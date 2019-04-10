@@ -12,11 +12,14 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
   setup do
     user = insert(:staked_user)
     conn = setup_jwt_auth(build_conn(), user)
+
     project = insert(:project, %{coinmarketcap_id: "ethereum", ticker: "ETH"})
 
     [
       conn: conn,
       slug: project.coinmarketcap_id,
+      contract: "ETH",
+      token_decimals: 18,
       from: from_iso8601!("2019-01-01T00:00:00Z"),
       to: from_iso8601!("2019-01-03T00:00:00Z"),
       number_of_holders: 10
@@ -25,7 +28,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
 
   test "returns data from TopHolders calculation", context do
     with_mock TopHolders,
-      percent_of_total_supply: fn _, _, _, _ ->
+      percent_of_total_supply: fn _, _, _, _, _ ->
         {:ok,
          [
            %{
@@ -47,7 +50,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
 
       assert_called(
         TopHolders.percent_of_total_supply(
-          context.slug,
+          context.contract,
+          context.token_decimals,
           context.number_of_holders,
           context.from,
           context.to
@@ -72,13 +76,14 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
   end
 
   test "returns empty array when there is no data", context do
-    with_mock TopHolders, percent_of_total_supply: fn _, _, _, _ -> {:ok, []} end do
+    with_mock TopHolders, percent_of_total_supply: fn _, _, _, _, _ -> {:ok, []} end do
       response = execute_query(context)
       holders = parse_response(response)
 
       assert_called(
         TopHolders.percent_of_total_supply(
-          context.slug,
+          context.contract,
+          context.token_decimals,
           context.number_of_holders,
           context.from,
           context.to
@@ -91,7 +96,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
 
   test "logs warning when calculation errors", context do
     with_mock TopHolders,
-      percent_of_total_supply: fn _, _, _, _ -> {:error, "error"} end do
+      percent_of_total_supply: fn _, _, _, _, _ -> {:error, "error"} end do
       assert capture_log(fn ->
                response = execute_query(context)
                holders = parse_response(response)

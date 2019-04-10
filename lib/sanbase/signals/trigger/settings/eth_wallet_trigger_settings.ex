@@ -150,6 +150,9 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
       }
     end
 
+    defp operation_text(value, %{amount_up: _}), do: "has increased by #{value}"
+    defp operation_text(value, %{amount_down: _}), do: "has decreased by #{abs(value)}"
+
     defp payload(
            %Project{name: name} = project,
            settings,
@@ -157,9 +160,9 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
            from
          ) do
       """
-      The #{settings.asset.slug} balance of #{name} wallets has changed by #{balance_change} since #{
-        from
-      }
+      The #{settings.asset.slug} balance of #{name} wallets #{
+        operation_text(balance_change, settings.operation)
+      } since #{DateTime.truncate(from, :second)}
 
       More info here: #{Sanbase.Model.Project.sanbase_link(project)}
       """
@@ -167,9 +170,12 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
 
     defp payload(address, settings, balance_change, from) do
       """
-      The #{settings.asset.slug} balance of the address #{address} has changed by #{
-        balance_change
-      } since #{from}
+      The #{settings.asset.slug} balance of the address #{address} #{
+        operation_text(balance_change, settings.operation)
+      } since #{DateTime.truncate(from, :second)}
+
+      See the historical balance change of the address here:
+      #{SanbaseWeb.Endpoint.historical_balance_url(address, settings.asset.slug)}
       """
     end
   end

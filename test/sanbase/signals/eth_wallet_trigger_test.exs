@@ -53,7 +53,16 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
       operation: %{amount_up: 200.0}
     }
 
-    {:ok, trigger1} =
+    trigger_settings3 = %{
+      type: "eth_wallet",
+      target: %{eth_address: eth_address},
+      asset: %{slug: "ethereum"},
+      channel: "telegram",
+      time_window: "1d",
+      operation: %{amount_down: 50.0}
+    }
+
+    {:ok, _} =
       UserTrigger.create_user_trigger(user, %{
         title: "Generic title",
         is_public: true,
@@ -61,7 +70,7 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
         settings: trigger_settings1
       })
 
-    {:ok, trigger2} =
+    {:ok, _} =
       UserTrigger.create_user_trigger(user, %{
         title: "Generic title",
         is_public: true,
@@ -69,15 +78,20 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
         settings: trigger_settings2
       })
 
+    {:ok, _} =
+      UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
+        is_public: true,
+        cooldown: "1d",
+        settings: trigger_settings3
+      })
+
     [
-      eth_address: eth_address,
-      user: user,
-      trigger1: trigger1,
-      trigger2: trigger2
+      eth_address: eth_address
     ]
   end
 
-  test "triggers eth wallet signal", _context do
+  test "triggers eth wallet signal when balance increases", _context do
     test_pid = self()
 
     with_mocks [
@@ -94,11 +108,11 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
       Scheduler.run_signal(EthWalletTriggerSettings)
 
       assert_receive({:telegram_to_self, message})
-      assert message =~ "The ethereum balance of Santiment wallets has changed by 50"
+      assert message =~ "The ethereum balance of Santiment wallets has increased by 50"
     end
   end
 
-  test "triggers both eth wallet and address signals", context do
+  test "triggers eth wallet and address signals when balance increases", context do
     test_pid = self()
 
     with_mocks [
@@ -115,12 +129,35 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
       Scheduler.run_signal(EthWalletTriggerSettings)
 
       assert_receive({:telegram_to_self, message})
-      assert message =~ "The ethereum balance of Santiment wallets has changed by 280"
+      assert message =~ "The ethereum balance of Santiment wallets has increased by 280"
 
       assert_receive({:telegram_to_self, message})
 
       assert message =~
-               "The ethereum balance of the address #{context.eth_address} has changed by 280"
+               "The ethereum balance of the address #{context.eth_address} has increased by 280"
+    end
+  end
+
+  test "triggers address signal when balance decreases", context do
+    test_pid = self()
+
+    with_mocks [
+      {Sanbase.Telegram, [:passthrough],
+       send_message: fn _user, text ->
+         send(test_pid, {:telegram_to_self, text})
+         :ok
+       end},
+      {HistoricalBalance, [:passthrough],
+       balance_change: fn _, _, _, _ ->
+         {:ok, {100, 0, -100}}
+       end}
+    ] do
+      Scheduler.run_signal(EthWalletTriggerSettings)
+
+      assert_receive({:telegram_to_self, message})
+
+      assert message =~
+               "The ethereum balance of the address #{context.eth_address} has decreased by 100"
     end
   end
 

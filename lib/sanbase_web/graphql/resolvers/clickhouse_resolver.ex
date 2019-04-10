@@ -93,7 +93,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   end
 
   def mvrv_ratio(_root, %{slug: "bitcoin", from: from, to: to, interval: interval}, _resolution) do
-    Bitcoin.mvrv_ratio(from, to, interval)
+    with {:ok, from, to, interval} <-
+           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86400, 50) do
+      Bitcoin.mvrv_ratio(from, to, interval)
+    end
   end
 
   def mvrv_ratio(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do

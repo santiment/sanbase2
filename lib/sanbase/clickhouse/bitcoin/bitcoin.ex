@@ -50,31 +50,27 @@ defmodule Sanbase.Clickhouse.Bitcoin do
   def token_velocity(from, to, interval) do
     {query, args} = token_velocity_query(from, to, interval)
 
-    ClickhouseRepo.query_transform(
-      query,
-      args,
-      fn [dt, value] ->
-        %{
-          token_velocity: value,
-          datetime: DateTime.from_unix!(dt)
-        }
-      end
-    )
+    ClickhouseRepo.query_transform(query, args, fn [datetime, value] ->
+      %{
+        token_velocity: value,
+        datetime: DateTime.from_unix!(datetime)
+      }
+    end)
   end
 
   def mvrv_ratio(from, to, interval) do
     {query, args} = mvrv_ratio_query(from, to, interval)
 
-    ClickhouseRepo.query_transform(
-      query,
-      args,
-      fn [dt, value] ->
-        %{
-          ratio: value,
-          datetime: DateTime.from_unix!(dt)
-        }
-      end
-    )
+    ClickhouseRepo.query_transform(query, args, fn [datetime, value] ->
+      %{
+        ratio: value,
+        datetime: DateTime.from_unix!(datetime)
+      }
+    end)
+  end
+
+  def first_datetime(_) do
+    ~N[2009-01-09 00:00:00] |> DateTime.from_naive("Etc/UTC")
   end
 
   # Generic way to fetch a metric that is used by making an aggregation over
@@ -87,20 +83,16 @@ defmodule Sanbase.Clickhouse.Bitcoin do
        when metric in @metrics and aggregation in @aggregations do
     {query, args} = get_simple_metric_query(metric, aggregation, from, to, interval)
 
-    ClickhouseRepo.query_transform(
-      query,
-      args,
-      fn [dt, value] ->
-        %{
-          metric_name => value,
-          datetime: DateTime.from_unix!(dt)
-        }
-      end
-    )
+    ClickhouseRepo.query_transform(query, args, fn [datetime, value] ->
+      %{
+        metric_name => value,
+        datetime: DateTime.from_unix!(datetime)
+      }
+    end)
   end
 
   defp get_simple_metric_query(metric, aggregation, from, to, interval) do
-    interval_seconds = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
+    interval_seconds = round_interval(interval)
 
     query = """
     SELECT
@@ -139,7 +131,7 @@ defmodule Sanbase.Clickhouse.Bitcoin do
     {query, args}
   end
 
-  defp token_velocity_query(from, to, interval \\ 86400) do
+  defp token_velocity_query(from, to, interval) do
     interval_seconds = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
 
     query = """
@@ -157,5 +149,13 @@ defmodule Sanbase.Clickhouse.Bitcoin do
     args = [interval_seconds, DateTime.to_unix(from), DateTime.to_unix(to)]
 
     {query, args}
+  end
+
+  # Round the interval to whole days only
+  defp round_interval(interval) when is_binary(interval) do
+    Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
+    |> div(86_400)
+    |> max(1)
+    |> Kernel.*(86_400)
   end
 end

@@ -20,7 +20,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     Bitcoin
   }
 
-  @one_hour_seconds 3600
+  # Return this number of datapoints is the provided interval is an empty string
+  @datapoints 50
 
   def top_holders_percent_of_total_supply(
         _root,
@@ -94,7 +95,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   def mvrv_ratio(_root, %{slug: "bitcoin", from: from, to: to, interval: interval}, _resolution) do
     with {:ok, from, to, interval} <-
-           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86400, 50) do
+           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86400, @datapoints) do
       Bitcoin.mvrv_ratio(from, to, interval)
     end
   end
@@ -128,8 +129,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
              from,
              to,
              interval,
-             @one_hour_seconds,
-             50
+             3600,
+             @datapoints
            ),
          {:ok, active_deposits} <-
            DailyActiveDeposits.active_deposits(contract, from, to, interval) do
@@ -227,8 +228,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
              from,
              to,
              interval,
-             @one_hour_seconds,
-             50
+             3600,
+             @datapoints
            ),
          {:ok, share_of_deposits} <-
            ShareOfDeposits.share_of_deposits(contract, from, to, interval) do

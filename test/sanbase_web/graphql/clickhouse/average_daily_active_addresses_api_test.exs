@@ -10,17 +10,17 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AverageDailyActiveAddressesApiTest do
     project = insert(:project, %{main_contract_address: "0x123123"})
     insert(:project, %{coinmarketcap_id: "ethereum", ticker: "ETH", name: "Ethereum"})
     insert(:project, %{coinmarketcap_id: "bitcoin", ticker: "BTC", name: "Bitcoin"})
-    datetime1 = DateTime.from_naive!(~N[2017-05-13 00:00:00], "Etc/UTC")
-    datetime2 = DateTime.from_naive!(~N[2017-05-23 00:00:00], "Etc/UTC")
+    from = DateTime.from_naive!(~N[2017-05-13 00:00:00], "Etc/UTC")
+    to = DateTime.from_naive!(~N[2017-05-23 00:00:00], "Etc/UTC")
 
     [
       project: project,
-      datetime1: datetime1,
-      datetime2: datetime2
+      from: from,
+      to: to
     ]
   end
 
-  test "average daily active addreses for projectBySlug", context do
+  test "average daily active addreses for erc20 project", context do
     with_mock Sanbase.Clickhouse.Erc20DailyActiveAddresses,
       average_active_addresses: fn _, _, _ ->
         {:ok, [{"#{context.project.main_contract_address}", 10707}]}
@@ -29,8 +29,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AverageDailyActiveAddressesApiTest do
       {
         projectBySlug(slug: "#{context.project.coinmarketcap_id}") {
           averageDailyActiveAddresses(
-            from: "#{context.datetime1}",
-            to: "#{context.datetime2}")
+            from: "#{context.from}",
+            to: "#{context.to}")
         }
       }
       """
@@ -46,6 +46,58 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AverageDailyActiveAddressesApiTest do
     end
   end
 
+  test "average daily active addreses for Bitcoin", context do
+    with_mock Sanbase.Clickhouse.Bitcoin,
+      average_active_addresses: fn _, _ ->
+        {:ok, 543_223}
+      end do
+      query = """
+      {
+        projectBySlug(slug: "bitcoin") {
+          averageDailyActiveAddresses(
+            from: "#{context.from}",
+            to: "#{context.to}")
+        }
+      }
+      """
+
+      result =
+        context.conn
+        |> post("/graphql", query_skeleton(query, "projectBySlug"))
+
+      active_addresses =
+        json_response(result, 200)["data"]["projectBySlug"]["averageDailyActiveAddresses"]
+
+      assert active_addresses == 543_223
+    end
+  end
+
+  test "average daily active addreses for Ethereum", context do
+    with_mock Sanbase.Clickhouse.EthDailyActiveAddresses,
+      average_active_addresses: fn _, _ ->
+        {:ok, 221_007}
+      end do
+      query = """
+      {
+        projectBySlug(slug: "ethereum") {
+          averageDailyActiveAddresses(
+            from: "#{context.from}",
+            to: "#{context.to}")
+        }
+      }
+      """
+
+      result =
+        context.conn
+        |> post("/graphql", query_skeleton(query, "projectBySlug"))
+
+      active_addresses =
+        json_response(result, 200)["data"]["projectBySlug"]["averageDailyActiveAddresses"]
+
+      assert active_addresses == 221_007
+    end
+  end
+
   test "average daily active addreses are 0 in case of database error", context do
     with_mock Sanbase.Clickhouse.Erc20DailyActiveAddresses,
       average_active_addresses: fn _, _, _ ->
@@ -55,8 +107,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AverageDailyActiveAddressesApiTest do
       {
         projectBySlug(slug: "#{context.project.coinmarketcap_id}") {
           averageDailyActiveAddresses(
-            from: "#{context.datetime1}",
-            to: "#{context.datetime2}")
+            from: "#{context.from}",
+            to: "#{context.to}")
         }
       }
       """
@@ -85,8 +137,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AverageDailyActiveAddressesApiTest do
       {
         projectBySlug(slug: "#{context.project.coinmarketcap_id}") {
           averageDailyActiveAddresses(
-            from: "#{context.datetime1}",
-            to: "#{context.datetime2}")
+            from: "#{context.from}",
+            to: "#{context.to}")
         }
       }
       """
@@ -102,7 +154,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AverageDailyActiveAddressesApiTest do
     end
   end
 
-  test "average daily active addresses works for ethereum and bitcoin", context do
+  test "average DAA for ERC20 tokens, ethereum and bitcoin requested together", context do
     with_mocks([
       {Sanbase.Clickhouse.Erc20DailyActiveAddresses, [:passthrough],
        average_active_addresses: fn _, _, _ ->
@@ -121,8 +173,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AverageDailyActiveAddressesApiTest do
       {
         allProjects {
           averageDailyActiveAddresses(
-            from: "#{context.datetime1}",
-            to: "#{context.datetime2}")
+            from: "#{context.from}",
+            to: "#{context.to}")
         }
       }
       """

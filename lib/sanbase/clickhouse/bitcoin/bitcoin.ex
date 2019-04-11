@@ -129,7 +129,7 @@ defmodule Sanbase.Clickhouse.Bitcoin do
   defp get_aggregated_metric_in_interval_query(metric, aggregation, from, to) do
     query = """
     SELECT
-      #{aggregation}(#{metric}) as metric
+      #{aggregation}(#{metric}) AS metric
     FROM #{@table}
     PREWHERE
       dt >= toDateTime(?1) AND
@@ -166,7 +166,7 @@ defmodule Sanbase.Clickhouse.Bitcoin do
     query = """
     SELECT
     toUnixTimestamp((intDiv(toUInt32(toDateTime(dt)), ?1) * ?1)) AS time,
-      avg(transaction_volume) / avg(daily_stack_circulation) as value
+      avg(transaction_volume) / avg(daily_stack_circulation) AS value
     FROM #{@table}
     PREWHERE
       dt >= toDateTime(?2) AND

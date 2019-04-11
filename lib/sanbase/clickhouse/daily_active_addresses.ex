@@ -59,9 +59,7 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
     with {:ok, result} <- Bitcoin.average_active_addresses(from, to) do
       {:ok, [{"BTC", result}]}
     else
-      {:error, error} ->
-        Logger.warn("Cannot fetch average active addresses for Bitcoin")
-        {:ok, []}
+      {:error, error} -> handle_error("Bitcoin", error)
     end
   end
 
@@ -71,9 +69,7 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
     with {:ok, result} <- Eth.average_active_addresses(from, to) do
       {:ok, [{"ETH", result}]}
     else
-      {:error, error} ->
-        Logger.warn("Cannot fetch average active addresses for Ethereum")
-        {:ok, []}
+      {:error, error} -> handle_error("Ethereum", error)
     end
   end
 
@@ -83,9 +79,12 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
     with {:ok, result} <- Erc20.average_active_addresses(contracts, from, to) do
       {:ok, result}
     else
-      {:error, error} ->
-        Logger.warn("Cannot fetch average active addresses for ERC20 contracts")
-        {:ok, []}
+      {:error, error} -> handle_error("ERC20 contracts", error)
     end
+  end
+
+  defp handle_error(type, reason) do
+    Logger.warn("Cannot fetch average active addresses for #{type}. Reason: #{inspect(reason)}")
+    {:ok, []}
   end
 end

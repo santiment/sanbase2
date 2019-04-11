@@ -18,9 +18,9 @@ defmodule Sanbase.Timeline.TimelineEvent do
   alias __MODULE__
 
   @publish_insight "publish_insight"
-  @create_watchlist "create_watchlist"
+  @update_watchlist "update_watchlist"
   @create_public_trigger "create_public_trigger"
-  @event_types [@publish_insight, @create_watchlist, @create_public_trigger]
+  @event_types [@publish_insight, @update_watchlist, @create_public_trigger]
 
   @timestamps_opts [inserted_at: :created_at, updated_at: false, type: :utc_datetime]
   @table "timeline_events"
@@ -35,7 +35,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   end
 
   def publish_insight(), do: @publish_insight
-  def create_watchlist(), do: @create_watchlist
+  def update_watchlist(), do: @update_watchlist
   def create_public_trigger(), do: @create_public_trigger
 
   def create_changeset(%__MODULE__{} = timeline_events, attrs \\ %{}) do

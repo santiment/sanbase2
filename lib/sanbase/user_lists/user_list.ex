@@ -1,5 +1,6 @@
 defmodule Sanbase.UserList do
   use Ecto.Schema
+
   import Ecto.Changeset
   import Ecto.Query
 
@@ -7,6 +8,8 @@ defmodule Sanbase.UserList do
   alias Sanbase.Auth.User
   alias Sanbase.UserList.ListItem
   alias Sanbase.Repo
+  alias Ecto.Multi
+  alias Sanbase.Timeline.TimelineEvent
 
   schema "user_lists" do
     field(:name, :string)
@@ -50,11 +53,34 @@ defmodule Sanbase.UserList do
 
   def update_user_list(%{id: id} = params) do
     params = update_list_items_params(params, id)
+    watchlist = UserList.by_id(id)
+    changeset = watchlist |> update_changeset(params)
 
-    UserList.by_id(id)
-    |> Repo.preload(:list_items)
-    |> update_changeset(params)
-    |> Repo.update()
+    if watchlist.is_public and Map.get(params, :list_items) do
+      changeset
+      |> update_watchlist_and_log_event()
+      |> case do
+        {:ok, %{watchlist: watchlist}} ->
+          {:ok, watchlist}
+
+        {:error, _, error, _} ->
+          {:error, error}
+      end
+    else
+      Repo.update(changeset)
+    end
+  end
+
+  defp update_watchlist_and_log_event(changeset) do
+    Multi.new()
+    |> Multi.update(:watchlist, changeset)
+    |> Multi.run(:create_timeline_event, fn %{watchlist: watchlist} ->
+      TimelineEvent.create_event(watchlist, %{
+        event_type: TimelineEvent.update_watchlist(),
+        user_id: watchlist.user_id
+      })
+    end)
+    |> Repo.transaction()
   end
 
   def remove_user_list(%{id: id}) do

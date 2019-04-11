@@ -43,7 +43,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     insert(:timeline_event,
       user_list: user_list,
       user: user_to_follow,
-      event_type: TimelineEvent.create_watchlist()
+      event_type: TimelineEvent.update_watchlist()
     )
 
     user_trigger =

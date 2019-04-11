@@ -6,6 +6,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
   alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.Repo
   alias Sanbase.UserList
+  alias Sanbase.Timeline.TimelineEvent
 
   import SanbaseWeb.Graphql.TestHelpers
 
@@ -344,6 +345,8 @@ defmodule SanbaseWeb.Graphql.UserListTest do
 
       {:ok, user_list} =
         UserList.update_user_list(%{id: user_list.id, list_items: [%{project_id: project.id}]})
+
+      assert TimelineEvent |> Repo.all() |> length() == 1
 
       query = query("userList(userListId: #{user_list.id})")
 

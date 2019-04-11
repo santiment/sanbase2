@@ -62,9 +62,9 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
   def balance_change(address, from, to) do
     query = """
     SELECT
-      argMaxIf(value, dt, dt<=?2 AND sign = 1) as start_balance,
-      argMaxIf(value, dt, dt<=?3 AND sign = 1) as end_balance,
-      end_balance - start_balance as diff
+      argMaxIf(value, dt, dt<=?2 AND sign = 1) AS start_balance,
+      argMaxIf(value, dt, dt<=?3 AND sign = 1) AS end_balance,
+      end_balance - start_balance AS diff
     FROM #{@table}
     PREWHERE
       address = ?1

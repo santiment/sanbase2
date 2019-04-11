@@ -71,16 +71,20 @@ config :sanbase, Sanbase.Scheduler,
       schedule: "2-59/5 * * * *",
       task: {Sanbase.Signals.Scheduler, :run_signal, [Trigger.DailyActiveAddressesSettings]}
     ],
-    price_percent_change_sonar_singal: [
+    price_percent_change_sonar_signal: [
       schedule: "3-59/5 * * * *",
       task: {Sanbase.Signals.Scheduler, :run_signal, [Trigger.PricePercentChangeSettings]}
     ],
-    price_absolute_change_sonar_singal: [
+    price_absolute_change_sonar_signal: [
       schedule: "4-59/5 * * * *",
       task: {Sanbase.Signals.Scheduler, :run_signal, [Trigger.PricePercentChangeSettings]}
     ],
-    trending_words_sonar_singal: [
+    trending_words_sonar_signal: [
       schedule: "5-59/5 * * * *",
       task: {Sanbase.Signals.Scheduler, :run_signal, [Trigger.TrendingWordsTriggerSettings]}
+    ],
+    eth_wallet_signal: [
+      schedule: "5-59/5 * * * *",
+      task: {Sanbase.Signals.Scheduler, :run_signal, [Trigger.EthWalletTriggerSettings]}
     ]
   ]

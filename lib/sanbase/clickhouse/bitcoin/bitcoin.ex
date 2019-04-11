@@ -36,7 +36,16 @@ defmodule Sanbase.Clickhouse.Bitcoin do
   end
 
   def token_age_consumed(from, to, interval) do
-    get_simple_metric(:stack_age_consumed, :token_age_consumed, :avg, from, to, interval)
+    {query, args} = get_simple_metric_query(:stack_age_consumed, :avg, from, to, interval)
+
+    # TODO: add burn_rate key for backward compatibility. Should be removed when frontend migrates all queries to `token_age_consumed`
+    ClickhouseRepo.query_transform(query, args, fn [datetime, value] ->
+      %{
+        token_age_consumed: value,
+        burn_rate: value,
+        datetime: DateTime.from_unix!(datetime)
+      }
+    end)
   end
 
   def transaction_volume(from, to, interval) do

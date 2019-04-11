@@ -56,7 +56,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.EtherbiTypes)
   import_types(SanbaseWeb.Graphql.InsightTypes)
   import_types(SanbaseWeb.Graphql.TechIndicatorsTypes)
-  import_types(SanbaseWeb.Graphql.SocialDataTypes)
   import_types(SanbaseWeb.Graphql.TransactionTypes)
   import_types(SanbaseWeb.Graphql.FileTypes)
   import_types(SanbaseWeb.Graphql.UserListTypes)
@@ -70,6 +69,8 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.PaginationTypes)
   import_types(SanbaseWeb.Graphql.SignalsHistoricalActivityTypes)
   import_types(SanbaseWeb.Graphql.TimelineEventTypes)
+
+  import_types(SanbaseWeb.Graphql.Schema.SocialDataQueries)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.{
@@ -192,7 +193,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       cache_resolve(&PriceResolver.history_price/3)
@@ -259,7 +260,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
       arg(:transform, :string, default_value: "None")
       arg(:moving_average_interval_base, :integer, default_value: 7)
 
@@ -299,7 +300,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       cache_resolve(&TwitterResolver.history_twitter_data/3)
@@ -319,7 +320,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)
@@ -330,7 +331,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)
@@ -349,7 +350,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)
@@ -421,7 +422,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
@@ -441,6 +442,20 @@ defmodule SanbaseWeb.Graphql.Schema do
       complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)
       cache_resolve(&ClickhouseResolver.daily_active_deposits/3)
+    end
+
+    @desc ~s"""
+    Fetch share of deposits from Daily Active Addresses.
+    """
+    field :share_of_deposits, list_of(:share_of_deposits) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.share_of_deposits/3)
     end
 
     @desc "Fetch the currently running poll."
@@ -503,7 +518,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)
@@ -587,6 +602,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&TechIndicatorsResolver.social_volume/3)
     end
 
+    import_fields(:social_data_queries)
+
     @desc ~s"""
     Returns a list of slugs for which there is social volume data.
     """
@@ -641,7 +658,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      middleware(ApiTimeframeRestriction)
+      middleware(ApiTimeframeRestriction, %{allow_realtime_data: true})
       cache_resolve(&SocialDataResolver.trending_words/3)
     end
 
@@ -824,6 +841,18 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&ClickhouseResolver.realized_value/3)
     end
 
+    @desc "Returns what percent of token supply is on exchanges"
+    field :percent_of_token_supply_on_exchanges, list_of(:percent_of_token_supply_on_exchanges) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.percent_of_token_supply_on_exchanges/3)
+    end
+
     @desc """
     Returns NVT (Network-Value-to-Transactions-Ratio
     Daily Market Cap / Daily Transaction Volume
@@ -874,6 +903,26 @@ defmodule SanbaseWeb.Graphql.Schema do
       complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)
       cache_resolve(&ClickhouseResolver.gas_used/3)
+    end
+
+    @desc """
+    Returns the top holders' percent of total supply - in exchanges, outside exchanges and combined.
+
+    Arguments description:
+    * slug - a string uniquely identifying a project
+    * number_of_holders - take top `number_of_holders` into account when calculating.
+    * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    """
+    field :top_holders_percent_of_total_supply, list_of(:top_holders_percent_of_total_supply) do
+      arg(:slug, non_null(:string))
+      arg(:number_of_holders, non_null(:integer))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.top_holders_percent_of_total_supply/3)
     end
 
     @desc """
@@ -1211,11 +1260,19 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&UserListResolver.remove_user_list/3)
     end
 
+    @desc "Allow/Dissallow to receive notifications in email/telegram channel"
     field :settings_toggle_channel, :user_settings do
       arg(:signal_notify_telegram, :boolean)
       arg(:signal_notify_email, :boolean)
       middleware(JWTAuth)
       resolve(&UserSettingsResolver.settings_toggle_channel/3)
+    end
+
+    @desc "Change subscription to Santiment newsletter"
+    field :change_newsletter_subscription, :user_settings do
+      arg(:newsletter_subscription, :newsletter_subscription_type)
+      middleware(JWTAuth)
+      resolve(&UserSettingsResolver.change_newsletter_subscription/3)
     end
 
     @desc """

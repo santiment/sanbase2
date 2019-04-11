@@ -5,6 +5,7 @@ defmodule Sanbase.Signals.History.PricesHistory do
   `90 days` back.
   """
 
+  import Sanbase.Signals.{Utils, OperationEvaluation}
   import Sanbase.Signals.History.Utils
 
   alias Sanbase.Signals.Trigger.{
@@ -43,19 +44,10 @@ defmodule Sanbase.Signals.History.PricesHistory do
     Enum.zip([datetimes, prices, change_calculations])
     |> Enum.map(fn
       {dt, price, {percent_change, triggered?}} ->
-        %{
-          datetime: dt,
-          price: price,
-          triggered?: triggered?,
-          percent_change: percent_change
-        }
+        %{datetime: dt, price: price, triggered?: triggered?, percent_change: percent_change}
 
       {dt, price, triggered?} ->
-        %{
-          datetime: dt,
-          price: price,
-          triggered?: triggered?
-        }
+        %{datetime: dt, price: price, triggered?: triggered?}
     end)
   end
 
@@ -71,10 +63,6 @@ defmodule Sanbase.Signals.History.PricesHistory do
   defimpl Sanbase.Signals.History, for: PriceAbsoluteChangeSettings do
     alias Sanbase.Signals.History.PricesHistory
 
-    defguard is_outside_interval(value, low, high)
-             when is_number(value) and
-                    ((is_number(low) and value <= low) or (is_number(high) and value >= high))
-
     @spec historical_trigger_points(%PriceAbsoluteChangeSettings{}, String.t()) ::
             {:ok, list(PricesHistory.historical_trigger_points_type())} | {:error, String.t()}
     def historical_trigger_points(
@@ -83,18 +71,17 @@ defmodule Sanbase.Signals.History.PricesHistory do
         )
         when is_binary(target) do
       {:ok, prices, datetimes} = PricesHistory.get_prices(settings)
-      above = Map.get(settings, :above)
-      below = Map.get(settings, :below)
       cooldown_in_hours = Sanbase.DateTimeUtils.compound_duration_to_hours(cooldown)
 
       {absolute_price_calculations, _} =
         prices
         |> Enum.reduce({[], 0}, fn
-          price, {accumulated_calculations, 0} when is_outside_interval(price, below, above) ->
-            {[true | accumulated_calculations], cooldown_in_hours}
-
-          _price, {accumulated_calculations, 0} ->
-            {[false | accumulated_calculations], 0}
+          price, {accumulated_calculations, 0} ->
+            if operation_triggered?(price, settings.operation) do
+              {[true | accumulated_calculations], cooldown_in_hours}
+            else
+              {[false | accumulated_calculations], 0}
+            end
 
           _price, {accumulated_calculations, cooldown_left} ->
             {[false | accumulated_calculations], cooldown_left - 1}
@@ -136,7 +123,7 @@ defmodule Sanbase.Signals.History.PricesHistory do
         |> Enum.chunk_every(time_window_in_hours, 1, :discard)
         |> Enum.map(fn chunk -> {List.first(chunk), List.last(chunk)} end)
         |> percent_change_calculations_with_cooldown(
-          settings.percent_threshold,
+          settings.operation,
           cooldown_in_hours
         )
 

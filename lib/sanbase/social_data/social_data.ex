@@ -2,6 +2,7 @@ defmodule Sanbase.SocialData do
   import Sanbase.Utils.ErrorHandling, only: [error_result: 1]
 
   alias Sanbase.DateTimeUtils
+  alias Sanbase.SocialData.SocialDominance
 
   require Logger
   require Sanbase.Utils.Config, as: Config
@@ -10,6 +11,15 @@ defmodule Sanbase.SocialData do
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 15_000
+
+  defdelegate social_dominance(
+                slug,
+                datetime_from,
+                datetime_to,
+                interval,
+                source
+              ),
+              to: SocialDominance
 
   def trending_words(
         source,
@@ -280,6 +290,7 @@ defmodule Sanbase.SocialData do
   defp top_social_gainers_losers_result(result) do
     result =
       result
+      |> Enum.sort(&(&1["timestamp"] <= &2["timestamp"]))
       |> Enum.map(fn %{
                        "timestamp" => timestamp,
                        "projects" => projects
@@ -296,6 +307,7 @@ defmodule Sanbase.SocialData do
   defp social_gainers_losers_status_result(result) do
     result =
       result
+      |> Enum.sort(&(&1["timestamp"] <= &2["timestamp"]))
       |> Enum.map(fn %{
                        "timestamp" => timestamp,
                        "status" => status,
@@ -316,10 +328,10 @@ defmodule Sanbase.SocialData do
     |> Enum.map(fn %{"project" => project, "change" => change} = project_change ->
       case Map.get(project_change, "status") do
         nil ->
-          %{project: project, change: change}
+          %{slug: project, change: change}
 
         status ->
-          %{project: project, change: change, status: String.to_existing_atom(status)}
+          %{slug: project, change: change, status: String.to_existing_atom(status)}
       end
     end)
   end

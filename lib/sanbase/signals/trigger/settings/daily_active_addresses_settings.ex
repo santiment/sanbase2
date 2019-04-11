@@ -34,6 +34,7 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
           target: Type.complex_target(),
+          filtered_target: Type.filtered_target(),
           channel: Type.channel(),
           time_window: Type.time_window(),
           percent_threshold: number(),
@@ -95,7 +96,7 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
   defimpl Sanbase.Signals.Settings, for: DailyActiveAddressesSettings do
     def triggered?(%DailyActiveAddressesSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%DailyActiveAddressesSettings{} = settings) do
+    def evaluate(%DailyActiveAddressesSettings{} = settings, _trigger) do
       case DailyActiveAddressesSettings.get_data(settings) do
         list when is_list(list) and list != [] ->
           build_result(list, settings)

@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   alias Sanbase.Model.Project
   alias Sanbase.DateTimeUtils
-  alias SanbaseWeb.Graphql.Helpers.Utils
+  import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 7]
 
   alias Sanbase.Clickhouse.{
     DailyActiveDeposits,
@@ -13,10 +13,38 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     MVRV,
     NetworkGrowth,
     NVT,
-    RealizedValue
+    PercentOfTokenSupplyOnExchanges,
+    RealizedValue,
+    TopHolders,
+    ShareOfDeposits,
+    Bitcoin
   }
 
-  @one_hour_seconds 3600
+  # Return this number of datapoints is the provided interval is an empty string
+  @datapoints 50
+
+  def top_holders_percent_of_total_supply(
+        _root,
+        %{slug: slug, number_of_holders: number_of_holders, from: from, to: to},
+        _resolution
+      ) do
+    with {:ok, contract, token_decimals} <- Project.contract_info_by_slug(slug),
+         {:ok, percent_of_total_supply} <-
+           TopHolders.percent_of_total_supply(
+             contract,
+             token_decimals,
+             number_of_holders,
+             from,
+             to
+           ) do
+      {:ok, percent_of_total_supply}
+    else
+      {:error, error} ->
+        error_msg = "Can't calculate top holders - percent of total supply for slug: #{slug}."
+        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        {:error, error_msg}
+    end
+  end
 
   def gas_used(
         _root,
@@ -65,14 +93,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     end
   end
 
-  def mvrv_ratio(_root, args, _resolution) do
+  def mvrv_ratio(_root, %{slug: "bitcoin", from: from, to: to, interval: interval}, _resolution) do
+    with {:ok, from, to, interval} <-
+           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86400, @datapoints) do
+      Bitcoin.mvrv_ratio(from, to, interval)
+    end
+  end
+
+  def mvrv_ratio(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
     # TODO: Check if interval is a whole day as in token circulation
-    with {:ok, mvrv_ratio} <- MVRV.mvrv_ratio(args.slug, args.from, args.to, args.interval) do
+    with {:ok, mvrv_ratio} <- MVRV.mvrv_ratio(slug, from, to, interval) do
       {:ok, mvrv_ratio}
     else
       {:error, error} ->
         Logger.warn(
-          "Can't calculate MVRV ratio for project with coinmarketcap_id: #{args.slug}. Reason: #{
+          "Can't calculate MVRV ratio for project with coinmarketcap_id: #{slug}. Reason: #{
             inspect(error)
           }"
         )
@@ -88,14 +123,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       ) do
     with {:ok, contract, _} <- Project.contract_info_by_slug(slug),
          {:ok, from, to, interval} <-
-           Utils.calibrate_interval(
+           calibrate_interval(
              DailyActiveDeposits,
              contract,
              from,
              to,
              interval,
-             @one_hour_seconds,
-             50
+             3600,
+             @datapoints
            ),
          {:ok, active_deposits} <-
            DailyActiveDeposits.active_deposits(contract, from, to, interval) do
@@ -157,6 +192,58 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         )
 
         {:error, "Can't calculate historical balances for project with coinmarketcap_id #{slug}"}
+    end
+  end
+
+  def percent_of_token_supply_on_exchanges(
+        _root,
+        %{slug: slug, from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    case PercentOfTokenSupplyOnExchanges.percent_on_exchanges(slug, from, to, interval) do
+      {:ok, percent_tokens_on_exchanges} ->
+        {:ok, percent_tokens_on_exchanges}
+
+      {:error, error} ->
+        error_msg =
+          "Can't calculate Percent of Token Supply on Exchanges for project with coinmarketcap_id: #{
+            slug
+          }."
+
+        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        {:error, error_msg}
+    end
+  end
+
+  def share_of_deposits(
+        _root,
+        %{slug: slug, from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    with {:ok, contract, _} <- Project.contract_info_by_slug(slug),
+         {:ok, from, to, interval} <-
+           calibrate_interval(
+             ShareOfDeposits,
+             contract,
+             from,
+             to,
+             interval,
+             3600,
+             @datapoints
+           ),
+         {:ok, share_of_deposits} <-
+           ShareOfDeposits.share_of_deposits(contract, from, to, interval) do
+      {:ok, share_of_deposits}
+    else
+      {:error, {:missing_contract, error_msg}} ->
+        {:error, error_msg}
+
+      {:error, error} ->
+        error_msg =
+          "Can't calculate Share of Deposits for project with coinmarketcap_id: #{slug}."
+
+        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        {:error, error_msg}
     end
   end
 end

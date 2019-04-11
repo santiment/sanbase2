@@ -24,7 +24,7 @@ defmodule Sanbase.Insight.PostTest do
       })
       |> Repo.insert!()
 
-    assert post.state == Post.approved_state()
+    assert post.state == Post.awaiting_approval_state()
   end
 
   test "changes the owner to the fallback user" do

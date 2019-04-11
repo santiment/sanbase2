@@ -40,8 +40,7 @@ defmodule SanbaseWeb.Graphql.TargetUserListTest do
       type: "price_absolute_change",
       target: %{slug: "santiment"},
       channel: "telegram",
-      above: 300.0,
-      below: 200.0
+      operation: %{above: 300.0}
     }
 
     {:ok, _trigger} =
@@ -58,8 +57,7 @@ defmodule SanbaseWeb.Graphql.TargetUserListTest do
       type: "price_absolute_change",
       target: 12,
       channel: "telegram",
-      above: 300.0,
-      below: 200.0
+      operation: %{above: 300.0}
     }
 
     assert capture_log(fn ->
@@ -80,8 +78,7 @@ defmodule SanbaseWeb.Graphql.TargetUserListTest do
       type: "price_absolute_change",
       target: %{user_list: context.user_list.id},
       channel: "telegram",
-      above: 300.0,
-      below: 200.0
+      operation: %{above: 300.0}
     }
 
     {:ok, _trigger} =
@@ -97,8 +94,7 @@ defmodule SanbaseWeb.Graphql.TargetUserListTest do
       type: "price_absolute_change",
       target: %{slug: ["santiment", "ethereum", "bitcoin"]},
       channel: "telegram",
-      above: 300.0,
-      below: 200.0
+      operation: %{above: 300.0}
     }
 
     {:ok, _trigger} =
@@ -114,8 +110,7 @@ defmodule SanbaseWeb.Graphql.TargetUserListTest do
       type: "price_absolute_change",
       target: ["santiment", "ethereum", "bitcoin", 12],
       channel: "telegram",
-      above: 300.0,
-      below: 200.0
+      operation: %{above: 300.0}
     }
 
     capture_log(fn ->
@@ -135,8 +130,7 @@ defmodule SanbaseWeb.Graphql.TargetUserListTest do
       type: "price_absolute_change",
       target: %{user_list: [1, 2, 3]},
       channel: "telegram",
-      above: 300.0,
-      below: 200.0
+      operation: %{above: 300.0}
     }
 
     assert capture_log(fn ->

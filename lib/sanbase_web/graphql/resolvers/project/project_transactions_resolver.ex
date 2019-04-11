@@ -143,11 +143,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   end
 
   defp calculate_eth_spent(%Project{} = project, from_datetime, to_datetime) do
-    with {:ok, eth_addresses} <- Project.eth_addresses(project),
+    with {:eth_addresses, {:ok, eth_addresses}} when eth_addresses != [] <-
+           {:eth_addresses, Project.eth_addresses(project)},
          {:ok, eth_spent} <-
            Clickhouse.EthTransfers.eth_spent(eth_addresses, from_datetime, to_datetime) do
       {:ok, eth_spent}
     else
+      {:eth_addresses, _} ->
+        {:ok, nil}
+
       error ->
         Logger.warn(
           "Cannot calculate ETH spent for #{Project.describe(project)}. Reason: #{inspect(error)}"
@@ -171,13 +175,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   end
 
   defp calculate_eth_spent_over_time(%Project{} = project, from, to, interval) do
-    with {:ok, eth_addresses} <- Project.eth_addresses(project),
-         interval when is_integer(interval) <-
-           Sanbase.DateTimeUtils.compound_duration_to_seconds(interval),
+    with {:eth_addresses, {:ok, eth_addresses}} when eth_addresses != [] <-
+           {:eth_addresses, Project.eth_addresses(project)},
          {:ok, eth_spent_over_time} <-
            Clickhouse.EthTransfers.eth_spent_over_time(eth_addresses, from, to, interval) do
       {:ok, eth_spent_over_time}
     else
+      {:eth_addresses, _} ->
+        {:ok, []}
+
       error ->
         Logger.warn(
           "Cannot calculate ETH spent over time for for #{Project.describe(project)}. Reason: #{
@@ -197,10 +203,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
        }) do
     limit = Enum.min([limit, 100])
 
-    with {:ok, project_addresses} <- Project.eth_addresses(project),
+    with {:eth_addresses, {:ok, eth_addresses}} when eth_addresses != [] <-
+           {:eth_addresses, Project.eth_addresses(project)},
          {:ok, eth_transactions} <-
            Clickhouse.EthTransfers.top_wallet_transfers(
-             project_addresses,
+             eth_addresses,
              from,
              to,
              limit,
@@ -210,6 +217,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
            Clickhouse.MarkExchanges.mark_exchange_wallets(eth_transactions) do
       {:ok, eth_transactions}
     else
+      {:eth_addresses, _} ->
+        {:ok, []}
+
       error ->
         Logger.warn(
           "Cannot fetch top ETH transactions for #{Project.describe(project)}. Reason: #{

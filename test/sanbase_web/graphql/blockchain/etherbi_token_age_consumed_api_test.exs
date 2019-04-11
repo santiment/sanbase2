@@ -104,7 +104,8 @@ defmodule Sanbase.Etherbi.TokenAgeConsumedApiTest do
       tokenAgeConsumed(
         slug: "#{context.slug}",
         from: "#{context.datetime1}",
-        to: "#{context.datetime8}") {
+        to: "#{context.datetime8}",
+        interval: "") {
           datetime
           tokenAgeConsumed
       }

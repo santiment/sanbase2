@@ -26,7 +26,7 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
       |> post("/graphql", query_skeleton(query, "allExchanges"))
 
     exchanges = json_response(response, 200)["data"]["allExchanges"]
-    assert exchanges == ["Binance", "Bitfinex"]
+    assert Enum.sort(exchanges) == Enum.sort(["Binance", "Bitfinex"])
   end
 
   test "test fetching volume for exchange", context do

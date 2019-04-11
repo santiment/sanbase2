@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Clickhouse.DailyActiveAddressesTest do
+defmodule Sanbase.Clickhouse.DailyActiveAddressesTest do
   use Sanbase.DataCase
   require Sanbase.ClickhouseRepo
   import Mock

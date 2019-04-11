@@ -104,7 +104,8 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
       transactionVolume(
         slug: "#{context.slug}",
         from: "#{context.datetime1}",
-        to: "#{context.datetime8}") {
+        to: "#{context.datetime8}",
+        interval: "") {
           datetime
           transactionVolume
       }

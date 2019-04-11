@@ -165,7 +165,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
            ] == json_response(result, 200)["data"]["allInsights"]
   end
 
-  test "excluding draft posts from allInsights", %{
+  test "excluding draft and not approved posts from allInsights", %{
     conn: conn,
     poll: poll,
     user: user,
@@ -175,6 +175,13 @@ defmodule SanbaseWeb.Graphql.PostTest do
       poll: poll,
       user: user,
       state: Post.approved_state(),
+      ready_state: Post.published()
+    )
+
+    insert(:post,
+      poll: poll,
+      user: user,
+      state: Post.awaiting_approval_state(),
       ready_state: Post.published()
     )
 
@@ -368,7 +375,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
       assert sanbasePost["id"] != nil
       assert sanbasePost["title"] == "Awesome post"
-      assert sanbasePost["state"] == Post.approved_state()
+      assert sanbasePost["state"] == Post.awaiting_approval_state()
       assert sanbasePost["user"]["id"] == user.id |> Integer.to_string()
       assert sanbasePost["votes"]["totalSanVotes"] == 0
 

@@ -16,8 +16,12 @@ defmodule Sanbase.Insight.Post do
 
   require Logger
 
+  # state
+  @awaiting_approval "awaiting_approval"
   @approved "approved"
   @declined "declined"
+
+  # ready_state
   @draft "draft"
   @published "published"
 
@@ -30,7 +34,7 @@ defmodule Sanbase.Insight.Post do
     field(:short_desc, :string)
     field(:link, :string)
     field(:text, :string)
-    field(:state, :string, default: @approved)
+    field(:state, :string, default: @awaiting_approval)
     field(:moderation_comment, :string)
     field(:ready_state, :string, default: @draft)
     field(:discourse_topic_url, :string)
@@ -79,6 +83,7 @@ defmodule Sanbase.Insight.Post do
     |> cast(attrs, [:ready_state, :discourse_topic_url])
   end
 
+  def awaiting_approval_state(), do: @awaiting_approval
   def approved_state(), do: @approved
   def declined_state(), do: @declined
 
@@ -191,7 +196,7 @@ defmodule Sanbase.Insight.Post do
   def published_posts(page, page_size) do
     from(
       p in Post,
-      where: p.ready_state == ^@published,
+      where: p.ready_state == ^@published and p.state == ^@approved,
       order_by: [desc: p.updated_at],
       limit: ^page_size,
       offset: ^((page - 1) * page_size)

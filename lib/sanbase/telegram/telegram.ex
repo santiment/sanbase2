@@ -64,12 +64,12 @@ defmodule Sanbase.Telegram do
   @spec send_message(%User{}, message) :: :ok | {:error, String.t()}
   def send_message(%User{} = user, text) do
     case UserSettings.settings_for(user) do
-      nil ->
-        {:error,
-         "Cannot send message to user with id #{user.id}. Reason: There is no telegram_chat id for that user"}
-
       %Settings{telegram_chat_id: chat_id} when is_integer(chat_id) ->
         send_message_to_chat_id(chat_id, text)
+
+      _ ->
+        {:error,
+         "Cannot send message to user with id #{user.id}. Reason: There is no telegram_chat id for that user"}
     end
   end
 

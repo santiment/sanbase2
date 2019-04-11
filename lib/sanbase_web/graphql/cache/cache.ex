@@ -16,6 +16,8 @@ defmodule SanbaseWeb.Graphql.Cache do
             func: 3,
             from: 2,
             resolver: 2,
+            store: 2,
+            store: 3,
             get_or_store: 2,
             get_or_store: 3,
             cache_modify_middleware: 3,
@@ -104,6 +106,10 @@ defmodule SanbaseWeb.Graphql.Cache do
     CacheProvider.size(@cache_name, :megabytes)
   end
 
+  def get(key) do
+    CacheProvider.get(@cache_name, key)
+  end
+
   @doc false
   def from(captured_mfa, nil) when is_function(captured_mfa) do
     # Public so it can be used by the resolve macros. You should not use it.
@@ -143,7 +149,11 @@ defmodule SanbaseWeb.Graphql.Cache do
     end
   end
 
-  defp get_or_store(cache_name \\ @cache_name, cache_key, resolver_fn) do
+  def store(cache_name \\ @cache_name, cache_key, value) do
+    CacheProvider.store(cache_name, cache_key, value)
+  end
+
+  def get_or_store(cache_name \\ @cache_name, cache_key, resolver_fn) do
     CacheProvider.get_or_store(
       cache_name,
       cache_key,
@@ -193,17 +203,19 @@ defmodule SanbaseWeb.Graphql.Cache do
 
   # Helper functions
 
-  defp cache_key(name, args) do
+  def cache_key(name, args, opts \\ []) do
+    base_ttl = Keyword.get(opts, :ttl, @ttl)
+    max_ttl_offset = Keyword.get(opts, :max_ttl_offset, @max_ttl_offset)
     slug = Map.get(args, :slug, "")
-    ttl = @ttl + ("#{inspect(name)}#{slug}" |> :erlang.phash2(@max_ttl_offset))
 
-    args_hash =
+    ttl = base_ttl + ({name, slug} |> :erlang.phash2(max_ttl_offset))
+
+    args =
       args
       |> convert_values(ttl)
-      |> Jason.encode_to_iodata!()
 
     cache_key =
-      [name, args_hash]
+      [name, args]
       |> :erlang.phash2()
 
     {cache_key, ttl}
@@ -211,17 +223,24 @@ defmodule SanbaseWeb.Graphql.Cache do
 
   # Convert the values for using in the cache. A special treatement is done for
   # `%DateTime{}` so all datetimes in a @ttl sized window are treated the same
-  defp convert_values(args, ttl) do
+  defp convert_values(%DateTime{} = v, ttl) do
+    div(DateTime.to_unix(v, :second), ttl)
+  end
+
+  defp convert_values(%_{} = v, _), do: Map.from_struct(v)
+
+  defp convert_values(args, ttl) when is_list(args) or is_map(args) do
     args
     |> Enum.map(fn
-      {k, %DateTime{} = v} ->
-        {k, div(DateTime.to_unix(v, :millisecond), ttl)}
+      {k, v} ->
+        [k, convert_values(v, ttl)]
 
-      pair ->
-        pair
+      data ->
+        convert_values(data, ttl)
     end)
-    |> Map.new()
   end
+
+  defp convert_values(v, _), do: v
 
   defp captured_mfa_name(captured_mfa) do
     captured_mfa

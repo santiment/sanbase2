@@ -21,7 +21,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
     |> Dataloader.load(SanbaseDataloader, :eth_balance, project)
   end
 
-  @spec eth_balance_from_loader(any(), atom() | %{eth_addresses: any()}) :: {:ok, any()}
   def eth_balance_from_loader(loader, project) do
     addresses = Enum.map(project.eth_addresses, fn %{address: address} -> address end)
 
@@ -74,7 +73,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
     |> Dataloader.load(SanbaseDataloader, {:price, "BTC_bitcoin"}, :last)
   end
 
-  def usd_balance_from_loader(loader, project) do
+  def usd_balance_from_loader(loader, %Project{} = project) do
     with {:ok, eth_balance} <- eth_balance_from_loader(loader, project),
          {:ok, btc_balance} <- btc_balance_from_loader(loader, project),
          {eth_price_usd, _eth_price_btc} when not is_nil(eth_price_usd) <-

@@ -75,6 +75,12 @@ defmodule SanbaseWeb.Endpoint do
     |> Path.join("sonar")
   end
 
+  def historical_balance_url(address, asset) when is_binary(address) and is_binary(asset) do
+    website_url()
+    |> Path.join("/labs/balance")
+    |> Path.join(URI.encode_query("assets[]": asset, address: address))
+  end
+
   def user_account_url() do
     Config.get(:website_url)
     |> Path.join("account")

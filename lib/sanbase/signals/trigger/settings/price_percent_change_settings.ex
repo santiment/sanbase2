@@ -1,11 +1,11 @@
 defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   @moduledoc ~s"""
   PricePercentChangeSettings configures the settings for a signal that is fired
-  when the price of `target` changes by more than `percent_threshold` percent for the
+  when the price of `target` moves up or down by specified percent for the
   specified `time_window` time.
   """
   use Vex.Struct
-  import Sanbase.Signals.{Validation, Utils}
+  import Sanbase.Signals.{Validation, Utils, OperationEvaluation}
 
   alias __MODULE__
   alias Sanbase.Signals.Type
@@ -21,16 +21,17 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
             filtered_target: %{list: []},
             channel: nil,
             time_window: nil,
-            percent_threshold: nil,
+            operation: %{},
             triggered?: false,
             payload: nil
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
           target: Type.complex_target(),
+          filtered_target: Type.filtered_target(),
           channel: Type.channel(),
           time_window: Type.time_window(),
-          percent_threshold: number(),
+          operation: Type.operation(),
           triggered?: boolean(),
           payload: Type.payload()
         }
@@ -38,7 +39,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   validates(:target, &valid_target?/1)
   validates(:channel, &valid_notification_channel/1)
   validates(:time_window, &valid_time_window?/1)
-  validates(:percent_threshold, &valid_percent?/1)
+  validates(:operation, &valid_percent_change_operation?/1)
 
   @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type
@@ -47,7 +48,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   def get_data(%__MODULE__{filtered_target: %{list: target_list}} = settings)
       when is_list(target_list) do
     time_window_sec = DateTimeUtils.compound_duration_to_seconds(settings.time_window)
-    projects = Project.by_slugs(target_list)
+    projects = Project.by_slug(target_list)
     to = Timex.now()
     from = Timex.shift(to, seconds: -time_window_sec)
 
@@ -88,7 +89,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   defimpl Sanbase.Signals.Settings, for: PricePercentChangeSettings do
     def triggered?(%PricePercentChangeSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%PricePercentChangeSettings{} = settings) do
+    def evaluate(%PricePercentChangeSettings{} = settings, _trigger) do
       case PricePercentChangeSettings.get_data(settings) do
         list when is_list(list) and list != [] ->
           build_result(list, settings)
@@ -100,13 +101,16 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
 
     defp build_result(
            list,
-           %PricePercentChangeSettings{percent_threshold: percent_threshold} = settings
+           %PricePercentChangeSettings{operation: operation} = settings
          ) do
       payload =
         Enum.reduce(list, %{}, fn
-          {slug, {:ok, {percent_change, _, _} = price_data}}, acc
-          when percent_change >= percent_threshold ->
-            Map.put(acc, slug, payload(slug, settings, price_data))
+          {slug, {:ok, {percent_change, _, _} = price_data}}, acc ->
+            if operation_triggered?(percent_change, operation) do
+              Map.put(acc, slug, payload(slug, settings, price_data))
+            else
+              acc
+            end
 
           _, acc ->
             acc
@@ -129,17 +133,21 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
         settings.type,
         settings.target,
         settings.time_window,
-        settings.percent_threshold
+        settings.operation
       ])
     end
 
     defp payload(slug, settings, {percent_change, first_price, last_price}) do
       project = Sanbase.Model.Project.by_slug(slug)
 
+      operation_text = if percent_change > 0, do: "moved up", else: "moved down"
+
       """
-      **#{project.name}**'s price has changed by **#{percent_change}%** from $#{first_price} to $#{
-        last_price
-      } for the last #{DateTimeUtils.compound_duration_to_text(settings.time_window)}.
+      **#{project.name}**'s price has #{operation_text} by **#{percent_change}%** from $#{
+        round_price(first_price)
+      } to $#{round_price(last_price)} for the last #{
+        DateTimeUtils.compound_duration_to_text(settings.time_window)
+      }.
       More info here: #{Sanbase.Model.Project.sanbase_link(project)}
       ![Price chart over the past 90 days](#{chart_url(project, :volume)})
       """

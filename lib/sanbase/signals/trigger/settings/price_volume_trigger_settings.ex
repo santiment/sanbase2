@@ -42,6 +42,7 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings do
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
           target: Type.complex_target(),
+          filtered_target: Type.filtered_target(),
           channel: Type.channel(),
           threshold: Type.threshold(),
           aggregate_interval: Type.time(),
@@ -88,7 +89,7 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings do
   defimpl Sanbase.Signals.Settings, for: PriceVolumeDifferenceTriggerSettings do
     def triggered?(%PriceVolumeDifferenceTriggerSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%PriceVolumeDifferenceTriggerSettings{} = settings) do
+    def evaluate(%PriceVolumeDifferenceTriggerSettings{} = settings, _trigger) do
       case PriceVolumeDifferenceTriggerSettings.get_data(settings) do
         list when is_list(list) and list != [] ->
           build_result(list, settings)

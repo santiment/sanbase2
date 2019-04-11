@@ -45,6 +45,7 @@ defmodule Sanbase.Model.Project do
     field(:token_decimals, :integer)
     field(:total_supply, :decimal)
     field(:description, :string)
+    field(:long_description, :string)
     field(:project_transparency, :boolean, default: false)
     field(:main_contract_address, :string)
     belongs_to(:project_transparency_status, ProjectTransparencyStatus, on_replace: :nilify)
@@ -91,6 +92,7 @@ defmodule Sanbase.Model.Project do
       :main_contract_address,
       :team_token_wallet,
       :description,
+      :long_description,
       :project_transparency,
       :project_transparency_status_id,
       :project_transparency_description,
@@ -101,6 +103,7 @@ defmodule Sanbase.Model.Project do
     |> unique_constraint(:coinmarketcap_id)
   end
 
+  @spec describe(%Project{}) :: String.t()
   def describe(%Project{coinmarketcap_id: cmc_id}) when not is_nil(cmc_id) do
     "project with coinmarketcap_id #{cmc_id}"
   end
@@ -319,7 +322,7 @@ defmodule Sanbase.Model.Project do
     |> Repo.one()
   end
 
-  def by_slugs(slugs) when is_list(slugs) do
+  def by_slug(slugs) when is_list(slugs) do
     Project
     |> where([p], p.coinmarketcap_id in ^slugs)
     |> preload(^@preloads)
@@ -333,8 +336,25 @@ defmodule Sanbase.Model.Project do
     |> Repo.one()
   end
 
+  def contract_info_by_slug("ethereum") do
+    {:ok, "ETH", 18}
+  end
+
   def contract_info_by_slug(slug) do
-    Project.by_slug(slug) |> contract_info()
+    from(p in Project,
+      where: p.coinmarketcap_id == ^slug,
+      select: {p.main_contract_address, p.token_decimals}
+    )
+    |> Repo.one()
+    |> case do
+      {contract, token_decimals} when is_binary(contract) ->
+        {:ok, String.downcase(contract), token_decimals || 0}
+
+      _ ->
+        {:error,
+         {:missing_contract,
+          "Can't find contract address of project with coinmarketcap_id #{slug}"}}
+    end
   end
 
   def contract_address(%Project{} = project) do

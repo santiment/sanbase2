@@ -3,18 +3,22 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MVRVTest do
 
   import SanbaseWeb.Graphql.TestHelpers
   import Mock
+  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
   import ExUnit.CaptureLog
   import Sanbase.Factory
 
   alias Sanbase.Clickhouse.MVRV
 
   setup do
+    user = insert(:staked_user)
+    conn = setup_jwt_auth(build_conn(), user)
     project = insert(:project, %{coinmarketcap_id: "ethereum", ticker: "ETH"})
 
     [
+      conn: conn,
       slug: project.coinmarketcap_id,
-      from: allowed_free_user_from(),
-      to: allowed_free_user_to(),
+      from: from_iso8601!("2019-01-01T00:00:00Z"),
+      to: from_iso8601!("2019-01-03T00:00:00Z"),
       interval: "1d"
     ]
   end
@@ -24,8 +28,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MVRVTest do
       mvrv_ratio: fn _, _, _, _ ->
         {:ok,
          [
-           %{ratio: 0.1, datetime: allowed_free_user_from()},
-           %{ratio: 0.2, datetime: Timex.shift(allowed_free_user_from(), days: 1)}
+           %{ratio: 0.1, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
+           %{ratio: 0.2, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
          ]}
       end do
       response = execute_query(context)
@@ -34,11 +38,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MVRVTest do
       assert_called(MVRV.mvrv_ratio(context.slug, context.from, context.to, context.interval))
 
       assert ratios == [
-               %{"ratio" => 0.1, "datetime" => DateTime.to_iso8601(allowed_free_user_from())},
-               %{
-                 "ratio" => 0.2,
-                 "datetime" => DateTime.to_iso8601(Timex.shift(allowed_free_user_from(), days: 1))
-               }
+               %{"ratio" => 0.1, "datetime" => "2019-01-01T00:00:00Z"},
+               %{"ratio" => 0.2, "datetime" => "2019-01-02T00:00:00Z"}
              ]
     end
   end

@@ -10,7 +10,10 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   alias Sanbase.Repo
 
   import Mock
+  import Ecto.Query
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.Factory
+  import ExUnit.CaptureLog
 
   @datetime1 DateTime.from_naive!(~N[2017-05-13 15:00:00], "Etc/UTC")
   @datetime2 DateTime.from_naive!(~N[2017-05-14 16:00:00], "Etc/UTC")
@@ -265,6 +268,40 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
                "trxValue" => 45_000.0
              } in trx_all
     end
+  end
+
+  test "project without wallets does not log warnings", context do
+    project =
+      insert(:project, %{
+        name: "Bitcoin",
+        ticker: "BTC",
+        coinmarketcap_id: "bitcoin",
+        eth_addresses: []
+      })
+
+    query = """
+    {
+      projectBySlug(slug: "#{project.coinmarketcap_id}") {
+        ethTopTransactions(
+          from: "#{context.datetime_from}",
+          to: "#{context.datetime_to}",
+          transaction_type: ALL){
+            datetime,
+            trxValue,
+        }
+      }
+    }
+    """
+
+    log =
+      capture_log(fn ->
+        result =
+          context.conn
+          |> post("/graphql", query_skeleton(query, "projectBySlug"))
+      end)
+
+    assert {:ok, []} == Project.eth_addresses(project)
+    refute String.contains?(log, "Cannot fetch top ETH transactions")
   end
 
   # Private functions

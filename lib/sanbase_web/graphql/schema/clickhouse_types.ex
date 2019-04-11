@@ -6,6 +6,11 @@ defmodule SanbaseWeb.Graphql.ClickhouseTypes do
     field(:active_deposits, non_null(:integer))
   end
 
+  object :share_of_deposits do
+    field(:datetime, non_null(:datetime))
+    field(:share_of_deposits, :float)
+  end
+
   object :gas_used do
     field(:datetime, non_null(:datetime))
     field(:eth_gas_used, :integer)
@@ -43,5 +48,17 @@ defmodule SanbaseWeb.Graphql.ClickhouseTypes do
     field(:datetime, non_null(:datetime))
     field(:realized_value, :integer)
     field(:non_exchange_realized_value, :integer)
+  end
+
+  object :percent_of_token_supply_on_exchanges do
+    field(:datetime, non_null(:datetime))
+    field(:percent_on_exchanges, :float)
+  end
+
+  object :top_holders_percent_of_total_supply do
+    field(:datetime, non_null(:datetime))
+    field(:in_exchanges, :float)
+    field(:outside_exchanges, :float)
+    field(:in_top_holders_total, :float)
   end
 end

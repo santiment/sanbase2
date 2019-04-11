@@ -43,3 +43,5 @@ services:
       WEBSITE_URL: http://localhost:4000
       PUBLIC_URL: http://localhost:4000
       PARITY_URL: http://parity-optimized:8545
+      TECH_INDICATORS_URL: http://tech-indicators.default.svc.cluster.local
+      CLICKHOUSE_DATABASE_URL: clickhouse://clickhouse-proxy.default.svc.cluster.local:8123/default

@@ -47,6 +47,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:token_address, :string)
     field(:team_token_wallet, :string)
     field(:description, :string)
+    field(:long_description, :string)
     field(:token_decimals, :integer)
     field(:main_contract_address, :string)
     field(:eth_addresses, list_of(:eth_address), resolve: dataloader(SanbaseRepo))

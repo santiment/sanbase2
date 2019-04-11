@@ -8,7 +8,6 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     EthAccountResolver,
     UserSettingsResolver,
     UserTriggerResolver,
-    SignalsHistoricalActivityResolver,
     PostResolver
   }
 

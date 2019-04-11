@@ -159,7 +159,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
         {:ok, [%{top_words: top_words()}]}
       end do
       assert capture_log(fn ->
-               Sanbase.Signals.Scheduler.run_trending_words_signals()
+               Sanbase.Signals.Scheduler.run_signal(TrendingWordsTriggerSettings)
              end) =~ "In total 1/1 trending_words signals were sent successfully"
 
       alias Sanbase.Signals.HistoricalActivity
@@ -170,7 +170,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
       Sanbase.Signals.Evaluator.Cache.clear()
 
       assert capture_log(fn ->
-               Sanbase.Signals.Scheduler.run_trending_words_signals()
+               Sanbase.Signals.Scheduler.run_signal(TrendingWordsTriggerSettings)
              end) =~ "There were no signals triggered of type"
     end
   end
@@ -186,7 +186,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
         {:ok, [%{top_words: top_words()}]}
       end do
       assert capture_log(fn ->
-               Sanbase.Signals.Scheduler.run_trending_words_signals()
+               Sanbase.Signals.Scheduler.run_signal(TrendingWordsTriggerSettings)
              end) =~ "In total 1/1 trending_words signals were sent successfully"
 
       user_signal = HistoricalActivity |> Sanbase.Repo.all() |> List.first()
@@ -202,7 +202,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
     })
 
     assert capture_log(fn ->
-             Sanbase.Signals.Scheduler.run_trending_words_signals()
+             Sanbase.Signals.Scheduler.run_signal(TrendingWordsTriggerSettings)
            end) =~ "There were no signals triggered of type"
   end
 
@@ -222,7 +222,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
         {:ok, [%{top_words: top_words()}]}
       end do
       assert capture_log(fn ->
-               Sanbase.Signals.Scheduler.run_trending_words_signals()
+               Sanbase.Signals.Scheduler.run_signal(TrendingWordsTriggerSettings)
              end) =~ "In total 1/1 trending_words signals were sent successfully"
 
       {:ok, ut} = UserTrigger.get_trigger_by_id(context.user, context.trigger_trending_words.id)

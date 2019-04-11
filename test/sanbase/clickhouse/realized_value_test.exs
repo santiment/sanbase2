@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Clickhouse.RealizedValueTest do
+defmodule Sanbase.Clickhouse.RealizedValueTest do
   use Sanbase.DataCase
   import Mock
   import Sanbase.Factory

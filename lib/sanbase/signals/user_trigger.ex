@@ -195,20 +195,19 @@ defmodule Sanbase.Signals.UserTrigger do
           {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, Ecto.Changeset.t()}
   def remove_user_trigger(%User{} = user, trigger_id) do
     case get_trigger_by_id(user, trigger_id) do
+      {:ok, nil} ->
+        {:error, "Can't remove trigger with id #{trigger_id}"}
+
       {:ok, struct} ->
         Repo.delete(struct)
-
-      _ ->
-        {:error, "Can't remove trigger with id #{trigger_id}"}
     end
   end
 
-  @spec historical_trigger_points(%Trigger{}) :: list(any)
+  @spec historical_trigger_points(%Trigger{} | map()) :: list(any)
   def historical_trigger_points(%Trigger{} = trigger) do
     Trigger.historical_trigger_points(trigger)
   end
 
-  @spec historical_trigger_points(map()) :: list(any)
   def historical_trigger_points(%{settings: settings} = params) do
     {:ok, settings_struct} =
       settings
@@ -246,6 +245,10 @@ defmodule Sanbase.Signals.UserTrigger do
            {:map_from_struct, map_from_struct(trigger_struct)} do
       :ok
     else
+      {:load_in_struct, {:error, error}} ->
+        Logger.warn("UserTrigger struct is not valid. Reason: #{inspect(error)}")
+        {:error, error}
+
       {:valid?, false} ->
         {:ok, trigger_struct} = load_in_struct(trigger)
         errors = Vex.errors(trigger_struct)
@@ -258,9 +261,8 @@ defmodule Sanbase.Signals.UserTrigger do
 
         {:error, errors_text}
 
-      {:load_in_struct, {:error, error}} ->
+      {:map_from_struct, {:error, error}} ->
         Logger.warn("UserTrigger struct is not valid. Reason: #{inspect(error)}")
-        {:error, error}
 
       {:error, error} ->
         {:error, error}

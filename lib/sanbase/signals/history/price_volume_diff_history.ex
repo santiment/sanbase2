@@ -4,8 +4,6 @@ defmodule Sanbase.Signals.History.PriceVolumeDifferenceHistory do
   The history goes 180 days back.
   """
 
-  import Sanbase.Signals.History.Utils
-
   alias Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings
 
   require Logger

@@ -21,13 +21,13 @@ config :tesla, adapter: Tesla.Mock
 config :sanbase, Sanbase.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   database: "sanbase_test",
-  pool_size: 30
+  pool_size: 5
 
 # Configure your database
 config :sanbase, Sanbase.TimescaleRepo,
   pool: Ecto.Adapters.SQL.Sandbox,
   database: "sanbase_timescale_test",
-  pool_size: 30
+  pool_size: 5
 
 config :sanbase, Sanbase.Timescaledb, blockchain_schema: nil
 

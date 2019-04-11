@@ -18,18 +18,6 @@ defmodule SanbaseWeb.Graphql.TechIndicatorsTypes do
     field(:sentiment, :float)
   end
 
-  object :social_volume do
-    field(:datetime, non_null(:datetime))
-    field(:mentions_count, :integer)
-  end
-
-  enum :social_volume_type do
-    value(:professional_traders_chat_overview)
-    value(:telegram_chats_overview)
-    value(:telegram_discussion_overview)
-    value(:discord_discussion_overview)
-  end
-
   enum :topic_search_sources do
     value(:telegram)
     value(:professional_traders_chat)

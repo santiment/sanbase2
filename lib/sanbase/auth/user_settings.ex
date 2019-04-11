@@ -25,10 +25,12 @@ defmodule Sanbase.Auth.UserSettings do
     Repo.get_by(UserSettings, user_id: user_id)
     |> case do
       nil ->
-        nil
+        changeset(%UserSettings{}, %{user_id: user_id, settings: %{}})
+        |> Repo.insert!()
+        |> modify_settings()
 
       %UserSettings{} = us ->
-        %{us.settings | has_telegram_connected: us.settings.telegram_chat_id != nil}
+        modify_settings(us)
     end
   end
 
@@ -38,6 +40,10 @@ defmodule Sanbase.Auth.UserSettings do
 
   def set_telegram_chat_id(user_id, chat_id) do
     settings_update(user_id, %{telegram_chat_id: chat_id})
+  end
+
+  def change_newsletter_subscription(%User{id: user_id}, params) do
+    settings_update(user_id, params)
   end
 
   defp settings_update(user_id, params) do
@@ -50,5 +56,23 @@ defmodule Sanbase.Auth.UserSettings do
         changeset(us, %{settings: params})
     end
     |> Repo.insert_or_update()
+    |> case do
+      {:ok, %UserSettings{} = us} ->
+        {:ok, %{us | settings: modify_settings(us)}}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  defp modify_settings(%UserSettings{} = us) do
+    %{
+      us.settings
+      | has_telegram_connected: us.settings.telegram_chat_id != nil,
+        newsletter_subscription:
+          us.settings.newsletter_subscription
+          |> String.downcase()
+          |> String.to_existing_atom()
+    }
   end
 end

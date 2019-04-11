@@ -5,7 +5,7 @@ defmodule Sanbase.Factory do
   alias Sanbase.UserList
   alias Sanbase.Auth.{User, UserSettings}
   alias Sanbase.Insight.{Post, Poll}
-  alias Sanbase.Model.{Project, ExchangeAddress}
+  alias Sanbase.Model.{Project, ExchangeAddress, ProjectEthAddress}
   alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
   alias Sanbase.Timeline.TimelineEvent
 
@@ -47,7 +47,7 @@ defmodule Sanbase.Factory do
       title: "Awesome analysis",
       link: "http://example.com",
       text: "Text of the post",
-      state: Post.approved_state()
+      state: Post.awaiting_approval_state()
     }
   end
 
@@ -56,7 +56,7 @@ defmodule Sanbase.Factory do
       title: "Awesome analysis",
       link: "http://example.com",
       text: "Text of the post",
-      state: Post.approved_state()
+      state: Post.awaiting_approval_state()
     }
   end
 
@@ -74,7 +74,16 @@ defmodule Sanbase.Factory do
       token_decimals: 18,
       total_supply: 83_000_000,
       github_link: "https://github.com/santiment",
-      infrastructure: nil
+      infrastructure: nil,
+      eth_addresses: [build(:project_eth_address)]
+    }
+  end
+
+  def project_eth_address_factory() do
+    %ProjectEthAddress{
+      address: "0x" <> (:crypto.strong_rand_bytes(16) |> Base.encode16()),
+      source: "",
+      comments: ""
     }
   end
 
@@ -89,7 +98,8 @@ defmodule Sanbase.Factory do
     %UserSettings{
       settings: %{
         signal_notify_telegram: false,
-        signal_notify_email: false
+        signal_notify_email: false,
+        newsletter_subscription: "OFF"
       }
     }
   end

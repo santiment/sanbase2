@@ -31,8 +31,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         _resolution
       ) do
     with {:ok, from, to, interval} <-
-           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86400, @datapoints) do
-      Bitcoin.token_age_consumed(from, to, interval)
+           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86400, @datapoints),
+         {:ok, result} <- Bitcoin.token_age_consumed(from, to, interval) do
+      result = Enum.map(result, fn elem -> Map.put(elem, :burn_rate, elem.token_age_consumed) end)
+      {:ok, result}
     end
   end
 

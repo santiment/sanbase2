@@ -1,5 +1,5 @@
 defmodule Sanbase.Signals.History.Utils do
-  import Sanbase.Signals.Utils
+  import Sanbase.Signals.{Utils, OperationEvaluation}
 
   @type percent_change_calculations :: {float(), boolean()}
 
@@ -22,7 +22,7 @@ defmodule Sanbase.Signals.History.Utils do
       end)
       |> Enum.reduce({[], 0}, fn
         percent_change, {accumulated_calculations, 0} ->
-          if percent_change_triggered?(percent_change, operation) do
+          if operation_triggered?(percent_change, operation) do
             {[{percent_change, true} | accumulated_calculations], cooldown}
           else
             {[{percent_change, false} | accumulated_calculations], 0}
@@ -36,17 +36,5 @@ defmodule Sanbase.Signals.History.Utils do
   end
 
   def average([]), do: 0
-
-  def average(values) do
-    Float.round(Enum.sum(values) / length(values), 2)
-  end
-
-  defp percent_change_triggered?(percent_change, percent_threshold)
-       when is_float(percent_threshold) do
-    percent_change >= percent_threshold
-  end
-
-  defp percent_change_triggered?(percent_change, operation) when is_map(operation) do
-    percent_operation_triggered?(percent_change, operation)
-  end
+  def average(values), do: Float.round(Enum.sum(values) / length(values), 2)
 end

@@ -1,5 +1,5 @@
 defprotocol Sanbase.Signals.Settings do
-  def evaluate(trigger)
+  def evaluate(trigger_settings, trigger)
 
   @spec triggered?(struct()) :: boolean()
   def triggered?(trigger)
@@ -92,7 +92,7 @@ defmodule Sanbase.Signals.Trigger do
   def evaluate(%Trigger{settings: %{target: target} = trigger_settings} = trigger) do
     trigger_settings =
       %{trigger_settings | filtered_target: remove_targets_on_cooldown(target, trigger)}
-      |> Sanbase.Signals.Settings.evaluate()
+      |> Sanbase.Signals.Settings.evaluate(trigger)
 
     %Trigger{trigger | settings: trigger_settings}
   end
@@ -109,10 +109,14 @@ defmodule Sanbase.Signals.Trigger do
     Sanbase.Signals.Settings.cache_key(trigger_settings)
   end
 
-  def has_cooldown?(%Trigger{last_triggered: lt}, _target) when lt == %{}, do: false
+  def last_triggered(%Trigger{last_triggered: lt}, _target) when map_size(lt) == 0, do: nil
 
-  def has_cooldown?(%Trigger{cooldown: cd, last_triggered: lt}, target) when is_map(lt) do
-    case Map.get(lt, target) do
+  def last_triggered(%Trigger{last_triggered: lt}, target) do
+    Map.get(lt, target)
+  end
+
+  def has_cooldown?(%Trigger{} = trigger, target) do
+    case last_triggered(trigger, target) do
       nil ->
         false
 
@@ -120,7 +124,7 @@ defmodule Sanbase.Signals.Trigger do
         target_last_triggered = target_last_triggered |> DateTimeUtils.from_iso8601!()
 
         Timex.compare(
-          DateTimeUtils.after_interval(cd, target_last_triggered),
+          DateTimeUtils.after_interval(trigger.cooldown, target_last_triggered),
           Timex.now()
         ) == 1
     end

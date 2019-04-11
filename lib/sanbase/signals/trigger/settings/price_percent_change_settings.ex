@@ -5,7 +5,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   specified `time_window` time.
   """
   use Vex.Struct
-  import Sanbase.Signals.{Validation, Utils}
+  import Sanbase.Signals.{Validation, Utils, OperationEvaluation}
 
   alias __MODULE__
   alias Sanbase.Signals.Type
@@ -28,9 +28,10 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
           target: Type.complex_target(),
+          filtered_target: Type.filtered_target(),
           channel: Type.channel(),
           time_window: Type.time_window(),
-          operation: map(),
+          operation: Type.operation(),
           triggered?: boolean(),
           payload: Type.payload()
         }
@@ -38,7 +39,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   validates(:target, &valid_target?/1)
   validates(:channel, &valid_notification_channel/1)
   validates(:time_window, &valid_time_window?/1)
-  validates(:operation, &valid_percent_operation?/1)
+  validates(:operation, &valid_percent_change_operation?/1)
 
   @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type
@@ -47,7 +48,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   def get_data(%__MODULE__{filtered_target: %{list: target_list}} = settings)
       when is_list(target_list) do
     time_window_sec = DateTimeUtils.compound_duration_to_seconds(settings.time_window)
-    projects = Project.by_slugs(target_list)
+    projects = Project.by_slug(target_list)
     to = Timex.now()
     from = Timex.shift(to, seconds: -time_window_sec)
 
@@ -88,7 +89,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   defimpl Sanbase.Signals.Settings, for: PricePercentChangeSettings do
     def triggered?(%PricePercentChangeSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%PricePercentChangeSettings{} = settings) do
+    def evaluate(%PricePercentChangeSettings{} = settings, _trigger) do
       case PricePercentChangeSettings.get_data(settings) do
         list when is_list(list) and list != [] ->
           build_result(list, settings)
@@ -105,7 +106,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
       payload =
         Enum.reduce(list, %{}, fn
           {slug, {:ok, {percent_change, _, _} = price_data}}, acc ->
-            if percent_operation_triggered?(percent_change, operation) do
+            if operation_triggered?(percent_change, operation) do
               Map.put(acc, slug, payload(slug, settings, price_data))
             else
               acc

@@ -6,7 +6,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
 
   use Vex.Struct
 
-  import Sanbase.Signals.{Utils, Validation}
+  import Sanbase.Signals.{Utils, Validation, OperationEvaluation}
 
   alias __MODULE__
   alias Sanbase.Signals.Type
@@ -27,13 +27,14 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
 
   validates(:target, &valid_target?/1)
   validates(:channel, &valid_notification_channel/1)
-  validates(:operation, &valid_operation?/1)
+  validates(:operation, &valid_absolute_value_operation?/1)
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
           target: Type.complex_target(),
+          filtered_target: Type.filtered_target(),
           channel: Type.channel(),
-          operation: map(),
+          operation: Type.operation(),
           triggered?: boolean(),
           payload: Type.payload()
         }
@@ -80,7 +81,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
     @spec triggered?(Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings.t()) :: boolean()
     def triggered?(%PriceAbsoluteChangeSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%PriceAbsoluteChangeSettings{} = settings) do
+    def evaluate(%PriceAbsoluteChangeSettings{} = settings, _trigger) do
       case PriceAbsoluteChangeSettings.get_data(settings) do
         list when is_list(list) and list != [] ->
           build_result(list, settings)
@@ -93,7 +94,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
     defp build_result(list, %PriceAbsoluteChangeSettings{operation: operation} = settings) do
       payload =
         Enum.reduce(list, %{}, fn {slug, {:ok, price}}, acc ->
-          if evaluate_operation(price, operation) do
+          if operation_triggered?(price, operation) do
             Map.put(acc, slug, payload(slug, price, operation_text(operation)))
           else
             acc

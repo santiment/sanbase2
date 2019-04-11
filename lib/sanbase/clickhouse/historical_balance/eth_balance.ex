@@ -59,6 +59,28 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     end
   end
 
+  def balance_change(address, from, to) do
+    query = """
+    SELECT
+      argMaxIf(value, dt, dt<=?2 AND sign = 1) AS start_balance,
+      argMaxIf(value, dt, dt<=?3 AND sign = 1) AS end_balance,
+      end_balance - start_balance AS diff
+    FROM #{@table}
+    PREWHERE
+      address = ?1
+    """
+
+    args = [address |> String.downcase(), from, to]
+
+    ClickhouseRepo.query_transform(query, args, fn [s, e, value] ->
+      {s / @eth_decimals, e / @eth_decimals, value / @eth_decimals}
+    end)
+    |> case do
+      {:ok, [result]} -> {:ok, result}
+      error -> error
+    end
+  end
+
   @first_datetime ~N[2015-07-29 00:00:00]
                   |> DateTime.from_naive!("Etc/UTC")
                   |> DateTime.to_unix()

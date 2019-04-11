@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   alias Sanbase.Repo
 
   import Mock
+  import Ecto.Query
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
   import ExUnit.CaptureLog
@@ -270,7 +271,13 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   end
 
   test "project without wallets does not log warnings", context do
-    project = insert(:project, %{name: "Bitcoin", ticker: "BTC", coinmarketcap_id: "bitcoin"})
+    project =
+      insert(:project, %{
+        name: "Bitcoin",
+        ticker: "BTC",
+        coinmarketcap_id: "bitcoin",
+        eth_addresses: []
+      })
 
     query = """
     {

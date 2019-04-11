@@ -114,7 +114,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
   defimpl Sanbase.Signals.Settings, for: TrendingWordsTriggerSettings do
     def triggered?(%TrendingWordsTriggerSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%TrendingWordsTriggerSettings{target: target} = settings) do
+    def evaluate(%TrendingWordsTriggerSettings{target: target} = settings, _trigger) do
       case TrendingWordsTriggerSettings.get_data(settings) do
         {:ok, top_words} ->
           %TrendingWordsTriggerSettings{

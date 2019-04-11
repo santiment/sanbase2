@@ -9,13 +9,16 @@ defmodule Sanbase.Signals.Scheduler do
   > Update the `last_updated` in the database
   > Log stats messages
   """
-  alias Sanbase.Signals.Trigger.{
-    DailyActiveAddressesSettings,
-    PricePercentChangeSettings,
-    PriceAbsoluteChangeSettings,
-    TrendingWordsTriggerSettings,
-    PriceVolumeDifferenceTriggerSettings
-  }
+  alias Sanbase.Signals.Trigger
+
+  @signal_modules [
+    Trigger.DailyActiveAddressesSettings,
+    Trigger.PricePercentChangeSettings,
+    Trigger.PriceAbsoluteChangeSettings,
+    Trigger.TrendingWordsTriggerSettings,
+    Trigger.PriceVolumeDifferenceTriggerSettings,
+    Trigger.EthWalletTriggerSettings
+  ]
 
   alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
   alias Sanbase.Signals.Evaluator
@@ -26,29 +29,10 @@ defmodule Sanbase.Signals.Scheduler do
 
   defguard is_non_empty_map(map) when is_map(map) and map != %{}
 
-  def run_price_percent_change_signals() do
-    PricePercentChangeSettings.type()
-    |> run()
-  end
-
-  def run_price_absolute_change_signals() do
-    PriceAbsoluteChangeSettings.type()
-    |> run()
-  end
-
-  def run_daily_active_addresses_signals() do
-    DailyActiveAddressesSettings.type()
-    |> run()
-  end
-
-  def run_trending_words_signals() do
-    TrendingWordsTriggerSettings.type()
-    |> run()
-  end
-
-  def run_price_volume_difference_signals() do
-    PriceVolumeDifferenceTriggerSettings.type()
-    |> run()
+  for module <- @signal_modules do
+    def run_signal(unquote(module)) do
+      unquote(module).type() |> run()
+    end
   end
 
   # Private functions

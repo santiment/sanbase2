@@ -11,6 +11,8 @@ defmodule Sanbase.Signals.Evaluator.Cache do
   require Logger
   @cache_name :signals_evaluator_cache
 
+  def get_or_store(:nocache, func), do: func.()
+
   def get_or_store(key, func) when is_function(func, 0) do
     {result, error_if_any} =
       if (result = ConCache.get(@cache_name, key)) != nil do
@@ -25,6 +27,9 @@ defmodule Sanbase.Signals.Evaluator.Cache do
             case func.() do
               {:error, _} = error ->
                 {nil, error}
+
+              {:nocache, value} ->
+                {value, nil}
 
               value ->
                 ConCache.put(@cache_name, key, {:stored, value})

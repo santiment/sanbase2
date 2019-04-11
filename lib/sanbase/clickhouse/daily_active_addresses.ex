@@ -6,6 +6,8 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
   alias Sanbase.Clickhouse.Erc20DailyActiveAddresses, as: Erc20
   alias Sanbase.Clickhouse.EthDailyActiveAddresses, as: Eth
 
+  require Logger
+
   @ethereum ["ethereum", "ETH"]
   @bitcoin ["bitcoin", "BTC"]
 
@@ -49,11 +51,17 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
 
   # Helper functions that return lists of {slug, average_active_addresses}
   # As Ethereum and Bitcoin do not have contracts they are simulated
+  # In case of error return `{:ok, []}` because the other 2 queries could succeed
+  # and return meaningful results
   defp do_btc_average_active_addresses([], _, _), do: {:ok, []}
 
   defp do_btc_average_active_addresses([_ | _], from, to) do
     with {:ok, result} <- Bitcoin.average_active_addresses(from, to) do
       {:ok, [{"BTC", result}]}
+    else
+      {:error, error} ->
+        Logger.warn("Cannot fetch average active addresses for Bitcoin")
+        {:ok, []}
     end
   end
 
@@ -62,12 +70,22 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
   defp do_eth_average_active_addresses([_ | _], from, to) do
     with {:ok, result} <- Eth.average_active_addresses(from, to) do
       {:ok, [{"ETH", result}]}
+    else
+      {:error, error} ->
+        Logger.warn("Cannot fetch average active addresses for Ethereum")
+        {:ok, []}
     end
   end
 
   defp do_erc20_average_active_addresses([], _, _), do: {:ok, []}
 
   defp do_erc20_average_active_addresses(contracts, from, to) do
-    Erc20.average_active_addresses(contracts, from, to)
+    with {:ok, result} <- Erc20.average_active_addresses(contracts, from, to) do
+      {:ok, result}
+    else
+      {:error, error} ->
+        Logger.warn("Cannot fetch average active addresses for ERC20 contracts")
+        {:ok, []}
+    end
   end
 end

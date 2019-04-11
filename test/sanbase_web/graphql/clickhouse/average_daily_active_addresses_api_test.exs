@@ -3,6 +3,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AverageDailyActiveAddressesApiTest do
 
   import Mock
   import Sanbase.Factory
+  import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
 
   setup do
@@ -42,6 +43,36 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AverageDailyActiveAddressesApiTest do
         json_response(result, 200)["data"]["projectBySlug"]["averageDailyActiveAddresses"]
 
       assert active_addresses == 10707
+    end
+  end
+
+  test "average daily active addreses are 0 in case of database error", context do
+    with_mock Sanbase.Clickhouse.Erc20DailyActiveAddresses,
+      average_active_addresses: fn _, _, _ ->
+        {:error, "Some error"}
+      end do
+      query = """
+      {
+        projectBySlug(slug: "#{context.project.coinmarketcap_id}") {
+          averageDailyActiveAddresses(
+            from: "#{context.datetime1}",
+            to: "#{context.datetime2}")
+        }
+      }
+      """
+
+      assert capture_log(fn ->
+               result =
+                 context.conn
+                 |> post("/graphql", query_skeleton(query, "projectBySlug"))
+
+               active_addresses =
+                 json_response(result, 200)["data"]["projectBySlug"][
+                   "averageDailyActiveAddresses"
+                 ]
+
+               assert active_addresses == 0
+             end) =~ "[warn] Cannot fetch average active addresses for ERC20 contracts"
     end
   end
 

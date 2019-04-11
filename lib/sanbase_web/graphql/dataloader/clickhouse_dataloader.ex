@@ -21,9 +21,9 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
         DailyActiveAddresses.average_active_addresses(contract_addresses, from, to)
 
       daily_active_addresses
-      |> Enum.map(fn {contract_address, addresses} ->
-        {contract_address, addresses}
-      end)
+    end)
+    |> Enum.map(fn {contract_address, addresses} ->
+      {contract_address, addresses}
     end)
     |> Map.new()
   end

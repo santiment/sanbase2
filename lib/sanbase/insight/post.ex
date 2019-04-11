@@ -41,6 +41,7 @@ defmodule Sanbase.Insight.Post do
 
     has_many(:images, PostImage, on_delete: :delete_all)
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
+    has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
 
     many_to_many(
       :tags,

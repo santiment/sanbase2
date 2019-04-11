@@ -19,6 +19,7 @@ defmodule Sanbase.UserList do
     belongs_to(:user, User)
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
     has_many(:list_items, ListItem, on_delete: :delete_all, on_replace: :delete)
+    has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
 
     timestamps()
   end
@@ -57,15 +58,7 @@ defmodule Sanbase.UserList do
     changeset = watchlist |> update_changeset(params)
 
     if watchlist.is_public and Map.get(params, :list_items) do
-      changeset
-      |> update_watchlist_and_log_event()
-      |> case do
-        {:ok, %{watchlist: watchlist}} ->
-          {:ok, watchlist}
-
-        {:error, _, error, _} ->
-          {:error, error}
-      end
+      update_watchlist_and_log_event(changeset)
     else
       Repo.update(changeset)
     end
@@ -81,6 +74,13 @@ defmodule Sanbase.UserList do
       })
     end)
     |> Repo.transaction()
+    |> case do
+      {:ok, %{watchlist: watchlist}} ->
+        {:ok, watchlist}
+
+      {:error, _, error, _} ->
+        {:error, error}
+    end
   end
 
   def remove_user_list(%{id: id}) do

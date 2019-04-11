@@ -21,6 +21,8 @@ defmodule Sanbase.Signals.UserTrigger do
   alias Sanbase.Signals.{Trigger, HistoricalActivity}
   alias Sanbase.Repo
   alias Sanbase.Tag
+  alias Ecto.Multi
+  alias Sanbase.Timeline.TimelineEvent
 
   require Logger
 
@@ -38,6 +40,7 @@ defmodule Sanbase.Signals.UserTrigger do
 
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
     has_many(:signals_historical_activity, HistoricalActivity, on_delete: :delete_all)
+    has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
 
     timestamps()
   end
@@ -146,9 +149,13 @@ defmodule Sanbase.Signals.UserTrigger do
   def create_user_trigger(%User{id: user_id} = _user, %{settings: settings} = params) do
     with {:nil?, false} <- {:nil?, is_nil(settings)},
          :ok <- valid?(settings) do
-      %UserTrigger{}
-      |> create_changeset(%{user_id: user_id, trigger: params})
-      |> Repo.insert()
+      changeset = %UserTrigger{} |> create_changeset(%{user_id: user_id, trigger: params})
+
+      if Map.get(params, :is_public) do
+        create_trigger_and_log_event(changeset)
+      else
+        Repo.insert(changeset)
+      end
     else
       {:nil?, true} ->
         {:error, "Trigger structure is invalid. Key `settings` is empty."}
@@ -156,6 +163,25 @@ defmodule Sanbase.Signals.UserTrigger do
       {:error, error} ->
         {:error,
          "Trigger structure is invalid. Key `settings` is not valid. Reason: #{inspect(error)}"}
+    end
+  end
+
+  defp create_trigger_and_log_event(changeset) do
+    Multi.new()
+    |> Multi.insert(:user_trigger, changeset)
+    |> Multi.run(:create_timeline_event, fn %{user_trigger: user_trigger} ->
+      TimelineEvent.create_event(user_trigger, %{
+        event_type: TimelineEvent.create_public_trigger(),
+        user_id: user_trigger.user_id
+      })
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{user_trigger: user_trigger}} ->
+        {:ok, user_trigger}
+
+      {:error, _, error, _} ->
+        {:error, error}
     end
   end
 

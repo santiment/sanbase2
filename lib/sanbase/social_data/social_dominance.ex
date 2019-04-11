@@ -11,6 +11,42 @@ defmodule Sanbase.SocialData.SocialDominance do
 
   @recv_timeout 15_000
 
+  @sources Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :social_dominance_sources).values
+           |> Map.keys()
+           |> List.delete(:all)
+
+  def social_dominance(
+        slug,
+        datetime_from,
+        datetime_to,
+        interval,
+        :all
+      ) do
+    result =
+      @sources
+      |> Sanbase.Parallel.pmap(fn source ->
+        {:ok, result} = social_dominance(slug, datetime_from, datetime_to, interval, source)
+
+        result
+      end)
+      |> List.zip()
+      |> Enum.map(&Tuple.to_list/1)
+      |> Enum.map(fn all_sources_point ->
+        average_dominance =
+          all_sources_point
+          |> Enum.map(fn point -> point.dominance end)
+          |> Enum.sum()
+          |> Kernel./(length(@sources))
+
+        %{
+          datetime: all_sources_point |> List.first() |> Map.get(:datetime),
+          dominance: average_dominance
+        }
+      end)
+
+    {:ok, result}
+  end
+
   def social_dominance(
         slug,
         datetime_from,

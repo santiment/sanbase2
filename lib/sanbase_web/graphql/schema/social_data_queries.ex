@@ -21,13 +21,14 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
         2. "TELEGRAM" - shows the relative social dominance of this project in the telegram crypto channels
         3. "DISCORD" - shows the relative social dominance of this project on discord crypto communities
         4. "REDDIT" - shows the relative social dominance of this project on crypto subreddits
+        5. "ALL" - shows the average value of the social dominance across all sources
     """
     field :social_dominance, list_of(:social_dominance) do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, non_null(:string), default_value: "1d")
-      arg(:source, non_null(:social_dominance_sources))
+      arg(:source, non_null(:social_dominance_sources), default_value: :all)
 
       complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)

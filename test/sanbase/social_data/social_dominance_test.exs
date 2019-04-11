@@ -1,6 +1,7 @@
 defmodule Sanbase.SocialDominanceTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import Mock
   import Mockery
   import ExUnit.CaptureLog
 
@@ -56,6 +57,44 @@ defmodule Sanbase.SocialDominanceTest do
                     datetime: to
                   }
                 ]}
+    end
+
+    test "when computing for all sources" do
+      from = DateTime.from_naive!(~N[2018-04-16 10:00:00], "Etc/UTC")
+      to = DateTime.from_naive!(~N[2018-04-16 22:00:00], "Etc/UTC")
+
+      with_mock(HTTPoison, [],
+        get: fn _, _, _ ->
+          {:ok,
+           %HTTPoison.Response{
+             body:
+               "[{\"BTC_bitcoin\": 5, \"EOS_eos\": 15, \"ETH_ethereum\": 5, \"datetime\": 1523872800}, {\"BTC_bitcoin\": 15, \"EOS_eos\": 5, \"ETH_ethereum\": 10, \"datetime\": 1523916000}]",
+             status_code: 200
+           }}
+        end
+      ) do
+        result =
+          SocialData.social_dominance(
+            "ethereum",
+            from,
+            to,
+            "1h",
+            :all
+          )
+
+        assert result ==
+                 {:ok,
+                  [
+                    %{
+                      dominance: 5 * 100 / 25,
+                      datetime: from
+                    },
+                    %{
+                      dominance: 10 * 100 / 30,
+                      datetime: to
+                    }
+                  ]}
+      end
     end
 
     test "when there are no mentions for any project" do

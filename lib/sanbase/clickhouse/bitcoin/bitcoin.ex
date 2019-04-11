@@ -31,6 +31,10 @@ defmodule Sanbase.Clickhouse.Bitcoin do
     raise "Should not try to change Clickhouse bitcoin metrics"
   end
 
+  def average_active_addresses(from, to) do
+    get_aggregated_metric_in_interval(:active_addresses, :avg, from, to)
+  end
+
   def daily_active_addresses(from, to, interval) do
     get_simple_metric(:active_addresses, :active_addresses, :avg, from, to, interval)
   end
@@ -108,6 +112,31 @@ defmodule Sanbase.Clickhouse.Bitcoin do
 
     args = [interval_seconds, DateTime.to_unix(from), DateTime.to_unix(to)]
 
+    {query, args}
+  end
+
+  defp get_aggregated_metric_in_interval(metric, aggregation, from, to)
+       when metric in @metrics and aggregation in @aggregations do
+    {query, args} = get_aggregated_metric_in_interval_query(metric, aggregation, from, to)
+
+    ClickhouseRepo.query_transform(query, args, fn [value] -> value end)
+    |> case do
+      {:ok, [result]} -> {:ok, result}
+      error -> error
+    end
+  end
+
+  defp get_aggregated_metric_in_interval_query(metric, aggregation, from, to) do
+    query = """
+    SELECT
+      #{aggregation}(#{metric}) as metric
+    FROM #{@table}
+    PREWHERE
+      dt >= toDateTime(?1) AND
+      dt <= toDateTime(?2)
+    """
+
+    args = [DateTime.to_unix(from), DateTime.to_unix(to)]
     {query, args}
   end
 

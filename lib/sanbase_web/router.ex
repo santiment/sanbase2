@@ -88,10 +88,6 @@ defmodule SanbaseWeb.Router do
       plug(:accepts, ["html"])
       plug(:put_secure_browser_headers)
     end
-
-    # scope "/" do
-    #   get("/*path", ReverseProxy, upstream: ["http://localhost:3000"])
-    # end
   else
     get("/", SanbaseWeb.RootController, :healthcheck)
   end

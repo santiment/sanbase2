@@ -2,6 +2,8 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
   @moduledoc ~s"""
   Dispatch the calculations of the daily active addresses to the correct module
   """
+  use AsyncWith
+
   alias Sanbase.Clickhouse.Bitcoin
   alias Sanbase.Clickhouse.Erc20DailyActiveAddresses, as: Erc20
   alias Sanbase.Clickhouse.EthDailyActiveAddresses, as: Eth
@@ -42,10 +44,10 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
         _, acc -> acc
       end)
 
-    with {:ok, btc_average_addresses} <- do_btc_average_active_addresses(btc, from, to),
-         {:ok, eth_average_addresses} <- do_eth_average_active_addresses(eth, from, to),
-         {:ok, erc20_average_addresses} <- do_erc20_average_active_addresses(erc20, from, to) do
-      {:ok, btc_average_addresses ++ eth_average_addresses ++ erc20_average_addresses}
+    async with {:ok, btc_average_daa} <- do_btc_average_active_addresses(btc, from, to),
+               {:ok, eth_average_daa} <- do_eth_average_active_addresses(eth, from, to),
+               {:ok, erc20_average_daa} <- do_erc20_average_active_addresses(erc20, from, to) do
+      {:ok, btc_average_daa ++ eth_average_daa ++ erc20_average_daa}
     end
   end
 

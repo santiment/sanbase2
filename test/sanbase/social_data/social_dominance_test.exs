@@ -8,7 +8,7 @@ defmodule Sanbase.SocialDominanceTest do
   alias Sanbase.SocialData
   import Sanbase.Factory
 
-  @successful_response_body ~s(
+  @successful_response_body ~s([
     {"BTC_bitcoin": 5, "EOS_eos": 15, "ETH_ethereum": 5, "datetime": 1523872800},
     {"BTC_bitcoin": 15, "EOS_eos": 5, "ETH_ethereum": 10, "datetime": 1523916000}
   ])

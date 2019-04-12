@@ -8,6 +8,11 @@ defmodule Sanbase.SocialDominanceTest do
   alias Sanbase.SocialData
   import Sanbase.Factory
 
+  @successful_response_body ~s(
+    {"BTC_bitcoin": 5, "EOS_eos": 15, "ETH_ethereum": 5, "datetime": 1523872800},
+    {"BTC_bitcoin": 15, "EOS_eos": 5, "ETH_ethereum": 10, "datetime": 1523916000}
+  ])
+
   setup do
     project =
       insert(:project, %{
@@ -30,8 +35,7 @@ defmodule Sanbase.SocialDominanceTest do
         :get,
         {:ok,
          %HTTPoison.Response{
-           body:
-             "[{\"BTC_bitcoin\": 5, \"EOS_eos\": 15, \"ETH_ethereum\": 5, \"datetime\": 1523872800}, {\"BTC_bitcoin\": 15, \"EOS_eos\": 5, \"ETH_ethereum\": 10, \"datetime\": 1523916000}]",
+           body: @successful_response_body,
            status_code: 200
          }}
       )
@@ -67,8 +71,7 @@ defmodule Sanbase.SocialDominanceTest do
         get: fn _, _, _ ->
           {:ok,
            %HTTPoison.Response{
-             body:
-               "[{\"BTC_bitcoin\": 5, \"EOS_eos\": 15, \"ETH_ethereum\": 5, \"datetime\": 1523872800}, {\"BTC_bitcoin\": 15, \"EOS_eos\": 5, \"ETH_ethereum\": 10, \"datetime\": 1523916000}]",
+             body: @successful_response_body,
              status_code: 200
            }}
         end
@@ -106,8 +109,7 @@ defmodule Sanbase.SocialDominanceTest do
         :get,
         {:ok,
          %HTTPoison.Response{
-           body:
-             "[{\"BTC_bitcoin\": 0, \"EOS_eos\": 0, \"ETH_ethereum\": 0, \"datetime\": 1523872800}, {\"BTC_bitcoin\": 0, \"EOS_eos\": 0, \"ETH_ethereum\": 0, \"datetime\": 1523916000}]",
+           body: @successful_response_body,
            status_code: 200
          }}
       )

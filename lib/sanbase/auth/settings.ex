@@ -26,7 +26,7 @@ defmodule Sanbase.Auth.Settings do
     |> validate_change(:newsletter_subscription, &validate_subscription_type/2)
   end
 
-  defp normalize_newsletter_subscription(changeset, field, nil), do: changeset
+  defp normalize_newsletter_subscription(changeset, _field, nil), do: changeset
 
   defp normalize_newsletter_subscription(changeset, field, value) do
     put_change(
@@ -39,7 +39,7 @@ defmodule Sanbase.Auth.Settings do
   defp validate_subscription_type(_, nil), do: []
   defp validate_subscription_type(_, type) when type in @newsletter_subscription_types, do: []
 
-  defp validate_subscription_type(_, type) do
+  defp validate_subscription_type(_, _type) do
     [
       newsletter_subscription:
         "Type not in allowed types: #{inspect(@newsletter_subscription_types)}"

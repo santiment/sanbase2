@@ -54,6 +54,15 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
     end
   end
 
+  def average_active_addresses(eth, from, to, interval)
+      when is_binary(eth) and eth in @ethereum do
+    Eth.average_active_addresses(from, to, interval)
+  end
+
+  def average_active_addresses(contract, from, to, interval) when is_binary(contract) do
+    Erc20.average_active_addresses(contract, from, to, interval)
+  end
+
   # Helper functions that return lists of {slug, average_active_addresses}
   # As Ethereum and Bitcoin do not have contracts they are simulated
   # In case of error return `{:ok, []}` because the other 2 queries could succeed

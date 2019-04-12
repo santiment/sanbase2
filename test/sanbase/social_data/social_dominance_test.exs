@@ -13,6 +13,11 @@ defmodule Sanbase.SocialDominanceTest do
     {"BTC_bitcoin": 15, "EOS_eos": 5, "ETH_ethereum": 10, "datetime": 1523916000}
   ])
 
+  @successful_response_body_with_no_mentions ~s([
+    {"BTC_bitcoin": 0, "EOS_eos": 0, "ETH_ethereum": 0, "datetime": 1523872800},
+    {"BTC_bitcoin": 0, "EOS_eos": 0, "ETH_ethereum": 0, "datetime": 1523916000}
+  ])
+
   setup do
     project =
       insert(:project, %{
@@ -109,7 +114,7 @@ defmodule Sanbase.SocialDominanceTest do
         :get,
         {:ok,
          %HTTPoison.Response{
-           body: @successful_response_body,
+           body: @successful_response_body_with_no_mentions,
            status_code: 200
          }}
       )

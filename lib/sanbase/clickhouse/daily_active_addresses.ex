@@ -34,6 +34,7 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
     Erc20.average_active_addresses(contract, from, to, interval)
   end
 
+  @async_with_timeout 25_000
   def average_active_addresses(contracts, from, to) when is_list(contracts) do
     {btc, eth, erc20} =
       contracts

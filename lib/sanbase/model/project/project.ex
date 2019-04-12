@@ -336,9 +336,8 @@ defmodule Sanbase.Model.Project do
     |> Repo.one()
   end
 
-  def contract_info_by_slug("ethereum") do
-    {:ok, "ETH", 18}
-  end
+  def contract_info_by_slug("ethereum"), do: {:ok, "ETH", 18}
+  def contract_info_by_slug("bitcoin"), do: {:ok, "BTC", 8}
 
   def contract_info_by_slug(slug) do
     from(p in Project,
@@ -364,12 +363,11 @@ defmodule Sanbase.Model.Project do
     end
   end
 
-  def contract_info(%Project{coinmarketcap_id: "ethereum"}) do
-    # Internally when we have a table with blockchain related data
-    # contract address is used to identify projects. In case of ethereum
-    # the contract address contains simply 'ETH'
-    {:ok, "ETH", 18}
-  end
+  # Internally when we have a table with blockchain related data
+  # contract address is used to identify projects. In case of ethereum
+  # the contract address contains simply 'ETH'
+  def contract_info(%Project{coinmarketcap_id: "ethereum"}), do: {:ok, "ETH", 18}
+  def contract_info(%Project{coinmarketcap_id: "bitcoin"}), do: {:ok, "BTC", 8}
 
   def contract_info(%Project{
         main_contract_address: main_contract_address,

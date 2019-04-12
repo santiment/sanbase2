@@ -99,7 +99,8 @@ defmodule Sanbase.Mixfile do
       {:number, "~> 1.0"},
       {:remote_ip, "~> 0.1"},
       {:vex, "~> 0.8.0", override: true},
-      {:stream_data, "~> 0.4.2", only: :test}
+      {:stream_data, "~> 0.4.2", only: :test},
+      {:async_with, "~> 0.3"}
     ]
   end
 

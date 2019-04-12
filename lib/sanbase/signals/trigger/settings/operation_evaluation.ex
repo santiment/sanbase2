@@ -30,11 +30,6 @@ defmodule Sanbase.Signals.OperationEvaluation do
     true
   end
 
-  def operation_triggered?(percent_change, %{percent_down: percent})
-      when is_percent_change_moving_down(percent_change, percent) do
-    true
-  end
-
   def operation_triggered?(amount_changed, %{amount_up: amount})
       when is_number(amount_changed) and is_number(amount) and amount > 0 do
     amount_changed > amount
@@ -42,12 +37,7 @@ defmodule Sanbase.Signals.OperationEvaluation do
 
   def operation_triggered?(amount_changed, %{amount_down: amount})
       when is_number(amount_changed) and is_number(amount) and amount > 0 do
-    abs(amount_changed) > amount
-  end
-
-  def operation_triggered?(percent_change, %{percent_down: percent})
-      when is_percent_change_moving_down(percent_change, percent) do
-    true
+    amount_changed < 0 and abs(amount_changed) > amount
   end
 
   def operation_triggered?(_, _), do: false

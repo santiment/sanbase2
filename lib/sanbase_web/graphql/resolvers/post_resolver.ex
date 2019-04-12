@@ -184,7 +184,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     case Repo.get(Post, post_id) do
       %Post{user_id: ^user_id} = post ->
         post
-        |> Post.publish_changeset(%{ready_state: Post.published()})
+        |> Post.publish_changeset(%{
+          ready_state: Post.published(),
+          published_at: NaiveDateTime.utc_now()
+        })
         |> Repo.update()
         |> case do
           {:ok, post} ->

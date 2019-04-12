@@ -13,7 +13,16 @@ config :sanbase, SanbaseWeb.Endpoint,
   url: [host: "0.0.0.0"],
   debug_errors: true,
   code_reloader: true,
-  check_origin: false
+  check_origin: false,
+  watchers: [
+    node: [
+      "node_modules/webpack/bin/webpack.js",
+      "--mode",
+      "development",
+      "--watch-stdin",
+      cd: Path.expand("../assets", __DIR__)
+    ]
+  ]
 
 # ## SSL Support
 #
@@ -38,6 +47,7 @@ config :logger, :console, format: "[$time][$level][$metadata] $message\n"
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20
+# json_library: Jason
 
 # Configure your database
 config :sanbase, Sanbase.Repo,

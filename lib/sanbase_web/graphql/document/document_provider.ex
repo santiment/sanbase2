@@ -30,11 +30,11 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
     pipeline
     |> Absinthe.Pipeline.insert_before(
       Absinthe.Phase.Document.Execution.Resolution,
-      SanbseWeb.Graphql.Phase.Document.Execution.CacheDocument
+      SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument
     )
     |> Absinthe.Pipeline.insert_after(
       Absinthe.Phase.Document.Result,
-      SanbseWeb.Graphql.Phase.Document.Execution.Idempotent
+      SanbaseWeb.Graphql.Phase.Document.Execution.Idempotent
     )
   end
 
@@ -45,7 +45,7 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
   def process(%{document: _} = query, _), do: {:halt, query}
 end
 
-defmodule SanbseWeb.Graphql.Phase.Document.Execution.CacheDocument do
+defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do
   @moduledoc ~s"""
   Custom phase for obtaining the result from cache.
   In case the value is not present in the cache, the default Resolution and Result
@@ -87,7 +87,7 @@ defmodule SanbseWeb.Graphql.Phase.Document.Execution.CacheDocument do
         Process.put(:do_not_cache_query, true)
 
         {:jump, %{bp_root | result: result},
-         SanbseWeb.Graphql.Phase.Document.Execution.Idempotent}
+         SanbaseWeb.Graphql.Phase.Document.Execution.Idempotent}
     end
   end
 
@@ -131,7 +131,7 @@ defmodule SanbseWeb.Graphql.Phase.Document.Execution.CacheDocument do
   defp santize_blueprint(data), do: data
 end
 
-defmodule SanbseWeb.Graphql.Phase.Document.Execution.Idempotent do
+defmodule SanbaseWeb.Graphql.Phase.Document.Execution.Idempotent do
   @moduledoc ~s"""
   A phase that does nothing and is inserted after the Absinthe's Result phase.
   `CacheDocument` phase jumps to this `Idempotent` phase if it finds the needed

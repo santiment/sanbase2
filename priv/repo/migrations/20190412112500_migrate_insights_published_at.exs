@@ -25,6 +25,6 @@ defmodule Sanbase.Repo.Migrations.MigrateInsightsPublishedAt do
       %Post{inserted_at: dt} = post ->
         post |> Ecto.Changeset.change(published_at: dt)
     end)
-    |> Enum.map(&Repo.insert!/1)
+    |> Enum.map(&Repo.update!/1)
   end
 end

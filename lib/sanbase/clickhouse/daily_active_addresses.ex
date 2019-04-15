@@ -21,10 +21,6 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
     Erc20.realtime_active_addresses(contract)
   end
 
-  def average_active_addresses(eth, from, to) when is_binary(eth) and eth in @ethereum do
-    Eth.average_active_addresses(from, to)
-  end
-
   def average_active_addresses(eth, from, to, interval)
       when is_binary(eth) and eth in @ethereum do
     Eth.average_active_addresses(from, to, interval)
@@ -35,9 +31,15 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
   end
 
   @async_with_timeout 25_000
-  def average_active_addresses(contracts, from, to) when is_list(contracts) do
+  @doc ~s"""
+  Accepts a single contract(ETH or BTC in case of ethereum and bitcoin) or a list
+  of contracts and returns a list tuples `{contract, active_addresses}`
+  """
+  def average_active_addresses(contracts, from, to)
+      when is_list(contracts) or is_binary(contracts) do
     {btc, eth, erc20} =
       contracts
+      |> List.wrap()
       |> Enum.reduce({[], [], []}, fn
         c, {btc, eth, erc20} when c in @bitcoin -> {[c | btc], eth, erc20}
         c, {btc, eth, erc20} when c in @ethereum -> {btc, [c | eth], erc20}

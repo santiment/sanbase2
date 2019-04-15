@@ -362,6 +362,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
           }
           state,
           createdAt
+          publishedAt
         }
       }
       """
@@ -377,6 +378,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
       assert sanbasePost["state"] == Post.awaiting_approval_state()
       assert sanbasePost["user"]["id"] == user.id |> Integer.to_string()
       assert sanbasePost["votes"]["totalSanVotes"] == 0
+      assert sanbasePost["publishedAt"] == nil
 
       createdAt = Timex.parse!(sanbasePost["createdAt"], "{ISO:Extended}")
 
@@ -688,6 +690,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
           id,
           readyState,
           discourseTopicUrl
+          publishedAt
         }
       }
       """
@@ -696,10 +699,14 @@ defmodule SanbaseWeb.Graphql.PostTest do
         conn
         |> post("/graphql", mutation_skeleton(query))
 
-      data = json_response(result, 200)["data"]
-      assert data["publishInsight"]["readyState"] == Post.published()
+      insight = json_response(result, 200)["data"]["publishInsight"]
+      published_at = insight["publishedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
 
-      assert data["publishInsight"]["discourseTopicUrl"] ==
+      # Test that the published_at time is set to almost now
+      assert abs(Timex.diff(Timex.now(), published_at, :seconds)) < 2
+      assert insight["readyState"] == Post.published()
+
+      assert insight["discourseTopicUrl"] ==
                "https://discourse.stage.internal.santiment.net/t/first-test-from-api2/234"
     end
 

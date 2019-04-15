@@ -29,7 +29,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     UserFollowerResolver
   }
 
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
   alias SanbaseWeb.Graphql.Complexity
 
@@ -281,7 +281,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
-      cache_resolve(&GithubResolver.dev_activity/3)
+      cache_resolve(&GithubResolver.dev_activity/3, ttl: 600, max_ttl_offset: 600)
     end
 
     @desc "Fetch the current data for a Twitter account (currently includes only Twitter followers)."
@@ -632,7 +632,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)
-      cache_resolve(&TechIndicatorsResolver.topic_search/3)
+      cache_resolve(&TechIndicatorsResolver.topic_search/3, ttl: 600, max_ttl_offset: 240)
     end
 
     @desc ~s"""
@@ -657,7 +657,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
 
       middleware(ApiTimeframeRestriction, %{allow_realtime_data: true})
-      cache_resolve(&SocialDataResolver.trending_words/3)
+      cache_resolve(&SocialDataResolver.trending_words/3, ttl: 600, max_ttl_offset: 240)
     end
 
     @desc ~s"""
@@ -679,8 +679,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      middleware(ApiTimeframeRestriction)
-      cache_resolve(&SocialDataResolver.word_trend_score/3)
+      middleware(ApiTimeframeRestriction, %{allow_realtime_data: true})
+      cache_resolve(&SocialDataResolver.word_trend_score/3, ttl: 600, max_ttl_offset: 240)
     end
 
     @desc ~s"""
@@ -704,8 +704,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      middleware(ApiTimeframeRestriction)
-      cache_resolve(&SocialDataResolver.word_context/3)
+      middleware(ApiTimeframeRestriction, %{allow_realtime_data: true})
+      cache_resolve(&SocialDataResolver.word_context/3, ttl: 600, max_ttl_offset: 240)
     end
 
     @desc "Fetch a list of all exchange wallets. This query requires basic authentication."
@@ -721,7 +721,11 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
 
       complexity(&Complexity.from_to_interval/3)
-      cache_resolve(&ProjectTransactionsResolver.eth_spent_by_erc20_projects/3)
+
+      cache_resolve(&ProjectTransactionsResolver.eth_spent_by_erc20_projects/3,
+        ttl: 600,
+        max_ttl_offset: 240
+      )
     end
 
     @desc ~s"""
@@ -734,7 +738,11 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      cache_resolve(&ProjectTransactionsResolver.eth_spent_over_time_by_erc20_projects/3)
+
+      cache_resolve(&ProjectTransactionsResolver.eth_spent_over_time_by_erc20_projects/3,
+        ttl: 600,
+        max_ttl_offset: 240
+      )
     end
 
     @desc "Fetch all favourites lists for current_user."

@@ -15,15 +15,14 @@ defmodule SanbaseWeb.Graphql.Cache do
             func: 2,
             func: 3,
             from: 2,
-            resolver: 2,
+            resolver: 3,
             store: 2,
             store: 3,
             get_or_store: 2,
             get_or_store: 3,
             cache_modify_middleware: 3,
             cache_key: 2,
-            convert_values: 2,
-            captured_mfa_name: 1}
+            convert_values: 2}
 
   alias __MODULE__, as: CacheMod
   alias SanbaseWeb.Graphql.ConCacheProvider, as: CacheProvider
@@ -56,11 +55,12 @@ defmodule SanbaseWeb.Graphql.Cache do
   In such cases a default/filling value can be passed (0, nil, "No data", etc.)
   and the next query will try to resolve it again
   """
-  defmacro cache_resolve(captured_mfa_ast, fun_name \\ nil) do
+
+  defmacro cache_resolve(captured_mfa_ast, opts \\ []) do
     quote do
       middleware(
         Absinthe.Resolution,
-        CacheMod.from(unquote(captured_mfa_ast), unquote(fun_name))
+        CacheMod.from(unquote(captured_mfa_ast), unquote(opts))
       )
     end
   end
@@ -111,40 +111,33 @@ defmodule SanbaseWeb.Graphql.Cache do
   end
 
   @doc false
-  def from(captured_mfa, nil) when is_function(captured_mfa) do
+  def from(captured_mfa, opts) when is_function(captured_mfa) do
     # Public so it can be used by the resolve macros. You should not use it.
-    fun_name = captured_mfa |> captured_mfa_name()
-
-    resolver(captured_mfa, fun_name)
-  end
-
-  @doc false
-  def from(fun, fun_name) when is_function(fun) do
-    # Public so it can be used by the resolve macros. You should not use it.
-    resolver(fun, fun_name)
+    fun_name = captured_mfa |> :erlang.fun_info() |> Keyword.get(:name)
+    resolver(captured_mfa, fun_name, opts)
   end
 
   # Private functions
 
-  defp resolver(resolver_fn, name) do
+  defp resolver(resolver_fn, name, opts) do
     # Works only for top-level resolvers and fields with root object that has `id` field
     fn
       %{id: id} = root, args, resolution ->
         fun = fn -> resolver_fn.(root, args, resolution) end
 
-        cache_key({name, id}, args)
+        cache_key({name, id}, args, opts)
         |> get_or_store(fun)
 
       %{word: word} = root, args, resolution ->
         fun = fn -> resolver_fn.(root, args, resolution) end
 
-        cache_key({name, word}, args)
+        cache_key({name, word}, args, opts)
         |> get_or_store(fun)
 
       %{}, args, resolution ->
         fun = fn -> resolver_fn.(%{}, args, resolution) end
 
-        cache_key(name, args)
+        cache_key(name, args, opts)
         |> get_or_store(fun)
     end
   end
@@ -241,10 +234,4 @@ defmodule SanbaseWeb.Graphql.Cache do
   end
 
   defp convert_values(v, _), do: v
-
-  defp captured_mfa_name(captured_mfa) do
-    captured_mfa
-    |> :erlang.fun_info()
-    |> Keyword.get(:name)
-  end
 end

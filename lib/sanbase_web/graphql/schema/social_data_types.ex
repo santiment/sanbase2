@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   use Absinthe.Schema.Notation
 
   alias SanbaseWeb.Graphql.Resolvers.SocialDataResolver
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
   enum :trending_words_sources do
     value(:telegram)

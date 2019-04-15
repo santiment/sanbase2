@@ -46,6 +46,7 @@ defmodule Sanbase.Insight.Post do
       on_delete: :delete_all
     )
 
+    field(:published_at, :naive_datetime)
     timestamps()
   end
 
@@ -76,7 +77,7 @@ defmodule Sanbase.Insight.Post do
 
   def publish_changeset(%Post{} = post, attrs) do
     post
-    |> cast(attrs, [:ready_state, :discourse_topic_url])
+    |> cast(attrs, [:ready_state, :discourse_topic_url, :published_at])
   end
 
   def awaiting_approval_state(), do: @awaiting_approval

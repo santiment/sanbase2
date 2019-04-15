@@ -78,17 +78,7 @@ defmodule SanbaseWeb.Router do
     pipe_through(:browser)
 
     get("/consent", RootController, :consent)
-    get("/apiexamples", ApiExamplesController, :api_examples)
   end
 
-  get("/env.js", SanbaseWeb.RootController, :react_env)
-
-  if Mix.env() == :dev do
-    pipeline :nextjs do
-      plug(:accepts, ["html"])
-      plug(:put_secure_browser_headers)
-    end
-  else
-    get("/", SanbaseWeb.RootController, :healthcheck)
-  end
+  get("/", SanbaseWeb.RootController, :healthcheck)
 end

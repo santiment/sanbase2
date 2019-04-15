@@ -47,7 +47,6 @@ config :logger, :console, format: "[$time][$level][$metadata] $message\n"
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20
-# json_library: Jason
 
 # Configure your database
 config :sanbase, Sanbase.Repo,

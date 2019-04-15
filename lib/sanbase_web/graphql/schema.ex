@@ -679,7 +679,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      middleware(ApiTimeframeRestriction)
+      middleware(ApiTimeframeRestriction, %{allow_realtime_data: true})
       cache_resolve(&SocialDataResolver.word_trend_score/3)
     end
 
@@ -704,7 +704,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      middleware(ApiTimeframeRestriction)
+      middleware(ApiTimeframeRestriction, %{allow_realtime_data: true})
       cache_resolve(&SocialDataResolver.word_context/3)
     end
 

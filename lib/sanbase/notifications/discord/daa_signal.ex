@@ -174,7 +174,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     ConCache.get(@cache_id, cache_key)
     |> case do
       nil ->
-        get_avg_daa(projects)
+        get_average_active_addresses(projects)
         |> case do
           {:ok, avg_daa} ->
             :ok = ConCache.put(@cache_id, cache_key, avg_daa)
@@ -189,17 +189,13 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     end
   end
 
-  defp get_avg_daa(projects) do
+  defp get_average_active_addresses(projects) do
     projects
     |> Enum.map(&Project.contract_address/1)
     |> Enum.reject(&is_nil/1)
-    |> Enum.chunk_every(100)
+    |> Enum.chunk_every(50)
     |> Enum.map(fn contracts ->
-      DailyActiveAddresses.average_active_addresses(
-        contracts,
-        timeframe_from(),
-        timeframe_to()
-      )
+      DailyActiveAddresses.average_active_addresses(contracts, timeframe_from(), timeframe_to())
     end)
     |> handle_result()
   end
@@ -214,10 +210,8 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     projects
     |> Enum.map(&Project.contract_address/1)
     |> Enum.reject(&is_nil/1)
-    |> Enum.chunk_every(100)
-    |> Enum.map(fn contracts ->
-      DailyActiveAddresses.realtime_active_addresses(contracts)
-    end)
+    |> Enum.chunk_every(50)
+    |> Enum.map(fn contracts -> DailyActiveAddresses.realtime_active_addresses(contracts) end)
     |> handle_result()
   end
 
@@ -246,7 +240,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   end
 
   defp today_str() do
-    to_string(Timex.to_date(Timex.now()))
+    Timex.now() |> Timex.to_date() |> to_string()
   end
 
   defp notification_emoji_up() do

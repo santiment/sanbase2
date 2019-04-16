@@ -120,7 +120,7 @@ config :sanbase, Sanbase.Oauth2.Hydra,
   clients_that_require_san_tokens:
     {:system, "CLIENTS_THAT_REQUIRE_SAN_TOKENS", "{\"grafana\": 100}"}
 
-config :sanbase, SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction,
+config :sanbase, SanbaseWeb.Graphql.Middlewares.TimeframeRestriction,
   restrict_to_in_days: {:system, "RESTRICT_TO_IN_DAYS", "1"},
   restrict_from_in_days: {:system, "RESTRICT_FROM_IN_MONTHS", "90"}
 

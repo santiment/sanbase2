@@ -1,11 +1,11 @@
-defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
+defmodule SanbaseWeb.Graphql.TimeframeRestrictionMiddlewareTest do
   use SanbaseWeb.ConnCase
   require Sanbase.Utils.Config, as: Config
 
   @moduletag checkout_repo: [Sanbase.Repo, Sanbase.TimescaleRepo]
   @moduletag timescaledb: true
 
-  alias SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction
+  alias SanbaseWeb.Graphql.Middlewares.TimeframeRestriction
   alias Sanbase.Auth.User
   alias Sanbase.Model.Project
   alias Sanbase.Repo
@@ -196,6 +196,39 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
     assert %{"activeAddresses" => 300} in daas
   end
 
+  test "`from` later than `to` datetime" do
+    query = """
+     {
+      tokenAgeConsumed(
+        slug: "santiment",
+        from: "#{Timex.now()}",
+        to: "#{Timex.shift(Timex.now(), days: -10)}"
+        interval: "30m") {
+          tokenAgeConsumed
+      }
+    }
+    """
+
+    result =
+      build_conn()
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
+
+    %{
+      "errors" => [
+        %{
+          "message" => error_message
+        }
+      ]
+    } = result
+
+    assert error_message ==
+             """
+             `from` and `to` are not a valid time range.
+             Either `from` is a datetime after `to` or the time range is outside of the allowed interval.
+             """
+  end
+
   defp tokenAgeConsumedQuery(slug) do
     """
     {
@@ -236,6 +269,6 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
 
   defp restrict_from_in_days do
     -1 *
-      (Config.module_get(ApiTimeframeRestriction, :restrict_from_in_days) |> String.to_integer())
+      (Config.module_get(TimeframeRestriction, :restrict_from_in_days) |> String.to_integer())
   end
 end

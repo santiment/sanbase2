@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
   alias SanbaseWeb.Graphql.Resolvers.SocialDataResolver
   alias SanbaseWeb.Graphql.Complexity
-  alias SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction
+  alias SanbaseWeb.Graphql.Middlewares.TimeframeRestriction
 
   import_types(SanbaseWeb.Graphql.SocialDataTypes)
 
@@ -31,7 +31,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:source, non_null(:social_dominance_sources), default_value: :all)
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(ApiTimeframeRestriction)
+      middleware(TimeframeRestriction)
       resolve(&SocialDataResolver.social_dominance/3)
     end
   end

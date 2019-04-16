@@ -100,7 +100,7 @@ defmodule Sanbase.Insight.Post do
   All published insights for given user_id
   """
   def user_published_insights(user_id) do
-    published_posts()
+    published_insights()
     |> by_user(user_id)
     |> Repo.all()
   end
@@ -108,8 +108,8 @@ defmodule Sanbase.Insight.Post do
   @doc """
   All published and approved insights paginated
   """
-  def published_and_approved_posts(page, page_size) do
-    published_and_approved_posts()
+  def published_and_approved_insights(page, page_size) do
+    published_and_approved_insights()
     |> order_by_published_at()
     |> page(page, page_size)
     |> Repo.all()
@@ -118,8 +118,8 @@ defmodule Sanbase.Insight.Post do
   @doc """
   All published and approved insights by given tag
   """
-  def published_posts_by_tag(tag) do
-    published_and_approved_posts()
+  def published_insights_by_tag(tag) do
+    published_and_approved_insights()
     |> by_tag(tag)
     |> order_by_published_at()
     |> Repo.all()
@@ -128,8 +128,8 @@ defmodule Sanbase.Insight.Post do
   @doc """
   All published and approved insights by given tag and by current_user
   """
-  def user_published_posts_by_tag(user_id, tag) do
-    published_and_approved_posts()
+  def user_published_insights_by_tag(user_id, tag) do
+    published_and_approved_insights()
     |> by_user(user_id)
     |> by_tag(tag)
     |> order_by_published_at()
@@ -164,14 +164,14 @@ defmodule Sanbase.Insight.Post do
     |> where([_p, t], t.name == ^tag_name)
   end
 
-  defp published_posts() do
+  defp published_insights() do
     from(
       p in Post,
       where: p.ready_state == ^@published
     )
   end
 
-  defp published_and_approved_posts() do
+  defp published_and_approved_insights() do
     from(
       p in Post,
       where:

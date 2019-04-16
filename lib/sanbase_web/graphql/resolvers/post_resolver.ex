@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
 
   def all_insights(_root, %{page: page, page_size: page_size}, _resolution) do
     posts =
-      Post.published_and_approved_posts(page, page_size)
+      Post.published_and_approved_insights(page, page_size)
       |> Repo.preload(@preloaded_assoc)
 
     {:ok, posts}
@@ -68,7 +68,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
       }) do
     posts =
       user_id
-      |> Post.user_published_posts_by_tag(tag)
+      |> Post.user_published_insights_by_tag(tag)
       |> Repo.preload(@preloaded_assoc)
 
     {:ok, posts}
@@ -77,7 +77,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   def all_insights_by_tag(_root, %{tag: tag}, _context) do
     posts =
       tag
-      |> Post.published_posts_by_tag()
+      |> Post.published_insights_by_tag()
       |> Repo.preload(@preloaded_assoc)
 
     {:ok, posts}

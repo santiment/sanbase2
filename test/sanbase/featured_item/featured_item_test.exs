@@ -4,6 +4,7 @@ defmodule Sanbase.FeaturedItemTest do
   import Sanbase.Factory
 
   alias Sanbase.FeaturedItem
+  alias Sanbase.Insight.Post
 
   describe "insight featured items" do
     test "no insights are featured" do
@@ -11,20 +12,20 @@ defmodule Sanbase.FeaturedItemTest do
     end
 
     test "marking insights as featured" do
-      insight = insert(:post)
+      insight = insert(:post, state: Post.approved_state(), ready_state: Post.published())
       FeaturedItem.update_item(insight, true)
       assert FeaturedItem.insights() == [insight]
     end
 
     test "unmarking insights as featured" do
-      insight = insert(:post)
+      insight = insert(:post, state: Post.approved_state(), ready_state: Post.published())
       FeaturedItem.update_item(insight, true)
       FeaturedItem.update_item(insight, false)
       assert FeaturedItem.insights() == []
     end
 
     test "marking insight as featured is idempotent" do
-      insight = insert(:post)
+      insight = insert(:post, state: Post.approved_state(), ready_state: Post.published())
       FeaturedItem.update_item(insight, true)
       FeaturedItem.update_item(insight, true)
       FeaturedItem.update_item(insight, true)

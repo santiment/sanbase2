@@ -167,7 +167,7 @@ defmodule Sanbase.Insight.Post do
     from(
       p in Post,
       where: p.ready_state == ^@published and p.state == ^@approved,
-      order_by: [desc: p.updated_at],
+      order_by: [desc: p.published_at],
       limit: ^page_size,
       offset: ^((page - 1) * page_size)
     )

@@ -106,9 +106,9 @@ defmodule Sanbase.Insight.Post do
   end
 
   @doc """
-  All published and approved insights paginated
+  All public (published and approved) insights paginated
   """
-  def published_and_approved_insights(page, page_size) do
+  def public_insights(page, page_size) do
     published_and_approved_insights()
     |> order_by_published_at()
     |> page(page, page_size)

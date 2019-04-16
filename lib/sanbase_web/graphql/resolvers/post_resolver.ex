@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
 
   def all_insights(_root, %{page: page, page_size: page_size}, _resolution) do
     posts =
-      Post.published_and_approved_insights(page, page_size)
+      Post.public_insights(page, page_size)
       |> Repo.preload(@preloaded_assoc)
 
     {:ok, posts}

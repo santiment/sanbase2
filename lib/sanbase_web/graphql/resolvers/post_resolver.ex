@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
 
   def all_insights(_root, %{page: page, page_size: page_size}, _resolution) do
     posts =
-      Post.published_posts(page, page_size)
+      Post.published_and_approved_posts(page, page_size)
       |> Repo.preload(@preloaded_assoc)
 
     {:ok, posts}
@@ -68,18 +68,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
       }) do
     posts =
       user_id
-      |> Post.ranked_published_or_own_posts()
+      |> Post.user_published_posts_by_tag(tag)
       |> Repo.preload(@preloaded_assoc)
-      |> filter_by_tag(tag)
 
     {:ok, posts}
   end
 
   def all_insights_by_tag(_root, %{tag: tag}, _context) do
     posts =
-      Post.ranked_published_posts()
+      tag
+      |> Post.published_posts_by_tag()
       |> Repo.preload(@preloaded_assoc)
-      |> filter_by_tag(tag)
 
     {:ok, posts}
   end
@@ -222,13 +221,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     |> Repo.preload(:images)
     |> Map.get(:images, [])
     |> Enum.map(fn %{image_url: image_url} -> image_url end)
-  end
-
-  defp filter_by_tag(posts, tag) do
-    posts
-    |> Enum.filter(fn post ->
-      tag in Enum.map(post.tags, & &1.name)
-    end)
   end
 
   defp create_discourse_topic(%Post{id: id, title: title, inserted_at: inserted_at} = post) do

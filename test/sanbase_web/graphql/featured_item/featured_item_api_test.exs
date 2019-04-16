@@ -5,6 +5,7 @@ defmodule Sanbase.FeaturedItemApiTest do
   import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.FeaturedItem
+  alias Sanbase.Insight.Post
 
   describe "insight featured items" do
     test "no insights are featured", context do
@@ -12,7 +13,7 @@ defmodule Sanbase.FeaturedItemApiTest do
     end
 
     test "marking insights as featured", context do
-      insight = insert(:post)
+      insight = insert(:post, state: Post.approved_state(), ready_state: Post.published())
       FeaturedItem.update_item(insight, true)
 
       assert fetch_insights(context.conn) == %{
@@ -24,15 +25,22 @@ defmodule Sanbase.FeaturedItemApiTest do
              }
     end
 
-    test "unmarking insights as featured", context do
+    test "Only approved and published insights can be featured", context do
       insight = insert(:post)
+      FeaturedItem.update_item(insight, true)
+
+      assert fetch_insights(context.conn) == %{"data" => %{"featuredInsights" => []}}
+    end
+
+    test "unmarking insights as featured", context do
+      insight = insert(:post, state: Post.approved_state(), ready_state: Post.published())
       FeaturedItem.update_item(insight, true)
       FeaturedItem.update_item(insight, false)
       assert fetch_insights(context.conn) == %{"data" => %{"featuredInsights" => []}}
     end
 
     test "marking insight as featured is idempotent", context do
-      insight = insert(:post)
+      insight = insert(:post, state: Post.approved_state(), ready_state: Post.published())
       FeaturedItem.update_item(insight, true)
       FeaturedItem.update_item(insight, true)
       FeaturedItem.update_item(insight, true)

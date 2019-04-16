@@ -24,15 +24,14 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
 
   @allow_access_without_staking ["santiment"]
 
+  def call(resolution, %{allow_realtime_data: true, allow_historical_data: true}) do
+    resolution |> check_from_to_params()
+  end
+
   # Allow access to historical data and real-time data for the Santiment project.
   # This will serve the purpose of showing to anonymous and not-staking users how
   # the data looks like.
-  def call(
-        %Resolution{
-          arguments: %{slug: slug}
-        } = resolution,
-        _
-      )
+  def call(%Resolution{arguments: %{slug: slug}} = resolution, _)
       when slug in @allow_access_without_staking do
     resolution
     |> check_from_to_params()
@@ -40,14 +39,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
 
   def call(
         %Resolution{
-          context: %{
-            auth: %{auth_method: method, current_user: current_user}
-          },
+          context: %{auth: %{current_user: current_user}},
           arguments: %{from: from, to: to} = args
         } = resolution,
         middleware_args
-      )
-      when method in [:user_token, :apikey] do
+      ) do
     if !has_enough_san_tokens?(current_user) do
       %Resolution{
         resolution
@@ -90,14 +86,14 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
   defp restrict_to(to_datetime, %{allow_realtime_data: true}), do: to_datetime
 
   defp restrict_to(to_datetime, _) do
-    restrict_to = Timex.shift(Timex.now(), days: restrict_to_in_days())
+    restrict_to = Timex.shift(Timex.now(), days: -restrict_to_in_days())
     Enum.min_by([to_datetime, restrict_to], &DateTime.to_unix/1)
   end
 
   defp restrict_from(from_datetime, %{allow_historical_data: true}), do: from_datetime
 
   defp restrict_from(from_datetime, _) do
-    restrict_from = Timex.shift(Timex.now(), days: restrict_from_in_days())
+    restrict_from = Timex.shift(Timex.now(), days: -restrict_from_in_days())
     Enum.max_by([from_datetime, restrict_from], &DateTime.to_unix/1)
   end
 
@@ -106,11 +102,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
   end
 
   defp restrict_to_in_days() do
-    -1 * (Config.get(:restrict_to_in_days) |> String.to_integer())
+    Config.get(:restrict_to_in_days) |> String.to_integer()
   end
 
   defp restrict_from_in_days do
-    -1 * (Config.get(:restrict_from_in_days) |> String.to_integer())
+    Config.get(:restrict_from_in_days) |> String.to_integer()
   end
 
   defp check_from_to_params(%Resolution{arguments: %{from: from, to: to}} = resolution) do

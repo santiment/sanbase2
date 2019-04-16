@@ -25,7 +25,10 @@ defmodule Sanbase.Signals.StructMapTransformation do
   def load_in_struct(map) when is_map(map) do
     map
     |> atomize_keys()
-    |> struct_from_map()
+    |> case do
+      {:error, error} -> {:error, error}
+      atomized_map -> struct_from_map(atomized_map)
+    end
   end
 
   def load_in_struct(_), do: :error
@@ -59,12 +62,18 @@ defmodule Sanbase.Signals.StructMapTransformation do
   # Private functions
 
   defp atomize_keys(map) when is_map(map) do
-    for {key, val} <- map, into: %{} do
-      if is_atom(key) do
-        {key, atomize_keys(val)}
-      else
-        {atomize(key), atomize_keys(val)}
+    try do
+      for {key, val} <- map, into: %{} do
+        if is_atom(key) do
+          {key, atomize_keys(val)}
+        else
+          {atomize(key), atomize_keys(val)}
+        end
       end
+    rescue
+      ArgumentError ->
+        [{:erlang, :binary_to_existing_atom, [str, _], _} | _] = __STACKTRACE__
+        {:error, "The trigger contains unsupported or mistyped field #{inspect(str)}"}
     end
   end
 

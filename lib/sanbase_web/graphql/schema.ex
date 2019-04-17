@@ -503,6 +503,17 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&PostResolver.all_insights_by_tag/3)
     end
 
+    @desc ~s"""
+    Fetch a list of all posts/insights by a given list of tags.
+    """
+    field :all_insights_by_tags, list_of(:post) do
+      arg(:page, :integer, default_value: 1)
+      arg(:page_size, :integer, default_value: 20)
+      arg(:tags, list_of(:string))
+
+      resolve(&PostResolver.all_insights_by_tags/3)
+    end
+
     @desc "Fetch a list of all tags used for posts/insights. This query also returns tags that are not yet in use."
     field :all_tags, list_of(:tag) do
       cache_resolve(&PostResolver.all_tags/3)

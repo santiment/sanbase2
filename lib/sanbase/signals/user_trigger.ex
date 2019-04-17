@@ -209,13 +209,11 @@ defmodule Sanbase.Signals.UserTrigger do
   end
 
   def historical_trigger_points(%{settings: settings} = params) do
-    {:ok, settings_struct} =
-      settings
-      |> load_in_struct()
+    with {:ok, settings_struct} <- load_in_struct(settings) do
+      trigger = struct!(Trigger, params)
 
-    trigger = struct!(Trigger, params)
-
-    Trigger.historical_trigger_points(%{trigger | settings: settings_struct})
+      Trigger.historical_trigger_points(%{trigger | settings: settings_struct})
+    end
   end
 
   # Private functions

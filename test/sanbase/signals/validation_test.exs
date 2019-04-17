@@ -3,6 +3,44 @@ defmodule Sanbase.Signals.ValidationTest do
 
   alias Sanbase.Signals.Validation
 
+  describe "#load_in_struct" do
+    alias Sanbase.Signals.StructMapTransformation
+    alias Sanbase.Signals.UserTrigger
+
+    test "not supported keys in settings return error" do
+      # mistyped `time_window` as `time_windo`
+      settings = %{
+        "type" => "price_percent",
+        "target" => %{"slug" => "santiment"},
+        "channel" => "telegram",
+        "time_windo" => "24h",
+        "operation" => %{"above" => 5}
+      }
+
+      assert StructMapTransformation.load_in_struct(settings) ==
+               {:error, "The trigger contains unsupported or mistyped field \"time_windo\""}
+    end
+
+    # The historical activity API accepts JSON string as settings. The string keys
+    # are converted to atoms if they exist.
+    test "historical activity fails" do
+      # `operation` is mistyped as `operatio`
+      trigger = %{
+        cooldown: "4h",
+        settings: %{
+          "type" => "price_percent_change",
+          "target" => %{"slug" => "santiment"},
+          "channel" => "telegram",
+          "time_window" => "4h",
+          "operatio" => %{"percent_up" => 5.0}
+        }
+      }
+
+      assert UserTrigger.historical_trigger_points(trigger) ==
+               {:error, "The trigger contains unsupported or mistyped field \"operatio\""}
+    end
+  end
+
   describe "#valid_absolute_value_operation?" do
     test "with valid cases returns :ok" do
       valid_cases = [

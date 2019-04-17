@@ -274,14 +274,14 @@ defmodule SanbaseWeb.Graphql.PostTest do
     assert result |> hd() |> Map.get("text") == post.text
   end
 
-  test "getting all posts ranked", %{user: user, user2: user2, conn: conn, poll: poll} do
+  test "getting all insights ordered", %{user: user, user2: user2, conn: conn, poll: poll} do
     post =
       insert(:post,
         poll: poll,
         user: user,
         ready_state: Post.published(),
         state: Post.approved_state(),
-        updated_at: Timex.now() |> Timex.shift(seconds: -10)
+        published_at: Timex.now() |> Timex.shift(seconds: -10)
       )
 
     %Vote{}

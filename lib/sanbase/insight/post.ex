@@ -124,7 +124,7 @@ defmodule Sanbase.Insight.Post do
   @doc """
   All published and approved insights by given tag
   """
-  def published_insights_by_tag(tag) do
+  def public_insights_by_tag(tag) do
     published_and_approved_insights()
     |> by_tag(tag)
     |> order_by_published_at()
@@ -135,11 +135,21 @@ defmodule Sanbase.Insight.Post do
   @doc """
   All published and approved insights by given tag and by current_user
   """
-  def user_published_insights_by_tag(user_id, tag) do
+  def user_public_insights_by_tag(user_id, tag) do
     published_and_approved_insights()
     |> by_user(user_id)
     |> by_tag(tag)
     |> order_by_published_at()
+    |> Repo.all()
+    |> Repo.preload(@preloads)
+  end
+
+  def public_insights_by_tags(tags, page, page_size) when is_list(tags) do
+    published_and_approved_insights()
+    |> by_tags(tags)
+    |> distinct(true)
+    |> order_by_published_at()
+    |> page(page, page_size)
     |> Repo.all()
     |> Repo.preload(@preloads)
   end
@@ -180,6 +190,12 @@ defmodule Sanbase.Insight.Post do
     query
     |> join(:left, [p], t in assoc(p, :tags))
     |> where([_p, t], t.name == ^tag_name)
+  end
+
+  defp by_tags(query, tags) do
+    query
+    |> join(:left, [p], t in assoc(p, :tags))
+    |> where([_p, t], t.name in ^tags)
   end
 
   defp published_insights() do

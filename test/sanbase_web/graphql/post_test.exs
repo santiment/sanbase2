@@ -362,6 +362,46 @@ defmodule SanbaseWeb.Graphql.PostTest do
     assert result == [%{"id" => "#{post.id}"}]
   end
 
+  test "Get all insights by a list of tags", %{user: user, poll: poll} do
+    tag1 = insert(:tag, name: "PRJ1")
+    tag2 = insert(:tag, name: "PRJ2")
+    tag3 = insert(:tag, name: "PRJ3")
+
+    post =
+      insert(:post,
+        poll: poll,
+        user: user,
+        state: Post.approved_state(),
+        ready_state: Post.published(),
+        tags: [tag1, tag2]
+      )
+
+    post2 =
+      insert(:post,
+        poll: poll,
+        user: user,
+        state: Post.approved_state(),
+        ready_state: Post.published(),
+        tags: [tag3]
+      )
+
+    post3 =
+      insert(:post,
+        poll: poll,
+        user: user,
+        state: Post.approved_state(),
+        ready_state: Post.published(),
+        tags: [tag2]
+      )
+
+    result =
+      [tag1.name, tag2.name]
+      |> insights_by_tags_query()
+      |> execute_query(build_conn(), "allInsights")
+
+    assert result == [%{"id" => "#{post.id}"}, %{"id" => "#{post3.id}"}]
+  end
+
   describe "create post" do
     test "adding a new post to the current poll", %{user: user, conn: conn} do
       query = """
@@ -808,6 +848,16 @@ defmodule SanbaseWeb.Graphql.PostTest do
     """
     {
       allInsightsByTag(tag: "#{tag.name}"){
+        id
+      }
+    }
+    """
+  end
+
+  defp insights_by_tags_query(tags) do
+    """
+    {
+      allInsights(tags: #{Jason.encode!(tags)}){
         id
       }
     }

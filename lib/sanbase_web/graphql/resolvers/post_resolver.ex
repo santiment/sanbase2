@@ -13,13 +13,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   alias Sanbase.Notifications
   alias SanbaseWeb.Graphql.Helpers.Utils
 
-  @preloaded_assoc [:votes, :user, :images, :tags]
-
   def insights(%User{} = user, _args, _resolution) do
-    posts =
-      user.id
-      |> Post.user_insights()
-      |> Repo.preload(@preloaded_assoc)
+    posts = Post.user_insights(user.id)
 
     {:ok, posts}
   end
@@ -32,33 +27,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   end
 
   def all_insights(_root, %{page: page, page_size: page_size}, _resolution) do
-    posts =
-      Post.public_insights(page, page_size)
-      |> Repo.preload(@preloaded_assoc)
+    posts = Post.public_insights(page, page_size)
 
     {:ok, posts}
   end
 
   def all_insights_for_user(_root, %{user_id: user_id}, _context) do
-    posts =
-      user_id
-      |> Post.user_published_insights()
-      |> Repo.preload(@preloaded_assoc)
+    posts = Post.user_published_insights(user_id)
 
     {:ok, posts}
   end
 
   def all_insights_user_voted_for(_root, %{user_id: user_id}, _context) do
-    query =
-      from(
-        p in Post,
-        where: fragment("? IN (SELECT post_id FROM votes WHERE user_id = ?)", p.id, ^user_id)
-      )
-
-    posts =
-      query
-      |> Repo.all()
-      |> Repo.preload(@preloaded_assoc)
+    posts = Post.all_insights_user_voted_for(user_id)
 
     {:ok, posts}
   end
@@ -66,19 +47,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   def all_insights_by_tag(_root, %{tag: tag}, %{
         context: %{auth: %{current_user: %User{id: user_id}}}
       }) do
-    posts =
-      user_id
-      |> Post.user_published_insights_by_tag(tag)
-      |> Repo.preload(@preloaded_assoc)
+    posts = Post.user_published_insights_by_tag(user_id, tag)
 
     {:ok, posts}
   end
 
   def all_insights_by_tag(_root, %{tag: tag}, _context) do
-    posts =
-      tag
-      |> Post.published_insights_by_tag()
-      |> Repo.preload(@preloaded_assoc)
+    posts = Post.published_insights_by_tag(tag)
 
     {:ok, posts}
   end

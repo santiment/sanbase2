@@ -12,6 +12,7 @@ defmodule Sanbase.Insight.Post do
 
   alias Sanbase.Repo
 
+  @preloads [:votes, :user, :images, :tags]
   # state
   @awaiting_approval "awaiting_approval"
   @approved "approved"
@@ -87,6 +88,8 @@ defmodule Sanbase.Insight.Post do
   def published(), do: @published
   def draft(), do: @draft
 
+  def preloads(), do: @preloads
+
   @doc """
   All insights for given user_id
   """
@@ -94,6 +97,7 @@ defmodule Sanbase.Insight.Post do
     Post
     |> by_user(user_id)
     |> Repo.all()
+    |> Repo.preload(@preloads)
   end
 
   @doc """
@@ -103,6 +107,7 @@ defmodule Sanbase.Insight.Post do
     published_insights()
     |> by_user(user_id)
     |> Repo.all()
+    |> Repo.preload(@preloads)
   end
 
   @doc """
@@ -113,6 +118,7 @@ defmodule Sanbase.Insight.Post do
     |> order_by_published_at()
     |> page(page, page_size)
     |> Repo.all()
+    |> Repo.preload(@preloads)
   end
 
   @doc """
@@ -123,6 +129,7 @@ defmodule Sanbase.Insight.Post do
     |> by_tag(tag)
     |> order_by_published_at()
     |> Repo.all()
+    |> Repo.preload(@preloads)
   end
 
   @doc """
@@ -134,10 +141,27 @@ defmodule Sanbase.Insight.Post do
     |> by_tag(tag)
     |> order_by_published_at()
     |> Repo.all()
+    |> Repo.preload(@preloads)
   end
 
   @doc """
-    Change insights owner to be the fallback user
+  All published and approved insights that given user has voted for
+  """
+  def all_insights_user_voted_for(user_id) do
+    published_and_approved_insights()
+    |> user_has_voted_for(user_id)
+    |> Repo.all()
+    |> Repo.preload(@preloads)
+  end
+
+  defp user_has_voted_for(query, user_id) do
+    query
+    |> join(:left, [p], v in assoc(p, :votes))
+    |> where([_p, v], v.user_id == ^user_id)
+  end
+
+  @doc """
+  Change insights owner to be the fallback user
   """
   def change_owner_to_anonymous(user_id) do
     anon_user_id =

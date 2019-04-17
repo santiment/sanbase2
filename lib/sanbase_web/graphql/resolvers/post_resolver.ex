@@ -28,7 +28,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
 
   def all_insights(_root, %{tags: tags, page: page, page_size: page_size}, _context)
       when is_list(tags) do
-    posts = Post.public_insights_by_tags(tags, page, page_size) |> IO.inspect()
+    posts = Post.public_insights_by_tags(tags, page, page_size)
 
     {:ok, posts}
   end

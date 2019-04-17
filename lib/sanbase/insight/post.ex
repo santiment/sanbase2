@@ -154,12 +154,6 @@ defmodule Sanbase.Insight.Post do
     |> Repo.preload(@preloads)
   end
 
-  defp user_has_voted_for(query, user_id) do
-    query
-    |> join(:left, [p], v in assoc(p, :votes))
-    |> where([_p, v], v.user_id == ^user_id)
-  end
-
   @doc """
   Change insights owner to be the fallback user
   """
@@ -202,6 +196,12 @@ defmodule Sanbase.Insight.Post do
         p.ready_state == ^@published and
           p.state == ^@approved
     )
+  end
+
+  defp user_has_voted_for(query, user_id) do
+    query
+    |> join(:left, [p], v in assoc(p, :votes))
+    |> where([_p, v], v.user_id == ^user_id)
   end
 
   defp order_by_published_at(query) do

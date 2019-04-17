@@ -397,7 +397,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
     result =
       [tag1.name, tag2.name]
       |> insights_by_tags_query()
-      |> execute_query(build_conn(), "allInsightsByTags")
+      |> execute_query(build_conn(), "allInsights")
 
     assert result == [%{"id" => "#{post.id}"}, %{"id" => "#{post3.id}"}]
   end
@@ -857,7 +857,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
   defp insights_by_tags_query(tags) do
     """
     {
-      allInsightsByTags(tags: #{Jason.encode!(tags)}){
+      allInsights(tags: #{Jason.encode!(tags)}){
         id
       }
     }

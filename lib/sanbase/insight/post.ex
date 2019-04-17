@@ -12,6 +12,7 @@ defmodule Sanbase.Insight.Post do
 
   alias Sanbase.Repo
 
+  @preloads [:votes, :user, :images, :tags]
   # state
   @awaiting_approval "awaiting_approval"
   @approved "approved"
@@ -87,95 +88,74 @@ defmodule Sanbase.Insight.Post do
   def published(), do: @published
   def draft(), do: @draft
 
-  @doc """
-    Returns all posts ranked by HN ranking algorithm: https://news.ycombinator.com/item?id=1781013
-    where gravity = 1.8
-    formula: votes / pow((item_hour_age + 2), gravity)
-  """
-  @spec posts_by_score() :: [%Post{}]
-  def posts_by_score() do
-    gravity = 1.8
-
-    query = """
-      SELECT * FROM
-        (SELECT
-          posts_by_votes.*,
-          ((posts_by_votes.votes_count) / POWER(posts_by_votes.item_hour_age + 2, #{gravity})) as score
-          FROM
-            (SELECT
-              p.*,
-              (EXTRACT(EPOCH FROM current_timestamp - p.inserted_at) /3600)::Integer as item_hour_age,
-              count(*) AS votes_count
-              FROM posts AS p
-              LEFT JOIN votes AS v ON p.id = v.post_id
-              GROUP BY p.id
-              ORDER BY votes_count DESC
-            ) AS posts_by_votes
-          ORDER BY score DESC
-        ) AS ranked_posts;
-    """
-
-    result = Ecto.Adapters.SQL.query!(Repo, query)
-
-    result.rows
-    |> Enum.map(fn row ->
-      Repo.load(Post, {result.columns, row})
-    end)
-  end
-
-  @doc """
-    Returns only published posts ranked by the ranking algorithm
-  """
-  @spec ranked_published_posts() :: [%Post{}]
-  def ranked_published_posts() do
-    posts_by_score()
-    |> Enum.filter(&(&1.ready_state == published()))
-  end
-
-  @doc """
-    Returns published or current user's posts ranked by the ranking algorithm
-  """
-  @spec ranked_published_or_own_posts(integer) :: [%Post{}]
-  def ranked_published_or_own_posts(user_id) do
-    posts_by_score()
-    |> get_only_published_or_own_posts(user_id)
-  end
+  def preloads(), do: @preloads
 
   @doc """
   All insights for given user_id
   """
   def user_insights(user_id) do
-    from(
-      p in Post,
-      where: p.user_id == ^user_id
-    )
+    Post
+    |> by_user(user_id)
     |> Repo.all()
+    |> Repo.preload(@preloads)
   end
 
   @doc """
   All published insights for given user_id
   """
   def user_published_insights(user_id) do
-    from(
-      p in Post,
-      where: p.user_id == ^user_id and p.ready_state == ^@published
-    )
+    published_insights()
+    |> by_user(user_id)
     |> Repo.all()
-  end
-
-  def published_posts(page, page_size) do
-    from(
-      p in Post,
-      where: p.ready_state == ^@published and p.state == ^@approved,
-      order_by: [desc: p.published_at],
-      limit: ^page_size,
-      offset: ^((page - 1) * page_size)
-    )
-    |> Repo.all()
+    |> Repo.preload(@preloads)
   end
 
   @doc """
-    Change insights owner to be the fallback user
+  All public (published and approved) insights paginated
+  """
+  def public_insights(page, page_size) do
+    published_and_approved_insights()
+    |> order_by_published_at()
+    |> page(page, page_size)
+    |> Repo.all()
+    |> Repo.preload(@preloads)
+  end
+
+  @doc """
+  All published and approved insights by given tag
+  """
+  def published_insights_by_tag(tag) do
+    published_and_approved_insights()
+    |> by_tag(tag)
+    |> order_by_published_at()
+    |> Repo.all()
+    |> Repo.preload(@preloads)
+  end
+
+  @doc """
+  All published and approved insights by given tag and by current_user
+  """
+  def user_published_insights_by_tag(user_id, tag) do
+    published_and_approved_insights()
+    |> by_user(user_id)
+    |> by_tag(tag)
+    |> order_by_published_at()
+    |> Repo.all()
+    |> Repo.preload(@preloads)
+  end
+
+  @doc """
+  All published and approved insights that given user has voted for
+  """
+  def all_insights_user_voted_for(user_id) do
+    published_and_approved_insights()
+    |> user_has_voted_for(user_id)
+    |> Repo.all()
+    |> Repo.preload(@preloads)
+  end
+
+  @doc """
+  Change insights owner to be the fallback user
   """
   def change_owner_to_anonymous(user_id) do
     anon_user_id =
@@ -188,6 +168,54 @@ defmodule Sanbase.Insight.Post do
   end
 
   # Helper functions
+
+  defp by_user(query, user_id) do
+    from(
+      p in query,
+      where: p.user_id == ^user_id
+    )
+  end
+
+  defp by_tag(query, tag_name) do
+    query
+    |> join(:left, [p], t in assoc(p, :tags))
+    |> where([_p, t], t.name == ^tag_name)
+  end
+
+  defp published_insights() do
+    from(
+      p in Post,
+      where: p.ready_state == ^@published
+    )
+  end
+
+  defp published_and_approved_insights() do
+    from(
+      p in Post,
+      where:
+        p.ready_state == ^@published and
+          p.state == ^@approved
+    )
+  end
+
+  defp user_has_voted_for(query, user_id) do
+    query
+    |> join(:left, [p], v in assoc(p, :votes))
+    |> where([_p, v], v.user_id == ^user_id)
+  end
+
+  defp order_by_published_at(query) do
+    from(
+      p in query,
+      order_by: [desc: p.published_at]
+    )
+  end
+
+  defp page(query, page, page_size) do
+    query
+    |> offset(^((page - 1) * page_size))
+    |> limit(^page_size)
+  end
 
   defp images_cast(changeset, %{image_urls: image_urls}) do
     images = PostImage |> where([i], i.image_url in ^image_urls) |> Repo.all()
@@ -205,11 +233,4 @@ defmodule Sanbase.Insight.Post do
   end
 
   defp images_cast(changeset, _), do: changeset
-
-  defp get_only_published_or_own_posts(posts, user_id) do
-    posts
-    |> Enum.filter(fn post ->
-      post.user_id == user_id || post.ready_state == published()
-    end)
-  end
 end

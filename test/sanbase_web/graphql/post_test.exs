@@ -321,8 +321,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
   end
 
   test "Search posts by tag", %{user: user, conn: conn, poll: poll} do
-    tag1 = %Tag{name: "PRJ1"} |> Repo.insert!()
-    tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
+    tag1 = insert(:tag, name: "PRJ1")
+    tag2 = insert(:tag, name: "PRJ2")
 
     post =
       insert(:post,
@@ -333,17 +333,33 @@ defmodule SanbaseWeb.Graphql.PostTest do
         tags: [tag1, tag2]
       )
 
-    query = """
-    {
-      allInsightsByTag(tag: "#{tag1.name}"){
-        id
-      }
-    }
-    """
+    result =
+      tag1
+      |> insights_by_tag_query()
+      |> execute_query(conn, "allInsightsByTag")
 
-    result = conn |> post("/graphql", query_skeleton(query, "allInsightsByTag"))
+    assert result == [%{"id" => "#{post.id}"}]
+  end
 
-    assert json_response(result, 200)["data"]["allInsightsByTag"] == [%{"id" => "#{post.id}"}]
+  test "Search posts by tag for anonymous user", %{user: user, poll: poll} do
+    tag1 = insert(:tag, name: "PRJ1")
+    tag2 = insert(:tag, name: "PRJ2")
+
+    post =
+      insert(:post,
+        poll: poll,
+        user: user,
+        state: Post.approved_state(),
+        ready_state: Post.published(),
+        tags: [tag1, tag2]
+      )
+
+    result =
+      tag1
+      |> insights_by_tag_query()
+      |> execute_query(build_conn(), "allInsightsByTag")
+
+    assert result == [%{"id" => "#{post.id}"}]
   end
 
   describe "create post" do
@@ -786,5 +802,22 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
     [imageData] = json_response(result, 200)["data"]["uploadImage"]
     imageData["imageUrl"]
+  end
+
+  defp insights_by_tag_query(tag) do
+    """
+    {
+      allInsightsByTag(tag: "#{tag.name}"){
+        id
+      }
+    }
+    """
+  end
+
+  defp execute_query(query, conn, query_name) do
+    conn
+    |> post("/graphql", query_skeleton(query, query_name))
+    |> json_response(200)
+    |> get_in(["data", query_name])
   end
 end

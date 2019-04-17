@@ -4,7 +4,6 @@ defmodule Sanbase.Clickhouse.TopHolders do
   """
 
   alias Sanbase.DateTimeUtils
-  alias Sanbase.Model.Project
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 

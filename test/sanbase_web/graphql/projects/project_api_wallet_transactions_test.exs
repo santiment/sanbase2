@@ -10,7 +10,6 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   alias Sanbase.Repo
 
   import Mock
-  import Ecto.Query
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
   import ExUnit.CaptureLog
@@ -295,9 +294,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
 
     log =
       capture_log(fn ->
-        result =
-          context.conn
-          |> post("/graphql", query_skeleton(query, "projectBySlug"))
+        context.conn
+        |> post("/graphql", query_skeleton(query, "projectBySlug"))
       end)
 
     assert {:ok, []} == Project.eth_addresses(project)

@@ -5,7 +5,7 @@ defmodule Sanbase.Signals.History.PricesHistory do
   `90 days` back.
   """
 
-  import Sanbase.Signals.{Utils, OperationEvaluation}
+  import Sanbase.Signals.OperationEvaluation
   import Sanbase.Signals.History.Utils
 
   alias Sanbase.Signals.Trigger.{

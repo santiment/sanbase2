@@ -103,8 +103,8 @@ defmodule Sanbase.Insight.Post do
   @doc """
   All published insights for given user_id
   """
-  def user_published_insights(user_id) do
-    published_insights()
+  def user_public_insights(user_id) do
+    published_and_approved_insights()
     |> by_user(user_id)
     |> Repo.all()
     |> Repo.preload(@preloads)

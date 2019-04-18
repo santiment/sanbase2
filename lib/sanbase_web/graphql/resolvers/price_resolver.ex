@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
 
   @total_market "TOTAL_MARKET"
   @total_market_measurement "TOTAL_MARKET_total-market"
+  @total_erc20 "TOTAL_ERC20"
 
   @doc """
     Returns a list of price points for the given ticker. Optimizes the number of queries
@@ -30,6 +31,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     loader
     |> Dataloader.load(SanbaseDataloader, {:price, @total_market_measurement}, args)
     |> on_load(&total_market_history_price_on_load(&1, args))
+  end
+
+  def history_price(_root, %{slug: @total_erc20} = args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, {:price, @total_erc20}, args)
+    |> on_load(&total_erc20_history_price_on_load(&1, args))
   end
 
   @deprecated "Use history price by slug"
@@ -127,6 +134,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     else
       _ ->
         {:error, "Can't fetch total marketcap prices"}
+    end
+  end
+
+  defp total_erc20_history_price_on_load(loader, args) do
+    case Dataloader.get(loader, SanbaseDataloader, {:price, @total_erc20}, args) do
+      {:ok, total_erc20} -> {:ok, total_erc20}
+      _ -> {:error, "Can't fetch total volume and marketcap for all ERC20 projects"}
     end
   end
 

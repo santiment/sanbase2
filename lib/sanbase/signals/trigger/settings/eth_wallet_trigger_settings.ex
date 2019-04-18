@@ -62,8 +62,14 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
     target_list
     |> Enum.map(fn addr ->
       from = Trigger.last_triggered(trigger, addr) || settings.created_at
-      address_balance_change = balance_change(addr, settings.asset.slug, from, now)
-      {:eth_address, addr, address_balance_change, from}
+
+      case balance_change(addr, settings.asset.slug, from, now) do
+        [{^addr, {_, _, balance_change}}] ->
+          {:eth_address, addr, balance_change, from}
+
+        _ ->
+          {:eth_address, addr, 0, from}
+      end
     end)
   end
 
@@ -71,7 +77,7 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
         %__MODULE__{filtered_target: %{list: target_list, type: :slug}} = settings,
         trigger
       ) do
-    now = Timex.now()
+    to = Timex.now()
 
     target_list
     |> Project.by_slug()
@@ -79,23 +85,26 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
       from = Trigger.last_triggered(trigger, slug) || settings.created_at
 
       project_balance_change =
-        eth_addresses
-        |> Enum.reduce(0, fn %{address: addr}, balance ->
-          balance + balance_change(addr, settings.asset.slug, from, now)
-        end)
+        balance_change(eth_addresses, settings.asset.slug, from, to)
+        |> Enum.map(fn {_, {_, _, change}} -> change end)
+        |> Enum.sum()
 
       {:project, project, project_balance_change, from}
     end)
   end
 
-  defp balance_change(address, slug, from, to) do
+  defp balance_change(addresses, slug, from, to) do
+    cache_key =
+      ["balance_change", addresses, slug, bucket_datetime(from), bucket_datetime(to)]
+      |> :erlang.phash2()
+
     Cache.get_or_store(
-      "balance_change_#{address}_#{slug}_#{bucket_datetime(from)}_#{bucket_datetime(to)}",
+      cache_key,
       fn ->
-        HistoricalBalance.balance_change(address, slug, from, to)
+        HistoricalBalance.balance_change(addresses, slug, from, to)
         |> case do
-          {:ok, {_, _, change}} -> change
-          _ -> 0
+          {:ok, result} -> result
+          _ -> []
         end
       end
     )

@@ -10,7 +10,14 @@ defmodule Sanbase.DateTimeUtilsTest do
     assert DateTimeUtils.compound_duration_to_seconds("1h") == 3600
     assert DateTimeUtils.compound_duration_to_seconds("1d") == 86400
     assert DateTimeUtils.compound_duration_to_seconds("1w") == 604_800
-    assert DateTimeUtils.compound_duration_to_seconds("100") == 100
+
+    assert_raise CaseClauseError, fn ->
+      DateTimeUtils.compound_duration_to_seconds("100") == 100
+    end
+
+    assert_raise CaseClauseError, fn ->
+      DateTimeUtils.compound_duration_to_seconds("1dd") == 100
+    end
   end
 
   test "seconds after" do

@@ -1,15 +1,14 @@
 defmodule SanbaseWeb.Graphql.ProjectApiEthSpentOverTimeTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Model.{
-    Project,
-    ProjectEthAddress
-  }
-
   alias Sanbase.Repo
+  alias Sanbase.Model.{Project, ProjectEthAddress}
+  alias Sanbase.DateTimeUtils
 
-  import SanbaseWeb.Graphql.TestHelpers
   import Mock
+  import SanbaseWeb.Graphql.TestHelpers
+
+  @eth_decimals 1_000_000_000_000_000_000
 
   setup do
     ticker = "TESTXYZ"
@@ -40,23 +39,32 @@ defmodule SanbaseWeb.Graphql.ProjectApiEthSpentOverTimeTest do
     [
       project: p,
       ticker: ticker,
-      datetime_from: DateTime.from_naive!(~N[2017-05-13 15:00:00], "Etc/UTC"),
+      datetime_from: DateTime.from_naive!(~N[2017-05-12 15:00:00], "Etc/UTC"),
       datetime_to: DateTime.from_naive!(~N[2017-05-18 20:00:00], "Etc/UTC")
     ]
   end
 
   test "project eth spent over time", context do
-    with_mock Sanbase.Clickhouse.EthTransfers,
-      eth_spent_over_time: fn _, _, _, _ ->
+    dt1 = DateTimeUtils.from_iso8601!("2017-05-13T00:00:00Z") |> DateTime.to_unix()
+    dt2 = DateTimeUtils.from_iso8601!("2017-05-14T00:00:00Z") |> DateTime.to_unix()
+    dt3 = DateTimeUtils.from_iso8601!("2017-05-15T00:00:00Z") |> DateTime.to_unix()
+    dt4 = DateTimeUtils.from_iso8601!("2017-05-16T00:00:00Z") |> DateTime.to_unix()
+    dt5 = DateTimeUtils.from_iso8601!("2017-05-17T00:00:00Z") |> DateTime.to_unix()
+    dt6 = DateTimeUtils.from_iso8601!("2017-05-18T00:00:00Z") |> DateTime.to_unix()
+
+    with_mock Sanbase.ClickhouseRepo, [:passthrough],
+      query: fn _, _ ->
         {:ok,
-         [
-           %{datetime: Timex.parse!("2017-05-13T00:00:00Z", "{ISO:Extended}"), eth_spent: 500},
-           %{datetime: Timex.parse!("2017-05-14T00:00:00Z", "{ISO:Extended}"), eth_spent: 1500},
-           %{datetime: Timex.parse!("2017-05-15T00:00:00Z", "{ISO:Extended}"), eth_spent: 6000},
-           %{datetime: Timex.parse!("2017-05-16T00:00:00Z", "{ISO:Extended}"), eth_spent: 0},
-           %{datetime: Timex.parse!("2017-05-17T00:00:00Z", "{ISO:Extended}"), eth_spent: 0},
-           %{datetime: Timex.parse!("2017-05-18T00:00:00Z", "{ISO:Extended}"), eth_spent: 6500}
-         ]}
+         %{
+           rows: [
+             [dt1, -500 * @eth_decimals],
+             [dt2, -1500 * @eth_decimals],
+             [dt3, -6000 * @eth_decimals],
+             [dt4, 0],
+             [dt5, 0],
+             [dt6, -6500 * @eth_decimals]
+           ]
+         }}
       end do
       query = """
       {
@@ -82,17 +90,17 @@ defmodule SanbaseWeb.Graphql.ProjectApiEthSpentOverTimeTest do
 
       assert %{
                "datetime" => "2017-05-13T00:00:00Z",
-               "ethSpent" => 500
+               "ethSpent" => 500.0
              } in ethSpentOverTime
 
       assert %{
                "datetime" => "2017-05-14T00:00:00Z",
-               "ethSpent" => 1500
+               "ethSpent" => 1500.0
              } in ethSpentOverTime
 
       assert %{
                "datetime" => "2017-05-15T00:00:00Z",
-               "ethSpent" => 6000
+               "ethSpent" => 6000.0
              } in ethSpentOverTime
 
       assert %{
@@ -107,7 +115,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiEthSpentOverTimeTest do
 
       assert %{
                "datetime" => "2017-05-18T00:00:00Z",
-               "ethSpent" => 6500
+               "ethSpent" => 6500.0
              } in ethSpentOverTime
     end
   end

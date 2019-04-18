@@ -122,27 +122,6 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   end
 
   @doc ~s"""
-  Combines a list of lists of ethereum spent data for many projects to a list of ethereum spent data.
-  The entries at the same positions in each list are summed.
-  """
-  @spec combine_eth_spent_by_all_projects(list({:ok, spent_over_time_type})) ::
-          {:ok, list(spent_over_time_type)}
-  def combine_eth_spent_by_all_projects(eth_spent_over_time_list) do
-    total_eth_spent_over_time =
-      eth_spent_over_time_list
-      |> Enum.reject(fn
-        {:ok, elem} when elem != [] and elem != nil -> false
-        _ -> true
-      end)
-      |> Enum.map(fn {:ok, data} -> data end)
-      |> Stream.zip()
-      |> Stream.map(&Tuple.to_list/1)
-      |> Enum.map(&reduce_eth_spent/1)
-
-    {:ok, total_eth_spent_over_time}
-  end
-
-  @doc ~s"""
   Returns the inflow and outflow volume for a list of exchange_addresses between two datetimes
   """
   @spec exchange_volume(
@@ -393,15 +372,5 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     ]
 
     {query, args}
-  end
-
-  defp reduce_eth_spent([%{datetime: datetime} | _] = values) do
-    total_eth_spent =
-      values
-      |> Enum.reduce(0, fn %{eth_spent: eth_spent}, acc ->
-        eth_spent + acc
-      end)
-
-    %{datetime: datetime, eth_spent: total_eth_spent}
   end
 end

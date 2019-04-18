@@ -40,7 +40,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   end
 
   def all_insights_for_user(_root, %{user_id: user_id}, _context) do
-    posts = Post.user_published_insights(user_id)
+    posts = Post.user_public_insights(user_id)
 
     {:ok, posts}
   end

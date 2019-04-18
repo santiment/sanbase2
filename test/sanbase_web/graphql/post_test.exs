@@ -209,7 +209,14 @@ defmodule SanbaseWeb.Graphql.PostTest do
   end
 
   test "getting all posts for given user", %{user: user, user2: user2, conn: conn, poll: poll} do
-    post = insert(:post, poll: poll, user: user, ready_state: Post.published())
+    post =
+      insert(:post,
+        poll: poll,
+        user: user,
+        ready_state: Post.published(),
+        state: Post.approved_state()
+      )
+
     insert(:post, poll: poll, user: user, ready_state: Post.draft())
     insert(:post, poll: poll, user: user2, ready_state: Post.published())
 

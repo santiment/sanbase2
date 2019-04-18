@@ -72,11 +72,11 @@ defmodule Sanbase.Prices.Store do
       end)
       |> Enum.zip()
       |> Enum.map(&Tuple.to_list/1)
-      |> Enum.map(fn [%{datetime: dt} | _rest] = l ->
+      |> Enum.map(fn [%{datetime: dt} | _rest] = list ->
         %{
           datetime: dt,
-          volume: Enum.reduce(l, 0, fn %{volume: v}, acc -> acc + v end),
-          marketcap: Enum.reduce(l, 0, fn %{marketcap: m}, acc -> acc + m end)
+          volume: Enum.reduce(list, 0, fn %{volume: v}, acc -> acc + v end),
+          marketcap: Enum.reduce(list, 0, fn %{marketcap: m}, acc -> acc + m end)
         }
       end)
 

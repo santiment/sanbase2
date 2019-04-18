@@ -132,18 +132,6 @@ defmodule Sanbase.Insight.Post do
     |> Repo.preload(@preloads)
   end
 
-  @doc """
-  All published and approved insights by given tag and by current_user
-  """
-  def user_public_insights_by_tag(user_id, tag) do
-    published_and_approved_insights()
-    |> by_user(user_id)
-    |> by_tag(tag)
-    |> order_by_published_at()
-    |> Repo.all()
-    |> Repo.preload(@preloads)
-  end
-
   def public_insights_by_tags(tags, page, page_size) when is_list(tags) do
     published_and_approved_insights()
     |> by_tags(tags)

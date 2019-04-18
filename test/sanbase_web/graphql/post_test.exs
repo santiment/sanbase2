@@ -383,14 +383,13 @@ defmodule SanbaseWeb.Graphql.PostTest do
         tags: [tag1, tag2]
       )
 
-    post2 =
-      insert(:post,
-        poll: poll,
-        user: user,
-        state: Post.approved_state(),
-        ready_state: Post.published(),
-        tags: [tag3]
-      )
+    insert(:post,
+      poll: poll,
+      user: user,
+      state: Post.approved_state(),
+      ready_state: Post.published(),
+      tags: [tag3]
+    )
 
     post3 =
       insert(:post,

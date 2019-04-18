@@ -32,7 +32,11 @@ defmodule SanbaseWeb.ConnCase do
     SanbaseWeb.Graphql.Cache.clear_all()
 
     Sanbase.CaseHelpers.checkout_shared(tags)
+    conn = Phoenix.ConnTest.build_conn()
 
-    {:ok, conn: Phoenix.ConnTest.build_conn()}
+    staked_conn =
+      SanbaseWeb.Graphql.TestHelpers.setup_jwt_auth(conn, Sanbase.Factory.insert(:staked_user))
+
+    {:ok, conn: conn, staked_conn: staked_conn}
   end
 end

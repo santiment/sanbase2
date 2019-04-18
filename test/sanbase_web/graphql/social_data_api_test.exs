@@ -9,7 +9,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
 
   @error_response "Error executing query. See logs for details."
 
-  test "successfully fetch trending words", %{conn: conn} do
+  test "successfully fetch trending words", context do
     success_response = [
       %{
         datetime: DateTimeUtils.from_iso8601!("2018-11-10T00:00:00Z"),
@@ -30,7 +30,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
       }
 
       query = trending_words_query(args)
-      result = execute_and_parse_success_response(conn, query, "trendingWords")
+      result = execute_and_parse_success_response(context.staked_conn, query, "trendingWords")
 
       assert result == %{
                "data" => %{
@@ -48,7 +48,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
     end
   end
 
-  test "fetch trending words - proper error is returned", %{conn: conn} do
+  test "fetch trending words - proper error is returned", context do
     with_mock SocialData, trending_words: fn _, _, _, _, _ -> {:error, @error_response} end do
       args = %{
         source: "TELEGRAM",
@@ -59,12 +59,12 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
       }
 
       query = trending_words_query(args)
-      error = execute_and_parse_error_response(conn, query, "trendingWords")
+      error = execute_and_parse_error_response(context.staked_conn, query, "trendingWords")
       assert error =~ @error_response
     end
   end
 
-  test "successfully fetch word context", %{conn: conn} do
+  test "successfully fetch word context", context do
     success_response = [
       %{score: 1.0, word: "mas"},
       %{score: 0.7688603531300161, word: "christ"},
@@ -81,7 +81,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
       }
 
       query = word_context_query(args)
-      result = execute_and_parse_success_response(conn, query, "wordContext")
+      result = execute_and_parse_success_response(context.staked_conn, query, "wordContext")
 
       assert result == %{
                "data" => %{
@@ -95,7 +95,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
     end
   end
 
-  test "fetch word context - proper error is returned", %{conn: conn} do
+  test "fetch word context - proper error is returned", context do
     with_mock SocialData, word_context: fn _, _, _, _, _ -> {:error, @error_response} end do
       args = %{
         word: "merry",
@@ -106,12 +106,12 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
       }
 
       query = word_context_query(args)
-      error = execute_and_parse_error_response(conn, query, "wordContext")
+      error = execute_and_parse_error_response(context.staked_conn, query, "wordContext")
       assert error =~ @error_response
     end
   end
 
-  test "successfully fetch word trend score", %{conn: conn} do
+  test "successfully fetch word trend score", context do
     success_response = [
       %{
         score: 3725.6617392595313,
@@ -129,7 +129,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
       }
 
       query = word_trend_score_query(args)
-      result = execute_and_parse_success_response(conn, query, "wordTrendScore")
+      result = execute_and_parse_success_response(context.staked_conn, query, "wordTrendScore")
 
       assert result == %{
                "data" => %{
@@ -145,7 +145,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
     end
   end
 
-  test "fetching word trend score - proper error message is returned", %{conn: conn} do
+  test "fetching word trend score - proper error message is returned", context do
     error_response =
       "Error status 500 fetching word trend score for word merry: Internal Server Error"
 
@@ -153,17 +153,17 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
       args = %{
         word: "merry",
         source: "TELEGRAM",
-        from: "2018-01-09T00:00:00Z",
-        to: "2018-01-10T00:00:00Z"
+        from: "#{Timex.shift(Timex.now(), days: -20)}",
+        to: "#{Timex.now()}"
       }
 
       query = word_trend_score_query(args)
-      error = execute_and_parse_error_response(conn, query, "wordTrendScore")
+      error = execute_and_parse_error_response(context.staked_conn, query, "wordTrendScore")
       assert error == error_response
     end
   end
 
-  test "successfully fetch top social gainers losers", %{conn: conn} do
+  test "successfully fetch top social gainers losers", context do
     success_response = [
       %{
         datetime: DateTimeUtils.from_iso8601!("2019-03-15T13:00:00Z"),
@@ -192,7 +192,9 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
       }
 
       query = top_social_gainers_losers_query(args)
-      result = execute_and_parse_success_response(conn, query, "topSocialGainersLosers")
+
+      result =
+        execute_and_parse_success_response(context.staked_conn, query, "topSocialGainersLosers")
 
       assert result == %{
                "data" => %{
@@ -218,7 +220,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
     end
   end
 
-  test "fetch top social gainers losers - proper error is returned", %{conn: conn} do
+  test "fetch top social gainers losers - proper error is returned", context do
     with_mock SocialData, top_social_gainers_losers: fn _ -> {:error, @error_response} end do
       args = %{
         status: "ALL",
@@ -229,12 +231,15 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
       }
 
       query = top_social_gainers_losers_query(args)
-      error = execute_and_parse_error_response(conn, query, "topSocialGainersLosers")
+
+      error =
+        execute_and_parse_error_response(context.staked_conn, query, "topSocialGainersLosers")
+
       assert error =~ @error_response
     end
   end
 
-  test "successfully fetch social gainers losers status for slug", %{conn: conn} do
+  test "successfully fetch social gainers losers status for slug", context do
     success_response = [
       %{
         change: 12.709016393442624,
@@ -252,7 +257,13 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
       }
 
       query = social_gainers_losers_status_query(args)
-      result = execute_and_parse_success_response(conn, query, "socialGainersLosersStatus")
+
+      result =
+        execute_and_parse_success_response(
+          context.staked_conn,
+          query,
+          "socialGainersLosersStatus"
+        )
 
       func_args = %{
         args
@@ -276,7 +287,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
     end
   end
 
-  test "fetching social gainers losers status - proper error message is returned", %{conn: conn} do
+  test "fetching social gainers losers status - proper error message is returned", context do
     with_mock SocialData, social_gainers_losers_status: fn _ -> {:error, @error_response} end do
       args = %{
         slug: "qtum",
@@ -286,7 +297,10 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
       }
 
       query = social_gainers_losers_status_query(args)
-      error = execute_and_parse_error_response(conn, query, "topSocialGainersLosers")
+
+      error =
+        execute_and_parse_error_response(context.staked_conn, query, "topSocialGainersLosers")
+
       assert error =~ @error_response
     end
   end

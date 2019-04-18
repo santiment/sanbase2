@@ -51,14 +51,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     {:ok, posts}
   end
 
-  def all_insights_by_tag(_root, %{tag: tag}, %{
-        context: %{auth: %{current_user: %User{id: user_id}}}
-      }) do
-    posts = Post.user_public_insights_by_tag(user_id, tag)
-
-    {:ok, posts}
-  end
-
   def all_insights_by_tag(_root, %{tag: tag}, _context) do
     posts = Post.public_insights_by_tag(tag)
 

@@ -3,15 +3,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
 
   alias Sanbase.Auth.User
   alias Sanbase.UserList
+  alias Sanbase.Model.Project
   alias SanbaseWeb.Graphql.Helpers.Utils
-  alias Sanbase.Repo
 
-  def create_user_list(_root, args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def list_items(%UserList{} = user_list, _args, _resolution) do
+    result =
+      UserList.get_projects(user_list)
+      |> Project.preload()
+      |> Enum.map(&%{project: &1})
+
+    {:ok, result}
+  end
+
+  def create_user_list(_root, args, %{context: %{auth: %{current_user: current_user}}}) do
     case UserList.create_user_list(current_user, args) do
       {:ok, user_list} ->
-        {:ok, user_list |> Repo.preload(:list_items)}
+        {:ok, user_list}
 
       {:error, changeset} ->
         {
@@ -21,9 +28,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     end
   end
 
-  def update_user_list(_root, %{id: id} = args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def update_user_list(_root, %{id: id} = args, %{context: %{auth: %{current_user: current_user}}}) do
     if has_permissions?(id, current_user) do
       case UserList.update_user_list(args) do
         {:ok, user_list} ->
@@ -40,9 +45,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     end
   end
 
-  def remove_user_list(_root, %{id: id} = args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def remove_user_list(_root, %{id: id} = args, %{context: %{auth: %{current_user: current_user}}}) do
     if has_permissions?(id, current_user) do
       case UserList.remove_user_list(args) do
         {:ok, user_list} ->
@@ -55,14 +58,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
           }
       end
     else
-      {:error, "Cannot remove user list"}
+      {:error, "Cannot remove user list belonging to another user"}
     end
   end
 
-  def fetch_user_lists(_root, _args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
+  def fetch_user_lists(_root, _args, %{context: %{auth: %{current_user: current_user}}}) do
     UserList.fetch_user_lists(current_user)
+  end
+
+  def fetch_user_lists(_root, _args, _resolution) do
+    {:error, "Only logged in users can call this method"}
   end
 
   def fetch_public_user_lists(_root, _args, %{

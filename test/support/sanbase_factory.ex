@@ -5,7 +5,7 @@ defmodule Sanbase.Factory do
   alias Sanbase.UserList
   alias Sanbase.Auth.{User, UserSettings}
   alias Sanbase.Insight.{Post, Poll}
-  alias Sanbase.Model.{Project, ExchangeAddress, ProjectEthAddress, Infrastructure}
+  alias Sanbase.Model.{Project, ExchangeAddress, ProjectEthAddress, Infrastructure, MarketSegment}
   alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
 
   def user_factory() do
@@ -76,6 +76,10 @@ defmodule Sanbase.Factory do
       infrastructure: nil,
       eth_addresses: [build(:project_eth_address)]
     }
+  end
+
+  def market_segment_factory() do
+    %MarketSegment{name: "currency"}
   end
 
   def infrastructure_eth_factory() do

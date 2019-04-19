@@ -116,6 +116,9 @@ defmodule Sanbase.Mixfile do
         "ecto.migrate -r Sanbase.Repo",
         "ecto.dump -r Sanbase.Repo"
       ],
+      "ecto.gen.migration": [
+        "ecto.gen.migration -r Sanbase.Repo"
+      ],
       "ecto.rollback": [
         "load_dotenv",
         "ecto.rollback -r Sanbase.Repo",

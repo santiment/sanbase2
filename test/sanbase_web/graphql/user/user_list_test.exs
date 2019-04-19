@@ -64,7 +64,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
   end
 
   test "update user list", %{user: user, conn: conn} do
-    {:ok, created_user_list} = UserList.create_user_list(user, %{name: "My Test List"})
+    {:ok, user_list} = UserList.create_user_list(user, %{name: "My Test List"})
 
     project =
       Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
@@ -80,7 +80,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
     query = """
     mutation {
       updateUserList(
-        id: #{created_user_list.id},
+        id: #{user_list.id},
         name: "#{update_name}",
         color: BLACK,
         list_items: [{project_id: #{project.id}}]
@@ -104,8 +104,9 @@ defmodule SanbaseWeb.Graphql.UserListTest do
     result =
       conn
       |> post("/graphql", mutation_skeleton(query))
+      |> json_response(200)
 
-    user_list = json_response(result, 200)["data"]["updateUserList"]
+    user_list = result["data"]["updateUserList"]
     assert user_list["name"] == update_name
     assert user_list["color"] == "BLACK"
     assert user_list["is_public"] == false
@@ -116,7 +117,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
   end
 
   test "update user list - remove list items", %{user: user, conn: conn} do
-    {:ok, created_user_list} = UserList.create_user_list(user, %{name: "My Test List"})
+    {:ok, created_UserList} = UserList.create_user_list(user, %{name: "My Test List"})
 
     project =
       Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
@@ -124,7 +125,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
     firstyiw_update_query = """
     mutation {
       updateUserList(
-        id: #{created_user_list.id},
+        id: #{created_UserList.id},
         list_items: [{project_id: #{project.id}}]
       ) {
         list_items {
@@ -140,15 +141,15 @@ defmodule SanbaseWeb.Graphql.UserListTest do
       conn
       |> post("/graphql", mutation_skeleton(firstyiw_update_query))
 
-    user_list = json_response(result, 200)["data"]["updateUserList"]
-    assert user_list["list_items"] == [%{"project" => %{"id" => "#{project.id}"}}]
+    updated_user_list = json_response(result, 200)["data"]["updateUserList"]
+    assert updated_user_list["list_items"] == [%{"project" => %{"id" => "#{project.id}"}}]
 
     update_name = "My updated list"
 
     second_update_query = """
     mutation {
       updateUserList(
-        id: #{created_user_list.id},
+        id: #{created_UserList.id},
         name: "#{update_name}",
         color: BLACK,
         list_items: []
@@ -172,22 +173,22 @@ defmodule SanbaseWeb.Graphql.UserListTest do
       conn
       |> post("/graphql", mutation_skeleton(second_update_query))
 
-    user_list = json_response(result, 200)["data"]["updateUserList"]
-    assert user_list["name"] == update_name
-    assert user_list["color"] == "BLACK"
-    assert user_list["is_public"] == false
-    assert user_list["list_items"] == []
+    updated_user_list2 = json_response(result, 200)["data"]["updateUserList"]
+    assert updated_user_list2["name"] == update_name
+    assert updated_user_list2["color"] == "BLACK"
+    assert updated_user_list2["is_public"] == false
+    assert updated_user_list2["list_items"] == []
   end
 
   test "update user list - without list items", %{user: user, conn: conn} do
-    {:ok, created_user_list} = UserList.create_user_list(user, %{name: "My Test List"})
+    {:ok, user_list} = UserList.create_user_list(user, %{name: "My Test List"})
 
     update_name = "My updated list"
 
     query = """
     mutation {
       updateUserList(
-        id: #{created_user_list.id},
+        id: #{user_list.id},
         name: "#{update_name}",
         color: BLACK,
       ) {
@@ -210,22 +211,22 @@ defmodule SanbaseWeb.Graphql.UserListTest do
       conn
       |> post("/graphql", mutation_skeleton(query))
 
-    user_list = json_response(result, 200)["data"]["updateUserList"]
-    assert user_list["name"] == update_name
-    assert user_list["color"] == "BLACK"
-    assert user_list["is_public"] == false
-    assert user_list["list_items"] == []
+    updated_user_list = json_response(result, 200)["data"]["updateUserList"]
+    assert updated_user_list["name"] == update_name
+    assert updated_user_list["color"] == "BLACK"
+    assert updated_user_list["is_public"] == false
+    assert updated_user_list["list_items"] == []
   end
 
   test "cannot update not own user list", %{user2: user2, conn: conn} do
-    {:ok, created_user_list} = UserList.create_user_list(user2, %{name: "My Test List"})
+    {:ok, user_list} = UserList.create_user_list(user2, %{name: "My Test List"})
 
     update_name = "My updated list"
 
     query = """
     mutation {
       updateUserList(
-        id: #{created_user_list.id},
+        id: #{user_list.id},
         name: "#{update_name}",
       ) {
         id
@@ -236,26 +237,29 @@ defmodule SanbaseWeb.Graphql.UserListTest do
     result =
       conn
       |> post("/graphql", mutation_skeleton(query))
+      |> json_response(200)
 
-    [error] = json_response(result, 200)["errors"]
+    [error] = result["errors"]
     assert String.contains?(error["message"], "Cannot update user list")
   end
 
   test "remove user list", %{user: user, conn: conn} do
-    {:ok, created_user_list} = UserList.create_user_list(user, %{name: "My Test List"})
+    {:ok, user_list} = UserList.create_user_list(user, %{name: "My Test List"})
 
     query = """
     mutation {
       removeUserList(
-        id: #{created_user_list.id},
+        id: #{user_list.id},
       ) {
         id
       }
     }
     """
 
-    conn
-    |> post("/graphql", mutation_skeleton(query))
+    _result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+      |> json_response(200)
 
     assert UserList.fetch_user_lists(user) == {:ok, []}
   end
@@ -284,31 +288,32 @@ defmodule SanbaseWeb.Graphql.UserListTest do
     result =
       conn
       |> post("/graphql", query_skeleton(query, "fetchPublicUserLists"))
+      |> json_response(200)
 
-    user_list = json_response(result, 200)["data"]["fetchPublicUserLists"] |> List.first()
-    assert user_list["name"] == "My Test List"
-    assert user_list["color"] == "NONE"
-    assert user_list["is_public"] == true
-    assert user_list["user"]["id"] == user.id |> to_string()
+    user_lists = result["data"]["fetchPublicUserLists"] |> List.first()
+    assert user_lists["name"] == "My Test List"
+    assert user_lists["color"] == "NONE"
+    assert user_lists["is_public"] == true
+    assert user_lists["user"]["id"] == user.id |> to_string()
   end
 
   test "fetch all public user lists", %{user: user, user2: user2, conn: conn} do
-    UserList.create_user_list(user, %{name: "My Test List", is_public: true})
-    UserList.create_user_list(user2, %{name: "My Test List", is_public: true})
+    {:ok, _} = UserList.create_user_list(user, %{name: "My Test List", is_public: true})
+    {:ok, _} = UserList.create_user_list(user2, %{name: "My Test List", is_public: true})
 
     query = query("fetchAllPublicUserLists")
 
     result =
       conn
       |> post("/graphql", query_skeleton(query, "fetchAllPublicUserLists"))
+      |> json_response(200)
 
-    all_public_lists_cnt =
-      json_response(result, 200)["data"]["fetchAllPublicUserLists"] |> Enum.count()
+    all_public_lists = result["data"]["fetchAllPublicUserLists"]
 
-    assert all_public_lists_cnt == 2
+    assert Enum.count(all_public_lists) == 2
   end
 
-  describe "user_list" do
+  describe "UserList" do
     test "returns public lists for anonymous users", %{user2: user2} do
       project =
         Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
@@ -317,17 +322,17 @@ defmodule SanbaseWeb.Graphql.UserListTest do
         UserList.create_user_list(user2, %{name: "My Test List", is_public: true})
 
       {:ok, user_list} =
-        UserList.update_user_list(%{id: user_list.id, list_items: [%{project_id: project.id}]})
+        UserList.update_user_list(%{id: user_list.id(), list_items: [%{project_id: project.id}]})
 
-      query = query("userList(userListId: #{user_list.id})")
+      query = query("userList(userListId: #{user_list.id()})")
 
-      result = post(build_conn(), "/graphql", query_skeleton(query, "userList"))
+      result =
+        post(build_conn(), "/graphql", query_skeleton(query, "userList"))
+        |> json_response(200)
 
-      user_list_result = json_response(result, 200)["data"]["userList"]
-
-      assert user_list_result == %{
+      assert result["data"]["userList"] == %{
                "color" => "NONE",
-               "id" => "#{user_list.id}",
+               "id" => "#{user_list.id()}",
                "is_public" => true,
                "list_items" => [%{"project" => %{"id" => "#{project.id}"}}],
                "name" => "My Test List",
@@ -343,19 +348,18 @@ defmodule SanbaseWeb.Graphql.UserListTest do
         UserList.create_user_list(user2, %{name: "My Test List", is_public: true})
 
       {:ok, user_list} =
-        UserList.update_user_list(%{id: user_list.id, list_items: [%{project_id: project.id}]})
+        UserList.update_user_list(%{id: user_list.id(), list_items: [%{project_id: project.id}]})
 
-      query = query("userList(userListId: #{user_list.id})")
+      query = query("userList(userListId: #{user_list.id()})")
 
       result =
         conn
         |> post("/graphql", query_skeleton(query, "userList"))
+        |> json_response(200)
 
-      user_list_result = json_response(result, 200)["data"]["userList"]
-
-      assert user_list_result == %{
+      assert result["data"]["userList"] == %{
                "color" => "NONE",
-               "id" => "#{user_list.id}",
+               "id" => "#{user_list.id()}",
                "is_public" => true,
                "list_items" => [%{"project" => %{"id" => "#{project.id}"}}],
                "name" => "My Test List",
@@ -371,19 +375,18 @@ defmodule SanbaseWeb.Graphql.UserListTest do
         UserList.create_user_list(user, %{name: "My Test List", is_public: false})
 
       {:ok, user_list} =
-        UserList.update_user_list(%{id: user_list.id, list_items: [%{project_id: project.id}]})
+        UserList.update_user_list(%{id: user_list.id(), list_items: [%{project_id: project.id}]})
 
-      query = query("userList(userListId: #{user_list.id})")
+      query = query("userList(userListId: #{user_list.id()})")
 
       result =
         conn
         |> post("/graphql", query_skeleton(query, "userList"))
+        |> json_response(200)
 
-      user_list_result = json_response(result, 200)["data"]["userList"]
-
-      assert user_list_result == %{
+      assert result["data"]["userList"] == %{
                "color" => "NONE",
-               "id" => "#{user_list.id}",
+               "id" => "#{user_list.id()}",
                "is_public" => false,
                "list_items" => [%{"project" => %{"id" => "#{project.id}"}}],
                "name" => "My Test List",
@@ -395,15 +398,14 @@ defmodule SanbaseWeb.Graphql.UserListTest do
       {:ok, user_list} =
         UserList.create_user_list(user2, %{name: "My Test List", is_public: false})
 
-      query = query("userList(userListId: #{user_list.id})")
+      query = query("userList(userListId: #{user_list.id()})")
 
       result =
         conn
         |> post("/graphql", query_skeleton(query, "userList"))
+        |> json_response(200)
 
-      user_list_result = json_response(result, 200)["data"]["userList"]
-
-      assert user_list_result == nil
+      assert result["data"]["userList"] == nil
     end
   end
 

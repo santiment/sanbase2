@@ -7,8 +7,6 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
-  alias Sanbase.Model.Project
-  alias Sanbase.Repo
 
   setup do
     Store.create_db()

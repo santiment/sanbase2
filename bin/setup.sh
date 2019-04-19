@@ -5,5 +5,4 @@ docker-compose build && \
                                     mix ecto.setup_all &&
                                     mix run priv/repo/seeds.exs &&
                                     cd assets &&
-                                    npm install &&
-                                    npx brunch build"
+                                    npm install"

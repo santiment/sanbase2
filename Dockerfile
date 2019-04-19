@@ -26,7 +26,7 @@ COPY . /app
 
 ARG SECRET_KEY_BASE
 
-RUN cd assets && npm run build
+RUN cd assets && npm run build:prod
 RUN SECRET_KEY_BASE=$SECRET_KEY_BASE mix compile
 RUN mix phx.digest
 RUN mix release

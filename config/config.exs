@@ -12,6 +12,8 @@ config :tzdata, :autoupdate, :disabled
 # General application configuration
 config :sanbase, ecto_repos: [Sanbase.Repo, Sanbase.TimescaleRepo]
 
+config :phoenix, :json_library, Jason
+
 config :ecto, json_library: Jason
 
 config :sanbase, Sanbase,

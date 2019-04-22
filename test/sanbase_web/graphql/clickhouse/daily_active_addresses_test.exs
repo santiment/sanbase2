@@ -25,6 +25,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.DailyActiveAddressesTest do
       ethereum_slug: ethereum.coinmarketcap_id,
       ethereum_ticker: ethereum.ticker,
       bitcoin_slug: bitcoin.coinmarketcap_id,
+      bitcoin_ticker: bitcoin.ticker,
       from: from_iso8601!("2019-01-01T00:00:00Z"),
       to: from_iso8601!("2019-01-03T00:00:00Z"),
       interval: "1d"
@@ -122,6 +123,75 @@ defmodule SanbaseWeb.Graphql.Clickhouse.DailyActiveAddressesTest do
                  assert addresses == nil
                end) =~
                  ~s/[warn] Can't calculate daily active addresses for project with coinmarketcap_id: santiment. Reason: "Some error description here"/
+      end
+    end
+
+    test "works with empty interval for erc20 tokens", context do
+      with_mocks([
+        {DailyActiveAddresses, [:passthrough],
+         average_active_addresses: fn _, _, _, _ -> {:ok, []} end},
+        {Erc20DailyActiveAddresses, [:passthrough],
+         first_datetime: fn _ -> {:ok, from_iso8601!("2019-01-01T00:00:00Z")} end}
+      ]) do
+        query = active_addresses_query(context.token_slug, context.from, context.to, "")
+
+        context.conn
+        |> post("/graphql", query_skeleton(query, "dailyActiveAddresses"))
+
+        assert_called(
+          DailyActiveAddresses.average_active_addresses(
+            context.token_contract,
+            context.from,
+            context.to,
+            "86400s"
+          )
+        )
+      end
+    end
+
+    test "works with empty interval for ethereum", context do
+      with_mocks([
+        {DailyActiveAddresses, [:passthrough],
+         average_active_addresses: fn _, _, _, _ -> {:ok, []} end},
+        {EthDailyActiveAddresses, [:passthrough],
+         first_datetime: fn _ -> {:ok, from_iso8601!("2019-01-01T00:00:00Z")} end}
+      ]) do
+        query = active_addresses_query(context.ethereum_slug, context.from, context.to, "")
+
+        context.conn
+        |> post("/graphql", query_skeleton(query, "dailyActiveAddresses"))
+
+        assert_called(
+          DailyActiveAddresses.average_active_addresses(
+            context.ethereum_ticker,
+            context.from,
+            context.to,
+            "86400s"
+          )
+        )
+      end
+    end
+
+    test "works with empty interval for bitcoin", context do
+      with_mocks([
+        {DailyActiveAddresses, [:passthrough],
+         average_active_addresses: fn _, _, _, _ -> {:ok, []} end},
+        {Bitcoin, [:passthrough],
+         first_datetime: fn _ -> {:ok, from_iso8601!("2019-01-01T00:00:00Z")} end}
+      ]) do
+        query = active_addresses_query(context.bitcoin_slug, context.from, context.to, "")
+
+        context.conn
+        |> post("/graphql", query_skeleton(query, "dailyActiveAddresses"))
+
+        assert_called(
+          DailyActiveAddresses.average_active_addresses(
+            context.bitcoin_ticker,
+            context.from,
+            context.to,
+            "86400s"
+          )
+        )
       end
     end
 

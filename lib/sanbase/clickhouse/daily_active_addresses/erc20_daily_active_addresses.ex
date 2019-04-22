@@ -20,6 +20,24 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
           active_addresses: non_neg_integer()
         }
 
+  @table "erc20_daily_active_addresses"
+
+  def first_datetime(slug) do
+    query = """
+    SELECT min(dt) FROM #{@table} WHERE contract = ?1
+    """
+
+    args = [slug]
+
+    ClickhouseRepo.query_transform(query, args, fn [datetime] ->
+      datetime |> Sanbase.DateTimeUtils.from_erl!()
+    end)
+    |> case do
+      {:ok, [first_datetime]} -> {:ok, first_datetime}
+      error -> error
+    end
+  end
+
   @doc ~s"""
   Returns the average value of the daily active addresses
   for every contract in a given interval [form, to].
@@ -43,25 +61,31 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
     query = """
     SELECT contract, AVG(total_addresses) as active_addresses
     FROM (
-      SELECT contract, toStartOfDay(dt) as dt, toFloat64(anyLast(total_addresses)) as total_addresses
-      FROM erc20_daily_active_addresses
+      SELECT
+        contract,
+        toStartOfDay(dt) as dt2,
+        toFloat64(anyLast(total_addresses)) as total_addresses
+      FROM #{@table}
       PREWHERE
-      contract IN (?3) AND
-      dt < toDateTime(today()) AND
-      dt >= toDateTime(?1) AND
-      dt <= toDateTime(?2)
-      GROUP BY contract, dt
+        contract IN (?3) AND
+        dt < toDateTime(today()) AND
+        dt >= toDateTime(?1) AND
+        dt <= toDateTime(?2)
+      GROUP BY contract, dt2
 
       UNION ALL
 
-      SELECT contract, toStartOfDay(dt) as dt, (toFloat64(uniq(address)) * toFloat64(#{
-      today_coefficient
-    })) as total_addresses
-      FROM erc20_daily_active_addresses_list
-      PREWHERE contract IN (?3) and dt >= toDateTime(today()) AND
-      dt >= toDateTime(?1) AND
-      dt <= toDateTime(?2)
-      GROUP BY contract, dt
+      SELECT
+        contract,
+        toStartOfDay(dt) as dt2,
+        (toFloat64(uniqExact(address)) * toFloat64(#{today_coefficient})) as total_addresses
+      FROM #{@table}_list
+      PREWHERE
+        contract IN (?3) AND
+        dt >= toDateTime(today()) AND
+        dt >= toDateTime(?1) AND
+        dt <= toDateTime(?2)
+      GROUP BY contract, dt2
     )
     GROUP BY contract
     """
@@ -83,9 +107,13 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
     args = [contracts]
 
     query = """
-    SELECT contract, coalesce(uniq(address), 0) as active_addresses
-    FROM erc20_daily_active_addresses_list
-    PREWHERE contract IN (?1) and dt >= toDateTime(today())
+    SELECT
+      contract,
+      coalesce(uniqExact(address), 0) as active_addresses
+    FROM #{@table}_list
+    PREWHERE
+      contract IN (?1) AND
+      dt >= toDateTime(today())
     GROUP BY contract, dt
     """
 
@@ -112,39 +140,43 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
     span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)
 
     query = """
-    SELECT toUnixTimestamp(time) as dt, SUM(value) as active_addresses
+    SELECT toUnixTimestamp(dt3) AS time, SUM(value) AS active_addresses
     FROM (
       SELECT
-        toDateTime(intDiv(toUInt32(?4 + (number + 1) * ?1), ?1) * ?1) as time,
+        toDateTime(intDiv(toUInt32(?4 + (number + 1) * ?1), ?1) * ?1) AS dt3,
         toUInt32(0) AS value
       FROM numbers(?2)
 
       UNION ALL
 
-      SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, total_addresses as value
+      SELECT
+        toDateTime(intDiv(toUInt32(dt2), ?1) * ?1) AS dt3,
+        AVG(total_addresses) AS value
       FROM (
-        SELECT toStartOfDay(dt) as dt, anyLast(total_addresses) as total_addresses
-        FROM erc20_daily_active_addresses
-        PREWHERE contract = ?3 AND
-        dt < toDateTime(today()) AND
-        dt >= toDateTime(?4) AND
-        dt <= toDateTime(?5)
-        GROUP BY contract, dt
+        SELECT toStartOfDay(dt) AS dt2, anyLast(total_addresses) AS total_addresses
+        FROM #{@table}
+        PREWHERE
+          contract = ?3 AND
+          dt < toDateTime(today()) AND
+          dt >= toDateTime(?4) AND
+          dt <= toDateTime(?5)
+        GROUP BY dt2
 
         UNION ALL
 
-        SELECT toStartOfDay(dt) as dt, uniq(address) as total_addresses
-        FROM erc20_daily_active_addresses_list
+        SELECT toStartOfDay(dt) AS dt2, uniqExact(address) AS total_addresses
+        FROM #{@table}_list
         PREWHERE
-        contract = ?3 AND
-        dt >= toDateTime(today()) AND
-        dt >= toDateTime(?4) AND
-        dt <= toDateTime(?5)
-        GROUP BY dt
+          contract = ?3 AND
+          dt >= toDateTime(today()) AND
+          dt >= toDateTime(?4) AND
+          dt <= toDateTime(?5)
+        GROUP BY dt2
       )
+      GROUP BY dt3
     )
-    group by dt
-    order by dt
+    group by time
+    order by time
     """
 
     args = [interval, span, contract, from_datetime_unix, to_datetime_unix]

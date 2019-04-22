@@ -129,49 +129,6 @@ defmodule Sanbase.ExAdmin.Model.Project do
       after_filter(:set_defaults, only: [:new])
       after_filter(:add_tag, only: [:create])
     end
-
-    # Make all string filters "Contains" by default
-    sidebar "", only: :index do
-      panel "" do
-        markup_contents do
-          script type: "text/javascript" do
-            """
-            $(document).ready(function() {
-              $("div.filter-select select option[value$=_contains]").prop('selected', true);
-              $("div.filter-select select option[value$=_contains]").parent().trigger("change");
-            });
-            """
-          end
-        end
-      end
-    end
-
-    # Put Actions column to the front
-    sidebar " ", only: :index do
-      panel "" do
-        markup_contents do
-          script type: "text/javascript" do
-            """
-            $.moveColumn = function (table, from, to) {
-                var rows = $('tr', table);
-                var cols;
-                rows.each(function() {
-                    cols = $(this).children('th, td');
-                    cols.eq(from).detach().insertBefore(cols.eq(to));
-                });
-            }
-
-            $(document).ready(function() {
-              thact = $("table.index_table thead tr th.th-actions");
-              index = $("table.index_table thead tr th").index(thact);
-              table = $("table.index_table thead,tbody");
-              $.moveColumn(table, index, 1);
-            });
-            """
-          end
-        end
-      end
-    end
   end
 
   def set_defaults(conn, params, resource, :new) do

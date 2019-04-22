@@ -8,19 +8,7 @@ defmodule Sanbase.ExAdmin.Model.ExchangeAddress do
     form exchange_address do
       inputs do
         content do
-          """
-          <div>
-          Paste CSV in the following format:
-          <ul>
-            <li>Format: <b>address*</b>,<b>name*</b>,<b>source</b>,<b>comments</b>,<b>is dex</b>,<b>infrastructure id</b></li>
-            <li>Required: address, name</li>
-            <li>Column titles should be ommited</li>
-            <li>Example:
-              <pre>0x123f35fae36d75b1e72770e244f6595b68501234,Kyber,,\n0x1234465f45eac01389dbb3045206c1d07c123456,Another one,,</pre>
-            </li>
-          </ul>
-          </div>
-          """
+          raw("CSV Format: address,name,source,comments,is dex,infrastructure id")
         end
 
         input(exchange_address, :csv, type: :text, label: "paste CSV")

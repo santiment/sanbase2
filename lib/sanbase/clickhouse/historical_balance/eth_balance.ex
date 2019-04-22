@@ -1,6 +1,14 @@
 defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
   @doc ~s"""
-  Returns the historical balances of given ethereum address in all intervals between two datetimes.
+  Module for working with historical ethereum balances.
+
+  Includes functions for calculating:
+  - Historical balances for an address or a list of addresses. For a list of addresses
+  the combined balance is returned
+  - Balance changes for and address or a list of addresses. This is used to calculate
+  ethereum spent over time. Summing the balance changes of all wallets of a project
+  allows to easily handle transactions between project wallets and not count them
+  as spent.
   """
 
   use Ecto.Schema
@@ -10,9 +18,18 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
   @eth_decimals 1_000_000_000_000_000_000
+
+  @typedoc ~s"""
+  An interval represented as string. It has the format of number followed by one of:
+  ns, ms, s, m, h, d or w - each representing some time unit
+  """
+  @type interval :: String.t()
+
+  @type address :: String.t()
+
   @type historical_balance :: %{
           datetime: non_neg_integer(),
-          balance: float
+          balance: float()
         }
 
   @table "eth_balances"
@@ -23,18 +40,23 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     field(:sign, :integer)
   end
 
+  @doc false
   @spec changeset(any(), any()) :: no_return()
   def changeset(_, _attrs \\ %{}),
     do: raise("Should not try to change eth daily active addresses")
 
+  @doc ~s"""
+  For a given address or list of addresses returns the combined ethereum
+  balance for each bucket of size `interval` in the from-to time period
+  """
   @spec historical_balance(
-          String.t(),
+          address | list(address),
           DateTime.t(),
           DateTime.t(),
-          non_neg_integer()
-        ) :: {:ok, list(historical_balance)}
-  def historical_balance(address, from, to, interval) do
-    {query, args} = historical_balance_query(address, from, to, interval)
+          interval
+        ) :: {:ok, list(historical_balance)} | {:error, String.t()}
+  def historical_balance(addr, from, to, interval) do
+    {query, args} = historical_balance_query(addr, from, to, interval)
 
     ClickhouseRepo.query_transform(query, args, fn [dt, value, has_changed] ->
       %{
@@ -57,6 +79,15 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     end
   end
 
+  @doc ~s"""
+  For a given address or list of addresses returns the ethereum balance change for the
+  from-to period. The returned lists indicates the address, before balance, after balance
+  and the balance change
+  """
+  @spec balance_change(address | list(address), DateTime.t(), DateTime.t()) ::
+          {:ok, list({address, {balance_before, balance_after, balance_change}})}
+          | {:error, String.t()}
+        when balance_before: number(), balance_after: number(), balance_change: number()
   def balance_change(addresses, from, to) when is_binary(addresses) or is_list(addresses) do
     {query, args} = balance_change_query(addresses, from, to)
 
@@ -65,6 +96,13 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     end)
   end
 
+  @doc ~s"""
+  For a given address or list of addresses returns the ethereum  balance change for each bucket
+  of size `interval` in the from-to time period
+  """
+  @spec balance_change(address | list(address), DateTime.t(), DateTime.t(), interval) ::
+          {:ok, list({address, %{datetime: DateTime.t(), balance_change: number()}})}
+          | {:error, String.t()}
   def balance_change(addresses, from, to, interval)
       when is_binary(addresses) or is_list(addresses) do
     {query, args} = balance_change_query(addresses, from, to, interval)
@@ -88,6 +126,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     end
   end
 
+  # Private functions
+
   defp balance_change_query(addresses, from, to) do
     addresses = addresses |> List.wrap() |> List.flatten() |> Enum.map(&String.downcase/1)
 
@@ -108,7 +148,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     {query, args}
   end
 
-  @first_datetime ~N[2015-07-29 00:00:00] |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
   defp balance_change_query(addresses, from, to, interval) do
     addresses = Enum.map(addresses, &String.downcase/1)
     interval = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
@@ -146,6 +185,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     {query, args}
   end
 
+  @first_datetime ~N[2015-07-29 00:00:00] |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
   defp historical_balance_query(address, _from, to, interval) when is_binary(address) do
     address = String.downcase(address)
     interval = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)

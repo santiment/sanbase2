@@ -429,7 +429,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction, %{allow_historical_data: true})
-      cache_resolve(&EtherbiResolver.daily_active_addresses/3)
+      cache_resolve(&ClickhouseResolver.daily_active_addresses/3)
     end
 
     @desc ~s"""

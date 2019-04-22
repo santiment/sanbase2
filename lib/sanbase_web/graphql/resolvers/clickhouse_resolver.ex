@@ -124,17 +124,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   def daily_active_addresses(
         _root,
-        %{slug: "bitcoin", from: from, to: to, interval: interval},
-        _resolution
-      ) do
-    with {:ok, from, to, interval} <-
-           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86400, @datapoints) do
-      Bitcoin.daily_active_addresses(from, to, interval)
-    end
-  end
-
-  def daily_active_addresses(
-        _root,
         %{slug: slug, from: from, to: to, interval: interval},
         _resolution
       ) do
@@ -146,7 +135,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
              from,
              to,
              interval,
-             @one_hour_in_seconds,
+             86400,
              @datapoints
            ),
          {:ok, daily_active_addresses} <-

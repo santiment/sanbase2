@@ -35,7 +35,7 @@ defmodule Sanbase.Clickhouse.Bitcoin do
     get_aggregated_metric_in_interval(:active_addresses, :avg, from, to)
   end
 
-  def daily_active_addresses(from, to, interval) do
+  def average_active_addresses(from, to, interval) do
     get_simple_metric(:active_addresses, :active_addresses, :avg, from, to, interval)
   end
 

@@ -7,11 +7,24 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
   alias Sanbase.Clickhouse.Bitcoin
   alias Sanbase.Clickhouse.Erc20DailyActiveAddresses, as: Erc20
   alias Sanbase.Clickhouse.EthDailyActiveAddresses, as: Eth
+  alias Sanbase.Model.Project
 
   require Logger
 
   @ethereum ["ethereum", "ETH"]
   @bitcoin ["bitcoin", "BTC"]
+
+  def first_datetime(slug) when slug in @ethereum do
+    Eth.first_datetime(slug)
+  end
+
+  def first_datetime(slug) when slug in @bitcoin do
+    Bitcoin.first_datetime(slug)
+  end
+
+  def first_datetime(contract) when is_binary(contract) do
+    Erc20.first_datetime(contract)
+  end
 
   def realtime_active_addresses(eth) when is_binary(eth) and eth in @ethereum do
     Eth.realtime_active_addresses()
@@ -24,6 +37,11 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
   def average_active_addresses(eth, from, to, interval)
       when is_binary(eth) and eth in @ethereum do
     Eth.average_active_addresses(from, to, interval)
+  end
+
+  def average_active_addresses(btc, from, to, interval)
+      when is_binary(btc) and btc in @bitcoin do
+    Bitcoin.average_active_addresses(from, to, interval)
   end
 
   def average_active_addresses(contract, from, to, interval) when is_binary(contract) do

@@ -13,6 +13,22 @@ defmodule Sanbase.Clickhouse.EthDailyActiveAddresses do
           active_addresses: non_neg_integer()
         }
 
+  @table "eth_daily_active_addresses"
+
+  def first_datetime(_) do
+    query = """
+    SELECT min(dt) FROM #{@table}
+    """
+
+    ClickhouseRepo.query_transform(query, [], fn [datetime] ->
+      datetime |> Sanbase.DateTimeUtils.from_erl!()
+    end)
+    |> case do
+      {:ok, [first_datetime]} -> {:ok, first_datetime}
+      error -> error
+    end
+  end
+
   @doc ~s"""
   Gets the current value for active addresses for today.
   Returns an tuple {:ok, float}
@@ -20,9 +36,11 @@ defmodule Sanbase.Clickhouse.EthDailyActiveAddresses do
   @spec realtime_active_addresses() :: {:ok, float()}
   def realtime_active_addresses() do
     query = """
-    SELECT coalesce(uniq(address), 0) as active_addresses
-    FROM eth_daily_active_addresses_list
-    PREWHERE dt >= toDateTime(today())
+    SELECT
+      coalesce(uniqExact(address), 0) as active_addresses
+    FROM #{@table}_list
+    PREWHERE
+      dt >= toDateTime(today())
     """
 
     {:ok, result} =
@@ -51,21 +69,26 @@ defmodule Sanbase.Clickhouse.EthDailyActiveAddresses do
     query = """
     SELECT AVG(total_addresses) as active_addresses
     FROM (
-      SELECT dt, toFloat64(anyLast(total_addresses)) as total_addresses
-      FROM eth_daily_active_addresses
-      WHERE
-      dt < toDateTime(today()) AND
-      dt >= toDateTime(?1) AND
-      dt <= toDateTime(?2)
+      SELECT
+        dt,
+        toFloat64(anyLast(total_addresses)) as total_addresses
+      FROM #{@table}
+      PREWHERE
+        dt < toDateTime(today()) AND
+        dt >= toDateTime(?1) AND
+        dt <= toDateTime(?2)
       GROUP BY dt
 
       UNION ALL
 
-      SELECT dt, (toFloat64(uniq(address)) * toFloat64(#{today_coefficient})) as total_addresses
-      FROM eth_daily_active_addresses_list
-      WHERE dt >= toDateTime(today()) AND
-      dt >= toDateTime(?1) AND
-      dt <= toDateTime(?2)
+      SELECT
+        dt,
+        (toFloat64(uniqExact(address)) * toFloat64(#{today_coefficient})) as total_addresses
+      FROM #{@table}_list
+      PREWHERE
+        dt >= toDateTime(today()) AND
+        dt >= toDateTime(?1) AND
+        dt <= toDateTime(?2)
       GROUP BY dt
     )
     """
@@ -97,37 +120,39 @@ defmodule Sanbase.Clickhouse.EthDailyActiveAddresses do
     span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)
 
     query = """
-    SELECT toUnixTimestamp(time) as dt, SUM(value) as active_addresses
+    SELECT toUnixTimestamp(dt3) AS time, SUM(value) AS active_addresses
     FROM (
       SELECT
-        toDateTime(intDiv(toUInt32(?3 + (number + 1) * ?1), ?1) * ?1) as time,
+        toDateTime(intDiv(toUInt32(?3 + (number + 1) * ?1), ?1) * ?1) AS dt3,
         toUInt32(0) AS value
       FROM numbers(?2)
 
       UNION ALL
 
-      SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, total_addresses as value
+      SELECT toDateTime(intDiv(toUInt32(dt2), ?1) * ?1) AS dt3, AVG(total_addresses) AS value
       FROM (
-        SELECT toStartOfDay(dt) as dt, anyLast(total_addresses) as total_addresses
-        FROM eth_daily_active_addresses
-        WHERE
-        dt < toDateTime(today()) AND
-        dt >= toDateTime(?3) AND
-        dt <= toDateTime(?4)
-        GROUP BY dt
+        SELECT toStartOfDay(dt) AS dt2, anyLast(total_addresses) AS total_addresses
+        FROM #{@table}
+        PREWHERE
+          dt < toDateTime(today()) AND
+          dt >= toDateTime(?3) AND
+          dt <= toDateTime(?4)
+        GROUP BY dt2
 
         UNION ALL
 
-        SELECT toStartOfDay(dt) as dt, uniq(address) as total_addresses
-        FROM eth_daily_active_addresses_list
-        WHERE dt >= toDateTime(today()) AND
-        dt >= toDateTime(?3) AND
-        dt <= toDateTime(?4)
-        GROUP BY dt
+        SELECT toStartOfDay(dt) AS dt2, uniqExact(address) AS total_addresses
+        FROM #{@table}_list
+        PREWHERE
+          dt >= toDateTime(today()) AND
+          dt >= toDateTime(?3) AND
+          dt <= toDateTime(?4)
+        GROUP BY dt2
       )
+      GROUP BY dt3
     )
-    group by dt
-    order by dt
+    GROUP BY time
+    ORDER BY time
     """
 
     args = [interval, span, from_datetime_unix, to_datetime_unix]

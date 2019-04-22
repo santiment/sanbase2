@@ -724,6 +724,20 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&EtherbiResolver.exchange_wallets/3)
     end
 
+    @desc "Fetch the ETH spent by all projects within a given time period."
+    field :eth_spent_by_all_projects, :float do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+
+      cache_resolve(&ProjectTransactionsResolver.eth_spent_by_all_projects/3,
+        ttl: 600,
+        max_ttl_offset: 240
+      )
+    end
+
     @desc "Fetch the ETH spent by all ERC20 projects within a given time period."
     field :eth_spent_by_erc20_projects, :float do
       arg(:from, non_null(:datetime))
@@ -751,6 +765,24 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
 
       cache_resolve(&ProjectTransactionsResolver.eth_spent_over_time_by_erc20_projects/3,
+        ttl: 600,
+        max_ttl_offset: 240
+      )
+    end
+
+    @desc ~s"""
+    Fetch ETH spent by all projects within a given time period and interval.
+    This query returns a list of values where each value is of length `interval`.
+    """
+    field :eth_spent_over_time_by_all_projects, list_of(:eth_spent_data) do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+
+      cache_resolve(&ProjectTransactionsResolver.eth_spent_over_time_by_all_projects/3,
         ttl: 600,
         max_ttl_offset: 240
       )

@@ -129,7 +129,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
         %{from: from, to: to, interval: interval},
         _resolution
       ) do
-    Project.List.erc20_projects()
+    Project.List.erc20_projects() |> eth_spent_over_time(from, to, interval)
+  end
+
+  @doc ~s"""
+  Returns a list of ETH spent by all projects for a given time period,
+  grouped by the given `interval`.
+  """
+
+  def eth_spent_over_time_by_all_projects(
+        _root,
+        %{from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    Project.List.projects() |> eth_spent_over_time(from, to, interval)
+  end
+
+  defp eth_spent_over_time(projects, from, to, interval) do
+    projects
     |> Sanbase.Parallel.pmap(&calculate_eth_spent_over_time_cached(&1, from, to, interval).(),
       timeout: 25_000
     )

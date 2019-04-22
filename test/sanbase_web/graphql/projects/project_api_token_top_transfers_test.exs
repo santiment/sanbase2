@@ -118,7 +118,7 @@ defmodule Sanbase.Graphql.ProjectApiTokenTopTransactionsTest do
              "data" => %{"allErc20Projects" => nil},
              "errors" => [
                %{
-                 "locations" => [%{"column" => 0, "line" => 2}],
+                 "locations" => [%{"column" => 3, "line" => 2}],
                  "message" =>
                    "Cannot query [\"tokenTopTransactions\"] on a query that returns more than 1 project.",
                  "path" => ["allErc20Projects"]

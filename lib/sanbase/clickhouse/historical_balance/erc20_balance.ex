@@ -1,13 +1,24 @@
 defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
   @doc ~s"""
-  Returns the historical balances of given address and erc20 contract
-  in all intervals between two datetimes.
-  """
+  Module for working with historical ERC20 balances.
 
+  Includes functions for calculating:
+  - Historical balances for an address
+  - Balance changes for and address
+  """
   use Ecto.Schema
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
   import Sanbase.Clickhouse.HistoricalBalance.Utils
+
+  @typedoc ~s"""
+  An interval represented as string. It has the format of number followed by one of:
+  ns, ms, s, m, h, d or w - each representing some time unit
+  """
+  @type interval :: String.t()
+  @type address :: String.t()
+  @type contract :: String.t()
+  @type token_decimals :: non_neg_integer()
 
   @type historical_balance :: %{
           datetime: non_neg_integer(),
@@ -27,13 +38,17 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
   def changeset(_, _attrs \\ %{}),
     do: raise("Should not try to change eth daily active addresses")
 
+  @doc ~s"""
+  For a given address or addresses returns the combined balance of tokens
+  identified by `contract` for each bucket of size `interval` in the from-to time period
+  """
   @spec historical_balance(
-          String.t(),
-          String.t(),
-          non_neg_integer(),
+          address,
+          contract,
+          token_decimals,
           DateTime.t(),
           DateTime.t(),
-          String.t()
+          interval
         ) :: {:ok, list(historical_balance)} | {:error, String.t()}
   def historical_balance(address, contract, token_decimals, from, to, interval) do
     token_decimals = Sanbase.Math.ipow(10, token_decimals)
@@ -66,6 +81,22 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     end
   end
 
+  @doc ~s"""
+  For a given address returns the balance change in tokens, identified by `contract`
+
+  The change is for the from-to period. The returned lists indicates the address,
+  before balance, after balance and the balance change
+  """
+  @spec balance_change(
+          address,
+          contract,
+          token_decimals,
+          DateTime.t(),
+          DateTime.t()
+        ) ::
+          {:ok, list({address, {balance_before, balance_after, balance_change}})}
+          | {:error, String.t()}
+        when balance_before: number(), balance_after: number(), balance_change: number()
   def balance_change(address, contract, token_decimals, from, to) do
     token_decimals = Sanbase.Math.ipow(10, token_decimals)
 
@@ -86,6 +117,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
       {s / token_decimals, e / token_decimals, value / token_decimals}
     end)
   end
+
+  # Private functions
 
   @first_datetime ~N[2015-10-29 00:00:00]
                   |> DateTime.from_naive!("Etc/UTC")
@@ -110,24 +143,18 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
 
     SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) AS time, argMax(value, dt), toUInt8(1) AS has_changed
       FROM #{@table}
-      PREWHERE address = ?3
-      AND contract = ?4
-      AND sign = 1
-      AND dt <= toDateTime(?6)
+      PREWHERE
+        address = ?3 AND
+        contract = ?4 AND
+        sign = 1 AND
+        dt <= toDateTime(?6)
       GROUP BY time
     )
     GROUP BY time
     ORDER BY time
     """
 
-    args = [
-      interval,
-      span,
-      address,
-      contract,
-      @first_datetime,
-      to_unix
-    ]
+    args = [interval, span, address, contract, @first_datetime, to_unix]
 
     {query, args}
   end

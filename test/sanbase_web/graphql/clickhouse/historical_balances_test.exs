@@ -7,8 +7,11 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
   import ExUnit.CaptureLog
   import Sanbase.Factory
 
+  alias Sanbase.DateTimeUtils
+
   require Sanbase.ClickhouseRepo
 
+  @eth_decimals 1_000_000_000_000_000_000
   setup do
     project_without_contract = insert(:project, %{coinmarketcap_id: "someid1"})
 
@@ -32,21 +35,32 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
   end
 
   test "historical balances when interval is bigger than balances values interval", context do
-    with_mock Sanbase.ClickhouseRepo,
+    dt1 = DateTimeUtils.from_iso8601!("2017-05-11T00:00:00Z") |> DateTime.to_unix()
+    dt2 = DateTimeUtils.from_iso8601!("2017-05-12T00:00:00Z") |> DateTime.to_unix()
+    dt3 = DateTimeUtils.from_iso8601!("2017-05-13T00:00:00Z") |> DateTime.to_unix()
+    dt4 = DateTimeUtils.from_iso8601!("2017-05-14T00:00:00Z") |> DateTime.to_unix()
+    dt5 = DateTimeUtils.from_iso8601!("2017-05-15T00:00:00Z") |> DateTime.to_unix()
+    dt6 = DateTimeUtils.from_iso8601!("2017-05-16T00:00:00Z") |> DateTime.to_unix()
+    dt7 = DateTimeUtils.from_iso8601!("2017-05-17T00:00:00Z") |> DateTime.to_unix()
+    dt8 = DateTimeUtils.from_iso8601!("2017-05-18T00:00:00Z") |> DateTime.to_unix()
+    dt9 = DateTimeUtils.from_iso8601!("2017-05-19T00:00:00Z") |> DateTime.to_unix()
+    dt10 = DateTimeUtils.from_iso8601!("2017-05-20T00:00:00Z") |> DateTime.to_unix()
+
+    with_mock Sanbase.ClickhouseRepo, [:passthrough],
       query: fn _, _ ->
         {:ok,
          %{
            rows: [
-             [{{2017, 05, 11}, {0, 0, 0}}, :math.pow(10, 18) * 0, 1],
-             [{{2017, 05, 12}, {0, 0, 0}}, :math.pow(10, 18) * 0, 1],
-             [{{2017, 05, 13}, {0, 0, 0}}, :math.pow(10, 18) * 2000, 1],
-             [{{2017, 05, 14}, {0, 0, 0}}, :math.pow(10, 18) * 1800, 1],
-             [{{2017, 05, 15}, {0, 0, 0}}, :math.pow(10, 18) * 0, 0],
-             [{{2017, 05, 16}, {0, 0, 0}}, :math.pow(10, 18) * 1500, 1],
-             [{{2017, 05, 17}, {0, 0, 0}}, :math.pow(10, 18) * 1900, 1],
-             [{{2017, 05, 18}, {0, 0, 0}}, :math.pow(10, 18) * 1000, 1],
-             [{{2017, 05, 19}, {0, 0, 0}}, :math.pow(10, 18) * 0, 0],
-             [{{2017, 05, 20}, {0, 0, 0}}, :math.pow(10, 18) * 0, 0]
+             [dt1, 0, 1],
+             [dt2, 0, 1],
+             [dt3, 2000 * @eth_decimals, 1],
+             [dt4, 1800 * @eth_decimals, 1],
+             [dt5, 0, 0],
+             [dt6, 1500 * @eth_decimals, 1],
+             [dt7, 1900 * @eth_decimals, 1],
+             [dt8, 1000 * @eth_decimals, 1],
+             [dt9, 0, 0],
+             [dt10, 0, 0]
            ]
          }}
       end do
@@ -81,14 +95,18 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
   end
 
   test "historical balances when last interval is not full", context do
-    with_mock Sanbase.ClickhouseRepo,
+    dt1 = DateTimeUtils.from_iso8601!("2017-05-13T00:00:00Z") |> DateTime.to_unix()
+    dt2 = DateTimeUtils.from_iso8601!("2017-05-15T00:00:00Z") |> DateTime.to_unix()
+    dt3 = DateTimeUtils.from_iso8601!("2017-05-17T00:00:00Z") |> DateTime.to_unix()
+
+    with_mock Sanbase.ClickhouseRepo, [:passthrough],
       query: fn _, _ ->
         {:ok,
          %{
            rows: [
-             [{{2017, 05, 13}, {0, 0, 0}}, :math.pow(10, 18) * 2000, 1],
-             [{{2017, 05, 15}, {0, 0, 0}}, :math.pow(10, 18) * 1800, 1],
-             [{{2017, 05, 17}, {0, 0, 0}}, :math.pow(10, 18) * 1400, 1]
+             [dt1, 2000 * @eth_decimals, 1],
+             [dt2, 1800 * @eth_decimals, 1],
+             [dt3, 1400 * @eth_decimals, 1]
            ]
          }}
       end do

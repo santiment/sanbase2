@@ -91,7 +91,7 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
     ]
   end
 
-  test "triggers eth wallet signal when balance increases", _context do
+  test "triggers eth wallet signal when balance increases", context do
     test_pid = self()
 
     with_mocks [
@@ -102,7 +102,7 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
        end},
       {HistoricalBalance, [:passthrough],
        balance_change: fn _, _, _, _ ->
-         {:ok, {20, 70, 50}}
+         {:ok, [{context.eth_address, {20, 70, 50}}]}
        end}
     ] do
       Scheduler.run_signal(EthWalletTriggerSettings)
@@ -123,7 +123,7 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
        end},
       {HistoricalBalance, [:passthrough],
        balance_change: fn _, _, _, _ ->
-         {:ok, {20, 300, 280}}
+         {:ok, [{context.eth_address, {20, 300, 280}}]}
        end}
     ] do
       Scheduler.run_signal(EthWalletTriggerSettings)
@@ -149,7 +149,7 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
        end},
       {HistoricalBalance, [:passthrough],
        balance_change: fn _, _, _, _ ->
-         {:ok, {100, 0, -100}}
+         {:ok, [{context.eth_address, {100, 0, -100}}]}
        end}
     ] do
       Scheduler.run_signal(EthWalletTriggerSettings)

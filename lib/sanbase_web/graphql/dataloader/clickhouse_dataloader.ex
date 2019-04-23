@@ -105,16 +105,18 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   end
 
   defp result(has_errors?, value)
-  defp result(true, value), do: {:nocache, {:ok, value}}
-  defp result(false, value), do: {:ok, value}
+  defp result(true, value) when value < 0, do: {:nocache, {:ok, abs(value)}}
+  defp result(true, _), do: {:nocache, 0}
+  defp result(false, value) when value < 0, do: {:ok, abs(value)}
+  defp result(false, _), do: {:ok, 0}
 
   defp eth_spent(eth_addresses, args) do
     [%{from: from, to: to} | _] = args
 
-    case Clickhouse.EthTransfers.eth_spent(eth_addresses, from, to) do
-      {:ok, eth_spent} ->
-        eth_spent
-        |> Enum.map(fn {addr, value} -> {addr, {:ok, value}} end)
+    case Clickhouse.HistoricalBalance.eth_balance_change(eth_addresses, from, to) do
+      {:ok, balance_changes} ->
+        balance_changes
+        |> Enum.map(fn {addr, {_, _, change}} -> {addr, {:ok, change}} end)
 
       _ ->
         eth_addresses

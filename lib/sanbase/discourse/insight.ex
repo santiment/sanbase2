@@ -11,15 +11,11 @@ defmodule Sanbase.Discourse.Insight do
       This topic hosts the discussion about [#{link}](#{link})
     """
 
-    title = "##{id} | #{title} | #{DateTime.to_naive(inserted_at) |> to_string}"
+    title = "##{id} | #{title} | #{DateTime.to_naive(inserted_at)}"
 
     Discourse.Api.publish(title, text)
     |> case do
-      {:ok,
-       %{
-         "topic_id" => topic_id,
-         "topic_slug" => topic_slug
-       }} ->
+      {:ok, %{"topic_id" => topic_id, "topic_slug" => topic_slug}} ->
         {:ok, discourse_topic_url(topic_id, topic_slug)}
 
       {:error, error} ->
@@ -34,7 +30,6 @@ defmodule Sanbase.Discourse.Insight do
     |> URI.to_string()
   end
 
-  defp posts_url(id), do: "#{sanbase_url()}/insights/read/#{id}"
-  defp sanbase_url(), do: Config.module_get(SanbaseWeb.Endpoint, :frontend_url)
+  defp posts_url(id), do: "#{SanbaseWeb.Endpoint.frontend_url()}/insights/read/#{id}"
   defp discourse_url(), do: Config.module_get(Sanbase.Discourse, :url)
 end

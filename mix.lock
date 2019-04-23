@@ -1,5 +1,5 @@
 %{
-  "absinthe": {:hex, :absinthe, "1.4.16", "0933e4d9f12652b12115d5709c0293a1bf78a22578032e9ad0dad4efee6b9eb1", [:mix], [{:dataloader, "~> 1.0.0", [hex: :dataloader, repo: "hexpm", optional: true]}, {:decimal, "~> 1.0", [hex: :decimal, repo: "hexpm", optional: true]}], "hexpm"},
+  "absinthe": {:git, "https://github.com/absinthe-graphql/absinthe.git", "9c8e97167efacd7da2d28ef59e8a7c3341330a8f", []},
   "absinthe_ecto": {:hex, :absinthe_ecto, "0.1.3", "420b68129e79fe4571a4838904ba03e282330d335da47729ad52ffd7b8c5fcb1", [:mix], [{:absinthe, "~> 1.3.0 or ~> 1.4.0", [hex: :absinthe, repo: "hexpm", optional: false]}, {:ecto, ">= 0.0.0", [hex: :ecto, repo: "hexpm", optional: false]}], "hexpm"},
   "absinthe_metrics": {:hex, :absinthe_metrics, "1.0.0", "c4dd0444168a1d32a432cab2ced498069e58fd4b90aa9e1ec16b49557bee2cf1", [:mix], [{:absinthe, "~> 1.3", [hex: :absinthe, repo: "hexpm", optional: false]}, {:prometheus_ex, "~> 3.0", [hex: :prometheus_ex, repo: "hexpm", optional: true]}], "hexpm"},
   "absinthe_plug": {:hex, :absinthe_plug, "1.4.6", "ac5d2d3d02acf52fda0f151b294017ab06e2ed1c6c15334e06aac82c94e36e08", [:mix], [{:absinthe, "~> 1.4.11", [hex: :absinthe, repo: "hexpm", optional: false]}, {:plug, "~> 1.3.2 or ~> 1.4", [hex: :plug, repo: "hexpm", optional: false]}], "hexpm"},
@@ -70,6 +70,7 @@
   "mochiweb": {:hex, :mochiweb, "2.18.0", "eb55f1db3e6e960fac4e6db4e2db9ec3602cc9f30b86cd1481d56545c3145d2e", [:rebar3], [], "hexpm"},
   "mock": {:hex, :mock, "0.3.3", "42a433794b1291a9cf1525c6d26b38e039e0d3a360732b5e467bfc77ef26c914", [:mix], [{:meck, "~> 0.8.13", [hex: :meck, repo: "hexpm", optional: false]}], "hexpm"},
   "mockery": {:hex, :mockery, "2.3.0", "f1af3976916e7402427116f491e3038a251857de8f0836952c2fa24ad6de4317", [:mix], [], "hexpm"},
+  "nimble_parsec": {:hex, :nimble_parsec, "0.5.0", "90e2eca3d0266e5c53f8fbe0079694740b9c91b6747f2b7e3c5d21966bba8300", [:mix], [], "hexpm"},
   "number": {:hex, :number, "1.0.0", "b88229d83830147186e8e3f133395fa9faf4f17126cdfeb3e2d19cc538d35ed5", [:mix], [{:decimal, "~> 1.5", [hex: :decimal, repo: "hexpm", optional: false]}], "hexpm"},
   "oauther": {:hex, :oauther, "1.1.1", "7d8b16167bb587ecbcddd3f8792beb9ec3e7b65c1f8ebd86b8dd25318d535752", [:mix], [], "hexpm"},
   "observer_cli": {:hex, :observer_cli, "1.4.2", "8e640f9e8da281df5a0118907fd18e348c1f23cdc74729648ee837aed91b8c29", [:rebar3], [{:recon, "2.3.6", [hex: :recon, repo: "hexpm", optional: false]}], "hexpm"},

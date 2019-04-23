@@ -91,6 +91,35 @@ defmodule SanbaseWeb.Graphql.Clickhouse.DailyActiveAddressesTest do
       end
     end
 
+    test "returns active addresses for bitcoin", context do
+      with_mock DailyActiveAddresses,
+                [:passthrough],
+                average_active_addresses: fn _, _, _, _ ->
+                  {:ok,
+                   [
+                     %{active_addresses: 100, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
+                     %{active_addresses: 200, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
+                   ]}
+                end do
+        response = execute_daa_query(context.bitcoin_slug, context)
+        addresses = parse_daa_response(response)
+
+        assert_called(
+          DailyActiveAddresses.average_active_addresses(
+            context.bitcoin_ticker,
+            context.from,
+            context.to,
+            context.interval
+          )
+        )
+
+        assert addresses == [
+                 %{"activeAddresses" => 100, "datetime" => "2019-01-01T00:00:00Z"},
+                 %{"activeAddresses" => 200, "datetime" => "2019-01-02T00:00:00Z"}
+               ]
+      end
+    end
+
     test "returns empty array when there is no data", context do
       with_mock DailyActiveAddresses,
                 [:passthrough],

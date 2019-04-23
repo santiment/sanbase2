@@ -88,7 +88,7 @@ defmodule Sanbase.Blockchain.TransactionVolumeTest do
            ]
   end
 
-  test "burn rate for contract with no data return zeroes", context do
+  test "transaction volume for contract with no data return zeroes", context do
     assert {:ok, result} =
              TransactionVolume.transaction_volume(
                "non_existing_contract",

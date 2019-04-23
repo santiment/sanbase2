@@ -87,6 +87,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   @doc ~s"""
   Returns the accumulated ETH spent by all ERC20 projects for a given time period.
   """
+  def eth_spent_by_all_projects(_, %{from: from, to: to}, _resolution) do
+    with projects when is_list(projects) <- Project.List.projects() do
+      total_eth_spent =
+        projects
+        |> Sanbase.Parallel.pmap(&calculate_eth_spent_cached(&1, from, to).(), timeout: 25_000)
+        |> Enum.map(fn
+          {:ok, value} when not is_nil(value) -> value
+          _ -> 0
+        end)
+        |> Enum.sum()
+
+      {:ok, total_eth_spent}
+    end
+  end
+
+  @doc ~s"""
+  Returns the accumulated ETH spent by all ERC20 projects for a given time period.
+  """
   def eth_spent_by_erc20_projects(_, %{from: from, to: to}, _resolution) do
     with projects when is_list(projects) <- Project.List.erc20_projects() do
       total_eth_spent =
@@ -111,11 +129,28 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
         %{from: from, to: to, interval: interval},
         _resolution
       ) do
-    Project.List.erc20_projects()
+    Project.List.erc20_projects() |> eth_spent_over_time(from, to, interval)
+  end
+
+  @doc ~s"""
+  Returns a list of ETH spent by all projects for a given time period,
+  grouped by the given `interval`.
+  """
+
+  def eth_spent_over_time_by_all_projects(
+        _root,
+        %{from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    Project.List.projects() |> eth_spent_over_time(from, to, interval)
+  end
+
+  defp eth_spent_over_time(projects, from, to, interval) do
+    projects
     |> Sanbase.Parallel.pmap(&calculate_eth_spent_over_time_cached(&1, from, to, interval).(),
       timeout: 25_000
     )
-    |> Clickhouse.EthTransfers.combine_eth_spent_by_all_projects()
+    |> combine_eth_spent_by_all_projects()
   end
 
   def eth_top_transactions(
@@ -146,7 +181,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     with {:eth_addresses, {:ok, eth_addresses}} when eth_addresses != [] <-
            {:eth_addresses, Project.eth_addresses(project)},
          {:ok, eth_spent} <-
-           Clickhouse.EthTransfers.eth_spent(eth_addresses, from_datetime, to_datetime) do
+           Clickhouse.HistoricalBalance.eth_spent(
+             eth_addresses,
+             from_datetime,
+             to_datetime
+           ) do
       {:ok, eth_spent}
     else
       {:eth_addresses, _} ->
@@ -178,7 +217,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     with {:eth_addresses, {:ok, eth_addresses}} when eth_addresses != [] <-
            {:eth_addresses, Project.eth_addresses(project)},
          {:ok, eth_spent_over_time} <-
-           Clickhouse.EthTransfers.eth_spent_over_time(eth_addresses, from, to, interval) do
+           Clickhouse.HistoricalBalance.eth_spent_over_time(eth_addresses, from, to, interval) do
       {:ok, eth_spent_over_time}
     else
       {:eth_addresses, _} ->
@@ -229,5 +268,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
 
         {:nocache, {:ok, []}}
     end
+  end
+
+  # Combines a list of lists of ethereum spent data for many projects to a list of ethereum spent data.
+  # The entries at the same positions in each list are summed.
+  defp combine_eth_spent_by_all_projects(eth_spent_over_time_list) do
+    total_eth_spent_over_time =
+      eth_spent_over_time_list
+      |> Enum.reject(fn
+        {:ok, elem} when elem != [] and elem != nil -> false
+        _ -> true
+      end)
+      |> Enum.map(fn {:ok, data} -> data end)
+      |> Stream.zip()
+      |> Stream.map(&Tuple.to_list/1)
+      |> Enum.map(&reduce_eth_spent/1)
+
+    {:ok, total_eth_spent_over_time}
+  end
+
+  defp reduce_eth_spent([%{datetime: datetime} | _] = values) do
+    total_eth_spent = values |> Enum.map(& &1.eth_spent) |> Enum.sum()
+    %{datetime: datetime, eth_spent: total_eth_spent}
   end
 end

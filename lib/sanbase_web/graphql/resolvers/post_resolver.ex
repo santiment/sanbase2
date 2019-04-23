@@ -13,13 +13,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   alias Sanbase.Notifications
   alias SanbaseWeb.Graphql.Helpers.Utils
 
-  @preloaded_assoc [:votes, :user, :images, :tags]
-
   def insights(%User{} = user, _args, _resolution) do
-    posts =
-      user.id
-      |> Post.user_insights()
-      |> Repo.preload(@preloaded_assoc)
+    posts = Post.user_insights(user.id)
 
     {:ok, posts}
   end
@@ -31,55 +26,33 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     end
   end
 
+  def all_insights(_root, %{tags: tags, page: page, page_size: page_size}, _context)
+      when is_list(tags) do
+    posts = Post.public_insights_by_tags(tags, page, page_size)
+
+    {:ok, posts}
+  end
+
   def all_insights(_root, %{page: page, page_size: page_size}, _resolution) do
-    posts =
-      Post.published_posts(page, page_size)
-      |> Repo.preload(@preloaded_assoc)
+    posts = Post.public_insights(page, page_size)
 
     {:ok, posts}
   end
 
   def all_insights_for_user(_root, %{user_id: user_id}, _context) do
-    posts =
-      user_id
-      |> Post.user_published_insights()
-      |> Repo.preload(@preloaded_assoc)
+    posts = Post.user_public_insights(user_id)
 
     {:ok, posts}
   end
 
   def all_insights_user_voted_for(_root, %{user_id: user_id}, _context) do
-    query =
-      from(
-        p in Post,
-        where: fragment("? IN (SELECT post_id FROM votes WHERE user_id = ?)", p.id, ^user_id)
-      )
-
-    posts =
-      query
-      |> Repo.all()
-      |> Repo.preload(@preloaded_assoc)
-
-    {:ok, posts}
-  end
-
-  def all_insights_by_tag(_root, %{tag: tag}, %{
-        context: %{auth: %{current_user: %User{id: user_id}}}
-      }) do
-    posts =
-      user_id
-      |> Post.ranked_published_or_own_posts()
-      |> Repo.preload(@preloaded_assoc)
-      |> filter_by_tag(tag)
+    posts = Post.all_insights_user_voted_for(user_id)
 
     {:ok, posts}
   end
 
   def all_insights_by_tag(_root, %{tag: tag}, _context) do
-    posts =
-      Post.ranked_published_posts()
-      |> Repo.preload(@preloaded_assoc)
-      |> filter_by_tag(tag)
+    posts = Post.public_insights_by_tag(tag)
 
     {:ok, posts}
   end
@@ -196,12 +169,5 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     |> Repo.preload(:images)
     |> Map.get(:images, [])
     |> Enum.map(fn %{image_url: image_url} -> image_url end)
-  end
-
-  defp filter_by_tag(posts, tag) do
-    posts
-    |> Enum.filter(fn post ->
-      tag in Enum.map(post.tags, & &1.name)
-    end)
   end
 end

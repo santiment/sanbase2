@@ -1,11 +1,11 @@
-defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
+defmodule SanbaseWeb.Graphql.TimeframeRestrictionMiddlewareTest do
   use SanbaseWeb.ConnCase
   require Sanbase.Utils.Config, as: Config
 
   @moduletag checkout_repo: [Sanbase.Repo, Sanbase.TimescaleRepo]
   @moduletag timescaledb: true
 
-  alias SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction
+  alias SanbaseWeb.Graphql.Middlewares.TimeframeRestriction
   alias Sanbase.Auth.User
   alias Sanbase.Model.Project
   alias Sanbase.Repo
@@ -52,24 +52,6 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
       contract_address: contract_address,
       timestamp: restricted_from(),
       token_age_consumed: 7000
-    })
-
-    insert(:daily_active_addresses, %{
-      contract_address: contract_address,
-      timestamp: hour_ago(),
-      active_addresses: 100
-    })
-
-    insert(:daily_active_addresses, %{
-      contract_address: contract_address,
-      timestamp: week_ago(),
-      active_addresses: 200
-    })
-
-    insert(:daily_active_addresses, %{
-      contract_address: contract_address,
-      timestamp: restricted_from(),
-      active_addresses: 300
     })
 
     staked_user =
@@ -178,22 +160,37 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
     assert %{"tokenAgeConsumed" => 7000.0} in token_age_consumed
   end
 
-  test "shows historical data but not realtime for DAA", context do
+  test "`from` later than `to` datetime" do
+    query = """
+     {
+      tokenAgeConsumed(
+        slug: "santiment",
+        from: "#{Timex.now()}",
+        to: "#{Timex.shift(Timex.now(), days: -10)}"
+        interval: "30m") {
+          tokenAgeConsumed
+      }
+    }
+    """
+
     result =
       build_conn()
-      |> post(
-        "/graphql",
-        query_skeleton(
-          dailyActiveAddressesQuery(context.not_santiment_slug),
-          "dailyActiveAddresses"
-        )
-      )
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
 
-    daas = json_response(result, 200)["data"]["dailyActiveAddresses"]
+    %{
+      "errors" => [
+        %{
+          "message" => error_message
+        }
+      ]
+    } = result
 
-    refute %{"activeAddresses" => 100} in daas
-    assert %{"activeAddresses" => 200} in daas
-    assert %{"activeAddresses" => 300} in daas
+    assert error_message ==
+             """
+             `from` and `to` are not a valid time range.
+             Either `from` is a datetime after `to` or the time range is outside of the allowed interval.
+             """
   end
 
   defp tokenAgeConsumedQuery(slug) do
@@ -205,19 +202,6 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
         to: "#{now()}"
         interval: "30m") {
           tokenAgeConsumed
-      }
-    }
-    """
-  end
-
-  defp dailyActiveAddressesQuery(slug) do
-    """
-    {
-      dailyActiveAddresses(
-        slug: "#{slug}",
-        from: "#{before_restricted_from()}",
-        to: "#{now()}") {
-          activeAddresses
       }
     }
     """
@@ -236,6 +220,6 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
 
   defp restrict_from_in_days do
     -1 *
-      (Config.module_get(ApiTimeframeRestriction, :restrict_from_in_days) |> String.to_integer())
+      (Config.module_get(TimeframeRestriction, :restrict_from_in_days) |> String.to_integer())
   end
 end

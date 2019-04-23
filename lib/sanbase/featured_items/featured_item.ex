@@ -39,6 +39,10 @@ defmodule Sanbase.FeaturedItem do
   def insights() do
     insights_query()
     |> join(:inner, [fi], fi in assoc(fi, :post))
+    |> where(
+      [_fi, post],
+      post.ready_state == ^Post.published() and post.state == ^Post.approved_state()
+    )
     |> select([_fi, post], post)
     |> Repo.all()
     |> Repo.preload([:user, :poll])

@@ -2,7 +2,11 @@ defmodule SanbaseWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :sanbase
   require Sanbase.Utils.Config, as: Config
 
-  socket("/socket", SanbaseWeb.UserSocket)
+  socket("/socket", SanbaseWeb.UserSocket,
+    # or list of options
+    websocket: true,
+    longpoll: [check_origin: Phoenix.Transports.LongPoll]
+  )
 
   # Serve at "/" the static files from "priv/static" directory.
   #

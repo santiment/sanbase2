@@ -12,6 +12,8 @@ config :tzdata, :autoupdate, :disabled
 # General application configuration
 config :sanbase, ecto_repos: [Sanbase.Repo, Sanbase.TimescaleRepo]
 
+config :phoenix, :json_library, Jason
+
 config :ecto, json_library: Jason
 
 config :sanbase, Sanbase,
@@ -120,7 +122,7 @@ config :sanbase, Sanbase.Oauth2.Hydra,
   clients_that_require_san_tokens:
     {:system, "CLIENTS_THAT_REQUIRE_SAN_TOKENS", "{\"grafana\": 100}"}
 
-config :sanbase, SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction,
+config :sanbase, SanbaseWeb.Graphql.Middlewares.TimeframeRestriction,
   restrict_to_in_days: {:system, "RESTRICT_TO_IN_DAYS", "1"},
   restrict_from_in_days: {:system, "RESTRICT_FROM_IN_MONTHS", "90"}
 

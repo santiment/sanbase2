@@ -7,6 +7,8 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Mock
 
+  @eth_decimals 1_000_000_000_000_000_000
+
   setup do
     datetime1 = Timex.now() |> Timex.beginning_of_day()
     datetime2 = Timex.shift(datetime1, days: -10)
@@ -49,9 +51,19 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
   end
 
   test "project total eth spent whole interval", context do
-    with_mock Sanbase.Clickhouse.EthTransfers,
-      eth_spent: fn _, _, _ ->
-        {:ok, [{context.project_address, 20_000}]}
+    with_mock Sanbase.ClickhouseRepo, [:passthrough],
+      query: fn _, _ ->
+        {:ok,
+         %{
+           rows: [
+             [
+               context.project_address,
+               30_000 * @eth_decimals,
+               10_000 * @eth_decimals,
+               -20_000 * @eth_decimals
+             ]
+           ]
+         }}
       end do
       query = """
       {
@@ -74,9 +86,19 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
   test "project total eth spent part of interval", context do
     eth_spent = 4500
 
-    with_mock Sanbase.Clickhouse.EthTransfers,
-      eth_spent: fn _, _, _ ->
-        {:ok, [{context.project_address, eth_spent}]}
+    with_mock Sanbase.ClickhouseRepo, [:passthrough],
+      query: fn _, _ ->
+        {:ok,
+         %{
+           rows: [
+             [
+               context.project_address,
+               20000 * @eth_decimals,
+               15500 * @eth_decimals,
+               -4500 * @eth_decimals
+             ]
+           ]
+         }}
       end do
       query = """
       {
@@ -99,9 +121,19 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
   test "eth spent by erc20 projects", context do
     eth_spent = 30_000
 
-    with_mock Sanbase.Clickhouse.EthTransfers,
-      eth_spent: fn _, _, _ ->
-        {:ok, eth_spent}
+    with_mock Sanbase.ClickhouseRepo, [:passthrough],
+      query: fn _, _ ->
+        {:ok,
+         %{
+           rows: [
+             [
+               context.project_address,
+               100_000 * @eth_decimals,
+               70_000 * @eth_decimals,
+               -30_000 * @eth_decimals
+             ]
+           ]
+         }}
       end do
       query = """
       {
@@ -122,16 +154,24 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
   end
 
   test "eth spent over time by erc20 projects", context do
-    with_mock Sanbase.Clickhouse.EthTransfers, [:passthrough],
-      eth_spent_over_time: fn _, _, _, _ ->
+    dt1 = Timex.now() |> DateTime.to_unix()
+    dt2 = Timex.shift(Timex.now(), days: -1) |> DateTime.to_unix()
+    dt3 = Timex.shift(Timex.now(), days: -2) |> DateTime.to_unix()
+    dt4 = Timex.shift(Timex.now(), days: -3) |> DateTime.to_unix()
+    dt5 = Timex.shift(Timex.now(), days: -4) |> DateTime.to_unix()
+
+    with_mock Sanbase.ClickhouseRepo, [:passthrough],
+      query: fn _, _ ->
         {:ok,
-         [
-           %{datetime: Timex.now(), eth_spent: 16500},
-           %{datetime: Timex.shift(Timex.now(), days: -1), eth_spent: 5500},
-           %{datetime: Timex.shift(Timex.now(), days: -2), eth_spent: 3500},
-           %{datetime: Timex.shift(Timex.now(), days: -3), eth_spent: 2500},
-           %{datetime: Timex.shift(Timex.now(), days: -4), eth_spent: 500}
-         ]}
+         %{
+           rows: [
+             [dt1, -16500 * @eth_decimals],
+             [dt2, -5500 * @eth_decimals],
+             [dt3, -3500 * @eth_decimals],
+             [dt4, -2500 * @eth_decimals],
+             [dt5, -500 * @eth_decimals]
+           ]
+         }}
       end do
       query = """
       {
@@ -150,11 +190,11 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
 
       total_spent = json_response(result, 200)["data"]["ethSpentOverTimeByErc20Projects"]
 
-      assert %{"ethSpent" => 16500} in total_spent
-      assert %{"ethSpent" => 5500} in total_spent
-      assert %{"ethSpent" => 3500} in total_spent
-      assert %{"ethSpent" => 2500} in total_spent
-      assert %{"ethSpent" => 500} in total_spent
+      assert %{"ethSpent" => 16500.0} in total_spent
+      assert %{"ethSpent" => 5500.0} in total_spent
+      assert %{"ethSpent" => 3500.0} in total_spent
+      assert %{"ethSpent" => 2500.0} in total_spent
+      assert %{"ethSpent" => 500.0} in total_spent
     end
   end
 

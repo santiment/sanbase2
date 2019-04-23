@@ -3,7 +3,7 @@
 if [ $# -eq 0 ]; then
   tests_to_execute="test_all"
 else
-  tests_to_execute="test $@"
+  tests_to_execute="test_all $@"
 fi
 
 test_command="mix $tests_to_execute"

@@ -5,7 +5,7 @@ defmodule Sanbase.Factory do
   alias Sanbase.UserList
   alias Sanbase.Auth.{User, UserSettings}
   alias Sanbase.Insight.{Post, Poll}
-  alias Sanbase.Model.{Project, ExchangeAddress, ProjectEthAddress}
+  alias Sanbase.Model.{Project, ExchangeAddress, ProjectEthAddress, Infrastructure}
   alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
   alias Sanbase.Timeline.TimelineEvent
 
@@ -76,6 +76,12 @@ defmodule Sanbase.Factory do
       github_link: "https://github.com/santiment",
       infrastructure: nil,
       eth_addresses: [build(:project_eth_address)]
+    }
+  end
+
+  def infrastructure_eth_factory() do
+    %Infrastructure{
+      code: "ETH"
     }
   end
 

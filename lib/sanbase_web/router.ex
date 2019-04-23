@@ -60,6 +60,7 @@ defmodule SanbaseWeb.Router do
       analyze_complexity: true,
       max_complexity: 10000,
       interface: :simple,
+      log_level: :info,
       before_send: {SanbaseWeb.Graphql.AbsintheBeforeSend, :before_send}
     )
   end
@@ -78,21 +79,7 @@ defmodule SanbaseWeb.Router do
     pipe_through(:browser)
 
     get("/consent", RootController, :consent)
-    get("/apiexamples", ApiExamplesController, :api_examples)
   end
 
-  get("/env.js", SanbaseWeb.RootController, :react_env)
-
-  if Mix.env() == :dev do
-    pipeline :nextjs do
-      plug(:accepts, ["html"])
-      plug(:put_secure_browser_headers)
-    end
-
-    scope "/" do
-      get("/*path", ReverseProxy, upstream: ["http://localhost:3000"])
-    end
-  else
-    get("/", SanbaseWeb.RootController, :healthcheck)
-  end
+  get("/", SanbaseWeb.RootController, :healthcheck)
 end

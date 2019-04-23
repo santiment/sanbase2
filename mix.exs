@@ -37,20 +37,19 @@ defmodule Sanbase.Mixfile do
 
   defp deps() do
     [
-      {:phoenix, "~> 1.3.0"},
-      {:phoenix_pubsub, "~> 1.0"},
-      {:phoenix_ecto, "~> 3.2"},
+      {:phoenix, "~> 1.4.3"},
+      {:phoenix_pubsub, "~> 1.1"},
+      {:phoenix_ecto, "~> 3.3"},
       {:postgrex, ">= 0.0.0"},
       {:gettext, "~> 0.11"},
-      {:cowboy, "~> 1.0"},
+      {:cowboy, "~> 2.0"},
       {:decimal, "~> 1.0"},
-      {:reverse_proxy, git: "https://github.com/slogsdon/elixir-reverse-proxy"},
       {:corsica, "~> 1.0", only: [:dev]},
       {:tesla, "~> 1.0"},
       {:poison, ">= 1.0.0"},
       {:instream, "~> 0.16"},
       {:hammer, "~> 6.0"},
-      {:ex_admin, github: "santiment/ex_admin", branch: "master"},
+      {:ex_admin, github: "santiment/ex_admin", branch: "patch-exadmin"},
       {:basic_auth, "~> 2.2"},
       {:mock, "~> 0.3"},
       {:mockery, "~> 2.2"},
@@ -59,7 +58,7 @@ defmodule Sanbase.Mixfile do
       {:timex_ecto, "~> 3.0"},
       {:hackney, "~> 1.10"},
       {:guardian, "~> 1.0"},
-      {:absinthe, "~> 1.4"},
+      {:absinthe, github: "absinthe-graphql/absinthe", override: true},
       {:absinthe_ecto, "~> 0.1.0"},
       {:absinthe_plug, "~> 1.4.0"},
       {:temp, "~> 0.4"},
@@ -89,7 +88,7 @@ defmodule Sanbase.Mixfile do
       {:jason, "~> 1.1"},
       {:elasticsearch, "~> 0.5"},
       {:quantum, "~> 2.3"},
-      {:plug_cowboy, "~> 1.0"},
+      {:plug_cowboy, "~> 2.0"},
       {:prometheus_ex, "~> 3.0", override: true},
       {:prometheus_ecto, "~> 1.3"},
       {:prometheus_plugs, "~> 1.0"},
@@ -99,7 +98,8 @@ defmodule Sanbase.Mixfile do
       {:number, "~> 1.0"},
       {:remote_ip, "~> 0.1"},
       {:vex, "~> 0.8.0", override: true},
-      {:stream_data, "~> 0.4.2", only: :test}
+      {:stream_data, "~> 0.4.2", only: :test},
+      {:async_with, "~> 0.3"}
     ]
   end
 
@@ -130,13 +130,13 @@ defmodule Sanbase.Mixfile do
 
       # Append `_all` so the Ecto commands apply to all repos.
       # and run all tests
-      "ecto.load_all": [
+      "ecto.setup_all": [
         "load_dotenv",
         "ecto.drop",
         "ecto.create",
         "ecto.load"
       ],
-      "ecto.setup_all": [
+      "ecto.load_all": [
         "load_dotenv",
         "ecto.create --quiet",
         "ecto.load"

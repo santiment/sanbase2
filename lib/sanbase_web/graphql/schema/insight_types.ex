@@ -36,6 +36,13 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
       resolve(&PostResolver.related_projects/3)
     end
 
+    field :published_at, :datetime do
+      resolve(fn
+        %{published_at: nil}, _, _ -> {:ok, nil}
+        %{published_at: published_at}, _, _ -> DateTime.from_naive(published_at, "Etc/UTC")
+      end)
+    end
+
     field :created_at, non_null(:datetime) do
       resolve(fn %{inserted_at: inserted_at}, _, _ ->
         {:ok, inserted_at}

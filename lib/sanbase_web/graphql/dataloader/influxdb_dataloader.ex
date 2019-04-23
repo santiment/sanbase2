@@ -3,6 +3,8 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.Helpers.Utils
 
+  @total_erc20 "TOTAL_ERC20"
+
   def data() do
     Dataloader.KV.new(&query/2)
   end

@@ -210,7 +210,14 @@ defmodule SanbaseWeb.Graphql.PostTest do
   end
 
   test "getting all posts for given user", %{user: user, user2: user2, conn: conn, poll: poll} do
-    post = insert(:post, poll: poll, user: user, ready_state: Post.published())
+    post =
+      insert(:post,
+        poll: poll,
+        user: user,
+        ready_state: Post.published(),
+        state: Post.approved_state()
+      )
+
     insert(:post, poll: poll, user: user, ready_state: Post.draft())
     insert(:post, poll: poll, user: user2, ready_state: Post.published())
 
@@ -275,14 +282,14 @@ defmodule SanbaseWeb.Graphql.PostTest do
     assert result |> hd() |> Map.get("text") == post.text
   end
 
-  test "getting all posts ranked", %{user: user, user2: user2, conn: conn, poll: poll} do
+  test "getting all insights ordered", %{user: user, user2: user2, conn: conn, poll: poll} do
     post =
       insert(:post,
         poll: poll,
         user: user,
         ready_state: Post.published(),
         state: Post.approved_state(),
-        updated_at: Timex.now() |> Timex.shift(seconds: -10)
+        published_at: Timex.now() |> Timex.shift(seconds: -10)
       )
 
     %Vote{}
@@ -322,8 +329,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
   end
 
   test "Search posts by tag", %{user: user, conn: conn, poll: poll} do
-    tag1 = %Tag{name: "PRJ1"} |> Repo.insert!()
-    tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
+    tag1 = insert(:tag, name: "PRJ1")
+    tag2 = insert(:tag, name: "PRJ2")
 
     post =
       insert(:post,
@@ -334,17 +341,72 @@ defmodule SanbaseWeb.Graphql.PostTest do
         tags: [tag1, tag2]
       )
 
-    query = """
-    {
-      allInsightsByTag(tag: "#{tag1.name}"){
-        id
-      }
-    }
-    """
+    result =
+      tag1
+      |> insights_by_tag_query()
+      |> execute_query(conn, "allInsightsByTag")
 
-    result = conn |> post("/graphql", query_skeleton(query, "allInsightsByTag"))
+    assert result == [%{"id" => "#{post.id}"}]
+  end
 
-    assert json_response(result, 200)["data"]["allInsightsByTag"] == [%{"id" => "#{post.id}"}]
+  test "Search posts by tag for anonymous user", %{user: user, poll: poll} do
+    tag1 = insert(:tag, name: "PRJ1")
+    tag2 = insert(:tag, name: "PRJ2")
+
+    post =
+      insert(:post,
+        poll: poll,
+        user: user,
+        state: Post.approved_state(),
+        ready_state: Post.published(),
+        tags: [tag1, tag2]
+      )
+
+    result =
+      tag1
+      |> insights_by_tag_query()
+      |> execute_query(build_conn(), "allInsightsByTag")
+
+    assert result == [%{"id" => "#{post.id}"}]
+  end
+
+  test "Get all insights by a list of tags", %{user: user, poll: poll} do
+    tag1 = insert(:tag, name: "PRJ1")
+    tag2 = insert(:tag, name: "PRJ2")
+    tag3 = insert(:tag, name: "PRJ3")
+
+    post =
+      insert(:post,
+        poll: poll,
+        user: user,
+        state: Post.approved_state(),
+        ready_state: Post.published(),
+        tags: [tag1, tag2]
+      )
+
+    insert(:post,
+      poll: poll,
+      user: user,
+      state: Post.approved_state(),
+      ready_state: Post.published(),
+      tags: [tag3]
+    )
+
+    post3 =
+      insert(:post,
+        poll: poll,
+        user: user,
+        state: Post.approved_state(),
+        ready_state: Post.published(),
+        tags: [tag2]
+      )
+
+    result =
+      [tag1.name, tag2.name]
+      |> insights_by_tags_query()
+      |> execute_query(build_conn(), "allInsights")
+
+    assert result == [%{"id" => "#{post.id}"}, %{"id" => "#{post3.id}"}]
   end
 
   describe "create post" do
@@ -363,6 +425,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
           }
           state,
           createdAt
+          publishedAt
         }
       }
       """
@@ -378,6 +441,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
       assert sanbasePost["state"] == Post.awaiting_approval_state()
       assert sanbasePost["user"]["id"] == user.id |> Integer.to_string()
       assert sanbasePost["votes"]["totalSanVotes"] == 0
+      assert sanbasePost["publishedAt"] == nil
 
       createdAt = Timex.parse!(sanbasePost["createdAt"], "{ISO:Extended}")
 
@@ -875,5 +939,32 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
     [imageData] = json_response(result, 200)["data"]["uploadImage"]
     imageData["imageUrl"]
+  end
+
+  defp insights_by_tag_query(tag) do
+    """
+    {
+      allInsightsByTag(tag: "#{tag.name}"){
+        id
+      }
+    }
+    """
+  end
+
+  defp insights_by_tags_query(tags) do
+    """
+    {
+      allInsights(tags: #{Jason.encode!(tags)}){
+        id
+      }
+    }
+    """
+  end
+
+  defp execute_query(query, conn, query_name) do
+    conn
+    |> post("/graphql", query_skeleton(query, query_name))
+    |> json_response(200)
+    |> get_in(["data", query_name])
   end
 end

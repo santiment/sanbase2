@@ -9,7 +9,7 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
 
   alias Sanbase.Signals.Trigger.DailyActiveAddressesSettings
   alias Sanbase.Model.Project
-  alias Sanbase.Clickhouse.{Erc20DailyActiveAddresses, EthDailyActiveAddresses}
+  alias Sanbase.Clickhouse.DailyActiveAddresses
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Prices.Store, as: PricesStore
   require Logger
@@ -117,11 +117,7 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
     end
 
     defp get_daily_active_addresses(contract, from, to, interval) do
-      if contract == "ETH" do
-        EthDailyActiveAddresses.average_active_addresses(from, to, interval)
-      else
-        Erc20DailyActiveAddresses.average_active_addresses(contract, from, to, interval)
-      end
+      DailyActiveAddresses.average_active_addresses(contract, from, to, interval)
     end
 
     defp time_window_in_days(time_window) do

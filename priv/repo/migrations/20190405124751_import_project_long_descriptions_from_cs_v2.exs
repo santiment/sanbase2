@@ -29,8 +29,8 @@ defmodule Sanbase.Repo.Migrations.ImportProjectLongDescriptionsFromCSV2 do
         end
       end)
 
-    result |> Enum.filter(fn x -> is_number(x) end) |> Enum.sum() |> IO.inspect(label: "success")
-    result |> Enum.filter(fn x -> is_binary(x) end) |> IO.inspect(label: "not success")
+    result |> Enum.filter(fn x -> is_number(x) end) |> Enum.sum()
+    result |> Enum.filter(fn x -> is_binary(x) end)
   end
 
   def down(), do: :ok

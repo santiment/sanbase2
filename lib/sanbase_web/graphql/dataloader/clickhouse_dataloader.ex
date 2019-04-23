@@ -2,8 +2,30 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   alias Sanbase.Clickhouse
   alias Sanbase.Model.Project
 
+  alias Sanbase.Clickhouse.DailyActiveAddresses
+
   def data() do
     Dataloader.KV.new(&query/2)
+  end
+
+  def query(:average_daily_active_addresses, args) do
+    args = Enum.to_list(args)
+    [%{from: from, to: to} | _] = args
+
+    args
+    |> Enum.map(fn %{project: project} -> Project.contract_address(project) end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.chunk_every(100)
+    |> Sanbase.Parallel.flat_pmap(fn contract_addresses ->
+      {:ok, daily_active_addresses} =
+        DailyActiveAddresses.average_active_addresses(contract_addresses, from, to)
+
+      daily_active_addresses
+    end)
+    |> Enum.map(fn {contract_address, addresses} ->
+      {contract_address, addresses}
+    end)
+    |> Map.new()
   end
 
   def query(:average_dev_activity, args) do
@@ -83,16 +105,18 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   end
 
   defp result(has_errors?, value)
-  defp result(true, value), do: {:nocache, {:ok, value}}
-  defp result(false, value), do: {:ok, value}
+  defp result(true, value) when value < 0, do: {:nocache, {:ok, abs(value)}}
+  defp result(true, _), do: {:nocache, 0}
+  defp result(false, value) when value < 0, do: {:ok, abs(value)}
+  defp result(false, _), do: {:ok, 0}
 
   defp eth_spent(eth_addresses, args) do
     [%{from: from, to: to} | _] = args
 
-    case Clickhouse.EthTransfers.eth_spent(eth_addresses, from, to) do
-      {:ok, eth_spent} ->
-        eth_spent
-        |> Enum.map(fn {addr, value} -> {addr, {:ok, value}} end)
+    case Clickhouse.HistoricalBalance.eth_balance_change(eth_addresses, from, to) do
+      {:ok, balance_changes} ->
+        balance_changes
+        |> Enum.map(fn {addr, {_, _, change}} -> {addr, {:ok, change}} end)
 
       _ ->
         eth_addresses

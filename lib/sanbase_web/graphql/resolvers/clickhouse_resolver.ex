@@ -4,8 +4,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   alias Sanbase.Model.Project
   alias Sanbase.DateTimeUtils
   import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 7]
+  import Absinthe.Resolution.Helpers, only: [on_load: 2]
+
+  alias SanbaseWeb.Graphql.SanbaseDataloader
 
   alias Sanbase.Clickhouse.{
+    DailyActiveAddresses,
     DailyActiveDeposits,
     GasUsed,
     HistoricalBalance,
@@ -22,6 +26,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   # Return this number of datapoints is the provided interval is an empty string
   @datapoints 50
+
+  @one_hour_in_seconds 3_600
 
   def top_holders_percent_of_total_supply(
         _root,
@@ -116,6 +122,86 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     end
   end
 
+  def daily_active_addresses(
+        _root,
+        %{slug: slug, from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    with {:ok, contract, _} <- Project.contract_info_by_slug(slug),
+         {:ok, from, to, interval} <-
+           calibrate_interval(
+             DailyActiveAddresses,
+             contract,
+             from,
+             to,
+             interval,
+             86400,
+             @datapoints
+           ),
+         {:ok, daily_active_addresses} <-
+           DailyActiveAddresses.average_active_addresses(
+             contract,
+             from,
+             to,
+             interval
+           ) do
+      {:ok, daily_active_addresses}
+    else
+      {:error, {:missing_contract, error_msg}} ->
+        {:error, error_msg}
+
+      {:error, error} ->
+        error_msg =
+          "Can't calculate daily active addresses for project with coinmarketcap_id: #{slug}."
+
+        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        {:error, error_msg}
+    end
+  end
+
+  @doc ~S"""
+  Returns the average number of daily active addresses for the last 30 days
+  """
+  def average_daily_active_addresses(
+        %Project{} = project,
+        args,
+        %{context: %{loader: loader}}
+      ) do
+    to = Map.get(args, :to, Timex.now())
+    from = Map.get(args, :from, Timex.shift(to, days: -30))
+
+    loader
+    |> Dataloader.load(SanbaseDataloader, :average_daily_active_addresses, %{
+      project: project,
+      from: from,
+      to: to
+    })
+    |> on_load(&average_daily_active_addresses_on_load(&1, project))
+  end
+
+  defp average_daily_active_addresses_on_load(loader, project) do
+    with {:ok, contract_address, _token_decimals} <- Project.contract_info(project) do
+      average_daily_active_addresses =
+        loader
+        |> Dataloader.get(
+          SanbaseDataloader,
+          :average_daily_active_addresses,
+          contract_address
+        ) || 0
+
+      {:ok, average_daily_active_addresses}
+    else
+      {:error, {:missing_contract, _}} ->
+        {:ok, 0}
+
+      {:error, error} ->
+        error_msg = "Can't fetch average daily active addresses for #{Project.describe(project)}"
+        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+
+        {:ok, 0}
+    end
+  end
+
   def daily_active_deposits(
         _root,
         %{slug: slug, from: from, to: to, interval: interval},
@@ -129,7 +215,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
              from,
              to,
              interval,
-             3600,
+             @one_hour_in_seconds,
              @datapoints
            ),
          {:ok, active_deposits} <-
@@ -228,7 +314,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
              from,
              to,
              interval,
-             3600,
+             @one_hour_in_seconds,
              @datapoints
            ),
          {:ok, share_of_deposits} <-

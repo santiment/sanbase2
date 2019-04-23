@@ -13,6 +13,26 @@ defmodule Sanbase.Clickhouse.DailyActiveDeposits do
           active_deposits: non_neg_integer()
         }
 
+  @table "daily_active_deposits"
+
+  def first_datetime(contract) do
+    contract = String.downcase(contract)
+
+    query = """
+    SELECT min(dt) FROM #{@table} WHERE contract = ?1
+    """
+
+    args = [contract]
+
+    ClickhouseRepo.query_transform(query, args, fn [datetime] ->
+      datetime |> Sanbase.DateTimeUtils.from_erl!()
+    end)
+    |> case do
+      {:ok, [first_datetime]} -> {:ok, first_datetime}
+      error -> error
+    end
+  end
+
   @spec active_deposits(
           String.t(),
           DateTime.t(),
@@ -52,7 +72,7 @@ defmodule Sanbase.Clickhouse.DailyActiveDeposits do
       SELECT
         toDateTime(intDiv(toUInt32(dt), ?1) * ?1) AS time,
         SUM(total_addresses) AS value
-      FROM daily_active_deposits
+      FROM #{@table}
       PREWHERE
         contract = ?3 AND
         dt >= toDateTime(?4) AND

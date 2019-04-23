@@ -51,6 +51,38 @@ defmodule Sanbase.Prices.Store do
     end
   end
 
+  def fetch_prices_with_resolution("TOTAL_ERC20", from, to, resolution) do
+    measurements =
+      Sanbase.Model.Project.List.erc20_projects()
+      |> Enum.map(&Sanbase.Influxdb.Measurement.name_from/1)
+
+    total_erc20 =
+      measurements
+      |> Enum.chunk_every(100)
+      |> Sanbase.Parallel.pmap(fn measurements ->
+        {:ok, result} =
+          fetch_combined_mcap_volume(
+            measurements,
+            from,
+            to,
+            resolution
+          )
+
+        result
+      end)
+      |> Enum.zip()
+      |> Enum.map(&Tuple.to_list/1)
+      |> Enum.map(fn [%{datetime: dt} | _rest] = list ->
+        %{
+          datetime: dt,
+          volume: Enum.reduce(list, 0, fn %{volume: v}, acc -> acc + v end),
+          marketcap: Enum.reduce(list, 0, fn %{marketcap: m}, acc -> acc + m end)
+        }
+      end)
+
+    {:ok, total_erc20}
+  end
+
   def fetch_prices_with_resolution(measurement, from, to, resolution) do
     fetch_prices_with_resolution_query(measurement, from, to, resolution)
     |> Store.query()

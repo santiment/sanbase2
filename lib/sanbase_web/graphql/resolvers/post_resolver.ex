@@ -7,13 +7,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
 
   alias Sanbase.Auth.User
   alias Sanbase.Tag
-  alias Sanbase.Voting.{Post, Poll}
+  alias Sanbase.Insight.{Post, Poll}
   alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias Sanbase.Notifications
   alias SanbaseWeb.Graphql.Helpers.Utils
 
-  @preloaded_assoc [:votes, :user, :images, :tags]
+  def insights(%User{} = user, _args, _resolution) do
+    posts = Post.user_insights(user.id)
+
+    {:ok, posts}
+  end
 
   def post(_root, %{id: post_id}, _resolution) do
     case Repo.get(Post, post_id) do
@@ -22,61 +26,33 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     end
   end
 
+  def all_insights(_root, %{tags: tags, page: page, page_size: page_size}, _context)
+      when is_list(tags) do
+    posts = Post.public_insights_by_tags(tags, page, page_size)
+
+    {:ok, posts}
+  end
+
   def all_insights(_root, %{page: page, page_size: page_size}, _resolution) do
-    posts =
-      Post.published_posts(page, page_size)
-      |> Repo.preload(@preloaded_assoc)
+    posts = Post.public_insights(page, page_size)
 
     {:ok, posts}
   end
 
   def all_insights_for_user(_root, %{user_id: user_id}, _context) do
-    query =
-      from(
-        p in Post,
-        where: p.user_id == ^user_id
-      )
-
-    posts =
-      query
-      |> Repo.all()
-      |> Repo.preload(@preloaded_assoc)
+    posts = Post.user_public_insights(user_id)
 
     {:ok, posts}
   end
 
   def all_insights_user_voted_for(_root, %{user_id: user_id}, _context) do
-    query =
-      from(
-        p in Post,
-        where: fragment("? IN (SELECT post_id FROM votes WHERE user_id = ?)", p.id, ^user_id)
-      )
-
-    posts =
-      query
-      |> Repo.all()
-      |> Repo.preload(@preloaded_assoc)
-
-    {:ok, posts}
-  end
-
-  def all_insights_by_tag(_root, %{tag: tag}, %{
-        context: %{auth: %{current_user: %User{id: user_id}}}
-      }) do
-    posts =
-      user_id
-      |> Post.ranked_published_or_own_posts()
-      |> Repo.preload(@preloaded_assoc)
-      |> filter_by_tag(tag)
+    posts = Post.all_insights_user_voted_for(user_id)
 
     {:ok, posts}
   end
 
   def all_insights_by_tag(_root, %{tag: tag}, _context) do
-    posts =
-      Post.ranked_published_posts()
-      |> Repo.preload(@preloaded_assoc)
-      |> filter_by_tag(tag)
+    posts = Post.public_insights_by_tag(tag)
 
     {:ok, posts}
   end
@@ -181,7 +157,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     case Repo.get(Post, post_id) do
       %Post{user_id: ^user_id} = post ->
         post
-        |> Post.publish_changeset(%{ready_state: Post.published()})
+        |> Post.publish_changeset(%{
+          ready_state: Post.published(),
+          published_at: NaiveDateTime.utc_now()
+        })
         |> Repo.update()
         |> case do
           {:ok, post} ->
@@ -218,13 +197,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     |> Enum.map(fn %{image_url: image_url} -> image_url end)
   end
 
-  defp filter_by_tag(posts, tag) do
-    posts
-    |> Enum.filter(fn post ->
-      tag in Enum.map(post.tags, & &1.name)
-    end)
-  end
-
   defp create_discourse_topic(%Post{id: id, title: title, inserted_at: inserted_at} = post) do
     link = posts_url(id)
 
@@ -250,7 +222,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     |> Repo.update()
   end
 
-  defp posts_url(id), do: "#{sanbase_url()}/insights/#{id}"
+  defp posts_url(id), do: "#{sanbase_url()}/insights/read/#{id}"
   defp sanbase_url(), do: Config.module_get(SanbaseWeb.Endpoint, :frontend_url)
   defp discourse_url(), do: Config.module_get(Sanbase.Discourse, :url)
   defp notifiy_insight(), do: Mockery.Macro.mockable(Notifications.Insight)

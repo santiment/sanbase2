@@ -1,5 +1,5 @@
 defprotocol Sanbase.Signals.Settings do
-  def evaluate(trigger)
+  def evaluate(trigger_settings, trigger)
 
   @spec triggered?(struct()) :: boolean()
   def triggered?(trigger)
@@ -9,7 +9,7 @@ defprotocol Sanbase.Signals.Settings do
 end
 
 defprotocol Sanbase.Signals.History do
-  @spec historical_trigger_points(struct(), String.t()) :: list(any())
+  @spec historical_trigger_points(struct(), String.t()) :: {:ok, list(any())} | {:error, any()}
   def historical_trigger_points(trigger, cooldown)
 end
 
@@ -40,6 +40,8 @@ defmodule Sanbase.Signals.Trigger do
     field(:last_triggered, :map, default: %{})
     field(:cooldown, :string, default: "24h")
     field(:icon_url, :string)
+    field(:is_active, :boolean, default: true)
+    field(:is_repeating, :boolean, default: true)
   end
 
   @type t :: %__MODULE__{
@@ -49,7 +51,9 @@ defmodule Sanbase.Signals.Trigger do
           last_triggered: map(),
           title: String.t(),
           description: String.t(),
-          icon_url: String.t()
+          icon_url: String.t(),
+          is_active: boolean(),
+          is_repeating: boolean()
         }
 
   @doc false
@@ -60,7 +64,9 @@ defmodule Sanbase.Signals.Trigger do
     :last_triggered,
     :title,
     :description,
-    :icon_url
+    :icon_url,
+    :is_active,
+    :is_repeating
   ]
 
   def create_changeset(%__MODULE__{} = trigger, args \\ %{}) do
@@ -85,8 +91,8 @@ defmodule Sanbase.Signals.Trigger do
 
   def evaluate(%Trigger{settings: %{target: target} = trigger_settings} = trigger) do
     trigger_settings =
-      %{trigger_settings | filtered_target_list: remove_targets_on_cooldown(target, trigger)}
-      |> Sanbase.Signals.Settings.evaluate()
+      %{trigger_settings | filtered_target: remove_targets_on_cooldown(target, trigger)}
+      |> Sanbase.Signals.Settings.evaluate(trigger)
 
     %Trigger{trigger | settings: trigger_settings}
   end
@@ -103,10 +109,14 @@ defmodule Sanbase.Signals.Trigger do
     Sanbase.Signals.Settings.cache_key(trigger_settings)
   end
 
-  def has_cooldown?(%Trigger{last_triggered: lt}, _target) when lt == %{}, do: false
+  def last_triggered(%Trigger{last_triggered: lt}, _target) when map_size(lt) == 0, do: nil
 
-  def has_cooldown?(%Trigger{cooldown: cd, last_triggered: lt}, target) when is_map(lt) do
-    case Map.get(lt, target) do
+  def last_triggered(%Trigger{last_triggered: lt}, target) do
+    Map.get(lt, target)
+  end
+
+  def has_cooldown?(%Trigger{} = trigger, target) do
+    case last_triggered(trigger, target) do
       nil ->
         false
 
@@ -114,7 +124,7 @@ defmodule Sanbase.Signals.Trigger do
         target_last_triggered = target_last_triggered |> DateTimeUtils.from_iso8601!()
 
         Timex.compare(
-          DateTimeUtils.after_interval(cd, target_last_triggered),
+          DateTimeUtils.after_interval(trigger.cooldown, target_last_triggered),
           Timex.now()
         ) == 1
     end
@@ -128,22 +138,40 @@ defmodule Sanbase.Signals.Trigger do
     |> Enum.join(" ")
   end
 
-  defp remove_targets_on_cooldown(target, trigger)
-       when is_binary(target) do
-    remove_targets_on_cooldown([target], trigger)
+  defp remove_targets_on_cooldown(target, trigger) when is_binary(target) or is_list(target) do
+    target
+    |> List.wrap()
+    |> remove_targets_on_cooldown(trigger, :slug)
   end
 
   defp remove_targets_on_cooldown(%{user_list: user_list_id}, trigger) do
-    %{list_items: list_items} = Sanbase.UserLists.UserList.by_id(user_list_id)
+    %{list_items: list_items} = Sanbase.UserList.by_id(user_list_id)
 
     list_items
     |> Enum.map(fn %{project_id: id} -> id end)
     |> Project.List.slugs_by_ids()
-    |> remove_targets_on_cooldown(trigger)
+    |> remove_targets_on_cooldown(trigger, :slug)
   end
 
-  defp remove_targets_on_cooldown(target_list, trigger) when is_list(target_list) do
-    target_list
-    |> Enum.reject(&Sanbase.Signals.Trigger.has_cooldown?(trigger, &1))
+  defp remove_targets_on_cooldown(%{slug: slug}, trigger)
+       when is_binary(slug) or is_list(slug) do
+    slug
+    |> List.wrap()
+    |> remove_targets_on_cooldown(trigger, :slug)
+  end
+
+  defp remove_targets_on_cooldown(%{eth_address: address}, trigger)
+       when is_binary(address) or is_list(address) do
+    address
+    |> List.wrap()
+    |> remove_targets_on_cooldown(trigger, :eth_address)
+  end
+
+  defp remove_targets_on_cooldown(target_list, trigger, type) when is_list(target_list) do
+    target_list =
+      target_list
+      |> Enum.reject(&Sanbase.Signals.Trigger.has_cooldown?(trigger, &1))
+
+    %{list: target_list, type: type}
   end
 end

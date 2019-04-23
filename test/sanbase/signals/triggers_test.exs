@@ -4,6 +4,7 @@ defmodule Sanbase.Signals.TriggersTest do
   import Sanbase.Factory
   import ExUnit.CaptureLog
   import Sanbase.TestHelpers
+  import Sanbase.MapUtils
 
   alias Sanbase.Signals.UserTrigger
 
@@ -12,14 +13,10 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_settings = %{
       type: "daily_active_addresses",
-      target: "santiment",
-      filtered_target_list: [],
+      target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 300.0,
-      repeating: false,
-      triggered?: false,
-      payload: nil
+      percent_threshold: 300.0
     }
 
     {:ok, created_trigger} =
@@ -31,11 +28,12 @@ defmodule Sanbase.Signals.TriggersTest do
 
     assert created_trigger.trigger.settings == trigger_settings
 
-    trigger_id = created_trigger.trigger.id
+    trigger_id = created_trigger.id
 
     {:ok, %UserTrigger{trigger: trigger}} = UserTrigger.get_trigger_by_id(user, trigger_id)
 
-    assert trigger.settings |> Map.from_struct() == trigger_settings
+    settings = trigger.settings |> Map.from_struct()
+    assert drop_diff_keys(settings, trigger_settings) == trigger_settings
   end
 
   test "try creating user trigger with unknown type" do
@@ -43,11 +41,10 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_settings = %{
       type: "unknown",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 300.0,
-      repeating: false
+      operation: %{percent_up: 300.0}
     }
 
     {:error, message} =
@@ -57,7 +54,8 @@ defmodule Sanbase.Signals.TriggersTest do
         settings: trigger_settings
       })
 
-    assert message == "Trigger structure is invalid"
+    assert message ==
+             "Trigger structure is invalid. Key `settings` is not valid. Reason: \"The trigger settings type 'unknown' is not a valid type.\""
   end
 
   test "try creating user trigger with not valid icon url" do
@@ -65,11 +63,10 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_settings = %{
       type: "daily_active_addresses",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 300.0,
-      repeating: false
+      percent_threshold: 300.0
     }
 
     {:error, changeset} =
@@ -88,26 +85,24 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_settings = %{
       type: "daily_active_addresses",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "unknown",
       time_window: "1d",
       percent_threshold: 300.0,
-      repeating: false,
       triggered?: false,
       payload: nil
     }
 
     assert capture_log(fn ->
-             {:error, message} =
-               UserTrigger.create_user_trigger(user, %{
-                 title: "Generic title",
-                 is_public: true,
-                 settings: trigger_settings
-               })
-
-             assert message =~ "Trigger structure is invalid"
+             assert UserTrigger.create_user_trigger(user, %{
+                      title: "Generic title",
+                      is_public: true,
+                      settings: trigger_settings
+                    }) ==
+                      {:error,
+                       "Trigger structure is invalid. Key `settings` is not valid. Reason: [\"\\\"unknown\\\" is not a valid notification channel\"]"}
            end) =~
-             ~s/UserTrigger struct is not valid: [{:error, :channel, :by, \"\\\"unknown\\\" is not a valid notification channel"}]/
+             "UserTrigger struct is not valid. Reason: [\"\\\"unknown\\\" is not a valid notification channel\"]"
   end
 
   test "try creating user trigger with required field in struct" do
@@ -115,20 +110,18 @@ defmodule Sanbase.Signals.TriggersTest do
 
     settings = %{
       type: "daily_active_addresses",
-      target: "santiment",
+      target: %{slug: "santiment"},
       time_window: "1d",
-      percent_threshold: 300.0,
-      repeating: false
+      percent_threshold: 300.0
     }
 
-    {:error, message} =
-      UserTrigger.create_user_trigger(user, %{
-        title: "Generic title",
-        is_public: true,
-        settings: settings
-      })
-
-    assert message == "Trigger structure is invalid"
+    assert UserTrigger.create_user_trigger(user, %{
+             title: "Generic title",
+             is_public: true,
+             settings: settings
+           }) ==
+             {:error,
+              "Trigger structure is invalid. Key `settings` is not valid. Reason: [\"nil is not a valid notification channel\"]"}
   end
 
   test "create user trigger with optional field missing" do
@@ -136,11 +129,10 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_settings = %{
       type: "price_percent_change",
-      target: "santiment",
-      percent_threshold: 20,
+      target: %{slug: "santiment"},
+      operation: %{percent_up: 20},
       channel: "telegram",
-      time_window: "1d",
-      repeating: false
+      time_window: "1d"
     }
 
     title = "Some title"
@@ -161,11 +153,10 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_settings = %{
       type: "price_percent_change",
-      target: "santiment",
-      percent_threshold: 20,
+      target: %{slug: "santiment"},
+      operation: %{percent_up: 20},
       channel: "telegram",
-      time_window: "1d",
-      repeating: false
+      time_window: "1d"
     }
 
     title = "Generic title"
@@ -194,14 +185,13 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_settings1 = %{
       type: "daily_active_addresses",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 300.0,
-      repeating: false
+      percent_threshold: 300.0
     }
 
-    insert(:user_triggers,
+    insert(:user_trigger,
       user: user,
       trigger: %{title: "Generic title", is_public: true, settings: trigger_settings1}
     )
@@ -210,11 +200,10 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_settings2 = %{
       type: "price_percent_change",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "email",
       time_window: "1d",
-      percent_threshold: 10.0,
-      repeating: false
+      operation: %{percent_up: 10.0}
     }
 
     {:ok, _} =
@@ -232,41 +221,38 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_settings1 = %{
       type: "daily_active_addresses",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 300.0,
-      repeating: false
+      percent_threshold: 300.0
     }
 
     trigger_settings2 = %{
       type: "price_percent_change",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "email",
       time_window: "1d",
-      percent_threshold: 10.0,
-      repeating: false
+      operation: %{percent_up: 10.0}
     }
 
-    insert(:user_triggers,
+    insert(:user_trigger,
       user: user,
       trigger: %{title: "Generic title", is_public: true, settings: trigger_settings1}
     )
 
-    insert(:user_triggers,
+    insert(:user_trigger,
       user: user,
       trigger: %{title: "Generic title2", is_public: true, settings: trigger_settings2}
     )
 
-    trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:trigger) |> Map.get(:id)
+    trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:id)
 
     updated_trigger = %{
       type: "daily_active_addresses",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 200.0,
-      repeating: true
+      percent_threshold: 200.0
     }
 
     new_title = "New title"
@@ -290,9 +276,8 @@ defmodule Sanbase.Signals.TriggersTest do
     assert length(triggers) == 2
 
     %UserTrigger{trigger: trigger} =
-      Enum.find(triggers, fn %UserTrigger{trigger: trigger} -> trigger.id == trigger_id end)
+      Enum.find(triggers, fn %UserTrigger{id: id} -> id == trigger_id end)
 
-    assert trigger.settings.repeating == true
     assert trigger.title == new_title
     assert trigger.description == new_description
     assert trigger.icon_url == new_icon_url
@@ -303,20 +288,19 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_settings = %{
       type: "daily_active_addresses",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 200.0,
-      repeating: false
+      percent_threshold: 200.0
     }
 
-    insert(:user_triggers,
+    insert(:user_trigger,
       user: user,
       trigger: %{title: "Generic title", is_public: false, settings: trigger_settings}
     )
 
     ut = UserTrigger.triggers_for(user)
-    trigger_id = ut |> hd |> Map.get(:trigger) |> Map.get(:id)
+    trigger_id = ut |> hd |> Map.get(:id)
 
     UserTrigger.update_user_trigger(user, %{id: trigger_id, is_public: true, cooldown: "1h"})
     user_triggers = UserTrigger.triggers_for(user)

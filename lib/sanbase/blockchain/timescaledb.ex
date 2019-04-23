@@ -100,19 +100,24 @@ defmodule Sanbase.Timescaledb do
   @spec timescaledb_execute({iolist() | String.t(), list(argument)}, (any() -> any())) ::
           {:ok, list(any())} | {:error, any()}
   def timescaledb_execute({query, args}, transform_fn) when is_function(transform_fn, 1) do
-    Sanbase.TimescaleRepo.query(query, args)
-    |> case do
-      {:ok, %{rows: rows}} ->
-        result =
-          Enum.map(
-            rows,
-            transform_fn
-          )
+    try do
+      Sanbase.TimescaleRepo.query(query, args)
+      |> case do
+        {:ok, %{rows: rows}} ->
+          result =
+            Enum.map(
+              rows,
+              transform_fn
+            )
 
-        {:ok, result}
+          {:ok, result}
 
-      {:error, error} ->
-        {:error, error}
+        {:error, error} ->
+          {:error, error}
+      end
+    rescue
+      e ->
+        {:error, "Cannot execute TimescaleDB query. Reason: " <> Exception.message(e)}
     end
   end
 

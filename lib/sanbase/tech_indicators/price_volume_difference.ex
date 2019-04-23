@@ -25,15 +25,15 @@ defmodule Sanbase.TechIndicators.PriceVolumeDifference do
           DateTime.t(),
           String.t(),
           String.t(),
-          String.t(),
+          non_neg_integer(),
           non_neg_integer(),
           non_neg_integer()
         ) :: {:error, String.t()} | {:ok, [price_volume_diffp()]}
   def price_volume_diff(
         %Project{ticker: ticker, coinmarketcap_id: slug} = project,
         currency,
-        from_datetime,
-        to_datetime,
+        from,
+        to,
         aggregate_interval,
         window_type,
         approximation_window,
@@ -43,11 +43,11 @@ defmodule Sanbase.TechIndicators.PriceVolumeDifference do
     url = "#{tech_indicators_url()}/indicator/pricevolumediff/ma"
 
     # Workaround an issue with the usability of the tech_indicators api.
-    # The calculation needs to start from before the `from_datetime` so the
+    # The calculation needs to start from before the `from` so the
     # moving average can be calculated for the specified time. Shift the datetime
     # and drop the same number of points from the result
-    from_datetime =
-      Timex.shift(from_datetime,
+    shifted_from =
+      Timex.shift(from,
         seconds:
           -Sanbase.DateTimeUtils.compound_duration_to_seconds(aggregate_interval) *
             (approximation_window + comparison_window)
@@ -58,8 +58,8 @@ defmodule Sanbase.TechIndicators.PriceVolumeDifference do
       params: [
         {"ticker_slug", ticker <> "_" <> slug},
         {"currency", currency},
-        {"from_timestamp", DateTime.to_unix(from_datetime)},
-        {"to_timestamp", DateTime.to_unix(to_datetime)},
+        {"from_timestamp", DateTime.to_unix(shifted_from)},
+        {"to_timestamp", DateTime.to_unix(to)},
         {"aggregate_interval", aggregate_interval},
         {"window_type", window_type},
         {"approximation_window", approximation_window},
@@ -71,8 +71,14 @@ defmodule Sanbase.TechIndicators.PriceVolumeDifference do
     http_client().get(url, [], options)
     |> handle_result(project)
     |> case do
-      {:ok, result} -> {:ok, result |> Enum.drop(approximation_window + comparison_window)}
-      error -> error
+      {:ok, result} ->
+        {:ok,
+         Enum.drop_while(result, fn %{datetime: datetime} ->
+           DateTime.compare(datetime, from) == :lt
+         end)}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 

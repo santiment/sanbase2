@@ -12,10 +12,12 @@ defmodule Sanbase.Auth.User do
     UserSettings
   }
 
-  alias Sanbase.Voting.{Vote, Post}
-  alias Sanbase.UserLists.UserList
+  alias Sanbase.Insight.{Vote, Post}
+  alias Sanbase.UserList
   alias Sanbase.Repo
   alias Sanbase.Telegram
+  alias Sanbase.Signals.HistoricalActivity
+  alias Sanbase.Following.UserFollower
 
   require Sanbase.Utils.Config, as: Config
 
@@ -67,6 +69,9 @@ defmodule Sanbase.Auth.User do
     has_many(:apikey_tokens, UserApikeyToken, on_delete: :delete_all)
     has_many(:user_lists, UserList, on_delete: :delete_all)
     has_many(:posts, Post, on_delete: :delete_all)
+    has_many(:signals_historical_activity, HistoricalActivity, on_delete: :delete_all)
+    has_many(:followers, UserFollower, foreign_key: :user_id, on_delete: :delete_all)
+    has_many(:following, UserFollower, foreign_key: :follower_id, on_delete: :delete_all)
 
     has_one(:user_settings, UserSettings, on_delete: :delete_all)
 
@@ -114,14 +119,29 @@ defmodule Sanbase.Auth.User do
 
       case san_balance >= required_san_tokens do
         true ->
-          {:ok, %{historical_data: true, realtime_data: true, spreadsheet: true}}
+          {:ok, full_permissions()}
 
         _ ->
-          {:ok, %{historical_data: false, realtime_data: false, spreadsheet: false}}
+          {:ok, no_permissions()}
       end
     else
-      _ -> {:ok, %{historical_data: false, realtime_data: false, spreadsheet: false}}
+      _ -> {:ok, no_permissions()}
     end
+  end
+
+  def permissions!(%__MODULE__{} = user) do
+    case permissions(user) do
+      {:ok, permissions} -> permissions
+      {:error, error} -> raise(error)
+    end
+  end
+
+  def full_permissions() do
+    %{historical_data: true, realtime_data: true, spreadsheet: true}
+  end
+
+  def no_permissions() do
+    %{historical_data: false, realtime_data: false, spreadsheet: false}
   end
 
   def ascii_username?(nil), do: true

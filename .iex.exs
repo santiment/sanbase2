@@ -28,17 +28,15 @@ alias Sanbase.Auth.{
 
 alias Sanbase.Tag
 
-alias Sanbase.Voting.{
+alias Sanbase.Insight.{
   Post,
   Poll,
   Vote,
   PostImage
 }
 
-alias Sanbase.UserLists.{
-  UserList,
-  ListItem
-}
+alias Sanbase.UserList
+alias Sanbase.UserList.ListItem
 
 alias Sanbase.Blockchain.{
   BurnRate,
@@ -140,7 +138,7 @@ alias SanbaseWeb.Graphql.Resolvers.{
   TechIndicatorsResolver,
   TwitterResolver,
   UserListResolver,
-  VotingResolver,
+  InsightResolver,
   ClickhouseResolver
 }
 
@@ -148,11 +146,10 @@ alias SanbaseWeb.Graphql.Cache
 alias SanbaseWeb.Graphql.Helpers.Utils, as: GraphUtils
 alias Sanbase.Prices.Store, as: PricesStore
 alias Sanbase.Prices.Utils, as: PricesUtils
-alias Sanbase.Clickhouse.Common, as: ClickhouseCommon
 
 alias Sanbase.SocialData
 
-alias Sanbase.Signals.{UserTrigger, Trigger}
+alias Sanbase.Signals.{UserTrigger, Trigger, Scheduler}
 
 alias Sanbase.Signals.Trigger.{
   DailyActiveAddressesSettings,

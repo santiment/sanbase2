@@ -6,7 +6,6 @@ ENV MIX_ENV prod
 RUN apt-get update \
   && curl -sL https://deb.nodesource.com/setup_8.x | bash \
   && apt-get install -y nodejs git
-RUN npm install -g yarn
 
 RUN mix local.hex --force
 RUN mix local.rebar --force
@@ -19,15 +18,15 @@ RUN mix deps.get
 RUN mix deps.compile
 
 COPY ./assets/package.json /app/assets/package.json
-COPY ./assets/yarn.lock /app/assets/yarn.lock
+COPY ./assets/package-lock.json /app/assets/package-lock.json
 
-RUN cd assets && yarn
+RUN cd assets && npm install
 
 COPY . /app
 
 ARG SECRET_KEY_BASE
 
-RUN cd assets && yarn build
+RUN cd assets && npm run build:prod
 RUN SECRET_KEY_BASE=$SECRET_KEY_BASE mix compile
 RUN mix phx.digest
 RUN mix release

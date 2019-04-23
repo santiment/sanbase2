@@ -11,19 +11,18 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
   alias __MODULE__
   alias Sanbase.Signals.Type
   alias Sanbase.Model.Project
-  alias Sanbase.Clickhouse.{Erc20DailyActiveAddresses, EthDailyActiveAddresses}
+  alias Sanbase.Clickhouse.DailyActiveAddresses
   alias Sanbase.Signals.Evaluator.Cache
 
-  @derive Jason.Encoder
+  @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
   @trigger_type "daily_active_addresses"
   @enforce_keys [:type, :target, :channel, :time_window, :percent_threshold]
   defstruct type: @trigger_type,
             target: nil,
-            filtered_target_list: [],
+            filtered_target: %{list: []},
             channel: nil,
             time_window: nil,
             percent_threshold: nil,
-            repeating: true,
             triggered?: false,
             payload: nil
 
@@ -31,15 +30,14 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
   validates(:channel, &valid_notification_channel/1)
   validates(:time_window, &valid_time_window?/1)
   validates(:percent_threshold, &valid_percent?/1)
-  validates(:repeating, &is_boolean/1)
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
           target: Type.complex_target(),
+          filtered_target: Type.filtered_target(),
           channel: Type.channel(),
           time_window: Type.time_window(),
           percent_threshold: number(),
-          repeating: boolean(),
           triggered?: boolean(),
           payload: Type.payload()
         }
@@ -47,60 +45,58 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
   @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type
 
-  def get_data(%__MODULE__{filtered_target_list: target_list} = settings)
+  def get_data(%__MODULE__{filtered_target: %{list: target_list}} = settings)
       when is_list(target_list) do
     time_window_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(settings.time_window)
+    from = Timex.shift(Timex.now(), seconds: -time_window_sec)
+    to = Timex.shift(Timex.now(), days: -1)
 
     target_list
     |> Enum.map(fn slug ->
       {:ok, contract, _token_decimals} = Project.contract_info_by_slug(slug)
-
-      current_daa =
-        case contract do
-          "ETH" ->
-            Cache.get_or_store("daa_#{contract}_current", fn ->
-              {:ok, result} = EthDailyActiveAddresses.realtime_active_addresses()
-              result
-            end)
-
-          _ ->
-            Cache.get_or_store("daa_#{contract}_current", fn ->
-              {:ok, [{_, result}]} = Erc20DailyActiveAddresses.realtime_active_addresses(contract)
-              result
-            end)
-        end
-
-      average_daa =
-        Cache.get_or_store("daa_#{contract}_prev_#{settings.time_window}", fn ->
-          average_daily_active_addresses(
-            contract,
-            Timex.shift(Timex.now(), seconds: -time_window_sec),
-            Timex.shift(Timex.now(), days: -1)
-          )
-        end)
+      current_daa = realtime_active_addresses(contract)
+      average_daa = average_active_addresses(contract, from, to)
 
       {slug, {current_daa, average_daa}}
     end)
   end
 
-  defp average_daily_active_addresses("ethereum", from, to) do
-    {:ok, result} = EthDailyActiveAddresses.average_active_addresses(from, to)
-    result
+  defp realtime_active_addresses(contract) do
+    Cache.get_or_store("daa_#{contract}_current", fn ->
+      case DailyActiveAddresses.realtime_active_addresses(contract) do
+        {:ok, [{_, result}]} ->
+          result
+
+        _ ->
+          {:error, :nodata}
+      end
+    end)
+    |> case do
+      {:error, _} -> 0
+      result -> result
+    end
   end
 
-  defp average_daily_active_addresses(contract, from, to) do
-    {:ok, result} = Erc20DailyActiveAddresses.average_active_addresses(contract, from, to)
+  defp average_active_addresses(contract, from, to) do
+    Cache.get_or_store("daa_#{contract}_current", fn ->
+      case DailyActiveAddresses.average_active_addresses(contract, from, to) do
+        {:ok, [{_, result}]} ->
+          result
 
-    case result do
-      [{_, value}] -> value
-      _ -> 0
+        _ ->
+          {:error, :nodata}
+      end
+    end)
+    |> case do
+      {:error, _} -> 0
+      result -> result
     end
   end
 
   defimpl Sanbase.Signals.Settings, for: DailyActiveAddressesSettings do
     def triggered?(%DailyActiveAddressesSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%DailyActiveAddressesSettings{} = settings) do
+    def evaluate(%DailyActiveAddressesSettings{} = settings, _trigger) do
       case DailyActiveAddressesSettings.get_data(settings) do
         list when is_list(list) and list != [] ->
           build_result(list, settings)

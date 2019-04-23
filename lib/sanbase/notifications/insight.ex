@@ -3,7 +3,7 @@ defmodule Sanbase.Notifications.Insight do
   require Sanbase.Utils.Config, as: Config
   require Logger
 
-  alias Sanbase.Voting.Post
+  alias Sanbase.Insight.Post
 
   def publish_in_discord(post) do
     post
@@ -43,7 +43,7 @@ defmodule Sanbase.Notifications.Insight do
     Config.get(:insights_discord_publish_user)
   end
 
-  defp posts_url(id), do: "#{sanbase_url()}/insights/#{id}"
+  defp posts_url(id), do: "#{sanbase_url()}/insights/read/#{id}"
   defp sanbase_url(), do: Config.module_get(SanbaseWeb.Endpoint, :frontend_url)
   defp http_client(), do: Mockery.Macro.mockable(HTTPoison)
 end

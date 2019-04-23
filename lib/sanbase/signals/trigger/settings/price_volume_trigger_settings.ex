@@ -7,27 +7,25 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings do
   alias Sanbase.Model.Project
   alias Sanbase.TechIndicators.PriceVolumeDifference
 
-  @derive Jason.Encoder
+  @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
   @trigger_type "price_volume_difference"
   @enforce_keys [:type, :target, :channel, :threshold]
 
   defstruct type: @trigger_type,
             target: nil,
-            filtered_target_list: [],
+            filtered_target: %{list: []},
             channel: nil,
             threshold: 0.002,
             aggregate_interval: "1d",
             window_type: "bohman",
             approximation_window: 14,
             comparison_window: 7,
-            repeating: true,
             triggered?: false,
             payload: nil
 
   validates(:target, &valid_target?/1)
   validates(:channel, &valid_notification_channel/1)
   validates(:threshold, &valid_threshold?/1)
-  validates(:repeating, &is_boolean/1)
 
   @typedoc ~s"""
   threshold - the sensitivity of the trigger. Defaults to 0.002
@@ -44,6 +42,7 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings do
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
           target: Type.complex_target(),
+          filtered_target: Type.filtered_target(),
           channel: Type.channel(),
           threshold: Type.threshold(),
           aggregate_interval: Type.time(),
@@ -57,12 +56,13 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings do
   @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type
 
-  def get_data(%{filtered_target_list: target} = settings) when is_list(target) do
-    target
+  def get_data(%__MODULE__{filtered_target: %{list: target_list}} = settings)
+      when is_list(target_list) do
+    target_list
     |> Enum.map(fn slug -> get_data_for_single_project(slug, settings) end)
   end
 
-  defp get_data_for_single_project(slug, settings) do
+  def get_data_for_single_project(slug, settings) when is_binary(slug) do
     project = Project.by_slug(slug)
 
     # return only the last result
@@ -89,7 +89,7 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings do
   defimpl Sanbase.Signals.Settings, for: PriceVolumeDifferenceTriggerSettings do
     def triggered?(%PriceVolumeDifferenceTriggerSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%PriceVolumeDifferenceTriggerSettings{} = settings) do
+    def evaluate(%PriceVolumeDifferenceTriggerSettings{} = settings, _trigger) do
       case PriceVolumeDifferenceTriggerSettings.get_data(settings) do
         list when is_list(list) and list != [] ->
           build_result(list, settings)

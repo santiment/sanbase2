@@ -108,6 +108,21 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
     |> Map.get(:argument_data)
   end
 
+  @doc ~s"""
+  Transform the UserTrigger structure to be more easily consumed by the API.
+  This is done by propagating the tags and the UserTrigger id into the Trigger
+  structure
+  """
+  def transform_user_trigger(%Sanbase.Signals.UserTrigger{trigger: trigger, tags: tags} = ut) do
+    ut = Map.from_struct(ut)
+    trigger = Map.from_struct(trigger)
+
+    %{
+      ut
+      | trigger: trigger |> Map.put(:tags, tags) |> Map.put(:id, ut.id)
+    }
+  end
+
   # Private functions
 
   @spec format_error(Ecto.Changeset.error()) :: String.t()

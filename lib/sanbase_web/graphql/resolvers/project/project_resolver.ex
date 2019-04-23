@@ -12,7 +12,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   }
 
   alias Sanbase.Tag
-  alias Sanbase.Voting.Post
+  alias Sanbase.Insight.Post
 
   alias Sanbase.Prices
 
@@ -24,12 +24,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
-  def projects_count(_root, _args, _resolution) do
+  def projects_count(_root, args, _resolution) do
+    min_volume = Map.get(args, :min_volume)
+
     {:ok,
      %{
-       erc20_projects_count: Project.List.erc20_projects_count(),
-       currency_projects_count: Project.List.currency_projects_count(),
-       projects_count: Project.List.projects_count()
+       erc20_projects_count: Project.List.erc20_projects_count(min_volume),
+       currency_projects_count: Project.List.currency_projects_count(min_volume),
+       projects_count: Project.List.projects_count(min_volume)
      }}
   end
 
@@ -39,42 +41,45 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def all_projects(_parent, args, _resolution) do
-    page = Map.get(args, :page, nil)
-    page_size = Map.get(args, :page_size, nil)
+    page = Map.get(args, :page)
+    page_size = Map.get(args, :page_size)
+    min_volume = Map.get(args, :min_volume)
 
     projects =
       if not page_arguments_valid?(page, page_size) do
-        Project.List.projects()
+        Project.List.projects(min_volume)
       else
-        Project.List.projects_page(page, page_size)
+        Project.List.projects_page(page, page_size, min_volume)
       end
 
     {:ok, projects}
   end
 
   def all_erc20_projects(_root, args, _resolution) do
-    page = Map.get(args, :page, nil)
-    page_size = Map.get(args, :page_size, nil)
+    page = Map.get(args, :page)
+    page_size = Map.get(args, :page_size)
+    min_volume = Map.get(args, :min_volume)
 
     erc20_projects =
       if not page_arguments_valid?(page, page_size) do
-        Project.List.erc20_projects()
+        Project.List.erc20_projects(min_volume)
       else
-        Project.List.erc20_projects_page(page, page_size)
+        Project.List.erc20_projects_page(page, page_size, min_volume)
       end
 
     {:ok, erc20_projects}
   end
 
   def all_currency_projects(_root, args, _resolution) do
-    page = Map.get(args, :page, nil)
-    page_size = Map.get(args, :page_size, nil)
+    page = Map.get(args, :page)
+    page_size = Map.get(args, :page_size)
+    min_volume = Map.get(args, :min_volume)
 
     currency_projects =
       if not page_arguments_valid?(page, page_size) do
-        Project.List.currency_projects()
+        Project.List.currency_projects(min_volume)
       else
-        Project.List.currency_projects_page(page, page_size)
+        Project.List.currency_projects_page(page, page_size, min_volume)
       end
 
     {:ok, currency_projects}
@@ -86,10 +91,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         {:error, "Project with id '#{id}' not found."}
 
       project ->
-        project =
-          project
-          |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
-
         {:ok, project}
     end
   end
@@ -102,10 +103,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         {:error, "Project with slug '#{slug}' not found."}
 
       project ->
-        project =
-          project
-          |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
-
         {:ok, project}
     end
   end
@@ -157,7 +154,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       do: {:ok, nil}
 
   def project_transparency_status(
-        %Project{project_transparency_status_id: ptsi} = project,
+        %Project{project_transparency_status_id: ptsi},
         _args,
         %{context: %{loader: loader}}
       ) do
@@ -303,11 +300,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def average_dev_activity_from_loader(loader, project) do
     with {:ok, organization} <- Project.github_organization(project) do
-      average_dev_activity =
-        loader
-        |> Dataloader.get(SanbaseDataloader, :average_dev_activity, organization)
-
-      {:ok, average_dev_activity}
+      loader
+      |> Dataloader.get(SanbaseDataloader, :average_dev_activity, organization)
+      |> case do
+        nil -> {:ok, 0}
+        result -> result
+      end
     else
       _ -> {:ok, nil}
     end
@@ -411,11 +409,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def initial_ico(%Project{} = project, _args, _resolution) do
-    ico =
-      Project.initial_ico(project)
-      |> Repo.preload(ico_currencies: [:currency])
-
-    {:ok, ico}
+    {:ok, Project.initial_ico(project)}
   end
 
   @doc """

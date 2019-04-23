@@ -13,46 +13,35 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
 
   alias Sanbase.Model.Project
   alias Sanbase.Repo
-  alias Sanbase.Clickhouse.Erc20DailyActiveAddresses
+  alias Sanbase.Clickhouse.DailyActiveAddresses
 
   alias Sanbase.Notifications.{Discord, Notification, Type}
+
+  @cache_id :signals_cache
 
   @impl true
   def run() do
     projects = projects_over_threshold()
 
-    avg_daa_for_projects = get_or_store_avg_daa(projects)
-    today_daa_for_projects = all_projects_daa_for_today(projects)
+    with {:ok, avg_daa_for_projects} <- get_or_store_avg_daa(projects),
+         {:ok, today_daa_for_projects} <- all_projects_daa_for_today(projects) do
+      notification_type = Type.get_or_create("daa_signal")
 
-    notification_type = Type.get_or_create("daa_signal")
-
-    projects_to_signal =
       projects
-      |> Enum.map(
-        &check_for_project(&1, avg_daa_for_projects, today_daa_for_projects, notification_type)
-      )
-      |> Enum.reject(&is_nil/1)
-      |> Enum.sort_by(fn {_, _, _, _, change, _} -> change end, &>=/2)
+      |> projects_to_signal(avg_daa_for_projects, today_daa_for_projects, notification_type)
+      |> send_and_persist(notification_type)
 
-    if Enum.count(projects_to_signal) > 0 do
-      projects_to_signal
-      |> Enum.map(&create_notification_content/1)
-      |> Enum.each(fn {project, payload, embeds, current_daa} ->
-        payload
-        |> Discord.encode!(publish_user(), embeds)
-        |> publish("discord")
-
-        Notification.insert_triggered(project, notification_type, "#{current_daa}")
-      end)
-    else
-      Logger.info("DAA Signal finished with nothing to publish")
       :ok
+    else
+      {:error, error} ->
+        Logger.error(
+          "Error while executing Daily Active Addresses Signal. Reason: #{inspect(error)}"
+        )
     end
   end
 
   @impl true
   def publish(payload, "discord") do
-    Logger.info("Sending Discord notification for Daily Active Addresses: #{payload}")
     Discord.send_notification(webhook_url(), "DAA Signal", payload)
   end
 
@@ -61,7 +50,9 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   defp all_projects() do
     from(
       p in Project,
-      where: not is_nil(p.coinmarketcap_id) and not is_nil(p.main_contract_address)
+      where:
+        not is_nil(p.coinmarketcap_id) and
+          (not is_nil(p.main_contract_address) or p.coinmarketcap_id == "ethereum")
     )
     |> Repo.all()
   end
@@ -69,6 +60,35 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   defp projects_over_threshold() do
     all_projects()
     |> Project.projects_over_volume_threshold(threshold())
+  end
+
+  defp projects_to_signal(
+         projects,
+         avg_daa_for_projects,
+         today_daa_for_projects,
+         notification_type
+       ) do
+    projects
+    |> Enum.map(
+      &check_for_project(&1, avg_daa_for_projects, today_daa_for_projects, notification_type)
+    )
+    |> Enum.reject(&is_nil/1)
+    |> Enum.sort_by(fn {_, _, _, _, change, _} -> change end, &>=/2)
+  end
+
+  defp send_and_persist([], _),
+    do: Logger.info("Daily Active Addresses Signal finished with nothing to publish")
+
+  defp send_and_persist(projects_to_signal, notification_type) do
+    projects_to_signal
+    |> Enum.map(&create_notification_content/1)
+    |> Enum.each(fn {project, payload, embeds, current_daa} ->
+      payload
+      |> Discord.encode!(publish_user(), embeds)
+      |> publish("discord")
+
+      Notification.insert_triggered(project, notification_type, "#{current_daa}")
+    end)
   end
 
   defp check_for_project(project, avg_daa_for_projects, today_daa_for_projects, notification_type) do
@@ -84,10 +104,10 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
       Logger.info(
         "DAA signal check: #{project.coinmarketcap_id}, #{avg_daa}, #{current_daa}, #{
           last_triggered_daa
-        }, #{percent_change}%, #{hours}, #{percent_change > threshold_change() * 100}"
+        }, #{percent_change}%, #{hours}, #{percent_change > trigger_percent(project) * 100}"
       )
 
-      if percent_change > threshold_change() * 100 do
+      if percent_change > trigger_percent(project) * 100 do
         {project, avg_daa, current_daa, last_triggered_daa, percent_change, hours}
       else
         nil
@@ -149,21 +169,35 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   end
 
   defp get_or_store_avg_daa(projects) do
-    ConCache.get_or_store(:signals_cache, "daa_signal_#{today_str()}_averages", fn ->
-      projects
-      |> Enum.map(&Project.contract_address/1)
-      |> Enum.chunk_every(100)
-      |> Enum.flat_map(fn contracts ->
-        {:ok, daa_result} =
-          Erc20DailyActiveAddresses.average_active_addresses(
-            contracts,
-            timeframe_from(),
-            timeframe_to()
-          )
+    cache_key = "daa_signal_#{today_str()}_averages"
 
-        daa_result
-      end)
+    ConCache.get(@cache_id, cache_key)
+    |> case do
+      nil ->
+        get_average_active_addresses(projects)
+        |> case do
+          {:ok, avg_daa} ->
+            :ok = ConCache.put(@cache_id, cache_key, avg_daa)
+            {:ok, avg_daa}
+
+          {:error, error} ->
+            {:error, error}
+        end
+
+      avg_daa ->
+        {:ok, avg_daa}
+    end
+  end
+
+  defp get_average_active_addresses(projects) do
+    projects
+    |> Enum.map(&Project.contract_address/1)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.chunk_every(50)
+    |> Enum.map(fn contracts ->
+      DailyActiveAddresses.average_active_addresses(contracts, timeframe_from(), timeframe_to())
     end)
+    |> handle_result()
   end
 
   defp get_daa_contract(contract, all_projects_daa) do
@@ -175,11 +209,26 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   defp all_projects_daa_for_today(projects) do
     projects
     |> Enum.map(&Project.contract_address/1)
-    |> Enum.chunk_every(100)
-    |> Enum.flat_map(fn contracts ->
-      {:ok, today_daa} = Erc20DailyActiveAddresses.realtime_active_addresses(contracts)
-      today_daa
-    end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.chunk_every(50)
+    |> Enum.map(fn contracts -> DailyActiveAddresses.realtime_active_addresses(contracts) end)
+    |> handle_result()
+  end
+
+  defp handle_result(daa_for_projects) do
+    daa_for_projects
+    |> Enum.find(&match?({:error, _}, &1))
+    |> case do
+      {:error, error} ->
+        {:error, error}
+
+      nil ->
+        {
+          :ok,
+          daa_for_projects
+          |> Enum.flat_map(fn {:ok, daa} -> daa end)
+        }
+    end
   end
 
   defp diff_in_hours(%NaiveDateTime{} = datetime, last_datetime) do
@@ -191,7 +240,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   end
 
   defp today_str() do
-    to_string(Timex.to_date(Timex.now()))
+    Timex.now() |> Timex.to_date() |> to_string()
   end
 
   defp notification_emoji_up() do
@@ -213,8 +262,14 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     Config.get(:publish_user)
   end
 
-  defp threshold_change() do
-    Config.get(:change) |> String.to_integer()
+  defp trigger_percent(%Project{coinmarketcap_id: "ethereum"}) do
+    {trigger, ""} = Config.get(:ethereum_trigger_percent) |> Float.parse()
+    trigger
+  end
+
+  defp trigger_percent(_) do
+    {trigger, ""} = Config.get(:trigger_percent) |> Float.parse()
+    trigger
   end
 
   defp threshold() do

@@ -48,7 +48,7 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
 
     triggered =
       PriceVolumeDifferenceTriggerSettings.type()
-      |> UserTrigger.get_triggers_by_type()
+      |> UserTrigger.get_active_triggers_by_type()
       |> Evaluator.run()
 
     assert length(triggered) == 0
@@ -70,7 +70,7 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
       end do
       triggered =
         PriceVolumeDifferenceTriggerSettings.type()
-        |> UserTrigger.get_triggers_by_type()
+        |> UserTrigger.get_active_triggers_by_type()
         |> Evaluator.run()
 
       assert length(triggered) == 0
@@ -85,7 +85,9 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
            body: """
            [
              #{Sanbase.TechIndicatorsTestResponse.price_volume_diff_prepend_response()},
-             {"price_volume_diff": 0.01, "price_change": 0.04, "volume_change": 0.03, "timestamp": 1516752000}
+             {"price_volume_diff": 0.01, "price_change": 0.04, "volume_change": 0.03, "timestamp": #{
+             DateTime.utc_now() |> DateTime.to_unix()
+           }}
            ]
            """,
            status_code: 200
@@ -93,7 +95,7 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
       end do
       [triggered | rest] =
         PriceVolumeDifferenceTriggerSettings.type()
-        |> UserTrigger.get_triggers_by_type()
+        |> UserTrigger.get_active_triggers_by_type()
         |> Evaluator.run()
 
       assert length(rest) == 0
@@ -114,7 +116,7 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
       assert capture_log(fn ->
                triggered =
                  PriceVolumeDifferenceTriggerSettings.type()
-                 |> UserTrigger.get_triggers_by_type()
+                 |> UserTrigger.get_active_triggers_by_type()
                  |> Evaluator.run()
 
                assert triggered == []
@@ -133,7 +135,7 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
       assert capture_log(fn ->
                triggered =
                  PriceVolumeDifferenceTriggerSettings.type()
-                 |> UserTrigger.get_triggers_by_type()
+                 |> UserTrigger.get_active_triggers_by_type()
                  |> Evaluator.run()
 
                assert triggered == []
@@ -144,18 +146,16 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
   defp setup_triggers(user) do
     trigger_settings1 = %{
       type: "price_volume_difference",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
-      threshold: 0.002,
-      repeating: false
+      threshold: 0.002
     }
 
     trigger_settings2 = %{
       type: "price_volume_difference",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
-      threshold: 0.1,
-      repeating: false
+      threshold: 0.1
     }
 
     {:ok, trigger1} =

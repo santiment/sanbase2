@@ -38,8 +38,6 @@ defmodule Sanbase.Auth.Hmac do
   require Sanbase.Utils.Config, as: Config
   require Logger
 
-  alias Sanbase.Auth.UserApikeyToken
-
   @rand_bytes_length 64
   @apikey_length 32
 
@@ -60,7 +58,7 @@ defmodule Sanbase.Auth.Hmac do
   end
 
   def apikey_valid?(token, apikey) do
-    UserApikeyToken.has_token?(token) and apikey == generate_apikey(token)
+    apikey == generate_apikey(token)
   end
 
   def split_apikey(token_apikey) do

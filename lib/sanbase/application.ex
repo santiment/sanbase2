@@ -57,8 +57,7 @@ defmodule Sanbase.Application do
     children = (common_children() ++ children) |> Sanbase.ApplicationUtils.normalize_children()
 
     # Add error tracking through sentry
-    :ok = :error_logger.add_report_handler(Sentry.Logger)
-
+    {:ok, _} = Logger.add_backend(Sentry.LoggerBackend)
     Supervisor.start_link(children, opts)
   end
 

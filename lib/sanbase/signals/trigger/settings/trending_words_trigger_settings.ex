@@ -16,7 +16,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
   alias __MODULE__
   alias Sanbase.Signals.Type
 
-  @derive Jason.Encoder
+  @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
   @trigger_type "trending_words"
   @trending_words_size 10
   @trending_words_hours [1, 8, 14]
@@ -29,15 +29,13 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
             triggered?: false,
             payload: %{},
             target: "all",
-            filtered_target_list: [],
-            repeating: true
+            filtered_target: %{list: []}
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
           channel: Type.channel(),
           trigger_time: String.t(),
           triggered?: boolean(),
-          repeating: boolean(),
           payload: Type.payload()
         }
 
@@ -53,10 +51,10 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
   @spec type() :: String.t()
   def type(), do: @trigger_type
 
-  @spec get_data(%TrendingWordsTriggerSettings{}) :: {:ok, list(top_word_type)} | :error
-  def get_data(%TrendingWordsTriggerSettings{filtered_target_list: []}), do: :error
+  @spec get_data(%__MODULE__{}) :: {:ok, list(top_word_type)} | :error
+  def get_data(%__MODULE__{filtered_target: %{list: []}}), do: :error
 
-  def get_data(%TrendingWordsTriggerSettings{trigger_time: trigger_time}) do
+  def get_data(%__MODULE__{trigger_time: trigger_time}) do
     now = Timex.now()
     trigger_time = Time.from_iso8601!(trigger_time)
     now_time = DateTime.to_time(now)
@@ -116,7 +114,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
   defimpl Sanbase.Signals.Settings, for: TrendingWordsTriggerSettings do
     def triggered?(%TrendingWordsTriggerSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%TrendingWordsTriggerSettings{target: target} = settings) do
+    def evaluate(%TrendingWordsTriggerSettings{target: target} = settings, _trigger) do
       case TrendingWordsTriggerSettings.get_data(settings) do
         {:ok, top_words} ->
           %TrendingWordsTriggerSettings{

@@ -69,29 +69,6 @@ defmodule Sanbase.TechIndicators do
     end
   end
 
-  def erc20_exchange_funds_flow(
-        from_datetime,
-        to_datetime
-      ) do
-    erc20_exchange_funds_flow_request(
-      from_datetime,
-      to_datetime
-    )
-    |> case do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Jason.decode(body)
-        erc20_exchange_funds_flow_result(result)
-
-      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        error_result("Error status #{status} fetching erc20 exchange funds flow: #{body}")
-
-      {:error, %HTTPoison.Error{} = error} ->
-        error_result(
-          "Cannot fetch erc20 exchange funds flow data: #{HTTPoison.Error.message(error)}"
-        )
-    end
-  end
-
   def social_volume(
         slug,
         datetime_from,
@@ -111,7 +88,7 @@ defmodule Sanbase.TechIndicators do
         {:ok, result} = Jason.decode(body)
         social_volume_result(result)
 
-      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
+      {:ok, %HTTPoison.Response{status_code: status}} ->
         warn_result("Error status #{status} fetching social volume for project #{slug}")
 
       {:error, %HTTPoison.Error{} = error} ->
@@ -128,7 +105,7 @@ defmodule Sanbase.TechIndicators do
         {:ok, result} = Jason.decode(body)
         social_volume_projects_result(result)
 
-      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
+      {:ok, %HTTPoison.Response{status_code: status}} ->
         warn_result("Error status #{status} fetching social volume projects.")
 
       {:error, %HTTPoison.Error{} = error} ->
@@ -253,36 +230,6 @@ defmodule Sanbase.TechIndicators do
     {:ok, result}
   end
 
-  defp erc20_exchange_funds_flow_request(
-         from_datetime,
-         to_datetime
-       ) do
-    from_unix = DateTime.to_unix(from_datetime)
-    to_unix = DateTime.to_unix(to_datetime)
-
-    url = "#{tech_indicators_url()}/indicator/erc20_tokens_exchange_flow"
-
-    options = [
-      recv_timeout: 2 * @recv_timeout,
-      params: [
-        {"from_timestamp", from_unix},
-        {"to_timestamp", to_unix}
-      ]
-    ]
-
-    http_client().get(url, [], options)
-  end
-
-  defp erc20_exchange_funds_flow_result(result) do
-    result =
-      result
-      |> Enum.map(fn item ->
-        for {key, val} <- item, into: %{}, do: {String.to_existing_atom(key), val}
-      end)
-
-    {:ok, result}
-  end
-
   defp social_volume_request(
          slug,
          datetime_from,
@@ -372,8 +319,8 @@ defmodule Sanbase.TechIndicators do
   end
 
   defp topic_search_result(%{"messages" => messages, "chart_data" => chart_data}) do
-    messages = parse_topic_search_data(messages, "text")
-    chart_data = parse_topic_search_data(chart_data, "mentions_count")
+    messages = parse_topic_search_data(messages, :text)
+    chart_data = parse_topic_search_data(chart_data, :mentions_count)
 
     result = %{messages: messages, chart_data: chart_data}
 
@@ -385,7 +332,7 @@ defmodule Sanbase.TechIndicators do
     |> Enum.map(fn result ->
       %{
         :datetime => Map.get(result, "timestamp") |> DateTime.from_unix!(),
-        String.to_atom(key) => Map.get(result, key)
+        key => Map.get(result, to_string(key))
       }
     end)
   end

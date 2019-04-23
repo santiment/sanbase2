@@ -279,7 +279,7 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
 
   defp apikey_valid?(apikey) do
     {:ok, {token, _apikey}} = Hmac.split_apikey(apikey)
-    Hmac.apikey_valid?(token, apikey)
+    Hmac.apikey_valid?(token, apikey) && UserApikeyToken.has_token?(token)
   end
 
   defp generate_apikey(conn) do

@@ -1,13 +1,18 @@
 defmodule SanbaseWeb.Graphql.ContextPlug do
   @moduledoc ~s"""
-  Plug that builds the Graphql context.
-  Currently only checks the `authorization` header and verifies the credentials
+  Plug that builds the GraphQL context.
+
+  It performs the following operations:
+  - Check the `Authorization` header and verifies the credentials. Basic auth,
+  JSON Web Token (JWT) and apikey are the supported credential mechanisms.
+  - Inject the permissions for the logged in or anonymous user. The permissions
+  are a simple map that marks if the user has access to historical and realtime data
+  - Inject the cache key for the query in the context.
   """
 
   @behaviour Plug
 
   import Plug.Conn
-
   require Sanbase.Utils.Config, as: Config
 
   alias SanbaseWeb.Graphql.ContextPlug
@@ -24,24 +29,36 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   def init(opts), do: opts
 
   def call(conn, _) do
-    context = build_context(conn, @auth_methods)
-    put_private(conn, :absinthe, %{context: context |> Map.put(:remote_ip, conn.remote_ip)})
+    context =
+      build_context(conn, @auth_methods)
+      |> Map.put(:remote_ip, conn.remote_ip)
+
+    put_private(conn, :absinthe, %{context: context})
   end
 
   defp build_context(conn, [auth_method | rest]) do
     auth_method.(conn)
     |> case do
-      :skip -> build_context(conn, rest)
-      auth -> %{auth: auth}
+      :skip ->
+        build_context(conn, rest)
+
+      context ->
+        context
     end
   end
 
-  defp build_context(_conn, []), do: %{}
+  defp build_context(_conn, []), do: %{permissions: User.no_permissions()}
 
   def bearer_authentication(%Plug.Conn{} = conn) do
     with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
          {:ok, current_user} <- bearer_authorize(token) do
-      %{auth_method: :user_token, current_user: current_user}
+      %{
+        permissions: User.permissions!(current_user),
+        auth: %{
+          auth_method: :user_token,
+          current_user: current_user
+        }
+      }
     else
       _ -> :skip
     end
@@ -50,7 +67,10 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   def basic_authentication(%Plug.Conn{} = conn) do
     with ["Basic " <> auth_attempt] <- get_req_header(conn, "authorization"),
          {:ok, current_user} <- basic_authorize(auth_attempt) do
-      %{auth_method: :basic, current_user: current_user}
+      %{
+        permissions: User.full_permissions(),
+        auth: %{auth_method: :basic, current_user: current_user}
+      }
     else
       _ -> :skip
     end
@@ -60,7 +80,10 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     with ["Apikey " <> apikey] <- get_req_header(conn, "authorization"),
          {:ok, current_user} <- apikey_authorize(apikey),
          {:ok, {token, _apikey}} <- Sanbase.Auth.Hmac.split_apikey(apikey) do
-      %{auth_method: :apikey, current_user: current_user, token: token}
+      %{
+        permissions: User.permissions!(current_user),
+        auth: %{auth_method: :apikey, current_user: current_user, token: token}
+      }
     else
       _ -> :skip
     end

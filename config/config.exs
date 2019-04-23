@@ -5,8 +5,14 @@
 # is restricted to this project.
 use Mix.Config
 
+# Latest version of timezone data (2019a) distributed by IANA has an error
+# Disable the autoupdate until it is fixed
+config :tzdata, :autoupdate, :disabled
+
 # General application configuration
 config :sanbase, ecto_repos: [Sanbase.Repo, Sanbase.TimescaleRepo]
+
+config :phoenix, :json_library, Jason
 
 config :ecto, json_library: Jason
 
@@ -61,6 +67,7 @@ config :logger, :console,
 
 # Error tracking
 config :sentry,
+  json_library: Jason,
   included_environments: [:prod],
   environment_name: Mix.env()
 
@@ -115,18 +122,14 @@ config :sanbase, Sanbase.Oauth2.Hydra,
   clients_that_require_san_tokens:
     {:system, "CLIENTS_THAT_REQUIRE_SAN_TOKENS", "{\"grafana\": 100}"}
 
-config :sanbase, SanbaseWeb.Graphql.PlugAttack,
-  rate_limit_period: {:system, "RATE_LIMIT_PERIOD", "10000"},
-  rate_limit_max_requests: {:system, "RATE_LIMIT_MAX_REQUESTS", "40"}
-
-config :sanbase, SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction,
+config :sanbase, SanbaseWeb.Graphql.Middlewares.TimeframeRestriction,
   restrict_to_in_days: {:system, "RESTRICT_TO_IN_DAYS", "1"},
   restrict_from_in_days: {:system, "RESTRICT_FROM_IN_MONTHS", "90"}
 
 config :sanbase, Sanbase.Discourse,
   url: {:system, "DISCOURSE_URL", "https://discourse.stage.internal.santiment.net/"},
   api_key: {:system, "DISCOURSE_API_KEY"},
-  insights_category: {:system, "DISCOURSE_INSIGHTS_CATEGORY", "sanbaseinsights"}
+  insights_category: {:system, "DISCOURSE_INSIGHTS_CATEGORY", "Sanbase Insights"}
 
 config :libcluster,
   topologies: [

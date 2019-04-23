@@ -1,6 +1,6 @@
-defmodule SanbaseWeb.Graphql.UserListTest do
+defmodule SanbaseWeb.Graphql.TargetUserListTest do
   use Sanbase.DataCase, async: false
-  alias Sanbase.UserLists.UserList
+  alias Sanbase.UserList
   alias Sanbase.Signals.UserTrigger
 
   import Sanbase.Factory
@@ -38,11 +38,9 @@ defmodule SanbaseWeb.Graphql.UserListTest do
   test "create trigger with a single target", context do
     trigger_settings = %{
       type: "price_absolute_change",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
-      above: 300.0,
-      below: 200.0,
-      repeating: false
+      operation: %{above: 300.0}
     }
 
     {:ok, _trigger} =
@@ -59,20 +57,20 @@ defmodule SanbaseWeb.Graphql.UserListTest do
       type: "price_absolute_change",
       target: 12,
       channel: "telegram",
-      above: 300.0,
-      below: 200.0,
-      repeating: false
+      operation: %{above: 300.0}
     }
 
     assert capture_log(fn ->
-             assert {:error, "Trigger structure is invalid"} ==
-                      UserTrigger.create_user_trigger(context.user, %{
-                        title: "Not a valid signal",
-                        is_public: true,
-                        settings: trigger_settings
-                      })
-           end) =~
-             ~s/UserTrigger struct is not valid: [{:error, :target, :by, "12 is not a valid target"}]/
+             {:error, message} =
+               UserTrigger.create_user_trigger(context.user, %{
+                 title: "Not a valid signal",
+                 is_public: true,
+                 settings: trigger_settings
+               })
+
+             assert message =~
+                      "Trigger structure is invalid. Key `settings` is not valid. Reason: [\"12 is not a valid target\"]"
+           end) =~ "UserTrigger struct is not valid. Reason: [\"12 is not a valid target\"]"
   end
 
   test "create trigger with user_list target", context do
@@ -80,9 +78,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
       type: "price_absolute_change",
       target: %{user_list: context.user_list.id},
       channel: "telegram",
-      above: 300.0,
-      below: 200.0,
-      repeating: false
+      operation: %{above: 300.0}
     }
 
     {:ok, _trigger} =
@@ -96,11 +92,9 @@ defmodule SanbaseWeb.Graphql.UserListTest do
   test "create trigger with lists of slugs target", context do
     trigger_settings = %{
       type: "price_absolute_change",
-      target: ["santiment", "ethereum", "bitcoin"],
+      target: %{slug: ["santiment", "ethereum", "bitcoin"]},
       channel: "telegram",
-      above: 300.0,
-      below: 200.0,
-      repeating: false
+      operation: %{above: 300.0}
     }
 
     {:ok, _trigger} =
@@ -116,18 +110,17 @@ defmodule SanbaseWeb.Graphql.UserListTest do
       type: "price_absolute_change",
       target: ["santiment", "ethereum", "bitcoin", 12],
       channel: "telegram",
-      above: 300.0,
-      below: 200.0,
-      repeating: false
+      operation: %{above: 300.0}
     }
 
     capture_log(fn ->
-      assert {:error, "Trigger structure is invalid"} ==
-               UserTrigger.create_user_trigger(context.user, %{
-                 title: "Not a valid signal, too",
-                 is_public: true,
-                 settings: trigger_settings
-               })
+      assert UserTrigger.create_user_trigger(context.user, %{
+               title: "Not a valid signal, too",
+               is_public: true,
+               settings: trigger_settings
+             }) ==
+               {:error,
+                "Trigger structure is invalid. Key `settings` is not valid. Reason: [\"[\\\"santiment\\\", \\\"ethereum\\\", \\\"bitcoin\\\", 12] is not a valid target\"]"}
     end) =~
       ~s/UserTrigger struct is not valid: [{:error, :target, :by, "The target list contains elements that are not string"}]/
   end
@@ -137,19 +130,20 @@ defmodule SanbaseWeb.Graphql.UserListTest do
       type: "price_absolute_change",
       target: %{user_list: [1, 2, 3]},
       channel: "telegram",
-      above: 300.0,
-      below: 200.0,
-      repeating: false
+      operation: %{above: 300.0}
     }
 
     assert capture_log(fn ->
-             assert {:error, "Trigger structure is invalid"} ==
-                      UserTrigger.create_user_trigger(context.user, %{
-                        title: "Yet another not valid settings",
-                        is_public: true,
-                        settings: trigger_settings
-                      })
+             {:error, message} =
+               UserTrigger.create_user_trigger(context.user, %{
+                 title: "Yet another not valid settings",
+                 is_public: true,
+                 settings: trigger_settings
+               })
+
+             assert message ==
+                      "Trigger structure is invalid. Key `settings` is not valid. Reason: [\"%{user_list: [1, 2, 3]} is not a valid target\"]"
            end) =~
-             ~s/UserTrigger struct is not valid: [{:error, :target, :by, "%{user_list: [1, 2, 3]} is not a valid target"}]/
+             "UserTrigger struct is not valid. Reason: [\"%{user_list: [1, 2, 3]} is not a valid target\"]"
   end
 end

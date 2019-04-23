@@ -10,17 +10,20 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
   test "loading the user from the current token", %{conn: conn} do
     user =
-      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
+      %User{
+        salt: User.generate_salt(),
+        privacy_policy_accepted: true,
+        test_san_balance: Decimal.new(500_000)
+      }
       |> Repo.insert!()
 
     conn = setup_jwt_auth(conn, user)
 
-    assert conn.private[:absinthe] == %{
-             context: %{
-               auth: %{auth_method: :user_token, current_user: user},
-               remote_ip: {127, 0, 0, 1}
-             }
-           }
+    conn_context = conn.private.absinthe.context
+
+    assert conn_context.auth == %{auth_method: :user_token, current_user: user}
+    assert conn_context.remote_ip == {127, 0, 0, 1}
+    assert conn_context.permissions == User.full_permissions()
   end
 
   test "verifying the user's salt when loading", %{conn: conn} do
@@ -38,7 +41,9 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
       capture_log(fn ->
         conn = ContextPlug.call(conn, %{})
 
-        assert conn.private[:absinthe] == %{context: %{remote_ip: {127, 0, 0, 1}}}
+        conn_context = conn.private.absinthe.context
+        assert conn_context.remote_ip == {127, 0, 0, 1}
+        assert conn_context.permissions == User.no_permissions()
       end)
 
     assert logs =~ ~r/Invalid bearer token/

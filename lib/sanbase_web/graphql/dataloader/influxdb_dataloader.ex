@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
   alias SanbaseWeb.Graphql.Helpers.Utils
 
   @max_concurrency 10
+  @total_erc20 "TOTAL_ERC20"
 
   def data() do
     Dataloader.KV.new(&query/2)

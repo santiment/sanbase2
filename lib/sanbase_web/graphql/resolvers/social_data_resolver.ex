@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
-  alias SanbaseWeb.Graphql.Helpers.Utils
   import SanbaseWeb.Graphql.Helpers.Async, only: [async: 1]
+
+  alias SanbaseWeb.Graphql.Helpers.Utils
+  alias Sanbase.SocialData
   @context_words_default_size 10
 
   def trending_words(
@@ -15,7 +17,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
         _resolution
       ) do
     size = Enum.min([size, 100])
-    Sanbase.SocialData.trending_words(source, size, hour, from, to)
+    SocialData.trending_words(source, size, hour, from, to)
   end
 
   def word_context(
@@ -30,7 +32,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
         _resolution
       ) do
     size = Enum.min([size, 100])
-    Sanbase.SocialData.word_context(word, source, size, from, to)
+    SocialData.word_context(word, source, size, from, to)
   end
 
   def word_context(
@@ -45,7 +47,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     } = Utils.extract_root_query_args(resolution, "trending_words")
 
     async(fn ->
-      Sanbase.SocialData.word_context(word, source, @context_words_default_size, from, to)
+      SocialData.word_context(word, source, @context_words_default_size, from, to)
     end)
   end
 
@@ -59,6 +61,34 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
         },
         _resolution
       ) do
-    Sanbase.SocialData.word_trend_score(word, source, from, to)
+    SocialData.word_trend_score(word, source, from, to)
+  end
+
+  def top_social_gainers_losers(_root, args, _resolution) do
+    SocialData.top_social_gainers_losers(args)
+  end
+
+  def social_gainers_losers_status(_root, args, _resolution) do
+    SocialData.social_gainers_losers_status(args)
+  end
+
+  def social_dominance(
+        _root,
+        %{
+          slug: slug,
+          from: from,
+          to: to,
+          interval: interval,
+          source: source
+        },
+        _resolution
+      ) do
+    SocialData.social_dominance(
+      slug,
+      from,
+      to,
+      interval,
+      source
+    )
   end
 end

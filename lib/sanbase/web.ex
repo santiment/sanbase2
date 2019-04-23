@@ -28,16 +28,9 @@ defmodule Sanbase.Application.Web do
       {ConCache,
        [
          name: :graphql_cache,
-         ttl_check_interval: :timer.minutes(1),
+         ttl_check_interval: :timer.seconds(30),
          global_ttl: :timer.minutes(5),
          acquire_lock_timeout: 30_000
-       ]},
-
-      # Rate limit API calls
-      {PlugAttack.Storage.Ets,
-       [
-         name: SanbaseWeb.Graphql.PlugAttack.Storage,
-         clean_period: 60_000
        ]},
 
       # Time sereies TwitterData DB connection

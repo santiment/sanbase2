@@ -10,7 +10,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     GithubResolver,
     TwitterResolver,
     EtherbiResolver,
-    VotingResolver,
+    InsightResolver,
     TechIndicatorsResolver,
     SocialDataResolver,
     FileResolver,
@@ -23,13 +23,15 @@ defmodule SanbaseWeb.Graphql.Schema do
     ExchangeResolver,
     UserSettingsResolver,
     TelegramResolver,
-    UserTriggerResolver
+    UserTriggerResolver,
+    SignalsHistoricalActivityResolver,
+    FeaturedItemResolver,
+    UserFollowerResolver
   }
 
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
   alias SanbaseWeb.Graphql.Complexity
-  alias SanbaseWeb.Graphql.Complexity.TechIndicatorsComplexity
 
   alias SanbaseWeb.Graphql.Middlewares.{
     MultipleAuth,
@@ -37,8 +39,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     JWTAuth,
     ApikeyAuth,
     ProjectPermissions,
-    PostPermissions,
-    ApiTimeframeRestriction,
+    TimeframeRestriction,
     ApiUsage
   }
 
@@ -52,9 +53,8 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.GithubTypes)
   import_types(SanbaseWeb.Graphql.TwitterTypes)
   import_types(SanbaseWeb.Graphql.EtherbiTypes)
-  import_types(SanbaseWeb.Graphql.VotingTypes)
+  import_types(SanbaseWeb.Graphql.InsightTypes)
   import_types(SanbaseWeb.Graphql.TechIndicatorsTypes)
-  import_types(SanbaseWeb.Graphql.SocialDataTypes)
   import_types(SanbaseWeb.Graphql.TransactionTypes)
   import_types(SanbaseWeb.Graphql.FileTypes)
   import_types(SanbaseWeb.Graphql.UserListTypes)
@@ -65,6 +65,10 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.UserSettingsTypes)
   import_types(SanbaseWeb.Graphql.UserTriggerTypes)
   import_types(SanbaseWeb.Graphql.CustomTypes.JSON)
+  import_types(SanbaseWeb.Graphql.PaginationTypes)
+  import_types(SanbaseWeb.Graphql.SignalsHistoricalActivityTypes)
+
+  import_types(SanbaseWeb.Graphql.Schema.SocialDataQueries)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.{
@@ -125,6 +129,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Returns the number of erc20 projects, currency projects and all projects"
     field :projects_count, :projects_count do
+      arg(:min_volume, :integer)
       cache_resolve(&ProjectResolver.projects_count/3)
     end
 
@@ -132,6 +137,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_projects, list_of(:project) do
       arg(:page, :integer)
       arg(:page_size, :integer)
+      arg(:min_volume, :integer)
+
       middleware(ProjectPermissions)
       cache_resolve(&ProjectResolver.all_projects/3)
     end
@@ -140,6 +147,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_erc20_projects, list_of(:project) do
       arg(:page, :integer)
       arg(:page_size, :integer)
+      arg(:min_volume, :integer)
+
       middleware(ProjectPermissions)
 
       cache_resolve(&ProjectResolver.all_erc20_projects/3)
@@ -149,6 +158,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_currency_projects, list_of(:project) do
       arg(:page, :integer)
       arg(:page_size, :integer)
+      arg(:min_volume, :integer)
+
       middleware(ProjectPermissions)
 
       cache_resolve(&ProjectResolver.all_currency_projects/3)
@@ -165,14 +176,12 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Fetch a project by its ID."
     field :project, :project do
       arg(:id, non_null(:id))
-      middleware(ProjectPermissions)
       resolve(&ProjectResolver.project/3)
     end
 
     @desc "Fetch a project by a unique identifier."
     field :project_by_slug, :project do
       arg(:slug, non_null(:string))
-      middleware(ProjectPermissions)
       cache_resolve(&ProjectResolver.project_by_slug/3)
     end
 
@@ -181,10 +190,11 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, :string)
       arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "")
 
       complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
       cache_resolve(&PriceResolver.history_price/3)
     end
 
@@ -195,10 +205,11 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :ohlc, list_of(:ohlc) do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime)
+      arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
       cache_resolve(&PriceResolver.ohlc/3)
     end
 
@@ -210,6 +221,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
       cache_resolve(&PriceResolver.multiple_projects_stats/3)
     end
 
@@ -223,6 +236,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, non_null(:string), default_value: "1d")
 
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
       cache_resolve(&ProjectResolver.combined_history_stats/3)
     end
 
@@ -247,12 +262,12 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
       arg(:transform, :string, default_value: "None")
       arg(:moving_average_interval_base, :integer, default_value: 7)
 
-      middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
       complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_historical_data: true})
       cache_resolve(&GithubResolver.github_activity/3)
     end
 
@@ -268,9 +283,9 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:transform, :string, default_value: "None")
       arg(:moving_average_interval_base, :integer, default_value: 7)
 
-      middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
       complexity(&Complexity.from_to_interval/3)
-      cache_resolve(&GithubResolver.dev_activity/3)
+      middleware(TimeframeRestriction, %{allow_historical_data: true})
+      cache_resolve(&GithubResolver.dev_activity/3, ttl: 600, max_ttl_offset: 600)
     end
 
     @desc "Fetch the current data for a Twitter account (currently includes only Twitter followers)."
@@ -287,9 +302,10 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
       cache_resolve(&TwitterResolver.history_twitter_data/3)
     end
 
@@ -307,10 +323,10 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
 
-      middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
       cache_resolve(&EtherbiResolver.token_age_consumed/3)
     end
 
@@ -318,10 +334,10 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
 
-      middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
       cache_resolve(&EtherbiResolver.token_age_consumed/3)
     end
 
@@ -337,10 +353,10 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
 
-      middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
       cache_resolve(&EtherbiResolver.transaction_volume/3)
     end
 
@@ -357,9 +373,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
-      middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
-
+      middleware(TimeframeRestriction)
       cache_resolve(&EtherbiResolver.average_token_age_consumed_in_days/3)
     end
 
@@ -374,8 +389,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       @desc "The interval should represent whole days, i.e. `1d`, `48h`, `1w`, etc."
       arg(:interval, :string, default_value: "1d")
 
-      middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
       cache_resolve(&EtherbiResolver.token_circulation/3)
     end
 
@@ -390,8 +405,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       @desc "The interval should represent whole days, i.e. `1d`, `48h`, `1w`, etc."
       arg(:interval, :string, default_value: "1d")
 
-      middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
       cache_resolve(&EtherbiResolver.token_velocity/3)
     end
 
@@ -410,16 +425,45 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
 
-      middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
       complexity(&Complexity.from_to_interval/3)
-      cache_resolve(&EtherbiResolver.daily_active_addresses/3)
+      middleware(TimeframeRestriction, %{allow_historical_data: true})
+      cache_resolve(&ClickhouseResolver.daily_active_addresses/3)
+    end
+
+    @desc ~s"""
+    Fetch daily active deposits for a project within a given time period.
+    Projects are referred to by a unique identifier (slug).
+    """
+    field :daily_active_deposits, list_of(:active_deposits) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.daily_active_deposits/3)
+    end
+
+    @desc ~s"""
+    Fetch share of deposits from Daily Active Addresses.
+    """
+    field :share_of_deposits, list_of(:share_of_deposits) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.share_of_deposits/3)
     end
 
     @desc "Fetch the currently running poll."
     field :current_poll, :poll do
-      cache_resolve(&VotingResolver.current_poll/3)
+      cache_resolve(&InsightResolver.current_poll/3)
     end
 
     @desc ~s"""
@@ -429,16 +473,18 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :post, :post do
       arg(:id, non_null(:integer))
 
-      middleware(PostPermissions)
       resolve(&PostResolver.post/3)
     end
 
-    @desc "Fetch a list of all posts/insights. The user must be logged in to access all fields for the post/insight."
+    @desc """
+    Fetch a list of all posts/insights.
+    Optionally a list of tags can be passed so it fetches all insights with these tags.
+    """
     field :all_insights, list_of(:post) do
       arg(:page, :integer, default_value: 1)
       arg(:page_size, :integer, default_value: 20)
+      arg(:tags, list_of(:string))
 
-      middleware(PostPermissions)
       cache_resolve(&PostResolver.all_insights/3)
     end
 
@@ -446,7 +492,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_insights_for_user, list_of(:post) do
       arg(:user_id, non_null(:integer))
 
-      middleware(PostPermissions)
       resolve(&PostResolver.all_insights_for_user/3)
     end
 
@@ -454,7 +499,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_insights_user_voted, list_of(:post) do
       arg(:user_id, non_null(:integer))
 
-      middleware(PostPermissions)
       resolve(&PostResolver.all_insights_user_voted_for/3)
     end
 
@@ -465,7 +509,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_insights_by_tag, list_of(:post) do
       arg(:tag, non_null(:string))
 
-      middleware(PostPermissions)
       resolve(&PostResolver.all_insights_by_tag/3)
     end
 
@@ -482,46 +525,11 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
 
-      middleware(ApiTimeframeRestriction)
-
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
       cache_resolve(&EtherbiResolver.exchange_funds_flow/3)
-    end
-
-    @desc ~s"""
-    Fetch the exchange funds flow for all ERC20 projects in the given interval.
-
-    Arguments description:
-      * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
-      * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-05-23T10:02:19Z"
-
-    Fields description:
-      * ticker - The ticker of the project
-      * contract - The contract identifier of the project
-      * exchangeIn - How many tokens were deposited in the given period
-      * exchangeOut - How many tokens were withdrawn in the given period
-      * exchangeDiff - The difference between the deposited and the withdrawn tokens: exchangeIn - exchangeOut
-      * exchangeInUsd - How many tokens were deposited in the given period converted to USD based on the daily average price of the token
-      * exchangeOutUsd - How many tokens were withdrawn in the given period converted to USD based on the daily average price of the token
-      * exchangeDiffUsd - The difference between the deposited and the withdrawn tokens in USD: exchangeInUsd - exchangeOutUsd
-      * percentDiffExchangeDiffUsd - The percent difference between exchangeDiffUsd for the current period minus the exchangeDiffUsd for the previous period based on exchangeDiffUsd for the current period: (exchangeDiffUsd for current period - exchangeDiffUsd for previous period) * 100 / abs(exchangeDiffUsd for current period)
-      * exchangeVolumeUsd - The volume of all tokens in and out for the given period in USD: exchangeInUsd + exchangeOutUsd
-      * percentDiffExchangeVolumeUsd - The percent difference between exchangeVolumeUsd for the current period minus the exchangeVolumeUsd for the previous period based on exchangeVolumeUsd for the current period: (exchangeVolumeUsd for current period - exchangeVolumeUsd for previous period) * 100 / abs(exchangeVolumeUsd for current period)
-      * exchangeInBtc - How many tokens were deposited in the given period converted to BTC based on the daily average price of the token
-      * exchangeOutBtc - How many tokens were withdrawn in the given period converted to BTC based on the daily average price of the token
-      * exchangeDiffBtc - The difference between the deposited and the withdrawn tokens in BTC: exchangeInBtc - exchangeOutBtc
-      * percentDiffExchangeDiffBtc - The percent difference between exchangeDiffBtc for the current period minus the exchangeDiffBtc for the previous period based on exchangeDiffBtc for the current period: (exchangeDiffBtc for current period - exchangeDiffBtc for previous period) * 100 / abs(exchangeDiffBtc for current period)
-      * exchangeVolumeBtc - The volume of all tokens in and out for the given period in BTC: exchangeInBtc + exchangeOutBtc
-      * percentDiffExchangeVolumeBtc - The percent difference between exchangeVolumeBtc for the current period minus the exchangeVolumeBtc for the previous period based on exchangeVolumeBtc for the current period: (exchangeVolumeBtc for current period - exchangeVolumeBtc for previous period) * 100 / abs(exchangeVolumeBtc for current period)
-    """
-    field :erc20_exchange_funds_flow, list_of(:erc20_exchange_funds_flow) do
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-
-      middleware(ApiTimeframeRestriction)
-
-      cache_resolve(&TechIndicatorsResolver.erc20_exchange_funds_flow/3)
     end
 
     @desc ~s"""
@@ -538,9 +546,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "1d")
       arg(:size, :integer, default_value: 0)
 
-      middleware(ApiTimeframeRestriction)
-
-      complexity(&TechIndicatorsComplexity.price_volume_diff/3)
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
       cache_resolve(&TechIndicatorsResolver.price_volume_diff/3)
     end
 
@@ -552,7 +559,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "1d")
       arg(:result_size_tail, :integer, default_value: 0)
 
-      complexity(&TechIndicatorsComplexity.twitter_mention_count/3)
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
       cache_resolve(&TechIndicatorsResolver.twitter_mention_count/3)
     end
 
@@ -566,12 +574,9 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "1d")
       arg(:result_size_tail, :integer, default_value: 0)
 
-      middleware(MultipleAuth, [
-        {JWTAuth, san_tokens: 1000},
-        {ApikeyAuth, san_tokens: 1000}
-      ])
-
-      complexity(&TechIndicatorsComplexity.emojis_sentiment/3)
+      middleware(MultipleAuth, [{JWTAuth, san_tokens: 1000}, {ApikeyAuth, san_tokens: 1000}])
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
       cache_resolve(&TechIndicatorsResolver.emojis_sentiment/3)
     end
 
@@ -596,11 +601,12 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, non_null(:string), default_value: "1d")
       arg(:social_volume_type, non_null(:social_volume_type))
 
-      middleware(ApiTimeframeRestriction)
-
-      complexity(&TechIndicatorsComplexity.social_volume/3)
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
       resolve(&TechIndicatorsResolver.social_volume/3)
     end
+
+    import_fields(:social_data_queries)
 
     @desc ~s"""
     Returns a list of slugs for which there is social volume data.
@@ -630,10 +636,9 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, :datetime)
       arg(:interval, non_null(:string), default_value: "1d")
 
-      middleware(ApiTimeframeRestriction)
-
-      complexity(&TechIndicatorsComplexity.topic_search/3)
-      resolve(&TechIndicatorsResolver.topic_search/3)
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
+      cache_resolve(&TechIndicatorsResolver.topic_search/3, ttl: 600, max_ttl_offset: 240)
     end
 
     @desc ~s"""
@@ -657,9 +662,9 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      middleware(ApiTimeframeRestriction)
-
-      cache_resolve(&SocialDataResolver.trending_words/3)
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_realtime_data: true})
+      cache_resolve(&SocialDataResolver.trending_words/3, ttl: 600, max_ttl_offset: 240)
     end
 
     @desc ~s"""
@@ -681,9 +686,9 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      middleware(ApiTimeframeRestriction)
-
-      resolve(&SocialDataResolver.word_trend_score/3)
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_realtime_data: true})
+      cache_resolve(&SocialDataResolver.word_trend_score/3, ttl: 600, max_ttl_offset: 240)
     end
 
     @desc ~s"""
@@ -707,9 +712,9 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      middleware(ApiTimeframeRestriction)
-
-      cache_resolve(&SocialDataResolver.word_context/3)
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_realtime_data: true})
+      cache_resolve(&SocialDataResolver.word_context/3, ttl: 600, max_ttl_offset: 240)
     end
 
     @desc "Fetch a list of all exchange wallets. This query requires basic authentication."
@@ -719,12 +724,32 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&EtherbiResolver.exchange_wallets/3)
     end
 
+    @desc "Fetch the ETH spent by all projects within a given time period."
+    field :eth_spent_by_all_projects, :float do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+
+      cache_resolve(&ProjectTransactionsResolver.eth_spent_by_all_projects/3,
+        ttl: 600,
+        max_ttl_offset: 240
+      )
+    end
+
     @desc "Fetch the ETH spent by all ERC20 projects within a given time period."
     field :eth_spent_by_erc20_projects, :float do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      cache_resolve(&ProjectTransactionsResolver.eth_spent_by_erc20_projects/3)
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+
+      cache_resolve(&ProjectTransactionsResolver.eth_spent_by_erc20_projects/3,
+        ttl: 600,
+        max_ttl_offset: 240
+      )
     end
 
     @desc ~s"""
@@ -736,7 +761,31 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
-      cache_resolve(&ProjectTransactionsResolver.eth_spent_over_time_by_erc20_projects/3)
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+
+      cache_resolve(&ProjectTransactionsResolver.eth_spent_over_time_by_erc20_projects/3,
+        ttl: 600,
+        max_ttl_offset: 240
+      )
+    end
+
+    @desc ~s"""
+    Fetch ETH spent by all projects within a given time period and interval.
+    This query returns a list of values where each value is of length `interval`.
+    """
+    field :eth_spent_over_time_by_all_projects, list_of(:eth_spent_data) do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+
+      cache_resolve(&ProjectTransactionsResolver.eth_spent_over_time_by_all_projects/3,
+        ttl: 600,
+        max_ttl_offset: 240
+      )
     end
 
     @desc "Fetch all favourites lists for current_user."
@@ -762,7 +811,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :user_list, :user_list do
       arg(:user_list_id, non_null(:id))
 
-      resolve(&UserListResolver.user_list/3)
+      cache_resolve(&UserListResolver.user_list/3)
     end
 
     @desc "Returns statistics for the data stored in elasticsearch"
@@ -770,6 +819,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
+      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
       cache_resolve(&ElasticsearchResolver.stats/3)
     end
 
@@ -784,6 +834,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:address, non_null(:string))
       arg(:interval, non_null(:string), default_value: "1d")
 
+      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
       cache_resolve(&ClickhouseResolver.historical_balance/3)
     end
 
@@ -800,6 +851,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
       cache_resolve(&ExchangeResolver.exchange_volume/3)
     end
 
@@ -810,9 +863,119 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, non_null(:string), default_value: "1d")
 
-      middleware(ApiTimeframeRestriction)
-
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
       cache_resolve(&ClickhouseResolver.network_growth/3)
+    end
+
+    @desc "Returns MVRV(Market-Value-to-Realized-Value)"
+    field :mvrv_ratio, list_of(:mvrv_ratio) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, non_null(:string), default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.mvrv_ratio/3)
+    end
+
+    @desc "Returns Realized value - sum of the acquisition costs of an asset located in a wallet.
+    The realized value across the whole network is computed by summing the realized values
+    of all wallets holding tokens at the moment."
+    field :realized_value, list_of(:realized_value) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.realized_value/3)
+    end
+
+    @desc "Returns what percent of token supply is on exchanges"
+    field :percent_of_token_supply_on_exchanges, list_of(:percent_of_token_supply_on_exchanges) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.percent_of_token_supply_on_exchanges/3)
+    end
+
+    @desc """
+    Returns NVT (Network-Value-to-Transactions-Ratio
+    Daily Market Cap / Daily Transaction Volume
+    Since Daily Transaction Volume gets rather noisy and easy to manipulate
+    by transferring the same tokens through couple of addresses over and over again,
+    it’s not an ideal measure of a network’s economic activity.
+    That’s why we calculate NVT using Daily Trx Volume,
+    but also by using Daily Token Circulation instead,
+    which filters out excess transactions and provides a cleaner overview of
+    a blockchain’s daily transaction throughput.
+    """
+    field :nvt_ratio, list_of(:nvt_ratio) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.nvt_ratio/3)
+    end
+
+    @desc """
+    Returns distribution of miners between mining pools.
+    What part of the miners are using top3, top10 and all the other pools.
+    Currently only ETH is supported.
+    """
+    field :mining_pools_distribution, list_of(:mining_pools_distribution) do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.mining_pools_distribution/3)
+    end
+
+    @desc """
+    Returns used Gas by a blockchain.
+    When you send tokens, interact with a contract or do anything else on the blockchain,
+    you must pay for that computation. That payment is calculated in Gas.
+    """
+    field :gas_used, list_of(:gas_used) do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.gas_used/3)
+    end
+
+    @desc """
+    Returns the top holders' percent of total supply - in exchanges, outside exchanges and combined.
+
+    Arguments description:
+    * slug - a string uniquely identifying a project
+    * number_of_holders - take top `number_of_holders` into account when calculating.
+    * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    """
+    field :top_holders_percent_of_total_supply, list_of(:top_holders_percent_of_total_supply) do
+      arg(:slug, non_null(:string))
+      arg(:number_of_holders, non_null(:integer))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.top_holders_percent_of_total_supply/3)
     end
 
     @desc """
@@ -828,16 +991,15 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Get signal trigger by its id"
     field :get_trigger_by_id, :user_trigger do
-      arg(:id, non_null(:string))
+      arg(:id, non_null(:integer))
 
       middleware(JWTAuth)
-
       resolve(&UserTriggerResolver.get_trigger_by_id/3)
     end
 
     @desc "Get public signal triggers by user_id"
     field :public_triggers_for_user, list_of(:user_trigger) do
-      arg(:user_id, non_null(:integer))
+      arg(:user_id, non_null(:id))
 
       resolve(&UserTriggerResolver.public_triggers_for_user/3)
     end
@@ -850,9 +1012,78 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Get historical trigger points"
     field :historical_trigger_points, list_of(:json) do
       arg(:cooldown, :string)
-      arg(:settings, :json)
+      arg(:settings, non_null(:json))
 
-      resolve(&UserTriggerResolver.historical_trigger_points/3)
+      cache_resolve(&UserTriggerResolver.historical_trigger_points/3)
+    end
+
+    @desc """
+    Get current user's history of executed signals with cursor pagination.
+    * `cursor` argument is an object with: type `BEFORE` or `AFTER` and `datetime`.
+      - `type: BEFORE` gives those executed before certain datetime
+      - `type: AFTER` gives those executed after certain datetime
+    * `limit` argument defines the size of the page. Default value is 25
+    """
+    field :signals_historical_activity, :signal_historical_activity_paginated do
+      arg(:cursor, :cursor_input)
+      arg(:limit, :integer, default_value: 25)
+
+      middleware(JWTAuth)
+
+      resolve(&SignalsHistoricalActivityResolver.fetch_historical_activity_for/3)
+    end
+
+    @desc """
+    Top social gainers/losers returns the social volume changes of all crypto projects.
+
+    * `from` - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * `to` - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * `status` can be one of: `ALL`, `GAINER`, `LOSER`, `NEWCOMER`
+    * `size` - count of returned projects for status
+    * `time_window` - the `change` time window in days. Should be between `2d` and `30d`.
+    """
+    field :top_social_gainers_losers, list_of(:top_social_gainers_losers) do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:status, non_null(:social_gainers_losers_status_enum))
+      arg(:size, :integer, default_value: 10)
+      arg(:time_window, non_null(:string))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
+      cache_resolve(&SocialDataResolver.top_social_gainers_losers/3)
+    end
+
+    @desc """
+    Returns the social gainers/losers `status` and `change` for given slug.
+    Returned `status` can be one of: `GAINER`, `LOSER`, `NEWCOMER.`
+
+    * `slug` - a string uniquely identifying a project
+    * `from` - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * `to` - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * `time_window` - the `change` time window in days. Should be between `2d` and `30d`.
+    """
+    field :social_gainers_losers_status, list_of(:social_gainers_losers_status) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:time_window, non_null(:string))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
+      cache_resolve(&SocialDataResolver.social_gainers_losers_status/3)
+    end
+
+    field :featured_insights, list_of(:post) do
+      cache_resolve(&FeaturedItemResolver.insights/3)
+    end
+
+    field :featured_watchlists, list_of(:user_list) do
+      cache_resolve(&FeaturedItemResolver.watchlists/3)
+    end
+
+    field :featured_user_triggers, list_of(:user_trigger) do
+      cache_resolve(&FeaturedItemResolver.user_triggers/3)
     end
   end
 
@@ -932,14 +1163,14 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:post_id, non_null(:integer))
 
       middleware(JWTAuth)
-      resolve(&VotingResolver.vote/3)
+      resolve(&InsightResolver.vote/3)
     end
 
     field :unvote, :post do
       arg(:post_id, non_null(:integer))
 
       middleware(JWTAuth)
-      resolve(&VotingResolver.unvote/3)
+      resolve(&InsightResolver.unvote/3)
     end
 
     @desc """
@@ -1073,11 +1304,21 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&UserListResolver.remove_user_list/3)
     end
 
+    @desc "Allow/Dissallow to receive notifications in email/telegram channel"
     field :settings_toggle_channel, :user_settings do
       arg(:signal_notify_telegram, :boolean)
       arg(:signal_notify_email, :boolean)
+
       middleware(JWTAuth)
       resolve(&UserSettingsResolver.settings_toggle_channel/3)
+    end
+
+    @desc "Change subscription to Santiment newsletter"
+    field :change_newsletter_subscription, :user_settings do
+      arg(:newsletter_subscription, :newsletter_subscription_type)
+
+      middleware(JWTAuth)
+      resolve(&UserSettingsResolver.change_newsletter_subscription/3)
     end
 
     @desc """
@@ -1099,12 +1340,13 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:description, :string)
       arg(:icon_url, :string)
       arg(:is_public, :boolean)
+      arg(:is_active, :boolean)
+      arg(:is_repeating, :boolean)
       arg(:cooldown, :string)
       arg(:tags, list_of(:string))
       arg(:settings, non_null(:json))
 
       middleware(JWTAuth)
-
       resolve(&UserTriggerResolver.create_trigger/3)
     end
 
@@ -1113,17 +1355,18 @@ defmodule SanbaseWeb.Graphql.Schema do
     Returns the updated trigger.
     """
     field :update_trigger, :user_trigger do
-      arg(:id, non_null(:string))
+      arg(:id, non_null(:integer))
       arg(:title, :string)
       arg(:description, :string)
-      arg(:icon_url, :string)
-      arg(:is_public, :boolean)
-      arg(:cooldown, :string)
-      arg(:tags, list_of(:string))
       arg(:settings, :json)
+      arg(:icon_url, :string)
+      arg(:cooldown, :string)
+      arg(:is_active, :boolean)
+      arg(:is_public, :boolean)
+      arg(:is_repeating, :boolean)
+      arg(:tags, list_of(:string))
 
       middleware(JWTAuth)
-
       resolve(&UserTriggerResolver.update_trigger/3)
     end
 
@@ -1132,11 +1375,27 @@ defmodule SanbaseWeb.Graphql.Schema do
     Returns the removed trigger on success.
     """
     field :remove_trigger, :user_trigger do
-      arg(:id, non_null(:string))
+      arg(:id, non_null(:integer))
 
       middleware(JWTAuth)
 
       resolve(&UserTriggerResolver.remove_trigger/3)
+    end
+
+    @desc "Follow chosen user"
+    field :follow, :user do
+      arg(:user_id, non_null(:id))
+
+      middleware(JWTAuth)
+      resolve(&UserFollowerResolver.follow/3)
+    end
+
+    @desc "Unfollow chosen user"
+    field :unfollow, :user do
+      arg(:user_id, non_null(:id))
+
+      middleware(JWTAuth)
+      resolve(&UserFollowerResolver.unfollow/3)
     end
   end
 end

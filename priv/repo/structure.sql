@@ -169,6 +169,52 @@ ALTER SEQUENCE public.exchange_addresses_id_seq OWNED BY public.exchange_address
 
 
 --
+-- Name: featured_items; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.featured_items (
+    id bigint NOT NULL,
+    post_id bigint,
+    user_list_id bigint,
+    user_trigger_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    CONSTRAINT only_one_fk CHECK ((((
+CASE
+    WHEN (post_id IS NULL) THEN 0
+    ELSE 1
+END +
+CASE
+    WHEN (user_list_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (user_trigger_id IS NULL) THEN 0
+    ELSE 1
+END) = 1))
+);
+
+
+--
+-- Name: featured_items_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.featured_items_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: featured_items_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.featured_items_id_seq OWNED BY public.featured_items.id;
+
+
+--
 -- Name: ico_currencies; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -561,7 +607,8 @@ CREATE TABLE public.posts (
     short_desc text,
     text text,
     ready_state character varying(255) DEFAULT 'draft'::character varying,
-    discourse_topic_url character varying(255)
+    discourse_topic_url character varying(255),
+    published_at timestamp without time zone
 );
 
 
@@ -708,7 +755,8 @@ CREATE TABLE public.project (
     total_supply numeric,
     description text,
     email character varying(255),
-    main_contract_address character varying(255)
+    main_contract_address character varying(255),
+    long_description text
 );
 
 
@@ -871,12 +919,44 @@ CREATE TABLE public.schema_migrations (
 
 
 --
+-- Name: signals_historical_activity; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.signals_historical_activity (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    user_trigger_id bigint NOT NULL,
+    payload jsonb NOT NULL,
+    triggered_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: signals_historical_activity_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.signals_historical_activity_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: signals_historical_activity_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.signals_historical_activity_id_seq OWNED BY public.signals_historical_activity.id;
+
+
+--
 -- Name: tags; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.tags (
     id bigint NOT NULL,
-    name character varying(255)
+    name character varying(255) NOT NULL
 );
 
 
@@ -941,6 +1021,18 @@ CREATE SEQUENCE public.user_api_key_tokens_id_seq
 --
 
 ALTER SEQUENCE public.user_api_key_tokens_id_seq OWNED BY public.user_api_key_tokens.id;
+
+
+--
+-- Name: user_followers; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_followers (
+    user_id bigint NOT NULL,
+    follower_id bigint NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    CONSTRAINT user_cannot_follow_self CHECK ((user_id <> follower_id))
+);
 
 
 --
@@ -1172,6 +1264,13 @@ ALTER TABLE ONLY public.exchange_addresses ALTER COLUMN id SET DEFAULT nextval('
 
 
 --
+-- Name: featured_items id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.featured_items ALTER COLUMN id SET DEFAULT nextval('public.featured_items_id_seq'::regclass);
+
+
+--
 -- Name: ico_currencies id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1312,6 +1411,13 @@ ALTER TABLE ONLY public.schedule_rescrape_prices ALTER COLUMN id SET DEFAULT nex
 
 
 --
+-- Name: signals_historical_activity id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.signals_historical_activity ALTER COLUMN id SET DEFAULT nextval('public.signals_historical_activity_id_seq'::regclass);
+
+
+--
 -- Name: tags id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1397,6 +1503,14 @@ ALTER TABLE ONLY public.eth_coin_circulation
 
 ALTER TABLE ONLY public.exchange_addresses
     ADD CONSTRAINT exchange_addresses_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: featured_items featured_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.featured_items
+    ADD CONSTRAINT featured_items_pkey PRIMARY KEY (id);
 
 
 --
@@ -1576,6 +1690,14 @@ ALTER TABLE ONLY public.schema_migrations
 
 
 --
+-- Name: signals_historical_activity signals_historical_activity_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.signals_historical_activity
+    ADD CONSTRAINT signals_historical_activity_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: tags tags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1597,6 +1719,14 @@ ALTER TABLE ONLY public.telegram_user_tokens
 
 ALTER TABLE ONLY public.user_api_key_tokens
     ADD CONSTRAINT user_api_key_tokens_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_followers user_followers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_followers
+    ADD CONSTRAINT user_followers_pkey PRIMARY KEY (user_id, follower_id);
 
 
 --
@@ -1666,6 +1796,27 @@ CREATE UNIQUE INDEX eth_accounts_address_index ON public.eth_accounts USING btre
 --
 
 CREATE UNIQUE INDEX exchange_addresses_address_idx ON public.exchange_addresses USING btree (address);
+
+
+--
+-- Name: featured_items_post_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX featured_items_post_id_index ON public.featured_items USING btree (post_id);
+
+
+--
+-- Name: featured_items_user_list_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX featured_items_user_list_id_index ON public.featured_items USING btree (user_list_id);
+
+
+--
+-- Name: featured_items_user_trigger_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX featured_items_user_trigger_id_index ON public.featured_items USING btree (user_trigger_id);
 
 
 --
@@ -1844,6 +1995,13 @@ CREATE INDEX schedule_rescrape_prices_project_id_index ON public.schedule_rescra
 
 
 --
+-- Name: signals_historical_activity_user_id_triggered_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX signals_historical_activity_user_id_triggered_at_index ON public.signals_historical_activity USING btree (user_id, triggered_at);
+
+
+--
 -- Name: tags_name_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1869,6 +2027,13 @@ CREATE UNIQUE INDEX telegram_user_tokens_user_id_index ON public.telegram_user_t
 --
 
 CREATE UNIQUE INDEX user_api_key_tokens_token_index ON public.user_api_key_tokens USING btree (token);
+
+
+--
+-- Name: user_followers_user_id_follower_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX user_followers_user_id_follower_id_index ON public.user_followers USING btree (user_id, follower_id);
 
 
 --
@@ -1934,6 +2099,30 @@ ALTER TABLE ONLY public.eth_accounts
 
 ALTER TABLE ONLY public.exchange_addresses
     ADD CONSTRAINT exchange_addresses_infrastructure_id_fkey FOREIGN KEY (infrastructure_id) REFERENCES public.infrastructures(id);
+
+
+--
+-- Name: featured_items featured_items_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.featured_items
+    ADD CONSTRAINT featured_items_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id);
+
+
+--
+-- Name: featured_items featured_items_user_list_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.featured_items
+    ADD CONSTRAINT featured_items_user_list_id_fkey FOREIGN KEY (user_list_id) REFERENCES public.user_lists(id);
+
+
+--
+-- Name: featured_items featured_items_user_trigger_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.featured_items
+    ADD CONSTRAINT featured_items_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id);
 
 
 --
@@ -2129,6 +2318,22 @@ ALTER TABLE ONLY public.schedule_rescrape_prices
 
 
 --
+-- Name: signals_historical_activity signals_historical_activity_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.signals_historical_activity
+    ADD CONSTRAINT signals_historical_activity_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: signals_historical_activity signals_historical_activity_user_trigger_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.signals_historical_activity
+    ADD CONSTRAINT signals_historical_activity_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id);
+
+
+--
 -- Name: telegram_user_tokens telegram_user_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2142,6 +2347,22 @@ ALTER TABLE ONLY public.telegram_user_tokens
 
 ALTER TABLE ONLY public.user_api_key_tokens
     ADD CONSTRAINT user_api_key_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_followers user_followers_follower_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_followers
+    ADD CONSTRAINT user_followers_follower_id_fkey FOREIGN KEY (follower_id) REFERENCES public.users(id);
+
+
+--
+-- Name: user_followers user_followers_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_followers
+    ADD CONSTRAINT user_followers_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -2204,5 +2425,5 @@ ALTER TABLE ONLY public.votes
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO public."schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171128130151), (20171128183758), (20171128183804), (20171128222957), (20171129022700), (20171130144543), (20171205103038), (20171212105707), (20171213093912), (20171213104154), (20171213115525), (20171213120408), (20171213121433), (20171213180753), (20171215133550), (20171218112921), (20171219162029), (20171224113921), (20171224114352), (20171225093503), (20171226143530), (20171228163415), (20180102111752), (20180103102329), (20180105091551), (20180108100755), (20180108110118), (20180108140221), (20180112084549), (20180112215750), (20180114093910), (20180114095310), (20180115141540), (20180122122441), (20180126093200), (20180129165526), (20180131140259), (20180202131721), (20180205101949), (20180209121215), (20180211202224), (20180215105804), (20180216182032), (20180219102602), (20180219133328), (20180222135838), (20180223114151), (20180227090003), (20180319041803), (20180322143849), (20180323111505), (20180330045410), (20180411112814), (20180411112855), (20180411113727), (20180411120339), (20180412083038), (20180418141807), (20180423115739), (20180423130032), (20180424122421), (20180424135326), (20180425145127), (20180430093358), (20180503110930), (20180504071348), (20180526114244), (20180601085613), (20180620114029), (20180625122114), (20180628092208), (20180704075131), (20180704075135), (20180708110131), (20180708114337), (20180829153735), (20180830080945), (20180831074008), (20180831094245), (20180903115442), (20180912124703), (20180914114619), (20181002095110), (20181029104029), (20181102114904), (20181107134850), (20181129132524), (20181218142658), (20190110101520), (20190114144216), (20190116105831), (20190124134046), (20190128085100), (20190215131827);
+INSERT INTO public."schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171128130151), (20171128183758), (20171128183804), (20171128222957), (20171129022700), (20171130144543), (20171205103038), (20171212105707), (20171213093912), (20171213104154), (20171213115525), (20171213120408), (20171213121433), (20171213180753), (20171215133550), (20171218112921), (20171219162029), (20171224113921), (20171224114352), (20171225093503), (20171226143530), (20171228163415), (20180102111752), (20180103102329), (20180105091551), (20180108100755), (20180108110118), (20180108140221), (20180112084549), (20180112215750), (20180114093910), (20180114095310), (20180115141540), (20180122122441), (20180126093200), (20180129165526), (20180131140259), (20180202131721), (20180205101949), (20180209121215), (20180211202224), (20180215105804), (20180216182032), (20180219102602), (20180219133328), (20180222135838), (20180223114151), (20180227090003), (20180319041803), (20180322143849), (20180323111505), (20180330045410), (20180411112814), (20180411112855), (20180411113727), (20180411120339), (20180412083038), (20180418141807), (20180423115739), (20180423130032), (20180424122421), (20180424135326), (20180425145127), (20180430093358), (20180503110930), (20180504071348), (20180526114244), (20180601085613), (20180620114029), (20180625122114), (20180628092208), (20180704075131), (20180704075135), (20180708110131), (20180708114337), (20180829153735), (20180830080945), (20180831074008), (20180831094245), (20180903115442), (20180912124703), (20180914114619), (20181002095110), (20181029104029), (20181102114904), (20181107134850), (20181129132524), (20181218142658), (20190110101520), (20190114144216), (20190116105831), (20190124134046), (20190128085100), (20190215131827), (20190225144858), (20190227153610), (20190227153724), (20190312142628), (20190327104558), (20190327105353), (20190328141739), (20190329101433), (20190404143453), (20190404144631), (20190405124751), (20190408081738), (20190412100349), (20190412112500);
 

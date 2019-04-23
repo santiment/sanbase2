@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.SanbaseRepo do
   alias Sanbase.Repo
   alias Sanbase.Model.{ProjectBtcAddress, Project}
-  alias Sanbase.Voting.Post
+  alias Sanbase.Insight.Post
 
   import Ecto.Query
 

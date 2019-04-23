@@ -30,30 +30,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiForbiddenFieldsTest do
       |> post("/graphql", query_skeleton(query, "allProjects"))
 
     [error | _] = json_response(result, 200)["errors"]
-    assert String.contains?(error["message"], "unauthorized")
-  end
 
-  test "public project forbidden fields", context do
-    query = """
-    {
-      project(id:$id)
-      {
-        id,
-        initialIco {
-          id
-        },
-        icos {
-          id
-        }
-      }
-    }
-    """
-
-    result =
-      context.conn
-      |> post("/graphql", query_skeleton(query, "project", "($id:ID!)", "{\"id\": 1}"))
-
-    [error | _] = json_response(result, 200)["errors"]
-    assert String.contains?(error["message"], "unauthorized")
+    assert error["message"] ==
+             "Cannot query [\"initialIco\", \"icos\", \"fundsRaisedIcos\"] on a query that returns more than 1 project."
   end
 end

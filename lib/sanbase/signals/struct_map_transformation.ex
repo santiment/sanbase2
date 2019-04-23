@@ -1,13 +1,14 @@
 defmodule Sanbase.Signals.StructMapTransformation do
   alias Sanbase.Signals.Trigger
 
-  alias Sanbase.Signals.Trigger.{
-    DailyActiveAddressesSettings,
-    PricePercentChangeSettings,
-    PriceAbsoluteChangeSettings,
-    PriceVolumeDifferenceTriggerSettings,
-    TrendingWordsTriggerSettings
-  }
+  @module_type_pairs [
+    {Trigger.DailyActiveAddressesSettings, "daily_active_addresses"},
+    {Trigger.PricePercentChangeSettings, "price_percent_change"},
+    {Trigger.PriceAbsoluteChangeSettings, "price_absolute_change"},
+    {Trigger.PriceVolumeDifferenceTriggerSettings, "price_volume_difference"},
+    {Trigger.TrendingWordsTriggerSettings, "trending_words"},
+    {Trigger.EthWalletTriggerSettings, "eth_wallet"}
+  ]
 
   # Use __struct__ instead of %module{} to avoid circular dependencies
   def trigger_in_struct(
@@ -21,55 +22,64 @@ defmodule Sanbase.Signals.StructMapTransformation do
     %{trigger | settings: settings}
   end
 
-  def load_in_struct(trigger_settings) when is_map(trigger_settings) do
-    trigger_settings =
-      for {key, val} <- trigger_settings, into: %{} do
-        if is_atom(key) do
-          {key, val}
-        else
-          {String.to_existing_atom(key), val}
-        end
-      end
-
-    struct_from_map(trigger_settings)
-  rescue
-    _error in ArgumentError ->
-      {:error, "Trigger structure is invalid"}
+  def load_in_struct(map) when is_map(map) do
+    map
+    |> atomize_keys()
+    |> case do
+      {:error, error} -> {:error, error}
+      atomized_map -> struct_from_map(atomized_map)
+    end
   end
 
   def load_in_struct(_), do: :error
 
-  def struct_from_map(%{type: "daily_active_addresses"} = trigger_settings),
-    do: {:ok, struct!(DailyActiveAddressesSettings, trigger_settings)}
+  # All `struct_from_map` functions are generated from the @module_type_pairs as they
+  # all have the same structure and are just pattern matchin on different values
+  for {module, type} <- @module_type_pairs do
+    def struct_from_map(%{type: unquote(type)} = trigger_settings) do
+      {:ok, struct(unquote(module), trigger_settings)}
+    end
+  end
 
-  def struct_from_map(%{type: "price_percent_change"} = trigger_settings),
-    do: {:ok, struct!(PricePercentChangeSettings, trigger_settings)}
+  def struct_from_map(%{type: type}),
+    do: {:error, "The trigger settings type '#{type}' is not a valid type."}
 
-  def struct_from_map(%{type: "price_absolute_change"} = trigger_settings),
-    do: {:ok, struct!(PriceAbsoluteChangeSettings, trigger_settings)}
+  def struct_from_map(_), do: {:error, "The trigger settings are missing `type` key."}
 
-  def struct_from_map(%{type: "trending_words"} = trigger_settings),
-    do: {:ok, struct!(TrendingWordsTriggerSettings, trigger_settings)}
+  # All `map_from_struct` functions are generated from the @module_type_pairs as they
+  # all have the same structure and are just pattern matchin on different values
+  for {module, _type} <- @module_type_pairs do
+    def map_from_struct(%unquote(module){} = trigger_settings) do
+      {:ok, Map.from_struct(trigger_settings)}
+    end
+  end
 
-  def struct_from_map(%{type: "price_volume_difference"} = trigger_settings),
-    do: {:ok, struct!(PriceVolumeDifferenceTriggerSettings, trigger_settings)}
+  def map_from_struct(%struct_name{}),
+    do: {:error, "The #{inspect(struct_name)} is not a valid module defining a trigger struct."}
 
-  def struct_from_map(_), do: :error
+  def map_from_struct(_), do: {:error, "The data passed to map_from_struct/1 is not a struct"}
 
-  def map_from_struct(%DailyActiveAddressesSettings{} = trigger_settings),
-    do: {:ok, Map.from_struct(trigger_settings)}
+  # Private functions
 
-  def map_from_struct(%PricePercentChangeSettings{} = trigger_settings),
-    do: {:ok, Map.from_struct(trigger_settings)}
+  defp atomize_keys(map) when is_map(map) do
+    try do
+      for {key, val} <- map, into: %{} do
+        if is_atom(key) do
+          {key, atomize_keys(val)}
+        else
+          {atomize(key), atomize_keys(val)}
+        end
+      end
+    rescue
+      ArgumentError ->
+        [{:erlang, :binary_to_existing_atom, [str, _], _} | _] = __STACKTRACE__
+        {:error, "The trigger contains unsupported or mistyped field #{inspect(str)}"}
+    end
+  end
 
-  def map_from_struct(%PriceAbsoluteChangeSettings{} = trigger_settings),
-    do: {:ok, Map.from_struct(trigger_settings)}
+  defp atomize_keys(data), do: data
 
-  def map_from_struct(%PriceVolumeDifferenceTriggerSettings{} = trigger_settings),
-    do: {:ok, Map.from_struct(trigger_settings)}
-
-  def map_from_struct(%TrendingWordsTriggerSettings{} = trigger_settings),
-    do: {:ok, Map.from_struct(trigger_settings)}
-
-  def map_from_struct(_), do: :error
+  @compile {:inline, atomize: 1}
+  defp atomize("filtered_target_list"), do: :filtered_target_list
+  defp atomize(str) when is_binary(str), do: String.to_existing_atom(str)
 end

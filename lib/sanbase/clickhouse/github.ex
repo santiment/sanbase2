@@ -6,7 +6,7 @@ defmodule Sanbase.Clickhouse.Github do
   """
 
   @type t :: %__MODULE__{
-          datetime: %DateTime{},
+          datetime: DateTime.t(),
           owner: String.t(),
           repo: String.t(),
           actor: String.t(),
@@ -49,16 +49,17 @@ defmodule Sanbase.Clickhouse.Github do
   @doc ~s"""
   Return the number of all github events for a given organization and time period
   """
-  @spec total_github_activity(String.t(), %DateTime{}, %DateTime{}) :: {:ok, float()}
+  @spec total_github_activity(String.t(), DateTime.t(), DateTime.t()) ::
+          {:ok, float()}
+          | {:error, String.t()}
   def total_github_activity(organization, from, to) do
     {query, args} = total_github_activity_query(organization, from, to)
 
-    case ClickhouseRepo.query_transform(query, args, fn [elem] -> elem end) do
-      {:ok, [result]} ->
-        {:ok, result |> String.to_integer()}
-
-      error ->
-        error
+    case ClickhouseRepo.query_transform(query, args, fn [github_activity] ->
+           github_activity |> String.to_integer()
+         end) do
+      {:ok, [result]} -> {:ok, result}
+      {:error, error} -> {:error, error}
     end
   end
 
@@ -67,17 +68,14 @@ defmodule Sanbase.Clickhouse.Github do
     @non_dev_events
   }) for a given organization and time period
   """
-  @spec total_dev_activity(list(String.t()), %DateTime{}, %DateTime{}) ::
+  @spec total_dev_activity(list(String.t()), DateTime.t(), DateTime.t()) ::
           {:ok, list({String.t(), float()})}
   def total_dev_activity(owners, from, to) do
     {query, args} = total_dev_activity_query(owners, from, to)
 
-    {:ok, result} =
-      ClickhouseRepo.query_transform(query, args, fn [owner, dev_activity] ->
-        {owner, dev_activity |> String.to_integer()}
-      end)
-
-    {:ok, result}
+    ClickhouseRepo.query_transform(query, args, fn [owner, dev_activity] ->
+      {owner, dev_activity |> String.to_integer()}
+    end)
   end
 
   @doc ~s"""
@@ -86,8 +84,8 @@ defmodule Sanbase.Clickhouse.Github do
   """
   @spec dev_activity(
           String.t(),
-          %DateTime{},
-          %DateTime{},
+          DateTime.t(),
+          DateTime.t(),
           String.t(),
           String.t(),
           integer() | nil
@@ -97,20 +95,20 @@ defmodule Sanbase.Clickhouse.Github do
   def dev_activity(organization, from, to, interval, "None", _) do
     interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
 
-    {:ok, _result} =
-      dev_activity_query(organization, from, to, interval_sec)
-      |> datetime_activity_execute()
+    dev_activity_query(organization, from, to, interval_sec)
+    |> datetime_activity_execute()
   end
 
   def dev_activity(organization, from, to, interval, "movingAverage", ma_base) do
     interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
     from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
 
-    {:ok, result} =
-      dev_activity_query(organization, from, to, interval_sec)
-      |> datetime_activity_execute()
-
-    sma(result, ma_base)
+    dev_activity_query(organization, from, to, interval_sec)
+    |> datetime_activity_execute()
+    |> case do
+      {:ok, result} -> sma(result, ma_base)
+      error -> error
+    end
   end
 
   @doc ~s"""
@@ -119,8 +117,8 @@ defmodule Sanbase.Clickhouse.Github do
   """
   @spec github_activity(
           String.t() | nil,
-          %DateTime{},
-          %DateTime{},
+          DateTime.t(),
+          DateTime.t(),
           String.t(),
           String.t(),
           non_neg_integer()
@@ -138,11 +136,12 @@ defmodule Sanbase.Clickhouse.Github do
     interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
     from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
 
-    {:ok, result} =
-      github_activity_query(organization, from, to, interval_sec)
-      |> datetime_activity_execute()
-
-    sma(result, ma_base)
+    github_activity_query(organization, from, to, interval_sec)
+    |> datetime_activity_execute()
+    |> case do
+      {:ok, result} -> sma(result, ma_base)
+      error -> error
+    end
   end
 
   def first_datetime(slug) do
@@ -152,12 +151,13 @@ defmodule Sanbase.Clickhouse.Github do
 
     args = [slug]
 
-    {:ok, [first_datetime]} =
-      ClickhouseRepo.query_transform(query, args, fn [datetime] ->
-        datetime |> Sanbase.DateTimeUtils.from_erl!()
-      end)
-
-    {:ok, first_datetime}
+    ClickhouseRepo.query_transform(query, args, fn [datetime] ->
+      datetime |> Sanbase.DateTimeUtils.from_erl!()
+    end)
+    |> case do
+      {:ok, [first_datetime]} -> {:ok, first_datetime}
+      error -> error
+    end
   end
 
   # Private functions

@@ -10,39 +10,50 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
 
   def token_top_transactions(
         %Project{id: id} = project,
-        %{from: from, to: to, limit: limit} = args,
+        args,
         _resolution
       ) do
-    with {:ok, contract_address, token_decimals} <- Project.contract_info(project) do
-      limit = Enum.min([limit, 100])
-
-      async(
-        Cache.func(
-          fn ->
-            {:ok, token_transactions} =
-              Clickhouse.Erc20Transfers.token_top_transfers(
-                contract_address,
-                from,
-                to,
-                limit,
-                token_decimals
-              )
-
-            result =
-              token_transactions
-              |> Clickhouse.MarkExchanges.mark_exchange_wallets()
-
-            {:ok, result}
-          end,
-          {:token_top_transfers, id},
-          args
-        )
+    async(
+      Cache.func(
+        fn -> calculate_token_top_transactions(project, args) end,
+        {:token_top_transactions, id},
+        args
       )
-    else
-      {:error, error} ->
-        Logger.info("Cannot get token top transfers. Reason: #{inspect(error)}")
+    )
+  end
 
+  defp calculate_token_top_transactions(%Project{} = project, %{
+         from: from,
+         to: to,
+         limit: limit
+       }) do
+    limit = Enum.min([limit, 100])
+
+    with {:contract, {:ok, contract_address, token_decimals}} <-
+           {:contract, Project.contract_info(project)},
+         {:ok, token_transactions} <-
+           Clickhouse.Erc20Transfers.token_top_transfers(
+             contract_address,
+             from,
+             to,
+             limit,
+             token_decimals
+           ),
+         {:ok, token_transactions} <-
+           Clickhouse.MarkExchanges.mark_exchange_wallets(token_transactions) do
+      {:ok, token_transactions}
+    else
+      {:contract, _} ->
         {:ok, []}
+
+      error ->
+        Logger.warn(
+          "Cannot fetch top token transactions for project with id #{project.id}. Reason: #{
+            inspect(error)
+          }"
+        )
+
+        {:nocache, {:ok, []}}
     end
   end
 
@@ -57,11 +68,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   end
 
   def eth_spent_from_loader(loader, %Project{id: id}) do
-    eth_spent =
-      loader
-      |> Dataloader.get(SanbaseDataloader, :eth_spent, id)
-
-    {:ok, eth_spent}
+    loader
+    |> Dataloader.get(SanbaseDataloader, :eth_spent, id)
+    |> case do
+      nil -> {:ok, 0}
+      result -> result
+    end
   end
 
   def eth_spent_over_time(
@@ -70,6 +82,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
         _resolution
       ) do
     async(calculate_eth_spent_over_time_cached(project, from, to, interval))
+  end
+
+  @doc ~s"""
+  Returns the accumulated ETH spent by all ERC20 projects for a given time period.
+  """
+  def eth_spent_by_all_projects(_, %{from: from, to: to}, _resolution) do
+    with projects when is_list(projects) <- Project.List.projects() do
+      total_eth_spent =
+        projects
+        |> Sanbase.Parallel.pmap(&calculate_eth_spent_cached(&1, from, to).(), timeout: 25_000)
+        |> Enum.map(fn
+          {:ok, value} when not is_nil(value) -> value
+          _ -> 0
+        end)
+        |> Enum.sum()
+
+      {:ok, total_eth_spent}
+    end
   end
 
   @doc ~s"""
@@ -102,13 +132,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
         %{from: from, to: to, interval: interval},
         _resolution
       ) do
-    Project.List.erc20_projects()
+    Project.List.erc20_projects() |> eth_spent_over_time(from, to, interval)
+  end
+
+  @doc ~s"""
+  Returns a list of ETH spent by all projects for a given time period,
+  grouped by the given `interval`.
+  """
+
+  def eth_spent_over_time_by_all_projects(
+        _root,
+        %{from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    Project.List.projects() |> eth_spent_over_time(from, to, interval)
+  end
+
+  defp eth_spent_over_time(projects, from, to, interval) do
+    projects
     |> Sanbase.Parallel.map(
       &calculate_eth_spent_over_time_cached(&1, from, to, interval).(),
       timeout: 25_000,
       max_concurrency: 50
     )
-    |> Clickhouse.EthTransfers.combine_eth_spent_by_all_projects()
+    |> combine_eth_spent_by_all_projects()
   end
 
   def eth_top_transactions(
@@ -136,27 +183,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   end
 
   defp calculate_eth_spent(%Project{} = project, from_datetime, to_datetime) do
-    with {:ok, eth_addresses} <- Project.eth_addresses(project),
+    with {:eth_addresses, {:ok, eth_addresses}} when eth_addresses != [] <-
+           {:eth_addresses, Project.eth_addresses(project)},
          {:ok, eth_spent} <-
-           Clickhouse.EthTransfers.eth_spent(eth_addresses, from_datetime, to_datetime) do
+           Clickhouse.HistoricalBalance.eth_spent(
+             eth_addresses,
+             from_datetime,
+             to_datetime
+           ) do
       {:ok, eth_spent}
     else
+      {:eth_addresses, _} ->
+        {:ok, nil}
+
       error ->
         Logger.warn(
           "Cannot calculate ETH spent for #{Project.describe(project)}. Reason: #{inspect(error)}"
         )
 
-        {:ok, nil}
+        {:nocache, {:ok, nil}}
     end
-  rescue
-    e ->
-      Logger.error(
-        "Error raised while calculating ETH spent for #{Project.describe(project)}. Reason: #{
-          inspect(e)
-        }"
-      )
-
-      {:ok, nil}
   end
 
   defp calculate_eth_spent_over_time_cached(
@@ -172,32 +218,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     )
   end
 
-  defp calculate_eth_spent_over_time(%Project{id: id} = project, from, to, interval) do
-    with {:ok, eth_addresses} <- Project.eth_addresses(project),
-         interval when is_integer(interval) <-
-           Sanbase.DateTimeUtils.compound_duration_to_seconds(interval),
+  defp calculate_eth_spent_over_time(%Project{} = project, from, to, interval) do
+    with {:eth_addresses, {:ok, eth_addresses}} when eth_addresses != [] <-
+           {:eth_addresses, Project.eth_addresses(project)},
          {:ok, eth_spent_over_time} <-
-           Clickhouse.EthTransfers.eth_spent_over_time(eth_addresses, from, to, interval) do
+           Clickhouse.HistoricalBalance.eth_spent_over_time(eth_addresses, from, to, interval) do
       {:ok, eth_spent_over_time}
     else
+      {:eth_addresses, _} ->
+        {:ok, []}
+
       error ->
         Logger.warn(
-          "Cannot calculate ETH spent over time for project with id #{id}. Reason: #{
+          "Cannot calculate ETH spent over time for for #{Project.describe(project)}. Reason: #{
             inspect(error)
           }"
         )
 
-        {:ok, []}
+        {:nocache, {:ok, []}}
     end
-  rescue
-    e ->
-      Logger.error(
-        "Exception raised while calculating ETH spent over time for #{Project.describe(project)}. Reason: #{
-          inspect(e)
-        }"
-      )
-
-      {:ok, []}
   end
 
   defp calculate_eth_top_transactions(%Project{} = project, %{
@@ -208,30 +247,53 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
        }) do
     limit = Enum.min([limit, 100])
 
-    with trx_type <- trx_type,
-         {:ok, project_addresses} <- Project.eth_addresses(project),
+    with {:eth_addresses, {:ok, eth_addresses}} when eth_addresses != [] <-
+           {:eth_addresses, Project.eth_addresses(project)},
          {:ok, eth_transactions} <-
            Clickhouse.EthTransfers.top_wallet_transfers(
-             project_addresses,
+             eth_addresses,
              from,
              to,
              limit,
              trx_type
-           ) do
-      result =
-        eth_transactions
-        |> Clickhouse.MarkExchanges.mark_exchange_wallets()
-
-      {:ok, result}
+           ),
+         {:ok, eth_transactions} <-
+           Clickhouse.MarkExchanges.mark_exchange_wallets(eth_transactions) do
+      {:ok, eth_transactions}
     else
+      {:eth_addresses, _} ->
+        {:ok, []}
+
       error ->
         Logger.warn(
-          "Cannot fetch ETH transactions for project with id #{project.id}. Reason: #{
+          "Cannot fetch top ETH transactions for #{Project.describe(project)}. Reason: #{
             inspect(error)
           }"
         )
 
-        {:ok, []}
+        {:nocache, {:ok, []}}
     end
+  end
+
+  # Combines a list of lists of ethereum spent data for many projects to a list of ethereum spent data.
+  # The entries at the same positions in each list are summed.
+  defp combine_eth_spent_by_all_projects(eth_spent_over_time_list) do
+    total_eth_spent_over_time =
+      eth_spent_over_time_list
+      |> Enum.reject(fn
+        {:ok, elem} when elem != [] and elem != nil -> false
+        _ -> true
+      end)
+      |> Enum.map(fn {:ok, data} -> data end)
+      |> Stream.zip()
+      |> Stream.map(&Tuple.to_list/1)
+      |> Enum.map(&reduce_eth_spent/1)
+
+    {:ok, total_eth_spent_over_time}
+  end
+
+  defp reduce_eth_spent([%{datetime: datetime} | _] = values) do
+    total_eth_spent = values |> Enum.map(& &1.eth_spent) |> Enum.sum()
+    %{datetime: datetime, eth_spent: total_eth_spent}
   end
 end

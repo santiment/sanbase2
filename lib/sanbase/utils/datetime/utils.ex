@@ -71,7 +71,6 @@ defmodule Sanbase.DateTimeUtils do
         "h" -> :hours
         "d" -> :days
         "w" -> :weeks
-        _ -> nil
       end
 
     {int_interval, duration_type}
@@ -88,7 +87,6 @@ defmodule Sanbase.DateTimeUtils do
       "h" -> int_interval * 60 * 60
       "d" -> int_interval * 24 * 60 * 60
       "w" -> int_interval * 7 * 24 * 60 * 60
-      _ -> int_interval
     end
   end
 

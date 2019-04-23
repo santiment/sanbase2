@@ -5,7 +5,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
   Includes functions for calculating:
   - Historical balances for an address or a list of addresses. For a list of addresses
   the combined balance is returned
-  - Balance changes for and address or a list of addresses. This is used to calculate
+  - Balance changes for an address or a list of addresses. This is used to calculate
   ethereum spent over time. Summing the balance changes of all wallets of a project
   allows to easily handle transactions between project wallets and not count them
   as spent.
@@ -169,7 +169,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
 
       SELECT
         toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
-        sign*value as change
+        sign*value AS change
       FROM #{@table}
       PREWHERE
         address in (?3) AND

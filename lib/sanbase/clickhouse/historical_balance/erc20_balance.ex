@@ -39,7 +39,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     do: raise("Should not try to change eth daily active addresses")
 
   @doc ~s"""
-  For a given address addresses returns the combined balance of tokens
+  For a given address or addresses returns the combined balance of tokens
   identified by `contract` for each bucket of size `interval` in the from-to time period
   """
   @spec historical_balance(
@@ -82,10 +82,10 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
   end
 
   @doc ~s"""
-  For a given returns the balance of the tokens
-  identified by `contract` change for the
-  from-to period. The returned lists indicates the address, before balance, after balance
-  and the balance change
+  For a given address returns the balance change in tokens, identified by `contract`
+
+  The change is for the from-to period. The returned lists indicates the address,
+  before balance, after balance and the balance change
   """
   @spec balance_change(
           address,

@@ -24,7 +24,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   and the balance change.
 
   This is special case of balance_change/4 but as ethereum is used a lot for calculating
-  ethereum spent this case avoids a call to the database to obrain the contract
+  ethereum spent this case avoids a call to the database to obtain the contract
   """
   @spec eth_balance_change(address | list(address), DateTime.t(), DateTime.t()) ::
           {:ok, list({address, {balance_before, balance_after, balance_change}})}

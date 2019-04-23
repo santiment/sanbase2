@@ -82,7 +82,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   end
 
   defp events_by_followed_users(query, user_id, limit) do
-    following = UserFollower.following(user_id)
+    following = UserFollower.followed_by(user_id)
 
     from(
       event in query,

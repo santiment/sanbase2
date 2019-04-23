@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.Helpers.Utils
 
-  @max_concurrency 10
+  @max_concurrency 100
   @total_erc20 "TOTAL_ERC20"
 
   def data() do

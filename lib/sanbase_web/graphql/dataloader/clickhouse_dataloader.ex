@@ -17,12 +17,16 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     |> Enum.map(fn %{project: project} -> Project.contract_address(project) end)
     |> Enum.reject(&is_nil/1)
     |> Enum.chunk_every(100)
-    |> Sanbase.Parallel.flat_pmap(fn contract_addresses ->
-      {:ok, daily_active_addresses} =
-        DailyActiveAddresses.average_active_addresses(contract_addresses, from, to)
+    |> Sanbase.Parallel.map(
+      fn contract_addresses ->
+        {:ok, daily_active_addresses} =
+          DailyActiveAddresses.average_active_addresses(contract_addresses, from, to)
 
-      daily_active_addresses
-    end)
+        daily_active_addresses
+      end,
+      map_type: :flat_map,
+      max_concurrency: @max_concurrency
+    )
     |> Enum.map(fn {contract_address, addresses} ->
       {contract_address, addresses}
     end)

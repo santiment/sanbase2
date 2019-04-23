@@ -7,7 +7,15 @@ defmodule Sanbase.Clickhouse.ShareOfDeposits do
 
   @ethereum ["ethereum", "ETH"]
 
-  def share_of_deposits(eth, from, to, interval) when eth in @ethereum do
+  def first_datetime(slug) when slug in @ethereum do
+    Eth.first_datetime(slug)
+  end
+
+  def first_datetime(contract) when is_binary(contract) do
+    Erc20.first_datetime(contract)
+  end
+
+  def share_of_deposits(slug, from, to, interval) when slug in @ethereum do
     Eth.share_of_deposits(from, to, interval)
   end
 

@@ -8,7 +8,6 @@ defmodule Sanbase.UserList do
   alias Sanbase.Auth.User
   alias Sanbase.UserList.ListItem
   alias Sanbase.Repo
-  alias Ecto.Multi
   alias Sanbase.Timeline.TimelineEvent
 
   schema "user_lists" do
@@ -58,28 +57,27 @@ defmodule Sanbase.UserList do
     changeset = watchlist |> update_changeset(params)
 
     if watchlist.is_public and Map.get(params, :list_items) do
-      update_watchlist_and_log_event(changeset)
+      Repo.update(changeset)
+      |> log_timeline_event()
     else
       Repo.update(changeset)
     end
   end
 
-  defp update_watchlist_and_log_event(changeset) do
-    Multi.new()
-    |> Multi.update(:watchlist, changeset)
-    |> Multi.run(:create_timeline_event, fn %{watchlist: watchlist} ->
-      TimelineEvent.create_event(watchlist, %{
-        event_type: TimelineEvent.update_watchlist(),
-        user_id: watchlist.user_id
-      })
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{watchlist: watchlist}} ->
+  defp log_timeline_event(result) do
+    case result do
+      {:ok, watchlist} ->
+        Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+          TimelineEvent.create_event(watchlist, %{
+            event_type: TimelineEvent.update_watchlist_type(),
+            user_id: watchlist.user_id
+          })
+        end)
+
         {:ok, watchlist}
 
-      {:error, _, error, _} ->
-        {:error, error}
+      {:error, changeset} ->
+        {:error, changeset}
     end
   end
 

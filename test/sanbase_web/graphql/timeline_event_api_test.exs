@@ -34,7 +34,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       insert(:timeline_event,
         post: post,
         user: user_to_follow,
-        event_type: TimelineEvent.publish_insight()
+        event_type: TimelineEvent.publish_insight_type()
       )
 
     {:ok, user_list} =
@@ -43,7 +43,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     insert(:timeline_event,
       user_list: user_list,
       user: user_to_follow,
-      event_type: TimelineEvent.update_watchlist()
+      event_type: TimelineEvent.update_watchlist_type()
     )
 
     user_trigger =
@@ -61,7 +61,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       insert(:timeline_event,
         user_trigger: user_trigger,
         user: user_to_follow,
-        event_type: TimelineEvent.create_public_trigger()
+        event_type: TimelineEvent.create_public_trigger_type()
       )
 
     result = timeline_events_query(conn, "limit: 3")

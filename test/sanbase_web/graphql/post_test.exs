@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
   alias Sanbase.Insight.{Poll, Post, Vote}
   alias Sanbase.Model.Project
   alias Sanbase.Repo
+  alias Sanbase.Timeline.TimelineEvent
 
   setup do
     poll = Poll.find_or_insert_current_poll!()
@@ -17,6 +18,11 @@ defmodule SanbaseWeb.Graphql.PostTest do
     user2 = insert(:staked_user, username: "user2")
 
     conn = setup_jwt_auth(build_conn(), user)
+
+    on_exit(fn ->
+      Task.Supervisor.children(Sanbase.TaskSupervisor)
+      |> Enum.map(fn child -> Task.Supervisor.terminate_child(Sanbase.TaskSupervisor, child) end)
+    end)
 
     {:ok, conn: conn, user: user, user2: user2, poll: poll}
   end
@@ -753,6 +759,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
           |> publish_insight_mutation()
           |> execute_mutation_with_success("publishInsight", conn)
 
+        assert_receive({_, {:ok, %TimelineEvent{}}})
+
         assert result["readyState"] == Post.published()
 
         assert result["discourseTopicUrl"] ==
@@ -797,7 +805,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
     end
 
     @discourse_response_file "#{File.cwd!()}/test/sanbase_web/graphql/assets/discourse_publish_response.json"
-    test "returns error when discord publish fails", %{user: user, conn: conn, poll: poll} do
+    test "still returns post when discord publish fails", %{user: user, conn: conn, poll: poll} do
       with_mocks([
         {Sanbase.Discourse.Api, [],
          [publish: fn _, _ -> @discourse_response_file |> File.read!() |> Jason.decode() end]},
@@ -812,14 +820,14 @@ defmodule SanbaseWeb.Graphql.PostTest do
             ready_state: Post.draft()
           )
 
-        capture_log(fn ->
-          result =
-            post
-            |> publish_insight_mutation()
-            |> execute_mutation_with_errors(conn)
+        result =
+          post
+          |> publish_insight_mutation()
+          |> execute_mutation_with_success("publishInsight", conn)
 
-          assert String.contains?(result["message"], "Can't publish post")
-        end)
+        assert_receive({_, {:ok, %TimelineEvent{}}})
+
+        assert result["readyState"] == Post.published()
       end
     end
 

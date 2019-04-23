@@ -12,7 +12,6 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Timeline.TimelineEvent
 
   alias Sanbase.Repo
-  alias Ecto.Multi
 
   require Logger
 
@@ -101,7 +100,7 @@ defmodule Sanbase.Insight.Post do
     with {:nil?, %Post{id: ^post_id}} <- {:nil?, post},
          {:own_post?, %Post{user_id: ^user_id}} <- {:own_post?, post},
          {:draft?, %Post{ready_state: ^draft}} <- {:draft?, post},
-         {:ok, %{post: post}} <- publish_post(post, user_id) do
+         {:ok, post} <- publish_post(post, user_id) do
       {:ok, post}
     else
       {:nil?, nil} ->
@@ -113,7 +112,7 @@ defmodule Sanbase.Insight.Post do
       {:own_post?, _} ->
         {:error, "Can't publish not own post with id: #{post_id}"}
 
-      {:error, _, error, _} ->
+      {:error, error} ->
         error_message = "Can't publish post with id #{post_id}"
         Logger.error("#{error_message}, #{inspect(error)}")
         {:error, error_message}
@@ -200,27 +199,24 @@ defmodule Sanbase.Insight.Post do
   # Helper functions
 
   defp publish_post(post, user_id) do
-    Multi.new()
-    |> Multi.run(:discourse_topic_url, fn _ ->
-      Sanbase.Discourse.Insight.create_discourse_topic(post)
-    end)
-    |> Multi.run(:post, fn %{discourse_topic_url: discourse_topic_url} ->
-      publish_changeset(post, %{
-        discourse_topic_url: discourse_topic_url,
-        ready_state: Post.published()
-      })
-      |> Repo.update()
-    end)
-    |> Multi.run(:publish_in_discord, fn %{post: post} ->
-      Sanbase.Notifications.Insight.publish_in_discord(post)
-    end)
-    |> Multi.run(:create_timeline_event, fn %{post: post} ->
-      TimelineEvent.create_event(post, %{
-        event_type: TimelineEvent.publish_insight(),
-        user_id: user_id
-      })
-    end)
-    |> Repo.transaction()
+    with {:ok, post} <-
+           publish_changeset(post, %{ready_state: Post.published()}) |> Repo.update(),
+         {:ok, discourse_topic_url} <- Sanbase.Discourse.Insight.create_discourse_topic(post),
+         {:ok, post} <-
+           publish_changeset(post, %{discourse_topic_url: discourse_topic_url}) |> Repo.update() do
+      Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+        Sanbase.Notifications.Insight.publish_in_discord(post)
+      end)
+
+      Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+        TimelineEvent.create_event(post, %{
+          event_type: TimelineEvent.publish_insight_type(),
+          user_id: user_id
+        })
+      end)
+
+      {:ok, post}
+    end
   end
 
   defp by_user(query, user_id) do

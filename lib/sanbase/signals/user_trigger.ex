@@ -21,7 +21,6 @@ defmodule Sanbase.Signals.UserTrigger do
   alias Sanbase.Signals.{Trigger, HistoricalActivity}
   alias Sanbase.Repo
   alias Sanbase.Tag
-  alias Ecto.Multi
   alias Sanbase.Timeline.TimelineEvent
 
   require Logger
@@ -151,11 +150,8 @@ defmodule Sanbase.Signals.UserTrigger do
          :ok <- valid?(settings) do
       changeset = %UserTrigger{} |> create_changeset(%{user_id: user_id, trigger: params})
 
-      if Map.get(params, :is_public) do
-        create_trigger_and_log_event(changeset)
-      else
-        Repo.insert(changeset)
-      end
+      Repo.insert(changeset)
+      |> log_timeline_event(Map.get(params, :is_public))
     else
       {:nil?, true} ->
         {:error, "Trigger structure is invalid. Key `settings` is empty."}
@@ -166,24 +162,24 @@ defmodule Sanbase.Signals.UserTrigger do
     end
   end
 
-  defp create_trigger_and_log_event(changeset) do
-    Multi.new()
-    |> Multi.insert(:user_trigger, changeset)
-    |> Multi.run(:create_timeline_event, fn %{user_trigger: user_trigger} ->
-      TimelineEvent.create_event(user_trigger, %{
-        event_type: TimelineEvent.create_public_trigger(),
-        user_id: user_trigger.user_id
-      })
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{user_trigger: user_trigger}} ->
+  defp log_timeline_event(result, true) do
+    case result do
+      {:ok, user_trigger} ->
+        Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+          TimelineEvent.create_event(user_trigger, %{
+            event_type: TimelineEvent.create_public_trigger_type(),
+            user_id: user_trigger.user_id
+          })
+        end)
+
         {:ok, user_trigger}
 
-      {:error, _, error, _} ->
-        {:error, error}
+      {:error, changeset} ->
+        {:error, changeset}
     end
   end
+
+  defp log_timeline_event(result, _), do: result
 
   def create_user_trigger(_, _),
     do: {:error, "Trigger structure is invalid. Key `settings` is missing."}

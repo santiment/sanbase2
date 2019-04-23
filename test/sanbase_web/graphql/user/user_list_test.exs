@@ -27,6 +27,11 @@ defmodule SanbaseWeb.Graphql.UserListTest do
 
     conn = setup_jwt_auth(build_conn(), user)
 
+    on_exit(fn ->
+      Task.Supervisor.children(Sanbase.TaskSupervisor)
+      |> Enum.map(fn child -> Task.Supervisor.terminate_child(Sanbase.TaskSupervisor, child) end)
+    end)
+
     {:ok, conn: conn, user: user, user2: user2}
   end
 
@@ -345,6 +350,8 @@ defmodule SanbaseWeb.Graphql.UserListTest do
 
       {:ok, user_list} =
         UserList.update_user_list(%{id: user_list.id, list_items: [%{project_id: project.id}]})
+
+      assert_receive({_, {:ok, %TimelineEvent{}}})
 
       assert TimelineEvent |> Repo.all() |> length() == 1
 

@@ -165,12 +165,7 @@ defmodule Sanbase.Signals.UserTrigger do
   defp log_timeline_event(result, true) do
     case result do
       {:ok, user_trigger} ->
-        Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-          TimelineEvent.create_event(user_trigger, %{
-            event_type: TimelineEvent.create_public_trigger_type(),
-            user_id: user_trigger.user_id
-          })
-        end)
+        TimelineEvent.create_event_async(user_trigger, TimelineEvent.create_public_trigger_type())
 
         {:ok, user_trigger}
 

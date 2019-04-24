@@ -10,10 +10,7 @@ defmodule Sanbase.Signals.TriggersTest do
   alias Sanbase.Timeline.TimelineEvent
 
   setup do
-    on_exit(fn ->
-      Task.Supervisor.children(Sanbase.TaskSupervisor)
-      |> Enum.map(fn child -> Task.Supervisor.terminate_child(Sanbase.TaskSupervisor, child) end)
-    end)
+    clean_task_supervisor_children()
   end
 
   test "create and get user trigger" do

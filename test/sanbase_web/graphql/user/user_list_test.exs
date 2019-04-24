@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.UserListTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import Sanbase.TestHelpers
+
   alias Sanbase.Auth.User
   alias Sanbase.Model.Project
   alias Sanbase.Model.LatestCoinmarketcapData
@@ -11,6 +13,8 @@ defmodule SanbaseWeb.Graphql.UserListTest do
   import SanbaseWeb.Graphql.TestHelpers
 
   setup do
+    clean_task_supervisor_children()
+
     user =
       %User{
         salt: User.generate_salt(),
@@ -26,11 +30,6 @@ defmodule SanbaseWeb.Graphql.UserListTest do
       |> Repo.insert!()
 
     conn = setup_jwt_auth(build_conn(), user)
-
-    on_exit(fn ->
-      Task.Supervisor.children(Sanbase.TaskSupervisor)
-      |> Enum.map(fn child -> Task.Supervisor.terminate_child(Sanbase.TaskSupervisor, child) end)
-    end)
 
     {:ok, conn: conn, user: user, user2: user2}
   end

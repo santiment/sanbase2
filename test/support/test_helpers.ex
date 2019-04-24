@@ -6,6 +6,15 @@ defmodule Sanbase.TestHelpers do
     end
   end
 
+  defmacro clean_task_supervisor_children() do
+    quote do
+      on_exit(fn ->
+        Task.Supervisor.children(Sanbase.TaskSupervisor)
+        |> Enum.map(fn child -> Task.Supervisor.terminate_child(Sanbase.TaskSupervisor, child) end)
+      end)
+    end
+  end
+
   def error_details(%Ecto.Changeset{} = changeset) do
     changeset
     |> Ecto.Changeset.traverse_errors(&format_error/1)

@@ -67,12 +67,7 @@ defmodule Sanbase.UserList do
   defp log_timeline_event(result) do
     case result do
       {:ok, watchlist} ->
-        Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-          TimelineEvent.create_event(watchlist, %{
-            event_type: TimelineEvent.update_watchlist_type(),
-            user_id: watchlist.user_id
-          })
-        end)
+        TimelineEvent.create_event_async(watchlist, TimelineEvent.update_watchlist_type())
 
         {:ok, watchlist}
 

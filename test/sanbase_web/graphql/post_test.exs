@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
   import ExUnit.CaptureLog
+  import Sanbase.TestHelpers
 
   alias Sanbase.Tag
   alias Sanbase.Insight.{Poll, Post, Vote}
@@ -13,16 +14,13 @@ defmodule SanbaseWeb.Graphql.PostTest do
   alias Sanbase.Timeline.TimelineEvent
 
   setup do
+    clean_task_supervisor_children()
+
     poll = Poll.find_or_insert_current_poll!()
     user = insert(:staked_user, username: "user1")
     user2 = insert(:staked_user, username: "user2")
 
     conn = setup_jwt_auth(build_conn(), user)
-
-    on_exit(fn ->
-      Task.Supervisor.children(Sanbase.TaskSupervisor)
-      |> Enum.map(fn child -> Task.Supervisor.terminate_child(Sanbase.TaskSupervisor, child) end)
-    end)
 
     {:ok, conn: conn, user: user, user2: user2, poll: poll}
   end

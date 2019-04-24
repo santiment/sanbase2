@@ -62,6 +62,15 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   def events(_, _), do: {:error, "Bad arguments"}
 
+  def create_event_async(resource, type) do
+    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+      create_event(resource, %{
+        event_type: type,
+        user_id: resource.user_id
+      })
+    end)
+  end
+
   def create_event(%Post{id: id}, params) do
     create_event(:post_id, id, params)
   end

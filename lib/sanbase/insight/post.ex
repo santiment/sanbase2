@@ -208,12 +208,7 @@ defmodule Sanbase.Insight.Post do
         Sanbase.Notifications.Insight.publish_in_discord(post)
       end)
 
-      Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-        TimelineEvent.create_event(post, %{
-          event_type: TimelineEvent.publish_insight_type(),
-          user_id: user_id
-        })
-      end)
+      TimelineEvent.create_event_async(post, TimelineEvent.publish_insight_type())
 
       {:ok, post}
     end

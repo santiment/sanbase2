@@ -59,17 +59,20 @@ defmodule Sanbase.Prices.Store do
     total_erc20 =
       measurements
       |> Enum.chunk_every(100)
-      |> Sanbase.Parallel.pmap(fn measurements ->
-        {:ok, result} =
-          fetch_combined_mcap_volume(
-            measurements,
-            from,
-            to,
-            resolution
-          )
+      |> Sanbase.Parallel.map(
+        fn measurements ->
+          {:ok, result} =
+            fetch_combined_mcap_volume(
+              measurements,
+              from,
+              to,
+              resolution
+            )
 
-        result
-      end)
+          result
+        end,
+        max_concurrency: 100
+      )
       |> Enum.zip()
       |> Enum.map(&Tuple.to_list/1)
       |> Enum.map(fn [%{datetime: dt} | _rest] = list ->

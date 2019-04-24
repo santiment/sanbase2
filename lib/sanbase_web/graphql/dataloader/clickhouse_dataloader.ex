@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   alias Sanbase.Clickhouse
   alias Sanbase.Model.Project
 
+  @max_concurrency 100
   alias Sanbase.Clickhouse.DailyActiveAddresses
 
   def data() do
@@ -16,12 +17,16 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     |> Enum.map(fn %{project: project} -> Project.contract_address(project) end)
     |> Enum.reject(&is_nil/1)
     |> Enum.chunk_every(100)
-    |> Sanbase.Parallel.flat_pmap(fn contract_addresses ->
-      {:ok, daily_active_addresses} =
-        DailyActiveAddresses.average_active_addresses(contract_addresses, from, to)
+    |> Sanbase.Parallel.map(
+      fn contract_addresses ->
+        {:ok, daily_active_addresses} =
+          DailyActiveAddresses.average_active_addresses(contract_addresses, from, to)
 
-      daily_active_addresses
-    end)
+        daily_active_addresses
+      end,
+      map_type: :flat_map,
+      max_concurrency: @max_concurrency
+    )
     |> Enum.map(fn {contract_address, addresses} ->
       {contract_address, addresses}
     end)
@@ -41,21 +46,25 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     end)
     |> Enum.reject(&is_nil/1)
     |> Enum.chunk_every(100)
-    |> Sanbase.Parallel.flat_pmap(fn organizations ->
-      case Clickhouse.Github.total_dev_activity(organizations, from, to) do
-        {:ok, dev_activity} ->
-          dev_activity
-          |> Enum.map(fn {organization, dev_activity} ->
-            {organization, {:ok, dev_activity / days}}
-          end)
+    |> Sanbase.Parallel.map(
+      fn organizations ->
+        case Clickhouse.Github.total_dev_activity(organizations, from, to) do
+          {:ok, dev_activity} ->
+            dev_activity
+            |> Enum.map(fn {organization, dev_activity} ->
+              {organization, {:ok, dev_activity / days}}
+            end)
 
-        _ ->
-          organizations
-          |> Enum.map(fn organization ->
-            {organization, {:nocache, {:ok, 0}}}
-          end)
-      end
-    end)
+          _ ->
+            organizations
+            |> Enum.map(fn organization ->
+              {organization, {:nocache, {:ok, 0}}}
+            end)
+        end
+      end,
+      map_type: :flat_map,
+      max_concurrency: @max_concurrency
+    )
     |> Map.new()
   end
 
@@ -72,7 +81,10 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     eth_spent =
       eth_addresses(args)
       |> Enum.chunk_every(10)
-      |> Sanbase.Parallel.flat_pmap(&eth_spent(&1, args))
+      |> Sanbase.Parallel.map(&eth_spent(&1, args),
+        map_type: :flat_map,
+        max_concurrency: @max_concurrency
+      )
       |> Map.new()
 
     args

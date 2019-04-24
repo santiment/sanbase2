@@ -91,4 +91,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
       source
     )
   end
+
+  def news(
+        _root,
+        %{
+          tag: tag,
+          from: from,
+          to: to,
+          size: size
+        },
+        _resolution
+      ) do
+    SocialData.google_news(
+      tag,
+      from,
+      to,
+      size
+    )
+  end
 end

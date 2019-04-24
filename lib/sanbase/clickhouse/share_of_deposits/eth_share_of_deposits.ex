@@ -15,6 +15,24 @@ defmodule Sanbase.Clickhouse.EthShareOfDeposits do
           share_of_deposits: number()
         }
 
+  def first_datetime(contract) do
+    contract = String.downcase(contract)
+
+    query = """
+    SELECT min(dt) FROM daily_active_deposits WHERE contract = ?1
+    """
+
+    args = [contract]
+
+    ClickhouseRepo.query_transform(query, args, fn [datetime] ->
+      datetime |> Sanbase.DateTimeUtils.from_erl!()
+    end)
+    |> case do
+      {:ok, [first_datetime]} -> {:ok, first_datetime}
+      error -> error
+    end
+  end
+
   @spec share_of_deposits(
           %DateTime{},
           %DateTime{},

@@ -22,12 +22,12 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
 
   @table "erc20_daily_active_addresses"
 
-  def first_datetime(slug) do
+  def first_datetime(contract) do
     query = """
     SELECT min(dt) FROM #{@table} WHERE contract = ?1
     """
 
-    args = [slug]
+    args = [contract]
 
     ClickhouseRepo.query_transform(query, args, fn [datetime] ->
       datetime |> Sanbase.DateTimeUtils.from_erl!()

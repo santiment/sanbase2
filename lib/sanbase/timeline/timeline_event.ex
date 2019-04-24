@@ -21,6 +21,8 @@ defmodule Sanbase.Timeline.TimelineEvent do
   @update_watchlist_type "update_watchlist"
   @create_public_trigger_type "create_public_trigger"
 
+  @max_limit 100
+
   @timestamps_opts [inserted_at: :created_at, updated_at: false, type: :utc_datetime]
   @table "timeline_events"
   schema @table do
@@ -47,7 +49,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
         %{limit: limit, cursor: %{type: cursor_type, datetime: cursor_datetime}}
       ) do
     TimelineEvent
-    |> events_by_followed_users(user_id, limit)
+    |> events_by_followed_users(user_id, min(limit, @max_limit))
     |> by_cursor(cursor_type, cursor_datetime)
     |> Repo.all()
     |> events_with_cursor()
@@ -55,7 +57,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   def events(%User{id: user_id}, %{limit: limit}) do
     TimelineEvent
-    |> events_by_followed_users(user_id, limit)
+    |> events_by_followed_users(user_id, min(limit, @max_limit))
     |> Repo.all()
     |> events_with_cursor()
   end

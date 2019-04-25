@@ -6,26 +6,6 @@ defmodule Sanbase.NewsTest do
 
   alias Sanbase.SocialData
 
-  @successful_response_body ~s([
-    {
-      "timestamp": "2018-04-16T10:00:00Z",
-      "description": "test description",
-      "title": "test title",
-      "url": "http://example.com",
-      "source_name": "ForexTV.com",
-      "media_url": NaN
-    },
-    {
-      "timestamp": "2018-04-16T12:00:00",
-      "description": "test description2",
-      "title": "test title2",
-      "url": "http://example.com",
-      "source_name": "ForexTV.com"
-    }
-  ])
-
-  @successful_response_empty_body "[]"
-
   setup do
     [
       from: DateTime.from_naive!(~N[2018-04-16 10:00:00], "Etc/UTC"),
@@ -35,12 +15,23 @@ defmodule Sanbase.NewsTest do
 
   describe "google_news/4" do
     test "response: success", context do
+      success_response = ~s([
+        {
+          "timestamp": "2018-04-16T10:00:00Z",
+          "description": "test description",
+          "title": "test title",
+          "url": "http://example.com",
+          "source_name": "ForexTV.com",
+          "media_url": "http://test"
+        }
+      ])
+
       mock(
         HTTPoison,
         :get,
         {:ok,
          %HTTPoison.Response{
-           body: @successful_response_body,
+           body: success_response,
            status_code: 200
          }}
       )
@@ -53,17 +44,121 @@ defmodule Sanbase.NewsTest do
                   %{
                     datetime: Sanbase.DateTimeUtils.from_iso8601!("2018-04-16T10:00:00Z"),
                     description: "test description",
-                    media_url: "",
+                    media_url: "http://test",
                     source_name: "ForexTV.com",
                     title: "test title",
                     url: "http://example.com"
-                  },
+                  }
+                ]}
+    end
+
+    test "can handle NaN in media_link", context do
+      success_response = ~s([
+        {
+          "timestamp": "2018-04-16T10:00:00Z",
+          "description": "test description",
+          "title": "test title",
+          "url": "http://example.com",
+          "source_name": "ForexTV.com",
+          "media_url": NaN
+        }
+      ])
+
+      mock(
+        HTTPoison,
+        :get,
+        {:ok,
+         %HTTPoison.Response{
+           body: success_response,
+           status_code: 200
+         }}
+      )
+
+      result = SocialData.google_news("BTC", context.from, context.to, 2)
+
+      assert result ==
+               {:ok,
+                [
                   %{
-                    datetime: Sanbase.DateTimeUtils.from_iso8601!("2018-04-16T12:00:00Z"),
-                    description: "test description2",
-                    media_url: "",
+                    datetime: Sanbase.DateTimeUtils.from_iso8601!("2018-04-16T10:00:00Z"),
+                    description: "test description",
+                    media_url: nil,
                     source_name: "ForexTV.com",
-                    title: "test title2",
+                    title: "test title",
+                    url: "http://example.com"
+                  }
+                ]}
+    end
+
+    test "can handle empty media_link", context do
+      success_response = ~s([
+        {
+          "timestamp": "2018-04-16T10:00:00Z",
+          "description": "test description",
+          "title": "test title",
+          "url": "http://example.com",
+          "source_name": "ForexTV.com"
+        }
+      ])
+
+      mock(
+        HTTPoison,
+        :get,
+        {:ok,
+         %HTTPoison.Response{
+           body: success_response,
+           status_code: 200
+         }}
+      )
+
+      result = SocialData.google_news("BTC", context.from, context.to, 2)
+
+      assert result ==
+               {:ok,
+                [
+                  %{
+                    datetime: Sanbase.DateTimeUtils.from_iso8601!("2018-04-16T10:00:00Z"),
+                    description: "test description",
+                    media_url: nil,
+                    source_name: "ForexTV.com",
+                    title: "test title",
+                    url: "http://example.com"
+                  }
+                ]}
+    end
+
+    test "can work with timestamp in iso8601 without timezone", context do
+      success_response = ~s([
+        {
+          "timestamp": "2018-04-16T10:00:00",
+          "description": "test description",
+          "title": "test title",
+          "url": "http://example.com",
+          "source_name": "ForexTV.com"
+        }
+      ])
+
+      mock(
+        HTTPoison,
+        :get,
+        {:ok,
+         %HTTPoison.Response{
+           body: success_response,
+           status_code: 200
+         }}
+      )
+
+      result = SocialData.google_news("BTC", context.from, context.to, 2)
+
+      assert result ==
+               {:ok,
+                [
+                  %{
+                    datetime: Sanbase.DateTimeUtils.from_iso8601!("2018-04-16T10:00:00Z"),
+                    description: "test description",
+                    media_url: nil,
+                    source_name: "ForexTV.com",
+                    title: "test title",
                     url: "http://example.com"
                   }
                 ]}
@@ -75,7 +170,7 @@ defmodule Sanbase.NewsTest do
         :get,
         {:ok,
          %HTTPoison.Response{
-           body: @successful_response_empty_body,
+           body: "[]",
            status_code: 200
          }}
       )

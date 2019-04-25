@@ -84,6 +84,9 @@ defmodule Sanbase.SocialData.News do
                      } = datapoint ->
         # FIXME: should remove concat `Z` when fixed in tech-indicators. Now the string is invalid iso8601
         dt = if String.contains?(dt, "Z"), do: dt, else: dt <> "Z"
+        # FIXME: should be removed if fixed in tech-indicators
+        media_url = Map.get(datapoint, "media_url")
+        media_url = if media_url == "", do: nil, else: media_url
 
         %{
           datetime: Sanbase.DateTimeUtils.from_iso8601!(dt),
@@ -91,8 +94,7 @@ defmodule Sanbase.SocialData.News do
           description: description,
           url: url,
           source_name: source_name,
-          # FIXME: should be removed if fixed in tech-indicators
-          media_url: Map.get(datapoint, "media_url", "")
+          media_url: media_url
         }
       end)
 

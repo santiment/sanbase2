@@ -48,7 +48,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:tag, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:size, non_null(:integer), default_value: 10)
+      arg(:size, :integer, default_value: 10)
 
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction)

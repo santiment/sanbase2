@@ -45,11 +45,11 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
 
   object :news do
     field(:datetime, non_null(:datetime))
-    field(:title, :string)
+    field(:title, non_null(:string))
     field(:description, :string)
+    field(:source_name, :string)
     field(:url, :string)
     field(:media_url, :string)
-    field(:source_name, :string)
   end
 
   object :trending_words do

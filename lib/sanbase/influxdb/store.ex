@@ -14,20 +14,34 @@ defmodule Sanbase.Influxdb.Store do
       require Logger
 
       alias Sanbase.Influxdb.Measurement
+      @query_timeout 10_000
+      @pool_timeout 10_000
 
-      def import(nil) do
-        :ok
+      defp post(query) do
+        query
+        |> __MODULE__.execute(
+          method: :post,
+          query_timeout: @query_timeout,
+          pool_timeout: @pool_timeout
+        )
       end
+
+      defp get(query) do
+        query
+        |> __MODULE__.query(query_timeout: @query_timeout, pool_timeout: @pool_timeout)
+      end
+
+      defp write_data(data) do
+        data |> __MODULE__.write(query_timeout: @query_timeout, pool_timeout: @pool_timeout)
+      end
+
+      def import(no_data) when is_nil(no_data) or no_data == [], do: :ok
 
       def import(%Measurement{} = measurement) do
         :ok =
           measurement
           |> Measurement.convert_measurement_for_import()
-          |> __MODULE__.write()
-      end
-
-      def import([]) do
-        :ok
+          |> write_data()
       end
 
       def import({:error, reason} = err_tuple) do
@@ -43,8 +57,8 @@ defmodule Sanbase.Influxdb.Store do
         |> Stream.map(&Measurement.convert_measurement_for_import/1)
         |> Stream.reject(&is_nil/1)
         |> Stream.chunk_every(2500)
-        |> Stream.map(fn data_for_import ->
-          :ok = __MODULE__.write(data_for_import)
+        |> Stream.map(fn data ->
+          :ok = write_data(data)
         end)
         |> Stream.run()
       end
@@ -52,12 +66,12 @@ defmodule Sanbase.Influxdb.Store do
       def delete_by_tag(measurement, tag_key, tag_value) do
         ~s/DELETE from "#{measurement}"
         WHERE #{tag_key} = '#{tag_value}'/
-        |> __MODULE__.query()
+        |> post()
       end
 
       def list_measurements() do
         ~s/SHOW MEASUREMENTS/
-        |> __MODULE__.query()
+        |> get()
         |> parse_measurements_list()
       end
 
@@ -70,24 +84,24 @@ defmodule Sanbase.Influxdb.Store do
 
       def drop_measurement(measurement_name) do
         ~s/DROP MEASUREMENT "#{measurement_name}"/
-        |> __MODULE__.execute(method: :post)
+        |> post()
       end
 
       def create_db() do
         Sanbase.Utils.Config.get(:database)
         |> Instream.Admin.Database.create()
-        |> __MODULE__.execute(method: :post)
+        |> post()
       end
 
       def last_record(measurement) do
         ~s/SELECT * FROM "#{measurement}" ORDER BY time DESC LIMIT 1/
-        |> __MODULE__.query()
+        |> get()
         |> parse_time_series()
       end
 
       def last_datetime(measurement) do
         ~s/SELECT * FROM "#{measurement}" ORDER BY time DESC LIMIT 1/
-        |> __MODULE__.query()
+        |> get()
         |> parse_measurement_datetime()
       end
 
@@ -101,14 +115,14 @@ defmodule Sanbase.Influxdb.Store do
       def last_datetime_with_tag(measurement, tag_name, tag_value) when is_binary(tag_value) do
         ~s/SELECT * FROM "#{measurement}" ORDER BY time DESC LIMIT 1
         WHERE "#{tag_name}" = '#{tag_value}'/
-        |> __MODULE__.query()
+        |> get()
         |> parse_measurement_datetime()
       end
 
       def last_datetime_with_tag(measurement, tag_name, tag_value) do
         ~s/SELECT * FROM "#{measurement}" ORDER BY time DESC LIMIT 1
         WHERE "#{tag_name}" = #{tag_value}/
-        |> __MODULE__.query()
+        |> get()
         |> parse_measurement_datetime()
       end
 
@@ -121,7 +135,7 @@ defmodule Sanbase.Influxdb.Store do
 
       def first_datetime(measurement) do
         ~s/SELECT * FROM "#{measurement}" ORDER BY time ASC LIMIT 1/
-        |> __MODULE__.query()
+        |> get()
         |> parse_measurement_datetime()
       end
 

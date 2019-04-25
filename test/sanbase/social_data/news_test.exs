@@ -1,7 +1,6 @@
 defmodule Sanbase.NewsTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Mock
   import Mockery
   import ExUnit.CaptureLog
 
@@ -9,7 +8,7 @@ defmodule Sanbase.NewsTest do
 
   @successful_response_body ~s([
     {
-      "timestamp": "2018-04-16T10:00:00",
+      "timestamp": "2018-04-16T10:00:00Z",
       "description": "test description",
       "title": "test title",
       "url": "http://example.com",

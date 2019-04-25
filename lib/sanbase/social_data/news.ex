@@ -1,7 +1,6 @@
 defmodule Sanbase.SocialData.News do
   import Sanbase.Utils.ErrorHandling
 
-  alias Sanbase.Model.Project
   alias SanbaseWeb.Graphql.Cache
 
   require Mockery.Macro
@@ -77,15 +76,17 @@ defmodule Sanbase.SocialData.News do
       result
       |> Enum.sort(&(&1["timestamp"] <= &2["timestamp"]))
       |> Enum.map(fn %{
-                       "timestamp" => datetime,
+                       "timestamp" => dt,
                        "title" => title,
                        "description" => description,
                        "url" => url,
                        "source_name" => source_name
                      } = datapoint ->
+        # FIXME: should remove concat `Z` when fixed in tech-indicators. Now the string is invalid iso8601
+        dt = if String.contains?(dt, "Z"), do: dt, else: dt <> "Z"
+
         %{
-          # FIXME: should remove concat `Z` when fixed in tech-indicators
-          datetime: Sanbase.DateTimeUtils.from_iso8601!(datetime <> "Z"),
+          datetime: Sanbase.DateTimeUtils.from_iso8601!(dt),
           title: title,
           description: description,
           url: url,

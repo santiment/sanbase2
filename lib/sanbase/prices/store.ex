@@ -25,7 +25,7 @@ defmodule Sanbase.Prices.Store do
   """
   def fetch_price_points(measurement, from, to) do
     fetch_query(measurement, from, to)
-    |> Store.query()
+    |> get()
     |> parse_time_series()
   end
 
@@ -34,7 +34,7 @@ defmodule Sanbase.Prices.Store do
   """
   def fetch_ohlc(measurement, from, to, interval) do
     fetch_ohlc_query(measurement, from, to, interval)
-    |> Store.query()
+    |> get()
     |> parse_time_series()
   end
 
@@ -88,7 +88,7 @@ defmodule Sanbase.Prices.Store do
 
   def fetch_prices_with_resolution(measurement, from, to, resolution) do
     fetch_prices_with_resolution_query(measurement, from, to, resolution)
-    |> Store.query()
+    |> get()
     |> parse_time_series()
   end
 
@@ -104,14 +104,14 @@ defmodule Sanbase.Prices.Store do
 
   def fetch_volume_with_resolution(measurement, from, to, resolution) do
     fetch_volume_with_resolution_query(measurement, from, to, resolution)
-    |> Store.query()
+    |> get()
     |> parse_time_series()
   end
 
   def fetch_mean_volume(measurements, from, to) when is_list(measurements) do
     %{results: [%{series: series}]} =
       fetch_mean_volume_query(measurements, from, to)
-      |> Store.query()
+      |> get()
 
     series
     |> Enum.map(fn %{name: name, values: [[_, value]]} -> {name, value} end)
@@ -119,13 +119,13 @@ defmodule Sanbase.Prices.Store do
 
   def fetch_mean_volume(measurement, from, to) do
     fetch_mean_volume_query(measurement, from, to)
-    |> Store.query()
+    |> get()
     |> parse_time_series()
   end
 
   def fetch_average_price(measurement, from, to) do
     fetch_average_price_query(measurement, from, to)
-    |> Store.query()
+    |> get()
     |> parse_time_series()
     |> case do
       {:ok, [[_datetime, avg_price_usd, avg_price_btc]]} ->
@@ -148,7 +148,7 @@ defmodule Sanbase.Prices.Store do
 
   def last_history_datetime_cmc(ticker_cmc_id) do
     last_history_datetime_cmc_query(ticker_cmc_id)
-    |> Store.query()
+    |> get()
     |> parse_time_series()
     |> case do
       {:ok, [[_, iso8601_datetime | _rest]]} ->
@@ -172,7 +172,7 @@ defmodule Sanbase.Prices.Store do
 
   def fetch_last_price_point_before(measurement, timestamp) do
     fetch_last_price_point_before_query(measurement, timestamp)
-    |> Store.query()
+    |> get()
     |> parse_time_series()
   end
 
@@ -180,7 +180,7 @@ defmodule Sanbase.Prices.Store do
     measurements_str = measurement_slugs |> Enum.map(fn x -> ~s/"#{x}"/ end) |> Enum.join(", ")
 
     fetch_combined_mcap_volume_query(measurements_str, from, to, interval)
-    |> Store.query()
+    |> get()
     |> combine_results_mcap_volume()
   end
 
@@ -189,13 +189,13 @@ defmodule Sanbase.Prices.Store do
       measurement_slug_map |> Map.keys() |> Enum.map(fn x -> ~s/"#{x}"/ end) |> Enum.join(", ")
 
     fetch_volume_mcap_multiple_measurements_query(measurements_str, from, to)
-    |> Store.query()
+    |> get()
     |> volume_mcap_multiple_measurements_reducer(measurement_slug_map)
   end
 
   def volume_over_threshold(measurements, from, to, threshold) do
     mean_volume_for_period_query(measurements, from, to)
-    |> Store.query()
+    |> get()
     |> filter_volume_over_threshold(threshold)
   end
 
@@ -204,7 +204,7 @@ defmodule Sanbase.Prices.Store do
     FROM "#{measurement}"
     WHERE time >= #{influx_time(from)}
     AND time <= #{influx_time(to)}/
-    |> Store.query()
+    |> get()
     |> parse_time_series()
   end
 
@@ -213,7 +213,7 @@ defmodule Sanbase.Prices.Store do
 
     ~s/SELECT last_updated, ticker_cmc_id FROM "#{@last_history_price_cmc_measurement}"
     WHERE ticker_cmc_id != "" AND last_updated >= #{datetime_unix_ns}/
-    |> Store.query()
+    |> get()
     |> parse_time_series()
   end
 

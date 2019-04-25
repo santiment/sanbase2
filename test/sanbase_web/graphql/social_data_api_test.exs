@@ -305,6 +305,63 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
     end
   end
 
+  test "successfully fetch news", context do
+    success_response = [
+      %{
+        datetime: Sanbase.DateTimeUtils.from_iso8601!("2018-04-16T10:00:00Z"),
+        description: "test description",
+        media_url: "http://alabala",
+        source_name: "ForexTV.com",
+        title: "test title",
+        url: "http://example.com"
+      }
+    ]
+
+    with_mock SocialData, google_news: fn _, _, _, _ -> {:ok, success_response} end do
+      args = %{
+        tag: "qtum",
+        from: "2018-01-09T00:00:00Z",
+        to: "2018-01-10T00:00:00Z",
+        size: 10
+      }
+
+      query = news_query(args)
+      result = execute_and_parse_success_response(context.staked_conn, query, "news")
+
+      assert result == %{
+               "data" => %{
+                 "news" => [
+                   %{
+                     "datetime" => "2018-04-16T10:00:00Z",
+                     "description" => "test description",
+                     "mediaUrl" => "http://alabala",
+                     "sourceName" => "ForexTV.com",
+                     "title" => "test title",
+                     "url" => "http://example.com"
+                   }
+                 ]
+               }
+             }
+    end
+  end
+
+  test "fetching news error", context do
+    with_mock SocialData, google_news: fn _, _, _, _ -> {:error, @error_response} end do
+      args = %{
+        tag: "qtum",
+        from: "2018-01-09T00:00:00Z",
+        to: "2018-01-10T00:00:00Z",
+        size: 10
+      }
+
+      query = news_query(args)
+
+      error = execute_and_parse_error_response(context.staked_conn, query, "news")
+
+      assert error =~ @error_response
+    end
+  end
+
   defp trending_words_query(args) do
     """
     {
@@ -392,6 +449,26 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
         datetime,
         change,
         status
+      }
+    }
+    """
+  end
+
+  defp news_query(args) do
+    """
+    {
+      news(
+        tag: "#{args.tag}"
+        from: "#{args.from}",
+        to: "#{args.to}",
+        size: #{args.size}
+      ) {
+        datetime,
+       title,
+        description,
+        url,
+        mediaUrl,
+        sourceName
       }
     }
     """

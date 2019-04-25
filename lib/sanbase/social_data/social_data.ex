@@ -3,6 +3,7 @@ defmodule Sanbase.SocialData do
 
   alias Sanbase.DateTimeUtils
   alias Sanbase.SocialData.SocialDominance
+  alias Sanbase.SocialData.News
 
   require Logger
   require Sanbase.Utils.Config, as: Config
@@ -20,6 +21,14 @@ defmodule Sanbase.SocialData do
                 source
               ),
               to: SocialDominance
+
+  defdelegate google_news(
+                word,
+                datetime_from,
+                datetime_to,
+                size
+              ),
+              to: News
 
   def trending_words(
         source,

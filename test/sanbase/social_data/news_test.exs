@@ -52,7 +52,7 @@ defmodule Sanbase.NewsTest do
                 ]}
     end
 
-    test "can handle NaN in media_link", context do
+    test "when media_link is empty string - converts to nil", context do
       success_response = ~s([
         {
           "timestamp": "2018-04-16T10:00:00Z",
@@ -60,81 +60,7 @@ defmodule Sanbase.NewsTest do
           "title": "test title",
           "url": "http://example.com",
           "source_name": "ForexTV.com",
-          "media_url": NaN
-        }
-      ])
-
-      mock(
-        HTTPoison,
-        :get,
-        {:ok,
-         %HTTPoison.Response{
-           body: success_response,
-           status_code: 200
-         }}
-      )
-
-      result = SocialData.google_news("BTC", context.from, context.to, 2)
-
-      assert result ==
-               {:ok,
-                [
-                  %{
-                    datetime: Sanbase.DateTimeUtils.from_iso8601!("2018-04-16T10:00:00Z"),
-                    description: "test description",
-                    media_url: nil,
-                    source_name: "ForexTV.com",
-                    title: "test title",
-                    url: "http://example.com"
-                  }
-                ]}
-    end
-
-    test "can handle empty media_link", context do
-      success_response = ~s([
-        {
-          "timestamp": "2018-04-16T10:00:00Z",
-          "description": "test description",
-          "title": "test title",
-          "url": "http://example.com",
-          "source_name": "ForexTV.com"
-        }
-      ])
-
-      mock(
-        HTTPoison,
-        :get,
-        {:ok,
-         %HTTPoison.Response{
-           body: success_response,
-           status_code: 200
-         }}
-      )
-
-      result = SocialData.google_news("BTC", context.from, context.to, 2)
-
-      assert result ==
-               {:ok,
-                [
-                  %{
-                    datetime: Sanbase.DateTimeUtils.from_iso8601!("2018-04-16T10:00:00Z"),
-                    description: "test description",
-                    media_url: nil,
-                    source_name: "ForexTV.com",
-                    title: "test title",
-                    url: "http://example.com"
-                  }
-                ]}
-    end
-
-    test "can work with timestamp in iso8601 without timezone", context do
-      success_response = ~s([
-        {
-          "timestamp": "2018-04-16T10:00:00",
-          "description": "test description",
-          "title": "test title",
-          "url": "http://example.com",
-          "source_name": "ForexTV.com"
+          "media_url": ""
         }
       ])
 

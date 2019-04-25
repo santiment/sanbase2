@@ -24,8 +24,6 @@ defmodule Sanbase.SocialData.News do
     )
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        # FIXME: should be removed after fix in tech-indicators
-        body = body |> String.replace("NaN", "\"\"")
         {:ok, result} = Jason.decode(body)
         parse_result(result)
 
@@ -80,12 +78,9 @@ defmodule Sanbase.SocialData.News do
                        "title" => title,
                        "description" => description,
                        "url" => url,
-                       "source_name" => source_name
-                     } = datapoint ->
-        # FIXME: should remove concat `Z` when fixed in tech-indicators. Now the string is invalid iso8601
-        dt = if String.contains?(dt, "Z"), do: dt, else: dt <> "Z"
-        # FIXME: should be removed if fixed in tech-indicators
-        media_url = Map.get(datapoint, "media_url")
+                       "source_name" => source_name,
+                       "media_url" => media_url
+                     } ->
         media_url = if media_url == "", do: nil, else: media_url
 
         %{

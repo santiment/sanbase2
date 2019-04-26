@@ -119,7 +119,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
             "market_cap" => mcap_usd,
             "percent_change_1h" => percent_change_1h_usd,
             "percent_change_24h" => percent_change_24h_usd,
-            "percent_change_7d" => _percent_change_7d_usd
+            "percent_change_7d" => percent_change_7d_usd
           },
           "BTC" => %{
             "price" => price_btc,
@@ -146,7 +146,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
         total_supply: total_supply,
         percent_change_1h: percent_change_1h_usd,
         percent_change_24h: percent_change_24h_usd,
-        percent_change_7d: percent_change_24h_usd
+        percent_change_7d: percent_change_7d_usd
       }
     end)
     |> Enum.filter(fn %Ticker{last_updated: last_updated} -> last_updated end)

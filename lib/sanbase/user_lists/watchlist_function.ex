@@ -13,14 +13,14 @@ defmodule Sanbase.WatchlistFunction do
     Project.List.by_market_segment(market_segment)
   end
 
-  def evaluate(%__MODULE__{name: "top_erc20", args: args}) do
-    limit = Map.get(args, "limit") || Map.fetch!(args, :limit)
-    Project.List.erc20_projects_page(1, limit)
+  def evaluate(%__MODULE__{name: "top_erc20_projects", args: args}) do
+    size = Map.get(args, "size") || Map.fetch!(args, :size)
+    Project.List.erc20_projects_page(1, size)
   end
 
   def evaluate(%__MODULE__{name: "top_all_projects", args: args}) do
-    limit = Map.get(args, "limit") || Map.fetch!(args, :limit)
-    Project.List.projects_page(1, limit)
+    size = Map.get(args, "size") || Map.fetch!(args, :size)
+    Project.List.projects_page(1, size)
   end
 
   def evaluate(%__MODULE__{name: "min_volume", args: args}) do

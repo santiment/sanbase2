@@ -5,22 +5,11 @@ defmodule Sanbase.ExAdmin.Auth.UserSettings do
 
   register_resource Sanbase.Auth.UserSettings do
     action_items(only: [:show])
+  end
 
-    index do
-      column(:user)
-      column(:settings, fn us -> Poison.encode!(us.settings) end)
-    end
-
-    show user_settings do
-      attributes_table do
-        row(:user)
-      end
-
-      panel "Settings" do
-        table_for([user_settings]) do
-          column("Settings", &Poison.encode!(&1.settings))
-        end
-      end
+  defimpl ExAdmin.Render, for: Sanbase.Auth.Settings do
+    def to_string(data) do
+      data |> Map.from_struct() |> Jason.encode!()
     end
   end
 end

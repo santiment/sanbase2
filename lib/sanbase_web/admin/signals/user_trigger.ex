@@ -13,7 +13,7 @@ defmodule Sanbase.ExAdmin.Signals.UserTrigger do
       column(:title, & &1.trigger.title)
       column(:is_featured, &is_featured(&1))
       column(:is_public, &is_public(&1))
-      column(:trigger, &Jason.encode!(&1.trigger |> Map.from_struct()))
+      column(:trigger)
       column(:user)
     end
 
@@ -23,7 +23,7 @@ defmodule Sanbase.ExAdmin.Signals.UserTrigger do
         row(:title, & &1.trigger.title)
         row(:is_public, &is_public(&1))
         row(:user, link: true)
-        row(:trigger, &Jason.encode!(&1.trigger |> Map.from_struct()))
+        row(:trigger)
         row(:is_featured, &is_featured(&1))
       end
     end
@@ -79,5 +79,11 @@ defmodule Sanbase.ExAdmin.Signals.UserTrigger do
     end
 
     {conn, params, resource}
+  end
+
+  defimpl ExAdmin.Render, for: Sanbase.Signals.Trigger do
+    def to_string(data) do
+      data |> Map.from_struct() |> Jason.encode!()
+    end
   end
 end

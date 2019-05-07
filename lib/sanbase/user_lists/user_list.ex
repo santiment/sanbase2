@@ -41,7 +41,8 @@ defmodule Sanbase.UserList do
   end
 
   def by_id(id) do
-    from(ul in __MODULE__, where: ul.id == ^id, preload: [:list_items]) |> Repo.one()
+    from(ul in __MODULE__, where: ul.id == ^id)
+    |> Repo.one()
   end
 
   def get_projects(%__MODULE__{function: fun} = user_list) do
@@ -64,19 +65,19 @@ defmodule Sanbase.UserList do
   end
 
   def remove_user_list(%{id: id}) do
-    by_id(id) |> Repo.delete()
+    by_id(id)
+    |> Repo.delete()
   end
 
   def fetch_user_lists(%User{id: id} = _user) do
-    query = from(ul in __MODULE__, where: ul.user_id == ^id, preload: [:list_items])
+    query = from(ul in __MODULE__, where: ul.user_id == ^id)
     {:ok, Repo.all(query)}
   end
 
   def fetch_public_user_lists(%User{id: id} = _user) do
     query =
       from(ul in __MODULE__,
-        where: ul.user_id == ^id and ul.is_public == true,
-        preload: [:list_items]
+        where: ul.user_id == ^id and ul.is_public == true
       )
 
     {:ok, Repo.all(query)}
@@ -86,15 +87,14 @@ defmodule Sanbase.UserList do
     query =
       from(
         ul in __MODULE__,
-        where: ul.is_public == true,
-        preload: [:list_items]
+        where: ul.is_public == true
       )
 
     {:ok, Repo.all(query)}
   end
 
   def user_list(user_list_id, %User{id: id}) do
-    query = user_list_query_by_user_id(id) |> preload(:list_items)
+    query = user_list_query_by_user_id(id)
     {:ok, Repo.get(query, user_list_id)}
   end
 

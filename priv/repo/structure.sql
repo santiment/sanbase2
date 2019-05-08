@@ -1047,7 +1047,7 @@ CREATE TABLE public.user_lists (
     user_id bigint,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    function jsonb
+    function jsonb DEFAULT '{"args": [], "name": "empty"}'::jsonb
 );
 
 

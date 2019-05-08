@@ -5,11 +5,22 @@ defmodule Sanbase.Factory do
   alias Sanbase.UserList
   alias Sanbase.Auth.{User, UserSettings}
   alias Sanbase.Insight.{Post, Poll}
-  alias Sanbase.Model.{Project, ExchangeAddress, ProjectEthAddress, Infrastructure}
+
+  alias Sanbase.Model.{
+    Project,
+    ExchangeAddress,
+    ProjectEthAddress,
+    Infrastructure,
+    MarketSegment,
+    LatestCoinmarketcapData
+  }
+
   alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
 
   def user_factory() do
     %User{
+      username: :crypto.strong_rand_bytes(16) |> Base.encode16(),
+      email: (:crypto.strong_rand_bytes(16) |> Base.encode16()) <> "@gmail.com",
       salt: User.generate_salt(),
       privacy_policy_accepted: true
     }
@@ -76,6 +87,21 @@ defmodule Sanbase.Factory do
       infrastructure: nil,
       eth_addresses: [build(:project_eth_address)]
     }
+  end
+
+  def latest_cmc_data_factory() do
+    %LatestCoinmarketcapData{
+      coinmarketcap_id: "santiment",
+      rank: 100,
+      price_usd: 2,
+      price_btc: 0.0001 |> Decimal.from_float(),
+      volume_usd: 100_000,
+      update_time: Timex.now()
+    }
+  end
+
+  def market_segment_factory() do
+    %MarketSegment{name: "currency"}
   end
 
   def infrastructure_eth_factory() do

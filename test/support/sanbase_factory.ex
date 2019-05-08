@@ -19,6 +19,8 @@ defmodule Sanbase.Factory do
 
   def user_factory() do
     %User{
+      username: :crypto.strong_rand_bytes(16) |> Base.encode16(),
+      email: (:crypto.strong_rand_bytes(16) |> Base.encode16()) <> "@gmail.com",
       salt: User.generate_salt(),
       privacy_policy_accepted: true
     }

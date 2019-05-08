@@ -1,4 +1,19 @@
 defmodule Sanbase.UserList do
+  @moduledoc ~s"""
+  Module for working with lists of projects.
+
+  A watchlist (or user list) is a user created list of projects. The projects
+  in the list can be some concrete projects, they can be dynamically determined
+  by a function or the combination of both.
+
+  The list of some concrete slugs is used when a user wants to create a list of
+  projects they are intersted in. It can contain any project.
+
+  The watchlist defined by a function is being used when a watchlist can change
+  frequently according to some rules. Examples for such lists are having a watchlist
+  of the top 50 ERC20 projects or all projects with a market segment "stablecoin"
+  """
+
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
@@ -45,6 +60,9 @@ defmodule Sanbase.UserList do
     |> Repo.one()
   end
 
+  @doc ~s"""
+  Return a list of all projects in a watchlist.
+  """
   def get_projects(%__MODULE__{function: fun} = user_list) do
     WatchlistFunction.evaluate(fun) ++ ListItem.get_projects(user_list)
   end

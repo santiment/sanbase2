@@ -4,26 +4,14 @@ defmodule SanbaseWeb.Graphql.UserListTest do
   alias Sanbase.Auth.User
   alias Sanbase.Model.Project
   alias Sanbase.Model.LatestCoinmarketcapData
-  alias Sanbase.Repo
   alias Sanbase.UserList
 
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.Factory
 
   setup do
-    user =
-      %User{
-        salt: User.generate_salt(),
-        privacy_policy_accepted: true
-      }
-      |> Repo.insert!()
-
-    user2 =
-      %User{
-        salt: User.generate_salt(),
-        privacy_policy_accepted: true
-      }
-      |> Repo.insert!()
-
+    user = insert(:user)
+    user2 = insert(:user)
     conn = setup_jwt_auth(build_conn(), user)
 
     {:ok, conn: conn, user: user, user2: user2}
@@ -66,14 +54,8 @@ defmodule SanbaseWeb.Graphql.UserListTest do
   test "update user list", %{user: user, conn: conn} do
     {:ok, user_list} = UserList.create_user_list(user, %{name: "My Test List"})
 
-    project =
-      Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
-
-    Repo.insert!(%LatestCoinmarketcapData{
-      price_usd: Decimal.from_float(0.5),
-      coinmarketcap_id: project.coinmarketcap_id,
-      update_time: Ecto.DateTime.utc()
-    })
+    project = insert(:project)
+    insert(:latest_cmc_data, %{coinmarketcap_id: project.coinmarketcap_id, price_usd: 0.5})
 
     update_name = "My updated list"
 
@@ -117,15 +99,14 @@ defmodule SanbaseWeb.Graphql.UserListTest do
   end
 
   test "update user list - remove list items", %{user: user, conn: conn} do
-    {:ok, created_UserList} = UserList.create_user_list(user, %{name: "My Test List"})
+    {:ok, created_user_list} = UserList.create_user_list(user, %{name: "My Test List"})
 
-    project =
-      Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
+    project = insert(:project)
 
-    firstyiw_update_query = """
+    first_update = """
     mutation {
       updateUserList(
-        id: #{created_UserList.id},
+        id: #{created_user_list.id},
         list_items: [{project_id: #{project.id}}]
       ) {
         list_items {
@@ -139,17 +120,17 @@ defmodule SanbaseWeb.Graphql.UserListTest do
 
     result =
       conn
-      |> post("/graphql", mutation_skeleton(firstyiw_update_query))
+      |> post("/graphql", mutation_skeleton(first_update))
 
     updated_user_list = json_response(result, 200)["data"]["updateUserList"]
     assert updated_user_list["list_items"] == [%{"project" => %{"id" => "#{project.id}"}}]
 
     update_name = "My updated list"
 
-    second_update_query = """
+    second_update = """
     mutation {
       updateUserList(
-        id: #{created_UserList.id},
+        id: #{created_user_list.id},
         name: "#{update_name}",
         color: BLACK,
         list_items: []
@@ -171,7 +152,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
 
     result =
       conn
-      |> post("/graphql", mutation_skeleton(second_update_query))
+      |> post("/graphql", mutation_skeleton(second_update))
 
     updated_user_list2 = json_response(result, 200)["data"]["updateUserList"]
     assert updated_user_list2["name"] == update_name
@@ -265,7 +246,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
   end
 
   test "fetch user lists", %{user: user, conn: conn} do
-    UserList.create_user_list(user, %{name: "My Test List"})
+    {:ok, _} = UserList.create_user_list(user, %{name: "My Test List"})
 
     query = query("fetchUserLists")
 
@@ -281,7 +262,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
   end
 
   test "fetch public user lists", %{user: user, conn: conn} do
-    UserList.create_user_list(user, %{name: "My Test List", is_public: true})
+    {:ok, _} = UserList.create_user_list(user, %{name: "My Test List", is_public: true})
 
     query = query("fetchPublicUserLists")
 
@@ -315,8 +296,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
 
   describe "UserList" do
     test "returns public lists for anonymous users", %{user2: user2} do
-      project =
-        Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
+      project = insert(:project)
 
       {:ok, user_list} =
         UserList.create_user_list(user2, %{name: "My Test List", is_public: true})
@@ -341,8 +321,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
     end
 
     test "returns user list when public", %{user2: user2, conn: conn} do
-      project =
-        Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
+      project = insert(:project)
 
       {:ok, user_list} =
         UserList.create_user_list(user2, %{name: "My Test List", is_public: true})
@@ -368,8 +347,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
     end
 
     test "returns current user's private list", %{user: user, conn: conn} do
-      project =
-        Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
+      project = insert(:project)
 
       {:ok, user_list} =
         UserList.create_user_list(user, %{name: "My Test List", is_public: false})

@@ -40,7 +40,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   defp build_context(conn, [auth_method | rest]) do
     auth_method.(conn)
     |> case do
-      :skip ->
+      :try_next ->
         build_context(conn, rest)
 
       {:error, error} ->
@@ -89,7 +89,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         }
       }
     else
-      {:has_header?, _} -> :skip
+      {:has_header?, _} -> :try_next
       error -> error
     end
   end
@@ -103,7 +103,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         auth: %{auth_method: :basic, current_user: current_user}
       }
     else
-      {:has_header?, _} -> :skip
+      {:has_header?, _} -> :try_next
       error -> error
     end
   end
@@ -118,7 +118,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         auth: %{auth_method: :apikey, current_user: current_user, token: token}
       }
     else
-      {:has_header?, _} -> :skip
+      {:has_header?, _} -> :try_next
       error -> error
     end
   end

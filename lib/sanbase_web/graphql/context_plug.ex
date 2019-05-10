@@ -52,7 +52,23 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     end
   end
 
-  defp build_context(_conn, []), do: %{permissions: User.no_permissions()}
+  defp build_context(conn, []) do
+    case get_req_header(conn, "authorization") do
+      [] ->
+        %{permissions: User.no_permissions()}
+
+      [header] ->
+        conn
+        |> send_resp(400, """
+        Unsupported authorization header value: #{inspect(header)}.
+        The supported formats of the authorization header are:
+          "Bearer <JWT>"
+          "Apikey <apikey>"
+          "Basic <basic>"
+        """)
+        |> halt()
+    end
+  end
 
   def bearer_authentication(%Plug.Conn{} = conn) do
     with {:has_header?, ["Bearer " <> token]} <-

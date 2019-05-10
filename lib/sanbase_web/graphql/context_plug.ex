@@ -42,6 +42,11 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       :skip ->
         build_context(conn, rest)
 
+      {:error, error} ->
+        conn
+        |> send_resp(400, "Bad authorization header: #{inspect(error)}")
+        |> halt()
+
       context ->
         context
     end
@@ -50,7 +55,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   defp build_context(_conn, []), do: %{permissions: User.no_permissions()}
 
   def bearer_authentication(%Plug.Conn{} = conn) do
-    with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
+    with {:has_header?, ["Bearer " <> token]} <-
+           {:has_header?, get_req_header(conn, "authorization")},
          {:ok, current_user} <- bearer_authorize(token) do
       %{
         permissions: User.permissions!(current_user),
@@ -60,24 +66,28 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         }
       }
     else
-      _ -> :skip
+      {:has_header?, _} -> :skip
+      error -> error
     end
   end
 
   def basic_authentication(%Plug.Conn{} = conn) do
-    with ["Basic " <> auth_attempt] <- get_req_header(conn, "authorization"),
+    with {:has_header?, ["Basic " <> auth_attempt]} <-
+           {:has_header?, get_req_header(conn, "authorization")},
          {:ok, current_user} <- basic_authorize(auth_attempt) do
       %{
         permissions: User.full_permissions(),
         auth: %{auth_method: :basic, current_user: current_user}
       }
     else
-      _ -> :skip
+      {:has_header?, _} -> :skip
+      error -> error
     end
   end
 
   def apikey_authentication(%Plug.Conn{} = conn) do
-    with ["Apikey " <> apikey] <- get_req_header(conn, "authorization"),
+    with {:has_header?, ["Apikey " <> apikey]} <-
+           {:has_header?, get_req_header(conn, "authorization")},
          {:ok, current_user} <- apikey_authorize(apikey),
          {:ok, {token, _apikey}} <- Sanbase.Auth.Hmac.split_apikey(apikey) do
       %{
@@ -85,7 +95,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         auth: %{auth_method: :apikey, current_user: current_user, token: token}
       }
     else
-      _ -> :skip
+      {:has_header?, _} -> :skip
+      error -> error
     end
   end
 

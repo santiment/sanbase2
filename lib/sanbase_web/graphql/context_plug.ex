@@ -29,11 +29,12 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   def init(opts), do: opts
 
   def call(conn, _) do
-    context =
-      build_context(conn, @auth_methods)
-      |> Map.put(:remote_ip, conn.remote_ip)
+    {conn, context} = build_context(conn, @auth_methods)
 
-    put_private(conn, :absinthe, %{context: context})
+    context = context |> Map.put(:remote_ip, conn.remote_ip)
+
+    conn
+    |> put_private(:absinthe, %{context: context})
   end
 
   defp build_context(conn, [auth_method | rest]) do
@@ -43,30 +44,36 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         build_context(conn, rest)
 
       {:error, error} ->
-        conn
-        |> send_resp(400, "Bad authorization header: #{inspect(error)}")
-        |> halt()
+        conn =
+          conn
+          |> send_resp(400, "Bad authorization header: #{inspect(error)}")
+          |> halt()
+
+        {conn, %{}}
 
       context ->
-        context
+        {conn, context}
     end
   end
 
   defp build_context(conn, []) do
     case get_req_header(conn, "authorization") do
       [] ->
-        %{permissions: User.no_permissions()}
+        {conn, %{permissions: User.no_permissions()}}
 
       [header] ->
-        conn
-        |> send_resp(400, """
-        Unsupported authorization header value: #{inspect(header)}.
-        The supported formats of the authorization header are:
-          "Bearer <JWT>"
-          "Apikey <apikey>"
-          "Basic <basic>"
-        """)
-        |> halt()
+        conn =
+          conn
+          |> send_resp(400, """
+          Unsupported authorization header value: #{inspect(header)}.
+          The supported formats of the authorization header are:
+            "Bearer <JWT>"
+            "Apikey <apikey>"
+            "Basic <basic>"
+          """)
+          |> halt()
+
+        {conn, %{}}
     end
   end
 

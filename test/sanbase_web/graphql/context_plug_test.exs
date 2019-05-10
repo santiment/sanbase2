@@ -37,15 +37,9 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
     |> Ecto.Changeset.change(salt: User.generate_salt())
     |> Repo.update!()
 
-    logs =
-      capture_log(fn ->
-        conn = ContextPlug.call(conn, %{})
+    conn = ContextPlug.call(conn, %{})
 
-        conn_context = conn.private.absinthe.context
-        assert conn_context.remote_ip == {127, 0, 0, 1}
-        assert conn_context.permissions == User.no_permissions()
-      end)
-
-    assert logs =~ ~r/Invalid bearer token/
+    assert conn.status == 400
+    assert conn.resp_body == "Bad authorization header: :invalid_token"
   end
 end

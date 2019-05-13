@@ -58,6 +58,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ShareOfDepositsTest do
             to: "#{context.to}")
           {
             datetime
+            activeAddresses
+            activeDeposits
             shareOfDeposits
           }
         }
@@ -156,10 +158,14 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ShareOfDepositsTest do
 
       assert results == [
                %{
+                 "activeAddresses" => 100,
+                 "activeDeposits" => 10,
                  "shareOfDeposits" => 10.0,
                  "datetime" => "2019-01-01T00:00:00Z"
                },
                %{
+                 "activeAddresses" => 200,
+                 "activeDeposits" => 10,
                  "shareOfDeposits" => 5.0,
                  "datetime" => "2019-01-02T00:00:00Z"
                }
@@ -205,10 +211,14 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ShareOfDepositsTest do
 
       assert results == [
                %{
+                 "activeAddresses" => 100,
+                 "activeDeposits" => 10,
                  "shareOfDeposits" => 10.0,
                  "datetime" => "2019-01-01T00:00:00Z"
                },
                %{
+                 "activeAddresses" => 200,
+                 "activeDeposits" => 10,
                  "shareOfDeposits" => 5.0,
                  "datetime" => "2019-01-02T00:00:00Z"
                }
@@ -237,6 +247,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ShareOfDepositsTest do
         interval: "#{interval}"
       )
       {
+        activeAddresses
+        activeDeposits
         datetime
         shareOfDeposits
       }

@@ -29,28 +29,57 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   def init(opts), do: opts
 
   def call(conn, _) do
-    context =
-      build_context(conn, @auth_methods)
-      |> Map.put(:remote_ip, conn.remote_ip)
+    {conn, context} = build_context(conn, @auth_methods)
 
-    put_private(conn, :absinthe, %{context: context})
+    context = context |> Map.put(:remote_ip, conn.remote_ip)
+
+    conn
+    |> put_private(:absinthe, %{context: context})
   end
 
   defp build_context(conn, [auth_method | rest]) do
     auth_method.(conn)
     |> case do
-      :skip ->
+      :try_next ->
         build_context(conn, rest)
 
+      {:error, error} ->
+        conn =
+          conn
+          |> send_resp(400, "Bad authorization header: #{error}")
+          |> halt()
+
+        {conn, %{}}
+
       context ->
-        context
+        {conn, context}
     end
   end
 
-  defp build_context(_conn, []), do: %{permissions: User.no_permissions()}
+  defp build_context(conn, []) do
+    case get_req_header(conn, "authorization") do
+      [] ->
+        {conn, %{permissions: User.no_permissions()}}
+
+      [header] ->
+        conn =
+          conn
+          |> send_resp(400, """
+          Unsupported authorization header value: #{inspect(header)}.
+          The supported formats of the authorization header are:
+            "Bearer <JWT>"
+            "Apikey <apikey>"
+            "Basic <basic>"
+          """)
+          |> halt()
+
+        {conn, %{}}
+    end
+  end
 
   def bearer_authentication(%Plug.Conn{} = conn) do
-    with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
+    with {:has_header?, ["Bearer " <> token]} <-
+           {:has_header?, get_req_header(conn, "authorization")},
          {:ok, current_user} <- bearer_authorize(token) do
       %{
         permissions: User.permissions!(current_user),
@@ -60,24 +89,28 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         }
       }
     else
-      _ -> :skip
+      {:has_header?, _} -> :try_next
+      error -> error
     end
   end
 
   def basic_authentication(%Plug.Conn{} = conn) do
-    with ["Basic " <> auth_attempt] <- get_req_header(conn, "authorization"),
+    with {:has_header?, ["Basic " <> auth_attempt]} <-
+           {:has_header?, get_req_header(conn, "authorization")},
          {:ok, current_user} <- basic_authorize(auth_attempt) do
       %{
         permissions: User.full_permissions(),
         auth: %{auth_method: :basic, current_user: current_user}
       }
     else
-      _ -> :skip
+      {:has_header?, _} -> :try_next
+      error -> error
     end
   end
 
   def apikey_authentication(%Plug.Conn{} = conn) do
-    with ["Apikey " <> apikey] <- get_req_header(conn, "authorization"),
+    with {:has_header?, ["Apikey " <> apikey]} <-
+           {:has_header?, get_req_header(conn, "authorization")},
          {:ok, current_user} <- apikey_authorize(apikey),
          {:ok, {token, _apikey}} <- Sanbase.Auth.Hmac.split_apikey(apikey) do
       %{
@@ -85,7 +118,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         auth: %{auth_method: :apikey, current_user: current_user, token: token}
       }
     else
-      _ -> :skip
+      {:has_header?, _} -> :try_next
+      error -> error
     end
   end
 
@@ -95,8 +129,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       {:ok, user}
     else
       _ ->
-        Logger.warn("Invalid bearer token in request: #{token}")
-        {:error, :invalid_token}
+        {:error, "Invalid JSON Web Token (JWT)"}
     end
   end
 
@@ -110,8 +143,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         {:ok, username}
 
       _ ->
-        Logger.warn("Invalid basic auth credentials in request")
-        {:error, :invalid_credentials}
+        {:error, "Invalid basic authorization header credentials"}
     end
   end
 

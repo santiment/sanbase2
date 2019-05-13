@@ -776,6 +776,21 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc """
+    Returns miner balances over time.
+    Currently only ETH is supported.
+    """
+    field :miners_balance, list_of(:miners_balance) do
+      arg(:slug, :string, default_value: "ethereum")
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.miners_balance/3)
+    end
+
+    @desc """
     Returns used Gas by a blockchain.
     When you send tokens, interact with a contract or do anything else on the blockchain,
     you must pay for that computation. That payment is calculated in Gas.

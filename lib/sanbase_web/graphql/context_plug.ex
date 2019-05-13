@@ -56,9 +56,11 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     end
   end
 
+  defguard no_auth_header(header) when header in [[], ["null"], [""], nil]
+
   defp build_context(conn, []) do
     case get_req_header(conn, "authorization") do
-      [] ->
+      header when no_auth_header(header) ->
         {conn, %{permissions: User.no_permissions()}}
 
       [header] ->

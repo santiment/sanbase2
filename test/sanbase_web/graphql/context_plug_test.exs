@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.ContextPlugTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Auth.User
@@ -106,5 +105,51 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
              \"Apikey <apikey>\"
              \"Basic <basic>\"
            """
+  end
+
+  test "null authorization header passes" do
+    conn =
+      build_conn()
+      |> put_req_header(
+        "authorization",
+        "null"
+      )
+
+    conn = ContextPlug.call(conn, %{})
+
+    conn_context = conn.private.absinthe.context
+
+    refute Map.has_key?(conn_context, :auth)
+    assert conn_context.remote_ip == {127, 0, 0, 1}
+    assert conn_context.permissions == User.no_permissions()
+  end
+
+  test "empty authorization header passes" do
+    conn =
+      build_conn()
+      |> put_req_header(
+        "authorization",
+        ""
+      )
+
+    conn = ContextPlug.call(conn, %{})
+
+    conn_context = conn.private.absinthe.context
+
+    refute Map.has_key?(conn_context, :auth)
+    assert conn_context.remote_ip == {127, 0, 0, 1}
+    assert conn_context.permissions == User.no_permissions()
+  end
+
+  test "no authorization header passes" do
+    conn = build_conn()
+
+    conn = ContextPlug.call(conn, %{})
+
+    conn_context = conn.private.absinthe.context
+
+    refute Map.has_key?(conn_context, :auth)
+    assert conn_context.remote_ip == {127, 0, 0, 1}
+    assert conn_context.permissions == User.no_permissions()
   end
 end

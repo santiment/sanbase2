@@ -76,7 +76,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       SanbaseDataloader
     }
 
-    Dataloader.new()
+    # 11 seconds is 1s more than the influxdb timeout
+    Dataloader.new(timeout: :timer.seconds(11))
     |> Dataloader.add_source(SanbaseRepo, SanbaseRepo.data())
     |> Dataloader.add_source(SanbaseDataloader, SanbaseDataloader.data())
   end

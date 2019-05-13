@@ -40,6 +40,71 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
     conn = ContextPlug.call(conn, %{})
 
     assert conn.status == 400
-    assert conn.resp_body == "Bad authorization header: :invalid_token"
+    assert conn.resp_body == "Bad authorization header: Invalid JSON Web Token (JWT)"
+  end
+
+  test "invalid token returns error" do
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer some_random_not_correct_token")
+
+    conn = ContextPlug.call(conn, %{})
+    assert conn.status == 400
+    assert conn.resp_body == "Bad authorization header: Invalid JSON Web Token (JWT)"
+  end
+
+  test "invalid basic auth returns error" do
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Basic gibberish")
+
+    conn = ContextPlug.call(conn, %{})
+    assert conn.status == 400
+
+    assert conn.resp_body ==
+             "Bad authorization header: Invalid basic authorization header credentials"
+  end
+
+  test "not existing apikey returns error" do
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Apikey random_apikey")
+
+    conn = ContextPlug.call(conn, %{})
+    assert conn.status == 400
+    assert conn.resp_body == "Bad authorization header: Apikey not valid or malformed"
+  end
+
+  test "malformed apikey returns error" do
+    conn =
+      build_conn()
+      |> put_req_header(
+        "authorization",
+        "Apikey api_key_must_contain_single_underscore"
+      )
+
+    conn = ContextPlug.call(conn, %{})
+    assert conn.status == 400
+    assert conn.resp_body == "Bad authorization header: Apikey not valid or malformed"
+  end
+
+  test "unsupported/mistyped authorization header returns error" do
+    conn =
+      build_conn()
+      |> put_req_header(
+        "authorization",
+        "Aapikey api_key_must_contain_single_underscore"
+      )
+
+    conn = ContextPlug.call(conn, %{})
+    assert conn.status == 400
+
+    assert conn.resp_body == """
+           Unsupported authorization header value: \"Aapikey api_key_must_contain_single_underscore\".
+           The supported formats of the authorization header are:
+             \"Bearer <JWT>\"
+             \"Apikey <apikey>\"
+             \"Basic <basic>\"
+           """
   end
 end

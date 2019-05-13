@@ -46,7 +46,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       {:error, error} ->
         conn =
           conn
-          |> send_resp(400, "Bad authorization header: #{inspect(error)}")
+          |> send_resp(400, "Bad authorization header: #{error}")
           |> halt()
 
         {conn, %{}}
@@ -129,8 +129,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       {:ok, user}
     else
       _ ->
-        Logger.warn("Invalid bearer token in request: #{token}")
-        {:error, :invalid_token}
+        {:error, "Invalid JSON Web Token (JWT)"}
     end
   end
 
@@ -144,8 +143,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         {:ok, username}
 
       _ ->
-        Logger.warn("Invalid basic auth credentials in request")
-        {:error, :invalid_credentials}
+        {:error, "Invalid basic authorization header credentials"}
     end
   end
 

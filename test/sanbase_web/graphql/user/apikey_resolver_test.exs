@@ -3,7 +3,6 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
   @moduletag checkout_repo: [Sanbase.Repo, Sanbase.TimescaleRepo]
   @moduletag timescaledb: true
 
-  import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
   import Mockery
 
@@ -129,9 +128,9 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
 
     Repo.delete(user)
 
-    assert capture_log(fn ->
-             revoke_apikey(conn, apikey)
-           end) =~ "[warn] Invalid bearer token in request"
+    result = revoke_apikey(conn, apikey)
+    assert result.status == 400
+    assert result.resp_body == "Bad authorization header: Invalid JSON Web Token (JWT)"
   end
 
   test "on delete user delete all user's tokens", %{conn: conn, user: user} do

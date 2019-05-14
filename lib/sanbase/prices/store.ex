@@ -58,7 +58,7 @@ defmodule Sanbase.Prices.Store do
 
     total_erc20 =
       measurements
-      |> Enum.chunk_every(50)
+      |> Enum.chunk_every(20)
       |> Sanbase.Parallel.map(
         fn measurements ->
           {:ok, result} =

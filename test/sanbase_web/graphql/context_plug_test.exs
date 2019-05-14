@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
   use SanbaseWeb.ConnCase, async: false
 
   import SanbaseWeb.Graphql.TestHelpers
+  @moduletag capture_log: true
 
   alias Sanbase.Auth.User
   alias Sanbase.Repo
@@ -65,26 +66,30 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
   end
 
   test "not existing apikey returns error" do
+    apikey = "random_apikey"
+
     conn =
       build_conn()
-      |> put_req_header("authorization", "Apikey random_apikey")
+      |> put_req_header("authorization", "Apikey #{apikey}")
 
     conn = ContextPlug.call(conn, %{})
     assert conn.status == 400
-    assert conn.resp_body == "Bad authorization header: Apikey not valid or malformed"
+    assert conn.resp_body == "Bad authorization header: Apikey '#{apikey}' is not valid"
   end
 
   test "malformed apikey returns error" do
+    apikey = "api_key_must_contain_single_underscore"
+
     conn =
       build_conn()
       |> put_req_header(
         "authorization",
-        "Apikey api_key_must_contain_single_underscore"
+        "Apikey #{apikey}"
       )
 
     conn = ContextPlug.call(conn, %{})
     assert conn.status == 400
-    assert conn.resp_body == "Bad authorization header: Apikey not valid or malformed"
+    assert conn.resp_body =~ "Bad authorization header: Apikey '#{apikey}' is malformed"
   end
 
   test "unsupported/mistyped authorization header returns error" do

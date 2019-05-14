@@ -58,6 +58,7 @@ defmodule Sanbase.Auth.User do
     field(:email_candidate_token_validated_at, :naive_datetime)
     field(:consent_id, :string)
     field(:test_san_balance, :decimal)
+    field(:stripe_customer_id, :string)
 
     # GDPR related fields
     field(:privacy_policy_accepted, :boolean, default: false)
@@ -98,7 +99,8 @@ defmodule Sanbase.Auth.User do
       :salt,
       :test_san_balance,
       :privacy_policy_accepted,
-      :marketing_accepted
+      :marketing_accepted,
+      :stripe_customer_id
     ])
     |> normalize_username(attrs)
     |> normalize_email(attrs[:email], :email)

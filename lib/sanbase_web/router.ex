@@ -82,4 +82,9 @@ defmodule SanbaseWeb.Router do
   end
 
   get("/", SanbaseWeb.RootController, :healthcheck)
+
+  if Mix.env() == :dev do
+    get("/stripe", SanbaseWeb.RootController, :stripe)
+    post("/webhook", SanbaseWeb.RootController, :webhook)
+  end
 end

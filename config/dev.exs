@@ -10,6 +10,12 @@ config :sanbase, Sanbase, url: {:system, "SANBASE_URL", "https://sanbase-low-sta
 
 config :sanbase, SanbaseWeb.Endpoint,
   http: [port: 4000],
+  https: [
+    port: 4001,
+    cipher_suite: :strong,
+    certfile: "priv/cert/selfsigned.pem",
+    keyfile: "priv/cert/selfsigned_key.pem"
+  ],
   url: [host: "0.0.0.0"],
   debug_errors: true,
   code_reloader: true,

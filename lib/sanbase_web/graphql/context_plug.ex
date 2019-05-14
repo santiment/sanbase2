@@ -44,9 +44,12 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         build_context(conn, rest)
 
       {:error, error} ->
+        warn_msg = "Bad authorization header: #{error}"
+        Logger.warn(warn_msg)
+
         conn =
           conn
-          |> send_resp(400, "Bad authorization header: #{error}")
+          |> send_resp(400, warn_msg)
           |> halt()
 
         {conn, %{}}
@@ -64,6 +67,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         {conn, %{permissions: User.no_permissions()}}
 
       [header] ->
+        Logger.warn("Unsupported authorization header value: #{inspect(header)}")
+
         conn =
           conn
           |> send_resp(400, """

@@ -37,6 +37,10 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     |> put_private(:absinthe, %{context: context})
   end
 
+  defp build_error_msg(msg) do
+    %{errors: %{details: msg}} |> Jason.encode!()
+  end
+
   defp build_context(conn, [auth_method | rest]) do
     auth_method.(conn)
     |> case do
@@ -44,12 +48,12 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         build_context(conn, rest)
 
       {:error, error} ->
-        warn_msg = "Bad authorization header: #{error}"
-        Logger.warn(warn_msg)
+        msg = "Bad authorization header: #{error}"
+        Logger.warn(msg)
 
         conn =
           conn
-          |> send_resp(400, warn_msg)
+          |> send_resp(400, build_error_msg(msg))
           |> halt()
 
         {conn, %{}}
@@ -69,15 +73,18 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       [header] ->
         Logger.warn("Unsupported authorization header value: #{inspect(header)}")
 
-        conn =
-          conn
-          |> send_resp(400, """
+        response_msg =
+          build_error_msg("""
           Unsupported authorization header value: #{inspect(header)}.
           The supported formats of the authorization header are:
             "Bearer <JWT>"
             "Apikey <apikey>"
             "Basic <basic>"
           """)
+
+        conn =
+          conn
+          |> send_resp(400, response_msg)
           |> halt()
 
         {conn, %{}}

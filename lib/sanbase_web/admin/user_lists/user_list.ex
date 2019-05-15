@@ -13,12 +13,14 @@ defmodule Sanbase.ExAdmin.UserList do
       column(:is_featured, &is_featured(&1))
       column(:is_public)
       column(:user)
+      column(:function)
     end
 
     form user_list do
       inputs do
         input(user_list, :name)
         input(user_list, :is_public)
+        input(user_list, :function)
 
         input(
           user_list,
@@ -36,6 +38,7 @@ defmodule Sanbase.ExAdmin.UserList do
         row(:is_featured, &is_featured(&1))
         row(:color)
         row(:user, link: true)
+        row(:function)
       end
 
       panel "List items" do
@@ -59,5 +62,11 @@ defmodule Sanbase.ExAdmin.UserList do
     is_featured = params.user_list.is_featured |> String.to_existing_atom()
     Sanbase.FeaturedItem.update_item(resource, is_featured)
     {conn, params, resource}
+  end
+
+  defimpl ExAdmin.Render, for: Sanbase.WatchlistFunction do
+    def to_string(data) do
+      data |> Map.from_struct() |> Jason.encode!()
+    end
   end
 end

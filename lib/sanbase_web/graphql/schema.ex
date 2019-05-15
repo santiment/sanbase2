@@ -169,6 +169,14 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&ProjectResolver.all_currency_projects/3)
     end
 
+    field :all_projects_by_function, list_of(:project) do
+      arg(:function, :json)
+
+      middleware(ProjectPermissions)
+
+      cache_resolve(&ProjectResolver.all_projects_by_function/3)
+    end
+
     @desc "Fetch all project transparency projects. This query requires basic authentication."
     field :all_projects_project_transparency, list_of(:project) do
       middleware(BasicAuth)

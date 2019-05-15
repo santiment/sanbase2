@@ -85,6 +85,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, currency_projects}
   end
 
+  def all_projects_by_function(_root, %{function: function}, _resolution) do
+    with {:ok, function} <- Sanbase.WatchlistFunction.cast(function),
+         projects when is_list(projects) <- Sanbase.WatchlistFunction.evaluate(function) do
+      {:ok, projects}
+    end
+  end
+
   def project(_parent, %{id: id}, _resolution) do
     case Project.by_id(id) do
       nil ->

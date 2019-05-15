@@ -39,8 +39,10 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
     conn = ContextPlug.call(conn, %{})
 
+    {:ok, result} = conn.resp_body |> Jason.decode()
+
     assert conn.status == 400
-    assert conn.resp_body == "Bad authorization header: Invalid JSON Web Token (JWT)"
+    assert result["errors"]["details"] == "Bad authorization header: Invalid JSON Web Token (JWT)"
   end
 
   test "invalid token returns error" do
@@ -49,8 +51,10 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
       |> put_req_header("authorization", "Bearer some_random_not_correct_token")
 
     conn = ContextPlug.call(conn, %{})
+    {:ok, result} = conn.resp_body |> Jason.decode()
+
     assert conn.status == 400
-    assert conn.resp_body == "Bad authorization header: Invalid JSON Web Token (JWT)"
+    assert result["errors"]["details"] == "Bad authorization header: Invalid JSON Web Token (JWT)"
   end
 
   test "invalid basic auth returns error" do
@@ -59,9 +63,12 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
       |> put_req_header("authorization", "Basic gibberish")
 
     conn = ContextPlug.call(conn, %{})
+
+    {:ok, result} = conn.resp_body |> Jason.decode()
+
     assert conn.status == 400
 
-    assert conn.resp_body ==
+    assert result["errors"]["details"] ==
              "Bad authorization header: Invalid basic authorization header credentials"
   end
 
@@ -73,8 +80,13 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
       |> put_req_header("authorization", "Apikey #{apikey}")
 
     conn = ContextPlug.call(conn, %{})
+
+    {:ok, result} = conn.resp_body |> Jason.decode()
+
     assert conn.status == 400
-    assert conn.resp_body == "Bad authorization header: Apikey '#{apikey}' is not valid"
+
+    assert result["errors"]["details"] ==
+             "Bad authorization header: Apikey '#{apikey}' is not valid"
   end
 
   test "malformed apikey returns error" do
@@ -88,8 +100,12 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
       )
 
     conn = ContextPlug.call(conn, %{})
+    {:ok, result} = conn.resp_body |> Jason.decode()
+
     assert conn.status == 400
-    assert conn.resp_body =~ "Bad authorization header: Apikey '#{apikey}' is malformed"
+
+    assert result["errors"]["details"] =~
+             "Bad authorization header: Apikey '#{apikey}' is malformed"
   end
 
   test "unsupported/mistyped authorization header returns error" do
@@ -101,9 +117,12 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
       )
 
     conn = ContextPlug.call(conn, %{})
+
+    {:ok, result} = conn.resp_body |> Jason.decode()
+
     assert conn.status == 400
 
-    assert conn.resp_body == """
+    assert result["errors"]["details"] == """
            Unsupported authorization header value: \"Aapikey api_key_must_contain_single_underscore\".
            The supported formats of the authorization header are:
              \"Bearer <JWT>\"

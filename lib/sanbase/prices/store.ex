@@ -58,34 +58,7 @@ defmodule Sanbase.Prices.Store do
       Sanbase.Model.Project.List.erc20_projects()
       |> Enum.map(&Sanbase.Influxdb.Measurement.name_from/1)
 
-    total_erc20 =
-      measurements
-      |> Enum.chunk_every(20)
-      |> Sanbase.Parallel.map(
-        Cache.func(fn measurements ->
-          {:ok, result} =
-            fetch_combined_mcap_volume(
-              measurements,
-              from,
-              to,
-              resolution
-            )
-
-          result
-        end,
-        max_concurrency: 30
-      )
-      |> Enum.zip()
-      |> Enum.map(&Tuple.to_list/1)
-      |> Enum.map(fn [%{datetime: dt} | _rest] = list ->
-        %{
-          datetime: dt,
-          volume: Enum.reduce(list, 0, fn %{volume: v}, acc -> acc + v end),
-          marketcap: Enum.reduce(list, 0, fn %{marketcap: m}, acc -> acc + m end)
-        }
-      end)
-
-    {:ok, total_erc20}
+    fetch_combined_mcap_volume(measurements, from, to, resolution)
   end
 
   def fetch_prices_with_resolution(measurement, from, to, resolution) do
@@ -182,18 +155,28 @@ defmodule Sanbase.Prices.Store do
     |> parse_time_series()
   end
 
-  def fetch_combined_mcap_volume(measurement_slugs, from, to, interval) do
+  def fetch_combined_mcap_volume(measurement_slugs, from, to, resolution) do
     measurement_slugs
-    |> Enum.chunk_every(15)
+    |> Enum.chunk_every(50)
     |> Sanbase.Parallel.map(
       fn measurements ->
-        measurements_str = measurements |> Enum.map(fn x -> ~s/"#{x}"/ end) |> Enum.join(", ")
+        measurements = Enum.sort(measurements)
 
-        fetch_combined_mcap_volume_query(measurements_str, from, to, interval)
-        |> get()
+        Cache.func(
+          fn ->
+            measurements_str = measurements |> Enum.map(fn x -> ~s/"#{x}"/ end) |> Enum.join(", ")
+
+            fetch_combined_mcap_volume_query(measurements_str, from, to, resolution)
+            |> get()
+          end,
+          :measurements_combined_mcap_volume,
+          %{measurements: measurements, from: from, to: to, resolution: resolution},
+          ttl: 300,
+          max_ttl_offset: 300
+        ).()
       end,
       ordered: false,
-      max_concurrency: 10
+      max_concurrency: 20
     )
     |> combine_results_mcap_volume()
   end
@@ -201,16 +184,26 @@ defmodule Sanbase.Prices.Store do
   def fetch_volume_mcap_multiple_measurements(measurement_slug_map, from, to) do
     measurement_slug_map
     |> Map.keys()
-    |> Enum.chunk_every(15)
+    |> Enum.chunk_every(50)
     |> Sanbase.Parallel.map(
       fn measurements ->
-        measurements_str = measurements |> Enum.map(fn x -> ~s/"#{x}"/ end) |> Enum.join(", ")
+        measurements = Enum.sort(measurements)
 
-        fetch_volume_mcap_multiple_measurements_query(measurements_str, from, to)
-        |> get()
+        Cache.func(
+          fn ->
+            measurements_str = measurements |> Enum.map(fn x -> ~s/"#{x}"/ end) |> Enum.join(", ")
+
+            fetch_volume_mcap_multiple_measurements_query(measurements_str, from, to)
+            |> get()
+          end,
+          :measurements_mcap_volume,
+          %{measurements: measurements, from: from, to: to},
+          ttl: 300,
+          max_ttl_offset: 300
+        ).()
       end,
       ordered: false,
-      max_concurrency: 10
+      max_concurrency: 20
     )
     |> volume_mcap_multiple_measurements_reducer(measurement_slug_map)
   end

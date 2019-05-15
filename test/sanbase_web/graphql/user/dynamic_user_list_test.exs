@@ -88,6 +88,21 @@ defmodule SanbaseWeb.Graphql.DynamicUserListTest do
            ]
   end
 
+  test "dynamic watchlist for top erc20 projects ignoring some projects", %{conn: conn} do
+    function = %{
+      "name" => "top_erc20_projects",
+      "args" => %{"size" => 2, "ignored_projects" => ["dai"]}
+    }
+
+    result = execute_mutation(conn, query(function))
+    user_list = result["data"]["createUserList"]
+
+    assert user_list["listItems"] == [
+             %{"project" => %{"slug" => "maker"}},
+             %{"project" => %{"slug" => "santiment"}}
+           ]
+  end
+
   test "dynamic watchlist for top all projects", %{conn: conn} do
     function = %{"name" => "top_all_projects", "args" => %{"size" => 3}}
     result = execute_mutation(conn, query(function))

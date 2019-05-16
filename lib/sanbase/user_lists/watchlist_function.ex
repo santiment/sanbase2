@@ -15,7 +15,11 @@ defmodule Sanbase.WatchlistFunction do
 
   def evaluate(%__MODULE__{name: "top_erc20_projects", args: args}) do
     size = Map.get(args, "size") || Map.fetch!(args, :size)
-    Project.List.erc20_projects_page(1, size)
+    ignored_projects = Map.get(args, "ignored_projects") || Map.get(args, :ignored_projects) || []
+
+    Project.List.erc20_projects_page(1, size + length(ignored_projects))
+    |> Enum.reject(fn %Project{coinmarketcap_id: slug} -> Enum.member?(ignored_projects, slug) end)
+    |> Enum.take(size)
   end
 
   def evaluate(%__MODULE__{name: "top_all_projects", args: args}) do

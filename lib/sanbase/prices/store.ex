@@ -184,7 +184,7 @@ defmodule Sanbase.Prices.Store do
   def fetch_volume_mcap_multiple_measurements(measurement_slug_map, from, to) do
     measurement_slug_map
     |> Map.keys()
-    |> Enum.chunk_every(50)
+    |> Enum.chunk_every(10)
     |> Sanbase.Parallel.map(
       fn measurements ->
         measurements = Enum.sort(measurements)
@@ -203,7 +203,7 @@ defmodule Sanbase.Prices.Store do
         ).()
       end,
       ordered: false,
-      max_concurrency: 20
+      max_concurrency: 25
     )
     |> volume_mcap_multiple_measurements_reducer(measurement_slug_map)
   end
@@ -342,11 +342,7 @@ defmodule Sanbase.Prices.Store do
   end
 
   defp volume_mcap_multiple_measurements_reducer(results, measurement_slug_map) do
-    result =
-      Enum.reduce(results, %{errors: [], series: []}, fn
-        %{results: [%{series: series}]}, acc -> %{acc | series: series ++ acc.series}
-        %{results: [%{error: error}]}, acc -> %{acc | errors: [error | acc.errors]}
-      end)
+    result = combine_results(results)
 
     case result do
       %{errors: [], series: series} ->
@@ -369,11 +365,7 @@ defmodule Sanbase.Prices.Store do
   end
 
   defp combine_results_mcap_volume(results) do
-    result =
-      Enum.reduce(results, %{errors: [], series: []}, fn
-        %{results: [%{series: series}]}, acc -> %{acc | series: series ++ acc.series}
-        %{results: [%{error: error}]}, acc -> %{acc | errors: [error | acc.errors]}
-      end)
+    result = combine_results(results)
 
     case result do
       %{errors: [], series: series} ->
@@ -397,6 +389,13 @@ defmodule Sanbase.Prices.Store do
       %{errors: [error | _]} ->
         {:error, error}
     end
+  end
+
+  defp combine_results(results) when is_list(results) do
+    Enum.reduce(results, %{errors: [], series: []}, fn
+      %{results: [%{series: series}]}, acc -> %{acc | series: series ++ acc.series}
+      %{results: [%{error: error}]}, acc -> %{acc | errors: [error | acc.errors]}
+    end)
   end
 
   defp mean_volume_for_period_query(measurements, from, to) do

@@ -20,7 +20,7 @@ defmodule Sanbase.ExAdmin.UserList do
       inputs do
         input(user_list, :name)
         input(user_list, :is_public)
-        input(user_list, :function)
+        input(user_list, :function, type: :text)
 
         input(
           user_list,
@@ -49,6 +49,7 @@ defmodule Sanbase.ExAdmin.UserList do
     end
 
     controller do
+      before_filter(:normalize_function, only: [:update])
       after_filter(:set_featured, only: [:update])
     end
   end
@@ -64,7 +65,23 @@ defmodule Sanbase.ExAdmin.UserList do
     {conn, params, resource}
   end
 
+  def normalize_function(conn, params) do
+    params =
+      put_in(
+        params[:user_list][:function],
+        Jason.decode!(params.user_list.function)
+      )
+
+    {conn, params}
+  end
+
   defimpl ExAdmin.Render, for: Sanbase.WatchlistFunction do
+    def to_string(data) do
+      data |> Map.from_struct() |> Jason.encode!()
+    end
+  end
+
+  defimpl String.Chars, for: Sanbase.WatchlistFunction do
     def to_string(data) do
       data |> Map.from_struct() |> Jason.encode!()
     end

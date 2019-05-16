@@ -41,6 +41,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     %{errors: %{details: msg}} |> Jason.encode!()
   end
 
+  defguard no_auth_header(header) when header in [[], ["null"], [""], nil]
+
   defp build_context(conn, [auth_method | rest]) do
     auth_method.(conn)
     |> case do
@@ -62,8 +64,6 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         {conn, context}
     end
   end
-
-  defguard no_auth_header(header) when header in [[], ["null"], [""], nil]
 
   defp build_context(conn, []) do
     case get_req_header(conn, "authorization") do
@@ -142,6 +142,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
            SanbaseWeb.Guardian.resource_from_token(token) do
       {:ok, user}
     else
+      {:error, :token_expired} ->
+        %{permissions: User.no_permissions()}
+
       _ ->
         {:error, "Invalid JSON Web Token (JWT)"}
     end

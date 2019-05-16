@@ -109,12 +109,16 @@ defmodule Sanbase.Prices.Store do
   end
 
   def fetch_mean_volume(measurements, from, to) when is_list(measurements) do
-    %{results: [%{series: series}]} =
-      fetch_mean_volume_query(measurements, from, to)
-      |> get()
+    fetch_mean_volume_query(measurements, from, to)
+    |> get()
+    |> case do
+      %{results: [%{series: series}]} ->
+        series
+        |> Enum.map(fn %{name: name, values: [[_, value]]} -> {name, value} end)
 
-    series
-    |> Enum.map(fn %{name: name, values: [[_, value]]} -> {name, value} end)
+      _ ->
+        {:error, []}
+    end
   end
 
   def fetch_mean_volume(measurement, from, to) do

@@ -72,6 +72,18 @@ defmodule Sanbase.ExAdmin.UserList do
         Jason.decode!(params.user_list.function)
       )
 
+    params =
+      if is_nil(params.user_list.is_featured) do
+        is_featured =
+          params.id
+          |> UserList.by_id()
+          |> is_featured
+
+        put_in(params[:user_list][:is_featured], is_featured)
+      else
+        params
+      end
+
     {conn, params}
   end
 

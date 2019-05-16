@@ -157,7 +157,7 @@ defmodule Sanbase.Prices.Store do
 
   def fetch_combined_mcap_volume(measurement_slugs, from, to, resolution) do
     measurement_slugs
-    |> Enum.chunk_every(50)
+    |> Enum.chunk_every(10)
     |> Sanbase.Parallel.map(
       fn measurements ->
         measurements = Enum.sort(measurements)
@@ -176,7 +176,7 @@ defmodule Sanbase.Prices.Store do
         ).()
       end,
       ordered: false,
-      max_concurrency: 20
+      max_concurrency: 10
     )
     |> combine_results_mcap_volume()
   end
@@ -203,7 +203,7 @@ defmodule Sanbase.Prices.Store do
         ).()
       end,
       ordered: false,
-      max_concurrency: 25
+      max_concurrency: 10
     )
     |> volume_mcap_multiple_measurements_reducer(measurement_slug_map)
   end
@@ -395,6 +395,7 @@ defmodule Sanbase.Prices.Store do
     Enum.reduce(results, %{errors: [], series: []}, fn
       %{results: [%{series: series}]}, acc -> %{acc | series: series ++ acc.series}
       %{results: [%{error: error}]}, acc -> %{acc | errors: [error | acc.errors]}
+      _, acc -> %{acc | errors: [:error | acc.errors]}
     end)
   end
 

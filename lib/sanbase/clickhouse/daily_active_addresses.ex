@@ -7,7 +7,6 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
   alias Sanbase.Clickhouse.Bitcoin
   alias Sanbase.Clickhouse.Erc20DailyActiveAddresses, as: Erc20
   alias Sanbase.Clickhouse.EthDailyActiveAddresses, as: Eth
-  alias Sanbase.Model.Project
 
   require Logger
 

@@ -23,7 +23,6 @@ defmodule Sanbase.Signals.Scheduler do
   alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
   alias Sanbase.Signals.Evaluator
   alias Sanbase.Signal
-  alias Sanbase.Parallel
 
   require Logger
 

@@ -142,7 +142,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
     end
   end
 
-  defp parse_token_decimals(nil), do: 0
+  defp parse_token_decimals(""), do: nil
 
   defp parse_token_decimals(token_decimals) do
     token_decimals
@@ -150,7 +150,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
     |> String.to_integer()
   end
 
-  defp parse_total_supply(nil), do: D.new(0)
+  defp parse_total_supply(""), do: nil
 
   defp parse_total_supply(total_supply) do
     total_supply

@@ -4,7 +4,7 @@ defprotocol Sanbase.Signals.Settings do
   @spec triggered?(struct()) :: boolean()
   def triggered?(trigger)
 
-  @spec cache_key(struct()) :: String.t()
+  @spec cache_key(struct()) :: String.t() | :nocache
   def cache_key(trigger)
 end
 

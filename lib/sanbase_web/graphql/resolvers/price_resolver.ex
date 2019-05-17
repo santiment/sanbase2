@@ -1,10 +1,8 @@
 defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   require Logger
 
-  import Absinthe.Resolution.Helpers
   import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 6]
 
-  alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Model.Project
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.DateTimeUtils
@@ -37,7 +35,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   """
   def history_price(
         _root,
-        %{slug: @total_market_measurement, from: from, to: to, interval: interval},
+        %{slug: @total_market, from: from, to: to, interval: interval},
         _resolution
       ) do
     with {:ok, from, to, interval} <-

@@ -16,7 +16,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     Returns a list of price points for the given ticker. Optimizes the number of queries
     to the DB by inspecting the requested fields.
   """
-  @deprecated "Use history price by slug instead of ticker"
   def history_price(_root, %{ticker: @total_market} = args, %{context: %{loader: loader}}) do
     loader
     |> Dataloader.load(SanbaseDataloader, {:price, @total_market_measurement}, args)
@@ -39,7 +38,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     |> on_load(&total_erc20_history_price_on_load(&1, args))
   end
 
-  @deprecated "Use history price by slug"
   def history_price(_root, %{ticker: ticker} = args, %{context: %{loader: loader}}) do
     with slug when not is_nil(slug) <- Project.slug_by_ticker(ticker) do
       ticker_cmc_id = ticker <> "_" <> slug

@@ -7,12 +7,9 @@ defmodule SanbaseWeb.Graphql.Schema.WatchlistQueries do
   """
   use Absinthe.Schema.Notation
 
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
-  alias SanbaseWeb.Graphql.Resolvers.{
-    WatchlistResolver,
-    UserListResolver
-  }
+  alias SanbaseWeb.Graphql.Resolvers.UserListResolver
 
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 

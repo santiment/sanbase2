@@ -11,11 +11,11 @@ defmodule Sanbase.TechIndicators.PriceVolumeDifference do
 
   @recv_timeout 15_000
 
-  @type price_volume_diffp :: %{
+  @type price_volume_diff_point :: %{
           datetime: DateTime.t(),
-          price_volume_diff: number(),
-          price_change: number(),
-          volume_change: number()
+          price_volume_diff: number() | nil,
+          price_change: number() | nil,
+          volume_change: number() | nil
         }
 
   @spec price_volume_diff(
@@ -28,7 +28,7 @@ defmodule Sanbase.TechIndicators.PriceVolumeDifference do
           non_neg_integer(),
           non_neg_integer(),
           non_neg_integer()
-        ) :: {:error, String.t()} | {:ok, [price_volume_diffp()]}
+        ) :: {:error, String.t()} | {:ok, [price_volume_diff_point()]}
   def price_volume_diff(
         %Project{ticker: ticker, coinmarketcap_id: slug} = project,
         currency,

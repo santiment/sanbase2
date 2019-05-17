@@ -65,7 +65,7 @@ defmodule Sanbase.Auth.Hmac do
     with [token, apikey] <- String.split(token_apikey, "_") do
       {:ok, {token, apikey}}
     else
-      error ->
+      _error ->
         {:error,
          "Apikey '#{token_apikey}' is malformed - it must have two string parts separated by underscore"}
     end

@@ -13,7 +13,7 @@ defmodule Sanbase.Model.Project.List do
 
   alias Sanbase.Repo
 
-  alias Sanbase.Model.{Project, MarketSegment}
+  alias Sanbase.Model.Project
 
   @preloads [
     :eth_addresses,

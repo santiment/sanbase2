@@ -25,7 +25,7 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
   alias SanbaseWeb.Graphql.Cache
 
   @doc false
-  @spec pipeline(Absinthe.Plug.Request.t()) :: Absinthe.Pipeline.t()
+  @spec pipeline(Absinthe.Plug.Request.Query.t()) :: Absinthe.Pipeline.t()
   def pipeline(%{pipeline: pipeline}) do
     pipeline
     |> Absinthe.Pipeline.insert_before(

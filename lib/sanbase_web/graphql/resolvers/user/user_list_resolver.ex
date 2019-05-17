@@ -73,29 +73,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   def fetch_public_user_lists(_root, _args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    case UserList.fetch_public_user_lists(current_user) do
-      {:ok, user_lists} ->
-        {:ok, user_lists}
-
-      {:error, changeset} ->
-        {
-          :error,
-          message: "Cannot fetch public user lists", details: Utils.error_details(changeset)
-        }
-    end
+    UserList.fetch_public_user_lists(current_user)
   end
 
   def fetch_all_public_user_lists(_root, _args, _resolution) do
-    case UserList.fetch_all_public_lists() do
-      {:ok, user_lists} ->
-        {:ok, user_lists}
-
-      {:error, changeset} ->
-        {
-          :error,
-          message: "Cannot fetch public user lists", details: Utils.error_details(changeset)
-        }
-    end
+    UserList.fetch_all_public_lists()
   end
 
   def user_list(_root, %{user_list_id: user_list_id}, %{

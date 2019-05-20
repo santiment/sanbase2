@@ -8,6 +8,7 @@ defmodule Sanbase.Clickhouse.GasUsedTest do
 
   setup do
     [
+      slug: "ethereum",
       from: from_iso8601!("2019-01-01T00:00:00Z"),
       to: from_iso8601!("2019-01-03T00:00:00Z"),
       interval: "1d"
@@ -26,7 +27,7 @@ defmodule Sanbase.Clickhouse.GasUsedTest do
            ]
          }}
       end do
-      result = GasUsed.gas_used(context.from, context.to, context.interval)
+      result = GasUsed.gas_used(context.slug, context.from, context.to, context.interval)
 
       assert result ==
                {:ok,
@@ -60,7 +61,7 @@ defmodule Sanbase.Clickhouse.GasUsedTest do
            ]
          }}
       end do
-      result = GasUsed.gas_used(context.from, context.to, "2d")
+      result = GasUsed.gas_used(context.slug, context.from, context.to, "2d")
 
       assert result ==
                {:ok,
@@ -87,9 +88,23 @@ defmodule Sanbase.Clickhouse.GasUsedTest do
 
   test "returns empty array when query returns no rows", context do
     with_mock Sanbase.ClickhouseRepo, query: fn _, _ -> {:ok, %{rows: []}} end do
-      result = GasUsed.gas_used(context.from, context.to, context.interval)
+      result = GasUsed.gas_used(context.slug, context.from, context.to, context.interval)
 
       assert result == {:ok, []}
+    end
+  end
+
+  test "returns error when something except ethereum is requested", context do
+    with_mock Sanbase.ClickhouseRepo, query: fn _, _ -> {:ok, %{rows: []}} end do
+      result =
+        GasUsed.gas_used(
+          "unsupported",
+          context.from,
+          context.to,
+          context.interval
+        )
+
+      assert result == {:error, "Currently only ethereum is supported!"}
     end
   end
 end

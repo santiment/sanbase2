@@ -7,6 +7,7 @@ defmodule Sanbase.Clickhouse.MiningPoolsDistributionTest do
 
   setup do
     [
+      slug: "ethereum",
       from: from_iso8601!("2019-01-01T00:00:00Z"),
       to: from_iso8601!("2019-01-03T00:00:00Z"),
       interval: "1d"
@@ -25,7 +26,13 @@ defmodule Sanbase.Clickhouse.MiningPoolsDistributionTest do
            ]
          }}
       end do
-      result = MiningPoolsDistribution.distribution(context.from, context.to, context.interval)
+      result =
+        MiningPoolsDistribution.distribution(
+          context.slug,
+          context.from,
+          context.to,
+          context.interval
+        )
 
       assert result ==
                {:ok,
@@ -65,7 +72,7 @@ defmodule Sanbase.Clickhouse.MiningPoolsDistributionTest do
            ]
          }}
       end do
-      result = MiningPoolsDistribution.distribution(context.from, context.to, "2d")
+      result = MiningPoolsDistribution.distribution(context.slug, context.from, context.to, "2d")
 
       assert result ==
                {:ok,
@@ -100,9 +107,29 @@ defmodule Sanbase.Clickhouse.MiningPoolsDistributionTest do
 
   test "returns empty array when query returns no rows", context do
     with_mock Sanbase.ClickhouseRepo, query: fn _, _ -> {:ok, %{rows: []}} end do
-      result = MiningPoolsDistribution.distribution(context.from, context.to, context.interval)
+      result =
+        MiningPoolsDistribution.distribution(
+          context.slug,
+          context.from,
+          context.to,
+          context.interval
+        )
 
       assert result == {:ok, []}
+    end
+  end
+
+  test "returns error when something except ethereum is requested", context do
+    with_mock Sanbase.ClickhouseRepo, query: fn _, _ -> {:ok, %{rows: []}} end do
+      result =
+        MiningPoolsDistribution.distribution(
+          "unsupported",
+          context.from,
+          context.to,
+          context.interval
+        )
+
+      assert result == {:error, "Currently only ethereum is supported!"}
     end
   end
 end

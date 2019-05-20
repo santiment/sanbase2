@@ -85,10 +85,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   def mining_pools_distribution(
         _root,
-        %{from: from, to: to, interval: interval},
+        %{slug: slug, from: from, to: to, interval: interval},
         _resolution
       ) do
-    case MiningPoolsDistribution.distribution(from, to, interval) do
+    case MiningPoolsDistribution.distribution(slug, from, to, interval) do
       {:ok, distribution} ->
         {:ok, distribution}
 

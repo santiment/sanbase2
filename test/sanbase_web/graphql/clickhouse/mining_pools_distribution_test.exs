@@ -15,15 +15,28 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
 
     [
       conn: conn,
+      slug: "ethereum",
       from: from_iso8601!("2019-01-01T00:00:00Z"),
       to: from_iso8601!("2019-01-03T00:00:00Z"),
       interval: "1d"
     ]
   end
 
+  test "works only for ethereum", context do
+    with_mock MiningPoolsDistribution,
+      distribution: fn _, _, _, _ -> {:error, "Currently only ethereum is supported!"} end do
+      assert capture_log(fn ->
+               response = execute_query("unsupported", context)
+               result = parse_response(response)
+               assert result == nil
+             end) =~
+               ~s/[warn] Can't calculate mining pools distribution. Reason: "Currently only ethereum is supported!"/
+    end
+  end
+
   test "returns data from calculation", context do
     with_mock MiningPoolsDistribution,
-      distribution: fn _, _, _ ->
+      distribution: fn _, _, _, _ ->
         {:ok,
          [
            %{
@@ -40,11 +53,16 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
            }
          ]}
       end do
-      response = execute_query(context)
+      response = execute_query(context.slug, context)
       result = parse_response(response)
 
       assert_called(
-        MiningPoolsDistribution.distribution(context.from, context.to, context.interval)
+        MiningPoolsDistribution.distribution(
+          context.slug,
+          context.from,
+          context.to,
+          context.interval
+        )
       )
 
       assert result == [
@@ -65,12 +83,17 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
   end
 
   test "returns empty array when there is no data", context do
-    with_mock MiningPoolsDistribution, distribution: fn _, _, _ -> {:ok, []} end do
-      response = execute_query(context)
+    with_mock MiningPoolsDistribution, distribution: fn _, _, _, _ -> {:ok, []} end do
+      response = execute_query(context.slug, context)
       result = parse_response(response)
 
       assert_called(
-        MiningPoolsDistribution.distribution(context.from, context.to, context.interval)
+        MiningPoolsDistribution.distribution(
+          context.slug,
+          context.from,
+          context.to,
+          context.interval
+        )
       )
 
       assert result == []
@@ -79,9 +102,9 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
 
   test "logs warning when calculation errors", context do
     with_mock MiningPoolsDistribution,
-      distribution: fn _, _, _ -> {:error, "Some error description here"} end do
+      distribution: fn _, _, _, _ -> {:error, "Some error description here"} end do
       assert capture_log(fn ->
-               response = execute_query(context)
+               response = execute_query(context.slug, context)
                result = parse_response(response)
                assert result == nil
              end) =~
@@ -90,10 +113,12 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
   end
 
   test "uses 1d as default interval", context do
-    with_mock MiningPoolsDistribution, distribution: fn _, _, _ -> {:ok, []} end do
+    with_mock MiningPoolsDistribution, distribution: fn _, _, _, _ -> {:ok, []} end do
       query = """
         {
-          miningPoolsDistribution(from: "#{context.from}", to: "#{context.to}"){
+          miningPoolsDistribution(slug: "#{context.slug}", from: "#{context.from}", to: "#{
+        context.to
+      }"){
             datetime,
             top3,
             top10,
@@ -105,7 +130,9 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
       context.conn
       |> post("/graphql", query_skeleton(query, "miningPoolsDistribution"))
 
-      assert_called(MiningPoolsDistribution.distribution(context.from, context.to, "1d"))
+      assert_called(
+        MiningPoolsDistribution.distribution(context.slug, context.from, context.to, "1d")
+      )
     end
   end
 
@@ -113,17 +140,19 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
     json_response(response, 200)["data"]["miningPoolsDistribution"]
   end
 
-  defp execute_query(context) do
-    query = mining_pools_distribution_query(context.from, context.to, context.interval)
+  defp execute_query(slug, context) do
+    query = mining_pools_distribution_query(slug, context.from, context.to, context.interval)
 
     context.conn
     |> post("/graphql", query_skeleton(query, "miningPoolsDistribution"))
   end
 
-  defp mining_pools_distribution_query(from, to, interval) do
+  defp mining_pools_distribution_query(slug, from, to, interval) do
     """
       {
-        miningPoolsDistribution(from: "#{from}", to: "#{to}", interval: "#{interval}"){
+        miningPoolsDistribution(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "#{
+      interval
+    }"){
           datetime,
           top3,
           top10,

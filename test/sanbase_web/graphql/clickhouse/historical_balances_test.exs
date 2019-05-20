@@ -130,8 +130,10 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
   end
 
   test "historical balances when query returns error", context do
+    error = "Some error description here"
+
     with_mock Sanbase.ClickhouseRepo,
-      query: fn _, _ -> {:error, "Some error description here"} end do
+      query: fn _, _ -> {:error, error} end do
       query =
         historical_balances_query(
           "ethereum",
@@ -150,7 +152,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
                historical_balance = result["data"]["historicalBalance"]
                assert historical_balance == nil
              end) =~
-               ~s/[warn] Can't calculate historical balances for project with coinmarketcap_id ethereum. Reason: "Some error description here"/
+               graphql_error_msg("Historical Balances", "ethereum", error)
     end
   end
 
@@ -244,16 +246,18 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
 
              error = result["errors"] |> List.first()
 
-             assert error["message"] ==
-                      ~s/Can't calculate historical balances for project with coinmarketcap_id someid1/
+             assert error["message"] =~
+                      "Can't fetch Historical Balances for project with slug: someid1"
            end) =~
-             "{:missing_contract, \\\"Can't find contract address of project with coinmarketcap_id someid1\\\"}"
+             "{:missing_contract, \\\"Can't find contract address of project with slug: someid1\\\"}"
   end
 
   test "historical balances when clickhouse returns error", context do
+    error = "Something bad happened"
+
     with_mock Sanbase.ClickhouseRepo,
       query: fn _, _ ->
-        {:error, "something bad happened"}
+        {:error, error}
       end do
       query =
         historical_balances_query(
@@ -269,7 +273,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
                |> post("/graphql", query_skeleton(query, "historicalBalance"))
                |> json_response(200)
              end) =~
-               ~s/[warn] Can't calculate historical balances for project with coinmarketcap_id someid2. Reason: "something bad happened"/
+               graphql_error_msg("Historical Balances", "someid2", error)
     end
   end
 

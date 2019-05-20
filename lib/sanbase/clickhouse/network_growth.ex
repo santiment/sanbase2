@@ -1,30 +1,37 @@
 defmodule Sanbase.Clickhouse.NetworkGrowth do
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.DateTimeUtils
 
   def network_growth(contract, from, to, interval) do
     from_datetime_unix = DateTime.to_unix(from)
     to_datetime_unix = DateTime.to_unix(to)
+    interval = DateTimeUtils.compound_duration_to_seconds(interval)
     span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)
 
     query = """
-    SELECT toUnixTimestamp(time) as dt, SUM(value) as new_addresses
+    SELECT
+      toUnixTimestamp(time) AS dt,
+      SUM(value) AS new_addresses
     FROM (
       SELECT
-        toDateTime(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) as time,
+        toDateTime(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) AS time,
         toUInt32(0) AS value
       FROM numbers(?2)
 
       UNION ALL
 
-      SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, sum(total_addresses) as value
+      SELECT
+        toDateTime(intDiv(toUInt32(dt), ?1) * ?1) AS time,
+        SUM(total_addresses) AS value
       FROM eth_network_growth
-      PREWHERE contract = ?3 and
-      dt >= toDateTime(?4) and
-      dt <= toDateTime(?5)
-      group by time
+      PREWHERE
+        contract = ?3 AND
+        dt >= toDateTime(?4) AND
+        dt <= toDateTime(?5)
+      GROUP BY time
     )
-    group by dt
-    order by dt
+    GROUP BY dt
+    GROUP BY dt
     """
 
     args = [interval, span, contract, from_datetime_unix, to_datetime_unix]

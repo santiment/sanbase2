@@ -80,14 +80,16 @@ defmodule SanbaseWeb.Graphql.Clickhouse.PercentOfTokenSupplyOnExchangesTest do
   end
 
   test "logs warning when calculation errors", context do
+    error = "Some error description here"
+
     with_mock PercentOfTokenSupplyOnExchanges,
-      percent_on_exchanges: fn _, _, _, _ -> {:error, "Some error description here"} end do
+      percent_on_exchanges: fn _, _, _, _ -> {:error, error} end do
       assert capture_log(fn ->
                response = execute_query(context)
                values = parse_response(response)
                assert values == nil
              end) =~
-               ~s/[warn] Can't calculate Percent of Token Supply on Exchanges for project with coinmarketcap_id: santiment. Reason: "Some error description here"/
+               graphql_error_msg("Percent of Token Supply on Exchanges", context.slug, error)
     end
   end
 

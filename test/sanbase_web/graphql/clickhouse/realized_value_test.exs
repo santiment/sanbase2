@@ -73,14 +73,16 @@ defmodule SanbaseWeb.Graphql.Clickhouse.RealizedValueTest do
   end
 
   test "logs warning when calculation errors", context do
+    error = "Some error description here"
+
     with_mock RealizedValue,
-      realized_value: fn _, _, _, _ -> {:error, "Some error description here"} end do
+      realized_value: fn _, _, _, _ -> {:error, error} end do
       assert capture_log(fn ->
                response = execute_query(context)
                values = parse_response(response)
                assert values == nil
              end) =~
-               ~s/[warn] Can't calculate Realized Value for project with coinmarketcap_id: santiment. Reason: "Some error description here"/
+               graphql_error_msg("Realized Value", context.slug, error)
     end
   end
 

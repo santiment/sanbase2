@@ -2,11 +2,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   require Logger
 
   alias Sanbase.Model.Project
-  alias Sanbase.DateTimeUtils
   import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 7]
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
+
+  import Sanbase.Utils.ErrorHandling,
+    only: [log_graphql_error: 2, graphql_error_msg: 1, graphql_error_msg: 2]
 
   alias Sanbase.Clickhouse.{
     DailyActiveAddresses,
@@ -46,8 +48,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       {:ok, percent_of_total_supply}
     else
       {:error, error} ->
-        error_msg = "Can't calculate top holders - percent of total supply for slug: #{slug}."
-        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        error_msg = graphql_error_msg("Top Holders - percent of total supply", slug)
+        log_graphql_error(error_msg, error)
         {:error, error_msg}
     end
   end
@@ -62,24 +64,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:ok, gas_used}
 
       {:error, error} ->
-        error_msg = "Can't calculate Gas used."
-        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        error_msg = graphql_error_msg("Gas Used", slug)
+        log_graphql_error(error_msg, error)
         {:error, error_msg}
     end
   end
 
-  def network_growth(_root, args, _resolution) do
-    interval = DateTimeUtils.compound_duration_to_seconds(args.interval)
-
-    with {:ok, contract, _} <- Project.contract_info_by_slug(args.slug),
+  def network_growth(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
+    with {:ok, contract, _} <- Project.contract_info_by_slug(slug),
          {:ok, network_growth} <-
-           NetworkGrowth.network_growth(contract, args.from, args.to, interval) do
+           NetworkGrowth.network_growth(contract, from, to, interval) do
       {:ok, network_growth}
     else
-      error ->
-        Logger.error("Can't calculate network growth. Reason: #{inspect(error)}")
-
-        {:error, "Can't calculate network growth"}
+      {:error, error} ->
+        error_msg = graphql_error_msg("Network Growth", slug)
+        log_graphql_error(error_msg, error)
+        {:error, error_msg}
     end
   end
 
@@ -93,8 +93,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:ok, distribution}
 
       {:error, error} ->
-        error_msg = "Can't calculate mining pools distribution."
-        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        error_msg = graphql_error_msg("Mining Pools Distribution")
+        log_graphql_error(error_msg, error)
         {:error, error_msg}
     end
   end
@@ -112,13 +112,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       {:ok, mvrv_ratio}
     else
       {:error, error} ->
-        Logger.warn(
-          "Can't calculate MVRV ratio for project with coinmarketcap_id: #{slug}. Reason: #{
-            inspect(error)
-          }"
-        )
-
-        {:error, "Can't calculate MVRV ratio"}
+        error_msg = graphql_error_msg("MVRV Ratio", slug)
+        log_graphql_error(error_msg, error)
+        {:error, error_msg}
     end
   end
 
@@ -151,10 +147,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:error, error_msg}
 
       {:error, error} ->
-        error_msg =
-          "Can't calculate daily active addresses for project with coinmarketcap_id: #{slug}."
-
-        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        error_msg = graphql_error_msg("Daily Active Addresses", slug)
+        log_graphql_error(error_msg, error)
         {:error, error_msg}
     end
   end
@@ -196,8 +190,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
       {:error, error} ->
         error_msg = "Can't fetch average daily active addresses for #{Project.describe(project)}"
-        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
-
+        log_graphql_error(error_msg, error)
         {:ok, 0}
     end
   end
@@ -223,10 +216,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       {:ok, active_deposits}
     else
       {:error, error} ->
-        error_msg =
-          "Can't calculate daily active deposits for project with coinmarketcap_id: #{slug}."
-
-        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        error_msg = graphql_error_msg("Daily Active Deposits", slug)
+        log_graphql_error(error_msg, error)
         {:error, error_msg}
     end
   end
@@ -241,8 +232,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:ok, realized_value}
 
       {:error, error} ->
-        error_msg = "Can't calculate Realized Value for project with coinmarketcap_id: #{slug}."
-        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        error_msg = graphql_error_msg("Realized Value", slug)
+        log_graphql_error(error_msg, error)
         {:error, error_msg}
     end
   end
@@ -256,8 +247,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       {:ok, nvt_ratio}
     else
       {:error, error} ->
-        error_msg = "Can't calculate NVT ratio for project with coinmarketcap_id: #{slug}."
-        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        error_msg = graphql_error_msg("NVT Ratio", slug)
+        log_graphql_error(error_msg, error)
         {:error, error_msg}
     end
   end
@@ -271,13 +262,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       {:ok, result}
     else
       {:error, error} ->
-        Logger.warn(
-          "Can't calculate historical balances for project with coinmarketcap_id #{slug}. Reason: #{
-            inspect(error)
-          }"
-        )
-
-        {:error, "Can't calculate historical balances for project with coinmarketcap_id #{slug}"}
+        error_msg = graphql_error_msg("Historical Balances", slug)
+        log_graphql_error(error_msg, error)
+        {:error, error_msg}
     end
   end
 
@@ -291,12 +278,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:ok, percent_tokens_on_exchanges}
 
       {:error, error} ->
-        error_msg =
-          "Can't calculate Percent of Token Supply on Exchanges for project with coinmarketcap_id: #{
-            slug
-          }."
-
-        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        error_msg = graphql_error_msg("Percent of Token Supply on Exchanges", slug)
+        log_graphql_error(error_msg, error)
         {:error, error_msg}
     end
   end
@@ -325,10 +308,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:error, error_msg}
 
       {:error, error} ->
-        error_msg =
-          "Can't calculate Share of Deposits for project with coinmarketcap_id: #{slug}."
-
-        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        error_msg = graphql_error_msg("Share of Deposits", slug)
+        log_graphql_error(error_msg, error)
         {:error, error_msg}
     end
   end

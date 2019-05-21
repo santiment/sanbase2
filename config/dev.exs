@@ -92,8 +92,8 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   time_between_requests: 250
 
 config :sanbase, SanbaseWeb.Graphql.ContextPlug,
-  basic_auth_username: "user",
-  basic_auth_password: "pass"
+  basic_auth_username: "admin",
+  basic_auth_password: "admin"
 
 config :arc,
   storage: Arc.Storage.Local,

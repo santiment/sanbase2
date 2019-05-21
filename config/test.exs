@@ -17,6 +17,9 @@ config :logger, :console,
 # Test adapter that allows mocking
 config :tesla, adapter: Tesla.Mock
 
+config :sanbase, Sanbase.ApiCallDataExporter,
+  api_call_data_kafka_exporter: Sanbase.TestKafkaExporter
+
 # Configure postgres database
 config :sanbase, Sanbase.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,

@@ -128,12 +128,15 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
     ] do
       Scheduler.run_signal(EthWalletTriggerSettings)
 
-      assert_receive({:telegram_to_self, message})
-      assert message =~ "The ethereum balance of Santiment wallets has increased by 280"
+      assert_receive({:telegram_to_self, message1})
+      assert_receive({:telegram_to_self, message2})
 
-      assert_receive({:telegram_to_self, message})
+      sorted_messages = Enum.sort([message1, message2])
 
-      assert message =~
+      assert Enum.at(sorted_messages, 0) =~
+               "The ethereum balance of Santiment wallets has increased by 280"
+
+      assert Enum.at(sorted_messages, 1) =~
                "The ethereum balance of the address #{context.eth_address} has increased by 280"
     end
   end

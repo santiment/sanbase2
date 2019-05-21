@@ -51,7 +51,7 @@ defmodule Sanbase.Auth.ApiKeyTest do
 
     # Revoke the apikey and expect it to be non valid
     :ok = Apikey.revoke_apikey(user, apikey)
-    assert {:error, "Apikey not valid or malformed"} == Apikey.apikey_to_user(apikey)
+    assert {:error, "Apikey '#{apikey}' is not valid"} == Apikey.apikey_to_user(apikey)
   end
 
   test "get list of apikeys", %{user: user} do

@@ -60,7 +60,7 @@ defmodule Sanbase.Mixfile do
       {:guardian, "~> 1.0"},
       {:absinthe, github: "absinthe-graphql/absinthe", override: true},
       {:absinthe_ecto, "~> 0.1.0"},
-      {:absinthe_plug, "~> 1.4.0"},
+      {:absinthe_plug, github: "absinthe-graphql/absinthe_plug"},
       {:temp, "~> 0.4"},
       {:httpoison, "~> 1.2", override: true},
       {:floki, "~> 0.20"},

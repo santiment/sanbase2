@@ -23,8 +23,11 @@ defmodule Sanbase.Utils.Config do
 
   defmacro get(key, default) do
     quote bind_quoted: [key: key, default: default] do
-      Application.fetch_env!(:sanbase, __MODULE__)
-      |> Keyword.get(key, default)
+      Application.fetch_env(:sanbase, __MODULE__)
+      |> case do
+        {:ok, env} -> env |> Keyword.get(key, default)
+        _ -> default
+      end
       |> Config.parse_config_value()
     end
   end
@@ -39,8 +42,11 @@ defmodule Sanbase.Utils.Config do
 
   defmacro module_get(module, key, default) do
     quote bind_quoted: [module: module, key: key, default: default] do
-      Application.fetch_env!(:sanbase, module)
-      |> Keyword.get(key, default)
+      Application.fetch_env(:sanbase, module)
+      |> case do
+        {:ok, env} -> env |> Keyword.get(key, default)
+        _ -> default
+      end
       |> Config.parse_config_value()
     end
   end

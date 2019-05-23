@@ -18,7 +18,7 @@ config :logger, :console,
 config :tesla, adapter: Tesla.Mock
 
 config :sanbase, Sanbase.ApiCallDataExporter,
-  api_call_data_kafka_exporter: Sanbase.TestKafkaExporter
+  api_call_data_kafka_producer: Sanbase.TestKafkaProducer
 
 # Configure postgres database
 config :sanbase, Sanbase.Repo,

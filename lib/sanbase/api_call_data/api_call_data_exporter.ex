@@ -10,7 +10,7 @@ defmodule Sanbase.ApiCallDataExporter do
   use GenServer
 
   require Sanbase.Utils.Config, as: Config
-  @producer Config.get(:api_call_data_kafka_exporter, SanExporterEx.Producer)
+  @producer Config.get(:api_call_data_kafka_producer, SanExporterEx.Producer)
 
   @typedoc ~s"""
   A map that represents the API call data that will be persisted.
@@ -67,10 +67,10 @@ defmodule Sanbase.ApiCallDataExporter do
   is pushed to an internal buffer that is then send at once to Kafka.
   """
   @spec persist(api_call_data) :: :ok
-  def persist(api_call_data) do
+  def persist(exporter \\ __MODULE__, api_call_data) do
     # Log so it's seen in Kibana
     # Logger.info(api_call_data)
-    GenServer.cast(__MODULE__, {:persist, api_call_data})
+    GenServer.cast(exporter, {:persist, api_call_data})
   end
 
   @doc ~s"""

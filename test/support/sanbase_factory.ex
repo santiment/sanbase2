@@ -37,7 +37,7 @@ defmodule Sanbase.Factory do
   def staked_user_factory() do
     %User{
       salt: User.generate_salt(),
-      san_balance: Decimal.new(20000),
+      san_balance: Decimal.new(20_000),
       san_balance_updated_at: Timex.now(),
       privacy_policy_accepted: true
     }

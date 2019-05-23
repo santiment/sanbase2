@@ -4,7 +4,7 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
   Currently it is bucketed in `1 day` intervals and goes 90 days back.
   """
 
-  # TODO: Change `%{percent_up: settings.percent_threshold}`  with `operation` when implemented
+  # TODO: Change `%{percent_up: settings.percent_threshold}` with `operation` when implemented
   import Sanbase.Signals.History.Utils
 
   alias Sanbase.Signals.Trigger.DailyActiveAddressesSettings

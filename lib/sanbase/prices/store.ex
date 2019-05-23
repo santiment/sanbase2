@@ -373,7 +373,7 @@ defmodule Sanbase.Prices.Store do
           series
           |> Enum.map(fn %{values: values} -> values end)
           |> Enum.zip()
-          |> Enum.map(&Tuple.to_list/1)
+          |> Stream.map(&Tuple.to_list/1)
           |> Enum.map(fn [[iso8601_datetime, _, _] | _] = projects_data ->
             {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
 

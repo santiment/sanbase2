@@ -2,7 +2,7 @@
   "absinthe": {:git, "https://github.com/absinthe-graphql/absinthe.git", "aaa228d93fa9b6cb9630d7961e77c41f5bf40a95", []},
   "absinthe_ecto": {:hex, :absinthe_ecto, "0.1.3", "420b68129e79fe4571a4838904ba03e282330d335da47729ad52ffd7b8c5fcb1", [:mix], [{:absinthe, "~> 1.3.0 or ~> 1.4.0", [hex: :absinthe, repo: "hexpm", optional: false]}, {:ecto, ">= 0.0.0", [hex: :ecto, repo: "hexpm", optional: false]}], "hexpm"},
   "absinthe_metrics": {:hex, :absinthe_metrics, "1.0.0", "c4dd0444168a1d32a432cab2ced498069e58fd4b90aa9e1ec16b49557bee2cf1", [:mix], [{:absinthe, "~> 1.3", [hex: :absinthe, repo: "hexpm", optional: false]}, {:prometheus_ex, "~> 3.0", [hex: :prometheus_ex, repo: "hexpm", optional: true]}], "hexpm"},
-  "absinthe_plug": {:hex, :absinthe_plug, "1.4.7", "939b6b9e1c7abc6b399a5b49faa690a1fbb55b195c670aa35783b14b08ccec7a", [:mix], [{:absinthe, "~> 1.4.11", [hex: :absinthe, repo: "hexpm", optional: false]}, {:plug, "~> 1.3.2 or ~> 1.4", [hex: :plug, repo: "hexpm", optional: false]}], "hexpm"},
+  "absinthe_plug": {:git, "https://github.com/absinthe-graphql/absinthe_plug.git", "c33d44cfd2c7db9bc3ad1feedc49571f6d019efd", []},
   "accept": {:hex, :accept, "0.3.3", "548ebb6fb2e8b0d170e75bb6123aea6ceecb0189bb1231eeadf52eac08384a97", [:rebar3], [], "hexpm"},
   "arc": {:git, "https://github.com/marinho10/arc", "63b40c1fb8cd67d88731c6f87a5387aa746b391e", []},
   "artificery": {:hex, :artificery, "0.4.1", "90b1fcedb9034853b36dbea2174f9fc1172bd50b0686a723178103def5c9c1c8", [:mix], [], "hexpm"},

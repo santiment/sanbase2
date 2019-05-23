@@ -93,4 +93,36 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     field(:change, non_null(:float))
     field(:status, :social_gainers_losers_status_enum)
   end
+
+  object :twitter_mention_count do
+    field(:datetime, non_null(:datetime))
+    field(:mention_count, :integer)
+  end
+
+  object :emojis_sentiment do
+    field(:datetime, non_null(:datetime))
+    field(:sentiment, :float)
+  end
+
+  enum :topic_search_sources do
+    value(:telegram)
+    value(:professional_traders_chat)
+    value(:reddit)
+    value(:discord)
+  end
+
+  object :topic_search do
+    field(:messages, list_of(:messages))
+    field(:chart_data, list_of(:chart_data))
+  end
+
+  object :messages do
+    field(:text, :string)
+    field(:datetime, non_null(:datetime))
+  end
+
+  object :chart_data do
+    field(:mentions_count, :integer)
+    field(:datetime, non_null(:datetime))
+  end
 end

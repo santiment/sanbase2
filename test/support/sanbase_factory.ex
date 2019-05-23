@@ -16,6 +16,8 @@ defmodule Sanbase.Factory do
   }
 
   alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
+  alias Sanbase.Pricing.{Product, Plan, Subscription}
+  alias Sanbase.Pricing.Plan.AccessSeed
 
   def user_factory() do
     %User{
@@ -152,5 +154,53 @@ defmodule Sanbase.Factory do
 
   def watchlist_factory() do
     %UserList{name: "Generic User List name", color: :red, user: build(:user)}
+  end
+
+  def product_factory() do
+    %Product{name: "SanbaseAPI"}
+  end
+
+  def plan_free_factory() do
+    %Plan{
+      id: 1,
+      name: "Free",
+      amount: 0,
+      currency: "USD",
+      interval: "month",
+      access: AccessSeed.free()
+    }
+  end
+
+  def plan_essential_factory() do
+    %Plan{
+      id: 2,
+      name: "Essential",
+      amount: 15900,
+      currency: "USD",
+      interval: "month",
+      access: AccessSeed.essential()
+    }
+  end
+
+  def plan_pro_factory() do
+    %Plan{
+      id: 3,
+      name: "Pro",
+      amount: 35900,
+      currency: "USD",
+      interval: "month",
+      access: AccessSeed.pro()
+    }
+  end
+
+  def plan_premium_factory() do
+    %Plan{
+      id: 4,
+      name: "Premium",
+      amount: 75900,
+      currency: "USD",
+      interval: "month",
+      access: AccessSeed.premium()
+    }
   end
 end

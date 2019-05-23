@@ -522,7 +522,8 @@ CREATE TABLE public.plans (
     currency character varying(255),
     "interval" character varying(255),
     product_id bigint NOT NULL,
-    stripe_id character varying(255)
+    stripe_id character varying(255),
+    access jsonb
 );
 
 
@@ -2345,7 +2346,7 @@ ALTER TABLE ONLY public.notifications
 --
 
 ALTER TABLE ONLY public.plans
-    ADD CONSTRAINT plans_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE CASCADE;
+    ADD CONSTRAINT plans_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id);
 
 
 --

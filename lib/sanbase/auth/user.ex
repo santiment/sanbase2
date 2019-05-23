@@ -18,6 +18,7 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.Telegram
   alias Sanbase.Signals.HistoricalActivity
   alias Sanbase.Following.UserFollower
+  alias Sanbase.Pricing.Subscription
 
   require Sanbase.Utils.Config, as: Config
 
@@ -73,6 +74,7 @@ defmodule Sanbase.Auth.User do
     has_many(:signals_historical_activity, HistoricalActivity, on_delete: :delete_all)
     has_many(:followers, UserFollower, foreign_key: :user_id, on_delete: :delete_all)
     has_many(:following, UserFollower, foreign_key: :follower_id, on_delete: :delete_all)
+    has_many(:subscriptions, Subscription, on_delete: :delete_all)
 
     has_one(:user_settings, UserSettings, on_delete: :delete_all)
 

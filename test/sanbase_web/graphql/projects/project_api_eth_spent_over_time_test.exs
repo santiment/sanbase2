@@ -84,39 +84,39 @@ defmodule SanbaseWeb.Graphql.ProjectApiEthSpentOverTimeTest do
         context.conn
         |> post("/graphql", query_skeleton(query, "project"))
 
-      ethSpentOverTime = json_response(result, 200)["data"]["project"]["ethSpentOverTime"]
+      eth_spent_over_time = json_response(result, 200)["data"]["project"]["ethSpentOverTime"]
 
-      assert length(ethSpentOverTime) == 6
+      assert length(eth_spent_over_time) == 6
 
       assert %{
                "datetime" => "2017-05-13T00:00:00Z",
                "ethSpent" => 500.0
-             } in ethSpentOverTime
+             } in eth_spent_over_time
 
       assert %{
                "datetime" => "2017-05-14T00:00:00Z",
                "ethSpent" => 1500.0
-             } in ethSpentOverTime
+             } in eth_spent_over_time
 
       assert %{
                "datetime" => "2017-05-15T00:00:00Z",
                "ethSpent" => 6000.0
-             } in ethSpentOverTime
+             } in eth_spent_over_time
 
       assert %{
                "datetime" => "2017-05-16T00:00:00Z",
                "ethSpent" => 0
-             } in ethSpentOverTime
+             } in eth_spent_over_time
 
       assert %{
                "datetime" => "2017-05-17T00:00:00Z",
                "ethSpent" => 0
-             } in ethSpentOverTime
+             } in eth_spent_over_time
 
       assert %{
                "datetime" => "2017-05-18T00:00:00Z",
                "ethSpent" => 6500.0
-             } in ethSpentOverTime
+             } in eth_spent_over_time
     end
   end
 end

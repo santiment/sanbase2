@@ -261,12 +261,12 @@ defmodule SanbaseWeb.Graphql.Clickhouse.DailyActiveAddressesTest do
       with_mock Erc20DailyActiveAddresses,
                 [:passthrough],
                 average_active_addresses: fn _, _, _ ->
-                  {:ok, [{"#{context.token_contract}", 10707}]}
+                  {:ok, [{"#{context.token_contract}", 10_707}]}
                 end do
         response = execute_project_by_slug_query(context.token_slug, context)
         addresses = parse_project_by_slug_response(response)
 
-        assert addresses == 10707
+        assert addresses == 10_707
       end
     end
 
@@ -329,7 +329,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.DailyActiveAddressesTest do
       with_mocks([
         {Erc20DailyActiveAddresses, [:passthrough],
          average_active_addresses: fn _, _, _ ->
-           {:ok, [{"#{context.token_contract}", 10707}]}
+           {:ok, [{"#{context.token_contract}", 10_707}]}
          end},
         {EthDailyActiveAddresses, [:passthrough],
          average_active_addresses: fn _, _ ->
@@ -357,7 +357,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.DailyActiveAddressesTest do
         active_addresses = json_response(result, 200)["data"]["allProjects"]
 
         assert %{"averageDailyActiveAddresses" => 750_000} in active_addresses
-        assert %{"averageDailyActiveAddresses" => 10707} in active_addresses
+        assert %{"averageDailyActiveAddresses" => 10_707} in active_addresses
         assert %{"averageDailyActiveAddresses" => 250_000} in active_addresses
       end
     end

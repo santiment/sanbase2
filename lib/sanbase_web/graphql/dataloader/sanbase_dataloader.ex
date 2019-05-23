@@ -20,7 +20,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
           | :infrastructure
           | :project_transparency_status,
           any()
-        ) :: {:error, <<_::64, _::_*8>>} | {:ok, float()} | map()
+        ) :: {:error, String.t()} | {:ok, float()} | map()
   def query(queryable, args) do
     case queryable do
       x when x in [:average_daily_active_addresses, :average_dev_activity, :eth_spent] ->

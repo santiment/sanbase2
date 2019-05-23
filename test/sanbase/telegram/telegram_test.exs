@@ -10,7 +10,7 @@ defmodule Sanbase.TelegramTest do
   @bot_username Config.module_get(Sanbase.Telegram, :bot_username)
 
   @telegram_endpoint Config.module_get(Sanbase.Telegram, :telegram_endpoint)
-  @telegram_chat_id 12315
+  @telegram_chat_id 12_315
 
   setup do
     Tesla.Mock.mock(fn
@@ -77,10 +77,10 @@ defmodule Sanbase.TelegramTest do
     %Telegram.UserToken{token: user_token} = Telegram.UserToken.by_user_id(context.user.id)
     simulate_telegram_deep_link_follow(context, user_token)
 
-    %{"settings" => %{"hasTelegramConnected" => hasTelegramConnected}} =
+    %{"settings" => %{"hasTelegramConnected" => has_telegram_connected}} =
       gql_user_settings(context)
 
-    assert hasTelegramConnected == true
+    assert has_telegram_connected == true
   end
 
   # Private functions

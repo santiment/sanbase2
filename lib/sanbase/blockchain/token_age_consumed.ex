@@ -156,6 +156,6 @@ defmodule Sanbase.Blockchain.TokenAgeConsumed do
   end
 
   defp token_age_in_days(token_age_consumed, trx_volume) do
-    token_age_consumed / trx_volume * 15 / 86400
+    token_age_consumed / trx_volume * 15 / 86_400
   end
 end

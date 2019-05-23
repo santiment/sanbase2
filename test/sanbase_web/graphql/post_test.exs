@@ -846,8 +846,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
       conn
       |> post("/graphql", %{"query" => mutation, "img" => upload})
 
-    [imageData] = json_response(result, 200)["data"]["uploadImage"]
-    imageData["imageUrl"]
+    [image_data] = json_response(result, 200)["data"]["uploadImage"]
+    image_data["imageUrl"]
   end
 
   defp insights_by_tag_query(tag) do

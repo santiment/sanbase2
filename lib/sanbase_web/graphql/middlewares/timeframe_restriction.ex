@@ -46,7 +46,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
         } = resolution,
         middleware_args
       ) do
-    if !has_enough_san_tokens?(current_user) do
+    if has_enough_san_tokens?(current_user) do
+      resolution
+    else
       %Resolution{
         resolution
         | arguments: %{
@@ -55,8 +57,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
               to: restrict_to(to, middleware_args)
           }
       }
-    else
-      resolution
     end
     |> check_from_to_params()
   end

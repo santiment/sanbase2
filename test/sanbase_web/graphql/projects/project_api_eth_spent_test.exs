@@ -42,7 +42,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
       project: p,
       project_address: project_address,
       dates_day_diff1: Timex.diff(datetime1, datetime3, :days) + 1,
-      expected_sum1: 20000,
+      expected_sum1: 20_000,
       dates_day_diff2: Timex.diff(datetime1, datetime2, :days) + 1,
       expected_sum2: 4500,
       datetime_from: datetime3,
@@ -93,8 +93,8 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
            rows: [
              [
                context.project_address,
-               20000 * @eth_decimals,
-               15500 * @eth_decimals,
+               20_000 * @eth_decimals,
+               15_500 * @eth_decimals,
                -4500 * @eth_decimals
              ]
            ]
@@ -165,7 +165,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
         {:ok,
          %{
            rows: [
-             [dt1, -16500 * @eth_decimals],
+             [dt1, -16_500 * @eth_decimals],
              [dt2, -5500 * @eth_decimals],
              [dt3, -3500 * @eth_decimals],
              [dt4, -2500 * @eth_decimals],
@@ -190,7 +190,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
 
       total_spent = json_response(result, 200)["data"]["ethSpentOverTimeByErc20Projects"]
 
-      assert %{"ethSpent" => 16500.0} in total_spent
+      assert %{"ethSpent" => 16_500.0} in total_spent
       assert %{"ethSpent" => 5500.0} in total_spent
       assert %{"ethSpent" => 3500.0} in total_spent
       assert %{"ethSpent" => 2500.0} in total_spent

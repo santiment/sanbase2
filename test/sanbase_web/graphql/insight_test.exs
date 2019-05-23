@@ -202,9 +202,9 @@ defmodule SanbaseWeb.Graphql.InsightTest do
       conn
       |> post("/graphql", mutation_skeleton(query))
 
-    sanbasePost = json_response(result, 200)["data"]["unvote"]
+    result_post = json_response(result, 200)["data"]["unvote"]
 
-    assert sanbasePost["id"] == Integer.to_string(sanbase_post.id)
-    assert sanbasePost["votes"]["totalSanVotes"] == 0
+    assert result_post["id"] == Integer.to_string(sanbase_post.id)
+    assert result_post["votes"]["totalSanVotes"] == 0
   end
 end

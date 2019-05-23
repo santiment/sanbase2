@@ -50,7 +50,7 @@ defmodule Sanbase.Pricing.Plan.AccessSeed do
     metrics: @advanced_metrics
   }
 
-  @premeium %{
+  @premium %{
     api_calls_munute: 180,
     api_calls_month: 500_000,
     metrics: @pro[:metrics]

@@ -19,7 +19,12 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   """
   alias SanbaseWeb.Graphql.Cache
 
-  @compile inline: [cache_result: 2]
+  @compile inline: [
+             cache_result: 3,
+             queries_in_request: 1,
+             san_balance: 1,
+             extract_caller_data: 1
+           ]
   @cached_queries [
     "all_projects",
     "all_erc20_projects",
@@ -38,23 +43,25 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     # it again `touch`es it and the TTL timer is restarted. This can lead
     # to infinite storing the same value if there are enough requests
 
+    queries = queries_in_request(blueprint)
+    export_api_call_data(queries, conn, blueprint)
     should_cache? = !Process.get(:do_not_cache_query)
-    cache_result(should_cache?, blueprint)
+    cache_result(should_cache?, queries, blueprint)
 
     conn
     |> maybe_create_or_drop_session(blueprint.execution.context)
   end
 
-  defp cache_result(true, blueprint) do
-    requested_queries =
-      blueprint.operations
-      |> Enum.flat_map(fn %{selections: selections} ->
-        selections
-        |> Enum.map(fn %{name: name} -> name end)
-      end)
+  # Do not cache in case of:
+  # -`:nocache` returend from a resolver
+  # - result is taken from the cache and should not be stored again. Storing
+  # it again `touch`es it and the TTL timer is restarted. This can lead
+  # to infinite storing the same value if there are enough requests
+  defp cache_result(false, _, _), do: :ok
 
+  defp cache_result(true, queries, blueprint) do
     all_queries_cachable? =
-      requested_queries
+      queries
       |> Enum.all?(&Enum.member?(@cached_queries, Macro.underscore(&1)))
 
     if all_queries_cachable? do
@@ -76,4 +83,69 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   end
 
   defp maybe_create_or_drop_session(conn, _), do: conn
+
+  defp queries_in_request(%{operations: operations}) do
+    operations
+    |> Enum.flat_map(fn %{selections: selections} ->
+      selections
+      |> Enum.map(fn %{name: name} -> name end)
+    end)
+  end
+
+  defp export_api_call_data(queries, conn, blueprint) do
+    now = DateTime.utc_now() |> DateTime.to_unix(:nanosecond)
+    duration_ms = div(now - blueprint.telemetry.start_time, 1_000_000)
+
+    {user_id, san_tokens, auth_method, api_token} =
+      extract_caller_data(blueprint.execution.context)
+
+    Enum.map(queries, fn query ->
+      %{
+        timestamp: div(now, 1_000_000_000),
+        query: query,
+        status_code: 200,
+        user_id: user_id,
+        auth_method: auth_method,
+        api_token: api_token,
+        remote_ip: remote_ip(blueprint),
+        user_agent: user_agent(conn),
+        duration_ms: duration_ms,
+        san_tokens: san_tokens
+      }
+    end)
+    |> Sanbase.ApiCallDataExporter.persist()
+  end
+
+  defp remote_ip(blueprint) do
+    blueprint.execution.context.remote_ip |> :inet_parse.ntoa() |> to_string()
+  end
+
+  defp extract_caller_data(%{auth: %{auth_method: :user_token, current_user: user}}) do
+    {user.id, san_balance(user), :user_token, nil}
+  end
+
+  defp extract_caller_data(%{auth: %{auth_method: :apikey, current_user: user, token: token}}) do
+    {user.id, san_balance(user), :user_token, token}
+  end
+
+  defp extract_caller_data(%{auth: %{auth_method: :basic, current_user: user}}) do
+    {user.id, san_balance(user), :basic, nil}
+  end
+
+  defp extract_caller_data(_), do: {nil, nil, nil, nil}
+
+  defp san_balance(user) do
+    case Sanbase.Auth.User.san_balance(user) do
+      {:ok, balance} -> balance
+      _ -> 0
+    end
+  end
+
+  defp user_agent(%{req_headers: headers}) do
+    Enum.find(headers, &match?({"user-agent", _}, &1))
+    |> case do
+      {"user-agent", user_agent} -> user_agent
+      _ -> nil
+    end
+  end
 end

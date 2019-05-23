@@ -20,6 +20,7 @@ defmodule Sanbase.ApiCallDataExporter do
           query: String.t(),
           status_code: non_neg_integer(),
           user_id: non_neg_integer(),
+          auth_method: :atom,
           token: String.t(),
           remote_ip: String.t(),
           user_agent: String.t(),
@@ -66,7 +67,7 @@ defmodule Sanbase.ApiCallDataExporter do
   It will be sent no longer than `kafka_flush_timeout` seconds later. The data
   is pushed to an internal buffer that is then send at once to Kafka.
   """
-  @spec persist(api_call_data) :: :ok
+  @spec persist(pid() | atom(), api_call_data) :: :ok
   def persist(exporter \\ __MODULE__, api_call_data) do
     # Log so it's seen in Kibana
     # Logger.info(api_call_data)
@@ -85,18 +86,22 @@ defmodule Sanbase.ApiCallDataExporter do
     :ok
   end
 
-  @spec handle_cast({:persist, api_call_data}, state) :: {:noreply, state} when state: map()
+  @spec handle_cast({:persist, api_call_data | list(api_call_data)}, state) :: {:noreply, state}
+        when state: map()
   def handle_cast(
         {:persist, api_call_data},
-        %{size: size, buffering_max_messages: buffering_max_messages} = state
+        %{size: size, buffering_max_messages: bms} = state
       )
-      when size >= buffering_max_messages - 1 and is_map(api_call_data) do
-    :ok = send_data(state.topic, [Jason.encode!(api_call_data) | state.data])
+      when size >= bms - 1 do
+    data = api_call_data |> List.wrap() |> Enum.map(&Jason.encode!/1)
+
+    :ok = send_data(state.topic, data ++ state.data)
     {:noreply, %{state | data: [], size: 0}}
   end
 
-  def handle_cast({:persist, api_call_data}, state) when is_map(api_call_data) do
-    {:noreply, %{state | data: [Jason.encode!(api_call_data) | state.data], size: state.size + 1}}
+  def handle_cast({:persist, api_call_data}, state) do
+    data = api_call_data |> List.wrap() |> Enum.map(&Jason.encode!/1)
+    {:noreply, %{state | data: data ++ state.data, size: state.size + 1}}
   end
 
   def handle_info(:flush, state) do

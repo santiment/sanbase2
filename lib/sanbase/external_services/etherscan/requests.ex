@@ -11,13 +11,14 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests do
 
   alias Sanbase.ExternalServices.{RateLimiting, ErrorCatcher}
 
+  @user_agent "User-Agent: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Mobile Safari/537.36"
   plug(RateLimiting.Middleware, name: :etherscan_rate_limiter)
   plug(ErrorCatcher.Middleware)
   plug(Tesla.Middleware.BaseUrl, "https://api.etherscan.io/api")
+  plug(Tesla.Middleware.Headers, [{"user-agent", @user_agent}])
   plug(Tesla.Middleware.FollowRedirects, max_redirects: 10)
   plug(Tesla.Middleware.Compression)
   plug(Tesla.Middleware.JSON)
-
   plug(Tesla.Middleware.Query, apikey: Config.get(:api_key))
   plug(Tesla.Middleware.Logger)
 

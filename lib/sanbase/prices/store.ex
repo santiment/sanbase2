@@ -338,7 +338,7 @@ defmodule Sanbase.Prices.Store do
        FROM #{measurements_str}
        WHERE time >= #{DateTime.to_unix(from, :nanosecond)}
        AND time <= #{DateTime.to_unix(to, :nanosecond)}
-       GROUP BY time(#{resolution}) fill(0)/
+       GROUP BY time(#{resolution}) fill(none)/
   end
 
   defp volume_mcap_multiple_measurements_reducer(results, measurement_slug_map) do

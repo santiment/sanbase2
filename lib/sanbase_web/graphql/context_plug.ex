@@ -119,7 +119,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         permissions: User.permissions!(current_user),
         auth: %{
           auth_method: :user_token,
-          current_user: current_user
+          current_user: current_user,
+          san_balance: san_balance(current_user)
         }
       }
     else
@@ -134,7 +135,11 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
          {:ok, current_user} <- basic_authorize(auth_attempt) do
       %{
         permissions: User.full_permissions(),
-        auth: %{auth_method: :basic, current_user: current_user}
+        auth: %{
+          auth_method: :basic,
+          current_user: current_user,
+          san_balance: 0
+        }
       }
     else
       {:has_header?, _} -> :try_next
@@ -149,7 +154,12 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
          {:ok, {token, _apikey}} <- Sanbase.Auth.Hmac.split_apikey(apikey) do
       %{
         permissions: User.permissions!(current_user),
-        auth: %{auth_method: :apikey, current_user: current_user, token: token}
+        auth: %{
+          auth_method: :apikey,
+          current_user: current_user,
+          token: token,
+          san_balance: san_balance(current_user)
+        }
       }
     else
       {:has_header?, _} -> :try_next
@@ -186,5 +196,12 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   defp apikey_authorize(apikey) do
     Sanbase.Auth.Apikey.apikey_to_user(apikey)
+  end
+
+  defp san_balance(%User{} = user) do
+    case User.san_balance(user) do
+      {:ok, %Decimal{} = balance} -> balance |> Decimal.to_float()
+      _ -> 0
+    end
   end
 end

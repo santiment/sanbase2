@@ -7,10 +7,10 @@ defmodule SanbaseWeb.Graphql.Middlewares.Helpers do
   alias Sanbase.Auth.User
   alias Absinthe.Resolution
 
-  def has_enough_san_tokens(_, 0), do: true
+  def has_enough_san_tokens?(_, 0), do: true
 
-  def has_enough_san_tokens(current_user, san_tokens) do
-    if Decimal.cmp(User.san_balance!(current_user), Decimal.new(san_tokens)) != :lt do
+  def has_enough_san_tokens?(san_tokens, required_san_tokens) do
+    if san_tokens >= required_san_tokens do
       true
     else
       {:error, "Insufficient SAN balance"}
@@ -27,12 +27,12 @@ defmodule SanbaseWeb.Graphql.Middlewares.Helpers do
     end
   end
 
-  def handle_user_access(current_user, config, resolution) do
-    required_san_tokens = Keyword.get(config, :san_tokens, 0)
+  def handle_user_access(current_user, san_tokens, config, resolution) do
+    required_san_tokens = Keyword.get(config, :san_tokens, 0) |> Sanbase.Math.to_float()
     allow_access = Keyword.get(config, :allow_access, false)
 
     with true <- Helpers.allow_access?(current_user, allow_access),
-         true <- Helpers.has_enough_san_tokens(current_user, required_san_tokens) do
+         true <- Helpers.has_enough_san_tokens?(san_tokens, required_san_tokens) do
       resolution
     else
       {:error, _message} = error ->

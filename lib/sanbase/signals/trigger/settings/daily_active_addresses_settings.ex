@@ -79,7 +79,7 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
 
   defp average_active_addresses(contract, from, to) do
     Cache.get_or_store("daa_#{contract}_current", fn ->
-      case DailyActiveAddresses.average_active_addresses(contract, from, to) do
+      case DailyActiveAddresses.average_active_addresses([contract], from, to) do
         {:ok, [{_, result}]} ->
           result
 

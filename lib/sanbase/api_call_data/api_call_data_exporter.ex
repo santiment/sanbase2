@@ -21,7 +21,7 @@ defmodule Sanbase.ApiCallDataExporter do
           status_code: non_neg_integer(),
           user_id: non_neg_integer(),
           auth_method: :atom,
-          token: String.t(),
+          api_token: String.t(),
           remote_ip: String.t(),
           user_agent: String.t(),
           duration_ms: non_neg_integer(),
@@ -67,7 +67,8 @@ defmodule Sanbase.ApiCallDataExporter do
   It will be sent no longer than `kafka_flush_timeout` seconds later. The data
   is pushed to an internal buffer that is then send at once to Kafka.
   """
-  @spec persist(pid() | atom(), api_call_data) :: :ok
+  @spec persist(api_call_data | [api_call_data]) :: :ok
+  @spec persist(pid() | atom(), api_call_data | [api_call_data]) :: :ok
   def persist(exporter \\ __MODULE__, api_call_data) do
     # Log so it's seen in Kibana
     # Logger.info(api_call_data)
@@ -86,7 +87,7 @@ defmodule Sanbase.ApiCallDataExporter do
     :ok
   end
 
-  @spec handle_cast({:persist, api_call_data | list(api_call_data)}, state) :: {:noreply, state}
+  @spec handle_cast({:persist, api_call_data | [api_call_data]}, state) :: {:noreply, state}
         when state: map()
   def handle_cast(
         {:persist, api_call_data},

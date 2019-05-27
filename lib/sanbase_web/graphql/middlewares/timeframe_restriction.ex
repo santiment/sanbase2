@@ -11,17 +11,16 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
             restrict_from: 2,
             restrict_to: 2,
             check_from_to_params: 1,
-            has_enough_san_tokens?: 1,
             required_san_stake_full_access: 0,
             restrict_to_in_days: 0,
             restrict_from_in_days: 0}
 
-  require Sanbase.Utils.Config, as: Config
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
+  import SanbaseWeb.Graphql.Middlewares.Helpers
 
   alias Absinthe.Resolution
-  alias Sanbase.Auth.User
 
+  require Sanbase.Utils.Config, as: Config
   @allow_access_without_staking ["santiment"]
 
   @minimal_datetime_param from_iso8601!("2009-01-01T00:00:00Z")
@@ -41,22 +40,24 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
 
   def call(
         %Resolution{
-          context: %{auth: %{current_user: current_user}},
+          context: %{auth: %{san_balance: san_balance}},
           arguments: %{from: from, to: to} = args
         } = resolution,
         middleware_args
       ) do
-    if has_enough_san_tokens?(current_user) do
-      resolution
-    else
-      %Resolution{
+    case has_enough_san_tokens?(san_balance, required_san_stake_full_access()) do
+      true ->
         resolution
-        | arguments: %{
-            args
-            | from: restrict_from(from, middleware_args),
-              to: restrict_to(to, middleware_args)
-          }
-      }
+
+      _ ->
+        %Resolution{
+          resolution
+          | arguments: %{
+              args
+              | from: restrict_from(from, middleware_args),
+                to: restrict_to(to, middleware_args)
+            }
+        }
     end
     |> check_from_to_params()
   end
@@ -78,13 +79,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
     |> check_from_to_params()
   end
 
-  defp has_enough_san_tokens?(current_user) do
-    Decimal.cmp(
-      User.san_balance!(current_user),
-      Decimal.new(required_san_stake_full_access())
-    ) != :lt
-  end
-
   defp restrict_to(to_datetime, %{allow_realtime_data: true}), do: to_datetime
 
   defp restrict_to(to_datetime, _) do
@@ -100,7 +94,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
   end
 
   defp required_san_stake_full_access() do
-    Config.module_get(Sanbase, :required_san_stake_full_access) |> String.to_integer()
+    Config.module_get(Sanbase, :required_san_stake_full_access) |> Sanbase.Math.to_float()
   end
 
   defp restrict_to_in_days() do

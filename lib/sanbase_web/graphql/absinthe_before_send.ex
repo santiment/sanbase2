@@ -19,12 +19,16 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   """
   alias SanbaseWeb.Graphql.Cache
 
+  @compile :inline_list_funcs
   @compile inline: [
              cache_result: 3,
              queries_in_request: 1,
-             san_balance: 1,
-             extract_caller_data: 1
+             extract_caller_data: 1,
+             export_api_call_data: 3,
+             remote_ip: 1,
+             user_agent: 1
            ]
+
   @cached_queries [
     "all_projects",
     "all_erc20_projects",
@@ -57,8 +61,6 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   # - result is taken from the cache and should not be stored again. Storing
   # it again `touch`es it and the TTL timer is restarted. This can lead
   # to infinite storing the same value if there are enough requests
-  defp cache_result(false, _, _), do: :ok
-
   defp cache_result(true, queries, blueprint) do
     all_queries_cachable? =
       queries
@@ -92,6 +94,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     end)
   end
 
+  # API Call exporting functions
+
   defp export_api_call_data(queries, conn, blueprint) do
     now = DateTime.utc_now() |> DateTime.to_unix(:nanosecond)
     duration_ms = div(now - blueprint.telemetry.start_time, 1_000_000)
@@ -120,26 +124,25 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     blueprint.execution.context.remote_ip |> :inet_parse.ntoa() |> to_string()
   end
 
-  defp extract_caller_data(%{auth: %{auth_method: :user_token, current_user: user}}) do
-    {user.id, san_balance(user), :user_token, nil}
+  defp extract_caller_data(%{
+         auth: %{auth_method: :user_token, current_user: user, san_balance: san_balance}
+       }) do
+    {user.id, san_balance, :user_token, nil}
   end
 
-  defp extract_caller_data(%{auth: %{auth_method: :apikey, current_user: user, token: token}}) do
-    {user.id, san_balance(user), :user_token, token}
+  defp extract_caller_data(%{
+         auth: %{auth_method: :apikey, current_user: user, token: token, san_balance: san_balance}
+       }) do
+    {user.id, san_balance, :user_token, token}
   end
 
-  defp extract_caller_data(%{auth: %{auth_method: :basic, current_user: user}}) do
-    {user.id, san_balance(user), :basic, nil}
+  defp extract_caller_data(%{
+         auth: %{auth_method: :basic, san_balance: san_balance}
+       }) do
+    {nil, san_balance, :basic, nil}
   end
 
   defp extract_caller_data(_), do: {nil, nil, nil, nil}
-
-  defp san_balance(user) do
-    case Sanbase.Auth.User.san_balance(user) do
-      {:ok, balance} -> balance
-      _ -> 0
-    end
-  end
 
   defp user_agent(%{req_headers: headers}) do
     Enum.find(headers, &match?({"user-agent", _}, &1))

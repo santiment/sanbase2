@@ -21,7 +21,12 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
     conn_context = conn.private.absinthe.context
 
-    assert conn_context.auth == %{auth_method: :user_token, current_user: user}
+    assert conn_context.auth == %{
+             auth_method: :user_token,
+             current_user: user,
+             san_balance: 500_000.0
+           }
+
     assert conn_context.remote_ip == {127, 0, 0, 1}
     assert conn_context.permissions == User.full_permissions()
   end

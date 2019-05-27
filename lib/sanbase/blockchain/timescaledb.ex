@@ -41,7 +41,7 @@ defmodule Sanbase.Timescaledb do
     interval_pos = length(args) + 1
 
     query = [
-      "WITH data AS (
+      "EXPLAIN ANALYZE WITH data AS (
       SELECT time_bucket($#{interval_pos}::interval, timestamp)::timestamp AS ts, ",
       rest_query,
       " GROUP BY ts
@@ -104,6 +104,8 @@ defmodule Sanbase.Timescaledb do
       Sanbase.TimescaleRepo.query(query, args)
       |> case do
         {:ok, %{rows: rows}} ->
+          Enum.each(rows, &IO.puts/1)
+
           result =
             Enum.map(
               rows,

@@ -39,7 +39,7 @@ defmodule ApiCallDataExporterTest do
 
     data = api_call_data()
     :ok = Sanbase.ApiCallDataExporter.persist(exporter_pid, data)
-    Process.sleep(100)
+    Process.sleep(200)
     state = Sanbase.TestKafkaProducer.get_state()
     assert Map.get(state, topic) == [Jason.encode!(data)]
   end
@@ -60,7 +60,7 @@ defmodule ApiCallDataExporterTest do
     assert state == %{}
 
     # Aftert the kafka flush timeout has been reached the data is flushed
-    Process.sleep(100)
+    Process.sleep(200)
     state = Sanbase.TestKafkaProducer.get_state()
     topic_data = Map.get(state, topic)
     assert length(topic_data) == 50

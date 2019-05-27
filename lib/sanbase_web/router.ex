@@ -1,6 +1,10 @@
 defmodule SanbaseWeb.Router do
   use SanbaseWeb, :router
 
+  def handle_errors(conn, %{kind: _kind, reason: _reason, stack: _stack}) do
+    send_resp(conn, conn.status, "Something went wrong")
+  end
+
   pipeline :browser do
     plug(:accepts, ["html"])
     plug(:fetch_session)
@@ -33,6 +37,7 @@ defmodule SanbaseWeb.Router do
 
   scope "/" do
     pipe_through(:api)
+    use Plug.ErrorHandler
 
     forward(
       "/graphql",

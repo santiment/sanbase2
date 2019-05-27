@@ -34,14 +34,17 @@ defmodule Sanbase.Clickhouse.GasUsedTest do
                 [
                   %{
                     eth_gas_used: 101,
+                    gas_used: 101,
                     datetime: from_iso8601!("2019-01-01T00:00:00Z")
                   },
                   %{
                     eth_gas_used: 102,
+                    gas_used: 102,
                     datetime: from_iso8601!("2019-01-02T00:00:00Z")
                   },
                   %{
                     eth_gas_used: 103,
+                    gas_used: 103,
                     datetime: from_iso8601!("2019-01-03T00:00:00Z")
                   }
                 ]}
@@ -68,18 +71,22 @@ defmodule Sanbase.Clickhouse.GasUsedTest do
                 [
                   %{
                     eth_gas_used: 101,
+                    gas_used: 101,
                     datetime: from_iso8601!("2019-01-01T00:00:00Z")
                   },
                   %{
                     eth_gas_used: 102,
+                    gas_used: 102,
                     datetime: from_iso8601!("2019-01-02T00:00:00Z")
                   },
                   %{
                     eth_gas_used: 103,
+                    gas_used: 103,
                     datetime: from_iso8601!("2019-01-03T00:00:00Z")
                   },
                   %{
                     eth_gas_used: 104,
+                    gas_used: 104,
                     datetime: from_iso8601!("2019-01-04T00:00:00Z")
                   }
                 ]}

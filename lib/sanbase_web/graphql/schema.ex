@@ -934,7 +934,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     you must pay for that computation. That payment is calculated in Gas.
     """
     field :gas_used, list_of(:gas_used) do
-      arg(:slug, non_null(:string))
+      arg(:slug, :string, default_value: "ethereum")
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")

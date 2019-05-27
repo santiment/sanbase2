@@ -9,7 +9,8 @@ defmodule Sanbase.Clickhouse.GasUsed do
 
   @type gas_used :: %{
           datetime: DateTime.t(),
-          eth_gas_used: non_neg_integer()
+          eth_gas_used: non_neg_integer(),
+          gas_used: non_neg_integer()
         }
 
   @spec gas_used(
@@ -27,6 +28,7 @@ defmodule Sanbase.Clickhouse.GasUsed do
       fn [dt, gas_used] ->
         %{
           datetime: DateTime.from_unix!(dt),
+          gas_used: gas_used |> to_integer(),
           eth_gas_used: gas_used |> to_integer()
         }
       end

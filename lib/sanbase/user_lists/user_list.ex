@@ -18,7 +18,6 @@ defmodule Sanbase.UserList do
   import Ecto.Changeset
   import Ecto.Query
 
-  alias __MODULE__
   alias Sanbase.Auth.User
   alias Sanbase.UserList.ListItem
   alias Sanbase.WatchlistFunction
@@ -64,7 +63,8 @@ defmodule Sanbase.UserList do
   Return a list of all projects in a watchlist.
   """
   def get_projects(%__MODULE__{function: fun} = user_list) do
-    WatchlistFunction.evaluate(fun) ++ ListItem.get_projects(user_list)
+    (WatchlistFunction.evaluate(fun) ++ ListItem.get_projects(user_list))
+    |> Enum.uniq_by(fn %{id: id} -> id end)
   end
 
   def create_user_list(%User{id: user_id} = _user, params \\ %{}) do

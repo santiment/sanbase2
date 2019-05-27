@@ -1,8 +1,8 @@
 defmodule SanbaseWeb.Graphql.ContextPlugTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
+  @moduletag capture_log: true
 
   alias Sanbase.Auth.User
   alias Sanbase.Repo
@@ -37,15 +37,143 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
     |> Ecto.Changeset.change(salt: User.generate_salt())
     |> Repo.update!()
 
-    logs =
-      capture_log(fn ->
-        conn = ContextPlug.call(conn, %{})
+    conn = ContextPlug.call(conn, %{})
 
-        conn_context = conn.private.absinthe.context
-        assert conn_context.remote_ip == {127, 0, 0, 1}
-        assert conn_context.permissions == User.no_permissions()
-      end)
+    {:ok, result} = conn.resp_body |> Jason.decode()
 
-    assert logs =~ ~r/Invalid bearer token/
+    assert conn.status == 400
+    assert result["errors"]["details"] == "Bad authorization header: Invalid JSON Web Token (JWT)"
+  end
+
+  test "invalid token returns error" do
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer some_random_not_correct_token")
+
+    conn = ContextPlug.call(conn, %{})
+    {:ok, result} = conn.resp_body |> Jason.decode()
+
+    assert conn.status == 400
+    assert result["errors"]["details"] == "Bad authorization header: Invalid JSON Web Token (JWT)"
+  end
+
+  test "invalid basic auth returns error" do
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Basic gibberish")
+
+    conn = ContextPlug.call(conn, %{})
+
+    {:ok, result} = conn.resp_body |> Jason.decode()
+
+    assert conn.status == 400
+
+    assert result["errors"]["details"] ==
+             "Bad authorization header: Invalid basic authorization header credentials"
+  end
+
+  test "not existing apikey returns error" do
+    apikey = "random_apikey"
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Apikey #{apikey}")
+
+    conn = ContextPlug.call(conn, %{})
+
+    {:ok, result} = conn.resp_body |> Jason.decode()
+
+    assert conn.status == 400
+
+    assert result["errors"]["details"] ==
+             "Bad authorization header: Apikey '#{apikey}' is not valid"
+  end
+
+  test "malformed apikey returns error" do
+    apikey = "api_key_must_contain_single_underscore"
+
+    conn =
+      build_conn()
+      |> put_req_header(
+        "authorization",
+        "Apikey #{apikey}"
+      )
+
+    conn = ContextPlug.call(conn, %{})
+    {:ok, result} = conn.resp_body |> Jason.decode()
+
+    assert conn.status == 400
+
+    assert result["errors"]["details"] =~
+             "Bad authorization header: Apikey '#{apikey}' is malformed"
+  end
+
+  test "unsupported/mistyped authorization header returns error" do
+    conn =
+      build_conn()
+      |> put_req_header(
+        "authorization",
+        "Aapikey api_key_must_contain_single_underscore"
+      )
+
+    conn = ContextPlug.call(conn, %{})
+
+    {:ok, result} = conn.resp_body |> Jason.decode()
+
+    assert conn.status == 400
+
+    assert result["errors"]["details"] == """
+           Unsupported authorization header value: \"Aapikey api_key_must_contain_single_underscore\".
+           The supported formats of the authorization header are:
+             \"Bearer <JWT>\"
+             \"Apikey <apikey>\"
+             \"Basic <basic>\"
+           """
+  end
+
+  test "null authorization header passes" do
+    conn =
+      build_conn()
+      |> put_req_header(
+        "authorization",
+        "null"
+      )
+
+    conn = ContextPlug.call(conn, %{})
+
+    conn_context = conn.private.absinthe.context
+
+    refute Map.has_key?(conn_context, :auth)
+    assert conn_context.remote_ip == {127, 0, 0, 1}
+    assert conn_context.permissions == User.no_permissions()
+  end
+
+  test "empty authorization header passes" do
+    conn =
+      build_conn()
+      |> put_req_header(
+        "authorization",
+        ""
+      )
+
+    conn = ContextPlug.call(conn, %{})
+
+    conn_context = conn.private.absinthe.context
+
+    refute Map.has_key?(conn_context, :auth)
+    assert conn_context.remote_ip == {127, 0, 0, 1}
+    assert conn_context.permissions == User.no_permissions()
+  end
+
+  test "no authorization header passes" do
+    conn = build_conn()
+
+    conn = ContextPlug.call(conn, %{})
+
+    conn_context = conn.private.absinthe.context
+
+    refute Map.has_key?(conn_context, :auth)
+    assert conn_context.remote_ip == {127, 0, 0, 1}
+    assert conn_context.permissions == User.no_permissions()
   end
 end

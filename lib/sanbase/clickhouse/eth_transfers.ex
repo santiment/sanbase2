@@ -51,7 +51,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     field(:type, :string)
   end
 
-  def changeset(_, _attrs \\ %{}) do
+  @spec changeset(any(), any()) :: no_return()
+  def changeset(_, _) do
     raise "Should not try to change eth transfers"
   end
 

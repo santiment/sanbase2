@@ -25,8 +25,8 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
   alias SanbaseWeb.Graphql.Cache
 
   @doc false
-  @spec pipeline(Absinthe.Plug.Request.t()) :: Absinthe.Pipeline.t()
-  def pipeline(%{pipeline: pipeline}) do
+  @impl true
+  def pipeline(%Absinthe.Plug.Request.Query{pipeline: pipeline}) do
     pipeline
     |> Absinthe.Pipeline.insert_before(
       Absinthe.Phase.Document.Execution.Resolution,
@@ -39,10 +39,9 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
   end
 
   @doc false
-  @spec process(Absinthe.Plug.Request.Query.t(), Keyword.t()) ::
-          Absinthe.DocumentProvider.result()
-  def process(%{document: nil} = query, _), do: {:cont, query}
-  def process(%{document: _} = query, _), do: {:halt, query}
+  @impl true
+  def process(%Absinthe.Plug.Request.Query{document: nil} = query, _), do: {:cont, query}
+  def process(%Absinthe.Plug.Request.Query{document: _} = query, _), do: {:halt, query}
 end
 
 defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do

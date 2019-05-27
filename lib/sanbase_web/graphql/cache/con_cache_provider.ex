@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
   @compile {:inline, get: 2, store: 3, get_or_store: 4, cache_item: 3}
 
   @max_cache_ttl 30 * 60
+
   @impl true
   def size(cache, :megabytes) do
     bytes_size = :ets.info(ConCache.ets(cache), :memory) * :erlang.system_info(:wordsize)

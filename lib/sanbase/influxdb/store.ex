@@ -17,6 +17,19 @@ defmodule Sanbase.Influxdb.Store do
       @query_timeout 10_000
       @pool_timeout 10_000
 
+      def init(conn) do
+        config =
+          Keyword.merge(
+            conn.config(),
+            host: Sanbase.Utils.Config.module_get(unquote(__MODULE__), :host),
+            port:
+              Sanbase.Utils.Config.module_get(unquote(__MODULE__), :port)
+              |> Sanbase.Math.to_integer()
+          )
+
+        Application.put_env(:sanbase, conn, config)
+      end
+
       defp post(query) do
         query
         |> __MODULE__.execute(

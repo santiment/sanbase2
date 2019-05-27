@@ -24,20 +24,23 @@ defmodule Sanbase.Auth.ApiKeyTest do
   test "fail when apikey second part is invalid", %{user: user} do
     {:ok, apikey} = Apikey.generate_apikey(user)
     apikey = apikey <> "s"
-    assert {:error, "Apikey not valid or malformed"} == Apikey.apikey_to_user(apikey)
+    {:error, error} = Apikey.apikey_to_user(apikey)
+    assert error =~ "Apikey '#{apikey}' is not valid"
   end
 
   # Won't find the token in the db
   test "fail when the apikey first part is invalid", %{user: user} do
     {:ok, apikey} = Apikey.generate_apikey(user)
     apikey = "s" <> apikey
-    assert {:error, "Apikey not valid or malformed"} == Apikey.apikey_to_user(apikey)
+    {:error, error} = Apikey.apikey_to_user(apikey)
+    assert error =~ "Apikey '#{apikey}' is not valid"
   end
 
   # Splitting the apikey will fail
   test "fail when the apikey cannot be split properly" do
-    assert {:error, "Apikey not valid or malformed"} ==
-             Apikey.apikey_to_user("notproperlyformatedapikey")
+    apikey = "notproperlyformatedapikey"
+    {:error, error} = Apikey.apikey_to_user("notproperlyformatedapikey")
+    assert error =~ "Apikey '#{apikey}' is malformed"
   end
 
   test "revoke apikey", %{user: user} do
@@ -48,7 +51,7 @@ defmodule Sanbase.Auth.ApiKeyTest do
 
     # Revoke the apikey and expect it to be non valid
     :ok = Apikey.revoke_apikey(user, apikey)
-    assert {:error, "Apikey not valid or malformed"} == Apikey.apikey_to_user(apikey)
+    assert {:error, "Apikey '#{apikey}' is not valid"} == Apikey.apikey_to_user(apikey)
   end
 
   test "get list of apikeys", %{user: user} do

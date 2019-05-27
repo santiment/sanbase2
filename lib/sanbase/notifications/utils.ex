@@ -7,7 +7,7 @@ defmodule Sanbase.Notifications.Utils do
       x when x <= 7200 ->
         "1 hour"
 
-      x when x < 86400 ->
+      x when x < 86_400 ->
         "#{div(x, 3600)} hours"
     end
   end

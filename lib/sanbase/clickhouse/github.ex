@@ -42,7 +42,7 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   @spec changeset(any(), any()) :: no_return
-  def changeset(_, _attrs \\ %{}) do
+  def changeset(_, _) do
     raise "Cannot change github ClickHouse table!"
   end
 
@@ -69,7 +69,7 @@ defmodule Sanbase.Clickhouse.Github do
   }) for a given organization and time period
   """
   @spec total_dev_activity(list(String.t()), DateTime.t(), DateTime.t()) ::
-          {:ok, list({String.t(), float()})}
+          {:ok, list({String.t(), non_neg_integer()})} | {:error, String.t()}
   def total_dev_activity(owners, from, to) do
     {query, args} = total_dev_activity_query(owners, from, to)
 

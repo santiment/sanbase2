@@ -223,8 +223,6 @@ defmodule Sanbase.Chart do
   # Return a list of 10 datetimes in the format `Oct 15`. The last datetime is manually added
   # so it coincides with the `to` parameter. That is because if the difference `to-from` is
   # not evenly divisible by 10 then the last datetime will be different
-  defp datetime_values(from, to) when is_nil(from) or is_nil(to), do: ""
-
   defp datetime_values(from, to) do
     diff = Timex.diff(from, to, :days) |> abs()
     interval = div(diff, 10)

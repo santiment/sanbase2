@@ -28,7 +28,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         _resolution
       ) do
     with {:ok, from, to, interval} <-
-           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86400, @datapoints),
+           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86_400, @datapoints),
          {:ok, result} <- Bitcoin.token_age_consumed(from, to, interval) do
       result = Enum.map(result, fn elem -> Map.put(elem, :burn_rate, elem.token_age_consumed) end)
       {:ok, result}
@@ -97,7 +97,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         _resolution
       ) do
     with {:ok, from, to, interval} <-
-           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86400, @datapoints) do
+           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86_400, @datapoints) do
       Bitcoin.transaction_volume(from, to, interval)
     end
   end
@@ -164,7 +164,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         _resolution
       ) do
     with {:ok, from, to, interval} <-
-           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86400, @datapoints) do
+           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86_400, @datapoints) do
       Bitcoin.token_circulation(from, to, interval)
     end
   end
@@ -176,7 +176,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       ) do
     with {:ok, contract, token_decimals} <- Project.contract_info_by_slug(slug),
          {:ok, from, to, interval} <-
-           calibrate_interval(TokenCirculation, contract, from, to, interval, 86400, @datapoints),
+           calibrate_interval(TokenCirculation, contract, from, to, interval, 86_400, @datapoints),
          {:ok, token_circulation} <-
            TokenCirculation.token_circulation(
              :less_than_a_day,
@@ -204,7 +204,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         _resolution
       ) do
     with {:ok, from, to, interval} <-
-           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86400, @datapoints) do
+           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86_400, @datapoints) do
       Bitcoin.token_velocity(from, to, interval)
     end
   end
@@ -216,7 +216,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       ) do
     with {:ok, contract, token_decimals} <- Project.contract_info_by_slug(slug),
          {:ok, from, to, interval} <-
-           calibrate_interval(TokenVelocity, contract, from, to, interval, 86400, @datapoints),
+           calibrate_interval(TokenVelocity, contract, from, to, interval, 86_400, @datapoints),
          {:ok, token_velocity} <-
            TokenVelocity.token_velocity(contract, from, to, interval, token_decimals) do
       {:ok, token_velocity |> fit_from_datetime(args)}

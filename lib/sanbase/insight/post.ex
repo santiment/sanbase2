@@ -186,13 +186,6 @@ defmodule Sanbase.Insight.Post do
     |> where([_p, t], t.name in ^tags)
   end
 
-  defp published_insights() do
-    from(
-      p in Post,
-      where: p.ready_state == ^@published
-    )
-  end
-
   defp published_and_approved_insights() do
     from(
       p in Post,

@@ -35,7 +35,8 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     field(:log_index, :integer, source: :logIndex)
   end
 
-  def changeset(_, _attrs \\ %{}) do
+  @spec changeset(any(), any()) :: no_return()
+  def changeset(_, _) do
     raise "Should not try to change eth daily active addresses"
   end
 

@@ -28,8 +28,14 @@ defmodule Sanbase.ApplicationUtils do
   """
   @spec start_if((() -> any), (() -> boolean)) :: nil | any
   def start_if(expr, condition) when is_function(condition, 0) do
-    if condition.() do
-      expr.()
+    try do
+      if condition.() do
+        expr.()
+      end
+    rescue
+      _ -> nil
+    catch
+      _ -> nil
     end
   end
 

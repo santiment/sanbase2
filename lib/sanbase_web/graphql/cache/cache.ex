@@ -81,11 +81,11 @@ defmodule SanbaseWeb.Graphql.Cache do
     >   :fetch_price_last_record, %{pair: pair}
     > ).()
   """
-  def func(cached_func, name, args \\ %{}) do
+  def func(cached_func, name, args \\ %{}, opts \\ []) do
     fn ->
       CacheProvider.get_or_store(
         @cache_name,
-        cache_key(name, args),
+        cache_key(name, args, opts),
         cached_func,
         &cache_modify_middleware/3
       )

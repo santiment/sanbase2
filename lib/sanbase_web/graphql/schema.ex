@@ -73,7 +73,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       SanbaseDataloader
     }
 
-    Dataloader.new()
+    # 11 seconds is 1s more than the influxdb timeout
+    Dataloader.new(timeout: :timer.seconds(11))
     |> Dataloader.add_source(SanbaseRepo, SanbaseRepo.data())
     |> Dataloader.add_source(SanbaseDataloader, SanbaseDataloader.data())
   end
@@ -165,6 +166,14 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(ProjectPermissions)
 
       cache_resolve(&ProjectResolver.all_currency_projects/3)
+    end
+
+    field :all_projects_by_function, list_of(:project) do
+      arg(:function, :json)
+
+      middleware(ProjectPermissions)
+
+      cache_resolve(&ProjectResolver.all_projects_by_function/3)
     end
 
     @desc "Fetch all project transparency projects. This query requires basic authentication."

@@ -27,7 +27,8 @@ defmodule Sanbase.Clickhouse.Bitcoin do
     field(:active_addresses, :integer)
   end
 
-  def changeset(_, _attrs \\ %{}) do
+  @spec changeset(any(), any()) :: no_return()
+  def changeset(_, _) do
     raise "Should not try to change Clickhouse bitcoin metrics"
   end
 

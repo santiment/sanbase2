@@ -51,7 +51,7 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
       |> UserTrigger.get_active_triggers_by_type()
       |> Evaluator.run()
 
-    assert length(triggered) == 0
+    assert triggered == []
   end
 
   test "none of the price volume diff signals triggered", _context do
@@ -73,7 +73,7 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
         |> UserTrigger.get_active_triggers_by_type()
         |> Evaluator.run()
 
-      assert length(triggered) == 0
+      assert triggered == []
     end
   end
 
@@ -98,7 +98,7 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
         |> UserTrigger.get_active_triggers_by_type()
         |> Evaluator.run()
 
-      assert length(rest) == 0
+      assert rest == []
       assert context.trigger1.id == triggered.id
       assert Trigger.triggered?(triggered.trigger) == true
     end

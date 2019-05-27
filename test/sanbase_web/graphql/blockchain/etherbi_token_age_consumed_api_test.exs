@@ -57,13 +57,13 @@ defmodule Sanbase.Etherbi.TokenAgeConsumedApiTest do
     insert(:token_age_consumed, %{
       contract_address: contract_address,
       timestamp: datetime4,
-      token_age_consumed: 15000
+      token_age_consumed: 15_000
     })
 
     insert(:token_age_consumed, %{
       contract_address: contract_address,
       timestamp: datetime5,
-      token_age_consumed: 65000
+      token_age_consumed: 65_000
     })
 
     insert(:token_age_consumed, %{
@@ -118,12 +118,12 @@ defmodule Sanbase.Etherbi.TokenAgeConsumedApiTest do
 
     token_age_consumed = json_response(result, 200)["data"]["tokenAgeConsumed"]
 
-    assert Enum.find(token_age_consumed, fn %{"tokenAgeConsumed" => tokenAgeConsumed} ->
-             tokenAgeConsumed == 6000
+    assert Enum.find(token_age_consumed, fn %{"tokenAgeConsumed" => value} ->
+             value == 6000
            end)
 
-    assert Enum.find(token_age_consumed, fn %{"tokenAgeConsumed" => tokenAgeConsumed} ->
-             tokenAgeConsumed == 85555
+    assert Enum.find(token_age_consumed, fn %{"tokenAgeConsumed" => value} ->
+             value == 85555
            end)
   end
 

@@ -96,7 +96,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
         |> Evaluator.run()
 
       # 2 signals triggered
-      assert length(rest) == 0
+      assert rest == []
       assert context.trigger1.id == triggered1.id
       assert context.trigger2.id == triggered2.id
     end
@@ -113,7 +113,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
         |> Evaluator.run()
 
       # 1 signal triggered
-      assert length(rest) == 0
+      assert rest == []
       assert context.trigger2.id == triggered.id
     end
   end
@@ -129,7 +129,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
         |> Evaluator.run()
 
       # 0 signals triggered
-      assert length(triggered) == 0
+      assert triggered == []
     end
   end
 

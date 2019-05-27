@@ -134,10 +134,8 @@ defmodule Sanbase.Auth.User do
   end
 
   def permissions!(%__MODULE__{} = user) do
-    case permissions(user) do
-      {:ok, permissions} -> permissions
-      {:error, error} -> raise(error)
-    end
+    {:ok, permissions} = permissions(user)
+    permissions
   end
 
   def full_permissions() do

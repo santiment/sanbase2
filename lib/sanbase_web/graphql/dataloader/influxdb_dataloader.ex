@@ -3,8 +3,7 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.Helpers.Utils
 
-  @max_concurrency 100
-  @total_erc20 "TOTAL_ERC20"
+  @max_concurrency 30
 
   def data() do
     Dataloader.KV.new(&query/2)
@@ -18,7 +17,7 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
     two_days_ago = Timex.shift(now, days: -2)
 
     measurements
-    |> Enum.chunk_every(100)
+    |> Enum.chunk_every(80)
     |> Sanbase.Parallel.map(
       fn measurements ->
         volumes_last_24h = Prices.Store.fetch_mean_volume(measurements, yesterday, now)
@@ -36,18 +35,23 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
         end)
         |> Enum.reject(&is_nil/1)
       end,
-      max_concurrency: @max_concurrency
+      max_concurrency: @max_concurrency,
+      ordered: false,
+      map_type: :flat_map
     )
-    |> Enum.flat_map(& &1)
     |> Map.new()
   end
 
   def query({:price, measurement}, ids) do
     ids
     |> Enum.uniq()
-    |> Enum.map(fn id ->
-      {id, fetch_price(measurement, id)}
-    end)
+    |> Sanbase.Parallel.map(
+      fn id ->
+        {id, fetch_price(measurement, id)}
+      end,
+      max_concurrency: @max_concurrency,
+      ordered: false
+    )
     |> Map.new()
   end
 

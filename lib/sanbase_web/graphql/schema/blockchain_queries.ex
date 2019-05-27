@@ -307,6 +307,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     Currently only ETH is supported.
     """
     field :mining_pools_distribution, list_of(:mining_pools_distribution) do
+      arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")

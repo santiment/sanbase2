@@ -2,11 +2,11 @@ defmodule SanbaseWeb.ErrorView do
   use SanbaseWeb, :view
 
   def render("404.json", _assigns) do
-    %{errors: %{detail: "Page not found"}}
+    %{errors: %{details: "Page not found"}}
   end
 
   def render("500.json", _assigns) do
-    %{errors: %{detail: "Internal server error"}}
+    %{errors: %{details: "Internal server error"}}
   end
 
   # In case no render clause matches or no

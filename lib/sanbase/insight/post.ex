@@ -31,7 +31,7 @@ defmodule Sanbase.Insight.Post do
     field(:short_desc, :string)
     field(:link, :string)
     field(:text, :string)
-    field(:state, :string, default: @awaiting_approval)
+    field(:state, :string, default: @approved)
     field(:moderation_comment, :string)
     field(:ready_state, :string, default: @draft)
     field(:discourse_topic_url, :string)

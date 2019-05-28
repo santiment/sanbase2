@@ -1,5 +1,7 @@
 defmodule SanbaseWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :sanbase
+  use SanbaseWeb.Endpoint.ErrorHandler
+
   require Sanbase.Utils.Config, as: Config
 
   socket("/socket", SanbaseWeb.UserSocket,

@@ -127,13 +127,13 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   defp extract_caller_data(%{
          auth: %{auth_method: :user_token, current_user: user, san_balance: san_balance}
        }) do
-    {user.id, san_balance, :user_token, nil}
+    {user.id, san_balance, :jwt, nil}
   end
 
   defp extract_caller_data(%{
          auth: %{auth_method: :apikey, current_user: user, token: token, san_balance: san_balance}
        }) do
-    {user.id, san_balance, :user_token, token}
+    {user.id, san_balance, :apikei, token}
   end
 
   defp extract_caller_data(%{

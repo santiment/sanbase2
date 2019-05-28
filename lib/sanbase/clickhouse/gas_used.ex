@@ -9,15 +9,17 @@ defmodule Sanbase.Clickhouse.GasUsed do
 
   @type gas_used :: %{
           datetime: DateTime.t(),
-          eth_gas_used: non_neg_integer()
+          eth_gas_used: non_neg_integer(),
+          gas_used: non_neg_integer()
         }
 
   @spec gas_used(
+          String.t(),
           DateTime.t(),
           DateTime.t(),
           String.t()
         ) :: {:ok, list(gas_used)} | {:error, String.t()}
-  def gas_used(from, to, interval) do
+  def gas_used("ethereum", from, to, interval) do
     {query, args} = gas_used_query(from, to, interval)
 
     ClickhouseRepo.query_transform(
@@ -26,11 +28,14 @@ defmodule Sanbase.Clickhouse.GasUsed do
       fn [dt, gas_used] ->
         %{
           datetime: DateTime.from_unix!(dt),
+          gas_used: gas_used |> to_integer(),
           eth_gas_used: gas_used |> to_integer()
         }
       end
     )
   end
+
+  def gas_used(_, _, _, _), do: {:error, "Currently only ethereum is supported!"}
 
   defp gas_used_query(from, to, interval) do
     from_datetime_unix = DateTime.to_unix(from)

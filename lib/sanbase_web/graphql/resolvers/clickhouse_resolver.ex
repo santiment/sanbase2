@@ -54,10 +54,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   def gas_used(
         _root,
-        %{from: from, to: to, interval: interval},
+        %{slug: slug, from: from, to: to, interval: interval},
         _resolution
       ) do
-    case GasUsed.gas_used(from, to, interval) do
+    case GasUsed.gas_used(slug, from, to, interval) do
       {:ok, gas_used} ->
         {:ok, gas_used}
 

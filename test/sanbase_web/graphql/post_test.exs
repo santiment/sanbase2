@@ -437,7 +437,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
       assert sanbasePost["id"] != nil
       assert sanbasePost["title"] == "Awesome post"
-      assert sanbasePost["state"] == Post.awaiting_approval_state()
+      assert sanbasePost["state"] == Post.approved_state()
       assert sanbasePost["user"]["id"] == user.id |> Integer.to_string()
       assert sanbasePost["votes"]["totalSanVotes"] == 0
       assert sanbasePost["publishedAt"] == nil

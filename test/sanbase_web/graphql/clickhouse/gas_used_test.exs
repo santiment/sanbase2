@@ -140,7 +140,6 @@ defmodule SanbaseWeb.Graphql.Clickhouse.GasUsedTest do
              }
            ]}
         end do
-
         query = """
           {
             gasUsed(from: "#{context.from}", to: "#{context.to}", interval: "#{context.interval}"){
@@ -150,8 +149,9 @@ defmodule SanbaseWeb.Graphql.Clickhouse.GasUsedTest do
           }
         """
 
-        response = context.conn
-                     |> post("/graphql", query_skeleton(query, "gasUsed"))
+        response =
+          context.conn
+          |> post("/graphql", query_skeleton(query, "gasUsed"))
 
         result = parse_response(response)
 

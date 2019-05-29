@@ -30,28 +30,28 @@ defmodule Sanbase.Pricing.Plan.AccessSeed do
                       ]
 
   @free %{
-    api_calls_munute: 10,
+    api_calls_minute: 10,
     api_calls_month: 1000,
     historical_data_in_days: 90,
     metrics: @standart_metrics
   }
 
   @essential %{
-    api_calls_munute: 60,
+    api_calls_minute: 60,
     api_calls_month: 10000,
     historical_data_in_days: 180,
     metrics: @standart_metrics
   }
 
   @pro %{
-    api_calls_munute: 120,
+    api_calls_minute: 120,
     api_calls_month: 150_000,
     historical_data_in_days: 18 * 30,
     metrics: @advanced_metrics
   }
 
   @premium %{
-    api_calls_munute: 180,
+    api_calls_minute: 180,
     api_calls_month: 500_000,
     metrics: @pro[:metrics]
   }

@@ -17,7 +17,7 @@ defmodule Sanbase.Pricing.Product do
 
   def changeset(%__MODULE__{} = product, attrs \\ %{}) do
     product
-    |> cast(attrs, [:stripe_id])
+    |> cast(attrs, [:name, :stripe_id])
   end
 
   def by_id(product_id) do
@@ -44,7 +44,7 @@ defmodule Sanbase.Pricing.Product do
 
   defp update_product(product, params) do
     product
-    |> __MODULE__.changeset(params)
+    |> changeset(params)
     |> Repo.update()
   end
 end

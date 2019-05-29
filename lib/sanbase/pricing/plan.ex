@@ -36,8 +36,13 @@ defmodule Sanbase.Pricing.Plan do
 
   def api_plans, do: @api_plans
 
-  def upgrade_plan(plan) do
-    @api_plans[to_integer(plan.id) + 1]
+  def plans_with_metric(query) do
+    from(
+      p in Plan,
+      where: fragment(~s(access @> ?), ^%{metrics: [query]})
+    )
+    |> Repo.all()
+    |> Enum.map(&Map.get(&1, :name))
   end
 
   def by_id(plan_id) do

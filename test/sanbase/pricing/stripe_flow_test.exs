@@ -25,6 +25,8 @@ defmodule Sanbase.Pricing.StripeFlowTest do
     conn = setup_jwt_auth(build_conn(), user)
     product = create_product()
     plan = create_plan(product, :plan_essential)
+    insert(:plan_pro, product: product)
+    insert(:plan_premium, product: product)
 
     {:ok, apikey} = Apikey.generate_apikey(user)
     conn_apikey = setup_apikey_auth(build_conn(), apikey)
@@ -41,7 +43,7 @@ defmodule Sanbase.Pricing.StripeFlowTest do
       |> hd()
 
     assert result["name"] == "SanbaseAPI"
-    assert length(result["plans"]) == 1
+    assert length(result["plans"]) == 3
   end
 
   test "current user subscriptions", context do
@@ -108,7 +110,7 @@ defmodule Sanbase.Pricing.StripeFlowTest do
              Requested metric mvrv_ratio is not provided by the current subscription plan #{
                context.plan.name
              }.
-             Please upgrade to Pro to get access to mvrv_ratio
+             Please upgrade to Pro or Premium to get access to mvrv_ratio
              """
     end
 

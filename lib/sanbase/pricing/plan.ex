@@ -9,14 +9,6 @@ defmodule Sanbase.Pricing.Plan do
   alias Sanbase.Pricing.{Product, Subscription}
   alias __MODULE__
 
-  @api_plans %{
-    1 => "Free",
-    2 => "Essential",
-    3 => "Pro",
-    4 => "Premium",
-    5 => "Enterprise"
-  }
-
   schema "plans" do
     field(:name, :string)
     field(:amount, :integer)

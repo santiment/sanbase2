@@ -7,12 +7,12 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
   alias Sanbase.Clickhouse.Bitcoin
   alias Sanbase.Clickhouse.Erc20DailyActiveAddresses, as: Erc20
   alias Sanbase.Clickhouse.EthDailyActiveAddresses, as: Eth
-  alias Sanbase.Model.Project
 
   require Logger
 
   @ethereum ["ethereum", "ETH"]
   @bitcoin ["bitcoin", "BTC"]
+  @async_with_timeout 25_000
 
   def first_datetime(slug) when slug in @ethereum do
     Eth.first_datetime(slug)
@@ -44,11 +44,15 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
     Bitcoin.average_active_addresses(from, to, interval)
   end
 
+  def average_active_addresses(eth, from, to, interval)
+      when is_binary(eth) and eth in @ethereum do
+    Eth.average_active_addresses(from, to, interval)
+  end
+
   def average_active_addresses(contract, from, to, interval) when is_binary(contract) do
     Erc20.average_active_addresses(contract, from, to, interval)
   end
 
-  @async_with_timeout 25_000
   @doc ~s"""
   Accepts a single contract(ETH or BTC in case of ethereum and bitcoin) or a list
   of contracts and returns a list tuples `{contract, active_addresses}`
@@ -70,15 +74,6 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
                {:ok, erc20_average_daa} <- do_erc20_average_active_addresses(erc20, from, to) do
       {:ok, btc_average_daa ++ eth_average_daa ++ erc20_average_daa}
     end
-  end
-
-  def average_active_addresses(eth, from, to, interval)
-      when is_binary(eth) and eth in @ethereum do
-    Eth.average_active_addresses(from, to, interval)
-  end
-
-  def average_active_addresses(contract, from, to, interval) when is_binary(contract) do
-    Erc20.average_active_addresses(contract, from, to, interval)
   end
 
   # Helper functions that return lists of {slug, average_active_addresses}

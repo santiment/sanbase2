@@ -17,7 +17,7 @@ defmodule SanbaseWeb.Graphql.CacheProvider do
   @doc ~s"""
   Put a query document in the cache with the key as cache key
   """
-  @callback store(cache, key, stored_value) :: true | {:error, error}
+  @callback store(cache, key, stored_value) :: :ok | {:error, error}
 
   @doc ~s"""
   Get the value for the given key from the cache. If there is no record with this

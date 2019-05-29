@@ -60,7 +60,7 @@ defmodule Sanbase.Mixfile do
       {:guardian, "~> 1.0"},
       {:absinthe, github: "absinthe-graphql/absinthe", override: true},
       {:absinthe_ecto, "~> 0.1.0"},
-      {:absinthe_plug, "~> 1.4.0"},
+      {:absinthe_plug, github: "absinthe-graphql/absinthe_plug"},
       {:temp, "~> 0.4"},
       {:httpoison, "~> 1.2", override: true},
       {:floki, "~> 0.20"},
@@ -77,7 +77,7 @@ defmodule Sanbase.Mixfile do
       {:arc, git: "https://github.com/marinho10/arc"},
       {:uuid, "~> 1.1"},
       {:phoenix_live_reload, "~> 1.1", only: :dev},
-      {:dialyxir, "~> 1.0.0-rc.5", only: [:dev], runtime: false},
+      {:dialyxir, "~> 1.0.0-rc.6", only: [:dev], runtime: false},
       {:con_cache, "~> 0.13"},
       {:excoveralls, "~> 0.8", optional: true, only: [:dev, :test]},
       {:observer_cli, "~> 1.3"},
@@ -99,7 +99,8 @@ defmodule Sanbase.Mixfile do
       {:remote_ip, "~> 0.1"},
       {:vex, "~> 0.8.0", override: true},
       {:stream_data, "~> 0.4.2", only: :test},
-      {:async_with, "~> 0.3"}
+      {:async_with, "~> 0.3"},
+      {:credo, "~> 1.0", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -115,6 +116,9 @@ defmodule Sanbase.Mixfile do
         "load_dotenv",
         "ecto.migrate -r Sanbase.Repo",
         "ecto.dump -r Sanbase.Repo"
+      ],
+      "ecto.gen.migration": [
+        "ecto.gen.migration -r Sanbase.Repo"
       ],
       "ecto.rollback": [
         "load_dotenv",

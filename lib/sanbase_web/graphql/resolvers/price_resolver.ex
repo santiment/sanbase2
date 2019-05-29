@@ -1,12 +1,12 @@
 defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   require Logger
 
-  import Absinthe.Resolution.Helpers
+  import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 6]
 
-  alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Model.Project
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.DateTimeUtils
+  alias Sanbase.Prices.Store
 
   @total_market "TOTAL_MARKET"
   @total_market_measurement "TOTAL_MARKET_total-market"
@@ -16,65 +16,92 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     Returns a list of price points for the given ticker. Optimizes the number of queries
     to the DB by inspecting the requested fields.
   """
-  @deprecated "Use history price by slug instead of ticker"
-  def history_price(_root, %{ticker: @total_market} = args, %{context: %{loader: loader}}) do
-    loader
-    |> Dataloader.load(SanbaseDataloader, {:price, @total_market_measurement}, args)
-    |> on_load(&total_market_history_price_on_load(&1, args))
+  def history_price(
+        _root,
+        %{ticker: @total_market, from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    with {:ok, from, to, interval} <-
+           calibrate_interval(Store, @total_market_measurement, from, to, interval, 300),
+         {:ok, result} <-
+           Store.fetch_prices_with_resolution(@total_market_measurement, from, to, interval) do
+      {:ok, result |> map_price_data()}
+    end
   end
 
   @doc """
     Returns a list of price points for the given ticker. Optimizes the number of queries
     to the DB by inspecting the requested fields.
   """
-  def history_price(_root, %{slug: @total_market} = args, %{context: %{loader: loader}}) do
-    loader
-    |> Dataloader.load(SanbaseDataloader, {:price, @total_market_measurement}, args)
-    |> on_load(&total_market_history_price_on_load(&1, args))
+  def history_price(
+        _root,
+        %{slug: @total_market, from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    with {:ok, from, to, interval} <-
+           calibrate_interval(Store, @total_market_measurement, from, to, interval, 300),
+         {:ok, result} <-
+           Store.fetch_prices_with_resolution(@total_market_measurement, from, to, interval) do
+      {:ok, result |> map_price_data()}
+    end
   end
 
-  def history_price(_root, %{slug: @total_erc20} = args, %{context: %{loader: loader}}) do
-    loader
-    |> Dataloader.load(SanbaseDataloader, {:price, @total_erc20}, args)
-    |> on_load(&total_erc20_history_price_on_load(&1, args))
+  def history_price(
+        _root,
+        %{slug: @total_erc20, from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    with {:ok, from, to, interval} <-
+           calibrate_interval(Store, @total_market_measurement, from, to, interval, 300),
+         {:ok, result} <-
+           Store.fetch_prices_with_resolution(@total_erc20, from, to, interval) do
+      {:ok, result}
+    end
   end
 
-  @deprecated "Use history price by slug"
-  def history_price(_root, %{ticker: ticker} = args, %{context: %{loader: loader}}) do
-    with slug when not is_nil(slug) <- Project.slug_by_ticker(ticker) do
-      ticker_cmc_id = ticker <> "_" <> slug
-
-      loader
-      |> Dataloader.load(SanbaseDataloader, {:price, ticker_cmc_id}, args)
-      |> on_load(&history_price_on_load(&1, ticker_cmc_id, args))
+  def history_price(_root, %{ticker: ticker, from: from, to: to, interval: interval}, _resolution) do
+    with {:get_slug, slug} when not is_nil(slug) <- {:get_slug, Project.slug_by_ticker(ticker)},
+         ticker_cmc_id <- ticker <> "_" <> slug,
+         {:ok, from, to, interval} <-
+           calibrate_interval(Store, slug, from, to, interval, 300),
+         {:ok, result} <- Store.fetch_prices_with_resolution(ticker_cmc_id, from, to, interval) do
+      {:ok, result |> map_price_data()}
     else
+      {:get_slug, nil} ->
+        {:error,
+         "The provided ticker '#{ticker}' is misspelled or there is no data for this ticker"}
+
       error ->
         {:error, "Cannot fetch history price for #{ticker}. Reason: #{inspect(error)}"}
     end
   end
 
-  def history_price(_root, %{slug: slug} = args, %{context: %{loader: loader}}) do
-    with ticker when not is_nil(ticker) <- Project.ticker_by_slug(slug) do
-      ticker_cmc_id = ticker <> "_" <> slug
-
-      loader
-      |> Dataloader.load(SanbaseDataloader, {:price, ticker_cmc_id}, args)
-      |> on_load(&history_price_on_load(&1, ticker_cmc_id, args))
+  def history_price(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
+    with {:get_ticker, ticker} when not is_nil(ticker) <-
+           {:get_ticker, Project.ticker_by_slug(slug)},
+         ticker_cmc_id <- ticker <> "_" <> slug,
+         {:ok, from, to, interval} <-
+           calibrate_interval(Store, slug, from, to, interval, 300),
+         {:ok, result} <- Store.fetch_prices_with_resolution(ticker_cmc_id, from, to, interval) do
+      {:ok, result |> map_price_data()}
     else
+      {:get_ticker, nil} ->
+        {:error, "The provided slug '#{slug}' is misspelled or there is no data for this slug"}
+
       error ->
         {:error, "Cannot fetch history price for #{slug}. Reason: #{inspect(error)}"}
     end
   end
 
-  def ohlc(_root, %{slug: slug} = args, _context) do
+  def ohlc(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
     with measurement when not is_nil(measurement) <- Measurement.name_from_slug(slug),
-         true <- DateTimeUtils.valid_interval_string?(args.interval),
+         true <- DateTimeUtils.valid_interval_string?(interval),
          {:ok, prices} <-
            Sanbase.Prices.Store.fetch_ohlc(
              measurement,
-             args.from,
-             args.to,
-             args.interval
+             from,
+             to,
+             interval
            ) do
       result =
         prices
@@ -95,13 +122,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     end
   end
 
-  def multiple_projects_stats(_root, %{slugs: slugs} = args, _context) do
+  def multiple_projects_stats(_root, %{slugs: slugs, from: from, to: to}, _resolution) do
     with {:ok, measurement_slug_map} <- Measurement.names_from_slugs(slugs),
          {:ok, values} <-
            Sanbase.Prices.Store.fetch_volume_mcap_multiple_measurements(
              measurement_slug_map,
-             args.from,
-             args.to
+             from,
+             to
            ) do
       {:ok,
        values
@@ -117,51 +144,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
 
   # Private functions
 
-  defp total_market_history_price_on_load(loader, args) do
-    with {:ok, usd_prices} <-
-           Dataloader.get(loader, SanbaseDataloader, {:price, @total_market_measurement}, args) do
-      result =
-        usd_prices
-        |> Enum.map(fn [dt, _, _, marketcap_usd, volume_usd] ->
-          %{
-            datetime: dt,
-            marketcap: marketcap_usd,
-            volume: volume_usd
-          }
-        end)
-
-      {:ok, result}
-    else
-      _ ->
-        {:error, "Can't fetch total marketcap prices"}
-    end
-  end
-
-  defp total_erc20_history_price_on_load(loader, args) do
-    case Dataloader.get(loader, SanbaseDataloader, {:price, @total_erc20}, args) do
-      {:ok, total_erc20} -> {:ok, total_erc20}
-      _ -> {:error, "Can't fetch total volume and marketcap for all ERC20 projects"}
-    end
-  end
-
-  defp history_price_on_load(loader, ticker_cmc_id, args) do
-    with {:ok, prices} <- Dataloader.get(loader, SanbaseDataloader, {:price, ticker_cmc_id}, args) do
-      result =
-        prices
-        |> Enum.map(fn [dt, usd_price, btc_price, marketcap_usd, volume_usd] ->
-          %{
-            datetime: dt,
-            price_btc: btc_price,
-            price_usd: usd_price,
-            marketcap: marketcap_usd,
-            volume: volume_usd
-          }
-        end)
-
-      {:ok, result}
-    else
-      _ ->
-        {:error, "Can't fetch prices for #{ticker_cmc_id}"}
-    end
+  defp map_price_data(data) do
+    data
+    |> Enum.map(fn [dt, usd_price, btc_price, marketcap_usd, volume_usd] ->
+      %{
+        datetime: dt,
+        price_btc: btc_price,
+        price_usd: usd_price,
+        marketcap: marketcap_usd,
+        volume: volume_usd
+      }
+    end)
   end
 end

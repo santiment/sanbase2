@@ -42,7 +42,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
 
   @doc false
   @spec changeset(any(), any()) :: no_return()
-  def changeset(_, _attrs \\ %{}),
+  def changeset(_, _),
     do: raise("Should not try to change eth daily active addresses")
 
   @doc ~s"""

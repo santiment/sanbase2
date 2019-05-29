@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.Helpers.Utils
 
-  @total_erc20 "TOTAL_ERC20"
+  @max_concurrency 30
 
   def data() do
     Dataloader.KV.new(&query/2)
@@ -17,33 +17,41 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
     two_days_ago = Timex.shift(now, days: -2)
 
     measurements
-    |> Enum.chunk_every(100)
-    |> Sanbase.Parallel.pmap(fn measurements ->
-      volumes_last_24h = Prices.Store.fetch_mean_volume(measurements, yesterday, now)
+    |> Enum.chunk_every(80)
+    |> Sanbase.Parallel.map(
+      fn measurements ->
+        volumes_last_24h = Prices.Store.fetch_mean_volume(measurements, yesterday, now)
 
-      volumes_previous_24h_map =
-        Prices.Store.fetch_mean_volume(measurements, two_days_ago, yesterday) |> Map.new()
+        volumes_previous_24h_map =
+          Prices.Store.fetch_mean_volume(measurements, two_days_ago, yesterday) |> Map.new()
 
-      volumes_last_24h
-      |> Enum.map(fn {name, today_vol} ->
-        yesterday_vol = Map.get(volumes_previous_24h_map, name, 0)
+        volumes_last_24h
+        |> Enum.map(fn {name, today_vol} ->
+          yesterday_vol = Map.get(volumes_previous_24h_map, name, 0)
 
-        if yesterday_vol > 1 do
-          {name, (today_vol - yesterday_vol) * 100 / yesterday_vol}
-        end
-      end)
-      |> Enum.reject(&is_nil/1)
-    end)
-    |> Enum.flat_map(& &1)
+          if yesterday_vol > 1 do
+            {name, (today_vol - yesterday_vol) * 100 / yesterday_vol}
+          end
+        end)
+        |> Enum.reject(&is_nil/1)
+      end,
+      max_concurrency: @max_concurrency,
+      ordered: false,
+      map_type: :flat_map
+    )
     |> Map.new()
   end
 
   def query({:price, measurement}, ids) do
     ids
     |> Enum.uniq()
-    |> Enum.map(fn id ->
-      {id, fetch_price(measurement, id)}
-    end)
+    |> Sanbase.Parallel.map(
+      fn id ->
+        {id, fetch_price(measurement, id)}
+      end,
+      max_concurrency: @max_concurrency,
+      ordered: false
+    )
     |> Map.new()
   end
 

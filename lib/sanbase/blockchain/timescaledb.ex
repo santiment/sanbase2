@@ -127,10 +127,10 @@ defmodule Sanbase.Timescaledb do
 
    ## Examples
 
-      iex> Sanbase.Timescaledb.timestamp_to_datetime({{2018, 8, 7}, {12, 55, 5, 00}})
-      #DateTime<2018-08-07 12:55:05Z>
-      iex> Sanbase.Timescaledb.timestamp_to_datetime({{2015, 1, 17}, {12, 55, 37, 00005}})
-      #DateTime<2015-01-17 12:55:37Z>
+      iex> Sanbase.Timescaledb.timestamp_to_datetime({{2018, 8, 7}, {12, 55, 5, 00}}) |> DateTime.to_iso8601()
+      "2018-08-07T12:55:05Z"
+      iex> Sanbase.Timescaledb.timestamp_to_datetime({{2015, 1, 17}, {12, 55, 37, 00005}}) |> DateTime.to_iso8601()
+      "2015-01-17T12:55:37Z"
   """
   @spec timestamp_to_datetime({{integer, integer, integer}, {integer, integer, integer, integer}}) ::
           DateTime.t() | no_return

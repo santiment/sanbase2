@@ -15,6 +15,24 @@ defmodule Sanbase.Clickhouse.Erc20ShareOfDeposits do
           share_of_deposits: number()
         }
 
+  def first_datetime(contract) do
+    contract = String.downcase(contract)
+
+    query = """
+    SELECT min(dt) FROM daily_active_deposits WHERE contract = ?1
+    """
+
+    args = [contract]
+
+    ClickhouseRepo.query_transform(query, args, fn [datetime] ->
+      datetime |> Sanbase.DateTimeUtils.from_erl!()
+    end)
+    |> case do
+      {:ok, [first_datetime]} -> {:ok, first_datetime}
+      error -> error
+    end
+  end
+
   @doc ~s"""
   Returns the share of deposits from daily active addresses for contract chunked in intervals between [from, to]
   If last day is included in the [from, to] the value is the realtime value in the current moment

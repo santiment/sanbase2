@@ -442,7 +442,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
       assert sanbasePost["id"] != nil
       assert sanbasePost["title"] == "Awesome post"
-      assert sanbasePost["state"] == Post.awaiting_approval_state()
+      assert sanbasePost["state"] == Post.approved_state()
       assert sanbasePost["user"]["id"] == user.id |> Integer.to_string()
       assert sanbasePost["votes"]["totalSanVotes"] == 0
       assert sanbasePost["publishedAt"] == nil
@@ -943,8 +943,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
       conn
       |> post("/graphql", %{"query" => mutation, "img" => upload})
 
-    [imageData] = json_response(result, 200)["data"]["uploadImage"]
-    imageData["imageUrl"]
+    [image_data] = json_response(result, 200)["data"]["uploadImage"]
+    image_data["imageUrl"]
   end
 
   defp insights_by_tag_query(tag) do

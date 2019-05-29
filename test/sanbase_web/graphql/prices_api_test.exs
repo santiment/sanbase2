@@ -7,8 +7,6 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
-  alias Sanbase.Model.Project
-  alias Sanbase.Repo
 
   setup do
     Store.create_db()
@@ -278,7 +276,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   test "project group stats with non existing slugs return no data", context do
     query = project_group_stats_query(["non-existing"], context.datetime1, context.datetime3)
     result = execute_query(context.conn, query, "projectsListStats")
-    assert result == nil
+    assert result == []
   end
 
   test "project group stats with existing and non existing slugs ignores latter", context do

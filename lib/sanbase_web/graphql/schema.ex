@@ -17,7 +17,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     PostResolver,
     MarketSegmentResolver,
     ApikeyResolver,
-    UserListResolver,
     ElasticsearchResolver,
     ClickhouseResolver,
     ExchangeResolver,
@@ -71,6 +70,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.TimelineEventTypes)
 
   import_types(SanbaseWeb.Graphql.Schema.SocialDataQueries)
+  import_types(SanbaseWeb.Graphql.Schema.WatchlistQueries)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.{
@@ -78,7 +78,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       SanbaseDataloader
     }
 
-    Dataloader.new()
+    # 11 seconds is 1s more than the influxdb timeout
+    Dataloader.new(timeout: :timer.seconds(11))
     |> Dataloader.add_source(SanbaseRepo, SanbaseRepo.data())
     |> Dataloader.add_source(SanbaseDataloader, SanbaseDataloader.data())
   end
@@ -109,6 +110,9 @@ defmodule SanbaseWeb.Graphql.Schema do
   end
 
   query do
+    import_fields(:social_data_queries)
+    import_fields(:user_list_queries)
+
     @desc "Returns the user currently logged in."
     field :current_user, :user do
       resolve(&AccountResolver.current_user/3)
@@ -165,6 +169,14 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(ProjectPermissions)
 
       cache_resolve(&ProjectResolver.all_currency_projects/3)
+    end
+
+    field :all_projects_by_function, list_of(:project) do
+      arg(:function, :json)
+
+      middleware(ProjectPermissions)
+
+      cache_resolve(&ProjectResolver.all_projects_by_function/3)
     end
 
     @desc "Fetch all project transparency projects. This query requires basic authentication."
@@ -608,8 +620,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&TechIndicatorsResolver.social_volume/3)
     end
 
-    import_fields(:social_data_queries)
-
     @desc ~s"""
     Returns a list of slugs for which there is social volume data.
     """
@@ -790,32 +800,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       )
     end
 
-    @desc "Fetch all favourites lists for current_user."
-    field :fetch_user_lists, list_of(:user_list) do
-      resolve(&UserListResolver.fetch_user_lists/3)
-    end
-
-    @desc "Fetch all public favourites lists for current_user."
-    field :fetch_public_user_lists, list_of(:user_list) do
-      resolve(&UserListResolver.fetch_public_user_lists/3)
-    end
-
-    @desc "Fetch all public favourites lists"
-    field :fetch_all_public_user_lists, list_of(:user_list) do
-      resolve(&UserListResolver.fetch_all_public_user_lists/3)
-    end
-
-    @desc ~s"""
-    Fetch public favourites list by list id.
-    If the list is owned by the current user then the list can be private as well.
-    This query returns either a single user list item or null.
-    """
-    field :user_list, :user_list do
-      arg(:user_list_id, non_null(:id))
-
-      cache_resolve(&UserListResolver.user_list/3)
-    end
-
     @desc "Returns statistics for the data stored in elasticsearch"
     field :elasticsearch_stats, :elasticsearch_stats do
       arg(:from, non_null(:datetime))
@@ -842,6 +826,8 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "List all exchanges"
     field :all_exchanges, list_of(:string) do
+      arg(:slug, :string, default_value: "ethereum")
+
       cache_resolve(&ExchangeResolver.all_exchanges/3)
     end
 
@@ -936,6 +922,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     Currently only ETH is supported.
     """
     field :mining_pools_distribution, list_of(:mining_pools_distribution) do
+      arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
@@ -951,6 +938,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     you must pay for that computation. That payment is calculated in Gas.
     """
     field :gas_used, list_of(:gas_used) do
+      arg(:slug, :string, default_value: "ethereum")
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
@@ -1099,6 +1087,8 @@ defmodule SanbaseWeb.Graphql.Schema do
   end
 
   mutation do
+    import_fields(:user_list_mutations)
+
     field :eth_login, :login do
       arg(:signature, non_null(:string))
       arg(:address, non_null(:string))
@@ -1279,40 +1269,6 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(JWTAuth)
       resolve(&ApikeyResolver.revoke_apikey/3)
-    end
-
-    @desc """
-    Create user favourites list.
-    """
-    field :create_user_list, :user_list do
-      arg(:name, non_null(:string))
-      arg(:is_public, :boolean)
-      arg(:color, :color_enum)
-
-      middleware(JWTAuth)
-      resolve(&UserListResolver.create_user_list/3)
-    end
-
-    @desc """
-    Update user favourites list.
-    """
-    field :update_user_list, :user_list do
-      arg(:id, non_null(:integer))
-      arg(:name, :string)
-      arg(:is_public, :boolean)
-      arg(:color, :color_enum)
-      arg(:list_items, list_of(:input_list_item))
-
-      middleware(JWTAuth)
-      resolve(&UserListResolver.update_user_list/3)
-    end
-
-    @desc "Remove user favourites list."
-    field :remove_user_list, :user_list do
-      arg(:id, non_null(:integer))
-
-      middleware(JWTAuth)
-      resolve(&UserListResolver.remove_user_list/3)
     end
 
     @desc "Allow/Dissallow to receive notifications in email/telegram channel"

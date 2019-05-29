@@ -1,4 +1,14 @@
 defmodule Sanbase.Model.Project.List do
+  @moduledoc ~s"""
+  Provide functions for fetching different subsets of projects.
+
+  Provided functions for getting a list of:
+  - all projects
+  - erc20 projects
+  - currency projects
+  - all/erc20/currency projects page ordered by rank
+  - projects filtered by market segment
+  """
   import Ecto.Query
 
   alias Sanbase.Repo
@@ -48,6 +58,8 @@ defmodule Sanbase.Model.Project.List do
   @doc ~s"""
   Returns `page_size` number of projects from the `page` pages ordered by rank
   """
+  def erc20_projects_page(page, page_size, min_volume \\ nil)
+
   def erc20_projects_page(page, page_size, min_volume) do
     erc20_projects_page_query(page, page_size, min_volume)
     |> Repo.all()
@@ -102,6 +114,8 @@ defmodule Sanbase.Model.Project.List do
   Returns `page_size` number of currency projects from the `page` pages.
   Classify as currency project everything except ERC20.
   """
+  def currency_projects_page(page, page_size, min_volume \\ nil)
+
   def currency_projects_page(page, page_size, min_volume) do
     currency_projects_page_query(page, page_size, min_volume)
     |> Repo.all()
@@ -155,6 +169,8 @@ defmodule Sanbase.Model.Project.List do
   @doc ~s"""
   Returns `page_size` number of all projects from the `page` pages
   """
+  def projects_page(page, page_size, min_volume \\ nil)
+
   def projects_page(page, page_size, min_volume) do
     projects_page_query(page, page_size, min_volume)
     |> Repo.all()
@@ -228,5 +244,20 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
     |> Enum.map(fn {slug, lcd} -> {slug, lcd} end)
     |> Map.new()
+  end
+
+  def by_market_segment(segment) when is_binary(segment) or is_list(segment) do
+    segments = List.wrap(segment)
+
+    projects_query()
+    |> join(:inner, [p], m in assoc(p, :market_segment))
+    |> where([_, m], m.name in ^segments)
+    |> Repo.all()
+  end
+
+  def by_slugs(slugs) when is_list(slugs) do
+    projects_query()
+    |> where([p], p.coinmarketcap_id in ^slugs)
+    |> Repo.all()
   end
 end

@@ -89,7 +89,7 @@ defmodule Sanbase.Blockchain.TokenCirculation do
   def token_circulation(:less_than_a_day, contract, from, to, interval, token_decimals \\ 0) do
     interval_in_secs = Timescaledb.transform_interval(interval).secs
 
-    case rem(interval_in_secs, 86400) do
+    case rem(interval_in_secs, 86_400) do
       0 ->
         calculate_token_circulation(
           :less_than_a_day,

@@ -10,13 +10,13 @@ defmodule Sanbase.ExternalServices.TwitterData.Store do
 
   def all_records_for_measurement!(measurement_name, from, to, interval) do
     select_from_to_query(measurement_name, from, to, interval)
-    |> Store.query()
+    |> get()
     |> parse_twitter_data_series!()
   end
 
   def last_record_for_measurement(measurement_name) do
     select_last_record_query(measurement_name)
-    |> Store.query()
+    |> get()
     |> parse_twitter_record()
   end
 

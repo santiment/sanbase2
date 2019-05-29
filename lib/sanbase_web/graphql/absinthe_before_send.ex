@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   @cached_queries [
     "all_projects",
     "all_erc20_projects",
-    "all_currency_projectsf",
+    "all_currency_projects",
     "project_by_slug",
     "projects_list_history_stats",
     "projects_list_stats"

@@ -7,7 +7,11 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ShareOfDepositsTest do
   import ExUnit.CaptureLog
   import Sanbase.Factory
 
-  alias Sanbase.Clickhouse.ShareOfDeposits
+  alias Sanbase.Clickhouse.{
+    ShareOfDeposits,
+    EthShareOfDeposits,
+    Erc20ShareOfDeposits
+  }
 
   setup do
     user = insert(:staked_user)
@@ -54,6 +58,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ShareOfDepositsTest do
             to: "#{context.to}")
           {
             datetime
+            activeAddresses
+            activeDeposits
             shareOfDeposits
           }
         }
@@ -68,6 +74,52 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ShareOfDepositsTest do
           context.from,
           context.to,
           "1d"
+        )
+      )
+    end
+  end
+
+  test "works with empty interval for ERC20 tokens", context do
+    with_mocks([
+      {ShareOfDeposits, [:passthrough], share_of_deposits: fn _, _, _, _ -> {:ok, []} end},
+      {Erc20ShareOfDeposits, [:passthrough],
+       first_datetime: fn _ -> {:ok, from_iso8601!("2019-01-01T00:00:00Z")} end}
+    ]) do
+      query =
+        share_of_deposits_query(context.token.coinmarketcap_id, context.from, context.to, "")
+
+      context.conn
+      |> post("/graphql", query_skeleton(query, "shareOfDeposits"))
+
+      assert_called(
+        ShareOfDeposits.share_of_deposits(
+          context.token.main_contract_address,
+          context.from,
+          context.to,
+          "3600s"
+        )
+      )
+    end
+  end
+
+  test "works with empty interval for ethereum", context do
+    with_mocks([
+      {ShareOfDeposits, [:passthrough], share_of_deposits: fn _, _, _, _ -> {:ok, []} end},
+      {EthShareOfDeposits, [:passthrough],
+       first_datetime: fn _ -> {:ok, from_iso8601!("2019-01-01T00:00:00Z")} end}
+    ]) do
+      query =
+        share_of_deposits_query(context.ethereum.coinmarketcap_id, context.from, context.to, "")
+
+      context.conn
+      |> post("/graphql", query_skeleton(query, "shareOfDeposits"))
+
+      assert_called(
+        ShareOfDeposits.share_of_deposits(
+          context.ethereum.ticker,
+          context.from,
+          context.to,
+          "3600s"
         )
       )
     end
@@ -106,10 +158,14 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ShareOfDepositsTest do
 
       assert results == [
                %{
+                 "activeAddresses" => 100,
+                 "activeDeposits" => 10,
                  "shareOfDeposits" => 10.0,
                  "datetime" => "2019-01-01T00:00:00Z"
                },
                %{
+                 "activeAddresses" => 200,
+                 "activeDeposits" => 10,
                  "shareOfDeposits" => 5.0,
                  "datetime" => "2019-01-02T00:00:00Z"
                }
@@ -155,10 +211,14 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ShareOfDepositsTest do
 
       assert results == [
                %{
+                 "activeAddresses" => 100,
+                 "activeDeposits" => 10,
                  "shareOfDeposits" => 10.0,
                  "datetime" => "2019-01-01T00:00:00Z"
                },
                %{
+                 "activeAddresses" => 200,
+                 "activeDeposits" => 10,
                  "shareOfDeposits" => 5.0,
                  "datetime" => "2019-01-02T00:00:00Z"
                }
@@ -187,6 +247,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ShareOfDepositsTest do
         interval: "#{interval}"
       )
       {
+        activeAddresses
+        activeDeposits
         datetime
         shareOfDeposits
       }

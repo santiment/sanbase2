@@ -24,11 +24,14 @@ defmodule Sanbase.SocialData.SocialDominance do
       ) do
     result =
       @sources
-      |> Sanbase.Parallel.pmap(fn source ->
-        {:ok, result} = social_dominance(slug, datetime_from, datetime_to, interval, source)
+      |> Sanbase.Parallel.map(
+        fn source ->
+          {:ok, result} = social_dominance(slug, datetime_from, datetime_to, interval, source)
 
-        result
-      end)
+          result
+        end,
+        max_concurrency: 10
+      )
       |> List.zip()
       |> Enum.map(&Tuple.to_list/1)
       |> Enum.map(fn all_sources_point ->

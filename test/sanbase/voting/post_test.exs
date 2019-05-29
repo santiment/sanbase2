@@ -6,7 +6,7 @@ defmodule Sanbase.Insight.PostTest do
   alias Sanbase.Auth.User
   alias Sanbase.Insight.{Poll, Post}
 
-  test "create_changeset does not allow to approve the post" do
+  test "create_changeset creates the post in approved state" do
     poll =
       Poll.current_poll_changeset()
       |> Repo.insert!()
@@ -19,12 +19,11 @@ defmodule Sanbase.Insight.PostTest do
       %Post{user_id: user.id, poll_id: poll.id}
       |> Post.create_changeset(%{
         text: "Some text",
-        title: "Awesome article!",
-        state: Post.approved_state()
+        title: "Awesome article!"
       })
       |> Repo.insert!()
 
-    assert post.state == Post.awaiting_approval_state()
+    assert post.state == Post.approved_state()
   end
 
   test "changes the owner to the fallback user" do

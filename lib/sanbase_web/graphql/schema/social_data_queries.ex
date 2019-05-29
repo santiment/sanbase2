@@ -34,5 +34,26 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       middleware(TimeframeRestriction)
       resolve(&SocialDataResolver.social_dominance/3)
     end
+
+    @desc ~s"""
+    Returns the news for given word.
+
+    Arguments description:
+      * tag - Project name, ticker or other crypto related words.
+      * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+      * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+      * size - size limit of the returned results
+    """
+    field :news, list_of(:news) do
+      arg(:tag, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:size, :integer, default_value: 10)
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
+
+      resolve(&SocialDataResolver.news/3)
+    end
   end
 end

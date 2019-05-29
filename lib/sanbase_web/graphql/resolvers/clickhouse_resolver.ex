@@ -54,10 +54,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   def gas_used(
         _root,
-        %{from: from, to: to, interval: interval},
+        %{slug: slug, from: from, to: to, interval: interval},
         _resolution
       ) do
-    case GasUsed.gas_used(from, to, interval) do
+    case GasUsed.gas_used(slug, from, to, interval) do
       {:ok, gas_used} ->
         {:ok, gas_used}
 
@@ -85,10 +85,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   def mining_pools_distribution(
         _root,
-        %{from: from, to: to, interval: interval},
+        %{slug: slug, from: from, to: to, interval: interval},
         _resolution
       ) do
-    case MiningPoolsDistribution.distribution(from, to, interval) do
+    case MiningPoolsDistribution.distribution(slug, from, to, interval) do
       {:ok, distribution} ->
         {:ok, distribution}
 
@@ -101,7 +101,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   def mvrv_ratio(_root, %{slug: "bitcoin", from: from, to: to, interval: interval}, _resolution) do
     with {:ok, from, to, interval} <-
-           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86400, @datapoints) do
+           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86_400, @datapoints) do
       Bitcoin.mvrv_ratio(from, to, interval)
     end
   end
@@ -135,7 +135,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
              from,
              to,
              interval,
-             86400,
+             86_400,
              @datapoints
            ),
          {:ok, daily_active_addresses} <-

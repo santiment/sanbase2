@@ -108,6 +108,23 @@ defmodule SanbaseWeb.Graphql.Clickhouse.DailyActiveDepositsTest do
     end
   end
 
+  test "works with empty interval", context do
+    with_mocks([
+      {DailyActiveDeposits, [:passthrough], active_deposits: fn _, _, _, _ -> {:ok, []} end},
+      {DailyActiveDeposits, [:passthrough],
+       first_datetime: fn _ -> {:ok, from_iso8601!("2019-01-01T00:00:00Z")} end}
+    ]) do
+      query = active_deposits_query(context.slug, context.from, context.to, "")
+
+      context.conn
+      |> post("/graphql", query_skeleton(query, "dailyActiveDeposits"))
+
+      assert_called(
+        DailyActiveDeposits.active_deposits(context.contract, context.from, context.to, "3600s")
+      )
+    end
+  end
+
   defp parse_response(response) do
     json_response(response, 200)["data"]["dailyActiveDeposits"]
   end

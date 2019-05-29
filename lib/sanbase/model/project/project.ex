@@ -516,6 +516,7 @@ defmodule Sanbase.Model.Project do
   end
 
   def preloads(), do: @preloads
+  def preload(items), do: Repo.preload(items, @preloads)
 
   defp parse_github_organization_link(github_link, slug) do
     # nil will break the regex

@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
   The restriction is for anon users and for users without the required SAN stake.
   By default configuration the allowed timeframe is in the inteval [now() - 90days, now() - 1day]
   """
-
   @behaviour Absinthe.Middleware
 
   @compile :inline_list_funcs
@@ -18,11 +17,14 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
             restrict_from_in_days: 0}
 
   require Sanbase.Utils.Config, as: Config
+  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Absinthe.Resolution
   alias Sanbase.Auth.User
 
   @allow_access_without_staking ["santiment"]
+
+  @minimal_datetime_param from_iso8601!("2009-01-01T00:00:00Z")
 
   def call(resolution, %{allow_realtime_data: true, allow_historical_data: true}) do
     resolution |> check_from_to_params()
@@ -44,7 +46,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
         } = resolution,
         middleware_args
       ) do
-    if !has_enough_san_tokens?(current_user) do
+    if has_enough_san_tokens?(current_user) do
+      resolution
+    else
       %Resolution{
         resolution
         | arguments: %{
@@ -53,8 +57,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
               to: restrict_to(to, middleware_args)
           }
       }
-    else
-      resolution
     end
     |> check_from_to_params()
   end
@@ -109,18 +111,39 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
     Config.get(:restrict_from_in_days) |> String.to_integer()
   end
 
-  defp check_from_to_params(%Resolution{arguments: %{from: from, to: to}} = resolution) do
-    if DateTime.compare(from, to) == :gt do
-      resolution
-      |> Resolution.put_result(
-        {:error,
-         """
-         `from` and `to` are not a valid time range.
-         Either `from` is a datetime after `to` or the time range is outside of the allowed interval.
-         """}
-      )
+  defp to_param_is_after_from(from, to) do
+    if DateTime.compare(to, from) == :gt do
+      true
     else
+      {:error,
+       """
+       `from` and `to` are not a valid time range.
+       Either `from` is a datetime after `to` or the time range is outside of the allowed interval.
+       """}
+    end
+  end
+
+  defp from_or_to_params_are_after_minimal_datetime(from, to) do
+    if DateTime.compare(from, @minimal_datetime_param) == :gt and
+         DateTime.compare(to, @minimal_datetime_param) == :gt do
+      true
+    else
+      {:error,
+       """
+       Cryptocurrencies didn't existed before #{@minimal_datetime_param}.
+       Please check `from` or `to` param values.
+       """}
+    end
+  end
+
+  defp check_from_to_params(%Resolution{arguments: %{from: from, to: to}} = resolution) do
+    with true <- to_param_is_after_from(from, to),
+         true <- from_or_to_params_are_after_minimal_datetime(from, to) do
       resolution
+    else
+      {:error, _message} = error ->
+        resolution
+        |> Resolution.put_result(error)
     end
   end
 

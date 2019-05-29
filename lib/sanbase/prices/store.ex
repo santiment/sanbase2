@@ -8,12 +8,14 @@ defmodule Sanbase.Prices.Store do
     interval is about 5 mins (+/- 3 seconds). The timestamps are stored as
     nanoseconds
   """
+
   use Sanbase.Influxdb.Store
 
-  require Logger
-
+  alias SanbaseWeb.Graphql.Cache
   alias __MODULE__
   alias Sanbase.Influxdb.Measurement
+
+  require Logger
 
   @last_history_price_cmc_measurement "sanbase-internal-last-history-price-cmc"
   def last_history_price_cmc_measurement() do
@@ -25,7 +27,7 @@ defmodule Sanbase.Prices.Store do
   """
   def fetch_price_points(measurement, from, to) do
     fetch_query(measurement, from, to)
-    |> Store.query()
+    |> get()
     |> parse_time_series()
   end
 
@@ -34,7 +36,7 @@ defmodule Sanbase.Prices.Store do
   """
   def fetch_ohlc(measurement, from, to, interval) do
     fetch_ohlc_query(measurement, from, to, interval)
-    |> Store.query()
+    |> get()
     |> parse_time_series()
   end
 
@@ -56,36 +58,12 @@ defmodule Sanbase.Prices.Store do
       Sanbase.Model.Project.List.erc20_projects()
       |> Enum.map(&Sanbase.Influxdb.Measurement.name_from/1)
 
-    total_erc20 =
-      measurements
-      |> Enum.chunk_every(100)
-      |> Sanbase.Parallel.pmap(fn measurements ->
-        {:ok, result} =
-          fetch_combined_mcap_volume(
-            measurements,
-            from,
-            to,
-            resolution
-          )
-
-        result
-      end)
-      |> Enum.zip()
-      |> Enum.map(&Tuple.to_list/1)
-      |> Enum.map(fn [%{datetime: dt} | _rest] = list ->
-        %{
-          datetime: dt,
-          volume: Enum.reduce(list, 0, fn %{volume: v}, acc -> acc + v end),
-          marketcap: Enum.reduce(list, 0, fn %{marketcap: m}, acc -> acc + m end)
-        }
-      end)
-
-    {:ok, total_erc20}
+    fetch_combined_mcap_volume(measurements, from, to, resolution)
   end
 
   def fetch_prices_with_resolution(measurement, from, to, resolution) do
     fetch_prices_with_resolution_query(measurement, from, to, resolution)
-    |> Store.query()
+    |> get()
     |> parse_time_series()
   end
 
@@ -101,28 +79,32 @@ defmodule Sanbase.Prices.Store do
 
   def fetch_volume_with_resolution(measurement, from, to, resolution) do
     fetch_volume_with_resolution_query(measurement, from, to, resolution)
-    |> Store.query()
+    |> get()
     |> parse_time_series()
   end
 
   def fetch_mean_volume(measurements, from, to) when is_list(measurements) do
-    %{results: [%{series: series}]} =
-      fetch_mean_volume_query(measurements, from, to)
-      |> Store.query()
+    fetch_mean_volume_query(measurements, from, to)
+    |> get()
+    |> case do
+      %{results: [%{series: series}]} ->
+        series
+        |> Enum.map(fn %{name: name, values: [[_, value]]} -> {name, value} end)
 
-    series
-    |> Enum.map(fn %{name: name, values: [[_, value]]} -> {name, value} end)
+      _ ->
+        {:error, []}
+    end
   end
 
   def fetch_mean_volume(measurement, from, to) do
     fetch_mean_volume_query(measurement, from, to)
-    |> Store.query()
+    |> get()
     |> parse_time_series()
   end
 
   def fetch_average_price(measurement, from, to) do
     fetch_average_price_query(measurement, from, to)
-    |> Store.query()
+    |> get()
     |> parse_time_series()
     |> case do
       {:ok, [[_datetime, avg_price_usd, avg_price_btc]]} ->
@@ -145,7 +127,7 @@ defmodule Sanbase.Prices.Store do
 
   def last_history_datetime_cmc(ticker_cmc_id) do
     last_history_datetime_cmc_query(ticker_cmc_id)
-    |> Store.query()
+    |> get()
     |> parse_time_series()
     |> case do
       {:ok, [[_, iso8601_datetime | _rest]]} ->
@@ -169,30 +151,66 @@ defmodule Sanbase.Prices.Store do
 
   def fetch_last_price_point_before(measurement, timestamp) do
     fetch_last_price_point_before_query(measurement, timestamp)
-    |> Store.query()
+    |> get()
     |> parse_time_series()
   end
 
-  def fetch_combined_mcap_volume(measurement_slugs, from, to, interval) do
-    measurements_str = measurement_slugs |> Enum.map(fn x -> ~s/"#{x}"/ end) |> Enum.join(", ")
+  def fetch_combined_mcap_volume(measurement_slugs, from, to, resolution) do
+    measurement_slugs
+    |> Enum.chunk_every(10)
+    |> Sanbase.Parallel.map(
+      fn measurements ->
+        measurements = Enum.sort(measurements)
 
-    fetch_combined_mcap_volume_query(measurements_str, from, to, interval)
-    |> Store.query()
+        Cache.func(
+          fn ->
+            measurements_str = measurements |> Enum.map(fn x -> ~s/"#{x}"/ end) |> Enum.join(", ")
+
+            fetch_combined_mcap_volume_query(measurements_str, from, to, resolution)
+            |> get()
+          end,
+          :measurements_combined_mcap_volume,
+          %{measurements: measurements, from: from, to: to, resolution: resolution},
+          ttl: 300,
+          max_ttl_offset: 300
+        ).()
+      end,
+      ordered: false,
+      max_concurrency: 10
+    )
     |> combine_results_mcap_volume()
   end
 
   def fetch_volume_mcap_multiple_measurements(measurement_slug_map, from, to) do
-    measurements_str =
-      measurement_slug_map |> Map.keys() |> Enum.map(fn x -> ~s/"#{x}"/ end) |> Enum.join(", ")
+    measurement_slug_map
+    |> Map.keys()
+    |> Enum.chunk_every(10)
+    |> Sanbase.Parallel.map(
+      fn measurements ->
+        measurements = Enum.sort(measurements)
 
-    fetch_volume_mcap_multiple_measurements_query(measurements_str, from, to)
-    |> Store.query()
+        Cache.func(
+          fn ->
+            measurements_str = measurements |> Enum.map(fn x -> ~s/"#{x}"/ end) |> Enum.join(", ")
+
+            fetch_volume_mcap_multiple_measurements_query(measurements_str, from, to)
+            |> get()
+          end,
+          :measurements_mcap_volume,
+          %{measurements: measurements, from: from, to: to},
+          ttl: 300,
+          max_ttl_offset: 300
+        ).()
+      end,
+      ordered: false,
+      max_concurrency: 10
+    )
     |> volume_mcap_multiple_measurements_reducer(measurement_slug_map)
   end
 
   def volume_over_threshold(measurements, from, to, threshold) do
     mean_volume_for_period_query(measurements, from, to)
-    |> Store.query()
+    |> get()
     |> filter_volume_over_threshold(threshold)
   end
 
@@ -201,7 +219,7 @@ defmodule Sanbase.Prices.Store do
     FROM "#{measurement}"
     WHERE time >= #{influx_time(from)}
     AND time <= #{influx_time(to)}/
-    |> Store.query()
+    |> get()
     |> parse_time_series()
   end
 
@@ -210,7 +228,7 @@ defmodule Sanbase.Prices.Store do
 
     ~s/SELECT last_updated, ticker_cmc_id FROM "#{@last_history_price_cmc_measurement}"
     WHERE ticker_cmc_id != "" AND last_updated >= #{datetime_unix_ns}/
-    |> Store.query()
+    |> get()
     |> parse_time_series()
   end
 
@@ -323,51 +341,63 @@ defmodule Sanbase.Prices.Store do
        GROUP BY time(#{resolution}) fill(0)/
   end
 
-  defp volume_mcap_multiple_measurements_reducer(%{results: [%{error: error}]}, _),
-    do: {:error, error}
+  defp volume_mcap_multiple_measurements_reducer(results, measurement_slug_map) do
+    result = combine_results(results)
 
-  defp volume_mcap_multiple_measurements_reducer(
-         %{results: [%{series: series}]},
-         measurement_slug_map
-       ) do
-    slugs = series |> Enum.map(fn s -> measurement_slug_map[s.name] end)
-    values = series |> Enum.map(& &1.values)
-    volume_values = values |> Enum.map(fn [[_, vol, _]] -> vol end)
-    combined_mcap = values |> Enum.reduce(0, fn [[_, _, mcap]], acc -> acc + mcap end)
-    marketcap_values = values |> Enum.map(fn [[_, _, mcap]] -> mcap end)
+    case result do
+      %{errors: [], series: series} ->
+        slugs = series |> Enum.map(fn s -> measurement_slug_map[s.name] end)
+        values = series |> Enum.map(& &1.values)
+        volume_values = values |> Enum.map(fn [[_, vol, _]] -> vol end)
+        combined_mcap = values |> Enum.reduce(0, fn [[_, _, mcap]], acc -> acc + mcap end)
+        marketcap_values = values |> Enum.map(fn [[_, _, mcap]] -> mcap end)
 
-    marketcap_percent =
-      marketcap_values |> Enum.map(fn mcap -> Float.round(mcap / combined_mcap, 5) end)
+        marketcap_percent =
+          marketcap_values |> Enum.map(fn mcap -> Float.round(mcap / combined_mcap, 5) end)
 
-    result = Enum.zip([slugs, volume_values, marketcap_values, marketcap_percent])
+        data = Enum.zip([slugs, volume_values, marketcap_values, marketcap_percent])
 
-    {:ok, result}
+        {:ok, data}
+
+      %{errors: [error | _]} ->
+        {:error, error}
+    end
   end
 
-  defp volume_mcap_multiple_measurements_reducer(_, _), do: {:error, nil}
+  defp combine_results_mcap_volume(results) do
+    result = combine_results(results)
 
-  defp combine_results_mcap_volume(%{results: [%{error: error}]}), do: {:error, error}
+    case result do
+      %{errors: [], series: series} ->
+        data =
+          series
+          |> Enum.map(fn %{values: values} -> values end)
+          |> Enum.zip()
+          |> Stream.map(&Tuple.to_list/1)
+          |> Enum.map(fn [[iso8601_datetime, _, _] | _] = projects_data ->
+            {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
 
-  defp combine_results_mcap_volume(%{results: [%{series: series}]}) do
-    result =
-      series
-      |> Enum.map(fn %{values: values} -> values end)
-      |> Enum.zip()
-      |> Enum.map(&Tuple.to_list/1)
-      |> Enum.map(fn [[iso8601_datetime, _, _] | _] = projects_data ->
-        {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+            {combined_volume, combined_mcap} =
+              projects_data
+              |> Enum.reduce({0, 0}, fn [_, volume, mcap], {v, m} -> {v + volume, m + mcap} end)
 
-        {combined_volume, combined_mcap} =
-          projects_data
-          |> Enum.reduce({0, 0}, fn [_, volume, mcap], {v, m} -> {v + volume, m + mcap} end)
+            %{datetime: datetime, volume: combined_volume, marketcap: combined_mcap}
+          end)
 
-        %{datetime: datetime, volume: combined_volume, marketcap: combined_mcap}
-      end)
+        {:ok, data}
 
-    {:ok, result}
+      %{errors: [error | _]} ->
+        {:error, error}
+    end
   end
 
-  defp combine_results_mcap_volume(_), do: {:ok, []}
+  defp combine_results(results) when is_list(results) do
+    Enum.reduce(results, %{errors: [], series: []}, fn
+      %{results: [%{series: series}]}, acc -> %{acc | series: series ++ acc.series}
+      %{results: [%{error: error}]}, acc -> %{acc | errors: [error | acc.errors]}
+      _, acc -> %{acc | errors: [:error | acc.errors]}
+    end)
+  end
 
   defp mean_volume_for_period_query(measurements, from, to) do
     ~s/SELECT MEAN(volume_usd) as volume

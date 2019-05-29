@@ -23,7 +23,6 @@ defmodule Sanbase.Signals.Scheduler do
   alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
   alias Sanbase.Signals.Evaluator
   alias Sanbase.Signal
-  alias Sanbase.Parallel
 
   require Logger
 
@@ -80,7 +79,7 @@ defmodule Sanbase.Signals.Scheduler do
   # returns a tuple {updated_user_triggers, send_result_list}
   defp send_and_mark_as_sent(triggers) do
     triggers
-    |> Parallel.pmap_concurrent(
+    |> Sanbase.Parallel.map(
       fn %UserTrigger{} = user_trigger ->
         case Signal.send(user_trigger) do
           [] ->

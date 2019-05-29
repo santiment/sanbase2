@@ -15,11 +15,12 @@ defmodule Sanbase.Clickhouse.MiningPoolsDistribution do
         }
 
   @spec distribution(
+          String.t(),
           DateTime.t(),
           DateTime.t(),
           String.t()
         ) :: {:ok, list(distribution)} | {:error, String.t()}
-  def distribution(from, to, interval) do
+  def distribution("ethereum", from, to, interval) do
     {query, args} = distribution_query(from, to, interval)
 
     ClickhouseRepo.query_transform(
@@ -35,6 +36,8 @@ defmodule Sanbase.Clickhouse.MiningPoolsDistribution do
       end
     )
   end
+
+  def distribution(_, _, _, _), do: {:error, "Currently only ethereum is supported!"}
 
   defp distribution_query(from, to, interval) do
     from_datetime_unix = DateTime.to_unix(from)

@@ -12,6 +12,7 @@ defmodule SanbaseWeb.Graphql.TimeframeRestrictionMiddlewareTest do
 
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.TimescaleFactory
+  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   setup do
     san_slug = "santiment"
@@ -191,6 +192,58 @@ defmodule SanbaseWeb.Graphql.TimeframeRestrictionMiddlewareTest do
              `from` and `to` are not a valid time range.
              Either `from` is a datetime after `to` or the time range is outside of the allowed interval.
              """
+  end
+
+  test "returns error when `from` param is before 2009 year", context do
+    conn = setup_jwt_auth(build_conn(), context.staked_user)
+
+    query = """
+     {
+      tokenAgeConsumed(
+        slug: "santiment",
+        from: "#{from_iso8601!("2008-12-31T23:59:59Z")}",
+        to: "#{from_iso8601!("2009-01-02T00:00:00Z")}"
+        interval: "1d") {
+          datetime
+          tokenAgeConsumed
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query))
+
+    error = List.first(json_response(result, 200)["errors"])["message"]
+
+    assert error ==
+             "Cryptocurrencies didn't existed before 2009-01-01 00:00:00Z.\nPlease check `from` or `to` param values.\n"
+  end
+
+  test "returns error when `from` and `to` params are both before 2009 year", context do
+    conn = setup_jwt_auth(build_conn(), context.staked_user)
+
+    query = """
+     {
+      tokenAgeConsumed(
+        slug: "santiment",
+        from: "#{from_iso8601!("2008-12-30T23:59:59Z")}",
+        to: "#{from_iso8601!("2008-12-31T23:59:59Z")}"
+        interval: "1d") {
+          datetime
+          tokenAgeConsumed
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query))
+
+    error = List.first(json_response(result, 200)["errors"])["message"]
+
+    assert error ==
+             "Cryptocurrencies didn't existed before 2009-01-01 00:00:00Z.\nPlease check `from` or `to` param values.\n"
   end
 
   defp tokenAgeConsumedQuery(slug) do

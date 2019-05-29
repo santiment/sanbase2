@@ -57,7 +57,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
         |> UserTrigger.get_active_triggers_by_type()
         |> Evaluator.run()
 
-      assert length(rest) == 0
+      assert rest == []
       assert trigger2.id == triggered.id
       assert Trigger.triggered?(triggered.trigger) == true
     end
@@ -85,7 +85,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
         |> UserTrigger.get_active_triggers_by_type()
         |> Evaluator.run()
 
-      assert length(rest) == 0
+      assert rest == []
       assert trigger1.id == triggered.id
       assert Trigger.triggered?(triggered.trigger) == true
     end
@@ -105,7 +105,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
         |> UserTrigger.get_active_triggers_by_type()
         |> Evaluator.run()
 
-      assert length(rest) == 0
+      assert rest == []
       assert trigger1.id == triggered.id
     end
 
@@ -163,7 +163,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
         |> UserTrigger.get_active_triggers_by_type()
         |> Evaluator.run()
 
-      assert length(triggered) == 0
+      assert triggered == []
     end
 
     test "signal setting cooldown works", context do

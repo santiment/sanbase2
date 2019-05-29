@@ -29,16 +29,18 @@ defmodule Sanbase.Auth.Apikey do
   @spec apikey_to_user(String.t()) :: {:ok, %User{}} | {:error, String.t()}
   def apikey_to_user(apikey) do
     with {:ok, {token, _rest}} <- Hmac.split_apikey(apikey),
-         true <- Hmac.apikey_valid?(token, apikey) do
-      UserApikeyToken.user_by_token(token)
+         {:valid?, true} <- {:valid?, Hmac.apikey_valid?(token, apikey)},
+         {:user?, {:ok, user}} <- {:user?, UserApikeyToken.user_by_token(token)} do
+      {:ok, user}
     else
-      false ->
-        Logger.info("Apikey #{apikey} is not valid")
-        {:error, "Apikey not valid or malformed"}
+      {:valid?, false} ->
+        {:error, "Apikey '#{apikey}' is not valid"}
 
-      error ->
-        Logger.info("Apikey #{apikey} cannot be split - #{inspect(error)}")
-        {:error, "Apikey not valid or malformed"}
+      {:user?, _} ->
+        {:error, "Apikey '#{apikey}' is not valid"}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 

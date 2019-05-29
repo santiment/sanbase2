@@ -26,7 +26,7 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
         whitepaper_link: "whitepaper.link.com",
         ticker: "SAN",
         token_decimals: 4,
-        total_supply: 50000
+        total_supply: 50_000
       }
       |> Repo.insert!()
 
@@ -49,7 +49,7 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
       whitepaper_link: "whitepaper.link.com",
       ticker: "SAN",
       token_decimals: 4,
-      total_supply: 50000
+      total_supply: 50_000
     }
 
     assert expected_project_info == ProjectInfo.from_project(project)

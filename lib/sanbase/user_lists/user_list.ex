@@ -78,8 +78,14 @@ defmodule Sanbase.UserList do
 
   def update_user_list(%{id: id} = params) do
     params = update_list_items_params(params, id)
-    watchlist = UserList.by_id(id) |> Repo.preload(:list_items)
-    changeset = watchlist |> update_changeset(params)
+
+    watchlist =
+      by_id(id)
+      |> Repo.preload(:list_items)
+
+    changeset =
+      watchlist
+      |> update_changeset(params)
 
     if watchlist.is_public and Map.get(params, :list_items) do
       Repo.update(changeset)

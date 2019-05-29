@@ -3,11 +3,9 @@ defmodule SanbaseWeb.Graphql.UserListTest do
 
   import Sanbase.TestHelpers
 
-  alias Sanbase.Auth.User
-  alias Sanbase.Model.Project
-  alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.UserList
   alias Sanbase.Timeline.TimelineEvent
+  alias Sanbase.Repo
 
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory

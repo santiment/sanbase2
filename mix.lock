@@ -6,7 +6,7 @@
   "accept": {:hex, :accept, "0.3.3", "548ebb6fb2e8b0d170e75bb6123aea6ceecb0189bb1231eeadf52eac08384a97", [:rebar3], [], "hexpm"},
   "arc": {:git, "https://github.com/marinho10/arc", "63b40c1fb8cd67d88731c6f87a5387aa746b391e", []},
   "artificery": {:hex, :artificery, "0.4.1", "90b1fcedb9034853b36dbea2174f9fc1172bd50b0686a723178103def5c9c1c8", [:mix], [], "hexpm"},
-  "async_with": {:hex, :async_with, "0.3.0", "5e553aef1d1539d436c9d1b0c0221f8fb3ae167cddbe0e106ac5b8a21103b75d", [:mix], [], "hexpm"},
+  "async_with": {:git, "https://github.com/fertapric/async_with.git", "f1fa693a1c5e8316997c4d6ecde1f064bfb6be47", []},
   "base64url": {:hex, :base64url, "0.0.1", "36a90125f5948e3afd7be97662a1504b934dd5dac78451ca6e9abf85a10286be", [:rebar], [], "hexpm"},
   "basic_auth": {:hex, :basic_auth, "2.2.4", "d8c748237870dd1df3bc5c0f1ab4f1fad6270c75472d7e62b19302ec59e92a79", [:mix], [{:plug, "~> 0.14 or ~> 1.0", [hex: :plug, repo: "hexpm", optional: false]}], "hexpm"},
   "bunt": {:hex, :bunt, "0.2.0", "951c6e801e8b1d2cbe58ebbd3e616a869061ddadcc4863d0a2182541acae9a38", [:mix], [], "hexpm"},

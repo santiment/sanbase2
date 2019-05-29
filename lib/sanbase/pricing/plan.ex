@@ -26,8 +26,6 @@ defmodule Sanbase.Pricing.Plan do
     |> cast(attrs, [:stripe_id, :access])
   end
 
-  def api_plans, do: @api_plans
-
   def plans_with_metric(query) do
     from(
       p in Plan,

@@ -1,4 +1,4 @@
-FROM elixir:1.8.0
+FROM elixir:1.8.2-otp-22
 
 # Install debian packages
 RUN apt-get update \

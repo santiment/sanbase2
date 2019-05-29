@@ -1,5 +1,5 @@
 # Elixir and phoenix assets build image
-FROM elixir:1.8.0 as code_builder
+FROM elixir:1.8.2-otp-22 as code_builder
 
 ENV MIX_ENV prod
 

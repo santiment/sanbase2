@@ -99,7 +99,7 @@ defmodule Sanbase.Mixfile do
       {:remote_ip, "~> 0.1"},
       {:vex, "~> 0.8.0", override: true},
       {:stream_data, "~> 0.4.2", only: :test},
-      {:async_with, "~> 0.3"},
+      {:async_with, github: "fertapric/async_with"},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false}
     ]
   end

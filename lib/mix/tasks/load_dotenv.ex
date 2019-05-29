@@ -7,6 +7,7 @@ defmodule Mix.Tasks.LoadDotenv do
   Loads the dotenv config
   """
 
+  @impl Mix.Task
   def run(_args) do
     Envy.auto_load()
   end

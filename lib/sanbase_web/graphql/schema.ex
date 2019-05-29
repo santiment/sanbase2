@@ -824,6 +824,8 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "List all exchanges"
     field :all_exchanges, list_of(:string) do
+      arg(:slug, :string, default_value: "ethereum")
+
       cache_resolve(&ExchangeResolver.all_exchanges/3)
     end
 

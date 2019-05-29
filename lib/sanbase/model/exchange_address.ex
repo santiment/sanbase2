@@ -23,32 +23,40 @@ defmodule Sanbase.Model.ExchangeAddress do
     exchange_address
     |> cast(attrs, [:address, :name, :source, :comments, :is_dex, :infrastructure_id])
     |> validate_required([:address, :name])
-    |> update_change(:address, &String.downcase/1)
     |> unique_constraint(:address)
   end
 
   @doc ~s"List all exchange addresses"
-  @spec list_all() :: list(%__MODULE__{})
-  def list_all() do
-    Repo.all(__MODULE__)
+  @spec list_all_by_infrastructure(%Infrastructure{}) :: list(%__MODULE__{})
+  def list_all_by_infrastructure(%Infrastructure{} = infr) do
+    from(e in __MODULE__, where: e.infrastructure_id == ^infr.id) |> Repo.all()
   end
 
+  def list_all_by_infrastructure(_), do: []
+
   @doc ~s"List all exchange names"
-  @spec exchange_names() :: list(String.t())
-  def exchange_names() do
+  @spec exchange_names_by_infrastructure(%Infrastructure{}) :: list(String.t())
+  def exchange_names_by_infrastructure(%Infrastructure{} = infr) do
     from(e in __MODULE__,
+      where: e.infrastructure_id == ^infr.id,
       select: e.name,
       distinct: true
     )
     |> Repo.all()
   end
 
+  def exchange_names_by_infrastructure(_), do: []
+
+  # TODO: This limit is temporary and the whole logic should be reworked so
+  # the Bitcoin addresses are also present in CH and does not need to be loaded
+  # in sanbase in order to calculate them
   @doc ~s"List all addresses that belong to certain exchange"
   @spec addresses_for_exchange(String.t()) :: {:ok, [String.t()]} | {:error, String.t()}
   def addresses_for_exchange(exchange) do
     from(e in __MODULE__,
       where: e.name == ^exchange,
-      select: e.address
+      select: e.address,
+      limit: 100
     )
     |> Repo.all()
     |> case do

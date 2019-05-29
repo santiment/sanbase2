@@ -1,12 +1,20 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
   require Logger
 
-  alias Sanbase.Model.ExchangeAddress
+  alias Sanbase.Model.{ExchangeAddress, Infrastructure}
   alias Sanbase.Clickhouse.EthTransfers
 
   @doc ~s"List all exchanges"
-  def all_exchanges(_root, _args, _resolution) do
-    {:ok, ExchangeAddress.exchange_names()}
+  def all_exchanges(_root, %{slug: "ethereum"}, _resolution) do
+    {:ok, ExchangeAddress.exchange_names_by_infrastructure(Infrastructure.get("ETH"))}
+  end
+
+  def all_exchanges(_root, %{slug: "bitcoin"}, _resolution) do
+    {:ok, ExchangeAddress.exchange_names_by_infrastructure(Infrastructure.get("BTC"))}
+  end
+
+  def all_exchanges(_, _, _) do
+    {:error, "Currently only ethereum and bitcoin exchanges are supported"}
   end
 
   @doc ~s"""

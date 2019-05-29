@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
   require Logger
 
-  alias Sanbase.Auth.User
   alias Sanbase.Timeline.TimelineEvent
 
   def timeline_events(_root, args, %{

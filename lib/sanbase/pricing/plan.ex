@@ -21,7 +21,7 @@ defmodule Sanbase.Pricing.Plan do
     has_many(:subscriptions, Subscription, on_delete: :delete_all)
   end
 
-  def changeset(%Plan{} = plan, attrs \\ %{}) do
+  def changeset(%__MODULE__{} = plan, attrs \\ %{}) do
     plan
     |> cast(attrs, [:stripe_id, :access])
   end
@@ -79,7 +79,7 @@ defmodule Sanbase.Pricing.Plan do
 
   defp update_plan(plan, params) do
     plan
-    |> __MODULE__.changeset(params)
+    |> changeset(params)
     |> Repo.update()
   end
 end

@@ -48,6 +48,9 @@ config :logger, :console, format: "[$time][$level][$metadata] $message\n"
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20
 
+config :sanbase, Sanbase.ApiCallDataExporter,
+  api_call_data_kafka_producer: Sanbase.TestKafkaProducer
+
 # Configure your database
 config :sanbase, Sanbase.Repo,
   username: "postgres",

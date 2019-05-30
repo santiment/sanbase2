@@ -440,7 +440,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true})
+      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
       cache_resolve(&ClickhouseResolver.daily_active_addresses/3)
     end
 

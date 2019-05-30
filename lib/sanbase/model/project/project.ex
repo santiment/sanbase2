@@ -350,8 +350,7 @@ defmodule Sanbase.Model.Project do
         {:ok, String.downcase(contract), token_decimals || 0}
 
       _ ->
-        {:error,
-         {:missing_contract, "Can't find contract address of project with slug: #{slug}"}}
+        {:error, {:missing_contract, "Can't find contract address of project with slug: #{slug}"}}
     end
   end
 

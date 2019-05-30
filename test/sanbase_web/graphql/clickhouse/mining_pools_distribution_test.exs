@@ -32,7 +32,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
                result = parse_response(response)
                assert result == nil
              end) =~
-              graphql_error_msg("Mining Pools Distribution", error)
+               graphql_error_msg("Mining Pools Distribution", error)
     end
   end
 

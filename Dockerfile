@@ -10,6 +10,7 @@ RUN apt-get update \
 RUN mix local.hex --force
 RUN mix local.rebar --force
 
+
 WORKDIR /app
 
 COPY mix.lock /app/mix.lock
@@ -19,20 +20,20 @@ RUN mix deps.compile
 
 COPY ./assets/package.json /app/assets/package.json
 COPY ./assets/package-lock.json /app/assets/package-lock.json
-
 RUN cd assets && npm install
 
+# Copy all files only before compile so we can cache the deps fetching layer
 COPY . /app
+RUN mix format --check-formatted
+RUN cd assets && npm run build:prod
 
 ARG SECRET_KEY_BASE
-
-RUN cd assets && npm run build:prod
 RUN SECRET_KEY_BASE=$SECRET_KEY_BASE mix compile
 RUN mix phx.digest
 RUN mix release
 
 # Release image
-FROM elixir:1.8.0
+FROM elixir:1.8.2-otp-22
 
 RUN apt-get install -y --only-upgrade bash
 

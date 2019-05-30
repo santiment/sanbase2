@@ -12,9 +12,11 @@ WORKDIR /app
 
 COPY mix.lock /app/mix.lock
 COPY mix.exs /app/mix.exs
+
 RUN mix deps.get
 RUN mix deps.compile
 
 COPY . /app
+RUN mix format --check-formatted
 
 CMD mix test_all --trace

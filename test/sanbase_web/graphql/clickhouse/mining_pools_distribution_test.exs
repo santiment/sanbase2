@@ -23,14 +23,16 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
   end
 
   test "works only for ethereum", context do
+    error = "Currently only ethereum is supported!"
+
     with_mock MiningPoolsDistribution,
-      distribution: fn _, _, _, _ -> {:error, "Currently only ethereum is supported!"} end do
+      distribution: fn _, _, _, _ -> {:error, error} end do
       assert capture_log(fn ->
                response = execute_query("unsupported", context)
                result = parse_response(response)
                assert result == nil
              end) =~
-               ~s/[warn] Can't calculate mining pools distribution. Reason: "Currently only ethereum is supported!"/
+              graphql_error_msg("Mining Pools Distribution", error)
     end
   end
 
@@ -101,14 +103,16 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
   end
 
   test "logs warning when calculation errors", context do
+    error = "Some error description here"
+
     with_mock MiningPoolsDistribution,
-      distribution: fn _, _, _, _ -> {:error, "Some error description here"} end do
+      distribution: fn _, _, _, _ -> {:error, error} end do
       assert capture_log(fn ->
                response = execute_query(context.slug, context)
                result = parse_response(response)
                assert result == nil
              end) =~
-               ~s/[warn] Can't calculate mining pools distribution. Reason: "Some error description here"/
+               graphql_error_msg("Mining Pools Distribution", error)
     end
   end
 

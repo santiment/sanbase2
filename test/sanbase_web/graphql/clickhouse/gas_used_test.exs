@@ -66,13 +66,16 @@ defmodule SanbaseWeb.Graphql.Clickhouse.GasUsedTest do
   end
 
   test "logs warning when calculation errors", context do
+    error = "Some error description here"
+
     with_mock GasUsed,
-      gas_used: fn _, _, _, _ -> {:error, "Some error description here"} end do
+      gas_used: fn _, _, _, _ -> {:error, error} end do
       assert capture_log(fn ->
                response = execute_query(context.slug, context)
                result = parse_response(response)
                assert result == nil
-             end) =~ ~s/[warn] Can't calculate Gas used. Reason: "Some error description here"/
+             end) =~
+               graphql_error_msg("Gas Used", context.slug, error)
     end
   end
 
@@ -95,14 +98,16 @@ defmodule SanbaseWeb.Graphql.Clickhouse.GasUsedTest do
   end
 
   test "works only for ethereum", context do
+    error = "Currently only ethereum is supported!"
+
     with_mock GasUsed,
-      gas_used: fn _, _, _, _ -> {:error, "Currently only ethereum is supported!"} end do
+      gas_used: fn _, _, _, _ -> {:error, error} end do
       assert capture_log(fn ->
                response = execute_query("unsupported", context)
                result = parse_response(response)
                assert result == nil
              end) =~
-               ~s/[warn] Can't calculate Gas used. Reason: "Currently only ethereum is supported!"/
+               graphql_error_msg("Gas Used", "unsupported", error)
     end
   end
 

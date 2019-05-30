@@ -95,16 +95,16 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
   end
 
   test "logs warning when calculation errors", context do
+    error = "Some error description here"
+
     with_mock TopHolders,
-      percent_of_total_supply: fn _, _, _, _, _ -> {:error, "error"} end do
+      percent_of_total_supply: fn _, _, _, _, _ -> {:error, error} end do
       assert capture_log(fn ->
                response = execute_query(context)
                holders = parse_response(response)
                assert holders == nil
              end) =~
-               ~s/[warn] Can't calculate top holders - percent of total supply for slug: #{
-                 context.slug
-               }. Reason: "error"/
+               graphql_error_msg("Top Holders - percent of total supply", context.slug, error)
     end
   end
 

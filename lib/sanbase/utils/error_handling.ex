@@ -12,4 +12,16 @@ defmodule Sanbase.Utils.ErrorHandling do
     Logger.warn("[#{log_id}] #{message}")
     {:error, "[#{log_id}] Error executing #{query_name}. See logs for details."}
   end
+
+  def graphql_error_msg(metric_name) do
+    "[#{Ecto.UUID.generate()}] Can't fetch #{metric_name}"
+  end
+
+  def graphql_error_msg(metric_name, slug) do
+    "[#{Ecto.UUID.generate()}] Can't fetch #{metric_name} for project with slug: #{slug}"
+  end
+
+  def log_graphql_error(message, error) do
+    Logger.warn("#{message}" <> ", Reason: #{inspect(error)}")
+  end
 end

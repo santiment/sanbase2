@@ -125,7 +125,7 @@ defmodule SanbaseWeb.Graphql.PriceVolumeDiffApiTest do
              error = result["errors"] |> List.first()
              assert error["message"] =~ "Error executing query. See logs for details"
            end) =~
-             "Error status 500 fetching price-volume diff for project with coinmarketcap_id santiment: Internal Server Error"
+             "Error status 500 fetching price-volume diff for project with slug: santiment - Internal Server Error"
   end
 
   # Private functions

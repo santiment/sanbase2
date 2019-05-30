@@ -105,11 +105,11 @@ defmodule Sanbase.Model.Project do
 
   @spec describe(%Project{}) :: String.t()
   def describe(%Project{coinmarketcap_id: cmc_id}) when not is_nil(cmc_id) do
-    "project with coinmarketcap_id #{cmc_id}"
+    "project with slug: #{cmc_id}"
   end
 
   def describe(%Project{id: id}) do
-    "project with id #{id}"
+    "project with id: #{id}"
   end
 
   def sanbase_link(%Project{coinmarketcap_id: cmc_id}) when not is_nil(cmc_id) do
@@ -351,8 +351,7 @@ defmodule Sanbase.Model.Project do
 
       _ ->
         {:error,
-         {:missing_contract,
-          "Can't find contract address of project with coinmarketcap_id #{slug}"}}
+         {:missing_contract, "Can't find contract address of project with slug: #{slug}"}}
     end
   end
 

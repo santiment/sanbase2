@@ -37,14 +37,16 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ShareOfDepositsTest do
   end
 
   test "logs warning when calculation errors", context do
+    error = "Some error description here"
+
     with_mock ShareOfDeposits,
-      share_of_deposits: fn _, _, _, _ -> {:error, "Some error description here"} end do
+      share_of_deposits: fn _, _, _, _ -> {:error, error} end do
       assert capture_log(fn ->
                response = execute_query(context, context.token.coinmarketcap_id)
                result = parse_response(response)
                assert result == nil
              end) =~
-               ~s/[warn] Can't calculate Share of Deposits for project with coinmarketcap_id: santiment. Reason: "Some error description here"/
+               graphql_error_msg("Share of Deposits", context.token.coinmarketcap_id, error)
     end
   end
 

@@ -141,17 +141,19 @@ defmodule SanbaseWeb.Graphql.Clickhouse.DailyActiveAddressesTest do
     end
 
     test "logs warning when calculation errors", context do
+      error = "Some error description here"
+
       with_mock DailyActiveAddresses,
                 [:passthrough],
                 average_active_addresses: fn _, _, _, _ ->
-                  {:error, "Some error description here"}
+                  {:error, error}
                 end do
         assert capture_log(fn ->
                  response = execute_daa_query(context.token_slug, context)
                  addresses = parse_daa_response(response)
                  assert addresses == nil
                end) =~
-                 ~s/[warn] Can't calculate daily active addresses for project with coinmarketcap_id: santiment. Reason: "Some error description here"/
+                 graphql_error_msg("Daily Active Addresses", context.token_slug, error)
       end
     end
 

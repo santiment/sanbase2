@@ -10,7 +10,6 @@ RUN apt-get update \
 RUN mix local.hex --force
 RUN mix local.rebar --force
 
-
 WORKDIR /app
 
 COPY mix.lock /app/mix.lock
@@ -18,14 +17,13 @@ COPY mix.exs /app/mix.exs
 RUN mix deps.get
 RUN mix deps.compile
 
-COPY ./assets/package.json /app/assets/package.json
-COPY ./assets/package-lock.json /app/assets/package-lock.json
+COPY ./assets /app/assets
 RUN cd assets && npm install
+RUN cd assets && npm run build:prod
 
 # Copy all files only before compile so we can cache the deps fetching layer
 COPY . /app
 RUN mix format --check-formatted
-RUN cd assets && npm run build:prod
 
 ARG SECRET_KEY_BASE
 RUN SECRET_KEY_BASE=$SECRET_KEY_BASE mix compile

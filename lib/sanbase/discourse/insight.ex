@@ -1,4 +1,7 @@
 defmodule Sanbase.Discourse.Insight do
+  @moduledoc """
+  Module for creating a topic in Santiment Discourse forum on published insight.
+  """
   require Sanbase.Utils.Config, as: Config
 
   alias Sanbase.Insight.Post
@@ -6,11 +9,7 @@ defmodule Sanbase.Discourse.Insight do
 
   def create_discourse_topic(%Post{id: id, title: title, inserted_at: inserted_at}) do
     link = posts_url(id)
-
-    text = ~s"""
-      This topic hosts the discussion about [#{link}](#{link})
-    """
-
+    text = "This topic hosts the discussion about [#{link}](#{link})"
     title = "##{id} | #{title} | #{DateTime.to_naive(inserted_at)}"
 
     Discourse.Api.publish(title, text)

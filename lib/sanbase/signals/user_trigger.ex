@@ -162,6 +162,9 @@ defmodule Sanbase.Signals.UserTrigger do
     end
   end
 
+  def create_user_trigger(_, _),
+    do: {:error, "Trigger structure is invalid. Key `settings` is missing."}
+
   defp log_timeline_event(result, true) do
     case result do
       {:ok, user_trigger} ->
@@ -175,9 +178,6 @@ defmodule Sanbase.Signals.UserTrigger do
   end
 
   defp log_timeline_event(result, _), do: result
-
-  def create_user_trigger(_, _),
-    do: {:error, "Trigger structure is invalid. Key `settings` is missing."}
 
   @doc ~s"""
   Update an existing user trigger with a given UUID `trigger_id`.

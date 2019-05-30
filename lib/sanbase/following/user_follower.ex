@@ -1,4 +1,7 @@
 defmodule Sanbase.Following.UserFollower do
+  @moduledoc """
+  Module implementing follow/unfollow functionality between users.
+  """
   use Ecto.Schema
 
   import Ecto.Changeset
@@ -40,10 +43,29 @@ defmodule Sanbase.Following.UserFollower do
 
   def unfollow(_, _), do: {:error, "User can't unfollow oneself"}
 
+  @doc """
+  Returns all user ids of users that are followed by certain user
+  """
   def followed_by(user_id) do
-    Repo.get(User, user_id)
-    |> Repo.preload(:following)
-    |> Map.get(:following)
+    from(
+      uf in __MODULE__,
+      where: uf.follower_id == ^user_id,
+      select: [:user_id]
+    )
+    |> Repo.all()
     |> Enum.map(&Map.get(&1, :user_id))
+  end
+
+  @doc """
+  Returns all user ids of users that follow certain users
+  """
+  def following(user_id) do
+    from(
+      uf in __MODULE__,
+      where: uf.user_id == ^user_id,
+      select: [:follower_id]
+    )
+    |> Repo.all()
+    |> Enum.map(&Map.get(&1, :follower_id))
   end
 end

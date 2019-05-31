@@ -3,7 +3,7 @@ FROM elixir:1.8.2-otp-22-alpine as code_builder
 
 ENV MIX_ENV prod
 
-RUN apk add --update nodejs git make g++
+RUN apk add --no-cache nodejs git make g++
 
 RUN mix local.hex --force
 RUN mix local.rebar --force
@@ -31,7 +31,7 @@ RUN mix release
 # Release image
 FROM elixir:1.8.2-otp-22-alpine
 
-RUN apk add --update bash
+RUN apk add --no-cache bash
 
 WORKDIR /app
 

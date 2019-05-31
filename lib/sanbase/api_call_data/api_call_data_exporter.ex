@@ -10,22 +10,22 @@ defmodule Sanbase.ApiCallDataExporter do
   use GenServer
 
   require Sanbase.Utils.Config, as: Config
-  @producer Config.get(:api_call_data_kafka_producer, SanExporterEx.Producer)
+  @producer Config.get(:producer, SanExporterEx.Producer)
 
   @typedoc ~s"""
   A map that represents the API call data that will be persisted.
   """
   @type api_call_data :: %{
-          timestamp: non_neg_integer(),
-          query: String.t(),
+          timestamp: non_neg_integer() | nil,
+          query: String.t() | nil,
           status_code: non_neg_integer(),
-          user_id: non_neg_integer(),
-          auth_method: :atom,
-          api_token: String.t(),
+          user_id: non_neg_integer() | nil,
+          auth_method: :atom | nil,
+          api_token: String.t() | nil,
           remote_ip: String.t(),
           user_agent: String.t(),
-          duration_ms: non_neg_integer(),
-          san_tokens: float()
+          duration_ms: non_neg_integer() | nil,
+          san_tokens: float() | nil
         }
 
   @typedoc ~s"""
@@ -111,7 +111,7 @@ defmodule Sanbase.ApiCallDataExporter do
     {:noreply, %{state | data: [], size: 0}}
   end
 
-  defp send_data(topic, data) do
-    @producer.send_data(topic, data)
-  end
+  defp send_data(_, []), do: :ok
+  defp send_data(_, nil), do: :ok
+  defp send_data(topic, data), do: @producer.send_data(topic, data)
 end

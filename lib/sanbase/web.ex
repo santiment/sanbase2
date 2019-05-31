@@ -1,6 +1,8 @@
 defmodule Sanbase.Application.Web do
   import Sanbase.ApplicationUtils
 
+  require Sanbase.Utils.Config, as: Config
+
   def init() do
     # API metrics
     SanbaseWeb.Graphql.Prometheus.HistogramInstrumenter.install(SanbaseWeb.Graphql.Schema)
@@ -13,6 +15,13 @@ defmodule Sanbase.Application.Web do
   will be started, too.
   """
   def children() do
+    kafka_producer =
+      Config.module_get(
+        Sanbase.ApiCallDataExporter,
+        :supervisor,
+        SanExporterEx.Producer.Supervisor
+      )
+
     # Define workers and child supervisors to be supervised
     children = [
       # Start the TimescaleDB Ecto repository
@@ -48,7 +57,10 @@ defmodule Sanbase.Application.Web do
            [name: Sanbase.ClusterSupervisor]
          ]},
         [:prod]
-      )
+      ),
+      {SanExporterEx, [kafka_producer_module: kafka_producer]},
+      # Start the API Call Data Exporter
+      {Sanbase.ApiCallDataExporter, [topic: "api_call_data"]}
     ]
 
     opts = [strategy: :one_for_one, name: Sanbase.WebSupervisor, max_restarts: 5, max_seconds: 1]

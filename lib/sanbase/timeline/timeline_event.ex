@@ -82,23 +82,39 @@ defmodule Sanbase.Timeline.TimelineEvent do
   # private functions
 
   defp maybe_create_event(
-         %Post{id: id},
-         %{state: "approved", ready_state: "published"},
-         params
+         %Post{id: id, ready_state: "published"},
+         %{state: "approved"},
+         %{event_type: @publish_insight_type} = params
+       ) do
+    create_event(:post_id, id, params)
+  end
+
+  defp maybe_create_event(
+         %Post{id: id, state: "approved"},
+         %{ready_state: "published"},
+         %{event_type: @publish_insight_type} = params
        ) do
     create_event(:post_id, id, params)
   end
 
   defp maybe_create_event(%Post{id: _id}, _, _), do: :ok
 
-  defp maybe_create_event(%UserList{id: id, is_public: true}, %{list_items: list_items}, params)
+  defp maybe_create_event(
+         %UserList{id: id, is_public: true},
+         %{list_items: list_items},
+         %{event_type: @update_watchlist_type} = params
+       )
        when is_list(list_items) and length(list_items) > 0 do
     create_event(:user_list_id, id, params)
   end
 
   defp maybe_create_event(%UserList{id: _id}, _, _), do: :ok
 
-  defp maybe_create_event(%UserTrigger{id: id, trigger: %{is_public: true}}, _, params) do
+  defp maybe_create_event(
+         %UserTrigger{id: id, trigger: %{is_public: true}},
+         _,
+         %{event_type: @create_public_trigger_type} = params
+       ) do
     create_event(:user_trigger_id, id, params)
   end
 

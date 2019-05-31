@@ -81,8 +81,7 @@ defmodule Sanbase.Clickhouse.TokenCirculation do
       toUnixTimestamp(min(dt))
     FROM #{@table}
     PREWHERE
-      ticker_slug = ?1 AND
-      metric = '#{@metric_name}'
+      ticker_slug = ?1
     """
 
     ClickhouseRepo.query_transform(query, [ticker_slug], fn [datetime] ->

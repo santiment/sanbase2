@@ -110,7 +110,7 @@ defmodule Sanbase.Clickhouse.TokenCirculation do
       args,
       fn [timestamp, token_circulation] ->
         %{
-          datetime: timestamp |> String.to_integer() |> DateTime.from_unix!(),
+          datetime: timestamp |> DateTime.from_unix!(),
           token_circulation: token_circulation
         }
       end
@@ -120,11 +120,11 @@ defmodule Sanbase.Clickhouse.TokenCirculation do
   defp token_circulation_query(:less_than_a_day, ticker_slug, from, to, interval) do
     query = """
     SELECT
-      intDiv(t, ?1) * ?1 AS t,
+      toUnixTimestamp((intDiv(toUInt32(toDateTime(dt2)), ?1) * ?1)) AS ts,
       AVG(value)
     FROM (
       SELECT
-        toUnixTimestamp(toDateTime(dt)) AS t,
+        toDateTime(dt) AS dt2,
         argMax(value,computed_at) AS value
       FROM
         #{@table}
@@ -133,10 +133,10 @@ defmodule Sanbase.Clickhouse.TokenCirculation do
         dt <= toDate(?3) AND
         ticker_slug = ?4 AND
         metric = '#{@metric_name}'
-      GROUP BY t
+      GROUP BY dt2
     )
-    GROUP BY t
-    ORDER BY t
+    GROUP BY ts
+    ORDER BY ts
     """
 
     args = [interval, from, to, ticker_slug]

@@ -25,6 +25,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     TopHolders,
     ShareOfDeposits,
     TokenCirculation,
+    TokenVelocity,
     Bitcoin
   }
 
@@ -160,6 +161,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     else
       {:error, error} ->
         error_msg = graphql_error_msg("Token Circulation", slug)
+        log_graphql_error(error_msg, error)
+        {:error, error_msg}
+    end
+  end
+
+  def token_velocity(
+        _root,
+        %{slug: slug, from: from, to: to, interval: interval} = args,
+        _resolution
+      ) do
+    with ticker when is_binary(ticker) <- Project.ticker_by_slug(slug),
+         ticker_slug <- ticker <> "_" <> slug,
+         {:ok, from, to, interval} <-
+           calibrate_interval(TokenVelocity, ticker_slug, from, to, interval, 86_400, @datapoints),
+         {:ok, token_velocity} <-
+           TokenVelocity.token_velocity(ticker_slug, from, to, interval) do
+      {:ok, token_velocity |> fit_from_datetime(args)}
+    else
+      {:error, error} ->
+        error_msg = graphql_error_msg("Token Velocity", slug)
         log_graphql_error(error_msg, error)
         {:error, error_msg}
     end

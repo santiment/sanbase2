@@ -199,8 +199,10 @@ defmodule Sanbase.Insight.Post do
   # Helper functions
 
   defp publish_post(post) do
+    publish_changeset = publish_changeset(post, %{ready_state: Post.published()})
+
     with {:ok, post} <-
-           publish_changeset(post, %{ready_state: Post.published()}) |> Repo.update(),
+           publish_changeset |> Repo.update(),
          {:ok, discourse_topic_url} <- Sanbase.Discourse.Insight.create_discourse_topic(post),
          {:ok, post} <-
            publish_changeset(post, %{discourse_topic_url: discourse_topic_url}) |> Repo.update() do
@@ -208,7 +210,11 @@ defmodule Sanbase.Insight.Post do
         Sanbase.Notifications.Insight.publish_in_discord(post)
       end)
 
-      TimelineEvent.create_event_async(post, TimelineEvent.publish_insight_type())
+      TimelineEvent.maybe_create_event_async(
+        TimelineEvent.publish_insight_type(),
+        post,
+        publish_changeset
+      )
 
       {:ok, post}
     end

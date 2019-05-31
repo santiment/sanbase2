@@ -79,32 +79,11 @@ defmodule Sanbase.UserList do
   def update_user_list(%{id: id} = params) do
     params = update_list_items_params(params, id)
 
-    watchlist =
-      by_id(id)
-      |> Repo.preload(:list_items)
+    watchlist = by_id(id) |> Repo.preload(:list_items)
+    changeset = watchlist |> update_changeset(params)
 
-    changeset =
-      watchlist
-      |> update_changeset(params)
-
-    if watchlist.is_public and Map.get(params, :list_items) do
-      Repo.update(changeset)
-      |> log_timeline_event()
-    else
-      Repo.update(changeset)
-    end
-  end
-
-  defp log_timeline_event(result) do
-    case result do
-      {:ok, watchlist} ->
-        TimelineEvent.create_event_async(watchlist, TimelineEvent.update_watchlist_type())
-
-        {:ok, watchlist}
-
-      {:error, changeset} ->
-        {:error, changeset}
-    end
+    Repo.update(changeset)
+    |> maybe_create_event(changeset, TimelineEvent.update_watchlist_type())
   end
 
   def remove_user_list(%{id: id}) do
@@ -142,6 +121,13 @@ defmodule Sanbase.UserList do
   end
 
   # Private functions
+
+  defp maybe_create_event({:ok, watchlist}, changeset, event_type) do
+    TimelineEvent.maybe_create_event_async(event_type, watchlist, changeset)
+    {:ok, watchlist}
+  end
+
+  defp maybe_create_event(error_result, _, _), do: error_result
 
   defp user_list_query_by_user_id(nil) do
     from(dul in __MODULE__, where: dul.is_public == true)

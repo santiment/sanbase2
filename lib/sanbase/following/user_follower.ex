@@ -57,7 +57,7 @@ defmodule Sanbase.Following.UserFollower do
   end
 
   @doc """
-  Returns all user ids of users that follow certain users
+  Returns all user ids of users that follow certain user
   """
   def following(user_id) do
     from(

@@ -11,7 +11,7 @@ defmodule Sanbase.Notifications.Insight do
     |> publish()
     |> case do
       {:ok, %HTTPoison.Response{status_code: 204}} ->
-        {:ok, "Successfully published insight"}
+        :ok
 
       {:ok, %HTTPoison.Response{status_code: status_code}} ->
         Logger.error("Can't publish insight [#{post.id}] in discord: code[#{status_code}]")

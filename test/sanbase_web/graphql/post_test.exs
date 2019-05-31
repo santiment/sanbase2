@@ -742,7 +742,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
       with_mocks([
         {Sanbase.Discourse.Api, [],
          [publish: fn _, _ -> @discourse_response_file |> File.read!() |> Jason.decode() end]},
-        {Sanbase.Notifications.Insight, [], [publish_in_discord: fn _ -> {:ok, "Success"} end]}
+        {Sanbase.Notifications.Insight, [], [publish_in_discord: fn _ -> :ok end]}
       ]) do
         post =
           insert(:post,
@@ -781,7 +781,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
       with_mocks([
         {Sanbase.Discourse.Api, [],
          [publish: fn _, _ -> {:error, "Cannot publish to discourse"} end]},
-        {Sanbase.Notifications.Insight, [], [publish_in_discord: fn _ -> {:ok, "Success"} end]}
+        {Sanbase.Notifications.Insight, [], [publish_in_discord: fn _ -> :ok end]}
       ]) do
         post =
           insert(:post,

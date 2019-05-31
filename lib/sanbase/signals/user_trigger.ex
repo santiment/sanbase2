@@ -151,7 +151,7 @@ defmodule Sanbase.Signals.UserTrigger do
       changeset = %UserTrigger{} |> create_changeset(%{user_id: user_id, trigger: params})
 
       Repo.insert(changeset)
-      |> log_timeline_event(Map.get(params, :is_public))
+      |> maybe_create_event(changeset, TimelineEvent.create_public_trigger_type())
     else
       {:nil?, true} ->
         {:error, "Trigger structure is invalid. Key `settings` is empty."}
@@ -164,20 +164,6 @@ defmodule Sanbase.Signals.UserTrigger do
 
   def create_user_trigger(_, _),
     do: {:error, "Trigger structure is invalid. Key `settings` is missing."}
-
-  defp log_timeline_event(result, true) do
-    case result do
-      {:ok, user_trigger} ->
-        TimelineEvent.create_event_async(user_trigger, TimelineEvent.create_public_trigger_type())
-
-        {:ok, user_trigger}
-
-      {:error, changeset} ->
-        {:error, changeset}
-    end
-  end
-
-  defp log_timeline_event(result, _), do: result
 
   @doc ~s"""
   Update an existing user trigger with a given UUID `trigger_id`.
@@ -283,6 +269,13 @@ defmodule Sanbase.Signals.UserTrigger do
         {:error, error}
     end
   end
+
+  defp maybe_create_event({:ok, user_trigger}, changeset, event_type) do
+    TimelineEvent.maybe_create_event_async(event_type, user_trigger, changeset)
+    {:ok, user_trigger}
+  end
+
+  defp maybe_create_event(error_result, _, _), do: error_result
 
   defp clean_params(params) do
     params

@@ -17,6 +17,12 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   alias __MODULE__
 
+  @doc """
+  Currently supported events are:
+  * Publish Insight
+  * Update a public Watchlist with projects
+  * Create a public UserTrigger
+  """
   @publish_insight_type "publish_insight"
   @update_watchlist_type "update_watchlist"
   @create_public_trigger_type "create_public_trigger"
@@ -64,28 +70,39 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   def events(_, _), do: {:error, "Bad arguments"}
 
-  def create_event_async(resource, type) do
+  def maybe_create_event_async(event_type, resource, changeset) do
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-      create_event(resource, %{
-        event_type: type,
+      maybe_create_event(resource, changeset.changes, %{
+        event_type: event_type,
         user_id: resource.user_id
       })
     end)
   end
 
-  def create_event(%Post{id: id}, params) do
+  # private functions
+
+  defp maybe_create_event(
+         %Post{id: id},
+         %{state: "approved", ready_state: "published"},
+         params
+       ) do
     create_event(:post_id, id, params)
   end
 
-  def create_event(%UserList{id: id}, params) do
+  defp maybe_create_event(%Post{id: _id}, _, _), do: :ok
+
+  defp maybe_create_event(%UserList{id: id, is_public: true}, %{list_items: list_items}, params)
+       when is_list(list_items) and length(list_items) > 0 do
     create_event(:user_list_id, id, params)
   end
 
-  def create_event(%UserTrigger{id: id}, params) do
+  defp maybe_create_event(%UserList{id: _id}, _, _), do: :ok
+
+  defp maybe_create_event(%UserTrigger{id: id, trigger: %{is_public: true}}, _, params) do
     create_event(:user_trigger_id, id, params)
   end
 
-  # private functions
+  defp maybe_create_event(%UserTrigger{id: _id}, _, _), do: :ok
 
   defp create_event(type, id, params) do
     %__MODULE__{} |> create_changeset(Map.put(params, type, id)) |> Repo.insert()

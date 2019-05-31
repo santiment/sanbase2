@@ -2,7 +2,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   require Logger
 
   alias Sanbase.Model.Project
-  import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 7]
+  import SanbaseWeb.Graphql.Helpers.Utils, only: [fit_from_datetime: 2, calibrate_interval: 7]
+
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
@@ -23,6 +24,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     RealizedValue,
     TopHolders,
     ShareOfDeposits,
+    TokenCirculation,
     Bitcoin
   }
 
@@ -113,6 +115,51 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     else
       {:error, error} ->
         error_msg = graphql_error_msg("MVRV Ratio", slug)
+        log_graphql_error(error_msg, error)
+        {:error, error_msg}
+    end
+  end
+
+  def token_circulation(
+        _root,
+        %{slug: "bitcoin", from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    with {:ok, from, to, interval} <-
+           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86_400, @datapoints) do
+      Bitcoin.token_circulation(from, to, interval)
+    end
+  end
+
+  def token_circulation(
+        _root,
+        %{slug: slug, from: from, to: to, interval: interval} = args,
+        _resolution
+      ) do
+    with ticker when is_binary(ticker) <- Project.ticker_by_slug(slug),
+         ticker_slug <- ticker <> "_" <> slug,
+         {:ok, from, to, interval} <-
+           calibrate_interval(
+             TokenCirculation,
+             ticker_slug,
+             from,
+             to,
+             interval,
+             86_400,
+             @datapoints
+           ),
+         {:ok, token_circulation} <-
+           TokenCirculation.token_circulation(
+             :less_than_a_day,
+             ticker_slug,
+             from,
+             to,
+             interval
+           ) do
+      {:ok, token_circulation |> fit_from_datetime(args)}
+    else
+      {:error, error} ->
+        error_msg = graphql_error_msg("Token Circulation", slug)
         log_graphql_error(error_msg, error)
         {:error, error_msg}
     end

@@ -403,7 +403,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction)
-      cache_resolve(&EtherbiResolver.token_circulation/3)
+      cache_resolve(&ClickhouseResolver.token_circulation/3)
     end
 
     @desc ~s"""

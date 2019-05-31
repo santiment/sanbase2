@@ -1,7 +1,6 @@
-# Elixir and phoenix assets build image
-FROM elixir:1.8.2-otp-22
+FROM elixir:1.8.2-otp-22-alpine
 
-RUN apt-get update && apt-get install -y git postgresql-client-9.6
+RUN apk add --update git postgresql-client make g++
 
 ENV MIX_ENV test
 

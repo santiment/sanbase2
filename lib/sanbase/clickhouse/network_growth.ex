@@ -31,7 +31,7 @@ defmodule Sanbase.Clickhouse.NetworkGrowth do
       GROUP BY time
     )
     GROUP BY dt
-    GROUP BY dt
+    ORDER BY dt
     """
 
     args = [interval, span, contract, from_datetime_unix, to_datetime_unix]

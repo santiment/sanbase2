@@ -29,7 +29,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   @max_limit 100
 
-  @timestamps_opts [inserted_at: :created_at, updated_at: false, type: :utc_datetime]
+  @timestamps_opts [updated_at: false, type: :utc_datetime]
   @table "timeline_events"
   schema @table do
     field(:event_type, :string)
@@ -47,7 +47,14 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   def create_changeset(%__MODULE__{} = timeline_events, attrs \\ %{}) do
     timeline_events
-    |> cast(attrs, [:event_type, :user_id, :post_id, :user_list_id, :user_trigger_id, :created_at])
+    |> cast(attrs, [
+      :event_type,
+      :user_id,
+      :post_id,
+      :user_list_id,
+      :user_trigger_id,
+      :inserted_at
+    ])
   end
 
   def events(
@@ -130,7 +137,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     from(
       event in query,
       where: event.user_id in ^following,
-      order_by: [desc: event.created_at],
+      order_by: [desc: event.inserted_at],
       limit: ^limit,
       preload: [:user_trigger, :post, :user_list, :user]
     )
@@ -139,22 +146,22 @@ defmodule Sanbase.Timeline.TimelineEvent do
   defp by_cursor(query, :before, datetime) do
     from(
       event in query,
-      where: event.created_at < ^datetime
+      where: event.inserted_at < ^datetime
     )
   end
 
   defp by_cursor(query, :after, datetime) do
     from(
       event in query,
-      where: event.created_at > ^datetime
+      where: event.inserted_at > ^datetime
     )
   end
 
   defp events_with_cursor([]), do: {:ok, %{events: [], cursor: %{}}}
 
   defp events_with_cursor(events) do
-    before_datetime = events |> List.last() |> Map.get(:created_at)
-    after_datetime = events |> List.first() |> Map.get(:created_at)
+    before_datetime = events |> List.last() |> Map.get(:inserted_at)
+    after_datetime = events |> List.first() |> Map.get(:inserted_at)
 
     {:ok,
      %{

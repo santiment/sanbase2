@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventTypes do
 
   object :timeline_event do
     field(:event_type, non_null(:string))
-    field(:created_at, non_null(:datetime))
+    field(:inserted_at, non_null(:datetime))
     field(:user, non_null(:user))
     field(:user_trigger, :user_trigger)
     field(:post, :post)

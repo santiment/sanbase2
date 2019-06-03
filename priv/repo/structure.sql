@@ -1002,7 +1002,7 @@ CREATE TABLE public.timeline_events (
     post_id bigint,
     user_list_id bigint,
     user_trigger_id bigint,
-    created_at timestamp without time zone NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
     CONSTRAINT only_one_fk CHECK ((((
 CASE
     WHEN (post_id IS NULL) THEN 0
@@ -2086,10 +2086,10 @@ CREATE UNIQUE INDEX telegram_user_tokens_user_id_index ON public.telegram_user_t
 
 
 --
--- Name: timeline_events_user_id_created_at_index; Type: INDEX; Schema: public; Owner: -
+-- Name: timeline_events_user_id_inserted_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX timeline_events_user_id_created_at_index ON public.timeline_events USING btree (user_id, created_at);
+CREATE INDEX timeline_events_user_id_inserted_at_index ON public.timeline_events USING btree (user_id, inserted_at);
 
 
 --

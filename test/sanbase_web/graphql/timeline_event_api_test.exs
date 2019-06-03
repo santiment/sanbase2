@@ -85,7 +85,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
         }
         events {
           eventType,
-          createdAt,
+          insertedAt,
           user {
             id
           },

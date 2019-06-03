@@ -1,6 +1,13 @@
 defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   @moduledoc ~s"""
-  Cache the whole result right before it is send to the client.
+  Cache & Persist API Call Data right before sending the response.
+
+  This module is responsible for persisting the API Call data and
+  cache the whole result of some queries right before it is send to the client.
+
+  All queries that did not raise exceptions and were successfully handled
+  by the GraphQL layer pass through this module. The data for them is exported
+  to Kafka. See `export_api_call_data` for more info.
 
   The Blueprint's `result` field contains the final result as a single map.
   This result is made up of the top-level resolver and all custom resolvers.
@@ -26,7 +33,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
              extract_caller_data: 1,
              export_api_call_data: 3,
              remote_ip: 1,
-             user_agent: 1
+             user_agent: 1,
+             has_graphql_errors?: 1
            ]
 
   @cached_queries [
@@ -38,8 +46,6 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     "projects_list_stats"
   ]
 
-  def before_send(conn, %Absinthe.Blueprint{result: %{errors: _}}), do: conn
-
   def before_send(conn, %Absinthe.Blueprint{} = blueprint) do
     # Do not cache in case of:
     # -`:nocache` returend from a resolver
@@ -49,8 +55,15 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
     queries = queries_in_request(blueprint)
     export_api_call_data(queries, conn, blueprint)
-    should_cache? = !Process.get(:do_not_cache_query)
-    cache_result(should_cache?, queries, blueprint)
+
+    case blueprint do
+      %Absinthe.Blueprint{result: %{errors: _}} ->
+        :ok
+
+      _ ->
+        should_cache? = !Process.get(:do_not_cache_query)
+        cache_result(should_cache?, queries, blueprint)
+    end
 
     conn
     |> maybe_create_or_drop_session(blueprint.execution.context)
@@ -96,6 +109,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
   # API Call exporting functions
 
+  # Create an API Call event for every query in a Document separately.
   defp export_api_call_data(queries, conn, blueprint) do
     now = DateTime.utc_now() |> DateTime.to_unix(:nanosecond)
     duration_ms = div(now - blueprint.telemetry.start_time, 1_000_000)
@@ -108,6 +122,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         timestamp: div(now, 1_000_000_000),
         query: query,
         status_code: 200,
+        has_graphql_errors: has_graphql_errors?(blueprint),
         user_id: user_id,
         auth_method: auth_method,
         api_token: api_token,
@@ -151,4 +166,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       _ -> nil
     end
   end
+
+  defp has_graphql_errors?(%Absinthe.Blueprint{result: %{errors: _}}), do: true
+  defp has_graphql_errors?(_), do: false
 end

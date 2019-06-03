@@ -99,6 +99,14 @@ defmodule Sanbase.Application do
   @spec common_children() :: [:supervisor.child_spec() | {module(), term()} | module()]
   def common_children() do
     [
+      # Start the Kafka Exporter
+      {SanExporterEx, [kafka_producer_module: kafka_producer()]},
+
+      # Start the API Call Data Exporter. Must be started before the Endpoint
+      # so it will be terminated after the Endpoint so no API Calls can come in
+      # and not be persisted. When terminating it will flush its internal buffer
+      {Sanbase.ApiCallDataExporter, [topic: kafka_api_call_data_topic()]},
+
       # Start the endpoint when the application starts
       SanbaseWeb.Endpoint,
 
@@ -125,4 +133,16 @@ defmodule Sanbase.Application do
     SanbaseWeb.Endpoint.config_change(changed, removed)
     :ok
   end
+
+  defp kafka_producer() do
+    require Sanbase.Utils.Config, as: Config
+
+    Config.module_get(
+      Sanbase.ApiCallDataExporter,
+      :supervisor,
+      SanExporterEx.Producer.Supervisor
+    )
+  end
+
+  defp kafka_api_call_data_topic(), do: "api_call_data"
 end

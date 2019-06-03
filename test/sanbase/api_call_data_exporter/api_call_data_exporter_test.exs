@@ -54,7 +54,7 @@ defmodule ApiCallDataExporterTest do
     # No data even after 50 api calls were persisted and some time has passed
     Process.sleep(100)
     state = Sanbase.InMemoryKafka.Producer.get_state()
-    assert state == %{}
+    assert Map.get(state, topic) == nil
 
     # Aftert the kafka flush timeout has been reached the data is flushed
     Process.sleep(200)

@@ -2,6 +2,17 @@ defmodule SanbaseWeb.Endpoint.ErrorHandler do
   @moduledoc ~s"""
   Handle errors that happened in the Endpoint.
 
+  This will specifically handle:
+  1. Anything that has either :status_code or :plug_status field such as:
+    - Plug Praser Error - HTTP Status Code 400
+    - Phoenix Routing Error - HTTP Status Code 404
+    - Any other Plug or Phoenix specific error
+   2. Anything that does not have these fields will return HTTP Status Code 500
+
+  If the error is catched here the GraphQL Layer has not been reached, so the
+  `has_graphql_errors` field is set to `nil`. The GraphQL layer is responsible
+  for parsign the query, authorization and extraction of SAN Balance, so these
+  fields cannot be provided, too.
   """
   defmacro __using__(_opts) do
     quote do
@@ -14,8 +25,9 @@ defmodule SanbaseWeb.Endpoint.ErrorHandler do
       defoverridable call: 2
 
       # Phoenix.Endpoint.call/2 function is defined in a before_compile hook
-      # so in order to catch errors with it the using and before compile macros
-      # need to be used
+      # so in order to catch errors with it the `__using__` and `__before_compile__`
+      # macros need to be redefined. Using `super(conn, opts)` calls the original
+      # call function that was to be executed and wraps it in a try-rescue block
       def call(conn, opts) do
         try do
           super(conn, opts)
@@ -41,6 +53,7 @@ defmodule SanbaseWeb.Endpoint.ErrorHandler do
           timestamp: DateTime.utc_now() |> DateTime.to_unix(),
           query: nil,
           status_code: status_code,
+          has_graphql_errors: nil,
           user_id: nil,
           auth_method: nil,
           api_token: nil,

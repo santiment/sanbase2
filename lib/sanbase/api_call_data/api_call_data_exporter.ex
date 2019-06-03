@@ -19,6 +19,7 @@ defmodule Sanbase.ApiCallDataExporter do
           timestamp: non_neg_integer() | nil,
           query: String.t() | nil,
           status_code: non_neg_integer(),
+          has_graphql_errors: boolean() | nil,
           user_id: non_neg_integer() | nil,
           auth_method: :atom | nil,
           api_token: String.t() | nil,
@@ -70,15 +71,13 @@ defmodule Sanbase.ApiCallDataExporter do
   @spec persist(api_call_data | [api_call_data]) :: :ok
   @spec persist(pid() | atom(), api_call_data | [api_call_data]) :: :ok
   def persist(exporter \\ __MODULE__, api_call_data) do
-    # Log so it's seen in Kibana
-    # Logger.info(api_call_data)
     GenServer.cast(exporter, {:persist, api_call_data})
   end
 
   @doc ~s"""
   Send all available data in the buffers before shutting down.
 
-  The ApiCallRecorder should be started before the Endpoin in the supervison tree.
+  The ApiCallRecorder should be started before the Endpoint in the supervison tree.
   This means that when shutting down it will be stopped after the Endpoint so
   all API call data will be stored in Kafka and no more API calls are exepcted
   """

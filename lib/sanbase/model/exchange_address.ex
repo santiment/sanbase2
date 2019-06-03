@@ -47,6 +47,18 @@ defmodule Sanbase.Model.ExchangeAddress do
 
   def exchange_names_by_infrastructure(_), do: []
 
+  @doc ~s"List all exchange wallets"
+  @spec exchange_wallets_by_infrastructure(%Infrastructure{}) :: list(String.t())
+  def exchange_wallets_by_infrastructure(%Infrastructure{} = infr) do
+    from(e in __MODULE__,
+      where: e.infrastructure_id == ^infr.id,
+      limit: 5000
+    )
+    |> Repo.all()
+  end
+
+  def exchange_wallets_by_infrastructure(_), do: []
+
   # TODO: This limit is temporary and the whole logic should be reworked so
   # the Bitcoin addresses are also present in CH and does not need to be loaded
   # in sanbase in order to calculate them
@@ -56,7 +68,7 @@ defmodule Sanbase.Model.ExchangeAddress do
     from(e in __MODULE__,
       where: e.name == ^exchange,
       select: e.address,
-      limit: 100
+      limit: 5000
     )
     |> Repo.all()
     |> case do

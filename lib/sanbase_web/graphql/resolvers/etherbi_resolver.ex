@@ -6,8 +6,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   import Sanbase.Utils.ErrorHandling,
     only: [log_graphql_error: 2, graphql_error_msg: 2]
 
-  alias Sanbase.Repo
-  alias Sanbase.Model.{Project, ExchangeAddress}
+  alias Sanbase.Model.{Infrastructure, Project, ExchangeAddress}
 
   alias Sanbase.Blockchain.{
     TokenVelocity,
@@ -231,7 +230,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     end
   end
 
-  def exchange_wallets(_root, _args, _resolution) do
-    {:ok, ExchangeAddress |> Repo.all() |> Repo.preload(:infrastructure)}
+  def exchange_wallets(_root, %{slug: "ethereum"}, _resolution) do
+    {:ok, ExchangeAddress.exchange_wallets_by_infrastructure(Infrastructure.get("ETH"))}
+  end
+
+  def exchange_wallets(_root, %{slug: "bitcoin"}, _resolution) do
+    {:ok, ExchangeAddress.exchange_wallets_by_infrastructure(Infrastructure.get("BTC"))}
+  end
+
+  def exchange_wallets(_, _, _) do
+    {:error, "Currently only ethereum and bitcoin exchanges are supported"}
   end
 end

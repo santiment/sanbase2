@@ -55,7 +55,11 @@ defmodule Sanbase.Application do
           Sanbase.Application.Web.children()
       end
 
-    children = (common_children() ++ children) |> Sanbase.ApplicationUtils.normalize_children()
+    prepended_children = prepended_children(container_type)
+
+    children =
+      (prepended_children ++ common_children() ++ children)
+      |> Sanbase.ApplicationUtils.normalize_children()
 
     # Add error tracking through sentry
     {:ok, _} = Logger.add_backend(Sentry.LoggerBackend)
@@ -95,10 +99,9 @@ defmodule Sanbase.Application do
   end
 
   @doc ~s"""
-  Children common for all types of container types
+  Some services must be started before all others
   """
-  @spec common_children() :: [:supervisor.child_spec() | {module(), term()} | module()]
-  def common_children() do
+  def prepended_children(container_type) when container_type in ["web", "all"] do
     [
       # Start the Kafka Exporter
       {SanExporterEx, [kafka_producer_module: kafka_producer_supervisor_module()]},
@@ -106,8 +109,18 @@ defmodule Sanbase.Application do
       # Start the API Call Data Exporter. Must be started before the Endpoint
       # so it will be terminated after the Endpoint so no API Calls can come in
       # and not be persisted. When terminating it will flush its internal buffer
-      {Sanbase.ApiCallDataExporter, [topic: kafka_api_call_data_topic()]},
+      {Sanbase.ApiCallDataExporter, [topic: kafka_api_call_data_topic()]}
+    ]
+  end
 
+  def prepended_children(_), do: []
+
+  @doc ~s"""
+  Children common for all types of container types
+  """
+  @spec common_children() :: [:supervisor.child_spec() | {module(), term()} | module()]
+  def common_children() do
+    [
       # Start the endpoint when the application starts
       SanbaseWeb.Endpoint,
 

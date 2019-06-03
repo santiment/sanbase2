@@ -41,13 +41,7 @@ defmodule SanbaseWeb.Endpoint.ErrorHandler do
       defp export_api_call_data(conn, kind, reason) do
         remote_ip = conn.remote_ip |> :inet_parse.ntoa() |> to_string
         status_code = Map.get(reason, :status_code) || Map.get(reason, :plug_status, 500)
-
-        user_agent =
-          Enum.find(conn.req_headers, &match?({"user-agent", _}, &1))
-          |> case do
-            {"user-agent", user_agent} -> user_agent
-            _ -> nil
-          end
+        user_agent = Plug.Conn.get_req_header(conn, "user-agent") |> List.first()
 
         %{
           timestamp: DateTime.utc_now() |> DateTime.to_unix(),

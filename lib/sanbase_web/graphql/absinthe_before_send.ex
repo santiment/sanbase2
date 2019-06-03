@@ -33,7 +33,6 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
              extract_caller_data: 1,
              export_api_call_data: 3,
              remote_ip: 1,
-             user_agent: 1,
              has_graphql_errors?: 1
            ]
 
@@ -113,6 +112,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   defp export_api_call_data(queries, conn, blueprint) do
     now = DateTime.utc_now() |> DateTime.to_unix(:nanosecond)
     duration_ms = div(now - blueprint.telemetry.start_time, 1_000_000)
+    user_agent = Plug.Conn.get_req_header(conn, "user-agent") |> List.first()
 
     {user_id, san_tokens, auth_method, api_token} =
       extract_caller_data(blueprint.execution.context)
@@ -127,7 +127,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         auth_method: auth_method,
         api_token: api_token,
         remote_ip: remote_ip(blueprint),
-        user_agent: user_agent(conn),
+        user_agent: user_agent,
         duration_ms: duration_ms,
         san_tokens: san_tokens
       }
@@ -158,14 +158,6 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   end
 
   defp extract_caller_data(_), do: {nil, nil, nil, nil}
-
-  defp user_agent(%{req_headers: headers}) do
-    Enum.find(headers, &match?({"user-agent", _}, &1))
-    |> case do
-      {"user-agent", user_agent} -> user_agent
-      _ -> nil
-    end
-  end
 
   defp has_graphql_errors?(%Absinthe.Blueprint{result: %{errors: _}}), do: true
   defp has_graphql_errors?(_), do: false

@@ -95,11 +95,10 @@ defmodule Sanbase.Insight.Post do
   def publish(post_id, user_id) do
     post_id = String.to_integer(post_id)
     post = Repo.get(Post, post_id)
-    draft = draft()
 
     with {:nil?, %Post{id: ^post_id}} <- {:nil?, post},
          {:own_post?, %Post{user_id: ^user_id}} <- {:own_post?, post},
-         {:draft?, %Post{ready_state: ^draft}} <- {:draft?, post},
+         {:draft?, %Post{ready_state: ^@draft}} <- {:draft?, post},
          {:ok, post} <- publish_post(post) do
       {:ok, post}
     else

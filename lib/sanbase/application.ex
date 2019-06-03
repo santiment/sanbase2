@@ -1,6 +1,7 @@
 defmodule Sanbase.Application do
   use Application
   require Logger
+  require Sanbase.Utils.Config, as: Config
 
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
@@ -100,7 +101,7 @@ defmodule Sanbase.Application do
   def common_children() do
     [
       # Start the Kafka Exporter
-      {SanExporterEx, [kafka_producer_module: kafka_producer()]},
+      {SanExporterEx, [kafka_producer_module: kafka_producer_supervisor_module()]},
 
       # Start the API Call Data Exporter. Must be started before the Endpoint
       # so it will be terminated after the Endpoint so no API Calls can come in
@@ -134,9 +135,7 @@ defmodule Sanbase.Application do
     :ok
   end
 
-  defp kafka_producer() do
-    require Sanbase.Utils.Config, as: Config
-
+  defp kafka_producer_supervisor_module() do
     Config.module_get(
       Sanbase.ApiCallDataExporter,
       :supervisor,
@@ -144,5 +143,11 @@ defmodule Sanbase.Application do
     )
   end
 
-  defp kafka_api_call_data_topic(), do: "api_call_data"
+  defp kafka_api_call_data_topic() do
+    Config.module_get(
+      Sanbase.ApiCallDataExporter,
+      :kafka_topic,
+      "sanbase_api_call_data"
+    )
+  end
 end

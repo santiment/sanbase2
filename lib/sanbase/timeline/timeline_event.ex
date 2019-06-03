@@ -102,12 +102,12 @@ defmodule Sanbase.Timeline.TimelineEvent do
   def events(_, _), do: {:error, "Bad arguments"}
 
   @doc """
-    Asynchronously create a timeline event only if all criterias are met.
+  Asynchronously create a timeline event only if all criterias are met.
 
-    Params:
-      - event_type: one of the currently supported event type listed above.
-      - resource: created/updated resource. Currently supported: Post, UserList, UserTrigger.
-      - changeset: the changes used to determine if an event should be created.
+  Params:
+    - event_type: one of the currently supported event type listed above.
+    - resource: created/updated resource. Currently supported: Post, UserList, UserTrigger.
+    - changeset: the changes used to determine if an event should be created.
   """
   @spec maybe_create_event_async(
           event_type,

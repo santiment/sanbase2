@@ -34,7 +34,7 @@ defmodule Sanbase.UserList do
     belongs_to(:user, User)
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
     has_many(:list_items, ListItem, on_delete: :delete_all, on_replace: :delete)
-    has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
+    has_many(:timeline_events, TimelineEvent)
 
     timestamps()
   end

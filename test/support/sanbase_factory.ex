@@ -16,6 +16,7 @@ defmodule Sanbase.Factory do
   }
 
   alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
+  alias Sanbase.Timeline.TimelineEvent
 
   def user_factory() do
     %User{
@@ -152,5 +153,9 @@ defmodule Sanbase.Factory do
 
   def watchlist_factory() do
     %UserList{name: "Generic User List name", color: :red, user: build(:user)}
+  end
+
+  def timeline_event_factory() do
+    %TimelineEvent{}
   end
 end

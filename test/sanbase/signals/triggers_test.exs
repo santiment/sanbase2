@@ -7,6 +7,11 @@ defmodule Sanbase.Signals.TriggersTest do
   import Sanbase.MapUtils
 
   alias Sanbase.Signals.UserTrigger
+  alias Sanbase.Timeline.TimelineEvent
+
+  setup do
+    clean_task_supervisor_children()
+  end
 
   test "create and get user trigger" do
     user = insert(:user)
@@ -25,6 +30,10 @@ defmodule Sanbase.Signals.TriggersTest do
         is_public: true,
         settings: trigger_settings
       })
+
+    assert_receive({_, {:ok, %TimelineEvent{}}})
+
+    assert TimelineEvent |> Sanbase.Repo.all() |> length() == 1
 
     assert created_trigger.trigger.settings == trigger_settings
 

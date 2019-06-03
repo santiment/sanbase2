@@ -44,7 +44,13 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
   end
 
   test "no triggers were defined", _context do
-    Sanbase.Repo.delete_all(UserTrigger)
+    triggers = UserTrigger |> Sanbase.Repo.all()
+
+    triggers
+    |> Enum.each(fn t ->
+      Sanbase.Repo.get!(UserTrigger, t.id)
+      |> Sanbase.Repo.delete()
+    end)
 
     triggered =
       PriceVolumeDifferenceTriggerSettings.type()

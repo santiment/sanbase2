@@ -1,16 +1,21 @@
 defmodule SanbaseWeb.Graphql.PostTest do
   use SanbaseWeb.ConnCase, async: false
-  use Mockery
 
+  import Mock
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import ExUnit.CaptureLog
+  import Sanbase.TestHelpers
 
   alias Sanbase.Tag
   alias Sanbase.Insight.{Poll, Post, Vote}
   alias Sanbase.Model.Project
   alias Sanbase.Repo
+  alias Sanbase.Timeline.TimelineEvent
 
   setup do
+    clean_task_supervisor_children()
+
     poll = Poll.find_or_insert_current_poll!()
     user = insert(:staked_user, username: "user1")
     user2 = insert(:staked_user, username: "user2")
@@ -729,50 +734,102 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
   describe "publish post" do
     @discourse_response_file "#{File.cwd!()}/test/sanbase_web/graphql/assets/discourse_publish_response.json"
-    test "publish post", %{user: user, conn: conn, poll: poll} do
-      mock(
-        Sanbase.Discourse.Api,
-        :publish,
-        @discourse_response_file |> File.read!() |> Jason.decode()
-      )
+    test "successfully publishes in Discourse and Discord and creates timeline event", %{
+      user: user,
+      conn: conn,
+      poll: poll
+    } do
+      with_mocks([
+        {Sanbase.Discourse.Api, [],
+         [publish: fn _, _ -> @discourse_response_file |> File.read!() |> Jason.decode() end]},
+        {Sanbase.Notifications.Insight, [], [publish_in_discord: fn _ -> :ok end]}
+      ]) do
+        post =
+          insert(:post,
+            poll: poll,
+            user: user,
+            state: Post.approved_state(),
+            ready_state: Post.draft()
+          )
 
-      mock(Sanbase.Notifications.Insight, :publish_in_discord, :ok)
+        result =
+          post
+          |> publish_insight_mutation()
+          |> execute_mutation_with_success("publishInsight", conn)
 
-      post =
-        insert(:post,
-          poll: poll,
-          user: user,
-          state: Post.approved_state(),
-          ready_state: Post.draft()
-        )
+        assert_receive({_, {:ok, %TimelineEvent{}}})
 
-      query = """
-      mutation {
-        publishInsight(id: #{post.id}) {
-          id,
-          readyState,
-          discourseTopicUrl
-          publishedAt
-        }
-      }
-      """
+        assert result["readyState"] == Post.published()
 
-      result =
-        conn
-        |> post("/graphql", mutation_skeleton(query))
+        assert result["discourseTopicUrl"] ==
+                 "https://discourse.stage.internal.santiment.net/t/first-test-from-api2/234"
 
-      insight = json_response(result, 200)["data"]["publishInsight"]
-      published_at = insight["publishedAt"] |> Sanbase.DateTimeUtils.from_iso8601!()
-
-      # Test that the published_at time is set to almost now
-      assert abs(Timex.diff(Timex.now(), published_at, :seconds)) < 2
-      assert insight["readyState"] == Post.published()
-
-      assert insight["discourseTopicUrl"] ==
-               "https://discourse.stage.internal.santiment.net/t/first-test-from-api2/234"
+        assert Sanbase.Timeline.TimelineEvent |> Repo.all() |> length() == 1
+      end
     end
 
-    test "publish post returns error when user is not author", %{
+    test "returns error when post does not exist with the provided post_id", %{conn: conn} do
+      result =
+        %{id: 1000}
+        |> publish_insight_mutation()
+        |> execute_mutation_with_errors(conn)
+
+      assert String.contains?(result["message"], "Can't publish post")
+    end
+
+    test "returns error when discourse publish fails", %{user: user, conn: conn, poll: poll} do
+      with_mocks([
+        {Sanbase.Discourse.Api, [],
+         [publish: fn _, _ -> {:error, "Cannot publish to discourse"} end]},
+        {Sanbase.Notifications.Insight, [], [publish_in_discord: fn _ -> :ok end]}
+      ]) do
+        post =
+          insert(:post,
+            poll: poll,
+            user: user,
+            state: Post.approved_state(),
+            ready_state: Post.draft()
+          )
+
+        capture_log(fn ->
+          result =
+            post
+            |> publish_insight_mutation()
+            |> execute_mutation_with_errors(conn)
+
+          assert String.contains?(result["message"], "Can't publish post")
+        end)
+      end
+    end
+
+    @discourse_response_file "#{File.cwd!()}/test/sanbase_web/graphql/assets/discourse_publish_response.json"
+    test "still returns post when discord publish fails", %{user: user, conn: conn, poll: poll} do
+      with_mocks([
+        {Sanbase.Discourse.Api, [],
+         [publish: fn _, _ -> @discourse_response_file |> File.read!() |> Jason.decode() end]},
+        {Sanbase.Notifications.Insight, [],
+         [publish_in_discord: fn _ -> {:error, "Error publishing in discord"} end]}
+      ]) do
+        post =
+          insert(:post,
+            poll: poll,
+            user: user,
+            state: Post.approved_state(),
+            ready_state: Post.draft()
+          )
+
+        result =
+          post
+          |> publish_insight_mutation()
+          |> execute_mutation_with_success("publishInsight", conn)
+
+        assert_receive({_, {:ok, %TimelineEvent{}}})
+
+        assert result["readyState"] == Post.published()
+      end
+    end
+
+    test "returns error when user is not author", %{
       conn: conn,
       poll: poll,
       user2: user2
@@ -785,20 +842,33 @@ defmodule SanbaseWeb.Graphql.PostTest do
           ready_state: Post.draft()
         )
 
-      query = """
-      mutation {
-        publishInsight(id: #{post.id}) {
-          id,
-          ready_state
-        }
-      }
-      """
+      result =
+        post
+        |> publish_insight_mutation()
+        |> execute_mutation_with_errors(conn)
+
+      assert String.contains?(result["message"], "Can't publish not own post")
+    end
+
+    test "returns error when insight is already published", %{
+      conn: conn,
+      poll: poll,
+      user: user
+    } do
+      post =
+        insert(:post,
+          poll: poll,
+          user: user,
+          state: Post.approved_state(),
+          ready_state: Post.published()
+        )
 
       result =
-        conn
-        |> post("/graphql", mutation_skeleton(query))
+        post
+        |> publish_insight_mutation()
+        |> execute_mutation_with_errors(conn)
 
-      assert json_response(result, 200)["errors"]
+      assert String.contains?(result["message"], "Can't publish already published post")
     end
   end
 
@@ -823,6 +893,33 @@ defmodule SanbaseWeb.Graphql.PostTest do
   end
 
   # Helper functions
+
+  defp publish_insight_mutation(post) do
+    """
+    mutation {
+      publishInsight(id: #{post.id}) {
+        id,
+        readyState,
+        discourseTopicUrl
+      }
+    }
+    """
+  end
+
+  defp execute_mutation_with_success(query, query_name, conn) do
+    conn
+    |> post("/graphql", mutation_skeleton(query))
+    |> json_response(200)
+    |> get_in(["data", query_name])
+  end
+
+  defp execute_mutation_with_errors(query, conn) do
+    conn
+    |> post("/graphql", mutation_skeleton(query))
+    |> json_response(200)
+    |> Map.get("errors")
+    |> hd()
+  end
 
   @test_file_path "#{File.cwd!()}/test/sanbase_web/graphql/assets/image.png"
   defp upload_image(conn) do

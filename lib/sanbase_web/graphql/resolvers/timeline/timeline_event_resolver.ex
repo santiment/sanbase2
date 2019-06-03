@@ -6,12 +6,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
   def timeline_events(_root, args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    case TimelineEvent.events(current_user, args) do
-      {:ok, events} ->
-        {:ok, events}
-
-      {:error, error} ->
-        {:error, error}
-    end
+    TimelineEvent.events(current_user, args)
   end
 end

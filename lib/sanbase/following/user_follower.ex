@@ -50,10 +50,9 @@ defmodule Sanbase.Following.UserFollower do
     from(
       uf in __MODULE__,
       where: uf.follower_id == ^user_id,
-      select: [:user_id]
+      select: uf.user_id
     )
     |> Repo.all()
-    |> Enum.map(&Map.get(&1, :user_id))
   end
 
   @doc """
@@ -63,9 +62,8 @@ defmodule Sanbase.Following.UserFollower do
     from(
       uf in __MODULE__,
       where: uf.user_id == ^user_id,
-      select: [:follower_id]
+      select: uf.follower_id
     )
     |> Repo.all()
-    |> Enum.map(&Map.get(&1, :follower_id))
   end
 end

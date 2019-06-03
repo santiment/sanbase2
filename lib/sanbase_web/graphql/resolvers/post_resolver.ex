@@ -1,6 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   require Logger
-  require Sanbase.Utils.Config, as: Config
   require Mockery.Macro
 
   import Ecto.Query
@@ -10,7 +9,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   alias Sanbase.Insight.{Post, Poll}
   alias Sanbase.Model.Project
   alias Sanbase.Repo
-  alias Sanbase.Notifications
   alias SanbaseWeb.Graphql.Helpers.Utils
 
   def insights(%User{} = user, _args, _resolution) do

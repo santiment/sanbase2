@@ -71,6 +71,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
       :user_trigger_id,
       :inserted_at
     ])
+    |> validate_required([:event_type, :user_id])
   end
 
   @doc """

@@ -27,7 +27,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   @update_watchlist_type "update_watchlist"
   @create_public_trigger_type "create_public_trigger"
 
-  @max_limit 100
+  @max_events_returned 100
 
   @timestamps_opts [updated_at: false, type: :utc_datetime]
   @table "timeline_events"
@@ -40,6 +40,22 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
     timestamps()
   end
+
+  @type event_type() :: String.t()
+  @type cursor_type() :: :before | :after
+  @type cursor() :: %{type: cursor_type(), datetime: DateTime.t()}
+  @type cursor_with_limit :: %{
+          limit: non_neg_integer(),
+          cursor: cursor()
+        }
+  @type events_with_cursor ::
+          %{
+            events: list(%TimelineEvent{}),
+            cursor: %{
+              before: DateTime.t(),
+              after: DateTime.t()
+            }
+          }
 
   def publish_insight_type(), do: @publish_insight_type
   def update_watchlist_type(), do: @update_watchlist_type
@@ -57,12 +73,19 @@ defmodule Sanbase.Timeline.TimelineEvent do
     ])
   end
 
-  def events(
-        %User{id: user_id},
-        %{limit: limit, cursor: %{type: cursor_type, datetime: cursor_datetime}}
-      ) do
+  @doc """
+  Returns the generated eventsb by the activity of followed users.
+  The events can be paginated with time-based cursor pagination.
+  """
+  @spec events(%User{}, cursor_with_limit) :: {:ok, events_with_cursor} | {:error, String.t()}
+  def(
+    events(
+      %User{id: user_id},
+      %{limit: limit, cursor: %{type: cursor_type, datetime: cursor_datetime}}
+    )
+  ) do
     TimelineEvent
-    |> events_by_followed_users(user_id, min(limit, @max_limit))
+    |> events_by_followed_users(user_id, min(limit, @max_events_returned))
     |> by_cursor(cursor_type, cursor_datetime)
     |> Repo.all()
     |> events_with_cursor()
@@ -70,13 +93,26 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   def events(%User{id: user_id}, %{limit: limit}) do
     TimelineEvent
-    |> events_by_followed_users(user_id, min(limit, @max_limit))
+    |> events_by_followed_users(user_id, min(limit, @max_events_returned))
     |> Repo.all()
     |> events_with_cursor()
   end
 
   def events(_, _), do: {:error, "Bad arguments"}
 
+  @doc """
+    Asynchronously create a timeline event only if all criterias are met.
+
+    Params:
+      - event_type: one of the currently supported event type listed above.
+      - resource: created/updated resource. Currently supported: Post, UserList, UserTrigger.
+      - changeset: the changes used to determine if an event should be created.
+  """
+  @spec maybe_create_event_async(
+          event_type,
+          %Post{} | %UserList{} | %UserTrigger{},
+          Ecto.Changeset.t()
+        ) :: Task.t()
   def maybe_create_event_async(event_type, resource, changeset) do
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
       maybe_create_event(resource, changeset.changes, %{

@@ -79,8 +79,11 @@ defmodule Sanbase.UserList do
   def update_user_list(%{id: id} = params) do
     params = update_list_items_params(params, id)
 
-    watchlist = by_id(id) |> Repo.preload(:list_items)
-    changeset = watchlist |> update_changeset(params)
+    changeset =
+      id
+      |> by_id()
+      |> Repo.preload(:list_items)
+      |> update_changeset(params)
 
     Repo.update(changeset)
     |> maybe_create_event(changeset, TimelineEvent.update_watchlist_type())

@@ -98,7 +98,7 @@ defmodule Sanbase.Insight.Post do
 
     with {:nil?, %Post{id: ^post_id}} <- {:nil?, post},
          {:own_post?, %Post{user_id: ^user_id}} <- {:own_post?, post},
-         {:draft?, %Post{ready_state: ^@draft}} <- {:draft?, post},
+         {:draft?, %Post{ready_state: @draft}} <- {:draft?, post},
          {:ok, post} <- publish_post(post) do
       {:ok, post}
     else
@@ -200,8 +200,7 @@ defmodule Sanbase.Insight.Post do
   defp publish_post(post) do
     publish_changeset = publish_changeset(post, %{ready_state: Post.published()})
 
-    with {:ok, post} <-
-           publish_changeset |> Repo.update(),
+    with {:ok, post} <- publish_changeset |> Repo.update(),
          {:ok, discourse_topic_url} <- Sanbase.Discourse.Insight.create_discourse_topic(post),
          {:ok, post} <-
            publish_changeset(post, %{discourse_topic_url: discourse_topic_url}) |> Repo.update() do

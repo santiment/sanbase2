@@ -731,6 +731,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Fetch a list of all exchange wallets. This query requires basic authentication."
     field :exchange_wallets, list_of(:wallet) do
+      arg(:slug, :string, default_value: "ethereum")
       middleware(BasicAuth)
 
       cache_resolve(&EtherbiResolver.exchange_wallets/3)

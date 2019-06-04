@@ -41,8 +41,10 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     "all_erc20_projects",
     "all_currency_projects",
     "project_by_slug",
+    "project",
     "projects_list_history_stats",
-    "projects_list_stats"
+    "projects_list_stats",
+    "all_projects_by_function"
   ]
 
   def before_send(conn, %Absinthe.Blueprint{} = blueprint) do
@@ -55,11 +57,11 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     queries = queries_in_request(blueprint)
     export_api_call_data(queries, conn, blueprint)
 
-    case blueprint do
-      %Absinthe.Blueprint{result: %{errors: _}} ->
+    case has_graphql_errors?(blueprint) do
+      true ->
         :ok
 
-      _ ->
+      false ->
         should_cache? = !Process.get(:do_not_cache_query)
         cache_result(should_cache?, queries, blueprint)
     end
@@ -148,7 +150,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   defp extract_caller_data(%{
          auth: %{auth_method: :apikey, current_user: user, token: token, san_balance: san_balance}
        }) do
-    {user.id, san_balance, :apikei, token}
+    {user.id, san_balance, :apikey, token}
   end
 
   defp extract_caller_data(%{

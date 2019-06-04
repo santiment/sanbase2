@@ -9,7 +9,9 @@ defmodule Sanbase.ApiCallDataExporter do
 
   use GenServer
 
+  require Logger
   require Sanbase.Utils.Config, as: Config
+
   @producer Config.get(:producer, SanExporterEx.Producer)
 
   @typedoc ~s"""
@@ -82,7 +84,11 @@ defmodule Sanbase.ApiCallDataExporter do
   all API call data will be stored in Kafka and no more API calls are exepcted
   """
   def terminate(_reason, state) do
-    _ = send_data(state.topic, state.data)
+    Logger.info(
+      "Terminating the ApiCallExporter. Sending #{length(state.data)} API Call events to Kafka."
+    )
+
+    send_data(state.topic, state.data)
     :ok
   end
 

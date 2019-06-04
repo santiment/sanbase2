@@ -1,6 +1,6 @@
 defmodule Sanbase.InMemoryKafka.Producer do
   @moduledoc ~s"""
-  In-memory implementation of the SanExporterEx.ProduxerBehaviour used in dev
+  In-memory implementation of the SanExporterEx.ProducerBehaviour used in dev
   and test environments.
 
   This modulue is used by default in dev and test environments so there is no

@@ -4,14 +4,14 @@ defmodule SanbaseWeb.Endpoint.ErrorHandler do
 
   This will specifically handle:
   1. Anything that has either :status_code or :plug_status field such as:
-    - Plug Praser Error - HTTP Status Code 400
+    - Plug Parser Error - HTTP Status Code 400
     - Phoenix Routing Error - HTTP Status Code 404
     - Any other Plug or Phoenix specific error
    2. Anything that does not have these fields will return HTTP Status Code 500
 
   If the error is catched here the GraphQL Layer has not been reached, so the
   `has_graphql_errors` field is set to `nil`. The GraphQL layer is responsible
-  for parsign the query, authorization and extraction of SAN Balance, so these
+  for parsing the query, authorization and extraction of SAN Balance, so these
   fields cannot be provided, too.
   """
   defmacro __using__(_opts) do

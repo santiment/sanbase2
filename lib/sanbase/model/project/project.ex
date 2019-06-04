@@ -152,29 +152,23 @@ defmodule Sanbase.Model.Project do
   def by_slug(slug, opts \\ [])
 
   def by_slug(slug, opts) when is_binary(slug) do
-    additional_preloads = Keyword.get(opts, :additional_preloads, [])
-
     Project
     |> where([p], p.coinmarketcap_id == ^slug)
-    |> preload(^(@preloads ++ additional_preloads))
+    |> preload_query(opts)
     |> Repo.one()
   end
 
   def by_slug(slugs, opts) when is_list(slugs) do
-    additional_preloads = Keyword.get(opts, :additional_preloads, [])
-
     Project
     |> where([p], p.coinmarketcap_id in ^slugs)
-    |> preload(^(@preloads ++ additional_preloads))
+    |> preload_query(opts)
     |> Repo.all()
   end
 
   def by_id(id, opts \\ []) when is_integer(id) or is_binary(id) do
-    additional_preloads = Keyword.get(opts, :additional_preloads, [])
-
     Project
     |> where([p], p.id == ^id)
-    |> preload(^(@preloads ++ additional_preloads))
+    |> preload_query(opts)
     |> Repo.one()
   end
 
@@ -315,9 +309,16 @@ defmodule Sanbase.Model.Project do
 
   def preloads(), do: @preloads
 
-  def preload_assocs(items, opts \\ []) do
+  def preload_assocs(projects, opts \\ []) do
     additional_preloads = Keyword.get(opts, :additional_preloads, [])
-    Repo.preload(items, @preloads ++ additional_preloads)
+    Repo.preload(projects, additional_preloads ++ @preloads)
+  end
+
+  defp preload_query(query, opts) do
+    additional_preloads = Keyword.get(opts, :additional_preloads, [])
+
+    query
+    |> preload(^(additional_preloads ++ @preloads))
   end
 
   defp parse_github_organization_link(github_link, slug) do

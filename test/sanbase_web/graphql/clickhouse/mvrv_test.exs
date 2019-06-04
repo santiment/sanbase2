@@ -55,14 +55,16 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MVRVTest do
   end
 
   test "logs warning when calculation errors", context do
+    error = "Some error description here"
+
     with_mock MVRV,
-      mvrv_ratio: fn _, _, _, _ -> {:error, "Some error description here"} end do
+      mvrv_ratio: fn _, _, _, _ -> {:error, error} end do
       assert capture_log(fn ->
                response = execute_query(context)
                ratios = parse_response(response)
                assert ratios == nil
              end) =~
-               ~s/[warn] Can't calculate MVRV ratio for project with coinmarketcap_id: ethereum. Reason: "Some error description here"/
+               graphql_error_msg("MVRV Ratio", context.slug, error)
     end
   end
 

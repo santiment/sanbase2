@@ -28,7 +28,7 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
 
   use GenServer
 
-  alias Sanbase.Model.ExchangeAddress
+  alias Sanbase.Model.{ExchangeAddress, Infrastructure}
 
   @refresh_interval_min 10
   @name :mark_exchange_wallets_gen_server
@@ -43,8 +43,11 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
 
   def handle_continue(:set_state, _) do
     exchanges =
-      ExchangeAddress.list_all()
-      |> Enum.map(fn %ExchangeAddress{address: address} -> address |> String.downcase() end)
+      Infrastructure.get("ETH")
+      |> ExchangeAddress.list_all_by_infrastructure()
+      |> Enum.map(fn %ExchangeAddress{address: address} ->
+        address |> String.downcase()
+      end)
       |> MapSet.new()
 
     new_state = Map.put(%{}, :exchange_wallets_set, exchanges)

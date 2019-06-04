@@ -23,7 +23,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     SignalsHistoricalActivityResolver,
     FeaturedItemResolver,
     UserFollowerResolver,
-    EtherbiResolver
+    EtherbiResolver,
+    TimelineEventResolver
   }
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
@@ -61,6 +62,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.CustomTypes.JSON)
   import_types(SanbaseWeb.Graphql.PaginationTypes)
   import_types(SanbaseWeb.Graphql.SignalsHistoricalActivityTypes)
+  import_types(SanbaseWeb.Graphql.TimelineEventTypes)
 
   import_types(SanbaseWeb.Graphql.Schema.SocialDataQueries)
   import_types(SanbaseWeb.Graphql.Schema.WatchlistQueries)
@@ -397,6 +399,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Fetch a list of all exchange wallets. This query requires basic authentication."
     field :exchange_wallets, list_of(:wallet) do
+      arg(:slug, :string, default_value: "ethereum")
       middleware(BasicAuth)
 
       cache_resolve(&EtherbiResolver.exchange_wallets/3)
@@ -528,6 +531,15 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(JWTAuth)
 
       resolve(&SignalsHistoricalActivityResolver.fetch_historical_activity_for/3)
+    end
+
+    field :timeline_events, list_of(:timeline_events_paginated) do
+      arg(:cursor, :cursor_input)
+      arg(:limit, :integer, default_value: 25)
+
+      middleware(JWTAuth)
+
+      resolve(&TimelineEventResolver.timeline_events/3)
     end
 
     @desc """

@@ -18,6 +18,7 @@ defmodule Sanbase.Factory do
   alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
   alias Sanbase.Pricing.{Product, Plan, Subscription}
   alias Sanbase.Pricing.Plan.AccessSeed
+  alias Sanbase.Timeline.TimelineEvent
 
   def user_factory() do
     %User{
@@ -202,5 +203,9 @@ defmodule Sanbase.Factory do
       interval: "month",
       access: AccessSeed.premium()
     }
+  end
+
+  def timeline_event_factory() do
+    %TimelineEvent{}
   end
 end

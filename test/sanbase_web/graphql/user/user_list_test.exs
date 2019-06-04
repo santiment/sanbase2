@@ -1,17 +1,21 @@
 defmodule SanbaseWeb.Graphql.UserListTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Auth.User
-  alias Sanbase.Model.Project
-  alias Sanbase.Model.LatestCoinmarketcapData
+  import Sanbase.TestHelpers
+
   alias Sanbase.UserList
+  alias Sanbase.Timeline.TimelineEvent
+  alias Sanbase.Repo
 
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
   setup do
+    clean_task_supervisor_children()
+
     user = insert(:user)
     user2 = insert(:user)
+
     conn = setup_jwt_auth(build_conn(), user)
 
     {:ok, conn: conn, user: user, user2: user2}
@@ -329,7 +333,11 @@ defmodule SanbaseWeb.Graphql.UserListTest do
       {:ok, user_list} =
         UserList.update_user_list(%{id: user_list.id(), list_items: [%{project_id: project.id}]})
 
-      query = query("userList(userListId: #{user_list.id()})")
+      assert_receive({_, {:ok, %TimelineEvent{}}})
+
+      assert TimelineEvent |> Repo.all() |> length() == 1
+
+      query = query("userList(userListId: #{user_list.id})")
 
       result =
         conn

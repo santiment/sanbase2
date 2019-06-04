@@ -15,6 +15,7 @@ defmodule Sanbase.UserList do
   """
 
   use Ecto.Schema
+
   import Ecto.Changeset
   import Ecto.Query
 
@@ -22,6 +23,7 @@ defmodule Sanbase.UserList do
   alias Sanbase.UserList.ListItem
   alias Sanbase.WatchlistFunction
   alias Sanbase.Repo
+  alias Sanbase.Timeline.TimelineEvent
 
   schema "user_lists" do
     field(:name, :string)
@@ -32,6 +34,7 @@ defmodule Sanbase.UserList do
     belongs_to(:user, User)
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
     has_many(:list_items, ListItem, on_delete: :delete_all, on_replace: :delete)
+    has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
 
     timestamps()
   end
@@ -76,10 +79,14 @@ defmodule Sanbase.UserList do
   def update_user_list(%{id: id} = params) do
     params = update_list_items_params(params, id)
 
-    by_id(id)
-    |> Repo.preload(:list_items)
-    |> update_changeset(params)
-    |> Repo.update()
+    changeset =
+      id
+      |> by_id()
+      |> Repo.preload(:list_items)
+      |> update_changeset(params)
+
+    Repo.update(changeset)
+    |> maybe_create_event(changeset, TimelineEvent.update_watchlist_type())
   end
 
   def remove_user_list(%{id: id}) do
@@ -117,6 +124,13 @@ defmodule Sanbase.UserList do
   end
 
   # Private functions
+
+  defp maybe_create_event({:ok, watchlist}, changeset, event_type) do
+    TimelineEvent.maybe_create_event_async(event_type, watchlist, changeset)
+    {:ok, watchlist}
+  end
+
+  defp maybe_create_event(error_result, _, _), do: error_result
 
   defp user_list_query_by_user_id(nil) do
     from(dul in __MODULE__, where: dul.is_public == true)

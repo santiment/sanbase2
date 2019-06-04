@@ -1,12 +1,16 @@
 defmodule SanbaseWeb.Graphql.TargetUserListTest do
   use Sanbase.DataCase, async: false
-  alias Sanbase.UserList
-  alias Sanbase.Signals.UserTrigger
 
   import Sanbase.Factory
   import ExUnit.CaptureLog
+  import Sanbase.TestHelpers
+
+  alias Sanbase.UserList
+  alias Sanbase.Signals.UserTrigger
 
   setup do
+    clean_task_supervisor_children()
+
     user = insert(:user)
 
     p1 =

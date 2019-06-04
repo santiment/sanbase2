@@ -3,8 +3,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
   import SanbaseWeb.Graphql.Helpers.Utils, only: [fit_from_datetime: 2, calibrate_interval: 7]
 
-  alias Sanbase.Repo
-  alias Sanbase.Model.{Project, ExchangeAddress}
+  import Sanbase.Utils.ErrorHandling,
+    only: [log_graphql_error: 2, graphql_error_msg: 2]
+
+  alias Sanbase.Model.{Infrastructure, Project, ExchangeAddress}
 
   alias Sanbase.Blockchain.{
     TokenVelocity,
@@ -54,8 +56,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       {:ok, token_age_consumed |> fit_from_datetime(args)}
     else
       {:error, error} ->
-        error_msg = "Can't fetch burn rate for #{slug}"
-        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+        error_msg = graphql_error_msg("Burn Rate", slug)
+        log_graphql_error(error_msg, error)
         {:error, error_msg}
     end
   end
@@ -82,8 +84,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       {:ok, token_age |> fit_from_datetime(args)}
     else
       {:error, error} ->
-        error_msg = "Can't fetch average token age consumed in days for #{slug}"
-        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+        error_msg = graphql_error_msg("Average Token Age Consumed In Days", slug)
+        log_graphql_error(error_msg, error)
         {:error, error_msg}
     end
   end
@@ -115,8 +117,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       {:ok, trx_volumes |> fit_from_datetime(args)}
     else
       {:error, error} ->
-        error_msg = "Can't fetch transaction for #{slug}"
-        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+        error_msg = graphql_error_msg("Transaction Volume", slug)
+        log_graphql_error(error_msg, error)
         {:error, error_msg}
     end
   end
@@ -149,8 +151,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       {:ok, exchange_funds_flow |> fit_from_datetime(args)}
     else
       {:error, error} ->
-        error_msg = "Can't fetch the exchange fund flow for #{slug}."
-        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+        error_msg = graphql_error_msg("Exchange Funds Flow", slug)
+        log_graphql_error(error_msg, error)
         {:error, error_msg}
     end
   end
@@ -189,8 +191,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       {:ok, token_circulation |> fit_from_datetime(args)}
     else
       {:error, error} ->
-        error_msg = "Can't fetch token circulation for #{slug}."
-        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        error_msg = graphql_error_msg("Token Circulation", slug)
+        log_graphql_error(error_msg, error)
         {:error, error_msg}
     end
   end
@@ -222,13 +224,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       {:ok, token_velocity |> fit_from_datetime(args)}
     else
       {:error, error} ->
-        error_msg = "Can't fetch token velocity for #{slug}."
-        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        error_msg = graphql_error_msg("Token Velocity", slug)
+        log_graphql_error(error_msg, error)
         {:error, error_msg}
     end
   end
 
-  def exchange_wallets(_root, _args, _resolution) do
-    {:ok, ExchangeAddress |> Repo.all() |> Repo.preload(:infrastructure)}
+  def exchange_wallets(_root, %{slug: "ethereum"}, _resolution) do
+    {:ok, ExchangeAddress.exchange_wallets_by_infrastructure(Infrastructure.get("ETH"))}
+  end
+
+  def exchange_wallets(_root, %{slug: "bitcoin"}, _resolution) do
+    {:ok, ExchangeAddress.exchange_wallets_by_infrastructure(Infrastructure.get("BTC"))}
+  end
+
+  def exchange_wallets(_, _, _) do
+    {:error, "Currently only ethereum and bitcoin exchanges are supported"}
   end
 end

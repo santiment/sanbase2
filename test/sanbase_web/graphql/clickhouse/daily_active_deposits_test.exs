@@ -73,14 +73,16 @@ defmodule SanbaseWeb.Graphql.Clickhouse.DailyActiveDepositsTest do
   end
 
   test "logs warning when calculation errors", context do
+    error = "Some error description here"
+
     with_mock DailyActiveDeposits,
-      active_deposits: fn _, _, _, _ -> {:error, "Some error description here"} end do
+      active_deposits: fn _, _, _, _ -> {:error, error} end do
       assert capture_log(fn ->
                response = execute_query(context)
                deposits = parse_response(response)
                assert deposits == nil
              end) =~
-               ~s/[warn] Can't calculate daily active deposits for project with coinmarketcap_id: santiment. Reason: "Some error description here"/
+               graphql_error_msg("Daily Active Deposits", context.slug, error)
     end
   end
 

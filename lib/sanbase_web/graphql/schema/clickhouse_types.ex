@@ -20,7 +20,8 @@ defmodule SanbaseWeb.Graphql.ClickhouseTypes do
 
   object :gas_used do
     field(:datetime, non_null(:datetime))
-    field(:eth_gas_used, :integer)
+    field(:eth_gas_used, :integer, deprecate: "Use gasUsed")
+    field(:gas_used, :integer)
   end
 
   object :historical_balance do

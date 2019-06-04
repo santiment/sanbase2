@@ -8,9 +8,12 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
 
   require Logger
 
+  @user_agent "User-Agent: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Mobile Safari/537.36"
+
   plug(RateLimiting.Middleware, name: :etherscan_rate_limiter)
   plug(ErrorCatcher.Middleware)
   plug(Tesla.Middleware.BaseUrl, "https://etherscan.io")
+  plug(Tesla.Middleware.Headers, [{"user-agent", @user_agent}])
   plug(Tesla.Middleware.FollowRedirects, max_redirects: 10)
   plug(Tesla.Middleware.Logger)
 

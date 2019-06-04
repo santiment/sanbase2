@@ -1,16 +1,19 @@
 defmodule Sanbase.Insight.Post do
   use Ecto.Schema
 
+  use Timex.Ecto.Timestamps
+
   import Ecto.Changeset
   import Ecto.Query
-
-  use Timex.Ecto.Timestamps
 
   alias Sanbase.Tag
   alias Sanbase.Insight.{Poll, Post, Vote, PostImage}
   alias Sanbase.Auth.User
+  alias Sanbase.Timeline.TimelineEvent
 
   alias Sanbase.Repo
+
+  require Logger
 
   @preloads [:votes, :user, :images, :tags]
   # state
@@ -31,13 +34,14 @@ defmodule Sanbase.Insight.Post do
     field(:short_desc, :string)
     field(:link, :string)
     field(:text, :string)
-    field(:state, :string, default: @awaiting_approval)
+    field(:state, :string, default: @approved)
     field(:moderation_comment, :string)
     field(:ready_state, :string, default: @draft)
     field(:discourse_topic_url, :string)
 
     has_many(:images, PostImage, on_delete: :delete_all)
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
+    has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
 
     many_to_many(
       :tags,
@@ -87,6 +91,32 @@ defmodule Sanbase.Insight.Post do
 
   def published(), do: @published
   def draft(), do: @draft
+
+  def publish(post_id, user_id) do
+    post_id = String.to_integer(post_id)
+    post = Repo.get(Post, post_id)
+
+    with {:nil?, %Post{id: ^post_id}} <- {:nil?, post},
+         {:own_post?, %Post{user_id: ^user_id}} <- {:own_post?, post},
+         {:draft?, %Post{ready_state: @draft}} <- {:draft?, post},
+         {:ok, post} <- publish_post(post) do
+      {:ok, post}
+    else
+      {:nil?, nil} ->
+        {:error, "Can't publish post with id #{post_id}"}
+
+      {:draft?, _} ->
+        {:error, "Can't publish already published post with id: #{post_id}"}
+
+      {:own_post?, _} ->
+        {:error, "Can't publish not own post with id: #{post_id}"}
+
+      {:error, error} ->
+        error_message = "Can't publish post with id #{post_id}"
+        Logger.error("#{error_message}, #{inspect(error)}")
+        {:error, error_message}
+    end
+  end
 
   def preloads(), do: @preloads
 
@@ -166,6 +196,27 @@ defmodule Sanbase.Insight.Post do
   end
 
   # Helper functions
+
+  defp publish_post(post) do
+    publish_changeset = publish_changeset(post, %{ready_state: Post.published()})
+
+    with {:ok, post} <- publish_changeset |> Repo.update(),
+         {:ok, discourse_topic_url} <- Sanbase.Discourse.Insight.create_discourse_topic(post),
+         {:ok, post} <-
+           publish_changeset(post, %{discourse_topic_url: discourse_topic_url}) |> Repo.update() do
+      Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+        Sanbase.Notifications.Insight.publish_in_discord(post)
+      end)
+
+      TimelineEvent.maybe_create_event_async(
+        TimelineEvent.publish_insight_type(),
+        post,
+        publish_changeset
+      )
+
+      {:ok, post}
+    end
+  end
 
   defp by_user(query, user_id) do
     from(

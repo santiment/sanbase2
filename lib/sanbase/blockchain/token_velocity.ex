@@ -1,6 +1,6 @@
 defmodule Sanbase.Blockchain.TokenVelocity do
   @moduledoc ~s"""
-  Token Velocity is a metric which estimates the average frequency 
+  Token Velocity is a metric which estimates the average frequency
   at which the tokens change hands during some period of time.
 
   Example:
@@ -24,7 +24,7 @@ defmodule Sanbase.Blockchain.TokenVelocity do
 
   @doc ~s"""
   Return the token velocity for a given contract and time restrictions.
-  Token velocity for a given interval is calculatied by taking the `SUM` of the transaction volume 
+  Token velocity for a given interval is calculatied by taking the `SUM` of the transaction volume
   for this interval and the `SUM` of the token circulation for :less_than_a_day (number of active tokens each day)
   for this interval and divide them.
   """

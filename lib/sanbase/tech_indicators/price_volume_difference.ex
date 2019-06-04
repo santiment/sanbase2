@@ -89,13 +89,15 @@ defmodule Sanbase.TechIndicators.PriceVolumeDifference do
 
   defp handle_result({:ok, %HTTPoison.Response{status_code: status, body: body}}, project) do
     warn_result(
-      "Error status #{status} fetching price-volume diff for #{Project.describe(project)}: #{body}"
+      "Error status #{status} fetching price-volume diff for #{Project.describe(project)} - #{
+        body
+      }"
     )
   end
 
   defp handle_result({:error, %HTTPoison.Error{} = error}, project) do
     error_result(
-      "Cannot fetch price-volume diff data for #{Project.describe(project)}: #{
+      "Cannot fetch price-volume diff data for #{Project.describe(project)} - #{
         HTTPoison.Error.message(error)
       }"
     )

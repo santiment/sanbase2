@@ -92,15 +92,14 @@ defmodule Sanbase.Mixfile do
       {:prometheus_ex, "~> 3.0", override: true},
       {:prometheus_ecto, "~> 1.3"},
       {:prometheus_plugs, "~> 1.0"},
-      {:prometheus_process_collector, "~> 1.4"},
       {:absinthe_metrics, "~> 1.0"},
       {:libcluster, "~> 3.0"},
       {:number, "~> 1.0"},
       {:remote_ip, "~> 0.1"},
       {:vex, "~> 0.8.0", override: true},
       {:stream_data, "~> 0.4.2", only: :test},
-      {:async_with, "~> 0.3"},
       {:stripity_stripe, git: "https://github.com/code-corps/stripity_stripe"},
+      {:async_with, github: "fertapric/async_with"},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false}
     ]
   end

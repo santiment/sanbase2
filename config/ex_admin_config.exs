@@ -35,7 +35,8 @@ config :ex_admin,
     Sanbase.ExAdmin.ScheduleRescrapePrice,
     Sanbase.ExAdmin.Signals.HistoricalActivity,
     Sanbase.ExAdmin.Signals.UserTrigger,
-    Sanbase.ExAdmin.FeaturedItem
+    Sanbase.ExAdmin.FeaturedItem,
+    Sanbase.ExAdmin.TimelineEvent
   ],
   basic_auth: [
     username: {:system, "ADMIN_BASIC_AUTH_USERNAME"},

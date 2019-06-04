@@ -95,15 +95,14 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionTest do
 
   test "dynamic watchlist for min volume", %{conn: conn} do
     function = %{"name" => "min_volume", "args" => %{"min_volume" => 1_000_000_000}}
-    result = execute_query(conn, query(function))
+    result = execute_query(conn, query(function, [:volume_usd]))
     projects = result["data"]["allProjectsByFunction"]
 
-    assert projects == [
-             %{"slug" => "bitcoin"},
-             %{"slug" => "ethereum"},
-             %{"slug" => "ripple"},
-             %{"slug" => "tether"}
-           ]
+    slugs = projects |> Enum.map(& &1["slug"])
+    volumes = projects |> Enum.map(& &1["volumeUsd"])
+
+    assert slugs == ["bitcoin", "ethereum", "ripple", "tether"]
+    assert Enum.all?(volumes, &Kernel.>=(&1, 1_000_000_000))
   end
 
   test "dynamic watchlist for slug list", %{conn: conn} do
@@ -117,7 +116,7 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionTest do
            ]
   end
 
-  defp query(function) when is_map(function) do
+  defp query(function, additional_fields \\ []) when is_map(function) do
     function = function |> Jason.encode!()
 
     ~s|
@@ -126,6 +125,7 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionTest do
         function: '#{function}'
         ) {
          slug
+         #{additional_fields |> Enum.join(" ")}
       }
     }
     |

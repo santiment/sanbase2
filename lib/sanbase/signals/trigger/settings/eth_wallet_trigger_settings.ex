@@ -80,7 +80,7 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
     to = Timex.now()
 
     target_list
-    |> Project.by_slug()
+    |> Project.by_slug(additional_preloads: [:eth_addresses])
     |> Enum.map(fn %Project{eth_addresses: eth_addresses, coinmarketcap_id: slug} = project ->
       from = Trigger.last_triggered(trigger, slug) || settings.created_at
 

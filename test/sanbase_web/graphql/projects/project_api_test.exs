@@ -3,8 +3,6 @@ defmodule Sanbase.Graphql.ProjectApiTest do
 
   require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Repo
-
   import Plug.Conn
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory

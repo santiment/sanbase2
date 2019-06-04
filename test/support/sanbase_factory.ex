@@ -120,7 +120,7 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def infrastructure_eth_factory() do
+  def infrastructure_factory() do
     %Infrastructure{
       code: "ETH"
     }
@@ -178,5 +178,13 @@ defmodule Sanbase.Factory do
     %Ico{
       project_id: 1
     }
+  end
+
+  def rand_str(length \\ 10) do
+    :crypto.strong_rand_bytes(length) |> Base.encode64() |> binary_part(0, length)
+  end
+
+  def rand_hex_str(length \\ 10) do
+    :crypto.strong_rand_bytes(length) |> Base.hex_encode32(case: :lower) |> binary_part(0, length)
   end
 end

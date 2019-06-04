@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
   import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
 
   setup do
-    infr = insert(:infrastructure_eth)
+    infr = insert(:infrastructure, %{code: "ETH"})
 
     insert(:exchange_address, %{address: "0x234", name: "Binance", infrastructure_id: infr.id})
     insert(:exchange_address, %{address: "0x567", name: "Bitfinex", infrastructure_id: infr.id})

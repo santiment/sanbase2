@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionTest do
   import Sanbase.Factory
 
   setup do
-    infr_eth = insert(:infrastructure_eth)
+    infr_eth = insert(:infrastructure, %{code: "ETH"})
 
     stablecoin = insert(:market_segment, %{name: "stablecoin"})
     coin = insert(:market_segment, %{name: "coin"})

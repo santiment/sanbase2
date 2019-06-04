@@ -108,12 +108,6 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
       cache_resolve(&ProjectResolver.combined_history_stats/3)
     end
-
-    field :available_metrics_for_project, list_of(:string) do
-      arg(:slug, non_null(:string))
-
-      cache_resolve(&ProjectResolver.available_metrics_for_project/3)
-    end
   end
 
   object :project_eth_spent_queries do

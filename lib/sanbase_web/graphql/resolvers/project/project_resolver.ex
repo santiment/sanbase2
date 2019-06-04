@@ -504,23 +504,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     Cache.func(fn -> fetch_posts_by_ticker(ticker) end, {:related_posts, ticker}).()
   end
 
-  def available_metrics_for_project(_root, %{slug: slug}, _resolution) do
-    with %Project{} = project <- Project.by_slug(slug) do
-      is_erc20? = Project.is_erc20?(project)
-
-      case project do
-        %Project{coinmarketcap_id: "bitcoin"} ->
-          []
-
-        %Project{coinmarketcap_id: "ethereum"} ->
-          []
-
-        _project when is_erc20? == true ->
-          []
-      end
-    end
-  end
-
   # Private functions
 
   defp fetch_posts_by_ticker(ticker) do

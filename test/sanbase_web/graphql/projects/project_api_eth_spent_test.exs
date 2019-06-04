@@ -1,11 +1,9 @@
 defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Model.{Project, Infrastructure, ProjectEthAddress}
-  alias Sanbase.Repo
-
-  import SanbaseWeb.Graphql.TestHelpers
   import Mock
+  import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
 
   @eth_decimals 1_000_000_000_000_000_000
 
@@ -14,33 +12,22 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
     datetime2 = Timex.shift(datetime1, days: -10)
     datetime3 = Timex.shift(datetime1, days: -15)
 
-    eth_infrastructure =
-      %Infrastructure{code: "ETH"}
-      |> Repo.insert!()
+    eth_infr = insert(:infrastructure, %{code: "ETH"})
 
     p =
-      %Project{}
-      |> Project.changeset(%{
+      insert(:project, %{
         name: "Santiment",
         ticker: "SAN",
         coinmarketcap_id: "santiment",
-        main_contract_address: "0x123123",
-        infrastructure_id: eth_infrastructure.id
+        infrastructure_id: eth_infr.id,
+        main_contract_address: "0x" <> rand_hex_str()
       })
-      |> Repo.insert!()
 
-    project_address = "0x12345"
-
-    %ProjectEthAddress{}
-    |> ProjectEthAddress.changeset(%{
-      project_id: p.id,
-      address: project_address
-    })
-    |> Repo.insert_or_update()
+    project_address = p.eth_addresses |> List.first()
 
     [
       project: p,
-      project_address: project_address,
+      project_address: project_address.address,
       dates_day_diff1: Timex.diff(datetime1, datetime3, :days) + 1,
       expected_sum1: 20_000,
       dates_day_diff2: Timex.diff(datetime1, datetime2, :days) + 1,

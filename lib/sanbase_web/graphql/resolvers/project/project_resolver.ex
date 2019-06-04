@@ -515,7 +515,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         %Project{coinmarketcap_id: "ethereum"} ->
           []
 
-        project when is_erc20? == true ->
+        _project when is_erc20? == true ->
           []
       end
     end

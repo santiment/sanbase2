@@ -103,7 +103,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction)
-      cache_resolve(&EtherbiResolver.token_circulation/3)
+      cache_resolve(&ClickhouseResolver.token_circulation/3)
     end
 
     @desc ~s"""
@@ -119,7 +119,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction)
-      cache_resolve(&EtherbiResolver.token_velocity/3)
+      cache_resolve(&ClickhouseResolver.token_velocity/3)
     end
 
     @desc ~s"""
@@ -208,6 +208,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
 
     @desc "List all exchanges"
     field :all_exchanges, list_of(:string) do
+      arg(:slug, :string, default_value: "ethereum")
+
       cache_resolve(&ExchangeResolver.all_exchanges/3)
     end
 

@@ -16,7 +16,7 @@ defmodule Sanbase.Factory do
   }
 
   alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
-  alias Sanbase.Pricing.{Product, Plan, Subscription}
+  alias Sanbase.Pricing.{Product, Plan}
   alias Sanbase.Pricing.Plan.AccessSeed
   alias Sanbase.Timeline.TimelineEvent
 

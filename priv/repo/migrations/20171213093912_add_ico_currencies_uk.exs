@@ -1,4 +1,4 @@
-defmodule Sanbase.Repo.Migrations.AddIcoCurrenciesUk do
+defmodule Sanbase.Repo.Migrations.AddIcoCurrencyUk do
   use Ecto.Migration
 
   def up do

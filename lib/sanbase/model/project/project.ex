@@ -8,7 +8,7 @@ defmodule Sanbase.Model.Project do
     ProjectEthAddress,
     ProjectBtcAddress,
     Ico,
-    IcoCurrencies,
+    IcoCurrency,
     Currency,
     MarketSegment,
     Infrastructure,
@@ -18,11 +18,7 @@ defmodule Sanbase.Model.Project do
 
   import Ecto.Query
 
-  @preloads [
-    :eth_addresses,
-    :latest_coinmarketcap_data,
-    icos: [ico_currencies: [:currency]]
-  ]
+  @preloads [:eth_addresses, :latest_coinmarketcap_data]
 
   schema "project" do
     field(:name, :string)
@@ -271,7 +267,7 @@ defmodule Sanbase.Model.Project do
     query =
       from(
         i in Ico,
-        inner_join: ic in IcoCurrencies,
+        inner_join: ic in IcoCurrency,
         on: ic.ico_id == i.id and not is_nil(ic.amount),
         inner_join: c in Currency,
         on: c.id == ic.currency_id,
@@ -512,6 +508,8 @@ defmodule Sanbase.Model.Project do
   def github_organization(%Project{github_link: github_link, coinmarketcap_id: slug}) do
     parse_github_organization_link(github_link, slug)
   end
+
+  def is_erc20?()
 
   def preloads(), do: @preloads
   def preload(items), do: Repo.preload(items, @preloads)

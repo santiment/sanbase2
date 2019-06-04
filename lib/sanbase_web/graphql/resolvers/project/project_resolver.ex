@@ -13,15 +13,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   alias Sanbase.Tag
   alias Sanbase.Insight.Post
-
-  alias Sanbase.Prices
-
-  alias Sanbase.Influxdb.Measurement
-
   alias Sanbase.Repo
+  alias Sanbase.Prices
+  alias Sanbase.Influxdb.Measurement
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
-
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   def projects_count(_root, args, _resolution) do
@@ -507,6 +503,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   def related_posts(%Project{ticker: ticker} = _project, _args, _resolution) do
     Cache.func(fn -> fetch_posts_by_ticker(ticker) end, {:related_posts, ticker}).()
   end
+
+  def available_metrics_for_project(_root, %{slug: slug}, _resolution) do
+    with %Project{} = project <- Project.by_slug(slug) do
+      is_erc20? = Project.is_erc20?(project)
+
+      case project do
+        %Project{coinmarketcap_id: "bitcoin"} ->
+          []
+
+        %Project{coinmarketcap_id: "ethereum"} ->
+          []
+
+        project when is_erc20? == true ->
+          []
+      end
+    end
+  end
+
+  # Private functions
 
   defp fetch_posts_by_ticker(ticker) do
     query =

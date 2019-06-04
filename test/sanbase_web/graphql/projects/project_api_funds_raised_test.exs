@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
 
   alias Sanbase.Model.Project
   alias Sanbase.Model.Currency
-  alias Sanbase.Model.IcoCurrencies
+  alias Sanbase.Model.IcoCurrency
   alias Sanbase.Model.Ico
   alias Sanbase.Repo
   alias Sanbase.Prices.Store
@@ -95,12 +95,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
       |> Ico.changeset(%{project_id: project.id, end_date: date1})
       |> Repo.insert!()
 
-    %IcoCurrencies{}
-    |> IcoCurrencies.changeset(%{ico_id: ico1.id, currency_id: currency_eth.id, amount: 150})
+    %IcoCurrency{}
+    |> IcoCurrency.changeset(%{ico_id: ico1.id, currency_id: currency_eth.id, amount: 150})
     |> Repo.insert!()
 
-    %IcoCurrencies{}
-    |> IcoCurrencies.changeset(%{ico_id: ico1.id, currency_id: currency.id, amount: 50})
+    %IcoCurrency{}
+    |> IcoCurrency.changeset(%{ico_id: ico1.id, currency_id: currency.id, amount: 50})
     |> Repo.insert!()
 
     ico2 =
@@ -108,8 +108,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
       |> Ico.changeset(%{project_id: project.id, end_date: date2})
       |> Repo.insert!()
 
-    %IcoCurrencies{}
-    |> IcoCurrencies.changeset(%{ico_id: ico2.id, currency_id: currency_btc.id, amount: 200})
+    %IcoCurrency{}
+    |> IcoCurrency.changeset(%{ico_id: ico2.id, currency_id: currency_btc.id, amount: 200})
     |> Repo.insert!()
 
     project_no_ico =

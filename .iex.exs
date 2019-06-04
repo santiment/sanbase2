@@ -10,7 +10,7 @@ alias Sanbase.Model.{
   Currency,
   ExchangeAddress,
   Ico,
-  IcoCurrencies,
+  IcoCurrency,
   ProjectEthAddress,
   Project,
   LatestBtcWalletData

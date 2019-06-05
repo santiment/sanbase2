@@ -101,6 +101,8 @@ defmodule Sanbase.Model.Project do
 
   defdelegate roi_usd(project), to: Project.Roi
 
+  defdelegate ico_price(project), to: Project.FundsRaised
+
   defdelegate initial_ico(project), to: Project.FundsRaised
 
   defdelegate funds_raised_usd_ico_end_price(project), to: Project.FundsRaised

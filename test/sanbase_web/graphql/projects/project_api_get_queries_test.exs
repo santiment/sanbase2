@@ -4,11 +4,7 @@ defmodule Sanbase.Graphql.ProjectApiGetQueriesTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.Tag
   alias Sanbase.Insight.{Poll, Post}
-  alias Sanbase.Auth.User
-
-  alias Sanbase.Repo
 
   setup do
     infr_eth = insert(:infrastructure, %{code: "ETH"})
@@ -115,16 +111,18 @@ defmodule Sanbase.Graphql.ProjectApiGetQueriesTest do
 
   test "fetch all projects with their insights", context do
     post_title = "Awesome post"
-    tag = Repo.insert!(%Tag{name: context.project1.ticker})
-    user = Repo.insert!(%User{salt: User.generate_salt(), privacy_policy_accepted: true})
+    tag = insert(:tag, %{name: context.project1.ticker})
+    user = insert(:user)
     poll = Poll.find_or_insert_current_poll!()
 
-    Repo.insert!(%Post{
+    insert(:post,
       title: post_title,
-      poll_id: poll.id,
-      user_id: user.id,
-      tags: [tag]
-    })
+      poll: poll,
+      user: user,
+      tags: [tag],
+      state: Post.approved_state(),
+      ready_state: Post.published()
+    )
 
     query = """
     {

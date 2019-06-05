@@ -4,6 +4,26 @@ defmodule Sanbase.Model.Project.FundsRaised do
   alias Sanbase.Repo
   alias Sanbase.Model.{Project, Ico, IcoCurrency, Currency}
 
+  def ico_price(%Project{} = project) do
+    ico_with_max_price =
+      project
+      |> Repo.preload([:icos])
+      |> Map.get(:icos)
+      |> Enum.reject(fn ico -> is_nil(ico.token_usd_ico_price) end)
+      |> Enum.max_by(
+        fn ico -> ico.token_usd_ico_price |> Decimal.to_float() end,
+        fn -> nil end
+      )
+
+    case ico_with_max_price do
+      %Ico{token_usd_ico_price: ico_price} ->
+        ico_price |> Decimal.to_float()
+
+      _ ->
+        nil
+    end
+  end
+
   def initial_ico(%Project{id: id}) do
     Ico
     |> where([i], i.project_id == ^id)

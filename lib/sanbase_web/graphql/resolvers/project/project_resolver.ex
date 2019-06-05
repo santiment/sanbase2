@@ -1,27 +1,19 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   require Logger
 
-  import Ecto.Query
   import Absinthe.Resolution.Helpers, except: [async: 1]
   import SanbaseWeb.Graphql.Helpers.Async
 
   alias Sanbase.Model.{
     Project,
-    LatestCoinmarketcapData,
-    Ico
+    LatestCoinmarketcapData
   }
 
-  alias Sanbase.Tag
   alias Sanbase.Insight.Post
-
   alias Sanbase.Prices
-
   alias Sanbase.Influxdb.Measurement
-
-  alias Sanbase.Repo
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
-
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   def projects_count(_root, args, _resolution) do
@@ -422,22 +414,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   @doc """
   Return the main sale price, which is the maximum token_usd_ico_price from all icos of a project
   """
-  def ico_price(%Project{id: id}, _args, _resolution) do
-    ico_with_max_price =
-      Project
-      |> Repo.get(id)
-      |> Repo.preload([:icos])
-      |> Map.get(:icos)
-      |> Enum.reject(fn ico -> is_nil(ico.token_usd_ico_price) end)
-      |> Enum.map(fn ico ->
-        %Ico{ico | token_usd_ico_price: Decimal.to_float(ico.token_usd_ico_price)}
-      end)
-      |> Enum.max_by(fn ico -> ico.token_usd_ico_price end, fn -> nil end)
-
-    case ico_with_max_price do
-      %Ico{token_usd_ico_price: ico_price} -> {:ok, ico_price}
-      nil -> {:ok, nil}
-    end
+  def ico_price(%Project{} = project, _args, _resolution) do
+    {:ok, Project.ico_price(project)}
   end
 
   def price_to_book_ratio(%Project{} = project, _args, %{context: %{loader: loader}}) do
@@ -508,18 +486,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     Cache.func(fn -> fetch_posts_by_ticker(ticker) end, {:related_posts, ticker}).()
   end
 
-  defp fetch_posts_by_ticker(ticker) do
-    query =
-      from(
-        p in Post,
-        join: pt in "posts_tags",
-        on: p.id == pt.post_id,
-        join: t in Tag,
-        on: t.id == pt.tag_id,
-        where: t.name == ^ticker
-      )
+  # Private functions
 
-    {:ok, Repo.all(query)}
+  defp fetch_posts_by_ticker(ticker) do
+    posts = Post.public_insights_by_tag(ticker)
+    {:ok, posts}
   end
 
   # Calling Decimal.to_float/1 with `nil` crashes the process

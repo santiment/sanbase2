@@ -1,8 +1,8 @@
-defmodule Sanbase.Model.IcoCurrencies do
+defmodule Sanbase.Model.IcoCurrency do
   use Ecto.Schema
   import Ecto.Changeset
   alias Sanbase.Model.ModelUtils
-  alias Sanbase.Model.IcoCurrencies
+  alias Sanbase.Model.IcoCurrency
   alias Sanbase.Model.Ico
   alias Sanbase.Model.Currency
 
@@ -15,7 +15,7 @@ defmodule Sanbase.Model.IcoCurrencies do
   end
 
   @doc false
-  def changeset(%IcoCurrencies{} = ico_currencies, attrs \\ %{}) do
+  def changeset(%IcoCurrency{} = ico_currencies, attrs \\ %{}) do
     ico_currencies
     |> cast(attrs, [:ico_id, :currency_id, :amount])
     |> validate_required([:ico_id, :currency_id])
@@ -23,7 +23,7 @@ defmodule Sanbase.Model.IcoCurrencies do
   end
 
   @doc false
-  def changeset_ex_admin(%IcoCurrencies{} = ico_currencies, attrs \\ %{}) do
+  def changeset_ex_admin(%IcoCurrency{} = ico_currencies, attrs \\ %{}) do
     attrs =
       set_currency_id(attrs)
       |> ModelUtils.removeThousandsSeparator(:amount)

@@ -1,40 +1,20 @@
 defmodule SanbaseWeb.Graphql.ProjectApiEthSpentOverTimeTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Repo
-  alias Sanbase.Model.{Project, ProjectEthAddress}
-  alias Sanbase.DateTimeUtils
-
   import Mock
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.Factory
+
+  alias Sanbase.DateTimeUtils
 
   @eth_decimals 1_000_000_000_000_000_000
 
   setup do
     ticker = "TESTXYZ"
 
-    p =
-      %Project{}
-      |> Project.changeset(%{name: "Santiment", ticker: ticker, coinmarketcap_id: "santiment"})
-      |> Repo.insert!()
-
-    project_address1 = "0x123a12345bc"
-
-    %ProjectEthAddress{}
-    |> ProjectEthAddress.changeset(%{
-      project_id: p.id,
-      address: project_address1
-    })
-    |> Repo.insert_or_update()
-
-    project_address2 = "0x321321321"
-
-    %ProjectEthAddress{}
-    |> ProjectEthAddress.changeset(%{
-      project_id: p.id,
-      address: project_address2
-    })
-    |> Repo.insert!()
+    p = insert(:project, %{name: "Santiment", ticker: ticker, coinmarketcap_id: "santiment"})
+    insert(:project_eth_address, %{project_id: p.id})
+    insert(:project_eth_address, %{project_id: p.id})
 
     [
       project: p,

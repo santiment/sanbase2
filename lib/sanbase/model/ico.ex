@@ -8,7 +8,7 @@ defmodule Sanbase.Model.Ico do
   alias Sanbase.Model.Ico
   alias Sanbase.Model.Project
   alias Sanbase.Model.Currency
-  alias Sanbase.Model.IcoCurrencies
+  alias Sanbase.Model.IcoCurrency
 
   schema "icos" do
     belongs_to(:project, Project)
@@ -25,7 +25,7 @@ defmodule Sanbase.Model.Ico do
     field(:contract_abi, :string)
     field(:comments, :string)
     belongs_to(:cap_currency, Currency, on_replace: :nilify)
-    has_many(:ico_currencies, IcoCurrencies)
+    has_many(:ico_currencies, IcoCurrency)
   end
 
   @doc false
@@ -64,7 +64,7 @@ defmodule Sanbase.Model.Ico do
 
     ico
     |> changeset(attrs)
-    |> cast_assoc(:ico_currencies, required: false, with: &IcoCurrencies.changeset_ex_admin/2)
+    |> cast_assoc(:ico_currencies, required: false, with: &IcoCurrency.changeset_ex_admin/2)
   end
 
   def funds_raised_usd_ico_end_price(%Ico{end_date: end_date, project_id: project_id} = ico)

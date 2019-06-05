@@ -9,7 +9,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   def list_items(%UserList{} = user_list, _args, _resolution) do
     result =
       UserList.get_projects(user_list)
-      |> Project.preload()
+      |> Project.preload_assocs()
       |> Enum.map(&%{project: &1})
 
     {:ok, result}

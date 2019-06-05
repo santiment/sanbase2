@@ -12,7 +12,10 @@ defmodule Sanbase.Factory do
     ProjectEthAddress,
     Infrastructure,
     MarketSegment,
-    LatestCoinmarketcapData
+    LatestCoinmarketcapData,
+    Currency,
+    Ico,
+    IcoCurrency
   }
 
   alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
@@ -105,7 +108,19 @@ defmodule Sanbase.Factory do
     %MarketSegment{name: "currency"}
   end
 
-  def infrastructure_eth_factory() do
+  def currency_factory() do
+    %Currency{code: "ETH"}
+  end
+
+  def ico_currency_factory() do
+    %IcoCurrency{
+      ico_id: 1,
+      currency_id: 1,
+      amount: 1000
+    }
+  end
+
+  def infrastructure_factory() do
     %Infrastructure{
       code: "ETH"
     }
@@ -157,5 +172,19 @@ defmodule Sanbase.Factory do
 
   def timeline_event_factory() do
     %TimelineEvent{}
+  end
+
+  def ico_factory() do
+    %Ico{
+      project_id: 1
+    }
+  end
+
+  def rand_str(length \\ 10) do
+    :crypto.strong_rand_bytes(length) |> Base.encode64() |> binary_part(0, length)
+  end
+
+  def rand_hex_str(length \\ 10) do
+    :crypto.strong_rand_bytes(length) |> Base.hex_encode32(case: :lower) |> binary_part(0, length)
   end
 end

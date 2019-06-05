@@ -41,11 +41,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     should_cache? = !Process.get(:do_not_cache_query)
     cache_result(should_cache?, blueprint)
 
-    if auth_token = blueprint.execution.context[:auth_token] do
-      Plug.Conn.put_session(conn, :auth_token, auth_token)
-    else
-      conn
-    end
+    conn
+    |> maybe_update_session(blueprint.execution.context)
   end
 
   defp cache_result(true, blueprint) do
@@ -69,4 +66,10 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   end
 
   defp cache_result(_, _), do: :ok
+
+  defp maybe_update_session(conn, %{auth_token: auth_token}) do
+    Plug.Conn.put_session(conn, :auth_token, auth_token)
+  end
+
+  defp maybe_update_session(conn, _), do: conn
 end

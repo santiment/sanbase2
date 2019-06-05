@@ -37,7 +37,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     JWTAuth,
     ApikeyAuth,
     TimeframeRestriction,
-    ApiUsage
+    ApiUsage,
+    LoginSuccess
   }
 
   import_types(Absinthe.Plug.Types)
@@ -937,6 +938,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:message_hash, non_null(:string))
 
       resolve(&AccountResolver.eth_login/2)
+      middleware(LoginSuccess)
     end
 
     field :email_login, :email_login_request do
@@ -952,14 +954,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:token, non_null(:string))
 
       resolve(&AccountResolver.email_login_verify/2)
-
-      middleware(fn resolution, _ ->
-        with %{value: %{token: token, user: user}} <- resolution do
-          Map.update!(resolution, :context, fn ctx ->
-            Map.put(ctx, :auth_token, token)
-          end)
-        end
-      end)
+      middleware(LoginSuccess)
     end
 
     field :email_change_verify, :login do

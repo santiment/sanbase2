@@ -952,6 +952,14 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:token, non_null(:string))
 
       resolve(&AccountResolver.email_login_verify/2)
+
+      middleware(fn resolution, _ ->
+        with %{value: %{token: token, user: user}} <- resolution do
+          Map.update!(resolution, :context, fn ctx ->
+            Map.put(ctx, :auth_token, token)
+          end)
+        end
+      end)
     end
 
     field :email_change_verify, :login do

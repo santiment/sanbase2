@@ -37,10 +37,15 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     # - result is taken from the cache and should not be stored again. Storing
     # it again `touch`es it and the TTL timer is restarted. This can lead
     # to infinite storing the same value if there are enough requests
+
     should_cache? = !Process.get(:do_not_cache_query)
     cache_result(should_cache?, blueprint)
 
-    conn
+    if auth_token = blueprint.execution.context[:auth_token] do
+      Plug.Conn.put_session(conn, :auth_token, auth_token)
+    else
+      conn
+    end
   end
 
   defp cache_result(true, blueprint) do

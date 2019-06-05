@@ -10,7 +10,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
   }
 
   alias SanbaseWeb.Graphql.Complexity
-  alias SanbaseWeb.Graphql.Middlewares.{TimeframeRestriction, ProjectPermissions}
+  alias SanbaseWeb.Graphql.Middlewares.{BasicAuth, TimeframeRestriction, ProjectPermissions}
 
   import_types(SanbaseWeb.Graphql.ProjectTypes)
 

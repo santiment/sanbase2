@@ -15,7 +15,7 @@ defmodule Sanbase.Model.Project.AvailableMetrics do
   end
 
   @doc ~s"""
-  Return a listo of all GraphQL query names that have data for the provided
+  Return a list of all GraphQL query names that have data for the provided
   project identified by a `slug` argument.
 
   In order to determine which metrics are available a list of rules is appled.

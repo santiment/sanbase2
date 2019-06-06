@@ -91,7 +91,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     end
   end
 
-  # with token in cookie
+  # Authenticate with token in cookie
   def bearer_authentication(%Plug.Conn{private: %{plug_session: %{"auth_token" => token}}}) do
     case bearer_authorize(token) do
       {:ok, current_user} ->

@@ -16,13 +16,12 @@ defmodule SanbaseWeb.Router do
   pipeline :api do
     plug(:accepts, ["json"])
 
-    plug(Plug.Session,
+    plug(SanbaseWeb.Plug.SessionPlug,
       store: :cookie,
       # 30 days
       max_age: 24 * 60 * 60 * 30,
       key: "_sanbase_sid",
-      signing_salt: "alabala",
-      domain: "example.com"
+      signing_salt: "bfH+5EQ0"
     )
 
     plug(RemoteIp)

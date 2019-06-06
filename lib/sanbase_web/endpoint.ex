@@ -33,16 +33,6 @@ defmodule SanbaseWeb.Endpoint do
   plug(Plug.MethodOverride)
   plug(Plug.Head)
 
-  # The session will be stored in the cookie and signed,
-  # this means its contents can be read but not tampered with.
-  # Set :encryption_salt if you would also like to encrypt it.
-  plug(
-    Plug.Session,
-    store: :cookie,
-    key: "_sanbase_key",
-    signing_salt: "bfH+5EQ0"
-  )
-
   if Mix.env() == :dev do
     plug(Corsica, origins: ["http://localhost:3000", "http://0.0.0.0:4000"])
   end

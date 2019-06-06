@@ -99,6 +99,9 @@ config :arc,
   storage: Arc.Storage.Local,
   storage_dir: "/tmp/sanbase/filestore/"
 
+config :sanbase, SanbaseWeb.Plug.SessionPlug,
+  domain: {:system, "SANTIMENT_ROOT_DOMAIN", "localhost"}
+
 if File.exists?("config/dev.secret.exs") do
   import_config "dev.secret.exs"
 end

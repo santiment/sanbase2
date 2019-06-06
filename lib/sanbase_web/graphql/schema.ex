@@ -959,7 +959,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     field :logout, :logout do
-      resolve(fn _, _ -> {:ok, %{logout_success: true}} end)
+      resolve(fn _, _ -> {:ok, %{success: true}} end)
       middleware(DeleteSession)
     end
 

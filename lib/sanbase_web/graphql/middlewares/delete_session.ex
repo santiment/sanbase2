@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.DeleteSession do
 
   alias Absinthe.Resolution
 
-  def call(%Resolution{value: %{logout_success: true}} = resolution, _) do
+  def call(%Resolution{value: %{success: true}} = resolution, _) do
     Map.update!(resolution, :context, fn ctx ->
       Map.put(ctx, :delete_session, true)
     end)

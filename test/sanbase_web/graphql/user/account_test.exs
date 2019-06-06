@@ -399,6 +399,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     assert login_data["token"] != nil
     assert login_data["user"]["email"] == user.email
 
+    assert login_data["token"] == result.private.plug_session["auth_token"]
     # Assert that now() and validated_at do not differ by more than 2 seconds
     assert Sanbase.TestUtils.date_close_to(
              Timex.now(),
@@ -537,5 +538,24 @@ defmodule SanbaseWeb.Graphql.AccountTest do
 
     assert Repo.get_by(User, email: "john@example.com")
     assert json_response(result, 200)["data"]["emailLogin"]["success"]
+  end
+
+  test "logout clears session", %{
+    conn: conn
+  } do
+    query = """
+    mutation {
+      logout {
+        success
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    assert json_response(result, 200)["data"]["logout"]["success"]
+    assert result.private.plug_session_info == :drop
   end
 end

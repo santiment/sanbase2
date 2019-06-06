@@ -72,7 +72,7 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
   end
 
   object :logout do
-    field(:logout_success, non_null(:boolean))
+    field(:success, non_null(:boolean))
   end
 
   object :email_login_request do

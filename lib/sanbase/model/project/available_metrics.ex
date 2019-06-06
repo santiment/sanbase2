@@ -215,8 +215,16 @@ defmodule Sanbase.Model.Project.AvailableMetrics do
     """
   end
 
+  # Fetch and cache the social volume projects for 30 minutes
   defp social_volume_projects() do
-    {:ok, projeccts} = Sanbase.TechIndicators.social_volume_projects()
-    projeccts
+    SanbaseWeb.Graphql.Cache.func(
+      fn ->
+        {:ok, projects} = Sanbase.TechIndicators.social_volume_projects()
+        projects
+      end,
+      :social_volume_projects_list,
+      %{},
+      ttl: 1800
+    ).()
   end
 end

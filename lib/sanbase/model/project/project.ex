@@ -307,6 +307,14 @@ defmodule Sanbase.Model.Project do
   def is_erc20?(%Project{} = project) do
     project
     |> Repo.preload(:infrastructure)
+    |> case do
+      %Project{main_contract_address: contract, infrastructure: %Infrastructure{code: "ETH"}}
+      when not is_nil(contract) ->
+        true
+
+      _ ->
+        false
+    end
   end
 
   def preloads(), do: @preloads

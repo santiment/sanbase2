@@ -10,6 +10,7 @@ defmodule Sanbase.Factory do
     Project,
     ExchangeAddress,
     ProjectEthAddress,
+    ProjectBtcAddress,
     Infrastructure,
     MarketSegment,
     LatestCoinmarketcapData,
@@ -129,6 +130,14 @@ defmodule Sanbase.Factory do
   def project_eth_address_factory() do
     %ProjectEthAddress{
       address: "0x" <> (:crypto.strong_rand_bytes(16) |> Base.encode16()),
+      source: "",
+      comments: ""
+    }
+  end
+
+  def project_btc_address_factory() do
+    %ProjectBtcAddress{
+      address: :crypto.strong_rand_bytes(16) |> Base.encode16(),
       source: "",
       comments: ""
     }

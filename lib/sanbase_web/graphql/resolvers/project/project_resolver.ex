@@ -16,6 +16,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
+  def available_metrics(%Project{} = project, _args, _resolution) do
+    available_metrics = Project.AvailableMetrics.get(project)
+    {:ok, available_metrics}
+  end
+
   def projects_count(_root, args, _resolution) do
     min_volume = Map.get(args, :min_volume)
 

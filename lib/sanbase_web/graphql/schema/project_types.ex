@@ -23,6 +23,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   A type fully describing a project.
   """
   object :project do
+    field :available_metrics, list_of(:string) do
+      cache_resolve(&ProjectResolver.available_metrics/3, ttl: 1800)
+    end
+
     field(:id, non_null(:id))
     field(:name, non_null(:string))
     field(:ticker, :string)

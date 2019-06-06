@@ -93,4 +93,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
     Logger.reset_metadata([{:query, definition.name} | metadata])
     resolution
   end
+
+  def call(resolution, _), do: resolution
 end

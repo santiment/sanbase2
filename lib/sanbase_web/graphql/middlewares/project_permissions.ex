@@ -28,7 +28,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.ProjectPermissions do
       "funds_raised_icos",
       "funds_raised_eth_ico_end_price",
       "funds_raised_usd_ico_end_price",
-      "funds_raised_btc_ico_end_price"
+      "funds_raised_btc_ico_end_price",
+      "available_metrics"
     ]
 
     requested_fields = requested_fields(resolution)

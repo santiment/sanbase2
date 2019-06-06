@@ -529,7 +529,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     Returns a list of slugs for which there is social volume data.
     """
     field :social_volume_projects, list_of(:string) do
-      resolve(&TechIndicatorsResolver.social_volume_projects/3)
+      cache_resolve(&TechIndicatorsResolver.social_volume_projects/3)
     end
 
     @desc ~s"""

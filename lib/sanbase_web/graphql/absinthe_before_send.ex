@@ -42,7 +42,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     cache_result(should_cache?, blueprint)
 
     conn
-    |> maybe_update_session(blueprint.execution.context)
+    |> maybe_create_or_drop_session(blueprint.execution.context)
   end
 
   defp cache_result(true, blueprint) do
@@ -67,9 +67,13 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
   defp cache_result(_, _), do: :ok
 
-  defp maybe_update_session(conn, %{auth_token: auth_token}) do
+  defp maybe_create_or_drop_session(conn, %{create_session: true, auth_token: auth_token}) do
     Plug.Conn.put_session(conn, :auth_token, auth_token)
   end
 
-  defp maybe_update_session(conn, _), do: conn
+  defp maybe_create_or_drop_session(conn, %{delete_session: true}) do
+    Plug.Conn.configure_session(conn, drop: true)
+  end
+
+  defp maybe_create_or_drop_session(conn, _), do: conn
 end

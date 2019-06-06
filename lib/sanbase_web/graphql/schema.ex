@@ -38,7 +38,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     ApikeyAuth,
     TimeframeRestriction,
     ApiUsage,
-    LoginSuccess
+    CreateSession,
+    DeleteSession
   }
 
   import_types(Absinthe.Plug.Types)
@@ -938,7 +939,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:message_hash, non_null(:string))
 
       resolve(&AccountResolver.eth_login/2)
-      middleware(LoginSuccess)
+      middleware(CreateSession)
     end
 
     field :email_login, :email_login_request do
@@ -954,7 +955,12 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:token, non_null(:string))
 
       resolve(&AccountResolver.email_login_verify/2)
-      middleware(LoginSuccess)
+      middleware(CreateSession)
+    end
+
+    field :logout, :logout do
+      resolve(fn _, _ -> {:ok, %{logout_success: true}} end)
+      middleware(DeleteSession)
     end
 
     field :email_change_verify, :login do

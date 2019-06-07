@@ -43,9 +43,7 @@ defmodule SanbaseWeb.Endpoint do
     signing_salt: "grT-As16"
   )
 
-  if Mix.env() == :dev do
-    plug(Corsica, origins: ["http://localhost:3000", "http://0.0.0.0:4000"])
-  end
+  plug(Corsica, origins: "*")
 
   # makes the /metrics URL happen
   plug(Sanbase.Prometheus.Exporter)

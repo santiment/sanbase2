@@ -44,7 +44,7 @@ defmodule Sanbase.Mixfile do
       {:gettext, "~> 0.11"},
       {:cowboy, "~> 2.0"},
       {:decimal, "~> 1.0"},
-      {:corsica, "~> 1.0", only: [:dev]},
+      {:corsica, "~> 1.0"},
       {:tesla, "~> 1.0"},
       {:poison, ">= 1.0.0"},
       {:instream, "~> 0.16"},

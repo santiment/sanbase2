@@ -31,7 +31,10 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   def call(conn, _) do
     {conn, context} = build_context(conn, @auth_methods)
 
-    context = context |> Map.put(:remote_ip, conn.remote_ip)
+    context =
+      context
+      |> Map.put(:remote_ip, conn.remote_ip)
+      |> Map.put(:origin_url, Plug.Conn.get_req_header(conn, "origin") |> List.first())
 
     conn
     |> put_private(:absinthe, %{context: context})
@@ -88,6 +91,23 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
           |> halt()
 
         {conn, %{}}
+    end
+  end
+
+  # Authenticate with token in cookie
+  def bearer_authentication(%Plug.Conn{private: %{plug_session: %{"auth_token" => token}}}) do
+    case bearer_authorize(token) do
+      {:ok, current_user} ->
+        %{
+          permissions: User.permissions!(current_user),
+          auth: %{
+            auth_method: :user_token,
+            current_user: current_user
+          }
+        }
+
+      _ ->
+        :try_next
     end
   end
 

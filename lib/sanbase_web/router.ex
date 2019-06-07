@@ -16,6 +16,7 @@ defmodule SanbaseWeb.Router do
   pipeline :api do
     plug(:accepts, ["json"])
     plug(RemoteIp)
+    plug(:fetch_session)
     plug(SanbaseWeb.Graphql.ContextPlug)
   end
 

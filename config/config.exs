@@ -144,6 +144,9 @@ config :libcluster,
     ]
   ]
 
+config :sanbase, SanbaseWeb.Plug.SessionPlug,
+  domain: {:system, "SANTIMENT_ROOT_DOMAIN", "localhost"}
+
 # Import configs
 import_config "ex_admin_config.exs"
 import_config "influxdb_config.exs"

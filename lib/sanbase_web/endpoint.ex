@@ -33,14 +33,14 @@ defmodule SanbaseWeb.Endpoint do
   plug(Plug.MethodOverride)
   plug(Plug.Head)
 
-  # The session will be stored in the cookie and signed,
-  # this means its contents can be read but not tampered with.
-  # Set :encryption_salt if you would also like to encrypt it.
-  plug(
-    Plug.Session,
+  plug(SanbaseWeb.Plug.SessionPlug,
     store: :cookie,
-    key: "_sanbase_key",
-    signing_salt: "bfH+5EQ0"
+    # 30 days
+    max_age: 24 * 60 * 60 * 30,
+    key: "_sanbase_sid",
+    # Doesn't need to be a secret. Session cookies are signed by both secret_key_base and signing_salt
+    # For reference: https://github.com/phoenixframework/phoenix/issues/2146
+    signing_salt: "grT-As16"
   )
 
   if Mix.env() == :dev do
@@ -102,8 +102,12 @@ defmodule SanbaseWeb.Endpoint do
     backend_url() <> "/graphql"
   end
 
-  def login_url(token, email) do
+  def login_url(token, email, nil) do
     frontend_url() <> "/email_login?" <> URI.encode_query(token: token, email: email)
+  end
+
+  def login_url(token, email, origin_url) do
+    origin_url <> "/email_login?" <> URI.encode_query(token: token, email: email)
   end
 
   def verify_url(email_candidate_token, email_candidate) do

@@ -43,7 +43,7 @@ defmodule SanbaseWeb.Endpoint do
     signing_salt: "grT-As16"
   )
 
-  plug(Corsica, origins: "*")
+  plug(Corsica, origins: "*", allow_credentials: true)
 
   # makes the /metrics URL happen
   plug(Sanbase.Prometheus.Exporter)

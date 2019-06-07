@@ -42,7 +42,7 @@ config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
   api_url: "https://pro-api.coinmarketcap.com/"
 
 config :sanbase, SanbaseWeb.Plug.SessionPlug,
-  domain: {:system, "SANTIMENT_ROOT_DOMAIN", "santiment.net"}
+  domain: {:system, "SANTIMENT_ROOT_DOMAIN", ".santiment.net"}
 
 if File.exists?("config/prod.secret.exs") do
   import_config "prod.secret.exs"

@@ -94,10 +94,6 @@ defmodule SanbaseWeb.Endpoint do
     Config.get(:frontend_url)
   end
 
-  def neuron_url() do
-    Config.get(:neuron_url)
-  end
-
   def backend_url() do
     Config.get(:backend_url)
   end
@@ -106,14 +102,8 @@ defmodule SanbaseWeb.Endpoint do
     backend_url() <> "/graphql"
   end
 
-  def login_url(token, email, app) do
-    base_url =
-      case app do
-        :app -> frontend_url()
-        :neuron -> neuron_url()
-      end
-
-    base_url <> "/email_login?" <> URI.encode_query(token: token, email: email)
+  def login_url(token, email) do
+    frontend_url() <> "/email_login?" <> URI.encode_query(token: token, email: email)
   end
 
   def verify_url(email_candidate_token, email_candidate) do

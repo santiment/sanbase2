@@ -5,7 +5,6 @@ defmodule SanbaseWeb.Graphql.AccountTest do
   alias Sanbase.Repo
 
   import Mockery
-  import Mock
   import SanbaseWeb.Graphql.TestHelpers
   import ExUnit.CaptureLog
 
@@ -521,36 +520,24 @@ defmodule SanbaseWeb.Graphql.AccountTest do
   end
 
   test "emailLogin returns true if the login email was sent successfully", %{
-    conn: conn,
-    user: user
+    conn: conn
   } do
-    with_mock Sanbase.MandrillApi,
-              [],
-              send: fn _, _, _ ->
-                {:ok, %{}}
-              end do
-      query = """
-      mutation {
-        emailLogin(email: "john@example.com", application: NEURON) {
-          success
-        }
+    mock(Sanbase.MandrillApi, :send, {:ok, %{}})
+
+    query = """
+    mutation {
+      emailLogin(email: "john@example.com") {
+        success
       }
-      """
+    }
+    """
 
-      result =
-        conn
-        |> post("/graphql", mutation_skeleton(query))
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
 
-      user = Repo.get_by(User, email: "john@example.com")
-
-      vars = %{
-        LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email, :neuron)
-      }
-
-      assert user
-      assert json_response(result, 200)["data"]["emailLogin"]["success"]
-      assert_called(Sanbase.MandrillApi.send(:_, :_, vars))
-    end
+    assert Repo.get_by(User, email: "john@example.com")
+    assert json_response(result, 200)["data"]["emailLogin"]["success"]
   end
 
   test "logout clears session", %{

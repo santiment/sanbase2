@@ -89,9 +89,4 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     field(:user_id, non_null(:id))
     field(:follower_id, non_null(:id))
   end
-
-  enum :apps_enum do
-    value(:app)
-    value(:neuron)
-  end
 end

@@ -53,8 +53,7 @@ config :sanbase, SanbaseWeb.Endpoint,
   # should be removed after app.santiment.net migration
   website_url: {:system, "WEBSITE_URL", "http://localhost:4000"},
   backend_url: {:system, "BACKEND_URL", "http://localhost:4000"},
-  frontend_url: {:system, "FRONTEND_URL", "http://localhost:4000"},
-  neuron_url: {:system, "NEURON_URL", "https://neuron-stage.santiment.net"}
+  frontend_url: {:system, "FRONTEND_URL", "http://localhost:4000"}
 
 # Do not log SASL crash reports
 config :sasl, sasl_error_logger: false

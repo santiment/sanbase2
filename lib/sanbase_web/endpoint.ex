@@ -102,8 +102,12 @@ defmodule SanbaseWeb.Endpoint do
     backend_url() <> "/graphql"
   end
 
-  def login_url(token, email) do
+  def login_url(token, email, nil) do
     frontend_url() <> "/email_login?" <> URI.encode_query(token: token, email: email)
+  end
+
+  def login_url(token, email, origin_url) do
+    origin_url <> "/email_login?" <> URI.encode_query(token: token, email: email)
   end
 
   def verify_url(email_candidate_token, email_candidate) do

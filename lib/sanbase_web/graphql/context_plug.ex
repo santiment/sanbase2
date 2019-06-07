@@ -31,7 +31,10 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   def call(conn, _) do
     {conn, context} = build_context(conn, @auth_methods)
 
-    context = context |> Map.put(:remote_ip, conn.remote_ip)
+    context =
+      context
+      |> Map.put(:remote_ip, conn.remote_ip)
+      |> Map.put(:origin_url, Plug.Conn.get_req_header(conn, "origin") |> List.first())
 
     conn
     |> put_private(:absinthe, %{context: context})

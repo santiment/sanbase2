@@ -57,8 +57,9 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
   Accepts a single contract(ETH or BTC in case of ethereum and bitcoin) or a list
   of contracts and returns a list tuples `{contract, active_addresses}`
   """
-  def average_active_addresses(contracts, from, to)
-      when is_list(contracts) or is_binary(contracts) do
+  @spec average_active_addresses(list(String.t()) | String.t(), DateTime.t(), DateTime.t()) ::
+          {:ok, list({String.t(), number()})}
+  def average_active_addresses(contracts, from, to) do
     {btc, eth, erc20} =
       contracts
       |> List.wrap()
@@ -73,6 +74,8 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
                {:ok, eth_average_daa} <- do_eth_average_active_addresses(eth, from, to),
                {:ok, erc20_average_daa} <- do_erc20_average_active_addresses(erc20, from, to) do
       {:ok, btc_average_daa ++ eth_average_daa ++ erc20_average_daa}
+    else
+      _ -> {:ok, []}
     end
   end
 

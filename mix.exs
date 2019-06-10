@@ -99,7 +99,9 @@ defmodule Sanbase.Mixfile do
       {:vex, "~> 0.8.0", override: true},
       {:stream_data, "~> 0.4.2", only: :test},
       {:async_with, github: "fertapric/async_with"},
-      {:credo, "~> 1.0", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
+      {:san_exporter_ex, github: "santiment/san-exporter-ex"},
+      {:faker, "~> 0.12"}
     ]
   end
 

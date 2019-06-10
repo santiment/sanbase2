@@ -1,4 +1,18 @@
 defmodule Sanbase.DateTimeUtils do
+  @doc ~s"""
+  Sleep until `datetime` if and only if it is in the future.
+  """
+  @spec sleep_until(DateTime.t()) :: :ok
+  def sleep_until(%DateTime{} = datetime) do
+    case DateTime.diff(datetime, DateTime.utc_now(), :millisecond) do
+      sleep_ms when is_integer(sleep_ms) and sleep_ms > 0 ->
+        Process.sleep(sleep_ms)
+
+      _ ->
+        :ok
+    end
+  end
+
   def after_interval(interval, datetime \\ DateTime.utc_now()) when is_binary(interval) do
     compound_duration_to_seconds(interval) |> seconds_after(datetime)
   end

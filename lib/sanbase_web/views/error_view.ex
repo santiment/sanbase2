@@ -1,6 +1,10 @@
 defmodule SanbaseWeb.ErrorView do
   use SanbaseWeb, :view
 
+  def render("400.json", _assigns) do
+    %{errors: %{details: "Bad request"}}
+  end
+
   def render("404.json", _assigns) do
     %{errors: %{details: "Page not found"}}
   end

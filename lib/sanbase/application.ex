@@ -104,7 +104,11 @@ defmodule Sanbase.Application do
   def prepended_children(container_type) when container_type in ["web", "all"] do
     [
       # Start the Kafka Exporter
-      {SanExporterEx, [kafka_producer_module: kafka_producer_supervisor_module()]},
+      {SanExporterEx,
+       [
+         kafka_producer_module: kafka_producer_supervisor_module(),
+         kafka_endpoint: kafka_endpoint()
+       ]},
 
       # Start the API Call Data Exporter. Must be started before the Endpoint
       # so it will be terminated after the Endpoint so no API Calls can come in
@@ -149,18 +153,19 @@ defmodule Sanbase.Application do
   end
 
   defp kafka_producer_supervisor_module() do
-    Config.module_get(
-      Sanbase.ApiCallDataExporter,
-      :supervisor,
-      SanExporterEx.Producer.Supervisor
-    )
+    Config.module_get(Sanbase.ApiCallDataExporter, :supervisor, SanExporterEx.Producer.Supervisor)
   end
 
   defp kafka_api_call_data_topic() do
-    Config.module_get(
-      Sanbase.ApiCallDataExporter,
-      :kafka_topic,
-      "sanbase_api_call_data"
-    )
+    Config.module_get(Sanbase.ApiCallDataExporter, :kafka_topic, "sanbase_api_call_data")
+  end
+
+  defp kafka_endpoint() do
+    url = Config.module_get(Sanbase.ApiCallDataExporter, :kafka_url)
+
+    port =
+      Config.module_get(Sanbase.ApiCallDataExporter, :kafka_port) |> Sanbase.Math.to_integer()
+
+    [{url, port}]
   end
 end

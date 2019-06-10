@@ -1,5 +1,5 @@
 defmodule ApiCallDataExporterTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   setup do
     topic = :crypto.strong_rand_bytes(12) |> Base.encode64()
@@ -13,6 +13,7 @@ defmodule ApiCallDataExporterTest do
         name: rand_atom(),
         buffering_max_messages: 0,
         kafka_flush_timeout: 10_000,
+        can_send_after_interval: 0,
         topic: topic
       )
 
@@ -20,7 +21,7 @@ defmodule ApiCallDataExporterTest do
     :ok = Sanbase.ApiCallDataExporter.persist(exporter_pid, data)
     Process.sleep(100)
     state = Sanbase.InMemoryKafka.Producer.get_state()
-    assert Map.get(state, topic) == [Jason.encode!(data)]
+    assert Map.get(state, topic) |> Enum.map(&elem(&1, 1)) == [Jason.encode!(data)]
   end
 
   # Setting kafka_flush_timeout to 100 flushes the buffer to kafka each 100ms
@@ -30,6 +31,7 @@ defmodule ApiCallDataExporterTest do
         name: rand_atom(),
         buffering_max_messages: 5000,
         kafka_flush_timeout: 100,
+        can_send_after_interval: 0,
         topic: topic
       )
 
@@ -37,7 +39,7 @@ defmodule ApiCallDataExporterTest do
     :ok = Sanbase.ApiCallDataExporter.persist(exporter_pid, data)
     Process.sleep(200)
     state = Sanbase.InMemoryKafka.Producer.get_state()
-    assert Map.get(state, topic) == [Jason.encode!(data)]
+    assert Map.get(state, topic) |> Enum.map(&elem(&1, 1)) == [Jason.encode!(data)]
   end
 
   test "batching api calls works after flush timeout time has passed", %{topic: topic} do
@@ -46,6 +48,7 @@ defmodule ApiCallDataExporterTest do
         name: rand_atom(),
         buffering_max_messages: 5000,
         kafka_flush_timeout: 200,
+        can_send_after_interval: 0,
         topic: topic
       )
 
@@ -69,6 +72,7 @@ defmodule ApiCallDataExporterTest do
         name: rand_atom(),
         buffering_max_messages: 500,
         kafka_flush_timeout: 100_000,
+        can_send_after_interval: 0,
         topic: topic
       )
 
@@ -88,6 +92,7 @@ defmodule ApiCallDataExporterTest do
         name: rand_atom(),
         buffering_max_messages: 100,
         kafka_flush_timeout: 5000,
+        can_send_after_interval: 0,
         topic: topic
       )
 

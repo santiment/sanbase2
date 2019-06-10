@@ -5,6 +5,9 @@ defmodule Sanbase.ApiCallDataExporter do
   The module exposes one function that should be used - `persist/1`.
   This functions adds the data to an internal buffer that is flushed
   every `kafka_flush_timeout` seconds or when the buffer is big enough.
+
+  The exporter cannot send data more than once every 1 second so the this
+  GenServer cannot die too often and crash its supervisor
   """
 
   use GenServer
@@ -40,6 +43,7 @@ defmodule Sanbase.ApiCallDataExporter do
           | {:topic, String.t()}
           | {:kafka_flush_timeout, non_neg_integer()}
           | {:buffering_max_messages, non_neg_integer()}
+          | {:can_send_after_interval, non_neg_integer()}
         ]
 
   @spec start_link(options) :: GenServer.on_start()
@@ -50,8 +54,9 @@ defmodule Sanbase.ApiCallDataExporter do
 
   @spec init(options) :: {:ok, state} when state: map()
   def init(opts) do
-    kafka_flush_timeout = Keyword.get(opts, :kafka_flush_timeout, 5000)
-    buffering_max_messages = Keyword.get(opts, :buffering_max_messages, 5000)
+    kafka_flush_timeout = Keyword.get(opts, :kafka_flush_timeout, 30_000)
+    buffering_max_messages = Keyword.get(opts, :buffering_max_messages, 1000)
+    can_send_after_interval = Keyword.get(opts, :can_send_after_interval, 1000)
     Process.send_after(self(), :flush, kafka_flush_timeout)
 
     {:ok,
@@ -60,12 +65,14 @@ defmodule Sanbase.ApiCallDataExporter do
        data: [],
        size: 0,
        kafka_flush_timeout: kafka_flush_timeout,
-       buffering_max_messages: buffering_max_messages
+       buffering_max_messages: buffering_max_messages,
+       can_send_after_interval: can_send_after_interval,
+       can_send_after: DateTime.utc_now() |> DateTime.add(can_send_after_interval, :millisecond)
      }}
   end
 
   @doc ~s"""
-  Assynchronously add the API call data to the buffer.
+  Asynchronously add the API call data to the buffer.
 
   It will be sent no longer than `kafka_flush_timeout` seconds later. The data
   is pushed to an internal buffer that is then send at once to Kafka.
@@ -88,7 +95,7 @@ defmodule Sanbase.ApiCallDataExporter do
       "Terminating the ApiCallExporter. Sending #{length(state.data)} API Call events to Kafka."
     )
 
-    send_data(state.topic, state.data)
+    send_data(state.data, state)
     :ok
   end
 
@@ -96,27 +103,42 @@ defmodule Sanbase.ApiCallDataExporter do
         when state: map()
   def handle_cast(
         {:persist, api_call_data},
-        %{size: size, buffering_max_messages: bms} = state
-      )
-      when size >= bms - 1 do
-    data = api_call_data |> List.wrap() |> Enum.map(&Jason.encode!/1)
+        state
+      ) do
+    data = api_call_data |> List.wrap() |> Enum.map(&{"", Jason.encode!(&1)})
+    new_messages_length = length(data)
 
-    :ok = send_data(state.topic, data ++ state.data)
-    {:noreply, %{state | data: [], size: 0}}
-  end
+    case state.size + new_messages_length >= state.buffering_max_messages do
+      true ->
+        :ok = send_data(data ++ state.data, state)
 
-  def handle_cast({:persist, api_call_data}, state) do
-    data = api_call_data |> List.wrap() |> Enum.map(&Jason.encode!/1)
-    {:noreply, %{state | data: data ++ state.data, size: state.size + 1}}
+        {:noreply,
+         %{
+           state
+           | data: [],
+             size: 0,
+             can_send_after:
+               DateTime.utc_now() |> DateTime.add(state.can_send_after_interval, :millisecond)
+         }}
+
+      false ->
+        {:noreply, %{state | data: data ++ state.data, size: state.size + new_messages_length}}
+    end
   end
 
   def handle_info(:flush, state) do
-    :ok = send_data(state.topic, state.data)
+    :ok = send_data(state.data, state)
+
     Process.send_after(self(), :flush, state.kafka_flush_timeout)
     {:noreply, %{state | data: [], size: 0}}
   end
 
-  defp send_data(_, []), do: :ok
-  defp send_data(_, nil), do: :ok
-  defp send_data(topic, data), do: @producer.send_data(topic, data)
+  defp send_data([], _), do: :ok
+  defp send_data(nil, _), do: :ok
+
+  defp send_data(data, %{topic: topic, can_send_after: can_send_after, size: size}) do
+    Sanbase.DateTimeUtils.sleep_until(can_send_after)
+    Logger.info("Sending #{size} API Call events to Kafka.")
+    @producer.send_data(topic, data)
+  end
 end

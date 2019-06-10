@@ -36,6 +36,11 @@ defmodule SanbaseWeb.Graphql.ClickhouseTypes do
     field(:other, :float)
   end
 
+  object :miners_balance do
+    field(:datetime, non_null(:datetime))
+    field(:balance, :float)
+  end
+
   object :mvrv_ratio do
     field(:datetime, non_null(:datetime))
     field(:ratio, :float)

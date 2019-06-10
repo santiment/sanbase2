@@ -161,7 +161,7 @@ defmodule Sanbase.Application do
   end
 
   defp kafka_endpoint() do
-    url = Config.module_get(Sanbase.ApiCallDataExporter, :kafka_url)
+    url = Config.module_get(Sanbase.ApiCallDataExporter, :kafka_url) |> to_charlist()
 
     port =
       Config.module_get(Sanbase.ApiCallDataExporter, :kafka_port) |> Sanbase.Math.to_integer()

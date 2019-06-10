@@ -33,7 +33,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
              extract_caller_data: 1,
              export_api_call_data: 3,
              remote_ip: 1,
-             has_graphql_errors?: 1
+             has_graphql_errors?: 1,
+             maybe_create_or_drop_session: 2
            ]
 
   @cached_queries [
@@ -88,7 +89,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     end
   end
 
-  defp cache_result(_, _), do: :ok
+  defp cache_result(_, _, _), do: :ok
 
   defp maybe_create_or_drop_session(conn, %{create_session: true, auth_token: auth_token}) do
     Plug.Conn.put_session(conn, :auth_token, auth_token)

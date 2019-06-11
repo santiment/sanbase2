@@ -23,8 +23,7 @@ RUN cd assets && npm run build:prod
 COPY . /app
 RUN mix format --check-formatted
 
-ARG SECRET_KEY_BASE
-RUN SECRET_KEY_BASE=$SECRET_KEY_BASE mix compile
+RUN mix compile
 RUN mix phx.digest
 RUN mix release
 

@@ -21,7 +21,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   require Logger
 
   @auth_methods [
-    &ContextPlug.bearer_authentication/1,
+    &ContextPlug.bearer_auth_token_authentication/1,
+    &ContextPlug.bearer_auth_header_authentication/1,
     &ContextPlug.basic_authentication/1,
     &ContextPlug.apikey_authentication/1
   ]
@@ -95,7 +96,11 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   end
 
   # Authenticate with token in cookie
-  def bearer_authentication(%Plug.Conn{private: %{plug_session: %{"auth_token" => token}}}) do
+  def bearer_auth_token_authentication(
+        %Plug.Conn{
+          private: %{plug_session: %{"auth_token" => token}}
+        } = conn
+      ) do
     case bearer_authorize(token) do
       {:ok, current_user} ->
         %{
@@ -112,7 +117,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     end
   end
 
-  def bearer_authentication(%Plug.Conn{} = conn) do
+  def bearer_auth_token_authentication(_), do: :try_next
+
+  def bearer_auth_header_authentication(%Plug.Conn{} = conn) do
     with {:has_header?, ["Bearer " <> token]} <-
            {:has_header?, get_req_header(conn, "authorization")},
          {:ok, current_user} <- bearer_authorize(token) do

@@ -102,7 +102,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
           permissions: User.permissions!(current_user),
           auth: %{
             auth_method: :user_token,
-            current_user: current_user
+            current_user: current_user,
+            san_balance: san_balance(current_user)
           }
         }
 

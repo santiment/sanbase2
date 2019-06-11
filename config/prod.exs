@@ -8,7 +8,7 @@ config :sanbase, SanbaseWeb.Endpoint,
   root: '.',
   version: Application.spec(:sanbase, :vsn),
   load_from_system_env: true,
-  secret_key_base: System.get_env("SECRET_KEY_BASE")
+  secret_key_base: "${SECRET_KEY_BASE}"
 
 # So only migrations for Sanbase.Repo are run. Do not run migrations for
 # Sanbase.TimescaleRepo as this database is not managed by sanbase, but we want

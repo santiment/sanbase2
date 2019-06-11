@@ -40,7 +40,14 @@ defmodule SanbaseWeb.Endpoint.ErrorHandler do
 
       defp export_api_call_data(conn, kind, reason) do
         remote_ip = conn.remote_ip |> :inet_parse.ntoa() |> to_string
-        status_code = Map.get(reason, :status_code) || Map.get(reason, :plug_status, 500)
+
+        status_code =
+          if is_map(reason) do
+            Map.get(reason, :status_code) || Map.get(reason, :plug_status, 500)
+          else
+            500
+          end
+
         user_agent = Plug.Conn.get_req_header(conn, "user-agent") |> List.first()
 
         %{

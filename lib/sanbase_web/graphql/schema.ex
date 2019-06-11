@@ -8,11 +8,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     GithubResolver,
     TwitterResolver,
     EtherbiResolver,
-    InsightResolver,
     TechIndicatorsResolver,
     SocialDataResolver,
-    FileResolver,
-    PostResolver,
     MarketSegmentResolver,
     ApikeyResolver,
     ElasticsearchResolver,
@@ -65,10 +62,10 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.PaginationTypes)
   import_types(SanbaseWeb.Graphql.SignalsHistoricalActivityTypes)
   import_types(SanbaseWeb.Graphql.TimelineEventTypes)
-
   import_types(SanbaseWeb.Graphql.Schema.SocialDataQueries)
   import_types(SanbaseWeb.Graphql.Schema.WatchlistQueries)
   import_types(SanbaseWeb.Graphql.Schema.ProjectQueries)
+  import_types(SanbaseWeb.Graphql.Schema.InsightQueries)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.{
@@ -112,6 +109,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:user_list_queries)
     import_fields(:project_queries)
     import_fields(:project_eth_spent_queries)
+    import_fields(:insight_queries)
 
     @desc "Returns the user currently logged in."
     field :current_user, :user do
@@ -379,62 +377,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction)
       cache_resolve(&ClickhouseResolver.share_of_deposits/3)
-    end
-
-    @desc "Fetch the currently running poll."
-    field :current_poll, :poll do
-      cache_resolve(&InsightResolver.current_poll/3)
-    end
-
-    @desc ~s"""
-    Fetch the post with the given ID.
-    The user must be logged in to access all fields for the post/insight.
-    """
-    field :post, :post do
-      arg(:id, non_null(:integer))
-
-      resolve(&PostResolver.post/3)
-    end
-
-    @desc """
-    Fetch a list of all posts/insights.
-    Optionally a list of tags can be passed so it fetches all insights with these tags.
-    """
-    field :all_insights, list_of(:post) do
-      arg(:page, :integer, default_value: 1)
-      arg(:page_size, :integer, default_value: 20)
-      arg(:tags, list_of(:string))
-
-      cache_resolve(&PostResolver.all_insights/3)
-    end
-
-    @desc "Fetch a list of all posts for given user ID."
-    field :all_insights_for_user, list_of(:post) do
-      arg(:user_id, non_null(:integer))
-
-      resolve(&PostResolver.all_insights_for_user/3)
-    end
-
-    @desc "Fetch a list of all posts for which a user has voted."
-    field :all_insights_user_voted, list_of(:post) do
-      arg(:user_id, non_null(:integer))
-
-      resolve(&PostResolver.all_insights_user_voted_for/3)
-    end
-
-    @desc ~s"""
-    Fetch a list of all posts/insights that have a given tag.
-    The user must be logged in to access all fields for the post/insight.
-    """
-    field :all_insights_by_tag, list_of(:post) do
-      arg(:tag, non_null(:string))
-
-      resolve(&PostResolver.all_insights_by_tag/3)
-    end
-
-    @desc "Fetch a list of all tags used for posts/insights. This query also returns tags that are not yet in use."
-    field :all_tags, list_of(:tag) do
-      cache_resolve(&PostResolver.all_tags/3)
     end
 
     @desc ~s"""
@@ -946,6 +888,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
   mutation do
     import_fields(:user_list_mutations)
+    import_fields(:insight_mutations)
 
     field :eth_login, :login do
       arg(:signature, non_null(:string))
@@ -1024,81 +967,6 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(JWTAuth)
       resolve(&AccountResolver.remove_user_eth_address/3)
-    end
-
-    field :vote, :post do
-      arg(:post_id, non_null(:integer))
-
-      middleware(JWTAuth)
-      resolve(&InsightResolver.vote/3)
-    end
-
-    field :unvote, :post do
-      arg(:post_id, non_null(:integer))
-
-      middleware(JWTAuth)
-      resolve(&InsightResolver.unvote/3)
-    end
-
-    @desc """
-    Create a post. After creation the post is not visible to anyone but the author.
-    To be visible to anyone, the post must be published. By publishing it also becomes
-    immutable and can no longer be updated.
-    """
-    field :create_post, :post do
-      arg(:title, non_null(:string))
-      arg(:short_desc, :string)
-      arg(:link, :string)
-      arg(:text, :string)
-      arg(:image_urls, list_of(:string))
-      arg(:tags, list_of(:string))
-
-      middleware(JWTAuth)
-      resolve(&PostResolver.create_post/3)
-    end
-
-    @desc """
-    Update a post if and only if the currently logged in user is the creator of the post
-    A post can be updated if it is not yet published.
-    """
-    field :update_post, :post do
-      arg(:id, non_null(:id))
-      arg(:title, :string)
-      arg(:short_desc, :string)
-      arg(:link, :string)
-      arg(:text, :string)
-      arg(:image_urls, list_of(:string))
-      arg(:tags, list_of(:string))
-
-      middleware(JWTAuth)
-      resolve(&PostResolver.update_post/3)
-    end
-
-    @desc "Delete a post. The post must be owned by the user currently logged in."
-    field :delete_post, :post do
-      arg(:id, non_null(:id))
-
-      middleware(JWTAuth)
-      resolve(&PostResolver.delete_post/3)
-    end
-
-    @desc "Upload a list of images and return their URLs."
-    field :upload_image, list_of(:image_data) do
-      arg(:images, list_of(:upload))
-
-      middleware(JWTAuth)
-      resolve(&FileResolver.upload_image/3)
-    end
-
-    @desc """
-    Publish insight. The `id` argument must be an id of an already existing insight.
-    Once published, the insight is visible to anyone and can no longer be edited.
-    """
-    field :publish_insight, :post do
-      arg(:id, non_null(:id))
-
-      middleware(JWTAuth)
-      resolve(&PostResolver.publish_insight/3)
     end
 
     @desc ~s"""

@@ -96,11 +96,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   end
 
   # Authenticate with token in cookie
-  def bearer_auth_token_authentication(
-        %Plug.Conn{
-          private: %{plug_session: %{"auth_token" => token}}
-        } = conn
-      ) do
+  def bearer_auth_token_authentication(%Plug.Conn{
+        private: %{plug_session: %{"auth_token" => token}}
+      }) do
     case bearer_authorize(token) do
       {:ok, current_user} ->
         %{
@@ -181,6 +179,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       {:ok, user}
     else
       {:error, :token_expired} ->
+        %{permissions: User.no_permissions()}
+
+      {:error, :invalid_token} ->
         %{permissions: User.no_permissions()}
 
       _ ->

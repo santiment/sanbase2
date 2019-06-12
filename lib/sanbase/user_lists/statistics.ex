@@ -10,6 +10,15 @@ defmodule Sanbase.UserLists.Statistics do
     |> Repo.one()
   end
 
+  def users_with_watchlist_count() do
+    from(ul in UserList,
+      select: count(fragment("DISTINCT ?", ul.user_id))
+    )
+    |> Repo.one()
+  end
+
+  # Private functions
+
   defp watchlists_query(from, to) do
     from_naive = DateTime.to_naive(from)
     to_naive = DateTime.to_naive(to)

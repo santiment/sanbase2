@@ -13,10 +13,16 @@ defmodule Sanbase.Auth.Statistics do
       |> Repo.all()
       |> Enum.map(&Decimal.to_float/1)
 
+    {min_stake, max_stake} = Sanbase.Math.min_max(san_balances)
+
     %{
       "average_tokens_staked" => Math.average(san_balances),
       "median_tokens_staked" => Math.median(san_balances),
-      "tokens_staked" => Enum.sum(san_balances) |> Kernel.*(1.0) |> Float.round(2)
+      "tokens_staked" => Enum.sum(san_balances) |> Kernel.*(1.0) |> Float.round(2),
+      "biggest_stake" => max_stake |> Kernel.*(1.0) |> Float.round(2),
+      "smallest_stake" => min_stake |> Kernel.*(1.0) |> Float.round(2),
+      "users_with_over_1000_san" => Enum.count(san_balances, fn balance -> balance >= 1000 end),
+      "users_with_over_200_san" => Enum.count(san_balances, fn balance -> balance >= 200 end)
     }
   end
 

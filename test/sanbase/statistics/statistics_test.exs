@@ -68,7 +68,7 @@ defmodule Sanbase.StatisticsTest do
               "registered_users_last_180d" => 4,
               "registered_users_last_30d" => 4,
               "registered_users_last_7d" => 2,
-              "registered_users_last_overall" => 6
+              "registered_users_overall" => 6
             }} in statistics
 
     assert {"registered_staking_users",
@@ -76,7 +76,7 @@ defmodule Sanbase.StatisticsTest do
               "registered_staking_users_last_180d" => 2,
               "registered_staking_users_last_30d" => 2,
               "registered_staking_users_last_7d" => 1,
-              "registered_staking_users_last_overall" => 3
+              "registered_staking_users_overall" => 3
             }} in statistics
 
     assert {"weekly_updates_subscribed_user_count",
@@ -87,19 +87,25 @@ defmodule Sanbase.StatisticsTest do
               "daily_updates_subscribed_user_count" => 1
             }} in statistics
 
-    assert {"watchlists_created",
+    assert {"watchlists",
             %{
+              "average_watchlists_per_user_with_watchlists" => 1.25,
+              "users_with_watchlist_count" => 4,
               "watchlist_created_last_180d" => 5,
               "watchlist_created_last_30d" => 5,
               "watchlist_created_last_7d" => 5,
-              "watchlist_created_last_overall" => 5
+              "watchlist_created_overall" => 5
             }} in statistics
 
     assert {"tokens_staked",
             %{
               "average_tokens_staked" => 2.0e4,
+              "biggest_stake" => 2.0e4,
               "median_tokens_staked" => 2.0e4,
-              "tokens_staked" => 6.0e4
+              "smallest_stake" => 2.0e4,
+              "tokens_staked" => 6.0e4,
+              "users_with_over_1000_san" => 3,
+              "users_with_over_200_san" => 3
             }} in statistics
   end
 end

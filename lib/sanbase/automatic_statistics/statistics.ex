@@ -8,7 +8,7 @@ defmodule Sanbase.Statistics do
     "registered_staking_users",
     "weekly_updates_subscribed_user_count",
     "daily_updates_subscribed_user_count",
-    "watchlists_created",
+    "watchlists",
     "tokens_staked"
   ]
 
@@ -37,7 +37,7 @@ defmodule Sanbase.Statistics do
       "registered_users_last_7d" => last_7d,
       "registered_users_last_30d" => last_30d,
       "registered_users_last_180d" => last_180d,
-      "registered_users_last_overall" => overall
+      "registered_users_overall" => overall
     }
   end
 
@@ -52,7 +52,7 @@ defmodule Sanbase.Statistics do
       "registered_staking_users_last_7d" => last_7d,
       "registered_staking_users_last_30d" => last_30d,
       "registered_staking_users_last_180d" => last_180d,
-      "registered_staking_users_last_overall" => overall
+      "registered_staking_users_overall" => overall
     }
   end
 
@@ -81,18 +81,29 @@ defmodule Sanbase.Statistics do
     }
   end
 
-  def get("watchlists_created") do
+  def get("watchlists") do
     now = Timex.now()
     last_7d = WatchlistStatistics.watchlists_created(Timex.shift(now, days: -7), now)
     last_30d = WatchlistStatistics.watchlists_created(Timex.shift(now, days: -30), now)
     last_180d = WatchlistStatistics.watchlists_created(Timex.shift(now, days: -180), now)
     overall = WatchlistStatistics.watchlists_created(@epoch_datetime, now)
+    users_with_watchlist_count = WatchlistStatistics.users_with_watchlist_count()
+
+    average_watchlists_per_user =
+      if users_with_watchlist_count > 0 do
+        overall / users_with_watchlist_count
+      else
+        0.0
+      end
+      |> Float.round(2)
 
     %{
       "watchlist_created_last_7d" => last_7d,
       "watchlist_created_last_30d" => last_30d,
       "watchlist_created_last_180d" => last_180d,
-      "watchlist_created_last_overall" => overall
+      "watchlist_created_overall" => overall,
+      "users_with_watchlist_count" => users_with_watchlist_count,
+      "average_watchlists_per_user_with_watchlists" => average_watchlists_per_user
     }
   end
 end

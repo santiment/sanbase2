@@ -11,6 +11,7 @@ config :ex_admin,
   module: SanbaseWeb,
   modules: [
     Sanbase.ExAdmin.Dashboard,
+    Sanbase.ExAdmin.Statistics,
     Sanbase.ExAdmin.Model.Project,
     Sanbase.ExAdmin.Model.ProjectBtcAddress,
     Sanbase.ExAdmin.Model.ProjectEthAddress,

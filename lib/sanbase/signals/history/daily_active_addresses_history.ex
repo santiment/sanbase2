@@ -6,6 +6,7 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
 
   # TODO: Change `%{percent_up: settings.percent_threshold}` with `operation` when implemented
   import Sanbase.Signals.History.Utils
+  import Sanbase.Math, only: [average: 1]
 
   alias Sanbase.Signals.Trigger.DailyActiveAddressesSettings
   alias Sanbase.Model.Project

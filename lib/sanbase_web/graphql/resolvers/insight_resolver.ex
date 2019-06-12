@@ -53,33 +53,38 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
 
   def voted_at(%Post{}, _args, _context), do: {:ok, nil}
 
-  def vote(_root, %{post_id: post_id}, %{
+  def vote(_root, args, %{
         context: %{auth: %{current_user: user}}
       }) do
+    insight_id = Map.get(args, :insight_id) || Map.fetch!(args, :post_id)
+
     %Vote{}
-    |> Vote.changeset(%{post_id: post_id, user_id: user.id})
+    |> Vote.changeset(%{post_id: insight_id, user_id: user.id})
     |> Repo.insert()
     |> case do
       {:ok, _vote} ->
-        {:ok, Repo.get(Post, post_id)}
+        {:ok, Repo.get(Post, insight_id)}
 
       {:error, changeset} ->
         {
           :error,
-          message: "Can't vote for post #{post_id}", details: Utils.error_details(changeset)
+          message: "Can't vote for post with id #{insight_id}",
+          details: Utils.error_details(changeset)
         }
     end
   end
 
-  def unvote(_root, %{post_id: post_id}, %{
+  def unvote(_root, args, %{
         context: %{auth: %{current_user: user}}
       }) do
-    with %Vote{} = vote <- Repo.get_by(Vote, post_id: post_id, user_id: user.id),
+    insight_id = Map.get(args, :insight_id) || Map.fetch!(args, :post_id)
+
+    with %Vote{} = vote <- Repo.get_by(Vote, post_id: insight_id, user_id: user.id),
          {:ok, _vote} <- Repo.delete(vote) do
-      {:ok, Repo.get(Post, post_id)}
+      {:ok, Repo.get(Post, insight_id)}
     else
       _error ->
-        {:error, "Can't remove vote"}
+        {:error, "Can't remove vote for post with id #{insight_id}"}
     end
   end
 end

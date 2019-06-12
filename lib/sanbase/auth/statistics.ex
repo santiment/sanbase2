@@ -16,7 +16,7 @@ defmodule Sanbase.Auth.Statistics do
     %{
       "average_tokens_staked" => Math.average(san_balances),
       "median_tokens_staked" => Math.median(san_balances),
-      "tokens_staked" => Enum.sum(san_balances) |> Float.round(2)
+      "tokens_staked" => Enum.sum(san_balances) |> Kernel.*(1.0) |> Float.round(2)
     }
   end
 

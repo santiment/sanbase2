@@ -147,4 +147,33 @@ defmodule Sanbase.Math do
       _, acc -> acc
     end)
   end
+
+  def average(list, precision \\ 2)
+  def average([], _), do: 0
+  def average(values, precision), do: Float.round(Enum.sum(values) / length(values), precision)
+
+  def median([]), do: nil
+
+  def median(list) when is_list(list) do
+    list = Enum.sort(list)
+
+    midpoint =
+      (length(list) / 2)
+      |> Float.floor()
+      |> round
+
+    {l1, l2} = list |> Enum.split(midpoint)
+
+    # l2 is the same length as l1 or 1 element bigger as the midpoint is floored
+    case length(l2) > length(l1) do
+      true ->
+        [med | _] = l2
+        med
+
+      false ->
+        [m1 | _] = l2
+        m2 = List.last(l1)
+        average([m1, m2])
+    end
+  end
 end

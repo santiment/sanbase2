@@ -16,7 +16,6 @@ defmodule Sanbase.DataCase do
 
   using do
     quote do
-      use ExUnitProperties
       import Ecto
       import Ecto.Changeset
       import Ecto.Query

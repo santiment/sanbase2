@@ -26,6 +26,9 @@ defmodule Sanbase.Auth.Settings do
     |> validate_change(:newsletter_subscription, &validate_subscription_type/2)
   end
 
+  def daily_subscription_type(), do: "DAILY"
+  def weekly_subscription_type(), do: "WEEKLY"
+
   defp normalize_newsletter_subscription(changeset, _field, nil), do: changeset
 
   defp normalize_newsletter_subscription(changeset, field, value) do

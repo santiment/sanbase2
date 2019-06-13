@@ -153,7 +153,9 @@ defmodule Sanbase.Signals.UserTrigger do
        }),
        do: true
 
-  defp has_invalid_notification_channel?(_), do: false
+  defp has_invalid_notification_channel?(_) do
+    false
+  end
 
   @doc ~s"""
   Create a new user trigger that is used to fire signals.

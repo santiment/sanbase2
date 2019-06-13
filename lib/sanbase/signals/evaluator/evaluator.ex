@@ -11,13 +11,13 @@ defmodule Sanbase.Signals.Evaluator do
   @doc ~s"""
   Takes a list of triggers and returns its subset that evaluate to true at the given moment.
   """
-  @spec run(list()) :: list()
-  def run([]), do: []
+  @spec run(list(), String.t()) :: list()
+  def run(user_triggers, type \\ nil)
 
-  def run([ut | _] = user_triggers) do
-    Logger.info(
-      "Start evaluating #{length(user_triggers)} signals of type #{ut.trigger.settings.__struct__}"
-    )
+  def run([], _), do: []
+
+  def run(user_triggers, type) do
+    Logger.info("Start evaluating #{length(user_triggers)} signals of type #{type}")
 
     user_triggers
     |> Sanbase.Parallel.map(

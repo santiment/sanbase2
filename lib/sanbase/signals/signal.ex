@@ -13,6 +13,8 @@ defimpl Sanbase.Signal, for: Any do
     {:error, warn_msg}
   end
 
+  def send(%{trigger: %{settings: %{channel: "email"}}}), do: {:error, "Not implemented"}
+
   def send(%{
         user: %Sanbase.Auth.User{
           id: id,

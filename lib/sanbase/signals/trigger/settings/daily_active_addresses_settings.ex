@@ -63,8 +63,8 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
         _ ->
           nil
       end
-      |> Enum.reject(&is_nil/1)
     end)
+    |> Enum.reject(&is_nil/1)
   end
 
   defp realtime_active_addresses(contract) do

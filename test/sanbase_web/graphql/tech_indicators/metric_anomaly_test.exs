@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.MetricAnomaliesTest do
+defmodule SanbaseWeb.Graphql.MetricAnomalyTest do
   use SanbaseWeb.ConnCase, async: false
   use Mockery
 
@@ -36,9 +36,9 @@ defmodule SanbaseWeb.Graphql.MetricAnomaliesTest do
 
     result =
       context.conn
-      |> post("/graphql", query_skeleton(query, "metricAnomalies"))
+      |> post("/graphql", query_skeleton(query, "metricAnomaly"))
       |> json_response(200)
-      |> get_in(["data", "metricAnomalies"])
+      |> get_in(["data", "metricAnomaly"])
 
     assert result == [
              %{"datetime" => "2019-02-23T00:00:00Z", "value" => 30},
@@ -61,9 +61,9 @@ defmodule SanbaseWeb.Graphql.MetricAnomaliesTest do
 
     result =
       context.conn
-      |> post("/graphql", query_skeleton(query, "metricAnomalies"))
+      |> post("/graphql", query_skeleton(query, "metricAnomaly"))
       |> json_response(200)
-      |> get_in(["data", "metricAnomalies"])
+      |> get_in(["data", "metricAnomaly"])
 
     assert result == []
   end
@@ -84,10 +84,10 @@ defmodule SanbaseWeb.Graphql.MetricAnomaliesTest do
     assert capture_log(fn ->
              result =
                context.conn
-               |> post("/graphql", query_skeleton(query, "metricAnomalies"))
+               |> post("/graphql", query_skeleton(query, "metricAnomaly"))
                |> json_response(200)
 
-             assert result["data"] == %{"metricAnomalies" => nil}
+             assert result["data"] == %{"metricAnomaly" => nil}
              error = result["errors"] |> List.first()
              assert error["message"] =~ "Error executing query. See logs for details"
            end) =~
@@ -99,7 +99,7 @@ defmodule SanbaseWeb.Graphql.MetricAnomaliesTest do
   defp anomalies_query(context) do
     """
     {
-      metricAnomalies(
+      metricAnomaly(
         metric: DAILY_ACTIVE_ADDRESSES,
         slug: "#{context.project.coinmarketcap_id}"
         from: "#{context.datetime1}"

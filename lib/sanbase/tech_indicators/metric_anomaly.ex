@@ -1,4 +1,4 @@
-defmodule Sanbase.TechIndicators.MetricAnomalies do
+defmodule Sanbase.TechIndicators.MetricAnomaly do
   import Sanbase.Utils.ErrorHandling
 
   require Logger
@@ -14,14 +14,14 @@ defmodule Sanbase.TechIndicators.MetricAnomalies do
           value: number()
         }
 
-  @spec metric_anomalies(
+  @spec metric_anomaly(
           atom(),
           String.t(),
           DateTime.t(),
           DateTime.t(),
           String.t()
         ) :: {:error, String.t()} | {:ok, [anomaly_point()]}
-  def metric_anomalies(
+  def metric_anomaly(
         metric,
         slug,
         from,

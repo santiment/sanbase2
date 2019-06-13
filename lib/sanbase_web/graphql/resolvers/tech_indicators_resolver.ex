@@ -115,7 +115,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
     )
   end
 
-  def metric_anomalies(
+  def metric_anomaly(
         _root,
         %{
           metric: metric,
@@ -126,7 +126,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
         },
         _resolution
       ) do
-    TechIndicators.metric_anomalies(
+    TechIndicators.metric_anomaly(
       metric,
       slug,
       from,

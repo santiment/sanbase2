@@ -137,7 +137,7 @@ defmodule SanbaseWeb.Graphql.Schema.TechIndicatorsQueries do
     * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
     * interval - an integer followed by one of: `m`, `h`, `d`, `w`
     """
-    field :metric_anomalies, list_of(:anomaly_value) do
+    field :metric_anomaly, list_of(:anomaly_value) do
       arg(:metric, non_null(:anomalies_metrics_enum))
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
@@ -146,7 +146,7 @@ defmodule SanbaseWeb.Graphql.Schema.TechIndicatorsQueries do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction)
-      resolve(&TechIndicatorsResolver.metric_anomalies/3)
+      resolve(&TechIndicatorsResolver.metric_anomaly/3)
     end
   end
 end

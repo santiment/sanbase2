@@ -12,7 +12,8 @@ defmodule SanbaseWeb.Graphql.Schema.TechIndicatorsQueries do
   alias SanbaseWeb.Graphql.Middlewares.{
     TimeframeRestriction,
     ApikeyAuth,
-    MultipleAuth
+    MultipleAuth,
+    JWTAuth
   }
 
   import_types(SanbaseWeb.Graphql.TechIndicatorsTypes)

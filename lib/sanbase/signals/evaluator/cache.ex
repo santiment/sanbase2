@@ -11,6 +11,7 @@ defmodule Sanbase.Signals.Evaluator.Cache do
   require Logger
   @cache_name :signals_evaluator_cache
 
+  def get_or_store({_, :nocache}, func), do: func.()
   def get_or_store(:nocache, func), do: func.()
 
   def get_or_store(key, func) when is_function(func, 0) do

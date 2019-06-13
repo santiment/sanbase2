@@ -137,7 +137,23 @@ defmodule Sanbase.Signals.UserTrigger do
     )
     |> Repo.all()
     |> Enum.map(&trigger_in_struct/1)
+    |> Enum.reject(&has_invalid_notification_channel?/1)
   end
+
+  defp has_invalid_notification_channel?(%{
+         user: %{
+           user_settings: %{settings: %{telegram_chat_id: nil}},
+           trigger: %{settings: %{channel: "telegram"}}
+         }
+       }),
+       do: true
+
+  defp has_invalid_notification_channel?(%{
+         user: %{email: nil, trigger: %{settings: %{channel: "email"}}}
+       }),
+       do: true
+
+  defp has_invalid_notification_channel?(_), do: false
 
   @doc ~s"""
   Create a new user trigger that is used to fire signals.

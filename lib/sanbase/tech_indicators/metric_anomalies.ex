@@ -14,14 +14,14 @@ defmodule Sanbase.TechIndicators.MetricAnomalies do
           value: number()
         }
 
-  @spec anomalies(
+  @spec metric_anomalies(
           atom(),
           String.t(),
           DateTime.t(),
           DateTime.t(),
           String.t()
         ) :: {:error, String.t()} | {:ok, [anomaly_point()]}
-  def anomalies(
+  def metric_anomalies(
         metric,
         slug,
         from,
@@ -42,11 +42,10 @@ defmodule Sanbase.TechIndicators.MetricAnomalies do
     ]
 
     http_client().get(url, [], options)
-    |> IO.inspect()
     |> handle_result(slug, metric)
     |> case do
       {:ok, result} ->
-        result
+        {:ok, result}
 
       {:error, error} ->
         {:error, error}
@@ -55,7 +54,6 @@ defmodule Sanbase.TechIndicators.MetricAnomalies do
 
   defp handle_result({:ok, %HTTPoison.Response{status_code: 200, body: body}}, _, _) do
     body
-    |> Jason.decode!()
     |> Jason.decode!()
     |> anomalies_result()
   end
@@ -84,7 +82,7 @@ defmodule Sanbase.TechIndicators.MetricAnomalies do
                        "value" => value
                      } ->
         %{
-          datetime: DateTime.from_unix!(datetime, :milliseconds),
+          datetime: DateTime.from_unix!(datetime),
           value: value
         }
       end)

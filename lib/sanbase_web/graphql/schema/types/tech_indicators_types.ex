@@ -39,4 +39,14 @@ defmodule SanbaseWeb.Graphql.TechIndicatorsTypes do
     field(:mentions_count, :integer)
     field(:datetime, non_null(:datetime))
   end
+
+  enum :anomalies_metrics_enum do
+    value(:daily_active_addresses)
+    value(:dev_activity)
+  end
+
+  object :anomaly_value do
+    field(:value, :float)
+    field(:datetime, non_null(:datetime))
+  end
 end

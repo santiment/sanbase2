@@ -5,11 +5,21 @@ defmodule Sanbase.TechIndicators do
   require Sanbase.Utils.Config, as: Config
 
   alias Sanbase.Model.Project
+  alias Sanbase.TechIndicators.MetricAnomalies
 
   require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 15_000
+
+  defdelegate metric_anomalies(
+                metric,
+                slug,
+                from,
+                to,
+                interval
+              ),
+              to: MetricAnomalies
 
   def twitter_mention_count(
         ticker,

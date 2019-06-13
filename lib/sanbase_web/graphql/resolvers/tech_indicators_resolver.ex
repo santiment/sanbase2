@@ -115,6 +115,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
     )
   end
 
+  def metric_anomalies(
+        _root,
+        %{
+          metric: metric,
+          slug: slug,
+          from: from,
+          to: to,
+          interval: interval
+        },
+        _resolution
+      ) do
+    TechIndicators.metric_anomalies(
+      metric,
+      slug,
+      from,
+      to,
+      interval
+    )
+  end
+
   defp price_volume_diff_window_type(),
     do: Config.module_get(Sanbase.Notifications.PriceVolumeDiff, :window_type)
 

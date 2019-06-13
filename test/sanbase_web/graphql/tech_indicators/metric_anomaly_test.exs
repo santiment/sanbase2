@@ -24,8 +24,8 @@ defmodule SanbaseWeb.Graphql.MetricAnomalyTest do
        %HTTPoison.Response{
          body: """
          [
-           {"datetime":1550880000,"value":30},
-           {"datetime":1550966400,"value":40}
+           {"datetime":"2019-02-23T00:00:00+00:00","value":30},
+           {"datetime":"2019-02-24T00:00:00+00:00","value":40}
          ]
          """,
          status_code: 200

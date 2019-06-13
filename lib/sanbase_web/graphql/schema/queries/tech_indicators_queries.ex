@@ -146,7 +146,7 @@ defmodule SanbaseWeb.Graphql.Schema.TechIndicatorsQueries do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction)
-      resolve(&TechIndicatorsResolver.metric_anomaly/3)
+      cache_resolve(&TechIndicatorsResolver.metric_anomaly/3)
     end
   end
 end

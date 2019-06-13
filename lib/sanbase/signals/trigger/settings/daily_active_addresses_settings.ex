@@ -53,11 +53,17 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
 
     target_list
     |> Enum.map(fn slug ->
-      {:ok, contract, _token_decimals} = Project.contract_info_by_slug(slug)
-      current_daa = realtime_active_addresses(contract)
-      average_daa = average_active_addresses(contract, from, to)
+      case Project.contract_info_by_slug(slug) do
+        {:ok, contract, _token_decimals} ->
+          current_daa = realtime_active_addresses(contract)
+          average_daa = average_active_addresses(contract, from, to)
 
-      {slug, {current_daa, average_daa}}
+          {slug, {current_daa, average_daa}}
+
+        _ ->
+          nil
+      end
+      |> Enum.reject(&is_nil/1)
     end)
   end
 

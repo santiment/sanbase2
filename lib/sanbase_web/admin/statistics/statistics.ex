@@ -22,7 +22,7 @@ defmodule Sanbase.ExAdmin.Statistics do
                 pre("|", style: "all: initial; margin: 0 10px 0 10px;")
               end
 
-              td("#{value}")
+              td("#{format_value(value)}")
             end
           end)
         end
@@ -36,4 +36,10 @@ defmodule Sanbase.ExAdmin.Statistics do
     |> Enum.map(&String.capitalize/1)
     |> Enum.join(" ")
   end
+
+  defp format_value(num) when is_float(num) do
+    Number.Delimit.number_to_delimited(num)
+  end
+
+  defp format_value(val), do: val
 end

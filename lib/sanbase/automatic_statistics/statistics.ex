@@ -6,8 +6,8 @@ defmodule Sanbase.Statistics do
     "staking_users",
     "registered_users",
     "registered_staking_users",
-    "weekly_updates_subscribed_user_count",
-    "daily_updates_subscribed_user_count",
+    "daily_newsletter_subscriptions",
+    "weekly_newsletter_subscriptions",
     "watchlists",
     "tokens_staked"
   ]
@@ -67,17 +67,73 @@ defmodule Sanbase.Statistics do
     UserStatistics.tokens_staked()
   end
 
-  def get("weekly_updates_subscribed_user_count") do
+  def get("daily_newsletter_subscriptions") do
+    now = Timex.now()
+
+    last_7d =
+      UserStatistics.newsletter_subscribed_users(
+        Sanbase.Auth.Settings.daily_subscription_type(),
+        Timex.shift(now, days: -7),
+        now
+      )
+
+    last_30d =
+      UserStatistics.newsletter_subscribed_users(
+        Sanbase.Auth.Settings.daily_subscription_type(),
+        Timex.shift(now, days: -30),
+        now
+      )
+
+    last_180d =
+      UserStatistics.newsletter_subscribed_users(
+        Sanbase.Auth.Settings.daily_subscription_type(),
+        Timex.shift(now, days: -180),
+        now
+      )
+
+    overall =
+      UserStatistics.newsletter_subscribed_users(Sanbase.Auth.Settings.daily_subscription_type())
+
     %{
-      "weekly_updates_subscribed_user_count" =>
-        UserStatistics.weekly_updates_subscribed_user_count()
+      "daily_updates_subscribed_user_count_last_7d" => last_7d,
+      "daily_updates_subscribed_user_count_last_30d" => last_30d,
+      "daily_updates_subscribed_user_count_last_180d" => last_180d,
+      "daily_updates_subscribed_user_count_overall" => overall
     }
   end
 
-  def get("daily_updates_subscribed_user_count") do
+  def get("weekly_newsletter_subscriptions") do
+    now = Timex.now()
+
+    last_7d =
+      UserStatistics.newsletter_subscribed_users(
+        Sanbase.Auth.Settings.weekly_subscription_type(),
+        Timex.shift(now, days: -7),
+        now
+      )
+
+    last_30d =
+      UserStatistics.newsletter_subscribed_users(
+        Sanbase.Auth.Settings.weekly_subscription_type(),
+        Timex.shift(now, days: -30),
+        now
+      )
+
+    last_180d =
+      UserStatistics.newsletter_subscribed_users(
+        Sanbase.Auth.Settings.weekly_subscription_type(),
+        Timex.shift(now, days: -180),
+        now
+      )
+
+    overall =
+      UserStatistics.newsletter_subscribed_users(Sanbase.Auth.Settings.weekly_subscription_type())
+
     %{
-      "daily_updates_subscribed_user_count" =>
-        UserStatistics.daily_updates_subscribed_user_count()
+      "weekly_updates_subscribed_user_count_last_7d" => last_7d,
+      "weekly_updates_subscribed_user_count_last_30d" => last_30d,
+      "weekly_updates_subscribed_user_count_last_180d" => last_180d,
+      "weekly_updates_subscribed_user_count_overall" => overall
     }
   end
 

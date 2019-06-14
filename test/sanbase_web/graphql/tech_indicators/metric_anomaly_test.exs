@@ -41,8 +41,8 @@ defmodule SanbaseWeb.Graphql.MetricAnomalyTest do
       |> get_in(["data", "metricAnomaly"])
 
     assert result == [
-             %{"datetime" => "2019-02-23T00:00:00Z", "value" => 30},
-             %{"datetime" => "2019-02-24T00:00:00Z", "value" => 40}
+             %{"datetime" => "2019-02-23T00:00:00Z", "metricValue" => 30},
+             %{"datetime" => "2019-02-24T00:00:00Z", "metricValue" => 40}
            ]
   end
 
@@ -106,7 +106,7 @@ defmodule SanbaseWeb.Graphql.MetricAnomalyTest do
         to: "#{context.datetime2}"
       ) {
         datetime
-        value
+        metricValue
       }
     }
     """

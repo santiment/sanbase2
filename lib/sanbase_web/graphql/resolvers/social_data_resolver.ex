@@ -2,8 +2,99 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
   import SanbaseWeb.Graphql.Helpers.Async, only: [async: 1]
 
   alias SanbaseWeb.Graphql.Helpers.Utils
-  alias Sanbase.SocialData
+
+  alias Sanbase.{
+    SocialData,
+    TechIndicators
+  }
+
   @context_words_default_size 10
+
+  def twitter_mention_count(
+        _root,
+        %{
+          ticker: ticker,
+          from: from,
+          to: to,
+          interval: interval,
+          result_size_tail: result_size_tail
+        },
+        _resolution
+      ) do
+    TechIndicators.twitter_mention_count(
+      ticker,
+      from,
+      to,
+      interval,
+      result_size_tail
+    )
+  end
+
+  def emojis_sentiment(
+        _root,
+        %{
+          from: from,
+          to: to,
+          interval: interval,
+          result_size_tail: result_size_tail
+        },
+        _resolution
+      ) do
+    TechIndicators.emojis_sentiment(
+      from,
+      to,
+      interval,
+      result_size_tail
+    )
+  end
+
+  def social_volume(
+        _root,
+        %{
+          slug: slug,
+          from: from,
+          to: to,
+          interval: interval,
+          social_volume_type: social_volume_type
+        },
+        _resolution
+      ) do
+    TechIndicators.social_volume(
+      slug,
+      from,
+      to,
+      interval,
+      social_volume_type
+    )
+  end
+
+  def social_volume_projects(
+        _root,
+        %{},
+        _resolution
+      ) do
+    TechIndicators.social_volume_projects()
+  end
+
+  def topic_search(
+        _root,
+        %{
+          source: source,
+          search_text: search_text,
+          from: from,
+          to: to,
+          interval: interval
+        },
+        _resolution
+      ) do
+    TechIndicators.topic_search(
+      source,
+      search_text,
+      from,
+      to,
+      interval
+    )
+  end
 
   def trending_words(
         _root,

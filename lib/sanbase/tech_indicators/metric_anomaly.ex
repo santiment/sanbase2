@@ -83,7 +83,7 @@ defmodule Sanbase.TechIndicators.MetricAnomaly do
                      } ->
         %{
           datetime: Sanbase.DateTimeUtils.from_iso8601!(datetime),
-          value: value
+          metric_value: value
         }
       end)
 

@@ -10,10 +10,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
     JWTAuth
   }
 
-  alias SanbaseWeb.Graphql.Resolvers.{
-    SocialDataResolver,
-    TechIndicatorsResolver
-  }
+  alias SanbaseWeb.Graphql.Resolvers.SocialDataResolver
 
   alias SanbaseWeb.Graphql.Complexity
 
@@ -30,7 +27,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
-      cache_resolve(&TechIndicatorsResolver.twitter_mention_count/3)
+      cache_resolve(&SocialDataResolver.twitter_mention_count/3)
     end
 
     @desc ~s"""
@@ -46,7 +43,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       middleware(MultipleAuth, [{JWTAuth, san_tokens: 1000}, {ApikeyAuth, san_tokens: 1000}])
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
-      cache_resolve(&TechIndicatorsResolver.emojis_sentiment/3)
+      cache_resolve(&SocialDataResolver.emojis_sentiment/3)
     end
 
     @desc ~s"""
@@ -72,14 +69,14 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction)
-      resolve(&TechIndicatorsResolver.social_volume/3)
+      resolve(&SocialDataResolver.social_volume/3)
     end
 
     @desc ~s"""
     Returns a list of slugs for which there is social volume data.
     """
     field :social_volume_projects, list_of(:string) do
-      cache_resolve(&TechIndicatorsResolver.social_volume_projects/3)
+      cache_resolve(&SocialDataResolver.social_volume_projects/3)
     end
 
     @desc ~s"""
@@ -105,7 +102,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction)
-      cache_resolve(&TechIndicatorsResolver.topic_search/3, ttl: 600, max_ttl_offset: 240)
+      cache_resolve(&SocialDataResolver.topic_search/3, ttl: 600, max_ttl_offset: 240)
     end
 
     @desc ~s"""

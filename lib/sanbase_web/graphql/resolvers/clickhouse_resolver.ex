@@ -151,17 +151,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   def token_circulation(
         _root,
-        %{slug: "bitcoin", from: from, to: to, interval: interval},
-        _resolution
-      ) do
-    with {:ok, from, to, interval} <-
-           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86_400, @datapoints) do
-      Bitcoin.token_circulation(from, to, interval)
-    end
-  end
-
-  def token_circulation(
-        _root,
         %{slug: slug, from: from, to: to, interval: interval} = args,
         _resolution
       ) do

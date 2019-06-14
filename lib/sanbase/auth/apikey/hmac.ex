@@ -38,29 +38,36 @@ defmodule Sanbase.Auth.Hmac do
   require Sanbase.Utils.Config, as: Config
   require Logger
 
-  @rand_bytes_length 64
-  @apikey_length 32
+  @rand_bytes_length 32
+  @apikey_length 16
 
-  def hmac(apikey) do
-    :crypto.hmac(:sha256, secret_key(), apikey)
+  @spec hmac(String.t()) :: String.t()
+  def hmac(token) when is_binary(token) do
+    :crypto.hmac(:sha256, secret_key(), token)
     |> Base.encode32(case: :lower)
-    |> binary_part(0, @apikey_length)
+    |> binary_part(0, byte_size(token))
   end
 
+  @spec generate_token :: String.t()
   def generate_token() do
     :crypto.strong_rand_bytes(@rand_bytes_length)
     |> Base.encode32(case: :lower)
     |> binary_part(0, @apikey_length)
   end
 
+  @spec generate_apikey(String.t()) :: String.t()
   def generate_apikey(token) do
     token <> "_" <> hmac(token)
   end
 
-  def apikey_valid?(token, apikey) do
+  @spec apikey_valid?(String.t(), String.t()) :: boolean
+  def apikey_valid?(token, apikey) when byte_size(apikey) >= 32 and byte_size(token) >= 16 do
     apikey == generate_apikey(token)
   end
 
+  def apikey_valid?(_, _), do: false
+
+  @spec split_apikey(String.t()) :: {:ok, {String.t(), String.t()}} | {:error, String.t()}
   def split_apikey(token_apikey) do
     with [token, apikey] <- String.split(token_apikey, "_") do
       {:ok, {token, apikey}}

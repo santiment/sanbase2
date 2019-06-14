@@ -11,7 +11,7 @@ defmodule Sanbase.Signals.Evaluator do
   @doc ~s"""
   Takes a list of triggers and returns its subset that evaluate to true at the given moment.
   """
-  @spec run(list(), String.t()) :: list()
+  @spec run(list(), String.t() | nil) :: list()
   def run(user_triggers, type \\ nil)
 
   def run([], _), do: []
@@ -36,6 +36,7 @@ defmodule Sanbase.Signals.Evaluator do
         fn -> Trigger.evaluate(original_trigger) end
       )
 
+    # Take only `payload` and `triggered?` from the cache
     %UserTrigger{
       user_trigger
       | trigger: %{

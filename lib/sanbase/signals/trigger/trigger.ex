@@ -90,8 +90,10 @@ defmodule Sanbase.Signals.Trigger do
   end
 
   def evaluate(%Trigger{settings: %{target: target} = trigger_settings} = trigger) do
+    filtered_target = remove_targets_on_cooldown(target, trigger)
+
     trigger_settings =
-      %{trigger_settings | filtered_target: remove_targets_on_cooldown(target, trigger)}
+      %{trigger_settings | filtered_target: filtered_target}
       |> Sanbase.Signals.Settings.evaluate(trigger)
 
     %Trigger{trigger | settings: trigger_settings}

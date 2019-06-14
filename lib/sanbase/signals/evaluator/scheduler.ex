@@ -40,7 +40,7 @@ defmodule Sanbase.Signals.Scheduler do
     {updated_user_triggers, sent_list_results} =
       type
       |> UserTrigger.get_active_triggers_by_type()
-      |> Evaluator.run()
+      |> Evaluator.run(type)
       |> filter_triggered?()
       |> send_and_mark_as_sent()
 
@@ -115,7 +115,10 @@ defmodule Sanbase.Signals.Scheduler do
          },
          send_results_list
        ) do
-    now = Timex.now()
+    # Round the datetimes to minutes because the `last_triggered` is used as
+    # part of a cache key. If `now` is left as is the last triggered time of
+    # all signals will be different, sometimes only by a second
+    now = Timex.now() |> Timex.set(second: 0, microsecond: {0, 0})
 
     last_triggered =
       send_results_list

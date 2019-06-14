@@ -2,6 +2,7 @@ defmodule Sanbase.StatisticsTest do
   use Sanbase.DataCase
 
   import Sanbase.Factory
+  import Mock
 
   setup do
     u1 = insert(:user)
@@ -46,9 +47,16 @@ defmodule Sanbase.StatisticsTest do
     Ecto.Changeset.change(u6, %{inserted_at: Timex.shift(Timex.now(), days: -1)})
     |> Sanbase.Repo.update()
 
-    Sanbase.Auth.UserSettings.change_newsletter_subscription(u6, %{
-      newsletter_subscription: :weekly
-    })
+    before_170d = Timex.shift(Timex.now(), days: -170)
+
+    # Simulate that the user subscribed 170d ago, cannot be modified with changeset
+    # as the `newsletter_subscription_updated_at` is not accepted as param but is
+    # internally set.
+    with_mock(DateTime, [:passthrough], utc_now: fn -> before_170d end) do
+      Sanbase.Auth.UserSettings.change_newsletter_subscription(u6, %{
+        newsletter_subscription: :weekly
+      })
+    end
 
     insert(:watchlist, %{user: u1})
     insert(:watchlist, %{user: u1})
@@ -101,8 +109,8 @@ defmodule Sanbase.StatisticsTest do
     assert {"weekly_newsletter_subscriptions",
             %{
               "weekly_updates_subscribed_user_count_last_180d" => 3,
-              "weekly_updates_subscribed_user_count_last_30d" => 3,
-              "weekly_updates_subscribed_user_count_last_7d" => 3,
+              "weekly_updates_subscribed_user_count_last_30d" => 2,
+              "weekly_updates_subscribed_user_count_last_7d" => 2,
               "weekly_updates_subscribed_user_count_overall" => 3
             }} in statistics
 

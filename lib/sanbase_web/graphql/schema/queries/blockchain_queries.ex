@@ -10,7 +10,11 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
   }
 
   alias SanbaseWeb.Graphql.Complexity
-  alias SanbaseWeb.Graphql.Middlewares.TimeframeRestriction
+
+  alias SanbaseWeb.Graphql.Middlewares.{
+    TimeframeRestriction,
+    BasicAuth
+  }
 
   import_types(SanbaseWeb.Graphql.EtherbiTypes)
   import_types(SanbaseWeb.Graphql.ClickhouseTypes)

@@ -114,7 +114,10 @@ defmodule Sanbase.Signals.Trigger do
   def last_triggered(%Trigger{last_triggered: lt}, _target) when map_size(lt) == 0, do: nil
 
   def last_triggered(%Trigger{last_triggered: lt}, target) do
-    Map.get(lt, target)
+    case Map.get(lt, target) do
+      nil -> nil
+      last_triggered -> last_triggered |> DateTimeUtils.from_iso8601!()
+    end
   end
 
   def has_cooldown?(%Trigger{} = trigger, target) do
@@ -122,9 +125,7 @@ defmodule Sanbase.Signals.Trigger do
       nil ->
         false
 
-      target_last_triggered ->
-        target_last_triggered = target_last_triggered |> DateTimeUtils.from_iso8601!()
-
+      %DateTime{} = target_last_triggered ->
         Timex.compare(
           DateTimeUtils.after_interval(trigger.cooldown, target_last_triggered),
           Timex.now()

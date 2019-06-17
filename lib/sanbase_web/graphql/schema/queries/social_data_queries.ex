@@ -10,13 +10,114 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
     JWTAuth
   }
 
-  alias SanbaseWeb.Graphql.Resolvers.SocialDataResolver
+  alias SanbaseWeb.Graphql.Resolvers.{
+    SocialDataResolver,
+    TwitterResolver,
+    ElasticsearchResolver
+  }
 
   alias SanbaseWeb.Graphql.Complexity
 
   import_types(SanbaseWeb.Graphql.SocialDataTypes)
 
   object :social_data_queries do
+    @desc "Fetch the current data for a Twitter account (currently includes only Twitter followers)."
+    field :twitter_data, :twitter_data do
+      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
+      arg(:slug, :string)
+
+      cache_resolve(&TwitterResolver.twitter_data/3)
+    end
+
+    @desc "Fetch historical data for a Twitter account (currently includes only Twitter followers)."
+    field :history_twitter_data, list_of(:twitter_data) do
+      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
+      arg(:slug, :string)
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      cache_resolve(&TwitterResolver.history_twitter_data/3)
+    end
+
+    @desc ~s"""
+    Returns lists with trending words and their corresponding trend score.
+
+    Arguments description:
+      * source - one of the following:
+        1. TELEGRAM
+        2. PROFESSIONAL_TRADERS_CHAT
+        3. REDDIT
+        4. ALL
+      * size - an integer showing how many words should be included in the top list (max 100)
+      * hour - an integer from 0 to 23 showing the hour of the day when the calculation was executed
+      * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+      * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    """
+    field :trending_words, list_of(:trending_words) do
+      arg(:source, non_null(:trending_words_sources))
+      arg(:size, non_null(:integer))
+      arg(:hour, non_null(:integer))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_realtime_data: true})
+      cache_resolve(&SocialDataResolver.trending_words/3, ttl: 600, max_ttl_offset: 240)
+    end
+
+    @desc ~s"""
+    Returns the historical score for a given word within a time interval
+
+    Arguments description:
+      * word - the word the historical score is requested for
+      * source - one of the following:
+        1. TELEGRAM
+        2. PROFESSIONAL_TRADERS_CHAT
+        3. REDDIT
+        4. ALL
+      * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+      * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    """
+    field :word_trend_score, list_of(:word_trend_score) do
+      arg(:word, non_null(:string))
+      arg(:source, non_null(:trending_words_sources))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_realtime_data: true})
+      cache_resolve(&SocialDataResolver.word_trend_score/3, ttl: 600, max_ttl_offset: 240)
+    end
+
+    @desc ~s"""
+    Returns context for a trending word and the corresponding context score.
+
+    Arguments description:
+      * word - the word the context is requested for
+      * source - one of the following:
+        1. TELEGRAM
+        2. PROFESSIONAL_TRADERS_CHAT
+        3. REDDIT
+        4. ALL
+      * size - an integer showing how many words should be included in the top list (max 100)
+      * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+      * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    """
+    field :word_context, list_of(:word_context) do
+      arg(:word, non_null(:string))
+      arg(:source, non_null(:trending_words_sources))
+      arg(:size, non_null(:integer))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_realtime_data: true})
+      cache_resolve(&SocialDataResolver.word_context/3, ttl: 600, max_ttl_offset: 240)
+    end
+
     @desc "Fetch the Twitter mention count for a given ticker and time period."
     field :twitter_mention_count, list_of(:twitter_mention_count) do
       arg(:ticker, non_null(:string))
@@ -151,6 +252,56 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       middleware(TimeframeRestriction)
 
       resolve(&SocialDataResolver.news/3)
+    end
+
+    @desc "Returns statistics for the data stored in elasticsearch"
+    field :elasticsearch_stats, :elasticsearch_stats do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      cache_resolve(&ElasticsearchResolver.stats/3)
+    end
+
+    @desc """
+    Top social gainers/losers returns the social volume changes of all crypto projects.
+
+    * `from` - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * `to` - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * `status` can be one of: `ALL`, `GAINER`, `LOSER`, `NEWCOMER`
+    * `size` - count of returned projects for status
+    * `time_window` - the `change` time window in days. Should be between `2d` and `30d`.
+    """
+    field :top_social_gainers_losers, list_of(:top_social_gainers_losers) do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:status, non_null(:social_gainers_losers_status_enum))
+      arg(:size, :integer, default_value: 10)
+      arg(:time_window, non_null(:string))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
+      cache_resolve(&SocialDataResolver.top_social_gainers_losers/3)
+    end
+
+    @desc """
+    Returns the social gainers/losers `status` and `change` for given slug.
+    Returned `status` can be one of: `GAINER`, `LOSER`, `NEWCOMER.`
+
+    * `slug` - a string uniquely identifying a project
+    * `from` - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * `to` - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * `time_window` - the `change` time window in days. Should be between `2d` and `30d`.
+    """
+    field :social_gainers_losers_status, list_of(:social_gainers_losers_status) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:time_window, non_null(:string))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
+      cache_resolve(&SocialDataResolver.social_gainers_losers_status/3)
     end
   end
 end

@@ -6,7 +6,8 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
   alias SanbaseWeb.Graphql.Resolvers.{
     PriceResolver,
     ProjectResolver,
-    ProjectTransactionsResolver
+    ProjectTransactionsResolver,
+    MarketSegmentResolver
   }
 
   alias SanbaseWeb.Graphql.Complexity
@@ -107,6 +108,21 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
       cache_resolve(&ProjectResolver.combined_history_stats/3)
+    end
+
+    @desc "Fetch all market segments."
+    field :all_market_segments, list_of(:market_segment) do
+      cache_resolve(&MarketSegmentResolver.all_market_segments/3)
+    end
+
+    @desc "Fetch ERC20 projects' market segments."
+    field :erc20_market_segments, list_of(:market_segment) do
+      cache_resolve(&MarketSegmentResolver.erc20_market_segments/3)
+    end
+
+    @desc "Fetch currency projects' market segments."
+    field :currencies_market_segments, list_of(:market_segment) do
+      cache_resolve(&MarketSegmentResolver.currencies_market_segments/3)
     end
   end
 

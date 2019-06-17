@@ -97,8 +97,10 @@ defmodule Sanbase.Signals.EvaluatorTest do
 
       # 2 signals triggered
       assert rest == []
-      assert context.trigger1.id == triggered1.id
-      assert context.trigger2.id == triggered2.id
+      triggered_ids = [triggered1.id, triggered2.id] |> Enum.sort()
+      expected_ids = [context.trigger1.id, context.trigger2.id] |> Enum.sort()
+
+      assert triggered_ids == expected_ids
     end
   end
 

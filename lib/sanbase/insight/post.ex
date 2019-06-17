@@ -83,6 +83,7 @@ defmodule Sanbase.Insight.Post do
   def publish_changeset(%Post{} = post, attrs) do
     post
     |> cast(attrs, [:ready_state, :discourse_topic_url, :published_at])
+    |> change(published_at: NaiveDateTime.utc_now())
   end
 
   def awaiting_approval_state(), do: @awaiting_approval

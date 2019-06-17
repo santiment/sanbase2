@@ -756,6 +756,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
         assert result["discourseTopicUrl"] ==
                  "https://discourse.stage.internal.santiment.net/t/first-test-from-api2/234"
 
+        assert result["publishedAt"] != nil
+
         assert Sanbase.Timeline.TimelineEvent |> Repo.all() |> length() == 1
       end
     end
@@ -892,7 +894,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
       publishInsight(id: #{post.id}) {
         id,
         readyState,
-        discourseTopicUrl
+        discourseTopicUrl,
+        publishedAt
       }
     }
     """

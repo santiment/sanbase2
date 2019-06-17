@@ -14,7 +14,7 @@ defmodule Sanbase.Application.Signals do
       Sanbase.TimescaleRepo,
 
       # Start the Clickhouse Repo
-      start_in({Sanbase.ClickhouseRepo, []}, [:dev, :prod]),
+      start_in({Sanbase.ClickhouseRepo, []}, [:prod]),
 
       # Start the signal evaluator cache
       Supervisor.child_spec(

@@ -9,7 +9,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   def list_items(%UserList{} = user_list, _args, _resolution) do
     result =
       UserList.get_projects(user_list)
-      |> Project.preload()
+      |> Project.preload_assocs()
       |> Enum.map(&%{project: &1})
 
     {:ok, result}
@@ -78,6 +78,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
 
   def fetch_all_public_user_lists(_root, _args, _resolution) do
     UserList.fetch_all_public_lists()
+  end
+
+  def watchlist(_root, %{id: id}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    UserList.user_list(id, current_user)
+  end
+
+  def watchlist(_root, %{id: id}, _resolution) do
+    UserList.user_list(id, %User{id: nil})
   end
 
   def user_list(_root, %{user_list_id: user_list_id}, %{

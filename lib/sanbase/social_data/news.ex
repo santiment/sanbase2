@@ -1,8 +1,6 @@
 defmodule Sanbase.SocialData.News do
   import Sanbase.Utils.ErrorHandling
 
-  alias SanbaseWeb.Graphql.Cache
-
   require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
@@ -41,32 +39,22 @@ defmodule Sanbase.SocialData.News do
          datetime_to,
          size
        ) do
-    cache_key =
-      Cache.cache_key(:google_news_api_request, %{
-        tag: tag,
-        from: datetime_from,
-        to: datetime_to,
-        size: size
-      })
+    from_unix = DateTime.to_unix(datetime_from)
+    to_unix = DateTime.to_unix(datetime_to)
 
-    Cache.get_or_store(cache_key, fn ->
-      from_unix = DateTime.to_unix(datetime_from)
-      to_unix = DateTime.to_unix(datetime_to)
+    url = "#{tech_indicators_url()}/indicator/google_news_feed"
 
-      url = "#{tech_indicators_url()}/indicator/google_news_feed"
-
-      options = [
-        recv_timeout: @recv_timeout,
-        params: [
-          {"tag", tag},
-          {"from_timestamp", from_unix},
-          {"to_timestamp", to_unix},
-          {"size", size}
-        ]
+    options = [
+      recv_timeout: @recv_timeout,
+      params: [
+        {"tag", tag},
+        {"from_timestamp", from_unix},
+        {"to_timestamp", to_unix},
+        {"size", size}
       ]
+    ]
 
-      http_client().get(url, [], options)
-    end)
+    http_client().get(url, [], options)
   end
 
   defp parse_result(result) do

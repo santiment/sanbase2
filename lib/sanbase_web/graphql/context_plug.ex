@@ -21,7 +21,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   require Logger
 
   @auth_methods [
-    &ContextPlug.bearer_authentication/1,
+    &ContextPlug.bearer_auth_token_authentication/1,
+    &ContextPlug.bearer_auth_header_authentication/1,
     &ContextPlug.basic_authentication/1,
     &ContextPlug.apikey_authentication/1
   ]
@@ -31,7 +32,10 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   def call(conn, _) do
     {conn, context} = build_context(conn, @auth_methods)
 
-    context = context |> Map.put(:remote_ip, conn.remote_ip)
+    context =
+      context
+      |> Map.put(:remote_ip, conn.remote_ip)
+      |> Map.put(:origin_url, Plug.Conn.get_req_header(conn, "origin") |> List.first())
 
     conn
     |> put_private(:absinthe, %{context: context})
@@ -91,7 +95,29 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     end
   end
 
-  def bearer_authentication(%Plug.Conn{} = conn) do
+  # Authenticate with token in cookie
+  def bearer_auth_token_authentication(%Plug.Conn{
+        private: %{plug_session: %{"auth_token" => token}}
+      }) do
+    case bearer_authorize(token) do
+      {:ok, current_user} ->
+        %{
+          permissions: User.permissions!(current_user),
+          auth: %{
+            auth_method: :user_token,
+            current_user: current_user,
+            san_balance: san_balance(current_user)
+          }
+        }
+
+      _ ->
+        :try_next
+    end
+  end
+
+  def bearer_auth_token_authentication(_), do: :try_next
+
+  def bearer_auth_header_authentication(%Plug.Conn{} = conn) do
     with {:has_header?, ["Bearer " <> token]} <-
            {:has_header?, get_req_header(conn, "authorization")},
          {:ok, current_user} <- bearer_authorize(token) do
@@ -99,7 +125,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         permissions: User.permissions!(current_user),
         auth: %{
           auth_method: :user_token,
-          current_user: current_user
+          current_user: current_user,
+          san_balance: san_balance(current_user)
         }
       }
     else
@@ -114,7 +141,11 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
          {:ok, current_user} <- basic_authorize(auth_attempt) do
       %{
         permissions: User.full_permissions(),
-        auth: %{auth_method: :basic, current_user: current_user}
+        auth: %{
+          auth_method: :basic,
+          current_user: current_user,
+          san_balance: 0
+        }
       }
     else
       {:has_header?, _} -> :try_next
@@ -129,7 +160,12 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
          {:ok, {token, _apikey}} <- Sanbase.Auth.Hmac.split_apikey(apikey) do
       %{
         permissions: User.permissions!(current_user),
-        auth: %{auth_method: :apikey, current_user: current_user, token: token}
+        auth: %{
+          auth_method: :apikey,
+          current_user: current_user,
+          token: token,
+          san_balance: san_balance(current_user)
+        }
       }
     else
       {:has_header?, _} -> :try_next
@@ -143,6 +179,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       {:ok, user}
     else
       {:error, :token_expired} ->
+        %{permissions: User.no_permissions()}
+
+      {:error, :invalid_token} ->
         %{permissions: User.no_permissions()}
 
       _ ->
@@ -166,5 +205,12 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   defp apikey_authorize(apikey) do
     Sanbase.Auth.Apikey.apikey_to_user(apikey)
+  end
+
+  defp san_balance(%User{} = user) do
+    case User.san_balance(user) do
+      {:ok, %Decimal{} = balance} -> balance |> Decimal.to_float()
+      _ -> 0
+    end
   end
 end

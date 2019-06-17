@@ -51,7 +51,7 @@ defmodule Sanbase.Etherbi.ExchangeWalletsApiTest do
   end
 
   test "returning a list of wallets from the DB", context do
-    infr = insert(:infrastructure_eth)
+    infr = insert(:infrastructure, %{code: "ETH"})
 
     insert(:exchange_address, %{address: "0x12345", name: "Binance", infrastructure_id: infr.id})
     insert(:exchange_address, %{address: "0x54321", name: "Kraken", infrastructure_id: infr.id})

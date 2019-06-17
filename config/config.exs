@@ -20,6 +20,10 @@ config :sanbase, Sanbase,
   environment: "#{Mix.env()}",
   required_san_stake_full_access: {:system, "REQUIRED_SAN_STAKE_FULL_ACCESS", "1000"}
 
+config :sanbase, Sanbase.ApiCallDataExporter,
+  kafka_url: {:system, "KAFKA_URL", "blockchain-kafka-kafka"},
+  kafka_port: {:system, "KAFKA_PORT", "9092"}
+
 config :sanbase, Sanbase.ClickhouseRepo, adapter: Ecto.Adapters.Postgres
 
 config :sanbase, Sanbase.Repo,
@@ -143,6 +147,9 @@ config :libcluster,
       ]
     ]
   ]
+
+config :sanbase, SanbaseWeb.Plug.SessionPlug,
+  domain: {:system, "SANTIMENT_ROOT_DOMAIN", "localhost"}
 
 # Import configs
 import_config "ex_admin_config.exs"

@@ -44,7 +44,7 @@ defmodule Sanbase.Mixfile do
       {:gettext, "~> 0.11"},
       {:cowboy, "~> 2.0"},
       {:decimal, "~> 1.0"},
-      {:corsica, "~> 1.0", only: [:dev]},
+      {:corsica, "~> 1.0"},
       {:tesla, "~> 1.0"},
       {:poison, ">= 1.0.0"},
       {:instream, "~> 0.16"},
@@ -100,7 +100,9 @@ defmodule Sanbase.Mixfile do
       {:stream_data, "~> 0.4.2", only: :test},
       {:stripity_stripe, git: "https://github.com/code-corps/stripity_stripe"},
       {:async_with, github: "fertapric/async_with"},
-      {:credo, "~> 1.0", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
+      {:san_exporter_ex, github: "santiment/san-exporter-ex"},
+      {:faker, "~> 0.12"}
     ]
   end
 

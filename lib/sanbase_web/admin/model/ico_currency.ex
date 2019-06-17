@@ -1,11 +1,11 @@
-defmodule Sanbase.ExAdmin.Model.IcoCurrencies do
+defmodule Sanbase.ExAdmin.Model.IcoCurrency do
   use ExAdmin.Register
 
   import Ecto.Query, warn: false
 
-  alias Sanbase.Model.{Ico, Currency, IcoCurrencies}
+  alias Sanbase.Model.{Ico, Currency, IcoCurrency}
 
-  register_resource Sanbase.Model.IcoCurrencies do
+  register_resource Sanbase.Model.IcoCurrency do
     index do
       selectable_column()
 

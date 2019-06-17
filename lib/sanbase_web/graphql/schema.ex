@@ -34,6 +34,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.Schema.FeaturedQueries)
   import_types(SanbaseWeb.Graphql.Schema.UserQueries)
   import_types(SanbaseWeb.Graphql.Schema.TimelineQueries)
+  import_types(SanbaseWeb.Graphql.Schema.PricingQueries)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.{
@@ -86,6 +87,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:featured_queries)
     import_fields(:user_queries)
     import_fields(:timeline_queries)
+    import_fields(:pricing_queries)
   end
 
   mutation do
@@ -93,5 +95,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:insight_mutations)
     import_fields(:signal_mutations)
     import_fields(:user_mutations)
+    import_fields(:pricing_mutations)
   end
 end

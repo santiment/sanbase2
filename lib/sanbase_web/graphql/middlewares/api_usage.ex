@@ -13,7 +13,12 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
         %Resolution{
           definition: definition,
           context: %{
-            auth: %{auth_method: :apikey, token: token, current_user: user},
+            auth: %{
+              auth_method: :apikey,
+              token: token,
+              current_user: user,
+              san_balance: san_balance
+            },
             remote_ip: remote_ip
           }
         } = resolution,
@@ -31,7 +36,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
       user_id: user.id,
       query: definition.name,
       complexity: definition.complexity,
-      san_balance: Sanbase.Auth.User.san_balance!(user)
+      san_balance: san_balance
     )
 
     Logger.info(
@@ -48,7 +53,10 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
   def call(
         %Resolution{
           definition: definition,
-          context: %{auth: %{auth_method: :user_token, current_user: user}, remote_ip: remote_ip}
+          context: %{
+            auth: %{auth_method: :user_token, current_user: user, san_balance: san_balance},
+            remote_ip: remote_ip
+          }
         } = resolution,
         _config
       ) do
@@ -60,7 +68,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
       user_id: user.id,
       query: definition.name,
       complexity: definition.complexity,
-      san_balance: Sanbase.Auth.User.san_balance!(user)
+      san_balance: san_balance
     )
 
     Logger.info(
@@ -93,4 +101,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
     Logger.reset_metadata([{:query, definition.name} | metadata])
     resolution
   end
+
+  def call(resolution, _), do: resolution
 end

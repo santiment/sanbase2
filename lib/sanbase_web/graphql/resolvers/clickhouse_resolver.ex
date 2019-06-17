@@ -11,6 +11,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   import Sanbase.Utils.ErrorHandling,
     only: [log_graphql_error: 2, graphql_error_msg: 1, graphql_error_msg: 2]
 
+  alias Sanbase.Clickhouse.HistoricalBalance.MinersBalance
+
   alias Sanbase.Clickhouse.{
     DailyActiveAddresses,
     DailyActiveDeposits,
@@ -102,6 +104,32 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     end
   end
 
+  def miners_balance(
+        _root,
+        %{slug: slug, from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    with {:ok, from, to, interval} <-
+           calibrate_interval(
+             MinersBalance,
+             slug,
+             from,
+             to,
+             interval,
+             86400,
+             @datapoints
+           ),
+         {:ok, balance} <-
+           MinersBalance.historical_balance(slug, from, to, interval) do
+      {:ok, balance}
+    else
+      {:error, error} ->
+        error_msg = graphql_error_msg("Miners Balance", slug)
+        log_graphql_error(error_msg, error)
+        {:error, error_msg}
+    end
+  end
+
   def mvrv_ratio(_root, %{slug: "bitcoin", from: from, to: to, interval: interval}, _resolution) do
     with {:ok, from, to, interval} <-
            calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86_400, @datapoints) do
@@ -118,17 +146,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         error_msg = graphql_error_msg("MVRV Ratio", slug)
         log_graphql_error(error_msg, error)
         {:error, error_msg}
-    end
-  end
-
-  def token_circulation(
-        _root,
-        %{slug: "bitcoin", from: from, to: to, interval: interval},
-        _resolution
-      ) do
-    with {:ok, from, to, interval} <-
-           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86_400, @datapoints) do
-      Bitcoin.token_circulation(from, to, interval)
     end
   end
 

@@ -34,7 +34,4 @@ defmodule Sanbase.Signals.History.Utils do
 
     percent_change_calculations |> Enum.reverse()
   end
-
-  def average([]), do: 0
-  def average(values), do: Float.round(Enum.sum(values) / length(values), 2)
 end

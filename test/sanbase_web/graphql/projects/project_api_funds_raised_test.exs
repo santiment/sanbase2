@@ -2,12 +2,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Utils.Config, only: [parse_config_value: 1]
+  import Sanbase.Factory
 
-  alias Sanbase.Model.Project
-  alias Sanbase.Model.Currency
-  alias Sanbase.Model.IcoCurrencies
-  alias Sanbase.Model.Ico
-  alias Sanbase.Repo
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
 
@@ -18,17 +14,9 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     Store.create_db()
 
     # Add the Projects to the Postgres
-    %Project{}
-    |> Project.changeset(%{name: "Test project", coinmarketcap_id: "test", ticker: "TEST"})
-    |> Repo.insert!()
-
-    %Project{}
-    |> Project.changeset(%{name: "Bitcoin", coinmarketcap_id: "bitcoin", ticker: "BTC"})
-    |> Repo.insert!()
-
-    %Project{}
-    |> Project.changeset(%{name: "Ethereum", coinmarketcap_id: "ethereum", ticker: "ETH"})
-    |> Repo.insert!()
+    insert(:project, %{name: "Test project", coinmarketcap_id: "test", ticker: "TEST"})
+    insert(:project, %{name: "Bitcoin", coinmarketcap_id: "bitcoin", ticker: "BTC"})
+    insert(:project, %{name: "Ethereum", coinmarketcap_id: "ethereum", ticker: "ETH"})
 
     # Initialize the Influxdb state
     test_ticker_cmc_id = "TEST_test"
@@ -40,10 +28,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     Store.drop_measurement(eth_ticker_cmc_id)
 
     date1 = "2017-08-19"
-    date1_unix = 1_503_100_800_000_000_000
+    {:ok, dt1} = Timex.parse!(date1, "{YYYY}-{0M}-{D}") |> DateTime.from_naive("Etc/UTC")
+    date1_unix = dt1 |> DateTime.to_unix(:nanosecond)
 
     date2 = "2017-10-17"
-    date2_unix = 1_508_198_400_000_000_000
+    {:ok, dt2} = Timex.parse!(date2, "{YYYY}-{0M}-{D}") |> DateTime.from_naive("Etc/UTC")
+    date2_unix = dt2 |> DateTime.to_unix(:nanosecond)
 
     Store.import([
       %Measurement{
@@ -69,53 +59,23 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     ])
 
     # Add the 3 currencies
-    currency_eth =
-      %Currency{}
-      |> Currency.changeset(%{code: "ETH"})
-      |> Repo.insert!()
-
-    currency_btc =
-      %Currency{}
-      |> Currency.changeset(%{code: "BTC"})
-      |> Repo.insert!()
-
-    currency =
-      %Currency{}
-      |> Currency.changeset(%{code: "TEST"})
-      |> Repo.insert!()
+    currency_eth = insert(:currency, %{code: "ETH"})
+    currency_btc = insert(:currency, %{code: "BTC"})
+    currency = insert(:currency, %{code: "TEST"})
 
     # Add a random project and its ICOs
     project =
-      %Project{}
-      |> Project.changeset(%{name: "Project", coinmarketcap_id: "projjject", ticker: "PROJ"})
-      |> Repo.insert!()
+      insert(:project, %{name: rand_str(), coinmarketcap_id: rand_str(), ticker: rand_str(4)})
 
-    ico1 =
-      %Ico{}
-      |> Ico.changeset(%{project_id: project.id, end_date: date1})
-      |> Repo.insert!()
+    ico1 = insert(:ico, %{project_id: project.id, end_date: date1})
+    insert(:ico_currency, %{ico_id: ico1.id, currency_id: currency_eth.id, amount: 150})
+    insert(:ico_currency, %{ico_id: ico1.id, currency_id: currency.id, amount: 50})
 
-    %IcoCurrencies{}
-    |> IcoCurrencies.changeset(%{ico_id: ico1.id, currency_id: currency_eth.id, amount: 150})
-    |> Repo.insert!()
-
-    %IcoCurrencies{}
-    |> IcoCurrencies.changeset(%{ico_id: ico1.id, currency_id: currency.id, amount: 50})
-    |> Repo.insert!()
-
-    ico2 =
-      %Ico{}
-      |> Ico.changeset(%{project_id: project.id, end_date: date2})
-      |> Repo.insert!()
-
-    %IcoCurrencies{}
-    |> IcoCurrencies.changeset(%{ico_id: ico2.id, currency_id: currency_btc.id, amount: 200})
-    |> Repo.insert!()
+    ico2 = insert(:ico, %{project_id: project.id, end_date: date2})
+    insert(:ico_currency, %{ico_id: ico2.id, currency_id: currency_btc.id, amount: 200})
 
     project_no_ico =
-      %Project{}
-      |> Project.changeset(%{name: "NoIco", coinmarketcap_id: "no_ico", ticker: "NO_ICO"})
-      |> Repo.insert!()
+      insert(:project, %{name: rand_str(), coinmarketcap_id: rand_str(), ticker: rand_str(4)})
 
     [
       project: project,
@@ -124,7 +84,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
   end
 
   test "fetch project public funds raised", context do
-    project_id = context.project.id
+    project = context.project
 
     query = """
     {
@@ -141,12 +101,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
       context.conn
       |> post(
         "/graphql",
-        query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project_id}}")
+        query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project.id}}")
       )
 
     assert json_response(result, 200)["data"]["project"] ==
              %{
-               "name" => "Project",
+               "name" => project.name,
                "fundsRaisedUsdIcoEndPrice" => 1200.0,
                "fundsRaisedEthIcoEndPrice" => 250.0,
                "fundsRaisedBtcIcoEndPrice" => 300.0
@@ -154,7 +114,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
   end
 
   test "fetch project funds raised", context do
-    project_id = context.project.id
+    project = context.project
 
     query = """
     {
@@ -178,12 +138,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
       |> put_req_header("authorization", get_authorization_header())
       |> post(
         "/graphql",
-        query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project_id}}")
+        query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project.id}}")
       )
 
     assert json_response(result, 200)["data"]["project"] ==
              %{
-               "name" => "Project",
+               "name" => project.name,
                "fundsRaisedUsdIcoEndPrice" => 1200.0,
                "fundsRaisedEthIcoEndPrice" => 250.0,
                "fundsRaisedBtcIcoEndPrice" => 300.0,
@@ -205,7 +165,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
   end
 
   test "no ico does not break query", context do
-    project_id = context.project_no_ico.id
+    project = context.project_no_ico
 
     query = """
     {
@@ -229,12 +189,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
       |> put_req_header("authorization", get_authorization_header())
       |> post(
         "/graphql",
-        query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project_id}}")
+        query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project.id}}")
       )
 
     assert json_response(result, 200)["data"]["project"] ==
              %{
-               "name" => context.project_no_ico.name,
+               "name" => project.name,
                "fundsRaisedUsdIcoEndPrice" => nil,
                "fundsRaisedEthIcoEndPrice" => nil,
                "fundsRaisedBtcIcoEndPrice" => nil,

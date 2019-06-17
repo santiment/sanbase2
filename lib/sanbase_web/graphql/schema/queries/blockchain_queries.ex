@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
   use Absinthe.Schema.Notation
 
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
   alias SanbaseWeb.Graphql.Resolvers.{
     EtherbiResolver,
@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
 
   alias SanbaseWeb.Graphql.Middlewares.{
     TimeframeRestriction,
-    AccessControl
+    BasicAuth
   }
 
   import_types(SanbaseWeb.Graphql.EtherbiTypes)
@@ -21,6 +21,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
   import_types(SanbaseWeb.Graphql.ExchangeTypes)
 
   object :blockchain_queries do
+    # STANDART PLAN
     @desc ~s"""
     Fetch burn rate for a project within a given time period, grouped by interval.
     Projects are referred to by a unique identifier (slug).
@@ -123,21 +124,6 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     end
 
     @desc ~s"""
-    Fetch the flow of funds into and out of an exchange wallet.
-    This query returns the difference IN-OUT calculated for each interval.
-    """
-    field :exchange_funds_flow, list_of(:exchange_funds_flow) do
-      arg(:slug, non_null(:string))
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
-
-      complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
-      cache_resolve(&EtherbiResolver.exchange_funds_flow/3)
-    end
-
-    @desc ~s"""
     Fetch daily active addresses for a project within a given time period.
     Projects are referred to by a unique identifier (slug).
 
@@ -155,62 +141,23 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true})
+      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
       cache_resolve(&ClickhouseResolver.daily_active_addresses/3)
     end
 
     @desc ~s"""
-    Fetch daily active deposits for a project within a given time period.
-    Projects are referred to by a unique identifier (slug).
+    Fetch the flow of funds into and out of an exchange wallet.
+    This query returns the difference IN-OUT calculated for each interval.
     """
-    field :daily_active_deposits, list_of(:active_deposits) do
+    field :exchange_funds_flow, list_of(:exchange_funds_flow) do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
-      middleware(AccessControl)
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction)
-      cache_resolve(&ClickhouseResolver.daily_active_deposits/3)
-    end
-
-    @desc ~s"""
-    Fetch share of deposits from Daily Active Addresses.
-    """
-    field :share_of_deposits, list_of(:share_of_deposits) do
-      arg(:slug, non_null(:string))
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
-
-      middleware(AccessControl)
-      complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
-      cache_resolve(&ClickhouseResolver.share_of_deposits/3)
-    end
-
-    @desc ~s"""
-    Historical balance for erc20 token or eth address.
-    Returns the historical balance for a given address in the given interval.
-    """
-    field :historical_balance, list_of(:historical_balance) do
-      arg(:slug, non_null(:string))
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-      arg(:address, non_null(:string))
-      arg(:interval, non_null(:string), default_value: "1d")
-
-      middleware(AccessControl)
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
-      cache_resolve(&ClickhouseResolver.historical_balance/3)
-    end
-
-    @desc "List all exchanges"
-    field :all_exchanges, list_of(:string) do
-      arg(:slug, :string, default_value: "ethereum")
-
-      cache_resolve(&ExchangeResolver.all_exchanges/3)
+      cache_resolve(&EtherbiResolver.exchange_funds_flow/3)
     end
 
     @desc ~s"""
@@ -221,7 +168,6 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      middleware(AccessControl)
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
       cache_resolve(&ExchangeResolver.exchange_volume/3)
@@ -234,24 +180,60 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:to, non_null(:datetime))
       arg(:interval, non_null(:string), default_value: "1d")
 
-      middleware(AccessControl)
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction)
       cache_resolve(&ClickhouseResolver.network_growth/3)
     end
 
-    @desc "Returns MVRV(Market-Value-to-Realized-Value)"
-    field :mvrv_ratio, list_of(:mvrv_ratio) do
+    @desc "Returns what percent of token supply is on exchanges"
+    field :percent_of_token_supply_on_exchanges, list_of(:percent_of_token_supply_on_exchanges) do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, non_null(:string), default_value: "1d")
+      arg(:interval, :string, default_value: "1d")
 
-      middleware(AccessControl)
-      middleware(TimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
-      cache_resolve(&ClickhouseResolver.mvrv_ratio/3)
+      middleware(TimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.percent_of_token_supply_on_exchanges/3)
     end
+
+    @desc """
+    Returns used Gas by a blockchain.
+    When you send tokens, interact with a contract or do anything else on the blockchain,
+    you must pay for that computation. That payment is calculated in Gas.
+    """
+    field :gas_used, list_of(:gas_used) do
+      arg(:slug, :string, default_value: "ethereum")
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.gas_used/3)
+    end
+
+    @desc """
+    Returns the top holders' percent of total supply - in exchanges, outside exchanges and combined.
+
+    Arguments description:
+    * slug - a string uniquely identifying a project
+    * number_of_holders - take top `number_of_holders` into account when calculating.
+    * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    """
+    field :top_holders_percent_of_total_supply, list_of(:top_holders_percent_of_total_supply) do
+      arg(:slug, non_null(:string))
+      arg(:number_of_holders, non_null(:integer))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.top_holders_percent_of_total_supply/3)
+    end
+
+    # ADVANCED PLAN
 
     @desc "Returns Realized value - sum of the acquisition costs of an asset located in a wallet.
     The realized value across the whole network is computed by summing the realized values
@@ -262,23 +244,21 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
-      middleware(AccessControl)
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction)
       cache_resolve(&ClickhouseResolver.realized_value/3)
     end
 
-    @desc "Returns what percent of token supply is on exchanges"
-    field :percent_of_token_supply_on_exchanges, list_of(:percent_of_token_supply_on_exchanges) do
+    @desc "Returns MVRV(Market-Value-to-Realized-Value)"
+    field :mvrv_ratio, list_of(:mvrv_ratio) do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
+      arg(:interval, non_null(:string), default_value: "1d")
 
-      middleware(AccessControl)
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction)
-      cache_resolve(&ClickhouseResolver.percent_of_token_supply_on_exchanges/3)
+      cache_resolve(&ClickhouseResolver.mvrv_ratio/3)
     end
 
     @desc """
@@ -303,6 +283,66 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       cache_resolve(&ClickhouseResolver.nvt_ratio/3)
     end
 
+    @desc ~s"""
+    Fetch daily active deposits for a project within a given time period.
+    Projects are referred to by a unique identifier (slug).
+    """
+    field :daily_active_deposits, list_of(:active_deposits) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.daily_active_deposits/3)
+    end
+
+    # MISC - currently not in STANDART or ADVANCED plan
+    @desc ~s"""
+    Fetch share of deposits from Daily Active Addresses.
+    """
+    field :share_of_deposits, list_of(:share_of_deposits) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.share_of_deposits/3)
+    end
+
+    @desc "Fetch a list of all exchange wallets. This query requires basic authentication."
+    field :exchange_wallets, list_of(:wallet) do
+      arg(:slug, :string, default_value: "ethereum")
+
+      middleware(BasicAuth)
+      cache_resolve(&EtherbiResolver.exchange_wallets/3)
+    end
+
+    @desc ~s"""
+    Historical balance for erc20 token or eth address.
+    Returns the historical balance for a given address in the given interval.
+    """
+    field :historical_balance, list_of(:historical_balance) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:address, non_null(:string))
+      arg(:interval, non_null(:string), default_value: "1d")
+
+      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      cache_resolve(&ClickhouseResolver.historical_balance/3)
+    end
+
+    @desc "List all exchanges"
+    field :all_exchanges, list_of(:string) do
+      arg(:slug, :string, default_value: "ethereum")
+
+      cache_resolve(&ExchangeResolver.all_exchanges/3)
+    end
+
     @desc """
     Returns distribution of miners between mining pools.
     What part of the miners are using top3, top10 and all the other pools.
@@ -314,48 +354,24 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
-      middleware(AccessControl)
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction)
       cache_resolve(&ClickhouseResolver.mining_pools_distribution/3)
     end
 
     @desc """
-    Returns used Gas by a blockchain.
-    When you send tokens, interact with a contract or do anything else on the blockchain,
-    you must pay for that computation. That payment is calculated in Gas.
+    Returns miner balances over time.
+    Currently only ETH is supported.
     """
-    field :gas_used, list_of(:gas_used) do
+    field :miners_balance, list_of(:miners_balance) do
       arg(:slug, :string, default_value: "ethereum")
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
-      middleware(AccessControl)
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction)
-      cache_resolve(&ClickhouseResolver.gas_used/3)
-    end
-
-    @desc """
-    Returns the top holders' percent of total supply - in exchanges, outside exchanges and combined.
-
-    Arguments description:
-    * slug - a string uniquely identifying a project
-    * number_of_holders - take top `number_of_holders` into account when calculating.
-    * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
-    * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
-    """
-    field :top_holders_percent_of_total_supply, list_of(:top_holders_percent_of_total_supply) do
-      arg(:slug, non_null(:string))
-      arg(:number_of_holders, non_null(:integer))
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-
-      middleware(AccessControl)
-      complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
-      cache_resolve(&ClickhouseResolver.top_holders_percent_of_total_supply/3)
+      cache_resolve(&ClickhouseResolver.miners_balance/3)
     end
   end
 end

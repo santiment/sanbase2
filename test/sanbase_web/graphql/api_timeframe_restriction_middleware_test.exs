@@ -110,7 +110,7 @@ defmodule SanbaseWeb.Graphql.TimeframeRestrictionMiddlewareTest do
     assert %{"tokenAgeConsumed" => 7000.0} in token_age_consumed
   end
 
-  test "does not show real for user without SAN stake", context do
+  test "does not show real-time data for user without SAN stake", context do
     conn = setup_jwt_auth(build_conn(), context.not_staked_user)
 
     result =

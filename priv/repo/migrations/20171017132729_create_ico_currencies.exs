@@ -1,4 +1,4 @@
-defmodule Sanbase.Repo.Migrations.CreateIcoCurrencies do
+defmodule Sanbase.Repo.Migrations.CreateIcoCurrency do
   use Ecto.Migration
 
   def change do

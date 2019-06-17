@@ -5,7 +5,7 @@ defmodule Sanbase.Repo.Migrations.IcoMoveFundsRaisedTotalsToDetails do
 
   alias Sanbase.Repo
   alias Sanbase.Model.Ico
-  alias Sanbase.Model.IcoCurrencies
+  alias Sanbase.Model.IcoCurrency
   alias Sanbase.Model.Currency
 
   def up do
@@ -49,7 +49,7 @@ defmodule Sanbase.Repo.Migrations.IcoMoveFundsRaisedTotalsToDetails do
       Enum.find(ico.ico_currencies, &(&1.currency_id == currency.id))
       |> case do
         nil -> nil
-        ic -> IcoCurrencies.changeset(ic, %{amount: funds_raised_total})
+        ic -> IcoCurrency.changeset(ic, %{amount: funds_raised_total})
       end
   end
 
@@ -66,8 +66,8 @@ defmodule Sanbase.Repo.Migrations.IcoMoveFundsRaisedTotalsToDetails do
         nil
 
       amount ->
-        %IcoCurrencies{}
-        |> IcoCurrencies.changeset(%{ico_id: ico.id, currency_id: currency.id, amount: amount})
+        %IcoCurrency{}
+        |> IcoCurrency.changeset(%{ico_id: ico.id, currency_id: currency.id, amount: amount})
     end
   end
 

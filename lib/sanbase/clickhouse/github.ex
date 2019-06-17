@@ -326,8 +326,8 @@ defmodule Sanbase.Clickhouse.Github do
   defp average(l) when is_list(l) do
     values = Enum.map(l, fn %{activity: da} -> da end)
     %{datetime: datetime} = List.last(l)
-    activity = Enum.sum(values) / length(values)
+    avg_activity = Sanbase.Math.average(values)
 
-    {datetime, activity}
+    {datetime, avg_activity}
   end
 end

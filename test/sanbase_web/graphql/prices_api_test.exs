@@ -20,7 +20,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     ticker_cmc_id1 = ticker1 <> "_" <> slug1
     ticker_cmc_id2 = ticker2 <> "_" <> slug2
 
-    infr_eth = insert(:infrastructure_eth)
+    infr_eth = insert(:infrastructure, %{code: "ETH"})
 
     insert(:project,
       name: "Test project",

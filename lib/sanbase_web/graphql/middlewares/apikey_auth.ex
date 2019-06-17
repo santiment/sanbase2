@@ -34,11 +34,14 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApikeyAuth do
   configuration.
   """
   def call(
-        %Resolution{context: %{auth: %{auth_method: :apikey, current_user: current_user}}} =
-          resolution,
+        %Resolution{
+          context: %{
+            auth: %{auth_method: :apikey, current_user: current_user, san_balance: san_balance}
+          }
+        } = resolution,
         config
       ) do
-    Helpers.handle_user_access(current_user, config, resolution)
+    Helpers.handle_user_access(current_user, san_balance, config, resolution)
   end
 
   def call(resolution, _) do

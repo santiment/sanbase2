@@ -1,85 +1,57 @@
 defmodule Sanbase.Graphql.ProjectApiGetQueriesTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Model.{
-    Project,
-    Infrastructure,
-    Ico
-  }
-
-  alias Sanbase.Tag
-  alias Sanbase.Insight.{Poll, Post}
-  alias Sanbase.Auth.User
-
-  alias Sanbase.Repo
-
+  import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
+  alias Sanbase.Insight.{Poll, Post}
+
   setup do
-    infr_eth =
-      %Infrastructure{}
-      |> Infrastructure.changeset(%{code: "ETH"})
-      |> Repo.insert!()
+    infr_eth = insert(:infrastructure, %{code: "ETH"})
 
-    infr_btc =
-      %Infrastructure{}
-      |> Infrastructure.changeset(%{code: "BTC"})
-      |> Repo.insert!()
+    infr_btc = insert(:infrastructure, %{code: "BTC"})
 
-    project1 =
-      %Project{}
-      |> Project.changeset(%{
-        ticker: "PRJ1",
-        name: "Project1",
-        infrastructure_id: infr_eth.id,
-        coinmarketcap_id: "proj1",
-        main_contract_address: "0x123123"
+    p1 =
+      insert(:project, %{
+        name: rand_str(),
+        coinmarketcap_id: rand_str(),
+        ticker: rand_str(4),
+        main_contract_address: "0x123123",
+        infrastructure_id: infr_eth.id
       })
-      |> Repo.insert!()
 
-    %Ico{}
-    |> Ico.changeset(%{project_id: project1.id})
-    |> Repo.insert!()
+    insert(:ico, %{project_id: p1.id})
 
-    project2 =
-      %Project{}
-      |> Project.changeset(%{
-        ticker: "PRJ2",
-        name: "Project2",
-        infrastructure_id: infr_eth.id,
-        coinmarketcap_id: "proj2"
+    p2 =
+      insert(:project, %{
+        name: rand_str(),
+        coinmarketcap_id: rand_str(),
+        ticker: rand_str(4),
+        infrastructure_id: infr_eth.id
       })
-      |> Repo.insert!()
 
-    %Ico{}
-    |> Ico.changeset(%{project_id: project2.id})
-    |> Repo.insert!()
+    insert(:ico, %{project_id: p2.id})
 
     # Should be classified as currency despite having main contract address
-    project3 =
-      %Project{}
-      |> Project.changeset(%{
-        ticker: "PRJ3",
-        name: "Project3",
+    p3 =
+      insert(:project, %{
+        name: rand_str(),
+        coinmarketcap_id: rand_str(),
         infrastructure_id: infr_btc.id,
-        coinmarketcap_id: "proj3",
+        ticker: rand_str(4),
         main_contract_address: "0x1234567890"
       })
-      |> Repo.insert!()
 
-    %Ico{}
-    |> Ico.changeset(%{project_id: project3.id})
-    |> Repo.insert!()
+    insert(:ico, %{project_id: p3.id})
 
-    {:ok, project: project1}
+    {:ok, project1: p1, project2: p2, project3: p3}
   end
 
   test "fetch all projects", context do
     query = """
     {
       allProjects{
-        name,
-        slug
+        name
       }
     }
     """
@@ -90,9 +62,11 @@ defmodule Sanbase.Graphql.ProjectApiGetQueriesTest do
 
     projects = json_response(result, 200)["data"]["allProjects"]
 
-    assert %{"name" => "Project1", "slug" => "proj1"} in projects
-    assert %{"name" => "Project2", "slug" => "proj2"} in projects
-    assert %{"name" => "Project3", "slug" => "proj3"} in projects
+    assert %{"name" => context.project1.name} in projects
+
+    assert %{"name" => context.project2.name} in projects
+
+    assert %{"name" => context.project3.name} in projects
   end
 
   test "fetch all erc20 projects", context do
@@ -110,9 +84,9 @@ defmodule Sanbase.Graphql.ProjectApiGetQueriesTest do
 
     projects = json_response(result, 200)["data"]["allErc20Projects"]
 
-    assert %{"name" => "Project1"} in projects
-    assert %{"name" => "Project2"} not in projects
-    assert %{"name" => "Project3"} not in projects
+    assert %{"name" => context.project1.name} in projects
+    assert %{"name" => context.project2.name} not in projects
+    assert %{"name" => context.project3.name} not in projects
   end
 
   test "fetch all currency projects", context do
@@ -130,23 +104,25 @@ defmodule Sanbase.Graphql.ProjectApiGetQueriesTest do
 
     projects = json_response(result, 200)["data"]["allCurrencyProjects"]
 
-    assert %{"name" => "Project1"} not in projects
-    assert %{"name" => "Project2"} in projects
-    assert %{"name" => "Project3"} in projects
+    assert %{"name" => context.project1.name} not in projects
+    assert %{"name" => context.project2.name} in projects
+    assert %{"name" => context.project3.name} in projects
   end
 
   test "fetch all projects with their insights", context do
     post_title = "Awesome post"
-    tag = Repo.insert!(%Tag{name: context.project.ticker})
-    user = Repo.insert!(%User{salt: User.generate_salt(), privacy_policy_accepted: true})
+    tag = insert(:tag, %{name: context.project1.ticker})
+    user = insert(:user)
     poll = Poll.find_or_insert_current_poll!()
 
-    Repo.insert!(%Post{
+    insert(:post,
       title: post_title,
-      poll_id: poll.id,
-      user_id: user.id,
-      tags: [tag]
-    })
+      poll: poll,
+      user: user,
+      tags: [tag],
+      state: Post.approved_state(),
+      ready_state: Post.published()
+    )
 
     query = """
     {
@@ -166,7 +142,7 @@ defmodule Sanbase.Graphql.ProjectApiGetQueriesTest do
     projects = json_response(result, 200)["data"]["allProjects"]
 
     assert %{
-             "ticker" => "PRJ1",
+             "ticker" => context.project1.ticker,
              "related_posts" => [%{"title" => post_title}]
            } in projects
   end

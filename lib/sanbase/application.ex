@@ -1,6 +1,7 @@
 defmodule Sanbase.Application do
   use Application
   require Logger
+  require Sanbase.Utils.Config, as: Config
 
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
@@ -54,7 +55,11 @@ defmodule Sanbase.Application do
           Sanbase.Application.Web.children()
       end
 
-    children = (common_children() ++ children) |> Sanbase.ApplicationUtils.normalize_children()
+    prepended_children = prepended_children(container_type)
+
+    children =
+      (prepended_children ++ common_children() ++ children)
+      |> Sanbase.ApplicationUtils.normalize_children()
 
     # Add error tracking through sentry
     {:ok, _} = Logger.add_backend(Sentry.LoggerBackend)
@@ -94,6 +99,27 @@ defmodule Sanbase.Application do
   end
 
   @doc ~s"""
+  Some services must be started before all others
+  """
+  def prepended_children(container_type) when container_type in ["web", "all"] do
+    [
+      # Start the Kafka Exporter
+      {SanExporterEx,
+       [
+         kafka_producer_module: kafka_producer_supervisor_module(),
+         kafka_endpoint: kafka_endpoint()
+       ]},
+
+      # Start the API Call Data Exporter. Must be started before the Endpoint
+      # so it will be terminated after the Endpoint so no API Calls can come in
+      # and not be persisted. When terminating it will flush its internal buffer
+      {Sanbase.ApiCallDataExporter, [topic: kafka_api_call_data_topic()]}
+    ]
+  end
+
+  def prepended_children(_), do: []
+
+  @doc ~s"""
   Children common for all types of container types
   """
   @spec common_children() :: [:supervisor.child_spec() | {module(), term()} | module()]
@@ -124,5 +150,22 @@ defmodule Sanbase.Application do
   def config_change(changed, _new, removed) do
     SanbaseWeb.Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  defp kafka_producer_supervisor_module() do
+    Config.module_get(Sanbase.ApiCallDataExporter, :supervisor, SanExporterEx.Producer.Supervisor)
+  end
+
+  defp kafka_api_call_data_topic() do
+    Config.module_get(Sanbase.ApiCallDataExporter, :kafka_topic, "sanbase_api_call_data")
+  end
+
+  defp kafka_endpoint() do
+    url = Config.module_get(Sanbase.ApiCallDataExporter, :kafka_url) |> to_charlist()
+
+    port =
+      Config.module_get(Sanbase.ApiCallDataExporter, :kafka_port) |> Sanbase.Math.to_integer()
+
+    [{url, port}]
   end
 end

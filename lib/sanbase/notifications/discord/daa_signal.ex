@@ -101,12 +101,6 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
 
       percent_change = percent_change(avg_daa, current_daa - last_triggered_daa)
 
-      Logger.info(
-        "DAA signal check: #{project.coinmarketcap_id}, #{avg_daa}, #{current_daa}, #{
-          last_triggered_daa
-        }, #{percent_change}%, #{hours}, #{percent_change > trigger_percent(project) * 100}"
-      )
-
       if percent_change > trigger_percent(project) * 100 do
         {project, avg_daa, current_daa, last_triggered_daa, percent_change, hours}
       else

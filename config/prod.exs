@@ -8,7 +8,7 @@ config :sanbase, SanbaseWeb.Endpoint,
   root: '.',
   version: Application.spec(:sanbase, :vsn),
   load_from_system_env: true,
-  secret_key_base: System.get_env("SECRET_KEY_BASE")
+  secret_key_base: "${SECRET_KEY_BASE}"
 
 # So only migrations for Sanbase.Repo are run. Do not run migrations for
 # Sanbase.TimescaleRepo as this database is not managed by sanbase, but we want
@@ -40,6 +40,9 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
   api_url: "https://pro-api.coinmarketcap.com/"
+
+config :sanbase, SanbaseWeb.Plug.SessionPlug,
+  domain: {:system, "SANTIMENT_ROOT_DOMAIN", ".santiment.net"}
 
 if File.exists?("config/prod.secret.exs") do
   import_config "prod.secret.exs"

@@ -1,5 +1,3 @@
-import Ecto.Query, only: [from: 2]
-
 alias Sanbase.Model.{
   Infrastructure,
   MarketSegment,
@@ -10,7 +8,7 @@ alias Sanbase.Model.{
   Currency,
   ExchangeAddress,
   Ico,
-  IcoCurrencies,
+  IcoCurrency,
   ProjectEthAddress,
   Project,
   LatestBtcWalletData
@@ -160,11 +158,3 @@ alias Sanbase.Signals.Trigger.{
 
 now = fn -> Timex.now() end
 days_ago = fn days -> Timex.shift(Timex.now(), days: -days) end
-
-project_slugs =
-  from(p in Project, where: not is_nil(p.coinmarketcap_id), select: p.coinmarketcap_id)
-  |> Repo.all()
-
-project_contracts =
-  from(p in Project, where: not is_nil(p.main_contract_address), select: p.main_contract_address)
-  |> Repo.all()

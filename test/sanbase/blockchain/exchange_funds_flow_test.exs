@@ -103,23 +103,23 @@ defmodule Sanbase.Blockchain.ExchangeFundsFlowTest do
 
     assert result == [
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-12 18:00:00Z"),
                in_out_difference: 0.0
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 18:00:00Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-13 12:00:00Z"),
                in_out_difference: 0.0
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-14 12:00:00Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-14 06:00:00Z"),
                in_out_difference: 0.0
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-15 06:00:00Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-15 00:00:00Z"),
                in_out_difference: 0.0
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-16 00:00:00Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-15 18:00:00Z"),
                in_out_difference: 0.0
              }
            ]
@@ -131,7 +131,7 @@ defmodule Sanbase.Blockchain.ExchangeFundsFlowTest do
                context.contract,
                context.datetime_from,
                context.datetime_to,
-               "7d"
+               "10d"
              )
 
     assert result == [

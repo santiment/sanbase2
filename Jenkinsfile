@@ -15,7 +15,7 @@ podTemplate(label: 'sanbase-builder', containers: [
           -f Dockerfile-test . \
           --progress plain"
 
-        sh "docker run --rm --name test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID} -d timescale/timescaledb:0.10.1-pg10"
+        sh "docker run -e POSTGRES_PASSWORD=password --rm --name test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID} -d timescale/timescaledb:1.3.0-pg10"
         sh "docker run --rm --name test-influxdb-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID} -d influxdb:1.7-alpine"
         try {
           sh "docker run --rm \
@@ -23,9 +23,7 @@ podTemplate(label: 'sanbase-builder', containers: [
             --link test-influxdb-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID}:test-influxdb \
             --env DATABASE_URL=postgres://postgres:password@test-db:5432/postgres \
             --env TIMESCALE_DATABASE_URL=postgres://postgres:password@test-db:5432/postgres \
-            --env CLICKHOUSE_DATABASE_URL=postgres://postgres:password@test-db:5432/postgres \
             --env INFLUXDB_HOST=test-influxdb \
-            --env ETHERBI_INFLUXDB_HOST=test-influxdb \
             -t sanbase-test:${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID}"
         } finally {
           sh "docker kill test-influxdb-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID}"

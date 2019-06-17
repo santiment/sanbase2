@@ -12,6 +12,7 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
   use Vex.Struct
 
   import Sanbase.Signals.{Validation, OperationEvaluation}
+  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias __MODULE__
   alias Sanbase.Signals.{Type, Trigger}
@@ -61,7 +62,9 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
 
     target_list
     |> Enum.map(fn addr ->
-      from = Trigger.last_triggered(trigger, addr) || settings.created_at
+      from =
+        Trigger.last_triggered(trigger, addr) ||
+          settings.created_at |> from_iso8601!()
 
       case balance_change(addr, settings.asset.slug, from, now) do
         [{^addr, {_, _, balance_change}}] ->
@@ -82,7 +85,9 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
     target_list
     |> Project.by_slug()
     |> Enum.map(fn %Project{eth_addresses: eth_addresses, coinmarketcap_id: slug} = project ->
-      from = Trigger.last_triggered(trigger, slug) || settings.created_at
+      from =
+        Trigger.last_triggered(trigger, slug) ||
+          settings.created_at |> from_iso8601!()
 
       project_balance_change =
         balance_change(eth_addresses, settings.asset.slug, from, to)

@@ -3,7 +3,7 @@ defmodule Sanbase.Auth.Statistics do
 
   alias Sanbase.Repo
   alias Sanbase.Math
-  alias Sanbase.Auth.{User, Settings, UserSettings}
+  alias Sanbase.Auth.{User, UserSettings}
 
   def tokens_staked() do
     san_balances =
@@ -59,14 +59,31 @@ defmodule Sanbase.Auth.Statistics do
     |> Repo.one()
   end
 
-  def weekly_updates_subscribed_user_count() do
-    user_settings_with_newsletter_subscription_query(Settings.weekly_subscription_type())
+  def newsletter_subscribed_user_count(subscription_type) do
+    user_settings_with_newsletter_subscription_query(subscription_type)
     |> count()
     |> Repo.one()
   end
 
-  def daily_updates_subscribed_user_count() do
-    user_settings_with_newsletter_subscription_query(Settings.daily_subscription_type())
+  def newsletter_subscribed_users(subscription_type) do
+    user_settings_with_newsletter_subscription_query(subscription_type)
+    |> count()
+    |> Repo.one()
+  end
+
+  def newsletter_subscribed_users(subscription_type, from, to) do
+    user_settings_with_newsletter_subscription_query(subscription_type)
+    |> where(
+      fragment(
+        """
+        NOT settings->>'newsletter_subscription_updated_at_unix' IS NULL AND
+        (settings->>'newsletter_subscription_updated_at_unix')::NUMERIC >= ? AND
+        (settings->>'newsletter_subscription_updated_at_unix')::NUMERIC <= ?
+        """,
+        ^DateTime.to_unix(from),
+        ^DateTime.to_unix(to)
+      )
+    )
     |> count()
     |> Repo.one()
   end

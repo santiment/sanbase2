@@ -20,7 +20,8 @@ defmodule Sanbase.Repo.Migrations.UpdatePublishedAtInsights do
   defp run() do
     query =
       from(p in Post,
-        where: p.ready_state == ^Post.published() and is_nil(p.published_at)
+        where:
+          p.ready_state == ^Post.published() and is_nil(p.published_at, preload: [:featured_item])
       )
 
     query

@@ -764,6 +764,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
         assert result["discourseTopicUrl"] ==
                  "https://discourse.stage.internal.santiment.net/t/first-test-from-api2/234"
 
+        assert result["publishedAt"] != nil
+
         assert Sanbase.Timeline.TimelineEvent |> Repo.all() |> length() == 1
       end
     end
@@ -827,27 +829,6 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
         assert result["readyState"] == Post.published()
       end
-    end
-
-    test "updated publishedAt field with current datetime", %{
-      conn: conn,
-      poll: poll,
-      user: user
-    } do
-      post =
-        insert(:post,
-          poll: poll,
-          user: user,
-          state: Post.approved_state(),
-          ready_state: Post.draft()
-        )
-
-      result =
-        post
-        |> publish_insight_mutation()
-        |> execute_mutation_with_success("publishInsight", conn)
-
-      assert result["publishedAt"] != nil
     end
 
     test "returns error when user is not author", %{

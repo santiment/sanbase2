@@ -252,7 +252,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction)
 
-      resolve(&SocialDataResolver.news/3)
+      cache_resolve(&SocialDataResolver.news/3)
     end
 
     @desc "Returns statistics for the data stored in elasticsearch"

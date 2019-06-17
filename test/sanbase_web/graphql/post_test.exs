@@ -829,6 +829,27 @@ defmodule SanbaseWeb.Graphql.PostTest do
       end
     end
 
+    test "updated publishedAt field with current datetime", %{
+      conn: conn,
+      poll: poll,
+      user: user
+    } do
+      post =
+        insert(:post,
+          poll: poll,
+          user: user,
+          state: Post.approved_state(),
+          ready_state: Post.draft()
+        )
+
+      result =
+        post
+        |> publish_insight_mutation()
+        |> execute_mutation_with_success("publishInsight", conn)
+
+      assert result["publishedAt"] != nil
+    end
+
     test "returns error when user is not author", %{
       conn: conn,
       poll: poll,
@@ -900,7 +921,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
       publishInsight(id: #{post.id}) {
         id,
         readyState,
-        discourseTopicUrl
+        discourseTopicUrl,
+        publishedAt
       }
     }
     """

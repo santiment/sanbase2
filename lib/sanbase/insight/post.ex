@@ -198,7 +198,11 @@ defmodule Sanbase.Insight.Post do
   # Helper functions
 
   defp publish_post(post) do
-    publish_changeset = publish_changeset(post, %{ready_state: Post.published()})
+    publish_changeset =
+      publish_changeset(post, %{
+        ready_state: Post.published(),
+        published_at: NaiveDateTime.utc_now()
+      })
 
     with {:ok, post} <- publish_changeset |> Repo.update(),
          {:ok, discourse_topic_url} <- Sanbase.Discourse.Insight.create_discourse_topic(post),

@@ -10,6 +10,7 @@ defmodule Sanbase.Auth.Settings do
     field(:telegram_chat_id, :integer)
     field(:has_telegram_connected, :boolean, virtual: true)
     field(:newsletter_subscription, :string, default: "OFF")
+    field(:newsletter_subscription_updated_at_unix, :integer, default: nil)
   end
 
   def changeset(schema, params) do
@@ -32,10 +33,11 @@ defmodule Sanbase.Auth.Settings do
   defp normalize_newsletter_subscription(changeset, _field, nil), do: changeset
 
   defp normalize_newsletter_subscription(changeset, field, value) do
-    put_change(
-      changeset,
-      field,
-      value |> Atom.to_string() |> String.upcase()
+    changeset
+    |> put_change(field, value |> Atom.to_string() |> String.upcase())
+    |> put_change(
+      :newsletter_subscription_updated_at_unix,
+      DateTime.utc_now() |> DateTime.to_unix()
     )
   end
 

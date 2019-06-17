@@ -158,6 +158,8 @@ defmodule Sanbase.DateTimeUtils do
     datetime
   end
 
+  def from_iso8601!(%DateTime{} = dt), do: dt
+
   def from_iso8601_to_unix!(datetime_str) do
     datetime_str
     |> from_iso8601!()

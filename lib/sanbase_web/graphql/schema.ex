@@ -2,45 +2,42 @@ defmodule SanbaseWeb.Graphql.Schema do
   use Absinthe.Schema
   use Absinthe.Ecto, repo: Sanbase.Repo
 
+  alias SanbaseWeb.Graphql
+  alias SanbaseWeb.Graphql.{SanbaseRepo, SanbaseDataloader}
   alias SanbaseWeb.Graphql.Middlewares.ApiUsage
 
   import_types(Absinthe.Plug.Types)
   import_types(Absinthe.Type.Custom)
-  import_types(SanbaseWeb.Graphql.TagTypes)
-  import_types(SanbaseWeb.Graphql.CustomTypes)
-  import_types(SanbaseWeb.Graphql.AccountTypes)
-  import_types(SanbaseWeb.Graphql.TransactionTypes)
-  import_types(SanbaseWeb.Graphql.FileTypes)
-  import_types(SanbaseWeb.Graphql.UserListTypes)
-  import_types(SanbaseWeb.Graphql.MarketSegmentTypes)
-  import_types(SanbaseWeb.Graphql.UserSettingsTypes)
-  import_types(SanbaseWeb.Graphql.UserTriggerTypes)
-  import_types(SanbaseWeb.Graphql.CustomTypes.JSON)
-  import_types(SanbaseWeb.Graphql.PaginationTypes)
-  import_types(SanbaseWeb.Graphql.SignalsHistoricalActivityTypes)
-  import_types(SanbaseWeb.Graphql.TimelineEventTypes)
-  import_types(SanbaseWeb.Graphql.InsightTypes)
-  import_types(SanbaseWeb.Graphql.TwitterTypes)
+  import_types(Graphql.TagTypes)
+  import_types(Graphql.CustomTypes)
+  import_types(Graphql.AccountTypes)
+  import_types(Graphql.TransactionTypes)
+  import_types(Graphql.FileTypes)
+  import_types(Graphql.UserListTypes)
+  import_types(Graphql.MarketSegmentTypes)
+  import_types(Graphql.UserSettingsTypes)
+  import_types(Graphql.UserTriggerTypes)
+  import_types(Graphql.CustomTypes.JSON)
+  import_types(Graphql.PaginationTypes)
+  import_types(Graphql.SignalsHistoricalActivityTypes)
+  import_types(Graphql.TimelineEventTypes)
+  import_types(Graphql.InsightTypes)
+  import_types(Graphql.TwitterTypes)
 
-  import_types(SanbaseWeb.Graphql.Schema.SocialDataQueries)
-  import_types(SanbaseWeb.Graphql.Schema.WatchlistQueries)
-  import_types(SanbaseWeb.Graphql.Schema.ProjectQueries)
-  import_types(SanbaseWeb.Graphql.Schema.InsightQueries)
-  import_types(SanbaseWeb.Graphql.Schema.TechIndicatorsQueries)
-  import_types(SanbaseWeb.Graphql.Schema.PriceQueries)
-  import_types(SanbaseWeb.Graphql.Schema.GithubQueries)
-  import_types(SanbaseWeb.Graphql.Schema.BlockchainQueries)
-  import_types(SanbaseWeb.Graphql.Schema.SignalQueries)
-  import_types(SanbaseWeb.Graphql.Schema.FeaturedQueries)
-  import_types(SanbaseWeb.Graphql.Schema.UserQueries)
-  import_types(SanbaseWeb.Graphql.Schema.TimelineQueries)
+  import_types(Graphql.Schema.SocialDataQueries)
+  import_types(Graphql.Schema.WatchlistQueries)
+  import_types(Graphql.Schema.ProjectQueries)
+  import_types(Graphql.Schema.InsightQueries)
+  import_types(Graphql.Schema.TechIndicatorsQueries)
+  import_types(Graphql.Schema.PriceQueries)
+  import_types(Graphql.Schema.GithubQueries)
+  import_types(Graphql.Schema.BlockchainQueries)
+  import_types(Graphql.Schema.SignalQueries)
+  import_types(Graphql.Schema.FeaturedQueries)
+  import_types(Graphql.Schema.UserQueries)
+  import_types(Graphql.Schema.TimelineQueries)
 
   def dataloader() do
-    alias SanbaseWeb.Graphql.{
-      SanbaseRepo,
-      SanbaseDataloader
-    }
-
     # 11 seconds is 1s more than the influxdb timeout
     Dataloader.new(timeout: :timer.seconds(11))
     |> Dataloader.add_source(SanbaseRepo, SanbaseRepo.data())
@@ -60,8 +57,8 @@ defmodule SanbaseWeb.Graphql.Schema do
 
   def middleware(middlewares, field, object) do
     prometeheus_middlewares =
-      SanbaseWeb.Graphql.Prometheus.HistogramInstrumenter.instrument(middlewares, field, object)
-      |> SanbaseWeb.Graphql.Prometheus.CounterInstrumenter.instrument(field, object)
+      Graphql.Prometheus.HistogramInstrumenter.instrument(middlewares, field, object)
+      |> Graphql.Prometheus.CounterInstrumenter.instrument(field, object)
 
     case object.identifier do
       :query ->

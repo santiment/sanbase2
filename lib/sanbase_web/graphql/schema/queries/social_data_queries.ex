@@ -19,6 +19,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
   alias SanbaseWeb.Graphql.Complexity
 
   import_types(SanbaseWeb.Graphql.SocialDataTypes)
+  import_types(SanbaseWeb.Graphql.ElasticsearchTypes)
 
   object :social_data_queries do
     @desc "Fetch the current data for a Twitter account (currently includes only Twitter followers)."

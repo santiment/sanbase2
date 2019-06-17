@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.Schema do
 
   alias SanbaseWeb.Graphql.Resolvers.{
     AccountResolver,
-    SocialDataResolver,
     MarketSegmentResolver,
     ApikeyResolver,
     UserSettingsResolver,
@@ -16,14 +15,10 @@ defmodule SanbaseWeb.Graphql.Schema do
     TimelineEventResolver
   }
 
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
-
-  alias SanbaseWeb.Graphql.Complexity
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
   alias SanbaseWeb.Graphql.Middlewares.{
-    BasicAuth,
     JWTAuth,
-    TimeframeRestriction,
     ApiUsage,
     CreateOrDeleteSession
   }
@@ -33,22 +28,19 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.TagTypes)
   import_types(SanbaseWeb.Graphql.CustomTypes)
   import_types(SanbaseWeb.Graphql.AccountTypes)
-  import_types(SanbaseWeb.Graphql.TwitterTypes)
-  import_types(SanbaseWeb.Graphql.EtherbiTypes)
-  import_types(SanbaseWeb.Graphql.InsightTypes)
   import_types(SanbaseWeb.Graphql.TransactionTypes)
   import_types(SanbaseWeb.Graphql.FileTypes)
   import_types(SanbaseWeb.Graphql.UserListTypes)
   import_types(SanbaseWeb.Graphql.MarketSegmentTypes)
-  import_types(SanbaseWeb.Graphql.ElasticsearchTypes)
-  import_types(SanbaseWeb.Graphql.ClickhouseTypes)
-  import_types(SanbaseWeb.Graphql.ExchangeTypes)
   import_types(SanbaseWeb.Graphql.UserSettingsTypes)
   import_types(SanbaseWeb.Graphql.UserTriggerTypes)
   import_types(SanbaseWeb.Graphql.CustomTypes.JSON)
   import_types(SanbaseWeb.Graphql.PaginationTypes)
   import_types(SanbaseWeb.Graphql.SignalsHistoricalActivityTypes)
   import_types(SanbaseWeb.Graphql.TimelineEventTypes)
+  import_types(SanbaseWeb.Graphql.InsightTypes)
+  import_types(SanbaseWeb.Graphql.TwitterTypes)
+
   import_types(SanbaseWeb.Graphql.Schema.SocialDataQueries)
   import_types(SanbaseWeb.Graphql.Schema.WatchlistQueries)
   import_types(SanbaseWeb.Graphql.Schema.ProjectQueries)

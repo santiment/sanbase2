@@ -8,6 +8,7 @@ defmodule Sanbase.Pricing.Subscription do
   alias Sanbase.Pricing.Plan.AccessSeed
   alias Sanbase.Auth.User
   alias Sanbase.Repo
+  alias Sanbase.StripeApi
 
   require Logger
 
@@ -119,9 +120,9 @@ defmodule Sanbase.Pricing.Subscription do
 
     user
     |> User.san_balance!()
-    |> percent_off()
+    |> percent_discount()
     |> update_subscription_with_coupon(subscription)
-    |> Stripe.Subscription.create()
+    |> StripeApi.create_subscription()
   end
 
   defp create_subscription(stripe_subscription, user, plan) do
@@ -137,13 +138,13 @@ defmodule Sanbase.Pricing.Subscription do
   defp update_subscription_with_coupon(nil, subscription), do: subscription
 
   defp update_subscription_with_coupon(percent_off, subscription) do
-    {:ok, coupon} = Stripe.Coupon.create(%{percent_off: percent_off, duration: "forever"})
+    {:ok, coupon} = StripeApi.create_coupon(%{percent_off: percent_off, duration: "forever"})
     Map.put(subscription, :coupon, coupon)
   end
 
-  defp percent_off(balance) when balance >= 1000, do: 20
-  defp percent_off(balance) when balance >= 200, do: 4
-  defp percent_off(_), nil
+  defp percent_discount(balance) when balance >= 1000, do: 20
+  defp percent_discount(balance) when balance >= 200, do: 4
+  defp percent_discount(_), nil
 
   defp subscription_access?(nil, _query), do: true
 

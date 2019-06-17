@@ -3,8 +3,6 @@ defmodule Sanbase.Pricing.Plan do
 
   import Ecto.Changeset
   import Ecto.Query
-  import Sanbase.Math, only: [to_integer: 1]
-
   alias Sanbase.Repo
   alias Sanbase.Pricing.{Product, Subscription}
   alias __MODULE__
@@ -29,10 +27,10 @@ defmodule Sanbase.Pricing.Plan do
   def plans_with_metric(query) do
     from(
       p in Plan,
-      where: fragment(~s(access @> ?), ^%{metrics: [query]})
+      where: fragment(~s(access @> ?), ^%{metrics: [query]}),
+      select: p.name
     )
     |> Repo.all()
-    |> Enum.map(&Map.get(&1, :name))
   end
 
   def by_id(plan_id) do
@@ -44,7 +42,7 @@ defmodule Sanbase.Pricing.Plan do
   defp update_stripe_id_if_not_present(%__MODULE__{stripe_id: stripe_id} = plan)
        when is_nil(stripe_id) do
     plan
-    |> create_stripe_plan()
+    |> Sanbase.StripeApi.create_plan()
     |> case do
       {:ok, stripe_plan} ->
         update_plan(plan, %{stripe_id: stripe_plan.id})
@@ -57,24 +55,6 @@ defmodule Sanbase.Pricing.Plan do
   defp update_stripe_id_if_not_present(%__MODULE__{stripe_id: stripe_id} = plan)
        when is_binary(stripe_id) do
     {:ok, plan}
-  end
-
-  defp create_stripe_plan(
-         %__MODULE__{
-           name: name,
-           currency: currency,
-           amount: amount,
-           interval: interval,
-           product: %Product{stripe_id: product_stripe_id}
-         } = plan
-       ) do
-    Stripe.Plan.create(%{
-      name: plan.name,
-      currency: plan.currency,
-      amount: amount,
-      interval: interval,
-      product: product_stripe_id
-    })
   end
 
   defp update_plan(plan, params) do

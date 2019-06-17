@@ -27,7 +27,7 @@ defmodule Sanbase.Pricing.Product do
 
   defp update_stripe_id_if_not_present(%__MODULE__{stripe_id: stripe_id} = product)
        when is_nil(stripe_id) do
-    Stripe.Product.create(%{name: product.name, type: "service"})
+    Sanbase.StripeApi.create_product(product)
     |> case do
       {:ok, stripe_product} ->
         update_product(product, %{stripe_id: stripe_product.id})

@@ -13,7 +13,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
 
   alias SanbaseWeb.Graphql.Middlewares.{
     TimeframeRestriction,
-    BasicAuth
+    BasicAuth,
+    AccessControl
   }
 
   import_types(SanbaseWeb.Graphql.EtherbiTypes)
@@ -181,6 +182,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, non_null(:string), default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
+      middleware(AccessControl)
       middleware(TimeframeRestriction)
       cache_resolve(&ClickhouseResolver.network_growth/3)
     end
@@ -257,6 +259,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, non_null(:string), default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
+      middleware(AccessControl)
       middleware(TimeframeRestriction)
       cache_resolve(&ClickhouseResolver.mvrv_ratio/3)
     end

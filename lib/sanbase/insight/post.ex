@@ -83,6 +83,7 @@ defmodule Sanbase.Insight.Post do
   def publish_changeset(%Post{} = post, attrs) do
     post
     |> cast(attrs, [:ready_state, :discourse_topic_url, :published_at])
+    |> change(published_at: NaiveDateTime.utc_now())
   end
 
   def awaiting_approval_state(), do: @awaiting_approval
@@ -198,11 +199,7 @@ defmodule Sanbase.Insight.Post do
   # Helper functions
 
   defp publish_post(post) do
-    publish_changeset =
-      publish_changeset(post, %{
-        ready_state: Post.published(),
-        published_at: NaiveDateTime.utc_now()
-      })
+    publish_changeset = publish_changeset(post, %{ready_state: Post.published()})
 
     with {:ok, post} <- publish_changeset |> Repo.update(),
          {:ok, discourse_topic_url} <- Sanbase.Discourse.Insight.create_discourse_topic(post),

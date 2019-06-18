@@ -22,10 +22,22 @@ defmodule SanbaseWeb.RootController do
   def consent(
         conn,
         %{
-          "consent" => consent,
-          "token" => token
-        } = _params
+          "consent" => consent
+        } = params
       ) do
+    token = Map.get(params, "token")
+
+    token =
+      if token != nil and token != "null" do
+        token
+      else
+        %Plug.Conn{
+          private: %{plug_session: %{"auth_token" => token}}
+        } = conn
+
+        token
+      end
+
     with {:ok, user} <- bearer_authorize(token),
          {:ok, access_token} <- Hydra.get_access_token(),
          {:ok, redirect_url, client_id} <- Hydra.get_consent_data(consent, access_token),
@@ -34,6 +46,10 @@ defmodule SanbaseWeb.RootController do
     else
       _ -> redirect(conn, to: "/")
     end
+  end
+
+  def consent(conn, _params) do
+    redirect(conn, to: "/")
   end
 
   defp path(file) do

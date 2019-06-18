@@ -38,7 +38,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.TimelineQueries)
   import_types(Graphql.Schema.PricingQueries)
 
-
   def dataloader() do
     # 11 seconds is 1s more than the influxdb timeout
     Dataloader.new(timeout: :timer.seconds(11))

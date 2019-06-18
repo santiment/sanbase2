@@ -322,6 +322,15 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     end
 
     @desc ~s"""
+    Return a list of assets that a wallet currently holds.
+    """
+    field :assets_held_by_address, list_of(:slug_balance) do
+      arg(:address, non_null(:string))
+
+      cache_resolve(&ClickhouseResolver.assets_held_by_address/3)
+    end
+
+    @desc ~s"""
     Historical balance for erc20 token or eth address.
     Returns the historical balance for a given address in the given interval.
     """

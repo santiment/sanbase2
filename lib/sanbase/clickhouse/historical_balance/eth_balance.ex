@@ -32,6 +32,11 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
           balance: float()
         }
 
+  @type slug_balance_map :: %{
+          slug: String.t(),
+          balance: float()
+        }
+
   @table "eth_balances"
   schema @table do
     field(:datetime, :utc_datetime, source: :dt)
@@ -44,6 +49,41 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
   @spec changeset(any(), any()) :: no_return()
   def changeset(_, _),
     do: raise("Should not try to change eth daily active addresses")
+
+  @doc ~s"""
+  Return a list of all assets that the address holds or has held in the past and
+  the latest balance.
+
+  This function can currently return either empty list or a list with item for the
+  "ethereum" slug
+  """
+  @spec assets_held_by_address(address) :: {:ok, list(slug_balance_map)} | {:error, String.t()}
+  def assets_held_by_address(address) do
+    {query, args} = current_ethereum_balance_query(address)
+
+    ClickhouseRepo.query_transform(query, args, fn [value] ->
+      %{
+        slug: "ethereum",
+        balance: value / @eth_decimals
+      }
+    end)
+  end
+
+  defp current_ethereum_balance_query(address) do
+    query = """
+    SELECT value
+    FROM
+      #{@table}
+    PREWHERE
+      address = ?1 AND
+      sign = 1
+    ORDER BY dt DESC
+    LIMIT 1
+    """
+
+    args = [address |> String.downcase()]
+    {query, args}
+  end
 
   @doc ~s"""
   For a given address or list of addresses returns the combined ethereum

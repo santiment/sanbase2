@@ -25,6 +25,11 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
           balance: float
         }
 
+  @type slug_balance_map :: %{
+          slug: String.t(),
+          balance: float()
+        }
+
   @table "erc20_balances"
   schema @table do
     field(:datetime, :utc_datetime, source: :dt)
@@ -37,6 +42,43 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
   @spec changeset(any(), any()) :: no_return()
   def changeset(_, _),
     do: raise("Should not try to change eth daily active addresses")
+
+  @doc ~s"""
+  Return a list of all assets that the address holds or has held in the past and
+  the latest balance
+  """
+  @spec assets_held_by_address(address) :: {:ok, list(slug_balance_map)} | {:error, String.t()}
+  def assets_held_by_address(address) do
+    {query, args} = assets_held_by_address_query(address)
+
+    case ClickhouseRepo.query_transform(query, args, & &1) do
+      {:ok, contract_value_pairs} ->
+        projects =
+          contract_value_pairs
+          |> Enum.map(fn [contract, _] -> contract end)
+          |> Sanbase.Model.Project.List.by_field(:main_contract_address)
+
+        result =
+          Enum.map(contract_value_pairs, fn [contract, value] ->
+            case Enum.find(projects, &match?(%_{main_contract_address: ^contract}, &1)) do
+              nil ->
+                nil
+
+              %_{token_decimals: token_decimals, coinmarketcap_id: slug} ->
+                %{
+                  slug: slug,
+                  balance: value / Sanbase.Math.ipow(10, token_decimals || 0)
+                }
+            end
+          end)
+          |> Enum.reject(&is_nil/1)
+
+        {:ok, result}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
 
   @doc ~s"""
   For a given address or addresses returns the combined balance of tokens
@@ -155,6 +197,24 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     """
 
     args = [interval, span, address, contract, @first_datetime, to_unix]
+
+    {query, args}
+  end
+
+  defp assets_held_by_address_query(address) do
+    query = """
+    SELECT
+      contract,
+      argMax(value, blockNumber)
+    FROM
+      erc20_balances
+    PREWHERE
+      address = ?1 AND
+      sign = 1
+    GROUP BY contract
+    """
+
+    args = [address |> String.downcase()]
 
     {query, args}
   end

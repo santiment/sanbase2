@@ -19,6 +19,21 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   @type interval :: String.t()
 
   @doc ~s"""
+  Return a list of the assets that a given address currently holds or
+  has held in the past.
+
+  This can be combined with the historical balance query to see the historical
+  balance of all currently owned assets
+  """
+  @spec assets_held_by_address(address) :: list(slug)
+  def assets_held_by_address(address) do
+    with {:ok, erc20_assets} <- Erc20Balance.assets_held_by_address(address),
+         {:ok, ethereum} <- EthBalance.assets_held_by_address(address) do
+      {:ok, ethereum ++ erc20_assets}
+    end
+  end
+
+  @doc ~s"""
   For a given address or list of addresses returns the ethereum balance change for the
   from-to period. The returned lists indicates the address, before balance, after balance
   and the balance change.

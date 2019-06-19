@@ -36,10 +36,10 @@ defmodule Sanbase.Pricing.Plan do
   def by_id(plan_id) do
     Repo.get(__MODULE__, plan_id)
     |> Repo.preload(:product)
-    |> update_stripe_id_if_not_present()
+    |> maybe_create_plan_in_stripe()
   end
 
-  defp update_stripe_id_if_not_present(%__MODULE__{stripe_id: stripe_id} = plan)
+  defp maybe_create_plan_in_stripe(%__MODULE__{stripe_id: stripe_id} = plan)
        when is_nil(stripe_id) do
     plan
     |> Sanbase.StripeApi.create_plan()
@@ -52,7 +52,7 @@ defmodule Sanbase.Pricing.Plan do
     end
   end
 
-  defp update_stripe_id_if_not_present(%__MODULE__{stripe_id: stripe_id} = plan)
+  defp maybe_create_plan_in_stripe(%__MODULE__{stripe_id: stripe_id} = plan)
        when is_binary(stripe_id) do
     {:ok, plan}
   end

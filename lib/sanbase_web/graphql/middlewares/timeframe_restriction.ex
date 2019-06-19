@@ -19,13 +19,13 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
   import SanbaseWeb.Graphql.Middlewares.Helpers
 
   alias Absinthe.Resolution
-  alias Sanbase.Auth.User
   alias Sanbase.Pricing.Subscription
 
   require Sanbase.Utils.Config, as: Config
   @allow_access_without_staking ["santiment"]
 
   @minimal_datetime_param from_iso8601!("2009-01-01T00:00:00Z")
+  @api_product_id 1
 
   def call(%Resolution{state: :resolved} = resolution, _) do
     resolution
@@ -60,10 +60,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
       ) do
     query = definition.name |> Macro.underscore()
 
-    with :apikey <- auth_method,
-         true <- Subscription.is_restricted?(query),
+    with true <- Subscription.is_restricted?(query),
          subscription when not is_nil(subscription) <-
-           Subscription.current_subscription(current_user) do
+           Subscription.current_subscription(current_user, @api_product_id) do
       historical_data_in_days = Subscription.historical_data_in_days(subscription)
 
       if historical_data_in_days do

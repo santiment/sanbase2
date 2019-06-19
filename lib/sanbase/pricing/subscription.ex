@@ -33,15 +33,18 @@ defmodule Sanbase.Pricing.Subscription do
   end
 
   def user_subscriptions(user) do
-    from(s in Subscription, where: s.user_id == ^user.id, order_by: [desc: s.id])
+    user
+    |> user_subscriptions_query()
     |> Repo.all()
     |> Repo.preload(plan: [:product])
   end
 
-  def current_subscription(user) do
+  def current_subscription(user, product_id) do
     user
-    |> user_subscriptions()
-    |> List.first()
+    |> user_subscriptions_query()
+    |> last_subscription_for_product_query(product_id)
+    |> Repo.one()
+    |> Repo.preload(plan: [:product])
   end
 
   def has_access?(subscription, query) do
@@ -56,10 +59,7 @@ defmodule Sanbase.Pricing.Subscription do
   end
 
   def is_restricted?(query) do
-    free = AccessSeed.free()[:metrics]
-    all = AccessSeed.all_restricted_metrics()
-
-    query in (all -- free)
+    query in AccessSeed.all_restricted_metrics()
   end
 
   def plan_name(subscription) do
@@ -74,7 +74,7 @@ defmodule Sanbase.Pricing.Subscription do
       create_subscription(stripe_subscription, user, plan)
     else
       nil ->
-        {:error, "Can't find user user or plan with provided ids"}
+        {:error, "Can't find user or plan with provided ids"}
 
       {:error, reason} ->
         Logger.error(inspect(reason))
@@ -83,7 +83,7 @@ defmodule Sanbase.Pricing.Subscription do
 
   defp create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)
        when is_nil(stripe_id) do
-    create_stripe_customer(user, card_token)
+    StripeApi.create_customer(user, card_token)
     |> case do
       {:ok, stripe_customer} ->
         user
@@ -97,19 +97,7 @@ defmodule Sanbase.Pricing.Subscription do
 
   defp create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)
        when is_binary(stripe_id) do
-    update_stripe_customer(user, card_token)
-  end
-
-  defp create_stripe_customer(user, card_token) do
-    Stripe.Customer.create(%{
-      description: user.username,
-      email: user.email,
-      source: card_token
-    })
-  end
-
-  defp update_stripe_customer(user, card_token) do
-    Stripe.Customer.update(user.stripe_customer_id, %{source: card_token})
+    StripeApi.update_customer(user, card_token)
   end
 
   defp create_stripe_subscription(user, plan) do
@@ -146,9 +134,23 @@ defmodule Sanbase.Pricing.Subscription do
   defp percent_discount(balance) when balance >= 200, do: 4
   defp percent_discount(_), nil
 
-  defp subscription_access?(nil, _query), do: true
+  defp subscription_access?(nil, _query), do: false
 
   defp subscription_access?(subscription, query) do
     query in subscription.plan.access["metrics"]
+  end
+
+  defp user_subscriptions_query(user) do
+    from(s in Subscription,
+      where: s.user_id == ^user.id,
+      order_by: [desc: s.id]
+    )
+  end
+
+  defp last_subscription_for_product_query(query, product_id) do
+    from(s in query,
+      where: s.plan_id in fragment("select id from plans where product_id = ?", ^product_id),
+      limit: 1
+    )
   end
 end

@@ -6,32 +6,45 @@ defmodule Sanbase.Pricing.StripeFlowTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
-  alias Sanbase.Pricing.{Product, Plan}
+  alias Sanbase.Pricing.{Product, Plan, Subscription}
   alias Sanbase.Pricing.Plan.AccessSeed
   alias Sanbase.Auth.Apikey
+  alias Sanbase.StripeApi
+  alias Sanbase.Repo
 
   setup_with_mocks([
-    {Stripe.Product, [], [create: fn _ -> stripe_product_resp() end]},
-    {Stripe.Plan, [], [create: fn _ -> stripe_plan_resp() end]},
-    {Stripe.Customer, [], [create: fn _ -> stripe_customer_resp() end]},
-    {Stripe.Customer, [], [update: fn _, _ -> stripe_customer_resp() end]},
-    {Stripe.Coupon, [], [create: fn _ -> stripe_coupon_resp() end]},
-    {Stripe.Subscription, [], [create: fn _ -> stripe_subscription_resp() end]},
+    {StripeApi, [], [create_product: fn _ -> stripe_product_resp() end]},
+    {StripeApi, [], [create_plan: fn _ -> stripe_plan_resp() end]},
+    {StripeApi, [], [create_customer: fn _, _ -> stripe_customer_resp() end]},
+    {StripeApi, [], [update_customer: fn _, _ -> stripe_customer_resp() end]},
+    {StripeApi, [], [create_coupon: fn _ -> stripe_coupon_resp() end]},
+    {StripeApi, [], [create_subscription: fn _ -> stripe_subscription_resp() end]},
     {Sanbase.Clickhouse.MVRV, [], [mvrv_ratio: fn _, _, _, _ -> mvrv_resp() end]},
     {Sanbase.Clickhouse.NetworkGrowth, [],
      [network_growth: fn _, _, _, _ -> network_growth_resp() end]}
   ]) do
+    free_user = insert(:user)
     user = insert(:staked_user)
     conn = setup_jwt_auth(build_conn(), user)
     product = create_product()
     plan = create_plan(product, :plan_essential)
-    insert(:plan_pro, product: product)
+    plan_pro = insert(:plan_pro, product: product)
     insert(:plan_premium, product: product)
 
     {:ok, apikey} = Apikey.generate_apikey(user)
     conn_apikey = setup_apikey_auth(build_conn(), apikey)
 
-    {:ok, conn: conn, user: user, product: product, plan: plan, conn_apikey: conn_apikey}
+    {:ok, apikey_free} = Apikey.generate_apikey(free_user)
+    conn_apikey_free = setup_apikey_auth(build_conn(), apikey_free)
+
+    {:ok,
+     conn: conn,
+     user: user,
+     product: product,
+     plan: plan,
+     plan_pro: plan_pro,
+     conn_apikey: conn_apikey,
+     conn_apikey_free: conn_apikey_free}
   end
 
   test "list products with plans", context do
@@ -46,14 +59,92 @@ defmodule Sanbase.Pricing.StripeFlowTest do
     assert length(result["plans"]) == 3
   end
 
-  test "current user subscriptions", context do
-    query = subscribe_mutation(context.plan.id)
-    execute_mutation(context.conn, query, "subscribe")
+  describe "#is_restricted?" do
+    test "network_growth and mvrv_ratio are restricted" do
+      assert Subscription.is_restricted?("network_growth")
+      assert Subscription.is_restricted?("mvrv_ratio")
+    end
 
-    current_user = execute_query(context.conn, current_user_query(), "currentUser")
-    subscription = current_user["subscriptions"] |> hd()
+    test "all_projects and history_price are not restricted" do
+      refute Subscription.is_restricted?("all_projects")
+      refute Subscription.is_restricted?("history_price")
+    end
+  end
 
-    assert subscription["plan"]["name"] == "Essential"
+  describe "#has_access?" do
+    test "subscription to ESSENTIAL plan has access to STANDART metrics", context do
+      subscription = insert(:subscription_essential, user: context.user) |> Repo.preload(:plan)
+
+      assert Subscription.has_access?(subscription, "network_growth")
+    end
+
+    test "subscription to ESSENTIAL plan does not have access to ADVANCED metrics", context do
+      subscription = insert(:subscription_essential, user: context.user) |> Repo.preload(:plan)
+
+      refute Subscription.has_access?(subscription, "mvrv_ratio")
+    end
+
+    test "subscription to ESSENTIAL plan has access to not restricted metrics", context do
+      subscription = insert(:subscription_essential, user: context.user) |> Repo.preload(:plan)
+
+      assert Subscription.has_access?(subscription, "history_price")
+    end
+
+    test "subscription to PRO plan have access to both STANDART and ADVANCED metrics", context do
+      subscription = insert(:subscription_pro, user: context.user) |> Repo.preload(:plan)
+
+      assert Subscription.has_access?(subscription, "network_growth")
+      assert Subscription.has_access?(subscription, "mvrv_ratio")
+    end
+
+    test "subscription to PRO plan has access to not restricted metrics", context do
+      subscription = insert(:subscription_pro, user: context.user) |> Repo.preload(:plan)
+
+      assert Subscription.has_access?(subscription, "history_price")
+    end
+  end
+
+  describe "#user_subscriptions" do
+    test "when there are subscriptions - currentUser return list of subscriptions", context do
+      insert(:subscription_essential, user: context.user)
+
+      subscription = Subscription.user_subscriptions(context.user) |> hd()
+      assert subscription.plan.name == "Essential"
+    end
+
+    test "when there are no subscriptions - return []", context do
+      assert Subscription.user_subscriptions(context.user) == []
+    end
+  end
+
+  describe "#currentUser[subscriptions]" do
+    test "when there are subscriptions - currentUser return list of subscriptions", context do
+      insert(:subscription_essential, user: context.user)
+
+      current_user = execute_query(context.conn, current_user_query(), "currentUser")
+      subscription = current_user["subscriptions"] |> hd()
+
+      assert subscription["plan"]["name"] == "Essential"
+    end
+
+    test "when there are no subscriptions - return []", context do
+      current_user = execute_query(context.conn, current_user_query(), "currentUser")
+      assert current_user["subscriptions"] == []
+    end
+  end
+
+  describe "#current_subscription" do
+    test "when there is subscription - return it", context do
+      insert(:subscription_essential, user: context.user)
+
+      current_subscription = Subscription.current_subscription(context.user, context.product.id)
+      assert current_subscription.plan.id == context.plan.id
+    end
+
+    test "when there isn't - return nil", context do
+      current_subscription = Subscription.current_subscription(context.user, context.product.id)
+      assert current_subscription == nil
+    end
   end
 
   describe "no subscriptions" do
@@ -129,6 +220,105 @@ defmodule Sanbase.Pricing.StripeFlowTest do
                %{"datetime" => "2019-01-01T00:00:00Z", "newAddresses" => 10},
                %{"datetime" => "2019-01-02T00:00:00Z", "newAddresses" => 20}
              ]
+    end
+  end
+
+  describe "Free user, staked" do
+    test "can access STANDART metrics for all time", context do
+      from = Timex.shift(Timex.now(), days: -(100 + 1))
+      to = Timex.now()
+      query = network_growth_query(from, to)
+      result = execute_query(context.conn_apikey, query, "networkGrowth")
+      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
+      assert result != nil
+    end
+
+    test "can access ADVANCED metrics for all time", context do
+      from = Timex.shift(Timex.now(), days: -(100 + 1))
+      to = Timex.now()
+      query = mvrv_query(from, to)
+      result = execute_query(context.conn_apikey, query, "mvrvRatio")
+
+      assert_called(Sanbase.Clickhouse.MVRV.mvrv_ratio(:_, from, to, :_))
+      assert result != nil
+    end
+  end
+
+  describe "Free user, not staked" do
+    test "can access STANDART metrics for 3 months", context do
+      from = Timex.shift(Timex.now(), days: -(100 + 1))
+      to = Timex.now()
+      query = network_growth_query(from, to)
+      result = execute_query(context.conn_apikey_free, query, "networkGrowth")
+
+      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
+      assert result != nil
+    end
+
+    test "can access ADVANCED metrics for 3 months", context do
+      from = Timex.shift(Timex.now(), days: -(100 + 1))
+      to = Timex.now()
+      query = mvrv_query(from, to)
+      result = execute_query(context.conn_apikey_free, query, "mvrvRatio")
+
+      refute called(Sanbase.Clickhouse.MVRV.mvrv_ratio(:_, from, to, :_))
+      assert result != nil
+    end
+  end
+
+  describe "user with ESSENTIAL (STANDART metrics) plan" do
+    test "can access STANDART metrics for 180 days", context do
+      query = subscribe_mutation(context.plan.id)
+      execute_mutation(context.conn, query, "subscribe")
+
+      from = Timex.shift(Timex.now(), days: -(100 + 1))
+      to = Timex.now()
+      query = network_growth_query(from, to)
+      result = execute_query(context.conn_apikey_free, query, "networkGrowth")
+
+      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
+      assert result != nil
+    end
+
+    test "can't access ADVANCED metrics", context do
+      query = subscribe_mutation(context.plan.id)
+      execute_mutation(context.conn, query, "subscribe")
+
+      from = Timex.shift(Timex.now(), days: -(100 + 1))
+      to = Timex.now()
+      query = mvrv_query(from, to)
+      error_msg = execute_query_with_error(context.conn_apikey, query, "mvrvRatio")
+
+      refute called(Sanbase.Clickhouse.MVRV.mvrv_ratio(:_, from, to, :_))
+      assert error_msg != nil
+    end
+  end
+
+  describe "user with PRO (ADVANCED metrics) plan" do
+    test "can access STANDART metrics for #{18 * 30} days", context do
+      query = subscribe_mutation(context.plan_pro.id)
+      execute_mutation(context.conn, query, "subscribe")
+
+      from = Timex.shift(Timex.now(), days: -(18 * 30 + 1))
+      to = Timex.now()
+      query = network_growth_query(from, to)
+      result = execute_query(context.conn_apikey_free, query, "networkGrowth")
+
+      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
+      assert result != nil
+    end
+
+    test "can access ADVANCED metrics for #{18 * 30} days", context do
+      query = subscribe_mutation(context.plan_pro.id)
+      execute_mutation(context.conn, query, "subscribe")
+
+      from = Timex.shift(Timex.now(), days: -(18 * 30 + 1))
+      to = Timex.now()
+      query = mvrv_query(from, to)
+      result = execute_query(context.conn_apikey_free, query, "mvrvRatio")
+
+      refute called(Sanbase.Clickhouse.MVRV.mvrv_ratio(:_, from, to, :_))
+      assert result != nil
     end
   end
 

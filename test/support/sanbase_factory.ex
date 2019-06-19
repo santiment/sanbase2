@@ -20,7 +20,7 @@ defmodule Sanbase.Factory do
   }
 
   alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
-  alias Sanbase.Pricing.{Product, Plan}
+  alias Sanbase.Pricing.{Product, Plan, Subscription}
   alias Sanbase.Pricing.Plan.AccessSeed
   alias Sanbase.Timeline.TimelineEvent
 
@@ -182,7 +182,7 @@ defmodule Sanbase.Factory do
   end
 
   def product_factory() do
-    %Product{name: "SanbaseAPI"}
+    %Product{id: 1, name: "SanbaseAPI"}
   end
 
   def plan_free_factory() do
@@ -226,6 +226,18 @@ defmodule Sanbase.Factory do
       currency: "USD",
       interval: "month",
       access: AccessSeed.premium()
+    }
+  end
+
+  def subscription_essential_factory() do
+    %Subscription{
+      plan_id: 2
+    }
+  end
+
+  def subscription_pro_factory() do
+    %Subscription{
+      plan_id: 3
     }
   end
 

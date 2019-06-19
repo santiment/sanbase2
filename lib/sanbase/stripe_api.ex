@@ -2,7 +2,9 @@ defmodule Sanbase.StripeApi do
   @moduledoc """
   Module wrapping communication with Stripe.
   """
+
   alias Sanbase.Pricing.{Product, Plan}
+  alias Sanbase.Auth.User
 
   @type subscription_item :: %{plan: String.t()}
   @type subscription :: %{
@@ -10,6 +12,18 @@ defmodule Sanbase.StripeApi do
           customer: String.t(),
           items: list(subscription_item)
         }
+
+  def create_customer(%User{username: username, email: email}, card_token) do
+    Stripe.Customer.create(%{
+      description: username,
+      email: email,
+      source: card_token
+    })
+  end
+
+  def update_customer(%User{stripe_customer_id: stripe_customer_id}, card_token) do
+    Stripe.Customer.update(stripe_customer_id, %{source: card_token})
+  end
 
   def create_product(%Product{name: name}) do
     Stripe.Product.create(%{name: name, type: "service"})

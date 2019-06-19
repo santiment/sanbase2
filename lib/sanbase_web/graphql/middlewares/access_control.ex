@@ -1,6 +1,15 @@
 defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   @moduledoc """
-
+  Free user (no subscription plan):
+    * have access to STANDART and ADVANCED metrics for 3 months
+  Free user staked 1000 SAN:
+    * have access to STANDART metrcis for all time
+    * have access to ADVANCED metrics for all time
+  User with STANDART metrics plan
+    * have access to STANDART metrics for `historical_data_in_days` days
+  User with ADVANCED metrics plan
+    * have access to STANDART and ADVANCED metrics for `historical_data_in_days`
+    or all time
   """
   @behaviour Absinthe.Middleware
 
@@ -9,11 +18,13 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   require Logger
 
+  @api_product_id 1
+
   def call(
         %Resolution{
           definition: definition,
           context: %{
-            auth: %{auth_method: :apikey, current_user: user}
+            auth: %{current_user: user}
           }
         } = resolution,
         _config
@@ -21,7 +32,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     query = definition.name |> Macro.underscore()
 
     user
-    |> Subscription.current_subscription()
+    |> Subscription.current_subscription(@api_product_id)
     |> check_access_to_query(resolution, query)
   end
 

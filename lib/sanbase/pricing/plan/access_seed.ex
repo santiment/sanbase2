@@ -11,19 +11,18 @@ defmodule Sanbase.Pricing.Plan.AccessSeed do
     "github_activity",
     "dev_activity",
     "network_growth",
-    "all_exchanges",
-    "exchange_volume"
+    "exchange_volume",
+    "share_of_deposits",
+    "historical_balance",
+    "percent_of_token_supply_on_exchanges",
+    "mining_pools_distribution",
+    "gas_used",
+    "top_holders_percent_of_total_supply"
   ]
 
   @advanced_metrics @standart_metrics ++
                       [
-                        "share_of_deposits",
                         "daily_active_deposits",
-                        "historical_balance",
-                        "percent_of_token_supply_on_exchanges",
-                        "mining_pools_distribution",
-                        "gas_used",
-                        "top_holders_percent_of_total_supply",
                         "realized_value",
                         "mvrv_ratio",
                         "nvt_ratio"

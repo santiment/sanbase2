@@ -5,6 +5,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   for many different database tables and schemas.
   """
 
+  use AsyncWith
+
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.HistoricalBalance.{EthBalance, Erc20Balance}
 
@@ -25,11 +27,14 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   This can be combined with the historical balance query to see the historical
   balance of all currently owned assets
   """
-  @spec assets_held_by_address(address) :: list(slug)
+  @spec assets_held_by_address(address) :: {:ok, list(slug)} | {:erorr, String.t()}
   def assets_held_by_address(address) do
-    with {:ok, erc20_assets} <- Erc20Balance.assets_held_by_address(address),
-         {:ok, ethereum} <- EthBalance.assets_held_by_address(address) do
+    async with {:ok, erc20_assets} <- Erc20Balance.assets_held_by_address(address),
+               {:ok, ethereum} <- EthBalance.assets_held_by_address(address) do
       {:ok, ethereum ++ erc20_assets}
+    else
+      error ->
+        error
     end
   end
 

@@ -81,6 +81,21 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def random_erc20_project_factory() do
+    %Project{
+      name: rand_str(),
+      ticker: rand_str(4),
+      coinmarketcap_id: rand_str(),
+      token_decimals: 18,
+      total_supply: :rand.uniform(50_000_000) + 10_000_000,
+      github_link: "https://github.com/#{rand_hex_str()}",
+      infrastructure:
+        Sanbase.Repo.get_by(Infrastructure, code: "ETH") || build(:infrastructure, %{code: "ETH"}),
+      eth_addresses: [build(:project_eth_address), build(:project_eth_address)],
+      main_contract_address: "0x" <> rand_hex_str()
+    }
+  end
+
   def project_factory() do
     %Project{
       name: "Santiment",

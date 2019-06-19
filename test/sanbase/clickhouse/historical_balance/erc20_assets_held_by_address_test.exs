@@ -1,119 +1,78 @@
 defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20AssetsHeldByAdderssTest do
   use Sanbase.DataCase
+
   import Mock
-  import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
-  alias Sanbase.Clickhouse.HistoricalBalance.MinersBalance
+  import Sanbase.Factory
+
+  alias Sanbase.Clickhouse.HistoricalBalance.Erc20Balance
+
   require Sanbase.ClickhouseRepo
 
   setup do
-    [
-      slug: "ethereum",
-      from: from_iso8601!("2019-01-01T00:00:00Z"),
-      to: from_iso8601!("2019-01-04T00:00:00Z")
-    ]
+    p1 = insert(:random_erc20_project)
+    p2 = insert(:random_erc20_project)
+    p3 = insert(:random_erc20_project)
+    p4 = insert(:random_erc20_project)
+    p5 = insert(:random_erc20_project)
+    {:ok, [p1: p1, p2: p2, p3: p3, p4: p4, p5: p5]}
   end
 
-  test "works for intervals in days", context do
+  test "clickhouse returns list of results", context do
     with_mock Sanbase.ClickhouseRepo,
       query: fn _, _ ->
         {:ok,
          %{
            rows: [
-             [from_iso8601_to_unix!("2019-01-01T00:00:00Z"), 100_000],
-             [from_iso8601_to_unix!("2019-01-02T00:00:00Z"), 200_000],
-             [from_iso8601_to_unix!("2019-01-03T00:00:00Z"), 300_000],
-             [from_iso8601_to_unix!("2019-01-04T00:00:00Z"), 400_000]
+             [
+               context.p1.main_contract_address,
+               Sanbase.Math.ipow(10, context.p1.token_decimals) * 100
+             ],
+             [
+               context.p2.main_contract_address,
+               Sanbase.Math.ipow(10, context.p2.token_decimals) * 255
+             ],
+             [context.p3.main_contract_address, 0],
+             [
+               context.p4.main_contract_address,
+               Sanbase.Math.ipow(10, context.p4.token_decimals) * 1643
+             ],
+             [context.p5.main_contract_address, 0]
            ]
          }}
       end do
-      result = MinersBalance.historical_balance(context.slug, context.from, context.to, "1d")
-
-      assert result ==
+      assert Erc20Balance.assets_held_by_address("0x123") ==
                {:ok,
                 [
-                  %{
-                    balance: 100_000,
-                    datetime: from_iso8601!("2019-01-01T00:00:00Z")
-                  },
-                  %{
-                    balance: 200_000,
-                    datetime: from_iso8601!("2019-01-02T00:00:00Z")
-                  },
-                  %{
-                    balance: 300_000,
-                    datetime: from_iso8601!("2019-01-03T00:00:00Z")
-                  },
-                  %{
-                    balance: 400_000,
-                    datetime: from_iso8601!("2019-01-04T00:00:00Z")
-                  }
+                  %{balance: 100, slug: context.p1.coinmarketcap_id},
+                  %{balance: 255, slug: context.p2.coinmarketcap_id},
+                  %{balance: 0.0, slug: context.p3.coinmarketcap_id},
+                  %{balance: 1643, slug: context.p4.coinmarketcap_id},
+                  %{balance: 0.0, slug: context.p5.coinmarketcap_id}
                 ]}
     end
   end
 
-  test "works for intervals in hours", context do
+  test "clickhouse returns no results", _context do
     with_mock Sanbase.ClickhouseRepo,
       query: fn _, _ ->
         {:ok,
          %{
-           rows: [
-             [from_iso8601_to_unix!("2019-01-01T00:00:00Z"), 100_000],
-             [from_iso8601_to_unix!("2019-01-02T00:00:00Z"), 200_000],
-             [from_iso8601_to_unix!("2019-01-03T00:00:00Z"), 300_000],
-             [from_iso8601_to_unix!("2019-01-04T00:00:00Z"), 400_000]
-           ]
+           rows: []
          }}
       end do
-      result = MinersBalance.historical_balance(context.slug, context.from, context.to, "24h")
-
-      assert result ==
-               {:ok,
-                [
-                  %{
-                    balance: 100_000,
-                    datetime: from_iso8601!("2019-01-01T00:00:00Z")
-                  },
-                  %{
-                    balance: 200_000,
-                    datetime: from_iso8601!("2019-01-02T00:00:00Z")
-                  },
-                  %{
-                    balance: 300_000,
-                    datetime: from_iso8601!("2019-01-03T00:00:00Z")
-                  },
-                  %{
-                    balance: 400_000,
-                    datetime: from_iso8601!("2019-01-04T00:00:00Z")
-                  }
-                ]}
+      assert Erc20Balance.assets_held_by_address("0x123") ==
+               {:ok, []}
     end
   end
 
-  test "returns empty array when query returns no rows", context do
-    with_mock Sanbase.ClickhouseRepo, query: fn _, _ -> {:ok, %{rows: []}} end do
-      result = MinersBalance.historical_balance(context.slug, context.from, context.to, "1d")
-
-      assert result == {:ok, []}
-    end
-  end
-
-  test "returns error when requested interval is less than a day", context do
-    result = MinersBalance.historical_balance(context.slug, context.from, context.to, "23h")
-
-    assert result == {:error, "The interval must consist of whole days!"}
-  end
-
-  test "returns error when something except ethereum is requested", context do
-    with_mock Sanbase.ClickhouseRepo, query: fn _, _ -> {:ok, %{rows: []}} end do
-      result =
-        MinersBalance.historical_balance(
-          "unsupported",
-          context.from,
-          context.to,
-          "1d"
-        )
-
-      assert result == {:error, "Currently only ethereum is supported!"}
+  test "clickhouse returns error", _context do
+    with_mock Sanbase.ClickhouseRepo,
+      query: fn _, _ ->
+        {:eror, "Cannot execute query due to error"}
+      end do
+      assert Erc20Balance.assets_held_by_address("0x123") ==
+               {:error,
+                "Cannot execute ClickHouse query. Reason: no case clause matching: {:eror, \"Cannot execute query due to error\"}\n"}
     end
   end
 end

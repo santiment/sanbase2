@@ -9,7 +9,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   import Sanbase.Utils.ErrorHandling,
-    only: [log_graphql_error: 2, graphql_error_msg: 1, graphql_error_msg: 2]
+    only: [log_graphql_error: 2, graphql_error_msg: 1, graphql_error_msg: 2, graphql_error_msg: 3]
 
   alias Sanbase.Clickhouse.HistoricalBalance.MinersBalance
 
@@ -339,12 +339,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   end
 
   def assets_held_by_address(_root, %{address: address}, _resolution) do
-    case HistoricalBalance.assets_held_by_address(address) do
+    HistoricalBalance.assets_held_by_address(address)
+    |> case do
       {:ok, result} ->
         {:ok, result}
 
       {:error, error} ->
-        error_msg = graphql_error_msg("Assets held by address", address)
+        error_msg = graphql_error_msg("Assets held by address", address, description: "address")
         log_graphql_error(error_msg, error)
         {:error, error_msg}
     end

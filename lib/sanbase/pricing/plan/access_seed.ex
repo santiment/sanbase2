@@ -1,4 +1,8 @@
 defmodule Sanbase.Pricing.Plan.AccessSeed do
+  @moduledoc """
+  Module that holds the access control structure of the subscription plans.
+  """
+
   @standart_metrics [
     "burn_rate",
     "token_age_consumed",
@@ -52,12 +56,14 @@ defmodule Sanbase.Pricing.Plan.AccessSeed do
   @premium %{
     api_calls_minute: 180,
     api_calls_month: 500_000,
-    metrics: @pro[:metrics]
+    metrics: @advanced_metrics
   }
 
   def free(), do: @free
   def essential(), do: @essential
   def pro(), do: @pro
   def premium(), do: @premium
+  def standart_metrics(), do: @standart_metrics
+  def advanced_metrics(), do: @advanced_metrics
   def all_restricted_metrics(), do: @advanced_metrics
 end

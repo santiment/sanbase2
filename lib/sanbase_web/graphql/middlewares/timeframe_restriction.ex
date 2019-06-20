@@ -1,8 +1,13 @@
 defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
   @moduledoc """
   Middleware that is used to restrict the API access in a certain timeframe.
-  The restriction is for anon users and for users without the required SAN stake.
-  By default configuration the allowed timeframe is in the inteval [now() - 90days, now() - 1day]
+
+  Currently the implemented scheme is like this:
+  * For users accessing data for slug `santiment` - there is no restriction.
+  * If the user is anonymous the allowed timeframe is in the inteval [now() - 90days, now() - 1day].
+  * If the user has staked 1000SAN, currently he has unlimited historical data.
+  * If the logged in user is subscribed to a plan - the allowed historical days is the value of `historical_data_in_days`
+  for this plan.
   """
   @behaviour Absinthe.Middleware
 
@@ -49,7 +54,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
           definition: definition,
           context: %{
             auth: %{
-              auth_method: auth_method,
               current_user: current_user,
               san_balance: san_balance
             }

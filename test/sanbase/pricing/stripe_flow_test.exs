@@ -5,9 +5,9 @@ defmodule Sanbase.Pricing.StripeFlowTest do
   import Mock
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
+  import ExUnit.CaptureLog
 
   alias Sanbase.Pricing.{Product, Plan, Subscription}
-  alias Sanbase.Pricing.Plan.AccessSeed
   alias Sanbase.Auth.Apikey
   alias Sanbase.StripeApi
   alias Sanbase.Repo
@@ -18,10 +18,7 @@ defmodule Sanbase.Pricing.StripeFlowTest do
     {StripeApi, [], [create_customer: fn _, _ -> stripe_customer_resp() end]},
     {StripeApi, [], [update_customer: fn _, _ -> stripe_customer_resp() end]},
     {StripeApi, [], [create_coupon: fn _ -> stripe_coupon_resp() end]},
-    {StripeApi, [], [create_subscription: fn _ -> stripe_subscription_resp() end]},
-    {Sanbase.Clickhouse.MVRV, [], [mvrv_ratio: fn _, _, _, _ -> mvrv_resp() end]},
-    {Sanbase.Clickhouse.NetworkGrowth, [],
-     [network_growth: fn _, _, _, _ -> network_growth_resp() end]}
+    {StripeApi, [], [create_subscription: fn _ -> stripe_subscription_resp() end]}
   ]) do
     free_user = insert(:user)
     user = insert(:staked_user)
@@ -68,6 +65,18 @@ defmodule Sanbase.Pricing.StripeFlowTest do
     test "all_projects and history_price are not restricted" do
       refute Subscription.is_restricted?("all_projects")
       refute Subscription.is_restricted?("history_price")
+    end
+  end
+
+  describe "#needs_advanced_plan?" do
+    test "mvrv_ratio needs advanced plan subscription" do
+      assert Subscription.needs_advanced_plan?("mvrv_ratio")
+    end
+
+    test "network_growth, all_projects and history_price does not need advanced plan subscription" do
+      refute Subscription.needs_advanced_plan?("network_growth")
+      refute Subscription.needs_advanced_plan?("all_projects")
+      refute Subscription.needs_advanced_plan?("history_price")
     end
   end
 
@@ -147,201 +156,91 @@ defmodule Sanbase.Pricing.StripeFlowTest do
     end
   end
 
-  describe "no subscriptions" do
-    test "restricted query", context do
-      query = mvrv_query(Timex.shift(Timex.now(), days: -10), Timex.shift(Timex.now(), days: -8))
-      result = execute_query(context.conn_apikey, query, "mvrvRatio")
+  describe "#subscribe" do
+    test "successfull subscription", context do
+      {:ok,
+       %Subscription{
+         user_id: user_id,
+         plan_id: plan_id,
+         stripe_id: stripe_id
+       }} = Subscription.subscribe(context.user.id, "test_card_token", context.plan.id)
 
-      assert result == [
-               %{"datetime" => "2019-01-01T00:00:00Z", "ratio" => 0.1},
-               %{"datetime" => "2019-01-02T00:00:00Z", "ratio" => 0.2}
-             ]
+      assert user_id == context.user.id
+      assert plan_id == context.plan.id
+      assert stripe_id != nil
     end
 
-    test "restricted query with from/to more than 3 months ago", context do
-      query = mvrv_query(Timex.shift(Timex.now(), days: -200), Timex.shift(Timex.now(), days: -8))
-      result = execute_query(context.conn_apikey, query, "mvrvRatio")
+    test "when user with provided id doesn't exist - logs the error and returns it", context do
+      assert capture_log(fn ->
+               {:error, reason} = Subscription.subscribe(-1, "test_card_token", context.plan.id)
 
-      assert result == [
-               %{"datetime" => "2019-01-01T00:00:00Z", "ratio" => 0.1},
-               %{"datetime" => "2019-01-02T00:00:00Z", "ratio" => 0.2}
-             ]
-    end
-  end
-
-  describe "subscribed to essential plan" do
-    test "with query in plan", context do
-      query = subscribe_mutation(context.plan.id)
-      execute_mutation(context.conn, query, "subscribe")
-
-      query =
-        network_growth_query(
-          from_iso8601!("2019-03-01T00:00:00Z"),
-          from_iso8601!("2019-03-03T00:00:00Z")
-        )
-
-      result = execute_query(context.conn_apikey, query, "networkGrowth")
-
-      assert result == [
-               %{"datetime" => "2019-01-01T00:00:00Z", "newAddresses" => 10},
-               %{"datetime" => "2019-01-02T00:00:00Z", "newAddresses" => 20}
-             ]
+               assert reason =~ "Cannnot find user with id -1"
+             end) =~ "Cannnot find user with id -1"
     end
 
-    test "with query outside plan", context do
-      query = subscribe_mutation(context.plan.id)
-      execute_mutation(context.conn, query, "subscribe")
+    test "when plan with provided id doesn't exist - logs the error and returns it", context do
+      assert capture_log(fn ->
+               {:error, reason} = Subscription.subscribe(context.user.id, "test_card_token", -1)
 
-      query =
-        mvrv_query(from_iso8601!("2019-03-01T00:00:00Z"), from_iso8601!("2019-03-03T00:00:00Z"))
-
-      error_msg = execute_query_with_error(context.conn_apikey, query, "mvrvRatio")
-
-      assert error_msg == """
-             Requested metric mvrv_ratio is not provided by the current subscription plan #{
-               context.plan.name
-             }.
-             Please upgrade to Pro or Premium to get access to mvrv_ratio
-             """
+               assert reason =~ "Cannnot find plan with id -1"
+             end) =~ "Cannnot find plan with id -1"
     end
 
-    test "with query in plan but outside allowed historical data", context do
-      query = subscribe_mutation(context.plan.id)
-      execute_mutation(context.conn, query, "subscribe")
+    test "when creating customer in Stripe fails - logs the error and returns generic error",
+         context do
+      with_mock StripeApi, [],
+        create_customer: fn _, _ ->
+          {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
+        end do
+        assert capture_log(fn ->
+                 {:error, reason} =
+                   Subscription.subscribe(context.user.id, "test_card_token", context.plan.id)
 
-      allowed_days = AccessSeed.essential()[:historical_data_in_days]
-
-      from = Timex.shift(Timex.now(), days: -(allowed_days + 1))
-      to = Timex.shift(Timex.now(), days: -(allowed_days - 1))
-      query = network_growth_query(from, to)
-      result = execute_query(context.conn_apikey, query, "networkGrowth")
-
-      assert result == [
-               %{"datetime" => "2019-01-01T00:00:00Z", "newAddresses" => 10},
-               %{"datetime" => "2019-01-02T00:00:00Z", "newAddresses" => 20}
-             ]
-    end
-  end
-
-  describe "Free user, staked" do
-    test "can access STANDART metrics for all time", context do
-      from = Timex.shift(Timex.now(), days: -(100 + 1))
-      to = Timex.now()
-      query = network_growth_query(from, to)
-      result = execute_query(context.conn_apikey, query, "networkGrowth")
-      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
-      assert result != nil
+                 assert reason == Subscription.generic_error_message()
+               end) =~ "test error"
+      end
     end
 
-    test "can access ADVANCED metrics for all time", context do
-      from = Timex.shift(Timex.now(), days: -(100 + 1))
-      to = Timex.now()
-      query = mvrv_query(from, to)
-      result = execute_query(context.conn_apikey, query, "mvrvRatio")
+    test "when creating coupon in Stripe fails - logs the error and returns generic error",
+         context do
+      with_mocks([
+        {StripeApi, [], [create_customer: fn _, _ -> stripe_customer_resp() end]},
+        {StripeApi, [],
+         [
+           create_coupon: fn _ ->
+             {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
+           end
+         ]}
+      ]) do
+        assert capture_log(fn ->
+                 {:error, reason} =
+                   Subscription.subscribe(context.user.id, "test_card_token", context.plan.id)
 
-      assert_called(Sanbase.Clickhouse.MVRV.mvrv_ratio(:_, from, to, :_))
-      assert result != nil
-    end
-  end
-
-  describe "Free user, not staked" do
-    test "can access STANDART metrics for 3 months", context do
-      from = Timex.shift(Timex.now(), days: -(100 + 1))
-      to = Timex.now()
-      query = network_growth_query(from, to)
-      result = execute_query(context.conn_apikey_free, query, "networkGrowth")
-
-      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
-      assert result != nil
+                 assert reason == Subscription.generic_error_message()
+               end) =~ "test error"
+      end
     end
 
-    test "can access ADVANCED metrics for 3 months", context do
-      from = Timex.shift(Timex.now(), days: -(100 + 1))
-      to = Timex.now()
-      query = mvrv_query(from, to)
-      result = execute_query(context.conn_apikey_free, query, "mvrvRatio")
+    test "when creating subscription in Stripe fails - logs the error and returns generic error",
+         context do
+      with_mocks([
+        {StripeApi, [], [create_customer: fn _, _ -> stripe_customer_resp() end]},
+        {StripeApi, [], [create_coupon: fn _ -> stripe_coupon_resp() end]},
+        {StripeApi, [],
+         [
+           create_subscription: fn _ ->
+             {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
+           end
+         ]}
+      ]) do
+        assert capture_log(fn ->
+                 {:error, reason} =
+                   Subscription.subscribe(context.user.id, "test_card_token", context.plan.id)
 
-      refute called(Sanbase.Clickhouse.MVRV.mvrv_ratio(:_, from, to, :_))
-      assert result != nil
+                 assert reason == Subscription.generic_error_message()
+               end) =~ "test error"
+      end
     end
-  end
-
-  describe "user with ESSENTIAL (STANDART metrics) plan" do
-    test "can access STANDART metrics for 180 days", context do
-      query = subscribe_mutation(context.plan.id)
-      execute_mutation(context.conn, query, "subscribe")
-
-      from = Timex.shift(Timex.now(), days: -(100 + 1))
-      to = Timex.now()
-      query = network_growth_query(from, to)
-      result = execute_query(context.conn_apikey_free, query, "networkGrowth")
-
-      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "can't access ADVANCED metrics", context do
-      query = subscribe_mutation(context.plan.id)
-      execute_mutation(context.conn, query, "subscribe")
-
-      from = Timex.shift(Timex.now(), days: -(100 + 1))
-      to = Timex.now()
-      query = mvrv_query(from, to)
-      error_msg = execute_query_with_error(context.conn_apikey, query, "mvrvRatio")
-
-      refute called(Sanbase.Clickhouse.MVRV.mvrv_ratio(:_, from, to, :_))
-      assert error_msg != nil
-    end
-  end
-
-  describe "user with PRO (ADVANCED metrics) plan" do
-    test "can access STANDART metrics for #{18 * 30} days", context do
-      query = subscribe_mutation(context.plan_pro.id)
-      execute_mutation(context.conn, query, "subscribe")
-
-      from = Timex.shift(Timex.now(), days: -(18 * 30 + 1))
-      to = Timex.now()
-      query = network_growth_query(from, to)
-      result = execute_query(context.conn_apikey_free, query, "networkGrowth")
-
-      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "can access ADVANCED metrics for #{18 * 30} days", context do
-      query = subscribe_mutation(context.plan_pro.id)
-      execute_mutation(context.conn, query, "subscribe")
-
-      from = Timex.shift(Timex.now(), days: -(18 * 30 + 1))
-      to = Timex.now()
-      query = mvrv_query(from, to)
-      result = execute_query(context.conn_apikey_free, query, "mvrvRatio")
-
-      refute called(Sanbase.Clickhouse.MVRV.mvrv_ratio(:_, from, to, :_))
-      assert result != nil
-    end
-  end
-
-  defp mvrv_query(from, to) do
-    """
-      {
-        mvrvRatio(slug: "ethereum", from: "#{from}", to: "#{to}", interval: "1d"){
-          datetime,
-          ratio
-        }
-      }
-    """
-  end
-
-  defp network_growth_query(from, to) do
-    """
-      {
-        networkGrowth(slug: "ethereum", from: "#{from}", to: "#{to}", interval: "1d"){
-          datetime,
-          newAddresses
-        }
-      }
-    """
   end
 
   defp current_user_query do
@@ -405,22 +304,6 @@ defmodule Sanbase.Pricing.StripeFlowTest do
     plan = insert(plan_type, product: product)
     {:ok, plan} = Plan.by_id(plan.id)
     plan
-  end
-
-  defp mvrv_resp() do
-    {:ok,
-     [
-       %{ratio: 0.1, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
-       %{ratio: 0.2, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
-     ]}
-  end
-
-  defp network_growth_resp() do
-    {:ok,
-     [
-       %{new_addresses: 10, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
-       %{new_addresses: 20, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
-     ]}
   end
 
   defp stripe_coupon_resp() do

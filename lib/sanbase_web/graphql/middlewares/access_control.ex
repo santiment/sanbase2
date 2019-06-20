@@ -1,15 +1,9 @@
 defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   @moduledoc """
-  Free user (no subscription plan):
-    * have access to STANDART and ADVANCED metrics for 3 months
-  Free user staked 1000 SAN:
-    * have access to STANDART metrcis for all time
-    * have access to ADVANCED metrics for all time
-  User with STANDART metrics plan
-    * have access to STANDART metrics for `historical_data_in_days` days
-  User with ADVANCED metrics plan
-    * have access to STANDART and ADVANCED metrics for `historical_data_in_days`
-    or all time
+  Module that currently checks whether current_user's plan has access to requested
+  query and if not - returns error message to upgrade.
+  If user is not logged in passes to next middleware TimeframeRestriction
+  which restricts historical data usage to 90 days.
   """
   @behaviour Absinthe.Middleware
 
@@ -24,14 +18,14 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         %Resolution{
           definition: definition,
           context: %{
-            auth: %{current_user: user}
+            auth: %{current_user: current_user}
           }
         } = resolution,
         _config
       ) do
     query = definition.name |> Macro.underscore()
 
-    user
+    current_user
     |> Subscription.current_subscription(@api_product_id)
     |> check_access_to_query(resolution, query)
   end

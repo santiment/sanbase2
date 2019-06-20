@@ -12,6 +12,10 @@ defmodule Sanbase.Pricing.Subscription do
 
   require Logger
 
+  @generic_error_message """
+  Current subscription attempt failed. Please, contact administrator of the site for more information.
+  """
+
   schema "subscriptions" do
     field(:stripe_id, :string)
     belongs_to(:user, User)
@@ -48,7 +52,7 @@ defmodule Sanbase.Pricing.Subscription do
   end
 
   def has_access?(subscription, query) do
-    case is_restricted?(query) do
+    case needs_advanced_plan?(query) do
       true -> subscription_access?(subscription, query)
       false -> true
     end
@@ -62,24 +66,41 @@ defmodule Sanbase.Pricing.Subscription do
     query in AccessSeed.all_restricted_metrics()
   end
 
+  def needs_advanced_plan?(query) do
+    advanced_metrics = AccessSeed.advanced_metrics()
+    standart_metrics = AccessSeed.standart_metrics()
+
+    query in advanced_metrics and query not in standart_metrics
+  end
+
   def plan_name(subscription) do
     subscription.plan.name
   end
 
   def subscribe(user_id, card_token, plan_id) do
-    with %User{} = user <- Repo.get(User, user_id),
-         %Plan{} = plan <- Repo.get(Plan, plan_id),
+    with {:user?, %User{} = user} <- {:user?, Repo.get(User, user_id)},
+         {:plan?, %Plan{} = plan} <- {:plan?, Repo.get(Plan, plan_id)},
          {:ok, _} <- create_or_update_stripe_customer(user, card_token),
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan) do
       create_subscription(stripe_subscription, user, plan)
     else
-      nil ->
-        {:error, "Can't find user or plan with provided ids"}
+      {:user?, _} ->
+        reason = "Cannnot find user with id #{user_id}"
+        Logger.error("Subscription attempt failed - reason: #{reason}")
+        {:error, reason}
+
+      {:plan?, _} ->
+        reason = "Cannnot find plan with id #{plan_id}"
+        Logger.error("Subscription attempt failed - reason: #{reason}")
+        {:error, reason}
 
       {:error, reason} ->
-        Logger.error(inspect(reason))
+        Logger.error("Subscription attempt failed - reason: #{inspect(reason)}")
+        {:error, @generic_error_message}
     end
   end
+
+  def generic_error_message, do: @generic_error_message
 
   defp create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)
        when is_nil(stripe_id) do
@@ -110,7 +131,13 @@ defmodule Sanbase.Pricing.Subscription do
     |> User.san_balance!()
     |> percent_discount()
     |> update_subscription_with_coupon(subscription)
-    |> StripeApi.create_subscription()
+    |> case do
+      {:ok, subscription} ->
+        StripeApi.create_subscription(subscription)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   defp create_subscription(stripe_subscription, user, plan) do
@@ -126,8 +153,14 @@ defmodule Sanbase.Pricing.Subscription do
   defp update_subscription_with_coupon(nil, subscription), do: subscription
 
   defp update_subscription_with_coupon(percent_off, subscription) do
-    {:ok, coupon} = StripeApi.create_coupon(%{percent_off: percent_off, duration: "forever"})
-    Map.put(subscription, :coupon, coupon)
+    StripeApi.create_coupon(%{percent_off: percent_off, duration: "forever"})
+    |> case do
+      {:ok, coupon} ->
+        {:ok, Map.put(subscription, :coupon, coupon)}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   defp percent_discount(balance) when balance >= 1000, do: 20

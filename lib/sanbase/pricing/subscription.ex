@@ -29,7 +29,7 @@ defmodule Sanbase.Pricing.Subscription do
     |> cast(attrs, [:plan_id, :user_id, :stripe_id])
   end
 
-  def list_product_with_plans do
+  def product_with_plans do
     products =
       Product
       |> Repo.all()

@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PricingResolver do
   alias Sanbase.Auth.User
 
   def products_with_plans(_root, _args, _resolution) do
-    Subscription.list_product_with_plans()
+    Subscription.product_with_plans()
   end
 
   def subscribe(_root, %{card_token: card_token, plan_id: plan_id}, %{

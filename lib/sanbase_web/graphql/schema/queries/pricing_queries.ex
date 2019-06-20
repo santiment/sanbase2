@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.Schema.PricingQueries do
 
   object :pricing_queries do
     @desc ~s"""
-    List availbale products with corresponding subscription plans.
+    List available products with corresponding subscription plans.
     """
     field :products_with_plans, list_of(:product) do
       resolve(&PricingResolver.products_with_plans/3)

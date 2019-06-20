@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.CreateProductsTable do
 
   def up do
     create table(:products) do
-      add(:name, :string)
+      add(:name, :string, null: false)
       add(:stripe_id, :string)
     end
 

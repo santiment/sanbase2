@@ -6,10 +6,10 @@ defmodule Sanbase.Repo.Migrations.CreatePlansTable do
   @table :plans
   def up do
     create table(@table) do
-      add(:name, :string)
-      add(:amount, :integer)
-      add(:currency, :string)
-      add(:interval, :string)
+      add(:name, :string, null: false)
+      add(:amount, :integer, null: false)
+      add(:currency, :string, null: false)
+      add(:interval, :string, null: false)
       add(:product_id, references(:products), null: false)
       add(:stripe_id, :string)
       add(:access, :jsonb)

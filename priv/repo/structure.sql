@@ -531,10 +531,10 @@ ALTER SEQUENCE public.notifications_id_seq OWNED BY public.notifications.id;
 
 CREATE TABLE public.plans (
     id bigint NOT NULL,
-    name character varying(255),
-    amount integer,
-    currency character varying(255),
-    "interval" character varying(255),
+    name character varying(255) NOT NULL,
+    amount integer NOT NULL,
+    currency character varying(255) NOT NULL,
+    "interval" character varying(255) NOT NULL,
     product_id bigint NOT NULL,
     stripe_id character varying(255),
     access jsonb
@@ -764,7 +764,7 @@ ALTER SEQUENCE public.processed_github_archives_id_seq OWNED BY public.processed
 
 CREATE TABLE public.products (
     id bigint NOT NULL,
-    name character varying(255),
+    name character varying(255) NOT NULL,
     stripe_id character varying(255)
 );
 

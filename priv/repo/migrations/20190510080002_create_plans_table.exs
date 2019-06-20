@@ -21,7 +21,7 @@ defmodule Sanbase.Repo.Migrations.CreatePlansTable do
       (2, 'ESSENTIAL', 1, 11900, 'USD', 'month', '#{AccessSeed.essential() |> Jason.encode!()}'),
       (3, 'PRO', 1, 35900, 'USD', 'month', '#{AccessSeed.pro() |> Jason.encode!()}'),
       (4, 'PREMIUM', 1, 71900, 'USD', 'month', '#{AccessSeed.premium() |> Jason.encode!()}'),
-      (5, 'CUSTOM', 1, 0, 'USD', 'month', '{}')
+      (5, 'CUSTOM', 1, 0, 'USD', 'month', '#{AccessSeed.premium() |> Jason.encode!()}')
     """)
   end
 

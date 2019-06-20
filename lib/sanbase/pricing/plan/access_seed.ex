@@ -59,10 +59,15 @@ defmodule Sanbase.Pricing.Plan.AccessSeed do
     metrics: @advanced_metrics
   }
 
+  @custom %{
+    metrics: @advanced_metrics
+  }
+
   def free(), do: @free
   def essential(), do: @essential
   def pro(), do: @pro
   def premium(), do: @premium
+  def custom(), do: @custom
   def standart_metrics(), do: @standart_metrics
   def advanced_metrics(), do: @advanced_metrics
   def all_restricted_metrics(), do: @advanced_metrics

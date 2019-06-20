@@ -68,11 +68,11 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20AssetsHeldByAdderssTest do
   test "clickhouse returns error", _context do
     with_mock Sanbase.ClickhouseRepo,
       query: fn _, _ ->
-        {:eror, "Cannot execute query due to error"}
+        {:error, "Cannot execute query due to error"}
       end do
       assert Erc20Balance.assets_held_by_address("0x123") ==
                {:error,
-                "Cannot execute ClickHouse query. Reason: no case clause matching: {:eror, \"Cannot execute query due to error\"}\n"}
+                "Cannot execute ClickHouse query. Reason: no case clause matching: {:error, \"Cannot execute query due to error\"}\n"}
     end
   end
 end

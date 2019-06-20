@@ -47,11 +47,11 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
   end
 
   test "list products with plans", context do
-    query = list_products_with_plans_query()
+    query = products_with_plans_query()
 
     result =
       context.conn
-      |> execute_query(query, "listProductsWithPlans")
+      |> execute_query(query, "productsWithPlans")
       |> hd()
 
     assert result["name"] == "SanbaseAPI"
@@ -112,10 +112,10 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
     """
   end
 
-  defp list_products_with_plans_query() do
+  defp products_with_plans_query() do
     """
     {
-      listProductsWithPlans {
+      productsWithPlans {
         name
         plans {
           name

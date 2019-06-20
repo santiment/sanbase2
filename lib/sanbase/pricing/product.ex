@@ -2,10 +2,8 @@ defmodule Sanbase.Pricing.Product do
   use Ecto.Schema
 
   import Ecto.Changeset
-  import Ecto.Query
 
   alias Sanbase.Pricing.Plan
-  alias __MODULE__
   alias Sanbase.Repo
 
   schema "products" do

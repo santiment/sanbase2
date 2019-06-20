@@ -91,7 +91,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
               | arguments: %{
                   args
                   | from: restrict_from(from, middleware_args, restrict_from_in_days()),
-                    to: restrict_to(to, middleware_args, restrict_to_in_days)
+                    to: restrict_to(to, middleware_args, restrict_to_in_days())
                 }
             }
         end
@@ -99,7 +99,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
     end
   end
 
-  def call(%Resolution{arguments: %{from: from, to: to} = args} = resolution, middleware_args) do
+  def call(%Resolution{arguments: %{from: from, to: to}} = resolution, middleware_args) do
     resolution
     |> update_resolution_from_to(
       restrict_from(from, middleware_args, restrict_from_in_days()),
@@ -178,7 +178,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
   defp check_from_to_params(resolution), do: resolution
 
   defp update_resolution_from_to(
-         %Resolution{arguments: %{from: from, to: to} = args} = resolution,
+         %Resolution{arguments: %{from: _from, to: _to} = args} = resolution,
          restricted_from,
          restricted_to
        ) do

@@ -81,8 +81,9 @@ defmodule Sanbase.Pricing.Subscription do
     with {:user?, %User{} = user} <- {:user?, Repo.get(User, user_id)},
          {:plan?, %Plan{} = plan} <- {:plan?, Repo.get(Plan, plan_id)},
          {:ok, _} <- create_or_update_stripe_customer(user, card_token),
-         {:ok, stripe_subscription} <- create_stripe_subscription(user, plan) do
-      create_subscription(stripe_subscription, user, plan)
+         {:ok, stripe_subscription} <- create_stripe_subscription(user, plan),
+         {:ok, subscription} <- create_subscription(stripe_subscription, user, plan) do
+      {:ok, subscription |> Repo.preload(plan: [:product])}
     else
       {:user?, _} ->
         reason = "Cannnot find user with id #{user_id}"
@@ -148,13 +149,6 @@ defmodule Sanbase.Pricing.Subscription do
       plan_id: plan.id
     })
     |> Repo.insert()
-    |> case do
-      {:ok, subscription} ->
-        {:ok, subscription |> Repo.preload(plan: [:product])}
-
-      {:error, changeset} ->
-        {:error, changeset}
-    end
   end
 
   defp update_subscription_with_coupon(nil, subscription), do: subscription

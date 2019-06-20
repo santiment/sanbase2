@@ -17,8 +17,10 @@ defmodule Sanbase.Utils.ErrorHandling do
     "[#{Ecto.UUID.generate()}] Can't fetch #{metric_name}"
   end
 
-  def graphql_error_msg(metric_name, slug) do
-    "[#{Ecto.UUID.generate()}] Can't fetch #{metric_name} for project with slug: #{slug}"
+  def graphql_error_msg(metric_name, identifier, opts \\ []) do
+    description = Keyword.get(opts, :description, "project with slug")
+
+    "[#{Ecto.UUID.generate()}] Can't fetch #{metric_name} for #{description}: #{identifier}"
   end
 
   def log_graphql_error(message, error) do

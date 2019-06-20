@@ -222,13 +222,23 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
   end
 
-  def slugs_by_ids(ids) do
+  def slugs_by_field(values, field) do
     from(
       p in Project,
-      where: p.id in ^ids and not is_nil(p.coinmarketcap_id),
+      where: field(p, ^field) in ^values and not is_nil(p.coinmarketcap_id),
       select: p.coinmarketcap_id
     )
     |> Repo.all()
+  end
+
+  def field_slug_map(values, field) do
+    from(
+      p in Project,
+      where: field(p, ^field) in ^values and not is_nil(p.coinmarketcap_id),
+      select: {field(p, ^field), p.coinmarketcap_id}
+    )
+    |> Repo.all()
+    |> Map.new()
   end
 
   def slug_price_change_map() do
@@ -254,6 +264,12 @@ defmodule Sanbase.Model.Project.List do
   def by_slugs(slugs) when is_list(slugs) do
     projects_query()
     |> where([p], p.coinmarketcap_id in ^slugs)
+    |> Repo.all()
+  end
+
+  def by_field(values, field) when is_list(values) do
+    projects_query()
+    |> where([p], field(p, ^field) in ^values)
     |> Repo.all()
   end
 end

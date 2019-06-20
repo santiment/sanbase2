@@ -5,6 +5,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   for many different database tables and schemas.
   """
 
+  use AsyncWith
+
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.HistoricalBalance.{EthBalance, Erc20Balance}
 
@@ -17,6 +19,24 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   ns, ms, s, m, h, d or w - each representing some time unit
   """
   @type interval :: String.t()
+
+  @doc ~s"""
+  Return a list of the assets that a given address currently holds or
+  has held in the past.
+
+  This can be combined with the historical balance query to see the historical
+  balance of all currently owned assets
+  """
+  @spec assets_held_by_address(address) :: {:ok, list(slug)} | {:error, String.t()}
+  def assets_held_by_address(address) do
+    async with {:ok, erc20_assets} <- Erc20Balance.assets_held_by_address(address),
+               {:ok, ethereum} <- EthBalance.assets_held_by_address(address) do
+      {:ok, ethereum ++ erc20_assets}
+    else
+      error ->
+        error
+    end
+  end
 
   @doc ~s"""
   For a given address or list of addresses returns the ethereum balance change for the

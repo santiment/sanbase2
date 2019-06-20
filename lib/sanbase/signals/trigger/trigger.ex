@@ -152,7 +152,7 @@ defmodule Sanbase.Signals.Trigger do
 
     list_items
     |> Enum.map(fn %{project_id: id} -> id end)
-    |> Project.List.slugs_by_ids()
+    |> Project.List.slugs_by_field(:id)
     |> remove_targets_on_cooldown(trigger, :slug)
   end
 

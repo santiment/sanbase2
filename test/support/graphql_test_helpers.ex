@@ -61,11 +61,19 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   end
 
   def execute_mutation(conn, query, query_name) do
-    result =
-      conn
-      |> post("/graphql", mutation_skeleton(query))
-      |> json_response(200)
-      |> get_in(["data", query_name])
+    conn
+    |> post("/graphql", mutation_skeleton(query))
+    |> json_response(200)
+    |> get_in(["data", query_name])
+  end
+
+  def execute_mutation_with_error(conn, query) do
+    conn
+    |> post("/graphql", mutation_skeleton(query))
+    |> json_response(200)
+    |> Map.get("errors")
+    |> hd()
+    |> Map.get("message")
   end
 
   def graphql_error_msg(metric_name, error) do

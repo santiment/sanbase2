@@ -148,6 +148,13 @@ defmodule Sanbase.Pricing.Subscription do
       plan_id: plan.id
     })
     |> Repo.insert()
+    |> case do
+      {:ok, subscription} ->
+        {:ok, subscription |> Repo.preload(plan: [:product])}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
   defp update_subscription_with_coupon(nil, subscription), do: subscription

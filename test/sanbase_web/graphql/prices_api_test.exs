@@ -299,14 +299,6 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
            ] == result
   end
 
-  defp execute_query(conn, query, query_name) do
-    result =
-      conn
-      |> post("/graphql", query_skeleton(query, query_name))
-
-    json_response(result, 200)["data"][query_name]
-  end
-
   defp project_group_stats_query(slugs, from, to) do
     slugs_str = slugs |> Enum.map(fn slug -> ~s|"#{slug}"| end) |> Enum.join(",")
 

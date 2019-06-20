@@ -36,7 +36,7 @@ defmodule SanbaseWeb do
       import Phoenix.Controller, only: [get_flash: 2, view_module: 1]
       import Phoenix.HTML
 
-      import SanbaseWeb.Router.Helpers
+      alias SanbaseWeb.Router.Helpers, as: Routes
       import SanbaseWeb.ErrorHelpers
       import SanbaseWeb.Gettext
     end

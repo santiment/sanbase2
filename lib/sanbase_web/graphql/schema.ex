@@ -36,6 +36,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.FeaturedQueries)
   import_types(Graphql.Schema.UserQueries)
   import_types(Graphql.Schema.TimelineQueries)
+  import_types(Graphql.Schema.PricingQueries)
 
   def dataloader() do
     # 11 seconds is 1s more than the influxdb timeout
@@ -83,6 +84,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:featured_queries)
     import_fields(:user_queries)
     import_fields(:timeline_queries)
+    import_fields(:pricing_queries)
   end
 
   mutation do
@@ -90,5 +92,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:insight_mutations)
     import_fields(:signal_mutations)
     import_fields(:user_mutations)
+    import_fields(:pricing_mutations)
   end
 end

@@ -1,15 +1,20 @@
 defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
   @moduledoc """
   Middleware that is used to restrict the API access in a certain timeframe.
-  The restriction is for anon users and for users without the required SAN stake.
-  By default configuration the allowed timeframe is in the inteval [now() - 90days, now() - 1day]
+
+  Currently the implemented scheme is like this:
+  * For users accessing data for slug `santiment` - there is no restriction.
+  * If the user is anonymous the allowed timeframe is in the inteval [now() - 90days, now() - 1day].
+  * If the user has staked 1000SAN, currently he has unlimited historical data.
+  * If the logged in user is subscribed to a plan - the allowed historical days is the value of `historical_data_in_days`
+  for this plan.
   """
   @behaviour Absinthe.Middleware
 
   @compile :inline_list_funcs
   @compile {:inline,
-            restrict_from: 2,
-            restrict_to: 2,
+            restrict_from: 3,
+            restrict_to: 3,
             check_from_to_params: 1,
             required_san_stake_full_access: 0,
             restrict_to_in_days: 0,
@@ -19,14 +24,20 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
   import SanbaseWeb.Graphql.Middlewares.Helpers
 
   alias Absinthe.Resolution
+  alias Sanbase.Pricing.Subscription
 
   require Sanbase.Utils.Config, as: Config
   @allow_access_without_staking ["santiment"]
 
   @minimal_datetime_param from_iso8601!("2009-01-01T00:00:00Z")
+  @api_product_id 1
+
+  def call(%Resolution{state: :resolved} = resolution, _) do
+    resolution
+  end
 
   def call(resolution, %{allow_realtime_data: true, allow_historical_data: true}) do
-    resolution |> check_from_to_params()
+    resolution
   end
 
   # Allow access to historical data and real-time data for the Santiment project.
@@ -40,37 +51,60 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
 
   def call(
         %Resolution{
-          context: %{auth: %{san_balance: san_balance}},
+          definition: definition,
+          context: %{
+            auth: %{
+              current_user: current_user,
+              san_balance: san_balance
+            }
+          },
           arguments: %{from: from, to: to} = args
         } = resolution,
         middleware_args
       ) do
-    case has_enough_san_tokens?(san_balance, required_san_stake_full_access()) do
-      true ->
-        resolution
+    query = definition.name |> Macro.underscore()
 
+    with true <- Subscription.is_restricted?(query),
+         subscription when not is_nil(subscription) <-
+           Subscription.current_subscription(current_user, @api_product_id) do
+      historical_data_in_days = Subscription.historical_data_in_days(subscription)
+
+      if historical_data_in_days do
+        resolution
+        |> update_resolution_from_to(
+          restrict_from(from, middleware_args, historical_data_in_days),
+          to
+        )
+      else
+        resolution
+      end
+      |> check_from_to_params()
+    else
       _ ->
-        %Resolution{
-          resolution
-          | arguments: %{
-              args
-              | from: restrict_from(from, middleware_args),
-                to: restrict_to(to, middleware_args)
+        case has_enough_san_tokens?(san_balance, required_san_stake_full_access()) do
+          true ->
+            resolution
+
+          _ ->
+            %Resolution{
+              resolution
+              | arguments: %{
+                  args
+                  | from: restrict_from(from, middleware_args, restrict_from_in_days()),
+                    to: restrict_to(to, middleware_args, restrict_to_in_days())
+                }
             }
-        }
+        end
+        |> check_from_to_params()
     end
-    |> check_from_to_params()
   end
 
-  def call(%Resolution{arguments: %{from: from, to: to} = args} = resolution, middleware_args) do
-    %Resolution{
-      resolution
-      | arguments: %{
-          args
-          | from: restrict_from(from, middleware_args),
-            to: restrict_to(to, middleware_args)
-        }
-    }
+  def call(%Resolution{arguments: %{from: from, to: to}} = resolution, middleware_args) do
+    resolution
+    |> update_resolution_from_to(
+      restrict_from(from, middleware_args, restrict_from_in_days()),
+      restrict_to(to, middleware_args, restrict_to_in_days())
+    )
     |> check_from_to_params()
   end
 
@@ -79,17 +113,17 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
     |> check_from_to_params()
   end
 
-  defp restrict_to(to_datetime, %{allow_realtime_data: true}), do: to_datetime
+  defp restrict_to(to_datetime, %{allow_realtime_data: true}, _), do: to_datetime
 
-  defp restrict_to(to_datetime, _) do
-    restrict_to = Timex.shift(Timex.now(), days: -restrict_to_in_days())
+  defp restrict_to(to_datetime, _, days) do
+    restrict_to = Timex.shift(Timex.now(), days: -days)
     Enum.min_by([to_datetime, restrict_to], &DateTime.to_unix/1)
   end
 
-  defp restrict_from(from_datetime, %{allow_historical_data: true}), do: from_datetime
+  defp restrict_from(from_datetime, %{allow_historical_data: true}, _), do: from_datetime
 
-  defp restrict_from(from_datetime, _) do
-    restrict_from = Timex.shift(Timex.now(), days: -restrict_from_in_days())
+  defp restrict_from(from_datetime, _, days) do
+    restrict_from = Timex.shift(Timex.now(), days: -days)
     Enum.max_by([from_datetime, restrict_from], &DateTime.to_unix/1)
   end
 
@@ -142,4 +176,19 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
   end
 
   defp check_from_to_params(resolution), do: resolution
+
+  defp update_resolution_from_to(
+         %Resolution{arguments: %{from: _from, to: _to} = args} = resolution,
+         restricted_from,
+         restricted_to
+       ) do
+    %Resolution{
+      resolution
+      | arguments: %{
+          args
+          | from: restricted_from,
+            to: restricted_to
+        }
+    }
+  end
 end

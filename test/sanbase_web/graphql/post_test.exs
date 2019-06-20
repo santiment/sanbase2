@@ -345,10 +345,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
         tags: [tag1, tag2]
       )
 
-    result =
-      tag1
-      |> insights_by_tag_query()
-      |> execute_query(conn, "allInsightsByTag")
+    result = execute_query(conn, insights_by_tag_query(tag1), "allInsightsByTag")
 
     assert result == [%{"id" => "#{post.id}"}]
   end
@@ -366,10 +363,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
         tags: [tag1, tag2]
       )
 
-    result =
-      tag1
-      |> insights_by_tag_query()
-      |> execute_query(build_conn(), "allInsightsByTag")
+    result = execute_query(build_conn(), insights_by_tag_query(tag1), "allInsightsByTag")
 
     assert result == [%{"id" => "#{post.id}"}]
   end
@@ -405,10 +399,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
         tags: [tag2]
       )
 
-    result =
-      [tag1.name, tag2.name]
-      |> insights_by_tags_query()
-      |> execute_query(build_conn(), "allInsights")
+    query = insights_by_tags_query([tag1.name, tag2.name])
+    result = execute_query(build_conn(), query, "allInsights")
 
     assert result == [%{"id" => "#{post.id}"}, %{"id" => "#{post3.id}"}]
   end
@@ -968,12 +960,5 @@ defmodule SanbaseWeb.Graphql.PostTest do
       }
     }
     """
-  end
-
-  defp execute_query(query, conn, query_name) do
-    conn
-    |> post("/graphql", query_skeleton(query, query_name))
-    |> json_response(200)
-    |> get_in(["data", query_name])
   end
 end

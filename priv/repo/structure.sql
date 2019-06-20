@@ -526,6 +526,41 @@ ALTER SEQUENCE public.notifications_id_seq OWNED BY public.notifications.id;
 
 
 --
+-- Name: plans; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.plans (
+    id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    amount integer NOT NULL,
+    currency character varying(255) NOT NULL,
+    "interval" character varying(255) NOT NULL,
+    product_id bigint NOT NULL,
+    stripe_id character varying(255),
+    access jsonb
+);
+
+
+--
+-- Name: plans_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.plans_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: plans_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.plans_id_seq OWNED BY public.plans.id;
+
+
+--
 -- Name: polls; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -721,6 +756,36 @@ CREATE SEQUENCE public.processed_github_archives_id_seq
 --
 
 ALTER SEQUENCE public.processed_github_archives_id_seq OWNED BY public.processed_github_archives.id;
+
+
+--
+-- Name: products; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.products (
+    id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    stripe_id character varying(255)
+);
+
+
+--
+-- Name: products_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.products_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: products_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.products_id_seq OWNED BY public.products.id;
 
 
 --
@@ -948,6 +1013,37 @@ CREATE SEQUENCE public.signals_historical_activity_id_seq
 --
 
 ALTER SEQUENCE public.signals_historical_activity_id_seq OWNED BY public.signals_historical_activity.id;
+
+
+--
+-- Name: subscriptions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.subscriptions (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    plan_id bigint NOT NULL,
+    stripe_id character varying(255)
+);
+
+
+--
+-- Name: subscriptions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.subscriptions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: subscriptions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.subscriptions_id_seq OWNED BY public.subscriptions.id;
 
 
 --
@@ -1235,7 +1331,8 @@ CREATE TABLE public.users (
     email_candidate character varying(255),
     email_candidate_token character varying(255),
     email_candidate_token_generated_at timestamp without time zone,
-    email_candidate_token_validated_at timestamp without time zone
+    email_candidate_token_validated_at timestamp without time zone,
+    stripe_customer_id character varying(255)
 );
 
 
@@ -1382,6 +1479,13 @@ ALTER TABLE ONLY public.notifications ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: plans id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.plans ALTER COLUMN id SET DEFAULT nextval('public.plans_id_seq'::regclass);
+
+
+--
 -- Name: polls id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1424,6 +1528,13 @@ ALTER TABLE ONLY public.processed_github_archives ALTER COLUMN id SET DEFAULT ne
 
 
 --
+-- Name: products id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.products ALTER COLUMN id SET DEFAULT nextval('public.products_id_seq'::regclass);
+
+
+--
 -- Name: project id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1463,6 +1574,13 @@ ALTER TABLE ONLY public.schedule_rescrape_prices ALTER COLUMN id SET DEFAULT nex
 --
 
 ALTER TABLE ONLY public.signals_historical_activity ALTER COLUMN id SET DEFAULT nextval('public.signals_historical_activity_id_seq'::regclass);
+
+
+--
+-- Name: subscriptions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subscriptions ALTER COLUMN id SET DEFAULT nextval('public.subscriptions_id_seq'::regclass);
 
 
 --
@@ -1649,6 +1767,14 @@ ALTER TABLE ONLY public.notifications
 
 
 --
+-- Name: plans plans_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.plans
+    ADD CONSTRAINT plans_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: polls polls_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1694,6 +1820,14 @@ ALTER TABLE ONLY public.posts_tags
 
 ALTER TABLE ONLY public.processed_github_archives
     ADD CONSTRAINT processed_github_archives_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: products products_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.products
+    ADD CONSTRAINT products_pkey PRIMARY KEY (id);
 
 
 --
@@ -1750,6 +1884,14 @@ ALTER TABLE ONLY public.schema_migrations
 
 ALTER TABLE ONLY public.signals_historical_activity
     ADD CONSTRAINT signals_historical_activity_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: subscriptions subscriptions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subscriptions
+    ADD CONSTRAINT subscriptions_pkey PRIMARY KEY (id);
 
 
 --
@@ -2142,6 +2284,13 @@ CREATE UNIQUE INDEX users_email_token_index ON public.users USING btree (email_t
 
 
 --
+-- Name: users_stripe_customer_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX users_stripe_customer_id_index ON public.users USING btree (stripe_customer_id);
+
+
+--
 -- Name: users_username_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2276,6 +2425,14 @@ ALTER TABLE ONLY public.notifications
 
 
 --
+-- Name: plans plans_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.plans
+    ADD CONSTRAINT plans_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id);
+
+
+--
 -- Name: post_images post_images_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2404,6 +2561,22 @@ ALTER TABLE ONLY public.signals_historical_activity
 
 
 --
+-- Name: subscriptions subscriptions_plan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subscriptions
+    ADD CONSTRAINT subscriptions_plan_id_fkey FOREIGN KEY (plan_id) REFERENCES public.plans(id) ON DELETE CASCADE;
+
+
+--
+-- Name: subscriptions subscriptions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subscriptions
+    ADD CONSTRAINT subscriptions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: telegram_user_tokens telegram_user_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2527,5 +2700,5 @@ ALTER TABLE ONLY public.votes
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO public."schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171128130151), (20171128183758), (20171128183804), (20171128222957), (20171129022700), (20171130144543), (20171205103038), (20171212105707), (20171213093912), (20171213104154), (20171213115525), (20171213120408), (20171213121433), (20171213180753), (20171215133550), (20171218112921), (20171219162029), (20171224113921), (20171224114352), (20171225093503), (20171226143530), (20171228163415), (20180102111752), (20180103102329), (20180105091551), (20180108100755), (20180108110118), (20180108140221), (20180112084549), (20180112215750), (20180114093910), (20180114095310), (20180115141540), (20180122122441), (20180126093200), (20180129165526), (20180131140259), (20180202131721), (20180205101949), (20180209121215), (20180211202224), (20180215105804), (20180216182032), (20180219102602), (20180219133328), (20180222135838), (20180223114151), (20180227090003), (20180319041803), (20180322143849), (20180323111505), (20180330045410), (20180411112814), (20180411112855), (20180411113727), (20180411120339), (20180412083038), (20180418141807), (20180423115739), (20180423130032), (20180424122421), (20180424135326), (20180425145127), (20180430093358), (20180503110930), (20180504071348), (20180526114244), (20180601085613), (20180620114029), (20180625122114), (20180628092208), (20180704075131), (20180704075135), (20180708110131), (20180708114337), (20180829153735), (20180830080945), (20180831074008), (20180831094245), (20180903115442), (20180912124703), (20180914114619), (20181002095110), (20181029104029), (20181102114904), (20181107134850), (20181129132524), (20181218142658), (20190110101520), (20190114144216), (20190116105831), (20190124134046), (20190128085100), (20190215131827), (20190225144858), (20190227153610), (20190227153724), (20190312142628), (20190327104558), (20190327105353), (20190328141739), (20190329101433), (20190404143453), (20190404144631), (20190405124751), (20190408081738), (20190412100349), (20190412112500), (20190424135000), (20190529122938), (20190617065216);
+INSERT INTO public."schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171128130151), (20171128183758), (20171128183804), (20171128222957), (20171129022700), (20171130144543), (20171205103038), (20171212105707), (20171213093912), (20171213104154), (20171213115525), (20171213120408), (20171213121433), (20171213180753), (20171215133550), (20171218112921), (20171219162029), (20171224113921), (20171224114352), (20171225093503), (20171226143530), (20171228163415), (20180102111752), (20180103102329), (20180105091551), (20180108100755), (20180108110118), (20180108140221), (20180112084549), (20180112215750), (20180114093910), (20180114095310), (20180115141540), (20180122122441), (20180126093200), (20180129165526), (20180131140259), (20180202131721), (20180205101949), (20180209121215), (20180211202224), (20180215105804), (20180216182032), (20180219102602), (20180219133328), (20180222135838), (20180223114151), (20180227090003), (20180319041803), (20180322143849), (20180323111505), (20180330045410), (20180411112814), (20180411112855), (20180411113727), (20180411120339), (20180412083038), (20180418141807), (20180423115739), (20180423130032), (20180424122421), (20180424135326), (20180425145127), (20180430093358), (20180503110930), (20180504071348), (20180526114244), (20180601085613), (20180620114029), (20180625122114), (20180628092208), (20180704075131), (20180704075135), (20180708110131), (20180708114337), (20180829153735), (20180830080945), (20180831074008), (20180831094245), (20180903115442), (20180912124703), (20180914114619), (20181002095110), (20181029104029), (20181102114904), (20181107134850), (20181129132524), (20181218142658), (20190110101520), (20190114144216), (20190116105831), (20190124134046), (20190128085100), (20190215131827), (20190225144858), (20190227153610), (20190227153724), (20190312142628), (20190327104558), (20190327105353), (20190328141739), (20190329101433), (20190404143453), (20190404144631), (20190405124751), (20190408081738), (20190412100349), (20190412112500), (20190424135000), (20190510071926), (20190510075046), (20190510080002), (20190513132556), (20190529122938), (20190617065216);
 

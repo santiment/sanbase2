@@ -93,7 +93,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   of size `interval` in the from-to time period
   """
   @spec historical_balance(address | list(address), slug, DateTime.t(), DateTime.t(), interval) ::
-          {:ok, list({address, %{datetime: DateTime.t(), balance: number()}})}
+          {:ok, list(%{datetime: DateTime.t(), balance: number()})}
           | {:error, String.t()}
   def historical_balance(address, slug, from, to, interval) do
     with {:ok, contract, token_decimals} <- Project.contract_info_by_slug(slug) do

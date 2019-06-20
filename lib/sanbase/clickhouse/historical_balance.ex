@@ -20,6 +20,13 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   """
   @type interval :: String.t()
 
+  @typedoc ~s"""
+  The type returned by the historical_balance/5 function
+  """
+  @type historical_balance_return ::
+          {:ok, list(%{datetime: DateTime.t(), balance: number()})}
+          | {:error, String.t()}
+
   @doc ~s"""
   Return a list of the assets that a given address currently holds or
   has held in the past.
@@ -93,8 +100,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   of size `interval` in the from-to time period
   """
   @spec historical_balance(address | list(address), slug, DateTime.t(), DateTime.t(), interval) ::
-          {:ok, list(%{datetime: DateTime.t(), balance: number()})}
-          | {:error, String.t()}
+          historical_balance_return
   def historical_balance(address, slug, from, to, interval) do
     with {:ok, contract, token_decimals} <- Project.contract_info_by_slug(slug) do
       case contract do

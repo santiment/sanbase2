@@ -21,7 +21,7 @@ defmodule Sanbase.Signals.History.EthWalletTriggerHistory do
           triggered?: boolean()
         }
 
-  @spec get_data(EthWalletTriggerSettings.t()) :: {:ok, list()} | {:error, String.t()}
+  @spec get_data(EthWalletTriggerSettings.t()) :: HistoricalBalance.historical_balance_return()
   def get_data(%{target: target, asset: asset}) do
     {from, to, interval} = get_timeseries_params()
 

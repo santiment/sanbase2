@@ -15,6 +15,8 @@ defmodule Sanbase.Pricing.Subscription do
   @generic_error_message """
   Current subscription attempt failed. Please, contact administrator of the site for more information.
   """
+  @percent_discount_1000_san 20
+  @percent_discount_200_san 4
 
   schema "subscriptions" do
     field(:stripe_id, :string)
@@ -164,8 +166,8 @@ defmodule Sanbase.Pricing.Subscription do
     end
   end
 
-  defp percent_discount(balance) when balance >= 1000, do: 20
-  defp percent_discount(balance) when balance >= 200, do: 4
+  defp percent_discount(balance) when balance >= 1000, do: @percent_discount_1000_san
+  defp percent_discount(balance) when balance >= 200, do: @percent_discount_200_san
   defp percent_discount(_), nil
 
   defp subscription_access?(nil, _query), do: false

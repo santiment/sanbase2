@@ -19,34 +19,20 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.AssetsHeldByAdderssTest do
   end
 
   test "clickhouse returns list of results", context do
-    with_mock Sanbase.ClickhouseRepo,
-      query: fn query, _ ->
-        # If the query contains `contract` return erc20 data, ethereum data otherwise
-        case String.contains?(query, "contract") do
-          true ->
-            {:ok,
-             %{
-               rows: [
-                 [
-                   context.p1.main_contract_address,
-                   Sanbase.Math.ipow(10, context.p1.token_decimals) * 100
-                 ],
-                 [
-                   context.p2.main_contract_address,
-                   Sanbase.Math.ipow(10, context.p1.token_decimals) * 200
-                 ]
-               ]
-             }}
-
-          false ->
-            {:ok,
-             %{
-               rows: [
-                 [Sanbase.Math.ipow(10, 18) * 1000]
-               ]
-             }}
-        end
-      end do
+    with_mocks [
+      {Sanbase.Clickhouse.HistoricalBalance.Erc20Balance, [:passthrough],
+       assets_held_by_address: fn _ ->
+         {:ok,
+          [
+            %{balance: 100.0, slug: context.p1.coinmarketcap_id},
+            %{balance: 200.0, slug: context.p2.coinmarketcap_id}
+          ]}
+       end},
+      {Sanbase.Clickhouse.HistoricalBalance.EthBalance, [:passthrough],
+       assets_held_by_address: fn _ ->
+         {:ok, [%{balance: 1000.0, slug: context.eth_project.coinmarketcap_id}]}
+       end}
+    ] do
       assert HistoricalBalance.assets_held_by_address("0x123") ==
                {:ok,
                 [
@@ -58,26 +44,34 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.AssetsHeldByAdderssTest do
   end
 
   test "clickhouse returns no results", _context do
-    with_mock Sanbase.ClickhouseRepo,
-      query: fn _, _ ->
-        {:ok,
-         %{
-           rows: []
-         }}
-      end do
+    with_mocks [
+      {Sanbase.Clickhouse.HistoricalBalance.Erc20Balance, [:passthrough],
+       assets_held_by_address: fn _ ->
+         {:ok, []}
+       end},
+      {Sanbase.Clickhouse.HistoricalBalance.EthBalance, [:passthrough],
+       assets_held_by_address: fn _ ->
+         {:ok, []}
+       end}
+    ] do
       assert HistoricalBalance.assets_held_by_address("0x123") ==
                {:ok, []}
     end
   end
 
   test "clickhouse returns error", _context do
-    with_mock Sanbase.ClickhouseRepo,
-      query: fn _, _ ->
-        {:error, "Cannot execute query due to error"}
-      end do
+    with_mocks [
+      {Sanbase.Clickhouse.HistoricalBalance.Erc20Balance, [:passthrough],
+       assets_held_by_address: fn _ ->
+         {:ok, []}
+       end},
+      {Sanbase.Clickhouse.HistoricalBalance.EthBalance, [:passthrough],
+       assets_held_by_address: fn _ ->
+         {:error, "Something went wrong"}
+       end}
+    ] do
       assert HistoricalBalance.assets_held_by_address("0x123") ==
-               {:error,
-                "Cannot execute ClickHouse query. Reason: no case clause matching: {:error, \"Cannot execute query due to error\"}\n"}
+               {:error, "Something went wrong"}
     end
   end
 end

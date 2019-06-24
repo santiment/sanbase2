@@ -128,7 +128,9 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
       assert_receive({:telegram_to_self, message1})
       assert_receive({:telegram_to_self, message2})
 
-      sorted_messages = Enum.sort([message1, message2])
+      # Plain sort won't work as depends on the randomly generated project name
+      # Sorting on wheter there is `address` substring is deterministic
+      sorted_messages = Enum.sort_by([message1, message2], &String.contains?(&1, "address"))
 
       assert Enum.at(sorted_messages, 0) =~
                "The ethereum balance of #{context.project.name} wallets has increased by 280"

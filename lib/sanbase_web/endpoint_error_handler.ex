@@ -50,8 +50,13 @@ defmodule SanbaseWeb.Endpoint.ErrorHandler do
 
         user_agent = Plug.Conn.get_req_header(conn, "user-agent") |> List.first()
 
+        id =
+          Logger.metadata() |> Keyword.get(:request_id) ||
+            "gen_" <> (:crypto.strong_rand_bytes(16) |> Base.encode64())
+
         %{
           timestamp: DateTime.utc_now() |> DateTime.to_unix(),
+          id: id,
           query: nil,
           status_code: status_code,
           has_graphql_errors: nil,

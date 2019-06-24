@@ -120,9 +120,14 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     {user_id, san_tokens, auth_method, api_token} =
       extract_caller_data(blueprint.execution.context)
 
+    id =
+      Logger.metadata() |> Keyword.get(:request_id) ||
+        "gen_" <> (:crypto.strong_rand_bytes(16) |> Base.encode64())
+
     Enum.map(queries, fn query ->
       %{
         timestamp: div(now, 1_000_000_000),
+        id: id,
         query: query,
         status_code: 200,
         has_graphql_errors: has_graphql_errors?(blueprint),

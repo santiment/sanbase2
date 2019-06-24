@@ -22,6 +22,7 @@ defmodule Sanbase.ApiCallDataExporter do
   """
   @type api_call_data :: %{
           timestamp: non_neg_integer() | nil,
+          id: String.t(),
           query: String.t() | nil,
           status_code: non_neg_integer(),
           has_graphql_errors: boolean() | nil,

@@ -126,6 +126,12 @@ defmodule Sanbase.Pricing.Subscription do
     })
   end
 
+  def cancel_subscription(user_id) do
+    user = Repo.get(User, user_id)
+    current_subscription = current_subscription(user, Product.sanbase_api())
+    StripeApi.cancel_subscription(current_subscription.stripe_id)
+  end
+
   def generic_error_message, do: @generic_error_message
 
   defp create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)

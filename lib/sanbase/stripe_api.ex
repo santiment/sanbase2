@@ -55,6 +55,11 @@ defmodule Sanbase.StripeApi do
     Stripe.Subscription.update(stripe_id, params)
   end
 
+  def cancel_subscription(stripe_id) do
+    stripe_id
+    |> update_subscription(%{cancel_at_period_end: true})
+  end
+
   def get_subscription_first_item_id(stripe_id) do
     stripe_id
     |> retrieve_subscription()

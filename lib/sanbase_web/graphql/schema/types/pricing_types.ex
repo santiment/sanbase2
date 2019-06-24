@@ -11,6 +11,8 @@ defmodule SanbaseWeb.Graphql.Schema.PricingTypes do
     field(:name, :string)
     field(:access, :json)
     field(:product, :product)
+    field(:interval, :string)
+    field(:amount, :integer)
   end
 
   object :plan_subscription do

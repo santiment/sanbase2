@@ -21,7 +21,7 @@ defmodule Sanbase.StripeApiTestReponse do
      }}
   end
 
-  def stripe_product_resp() do
+  def create_product_resp() do
     {:ok,
      %Stripe.Product{
        active: true,
@@ -47,7 +47,7 @@ defmodule Sanbase.StripeApiTestReponse do
      }}
   end
 
-  defp create_plan_resp() do
+  def create_plan_resp() do
     {:ok,
      %Stripe.Plan{
        active: true,

@@ -37,7 +37,7 @@ defmodule Sanbase.StripeApi do
         product: %Product{stripe_id: product_stripe_id}
       }) do
     Stripe.Plan.create(%{
-      name: name,
+      nickname: name,
       currency: currency,
       amount: amount,
       interval: interval,

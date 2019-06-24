@@ -27,7 +27,7 @@ defmodule Sanbase.Pricing.Plan do
   def plans_with_metric(query) do
     from(
       p in Plan,
-      where: fragment(~s(access @> ?), ^%{metrics: [query]}),
+      where: p.interval == "month" and fragment(~s(access @> ?), ^%{metrics: [query]}),
       select: p.name
     )
     |> Repo.all()
@@ -36,11 +36,10 @@ defmodule Sanbase.Pricing.Plan do
   def by_id(plan_id) do
     Repo.get(__MODULE__, plan_id)
     |> Repo.preload(:product)
-    |> maybe_create_plan_in_stripe()
   end
 
-  defp maybe_create_plan_in_stripe(%__MODULE__{stripe_id: stripe_id} = plan)
-       when is_nil(stripe_id) do
+  def maybe_create_plan_in_stripe(%__MODULE__{stripe_id: stripe_id} = plan)
+      when is_nil(stripe_id) do
     plan
     |> Sanbase.StripeApi.create_plan()
     |> case do
@@ -52,8 +51,8 @@ defmodule Sanbase.Pricing.Plan do
     end
   end
 
-  defp maybe_create_plan_in_stripe(%__MODULE__{stripe_id: stripe_id} = plan)
-       when is_binary(stripe_id) do
+  def maybe_create_plan_in_stripe(%__MODULE__{stripe_id: stripe_id} = plan)
+      when is_binary(stripe_id) do
     {:ok, plan}
   end
 

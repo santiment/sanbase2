@@ -25,10 +25,7 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
     user = insert(:staked_user)
     conn = setup_jwt_auth(build_conn(), user)
 
-    product = insert(:product)
-    plan_essential = insert(:plan_essential, product: product)
-    plan_pro = insert(:plan_pro, product: product)
-    insert(:plan_premium, product: product)
+    plans = Sanbase.Pricing.TestSeed.seed_products_and_plans()
 
     {:ok, apikey} = Apikey.generate_apikey(user)
     conn_apikey = setup_apikey_auth(build_conn(), apikey)
@@ -39,9 +36,9 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
     {:ok,
      conn: conn,
      user: user,
-     product: product,
-     plan_essential: plan_essential,
-     plan_pro: plan_pro,
+     product: plans.product,
+     plan_essential: plans.plan_essential,
+     plan_pro: plans.plan_pro,
      conn_apikey: conn_apikey,
      conn_apikey_free: conn_apikey_free}
   end
@@ -55,7 +52,7 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
       |> hd()
 
     assert result["name"] == "SanbaseAPI"
-    assert length(result["plans"]) == 3
+    assert length(result["plans"]) == 9
   end
 
   describe "#currentUser[subscriptions]" do
@@ -65,7 +62,7 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
       current_user = execute_query(context.conn, current_user_query(), "currentUser")
       subscription = current_user["subscriptions"] |> hd()
 
-      assert subscription["plan"]["name"] == "Essential"
+      assert subscription["plan"]["name"] == "ESSENTIAL"
     end
 
     test "when there are no subscriptions - return []", context do
@@ -134,6 +131,8 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
           id
           name
           access
+          interval
+          amount
           product {
             name
           }

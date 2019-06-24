@@ -20,11 +20,10 @@ defmodule Sanbase.Pricing.Product do
 
   def by_id(product_id) do
     Repo.get(__MODULE__, product_id)
-    |> maybe_create_product_in_stripe()
   end
 
-  defp maybe_create_product_in_stripe(%__MODULE__{stripe_id: stripe_id} = product)
-       when is_nil(stripe_id) do
+  def maybe_create_product_in_stripe(%__MODULE__{stripe_id: stripe_id} = product)
+      when is_nil(stripe_id) do
     Sanbase.StripeApi.create_product(product)
     |> case do
       {:ok, stripe_product} ->
@@ -35,8 +34,8 @@ defmodule Sanbase.Pricing.Product do
     end
   end
 
-  defp maybe_create_product_in_stripe(%__MODULE__{stripe_id: stripe_id} = product)
-       when is_binary(stripe_id) do
+  def maybe_create_product_in_stripe(%__MODULE__{stripe_id: stripe_id} = product)
+      when is_binary(stripe_id) do
     {:ok, product}
   end
 

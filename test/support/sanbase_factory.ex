@@ -203,7 +203,7 @@ defmodule Sanbase.Factory do
   def plan_free_factory() do
     %Plan{
       id: 1,
-      name: "Free",
+      name: "FREE",
       amount: 0,
       currency: "USD",
       interval: "month",
@@ -214,7 +214,7 @@ defmodule Sanbase.Factory do
   def plan_essential_factory() do
     %Plan{
       id: 2,
-      name: "Essential",
+      name: "ESSENTIAL",
       amount: 15900,
       currency: "USD",
       interval: "month",
@@ -225,7 +225,7 @@ defmodule Sanbase.Factory do
   def plan_pro_factory() do
     %Plan{
       id: 3,
-      name: "Pro",
+      name: "PRO",
       amount: 35900,
       currency: "USD",
       interval: "month",
@@ -236,11 +236,66 @@ defmodule Sanbase.Factory do
   def plan_premium_factory() do
     %Plan{
       id: 4,
-      name: "Premium",
+      name: "PREMIUM",
       amount: 75900,
       currency: "USD",
       interval: "month",
       access: AccessSeed.premium()
+    }
+  end
+
+  def plan_custom_factory() do
+    %Plan{
+      id: 5,
+      name: "CUSTOM",
+      amount: 0,
+      currency: "USD",
+      interval: "month",
+      access: AccessSeed.custom()
+    }
+  end
+
+  def plan_essential_yearly_factory() do
+    %Plan{
+      id: 6,
+      name: "ESSENTIAL",
+      amount: 128_520,
+      currency: "USD",
+      interval: "year",
+      access: AccessSeed.pro()
+    }
+  end
+
+  def plan_pro_yearly_factory() do
+    %Plan{
+      id: 7,
+      name: "PRO",
+      amount: 387_720,
+      currency: "USD",
+      interval: "year",
+      access: AccessSeed.pro()
+    }
+  end
+
+  def plan_premium_yearly_factory() do
+    %Plan{
+      id: 8,
+      name: "PREMIUM",
+      amount: 819_720,
+      currency: "USD",
+      interval: "year",
+      access: AccessSeed.premium()
+    }
+  end
+
+  def plan_custom_yearly_factory() do
+    %Plan{
+      id: 9,
+      name: "CUSTOM",
+      amount: 0,
+      currency: "USD",
+      interval: "year",
+      access: AccessSeed.custom()
     }
   end
 

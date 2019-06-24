@@ -65,7 +65,7 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
       current_user = execute_query(context.conn, current_user_query(), "currentUser")
       subscription = current_user["subscriptions"] |> hd()
 
-      assert subscription["plan"]["name"] == "Essential"
+      assert subscription["plan"]["name"] == "ESSENTIAL"
     end
 
     test "when there are no subscriptions - return []", context do

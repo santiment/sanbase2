@@ -7,6 +7,7 @@ defmodule Sanbase.Pricing.AccessTest do
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Sanbase.Auth.Apikey
+  alias Sanbase.Pricing.TestSeed
 
   setup_with_mocks([
     {Sanbase.Clickhouse.MVRV, [], [mvrv_ratio: fn _, _, _, _ -> mvrv_resp() end]},
@@ -16,16 +17,13 @@ defmodule Sanbase.Pricing.AccessTest do
     free_user = insert(:user)
     user = insert(:staked_user)
 
+    TestSeed.seed_products_and_plans()
+
     {:ok, apikey} = Apikey.generate_apikey(user)
     conn_apikey = setup_apikey_auth(build_conn(), apikey)
 
     {:ok, apikey_free} = Apikey.generate_apikey(free_user)
     conn_apikey_free = setup_apikey_auth(build_conn(), apikey_free)
-
-    product = insert(:product)
-    insert(:plan_essential, product: product)
-    insert(:plan_pro, product: product)
-    insert(:plan_premium, product: product)
 
     {:ok, user: user, conn_apikey: conn_apikey, conn_apikey_free: conn_apikey_free}
   end
@@ -98,8 +96,8 @@ defmodule Sanbase.Pricing.AccessTest do
       refute called(Sanbase.Clickhouse.MVRV.mvrv_ratio(:_, from, to, :_))
 
       assert error_msg == """
-             Requested metric mvrv_ratio is not provided by the current subscription plan Essential.
-             Please upgrade to Pro or Premium to get access to mvrv_ratio
+             Requested metric mvrv_ratio is not provided by the current subscription plan ESSENTIAL.
+             Please upgrade to PRO or PREMIUM or CUSTOM to get access to mvrv_ratio
              """
     end
   end

@@ -100,7 +100,7 @@ defmodule Sanbase.Pricing.SubscriptionTest do
       insert(:subscription_essential, user: context.user)
 
       subscription = Subscription.user_subscriptions(context.user) |> hd()
-      assert subscription.plan.name == "Essential"
+      assert subscription.plan.name == "ESSENTIAL"
     end
 
     test "when there are no subscriptions - return []", context do

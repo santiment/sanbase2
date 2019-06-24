@@ -1,73 +1,201 @@
-defmodule Sanbase.Signals.TriggerEthWalletHistoryTest do
+defmodule Sanbase.Signals.EthWalletTriggerHistoryTest do
   use Sanbase.DataCase, async: false
 
   import Mock
-  import Sanbase.Factory
-  import Sanbase.DateTimeUtils
+  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Sanbase.Signals.UserTrigger
 
-  test "returns historical daa data with trigger points" do
-    daa_result = [
-      %{datetime: from_iso8601!("2018-11-17T00:00:00Z"), active_addresses: 23},
-      %{datetime: from_iso8601!("2018-11-18T00:00:00Z"), active_addresses: 25},
-      %{datetime: from_iso8601!("2018-11-19T00:00:00Z"), active_addresses: 60},
-      %{datetime: from_iso8601!("2018-11-20T00:00:00Z"), active_addresses: 30},
-      %{datetime: from_iso8601!("2018-11-21T00:00:00Z"), active_addresses: 20},
-      # this is trigger point
-      %{datetime: from_iso8601!("2018-11-22T00:00:00Z"), active_addresses: 76},
-      # cooldown
-      %{datetime: from_iso8601!("2018-11-23T00:00:00Z"), active_addresses: 180},
-      %{datetime: from_iso8601!("2018-11-24T00:00:00Z"), active_addresses: 50},
-      %{datetime: from_iso8601!("2018-11-25T00:00:00Z"), active_addresses: 60},
-      %{datetime: from_iso8601!("2018-11-26T00:00:00Z"), active_addresses: 70}
+  alias Sanbase.Clickhouse.HistoricalBalance
+
+  setup do
+    Sanbase.Signals.Evaluator.Cache.clear()
+
+    project = Sanbase.Factory.insert(:random_erc20_project)
+
+    trigger_settings_down = %{
+      type: "eth_wallet",
+      target: %{slug: project.coinmarketcap_id},
+      asset: %{slug: "ethereum"},
+      channel: "telegram",
+      operation: %{amount_down: 10}
+    }
+
+    trigger_settings_up = %{
+      type: "eth_wallet",
+      target: %{slug: project.coinmarketcap_id},
+      asset: %{slug: "ethereum"},
+      channel: "telegram",
+      operation: %{amount_up: 100}
+    }
+
+    [
+      project: project,
+      trigger_settings_down: trigger_settings_down,
+      trigger_settings_up: trigger_settings_up
     ]
+  end
 
-    prices_result = [
-      [from_iso8601!("2018-11-17T00:00:00Z"), 20, 1000, 500, 200],
-      [from_iso8601!("2018-11-18T00:00:00Z"), 20, 1000, 500, 200],
-      [from_iso8601!("2018-11-19T00:00:00Z"), 20, 1000, 500, 200],
-      [from_iso8601!("2018-11-20T00:00:00Z"), 20, 1000, 500, 200],
-      [from_iso8601!("2018-11-21T00:00:00Z"), 20, 1000, 500, 200],
-      [from_iso8601!("2018-11-22T00:00:00Z"), 20, 1000, 500, 200],
-      [from_iso8601!("2018-11-23T00:00:00Z"), 20, 1000, 500, 200],
-      [from_iso8601!("2018-11-24T00:00:00Z"), 20, 1000, 500, 200],
-      [from_iso8601!("2018-11-25T00:00:00Z"), 20, 1000, 500, 200],
-      [from_iso8601!("2018-11-26T00:00:00Z"), 20, 1000, 500, 200]
-    ]
+  test "eth wallet signal when balance decreases", context do
+    with_mock HistoricalBalance, [:passthrough],
+      historical_balance: fn _, _, _, _, _ ->
+        {:ok,
+         [
+           %{datetime: from_iso8601!("2019-01-01T00:00:00Z"), balance: 100},
+           %{datetime: from_iso8601!("2019-01-01T01:00:00Z"), balance: 100},
+           %{datetime: from_iso8601!("2019-01-01T02:00:00Z"), balance: 50},
+           %{datetime: from_iso8601!("2019-01-01T03:00:00Z"), balance: 50},
+           %{datetime: from_iso8601!("2019-01-01T04:00:00Z"), balance: 50},
+           %{datetime: from_iso8601!("2019-01-01T05:00:00Z"), balance: 50},
+           %{datetime: from_iso8601!("2019-01-01T06:00:00Z"), balance: 20},
+           %{datetime: from_iso8601!("2019-01-01T07:00:00Z"), balance: 20},
+           %{datetime: from_iso8601!("2019-01-01T08:00:00Z"), balance: 10}
+         ]}
+      end do
+      expected_result =
+        {:ok,
+         [
+           %{balance: 100, datetime: from_iso8601!("2019-01-01T00:00:00Z"), triggered?: false},
+           %{balance: 100, datetime: from_iso8601!("2019-01-01T01:00:00Z"), triggered?: false},
+           %{balance: 50, datetime: from_iso8601!("2019-01-01T02:00:00Z"), triggered?: true},
+           %{balance: 50, datetime: from_iso8601!("2019-01-01T03:00:00Z"), triggered?: false},
+           %{balance: 50, datetime: from_iso8601!("2019-01-01T04:00:00Z"), triggered?: false},
+           %{balance: 50, datetime: from_iso8601!("2019-01-01T05:00:00Z"), triggered?: false},
+           %{balance: 20, datetime: from_iso8601!("2019-01-01T06:00:00Z"), triggered?: true},
+           %{balance: 20, datetime: from_iso8601!("2019-01-01T07:00:00Z"), triggered?: false},
+           %{balance: 10, datetime: from_iso8601!("2019-01-01T08:00:00Z"), triggered?: true}
+         ]}
 
-    with_mocks([
-      {Sanbase.Clickhouse.Erc20DailyActiveAddresses, [],
-       [average_active_addresses: fn _, _, _, _ -> {:ok, daa_result} end]},
-      {Sanbase.Prices.Store, [],
-       [fetch_prices_with_resolution: fn _, _, _, _ -> {:ok, prices_result} end]}
-    ]) do
-      trigger_settings = %{
-        type: "daily_active_addresses",
-        target: %{slug: "santiment"},
-        channel: "telegram",
-        time_window: "2d",
-        percent_threshold: 200.0
-      }
-
-      insert(:project, %{
-        ticker: "SAN",
-        coinmarketcap_id: "santiment",
-        main_contract_address: "0x123"
-      })
-
-      trigger = %{settings: trigger_settings}
-      {:ok, points} = UserTrigger.historical_trigger_points(trigger)
-
-      triggered? =
-        points
-        |> Enum.find(fn %{datetime: dt} -> DateTime.to_iso8601(dt) == "2018-11-22T00:00:00Z" end)
-        |> Map.get(:triggered?)
-
-      assert Enum.filter(points, fn point -> point.triggered? end) |> length() == 1
-      assert Enum.filter(points, fn point -> !point.triggered? end) |> length() == 9
-      assert length(points) == 10
-      assert triggered? == true
+      assert UserTrigger.historical_trigger_points(%{
+               cooldown: "30m",
+               settings: context.trigger_settings_down
+             }) == expected_result
     end
+  end
+
+  test "eth wallet signal with big cooldown when balance decreases", context do
+    with_mock HistoricalBalance, [:passthrough],
+      historical_balance: fn _, _, _, _, _ ->
+        {:ok,
+         [
+           %{datetime: from_iso8601!("2019-01-01T00:00:00Z"), balance: 100},
+           %{datetime: from_iso8601!("2019-01-01T01:00:00Z"), balance: 100},
+           %{datetime: from_iso8601!("2019-01-01T02:00:00Z"), balance: 50},
+           %{datetime: from_iso8601!("2019-01-01T03:00:00Z"), balance: 50},
+           %{datetime: from_iso8601!("2019-01-01T04:00:00Z"), balance: 50},
+           %{datetime: from_iso8601!("2019-01-01T05:00:00Z"), balance: 50},
+           %{datetime: from_iso8601!("2019-01-01T06:00:00Z"), balance: 20},
+           %{datetime: from_iso8601!("2019-01-01T07:00:00Z"), balance: 20},
+           %{datetime: from_iso8601!("2019-01-01T08:00:00Z"), balance: 10}
+         ]}
+      end do
+      expected_result =
+        {:ok,
+         [
+           %{balance: 100, datetime: from_iso8601!("2019-01-01T00:00:00Z"), triggered?: false},
+           %{balance: 100, datetime: from_iso8601!("2019-01-01T01:00:00Z"), triggered?: false},
+           %{balance: 50, datetime: from_iso8601!("2019-01-01T02:00:00Z"), triggered?: true},
+           %{balance: 50, datetime: from_iso8601!("2019-01-01T03:00:00Z"), triggered?: false},
+           %{balance: 50, datetime: from_iso8601!("2019-01-01T04:00:00Z"), triggered?: false},
+           %{balance: 50, datetime: from_iso8601!("2019-01-01T05:00:00Z"), triggered?: false},
+           %{balance: 20, datetime: from_iso8601!("2019-01-01T06:00:00Z"), triggered?: false},
+           %{balance: 20, datetime: from_iso8601!("2019-01-01T07:00:00Z"), triggered?: false},
+           %{balance: 10, datetime: from_iso8601!("2019-01-01T08:00:00Z"), triggered?: false}
+         ]}
+
+      assert UserTrigger.historical_trigger_points(%{
+               cooldown: "1d",
+               settings: context.trigger_settings_down
+             }) == expected_result
+    end
+  end
+
+  test "eth wallet signal when balance increases", context do
+    with_mock HistoricalBalance, [:passthrough],
+      historical_balance: fn _, _, _, _, _ ->
+        {:ok,
+         [
+           %{datetime: from_iso8601!("2019-01-01T00:00:00Z"), balance: 100},
+           %{datetime: from_iso8601!("2019-01-01T01:00:00Z"), balance: 1000},
+           %{datetime: from_iso8601!("2019-01-01T02:00:00Z"), balance: 2000},
+           %{datetime: from_iso8601!("2019-01-01T03:00:00Z"), balance: 2000},
+           %{datetime: from_iso8601!("2019-01-01T04:00:00Z"), balance: 2000},
+           %{datetime: from_iso8601!("2019-01-01T05:00:00Z"), balance: 2000},
+           %{datetime: from_iso8601!("2019-01-01T06:00:00Z"), balance: 2500},
+           %{datetime: from_iso8601!("2019-01-01T07:00:00Z"), balance: 2500},
+           %{datetime: from_iso8601!("2019-01-01T08:00:00Z"), balance: 2500}
+         ]}
+      end do
+      expected_result =
+        {:ok,
+         [
+           %{balance: 100, datetime: from_iso8601!("2019-01-01T00:00:00Z"), triggered?: false},
+           %{balance: 1000, datetime: from_iso8601!("2019-01-01T01:00:00Z"), triggered?: true},
+           %{balance: 2000, datetime: from_iso8601!("2019-01-01T02:00:00Z"), triggered?: true},
+           %{balance: 2000, datetime: from_iso8601!("2019-01-01T03:00:00Z"), triggered?: false},
+           %{balance: 2000, datetime: from_iso8601!("2019-01-01T04:00:00Z"), triggered?: false},
+           %{balance: 2000, datetime: from_iso8601!("2019-01-01T05:00:00Z"), triggered?: false},
+           %{balance: 2500, datetime: from_iso8601!("2019-01-01T06:00:00Z"), triggered?: true},
+           %{balance: 2500, datetime: from_iso8601!("2019-01-01T07:00:00Z"), triggered?: false},
+           %{balance: 2500, datetime: from_iso8601!("2019-01-01T08:00:00Z"), triggered?: false}
+         ]}
+
+      assert UserTrigger.historical_trigger_points(%{
+               cooldown: "30m",
+               settings: context.trigger_settings_up
+             }) == expected_result
+    end
+  end
+
+  test "eth wallet signal with big cooldown when balance increases", context do
+    with_mock HistoricalBalance, [:passthrough],
+      historical_balance: fn _, _, _, _, _ ->
+        {:ok,
+         [
+           %{datetime: from_iso8601!("2019-01-01T00:00:00Z"), balance: 100},
+           %{datetime: from_iso8601!("2019-01-01T01:00:00Z"), balance: 1000},
+           %{datetime: from_iso8601!("2019-01-01T02:00:00Z"), balance: 2000},
+           %{datetime: from_iso8601!("2019-01-01T03:00:00Z"), balance: 2000},
+           %{datetime: from_iso8601!("2019-01-01T04:00:00Z"), balance: 2000},
+           %{datetime: from_iso8601!("2019-01-01T05:00:00Z"), balance: 2000},
+           %{datetime: from_iso8601!("2019-01-01T06:00:00Z"), balance: 2500},
+           %{datetime: from_iso8601!("2019-01-01T07:00:00Z"), balance: 2500},
+           %{datetime: from_iso8601!("2019-01-01T08:00:00Z"), balance: 2500}
+         ]}
+      end do
+      expected_result =
+        {:ok,
+         [
+           %{balance: 100, datetime: from_iso8601!("2019-01-01T00:00:00Z"), triggered?: false},
+           %{balance: 1000, datetime: from_iso8601!("2019-01-01T01:00:00Z"), triggered?: true},
+           %{balance: 2000, datetime: from_iso8601!("2019-01-01T02:00:00Z"), triggered?: false},
+           %{balance: 2000, datetime: from_iso8601!("2019-01-01T03:00:00Z"), triggered?: false},
+           %{balance: 2000, datetime: from_iso8601!("2019-01-01T04:00:00Z"), triggered?: false},
+           %{balance: 2000, datetime: from_iso8601!("2019-01-01T05:00:00Z"), triggered?: false},
+           %{balance: 2500, datetime: from_iso8601!("2019-01-01T06:00:00Z"), triggered?: false},
+           %{balance: 2500, datetime: from_iso8601!("2019-01-01T07:00:00Z"), triggered?: false},
+           %{balance: 2500, datetime: from_iso8601!("2019-01-01T08:00:00Z"), triggered?: false}
+         ]}
+
+      assert UserTrigger.historical_trigger_points(%{
+               cooldown: "1d",
+               settings: context.trigger_settings_up
+             }) == expected_result
+    end
+  end
+
+  test "eth wallet signal historical data not implemented for % change", context do
+    trigger_settings = %{
+      type: "eth_wallet",
+      target: %{slug: context.project.coinmarketcap_id},
+      asset: %{slug: "ethereum"},
+      channel: "telegram",
+      operation: %{percent_up: 10}
+    }
+
+    assert UserTrigger.historical_trigger_points(%{
+             cooldown: "1d",
+             settings: trigger_settings
+           }) == {:error, "Historical trigger points for percent change no implemented"}
   end
 end

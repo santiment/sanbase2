@@ -24,7 +24,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   The type returned by the historical_balance/5 function
   """
   @type historical_balance_return ::
-          {:ok, list(%{datetime: DateTime.t(), balance: number()})}
+          {:ok, []}
+          | {:ok, list(%{datetime: DateTime.t(), balance: number()})}
           | {:error, String.t()}
 
   @doc ~s"""

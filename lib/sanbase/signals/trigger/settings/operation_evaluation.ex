@@ -32,12 +32,12 @@ defmodule Sanbase.Signals.OperationEvaluation do
 
   def operation_triggered?(amount_changed, %{amount_up: amount})
       when is_number(amount_changed) and is_number(amount) and amount > 0 do
-    amount_changed > amount
+    amount_changed >= amount
   end
 
   def operation_triggered?(amount_changed, %{amount_down: amount})
       when is_number(amount_changed) and is_number(amount) and amount > 0 do
-    amount_changed < 0 and abs(amount_changed) > amount
+    amount_changed < 0 and abs(amount_changed) >= amount
   end
 
   def operation_triggered?(_, _), do: false

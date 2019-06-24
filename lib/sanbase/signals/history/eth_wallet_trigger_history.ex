@@ -58,7 +58,9 @@ defmodule Sanbase.Signals.History.EthWalletTriggerHistory do
     alias Sanbase.Signals.History.EthWalletTriggerHistory
 
     @spec historical_trigger_points(%EthWalletTriggerSettings{}, String.t()) ::
-            {:ok, list(PricesHistory.historical_trigger_points_type())} | {:error, String.t()}
+            {:ok, []}
+            | {:ok, list(EthWalletTriggerHistory.historical_trigger_points_type())}
+            | {:error, String.t()}
     def historical_trigger_points(
           %EthWalletTriggerSettings{target: %{slug: slug}} = settings,
           cooldown
@@ -80,43 +82,42 @@ defmodule Sanbase.Signals.History.EthWalletTriggerHistory do
     end
 
     defp do_historical_trigger_points(%EthWalletTriggerSettings{} = settings, cooldown) do
-      settings
-      |> EthWalletTriggerHistory.get_data()
-      |> case do
-        {:ok, data} ->
-          data
-          |> transform(settings)
-          |> evaluate(settings, cooldown)
+      case operation_type(settings) do
+        :absolute ->
+          evaluate(settings, cooldown)
 
-        error ->
-          error
+        :percent ->
+          {:error, "Historical trigger points for percent change no implemented"}
       end
     end
 
-    defp transform(data, %{operation: operation}) do
-      op = Map.keys(operation) |> List.first()
+    defp operation_type(%{operation: operation}) when is_map(operation) do
+      op_name = Map.keys(operation) |> List.first()
 
-      case operation_type(op) do
-        :percent -> {:error, "Historical trigger points for percent change no implemented"}
-        :absolute -> {:ok, data}
-      end
-    end
-
-    defp operation_type(op) do
-      if op |> Atom.to_string() |> String.contains?("percent") do
+      if op_name |> Atom.to_string() |> String.contains?("percent") do
         :percent
       else
         :absolute
       end
     end
 
-    defp evaluate({:error, error}, _settings, _cooldown), do: {:error, error}
+    defp evaluate(settings, cooldown) do
+      case EthWalletTriggerHistory.get_data(settings) do
+        {:error, error} ->
+          {:error, error}
 
-    defp evaluate({:ok, []}, _settings, _cooldowns), do: {:ok, []}
+        {:ok, []} ->
+          {:ok, []}
 
-    defp evaluate({:ok, data}, settings, cooldown) do
-      %{operation: operation} = settings
+        {:ok, data} ->
+          mark_triggered(data, settings, cooldown)
+      end
+    end
+
+    defp mark_triggered(data, settings, cooldown) do
       [%{balance: first_balance} | _] = data
+      %{operation: operation} = settings
+
       cooldown_in_hours = Sanbase.DateTimeUtils.compound_duration_to_hours(cooldown)
 
       {acc, _, _} =

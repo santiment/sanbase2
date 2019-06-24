@@ -6,12 +6,16 @@ defmodule Sanbase.Pricing.Product do
   alias Sanbase.Pricing.Plan
   alias Sanbase.Repo
 
+  @sanbase_api 1
+
   schema "products" do
     field(:name, :string)
     field(:stripe_id, :string)
 
     has_many(:plans, Plan)
   end
+
+  def sanbase_api(), do: @sanbase_api
 
   def changeset(%__MODULE__{} = product, attrs \\ %{}) do
     product

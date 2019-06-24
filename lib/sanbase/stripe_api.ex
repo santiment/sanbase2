@@ -51,6 +51,28 @@ defmodule Sanbase.StripeApi do
     Stripe.Subscription.create(subscription)
   end
 
+  def update_subscription(stripe_id, params) do
+    Stripe.Subscription.update(stripe_id, params)
+  end
+
+  def get_subscription_first_item_id(stripe_id) do
+    stripe_id
+    |> retrieve_subscription()
+    |> case do
+      {:ok, subscription} ->
+        subscription.items.data
+        |> hd()
+        |> Map.get(:id)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  def retrieve_subscription(stripe_id) do
+    Stripe.Subscription.retrieve(stripe_id)
+  end
+
   def create_coupon(%{percent_off: percent_off, duration: duration}) do
     Stripe.Coupon.create(%{percent_off: percent_off, duration: duration})
   end

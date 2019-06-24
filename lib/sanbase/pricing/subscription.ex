@@ -103,6 +103,29 @@ defmodule Sanbase.Pricing.Subscription do
     end
   end
 
+  @doc """
+  Upgrade or Downgrade plan:
+  https://stripe.com/docs/billing/subscriptions/upgrading-downgrading#switching
+  """
+  def update_subscription(user_id, plan_id) do
+    user = Repo.get(User, user_id)
+    plan = Repo.get(Plan, plan_id)
+    current_subscription = current_subscription(user, Product.sanbase_api())
+
+    item_id = StripeApi.get_subscription_first_item_id(current_subscription.stripe_id)
+
+    # Note: that will generate dialyzer error because the spec is wrong.
+    # More info here: https://github.com/code-corps/stripity_stripe/pull/499
+    StripeApi.update_subscription(current_subscription.stripe_id, %{
+      items: [
+        %{
+          id: item_id,
+          plan: plan.stripe_id
+        }
+      ]
+    })
+  end
+
   def generic_error_message, do: @generic_error_message
 
   defp create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)

@@ -1,7 +1,7 @@
 version: "3.4"
 services:
   postgres:
-    image: timescale/timescaledb:0.10.1-pg10
+    image: timescale/timescaledb:1.3.0-pg10
     ports:
       - "5432"
     environment:

@@ -126,6 +126,10 @@ defmodule Sanbase.Pricing.Subscription do
     })
   end
 
+  @doc """
+  Cancel subscription:
+  https://stripe.com/docs/billing/subscriptions/canceling-pausing#canceling
+  """
   def cancel_subscription(user_id) do
     user = Repo.get(User, user_id)
     current_subscription = current_subscription(user, Product.sanbase_api())

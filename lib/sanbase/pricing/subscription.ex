@@ -159,7 +159,7 @@ defmodule Sanbase.Pricing.Subscription do
     StripeApi.create_coupon(%{percent_off: percent_off, duration: "forever"})
     |> case do
       {:ok, coupon} ->
-        {:ok, Map.put(subscription, :coupon, coupon)}
+        {:ok, Map.put(subscription, :coupon, coupon.id)}
 
       {:error, reason} ->
         {:error, reason}
@@ -168,7 +168,7 @@ defmodule Sanbase.Pricing.Subscription do
 
   defp percent_discount(balance) when balance >= 1000, do: @percent_discount_1000_san
   defp percent_discount(balance) when balance >= 200, do: @percent_discount_200_san
-  defp percent_discount(_), nil
+  defp percent_discount(_), do: nil
 
   defp subscription_access?(nil, _query), do: false
 

@@ -93,7 +93,7 @@ defmodule Sanbase.Factory do
       github_link: "https://github.com/#{rand_hex_str()}",
       infrastructure:
         Sanbase.Repo.get_by(Infrastructure, code: "ETH") || build(:infrastructure, %{code: "ETH"}),
-      eth_addresses: [build(:project_eth_address), build(:project_eth_address)],
+      eth_addresses: [build(:project_eth_address)],
       main_contract_address: "0x" <> rand_hex_str()
     }
   end

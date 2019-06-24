@@ -26,19 +26,13 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
     user = insert(:user)
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
-    slug = "santiment"
-
-    project =
-      Sanbase.Factory.insert(:project, %{
-        coinmarketcap_id: slug,
-        main_contract_address: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
-      })
+    project = Sanbase.Factory.insert(:random_erc20_project)
 
     {:ok, [eth_address]} = Project.eth_addresses(project)
 
     trigger_settings1 = %{
       type: "eth_wallet",
-      target: %{slug: slug},
+      target: %{slug: project.coinmarketcap_id},
       asset: %{slug: "ethereum"},
       channel: "telegram",
       operation: %{amount_up: 25.0}
@@ -87,6 +81,7 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
       })
 
     [
+      project: project,
       eth_address: eth_address
     ]
   end
@@ -108,7 +103,9 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
       Scheduler.run_signal(EthWalletTriggerSettings)
 
       assert_receive({:telegram_to_self, message})
-      assert message =~ "The ethereum balance of Santiment wallets has increased by 50"
+
+      assert message =~
+               "The ethereum balance of #{context.project.name} wallets has increased by 50"
     end
   end
 
@@ -134,7 +131,7 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
       sorted_messages = Enum.sort([message1, message2])
 
       assert Enum.at(sorted_messages, 0) =~
-               "The ethereum balance of Santiment wallets has increased by 280"
+               "The ethereum balance of #{context.project.name} wallets has increased by 280"
 
       assert Enum.at(sorted_messages, 1) =~
                "The ethereum balance of the address #{context.eth_address} has increased by 280"

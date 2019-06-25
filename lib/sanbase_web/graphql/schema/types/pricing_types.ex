@@ -16,6 +16,14 @@ defmodule SanbaseWeb.Graphql.Schema.PricingTypes do
   end
 
   object :plan_subscription do
+    field(:id, :id)
+    field(:user, :user)
     field(:plan, :plan)
+    field(:current_period_end, :datetime)
+  end
+
+  object :subscription_cancellation do
+    field(:scheduled_for_cancellation, :boolean)
+    field(:scheduled_for_cancellation_at, :datetime)
   end
 end

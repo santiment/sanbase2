@@ -65,9 +65,12 @@ defmodule Sanbase.StripeApi do
     |> retrieve_subscription()
     |> case do
       {:ok, subscription} ->
-        subscription.items.data
-        |> hd()
-        |> Map.get(:id)
+        item_id =
+          subscription.items.data
+          |> hd()
+          |> Map.get(:id)
+
+        {:ok, item_id}
 
       {:error, reason} ->
         {:error, reason}

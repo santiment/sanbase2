@@ -35,14 +35,14 @@ defmodule Sanbase.Pricing.Plan.AccessSeed do
   @free %{
     api_calls_minute: 10,
     api_calls_month: 1000,
-    historical_data_in_days: 90,
+    historical_data_in_days: 3 * 30,
     metrics: @standart_metrics
   }
 
   @essential %{
     api_calls_minute: 60,
     api_calls_month: 10000,
-    historical_data_in_days: 180,
+    historical_data_in_days: 6 * 30,
     metrics: @standart_metrics
   }
 

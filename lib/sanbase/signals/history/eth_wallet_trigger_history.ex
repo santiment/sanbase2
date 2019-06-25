@@ -27,7 +27,7 @@ defmodule Sanbase.Signals.History.EthWalletTriggerHistory do
 
     case addresses_from_target(target) do
       [] ->
-        {:error, "No ethereum address provided or the target does not have ethereum addreses."}
+        {:error, "No ethereum addresses provided or the target does not have ethereum addreses."}
 
       addresses ->
         addresses
@@ -87,7 +87,7 @@ defmodule Sanbase.Signals.History.EthWalletTriggerHistory do
           evaluate(settings, cooldown)
 
         :percent ->
-          {:error, "Historical trigger points for percent change no implemented"}
+          {:error, "Historical trigger points for percent change are not implemented"}
       end
     end
 

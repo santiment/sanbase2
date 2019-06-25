@@ -196,6 +196,6 @@ defmodule Sanbase.Signals.EthWalletTriggerHistoryTest do
     assert UserTrigger.historical_trigger_points(%{
              cooldown: "1d",
              settings: trigger_settings
-           }) == {:error, "Historical trigger points for percent change no implemented"}
+           }) == {:error, "Historical trigger points for percent change are not implemented"}
   end
 end

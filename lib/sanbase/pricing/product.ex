@@ -1,4 +1,7 @@
 defmodule Sanbase.Pricing.Product do
+  @moduledoc """
+  Module for managing Sanbase products.
+  """
   use Ecto.Schema
 
   import Ecto.Changeset

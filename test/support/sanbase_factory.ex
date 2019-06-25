@@ -301,13 +301,15 @@ defmodule Sanbase.Factory do
 
   def subscription_essential_factory() do
     %Subscription{
-      plan_id: 2
+      plan_id: 2,
+      active: true
     }
   end
 
   def subscription_pro_factory() do
     %Subscription{
-      plan_id: 3
+      plan_id: 3,
+      active: true
     }
   end
 

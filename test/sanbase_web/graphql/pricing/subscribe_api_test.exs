@@ -85,8 +85,8 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
       assert capture_log(fn ->
                error_msg = execute_mutation_with_error(context.conn, query)
 
-               assert error_msg =~ "Cannnot find plan with id -1"
-             end) =~ "Cannnot find plan with id -1"
+               assert error_msg =~ "Cannot find plan with id -1"
+             end) =~ "Cannot find plan with id -1"
     end
   end
 

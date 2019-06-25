@@ -300,4 +300,12 @@ defmodule Sanbase.StripeApiTestReponse do
        trial_start: nil
      }}
   end
+
+  def update_subscription_resp do
+    create_subscription_resp()
+  end
+
+  def retrieve_subscription_resp do
+    create_subscription_resp()
+  end
 end

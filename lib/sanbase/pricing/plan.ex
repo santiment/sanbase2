@@ -1,4 +1,7 @@
 defmodule Sanbase.Pricing.Plan do
+  @moduledoc """
+  Module for managing billing plans for certain products.
+  """
   use Ecto.Schema
 
   import Ecto.Changeset

@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.TriggerHistoryTest do
+defmodule Sanbase.Signals.TriggerPriceHistoryTest do
   use Sanbase.DataCase, async: false
 
   import Mock

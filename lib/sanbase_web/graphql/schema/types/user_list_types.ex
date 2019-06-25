@@ -31,7 +31,7 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
     field(:historical_stats, list_of(:combined_projects_stats)) do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, non_null(:string), default_value: "1d")
+      arg(:interval, :string, default_value: "1d")
 
       cache_resolve(&UserListResolver.historical_stats/3)
     end

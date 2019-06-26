@@ -6,6 +6,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   alias Sanbase.Model.Project
   alias SanbaseWeb.Graphql.Helpers.Utils
 
+  def historical_stats(
+        %UserList{} = user_list,
+        %{from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    with measurements when is_list(measurements) <-
+           UserList.get_projects(user_list) |> Enum.map(&Sanbase.Influxdb.Measurement.name_from/1),
+         {:ok, result} <-
+           Sanbase.Prices.Store.fetch_combined_mcap_volume(measurements, from, to, interval) do
+      {:ok, result}
+    else
+      _error -> {:error, "Can't fetch historical stats for a watchlist"}
+    end
+  end
+
   def list_items(%UserList{} = user_list, _args, _resolution) do
     result =
       UserList.get_projects(user_list)

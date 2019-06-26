@@ -8,8 +8,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
   alias Sanbase.Influxdb.Measurement
 
   setup do
-    measurement1 = "SAN_santiment"
-    measurement2 = "ETH_ethereum"
+    p1 = insert(:random_erc20_project)
+    p2 = insert(:random_erc20_project)
+
+    measurement1 = Measurement.name_from(p1)
+    measurement2 = Measurement.name_from(p2)
+
     Store.create_db()
     Store.drop_measurement(measurement1)
     Store.drop_measurement(measurement2)
@@ -52,19 +56,14 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
       }
     ])
 
-    insert(:project, %{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
-    insert(:project, %{name: "Ethereum", ticker: "ETH", coinmarketcap_id: "ethereum"})
-
     [
-      datetime1: datetime1,
-      datetime2: datetime2,
-      datetime3: datetime3,
-      datetime4: datetime4,
-      slugs: ["santiment", "ethereum"]
+      from: datetime1,
+      to: datetime4,
+      slugs: [p1.coinmarketcap_id, p2.coinmarketcap_id]
     ]
   end
 
-  test "existing slugs and dates", %{conn: conn, datetime1: from, datetime4: to, slugs: slugs} do
+  test "existing slugs and dates", %{conn: conn, from: from, to: to, slugs: slugs} do
     query = query(from, to, slugs)
 
     result =
@@ -96,7 +95,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
            }
   end
 
-  test "empty slugs", %{conn: conn, datetime1: from, datetime4: to} do
+  test "empty slugs", %{conn: conn, from: from, to: to} do
     query = query(from, to, [])
 
     result =
@@ -107,7 +106,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
     assert result == %{"data" => %{"projectsListHistoryStats" => []}}
   end
 
-  test "non existing slugs", %{conn: conn, datetime1: from, datetime4: to} do
+  test "non existing slugs", %{conn: conn, from: from, to: to} do
     query = query(from, to, ["nonexisting", "alsononexisting"])
 
     result =
@@ -118,7 +117,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
     assert result == %{"data" => %{"projectsListHistoryStats" => []}}
   end
 
-  test "dates not existing", %{conn: conn, datetime1: from} do
+  test "dates not existing", %{conn: conn, from: from} do
     from_not_existing = Timex.shift(from, days: -30)
     to_not_existing = Timex.shift(from, days: -15)
     query = query(from_not_existing, to_not_existing, ["nonexisting", "alsononexisting"])

@@ -145,8 +145,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
     else
       {:error,
        """
-       `from` and `to` are not a valid time range.
-       Either `from` is a datetime after `to` or the time range is outside of the allowed interval.
+       The `to` datetime parameter must be after the `from` datetime parameter
        """}
     end
   end
@@ -159,7 +158,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
       {:error,
        """
        Cryptocurrencies didn't existed before #{@minimal_datetime_param}.
-       Please check `from` or `to` param values.
+       Please check `from` and/or `to` param values.
        """}
     end
   end

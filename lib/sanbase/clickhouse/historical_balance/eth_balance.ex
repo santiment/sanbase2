@@ -95,7 +95,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
           DateTime.t(),
           interval
         ) :: {:ok, list(historical_balance)} | {:error, String.t()}
-  def historical_balance(addr, from, to, interval) do
+  def historical_balance(addr, from, to, interval) when is_binary(addr) do
     {query, args} = historical_balance_query(addr, from, to, interval)
 
     ClickhouseRepo.query_transform(query, args, fn [dt, value, has_changed] ->
@@ -117,6 +117,27 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
       error ->
         error
     end
+  end
+
+  def historical_balance(addr, from, to, interval) when is_list(addr) do
+    result =
+      addr
+      |> Sanbase.Parallel.map(fn address ->
+        {:ok, balances} = historical_balance(address, from, to, interval)
+        balances
+      end)
+      |> Enum.zip()
+      |> Enum.map(&Tuple.to_list/1)
+      |> Enum.map(fn
+        [] ->
+          []
+
+        [%{datetime: datetime} | _] = list ->
+          balance = list |> Enum.map(& &1.balance) |> Enum.sum()
+          %{datetime: datetime, balance: balance}
+      end)
+
+    {:ok, result}
   end
 
   @doc ~s"""
@@ -247,7 +268,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
 
       SELECT
         toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
-        argMax(value, dt), toUInt8(1) AS has_changed
+        argMax(value, dt),
+        toUInt8(1) AS has_changed
       FROM #{@table}
       PREWHERE
         address = ?3 AND
@@ -260,43 +282,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     """
 
     args = [interval, span, address, @first_datetime, to_unix]
-    {query, args}
-  end
-
-  defp historical_balance_query(addresses, _from, to, interval) when is_list(addresses) do
-    addresses = Enum.map(addresses, &String.downcase/1)
-    interval = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
-    to_unix = DateTime.to_unix(to)
-    span = div(to_unix - @first_datetime, interval) |> max(1)
-
-    # The balances table is like a stack. For each balance change there is a record
-    # with sign = -1 that is the old balance and with sign = 1 which is the new balance
-    query = """
-    SELECT time, SUM(value), toUInt8(SUM(has_changed))
-      FROM (
-        SELECT
-          toUnixTimestamp(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) AS time,
-          toFloat64(0) AS value,
-          toInt8(0) AS has_changed
-        FROM numbers(?2)
-
-      UNION ALL
-
-      SELECT
-        toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
-        SUM(value*sign),
-        toUInt8(1) AS has_changed
-      FROM #{@table}
-      PREWHERE
-        address in (?3) AND
-        dt <= toDateTime(?5)
-      GROUP BY time, address
-    )
-    GROUP BY time
-    ORDER BY time
-    """
-
-    args = [interval, span, addresses, @first_datetime, to_unix]
     {query, args}
   end
 end

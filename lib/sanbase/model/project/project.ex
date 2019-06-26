@@ -151,6 +151,10 @@ defmodule Sanbase.Model.Project do
     |> Repo.one()
   end
 
+  def id_by_slug(slug) do
+    from(p in __MODULE__, where: p.coinmarketcap_id == ^slug, select: p.id) |> Repo.one()
+  end
+
   def by_slug(slug, opts \\ [])
 
   def by_slug(slug, opts) when is_binary(slug) do
@@ -291,17 +295,13 @@ defmodule Sanbase.Model.Project do
   end
 
   def github_organization(slug) when is_binary(slug) do
-    from(
-      p in Project,
-      where: p.coinmarketcap_id == ^slug,
-      select: p.github_link
-    )
-    |> Repo.one()
-    |> parse_github_organization_link(slug)
+    id_by_slug(slug)
+    |> Project.GithubOrganization.organizations_of()
   end
 
-  def github_organization(%Project{github_link: github_link, coinmarketcap_id: slug}) do
-    parse_github_organization_link(github_link, slug)
+  def github_organization(%Project{} = project) do
+    project
+    |> Project.GithubOrganization.organizations_of()
   end
 
   def is_erc20?(%Project{} = project) do

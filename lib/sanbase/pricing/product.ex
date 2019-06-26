@@ -1,6 +1,7 @@
 defmodule Sanbase.Pricing.Product do
   @moduledoc """
-  Module for managing Sanbase products.
+  Module for managing Sanbase products - objects that describe services
+  a customer can subscribe to.
   """
   use Ecto.Schema
 
@@ -9,6 +10,7 @@ defmodule Sanbase.Pricing.Product do
   alias Sanbase.Pricing.Plan
   alias Sanbase.Repo
 
+  # Sanbase API product id. Ids for products are fixed.
   @sanbase_api 1
 
   schema "products" do
@@ -29,6 +31,10 @@ defmodule Sanbase.Pricing.Product do
     Repo.get(__MODULE__, product_id)
   end
 
+  @doc """
+  If product does not have `stripe_id`. Create a product in Stripe and update with
+  received `stripe_id`.
+  """
   def maybe_create_product_in_stripe(%__MODULE__{stripe_id: stripe_id} = product)
       when is_nil(stripe_id) do
     Sanbase.StripeApi.create_product(product)

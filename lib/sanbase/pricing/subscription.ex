@@ -182,6 +182,9 @@ defmodule Sanbase.Pricing.Subscription do
     query in AccessSeed.all_restricted_metrics()
   end
 
+  @doc """
+  Query is in advanced subscription plans only
+  """
   def needs_advanced_plan?(query) do
     advanced_metrics = AccessSeed.advanced_metrics()
     standart_metrics = AccessSeed.standart_metrics()

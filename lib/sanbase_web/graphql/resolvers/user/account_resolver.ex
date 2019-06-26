@@ -32,6 +32,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
     end
   end
 
+  def api_calls_history(%User{} = user, %{from: from, to: to, interval: interval}, _resolution) do
+    Sanbase.Clickhouse.ApiCallData.api_call_history(user.id, from, to, interval)
+  end
+
   def current_user(_root, _args, %{
         context: %{auth: %{current_user: user}}
       }) do

@@ -2,6 +2,8 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
   use Absinthe.Schema.Notation
   use Absinthe.Ecto, repo: Sanbase.Repo
 
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
+
   alias SanbaseWeb.Graphql.Resolvers.{
     ApikeyResolver,
     AccountResolver,
@@ -25,7 +27,7 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     end
 
     field :san_balance, :float do
-      resolve(&AccountResolver.san_balance/3)
+      cache_resolve(&AccountResolver.san_balance/3)
     end
 
     field(:eth_accounts, list_of(:eth_account), resolve: assoc(:eth_accounts))
@@ -52,6 +54,19 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     field :subscriptions, list_of(:plan_subscription) do
       resolve(&PricingResolver.subscriptions/3)
     end
+
+    field :api_calls_history, list_of(:api_call_data) do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      cache_resolve(&AccountResolver.api_calls_history/3)
+    end
+  end
+
+  object :api_call_data do
+    field(:datetime, non_null(:datetime))
+    field(:api_calls_count, non_null(:integer))
   end
 
   @desc ~s"""
@@ -62,7 +77,7 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     field(:address, non_null(:string))
 
     field :san_balance, non_null(:integer) do
-      resolve(&EthAccountResolver.san_balance/3)
+      cache_resolve(&EthAccountResolver.san_balance/3)
     end
   end
 

@@ -15,7 +15,7 @@ defmodule SanbaseWeb.Graphql.Schema.PricingTypes do
     field(:amount, :integer)
   end
 
-  object :plan_subscription do
+  object :subscription_plan do
     field(:id, :id)
     field(:user, :user)
     field(:plan, :plan)

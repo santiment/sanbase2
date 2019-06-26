@@ -27,6 +27,20 @@ defmodule Sanbase.Pricing.Plan do
     |> cast(attrs, [:stripe_id, :access])
   end
 
+  def by_id(plan_id) do
+    Repo.get(__MODULE__, plan_id)
+    |> Repo.preload(:product)
+  end
+
+  def product_with_plans do
+    products =
+      Product
+      |> Repo.all()
+      |> Repo.preload(:plans)
+
+    {:ok, product_with_plans}
+  end
+
   def plans_with_metric(query) do
     from(
       p in Plan,
@@ -34,11 +48,6 @@ defmodule Sanbase.Pricing.Plan do
       select: p.name
     )
     |> Repo.all()
-  end
-
-  def by_id(plan_id) do
-    Repo.get(__MODULE__, plan_id)
-    |> Repo.preload(:product)
   end
 
   def maybe_create_plan_in_stripe(%__MODULE__{stripe_id: stripe_id} = plan)

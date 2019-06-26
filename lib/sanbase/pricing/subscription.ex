@@ -1,7 +1,7 @@
 defmodule Sanbase.Pricing.Subscription do
   @moduledoc """
   Module for managing user subscriptions - create, upgrade/downgrade, cancel.
-  Also containing some helper functions that take user subscription as arg and
+  Also containing some helper functions that take user subscription as argument and
   return some properties of the subscription plan.
   """
   use Ecto.Schema
@@ -9,7 +9,7 @@ defmodule Sanbase.Pricing.Subscription do
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Sanbase.Pricing.{Product, Plan, Subscription}
+  alias Sanbase.Pricing.{Plan, Subscription}
   alias Sanbase.Pricing.Plan.AccessSeed
   alias Sanbase.Auth.User
   alias Sanbase.Repo
@@ -46,56 +46,13 @@ defmodule Sanbase.Pricing.Subscription do
     ])
   end
 
-  def product_with_plans do
-    products =
-      Product
-      |> Repo.all()
-      |> Repo.preload(:plans)
+  @doc """
+  Subscribe user with card_token to a plan.
 
-    {:ok, products}
-  end
-
-  def user_subscriptions(user) do
-    user
-    |> user_subscriptions_query()
-    |> Repo.all()
-    |> Repo.preload(plan: [:product])
-  end
-
-  def current_subscription(user, product_id) do
-    user
-    |> user_subscriptions_query()
-    |> last_subscription_for_product_query(product_id)
-    |> Repo.one()
-    |> Repo.preload(plan: [:product])
-  end
-
-  def has_access?(subscription, query) do
-    case needs_advanced_plan?(query) do
-      true -> subscription_access?(subscription, query)
-      false -> true
-    end
-  end
-
-  def historical_data_in_days(subscription) do
-    subscription.plan.access["historical_data_in_days"]
-  end
-
-  def is_restricted?(query) do
-    query in AccessSeed.all_restricted_metrics()
-  end
-
-  def needs_advanced_plan?(query) do
-    advanced_metrics = AccessSeed.advanced_metrics()
-    standart_metrics = AccessSeed.standart_metrics()
-
-    query in advanced_metrics and query not in standart_metrics
-  end
-
-  def plan_name(subscription) do
-    subscription.plan.name
-  end
-
+  - Create or update a Stripe customer with card details contained by the card_token param.
+  - Create subscription record in Stripe.
+  - Create a subscription record locally so we can check access control without calling Stripe.
+  """
   def subscribe(user_id, card_token, plan_id) do
     with {:user?, %User{} = user} <- {:user?, Repo.get(User, user_id)},
          {:plan?, %Plan{} = plan} <- {:plan?, Repo.get(Plan, plan_id)},
@@ -116,10 +73,13 @@ defmodule Sanbase.Pricing.Subscription do
 
   @doc """
   Upgrade or Downgrade plan:
-  https://stripe.com/docs/billing/subscriptions/upgrading-downgrading#switching
+
+  - Updates subcription in Stripe with new plan.
+  - Updates local subscription
+  Stripe docs:   https://stripe.com/docs/billing/subscriptions/upgrading-downgrading#switching
   """
-  def update_subscription(subscription_id, plan_id) do
-    with {:subscription?, %Subscription{} = subscription} <-
+  def update_subscription(user_id, subscription_id, plan_id) do
+    with {:subscription?, %Subscription{user_id: ^user_id} = subscription} <-
            {:subscription?, Repo.get(Subscription, subscription_id) |> Repo.preload(:plan)},
          {:plan?, %Plan{} = new_plan} <- {:plan?, Repo.get(Plan, plan_id)},
          {:ok, item_id} <-
@@ -142,6 +102,7 @@ defmodule Sanbase.Pricing.Subscription do
     else
       result ->
         handle_subscription_error_result(result, "Upgrade/Downgrade failed", %{
+          user_id: user_id,
           subscription_id: subscription_id,
           plan_id: plan_id
         })
@@ -150,10 +111,13 @@ defmodule Sanbase.Pricing.Subscription do
 
   @doc """
   Cancel subscription:
+
+  Cancellation means scheduling for cancellation. It updates the `cancel_at_period_end` field which will cancel the
+  subscription at `current_period_end`. That allows user to use the subscription for the time left that he has already paid for.
   https://stripe.com/docs/billing/subscriptions/canceling-pausing#canceling
   """
-  def cancel_subscription(subscription_id) do
-    with {:subscription?, %Subscription{} = subscription} <-
+  def cancel_subscription(user_id, subscription_id) do
+    with {:subscription?, %Subscription{user_id: ^user_id} = subscription} <-
            {:subscription?, Repo.get(Subscription, subscription_id)},
          {:ok, _} <-
            StripeApi.cancel_subscription(subscription.stripe_id),
@@ -168,10 +132,68 @@ defmodule Sanbase.Pricing.Subscription do
         handle_subscription_error_result(
           result,
           "Canceling subscription failed",
-          %{subscription_id: subscription_id}
+          %{user_id: user_id, subscription_id: subscription_id}
         )
     end
   end
+
+  @doc """
+  List all active user subscriptions with plans and products.
+  """
+  def user_subscriptions(user) do
+    user
+    |> user_subscriptions_query()
+    |> Repo.all()
+    |> Repo.preload(plan: [:product])
+  end
+
+  @doc """
+  Current subscription is the last active subscription for a product.
+  """
+  def current_subscription(user, product_id) do
+    user
+    |> user_subscriptions_query()
+    |> last_subscription_for_product_query(product_id)
+    |> Repo.one()
+    |> Repo.preload(plan: [:product])
+  end
+
+  @doc """
+  By subscription and query name determines whether subscription can access the query.
+  """
+  def has_access?(subscription, query) do
+    case needs_advanced_plan?(query) do
+      true -> subscription_access?(subscription, query)
+      false -> true
+    end
+  end
+
+  @doc """
+  How much historical days a subscription plan can access.
+  """
+  def historical_data_in_days(subscription) do
+    subscription.plan.access["historical_data_in_days"]
+  end
+
+  @doc """
+  Checks whether a query is in any plan.
+  """
+  def is_restricted?(query) do
+    query in AccessSeed.all_restricted_metrics()
+  end
+
+  def needs_advanced_plan?(query) do
+    advanced_metrics = AccessSeed.advanced_metrics()
+    standart_metrics = AccessSeed.standart_metrics()
+
+    query in advanced_metrics and query not in standart_metrics
+  end
+
+  def plan_name(subscription) do
+    subscription.plan.name
+  end
+
+  # private functions
 
   defp handle_subscription_error_result(result, log_message, params) do
     case result do
@@ -186,7 +208,11 @@ defmodule Sanbase.Pricing.Subscription do
         {:error, reason}
 
       {:subscription?, _} ->
-        reason = "Cannot find subscription with id #{params.subscription_id}"
+        reason =
+          "Cannot find subscription with id #{params.subscription_id} for user with id #{
+            params.user_id
+          }. Either this subscription doesn not exist or it does not belong to the user."
+
         Logger.error("#{log_message} - reason: #{reason}")
         {:error, reason}
 
@@ -253,8 +279,8 @@ defmodule Sanbase.Pricing.Subscription do
     |> Repo.insert()
   end
 
-  defp update_subscription_db(current_subscription, params) do
-    current_subscription
+  defp update_subscription_db(subscription, params) do
+    subscription
     |> Subscription.changeset(params)
     |> Repo.update()
   end

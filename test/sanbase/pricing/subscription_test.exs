@@ -106,6 +106,12 @@ defmodule Sanbase.Pricing.SubscriptionTest do
     test "when there are no subscriptions - return []", context do
       assert Subscription.user_subscriptions(context.user) == []
     end
+
+    test "only active subscriptions", context do
+      insert(:subscription_essential, user: context.user, active: false)
+
+      assert Subscription.user_subscriptions(context.user) == []
+    end
   end
 
   describe "#current_subscription" do
@@ -117,6 +123,13 @@ defmodule Sanbase.Pricing.SubscriptionTest do
     end
 
     test "when there isn't - return nil", context do
+      current_subscription = Subscription.current_subscription(context.user, context.product.id)
+      assert current_subscription == nil
+    end
+
+    test "only active subscriptions", context do
+      insert(:subscription_essential, user: context.user, active: false)
+
       current_subscription = Subscription.current_subscription(context.user, context.product.id)
       assert current_subscription == nil
     end
@@ -247,7 +260,7 @@ defmodule Sanbase.Pricing.SubscriptionTest do
         subscription = insert(:subscription_essential, user: context.user, stripe_id: "stripe_id")
 
         {:ok, update_result} =
-          Subscription.update_subscription(subscription.id, context.plan_pro.id)
+          Subscription.update_subscription(context.user.id, subscription.id, context.plan_pro.id)
 
         assert update_result.plan.name == "PRO"
       end
@@ -266,25 +279,51 @@ defmodule Sanbase.Pricing.SubscriptionTest do
         subscription = insert(:subscription_pro, user: context.user, stripe_id: "stripe_id")
 
         {:ok, update_result} =
-          Subscription.update_subscription(subscription.id, context.plan_essential.id)
+          Subscription.update_subscription(
+            context.user.id,
+            subscription.id,
+            context.plan_essential.id
+          )
 
         assert update_result.plan.name == "ESSENTIAL"
       end
     end
 
+    test "returns error when subscription doesn not belong to user", context do
+      subscription = insert(:subscription_pro, user: context.user, stripe_id: "stripe_id")
+      user2 = insert(:user)
+
+      assert capture_log(fn ->
+               {:error, reason} =
+                 Subscription.update_subscription(
+                   user2.id,
+                   subscription.id,
+                   context.plan_essential.id
+                 )
+
+               assert reason ==
+                        "Cannot find subscription with id #{subscription.id} for user with id #{
+                          user2.id
+                        }. Either this subscription doesn not exist or it does not belong to the user."
+             end) =~ "Upgrade/Downgrade failed - reason: Cannot find subscription with id"
+    end
+
     test "returns error when referred subscription doesn not exist", context do
       assert capture_log(fn ->
-               {:error, reason} = Subscription.update_subscription(-1, context.plan_essential.id)
+               {:error, reason} =
+                 Subscription.update_subscription(context.user.id, -1, context.plan_essential.id)
 
-               assert reason == "Cannot find subscription with id -1"
-             end) =~ "Upgrade/Downgrade failed - reason: Cannot find subscription with id -1"
+               assert reason ==
+                        "Cannot find subscription with id -1 for user with id #{context.user.id}. Either this subscription doesn not exist or it does not belong to the user."
+             end) =~ "Upgrade/Downgrade failed - reason: Cannot find subscription with id"
     end
 
     test "returns error when referred plan doesn not exist", context do
       subscription = insert(:subscription_pro, user: context.user, stripe_id: "stripe_id")
 
       assert capture_log(fn ->
-               {:error, reason} = Subscription.update_subscription(subscription.id, -1)
+               {:error, reason} =
+                 Subscription.update_subscription(context.user.id, subscription.id, -1)
 
                assert reason == "Cannot find plan with id -1"
              end) =~ "Upgrade/Downgrade failed - reason: Cannot find plan with id -1"
@@ -310,7 +349,7 @@ defmodule Sanbase.Pricing.SubscriptionTest do
             current_period_end: tomorrow
           )
 
-        {:ok, cancel_result} = Subscription.cancel_subscription(subscription.id)
+        {:ok, cancel_result} = Subscription.cancel_subscription(context.user.id, subscription.id)
 
         assert cancel_result == %{
                  scheduled_for_cancellation: true,
@@ -321,10 +360,30 @@ defmodule Sanbase.Pricing.SubscriptionTest do
 
     test "returns error when referred subscription doesn not exist", context do
       assert capture_log(fn ->
-               {:error, reason} = Subscription.cancel_subscription(-1)
+               {:error, reason} = Subscription.cancel_subscription(context.user.id, -1)
 
-               assert reason == "Cannot find subscription with id -1"
-             end) =~ "Canceling subscription failed - reason: Cannot find subscription with id -1"
+               assert reason ==
+                        "Cannot find subscription with id -1 for user with id #{context.user.id}. Either this subscription doesn not exist or it does not belong to the user."
+             end) =~ "Canceling subscription failed - reason: Cannot find subscription with id"
+    end
+
+    test "returns error when subscription doesn not belong to user", context do
+      user2 = insert(:user)
+
+      subscription =
+        insert(:subscription_essential,
+          user: context.user,
+          stripe_id: "stripe_id"
+        )
+
+      assert capture_log(fn ->
+               {:error, reason} = Subscription.cancel_subscription(user2.id, subscription.id)
+
+               assert reason ==
+                        "Cannot find subscription with id #{subscription.id} for user with id #{
+                          user2.id
+                        }. Either this subscription doesn not exist or it does not belong to the user."
+             end) =~ "Canceling subscription failed - reason: Cannot find subscription with id"
     end
   end
 end

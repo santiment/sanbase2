@@ -49,7 +49,7 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
       resolve(&PostResolver.insights/3)
     end
 
-    field :subscriptions, list_of(:plan_subscription) do
+    field :subscriptions, list_of(:subscription_plan) do
       resolve(&PricingResolver.subscriptions/3)
     end
   end

@@ -17,7 +17,7 @@ defmodule Sanbase.Pricing.Plan do
     # amount is in cents
     field(:amount, :integer)
     field(:currency, :string)
-    # interval is `month` and `year`
+    # interval is one of `month` or `year`
     field(:interval, :string)
     field(:stripe_id, :string)
     field(:access, :map, default: %{})

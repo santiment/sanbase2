@@ -25,7 +25,6 @@ defmodule Sanbase.Pricing.Subscription do
 
   schema "subscriptions" do
     field(:stripe_id, :string)
-    field(:active, :boolean, null: false, default: false)
     field(:current_period_end, :utc_datetime)
     field(:cancel_at_period_end, :boolean, null: false, default: false)
     belongs_to(:user, User)
@@ -40,7 +39,6 @@ defmodule Sanbase.Pricing.Subscription do
       :plan_id,
       :user_id,
       :stripe_id,
-      :active,
       :current_period_end,
       :cancel_at_period_end
     ])
@@ -53,21 +51,13 @@ defmodule Sanbase.Pricing.Subscription do
   - Create subscription record in Stripe.
   - Create a subscription record locally so we can check access control without calling Stripe.
   """
-  def subscribe(user_id, card_token, plan_id) do
-    with {:user?, %User{} = user} <- {:user?, Repo.get(User, user_id)},
-         {:plan?, %Plan{} = plan} <- {:plan?, Repo.get(Plan, plan_id)},
-         {:ok, %User{stripe_customer_id: stripe_customer_id} = user}
+  def subscribe(user, card_token, plan) do
+    with {:ok, %User{stripe_customer_id: stripe_customer_id} = user}
          when not is_nil(stripe_customer_id) <-
            create_or_update_stripe_customer(user, card_token),
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan),
          {:ok, subscription} <- create_subscription_db(stripe_subscription, user, plan) do
       {:ok, subscription |> Repo.preload(plan: [:product])}
-    else
-      result ->
-        handle_subscription_error_result(result, "Subscription attempt failed", %{
-          user_id: user_id,
-          plan_id: plan_id
-        })
     end
   end
 
@@ -78,13 +68,8 @@ defmodule Sanbase.Pricing.Subscription do
   - Updates local subscription
   Stripe docs:   https://stripe.com/docs/billing/subscriptions/upgrading-downgrading#switching
   """
-  def update_subscription(user_id, subscription_id, plan_id) do
-    with {:subscription?, %Subscription{user_id: ^user_id} = subscription} <-
-           {:subscription?, Repo.get(Subscription, subscription_id) |> Repo.preload(:plan)},
-         {:plan?, %Plan{} = new_plan} <- {:plan?, Repo.get(Plan, plan_id)},
-         {:ok, item_id} <-
-           StripeApi.get_subscription_first_item_id(subscription.stripe_id),
-
+  def update_subscription(subscription, plan) do
+    with {:ok, item_id} <- StripeApi.get_subscription_first_item_id(subscription.stripe_id),
          # Note: that will generate dialyzer error because the spec is wrong.
          # More info here: https://github.com/code-corps/stripity_stripe/pull/499
          {:ok, _} <-
@@ -97,15 +82,8 @@ defmodule Sanbase.Pricing.Subscription do
              ]
            }),
          {:ok, updated_subscription} <-
-           update_subscription_db(subscription, %{plan_id: new_plan.id}) do
+           update_subscription_db(subscription, %{plan_id: plan.id}) do
       {:ok, updated_subscription |> Repo.preload([plan: [:product]], force: true)}
-    else
-      result ->
-        handle_subscription_error_result(result, "Upgrade/Downgrade failed", %{
-          user_id: user_id,
-          subscription_id: subscription_id,
-          plan_id: plan_id
-        })
     end
   end
 
@@ -116,24 +94,14 @@ defmodule Sanbase.Pricing.Subscription do
   subscription at `current_period_end`. That allows user to use the subscription for the time left that he has already paid for.
   https://stripe.com/docs/billing/subscriptions/canceling-pausing#canceling
   """
-  def cancel_subscription(user_id, subscription_id) do
-    with {:subscription?, %Subscription{user_id: ^user_id} = subscription} <-
-           {:subscription?, Repo.get(Subscription, subscription_id)},
-         {:ok, _} <-
-           StripeApi.cancel_subscription(subscription.stripe_id),
+  def cancel_subscription(subscription) do
+    with {:ok, _} <- StripeApi.cancel_subscription(subscription.stripe_id),
          {:ok, _} <- update_subscription_db(subscription, %{cancel_at_period_end: true}) do
       {:ok,
        %{
-         scheduled_for_cancellation: true,
+         is_scheduled_for_cancellation: true,
          scheduled_for_cancellation_at: subscription.current_period_end
        }}
-    else
-      result ->
-        handle_subscription_error_result(
-          result,
-          "Canceling subscription failed",
-          %{user_id: user_id, subscription_id: subscription_id}
-        )
     end
   end
 
@@ -143,6 +111,7 @@ defmodule Sanbase.Pricing.Subscription do
   def user_subscriptions(user) do
     user
     |> user_subscriptions_query()
+    |> active_subscriptions_query()
     |> Repo.all()
     |> Repo.preload(plan: [:product])
   end
@@ -153,6 +122,7 @@ defmodule Sanbase.Pricing.Subscription do
   def current_subscription(user, product_id) do
     user
     |> user_subscriptions_query()
+    |> active_subscriptions_query()
     |> last_subscription_for_product_query(product_id)
     |> Repo.one()
     |> Repo.preload(plan: [:product])
@@ -197,40 +167,6 @@ defmodule Sanbase.Pricing.Subscription do
   end
 
   # private functions
-
-  defp handle_subscription_error_result(result, log_message, params) do
-    case result do
-      {:user?, _} ->
-        reason = "Cannot find user with id #{params.user_id}"
-        Logger.error("#{log_message} - reason: #{reason}")
-        {:error, reason}
-
-      {:plan?, _} ->
-        reason = "Cannot find plan with id #{params.plan_id}"
-        Logger.error("#{log_message} - reason: #{reason}")
-        {:error, reason}
-
-      {:subscription?, _} ->
-        reason =
-          "Cannot find subscription with id #{params.subscription_id} for user with id #{
-            params.user_id
-          }. Either this subscription doesn not exist or it does not belong to the user."
-
-        Logger.error("#{log_message} - reason: #{reason}")
-        {:error, reason}
-
-      {:current_subscription?, nil} ->
-        reason =
-          "Current user with user id: #{params.user_id} does not have active subscriptions."
-
-        Logger.error("#{log_message} - reason: #{reason}")
-        {:error, reason}
-
-      {:error, reason} ->
-        Logger.error("#{log_message} - reason: #{inspect(reason)}")
-        {:error, @generic_error_message}
-    end
-  end
 
   defp create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)
        when is_nil(stripe_id) do
@@ -313,8 +249,17 @@ defmodule Sanbase.Pricing.Subscription do
 
   defp user_subscriptions_query(user) do
     from(s in Subscription,
-      where: s.user_id == ^user.id and s.active == true,
+      where: s.user_id == ^user.id,
       order_by: [desc: s.id]
+    )
+  end
+
+  # Active subscriptions have cancel_at_period_end=false or (cancel_at_period_end=true and current_period_end > Timex.now)
+  defp active_subscriptions_query(query) do
+    from(s in query,
+      where:
+        s.cancel_at_period_end == false or
+          (s.cancel_at_period_end == true and s.current_period_end > ^Timex.now())
     )
   end
 

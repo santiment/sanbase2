@@ -32,7 +32,7 @@ defmodule Sanbase.Pricing.Product do
   end
 
   @doc """
-  If product does not have `stripe_id`. Create a product in Stripe and update with
+  If product does not have `stripe_id` - create a product in Stripe and update with
   received `stripe_id`.
   """
   def maybe_create_product_in_stripe(%__MODULE__{stripe_id: stripe_id} = product)

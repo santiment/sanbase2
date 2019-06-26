@@ -1024,7 +1024,6 @@ CREATE TABLE public.subscriptions (
     user_id bigint NOT NULL,
     plan_id bigint NOT NULL,
     stripe_id character varying(255),
-    active boolean DEFAULT false NOT NULL,
     cancel_at_period_end boolean DEFAULT false NOT NULL,
     current_period_end timestamp without time zone
 );

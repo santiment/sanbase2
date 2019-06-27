@@ -162,7 +162,7 @@ defmodule Sanbase.Prices.Store do
       fn measurements ->
         measurements = Enum.sort(measurements)
 
-        Cache.func(
+        Cache.wrap(
           fn ->
             measurements_str = measurements |> Enum.map(fn x -> ~s/"#{x}"/ end) |> Enum.join(", ")
 
@@ -189,7 +189,7 @@ defmodule Sanbase.Prices.Store do
       fn measurements ->
         measurements = Enum.sort(measurements)
 
-        Cache.func(
+        Cache.wrap(
           fn ->
             measurements_str = measurements |> Enum.map(fn x -> ~s/"#{x}"/ end) |> Enum.join(", ")
 

@@ -59,7 +59,7 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
 
   # TODO: not covered in tests
   defp fetch_price(measurement, :last) do
-    Cache.func(
+    Cache.wrap(
       fn -> fetch_last_price_record(measurement) end,
       :fetch_price_last_record,
       %{measurement: measurement}
@@ -70,7 +70,7 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
     {:ok, from, to, interval} =
       Utils.calibrate_interval(Prices.Store, measurement, from, to, interval, 60)
 
-    Cache.func(
+    Cache.wrap(
       fn ->
         Prices.Store.fetch_prices_with_resolution(measurement, from, to, interval)
       end,

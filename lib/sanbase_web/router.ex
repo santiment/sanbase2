@@ -83,4 +83,5 @@ defmodule SanbaseWeb.Router do
   end
 
   get("/", SanbaseWeb.RootController, :healthcheck)
+  post("stripe_webhook", SanbaseWeb.RootController, :stripe_webhook)
 end

@@ -22,6 +22,11 @@ defmodule Sanbase.Pricing.Subscription do
   """
   @percent_discount_1000_san 20
   @percent_discount_200_san 4
+  # After `current_period_end` timestamp passes there is some time until `invoice.payment_succeeded` event is generated
+  # to update the field with new timestamp value. So we add 1 day gratis in which we should receive payment before
+  # we decide that this subscription is not active.
+  # Check for active subscription: current_period_end > Timex.now - @subscription_gratis_days
+  @subscription_gratis_days 1
 
   schema "subscriptions" do
     field(:stripe_id, :string)
@@ -225,7 +230,7 @@ defmodule Sanbase.Pricing.Subscription do
     |> Repo.insert()
   end
 
-  defp update_subscription_db(subscription, params) do
+  def update_subscription_db(subscription, params) do
     subscription
     |> Subscription.changeset(params)
     |> Repo.update()
@@ -261,12 +266,10 @@ defmodule Sanbase.Pricing.Subscription do
     )
   end
 
-  # Active subscriptions have cancel_at_period_end=false or (cancel_at_period_end=true and current_period_end > Timex.now)
+  # current_period_end > Timex.now - gratis days
   defp active_subscriptions_query(query) do
     from(s in query,
-      where:
-        s.cancel_at_period_end == false or
-          (s.cancel_at_period_end == true and s.current_period_end > ^Timex.now())
+      where: s.current_period_end > ^Timex.shift(Timex.now(), days: -@subscription_gratis_days)
     )
   end
 

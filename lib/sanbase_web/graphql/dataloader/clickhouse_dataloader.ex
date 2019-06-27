@@ -38,7 +38,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     [%{from: from, to: to, days: days} | _] = args
 
     args
-    |> Enum.map(fn %{project: project} ->
+    |> Enum.flat_map(fn %{project: project} ->
       {:ok, organizations} = Project.github_organizations(project)
       organizations
     end)

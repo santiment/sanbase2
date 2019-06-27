@@ -36,8 +36,10 @@ defmodule Sanbase.Model.Project.GithubOrganization do
   end
 
   def organizations_of(%Project{} = project) do
-    organizations_query(project.id)
-    |> Repo.all()
+    project
+    |> Repo.preload(:github_organizations)
+    |> Map.get(:github_organizations)
+    |> Enum.map(& &1.organization)
   end
 
   def organizations_of(project_id) when is_integer(project_id) and project_id > 0 do

@@ -243,23 +243,6 @@ defmodule Sanbase.Model.Project do
     {:ok, addresses}
   end
 
-  def eth_addresses_by_tickers(tickers) do
-    query =
-      from(
-        p in Project,
-        where: p.ticker in ^tickers and not is_nil(p.coinmarketcap_id),
-        preload: [:eth_addresses]
-      )
-
-    Repo.all(query)
-    |> Stream.map(fn %Project{ticker: ticker, eth_addresses: eth_addresses} ->
-      eth_addresses = eth_addresses |> Enum.map(&Map.get(&1, :address))
-
-      {ticker, eth_addresses}
-    end)
-    |> Enum.into(%{})
-  end
-
   @doc """
   Return all projects from the list which trading volume is over a given threshold
   """
@@ -329,26 +312,5 @@ defmodule Sanbase.Model.Project do
 
     query
     |> preload(^(additional_preloads ++ @preloads))
-  end
-
-  defp parse_github_organization_link(github_link, slug) do
-    # nil will break the regex
-    github_link = github_link || ""
-
-    case Regex.run(~r{https://(?:www.)?github.com/(.+)}, github_link) do
-      [_, github_path] ->
-        org =
-          github_path
-          |> String.downcase()
-          |> String.split("/")
-          |> hd
-
-        {:ok, org}
-
-      nil ->
-        {:error,
-         {:github_link_error,
-          "Invalid or missing github link for #{slug}: #{inspect(github_link)}"}}
-    end
   end
 end

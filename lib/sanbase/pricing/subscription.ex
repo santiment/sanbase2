@@ -124,6 +124,13 @@ defmodule Sanbase.Pricing.Subscription do
   defp create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)
        when is_binary(stripe_id) do
     StripeApi.update_customer(user, card_token)
+    |> case do
+      {:ok, _} ->
+        {:ok, user}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   defp create_stripe_subscription(user, plan) do

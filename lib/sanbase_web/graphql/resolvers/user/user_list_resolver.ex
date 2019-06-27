@@ -5,15 +5,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   alias Sanbase.UserList
   alias Sanbase.Model.Project
   alias SanbaseWeb.Graphql.Helpers.Utils
+  alias SanbaseWeb.Graphql.Cache
   alias Sanbase.SocialData.TrendingWords
 
+  @trending_words_size 10
   def stats(
         %UserList{} = user_list,
         _args,
         _resolution
       ) do
     projects = UserList.get_projects(user_list)
-    trending_words = TrendingWords.get_trending_now(10) |> MapSet.new()
+
+    trending_words =
+      Cache.wrap(
+        fn ->
+          TrendingWords.get_trending_now(@trending_words_size)
+          |> Enum.map(&String.downcase/1)
+          |> MapSet.new()
+        end,
+        :currently_trending_words,
+        %{size: @trending_words_size}
+      ).()
 
     {tickers, slugs} =
       Enum.reduce(projects, {[], []}, fn proj, {tickers, slugs} ->
@@ -27,10 +39,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     trending_tickers = Enum.filter(trending_words, &Enum.member?(tickers_set, &1))
     trending_slugs = Enum.filter(trending_words, &Enum.member?(slugs_set, &1))
 
-    %{
-      trending_tickers: trending_tickers,
-      trending_slugs: trending_slugs
-    }
+    {:ok,
+     %{
+       trending_tickers: trending_tickers,
+       trending_slugs: trending_slugs
+     }}
   end
 
   def historical_stats(

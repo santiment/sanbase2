@@ -6,7 +6,7 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
   import SanbaseWeb.Graphql.TestHelpers
   import ExUnit.CaptureLog
 
-  alias Sanbase.Auth.Apikey
+  alias Sanbase.Auth.{User, Apikey}
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestReponse
   alias Sanbase.Pricing.Subscription
@@ -87,6 +87,15 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
 
   describe "subscribe mutation" do
     test "successfull subscribe returns subscription", context do
+      query = subscribe_mutation(context.plan_essential.id)
+      response = execute_mutation(context.conn, query, "subscribe")
+
+      assert response["plan"]["name"] == context.plan_essential.name
+    end
+
+    test "successfull subscribe when user has stripe_customer_id", context do
+      context.user |> User.changeset(%{stripe_customer_id: "alabala"}) |> Sanbase.Repo.update!()
+
       query = subscribe_mutation(context.plan_essential.id)
       response = execute_mutation(context.conn, query, "subscribe")
 

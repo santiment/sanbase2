@@ -14,61 +14,43 @@ defmodule Sanbase.Graphql.ProjectApiMinVolumeQueriesTest do
     infr_btc = insert(:infrastructure, %{code: "BTC"})
 
     project1 =
-      insert(:project, %{
-        ticker: rand_str(4),
-        name: rand_str(),
+      insert(:random_project, %{
         infrastructure_id: infr_eth.id,
-        coinmarketcap_id: rand_str(),
         main_contract_address: "0x" <> rand_hex_str()
       })
       |> update_latest_coinmarketcap_data(%{volume_usd: 1000, rank: 10})
 
     project2 =
-      insert(:project, %{
-        ticker: rand_str(4),
-        name: rand_str(),
+      insert(:random_project, %{
         infrastructure_id: infr_eth.id,
-        coinmarketcap_id: rand_str(),
         main_contract_address: "0x" <> rand_hex_str()
       })
       |> update_latest_coinmarketcap_data(%{volume_usd: 2000, rank: 9})
 
     project3 =
-      insert(:project, %{
-        ticker: rand_str(4),
-        name: rand_str(),
+      insert(:random_project, %{
         infrastructure_id: infr_btc.id,
-        coinmarketcap_id: rand_str(),
         main_contract_address: "0x" <> rand_hex_str()
       })
       |> update_latest_coinmarketcap_data(%{volume_usd: 3000, rank: 5})
 
     project4 =
-      insert(:project, %{
-        ticker: rand_str(4),
-        name: rand_str(),
+      insert(:random_project, %{
         infrastructure_id: infr_btc.id,
-        coinmarketcap_id: rand_str(),
         main_contract_address: "0x" <> rand_hex_str()
       })
       |> update_latest_coinmarketcap_data(%{volume_usd: 4000, rank: 3})
 
     project5 =
-      insert(:project, %{
-        ticker: rand_str(4),
-        name: rand_str(),
+      insert(:random_project, %{
         infrastructure_id: infr_eth.id,
-        coinmarketcap_id: rand_str(),
         main_contract_address: "0x" <> rand_hex_str()
       })
       |> update_latest_coinmarketcap_data(%{rank: 50})
 
     project6 =
-      insert(:project, %{
-        ticker: rand_str(4),
-        name: rand_str(),
+      insert(:random_project, %{
         infrastructure_id: infr_btc.id,
-        coinmarketcap_id: rand_str(),
         main_contract_address: "0x" <> rand_hex_str()
       })
       |> update_latest_coinmarketcap_data(%{rank: 100})

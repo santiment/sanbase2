@@ -7,13 +7,15 @@ defmodule Sanbase.Graphql.ProjectApiTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
+  alias Sanbase.Model.Project
+
   test "fetch funds raised from icos", context do
     currency_eth = insert(:currency, %{code: "ETH"})
     currency_btc = insert(:currency, %{code: "BTC"})
     currency_usd = insert(:currency, %{code: "USD"})
 
-    p1 = insert(:project, %{ticker: "PROJ1", coinmarketcap_id: "project1", name: "Project1"})
-    p2 = insert(:project, %{ticker: "PROJ2", coinmarketcap_id: "project2", name: "Project2"})
+    p1 = insert(:random_project)
+    p2 = insert(:random_project)
 
     ico1_1 = insert(:ico, %{project_id: p1.id})
     ico2_1 = insert(:ico, %{project_id: p2.id})
@@ -47,7 +49,7 @@ defmodule Sanbase.Graphql.ProjectApiTest do
 
     assert json_response(result, 200)["data"]["project"] ==
              %{
-               "name" => "Project1",
+               "name" => p1.name,
                "fundsRaisedIcos" => [%{"currencyCode" => "USD", "amount" => "123.45"}]
              }
 
@@ -61,7 +63,7 @@ defmodule Sanbase.Graphql.ProjectApiTest do
 
     assert json_response(result, 200)["data"]["project"] ==
              %{
-               "name" => "Project2",
+               "name" => p2.name,
                "fundsRaisedIcos" => [
                  %{"currencyCode" => "BTC", "amount" => "300"},
                  %{"currencyCode" => "ETH", "amount" => "50"},
@@ -71,14 +73,11 @@ defmodule Sanbase.Graphql.ProjectApiTest do
   end
 
   test "fetch project by coinmarketcap id", context do
-    cmc_id = "santiment1"
-    name = "Santiment1"
-
-    insert(:project, %{name: name, coinmarketcap_id: cmc_id})
+    project = insert(:random_project)
 
     query = """
     {
-      projectBySlug(slug: "#{cmc_id}") {
+      projectBySlug(slug: "#{project.coinmarketcap_id}") {
         name
         coinmarketcapId
       }
@@ -90,10 +89,41 @@ defmodule Sanbase.Graphql.ProjectApiTest do
       |> post("/graphql", query_skeleton(query, "projectBySlug"))
       |> json_response(200)
 
-    project = result["data"]["projectBySlug"]
+    assert result["data"]["projectBySlug"]["name"] == project.name
+    assert result["data"]["projectBySlug"]["coinmarketcapId"] == project.coinmarketcap_id
+  end
 
-    assert project["name"] == name
-    assert project["coinmarketcapId"] == cmc_id
+  test "Fetch project's github links", context do
+    project =
+      insert(:random_project, %{
+        github_organizations: [
+          build(:github_organization),
+          build(:github_organization),
+          build(:github_organization)
+        ]
+      })
+
+    query = """
+    {
+      projectBySlug(slug: "#{project.coinmarketcap_id}") {
+        githubLinks
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "projectBySlug"))
+      |> json_response(200)
+
+    expected_github_links =
+      project.github_organizations
+      |> Enum.map(& &1.organization)
+      |> Enum.map(&Project.GithubOrganization.organization_to_link/1)
+      |> Enum.sort()
+
+    github_links = result["data"]["projectBySlug"]["githubLinks"] |> Enum.sort()
+    assert github_links == expected_github_links
   end
 
   test "fetch non existing project by coinmarketcap id", context do
@@ -119,38 +149,30 @@ defmodule Sanbase.Graphql.ProjectApiTest do
   end
 
   test "fetch project ico_price by slug", context do
-    cmc_id = "santiment1"
-    name = "Santiment1"
+    project = insert(:random_project)
 
-    project = insert(:project, %{name: name, coinmarketcap_id: cmc_id})
     insert(:ico, %{project_id: project.id, token_usd_ico_price: Decimal.from_float(0.1)})
     insert(:ico, %{project_id: project.id, token_usd_ico_price: Decimal.from_float(0.2)})
     insert(:ico, %{project_id: project.id, token_usd_ico_price: nil})
 
-    response = query_ico_price(context, cmc_id)
+    response = query_ico_price(context, project.coinmarketcap_id)
 
     assert response["icoPrice"] == 0.2
   end
 
   test "fetch project ico_price when it is nil", context do
-    cmc_id = "santiment1"
-    name = "Santiment1"
-
-    project = insert(:project, %{name: name, coinmarketcap_id: cmc_id})
+    project = insert(:random_project)
     insert(:ico, %{project_id: project.id, token_usd_ico_price: nil})
 
-    response = query_ico_price(context, cmc_id)
+    response = query_ico_price(context, project.coinmarketcap_id)
 
     assert response["icoPrice"] == nil
   end
 
   test "fetch project ico_price when the project does not have ico record", context do
-    cmc_id = "santiment1"
-    name = "Santiment1"
+    project = insert(:random_project)
 
-    insert(:project, %{name: name, coinmarketcap_id: cmc_id})
-
-    response = query_ico_price(context, cmc_id)
+    response = query_ico_price(context, project.coinmarketcap_id)
 
     assert response["icoPrice"] == nil
   end

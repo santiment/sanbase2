@@ -90,7 +90,6 @@ defmodule Sanbase.Factory do
       coinmarketcap_id: rand_str(),
       token_decimals: 18,
       total_supply: :rand.uniform(50_000_000) + 10_000_000,
-      github_link: "https://github.com/#{rand_hex_str()}",
       github_organizations: [build(:github_organization)],
       infrastructure:
         Sanbase.Repo.get_by(Infrastructure, code: "ETH") || build(:infrastructure, %{code: "ETH"}),
@@ -106,7 +105,19 @@ defmodule Sanbase.Factory do
       coinmarketcap_id: "santiment",
       token_decimals: 18,
       total_supply: 83_000_000,
-      github_link: "https://github.com/santiment",
+      github_organizations: [build(:github_organization)],
+      infrastructure: nil,
+      eth_addresses: [build(:project_eth_address)]
+    }
+  end
+
+  def random_project_factory() do
+    %Project{
+      name: rand_str(),
+      ticker: rand_hex_str() |> String.upcase(),
+      coinmarketcap_id: rand_str(),
+      token_decimals: 18,
+      total_supply: :rand.uniform(50_000_000) + 10_000_000,
       github_organizations: [build(:github_organization)],
       infrastructure: nil,
       eth_addresses: [build(:project_eth_address)]

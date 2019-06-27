@@ -93,7 +93,8 @@ defmodule Sanbase.Project.AvailableMetricsTest do
         github_link: nil,
         infrastructure: nil,
         main_contract_address: nil,
-        eth_addresses: []
+        eth_addresses: [],
+        github_organizations: []
       })
 
     assert AvailableMetrics.get(project) == @slug_metrics

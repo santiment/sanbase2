@@ -249,6 +249,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, volume_change_24h}
   end
 
+  def github_links(%Project{} = project, _args, _resolution) do
+    {:ok, orgs} = Project.github_organizations(project)
+    links = orgs |> Enum.map(&Project.GithubOrganization.organization_to_link/1)
+    {:ok, links}
+  end
+
   def average_github_activity(%Project{id: id} = project, %{days: days} = args, _resolution) do
     async(
       Cache.func(

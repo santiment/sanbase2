@@ -45,10 +45,8 @@ defmodule Sanbase.Model.Project.GithubOrganization do
     |> Repo.all()
   end
 
-  def organizations_to_links(organizations) do
-    organizations
-    |> List.wrap()
-    |> Enum.map(&"https://github.com/#{&1}")
+  def organization_to_link(organization) do
+    "https://github.com/#{organization}"
   end
 
   def link_to_organization(github_link) do

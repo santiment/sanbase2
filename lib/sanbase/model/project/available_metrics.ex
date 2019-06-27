@@ -101,7 +101,7 @@ defmodule Sanbase.Model.Project.AvailableMetrics do
 
   defp github_metrics(%Project{} = project) do
     case Project.github_organizations(project) do
-      {:ok, _} ->
+      {:ok, orgs} when is_list(orgs) and orgs != [] ->
         [
           "devActivity",
           "githubActivity",

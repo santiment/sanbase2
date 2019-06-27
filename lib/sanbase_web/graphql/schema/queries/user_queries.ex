@@ -45,6 +45,10 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       middleware(CreateOrDeleteSession)
     end
 
+    @desc ~s"""
+    Initiate email login. An email with a link that needs to be followed is sent
+    to the given email.
+    """
     field :email_login, :email_login_request do
       arg(:email, non_null(:string))
       arg(:username, :string)
@@ -53,6 +57,9 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       resolve(&AccountResolver.email_login/2)
     end
 
+    @desc ~s"""
+    Verifies the email login. This mutation does the actual login.
+    """
     field :email_login_verify, :login do
       arg(:email, non_null(:string))
       arg(:token, non_null(:string))
@@ -67,6 +74,9 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       middleware(CreateOrDeleteSession)
     end
 
+    @desc ~s"""
+    Verifies that the email change is valid. This mutation does the actual email change.
+    """
     field :email_change_verify, :login do
       arg(:email_candidate, non_null(:string))
       arg(:token, non_null(:string))
@@ -74,6 +84,10 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       resolve(&AccountResolver.email_change_verify/2)
     end
 
+    @desc ~s"""
+    Initiate the email change process. This mutation will send an email that contains
+    a link that needs to be followed to complete the email change.
+    """
     field :change_email, :email_login_request do
       arg(:email, non_null(:string))
 
@@ -178,7 +192,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       resolve(&TelegramResolver.revoke_telegram_deep_link/3)
     end
 
-    @desc "Follow chosen user"
+    @desc "Follow a chosen user"
     field :follow, :user do
       arg(:user_id, non_null(:id))
 
@@ -186,7 +200,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       resolve(&UserFollowerResolver.follow/3)
     end
 
-    @desc "Unfollow chosen user"
+    @desc "Unfollow a chosen user"
     field :unfollow, :user do
       arg(:user_id, non_null(:id))
 

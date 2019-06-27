@@ -2,6 +2,8 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
   use Absinthe.Schema.Notation
   use Absinthe.Ecto, repo: Sanbase.Repo
 
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
+
   alias SanbaseWeb.Graphql.Resolvers.{
     ApikeyResolver,
     AccountResolver,
@@ -25,11 +27,24 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     end
 
     field :san_balance, :float do
-      resolve(&AccountResolver.san_balance/3)
+      cache_resolve(&AccountResolver.san_balance/3)
     end
 
+    @desc ~s"""
+    A list of ethereum addresses owned by the user. A special message needs to be
+    signed in order to be confirmed that the address belongs to the user.
+    The combined SAN balance of the addresses is used for the `san_balance`
+    """
     field(:eth_accounts, list_of(:eth_account), resolve: assoc(:eth_accounts))
 
+    @desc ~s"""
+    A list of api keys. They are used by providing `Authorization` header to the
+    HTTP request with the value `Apikey <apikey>` (case sensitive). To generate
+    or revoke api keys check the `generateApikey` and `revokeApikey` mutations.
+
+    Using an apikey gives access to the queries, but not to the mutations. Every
+    api key has the same SAN balance and subsription as the whole account
+    """
     field :apikeys, list_of(:string) do
       resolve(&ApikeyResolver.apikeys_list/3)
     end
@@ -52,6 +67,23 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     field :subscriptions, list_of(:plan_subscription) do
       resolve(&PricingResolver.subscriptions/3)
     end
+
+    @desc ~s"""
+    The total number of api calls made by the user in a given time range.
+    Counts all API calls made either with JWT or API Key authentication
+    """
+    field :api_calls_history, list_of(:api_call_data) do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      cache_resolve(&AccountResolver.api_calls_history/3)
+    end
+  end
+
+  object :api_call_data do
+    field(:datetime, non_null(:datetime))
+    field(:api_calls_count, non_null(:integer))
   end
 
   @desc ~s"""
@@ -62,7 +94,7 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     field(:address, non_null(:string))
 
     field :san_balance, non_null(:integer) do
-      resolve(&EthAccountResolver.san_balance/3)
+      cache_resolve(&EthAccountResolver.san_balance/3)
     end
   end
 

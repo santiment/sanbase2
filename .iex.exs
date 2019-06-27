@@ -156,5 +156,11 @@ alias Sanbase.Signals.Trigger.{
   TrendingWordsTriggerSettings
 }
 
+alias Sanbase.Pricing.{
+  Product,
+  Plan,
+  Subscription
+}
+
 now = fn -> Timex.now() end
 days_ago = fn days -> Timex.shift(Timex.now(), days: -days) end

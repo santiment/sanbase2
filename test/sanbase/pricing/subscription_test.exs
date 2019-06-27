@@ -2,15 +2,11 @@ defmodule Sanbase.Pricing.SubscriptionTest do
   use SanbaseWeb.ConnCase
 
   import Sanbase.Factory
-  import Mock
   import SanbaseWeb.Graphql.TestHelpers
-  import ExUnit.CaptureLog
 
   alias Sanbase.Pricing.Subscription
   alias Sanbase.Auth.Apikey
-  alias Sanbase.StripeApi
   alias Sanbase.Repo
-  alias Sanbase.StripeApiTestReponse
 
   setup do
     free_user = insert(:user)
@@ -106,6 +102,16 @@ defmodule Sanbase.Pricing.SubscriptionTest do
     test "when there are no subscriptions - return []", context do
       assert Subscription.user_subscriptions(context.user) == []
     end
+
+    test "only active subscriptions", context do
+      insert(:subscription_essential,
+        user: context.user,
+        cancel_at_period_end: true,
+        current_period_end: Timex.shift(Timex.now(), days: -1)
+      )
+
+      assert Subscription.user_subscriptions(context.user) == []
+    end
   end
 
   describe "#current_subscription" do
@@ -120,116 +126,16 @@ defmodule Sanbase.Pricing.SubscriptionTest do
       current_subscription = Subscription.current_subscription(context.user, context.product.id)
       assert current_subscription == nil
     end
-  end
 
-  describe "#subscribe" do
-    test "successfull subscription", context do
-      with_mocks([
-        {StripeApi, [],
-         [create_customer: fn _, _ -> StripeApiTestReponse.create_or_update_customer_resp() end]},
-        {StripeApi, [], [create_coupon: fn _ -> StripeApiTestReponse.create_coupon_resp() end]},
-        {StripeApi, [],
-         [create_subscription: fn _ -> StripeApiTestReponse.create_subscription_resp() end]}
-      ]) do
-        {:ok,
-         %Subscription{
-           user_id: user_id,
-           plan_id: plan_id,
-           stripe_id: stripe_id
-         }} =
-          Subscription.subscribe(context.user.id, "test_card_token", context.plan_essential.id)
+    test "only active subscriptions", context do
+      insert(:subscription_essential,
+        user: context.user,
+        cancel_at_period_end: true,
+        current_period_end: Timex.shift(Timex.now(), days: -1)
+      )
 
-        assert user_id == context.user.id
-        assert plan_id == context.plan_essential.id
-        assert stripe_id != nil
-      end
-    end
-
-    test "when user with provided id doesn't exist - logs the error and returns it", context do
-      assert capture_log(fn ->
-               {:error, reason} =
-                 Subscription.subscribe(-1, "test_card_token", context.plan_essential.id)
-
-               assert reason =~ "Cannnot find user with id -1"
-             end) =~ "Cannnot find user with id -1"
-    end
-
-    test "when plan with provided id doesn't exist - logs the error and returns it", context do
-      assert capture_log(fn ->
-               {:error, reason} = Subscription.subscribe(context.user.id, "test_card_token", -1)
-
-               assert reason =~ "Cannnot find plan with id -1"
-             end) =~ "Cannnot find plan with id -1"
-    end
-
-    test "when creating customer in Stripe fails - logs the error and returns generic error",
-         context do
-      with_mock StripeApi, [],
-        create_customer: fn _, _ ->
-          {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
-        end do
-        assert capture_log(fn ->
-                 {:error, reason} =
-                   Subscription.subscribe(
-                     context.user.id,
-                     "test_card_token",
-                     context.plan_essential.id
-                   )
-
-                 assert reason == Subscription.generic_error_message()
-               end) =~ "test error"
-      end
-    end
-
-    test "when creating coupon in Stripe fails - logs the error and returns generic error",
-         context do
-      with_mocks([
-        {StripeApi, [],
-         [create_customer: fn _, _ -> StripeApiTestReponse.create_or_update_customer_resp() end]},
-        {StripeApi, [],
-         [
-           create_coupon: fn _ ->
-             {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
-           end
-         ]}
-      ]) do
-        assert capture_log(fn ->
-                 {:error, reason} =
-                   Subscription.subscribe(
-                     context.user.id,
-                     "test_card_token",
-                     context.plan_essential.id
-                   )
-
-                 assert reason == Subscription.generic_error_message()
-               end) =~ "test error"
-      end
-    end
-
-    test "when creating subscription in Stripe fails - logs the error and returns generic error",
-         context do
-      with_mocks([
-        {StripeApi, [],
-         [create_customer: fn _, _ -> StripeApiTestReponse.create_or_update_customer_resp() end]},
-        {StripeApi, [], [create_coupon: fn _ -> StripeApiTestReponse.create_coupon_resp() end]},
-        {StripeApi, [],
-         [
-           create_subscription: fn _ ->
-             {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
-           end
-         ]}
-      ]) do
-        assert capture_log(fn ->
-                 {:error, reason} =
-                   Subscription.subscribe(
-                     context.user.id,
-                     "test_card_token",
-                     context.plan_essential.id
-                   )
-
-                 assert reason == Subscription.generic_error_message()
-               end) =~ "test error"
-      end
+      current_subscription = Subscription.current_subscription(context.user, context.product.id)
+      assert current_subscription == nil
     end
   end
 end

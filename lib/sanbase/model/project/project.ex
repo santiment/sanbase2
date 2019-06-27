@@ -44,12 +44,16 @@ defmodule Sanbase.Model.Project do
     field(:long_description, :string)
     field(:project_transparency, :boolean, default: false)
     field(:main_contract_address, :string)
-    belongs_to(:project_transparency_status, ProjectTransparencyStatus, on_replace: :nilify)
     field(:project_transparency_description, :string)
+
+    has_many(:icos, Ico)
+    has_many(:github_organizations, Project.GithubOrganization)
     has_many(:eth_addresses, ProjectEthAddress)
     has_many(:btc_addresses, ProjectBtcAddress)
+
     belongs_to(:market_segment, MarketSegment, on_replace: :nilify)
     belongs_to(:infrastructure, Infrastructure, on_replace: :nilify)
+    belongs_to(:project_transparency_status, ProjectTransparencyStatus, on_replace: :nilify)
 
     belongs_to(
       :latest_coinmarketcap_data,
@@ -59,8 +63,6 @@ defmodule Sanbase.Model.Project do
       type: :string,
       on_replace: :nilify
     )
-
-    has_many(:icos, Ico)
   end
 
   def changeset(%Project{} = project, attrs \\ %{}) do
@@ -277,14 +279,12 @@ defmodule Sanbase.Model.Project do
     end
   end
 
-  def github_organization(slug) when is_binary(slug) do
-    id_by_slug(slug)
-    |> Project.GithubOrganization.organizations_of()
+  def github_organizations(slug) when is_binary(slug) do
+    {:ok, id_by_slug(slug) |> Project.GithubOrganization.organizations_of()}
   end
 
-  def github_organization(%Project{} = project) do
-    project
-    |> Project.GithubOrganization.organizations_of()
+  def github_organizations(%Project{} = project) do
+    {:ok, project |> Project.GithubOrganization.organizations_of()}
   end
 
   def is_erc20?(%Project{} = project) do

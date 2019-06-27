@@ -100,7 +100,7 @@ defmodule Sanbase.Model.Project.AvailableMetrics do
   end
 
   defp github_metrics(%Project{} = project) do
-    case Project.github_organization(project) do
+    case Project.github_organizations(project) do
       {:ok, _} ->
         [
           "devActivity",

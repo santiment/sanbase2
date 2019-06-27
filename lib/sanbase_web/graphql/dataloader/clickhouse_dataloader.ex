@@ -39,8 +39,8 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
 
     args
     |> Enum.map(fn %{project: project} ->
-      case Project.github_organization(project) do
-        {:ok, organization} -> organization
+      case Project.github_organizations(project) do
+        {:ok, organizations} -> organizations
         _ -> nil
       end
     end)

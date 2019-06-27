@@ -259,10 +259,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   defp calculate_average_github_activity(%Project{} = project, %{days: days}) do
-    with {:ok, organization} <- Project.github_organization(project) do
+    with {:ok, organizations} <- Project.github_organizations(project) do
       month_ago = Timex.shift(Timex.now(), days: -days)
 
-      case Sanbase.Clickhouse.Github.total_github_activity(organization, month_ago, Timex.now()) do
+      case Sanbase.Clickhouse.Github.total_github_activity(organizations, month_ago, Timex.now()) do
         {:ok, total_activity} ->
           {:ok, total_activity / days}
 
@@ -303,16 +303,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def average_dev_activity_from_loader(loader, project) do
-    with {:ok, organization} <- Project.github_organization(project) do
-      loader
-      |> Dataloader.get(SanbaseDataloader, :average_dev_activity, organization)
-      |> case do
-        nil -> {:ok, 0}
-        result -> result
+    with {:ok, organizations} <- Project.github_organizations(project) do
+      average_dev_activity = average_dev_activity_per_org(loader, organizations)
+      values = for {:ok, val} <- average_dev_activity, is_number(val), do: val
+
+      if Enum.member?(values, &match?({:error, _}, &1)) do
+        {:nocache, {:ok, Enum.sum(values)}}
+      else
+        {:ok, Enum.sum(values)}
       end
     else
       _ -> {:ok, nil}
     end
+  end
+
+  defp average_dev_activity_per_org(loader, organizations) do
+    organizations
+    |> Enum.map(fn org ->
+      loader
+      |> Dataloader.get(SanbaseDataloader, :average_dev_activity, org)
+      |> case do
+        nil -> {:ok, 0}
+        result -> result
+      end
+    end)
   end
 
   def marketcap_usd(

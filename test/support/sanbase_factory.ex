@@ -91,6 +91,7 @@ defmodule Sanbase.Factory do
       token_decimals: 18,
       total_supply: :rand.uniform(50_000_000) + 10_000_000,
       github_link: "https://github.com/#{rand_hex_str()}",
+      github_organizations: [build(:github_organization)],
       infrastructure:
         Sanbase.Repo.get_by(Infrastructure, code: "ETH") || build(:infrastructure, %{code: "ETH"}),
       eth_addresses: [build(:project_eth_address)],
@@ -106,8 +107,15 @@ defmodule Sanbase.Factory do
       token_decimals: 18,
       total_supply: 83_000_000,
       github_link: "https://github.com/santiment",
+      github_organizations: [build(:github_organization)],
       infrastructure: nil,
       eth_addresses: [build(:project_eth_address)]
+    }
+  end
+
+  def github_organization_factory() do
+    %Project.GithubOrganization{
+      organization: rand_str()
     }
   end
 

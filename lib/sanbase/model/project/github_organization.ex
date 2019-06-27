@@ -72,7 +72,7 @@ defmodule Sanbase.Model.Project.GithubOrganization do
   defp organizations_query(project_id) do
     from(org in __MODULE__,
       where: org.project_id == ^project_id,
-      select: org.name
+      select: org.organization
     )
   end
 end

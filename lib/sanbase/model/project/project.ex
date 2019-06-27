@@ -18,7 +18,7 @@ defmodule Sanbase.Model.Project do
 
   import Ecto.Query
 
-  @preloads [:eth_addresses, :latest_coinmarketcap_data]
+  @preloads [:eth_addresses, :latest_coinmarketcap_data, :github_organizations]
 
   schema "project" do
     field(:name, :string)

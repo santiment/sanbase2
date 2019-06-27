@@ -18,6 +18,7 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
   end
 
   object :watchlist_stats do
+    field(:trending_names, list_of(:string))
     field(:trending_slugs, list_of(:string))
     field(:trending_tickers, list_of(:string))
   end

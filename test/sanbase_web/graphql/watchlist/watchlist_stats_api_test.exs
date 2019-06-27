@@ -44,7 +44,9 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
 
       expected_result = %{
         "data" => %{
-          "watchlist" => %{"stats" => %{"trendingSlugs" => [], "trendingTickers" => []}}
+          "watchlist" => %{
+            "stats" => %{"trendingNames" => [], "trendingSlugs" => [], "trendingTickers" => []}
+          }
         }
       }
 
@@ -63,7 +65,13 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
 
       expected_result = %{
         "data" => %{
-          "watchlist" => %{"stats" => %{"trendingSlugs" => [slug], "trendingTickers" => []}}
+          "watchlist" => %{
+            "stats" => %{
+              "trendingNames" => [],
+              "trendingSlugs" => [slug],
+              "trendingTickers" => []
+            }
+          }
         }
       }
 
@@ -82,7 +90,13 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
 
       expected_result = %{
         "data" => %{
-          "watchlist" => %{"stats" => %{"trendingSlugs" => [], "trendingTickers" => [ticker]}}
+          "watchlist" => %{
+            "stats" => %{
+              "trendingNames" => [],
+              "trendingSlugs" => [],
+              "trendingTickers" => [ticker]
+            }
+          }
         }
       }
 
@@ -103,12 +117,57 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
       expected_result = %{
         "data" => %{
           "watchlist" => %{
-            "stats" => %{"trendingSlugs" => [slug], "trendingTickers" => [ticker]}
+            "stats" => %{
+              "trendingNames" => [],
+              "trendingSlugs" => [slug],
+              "trendingTickers" => [ticker]
+            }
           }
         }
       }
 
       assert result == expected_result
+    end
+  end
+
+  test "name is trending", context do
+    name = context.project1.name |> String.downcase()
+
+    with_mock Sanbase.SocialData.TrendingWords,
+      get_trending_now: fn _ ->
+        [name, "random", "2"]
+      end do
+      result = fetch_watchlist_stats(context.conn, context.watchlist)
+
+      expected_result = %{
+        "data" => %{
+          "watchlist" => %{
+            "stats" => %{
+              "trendingSlugs" => [],
+              "trendingTickers" => [],
+              "trendingNames" => [name]
+            }
+          }
+        }
+      }
+
+      assert result == expected_result
+    end
+  end
+
+  test "two names are trending", context do
+    name1 = context.project1.name |> String.downcase()
+    name2 = context.project2.name |> String.downcase()
+
+    with_mock Sanbase.SocialData.TrendingWords,
+      get_trending_now: fn _ ->
+        [name1, name2, "2"]
+      end do
+      result = fetch_watchlist_stats(context.conn, context.watchlist)
+
+      %{"data" => %{"watchlist" => %{"stats" => %{"trendingNames" => names}}}} = result
+
+      assert names |> Enum.sort() == [name1, name2] |> Enum.sort()
     end
   end
 
@@ -119,6 +178,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
         stats {
           trendingSlugs
           trendingTickers
+          trendingNames
         }
       }
     }

@@ -94,8 +94,8 @@ defmodule Sanbase.Clickhouse.Github do
           String.t(),
           integer() | nil
         ) :: {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
-  def dev_activity(nil, _, _, _), do: []
-  def dev_activity([], _, _, _), do: []
+  def dev_activity(nil, _, _, _, _, _), do: []
+  def dev_activity([], _, _, _, _, _), do: []
 
   def dev_activity(organizations, from, to, interval, "None", _) do
     interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)

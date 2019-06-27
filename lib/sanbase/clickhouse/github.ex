@@ -52,6 +52,8 @@ defmodule Sanbase.Clickhouse.Github do
   @spec total_github_activity(String.t(), DateTime.t(), DateTime.t()) ::
           {:ok, float()}
           | {:error, String.t()}
+  def total_github_activity([], _from, _to), do: {:ok, []}
+
   def total_github_activity(organizations, from, to) do
     {query, args} = total_github_activity_query(organizations, from, to)
 
@@ -70,6 +72,8 @@ defmodule Sanbase.Clickhouse.Github do
   """
   @spec total_dev_activity(list(String.t()), DateTime.t(), DateTime.t()) ::
           {:ok, list({String.t(), non_neg_integer()})} | {:error, String.t()}
+  def total_dev_activity([], _from, _to), do: {:ok, []}
+
   def total_dev_activity(organizations, from, to) do
     {query, args} = total_dev_activity_query(organizations, from, to)
 
@@ -91,6 +95,7 @@ defmodule Sanbase.Clickhouse.Github do
           integer() | nil
         ) :: {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
   def dev_activity(nil, _, _, _), do: []
+  def dev_activity([], _, _, _), do: []
 
   def dev_activity(organizations, from, to, interval, "None", _) do
     interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)

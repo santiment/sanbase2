@@ -309,8 +309,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def average_dev_activity_from_loader(loader, project) do
-    with {:ok, organizations} <- Project.github_organizations(project) do
-      average_dev_activity = average_dev_activity_per_org(loader, organizations)
+    with {:ok, orgs} when is_list(orgs) and orgs != [] <- Project.github_organizations(project) do
+      average_dev_activity = average_dev_activity_per_org(loader, orgs)
       values = for {:ok, val} <- average_dev_activity, is_number(val), do: val
 
       if Enum.member?(values, &match?({:error, _}, &1)) do

@@ -67,9 +67,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
   def email_login(%{email: email} = args, %{
         context: %{origin_url: origin_url}
       }) do
-    #  {:ok, _user} <- User.send_login_email(user, origin_url)
     with {:ok, user} <- User.find_or_insert_by_email(email, args[:username]),
-         {:ok, user} <- User.update_email_token(user, args[:consent]) do
+         {:ok, user} <- User.update_email_token(user, args[:consent]),
+         {:ok, _user} <- User.send_login_email(user, origin_url) do
       {:ok, %{success: true, first_login: user.first_login}}
     else
       _ -> {:error, message: "Can't login"}

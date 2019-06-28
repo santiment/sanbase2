@@ -84,4 +84,13 @@ defmodule Sanbase.StripeApi do
   def create_coupon(%{percent_off: percent_off, duration: duration}) do
     Stripe.Coupon.create(%{percent_off: percent_off, duration: duration})
   end
+
+  def list_payments(%User{stripe_customer_id: stripe_customer_id})
+      when is_binary(stripe_customer_id) do
+    Stripe.Charge.list(%{customer: stripe_customer_id})
+  end
+
+  def list_payments(_) do
+    {:ok, []}
+  end
 end

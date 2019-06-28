@@ -16,6 +16,15 @@ defmodule SanbaseWeb.Graphql.Schema.PricingQueries do
     field :products_with_plans, list_of(:product) do
       resolve(&PricingResolver.products_with_plans/3)
     end
+
+    @desc ~s"""
+    List all user invoice payments.
+    """
+    field :payments, list_of(:payments) do
+      middleware(JWTAuth)
+
+      resolve(&PricingResolver.payments/3)
+    end
   end
 
   object :pricing_mutations do

@@ -3,6 +3,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PricingResolver do
   alias Sanbase.Auth.User
   alias Sanbase.Repo
 
+  alias Sanbase.StripeApi
+
   require Logger
 
   def products_with_plans(_root, _args, _resolution) do
@@ -65,11 +67,45 @@ defmodule SanbaseWeb.Graphql.Resolvers.PricingResolver do
     end
   end
 
+  def payments(_root, _args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    StripeApi.list_payments(current_user)
+    |> case do
+      {:ok, []} ->
+        {:ok, []}
+
+      {:ok, payments} ->
+        {:ok, transform_payments(payments)}
+
+      {:error, reason} ->
+        Logger.error("Listing payments failed: reason: #{inspect(reason)}")
+        {:error, Subscription.generic_error_message()}
+    end
+  end
+
   def subscriptions(%User{} = user, _args, _resolution) do
     {:ok, Subscription.user_subscriptions(user)}
   end
 
   # private functions
+  defp transform_payments(%Stripe.List{data: payments}) do
+    payments
+    |> Enum.map(fn %Stripe.Charge{
+                     status: status,
+                     amount: amount,
+                     created: created,
+                     receipt_url: receipt_url
+                   } ->
+      %{
+        status: status,
+        amount: amount,
+        created_at: DateTime.from_unix!(created),
+        receipt_url: receipt_url
+      }
+    end)
+  end
+
   defp handle_subscription_error_result(result, log_message, params) do
     case result do
       {:plan?, _} ->

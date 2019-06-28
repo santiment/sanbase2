@@ -30,6 +30,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PricingResolver do
 
     with {:subscription?, %Subscription{user_id: ^user_id} = subscription} <-
            {:subscription?, Repo.get(Subscription, subscription_id) |> Repo.preload(:plan)},
+         {:cancelled?, %Subscription{cancel_at_period_end: false}} <- {:cancelled?, subscription},
          {:plan?, %Plan{} = new_plan} <- {:plan?, Repo.get(Plan, plan_id)},
          {:ok, subscription} <- Subscription.update_subscription(subscription, new_plan) do
       {:ok, subscription}
@@ -50,7 +51,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.PricingResolver do
 
     with {:subscription?, %Subscription{user_id: ^user_id} = subscription} <-
            {:subscription?, Repo.get(Subscription, subscription_id)},
-         {:ok, cancel_subscription} <- Subscription.cancel_subscription(subscription) do
+         {:cancelled?, %Subscription{cancel_at_period_end: false}} <- {:cancelled?, subscription},
+         {:ok, cancel_subscription} <-
+           Subscription.cancel_subscription(subscription) do
       {:ok, cancel_subscription}
     else
       result ->
@@ -79,6 +82,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.PricingResolver do
           "Cannot find subscription with id #{params.subscription_id} for user with id #{
             params.user_id
           }. Either this subscription doesn not exist or it does not belong to the user."
+
+        Logger.error("#{log_message} - reason: #{reason}")
+        {:error, reason}
+
+      {:cancelled?, %Subscription{current_period_end: current_period_end}} ->
+        reason =
+          "Subscription is scheduled for cancellation at the end of the paid period: #{
+            current_period_end
+          }"
 
         Logger.error("#{log_message} - reason: #{reason}")
         {:error, reason}

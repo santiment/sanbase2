@@ -320,13 +320,15 @@ defmodule Sanbase.Factory do
 
   def subscription_essential_factory() do
     %Subscription{
-      plan_id: 2
+      plan_id: 2,
+      current_period_end: Timex.shift(Timex.now(), days: 1)
     }
   end
 
   def subscription_pro_factory() do
     %Subscription{
-      plan_id: 3
+      plan_id: 3,
+      current_period_end: Timex.shift(Timex.now(), days: 1)
     }
   end
 

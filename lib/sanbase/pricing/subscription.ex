@@ -22,6 +22,11 @@ defmodule Sanbase.Pricing.Subscription do
   """
   @percent_discount_1000_san 20
   @percent_discount_200_san 4
+  # After `current_period_end` timestamp passes there is some time until `invoice.payment_succeeded` event is generated
+  # to update the field with new timestamp value. So we add 1 day gratis in which we should receive payment before
+  # we decide that this subscription is not active.
+  # Check for active subscription: current_period_end > Timex.now - @subscription_gratis_days
+  @subscription_gratis_days 1
 
   schema "subscriptions" do
     field(:stripe_id, :string)
@@ -72,7 +77,7 @@ defmodule Sanbase.Pricing.Subscription do
     with {:ok, item_id} <- StripeApi.get_subscription_first_item_id(subscription.stripe_id),
          # Note: that will generate dialyzer error because the spec is wrong.
          # More info here: https://github.com/code-corps/stripity_stripe/pull/499
-         {:ok, _} <-
+         {:ok, stripe_subscription} <-
            StripeApi.update_subscription(subscription.stripe_id, %{
              items: [
                %{
@@ -82,7 +87,10 @@ defmodule Sanbase.Pricing.Subscription do
              ]
            }),
          {:ok, updated_subscription} <-
-           update_subscription_db(subscription, %{plan_id: plan.id}) do
+           update_subscription_db(subscription, %{
+             plan_id: plan.id,
+             current_period_end: DateTime.from_unix!(stripe_subscription.current_period_end)
+           }) do
       {:ok, updated_subscription |> Repo.preload([plan: [:product]], force: true)}
     end
   end
@@ -225,7 +233,7 @@ defmodule Sanbase.Pricing.Subscription do
     |> Repo.insert()
   end
 
-  defp update_subscription_db(subscription, params) do
+  def update_subscription_db(subscription, params) do
     subscription
     |> Subscription.changeset(params)
     |> Repo.update()
@@ -261,12 +269,10 @@ defmodule Sanbase.Pricing.Subscription do
     )
   end
 
-  # Active subscriptions have cancel_at_period_end=false or (cancel_at_period_end=true and current_period_end > Timex.now)
+  # current_period_end > Timex.now - gratis days
   defp active_subscriptions_query(query) do
     from(s in query,
-      where:
-        s.cancel_at_period_end == false or
-          (s.cancel_at_period_end == true and s.current_period_end > ^Timex.now())
+      where: s.current_period_end > ^Timex.shift(Timex.now(), days: -@subscription_gratis_days)
     )
   end
 

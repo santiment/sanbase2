@@ -77,7 +77,7 @@ defmodule Sanbase.Pricing.Subscription do
     with {:ok, item_id} <- StripeApi.get_subscription_first_item_id(subscription.stripe_id),
          # Note: that will generate dialyzer error because the spec is wrong.
          # More info here: https://github.com/code-corps/stripity_stripe/pull/499
-         {:ok, _} <-
+         {:ok, stripe_subscription} <-
            StripeApi.update_subscription(subscription.stripe_id, %{
              items: [
                %{
@@ -87,7 +87,10 @@ defmodule Sanbase.Pricing.Subscription do
              ]
            }),
          {:ok, updated_subscription} <-
-           update_subscription_db(subscription, %{plan_id: plan.id}) do
+           update_subscription_db(subscription, %{
+             plan_id: plan.id,
+             current_period_end: stripe_subscription.current_period_end
+           }) do
       {:ok, updated_subscription |> Repo.preload([plan: [:product]], force: true)}
     end
   end

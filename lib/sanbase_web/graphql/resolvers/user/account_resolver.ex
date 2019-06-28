@@ -70,7 +70,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
     with {:ok, user} <- User.find_or_insert_by_email(email, args[:username]),
          {:ok, user} <- User.update_email_token(user, args[:consent]),
          {:ok, _user} <- User.send_login_email(user, origin_url) do
-      {:ok, %{success: true}}
+      {:ok, %{success: true, first_login: user.first_login}}
     else
       _ -> {:error, message: "Can't login"}
     end
@@ -210,7 +210,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
     Multi.new()
     |> Multi.insert(
       :add_user,
-      User.changeset(%User{}, %{username: address, salt: User.generate_salt()})
+      User.changeset(%User{}, %{username: address, salt: User.generate_salt(), first_login: true})
     )
     |> Multi.run(:add_eth_account, fn %{add_user: %User{id: id}} ->
       eth_account =

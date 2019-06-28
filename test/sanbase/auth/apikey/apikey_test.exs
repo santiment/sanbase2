@@ -17,7 +17,7 @@ defmodule Sanbase.Auth.ApiKeyTest do
   test "get user by apikey", %{user: user} do
     {:ok, apikey} = Apikey.generate_apikey(user)
     {:ok, retrieved_user} = Apikey.apikey_to_user(apikey)
-    assert user == retrieved_user
+    assert user.id == retrieved_user.id
   end
 
   # Will find th token in the db but will fail at the hmac part
@@ -47,7 +47,7 @@ defmodule Sanbase.Auth.ApiKeyTest do
     # Create and test the apikey
     {:ok, apikey} = Apikey.generate_apikey(user)
     {:ok, retrieved_user} = Apikey.apikey_to_user(apikey)
-    assert user == retrieved_user
+    assert user.id == retrieved_user.id
 
     # Revoke the apikey and expect it to be non valid
     :ok = Apikey.revoke_apikey(user, apikey)

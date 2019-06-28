@@ -132,6 +132,7 @@ defmodule Sanbase.Auth.UserTest do
 
     assert user.email == "test@example.com"
     assert user.username == "john_snow"
+    assert user.first_login
   end
 
   test "find_or_insert_by_email when the user exists" do

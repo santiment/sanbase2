@@ -33,5 +33,6 @@ defmodule SanbaseWeb.Graphql.Schema.PricingTypes do
     field(:amount, :integer)
     field(:created_at, :datetime)
     field(:status, :string)
+    field(:description, :string)
   end
 end

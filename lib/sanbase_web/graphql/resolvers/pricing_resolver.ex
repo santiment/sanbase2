@@ -95,13 +95,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.PricingResolver do
                      status: status,
                      amount: amount,
                      created: created,
-                     receipt_url: receipt_url
+                     receipt_url: receipt_url,
+                     description: description
                    } ->
       %{
         status: status,
         amount: amount,
         created_at: DateTime.from_unix!(created),
-        receipt_url: receipt_url
+        receipt_url: receipt_url,
+        description: description
       }
     end)
   end

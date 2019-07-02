@@ -1,5 +1,5 @@
 # Elixir and phoenix assets build image
-FROM elixir:1.8.2-otp-22-alpine as code_builder
+FROM elixir:1.9.0-alpine as code_builder
 
 ENV MIX_ENV prod
 
@@ -28,7 +28,7 @@ RUN mix phx.digest
 RUN mix release
 
 # Release image
-FROM elixir:1.8.2-otp-22-alpine
+FROM elixir:1.9.0-alpine
 
 RUN apk add --no-cache bash
 

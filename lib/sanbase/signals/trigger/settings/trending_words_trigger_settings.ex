@@ -15,12 +15,11 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
 
   alias __MODULE__
   alias Sanbase.Signals.Type
+  alias Sanbase.SocialData.TrendingWords
 
   @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
   @trigger_type "trending_words"
   @trending_words_size 10
-  @trending_words_hours [1, 8, 14]
-  @minutes_needed_for_trending_words_calculation 15
   @enforce_keys [:type, :channel, :trigger_time]
 
   defstruct type: @trigger_type,
@@ -55,61 +54,15 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
   def get_data(%__MODULE__{filtered_target: %{list: []}}), do: :error
 
   def get_data(%__MODULE__{trigger_time: trigger_time}) do
-    now = Timex.now()
+    now_time = Timex.now() |> DateTime.to_time()
     trigger_time = Time.from_iso8601!(trigger_time)
-    now_time = DateTime.to_time(now)
 
     if Time.compare(now_time, trigger_time) in [:gt, :eq] do
-      get_today_top_words(now)
+      TrendingWords.get_trending_now(@trending_words_size)
     end
   end
 
   # private functions
-
-  defp get_today_top_words(now) do
-    {from, to, hour} = get_trending_word_query_params(now)
-
-    Sanbase.SocialData.trending_words(
-      :all,
-      @trending_words_size,
-      hour,
-      from,
-      to
-    )
-    |> case do
-      {:ok, [%{top_words: top_words}]} ->
-        {:ok, top_words}
-
-      error ->
-        {:error, error}
-    end
-  end
-
-  defp get_trending_word_query_params(now) do
-    @trending_words_hours
-    |> Enum.map(fn hours ->
-      now
-      |> Timex.beginning_of_day()
-      |> Timex.shift(hours: hours, minutes: @minutes_needed_for_trending_words_calculation)
-    end)
-    |> Enum.filter(&(&1 < now))
-    |> case do
-      # get last trending words from yesterday
-      [] ->
-        {
-          Timex.beginning_of_day(Timex.shift(now, days: -1)),
-          Timex.end_of_day(Timex.shift(now, days: -1)),
-          @trending_words_hours |> Enum.max()
-        }
-
-      datetimes ->
-        {
-          Timex.beginning_of_day(now),
-          Timex.end_of_day(now),
-          datetimes |> Enum.map(& &1.hour) |> List.last()
-        }
-    end
-  end
 
   defimpl Sanbase.Signals.Settings, for: TrendingWordsTriggerSettings do
     def triggered?(%TrendingWordsTriggerSettings{triggered?: triggered}), do: triggered

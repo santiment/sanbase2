@@ -257,7 +257,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def average_github_activity(%Project{id: id} = project, %{days: days} = args, _resolution) do
     async(
-      Cache.func(
+      Cache.wrap(
         fn -> calculate_average_github_activity(project, args) end,
         {:average_github_activity, id, days}
       )
@@ -508,7 +508,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     do: {:ok, []}
 
   def related_posts(%Project{ticker: ticker} = _project, _args, _resolution) do
-    Cache.func(fn -> fetch_posts_by_ticker(ticker) end, {:related_posts, ticker}).()
+    Cache.wrap(fn -> fetch_posts_by_ticker(ticker) end, {:related_posts, ticker}).()
   end
 
   # Private functions

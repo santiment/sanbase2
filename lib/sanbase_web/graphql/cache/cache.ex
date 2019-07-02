@@ -12,8 +12,8 @@ defmodule SanbaseWeb.Graphql.Cache do
 
   @compile :inline_list_funcs
   @compile {:inline,
-            func: 2,
-            func: 3,
+            wrap: 2,
+            wrap: 3,
             from: 2,
             resolver: 3,
             store: 2,
@@ -74,14 +74,14 @@ defmodule SanbaseWeb.Graphql.Cache do
 
   NOTE: `cached_func` is a function with arity 0. That means if you want to use it
   in your code and you want some arguments you should use it like this:
-    > Cache.func(
+    > Cache.wrap(
     >   fn ->
     >     fetch_last_price_record(pair)
     >   end,
     >   :fetch_price_last_record, %{pair: pair}
     > ).()
   """
-  def func(cached_func, name, args \\ %{}, opts \\ []) do
+  def wrap(cached_func, name, args \\ %{}, opts \\ []) do
     fn ->
       CacheProvider.get_or_store(
         @cache_name,

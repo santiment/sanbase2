@@ -3,6 +3,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.PostPermissions do
 
   alias Absinthe.Resolution
 
+  alias SanbaseWeb.Graphql.Helpers.Utils
+
   @allowed_fields_for_anon_users [
     "id",
     "title",
@@ -34,15 +36,10 @@ defmodule SanbaseWeb.Graphql.Middlewares.PostPermissions do
   # Helper functions
 
   defp has_not_allowed_fields?(resolution) do
-    requested_fields = requested_fields(resolution)
+    requested_fields = Utils.requested_fields(resolution)
 
     Enum.any?(requested_fields, fn field ->
       field not in @allowed_fields_for_anon_users
     end)
-  end
-
-  defp requested_fields(resolution) do
-    resolution.definition.selections
-    |> Enum.map(&Map.get(&1, :name))
   end
 end

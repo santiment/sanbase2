@@ -16,7 +16,7 @@ defmodule Sanbase.Project.AvailableMetricsTest do
   ]
 
   setup_with_mocks([
-    {Sanbase.TechIndicators, [],
+    {Sanbase.TechIndicators, [:passthrough],
      [social_volume_projects: fn -> {:ok, ["bitcoin", "ethereum", "santiment"]} end]}
   ]) do
     []

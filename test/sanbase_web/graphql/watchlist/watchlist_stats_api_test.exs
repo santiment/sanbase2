@@ -38,7 +38,11 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
   test "no ticker or slug is trending", context do
     with_mock Sanbase.SocialData.TrendingWords,
       get_trending_now: fn _ ->
-        ["1", "2"]
+        {:ok,
+         [
+           %{word: "1", score: 2},
+           %{word: "2", score: 2}
+         ]}
       end do
       result = fetch_watchlist_stats(context.conn, context.watchlist)
 
@@ -59,7 +63,11 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
 
     with_mock Sanbase.SocialData.TrendingWords,
       get_trending_now: fn _ ->
-        [slug, "2"]
+        {:ok,
+         [
+           %{word: slug, score: 2},
+           %{word: "2", score: 2}
+         ]}
       end do
       result = fetch_watchlist_stats(context.conn, context.watchlist)
 
@@ -84,7 +92,11 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
 
     with_mock Sanbase.SocialData.TrendingWords,
       get_trending_now: fn _ ->
-        [ticker, "2"]
+        {:ok,
+         [
+           %{word: ticker, score: 2},
+           %{word: "2", score: 2}
+         ]}
       end do
       result = fetch_watchlist_stats(context.conn, context.watchlist)
 
@@ -110,7 +122,13 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
 
     with_mock Sanbase.SocialData.TrendingWords,
       get_trending_now: fn _ ->
-        [ticker, slug, "random", "2"]
+        {:ok,
+         [
+           %{word: ticker, score: 1.5},
+           %{word: slug, score: 5},
+           %{word: "random", score: 10},
+           %{word: "2", score: 2}
+         ]}
       end do
       result = fetch_watchlist_stats(context.conn, context.watchlist)
 
@@ -135,7 +153,12 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
 
     with_mock Sanbase.SocialData.TrendingWords,
       get_trending_now: fn _ ->
-        [name, "random", "2"]
+        {:ok,
+         [
+           %{word: name, score: 2},
+           %{word: "random", score: 2},
+           %{word: "2", score: 2}
+         ]}
       end do
       result = fetch_watchlist_stats(context.conn, context.watchlist)
 
@@ -161,13 +184,71 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
 
     with_mock Sanbase.SocialData.TrendingWords,
       get_trending_now: fn _ ->
-        [name1, name2, "2"]
+        {:ok,
+         [
+           %{word: name1, score: 3},
+           %{word: name2, score: 3},
+           %{word: "2", score: 3}
+         ]}
       end do
       result = fetch_watchlist_stats(context.conn, context.watchlist)
 
       %{"data" => %{"watchlist" => %{"stats" => %{"trendingNames" => names}}}} = result
 
       assert names |> Enum.sort() == [name1, name2] |> Enum.sort()
+    end
+  end
+
+  test "trending projects fetched by name and ticker", context do
+    name1 = context.project1.name |> String.downcase()
+    ticker2 = context.project2.ticker |> String.downcase()
+
+    with_mock Sanbase.SocialData.TrendingWords,
+      get_trending_now: fn _ ->
+        {:ok,
+         [
+           %{word: name1, score: 3},
+           %{word: ticker2, score: 3},
+           %{word: "something_random", score: 3}
+         ]}
+      end do
+      result = fetch_watchlist_stats_trending_projects(context.conn, context.watchlist)
+
+      %{"data" => %{"watchlist" => %{"stats" => %{"trendingProjects" => projects}}}} = result
+
+      expected_result =
+        [
+          %{"slug" => context.project1.coinmarketcap_id},
+          %{"slug" => context.project2.coinmarketcap_id}
+        ]
+        |> Enum.sort_by(fn %{"slug" => slug} -> slug end)
+
+      projects_sorted = projects |> Enum.sort_by(fn %{"slug" => slug} -> slug end)
+
+      assert projects_sorted == expected_result
+    end
+  end
+
+  test "trending projects fetched by slug", context do
+    slug = context.project1.coinmarketcap_id |> String.downcase()
+
+    with_mock Sanbase.SocialData.TrendingWords,
+      get_trending_now: fn _ ->
+        {:ok,
+         [
+           %{word: slug, score: 3},
+           %{word: "something+random", score: 3}
+         ]}
+      end do
+      result = fetch_watchlist_stats_trending_projects(context.conn, context.watchlist)
+
+      %{"data" => %{"watchlist" => %{"stats" => %{"trendingProjects" => projects}}}} = result
+
+      expected_result = [
+        %{"slug" => context.project1.coinmarketcap_id}
+      ]
+
+      assert projects == expected_result
     end
   end
 
@@ -179,6 +260,24 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
           trendingSlugs
           trendingTickers
           trendingNames
+        }
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query, "watchlist"))
+    |> json_response(200)
+  end
+
+  defp fetch_watchlist_stats_trending_projects(conn, %{id: id}) do
+    query = """
+    {
+      watchlist(id: #{id}){
+        stats {
+          trendingProjects {
+            slug
+          }
         }
       }
     }

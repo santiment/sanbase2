@@ -272,4 +272,27 @@ defmodule Sanbase.Model.Project.List do
     |> where([p], field(p, ^field) in ^values)
     |> Repo.all()
   end
+
+  def by_any_of(values, fields) when is_list(values) and is_list(fields) do
+    query =
+      fields
+      |> Enum.reduce(Project, fn field, q ->
+        q |> or_where([p], field(p, ^field) in ^values)
+      end)
+
+    query
+    |> Repo.all()
+  end
+
+  def by_name_ticker_slug(values) do
+    values = List.wrap(values)
+
+    from(p in projects_query(),
+      where:
+        fragment("lower(?)", p.name) in ^values or
+          fragment("lower(?)", p.ticker) in ^values or
+          fragment("lower(?)", p.coinmarketcap_id) in ^values
+    )
+    |> Repo.all()
+  end
 end

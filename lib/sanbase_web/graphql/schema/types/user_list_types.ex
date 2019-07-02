@@ -21,6 +21,8 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
     field(:trending_names, list_of(:string))
     field(:trending_slugs, list_of(:string))
     field(:trending_tickers, list_of(:string))
+    field(:trending_projects, list_of(:project))
+    field(:projects_count, :integer)
   end
 
   object :user_list do

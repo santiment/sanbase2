@@ -123,6 +123,13 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
     }
   end
 
+  @spec requested_fields(%Absinthe.Resolution{}) :: MapSet.t()
+  def requested_fields(%Absinthe.Resolution{} = resolution) do
+    resolution.definition.selections
+    |> Enum.map(fn %{name: name} -> Inflex.camelize(name, :lower) end)
+    |> MapSet.new()
+  end
+
   # Private functions
 
   @spec format_error(Ecto.Changeset.error()) :: String.t()

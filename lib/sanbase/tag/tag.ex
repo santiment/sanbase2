@@ -7,7 +7,7 @@ defmodule Sanbase.Tag do
   alias __MODULE__
   alias Sanbase.Repo
   alias Sanbase.Insight.Post
-  alias Sanbase.Signals.UserTrigger
+  alias Sanbase.Signal.UserTrigger
 
   schema "tags" do
     field(:name, :string)

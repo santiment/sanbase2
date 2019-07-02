@@ -1,8 +1,8 @@
-defmodule Sanbase.Signals.UserTrigger do
+defmodule Sanbase.Signal.UserTrigger do
   @moduledoc ~s"""
   Module that implements the connectionb between a user and a trigger.
   It provides functionsn for creating and updating such user triggerrs. Also
-  this is the struct that is used in the `Sanbase.Signals.Evaluator` because it
+  this is the struct that is used in the `Sanbase.Signal.Evaluator` because it
   needs to know the user to whom the signal needs to be sent.
   """
   @derive [Sanbase.Signal, Jason.Encoder]
@@ -13,12 +13,12 @@ defmodule Sanbase.Signals.UserTrigger do
 
   import Ecto.Changeset
   import Ecto.Query
-  import Sanbase.Signals.TriggerQuery
-  import Sanbase.Signals.StructMapTransformation
+  import Sanbase.Signal.TriggerQuery
+  import Sanbase.Signal.StructMapTransformation
 
   alias __MODULE__
   alias Sanbase.Auth.User
-  alias Sanbase.Signals.{Trigger, HistoricalActivity}
+  alias Sanbase.Signal.{Trigger, HistoricalActivity}
   alias Sanbase.Repo
   alias Sanbase.Tag
   alias Sanbase.Timeline.TimelineEvent

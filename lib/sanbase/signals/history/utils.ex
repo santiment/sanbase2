@@ -1,5 +1,5 @@
-defmodule Sanbase.Signals.History.Utils do
-  import Sanbase.Signals.{Utils, OperationEvaluation}
+defmodule Sanbase.Signal.History.Utils do
+  import Sanbase.Signal.{Utils, OperationEvaluation}
 
   @type percent_change_calculations :: {float(), boolean()}
 

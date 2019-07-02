@@ -47,7 +47,7 @@ config :sanbase, Sanbase.Telegram,
   telegram_endpoint: {:system, "TELEGRAM_ENDPOINT_RANDOM_STRING", "some_random_string"},
   token: {:system, "TELEGRAM_SIGNALS_BOT_TOKEN"}
 
-alias Sanbase.Signals.Trigger
+alias Sanbase.Signal.Trigger
 
 config :sanbase, Sanbase.Scheduler,
   scheduler_enabled: {:system, "QUANTUM_SCHEDULER_ENABLED", false},
@@ -65,26 +65,26 @@ config :sanbase, Sanbase.Scheduler,
     price_volume_difference_sonar_signal: [
       schedule: "1-59/5 * * * *",
       task:
-        {Sanbase.Signals.Scheduler, :run_signal, [Trigger.PriceVolumeDifferenceTriggerSettings]}
+        {Sanbase.Signal.Scheduler, :run_signal, [Trigger.PriceVolumeDifferenceTriggerSettings]}
     ],
     daily_active_addresses_sonar_signal: [
       schedule: "2-59/5 * * * *",
-      task: {Sanbase.Signals.Scheduler, :run_signal, [Trigger.DailyActiveAddressesSettings]}
+      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.DailyActiveAddressesSettings]}
     ],
     price_percent_change_sonar_signal: [
       schedule: "3-59/5 * * * *",
-      task: {Sanbase.Signals.Scheduler, :run_signal, [Trigger.PricePercentChangeSettings]}
+      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.PricePercentChangeSettings]}
     ],
     price_absolute_change_sonar_signal: [
       schedule: "4-59/5 * * * *",
-      task: {Sanbase.Signals.Scheduler, :run_signal, [Trigger.PriceAbsoluteChangeSettings]}
+      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.PriceAbsoluteChangeSettings]}
     ],
     trending_words_sonar_signal: [
       schedule: "5-59/5 * * * *",
-      task: {Sanbase.Signals.Scheduler, :run_signal, [Trigger.TrendingWordsTriggerSettings]}
+      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.TrendingWordsTriggerSettings]}
     ],
     eth_wallet_signal: [
       schedule: "5-59/5 * * * *",
-      task: {Sanbase.Signals.Scheduler, :run_signal, [Trigger.EthWalletTriggerSettings]}
+      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.EthWalletTriggerSettings]}
     ]
   ]

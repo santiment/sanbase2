@@ -18,7 +18,7 @@ config :ex_admin,
     Sanbase.ExAdmin.Model.ExchangeAddress,
     Sanbase.ExAdmin.FeaturedItem,
     Sanbase.ExAdmin.Model.Project.GithubOrganization,
-    Sanbase.ExAdmin.Signals.HistoricalActivity,
+    Sanbase.ExAdmin.Signal.HistoricalActivity,
     Sanbase.ExAdmin.Model.Ico,
     Sanbase.ExAdmin.Model.IcoCurrency,
     Sanbase.ExAdmin.Model.Infrastructure,
@@ -41,7 +41,7 @@ config :ex_admin,
     Sanbase.ExAdmin.Auth.UserApikeyToken,
     Sanbase.ExAdmin.UserList,
     Sanbase.ExAdmin.Auth.UserSettings,
-    Sanbase.ExAdmin.Signals.UserTrigger
+    Sanbase.ExAdmin.Signal.UserTrigger
   ],
   basic_auth: [
     username: {:system, "ADMIN_BASIC_AUTH_USERNAME"},

@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
+defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
   @moduledoc ~s"""
   Trigger settings for daily trending words signal.
   The signal is sent at the configured `trigger_time` and sends the last set of
@@ -10,11 +10,11 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
   use Vex.Struct
 
   import Sanbase.Math, only: [to_integer: 1]
-  import Sanbase.Signals.Utils
-  import Sanbase.Signals.Validation
+  import Sanbase.Signal.Utils
+  import Sanbase.Signal.Validation
 
   alias __MODULE__
-  alias Sanbase.Signals.Type
+  alias Sanbase.Signal.Type
   alias Sanbase.SocialData.TrendingWords
 
   @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
@@ -64,7 +64,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
 
   # private functions
 
-  defimpl Sanbase.Signals.Settings, for: TrendingWordsTriggerSettings do
+  defimpl Sanbase.Signal.Settings, for: TrendingWordsTriggerSettings do
     def triggered?(%TrendingWordsTriggerSettings{triggered?: triggered}), do: triggered
 
     def evaluate(%TrendingWordsTriggerSettings{target: target} = settings, _trigger) do

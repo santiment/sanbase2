@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.Validation do
+defmodule Sanbase.Signal.Validation do
   @notification_channels ["telegram", "email"]
 
   defguard is_valid_price(price) when is_number(price) and price >= 0

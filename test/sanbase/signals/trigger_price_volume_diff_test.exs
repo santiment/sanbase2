@@ -1,12 +1,12 @@
-defmodule Sanbase.Signals.PriceVolumeDiffTest do
+defmodule Sanbase.Signal.PriceVolumeDiffTest do
   use Sanbase.DataCase, async: false
 
   import Mock
   import Sanbase.Factory
   import ExUnit.CaptureLog
 
-  alias Sanbase.Signals.{Trigger, UserTrigger, Evaluator}
-  alias Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings
+  alias Sanbase.Signal.{Trigger, UserTrigger, Evaluator}
+  alias Sanbase.Signal.Trigger.PriceVolumeDifferenceTriggerSettings
 
   @ticker "SAN"
   @cmc_id "santiment"
@@ -17,7 +17,7 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
        build_embedded_chart: fn _, _, _ -> [%{image: %{url: "somelink"}}] end
      ]}
   ]) do
-    Sanbase.Signals.Evaluator.Cache.clear()
+    Sanbase.Signal.Evaluator.Cache.clear()
 
     Tesla.Mock.mock(fn
       %{method: :post} ->

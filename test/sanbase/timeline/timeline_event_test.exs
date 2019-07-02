@@ -5,7 +5,7 @@ defmodule Sanbase.Timeline.TimelineEventTest do
   import Sanbase.TestHelpers
 
   alias Sanbase.Insight.{Post, Poll}
-  alias Sanbase.Signals.UserTrigger
+  alias Sanbase.Signal.UserTrigger
   alias Sanbase.UserList
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Repo

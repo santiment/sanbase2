@@ -1,5 +1,5 @@
-defmodule Sanbase.Signals.StructMapTransformation do
-  alias Sanbase.Signals.Trigger
+defmodule Sanbase.Signal.StructMapTransformation do
+  alias Sanbase.Signal.Trigger
 
   @module_type_pairs [
     {Trigger.DailyActiveAddressesSettings, "daily_active_addresses"},
@@ -12,7 +12,7 @@ defmodule Sanbase.Signals.StructMapTransformation do
 
   # Use __struct__ instead of %module{} to avoid circular dependencies
   def trigger_in_struct(
-        %{trigger: trigger, __struct__: Sanbase.Signals.UserTrigger} = user_trigger
+        %{trigger: trigger, __struct__: Sanbase.Signal.UserTrigger} = user_trigger
       ) do
     %{user_trigger | trigger: trigger_in_struct(trigger)}
   end

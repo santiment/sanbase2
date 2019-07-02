@@ -1,14 +1,14 @@
-defmodule Sanbase.Signals.PriceVolumeDiffHistoryTest do
+defmodule Sanbase.Signal.PriceVolumeDiffHistoryTest do
   use Sanbase.DataCase, async: false
 
   import Mock
   import Sanbase.Factory
-  alias Sanbase.Signals.UserTrigger
+  alias Sanbase.Signal.UserTrigger
 
   @moduletag capture_log: true
 
   setup do
-    Sanbase.Signals.Evaluator.Cache.clear()
+    Sanbase.Signal.Evaluator.Cache.clear()
 
     project =
       insert(:project, %{

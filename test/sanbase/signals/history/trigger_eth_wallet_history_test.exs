@@ -1,15 +1,15 @@
-defmodule Sanbase.Signals.EthWalletTriggerHistoryTest do
+defmodule Sanbase.Signal.EthWalletTriggerHistoryTest do
   use Sanbase.DataCase, async: false
 
   import Mock
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
-  alias Sanbase.Signals.UserTrigger
+  alias Sanbase.Signal.UserTrigger
 
   alias Sanbase.Clickhouse.HistoricalBalance
 
   setup do
-    Sanbase.Signals.Evaluator.Cache.clear()
+    Sanbase.Signal.Evaluator.Cache.clear()
 
     project = Sanbase.Factory.insert(:random_erc20_project)
 

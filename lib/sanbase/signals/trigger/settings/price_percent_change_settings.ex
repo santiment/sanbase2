@@ -1,17 +1,17 @@
-defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
+defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
   @moduledoc ~s"""
   PricePercentChangeSettings configures the settings for a signal that is fired
   when the price of `target` moves up or down by specified percent for the
   specified `time_window` time.
   """
   use Vex.Struct
-  import Sanbase.Signals.{Validation, Utils, OperationEvaluation}
+  import Sanbase.Signal.{Validation, Utils, OperationEvaluation}
 
   alias __MODULE__
-  alias Sanbase.Signals.Type
+  alias Sanbase.Signal.Type
   alias Sanbase.Model.Project
   alias Sanbase.DateTimeUtils
-  alias Sanbase.Signals.Evaluator.Cache
+  alias Sanbase.Signal.Evaluator.Cache
 
   @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
   @trigger_type "price_percent_change"
@@ -86,7 +86,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
     "first_last_#{project.id}_#{from_rounded}_#{to_rounded}"
   end
 
-  defimpl Sanbase.Signals.Settings, for: PricePercentChangeSettings do
+  defimpl Sanbase.Signal.Settings, for: PricePercentChangeSettings do
     def triggered?(%PricePercentChangeSettings{triggered?: triggered}), do: triggered
 
     def evaluate(%PricePercentChangeSettings{} = settings, _trigger) do

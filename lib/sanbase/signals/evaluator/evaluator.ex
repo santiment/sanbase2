@@ -1,10 +1,10 @@
-defmodule Sanbase.Signals.Evaluator do
+defmodule Sanbase.Signal.Evaluator do
   @moduledoc ~s"""
   A module that takes a list of triggers and returns the ones that are triggered.
   """
 
-  alias Sanbase.Signals.Evaluator.Cache
-  alias Sanbase.Signals.{UserTrigger, Trigger}
+  alias Sanbase.Signal.Evaluator.Cache
+  alias Sanbase.Signal.{UserTrigger, Trigger}
 
   require Logger
 

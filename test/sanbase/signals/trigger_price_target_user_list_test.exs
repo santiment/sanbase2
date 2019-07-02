@@ -6,7 +6,7 @@ defmodule SanbaseWeb.Graphql.TargetUserListTest do
   import Sanbase.TestHelpers
 
   alias Sanbase.UserList
-  alias Sanbase.Signals.UserTrigger
+  alias Sanbase.Signal.UserTrigger
 
   setup do
     clean_task_supervisor_children()

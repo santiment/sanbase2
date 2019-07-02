@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.Evaluator.Cache do
+defmodule Sanbase.Signal.Evaluator.Cache do
   @moduledoc ~s"""
   Cache that is used during custom user signals evaluation. A subset of the
   signal's settings that uniquely determine the outcome are usead to generate a sha256

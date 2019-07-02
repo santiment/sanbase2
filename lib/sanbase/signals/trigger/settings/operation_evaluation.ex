@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.OperationEvaluation do
+defmodule Sanbase.Signal.OperationEvaluation do
   defguard is_between_exclusive(value, low, high)
            when is_number(value) and is_number(low) and is_number(high) and value > low and
                   value < high

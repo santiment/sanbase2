@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.EvaluatorPriceTest do
+defmodule Sanbase.Signal.EvaluatorPriceTest do
   use Sanbase.DataCase, async: false
 
   import Mock
@@ -7,8 +7,8 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
 
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
-  alias Sanbase.Signals.{Trigger, UserTrigger, Evaluator}
-  alias Sanbase.Signals.Trigger.{PricePercentChangeSettings, PriceAbsoluteChangeSettings}
+  alias Sanbase.Signal.{Trigger, UserTrigger, Evaluator}
+  alias Sanbase.Signal.Trigger.{PricePercentChangeSettings, PriceAbsoluteChangeSettings}
 
   @ticker "SAN"
   @cmc_id "santiment"
@@ -19,7 +19,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
        build_embedded_chart: fn _, _, _ -> [%{image: %{url: "somelink"}}] end
      ]}
   ]) do
-    Sanbase.Signals.Evaluator.Cache.clear()
+    Sanbase.Signal.Evaluator.Cache.clear()
 
     Tesla.Mock.mock(fn
       %{method: :post} ->
@@ -179,13 +179,13 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
       end)
 
       assert capture_log(fn ->
-               Sanbase.Signals.Scheduler.run_signal(PriceAbsoluteChangeSettings)
+               Sanbase.Signal.Scheduler.run_signal(PriceAbsoluteChangeSettings)
              end) =~ "In total 1/1 price_absolute_change signals were sent successfully"
 
-      Sanbase.Signals.Evaluator.Cache.clear()
+      Sanbase.Signal.Evaluator.Cache.clear()
 
       assert capture_log(fn ->
-               Sanbase.Signals.Scheduler.run_signal(PriceAbsoluteChangeSettings)
+               Sanbase.Signal.Scheduler.run_signal(PriceAbsoluteChangeSettings)
              end) =~ "There were no signals triggered of type"
     end
   end

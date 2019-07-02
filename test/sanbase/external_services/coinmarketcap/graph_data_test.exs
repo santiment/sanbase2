@@ -99,7 +99,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
     to = DateTime.utc_now()
 
     {:ok, [[_datetime, mean_volume]]} =
-      Store.fetch_mean_volume(@total_market_measurement, from, to)
+      Store.fetch_average_volume(@total_market_measurement, from, to)
 
     assert mean_volume == 2_513_748_896.5741253
   end

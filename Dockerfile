@@ -25,7 +25,7 @@ RUN mix format --check-formatted
 
 RUN mix compile
 RUN mix phx.digest
-RUN mix release
+RUN mix distillery.release
 
 # Release image
 FROM elixir:1.9.0-alpine

@@ -1,7 +1,7 @@
-defmodule Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings do
+defmodule Sanbase.Signal.Trigger.PriceVolumeDifferenceTriggerSettings do
   use Vex.Struct
 
-  import Sanbase.Signals.{Validation, Utils}
+  import Sanbase.Signal.{Validation, Utils}
 
   alias __MODULE__
   alias Sanbase.Model.Project
@@ -86,7 +86,7 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings do
     {slug, result}
   end
 
-  defimpl Sanbase.Signals.Settings, for: PriceVolumeDifferenceTriggerSettings do
+  defimpl Sanbase.Signal.Settings, for: PriceVolumeDifferenceTriggerSettings do
     def triggered?(%PriceVolumeDifferenceTriggerSettings{triggered?: triggered}), do: triggered
 
     def evaluate(%PriceVolumeDifferenceTriggerSettings{} = settings, _trigger) do

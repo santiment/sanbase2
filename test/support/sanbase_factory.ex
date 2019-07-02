@@ -19,7 +19,7 @@ defmodule Sanbase.Factory do
     IcoCurrency
   }
 
-  alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
+  alias Sanbase.Signal.{UserTrigger, HistoricalActivity}
   alias Sanbase.Pricing.{Product, Plan, Subscription}
   alias Sanbase.Pricing.Plan.AccessSeed
   alias Sanbase.Timeline.TimelineEvent

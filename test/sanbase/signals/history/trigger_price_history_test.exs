@@ -1,11 +1,11 @@
-defmodule Sanbase.Signals.TriggerPriceHistoryTest do
+defmodule Sanbase.Signal.TriggerPriceHistoryTest do
   use Sanbase.DataCase, async: false
 
   import Mock
   import Sanbase.Factory
   import Sanbase.DateTimeUtils
 
-  alias Sanbase.Signals.UserTrigger
+  alias Sanbase.Signal.UserTrigger
 
   test "returns historical daa data with trigger points" do
     daa_result = [

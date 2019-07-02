@@ -1,4 +1,4 @@
-defprotocol Sanbase.Signals.Settings do
+defprotocol Sanbase.Signal.Settings do
   def evaluate(trigger_settings, trigger)
 
   @spec triggered?(struct()) :: boolean()
@@ -8,12 +8,12 @@ defprotocol Sanbase.Signals.Settings do
   def cache_key(trigger)
 end
 
-defprotocol Sanbase.Signals.History do
+defprotocol Sanbase.Signal.History do
   @spec historical_trigger_points(struct(), String.t()) :: {:ok, list(any())} | {:error, any()}
   def historical_trigger_points(trigger, cooldown)
 end
 
-defmodule Sanbase.Signals.Trigger do
+defmodule Sanbase.Signal.Trigger do
   @moduledoc ~s"""
   Module that represents an embedded schema that is used in UserTrigger`s `jsonb`
   column. It represents a trigger, providing some common fields:
@@ -83,7 +83,7 @@ defmodule Sanbase.Signals.Trigger do
   end
 
   defp validate_url(_changeset, url) do
-    case Sanbase.Signals.Validation.valid_url?(url) do
+    case Sanbase.Signal.Validation.valid_url?(url) do
       :ok -> []
       {:error, reason} -> [icon_url: reason]
     end
@@ -94,21 +94,21 @@ defmodule Sanbase.Signals.Trigger do
 
     trigger_settings =
       %{trigger_settings | filtered_target: filtered_target}
-      |> Sanbase.Signals.Settings.evaluate(trigger)
+      |> Sanbase.Signal.Settings.evaluate(trigger)
 
     %Trigger{trigger | settings: trigger_settings}
   end
 
   def historical_trigger_points(%Trigger{settings: trigger_settings, cooldown: cooldown}) do
-    Sanbase.Signals.History.historical_trigger_points(trigger_settings, cooldown)
+    Sanbase.Signal.History.historical_trigger_points(trigger_settings, cooldown)
   end
 
   def triggered?(%Trigger{settings: trigger_settings}) do
-    Sanbase.Signals.Settings.triggered?(trigger_settings)
+    Sanbase.Signal.Settings.triggered?(trigger_settings)
   end
 
   def cache_key(%Trigger{settings: trigger_settings}) do
-    Sanbase.Signals.Settings.cache_key(trigger_settings)
+    Sanbase.Signal.Settings.cache_key(trigger_settings)
   end
 
   def last_triggered(%Trigger{last_triggered: lt}, _target) when map_size(lt) == 0, do: nil
@@ -173,7 +173,7 @@ defmodule Sanbase.Signals.Trigger do
   defp remove_targets_on_cooldown(target_list, trigger, type) when is_list(target_list) do
     target_list =
       target_list
-      |> Enum.reject(&Sanbase.Signals.Trigger.has_cooldown?(trigger, &1))
+      |> Enum.reject(&Sanbase.Signal.Trigger.has_cooldown?(trigger, &1))
 
     %{list: target_list, type: type}
   end

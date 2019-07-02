@@ -1,14 +1,14 @@
-defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
+defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
   @moduledoc """
   Implementation of historical_trigger_points for daily active addresses.
   Currently it is bucketed in `1 day` intervals and goes 90 days back.
   """
 
   # TODO: Change `%{percent_up: settings.percent_threshold}` with `operation` when implemented
-  import Sanbase.Signals.History.Utils
+  import Sanbase.Signal.History.Utils
   import Sanbase.Math, only: [average: 1]
 
-  alias Sanbase.Signals.Trigger.DailyActiveAddressesSettings
+  alias Sanbase.Signal.Trigger.DailyActiveAddressesSettings
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.DailyActiveAddresses
   alias Sanbase.Influxdb.Measurement
@@ -23,14 +23,14 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
           percent_change: float()
         }
 
-  defimpl Sanbase.Signals.History, for: DailyActiveAddressesSettings do
+  defimpl Sanbase.Signal.History, for: DailyActiveAddressesSettings do
     @historical_days_from 90
     @historical_days_to 1
     @historical_days_interval "1d"
     # Because the data is bucketed in daily intervals
     @minimal_time_window_in_days 2
 
-    alias Sanbase.Signals.History.DailyActiveAddressesHistory
+    alias Sanbase.Signal.History.DailyActiveAddressesHistory
 
     @spec historical_trigger_points(%DailyActiveAddressesSettings{}, String.t()) ::
             {:ok, list(DailyActiveAddressesHistory.historical_trigger_points_type())}

@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.HistoricalActivity do
+defmodule Sanbase.Signal.HistoricalActivity do
   @moduledoc ~s"""
   Table that persists triggered signals and their payload.
   """
@@ -8,7 +8,7 @@ defmodule Sanbase.Signals.HistoricalActivity do
   import Ecto.Query
 
   import Ecto.Changeset
-  alias Sanbase.Signals.UserTrigger
+  alias Sanbase.Signal.UserTrigger
   alias Sanbase.Auth.User
   alias Sanbase.Repo
 
@@ -29,8 +29,8 @@ defmodule Sanbase.Signals.HistoricalActivity do
 
   @doc """
   Fetch signal historical activity for user with cursor ordered by triggered_at descending.
-  Cursor is a map with `type` (one of `:before` and `:after`) and `datetime`. 
-  * `before` cursor is pointed at the last record of the return list. 
+  Cursor is a map with `type` (one of `:before` and `:after`) and `datetime`.
+  * `before` cursor is pointed at the last record of the return list.
     It is used for fetching messages `before` certain datetime
   * `after` cursor is pointed at latest message. It is used for fetching the latest signal activity.
   """

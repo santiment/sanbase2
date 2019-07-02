@@ -1,10 +1,10 @@
-defmodule Sanbase.Signals.History.PriceVolumeDifferenceHistory do
+defmodule Sanbase.Signal.History.PriceVolumeDifferenceHistory do
   @moduledoc """
   Implementations of historical trigger points for price_volume_difference.
   The history goes 180 days back.
   """
 
-  alias Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings
+  alias Sanbase.Signal.Trigger.PriceVolumeDifferenceTriggerSettings
 
   require Logger
 
@@ -14,10 +14,10 @@ defmodule Sanbase.Signals.History.PriceVolumeDifferenceHistory do
           triggered?: boolean()
         }
 
-  defimpl Sanbase.Signals.History, for: PriceVolumeDifferenceTriggerSettings do
+  defimpl Sanbase.Signal.History, for: PriceVolumeDifferenceTriggerSettings do
     @historical_days_from 180
 
-    alias Sanbase.Signals.History.PriceVolumeDifferenceHistory
+    alias Sanbase.Signal.History.PriceVolumeDifferenceHistory
 
     @spec historical_trigger_points(%PriceVolumeDifferenceTriggerSettings{}, String.t()) ::
             {:ok, list(PriceVolumeDifferenceHistory.historical_trigger_points_type())}

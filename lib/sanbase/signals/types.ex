@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.Type do
+defmodule Sanbase.Signal.Type do
   @type trigger_type :: String.t()
   @type channel :: String.t()
   @type target :: String.t()

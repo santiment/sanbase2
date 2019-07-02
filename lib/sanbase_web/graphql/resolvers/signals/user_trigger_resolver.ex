@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
 
   import SanbaseWeb.Graphql.Helpers.Utils, only: [transform_user_trigger: 1]
   alias Sanbase.Auth.User
-  alias Sanbase.Signals.{Trigger, UserTrigger}
+  alias Sanbase.Signal.{Trigger, UserTrigger}
   alias SanbaseWeb.Graphql.Helpers.Utils
   alias Sanbase.Telegram
 

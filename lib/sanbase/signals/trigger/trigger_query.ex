@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.TriggerQuery do
+defmodule Sanbase.Signal.TriggerQuery do
   defmacro trigger_type_is(type) do
     quote do
       fragment(

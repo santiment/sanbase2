@@ -1,14 +1,14 @@
-defmodule Sanbase.Signals.History.EthWalletTriggerHistory do
+defmodule Sanbase.Signal.History.EthWalletTriggerHistory do
   @moduledoc """
   Implementations of historical trigger points for eth_wallet signal for one year
   back and 1 day intervals.
   """
 
-  import Sanbase.Signals.OperationEvaluation
+  import Sanbase.Signal.OperationEvaluation
 
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.HistoricalBalance
-  alias Sanbase.Signals.Trigger.EthWalletTriggerSettings
+  alias Sanbase.Signal.Trigger.EthWalletTriggerSettings
 
   require Logger
 
@@ -54,8 +54,8 @@ defmodule Sanbase.Signals.History.EthWalletTriggerHistory do
     {from, now, @historical_interval}
   end
 
-  defimpl Sanbase.Signals.History, for: EthWalletTriggerSettings do
-    alias Sanbase.Signals.History.EthWalletTriggerHistory
+  defimpl Sanbase.Signal.History, for: EthWalletTriggerSettings do
+    alias Sanbase.Signal.History.EthWalletTriggerHistory
 
     @spec historical_trigger_points(%EthWalletTriggerSettings{}, String.t()) ::
             {:ok, []}

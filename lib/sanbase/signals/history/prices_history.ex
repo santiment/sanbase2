@@ -1,14 +1,14 @@
-defmodule Sanbase.Signals.History.PricesHistory do
+defmodule Sanbase.Signal.History.PricesHistory do
   @moduledoc """
   Implementations of historical trigger points for price_percent_change and
   price_absolute_change triggers. Historical prices are bucketed at `1 hour` intervals and goes
   `90 days` back.
   """
 
-  import Sanbase.Signals.OperationEvaluation
-  import Sanbase.Signals.History.Utils
+  import Sanbase.Signal.OperationEvaluation
+  import Sanbase.Signal.History.Utils
 
-  alias Sanbase.Signals.Trigger.{
+  alias Sanbase.Signal.Trigger.{
     PriceAbsoluteChangeSettings,
     PricePercentChangeSettings
   }
@@ -60,8 +60,8 @@ defmodule Sanbase.Signals.History.PricesHistory do
     {from, to, interval}
   end
 
-  defimpl Sanbase.Signals.History, for: PriceAbsoluteChangeSettings do
-    alias Sanbase.Signals.History.PricesHistory
+  defimpl Sanbase.Signal.History, for: PriceAbsoluteChangeSettings do
+    alias Sanbase.Signal.History.PricesHistory
 
     @spec historical_trigger_points(%PriceAbsoluteChangeSettings{}, String.t()) ::
             {:ok, list(PricesHistory.historical_trigger_points_type())} | {:error, String.t()}
@@ -100,8 +100,8 @@ defmodule Sanbase.Signals.History.PricesHistory do
     end
   end
 
-  defimpl Sanbase.Signals.History, for: PricePercentChangeSettings do
-    alias Sanbase.Signals.History.PricesHistory
+  defimpl Sanbase.Signal.History, for: PricePercentChangeSettings do
+    alias Sanbase.Signal.History.PricesHistory
 
     # Minimal time window is set to 2 hours. That is due to interval buckets being 1 hour each.
     @minimal_time_window 2

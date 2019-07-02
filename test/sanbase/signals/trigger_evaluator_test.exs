@@ -1,14 +1,14 @@
-defmodule Sanbase.Signals.EvaluatorTest do
+defmodule Sanbase.Signal.EvaluatorTest do
   use Sanbase.DataCase, async: false
 
   import Mock
   import Sanbase.Factory
   import ExUnit.CaptureLog
 
-  alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
-  alias Sanbase.Signals.Evaluator
+  alias Sanbase.Signal.{UserTrigger, HistoricalActivity}
+  alias Sanbase.Signal.Evaluator
 
-  alias Sanbase.Signals.Trigger.{
+  alias Sanbase.Signal.Trigger.{
     DailyActiveAddressesSettings,
     TrendingWordsTriggerSettings
   }
@@ -20,7 +20,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
        build_embedded_chart: fn _, _, _ -> [%{image: %{url: "somelink"}}] end
      ]}
   ]) do
-    Sanbase.Signals.Evaluator.Cache.clear()
+    Sanbase.Signal.Evaluator.Cache.clear()
 
     user = insert(:user)
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
@@ -161,18 +161,18 @@ defmodule Sanbase.Signals.EvaluatorTest do
         {:ok, [%{top_words: top_words()}]}
       end do
       assert capture_log(fn ->
-               Sanbase.Signals.Scheduler.run_signal(TrendingWordsTriggerSettings)
+               Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
              end) =~ "In total 1/1 trending_words signals were sent successfully"
 
-      alias Sanbase.Signals.HistoricalActivity
+      alias Sanbase.Signal.HistoricalActivity
       user_signal = HistoricalActivity |> Sanbase.Repo.all() |> List.first()
       assert user_signal.user_id == context.user.id
       assert String.contains?(user_signal.payload["all"], "coinbase")
 
-      Sanbase.Signals.Evaluator.Cache.clear()
+      Sanbase.Signal.Evaluator.Cache.clear()
 
       assert capture_log(fn ->
-               Sanbase.Signals.Scheduler.run_signal(TrendingWordsTriggerSettings)
+               Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
              end) =~ "There were no signals triggered of type"
     end
   end
@@ -188,7 +188,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
         {:ok, [%{top_words: top_words()}]}
       end do
       assert capture_log(fn ->
-               Sanbase.Signals.Scheduler.run_signal(TrendingWordsTriggerSettings)
+               Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
              end) =~ "In total 1/1 trending_words signals were sent successfully"
 
       user_signal = HistoricalActivity |> Sanbase.Repo.all() |> List.first()
@@ -204,7 +204,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
     })
 
     assert capture_log(fn ->
-             Sanbase.Signals.Scheduler.run_signal(TrendingWordsTriggerSettings)
+             Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
            end) =~ "There were no signals triggered of type"
   end
 
@@ -224,7 +224,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
         {:ok, [%{top_words: top_words()}]}
       end do
       assert capture_log(fn ->
-               Sanbase.Signals.Scheduler.run_signal(TrendingWordsTriggerSettings)
+               Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
              end) =~ "In total 1/1 trending_words signals were sent successfully"
 
       {:ok, ut} = UserTrigger.get_trigger_by_id(context.user, context.trigger_trending_words.id)
@@ -269,7 +269,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
         type
         |> UserTrigger.get_active_triggers_by_type()
         |> Enum.filter(fn %{id: id} -> id in [trigger1.id, trigger2.id] end)
-        |> Sanbase.Signals.Evaluator.run(type)
+        |> Sanbase.Signal.Evaluator.run(type)
 
       # Assert that not the whole trigger is replaced when it's taken from cache
       # but only `payload` and the `triggered?`
@@ -325,7 +325,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
       type
       |> UserTrigger.get_active_triggers_by_type()
       |> Enum.filter(fn %{id: id} -> id in [trigger1.id, trigger2.id] end)
-      |> Sanbase.Signals.Evaluator.run(type)
+      |> Sanbase.Signal.Evaluator.run(type)
 
       assert_called(DailyActiveAddressesSettings.get_data(%{channel: "email"}))
       assert_called(DailyActiveAddressesSettings.get_data(%{channel: "telegram"}))
@@ -377,7 +377,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
       type
       |> UserTrigger.get_active_triggers_by_type()
       |> Enum.filter(fn %{id: id} -> id in [trigger1.id, trigger2.id] end)
-      |> Sanbase.Signals.Evaluator.run(type)
+      |> Sanbase.Signal.Evaluator.run(type)
 
       # Only one of the signals called `get_data`, the other fetched the data
       # from the cache

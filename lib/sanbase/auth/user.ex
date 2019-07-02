@@ -16,7 +16,7 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.UserList
   alias Sanbase.Repo
   alias Sanbase.Telegram
-  alias Sanbase.Signals.HistoricalActivity
+  alias Sanbase.Signal.HistoricalActivity
   alias Sanbase.Following.UserFollower
   alias Sanbase.Pricing.Subscription
 

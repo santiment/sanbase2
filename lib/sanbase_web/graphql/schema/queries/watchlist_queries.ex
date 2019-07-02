@@ -7,8 +7,6 @@ defmodule SanbaseWeb.Graphql.Schema.WatchlistQueries do
   """
   use Absinthe.Schema.Notation
 
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
-
   alias SanbaseWeb.Graphql.Resolvers.UserListResolver
 
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
@@ -56,12 +54,12 @@ defmodule SanbaseWeb.Graphql.Schema.WatchlistQueries do
       deprecate("Use `watchlist` with argument `id` instead")
       arg(:user_list_id, non_null(:id))
 
-      cache_resolve(&UserListResolver.user_list/3)
+      resolve(&UserListResolver.user_list/3)
     end
 
     field :watchlist, :user_list do
       arg(:id, non_null(:id))
-      cache_resolve(&UserListResolver.watchlist/3)
+      resolve(&UserListResolver.watchlist/3)
     end
   end
 

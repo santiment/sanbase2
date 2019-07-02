@@ -32,7 +32,11 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
     field(:is_public, :boolean)
     field(:color, :color_enum)
     field(:function, :json)
-    field(:list_items, list_of(:list_item), resolve: &UserListResolver.list_items/3)
+
+    field :list_items, list_of(:list_item) do
+      resolve(&UserListResolver.list_items/3)
+    end
+
     field(:inserted_at, non_null(:naive_datetime))
     field(:updated_at, non_null(:naive_datetime))
 

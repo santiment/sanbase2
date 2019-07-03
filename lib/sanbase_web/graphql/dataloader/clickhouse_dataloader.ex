@@ -42,8 +42,8 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
       {:ok, organizations} = Project.github_organizations(project)
       organizations
     end)
-    |> Enum.reject(&is_nil/1)
     |> Enum.chunk_every(100)
+    |> Enum.reject(fn orgs -> orgs == nil or orgs == [] end)
     |> Sanbase.Parallel.map(
       fn organizations ->
         {:ok, dev_activity} = Clickhouse.Github.total_dev_activity(organizations, from, to)

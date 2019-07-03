@@ -129,6 +129,7 @@ defmodule Sanbase.Clickhouse.Github do
           non_neg_integer()
         ) :: {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
   def github_activity(nil, _, _, _), do: {:ok, []}
+  def github_activity([], _, _, _), do: {:ok, []}
 
   def github_activity(organizations, from, to, interval, "None", _) do
     interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
@@ -195,10 +196,10 @@ defmodule Sanbase.Clickhouse.Github do
           FROM (
             SELECT any(event) as events, dt
             FROM #{@table}
-            PREWHERE owner in (?3)
+            PREWHERE owner IN (?3)
             AND dt >= toDateTime(?4)
             AND dt <= toDateTime(?5)
-            AND event NOT in (?6)
+            AND event NOT IN (?6)
             GROUP BY owner, dt
           )
           GROUP BY time

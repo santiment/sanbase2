@@ -6,6 +6,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   """
 
   use AsyncWith
+  @async_with_timeout 25_000
 
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.HistoricalBalance.{EthBalance, Erc20Balance}

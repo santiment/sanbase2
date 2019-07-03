@@ -56,9 +56,9 @@ These are the fields describing a trigger.
 //price >= 0.51
 {
   "type": "price_absolute_change",
-  "target": {"slug": "santiment"},
+  "target": { "slug": "santiment" },
   "channel": "telegram",
-  "operation": {"above": 0.51}
+  "operation": { "above": 0.51 }
 }
 ```
 
@@ -66,9 +66,9 @@ These are the fields describing a trigger.
 // price <= 0.50
 {
   "type": "price_absolute_change",
-  "target": {"slug": "santiment"},
+  "target": { "slug": "santiment" },
   "channel": "telegram",
-  "operation": {"below": 0.50}
+  "operation": { "below": 0.5 }
 }
 ```
 
@@ -76,9 +76,9 @@ These are the fields describing a trigger.
 // price >= 0.49 and price <= 0.51
 {
   "type": "price_absolute_change",
-  "target": {"slug": "santiment"},
+  "target": { "slug": "santiment" },
   "channel": "telegram",
-  "operation": {"inside_channel": [0.49, 0.51]}
+  "operation": { "inside_channel": [0.49, 0.51] }
 }
 ```
 
@@ -86,9 +86,9 @@ These are the fields describing a trigger.
 // price <= 0.49 and price >= 0.51
 {
   "type": "price_absolute_change",
-  "target": {"slug": "santiment"},
+  "target": { "slug": "santiment" },
   "channel": "telegram",
-  "operation": {"outside_channel": [0.49, 0.51]}
+  "operation": { "outside_channel": [0.49, 0.51] }
 }
 ```
 
@@ -98,10 +98,10 @@ These are the fields describing a trigger.
 // price went up by 10% compared to 1 day ago
 {
   "type": "price_percent_change",
-  "target": {"slug": "santiment"},
+  "target": { "slug": "santiment" },
   "channel": "telegram",
   "time_window": "1d",
-  "operation": {"percent_up": 10.0}
+  "operation": { "percent_up": 10.0 }
 }
 ```
 
@@ -109,10 +109,10 @@ These are the fields describing a trigger.
 // price went down by 5% compared to 1 day ago
 {
   "type": "price_percent_change",
-  "target": {"slug": "santiment"},
+  "target": { "slug": "santiment" },
   "channel": "telegram",
   "time_window": "1d",
-  "operation": {"percent_down": 5.0}
+  "operation": { "percent_down": 5.0 }
 }
 ```
 
@@ -132,11 +132,46 @@ These are the fields describing a trigger.
 #### Example settings structure for `trending_words`
 
 ```json
-// Send the list of currently trending words at 12:00 UTC time.
+// Send the list of top 10 currently trending words at 12:00 UTC time.
 {
   "type": "trending_words",
   "channel": "telegram",
-  "trigger_time": "12:00:00"
+  "operation": {
+    "send_at_predefined_time": true,
+    "trigger_time": "12:00:00",
+    "size": 10
+  }
+}
+```
+
+```json
+// Send a signal if Santiment project is trending
+{
+  "type": "trending_words",
+  "channel": "telegram",
+  "target": { "slug": "santiment" },
+  "operation": { "project_trending": true }
+}
+```
+
+```json
+// Send a signal if any of the projects is trending. A project is trending if
+// at least one of its ticker, name or slug is in the trending words
+{
+  "type": "trending_words",
+  "channel": "telegram",
+  "target": { "slug": ["santiment", "bitcoin"] },
+  "operation": { "trending_project": true }
+}
+```
+
+```json
+// Send a signal if any of the words is trending
+{
+  "type": "trending_words",
+  "channel": "telegram",
+  "target": { "word": ["btc", "eth", "xrp"] },
+  "operation": { "trending_word": true }
 }
 ```
 
@@ -147,7 +182,7 @@ These are the fields describing a trigger.
 {
   "type": "price_volume_difference",
   "channel": "telegram",
-  "target": {"slug": "santiment"},
+  "target": { "slug": "santiment" },
   "threshold": 0.002
 }
 ```
@@ -159,9 +194,9 @@ These are the fields describing a trigger.
 {
   "type": "eth_wallet",
   "channel": "telegram",
-  "target": {"slug": "santiment"},
-  "asset": {"slug": "ethereum"},
-  "operation": {"amount_down": 100}
+  "target": { "slug": "santiment" },
+  "asset": { "slug": "ethereum" },
+  "operation": { "amount_down": 100 }
 }
 ```
 
@@ -170,9 +205,9 @@ These are the fields describing a trigger.
 {
   "type": "eth_wallet",
   "channel": "telegram",
-  "target": {"slug": "santiment"},
-  "asset": {"slug": "ethereum"},
-  "operation": {"amount_up": 200}
+  "target": { "slug": "santiment" },
+  "asset": { "slug": "ethereum" },
+  "operation": { "amount_up": 200 }
 }
 ```
 
@@ -181,19 +216,18 @@ These are the fields describing a trigger.
 {
   "type": "eth_wallet",
   "channel": "telegram",
-  "target": {"eth_address": "0x123"},
-  "asset": {"slug": "santiment"},
-  "operation": {"amount_up": 1000}
+  "target": { "eth_address": "0x123" },
+  "asset": { "slug": "santiment" },
+  "operation": { "amount_up": 1000 }
 }
 ```
 
 ### Create trigger
 
-
-``` graphql
+```graphql
 mutation {
   createTrigger(
-    title:"test ceco"
+    title: "test ceco"
     settings: "{\"channel\":\"telegram\",\"percent_threshold\":200.0,\"target\":{\"slug\": \"santiment\"},\"time_window\":\"30d\",\"type\":\"daily_active_addresses\"}"
   ) {
     trigger {
@@ -214,28 +248,28 @@ mutation {
 ### Get all triggers for current user
 
 ```graphql
-    {
-      currentUser {
-        id,
-        triggers {
-          id
-          title
-          description
-          isPublic
-          cooldown
-          iconUrl
-          active
-          repeating
-          settings
-        }
-      }
+{
+  currentUser {
+    id
+    triggers {
+      id
+      title
+      description
+      isPublic
+      cooldown
+      iconUrl
+      active
+      repeating
+      settings
     }
+  }
+}
 ```
 
 ### Update trigger by id
 
-* If `settings` is updated all fields in settings must be provided.
-* Trigger top-level ields can be updated - for ex: `isPublic`.
+- If `settings` is updated all fields in settings must be provided.
+- Trigger top-level ields can be updated - for ex: `isPublic`.
 
 Update `settings` and `isPublic`.
 
@@ -265,10 +299,7 @@ Update only trigger top-level field `isPublic`.
 
 ```graphql
 mutation {
-  updateTrigger(
-    id: 16
-    isPublic: true
-  ) {
+  updateTrigger(id: 16, isPublic: true) {
     trigger {
       id
       title
@@ -289,7 +320,7 @@ mutation {
 ```graphql
 mutation {
   removeTrigger(id: 9) {
-  	trigger {
+    trigger {
       id
     }
   }
@@ -300,9 +331,7 @@ mutation {
 
 ```graphql
 {
-  getTriggerById(
-    id: 16
-  ) {
+  getTriggerById(id: 16) {
     trigger {
       id
       title
@@ -364,8 +393,8 @@ mutation {
 
 ```graphql
 {
-  featuredUserTriggers{
-    trigger{
+  featuredUserTriggers {
+    trigger {
       title
       settings
     }
@@ -379,34 +408,31 @@ mutation {
 
 ```graphql
 {
-    signalsHistoricalActivity(
-      limit:1,
-      cursor:{
-        type:BEFORE,
-        datetime:"2019-03-11T11:56:42.970284"
-      }
-    ) {
-      cursor {
-        before,
-        after
-      }
-      activity {
-        payload,
-        triggeredAt,
-        userTrigger {
-          trigger {
-            title,
-            description
-          }
+  signalsHistoricalActivity(
+    limit: 1
+    cursor: { type: BEFORE, datetime: "2019-03-11T11:56:42.970284" }
+  ) {
+    cursor {
+      before
+      after
+    }
+    activity {
+      payload
+      triggeredAt
+      userTrigger {
+        trigger {
+          title
+          description
         }
       }
     }
+  }
 }
 ```
 
 #### Historical activity response
 
-```graphql
+````graphql
 {
   "data": {
     "signalsHistoricalActivity": {
@@ -432,7 +458,7 @@ mutation {
     }
   }
 }
-```
+````
 
 - `payload` is a json with key `slug` | `all` (when there is no specific slug) and value markdown message.
 
@@ -461,6 +487,7 @@ mutation {
 ```
 
 ### Historical trigger points
+
 Takes currently filled settings and a chosen cooldown and calculates historical trigger points that can be used in a preview chart.
 
 - Daily Active Addresses - 90 days of historical data. Minimal `time_window` is 2 days because intervals are 1 day each.
@@ -468,9 +495,9 @@ Takes currently filled settings and a chosen cooldown and calculates historical 
 - PriceVolumeDifference - 180 days of data.
 
 ```graphql
- {
+{
   historicalTriggerPoints(
-    cooldown:"2d"
+    cooldown: "2d"
     settings: "{\"percent_threshold\":200.0,\"target\":{\"slug\": \"naga\"},\"time_window\":\"30d\",\"type\":\"daily_active_addresses\"}"
   )
 }

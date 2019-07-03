@@ -20,22 +20,23 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
   @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
   @trigger_type "trending_words"
   @trending_words_size 10
-  @enforce_keys [:type, :channel, :trigger_time]
+  @enforce_keys [:type, :channel, :operation]
 
   defstruct type: @trigger_type,
             channel: nil,
-            trigger_time: nil,
             triggered?: false,
             payload: %{},
-            target: "all",
+            operation: %{},
+            target: "default",
             filtered_target: %{list: []}
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
           channel: Type.channel(),
-          trigger_time: String.t(),
+          operation: Type.operation(),
           triggered?: boolean(),
-          payload: Type.payload()
+          payload: Type.payload(),
+          triggered?: boolean()
         }
 
   @type top_word_type :: %{
@@ -45,21 +46,13 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
 
   # Validations
   validates(:channel, &valid_notification_channel/1)
-  validates(:trigger_time, &valid_iso8601_datetime_string?/1)
 
   @spec type() :: String.t()
   def type(), do: @trigger_type
 
-  @spec get_data(%__MODULE__{}) :: {:ok, list(top_word_type)} | :error
-  def get_data(%__MODULE__{filtered_target: %{list: []}}), do: :error
-
-  def get_data(%__MODULE__{trigger_time: trigger_time}) do
-    now_time = Timex.now() |> DateTime.to_time()
-    trigger_time = Time.from_iso8601!(trigger_time)
-
-    if Time.compare(now_time, trigger_time) in [:gt, :eq] do
-      TrendingWords.get_trending_now(@trending_words_size)
-    end
+  @spec get_data(%__MODULE__{}) :: {:ok, list(top_word_type)} | {:error, String.t()}
+  def get_data(%__MODULE__{}) do
+    TrendingWords.get_trending_now(@trending_words_size)
   end
 
   # private functions
@@ -67,14 +60,14 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
   defimpl Sanbase.Signal.Settings, for: TrendingWordsTriggerSettings do
     def triggered?(%TrendingWordsTriggerSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%TrendingWordsTriggerSettings{target: target} = settings, _trigger) do
+    def evaluate(%TrendingWordsTriggerSettings{filtered_target: %{list: []}} = settings, _trigger) do
+      %TrendingWordsTriggerSettings{settings | triggered?: false}
+    end
+
+    def evaluate(%TrendingWordsTriggerSettings{} = settings, _trigger) do
       case TrendingWordsTriggerSettings.get_data(settings) do
-        {:ok, top_words} ->
-          %TrendingWordsTriggerSettings{
-            settings
-            | triggered?: true,
-              payload: %{target => payload(top_words)}
-          }
+        {:ok, top_words} when is_list(top_words) and top_words != [] ->
+          build_result(top_words, settings)
 
         _ ->
           %TrendingWordsTriggerSettings{settings | triggered?: false}
@@ -82,10 +75,27 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
     end
 
     def cache_key(%TrendingWordsTriggerSettings{} = settings) do
-      construct_cache_key([settings.trigger_time])
+      construct_cache_key([settings.operation, settings.target])
     end
 
-    defp payload(top_words) do
+    defp build_result(
+           top_words,
+           %{operation: %{send_at_predefined_time: true, trigger_time: trigger_time}} = settings
+         ) do
+      trigger_time = Sanbase.DateTimeUtils.time_from_iso8601!(trigger_time)
+
+      if Time.compare(Time.utc_now(), trigger_time) == :gt do
+        %TrendingWordsTriggerSettings{
+          settings
+          | triggered?: true,
+            payload: %{settings.target => payload(settings, top_words)}
+        }
+      else
+        %TrendingWordsTriggerSettings{settings | triggered?: false}
+      end
+    end
+
+    defp payload(%{operation: %{send_at_predefined_time: true}}, top_words) do
       max_len = get_max_len(top_words)
 
       top_words_strings =
@@ -98,7 +108,7 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       top_words_table = Enum.join(top_words_strings, "\n")
 
       """
-      Trending words for: `#{Date.to_string(DateTime.to_date(Timex.now()))}`
+      Trending words at: `#{Timex.now() |> Timex.set(second: 0, microsecond: {0, 0})}`
 
       ```
       #{String.pad_trailing("Word", max_len)} | Score

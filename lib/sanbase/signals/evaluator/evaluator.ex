@@ -29,22 +29,24 @@ defmodule Sanbase.Signal.Evaluator do
     |> Enum.filter(&triggered?/1)
   end
 
-  defp evaluate(%UserTrigger{trigger: original_trigger} = user_trigger) do
-    trigger =
+  defp evaluate(%UserTrigger{trigger: trigger} = user_trigger) do
+    %{cooldown: cd, last_triggered: lt} = trigger
+
+    evaluated_trigger =
       Cache.get_or_store(
-        {original_trigger.last_triggered, Trigger.cache_key(original_trigger)},
-        fn -> Trigger.evaluate(original_trigger) end
+        {Trigger.cache_key(trigger), {lt, cd}},
+        fn -> Trigger.evaluate(trigger) end
       )
 
     # Take only `payload` and `triggered?` from the cache
     %UserTrigger{
       user_trigger
       | trigger: %{
-          original_trigger
+          trigger
           | settings: %{
-              original_trigger.settings
-              | payload: trigger.settings.payload,
-                triggered?: trigger.settings.triggered?
+              trigger.settings
+              | payload: evaluated_trigger.settings.payload,
+                triggered?: evaluated_trigger.settings.triggered?
             }
         }
     }

@@ -3,7 +3,11 @@ FROM elixir:1.9.0-alpine as code_builder
 
 ENV MIX_ENV prod
 
-RUN apk add --no-cache nodejs git make g++ nodejs-npm
+RUN apk add --no-cache make \
+                       g++ \ 
+                       git \ 
+                       nodejs \
+                       nodejs-npm
 
 RUN mix local.hex --force
 RUN mix local.rebar --force

@@ -58,6 +58,8 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
   # private functions
 
   defimpl Sanbase.Signal.Settings, for: TrendingWordsTriggerSettings do
+    alias Sanbase.Model.Project
+
     def triggered?(%TrendingWordsTriggerSettings{triggered?: triggered}), do: triggered
 
     def evaluate(%TrendingWordsTriggerSettings{filtered_target: %{list: []}} = settings, _trigger) do
@@ -95,6 +97,72 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       end
     end
 
+    defp build_result(
+           top_words,
+           %{operatiton: %{trending_word: true}, target: %{word: words}} = settings,
+           _trigger
+         ) do
+      trending_words =
+        MapSet.intersection(MapSet.new(top_words), MapSet.new(words |> List.wrap()))
+        |> Enum.to_list()
+
+      case trending_words do
+        [] ->
+          %TrendingWordsTriggerSettings{settings | triggered?: false}
+
+        [_] = words ->
+          payload =
+            Enum.reduce(words, %{}, fn word, acc ->
+              Map.put(acc, word, payload(settings, word))
+            end)
+
+          %TrendingWordsTriggerSettings{settings | triggered?: true, payload: payload}
+      end
+    end
+
+    defp build_result(
+           top_words,
+           %{operatiton: %{trending_project: true}, target: %{slug: slugs}} = settings,
+           _trigger
+         ) do
+      projects = Project.List.by_slugs(slugs)
+
+      project_words =
+        Enum.flat_map(projects, &[&1.name, &1.ticker, &1.coinmarketcap_id]) |> MapSet.new()
+
+      trending_words_mapset =
+        MapSet.intersection(MapSet.new(top_words), MapSet.new(project_words))
+
+      case Enum.empty?(trending_words_mapset) do
+        true ->
+          # If there are no trending words in the intersection there is no
+          # point of checking the projects separately
+          %TrendingWordsTriggerSettings{settings | triggered?: false}
+
+        false ->
+          payload =
+            Enum.reduce(projects, %{}, fn project, acc ->
+              if project_is_trending?(trending_words_mapset, project) do
+                acc
+              else
+                Map.put(acc, project.coinmarketcap_id, payload(settings, project))
+              end
+            end)
+
+          %TrendingWordsTriggerSettings{settings | triggered?: true, payload: payload}
+      end
+    end
+
+    defp project_is_trending?(words_mapset, %Project{} = p) do
+      # Project is trending if the intersection of [name, ticker, slug] and the trending
+      # words is not empty
+      not MapSet.intersection(
+        MapSet.new([p.ticker, p.name, p.coinmarketcap_id]),
+        words_mapset
+      )
+      |> Enum.empty?()
+    end
+
     defp payload(%{operation: %{send_at_predefined_time: true}}, top_words) do
       max_len = get_max_len(top_words)
 
@@ -116,6 +184,22 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       #{top_words_table}
       ```
       More info: #{SanbaseWeb.Endpoint.sonar_url()}
+      """
+    end
+
+    defp payload(%{operation: %{trending_word: true}}, word) do
+      """
+      The word **#{word}** is in the trending words.
+
+      More info here: #{SanbaseWeb.Endpoint.trending_word_url(word)}
+      """
+    end
+
+    defp payload(%{operation: %{trending_project: true}}, project) do
+      """
+      The project **#{project.name}** is in the trending words.
+
+      More info here: #{Project.sanbase_link(project)}
       """
     end
 

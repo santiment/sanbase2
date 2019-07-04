@@ -66,7 +66,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
       trending_words
       |> Enum.to_list()
       |> Project.List.by_name_ticker_slug()
-      |> Enum.uniq()
 
     %{
       trending_tickers: Enum.filter(trending_words, &Enum.member?(tickers_set, &1)),

@@ -63,11 +63,9 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionTest do
 
     result = execute_query(conn, query(function))
     projects = result["data"]["allProjectsByFunction"]
+    slugs = Enum.map(projects, & &1["slug"]) |> Enum.sort()
 
-    assert projects == [
-             %{"slug" => "dai"},
-             %{"slug" => "tether"}
-           ]
+    assert slugs == ["dai", "tether"]
   end
 
   test "dynamic watchlist for top erc20 projects", %{conn: conn} do

@@ -280,7 +280,14 @@ defmodule Sanbase.Model.Project do
   end
 
   def github_organizations(slug) when is_binary(slug) do
-    {:ok, id_by_slug(slug) |> Project.GithubOrganization.organizations_of()}
+    case id_by_slug(slug) do
+      nil ->
+        {:error,
+         "Cannot fetch github organizations for #{slug}. Reason: There is no project with that slug."}
+
+      id ->
+        {:ok, Project.GithubOrganization.organizations_of(id)}
+    end
   end
 
   def github_organizations(%Project{} = project) do

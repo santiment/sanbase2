@@ -252,6 +252,33 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
     end
   end
 
+  test "trending projects are uniq when slug, name and ticker are trending", context do
+    slug = context.project1.coinmarketcap_id |> String.downcase()
+    name = context.project1.name |> String.downcase()
+    ticker = context.project1.ticker |> String.downcase()
+
+    with_mock Sanbase.SocialData.TrendingWords,
+      get_trending_now: fn _ ->
+        {:ok,
+         [
+           %{word: slug, score: 3},
+           %{word: name, score: 4},
+           %{word: ticker, score: 1},
+           %{word: "random", score: 1}
+         ]}
+      end do
+      result = fetch_watchlist_stats_trending_projects(context.conn, context.watchlist)
+
+      %{"data" => %{"watchlist" => %{"stats" => %{"trendingProjects" => projects}}}} = result
+
+      expected_result = [
+        %{"slug" => context.project1.coinmarketcap_id}
+      ]
+
+      assert projects == expected_result
+    end
+  end
+
   defp fetch_watchlist_stats(conn, %{id: id}) do
     query = """
     {

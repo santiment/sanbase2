@@ -178,12 +178,14 @@ defmodule Sanbase.Signal.Scheduler do
   end
 
   defp max_last_triggered(last_triggered) when is_non_empty_map(last_triggered) do
-    # Somehow the last triggered ends up with both DateTime.t and binary types
     last_triggered
     |> Map.values()
     |> Enum.map(fn
-      %DateTime{} = dt -> dt
-      str -> Sanbase.DateTimeUtils.from_iso8601!(str)
+      %DateTime{} = dt ->
+        dt
+
+      datetime_str when is_binary(datetime_str) ->
+        Sanbase.DateTimeUtils.from_iso8601!(datetime_str)
     end)
     |> Enum.max_by(&DateTime.to_unix/1)
   end

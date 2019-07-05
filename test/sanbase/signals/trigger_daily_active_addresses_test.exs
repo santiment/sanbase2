@@ -5,7 +5,7 @@ defmodule Sanbase.Signal.EvaluatorTest do
   import Sanbase.Factory
   import ExUnit.CaptureLog
 
-  alias Sanbase.Signal.{UserTrigger, HistoricalActivity}
+  alias Sanbase.Signal.UserTrigger
   alias Sanbase.Signal.Evaluator
 
   alias Sanbase.Signal.Trigger.DailyActiveAddressesSettings

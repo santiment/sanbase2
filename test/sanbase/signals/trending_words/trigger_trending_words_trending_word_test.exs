@@ -3,6 +3,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingWordTest do
 
   import Mock
   import Sanbase.Factory
+  import ExUnit.CaptureLog
 
   alias Sanbase.Signal.UserTrigger
   alias Sanbase.Signal.Evaluator
@@ -58,7 +59,12 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingWordTest do
     end
   end
 
-  test "signal setting cooldown works for trending words", context do
+  test "signal setting cooldown works for trending words", _context do
+    Tesla.Mock.mock_global(fn
+      %{method: :post} ->
+        %Tesla.Env{status: 200, body: "ok"}
+    end)
+
     with_mock Sanbase.SocialData.TrendingWords, [:passthrough],
       get_trending_now: fn _ ->
         {:ok, [%{word: "santiment", score: 10}] ++ top_words()}

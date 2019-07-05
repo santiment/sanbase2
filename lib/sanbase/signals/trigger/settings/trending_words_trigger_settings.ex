@@ -105,7 +105,6 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
            top_words,
            %{operation: %{trending_word: true}, filtered_target: %{list: words}} = settings
          ) do
-      words |> List.wrap() |> Enum.map(&String.downcase/1)
       top_words = top_words |> Enum.map(&String.downcase(&1.word))
 
       trending_words =
@@ -131,10 +130,15 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
            %{operation: %{trending_project: true}, filtered_target: %{list: slugs}} = settings
          ) do
       projects = Project.List.by_slugs(slugs)
-      top_words = top_words |> Enum.map(&String.downcase(&1.word))
+
+      top_words =
+        top_words
+        |> Enum.map(&String.downcase(&1.word))
 
       project_words =
-        Enum.flat_map(projects, &[&1.name, &1.ticker, &1.coinmarketcap_id]) |> MapSet.new()
+        Enum.flat_map(projects, &[&1.name, &1.ticker, &1.coinmarketcap_id])
+        |> MapSet.new()
+        |> Enum.map(&String.downcase/1)
 
       trending_words_mapset =
         MapSet.intersection(MapSet.new(top_words), MapSet.new(project_words))

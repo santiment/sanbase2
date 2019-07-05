@@ -6,7 +6,7 @@ defmodule Sanbase.Signal.Scheduler do
   > Get the user triggers from the database
   > Evaluate the signals
   > Send the signals to the user
-  > Update the `last_updated` in the database
+  > Update the `last_triggered` in the database
   > Log stats messages
   """
   alias Sanbase.Signal.Trigger
@@ -180,6 +180,13 @@ defmodule Sanbase.Signal.Scheduler do
   defp max_last_triggered(last_triggered) when is_non_empty_map(last_triggered) do
     last_triggered
     |> Map.values()
-    |> Enum.max_by(&DateTime.to_iso8601/1)
+    |> Enum.map(fn
+      %DateTime{} = dt ->
+        dt
+
+      datetime_str when is_binary(datetime_str) ->
+        Sanbase.DateTimeUtils.from_iso8601!(datetime_str)
+    end)
+    |> Enum.max_by(&DateTime.to_unix/1)
   end
 end

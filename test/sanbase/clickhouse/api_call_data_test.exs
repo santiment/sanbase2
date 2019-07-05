@@ -49,8 +49,7 @@ defmodule Sanbase.Clickhouse.ApiCallDataTest do
 
   test "clickhouse returns empty list", context do
     dt1_str = "2019-01-01T00:00:00Z"
-    dt2_str = "2019-01-02T00:00:00Z"
-    dt3_str = "2019-01-03T00:00:00Z"
+    dt2_str = "2019-01-03T00:00:00Z"
 
     with_mock Sanbase.ClickhouseRepo,
       query: fn _, _ ->
@@ -60,7 +59,7 @@ defmodule Sanbase.Clickhouse.ApiCallDataTest do
         ApiCallData.api_call_history(
           context.user.id,
           from_iso8601!(dt1_str),
-          from_iso8601!(dt3_str),
+          from_iso8601!(dt2_str),
           "1d"
         )
 

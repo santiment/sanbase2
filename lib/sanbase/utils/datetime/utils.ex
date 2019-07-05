@@ -166,6 +166,13 @@ defmodule Sanbase.DateTimeUtils do
     |> DateTime.to_unix()
   end
 
+  def time_from_iso8601!(time_str) when is_binary(time_str) do
+    {:ok, time} = Time.from_iso8601(time_str)
+    time
+  end
+
+  def time_from_8601!(%Time{} = time), do: time
+
   def valid_interval_string?(interval_string) when not is_binary(interval_string) do
     {:error, "The provided string #{interval_string} is not a valid string interval"}
   end

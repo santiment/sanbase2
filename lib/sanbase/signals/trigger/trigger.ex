@@ -1,4 +1,11 @@
 defprotocol Sanbase.Signal.Settings do
+  @moduledoc ~s"""
+  A protocol that must be implemented by all trigger settings.
+
+  Every trigger has settings that define how it is evaluated, how it's cached
+  and how to check if the evaluated signal is triggered.
+  """
+
   def evaluate(trigger_settings, trigger)
 
   @spec triggered?(struct()) :: boolean()
@@ -126,10 +133,10 @@ defmodule Sanbase.Signal.Trigger do
         false
 
       %DateTime{} = target_last_triggered ->
-        Timex.compare(
+        DateTime.compare(
           DateTimeUtils.after_interval(trigger.cooldown, target_last_triggered),
           Timex.now()
-        ) == 1
+        ) == :gt
     end
   end
 
@@ -139,12 +146,6 @@ defmodule Sanbase.Signal.Trigger do
     |> String.split()
     |> Enum.map(&String.capitalize/1)
     |> Enum.join(" ")
-  end
-
-  defp remove_targets_on_cooldown(target, trigger) when is_binary(target) or is_list(target) do
-    target
-    |> List.wrap()
-    |> remove_targets_on_cooldown(trigger, :slug)
   end
 
   defp remove_targets_on_cooldown(%{user_list: user_list_id}, trigger) do
@@ -168,6 +169,12 @@ defmodule Sanbase.Signal.Trigger do
     address
     |> List.wrap()
     |> remove_targets_on_cooldown(trigger, :eth_address)
+  end
+
+  defp remove_targets_on_cooldown(target, trigger) do
+    target
+    |> List.wrap()
+    |> remove_targets_on_cooldown(trigger, :slug)
   end
 
   defp remove_targets_on_cooldown(target_list, trigger, type) when is_list(target_list) do

@@ -8,6 +8,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
     {:ok, UserSettings.settings_for(user)}
   end
 
+  def update_user_settings(_root, %{settings: settings}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    {:ok, %{settings: settings}} = UserSettings.update_settings(current_user, settings)
+
+    {:ok, settings}
+  end
+
   def settings_toggle_channel(_root, args, %{
         context: %{auth: %{current_user: current_user}}
       }) do

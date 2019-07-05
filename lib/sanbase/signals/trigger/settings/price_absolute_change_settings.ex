@@ -26,7 +26,7 @@ defmodule Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings do
             payload: nil
 
   validates(:target, &valid_target?/1)
-  validates(:channel, &valid_notification_channel/1)
+  validates(:channel, &valid_notification_channel?/1)
   validates(:operation, &valid_absolute_value_operation?/1)
 
   @type t :: %__MODULE__{

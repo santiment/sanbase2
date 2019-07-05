@@ -27,7 +27,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
             payload: nil
 
   validates(:target, &valid_target?/1)
-  validates(:channel, &valid_notification_channel/1)
+  validates(:channel, &valid_notification_channel?/1)
   validates(:time_window, &valid_time_window?/1)
   validates(:percent_threshold, &valid_percent?/1)
 

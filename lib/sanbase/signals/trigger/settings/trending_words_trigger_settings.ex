@@ -42,7 +42,8 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
         }
 
   # Validations
-  validates(:channel, &valid_notification_channel/1)
+  validates(:channel, &valid_notification_channel?/1)
+  validates(:target, &valid_target?/1)
 
   @spec type() :: String.t()
   def type(), do: @trigger_type

@@ -1,15 +1,15 @@
-## Table of contents
+# Table of contents
 
 - [Table of contents](#table-of-contents)
   - [Trigger structure](#trigger-structure)
   - [Settings fields](#settings-fields)
   - [Examples](#examples)
-    - [Example settings structure for `price_absolute_change`](#example-settings-structure-for-priceabsolutechange)
-    - [Example settings structure for `price_percent_change`](#example-settings-structure-for-pricepercentchange)
-    - [Example settings structure for `daily_active_addresses`](#example-settings-structure-for-dailyactiveaddresses)
-    - [Example settings structure for `trending_words`](#example-settings-structure-for-trendingwords)
-    - [Example settings structure for `price_volume_difference`](#example-settings-structure-for-pricevolumedifference)
-    - [Example settings structure for `eth_wallet`](#example-settings-structure-for-ethwallet)
+    - [Example settings structure for `price_absolute_change`](#example-settings-structure-for-price_absolut_echange)
+    - [Example settings structure for `price_percent_change`](#example-settings-structure-for-price_percent_change)
+    - [Example settings structure for `daily_active_addresses`](#example-settings-structure-for-daily_active_addresses)
+    - [Example settings structure for `trending_words`](#example-settings-structure-for-trending_words)
+    - [Example settings structure for `price_volume_difference`](#example-settings-structure-for-price_volume_difference)
+    - [Example settings structure for `eth_wallet`](#example-settings-structure-for-eth_wallet)
   - [Create trigger](#create-trigger)
   - [Get all triggers for current user](#get-all-triggers-for-current-user)
   - [Update trigger by id](#update-trigger-by-id)
@@ -145,18 +145,21 @@ These are the fields describing a trigger.
 ```
 
 ```json
-// Send a signal if Santiment project is trending
+// Send a signal if one project is trending. A project is trending if
+// at least one of its ticker, name or slug is in the trending words
+// The check is case insensitive.
 {
   "type": "trending_words",
   "channel": "telegram",
   "target": { "slug": "santiment" },
-  "operation": { "project_trending": true }
+  "operation": { "trending_project": true }
 }
 ```
 
 ```json
 // Send a signal if any of the projects is trending. A project is trending if
 // at least one of its ticker, name or slug is in the trending words
+// The check is case insensitive.
 {
   "type": "trending_words",
   "channel": "telegram",
@@ -166,7 +169,17 @@ These are the fields describing a trigger.
 ```
 
 ```json
-// Send a signal if any of the words is trending
+// Send a signal if a word is trending. The check is case insensitive.
+{
+  "type": "trending_words",
+  "channel": "telegram",
+  "target": { "word": "gandalf" },
+  "operation": { "trending_word": true }
+}
+```
+
+```json
+// Send a signal if any of the words is trending. The check is case insensitive.
 {
   "type": "trending_words",
   "channel": "telegram",

@@ -164,6 +164,13 @@ defmodule Sanbase.Signal.Trigger do
     |> remove_targets_on_cooldown(trigger, :slug)
   end
 
+  defp remove_targets_on_cooldown(%{word: slug}, trigger)
+       when is_binary(slug) or is_list(slug) do
+    slug
+    |> List.wrap()
+    |> remove_targets_on_cooldown(trigger, :word)
+  end
+
   defp remove_targets_on_cooldown(%{eth_address: address}, trigger)
        when is_binary(address) or is_list(address) do
     address

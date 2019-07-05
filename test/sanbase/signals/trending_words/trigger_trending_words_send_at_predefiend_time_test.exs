@@ -1,4 +1,4 @@
-defmodule Sanbase.Signal.TriggerTrendingWordsTest do
+defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
   use Sanbase.DataCase, async: false
 
   import Mock

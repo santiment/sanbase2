@@ -1,10 +1,12 @@
 defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
   @moduledoc ~s"""
-  Trigger settings for daily trending words signal.
-  The signal is sent at the configured `trigger_time` and sends the last set of
-  trending words that was calculated.
-  Currenly the trending words are calculated 3 times per day - at 01:00, 08:00
-  and 14:00 UTC time
+  Trigger settings for trending words signal.
+
+  The signal supports the following operations:
+
+  1. Send at the list of trending words at predefined time every day
+  2. Send a signal if some word enters the list of trending words.
+  3. Send a signal if some project enters the list of trending words
   """
 
   use Vex.Struct
@@ -39,20 +41,21 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
           triggered?: boolean()
         }
 
-  @type top_word_type :: %{
-          word: String.t(),
-          score: float()
-        }
-
   # Validations
   validates(:channel, &valid_notification_channel/1)
 
   @spec type() :: String.t()
   def type(), do: @trigger_type
 
-  @spec get_data(%__MODULE__{}) :: {:ok, list(top_word_type)} | {:error, String.t()}
+  @spec get_data(%__MODULE__{}) :: TrendingWords.result()
   def get_data(%__MODULE__{}) do
-    TrendingWords.get_trending_now(@trending_words_size)
+    case TrendingWords.get_trending_now(@trending_words_size) do
+      {:ok, words} ->
+        {:ok, words}
+
+      error ->
+        error
+    end
   end
 
   # private functions
@@ -99,11 +102,13 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
 
     defp build_result(
            top_words,
-           %{operatiton: %{trending_word: true}, target: %{word: words}} = settings,
-           _trigger
+           %{operation: %{trending_word: true}, filtered_target: %{list: words}} = settings
          ) do
+      words |> List.wrap() |> Enum.map(&String.downcase/1)
+      top_words = top_words |> Enum.map(&String.downcase(&1.word))
+
       trending_words =
-        MapSet.intersection(MapSet.new(top_words), MapSet.new(words |> List.wrap()))
+        MapSet.intersection(MapSet.new(top_words), MapSet.new(words))
         |> Enum.to_list()
 
       case trending_words do
@@ -122,10 +127,10 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
 
     defp build_result(
            top_words,
-           %{operatiton: %{trending_project: true}, target: %{slug: slugs}} = settings,
-           _trigger
+           %{operation: %{trending_project: true}, filtered_target: %{list: slugs}} = settings
          ) do
       projects = Project.List.by_slugs(slugs)
+      top_words = top_words |> Enum.map(&String.downcase(&1.word))
 
       project_words =
         Enum.flat_map(projects, &[&1.name, &1.ticker, &1.coinmarketcap_id]) |> MapSet.new()
@@ -143,9 +148,9 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
           payload =
             Enum.reduce(projects, %{}, fn project, acc ->
               if project_is_trending?(trending_words_mapset, project) do
-                acc
-              else
                 Map.put(acc, project.coinmarketcap_id, payload(settings, project))
+              else
+                acc
               end
             end)
 
@@ -156,11 +161,14 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
     defp project_is_trending?(words_mapset, %Project{} = p) do
       # Project is trending if the intersection of [name, ticker, slug] and the trending
       # words is not empty
-      not MapSet.intersection(
-        MapSet.new([p.ticker, p.name, p.coinmarketcap_id]),
-        words_mapset
-      )
-      |> Enum.empty?()
+      empty? =
+        MapSet.intersection(
+          MapSet.new([p.ticker, p.name, p.coinmarketcap_id] |> Enum.map(&String.downcase/1)),
+          words_mapset
+        )
+        |> Enum.empty?()
+
+      !empty?
     end
 
     defp payload(%{operation: %{send_at_predefined_time: true}}, top_words) do

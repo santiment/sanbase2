@@ -377,7 +377,7 @@ defmodule Sanbase.Insight.Post do
 
     changeset = %Ecto.Changeset{
       changeset
-      | data: post |> Repo.preload([:tags], force: true)
+      | data: post |> Repo.preload([:tags, :images], force: true)
     }
 
     Tag.put_tags(changeset, tags)

@@ -37,7 +37,7 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
         }
 
   validates(:target, &valid_target?/1)
-  validates(:channel, &valid_notification_channel/1)
+  validates(:channel, &valid_notification_channel?/1)
   validates(:time_window, &valid_time_window?/1)
   validates(:operation, &valid_percent_change_operation?/1)
 

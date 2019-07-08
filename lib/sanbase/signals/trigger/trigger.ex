@@ -36,7 +36,6 @@ defmodule Sanbase.Signal.Trigger do
   import Ecto.Changeset
 
   alias __MODULE__
-  alias Sanbase.Model.Project
   alias Sanbase.DateTimeUtils
 
   embedded_schema do
@@ -149,11 +148,10 @@ defmodule Sanbase.Signal.Trigger do
   end
 
   defp remove_targets_on_cooldown(%{user_list: user_list_id}, trigger) do
-    %{list_items: list_items} = Sanbase.UserList.by_id(user_list_id)
-
-    list_items
-    |> Enum.map(fn %{project_id: id} -> id end)
-    |> Project.List.slugs_by_field(:id)
+    user_list_id
+    |> Sanbase.UserList.by_id()
+    |> Sanbase.UserList.get_projects()
+    |> Enum.map(& &1.coinmarketcap_id)
     |> remove_targets_on_cooldown(trigger, :slug)
   end
 
@@ -162,6 +160,13 @@ defmodule Sanbase.Signal.Trigger do
     slug
     |> List.wrap()
     |> remove_targets_on_cooldown(trigger, :slug)
+  end
+
+  defp remove_targets_on_cooldown(%{word: slug}, trigger)
+       when is_binary(slug) or is_list(slug) do
+    slug
+    |> List.wrap()
+    |> remove_targets_on_cooldown(trigger, :word)
   end
 
   defp remove_targets_on_cooldown(%{eth_address: address}, trigger)

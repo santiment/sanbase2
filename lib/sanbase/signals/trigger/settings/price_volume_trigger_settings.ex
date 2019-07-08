@@ -24,7 +24,7 @@ defmodule Sanbase.Signal.Trigger.PriceVolumeDifferenceTriggerSettings do
             payload: nil
 
   validates(:target, &valid_target?/1)
-  validates(:channel, &valid_notification_channel/1)
+  validates(:channel, &valid_notification_channel?/1)
   validates(:threshold, &valid_threshold?/1)
 
   @typedoc ~s"""

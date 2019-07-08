@@ -10,9 +10,9 @@ defmodule Sanbase.Signal.Validation do
 
   def valid_notification_channels(), do: @notification_channels
 
-  def valid_notification_channel(channel) when channel in @notification_channels, do: :ok
+  def valid_notification_channel?(channel) when channel in @notification_channels, do: :ok
 
-  def valid_notification_channel(channel),
+  def valid_notification_channel?(channel),
     do: {:error, "#{inspect(channel)} is not a valid notification channel"}
 
   def valid_percent?(percent) when is_valid_percent(percent), do: :ok
@@ -75,7 +75,19 @@ defmodule Sanbase.Signal.Validation do
 
   def valid_iso8601_datetime_string?(_), do: {:error, "Not valid ISO8601 time"}
 
+  def valid_target?("default"), do: :ok
+
   def valid_target?(%{user_list: int}) when is_integer(int), do: :ok
+  def valid_target?(%{word: word}) when is_binary(word), do: :ok
+
+  def valid_target?(%{word: words}) when is_list(words) do
+    Enum.find(words, fn word -> not is_binary(word) end)
+    |> case do
+      nil -> :ok
+      _ -> {:error, "The target list contains elements that are not string"}
+    end
+  end
+
   def valid_target?(%{slug: slug}) when is_binary(slug), do: :ok
 
   def valid_target?(%{slug: slugs}) when is_list(slugs) do

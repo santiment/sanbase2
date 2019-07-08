@@ -46,15 +46,24 @@ defmodule Sanbase.Tag do
       when is_list(tags) and length(tags) > 0 do
     tags =
       tags
-      |> Enum.filter(fn tag -> changeset(%__MODULE__{}, %{name: tag}).valid? end)
+      |> Enum.filter(&is_binary/1)
       |> Enum.map(fn tag -> %{name: tag} end)
 
     Repo.insert_all(__MODULE__, tags, on_conflict: :nothing, conflict_target: [:name])
 
     tag_names = tags |> Enum.map(& &1.name)
 
+    tag_structures = by_names(tag_names)
+
+    # The `by_names` functions can return the tags in a different order if any new
+    # tags were inserted. Sort the tags in their original order before passing them
+    # to put_assoc
+    tags =
+      tag_names
+      |> Enum.map(fn name -> Enum.find(tag_structures, &(&1.name == name)) end)
+
     changeset
-    |> put_assoc(:tags, by_names(tag_names))
+    |> put_assoc(:tags, tags)
   end
 
   def put_tags(%Ecto.Changeset{} = changeset, _), do: changeset

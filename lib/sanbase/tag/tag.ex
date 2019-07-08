@@ -9,11 +9,13 @@ defmodule Sanbase.Tag do
   alias Sanbase.Insight.Post
   alias Sanbase.Signal.UserTrigger
 
+  @posts_join_through_table "posts_tags"
+  @user_triggers_join_through_table "posts_tags"
   schema "tags" do
     field(:name, :string)
 
-    many_to_many(:posts, Post, join_through: "posts_tags")
-    many_to_many(:user_triggers, UserTrigger, join_through: "user_triggers_tags")
+    many_to_many(:posts, Post, join_through: @posts_join_through_table)
+    many_to_many(:user_triggers, UserTrigger, join_through: @user_triggers_join_through_table)
   end
 
   def changeset(%Tag{} = tag, attrs \\ %{}) do
@@ -28,16 +30,20 @@ defmodule Sanbase.Tag do
     |> Repo.all()
   end
 
+  def all(), do: Repo.all(__MODULE__)
+
   @doc ~s"""
   Given a changeset and a map of params, containing `tags`. The tags are added with
   `put_assoc` that works on the whole list of tags.
   """
   @spec put_tags(Ecto.Changeset.t(), map()) :: Ecto.Changeset.t()
-  def put_tags(%Ecto.Changeset{} = changeset, %{tags: tags}) when length(tags) > 10 do
+  def put_tags(%Ecto.Changeset{} = changeset, %{tags: tags})
+      when is_list(tags) and length(tags) > 10 do
     Ecto.Changeset.add_error(changeset, :tags, "Cannot add more than 10 tags for a record")
   end
 
-  def put_tags(%Ecto.Changeset{} = changeset, %{tags: tags}) do
+  def put_tags(%Ecto.Changeset{} = changeset, %{tags: tags})
+      when is_list(tags) and length(tags) > 0 do
     tags =
       tags
       |> Enum.filter(fn tag -> changeset(%__MODULE__{}, %{name: tag}).valid? end)
@@ -52,4 +58,14 @@ defmodule Sanbase.Tag do
   end
 
   def put_tags(%Ecto.Changeset{} = changeset, _), do: changeset
+
+  def drop_tags(%Post{id: id}) do
+    from(p in @posts_join_through_table, where: p.post_id == ^id)
+    |> Repo.delete_all()
+  end
+
+  def drop_tags(%UserTrigger{id: id}) do
+    from(p in @user_triggers_join_through_table, where: p.user_trigger_id == ^id)
+    |> Repo.delete_all()
+  end
 end

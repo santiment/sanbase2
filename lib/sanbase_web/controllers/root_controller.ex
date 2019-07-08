@@ -22,10 +22,10 @@ defmodule SanbaseWeb.RootController do
     |> send_resp(200, "")
   end
 
-  def stripe_webhook(conn, params) do
-    IO.inspect(params)
+  def stripe_webhook(conn, _params) do
+    IO.inspect(conn.assigns[:stripe_event])
 
-    handle_event(params)
+    handle_event(conn)
     |> case do
       {:ok, _} ->
         conn
@@ -39,9 +39,13 @@ defmodule SanbaseWeb.RootController do
     end
   end
 
-  defp handle_event(%{
-         "type" => "invoice.payment_succeeded",
-         "data" => %{"object" => %{"subscription" => subscription_id}}
+  defp handle_event(%Plug.Conn{
+         assigns: %{
+           stripe_event: %{
+             type: "invoice.payment_succeeded",
+             data: %{object: %{subscription: subscription_id}}
+           }
+         }
        }) do
     {:ok, stripe_subscription} = StripeApi.retrieve_subscription(subscription_id)
 
@@ -51,9 +55,6 @@ defmodule SanbaseWeb.RootController do
       current_period_end: stripe_subscription.current_period_end
     })
     |> IO.inspect()
-  end
-
-  defp handle_event(%{"type" => "invoice.payment_failed"}) do
   end
 
   def consent(

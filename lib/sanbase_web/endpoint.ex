@@ -25,6 +25,8 @@ defmodule SanbaseWeb.Endpoint do
   plug(Plug.RequestId)
   plug(Plug.Logger)
 
+  plug(:copy_req_body)
+
   plug(
     Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json, Absinthe.Plug.Parser],
@@ -43,16 +45,6 @@ defmodule SanbaseWeb.Endpoint do
     # Doesn't need to be a secret. Session cookies are signed by both secret_key_base and signing_salt
     # For reference: https://github.com/phoenixframework/phoenix/issues/2146
     signing_salt: "grT-As16"
-  )
-
-  plug(Corsica,
-    origins: [
-      "https://app-stage.santiment.net/",
-      "https://neuro-stage.santiment.net/",
-      "https://app.santiment.net/",
-      "httsp://neuro.santiment.net"
-    ],
-    allow_credentials: true
   )
 
   # makes the /metrics URL happen
@@ -122,5 +114,10 @@ defmodule SanbaseWeb.Endpoint do
     frontend_url() <>
       "/verify_email?" <>
       URI.encode_query(token: email_candidate_token, emailCandidate: email_candidate)
+  end
+
+  defp copy_req_body(conn, _) do
+    {:ok, body, _} = Plug.Conn.read_body(conn)
+    Plug.Conn.put_private(conn, :raw_body, body)
   end
 end

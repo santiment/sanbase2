@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.TriggersTest do
+defmodule Sanbase.Signal.TriggersTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
@@ -6,7 +6,7 @@ defmodule Sanbase.Signals.TriggersTest do
   import Sanbase.TestHelpers
   import Sanbase.MapUtils
 
-  alias Sanbase.Signals.UserTrigger
+  alias Sanbase.Signal.UserTrigger
   alias Sanbase.Timeline.TimelineEvent
 
   setup do

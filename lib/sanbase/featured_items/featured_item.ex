@@ -12,7 +12,7 @@ defmodule Sanbase.FeaturedItem do
   alias Sanbase.Repo
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
-  alias Sanbase.Signals.UserTrigger
+  alias Sanbase.Signal.UserTrigger
 
   @table "featured_items"
   schema @table do

@@ -89,7 +89,7 @@ defmodule Sanbase.Pricing.Subscription do
          {:ok, updated_subscription} <-
            update_subscription_db(subscription, %{
              plan_id: plan.id,
-             current_period_end: stripe_subscription.current_period_end
+             current_period_end: DateTime.from_unix!(stripe_subscription.current_period_end)
            }) do
       {:ok, updated_subscription |> Repo.preload([plan: [:product]], force: true)}
     end

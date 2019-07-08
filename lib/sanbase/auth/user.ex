@@ -16,7 +16,7 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.UserList
   alias Sanbase.Repo
   alias Sanbase.Telegram
-  alias Sanbase.Signals.HistoricalActivity
+  alias Sanbase.Signal.HistoricalActivity
   alias Sanbase.Following.UserFollower
   alias Sanbase.Pricing.Subscription
 
@@ -60,6 +60,7 @@ defmodule Sanbase.Auth.User do
     field(:consent_id, :string)
     field(:test_san_balance, :decimal)
     field(:stripe_customer_id, :string)
+    field(:first_login, :boolean, default: false, virtual: true)
 
     # GDPR related fields
     field(:privacy_policy_accepted, :boolean, default: false)
@@ -102,7 +103,8 @@ defmodule Sanbase.Auth.User do
       :test_san_balance,
       :privacy_policy_accepted,
       :marketing_accepted,
-      :stripe_customer_id
+      :stripe_customer_id,
+      :first_login
     ])
     |> normalize_username(attrs)
     |> normalize_email(attrs[:email], :email)
@@ -246,7 +248,7 @@ defmodule Sanbase.Auth.User do
 
     case Repo.get_by(User, email: email) do
       nil ->
-        %User{email: email, username: username, salt: generate_salt()}
+        %User{email: email, username: username, salt: generate_salt(), first_login: true}
         |> Repo.insert()
 
       user ->

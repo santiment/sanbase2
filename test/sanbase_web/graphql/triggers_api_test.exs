@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.Signals.UserTrigger
+  alias Sanbase.Signal.UserTrigger
 
   setup do
     user = insert(:user, email: "test@example.com")

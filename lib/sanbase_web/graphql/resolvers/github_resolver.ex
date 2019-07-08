@@ -16,10 +16,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
         },
         _resolution
       ) do
-    with {:ok, github_organization} <- Project.github_organization(slug),
+    with {:ok, github_organizations} <- Project.github_organizations(slug),
          {:ok, result} <-
            Sanbase.Clickhouse.Github.dev_activity(
-             github_organization,
+             github_organizations,
              from,
              to,
              interval,
@@ -49,11 +49,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
         },
         _resolution
       ) do
-    with {:ok, github_organization} <- Project.github_organization(slug),
+    with {:ok, github_organizations} <- Project.github_organizations(slug),
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(
              Sanbase.Clickhouse.Github,
-             github_organization,
+             github_organizations,
              from,
              to,
              interval,
@@ -61,7 +61,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
            ),
          {:ok, result} <-
            Sanbase.Clickhouse.Github.github_activity(
-             github_organization,
+             github_organizations,
              from,
              to,
              interval,

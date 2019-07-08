@@ -1,9 +1,13 @@
 # Elixir and phoenix assets build image
-FROM elixir:1.8.2-otp-22-alpine as code_builder
+FROM elixir:1.9.0-alpine as code_builder
 
 ENV MIX_ENV prod
 
-RUN apk add --no-cache nodejs git make g++ nodejs-npm
+RUN apk add --no-cache make \
+                       g++ \ 
+                       git \ 
+                       nodejs \
+                       nodejs-npm
 
 RUN mix local.hex --force
 RUN mix local.rebar --force
@@ -25,10 +29,10 @@ RUN mix format --check-formatted
 
 RUN mix compile
 RUN mix phx.digest
-RUN mix release
+RUN mix distillery.release
 
 # Release image
-FROM elixir:1.8.2-otp-22-alpine
+FROM elixir:1.9.0-alpine
 
 RUN apk add --no-cache bash
 

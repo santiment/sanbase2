@@ -207,5 +207,11 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       middleware(JWTAuth)
       resolve(&UserFollowerResolver.unfollow/3)
     end
+
+    field :update_user_settings, :user_settings do
+      arg(:settings, :user_settings_input_object)
+      middleware(JWTAuth)
+      resolve(&UserSettingsResolver.update_user_settings/3)
+    end
   end
 end

@@ -18,7 +18,7 @@ defmodule Sanbase.Model.Project do
 
   import Ecto.Query
 
-  @preloads [:eth_addresses, :latest_coinmarketcap_data]
+  @preloads [:eth_addresses, :latest_coinmarketcap_data, :github_organizations]
 
   schema "project" do
     field(:name, :string)
@@ -44,12 +44,16 @@ defmodule Sanbase.Model.Project do
     field(:long_description, :string)
     field(:project_transparency, :boolean, default: false)
     field(:main_contract_address, :string)
-    belongs_to(:project_transparency_status, ProjectTransparencyStatus, on_replace: :nilify)
     field(:project_transparency_description, :string)
+
+    has_many(:icos, Ico)
+    has_many(:github_organizations, Project.GithubOrganization)
     has_many(:eth_addresses, ProjectEthAddress)
     has_many(:btc_addresses, ProjectBtcAddress)
+
     belongs_to(:market_segment, MarketSegment, on_replace: :nilify)
     belongs_to(:infrastructure, Infrastructure, on_replace: :nilify)
+    belongs_to(:project_transparency_status, ProjectTransparencyStatus, on_replace: :nilify)
 
     belongs_to(
       :latest_coinmarketcap_data,
@@ -59,8 +63,6 @@ defmodule Sanbase.Model.Project do
       type: :string,
       on_replace: :nilify
     )
-
-    has_many(:icos, Ico)
   end
 
   def changeset(%Project{} = project, attrs \\ %{}) do
@@ -151,6 +153,10 @@ defmodule Sanbase.Model.Project do
     |> Repo.one()
   end
 
+  def id_by_slug(slug) do
+    from(p in __MODULE__, where: p.coinmarketcap_id == ^slug, select: p.id) |> Repo.one()
+  end
+
   def by_slug(slug, opts \\ [])
 
   def by_slug(slug, opts) when is_binary(slug) do
@@ -239,23 +245,6 @@ defmodule Sanbase.Model.Project do
     {:ok, addresses}
   end
 
-  def eth_addresses_by_tickers(tickers) do
-    query =
-      from(
-        p in Project,
-        where: p.ticker in ^tickers and not is_nil(p.coinmarketcap_id),
-        preload: [:eth_addresses]
-      )
-
-    Repo.all(query)
-    |> Stream.map(fn %Project{ticker: ticker, eth_addresses: eth_addresses} ->
-      eth_addresses = eth_addresses |> Enum.map(&Map.get(&1, :address))
-
-      {ticker, eth_addresses}
-    end)
-    |> Enum.into(%{})
-  end
-
   @doc """
   Return all projects from the list which trading volume is over a given threshold
   """
@@ -290,18 +279,19 @@ defmodule Sanbase.Model.Project do
     end
   end
 
-  def github_organization(slug) when is_binary(slug) do
-    from(
-      p in Project,
-      where: p.coinmarketcap_id == ^slug,
-      select: p.github_link
-    )
-    |> Repo.one()
-    |> parse_github_organization_link(slug)
+  def github_organizations(slug) when is_binary(slug) do
+    case id_by_slug(slug) do
+      nil ->
+        {:error,
+         "Cannot fetch github organizations for #{slug}. Reason: There is no project with that slug."}
+
+      id ->
+        {:ok, Project.GithubOrganization.organizations_of(id)}
+    end
   end
 
-  def github_organization(%Project{github_link: github_link, coinmarketcap_id: slug}) do
-    parse_github_organization_link(github_link, slug)
+  def github_organizations(%Project{} = project) do
+    {:ok, project |> Project.GithubOrganization.organizations_of()}
   end
 
   def is_erc20?(%Project{} = project) do
@@ -329,26 +319,5 @@ defmodule Sanbase.Model.Project do
 
     query
     |> preload(^(additional_preloads ++ @preloads))
-  end
-
-  defp parse_github_organization_link(github_link, slug) do
-    # nil will break the regex
-    github_link = github_link || ""
-
-    case Regex.run(~r{https://(?:www.)?github.com/(.+)}, github_link) do
-      [_, github_path] ->
-        org =
-          github_path
-          |> String.downcase()
-          |> String.split("/")
-          |> hd
-
-        {:ok, org}
-
-      nil ->
-        {:error,
-         {:github_link_error,
-          "Invalid or missing github link for #{slug}: #{inspect(github_link)}"}}
-    end
   end
 end

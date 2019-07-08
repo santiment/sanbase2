@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
+defmodule Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings do
   @moduledoc ~s"""
   PriceAbsoluteChangeSettings configures the settings for a signal that is fired
   when the price of `target` goes higher than `above` or lower than `below`
@@ -6,13 +6,13 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
 
   use Vex.Struct
 
-  import Sanbase.Signals.{Utils, Validation, OperationEvaluation}
+  import Sanbase.Signal.{Utils, Validation, OperationEvaluation}
 
   alias __MODULE__
-  alias Sanbase.Signals.Type
+  alias Sanbase.Signal.Type
 
   alias Sanbase.Model.Project
-  alias Sanbase.Signals.Evaluator.Cache
+  alias Sanbase.Signal.Evaluator.Cache
 
   @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
   @trigger_type "price_absolute_change"
@@ -64,7 +64,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
     )
   end
 
-  defimpl Sanbase.Signals.Settings, for: PriceAbsoluteChangeSettings do
+  defimpl Sanbase.Signal.Settings, for: PriceAbsoluteChangeSettings do
     @doc ~s"""
     Construct a cache key only out of the parameters that determine the outcome.
     Parameters like `channel` are discarded. The `type` is included
@@ -78,7 +78,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
       ])
     end
 
-    @spec triggered?(Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings.t()) :: boolean()
+    @spec triggered?(Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings.t()) :: boolean()
     def triggered?(%PriceAbsoluteChangeSettings{triggered?: triggered}), do: triggered
 
     def evaluate(%PriceAbsoluteChangeSettings{} = settings, _trigger) do

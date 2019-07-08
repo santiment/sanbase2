@@ -113,7 +113,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
   This is done by propagating the tags and the UserTrigger id into the Trigger
   structure
   """
-  def transform_user_trigger(%Sanbase.Signals.UserTrigger{trigger: trigger, tags: tags} = ut) do
+  def transform_user_trigger(%Sanbase.Signal.UserTrigger{trigger: trigger, tags: tags} = ut) do
     ut = Map.from_struct(ut)
     trigger = Map.from_struct(trigger)
 
@@ -121,6 +121,13 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
       ut
       | trigger: trigger |> Map.put(:tags, tags) |> Map.put(:id, ut.id)
     }
+  end
+
+  @spec requested_fields(%Absinthe.Resolution{}) :: MapSet.t()
+  def requested_fields(%Absinthe.Resolution{} = resolution) do
+    resolution.definition.selections
+    |> Enum.map(fn %{name: name} -> Inflex.camelize(name, :lower) end)
+    |> MapSet.new()
   end
 
   # Private functions

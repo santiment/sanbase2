@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.EthWalletTriggerTest do
+defmodule Sanbase.Signal.EthWalletTriggerTest do
   use Sanbase.DataCase, async: false
 
   import Mock
@@ -6,7 +6,7 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
 
   alias Sanbase.Model.Project
 
-  alias Sanbase.Signals.{
+  alias Sanbase.Signal.{
     UserTrigger,
     Trigger.EthWalletTriggerSettings,
     Scheduler
@@ -21,7 +21,7 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
        build_embedded_chart: fn _, _, _ -> [%{image: %{url: "somelink"}}] end
      ]}
   ]) do
-    Sanbase.Signals.Evaluator.Cache.clear()
+    Sanbase.Signal.Evaluator.Cache.clear()
 
     user = insert(:user)
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)

@@ -147,9 +147,9 @@ alias Sanbase.Prices.Utils, as: PricesUtils
 
 alias Sanbase.SocialData
 
-alias Sanbase.Signals.{UserTrigger, Trigger, Scheduler}
+alias Sanbase.Signal.{UserTrigger, Trigger, Scheduler}
 
-alias Sanbase.Signals.Trigger.{
+alias Sanbase.Signal.Trigger.{
   DailyActiveAddressesSettings,
   PricePercentChangeSettings,
   PriceVolumeDifferenceTriggerSettings,

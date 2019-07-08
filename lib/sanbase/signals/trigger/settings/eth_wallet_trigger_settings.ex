@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
+defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
   @moduledoc ~s"""
   The EthWallet signal is triggered when the balance of a wallet or set of wallets
   changes by a predefined amount for a specified asset (Ethereum, SAN tokens, etc.)
@@ -11,14 +11,14 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
 
   use Vex.Struct
 
-  import Sanbase.Signals.{Validation, OperationEvaluation}
+  import Sanbase.Signal.{Validation, OperationEvaluation}
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias __MODULE__
-  alias Sanbase.Signals.{Type, Trigger}
+  alias Sanbase.Signal.{Type, Trigger}
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.HistoricalBalance
-  alias Sanbase.Signals.Evaluator.Cache
+  alias Sanbase.Signal.Evaluator.Cache
 
   @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
   @trigger_type "eth_wallet"
@@ -121,7 +121,7 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
 
   alias __MODULE__
 
-  defimpl Sanbase.Signals.Settings, for: EthWalletTriggerSettings do
+  defimpl Sanbase.Signal.Settings, for: EthWalletTriggerSettings do
     def triggered?(%EthWalletTriggerSettings{triggered?: triggered}), do: triggered
 
     def evaluate(%EthWalletTriggerSettings{} = settings, trigger) do

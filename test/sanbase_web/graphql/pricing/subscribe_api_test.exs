@@ -83,6 +83,16 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
       current_user = execute_query(context.conn, current_user_query(), "currentUser")
       assert current_user["subscriptions"] == []
     end
+
+    test "when there are no active subscriptions - return []", context do
+      insert(:subscription_essential,
+        user: context.user,
+        current_period_end: Timex.shift(Timex.now(), days: -2)
+      )
+
+      current_user = execute_query(context.conn, current_user_query(), "currentUser")
+      assert current_user["subscriptions"] == []
+    end
   end
 
   describe "subscribe mutation" do
@@ -182,6 +192,25 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
       assert response["plan"]["name"] == context.plan_pro.name
     end
 
+    test "returns error if subscription is scheduled for cancellation", context do
+      subscription =
+        insert(:subscription_essential,
+          user: context.user,
+          stripe_id: "stripe_id",
+          cancel_at_period_end: true,
+          current_period_end: Timex.now()
+        )
+
+      query = update_subscription_mutation(subscription.id, context.plan_pro.id)
+
+      assert capture_log(fn ->
+               error_msg = execute_mutation_with_error(context.conn, query)
+
+               assert error_msg =~
+                        "Subscription is scheduled for cancellation at the end of the paid period"
+             end) =~ "Subscription is scheduled for cancellation at the end of the paid period"
+    end
+
     test "when not existing plan provided - returns proper error", context do
       subscription = insert(:subscription_essential, user: context.user, stripe_id: "stripe_id")
       query = update_subscription_mutation(subscription.id, -1)
@@ -189,7 +218,8 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
       assert capture_log(fn ->
                error_msg = execute_mutation_with_error(context.conn, query)
 
-               assert error_msg =~ "Cannot find plan with id -1"
+               assert error_msg =~
+                        "Cannot find plan with id -1"
              end) =~ "Cannot find plan with id -1"
     end
 
@@ -274,6 +304,25 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
 
       assert response["isScheduledForCancellation"]
       assert response["ScheduledForCancellationAt"] == DateTime.to_iso8601(tomorrow)
+    end
+
+    test "returns error if subscription is scheduled for cancellation", context do
+      subscription =
+        insert(:subscription_essential,
+          user: context.user,
+          stripe_id: "stripe_id",
+          cancel_at_period_end: true,
+          current_period_end: Timex.now()
+        )
+
+      query = cancel_subscription_mutation(subscription.id)
+
+      assert capture_log(fn ->
+               error_msg = execute_mutation_with_error(context.conn, query)
+
+               assert error_msg =~
+                        "Subscription is scheduled for cancellation at the end of the paid period"
+             end) =~ "Subscription is scheduled for cancellation at the end of the paid period"
     end
 
     test "when cancelling not own subscription - returns error", context do

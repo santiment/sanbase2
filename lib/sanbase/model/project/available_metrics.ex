@@ -100,8 +100,8 @@ defmodule Sanbase.Model.Project.AvailableMetrics do
   end
 
   defp github_metrics(%Project{} = project) do
-    case Project.github_organization(project) do
-      {:ok, _} ->
+    case Project.github_organizations(project) do
+      {:ok, orgs} when is_list(orgs) and orgs != [] ->
         [
           "devActivity",
           "githubActivity",
@@ -217,7 +217,7 @@ defmodule Sanbase.Model.Project.AvailableMetrics do
 
   # Fetch and cache the social volume projects for 30 minutes
   defp social_volume_projects() do
-    SanbaseWeb.Graphql.Cache.func(
+    SanbaseWeb.Graphql.Cache.wrap(
       fn ->
         {:ok, projects} = Sanbase.TechIndicators.social_volume_projects()
         projects

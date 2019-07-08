@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
+defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
   @moduledoc ~s"""
   DailyActiveAddressesSettings configures the settings for a signal that is fired
   when the number of daily active addresses for today exceeds the average for the
@@ -6,13 +6,13 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
   """
   use Vex.Struct
 
-  import Sanbase.Signals.{Validation, Utils}
+  import Sanbase.Signal.{Validation, Utils}
 
   alias __MODULE__
-  alias Sanbase.Signals.Type
+  alias Sanbase.Signal.Type
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.DailyActiveAddresses
-  alias Sanbase.Signals.Evaluator.Cache
+  alias Sanbase.Signal.Evaluator.Cache
 
   @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
   @trigger_type "daily_active_addresses"
@@ -99,7 +99,7 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
     end
   end
 
-  defimpl Sanbase.Signals.Settings, for: DailyActiveAddressesSettings do
+  defimpl Sanbase.Signal.Settings, for: DailyActiveAddressesSettings do
     def triggered?(%DailyActiveAddressesSettings{triggered?: triggered}), do: triggered
 
     def evaluate(%DailyActiveAddressesSettings{} = settings, _trigger) do

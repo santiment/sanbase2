@@ -27,4 +27,12 @@ defmodule SanbaseWeb.Graphql.Schema.PricingTypes do
     field(:is_scheduled_for_cancellation, :boolean)
     field(:scheduled_for_cancellation_at, :datetime)
   end
+
+  object :payments do
+    field(:receipt_url, :string)
+    field(:amount, :integer)
+    field(:created_at, :datetime)
+    field(:status, :string)
+    field(:description, :string)
+  end
 end

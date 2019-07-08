@@ -16,7 +16,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
         _resolution
       ) do
     async(
-      Cache.func(
+      Cache.wrap(
         fn -> calculate_token_top_transactions(project, args) end,
         {:token_top_transactions, id},
         args
@@ -170,7 +170,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
         _resolution
       ) do
     async(
-      Cache.func(
+      Cache.wrap(
         fn -> calculate_eth_top_transactions(project, args) end,
         {:eth_top_transactions, id},
         args
@@ -181,7 +181,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   # Private functions
 
   defp calculate_eth_spent_cached(%Project{id: id} = project, from_datetime, to_datetime) do
-    Cache.func(
+    Cache.wrap(
       fn -> calculate_eth_spent(project, from_datetime, to_datetime) end,
       {:eth_spent, id},
       %{from_datetime: from_datetime, to_datetime: to_datetime}
@@ -217,7 +217,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
          to,
          interval
        ) do
-    Cache.func(
+    Cache.wrap(
       fn -> calculate_eth_spent_over_time(project, from, to, interval) end,
       {:eth_spent_over_time, id},
       %{from: from, to: to, interval: interval}

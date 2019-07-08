@@ -17,6 +17,14 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
     field(:project, :project)
   end
 
+  object :watchlist_stats do
+    field(:trending_names, list_of(:string))
+    field(:trending_slugs, list_of(:string))
+    field(:trending_tickers, list_of(:string))
+    field(:trending_projects, list_of(:project))
+    field(:projects_count, :integer)
+  end
+
   object :user_list do
     field(:id, non_null(:id))
     field(:user, non_null(:post_author), resolve: dataloader(SanbaseRepo))
@@ -24,9 +32,17 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
     field(:is_public, :boolean)
     field(:color, :color_enum)
     field(:function, :json)
-    field(:list_items, list_of(:list_item), resolve: &UserListResolver.list_items/3)
+
+    field :list_items, list_of(:list_item) do
+      resolve(&UserListResolver.list_items/3)
+    end
+
     field(:inserted_at, non_null(:naive_datetime))
     field(:updated_at, non_null(:naive_datetime))
+
+    field(:stats, :watchlist_stats) do
+      cache_resolve(&UserListResolver.stats/3)
+    end
 
     field(:historical_stats, list_of(:combined_projects_stats)) do
       arg(:from, non_null(:datetime))

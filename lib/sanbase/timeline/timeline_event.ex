@@ -12,7 +12,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   alias Sanbase.Auth.User
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
-  alias Sanbase.Signals.UserTrigger
+  alias Sanbase.Signal.UserTrigger
   alias Sanbase.Following.UserFollower
 
   alias __MODULE__

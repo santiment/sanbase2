@@ -5,6 +5,75 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   alias Sanbase.UserList
   alias Sanbase.Model.Project
   alias SanbaseWeb.Graphql.Helpers.Utils
+  alias SanbaseWeb.Graphql.Cache
+  alias Sanbase.SocialData.TrendingWords
+  alias SanbaseWeb.Graphql.Helpers.Utils
+
+  @trending_words_size 10
+  @trending_fields [:trending_slugs, :trending_tickers, :trending_names, :trending_projects]
+                   |> Enum.map(&Inflex.camelize(&1, :lower))
+
+  def stats(
+        %UserList{} = user_list,
+        _args,
+        resolution
+      ) do
+    projects = UserList.get_projects(user_list)
+    trending_words_stats = trending_words_stats(projects, resolution)
+    result = Map.merge(trending_words_stats, %{projects_count: length(projects)})
+    {:ok, result}
+  end
+
+  defp trending_words_stats(projects, resolution) do
+    requested_trending_fields =
+      MapSet.intersection(Utils.requested_fields(resolution), MapSet.new(@trending_fields))
+
+    if Enum.empty?(requested_trending_fields) do
+      %{}
+    else
+      get_trending_words_stats(projects)
+    end
+  end
+
+  defp get_trending_words_stats(projects) do
+    trending_words =
+      Cache.wrap(
+        fn ->
+          {:ok, words} = TrendingWords.get_trending_now(@trending_words_size)
+
+          words
+          |> Enum.map(fn %{word: word} -> String.downcase(word) end)
+          |> MapSet.new()
+        end,
+        :currently_trending_words,
+        %{size: @trending_words_size}
+      ).()
+
+    {tickers, slugs, names} =
+      Enum.reduce(projects, {[], [], []}, fn proj, {tickers, slugs, names} ->
+        {
+          [String.downcase(proj.ticker) | tickers],
+          [String.downcase(proj.coinmarketcap_id) | slugs],
+          [String.downcase(proj.name) | names]
+        }
+      end)
+
+    tickers_set = MapSet.new(tickers)
+    slugs_set = MapSet.new(slugs)
+    names_set = MapSet.new(names)
+
+    trending_projects =
+      trending_words
+      |> Enum.to_list()
+      |> Project.List.by_name_ticker_slug()
+
+    %{
+      trending_tickers: Enum.filter(trending_words, &Enum.member?(tickers_set, &1)),
+      trending_slugs: Enum.filter(trending_words, &Enum.member?(slugs_set, &1)),
+      trending_names: Enum.filter(trending_words, &Enum.member?(names_set, &1)),
+      trending_projects: trending_projects
+    }
+  end
 
   def historical_stats(
         %UserList{} = user_list,

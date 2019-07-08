@@ -38,14 +38,12 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     [%{from: from, to: to, days: days} | _] = args
 
     args
-    |> Enum.map(fn %{project: project} ->
-      case Project.github_organization(project) do
-        {:ok, organization} -> organization
-        _ -> nil
-      end
+    |> Enum.flat_map(fn %{project: project} ->
+      {:ok, organizations} = Project.github_organizations(project)
+      organizations
     end)
-    |> Enum.reject(&is_nil/1)
     |> Enum.chunk_every(100)
+    |> Enum.reject(fn orgs -> orgs == nil or orgs == [] end)
     |> Sanbase.Parallel.map(
       fn organizations ->
         {:ok, dev_activity} = Clickhouse.Github.total_dev_activity(organizations, from, to)

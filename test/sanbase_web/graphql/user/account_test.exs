@@ -528,6 +528,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     mutation {
       emailLogin(email: "john@example.com") {
         success
+        firstLogin
       }
     }
     """
@@ -537,7 +538,9 @@ defmodule SanbaseWeb.Graphql.AccountTest do
       |> post("/graphql", mutation_skeleton(query))
 
     assert Repo.get_by(User, email: "john@example.com")
-    assert json_response(result, 200)["data"]["emailLogin"]["success"]
+    response = json_response(result, 200)["data"]["emailLogin"]
+    assert response["success"]
+    assert response["firstLogin"]
   end
 
   test "logout clears session", %{

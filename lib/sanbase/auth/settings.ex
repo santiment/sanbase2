@@ -5,6 +5,10 @@ defmodule Sanbase.Auth.Settings do
   @newsletter_subscription_types ["DAILY", "WEEKLY", "OFF"]
 
   embedded_schema do
+    field(:theme, :string, default: "default")
+    field(:page_size, :integer, default: 20)
+    field(:is_beta_mode, :boolean, default: false)
+    field(:table_columns, :map, default: %{})
     field(:signal_notify_email, :boolean, default: false)
     field(:signal_notify_telegram, :boolean, default: false)
     field(:telegram_chat_id, :integer)
@@ -16,6 +20,10 @@ defmodule Sanbase.Auth.Settings do
   def changeset(schema, params) do
     schema
     |> cast(params, [
+      :theme,
+      :page_size,
+      :is_beta_mode,
+      :table_columns,
       :signal_notify_email,
       :signal_notify_telegram,
       :telegram_chat_id

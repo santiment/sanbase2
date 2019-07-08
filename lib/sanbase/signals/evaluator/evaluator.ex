@@ -1,15 +1,21 @@
-defmodule Sanbase.Signals.Evaluator do
+defmodule Sanbase.Signal.Evaluator do
   @moduledoc ~s"""
   A module that takes a list of triggers and returns the ones that are triggered.
+
+  The evaluation can be executed or the values can be taken from a cache. Taking
+  data from the cache respects the last triggered datetimes, the cooldown value and
+  all relevat trigger settings. Some of the fields such as the distribution channel
+  (email or telegram), name and description of the signal, etc. are ignored
   """
 
-  alias Sanbase.Signals.Evaluator.Cache
-  alias Sanbase.Signals.{UserTrigger, Trigger}
+  alias Sanbase.Signal.Evaluator.Cache
+  alias Sanbase.Signal.{UserTrigger, Trigger}
 
   require Logger
 
   @doc ~s"""
-  Takes a list of triggers and returns its subset that evaluate to true at the given moment.
+  Takes a list of triggers and returns its a list of those triggers that are
+  triggered at the current time and the user should be notified about.
   """
   @spec run(list(), String.t() | nil) :: list()
   def run(user_triggers, type \\ nil)
@@ -29,22 +35,27 @@ defmodule Sanbase.Signals.Evaluator do
     |> Enum.filter(&triggered?/1)
   end
 
-  defp evaluate(%UserTrigger{trigger: original_trigger} = user_trigger) do
-    trigger =
+  defp evaluate(%UserTrigger{trigger: trigger} = user_trigger) do
+    %{cooldown: cd, last_triggered: lt} = trigger
+
+    # Along with the trigger settings (the `cache_key`) take into account also
+    # the last triggered datetime and cooldown. This is done because a signal
+    # can only be fired if it did not fire in the past `cooldown` intereval of time
+    evaluated_trigger =
       Cache.get_or_store(
-        {original_trigger.last_triggered, Trigger.cache_key(original_trigger)},
-        fn -> Trigger.evaluate(original_trigger) end
+        {Trigger.cache_key(trigger), {lt, cd}},
+        fn -> Trigger.evaluate(trigger) end
       )
 
     # Take only `payload` and `triggered?` from the cache
     %UserTrigger{
       user_trigger
       | trigger: %{
-          original_trigger
+          trigger
           | settings: %{
-              original_trigger.settings
-              | payload: trigger.settings.payload,
-                triggered?: trigger.settings.triggered?
+              trigger.settings
+              | payload: evaluated_trigger.settings.payload,
+                triggered?: evaluated_trigger.settings.triggered?
             }
         }
     }

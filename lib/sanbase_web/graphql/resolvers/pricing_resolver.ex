@@ -3,6 +3,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PricingResolver do
   alias Sanbase.Auth.User
   alias Sanbase.Repo
 
+  alias Sanbase.StripeApi
+
   require Logger
 
   def products_with_plans(_root, _args, _resolution) do
@@ -30,6 +32,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PricingResolver do
 
     with {:subscription?, %Subscription{user_id: ^user_id} = subscription} <-
            {:subscription?, Repo.get(Subscription, subscription_id) |> Repo.preload(:plan)},
+         {:cancelled?, %Subscription{cancel_at_period_end: false}} <- {:cancelled?, subscription},
          {:plan?, %Plan{} = new_plan} <- {:plan?, Repo.get(Plan, plan_id)},
          {:ok, subscription} <- Subscription.update_subscription(subscription, new_plan) do
       {:ok, subscription}
@@ -50,7 +53,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.PricingResolver do
 
     with {:subscription?, %Subscription{user_id: ^user_id} = subscription} <-
            {:subscription?, Repo.get(Subscription, subscription_id)},
-         {:ok, cancel_subscription} <- Subscription.cancel_subscription(subscription) do
+         {:cancelled?, %Subscription{cancel_at_period_end: false}} <- {:cancelled?, subscription},
+         {:ok, cancel_subscription} <-
+           Subscription.cancel_subscription(subscription) do
       {:ok, cancel_subscription}
     else
       result ->
@@ -62,11 +67,47 @@ defmodule SanbaseWeb.Graphql.Resolvers.PricingResolver do
     end
   end
 
+  def payments(_root, _args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    StripeApi.list_payments(current_user)
+    |> case do
+      {:ok, []} ->
+        {:ok, []}
+
+      {:ok, payments} ->
+        {:ok, transform_payments(payments)}
+
+      {:error, reason} ->
+        Logger.error("Listing payments failed: reason: #{inspect(reason)}")
+        {:error, Subscription.generic_error_message()}
+    end
+  end
+
   def subscriptions(%User{} = user, _args, _resolution) do
     {:ok, Subscription.user_subscriptions(user)}
   end
 
   # private functions
+  defp transform_payments(%Stripe.List{data: payments}) do
+    payments
+    |> Enum.map(fn %Stripe.Charge{
+                     status: status,
+                     amount: amount,
+                     created: created,
+                     receipt_url: receipt_url,
+                     description: description
+                   } ->
+      %{
+        status: status,
+        amount: amount,
+        created_at: DateTime.from_unix!(created),
+        receipt_url: receipt_url,
+        description: description
+      }
+    end)
+  end
+
   defp handle_subscription_error_result(result, log_message, params) do
     case result do
       {:plan?, _} ->
@@ -79,6 +120,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.PricingResolver do
           "Cannot find subscription with id #{params.subscription_id} for user with id #{
             params.user_id
           }. Either this subscription doesn not exist or it does not belong to the user."
+
+        Logger.error("#{log_message} - reason: #{reason}")
+        {:error, reason}
+
+      {:cancelled?, %Subscription{current_period_end: current_period_end}} ->
+        reason =
+          "Subscription is scheduled for cancellation at the end of the paid period: #{
+            current_period_end
+          }"
 
         Logger.error("#{log_message} - reason: #{reason}")
         {:error, reason}

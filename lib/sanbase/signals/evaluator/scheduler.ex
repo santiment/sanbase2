@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.Scheduler do
+defmodule Sanbase.Signal.Scheduler do
   @moduledoc ~s"""
   This module is the entrypoint to the user custom signals.
   It's main job is to execute the whole glue all modules related to signal processing
@@ -6,10 +6,10 @@ defmodule Sanbase.Signals.Scheduler do
   > Get the user triggers from the database
   > Evaluate the signals
   > Send the signals to the user
-  > Update the `last_updated` in the database
+  > Update the `last_triggered` in the database
   > Log stats messages
   """
-  alias Sanbase.Signals.Trigger
+  alias Sanbase.Signal.Trigger
 
   @signal_modules [
     Trigger.DailyActiveAddressesSettings,
@@ -20,8 +20,8 @@ defmodule Sanbase.Signals.Scheduler do
     Trigger.EthWalletTriggerSettings
   ]
 
-  alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
-  alias Sanbase.Signals.Evaluator
+  alias Sanbase.Signal.{UserTrigger, HistoricalActivity}
+  alias Sanbase.Signal.Evaluator
   alias Sanbase.Signal
 
   require Logger
@@ -180,6 +180,13 @@ defmodule Sanbase.Signals.Scheduler do
   defp max_last_triggered(last_triggered) when is_non_empty_map(last_triggered) do
     last_triggered
     |> Map.values()
-    |> Enum.max_by(&DateTime.to_iso8601/1)
+    |> Enum.map(fn
+      %DateTime{} = dt ->
+        dt
+
+      datetime_str when is_binary(datetime_str) ->
+        Sanbase.DateTimeUtils.from_iso8601!(datetime_str)
+    end)
+    |> Enum.max_by(&DateTime.to_unix/1)
   end
 end

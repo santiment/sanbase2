@@ -21,6 +21,7 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     field(:consent_id, :string)
     field(:privacy_policy_accepted, :boolean)
     field(:marketing_accepted, :boolean)
+    field(:first_login, :boolean, default_value: false)
 
     field :permissions, :access_level do
       resolve(&AccountResolver.permissions/3)
@@ -114,6 +115,7 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
 
   object :email_login_request do
     field(:success, non_null(:boolean))
+    field(:first_login, :boolean, default_value: false)
   end
 
   object :access_level do

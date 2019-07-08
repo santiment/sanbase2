@@ -16,7 +16,7 @@ defmodule Sanbase.Project.AvailableMetricsTest do
   ]
 
   setup_with_mocks([
-    {Sanbase.TechIndicators, [],
+    {Sanbase.TechIndicators, [:passthrough],
      [social_volume_projects: fn -> {:ok, ["bitcoin", "ethereum", "santiment"]} end]}
   ]) do
     []
@@ -93,7 +93,8 @@ defmodule Sanbase.Project.AvailableMetricsTest do
         github_link: nil,
         infrastructure: nil,
         main_contract_address: nil,
-        eth_addresses: []
+        eth_addresses: [],
+        github_organizations: []
       })
 
     assert AvailableMetrics.get(project) == @slug_metrics
@@ -102,8 +103,6 @@ defmodule Sanbase.Project.AvailableMetricsTest do
   test "project with slug, github, infrastructure, contract and eth addresses" do
     project =
       insert(:project, %{
-        coinmarketcap_id: "santiment",
-        github_link: "https://github.com/santiment",
         infrastructure: build(:infrastructure, %{code: "ETH"}),
         main_contract_address: "0x" <> rand_hex_str(),
         eth_addresses: [build(:project_eth_address)]

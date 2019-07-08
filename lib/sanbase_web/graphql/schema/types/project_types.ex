@@ -56,8 +56,12 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:main_contract_address, :string)
     field(:eth_addresses, list_of(:eth_address), resolve: dataloader(SanbaseRepo))
 
+    field :github_links, list_of(:string) do
+      cache_resolve(&ProjectResolver.github_links/3)
+    end
+
     field :related_posts, list_of(:post) do
-      resolve(&ProjectResolver.related_posts/3)
+      cache_resolve(&ProjectResolver.related_posts/3)
     end
 
     field :market_segment, :string do

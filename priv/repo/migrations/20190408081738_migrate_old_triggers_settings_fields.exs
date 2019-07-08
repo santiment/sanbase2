@@ -2,11 +2,11 @@ defmodule Sanbase.Repo.Migrations.MigrateOldTriggersSettingsFields do
   use Ecto.Migration
 
   import Ecto.Query
-  import Sanbase.Signals.TriggerQuery
+  import Sanbase.Signal.TriggerQuery
 
-  alias Sanbase.Signals.UserTrigger
+  alias Sanbase.Signal.UserTrigger
 
-  alias Sanbase.Signals.Trigger.{
+  alias Sanbase.Signal.Trigger.{
     PricePercentChangeSettings,
     PriceAbsoluteChangeSettings
   }

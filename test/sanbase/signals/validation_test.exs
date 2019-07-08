@@ -1,11 +1,11 @@
-defmodule Sanbase.Signals.ValidationTest do
+defmodule Sanbase.Signal.ValidationTest do
   use Sanbase.DataCase, async: true
 
-  alias Sanbase.Signals.Validation
+  alias Sanbase.Signal.Validation
 
   describe "#load_in_struct" do
-    alias Sanbase.Signals.StructMapTransformation
-    alias Sanbase.Signals.UserTrigger
+    alias Sanbase.Signal.StructMapTransformation
+    alias Sanbase.Signal.UserTrigger
 
     test "not supported keys in settings return error" do
       # mistyped `time_window` as `time_windo`

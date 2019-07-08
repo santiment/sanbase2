@@ -52,8 +52,10 @@ defmodule Sanbase.Clickhouse.Github do
   @spec total_github_activity(String.t(), DateTime.t(), DateTime.t()) ::
           {:ok, float()}
           | {:error, String.t()}
-  def total_github_activity(organization, from, to) do
-    {query, args} = total_github_activity_query(organization, from, to)
+  def total_github_activity([], _from, _to), do: {:ok, []}
+
+  def total_github_activity(organizations, from, to) do
+    {query, args} = total_github_activity_query(organizations, from, to)
 
     case ClickhouseRepo.query_transform(query, args, fn [github_activity] ->
            github_activity |> String.to_integer()
@@ -70,11 +72,13 @@ defmodule Sanbase.Clickhouse.Github do
   """
   @spec total_dev_activity(list(String.t()), DateTime.t(), DateTime.t()) ::
           {:ok, list({String.t(), non_neg_integer()})} | {:error, String.t()}
-  def total_dev_activity(owners, from, to) do
-    {query, args} = total_dev_activity_query(owners, from, to)
+  def total_dev_activity([], _from, _to), do: {:ok, []}
 
-    ClickhouseRepo.query_transform(query, args, fn [owner, dev_activity] ->
-      {owner, dev_activity |> String.to_integer()}
+  def total_dev_activity(organizations, from, to) do
+    {query, args} = total_dev_activity_query(organizations, from, to)
+
+    ClickhouseRepo.query_transform(query, args, fn [organization, dev_activity] ->
+      {organization, dev_activity |> String.to_integer()}
     end)
   end
 
@@ -90,20 +94,21 @@ defmodule Sanbase.Clickhouse.Github do
           String.t(),
           integer() | nil
         ) :: {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
-  def dev_activity(nil, _, _, _), do: []
+  def dev_activity(nil, _, _, _, _, _), do: []
+  def dev_activity([], _, _, _, _, _), do: []
 
-  def dev_activity(organization, from, to, interval, "None", _) do
+  def dev_activity(organizations, from, to, interval, "None", _) do
     interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
 
-    dev_activity_query(organization, from, to, interval_sec)
+    dev_activity_query(organizations, from, to, interval_sec)
     |> datetime_activity_execute()
   end
 
-  def dev_activity(organization, from, to, interval, "movingAverage", ma_base) do
+  def dev_activity(organizations, from, to, interval, "movingAverage", ma_base) do
     interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
     from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
 
-    dev_activity_query(organization, from, to, interval_sec)
+    dev_activity_query(organizations, from, to, interval_sec)
     |> datetime_activity_execute()
     |> case do
       {:ok, result} -> sma(result, ma_base)
@@ -124,19 +129,20 @@ defmodule Sanbase.Clickhouse.Github do
           non_neg_integer()
         ) :: {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
   def github_activity(nil, _, _, _), do: {:ok, []}
+  def github_activity([], _, _, _), do: {:ok, []}
 
-  def github_activity(organization, from, to, interval, "None", _) do
+  def github_activity(organizations, from, to, interval, "None", _) do
     interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
 
-    github_activity_query(organization, from, to, interval_sec)
+    github_activity_query(organizations, from, to, interval_sec)
     |> datetime_activity_execute()
   end
 
-  def github_activity(organization, from, to, interval, "movingAverage", ma_base) do
+  def github_activity(organizations, from, to, interval, "movingAverage", ma_base) do
     interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
     from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
 
-    github_activity_query(organization, from, to, interval_sec)
+    github_activity_query(organizations, from, to, interval_sec)
     |> datetime_activity_execute()
     |> case do
       {:ok, result} -> sma(result, ma_base)
@@ -171,7 +177,7 @@ defmodule Sanbase.Clickhouse.Github do
     end)
   end
 
-  defp dev_activity_query(organization, from_datetime, to_datetime, interval) do
+  defp dev_activity_query(organizations, from_datetime, to_datetime, interval) do
     from_datetime_unix = DateTime.to_unix(from_datetime)
     to_datetime_unix = DateTime.to_unix(to_datetime)
     span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)
@@ -190,10 +196,10 @@ defmodule Sanbase.Clickhouse.Github do
           FROM (
             SELECT any(event) as events, dt
             FROM #{@table}
-            PREWHERE owner = ?3
+            PREWHERE owner IN (?3)
             AND dt >= toDateTime(?4)
             AND dt <= toDateTime(?5)
-            AND event NOT in (?6)
+            AND event NOT IN (?6)
             GROUP BY owner, dt
           )
           GROUP BY time
@@ -205,7 +211,7 @@ defmodule Sanbase.Clickhouse.Github do
     args = [
       interval,
       span,
-      organization,
+      organizations,
       from_datetime_unix,
       to_datetime_unix,
       @non_dev_events
@@ -214,7 +220,7 @@ defmodule Sanbase.Clickhouse.Github do
     {query, args}
   end
 
-  defp github_activity_query(organization, from_datetime, to_datetime, interval) do
+  defp github_activity_query(organizations, from_datetime, to_datetime, interval) do
     from_datetime_unix = DateTime.to_unix(from_datetime)
     to_datetime_unix = DateTime.to_unix(to_datetime)
     span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)
@@ -233,7 +239,7 @@ defmodule Sanbase.Clickhouse.Github do
           FROM (
             SELECT any(event) as events, dt
             FROM #{@table}
-            PREWHERE owner = ?3
+            PREWHERE owner IN (?3)
             AND dt >= toDateTime(?4)
             AND dt <= toDateTime(?5)
             GROUP BY owner, dt
@@ -247,7 +253,7 @@ defmodule Sanbase.Clickhouse.Github do
     args = [
       interval,
       span,
-      organization,
+      organizations,
       from_datetime_unix,
       to_datetime_unix
     ]
@@ -255,13 +261,13 @@ defmodule Sanbase.Clickhouse.Github do
     {query, args}
   end
 
-  defp total_github_activity_query(owner, from, to) do
+  defp total_github_activity_query(organizations, from, to) do
     query = """
     SELECT COUNT(*) FROM (
       SELECT COUNT(*)
       FROM #{@table}
       PREWHERE
-        owner = ?1 AND
+        owner IN (?1) AND
         dt >= toDateTime(?2) AND
         dt <= toDateTime(?3)
       GROUP BY owner, repo, dt, event
@@ -269,7 +275,7 @@ defmodule Sanbase.Clickhouse.Github do
     """
 
     args = [
-      owner,
+      organizations,
       DateTime.to_unix(from),
       DateTime.to_unix(to)
     ]
@@ -277,7 +283,7 @@ defmodule Sanbase.Clickhouse.Github do
     {query, args}
   end
 
-  defp total_dev_activity_query(owners, from, to) do
+  defp total_dev_activity_query(organizations, from, to) do
     query = """
     SELECT owner, COUNT(*)
     FROM(
@@ -294,7 +300,7 @@ defmodule Sanbase.Clickhouse.Github do
     """
 
     args = [
-      owners,
+      organizations,
       DateTime.to_unix(from),
       DateTime.to_unix(to),
       @non_dev_events

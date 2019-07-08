@@ -3,7 +3,6 @@ defmodule Sanbase.Signal.EvaluatorTest do
 
   import Mock
   import Sanbase.Factory
-  import ExUnit.CaptureLog
 
   alias Sanbase.Signal.UserTrigger
   alias Sanbase.Signal.Evaluator

@@ -1,22 +1,14 @@
-defmodule SanbaseWeb.Graphql.InsightTest do
+defmodule SanbaseWeb.Graphql.CurrentPollApiTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.Factory
+
   alias Sanbase.Insight.{Poll, Post, Vote}
-  alias Sanbase.Auth.User
   alias Sanbase.Repo
 
-  import SanbaseWeb.Graphql.TestHelpers
-
   setup do
-    user =
-      %User{
-        salt: User.generate_salt(),
-        san_balance: Decimal.new("10.000000000000000000"),
-        san_balance_updated_at: Timex.now(),
-        privacy_policy_accepted: true
-      }
-      |> Repo.insert!()
-
+    user = insert(:staked_user)
     conn = setup_jwt_auth(build_conn(), user)
 
     {:ok, conn: conn, user: user}
@@ -134,77 +126,5 @@ defmodule SanbaseWeb.Graphql.InsightTest do
     [post] = currentPoll["posts"]
 
     assert Timex.parse!(post["voted_at"], "{ISO:Extended}") == vote.inserted_at
-  end
-
-  test "voting for a post", %{conn: conn, user: user} do
-    poll = Poll.find_or_insert_current_poll!()
-
-    sanbase_post =
-      %Post{
-        poll_id: poll.id,
-        user_id: user.id,
-        title: "Awesome analysis",
-        text: "Example MD text of the analysis",
-        state: Post.approved_state()
-      }
-      |> Repo.insert!()
-
-    query = """
-    mutation {
-      vote(postId: #{sanbase_post.id}) {
-        id,
-        votes{
-          totalSanVotes
-        }
-      }
-    }
-    """
-
-    result =
-      conn
-      |> post("/graphql", mutation_skeleton(query))
-
-    sanbasePost = json_response(result, 200)["data"]["vote"]
-
-    assert sanbasePost["id"] == Integer.to_string(sanbase_post.id)
-
-    assert sanbasePost["votes"]["totalSanVotes"] == Decimal.to_integer(user.san_balance)
-  end
-
-  test "unvoting for a post", %{conn: conn, user: user} do
-    poll = Poll.find_or_insert_current_poll!()
-
-    sanbase_post =
-      %Post{
-        poll_id: poll.id,
-        user_id: user.id,
-        title: "Awesome analysis",
-        text: "Some text here",
-        state: Post.approved_state()
-      }
-      |> Repo.insert!()
-
-    %Vote{post_id: sanbase_post.id, user_id: user.id}
-    |> Repo.insert!()
-
-    query = """
-    mutation {
-      unvote(postId: #{sanbase_post.id}) {
-        id,
-        votes{
-          totalSanVotes
-        }
-      }
-    }
-    """
-
-    result =
-      conn
-      |> post("/graphql", mutation_skeleton(query))
-
-    result_post = json_response(result, 200)["data"]["unvote"]
-
-    assert result_post["id"] == Integer.to_string(sanbase_post.id)
-    assert result_post["votes"]["totalSanVotes"] == 0
   end
 end

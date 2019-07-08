@@ -4,7 +4,7 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
 
   The signal supports the following operations:
 
-  1. Send at the list of trending words at predefined time every day
+  1. Send the list of trending words at predefined time every day
   2. Send a signal if some word enters the list of trending words.
   3. Send a signal if some project enters the list of trending words
   """

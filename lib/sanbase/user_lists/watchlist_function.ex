@@ -37,6 +37,10 @@ defmodule Sanbase.WatchlistFunction do
     Project.List.by_slugs(slugs)
   end
 
+  def evaluate(%__MODULE__{name: "trending_projects"}) do
+    Project.List.currently_trending_projects()
+  end
+
   def evaluate(%__MODULE__{name: "empty"}), do: []
 
   def empty(), do: %__MODULE__{name: "empty", args: []}

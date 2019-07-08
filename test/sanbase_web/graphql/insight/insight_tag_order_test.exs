@@ -38,6 +38,28 @@ defmodule SanbaseWeb.Graphql.InsightTagOrderTest do
     assert result2["data"]["updateInsight"]["tags"] |> Enum.map(& &1["name"]) == ["BTC" | tags]
   end
 
+  test "tags preserved order after two updates", %{conn: conn} do
+    tags = ["first"]
+    mutation = create_insight_mutation("Title", "Text", tags)
+    result = execute_mutation(conn, mutation)
+
+    id = result["data"]["createInsight"]["id"]
+
+    assert result["data"]["createInsight"]["tags"] |> Enum.map(& &1["name"]) == tags
+
+    tags2 = ["BTC" | tags]
+    mutation2 = update_insight_tags_mutation(id, tags2)
+    result2 = execute_mutation(conn, mutation2)
+
+    assert result2["data"]["updateInsight"]["tags"] |> Enum.map(& &1["name"]) == tags2
+
+    tags3 = ["SAN", "PESH" | tags]
+    mutation3 = update_insight_tags_mutation(id, tags3)
+    result3 = execute_mutation(conn, mutation3)
+
+    assert result3["data"]["updateInsight"]["tags"] |> Enum.map(& &1["name"]) == tags3
+  end
+
   defp create_insight_mutation(title, text, tags) do
     """
     mutation {

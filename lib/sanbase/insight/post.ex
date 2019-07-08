@@ -74,7 +74,7 @@ defmodule Sanbase.Insight.Post do
   def update_changeset(%Post{} = post, attrs) do
     post
     |> cast(attrs, [:title, :short_desc, :link, :text, :moderation_comment, :state])
-    |> put_or_replace_tags(attrs)
+    |> Tag.put_tags(attrs)
     |> images_cast(attrs)
     |> validate_required([:poll_id, :user_id, :title])
     |> validate_length(:title, max: 140)

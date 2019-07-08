@@ -64,7 +64,14 @@ defmodule Sanbase.Factory do
       title: "Awesome analysis",
       link: "http://example.com",
       text: "Text of the post",
-      state: Post.awaiting_approval_state()
+      state: Post.awaiting_approval_state(),
+      tags: [build(:tag), build(:tag)]
+    }
+  end
+
+  def tag_factory() do
+    %Tag{
+      name: rand_str(5)
     }
   end
 
@@ -74,12 +81,6 @@ defmodule Sanbase.Factory do
       link: "http://example.com",
       text: "Text of the post",
       state: Post.awaiting_approval_state()
-    }
-  end
-
-  def tag_factory() do
-    %Tag{
-      name: "SAN"
     }
   end
 

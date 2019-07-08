@@ -34,6 +34,10 @@ defmodule Sanbase.Auth.UserSettings do
     end
   end
 
+  def update_settings(%User{id: id}, params) do
+    settings_update(id, params)
+  end
+
   def toggle_notification_channel(%User{id: user_id}, params) do
     settings_update(user_id, params)
   end

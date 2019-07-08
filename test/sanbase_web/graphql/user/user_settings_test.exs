@@ -13,6 +13,66 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     {:ok, conn: conn, user: user}
   end
 
+  test "toggle beta mode", %{user: user, conn: conn} do
+    query = toggle_beta_mode_query(true)
+    result = conn |> execute(query, "updateUserSettings")
+
+    assert result == %{"isBetaMode" => true}
+    assert UserSettings.settings_for(user) |> Map.get(:is_beta_mode) == true
+
+    query = toggle_beta_mode_query(false)
+    result = conn |> execute(query, "updateUserSettings")
+
+    assert result == %{"isBetaMode" => false}
+    assert UserSettings.settings_for(user) |> Map.get(:is_beta_mode) == false
+  end
+
+  test "change theme", %{user: user, conn: conn} do
+    query = change_theme_query("nightmode")
+    result = conn |> execute(query, "updateUserSettings")
+
+    assert result == %{"theme" => "nightmode"}
+    assert UserSettings.settings_for(user) |> Map.get(:theme) == "nightmode"
+
+    query = change_theme_query("default")
+    result = conn |> execute(query, "updateUserSettings")
+
+    assert result == %{"theme" => "default"}
+    assert UserSettings.settings_for(user) |> Map.get(:theme) == "default"
+  end
+
+  test "change page size", %{user: user, conn: conn} do
+    query = change_page_size_query(100)
+    result = conn |> execute(query, "updateUserSettings")
+
+    assert result == %{"pageSize" => 100}
+    assert UserSettings.settings_for(user) |> Map.get(:page_size) == 100
+
+    query = change_page_size_query(50)
+    result = conn |> execute(query, "updateUserSettings")
+
+    assert result == %{"pageSize" => 50}
+    assert UserSettings.settings_for(user) |> Map.get(:page_size) == 50
+  end
+
+  test "change table columns", %{user: user, conn: conn} do
+    query = change_table_columns_query(%{shown: ["price", "volume", "devActivity"]})
+    result = conn |> execute(query, "updateUserSettings")
+
+    assert result == %{"tableColumns" => %{"shown" => ["price", "volume", "devActivity"]}}
+
+    assert UserSettings.settings_for(user) |> Map.get(:table_columns) == %{
+             "shown" => ["price", "volume", "devActivity"]
+           }
+
+    query = change_table_columns_query(%{shown: ["price"]})
+    result = conn |> execute(query, "updateUserSettings")
+
+    assert result == %{"tableColumns" => %{"shown" => ["price"]}}
+
+    assert UserSettings.settings_for(user) |> Map.get(:table_columns) == %{"shown" => ["price"]}
+  end
+
   test "toggle telegram notification channel", %{user: user, conn: conn} do
     query = toggle_telegram_channel_query(true)
     result = conn |> execute(query, "settingsToggleChannel")
@@ -56,7 +116,11 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
       user: user,
       settings: %{
         signal_notify_telegram: true,
-        signal_notify_email: false
+        signal_notify_email: false,
+        is_beta_mode: true,
+        theme: "nightmode",
+        page_size: 100,
+        table_columns: %{shown: ["price", "volume"]}
       }
     )
 
@@ -66,7 +130,11 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     assert result["settings"] == %{
              "signalNotifyEmail" => false,
              "signalNotifyTelegram" => true,
-             "newsletterSubscription" => "OFF"
+             "newsletterSubscription" => "OFF",
+             "isBetaMode" => true,
+             "pageSize" => 100,
+             "tableColumns" => %{"shown" => ["price", "volume"]},
+             "theme" => "nightmode"
            }
   end
 
@@ -77,7 +145,11 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     assert result["settings"] == %{
              "newsletterSubscription" => "OFF",
              "signalNotifyEmail" => false,
-             "signalNotifyTelegram" => false
+             "signalNotifyTelegram" => false,
+             "isBetaMode" => false,
+             "pageSize" => 20,
+             "tableColumns" => %{},
+             "theme" => "default"
            }
   end
 
@@ -123,11 +195,15 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     """
     {
       currentUser {
-        id,
+        id
         settings {
           signalNotifyEmail
           signalNotifyTelegram
           newsletterSubscription
+          isBetaMode
+          theme
+          pageSize
+          tableColumns
         }
       }
     }
@@ -138,7 +214,51 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     """
     mutation {
       settingsToggleChannel(signalNotifyTelegram: #{is_active?}) {
-        signalNotifyTelegram,
+        signalNotifyTelegram
+      }
+    }
+    """
+  end
+
+  defp toggle_beta_mode_query(is_active?) do
+    """
+    mutation {
+      updateUserSettings(settings: {isBetaMode: #{is_active?}}) {
+        isBetaMode
+      }
+    }
+    """
+  end
+
+  defp change_theme_query(theme) do
+    """
+    mutation {
+      updateUserSettings(settings: {theme: "#{theme}"}) {
+        theme
+      }
+    }
+    """
+  end
+
+  defp change_table_columns_query(table_columns) do
+    ~s|
+    mutation {
+      updateUserSettings(
+        settings: {tableColumns: '#{table_columns |> Jason.encode!()}'}
+        ) {
+         tableColumns
+      }
+    }
+    |
+    |> String.replace(~r|\"|, ~S|\\"|)
+    |> String.replace(~r|'|, ~S|"|)
+  end
+
+  defp change_page_size_query(page_size) do
+    """
+    mutation {
+      updateUserSettings(settings: {pageSize: #{page_size}}) {
+        pageSize
       }
     }
     """

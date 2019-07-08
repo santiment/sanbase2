@@ -4,7 +4,7 @@
   - [Trigger structure](#trigger-structure)
   - [Settings fields](#settings-fields)
   - [Examples](#examples)
-    - [Example settings structure for `price_absolute_change`](#example-settings-structure-for-price_absolut_echange)
+    - [Example settings structure for `price_absolute_change`](#example-settings-structure-for-price_absolute_echange)
     - [Example settings structure for `price_percent_change`](#example-settings-structure-for-price_percent_change)
     - [Example settings structure for `daily_active_addresses`](#example-settings-structure-for-daily_active_addresses)
     - [Example settings structure for `trending_words`](#example-settings-structure-for-trending_words)
@@ -164,6 +164,18 @@ These are the fields describing a trigger.
   "type": "trending_words",
   "channel": "telegram",
   "target": { "slug": ["santiment", "bitcoin"] },
+  "operation": { "trending_project": true }
+}
+```
+
+```json
+// Send a signal if any of the projects in a watchlist is trending. A project is trending if
+// at least one of its ticker, name or slug is in the trending words
+// The check is case insensitive.
+{
+  "type": "trending_words",
+  "channel": "telegram",
+  "target": { "watchlist": 272 },
   "operation": { "trending_project": true }
 }
 ```

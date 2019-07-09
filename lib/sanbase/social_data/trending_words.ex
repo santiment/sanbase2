@@ -37,7 +37,9 @@ defmodule Sanbase.SocialData.TrendingWords do
   Get a list of the currently trending words
   """
   @spec get_trending_now(non_neg_integer()) :: result
-  def get_trending_now(size \\ 10) do
+  def get_trending_now(size \\ 10)
+
+  def get_trending_now(size) do
     now = Timex.now()
 
     {from, to, hour} = get_trending_word_query_params(now)

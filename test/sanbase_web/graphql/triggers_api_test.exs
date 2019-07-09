@@ -3,6 +3,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
   import Mock
   import Sanbase.Factory
+  import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Signal.UserTrigger
@@ -92,15 +93,18 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       {:telegram_to_self, "Successfully created a new signal of type: Daily Active Addresses"}
     )
 
-    result =
-      conn
-      |> post("/graphql", %{"query" => query})
-      |> json_response(200)
+    assert capture_log(fn ->
+             result =
+               conn
+               |> post("/graphql", %{"query" => query})
+               |> json_response(200)
 
-    error = result["errors"] |> List.first()
+             error = result["errors"] |> List.first()
 
-    assert error["message"] ==
-             "Trigger structure is invalid. Key `settings` is not valid. Reason: \"The trigger settings type 'unknown' is not a valid type.\""
+             assert error["message"] ==
+                      "Trigger structure is invalid. Key `settings` is not valid. Reason: \"The trigger settings type 'unknown' is not a valid type.\""
+           end) =~
+             "UserTrigger struct is not valid. Reason: \"The trigger settings type 'unknown' is not a valid type"
   end
 
   test "update trigger", %{user: user, conn: conn} do
@@ -347,6 +351,45 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     assert created_trigger["settings"] == trigger_settings
     assert created_trigger["id"] != nil
     assert created_trigger["tags"] == [%{"name" => "SAN"}, %{"name" => "santiment"}]
+  end
+
+  test "create trending words trigger with empty tags", %{conn: conn} do
+    trigger_settings = %{
+      "type" => "trending_words",
+      "channel" => "telegram",
+      "trigger_time" => "12:00:00"
+    }
+
+    trigger_settings_json = trigger_settings |> Jason.encode!()
+
+    query =
+      ~s|
+    mutation {
+      createTrigger(
+        settings: '#{trigger_settings_json}'
+        title: 'Generic title'
+        tags: []
+      ) {
+        trigger{
+          id
+          settings
+          tags{ name }
+        }
+      }
+    }
+    |
+      |> format_interpolated_json()
+
+    result =
+      conn
+      |> post("/graphql", %{"query" => query})
+      |> json_response(200)
+
+    created_trigger = result["data"]["createTrigger"]["trigger"]
+
+    assert created_trigger["settings"] == trigger_settings
+    assert created_trigger["id"] != nil
+    assert created_trigger["tags"] == []
   end
 
   test "fetches signals historical activity for current user", %{user: user, conn: conn} do

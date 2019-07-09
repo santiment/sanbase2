@@ -7,7 +7,7 @@ defmodule Sanbase.UserList do
   by a function or the combination of both.
 
   The list of some concrete slugs is used when a user wants to create a list of
-  projects they are intersted in. It can contain any project.
+  projects they are interested in. It can contain any project.
 
   The watchlist defined by a function is being used when a watchlist can change
   frequently according to some rules. Examples for such lists are having a watchlist

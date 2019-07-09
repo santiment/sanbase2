@@ -1,7 +1,8 @@
 defmodule Sanbase.Signal.Trigger.PriceVolumeDifferenceTriggerSettings do
   use Vex.Struct
 
-  import Sanbase.Signal.{Validation, Utils}
+  import Sanbase.{Validation, Signal.Validation}
+  import Sanbase.Signal.Utils
 
   alias __MODULE__
   alias Sanbase.Model.Project

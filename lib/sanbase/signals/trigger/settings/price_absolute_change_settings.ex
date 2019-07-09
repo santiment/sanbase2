@@ -6,7 +6,8 @@ defmodule Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings do
 
   use Vex.Struct
 
-  import Sanbase.Signal.{Utils, Validation, OperationEvaluation}
+  import Sanbase.Signal.Validation
+  import Sanbase.Signal.{Utils, OperationEvaluation}
 
   alias __MODULE__
   alias Sanbase.Signal.Type

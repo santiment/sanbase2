@@ -225,7 +225,7 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
       |> json_response(200)
 
     [error] = result["errors"]
-    assert String.contains?(error["message"], "Cannot update user list")
+    assert String.contains?(error["message"], "Cannot update watchlist of another user")
   end
 
   test "remove watchlist", %{user: user, conn: conn} do

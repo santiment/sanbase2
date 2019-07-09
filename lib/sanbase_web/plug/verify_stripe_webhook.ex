@@ -11,12 +11,23 @@ defmodule SanbaseWeb.Plug.VerifyStripeWebhook do
   require Logger
   require Sanbase.Utils.Config, as: Config
 
+  alias SanbaseWeb.Router.Helpers, as: Routes
+
   def init(opts), do: opts
 
   def call(conn, _opts), do: verify_stripe_request(conn)
 
   defp verify_stripe_request(conn) do
-    do_verify(conn, conn.private[:raw_body])
+    stripe_webhook_path = Routes.stripe_path(conn, :webhook)
+
+    case conn.request_path do
+      ^stripe_webhook_path ->
+        {:ok, body, conn} = Plug.Conn.read_body(conn)
+        do_verify(conn, body)
+
+      _ ->
+        conn
+    end
   end
 
   defp do_verify(conn, body) do
@@ -25,7 +36,7 @@ defmodule SanbaseWeb.Plug.VerifyStripeWebhook do
     case Stripe.Webhook.construct_event(body, signature, webhook_secret()) do
       {:ok, %Stripe.Event{} = event} ->
         conn
-        |> assign(:stripe_event, event)
+        |> assign(:stripe_event, Jason.decode!(body))
 
       {:error, error} ->
         halt_and_log_error(conn, error)

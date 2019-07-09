@@ -6,9 +6,6 @@ defmodule SanbaseWeb.RootController do
   alias Sanbase.Oauth2.Hydra
   alias Sanbase.Auth.User
 
-  alias Sanbase.StripeApi
-  alias Sanbase.Pricing.Subscription
-
   # Used in production mode to serve the reactjs application
   def index(conn, _params) do
     conn
@@ -20,41 +17,6 @@ defmodule SanbaseWeb.RootController do
     conn
     |> put_resp_content_type("text/plain")
     |> send_resp(200, "")
-  end
-
-  def stripe_webhook(conn, _params) do
-    IO.inspect(conn.assigns[:stripe_event])
-
-    handle_event(conn)
-    |> case do
-      {:ok, _} ->
-        conn
-        |> resp(200, "OK")
-        |> send_resp()
-
-      {:error, _} ->
-        conn
-        |> resp(500, "ERROR")
-        |> send_resp()
-    end
-  end
-
-  defp handle_event(%Plug.Conn{
-         assigns: %{
-           stripe_event: %{
-             type: "invoice.payment_succeeded",
-             data: %{object: %{subscription: subscription_id}}
-           }
-         }
-       }) do
-    {:ok, stripe_subscription} = StripeApi.retrieve_subscription(subscription_id)
-
-    Subscription
-    |> Sanbase.Repo.get_by(stripe_id: stripe_subscription.id)
-    |> Subscription.update_subscription_db(%{
-      current_period_end: stripe_subscription.current_period_end
-    })
-    |> IO.inspect()
   end
 
   def consent(

@@ -25,7 +25,9 @@ defmodule SanbaseWeb.Endpoint do
   plug(Plug.RequestId)
   plug(Plug.Logger)
 
-  plug(:copy_req_body)
+  # This plug plug should be before Plug.Parsers because its reading the
+  # request body and it can be read only once and if used anywhere else should be stored
+  plug(SanbaseWeb.Plug.VerifyStripeWebhook)
 
   plug(
     Plug.Parsers,
@@ -114,10 +116,5 @@ defmodule SanbaseWeb.Endpoint do
     frontend_url() <>
       "/verify_email?" <>
       URI.encode_query(token: email_candidate_token, emailCandidate: email_candidate)
-  end
-
-  defp copy_req_body(conn, _) do
-    {:ok, body, _} = Plug.Conn.read_body(conn)
-    Plug.Conn.put_private(conn, :raw_body, body)
   end
 end

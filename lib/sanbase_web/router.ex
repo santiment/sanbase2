@@ -24,10 +24,6 @@ defmodule SanbaseWeb.Router do
     plug(SanbaseWeb.Plug.TelegramMatchPlug)
   end
 
-  pipeline :stripe do
-    plug(SanbaseWeb.Plug.VerifyStripeWebhook)
-  end
-
   use ExAdmin.Router
 
   scope "/admin", ExAdmin do
@@ -81,9 +77,7 @@ defmodule SanbaseWeb.Router do
   end
 
   scope "/", SanbaseWeb do
-    pipe_through([:stripe])
-
-    post("/stripe_webhook", RootController, :stripe_webhook)
+    post("/stripe_webhook", StripeController, :webhook)
   end
 
   scope "/", SanbaseWeb do

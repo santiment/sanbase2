@@ -95,7 +95,9 @@ defmodule Sanbase.Insight.Post do
   def draft(), do: @draft
 
   def by_id(post_id) do
-    case Repo.get(__MODULE__, post_id) do
+    from(p in __MODULE__, preload: ^@preloads)
+    |> Repo.get(post_id)
+    |> case do
       nil -> {:error, "There is no insight with id #{post_id}"}
       post -> {:ok, post}
     end

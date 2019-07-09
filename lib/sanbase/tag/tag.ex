@@ -42,8 +42,7 @@ defmodule Sanbase.Tag do
     Ecto.Changeset.add_error(changeset, :tags, "Cannot add more than 10 tags for a record")
   end
 
-  def put_tags(%Ecto.Changeset{} = changeset, %{tags: tags})
-      when is_list(tags) and length(tags) > 0 do
+  def put_tags(%Ecto.Changeset{} = changeset, %{tags: tags}) when is_list(tags) do
     tags =
       tags
       |> Enum.filter(&is_binary/1)

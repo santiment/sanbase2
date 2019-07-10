@@ -24,14 +24,26 @@ config :sanbase, Sanbase.ApiCallDataExporter,
 # Configure postgres database
 config :sanbase, Sanbase.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
   database: "sanbase_test",
-  pool_size: 5
+  pool_size: 5,
+  pool_timeout: 600_000,
+  timeout: 600_000,
+  ownership_timeout: 600_000
 
 # Configure your database
 config :sanbase, Sanbase.TimescaleRepo,
   pool: Ecto.Adapters.SQL.Sandbox,
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
   database: "sanbase_timescale_test",
-  pool_size: 5
+  pool_size: 5,
+  pool_timeout: 600_000,
+  timeout: 600_000,
+  ownership_timeout: 600_000
 
 config :sanbase, Sanbase.Timescaledb, blockchain_schema: nil
 

@@ -170,7 +170,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:social_volume_type, non_null(:social_volume_type))
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(TimeframeRestriction, %{allow_realtime_data: true})
       resolve(&SocialDataResolver.social_volume/3)
     end
 
@@ -203,7 +203,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:interval, non_null(:string), default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(TimeframeRestriction, %{allow_realtime_data: true})
       cache_resolve(&SocialDataResolver.topic_search/3, ttl: 600, max_ttl_offset: 240)
     end
 
@@ -281,7 +281,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:time_window, non_null(:string))
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(TimeframeRestriction, %{allow_realtime_data: true})
       cache_resolve(&SocialDataResolver.top_social_gainers_losers/3)
     end
 
@@ -301,7 +301,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:time_window, non_null(:string))
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(TimeframeRestriction, %{allow_realtime_data: true})
       cache_resolve(&SocialDataResolver.social_gainers_losers_status/3)
     end
   end

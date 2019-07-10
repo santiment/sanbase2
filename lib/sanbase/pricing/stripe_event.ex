@@ -1,6 +1,12 @@
 defmodule Sanbase.Pricing.StripeEvent do
   @moduledoc """
-  Module for persisting Stripe webhook events.
+  Module for persisting and handling Stripe webhook events.
+
+  Events are persisted for 3 reasons:
+  1. help making event processing idempotent by not processing already processed events
+  (https://stripe.com/docs/webhooks/best-practices#duplicate-events)
+  2. Replay event if something happens.
+  3. Have a log of received events - that will help for fixing bugs.
   """
   use Ecto.Schema
 
@@ -32,6 +38,9 @@ defmodule Sanbase.Pricing.StripeEvent do
     Repo.get(__MODULE__, event_id)
   end
 
+  @doc """
+  Log event details with initial status `is_processed: false`
+  """
   def create(
         %{
           "id" => id,
@@ -49,6 +58,12 @@ defmodule Sanbase.Pricing.StripeEvent do
     |> Repo.update()
   end
 
+  @doc """
+  Handle different types of events asyncroniously.
+
+  Every event type has different logic for handling.
+  After handling is done - updating the event in processed status.
+  """
   def handle_event_async(stripe_event) do
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
       handle_event(stripe_event)

@@ -14,6 +14,7 @@ defmodule SanbaseWeb.StripeController do
         StripeEvent.create(stripe_event)
         |> case do
           {:ok, _} ->
+            # spawn a separate process to handle the event and return immediately
             StripeEvent.handle_event_async(stripe_event)
             success_response(conn)
 
@@ -21,7 +22,7 @@ defmodule SanbaseWeb.StripeController do
             error_response(conn)
         end
 
-      # duplicate event
+      # duplicate event - return 200
       _ ->
         success_response(conn)
     end

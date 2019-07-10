@@ -5,7 +5,7 @@ defmodule SanbaseWeb.StripeController do
 
   alias Sanbase.Pricing.StripeEvent
 
-  def webhook(conn, params) do
+  def webhook(conn, _params) do
     stripe_event = conn.assigns[:stripe_event]
     Logger.info("Stripe event received: #{inspect(stripe_event)}")
 

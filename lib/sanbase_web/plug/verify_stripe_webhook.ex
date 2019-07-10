@@ -34,7 +34,7 @@ defmodule SanbaseWeb.Plug.VerifyStripeWebhook do
     [signature] = get_req_header(conn, "stripe-signature")
 
     case Stripe.Webhook.construct_event(body, signature, webhook_secret()) do
-      {:ok, %Stripe.Event{} = event} ->
+      {:ok, %Stripe.Event{}} ->
         conn
         |> assign(:stripe_event, Jason.decode!(body))
 

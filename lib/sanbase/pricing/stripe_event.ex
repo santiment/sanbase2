@@ -10,12 +10,16 @@ defmodule Sanbase.Pricing.StripeEvent do
   alias Sanbase.Pricing.Subscription
   alias Sanbase.StripeApi
 
+  require Logger
+
   @primary_key false
   schema "stripe_events" do
     field(:event_id, :string, primary_key: true)
     field(:type, :string, null: false)
     field(:payload, :map, null: false)
     field(:is_processed, :boolean, default: false)
+
+    timestamps()
   end
 
   def changeset(%__MODULE__{} = stripe_event, attrs \\ %{}) do
@@ -35,7 +39,7 @@ defmodule Sanbase.Pricing.StripeEvent do
         } = stripe_event
       ) do
     %__MODULE__{}
-    |> changeset(%{event_id: id, type: type, payload: Jason.encode!(stripe_event)})
+    |> changeset(%{event_id: id, type: type, payload: stripe_event})
     |> Repo.insert()
   end
 
@@ -56,14 +60,23 @@ defmodule Sanbase.Pricing.StripeEvent do
          "type" => "invoice.payment_succeeded",
          "data" => %{"object" => %{"subscription" => subscription_id}}
        }) do
-    {:ok, stripe_subscription} = StripeApi.retrieve_subscription(subscription_id)
+    with {:ok, stripe_subscription} <- StripeApi.retrieve_subscription(subscription_id),
+         {:nil?, subscription} <-
+           {:nil?, Repo.get_by(Subscription, stripe_id: stripe_subscription.id)},
+         {:ok, _subscription} <-
+           Subscription.update_subscription_db(subscription, %{
+             current_period_end: DateTime.from_unix!(stripe_subscription.current_period_end)
+           }) do
+      update(id, %{is_processed: true})
+    else
+      {:nil?, _} ->
+        error_msg = "Subscription with stripe_id: #{subscription_id} does not exist"
+        Logger.error(error_msg)
+        {:error, error_msg}
 
-    Subscription
-    |> Repo.get_by(stripe_id: stripe_subscription.id)
-    |> Subscription.update_subscription_db(%{
-      current_period_end: stripe_subscription.current_period_end
-    })
-
-    update(id, %{is_processed: true})
+      {:error, reason} ->
+        Logger.error("Error handling invoice.payment_succeeded event: reason #{inspect(reason)}")
+        {:error, reason}
+    end
   end
 end

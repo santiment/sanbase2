@@ -69,7 +69,7 @@ defmodule Sanbase.Signal.History.PriceVolumeDifferenceHistory do
 
               cooldown_until =
                 Timex.shift(datetime,
-                  seconds: Sanbase.DateTimeUtils.compound_duration_to_seconds(cooldown)
+                  seconds: Sanbase.DateTimeUtils.str_to_sec(cooldown)
                 )
 
               {[new_elem | acc], cooldown_until}

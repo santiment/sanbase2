@@ -47,7 +47,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
 
   def get_data(%__MODULE__{filtered_target: %{list: target_list}} = settings)
       when is_list(target_list) do
-    time_window_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(settings.time_window)
+    time_window_sec = Sanbase.DateTimeUtils.str_to_sec(settings.time_window)
     from = Timex.shift(Timex.now(), seconds: -time_window_sec)
     to = Timex.shift(Timex.now(), days: -1)
 
@@ -157,7 +157,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
         percent_change(average_daa, current_daa)
       }%** for the last 1 day.
       Average Daily Active Addresses for last **#{
-        Sanbase.DateTimeUtils.compound_duration_to_text(time_window)
+        Sanbase.DateTimeUtils.interval_to_str(time_window)
       }**: **#{average_daa}**.
       More info here: #{Project.sanbase_link(project)}
 

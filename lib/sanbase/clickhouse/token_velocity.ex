@@ -40,7 +40,7 @@ defmodule Sanbase.Clickhouse.TokenVelocity do
           String.t()
         ) :: {:ok, list(velocity_map)} | {:error, String.t()}
   def token_velocity(ticker_slug, from, to, interval) do
-    interval = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
+    interval = Sanbase.DateTimeUtils.str_to_sec(interval)
 
     case rem(interval, 86_400) do
       0 ->

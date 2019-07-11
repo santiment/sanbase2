@@ -70,7 +70,7 @@ defmodule Sanbase.Timescaledb do
   """
   @spec transform_interval(interval) :: %Postgrex.Interval{}
   def transform_interval(interval) when is_binary(interval) do
-    seconds = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
+    seconds = Sanbase.DateTimeUtils.str_to_sec(interval)
     %Postgrex.Interval{secs: seconds}
   end
 

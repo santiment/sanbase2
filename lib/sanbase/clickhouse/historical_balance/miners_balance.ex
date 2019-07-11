@@ -18,7 +18,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.MinersBalance do
           String.t()
         ) :: {:ok, list(balance)} | {:error, String.t()}
   def historical_balance("ethereum", from, to, interval) do
-    interval_in_seconds = DateTimeUtils.compound_duration_to_seconds(interval)
+    interval_in_seconds = DateTimeUtils.str_to_sec(interval)
 
     case rem(interval_in_seconds, 86_400) do
       0 ->

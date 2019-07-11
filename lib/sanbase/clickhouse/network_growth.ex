@@ -5,7 +5,7 @@ defmodule Sanbase.Clickhouse.NetworkGrowth do
   def network_growth(contract, from, to, interval) do
     from_datetime_unix = DateTime.to_unix(from)
     to_datetime_unix = DateTime.to_unix(to)
-    interval = DateTimeUtils.compound_duration_to_seconds(interval)
+    interval = DateTimeUtils.str_to_sec(interval)
     span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)
 
     query = """

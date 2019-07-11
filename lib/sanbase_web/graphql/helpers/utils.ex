@@ -67,8 +67,8 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
     ma_interval =
       max(
         div(
-          DateTimeUtils.compound_duration_to_seconds(ma_base),
-          DateTimeUtils.compound_duration_to_seconds(interval)
+          DateTimeUtils.str_to_sec(ma_base),
+          DateTimeUtils.str_to_sec(interval)
         ),
         2
       )

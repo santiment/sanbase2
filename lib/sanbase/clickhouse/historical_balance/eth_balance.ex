@@ -211,7 +211,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
 
   defp balance_change_query(addresses, from, to, interval) do
     addresses = Enum.map(addresses, &String.downcase/1)
-    interval = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
+    interval = Sanbase.DateTimeUtils.str_to_sec(interval)
     to_unix = DateTime.to_unix(to)
     from_unix = DateTime.to_unix(from)
     span = div(to_unix - from_unix, interval) |> max(1)
@@ -249,7 +249,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
   @first_datetime ~N[2015-07-29 00:00:00] |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
   defp historical_balance_query(address, _from, to, interval) when is_binary(address) do
     address = String.downcase(address)
-    interval = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
+    interval = Sanbase.DateTimeUtils.str_to_sec(interval)
     to_unix = DateTime.to_unix(to)
     span = div(to_unix - @first_datetime, interval) |> max(1)
 

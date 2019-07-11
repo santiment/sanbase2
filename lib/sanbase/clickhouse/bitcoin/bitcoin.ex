@@ -142,7 +142,7 @@ defmodule Sanbase.Clickhouse.Bitcoin do
   end
 
   defp mvrv_ratio_query(from, to, interval) do
-    interval_seconds = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
+    interval_seconds = Sanbase.DateTimeUtils.str_to_sec(interval)
 
     query = """
     SELECT
@@ -162,7 +162,7 @@ defmodule Sanbase.Clickhouse.Bitcoin do
   end
 
   defp token_velocity_query(from, to, interval) do
-    interval_seconds = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
+    interval_seconds = Sanbase.DateTimeUtils.str_to_sec(interval)
 
     query = """
     SELECT
@@ -183,7 +183,7 @@ defmodule Sanbase.Clickhouse.Bitcoin do
 
   # Round the interval to whole days only
   defp round_interval(interval) when is_binary(interval) do
-    Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
+    Sanbase.DateTimeUtils.str_to_sec(interval)
     |> div(86_400)
     |> max(1)
     |> Kernel.*(86_400)

@@ -1,12 +1,28 @@
 defmodule Sanbase.UserList.Settings do
   @moduledoc ~s"""
-  Store and work with settings specific for a single watchlist
+  Store and work with settings specific for a watchlist.
+
+  The settings are stored per user. One watchlist can have many settings for many
+  users. When a user requires the settings for a watchlist the resolution process
+  is the first one that matches:
+  1. If the requesting user has defined settings - return them.
+  2. If the watchlist craetor has defined settings - return them.
+  3. Return the default settings
   """
 
   defmodule WatchlistSettings do
+    @moduledoc ~s"""
+    Embeded schema that defines how the settings look like
+    """
     use Ecto.Schema
 
     import Ecto.Changeset
+
+    @type t :: %{
+            page_size: non_neg_integer(),
+            table_columns: map(),
+            time_window: String.t()
+          }
 
     @default_page_size 20
     @default_time_window "180d"
@@ -70,6 +86,14 @@ defmodule Sanbase.UserList.Settings do
     )
   end
 
+  @doc ~s"""
+  Return the settings for a watchlist and a given user. Returns the first one that
+  exists:
+  1. User's settings for that watchlist
+  2. The watchlist's creator's settings for that watchlist
+  3. Default settings
+  """
+  @spec settings_for(%UserList{}, %User{} | nil) :: {:ok, WatchlistSettings.t()}
   def settings_for(%UserList{} = ul, %User{} = user) do
     settings =
       get_settings(ul.id, user.id) ||
@@ -83,6 +107,13 @@ defmodule Sanbase.UserList.Settings do
     get_settings(ul.id, ul.user_id)
   end
 
+  @doc ~s"""
+  Create or update settings for a given watchlist and user
+  """
+  @spec update_or_create_settings(watchlist_id, user_id, settings) :: {:ok, WatchlistSettings.t()}
+        when watchlist_id: non_neg_integer,
+             user_id: non_neg_integer,
+             settings: WatchlistSettings.t()
   def update_or_create_settings(watchlist_id, user_id, settings) do
     case Repo.one(settings_query(watchlist_id, user_id)) do
       nil ->

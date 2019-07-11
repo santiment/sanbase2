@@ -29,6 +29,69 @@ defmodule SanbaseWeb.Graphql.WatchlistSettingsApiTest do
     assert settings == nil
   end
 
+  test "validate page size", %{conn: conn} do
+    %{"id" => watchlist_id} = create_watchlist(conn, title: rand_str())
+
+    %{
+      "errors" => [
+        %{
+          "details" => error_details
+        }
+      ]
+    } =
+      update_watchlist_settings(conn, watchlist_id,
+        page_size: -50,
+        time_window: "60d",
+        table_columns: %{}
+      )
+
+    assert error_details == %{"settings" => %{"page_size" => ["must be greater than 0"]}}
+    %{"pageSize" => page_size} = get_watchlist_settings(conn, watchlist_id)
+    assert page_size != -50
+  end
+
+  test "validate time window", %{conn: conn} do
+    %{"id" => watchlist_id} = create_watchlist(conn, title: rand_str())
+
+    %{
+      "errors" => [
+        %{
+          "details" => error_details
+        }
+      ]
+    } =
+      update_watchlist_settings(conn, watchlist_id,
+        page_size: 50,
+        time_window: "200",
+        table_columns: %{}
+      )
+
+    assert error_details == %{
+             "settings" => %{"time_window" => ["\"200\" is not a valid time window"]}
+           }
+  end
+
+  test "validate time window 2", %{conn: conn} do
+    %{"id" => watchlist_id} = create_watchlist(conn, title: rand_str())
+
+    %{
+      "errors" => [
+        %{
+          "details" => error_details
+        }
+      ]
+    } =
+      update_watchlist_settings(conn, watchlist_id,
+        page_size: 50,
+        time_window: "100n",
+        table_columns: %{}
+      )
+
+    assert error_details == %{
+             "settings" => %{"time_window" => ["\"100n\" is not a valid time window"]}
+           }
+  end
+
   test "use watchlist creator's settings if current user does not have any", %{
     conn: conn,
     conn2: conn2
@@ -80,12 +143,14 @@ defmodule SanbaseWeb.Graphql.WatchlistSettingsApiTest do
   test "update watchlist for the same user", %{conn: conn} do
     %{"id" => watchlist_id} = create_watchlist(conn, title: rand_str())
 
-    updated_settings =
+    result =
       update_watchlist_settings(conn, watchlist_id,
         page_size: 20,
         time_window: "180d",
         table_columns: %{}
       )
+
+    updated_settings = result["data"]["updateWatchlistSettings"]
 
     watchlist_settings = get_watchlist_settings(conn, watchlist_id)
     # default settings
@@ -153,11 +218,8 @@ defmodule SanbaseWeb.Graphql.WatchlistSettingsApiTest do
       |> String.replace(~r|\"|, ~S|\\"|)
       |> String.replace(~r|'|, ~S|"|)
 
-    result =
-      conn
-      |> post("/graphql", mutation_skeleton(mutation))
-      |> json_response(200)
-
-    result["data"]["updateWatchlistSettings"]
+    conn
+    |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
   end
 end

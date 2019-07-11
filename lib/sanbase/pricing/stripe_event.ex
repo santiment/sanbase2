@@ -3,7 +3,7 @@ defmodule Sanbase.Pricing.StripeEvent do
   Module for persisting and handling Stripe webhook events.
 
   Events are persisted for 3 reasons:
-  1. help making event processing idempotent by not processing already processed events
+  1. Help making event processing idempotent by not processing already processed events
   (https://stripe.com/docs/webhooks/best-practices#duplicate-events)
   2. Replay event if something happens.
   3. Have a log of received events - that will help for fixing bugs.

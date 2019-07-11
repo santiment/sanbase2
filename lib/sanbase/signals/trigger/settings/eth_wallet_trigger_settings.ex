@@ -11,7 +11,8 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
 
   use Vex.Struct
 
-  import Sanbase.Signal.{Validation, OperationEvaluation}
+  import Sanbase.Signal.Validation
+  import Sanbase.Signal.OperationEvaluation
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias __MODULE__

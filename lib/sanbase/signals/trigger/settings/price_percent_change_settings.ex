@@ -5,7 +5,9 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
   specified `time_window` time.
   """
   use Vex.Struct
-  import Sanbase.Signal.{Validation, Utils, OperationEvaluation}
+
+  import Sanbase.{Validation, Signal.Validation}
+  import Sanbase.Signal.{Utils, OperationEvaluation}
 
   alias __MODULE__
   alias Sanbase.Signal.Type

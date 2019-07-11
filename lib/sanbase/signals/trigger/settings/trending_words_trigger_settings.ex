@@ -14,8 +14,8 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
   use Vex.Struct
 
   import Sanbase.Math, only: [to_integer: 1]
-  import Sanbase.Signal.Utils
   import Sanbase.Signal.Validation
+  import Sanbase.Signal.Utils
 
   alias __MODULE__
   alias Sanbase.Signal.Type

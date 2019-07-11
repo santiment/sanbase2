@@ -13,6 +13,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   @trending_fields [:trending_slugs, :trending_tickers, :trending_names, :trending_projects]
                    |> Enum.map(&Inflex.camelize(&1, :lower))
 
+  def settings(%UserList{} = watchlist, _args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    UserList.Settings.settings_for(watchlist, current_user)
+  end
+
+  def settings(%UserList{} = watchlist, _args, _) do
+    UserList.Settings.settings_for(watchlist, nil)
+  end
+
   def stats(
         %UserList{} = user_list,
         _args,
@@ -125,7 +135,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
           }
       end
     else
-      {:error, "Cannot update user list"}
+      {:error, "Cannot update watchlist of another user"}
+    end
+  end
+
+  def update_watchlist_settings(_root, %{id: watchlist_id, settings: settings}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    UserList.Settings.update_or_create_settings(watchlist_id, current_user.id, settings)
+    |> case do
+      {:ok, %{settings: settings}} ->
+        {:ok, settings}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error,
+         message: "Cannot update watchlist settings",
+         details: Sanbase.Utils.ErrorHandling.changeset_errors_to_str(changeset)}
     end
   end
 

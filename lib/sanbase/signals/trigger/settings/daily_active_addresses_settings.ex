@@ -6,7 +6,8 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
   """
   use Vex.Struct
 
-  import Sanbase.Signal.{Validation, Utils}
+  import Sanbase.{Validation, Signal.Validation}
+  import Sanbase.Signal.Utils
 
   alias __MODULE__
   alias Sanbase.Signal.Type

@@ -25,6 +25,18 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
     field(:projects_count, :integer)
   end
 
+  object :watchlist_settings do
+    field(:time_window, :string)
+    field(:page_size, :integer)
+    field(:table_columns, :json)
+  end
+
+  input_object :watchlist_settings_input_object do
+    field(:time_window, :string)
+    field(:page_size, :integer)
+    field(:table_columns, :json)
+  end
+
   object :user_list do
     field(:id, non_null(:id))
     field(:user, non_null(:post_author), resolve: dataloader(SanbaseRepo))
@@ -50,6 +62,10 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
       arg(:interval, :string, default_value: "1d")
 
       cache_resolve(&UserListResolver.historical_stats/3)
+    end
+
+    field(:settings, :watchlist_settings) do
+      cache_resolve(&UserListResolver.settings/3)
     end
   end
 end

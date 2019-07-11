@@ -89,7 +89,7 @@ defmodule Sanbase.Signal.Trigger do
   end
 
   defp validate_url(_changeset, url) do
-    case Sanbase.Signal.Validation.valid_url?(url) do
+    case Sanbase.Validation.valid_url?(url) do
       :ok -> []
       {:error, reason} -> [icon_url: reason]
     end

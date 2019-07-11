@@ -1,10 +1,10 @@
-podTemplate(label: 'sanbase-builder', containers: [
-  containerTemplate(name: 'docker', image: 'docker', ttyEnabled: true, command: 'cat', envVars: [
-    envVar(key: 'DOCKER_HOST', value: 'tcp://docker-host-docker-host:2375'),
-    envVar(key: 'DOCKER_BUILDKIT', value: '1')
-  ])
-]) {
-  node('sanbase-builder') {
+@Library('podTemplateLib')
+import net.santiment.utils.podTemplates
+
+slaveTemplates = new podTemplates()
+
+slaveTemplates.dockerTemplate { label ->
+  node(label) {
     stage('Run Tests') {
       container('docker') {
         def scmVars = checkout scm

@@ -3,20 +3,20 @@ defmodule Sanbase.DateTimeUtilsTest do
 
   alias Sanbase.DateTimeUtils
 
-  test "#compound_duration_to_seconds/1" do
-    assert DateTimeUtils.compound_duration_to_seconds("10000000000ns") == 10
-    assert DateTimeUtils.compound_duration_to_seconds("100s") == 100
-    assert DateTimeUtils.compound_duration_to_seconds("1m") == 60
-    assert DateTimeUtils.compound_duration_to_seconds("1h") == 3600
-    assert DateTimeUtils.compound_duration_to_seconds("1d") == 86_400
-    assert DateTimeUtils.compound_duration_to_seconds("1w") == 604_800
+  test "#str_to_sec/1" do
+    assert DateTimeUtils.str_to_sec("10000000000ns") == 10
+    assert DateTimeUtils.str_to_sec("100s") == 100
+    assert DateTimeUtils.str_to_sec("1m") == 60
+    assert DateTimeUtils.str_to_sec("1h") == 3600
+    assert DateTimeUtils.str_to_sec("1d") == 86_400
+    assert DateTimeUtils.str_to_sec("1w") == 604_800
 
     assert_raise CaseClauseError, fn ->
-      DateTimeUtils.compound_duration_to_seconds("100") == 100
+      DateTimeUtils.str_to_sec("100") == 100
     end
 
     assert_raise CaseClauseError, fn ->
-      DateTimeUtils.compound_duration_to_seconds("1dd") == 100
+      DateTimeUtils.str_to_sec("1dd") == 100
     end
   end
 

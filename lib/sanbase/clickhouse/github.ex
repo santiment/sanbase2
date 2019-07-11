@@ -98,14 +98,14 @@ defmodule Sanbase.Clickhouse.Github do
   def dev_activity([], _, _, _, _, _), do: []
 
   def dev_activity(organizations, from, to, interval, "None", _) do
-    interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
+    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
 
     dev_activity_query(organizations, from, to, interval_sec)
     |> datetime_activity_execute()
   end
 
   def dev_activity(organizations, from, to, interval, "movingAverage", ma_base) do
-    interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
+    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
     from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
 
     dev_activity_query(organizations, from, to, interval_sec)
@@ -132,14 +132,14 @@ defmodule Sanbase.Clickhouse.Github do
   def github_activity([], _, _, _), do: {:ok, []}
 
   def github_activity(organizations, from, to, interval, "None", _) do
-    interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
+    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
 
     github_activity_query(organizations, from, to, interval_sec)
     |> datetime_activity_execute()
   end
 
   def github_activity(organizations, from, to, interval, "movingAverage", ma_base) do
-    interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
+    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
     from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
 
     github_activity_query(organizations, from, to, interval_sec)

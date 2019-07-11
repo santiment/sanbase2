@@ -47,7 +47,7 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
   @spec get_data(__MODULE__.t()) :: list({Type.target(), any()})
   def get_data(%__MODULE__{filtered_target: %{list: target_list}} = settings)
       when is_list(target_list) do
-    time_window_sec = DateTimeUtils.compound_duration_to_seconds(settings.time_window)
+    time_window_sec = DateTimeUtils.str_to_sec(settings.time_window)
     projects = Project.by_slug(target_list)
     to = Timex.now()
     from = Timex.shift(to, seconds: -time_window_sec)
@@ -146,7 +146,7 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
       **#{project.name}**'s price has #{operation_text} by **#{percent_change}%** from $#{
         round_price(first_price)
       } to $#{round_price(last_price)} for the last #{
-        DateTimeUtils.compound_duration_to_text(settings.time_window)
+        DateTimeUtils.interval_to_str(settings.time_window)
       }.
       More info here: #{Sanbase.Model.Project.sanbase_link(project)}
       ![Price chart over the past 90 days](#{chart_url(project, :volume)})

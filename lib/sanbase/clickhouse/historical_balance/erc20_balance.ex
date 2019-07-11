@@ -166,7 +166,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
                   |> DateTime.from_naive!("Etc/UTC")
                   |> DateTime.to_unix()
   defp historical_balance_query(address, contract, _from, to, interval) do
-    interval = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
+    interval = Sanbase.DateTimeUtils.str_to_sec(interval)
     to_unix = DateTime.to_unix(to)
     span = div(to_unix - @first_datetime, interval) |> max(1)
 

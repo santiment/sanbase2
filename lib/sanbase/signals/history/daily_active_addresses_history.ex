@@ -61,7 +61,7 @@ defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
           |> Enum.map(fn {daa_item, price_item} -> Map.merge(daa_item, price_item) end)
 
         time_window_in_days = time_window_in_days(settings.time_window)
-        cooldown_in_days = Sanbase.DateTimeUtils.compound_duration_to_days(cooldown)
+        cooldown_in_days = Sanbase.DateTimeUtils.str_to_days(cooldown)
 
         active_addresses =
           daa_result |> Enum.map(fn %{active_addresses: active_addresses} -> active_addresses end)
@@ -122,7 +122,7 @@ defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
     end
 
     defp time_window_in_days(time_window) do
-      Sanbase.DateTimeUtils.compound_duration_to_days(time_window)
+      Sanbase.DateTimeUtils.str_to_days(time_window)
       |> max(@minimal_time_window_in_days)
     end
   end

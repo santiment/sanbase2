@@ -49,7 +49,7 @@ defmodule Sanbase.TechIndicators.PriceVolumeDifference do
     shifted_from =
       Timex.shift(from,
         seconds:
-          -Sanbase.DateTimeUtils.compound_duration_to_seconds(aggregate_interval) *
+          -Sanbase.DateTimeUtils.str_to_sec(aggregate_interval) *
             (approximation_window + comparison_window)
       )
 

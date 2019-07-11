@@ -61,7 +61,7 @@ defmodule Sanbase.Clickhouse.Erc20ShareOfDeposits do
   end
 
   defp share_of_deposits_query(contract, from, to, interval) do
-    interval = DateTimeUtils.compound_duration_to_seconds(interval)
+    interval = DateTimeUtils.str_to_sec(interval)
     from_datetime_unix = DateTime.to_unix(from)
     to_datetime_unix = DateTime.to_unix(to)
     span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)

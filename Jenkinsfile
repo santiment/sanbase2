@@ -1,6 +1,9 @@
 @Library('podTemplateLib')
 import net.santiment.utils.podTemplates
 
+
+properties([buildDiscarder(logRotator(artifactDaysToKeepStr: '30', artifactNumToKeepStr: '', daysToKeepStr: '30', numToKeepStr: ''))])
+
 slaveTemplates = new podTemplates()
 
 slaveTemplates.dockerTemplate { label ->

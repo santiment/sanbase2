@@ -373,6 +373,122 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
     end
   end
 
+  describe "renew_subscription mutation" do
+    test "successfully renew subscription", context do
+      subscription =
+        insert(:subscription_essential,
+          user: context.user,
+          stripe_id: "stripe_id",
+          cancel_at_period_end: true,
+          current_period_end: Timex.shift(Timex.now(), days: 10)
+        )
+
+      query = renew_subscription_mutation(subscription.id)
+      response = execute_mutation(context.conn, query, "renewSubscription")
+
+      assert response["cancelAtPeriodEnd"] == false
+    end
+
+    test "when subscription is not scheduled for cancellation - returns error", context do
+      subscription =
+        insert(:subscription_essential,
+          user: context.user,
+          stripe_id: "stripe_id",
+          cancel_at_period_end: false,
+          current_period_end: Timex.shift(Timex.now(), days: -1)
+        )
+
+      query = renew_subscription_mutation(subscription.id)
+
+      assert capture_log(fn ->
+               error_msg = execute_mutation_with_error(context.conn, query)
+
+               assert error_msg =~
+                        "Subscription is not scheduled for cancellation so it cannot be renewed"
+             end) =~
+               "Subscription is not scheduled for cancellation so it cannot be renewed"
+    end
+
+    test "when not existing subscription provided - returns error", context do
+      query = update_subscription_mutation(-1, context.plan_pro.id)
+
+      assert capture_log(fn ->
+               error_msg = execute_mutation_with_error(context.conn, query)
+
+               assert error_msg =~ "Cannot find subscription with id -1"
+             end) =~ "Cannot find subscription with id -1"
+    end
+
+    test "when renewing not own subscription - returns error", context do
+      user2 = insert(:user)
+
+      subscription =
+        insert(:subscription_essential,
+          user: user2,
+          stripe_id: "stripe_id",
+          cancel_at_period_end: true,
+          current_period_end: Timex.shift(Timex.now(), days: -1)
+        )
+
+      query = renew_subscription_mutation(subscription.id)
+
+      assert capture_log(fn ->
+               error_msg = execute_mutation_with_error(context.conn, query)
+
+               assert error_msg =~
+                        "Cannot find subscription with id #{subscription.id} for user with id #{
+                          context.user.id
+                        }. Either this subscription doesn not exist or it does not belong to the user."
+             end) =~ "Cannot find subscription with id"
+    end
+
+    test "when renewing subscription after end period - returns error", context do
+      subscription =
+        insert(:subscription_essential,
+          user: context.user,
+          stripe_id: "stripe_id",
+          cancel_at_period_end: true,
+          current_period_end: Timex.shift(Timex.now(), days: -1)
+        )
+
+      query = renew_subscription_mutation(subscription.id)
+
+      assert capture_log(fn ->
+               error_msg = execute_mutation_with_error(context.conn, query)
+
+               assert error_msg =~
+                        "Cancelled subscription has already reached the end period"
+             end) =~ "Cancelled subscription has already reached the end period"
+    end
+
+    test "when updating subscription in Stripe fails - returns generic error", context do
+      with_mocks([
+        {StripeApi, [],
+         [
+           update_subscription: fn _, _ ->
+             {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
+           end
+         ]}
+      ]) do
+        subscription =
+          insert(:subscription_essential,
+            user: context.user,
+            stripe_id: "stripe_id",
+            cancel_at_period_end: true,
+            current_period_end: Timex.shift(Timex.now(), days: 10)
+          )
+
+        query = renew_subscription_mutation(subscription.id)
+
+        assert capture_log(fn ->
+                 error_msg = execute_mutation_with_error(context.conn, query)
+
+                 assert error_msg == Subscription.generic_error_message()
+               end) =~ "test error"
+      end
+    end
+  end
+
   defp current_user_query do
     """
     {
@@ -439,6 +555,17 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
             name
           }
         }
+      }
+    }
+    """
+  end
+
+  defp renew_subscription_mutation(subscription_id) do
+    """
+    mutation {
+      renewSubscription(subscriptionId: #{subscription_id}) {
+        currentPeriodEnd
+        cancelAtPeriodEnd
       }
     }
     """

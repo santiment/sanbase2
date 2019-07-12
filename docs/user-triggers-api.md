@@ -40,7 +40,7 @@ These are the fields describing a trigger.
 ### Settings fields
 
 - **type** Defines the type of the trigger. Can be one of: `["daily_active_addresses", "price_absolute_change", "price_percent_change", "trending_words", "price_volume_difference"]`
-- **target**: Slug or list of slugs or watchlist or ethereum addresses or list of ethereum addresses - `{"slug": "naga"} | {"slug": ["ethereum", "santiment"]} | {"user_list": user_list_id} | {"eth_address": "0x123"} | {"eth_address": ["0x123", "0x234"]}`.
+- **target**: Slug or list of slugs or watchlist or ethereum addresses or list of ethereum addresses - `{"slug": "naga"} | {"slug": ["ethereum", "santiment"]} | {"watchlist_id": watchlsit_id} | {"eth_address": "0x123"} | {"eth_address": ["0x123", "0x234"]}`.
 - **channel**: `"telegram" | "email"` - Currently notifications are sent only in telegram
 - **time_window**: `1d`, `4w`, `1h` - Time string we use throughout the API for `interval`
 - **operation** - A map describing the operation that triggers the signal. Check the examples.
@@ -175,7 +175,7 @@ These are the fields describing a trigger.
 {
   "type": "trending_words",
   "channel": "telegram",
-  "target": { "watchlist": 272 },
+  "target": { "watchlist_id": 272 },
   "operation": { "trending_project": true }
 }
 ```

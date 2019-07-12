@@ -80,7 +80,7 @@ defmodule SanbaseWeb.Graphql.TargetUserListTest do
   test "create trigger with user_list target", context do
     trigger_settings = %{
       type: "price_absolute_change",
-      target: %{user_list: context.user_list.id},
+      target: %{watchlist_id: context.user_list.id},
       channel: "telegram",
       operation: %{above: 300.0}
     }
@@ -132,7 +132,7 @@ defmodule SanbaseWeb.Graphql.TargetUserListTest do
   test "non valid target fails", context do
     trigger_settings = %{
       type: "price_absolute_change",
-      target: %{user_list: [1, 2, 3]},
+      target: %{watchlist_id: [1, 2, 3]},
       channel: "telegram",
       operation: %{above: 300.0}
     }
@@ -146,8 +146,8 @@ defmodule SanbaseWeb.Graphql.TargetUserListTest do
                })
 
              assert message ==
-                      "Trigger structure is invalid. Key `settings` is not valid. Reason: [\"%{user_list: [1, 2, 3]} is not a valid target\"]"
+                      "Trigger structure is invalid. Key `settings` is not valid. Reason: [\"%{watchlist_id: [1, 2, 3]} is not a valid target\"]"
            end) =~
-             "UserTrigger struct is not valid. Reason: [\"%{user_list: [1, 2, 3]} is not a valid target\"]"
+             "UserTrigger struct is not valid. Reason: [\"%{watchlist_id: [1, 2, 3]} is not a valid target\"]"
   end
 end

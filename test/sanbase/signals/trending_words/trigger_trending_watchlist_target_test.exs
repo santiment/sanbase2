@@ -1,4 +1,4 @@
-defmodule Sanbase.Signal.TriggerTrendingWordsUserListTargetTest do
+defmodule Sanbase.Signal.TriggerTrendingWordsWatchlistTargetTest do
   use Sanbase.DataCase, async: false
 
   import Mock
@@ -36,7 +36,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsUserListTargetTest do
       type: TrendingWordsTriggerSettings.type(),
       channel: "telegram",
       operation: %{trending_project: true},
-      target: %{user_list: user_list.id}
+      target: %{watchlist_id: user_list.id}
     }
 
     {:ok, trigger_trending_words} =

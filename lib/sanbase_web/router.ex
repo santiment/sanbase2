@@ -77,6 +77,10 @@ defmodule SanbaseWeb.Router do
   end
 
   scope "/", SanbaseWeb do
+    post("/stripe_webhook", StripeController, :webhook)
+  end
+
+  scope "/", SanbaseWeb do
     pipe_through(:browser)
 
     get("/consent", RootController, :consent)

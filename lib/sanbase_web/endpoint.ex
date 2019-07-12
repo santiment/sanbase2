@@ -25,6 +25,10 @@ defmodule SanbaseWeb.Endpoint do
   plug(Plug.RequestId)
   plug(Plug.Logger)
 
+  # This plug should be placed before Plug.Parsers because it is reading the
+  # request body and it can be read only once and if used anywhere else should be stored
+  plug(SanbaseWeb.Plug.VerifyStripeWebhook)
+
   plug(
     Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json, Absinthe.Plug.Parser],
@@ -43,16 +47,6 @@ defmodule SanbaseWeb.Endpoint do
     # Doesn't need to be a secret. Session cookies are signed by both secret_key_base and signing_salt
     # For reference: https://github.com/phoenixframework/phoenix/issues/2146
     signing_salt: "grT-As16"
-  )
-
-  plug(Corsica,
-    origins: [
-      "https://app-stage.santiment.net/",
-      "https://neuro-stage.santiment.net/",
-      "https://app.santiment.net/",
-      "httsp://neuro.santiment.net"
-    ],
-    allow_credentials: true
   )
 
   # makes the /metrics URL happen

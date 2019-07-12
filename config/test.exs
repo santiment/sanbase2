@@ -67,6 +67,8 @@ config :sanbase, Sanbase.Elasticsearch.Cluster, api: Sanbase.ElasticsearchMock
 
 config :sanbase, Sanbase.Elasticsearch, indices: "index1,index2,index3,index4"
 
+config :sanbase, SanbaseWeb.Plug.VerifyStripeWebhook, webhook_secret: "stripe_webhook_secret"
+
 # So the router can read it compile time
 System.put_env("TELEGRAM_ENDPOINT_RANDOM_STRING", "random_string")
 

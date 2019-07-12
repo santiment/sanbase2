@@ -41,7 +41,8 @@ config :ex_admin,
     Sanbase.ExAdmin.Auth.UserApikeyToken,
     Sanbase.ExAdmin.UserList,
     Sanbase.ExAdmin.Auth.UserSettings,
-    Sanbase.ExAdmin.Signal.UserTrigger
+    Sanbase.ExAdmin.Signal.UserTrigger,
+    Sanbase.ExAdmin.Pricing.StripeEvent
   ],
   basic_auth: [
     username: {:system, "ADMIN_BASIC_AUTH_USERNAME"},

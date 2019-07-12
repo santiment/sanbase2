@@ -1,6 +1,12 @@
 defmodule Sanbase.Utils.ErrorHandling do
   require Logger
 
+  @spec changeset_errors_to_str(Ecto.Changeset.t()) :: String.t()
+  def changeset_errors_to_str(%Ecto.Changeset{} = changeset) do
+    changeset
+    |> Ecto.Changeset.traverse_errors(&format_error/1)
+  end
+
   def error_result(message, query_name \\ "query") do
     log_id = Ecto.UUID.generate()
     Logger.error("[#{log_id}] #{message}")
@@ -25,5 +31,12 @@ defmodule Sanbase.Utils.ErrorHandling do
 
   def log_graphql_error(message, error) do
     Logger.warn("#{message}" <> ", Reason: #{inspect(error)}")
+  end
+
+  # Private functions
+  defp format_error({msg, opts}) do
+    Enum.reduce(opts, msg, fn {key, value}, acc ->
+      String.replace(acc, "%{#{key}}", to_string(inspect(value)))
+    end)
   end
 end

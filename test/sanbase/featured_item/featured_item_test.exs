@@ -26,6 +26,7 @@ defmodule Sanbase.FeaturedItemTest do
 
     test "marking insight as featured is idempotent" do
       insight = insert(:post, state: Post.approved_state(), ready_state: Post.published())
+
       FeaturedItem.update_item(insight, true)
       FeaturedItem.update_item(insight, true)
       FeaturedItem.update_item(insight, true)

@@ -32,7 +32,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PricingResolver do
 
     with {:subscription?, %Subscription{user_id: ^user_id} = subscription} <-
            {:subscription?, Repo.get(Subscription, subscription_id) |> Repo.preload(:plan)},
-         {:cancelled?, %Subscription{cancel_at_period_end: false}} <- {:cancelled?, subscription},
+         {:not_cancelled?, %Subscription{cancel_at_period_end: false}} <-
+           {:not_cancelled?, subscription},
          {:plan?, %Plan{} = new_plan} <- {:plan?, Repo.get(Plan, plan_id)},
          {:ok, subscription} <- Subscription.update_subscription(subscription, new_plan) do
       {:ok, subscription}
@@ -41,7 +42,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PricingResolver do
         handle_subscription_error_result(
           result,
           "Upgrade/Downgrade failed",
-          %{user_id: current_user.id, subscription_id: subscription_id, plan_id: plan_id}
+          %{user_id: user_id, subscription_id: subscription_id, plan_id: plan_id}
         )
     end
   end
@@ -53,7 +54,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PricingResolver do
 
     with {:subscription?, %Subscription{user_id: ^user_id} = subscription} <-
            {:subscription?, Repo.get(Subscription, subscription_id)},
-         {:cancelled?, %Subscription{cancel_at_period_end: false}} <- {:cancelled?, subscription},
+         {:not_cancelled?, %Subscription{cancel_at_period_end: false}} <-
+           {:not_cancelled?, subscription},
          {:ok, cancel_subscription} <-
            Subscription.cancel_subscription(subscription) do
       {:ok, cancel_subscription}
@@ -62,7 +64,28 @@ defmodule SanbaseWeb.Graphql.Resolvers.PricingResolver do
         handle_subscription_error_result(
           result,
           "Canceling subscription failed",
-          %{user_id: current_user.id, subscription_id: subscription_id}
+          %{user_id: user_id, subscription_id: subscription_id}
+        )
+    end
+  end
+
+  def renew_cancelled_subscription(_root, %{subscription_id: subscription_id}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    user_id = current_user.id
+
+    with {:subscription?, %Subscription{user_id: ^user_id} = subscription} <-
+           {:subscription?, Repo.get(Subscription, subscription_id) |> Repo.preload(:plan)},
+         {:cancelled?, %Subscription{cancel_at_period_end: true}} <-
+           {:cancelled?, subscription},
+         {:ok, subscription} <- Subscription.renew_cancelled_subscription(subscription) do
+      {:ok, subscription}
+    else
+      result ->
+        handle_subscription_error_result(
+          result,
+          "Renewing subscription failed",
+          %{user_id: user_id, subscription_id: subscription_id}
         )
     end
   end
@@ -124,13 +147,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.PricingResolver do
         Logger.error("#{log_message} - reason: #{reason}")
         {:error, reason}
 
-      {:cancelled?, %Subscription{current_period_end: current_period_end}} ->
+      {:not_cancelled?,
+       %Subscription{cancel_at_period_end: true, current_period_end: current_period_end}} ->
         reason =
           "Subscription is scheduled for cancellation at the end of the paid period: #{
             current_period_end
           }"
 
         Logger.error("#{log_message} - reason: #{reason}")
+        {:error, reason}
+
+      {:cancelled?, %Subscription{cancel_at_period_end: false}} ->
+        reason = "Subscription is not scheduled for cancellation so it cannot be renewed"
+
+        Logger.error("#{log_message} - reason: #{reason}")
+        {:error, reason}
+
+      {:end_period_reached_error, reason} ->
+        Logger.error("#{log_message} - reason: #{inspect(reason)}")
         {:error, reason}
 
       {:error, reason} ->

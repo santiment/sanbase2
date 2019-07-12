@@ -6,7 +6,8 @@ defmodule Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings do
 
   use Vex.Struct
 
-  import Sanbase.Signal.{Utils, Validation, OperationEvaluation}
+  import Sanbase.Signal.Validation
+  import Sanbase.Signal.{Utils, OperationEvaluation}
 
   alias __MODULE__
   alias Sanbase.Signal.Type
@@ -26,7 +27,7 @@ defmodule Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings do
             payload: nil
 
   validates(:target, &valid_target?/1)
-  validates(:channel, &valid_notification_channel/1)
+  validates(:channel, &valid_notification_channel?/1)
   validates(:operation, &valid_absolute_value_operation?/1)
 
   @type t :: %__MODULE__{

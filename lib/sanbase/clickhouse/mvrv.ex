@@ -36,7 +36,7 @@ defmodule Sanbase.Clickhouse.MVRV do
 
     from_datetime_unix = DateTime.to_unix(from)
     to_datetime_unix = DateTime.to_unix(to)
-    interval = DateTimeUtils.compound_duration_to_seconds(interval)
+    interval = DateTimeUtils.str_to_sec(interval)
 
     query = """
     SELECT

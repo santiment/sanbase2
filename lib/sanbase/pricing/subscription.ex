@@ -114,6 +114,34 @@ defmodule Sanbase.Pricing.Subscription do
   end
 
   @doc """
+  Renew cancelled subscription if `current_period_end` is not reached.
+
+  https://stripe.com/docs/billing/subscriptions/canceling-pausing#reactivating-canceled-subscriptions
+  """
+  def renew_cancelled_subscription(subscription) do
+    with {:end_period_reached?, :lt} <-
+           {:end_period_reached?, DateTime.compare(Timex.now(), subscription.current_period_end)},
+         {:ok, stripe_subscription} <-
+           StripeApi.update_subscription(subscription.stripe_id, %{cancel_at_period_end: false}),
+         {:ok, updated_subscription} <-
+           update_subscription_db(subscription, %{
+             cancel_at_period_end: false,
+             current_period_end: DateTime.from_unix!(stripe_subscription.current_period_end)
+           }) do
+      {:ok, updated_subscription |> Repo.preload([plan: [:product]], force: true)}
+    else
+      {:end_period_reached?, _} ->
+        {:end_period_reached_error,
+         "Cancelled subscription has already reached the end period at #{
+           subscription.current_period_end
+         }"}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
   List all active user subscriptions with plans and products.
   """
   def user_subscriptions(user) do

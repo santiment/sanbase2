@@ -14,7 +14,7 @@ defmodule Sanbase.DateTimeUtils do
   end
 
   def after_interval(interval, datetime \\ DateTime.utc_now()) when is_binary(interval) do
-    compound_duration_to_seconds(interval) |> seconds_after(datetime)
+    str_to_sec(interval) |> seconds_after(datetime)
   end
 
   def seconds_after(seconds, datetime \\ DateTime.utc_now()) do
@@ -47,24 +47,9 @@ defmodule Sanbase.DateTimeUtils do
     %DateTime{datetime | hour: 0, minute: 0, second: 0, microsecond: {0, 0}}
   end
 
-  # Interval should be an integer followed by one of: s, m, h, d or w
-  def str_to_sec(interval) do
-    interval_type = String.last(interval)
-
-    String.slice(interval, 0..-2)
-    |> String.to_integer()
-    |> str_to_sec(interval_type)
-  end
-
   def str_to_hours(interval) do
     str_to_sec(interval) |> Integer.floor_div(3600)
   end
-
-  defp str_to_sec(seconds, "s"), do: seconds
-  defp str_to_sec(minutes, "m"), do: minutes * 60
-  defp str_to_sec(hours, "h"), do: hours * 60 * 60
-  defp str_to_sec(days, "d"), do: days * 60 * 60 * 24
-  defp str_to_sec(weeks, "w"), do: weeks * 60 * 60 * 24 * 7
 
   def ecto_date_to_datetime(ecto_date) do
     {:ok, datetime, _} =
@@ -73,24 +58,7 @@ defmodule Sanbase.DateTimeUtils do
     datetime
   end
 
-  def compund_duration_to_tuple(interval) do
-    {int_interval, duration_index} = Integer.parse(interval)
-
-    duration_type =
-      case duration_index do
-        "ns" -> :nanoseconds
-        "ms" -> :milliseconds
-        "s" -> :seconds
-        "m" -> :minutes
-        "h" -> :hours
-        "d" -> :days
-        "w" -> :weeks
-      end
-
-    {int_interval, duration_type}
-  end
-
-  def compound_duration_to_seconds(interval) do
+  def str_to_sec(interval) do
     {int_interval, duration_index} = Integer.parse(interval)
 
     case duration_index do
@@ -104,21 +72,14 @@ defmodule Sanbase.DateTimeUtils do
     end
   end
 
-  def compound_duration_to_days(interval) do
-    interval_in_seconds = compound_duration_to_seconds(interval)
+  def str_to_days(interval) do
+    interval_in_seconds = str_to_sec(interval)
     one_day_in_seconds = 3600 * 24
 
     div(interval_in_seconds, one_day_in_seconds)
   end
 
-  def compound_duration_to_hours(interval) do
-    interval_in_seconds = compound_duration_to_seconds(interval)
-    one_hour_in_seconds = 3600
-
-    div(interval_in_seconds, one_hour_in_seconds)
-  end
-
-  def compound_duration_to_text(interval) do
+  def interval_to_str(interval) do
     {int_interval, duration_index} = Integer.parse(interval)
 
     case duration_index do

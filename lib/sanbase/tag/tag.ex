@@ -9,11 +9,13 @@ defmodule Sanbase.Tag do
   alias Sanbase.Insight.Post
   alias Sanbase.Signal.UserTrigger
 
+  @posts_join_through_table "posts_tags"
+  @user_triggers_join_through_table "posts_tags"
   schema "tags" do
     field(:name, :string)
 
-    many_to_many(:posts, Post, join_through: "posts_tags")
-    many_to_many(:user_triggers, UserTrigger, join_through: "user_triggers_tags")
+    many_to_many(:posts, Post, join_through: @posts_join_through_table)
+    many_to_many(:user_triggers, UserTrigger, join_through: @user_triggers_join_through_table)
   end
 
   def changeset(%Tag{} = tag, attrs \\ %{}) do
@@ -28,27 +30,39 @@ defmodule Sanbase.Tag do
     |> Repo.all()
   end
 
+  def all(), do: Repo.all(__MODULE__)
+
   @doc ~s"""
   Given a changeset and a map of params, containing `tags`. The tags are added with
   `put_assoc` that works on the whole list of tags.
   """
   @spec put_tags(Ecto.Changeset.t(), map()) :: Ecto.Changeset.t()
-  def put_tags(%Ecto.Changeset{} = changeset, %{tags: tags}) when length(tags) > 10 do
+  def put_tags(%Ecto.Changeset{} = changeset, %{tags: tags})
+      when is_list(tags) and length(tags) > 10 do
     Ecto.Changeset.add_error(changeset, :tags, "Cannot add more than 10 tags for a record")
   end
 
-  def put_tags(%Ecto.Changeset{} = changeset, %{tags: tags}) do
+  def put_tags(%Ecto.Changeset{} = changeset, %{tags: tags}) when is_list(tags) do
     tags =
       tags
-      |> Enum.filter(fn tag -> changeset(%__MODULE__{}, %{name: tag}).valid? end)
+      |> Enum.filter(&is_binary/1)
       |> Enum.map(fn tag -> %{name: tag} end)
 
     Repo.insert_all(__MODULE__, tags, on_conflict: :nothing, conflict_target: [:name])
 
     tag_names = tags |> Enum.map(& &1.name)
 
+    tag_structures = by_names(tag_names)
+
+    # The `by_names` functions can return the tags in a different order if any new
+    # tags were inserted. Sort the tags in their original order before passing them
+    # to put_assoc
+    tags =
+      tag_names
+      |> Enum.map(fn name -> Enum.find(tag_structures, &(&1.name == name)) end)
+
     changeset
-    |> put_assoc(:tags, by_names(tag_names))
+    |> put_assoc(:tags, tags)
   end
 
   def put_tags(%Ecto.Changeset{} = changeset, _), do: changeset

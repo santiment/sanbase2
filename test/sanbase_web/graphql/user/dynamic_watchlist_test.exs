@@ -1,6 +1,7 @@
-defmodule SanbaseWeb.Graphql.DynamicUserListTest do
+defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import Mock
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
@@ -64,7 +65,7 @@ defmodule SanbaseWeb.Graphql.DynamicUserListTest do
     function = %{"name" => "market_segment", "args" => %{"market_segment" => "stablecoin"}}
 
     result = execute_mutation(conn, query(function))
-    user_list = result["data"]["createUserList"]
+    user_list = result["data"]["createWatchlist"]
 
     assert user_list["name"] == "My list"
     assert user_list["color"] == "BLACK"
@@ -80,7 +81,7 @@ defmodule SanbaseWeb.Graphql.DynamicUserListTest do
   test "dynamic watchlist for top erc20 projects", %{conn: conn} do
     function = %{"name" => "top_erc20_projects", "args" => %{"size" => 2}}
     result = execute_mutation(conn, query(function))
-    user_list = result["data"]["createUserList"]
+    user_list = result["data"]["createWatchlist"]
 
     assert user_list["listItems"] == [
              %{"project" => %{"slug" => "maker"}},
@@ -95,7 +96,7 @@ defmodule SanbaseWeb.Graphql.DynamicUserListTest do
     }
 
     result = execute_mutation(conn, query(function))
-    user_list = result["data"]["createUserList"]
+    user_list = result["data"]["createWatchlist"]
 
     assert user_list["listItems"] == [
              %{"project" => %{"slug" => "maker"}},
@@ -106,7 +107,7 @@ defmodule SanbaseWeb.Graphql.DynamicUserListTest do
   test "dynamic watchlist for top all projects", %{conn: conn} do
     function = %{"name" => "top_all_projects", "args" => %{"size" => 3}}
     result = execute_mutation(conn, query(function))
-    user_list = result["data"]["createUserList"]
+    user_list = result["data"]["createWatchlist"]
 
     assert user_list["listItems"] == [
              %{"project" => %{"slug" => "bitcoin"}},
@@ -118,7 +119,7 @@ defmodule SanbaseWeb.Graphql.DynamicUserListTest do
   test "dynamic watchlist for min volume", %{conn: conn} do
     function = %{"name" => "min_volume", "args" => %{"min_volume" => 1_000_000_000}}
     result = execute_mutation(conn, query(function))
-    user_list = result["data"]["createUserList"]
+    user_list = result["data"]["createWatchlist"]
 
     assert user_list["listItems"] == [
              %{"project" => %{"slug" => "bitcoin"}},
@@ -131,12 +132,33 @@ defmodule SanbaseWeb.Graphql.DynamicUserListTest do
   test "dynamic watchlist for slug list", %{conn: conn} do
     function = %{"name" => "slugs", "args" => %{"slugs" => ["bitcoin", "santiment"]}}
     result = execute_mutation(conn, query(function))
-    user_list = result["data"]["createUserList"]
+    user_list = result["data"]["createWatchlist"]
 
     assert user_list["listItems"] == [
              %{"project" => %{"slug" => "bitcoin"}},
              %{"project" => %{"slug" => "santiment"}}
            ]
+  end
+
+  test "dynamic watchlist for currently trending projects", %{conn: conn} do
+    with_mock(Sanbase.SocialData.TrendingWords,
+      get_trending_now: fn ->
+        {:ok,
+         [
+           %{word: "SAN", score: 5},
+           %{word: "bitcoin", score: 3},
+           %{word: "Ripple", score: 2},
+           %{word: "random_str", score: 1}
+         ]}
+      end
+    ) do
+      function = %{"name" => "trending_projects"}
+      result = execute_mutation(conn, query(function))
+      user_list = result["data"]["createWatchlist"]
+      slugs = user_list["listItems"] |> Enum.map(fn %{"project" => %{"slug" => slug}} -> slug end)
+
+      assert slugs |> Enum.sort() == ["santiment", "bitcoin", "ripple"] |> Enum.sort()
+    end
   end
 
   defp query(function, opts \\ []) when is_map(function) do
@@ -146,7 +168,7 @@ defmodule SanbaseWeb.Graphql.DynamicUserListTest do
 
     ~s|
     mutation {
-      createUserList(
+      createWatchlist(
         name: '#{name}'
         color: #{color}
         function: '#{function}'

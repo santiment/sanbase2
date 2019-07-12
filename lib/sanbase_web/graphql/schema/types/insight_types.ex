@@ -29,7 +29,7 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:moderation_comment, :string)
     field(:ready_state, :string)
     field(:images, list_of(:image_data), resolve: dataloader(SanbaseRepo))
-    field(:tags, list_of(:tag), resolve: dataloader(SanbaseRepo))
+    field(:tags, list_of(:tag))
     field(:discourse_topic_url, :string)
 
     field :related_projects, list_of(:project) do

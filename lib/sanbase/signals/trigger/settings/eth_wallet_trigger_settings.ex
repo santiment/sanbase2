@@ -11,7 +11,8 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
 
   use Vex.Struct
 
-  import Sanbase.Signal.{Validation, OperationEvaluation}
+  import Sanbase.Signal.Validation
+  import Sanbase.Signal.OperationEvaluation
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias __MODULE__
@@ -46,7 +47,7 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
           created_at: DateTime.t()
         }
 
-  validates(:channel, &valid_notification_channel/1)
+  validates(:channel, &valid_notification_channel?/1)
   validates(:target, &valid_eth_wallet_target?/1)
   validates(:asset, &valid_slug?/1)
   validates(:operation, &valid_absolute_change_operation?/1)

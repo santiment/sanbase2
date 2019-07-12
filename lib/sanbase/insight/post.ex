@@ -5,13 +5,14 @@ defmodule Sanbase.Insight.Post do
 
   import Ecto.Changeset
   import Ecto.Query
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_to_str: 1]
 
   alias Sanbase.Tag
-  alias Sanbase.Insight.{Poll, Post, Vote, PostImage}
-  alias Sanbase.Auth.User
-  alias Sanbase.Timeline.TimelineEvent
-
   alias Sanbase.Repo
+  alias Sanbase.Auth.User
+  alias Sanbase.Model.Project
+  alias Sanbase.Insight.{Poll, Post, Vote, PostImage}
+  alias Sanbase.Timeline.TimelineEvent
 
   require Logger
 
@@ -93,6 +94,84 @@ defmodule Sanbase.Insight.Post do
   def published(), do: @published
   def draft(), do: @draft
 
+  def by_id(post_id) do
+    from(p in __MODULE__, preload: ^@preloads)
+    |> Repo.get(post_id)
+    |> case do
+      nil -> {:error, "There is no insight with id #{post_id}"}
+      post -> {:ok, post}
+    end
+  end
+
+  def create(%User{id: user_id}, args) do
+    %__MODULE__{user_id: user_id, poll_id: Poll.find_or_insert_current_poll!().id}
+    |> create_changeset(args)
+    |> Repo.insert()
+    |> case do
+      {:ok, post} ->
+        {:ok, post}
+
+      {:error, changeset} ->
+        {
+          :error,
+          message: "Cannot create insight", details: changeset_errors_to_str(changeset)
+        }
+    end
+  end
+
+  def update(post_id, %User{id: user_id}, args) do
+    case Repo.get(__MODULE__, post_id) do
+      %__MODULE__{user_id: ^user_id, ready_state: @draft} = post ->
+        post
+        |> Repo.preload([:tags, :images])
+        |> __MODULE__.update_changeset(args)
+        |> Repo.update()
+        |> case do
+          {:ok, post} ->
+            {:ok, post}
+
+          {:error, changeset} ->
+            {
+              :error,
+              message: "Cannot update insight", details: changeset_errors_to_str(changeset)
+            }
+        end
+
+      %Post{user_id: another_user_id} when user_id != another_user_id ->
+        {:error, "Cannot update not owned insight: #{post_id}"}
+
+      %Post{user_id: ^user_id, ready_state: @published} ->
+        {:error, "Cannot update published insight: #{post_id}"}
+
+      _post ->
+        {:error, "Cannot update insight with id: #{post_id}"}
+    end
+  end
+
+  def delete(post_id, %User{id: user_id}) do
+    case Repo.get(Post, post_id) do
+      %__MODULE__{user_id: ^user_id} = post ->
+        # Delete the images from the S3/Local store.
+        delete_post_images(post)
+
+        # Note: When ecto changeset middleware is implemented return just `Repo.delete(post)`
+        case Repo.delete(post) do
+          {:ok, post} ->
+            {:ok, post}
+
+          {:error, changeset} ->
+            {
+              :error,
+              message: "Cannot delete post with id #{post_id}",
+              details: changeset_errors_to_str(changeset)
+            }
+        end
+
+      _post ->
+        {:error, "You don't own the post with id #{post_id}"}
+    end
+  end
+
   def publish(post_id, user_id) do
     post_id = String.to_integer(post_id)
     post = Repo.get(Post, post_id)
@@ -104,22 +183,34 @@ defmodule Sanbase.Insight.Post do
       {:ok, post}
     else
       {:nil?, nil} ->
-        {:error, "Can't publish post with id #{post_id}"}
+        {:error, "Cannot publish insight with id #{post_id}"}
 
       {:draft?, _} ->
-        {:error, "Can't publish already published post with id: #{post_id}"}
+        {:error, "Cannot publish already published insight with id: #{post_id}"}
 
       {:own_post?, _} ->
-        {:error, "Can't publish not own post with id: #{post_id}"}
+        {:error, "Cannot publish not own insight with id: #{post_id}"}
 
       {:error, error} ->
-        error_message = "Can't publish post with id #{post_id}"
+        error_message = "Cannot publish insight with id #{post_id}"
         Logger.error("#{error_message}, #{inspect(error)}")
         {:error, error_message}
     end
   end
 
   def preloads(), do: @preloads
+
+  def related_projects(%Post{} = post) do
+    tags =
+      post
+      |> Repo.preload([:tags])
+      |> Map.get(:tags)
+      |> Enum.map(& &1.name)
+
+    projects = Project.List.by_field(tags, :ticker)
+
+    {:ok, projects}
+  end
 
   @doc """
   All insights for given user_id
@@ -273,7 +364,7 @@ defmodule Sanbase.Insight.Post do
       changeset
       |> Ecto.Changeset.add_error(
         :images,
-        "The images you are trying to use are already used in another post"
+        "The images you are trying to use are already used in another insight"
       )
     else
       changeset
@@ -282,4 +373,16 @@ defmodule Sanbase.Insight.Post do
   end
 
   defp images_cast(changeset, _), do: changeset
+
+  defp extract_image_url_from_post(%Post{} = post) do
+    post
+    |> Repo.preload(:images)
+    |> Map.get(:images, [])
+    |> Enum.map(fn %{image_url: image_url} -> image_url end)
+  end
+
+  defp delete_post_images(%Post{} = post) do
+    extract_image_url_from_post(post)
+    |> Enum.map(&Sanbase.FileStore.delete/1)
+  end
 end

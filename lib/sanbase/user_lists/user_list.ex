@@ -7,7 +7,7 @@ defmodule Sanbase.UserList do
   by a function or the combination of both.
 
   The list of some concrete slugs is used when a user wants to create a list of
-  projects they are intersted in. It can contain any project.
+  projects they are interested in. It can contain any project.
 
   The watchlist defined by a function is being used when a watchlist can change
   frequently according to some rules. Examples for such lists are having a watchlist
@@ -32,6 +32,7 @@ defmodule Sanbase.UserList do
     field(:function, WatchlistFunction, default: %WatchlistFunction{})
 
     belongs_to(:user, User)
+
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
     has_many(:list_items, ListItem, on_delete: :delete_all, on_replace: :delete)
     has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)

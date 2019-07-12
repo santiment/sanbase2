@@ -71,7 +71,7 @@ defmodule Sanbase.Signal.History.PricesHistory do
         )
         when is_binary(target) do
       {:ok, prices, datetimes} = PricesHistory.get_prices(settings)
-      cooldown_in_hours = Sanbase.DateTimeUtils.compound_duration_to_hours(cooldown)
+      cooldown_in_hours = Sanbase.DateTimeUtils.str_to_hours(cooldown)
 
       {absolute_price_calculations, _} =
         prices
@@ -116,7 +116,7 @@ defmodule Sanbase.Signal.History.PricesHistory do
       {:ok, prices, datetimes} = PricesHistory.get_prices(settings)
 
       time_window_in_hours = time_window_in_hours(settings.time_window)
-      cooldown_in_hours = Sanbase.DateTimeUtils.compound_duration_to_hours(cooldown)
+      cooldown_in_hours = Sanbase.DateTimeUtils.str_to_hours(cooldown)
 
       percent_change_calculations =
         prices
@@ -140,7 +140,7 @@ defmodule Sanbase.Signal.History.PricesHistory do
     end
 
     defp time_window_in_hours(time_window) do
-      Sanbase.DateTimeUtils.compound_duration_to_hours(time_window)
+      Sanbase.DateTimeUtils.str_to_hours(time_window)
       |> max(@minimal_time_window)
     end
   end

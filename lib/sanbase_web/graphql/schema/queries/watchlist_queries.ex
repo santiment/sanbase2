@@ -122,6 +122,14 @@ defmodule SanbaseWeb.Graphql.Schema.WatchlistQueries do
       resolve(&UserListResolver.update_user_list/3)
     end
 
+    field :update_watchlist_settings, :watchlist_settings do
+      arg(:id, non_null(:integer))
+      arg(:settings, non_null(:watchlist_settings_input_object))
+
+      middleware(JWTAuth)
+      resolve(&UserListResolver.update_watchlist_settings/3)
+    end
+
     @desc "Remove user favourites list."
     field :remove_user_list, :user_list do
       arg(:id, non_null(:integer))

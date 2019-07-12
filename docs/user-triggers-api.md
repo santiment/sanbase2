@@ -1,15 +1,15 @@
-## Table of contents
+# Table of contents
 
 - [Table of contents](#table-of-contents)
   - [Trigger structure](#trigger-structure)
   - [Settings fields](#settings-fields)
   - [Examples](#examples)
-    - [Example settings structure for `price_absolute_change`](#example-settings-structure-for-priceabsolutechange)
-    - [Example settings structure for `price_percent_change`](#example-settings-structure-for-pricepercentchange)
-    - [Example settings structure for `daily_active_addresses`](#example-settings-structure-for-dailyactiveaddresses)
-    - [Example settings structure for `trending_words`](#example-settings-structure-for-trendingwords)
-    - [Example settings structure for `price_volume_difference`](#example-settings-structure-for-pricevolumedifference)
-    - [Example settings structure for `eth_wallet`](#example-settings-structure-for-ethwallet)
+    - [Example settings structure for `price_absolute_change`](#example-settings-structure-for-price_absolute_echange)
+    - [Example settings structure for `price_percent_change`](#example-settings-structure-for-price_percent_change)
+    - [Example settings structure for `daily_active_addresses`](#example-settings-structure-for-daily_active_addresses)
+    - [Example settings structure for `trending_words`](#example-settings-structure-for-trending_words)
+    - [Example settings structure for `price_volume_difference`](#example-settings-structure-for-price_volume_difference)
+    - [Example settings structure for `eth_wallet`](#example-settings-structure-for-eth_wallet)
   - [Create trigger](#create-trigger)
   - [Get all triggers for current user](#get-all-triggers-for-current-user)
   - [Update trigger by id](#update-trigger-by-id)
@@ -40,7 +40,7 @@ These are the fields describing a trigger.
 ### Settings fields
 
 - **type** Defines the type of the trigger. Can be one of: `["daily_active_addresses", "price_absolute_change", "price_percent_change", "trending_words", "price_volume_difference"]`
-- **target**: Slug or list of slugs or watchlist or ethereum addresses or list of ethereum addresses - `{"slug": "naga"} | {"slug": ["ethereum", "santiment"]} | {"user_list": user_list_id} | {"eth_address": "0x123"} | {"eth_address": ["0x123", "0x234"]}`.
+- **target**: Slug or list of slugs or watchlist or ethereum addresses or list of ethereum addresses - `{"slug": "naga"} | {"slug": ["ethereum", "santiment"]} | {"watchlist_id": watchlsit_id} | {"eth_address": "0x123"} | {"eth_address": ["0x123", "0x234"]}`.
 - **channel**: `"telegram" | "email"` - Currently notifications are sent only in telegram
 - **time_window**: `1d`, `4w`, `1h` - Time string we use throughout the API for `interval`
 - **operation** - A map describing the operation that triggers the signal. Check the examples.
@@ -145,18 +145,21 @@ These are the fields describing a trigger.
 ```
 
 ```json
-// Send a signal if Santiment project is trending
+// Send a signal if one project is trending. A project is trending if
+// at least one of its ticker, name or slug is in the trending words
+// The check is case insensitive.
 {
   "type": "trending_words",
   "channel": "telegram",
   "target": { "slug": "santiment" },
-  "operation": { "project_trending": true }
+  "operation": { "trending_project": true }
 }
 ```
 
 ```json
 // Send a signal if any of the projects is trending. A project is trending if
 // at least one of its ticker, name or slug is in the trending words
+// The check is case insensitive.
 {
   "type": "trending_words",
   "channel": "telegram",
@@ -166,7 +169,29 @@ These are the fields describing a trigger.
 ```
 
 ```json
-// Send a signal if any of the words is trending
+// Send a signal if any of the projects in a watchlist is trending. A project is trending if
+// at least one of its ticker, name or slug is in the trending words
+// The check is case insensitive.
+{
+  "type": "trending_words",
+  "channel": "telegram",
+  "target": { "watchlist_id": 272 },
+  "operation": { "trending_project": true }
+}
+```
+
+```json
+// Send a signal if a word is trending. The check is case insensitive.
+{
+  "type": "trending_words",
+  "channel": "telegram",
+  "target": { "word": "gandalf" },
+  "operation": { "trending_word": true }
+}
+```
+
+```json
+// Send a signal if any of the words is trending. The check is case insensitive.
 {
   "type": "trending_words",
   "channel": "telegram",

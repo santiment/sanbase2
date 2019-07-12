@@ -295,4 +295,34 @@ defmodule Sanbase.Model.Project.List do
     )
     |> Repo.all()
   end
+
+  def currently_trending_projects() do
+    {:ok, trending_words} = Sanbase.SocialData.TrendingWords.get_trending_now()
+
+    trending_words_mapset =
+      trending_words
+      |> Enum.map(&String.downcase(&1.word))
+      |> MapSet.new()
+
+    Enum.reduce(projects(), [], fn project, acc ->
+      if project_is_trending?(trending_words_mapset, project) do
+        [project | acc]
+      else
+        acc
+      end
+    end)
+  end
+
+  defp project_is_trending?(words_mapset, %Project{} = p) do
+    # Project is trending if the intersection of [name, ticker, slug] and the trending
+    # words is not empty
+    empty? =
+      MapSet.intersection(
+        MapSet.new([p.ticker, p.name, p.coinmarketcap_id] |> Enum.map(&String.downcase/1)),
+        words_mapset
+      )
+      |> Enum.empty?()
+
+    !empty?
+  end
 end

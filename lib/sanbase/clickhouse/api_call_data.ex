@@ -22,7 +22,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   end
 
   defp api_call_history_query(user_id, from, to, interval) do
-    interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
+    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
 
     query = """
     SELECT

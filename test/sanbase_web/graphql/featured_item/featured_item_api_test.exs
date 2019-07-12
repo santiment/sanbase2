@@ -14,12 +14,14 @@ defmodule Sanbase.FeaturedItemApiTest do
 
     test "marking insights as featured", context do
       insight = insert(:post, state: Post.approved_state(), ready_state: Post.published())
+      tags = insight.tags |> Enum.map(fn %{name: name} -> %{"name" => name} end)
+
       FeaturedItem.update_item(insight, true)
 
       assert fetch_insights(context.conn) == %{
                "data" => %{
                  "featuredInsights" => [
-                   %{"id" => "#{insight.id}", "title" => "#{insight.title}"}
+                   %{"id" => "#{insight.id}", "title" => "#{insight.title}", "tags" => tags}
                  ]
                }
              }
@@ -41,6 +43,7 @@ defmodule Sanbase.FeaturedItemApiTest do
 
     test "marking insight as featured is idempotent", context do
       insight = insert(:post, state: Post.approved_state(), ready_state: Post.published())
+      tags = insight.tags |> Enum.map(fn %{name: name} -> %{"name" => name} end)
       FeaturedItem.update_item(insight, true)
       FeaturedItem.update_item(insight, true)
       FeaturedItem.update_item(insight, true)
@@ -48,7 +51,11 @@ defmodule Sanbase.FeaturedItemApiTest do
       assert fetch_insights(context.conn) == %{
                "data" => %{
                  "featuredInsights" => [
-                   %{"id" => "#{insight.id}", "title" => "#{insight.title}"}
+                   %{
+                     "id" => "#{insight.id}",
+                     "title" => "#{insight.title}",
+                     "tags" => tags
+                   }
                  ]
                }
              }
@@ -60,6 +67,7 @@ defmodule Sanbase.FeaturedItemApiTest do
         featuredInsights{
           id
           title
+          tags{ name }
         }
       }
       """

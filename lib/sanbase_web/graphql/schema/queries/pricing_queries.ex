@@ -64,5 +64,17 @@ defmodule SanbaseWeb.Graphql.Schema.PricingQueries do
 
       resolve(&PricingResolver.cancel_subscription/3)
     end
+
+    @desc ~s"""
+    Request subscription for renewal. Subscription that is cancelled but has not reached
+    end of the current period can be renewed.
+    """
+    field :renew_cancelled_subscription, :subscription_plan do
+      arg(:subscription_id, non_null(:integer))
+
+      middleware(JWTAuth)
+
+      resolve(&PricingResolver.renew_cancelled_subscription/3)
+    end
   end
 end

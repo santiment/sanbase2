@@ -1,7 +1,8 @@
 defmodule Sanbase.Signal.Trigger.PriceVolumeDifferenceTriggerSettings do
   use Vex.Struct
 
-  import Sanbase.Signal.{Validation, Utils}
+  import Sanbase.{Validation, Signal.Validation}
+  import Sanbase.Signal.Utils
 
   alias __MODULE__
   alias Sanbase.Model.Project
@@ -24,7 +25,7 @@ defmodule Sanbase.Signal.Trigger.PriceVolumeDifferenceTriggerSettings do
             payload: nil
 
   validates(:target, &valid_target?/1)
-  validates(:channel, &valid_notification_channel/1)
+  validates(:channel, &valid_notification_channel?/1)
   validates(:threshold, &valid_threshold?/1)
 
   @typedoc ~s"""

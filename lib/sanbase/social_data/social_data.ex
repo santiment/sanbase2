@@ -365,7 +365,7 @@ defmodule Sanbase.SocialData do
   defp validate_time_window(time_window) do
     with {:valid_compound_duration?, true} <-
            {:valid_compound_duration?, DateTimeUtils.valid_compound_duration?(time_window)},
-         time_window_in_days = DateTimeUtils.compound_duration_to_days(time_window),
+         time_window_in_days = DateTimeUtils.str_to_days(time_window),
          {:valid_time_window?, true} <-
            {:valid_time_window?, time_window_in_days >= 2 and time_window_in_days <= 30} do
       {:ok, "#{time_window_in_days}d"}

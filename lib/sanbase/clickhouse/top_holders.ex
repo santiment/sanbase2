@@ -42,7 +42,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
   defp percent_of_total_supply_query(contract, token_decimals, number_of_holders, from, to) do
     from_datetime_unix = DateTime.to_unix(from)
     to_datetime_unix = DateTime.to_unix(to)
-    interval = DateTimeUtils.compound_duration_to_seconds("1d")
+    interval = DateTimeUtils.str_to_sec("1d")
 
     query = """
     SELECT

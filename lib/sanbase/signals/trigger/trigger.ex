@@ -148,7 +148,11 @@ defmodule Sanbase.Signal.Trigger do
   end
 
   defp remove_targets_on_cooldown(%{user_list: user_list_id}, trigger) do
-    user_list_id
+    remove_targets_on_cooldown(%{watchlist_id: user_list_id}, trigger)
+  end
+
+  defp remove_targets_on_cooldown(%{watchlist_id: watchlist_id}, trigger) do
+    watchlist_id
     |> Sanbase.UserList.by_id()
     |> Sanbase.UserList.get_projects()
     |> Enum.map(& &1.coinmarketcap_id)

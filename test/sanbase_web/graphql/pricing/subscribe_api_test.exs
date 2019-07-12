@@ -373,7 +373,7 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
     end
   end
 
-  describe "renew_subscription mutation" do
+  describe "renew_cancelled_subscription mutation" do
     test "successfully renew subscription", context do
       subscription =
         insert(:subscription_essential,
@@ -383,8 +383,8 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
           current_period_end: Timex.shift(Timex.now(), days: 10)
         )
 
-      query = renew_subscription_mutation(subscription.id)
-      response = execute_mutation(context.conn, query, "renewSubscription")
+      query = renew_cancelled_subscription_mutation(subscription.id)
+      response = execute_mutation(context.conn, query, "renewCancelledSubscription")
 
       assert response["cancelAtPeriodEnd"] == false
     end
@@ -398,7 +398,7 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
           current_period_end: Timex.shift(Timex.now(), days: -1)
         )
 
-      query = renew_subscription_mutation(subscription.id)
+      query = renew_cancelled_subscription_mutation(subscription.id)
 
       assert capture_log(fn ->
                error_msg = execute_mutation_with_error(context.conn, query)
@@ -430,7 +430,7 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
           current_period_end: Timex.shift(Timex.now(), days: -1)
         )
 
-      query = renew_subscription_mutation(subscription.id)
+      query = renew_cancelled_subscription_mutation(subscription.id)
 
       assert capture_log(fn ->
                error_msg = execute_mutation_with_error(context.conn, query)
@@ -451,7 +451,7 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
           current_period_end: Timex.shift(Timex.now(), days: -1)
         )
 
-      query = renew_subscription_mutation(subscription.id)
+      query = renew_cancelled_subscription_mutation(subscription.id)
 
       assert capture_log(fn ->
                error_msg = execute_mutation_with_error(context.conn, query)
@@ -478,7 +478,7 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
             current_period_end: Timex.shift(Timex.now(), days: 10)
           )
 
-        query = renew_subscription_mutation(subscription.id)
+        query = renew_cancelled_subscription_mutation(subscription.id)
 
         assert capture_log(fn ->
                  error_msg = execute_mutation_with_error(context.conn, query)
@@ -560,10 +560,10 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
     """
   end
 
-  defp renew_subscription_mutation(subscription_id) do
+  defp renew_cancelled_subscription_mutation(subscription_id) do
     """
     mutation {
-      renewSubscription(subscriptionId: #{subscription_id}) {
+      renewCancelledSubscription(subscriptionId: #{subscription_id}) {
         currentPeriodEnd
         cancelAtPeriodEnd
       }

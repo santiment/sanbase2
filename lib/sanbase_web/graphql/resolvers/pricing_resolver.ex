@@ -69,7 +69,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PricingResolver do
     end
   end
 
-  def renew_subscription(_root, %{subscription_id: subscription_id}, %{
+  def renew_cancelled_subscription(_root, %{subscription_id: subscription_id}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
     user_id = current_user.id
@@ -78,7 +78,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PricingResolver do
            {:subscription?, Repo.get(Subscription, subscription_id) |> Repo.preload(:plan)},
          {:cancelled?, %Subscription{cancel_at_period_end: true}} <-
            {:cancelled?, subscription},
-         {:ok, subscription} <- Subscription.renew_subscription(subscription) do
+         {:ok, subscription} <- Subscription.renew_cancelled_subscription(subscription) do
       {:ok, subscription}
     else
       result ->

@@ -118,7 +118,7 @@ defmodule Sanbase.Pricing.Subscription do
 
   https://stripe.com/docs/billing/subscriptions/canceling-pausing#reactivating-canceled-subscriptions
   """
-  def renew_subscription(subscription) do
+  def renew_cancelled_subscription(subscription) do
     with {:end_period_reached?, :lt} <-
            {:end_period_reached?, DateTime.compare(Timex.now(), subscription.current_period_end)},
          {:ok, stripe_subscription} <-
@@ -130,7 +130,7 @@ defmodule Sanbase.Pricing.Subscription do
            }) do
       {:ok, updated_subscription |> Repo.preload([plan: [:product]], force: true)}
     else
-      {:end_period_reached?, :gt} ->
+      {:end_period_reached?, _} ->
         {:end_period_reached_error,
          "Cancelled subscription has already reached the end period at #{
            subscription.current_period_end

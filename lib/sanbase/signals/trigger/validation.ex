@@ -92,6 +92,16 @@ defmodule Sanbase.Signal.Validation do
      "#{inspect(slug)} is not a valid slug. A valid slug is a map with a single slug key and string value"}
   end
 
+  def valid_daily_active_addresses_operation?(op) do
+    valid? = [valid_percent_change_operation?(op), valid_absolute_change_operation?(op)]
+
+    if Enum.member?(valid?, :ok) do
+      :ok
+    else
+      {:error, "#{inspect(op)} is not valid absolute change or percent change operation."}
+    end
+  end
+
   # private functions
   defp do_valid_absolute_value_operation?(_, [min, max]) when is_valid_min_max_price(min, max),
     do: :ok

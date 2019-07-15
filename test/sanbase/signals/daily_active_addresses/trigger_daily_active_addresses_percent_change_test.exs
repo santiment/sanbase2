@@ -1,9 +1,9 @@
-defmodule Sanbase.Signal.EvaluatorTest do
+defmodule Sanbase.Signal.DailyActiveAddressesPercentChangeTest do
   use Sanbase.DataCase, async: false
 
   import Mock
   import Sanbase.Factory
-
+  import Sanbase.TestHelpers
   alias Sanbase.Signal.UserTrigger
   alias Sanbase.Signal.Evaluator
 
@@ -32,16 +32,16 @@ defmodule Sanbase.Signal.EvaluatorTest do
       type: "daily_active_addresses",
       target: %{slug: "santiment"},
       channel: "telegram",
-      time_window: "1d",
-      percent_threshold: 300.0
+      time_window: "7d",
+      operation: %{percent_up: 300.0}
     }
 
     trigger_settings2 = %{
       type: "daily_active_addresses",
       target: %{slug: "santiment"},
       channel: "telegram",
-      time_window: "1d",
-      percent_threshold: 200.0
+      time_window: "7d",
+      operation: %{percent_up: 200.0}
     }
 
     {:ok, trigger1} =
@@ -60,17 +60,24 @@ defmodule Sanbase.Signal.EvaluatorTest do
         settings: trigger_settings2
       })
 
+    datetimes = generate_datetimes(~U[2019-01-01 00:00:00Z], "1d", 7)
+
     [
       user: user,
       trigger1: trigger1,
-      trigger2: trigger2
+      trigger2: trigger2,
+      datetimes: datetimes
     ]
   end
 
   test "all of daily active addresses signals triggered", context do
+    data =
+      Enum.zip(context.datetimes, [100, 100, 100, 100, 100, 100, 5000])
+      |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
+
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
-        [{"santiment", {100, 20}}]
+        [{"santiment", data}]
       end do
       [triggered1, triggered2 | rest] =
         DailyActiveAddressesSettings.type()
@@ -87,9 +94,13 @@ defmodule Sanbase.Signal.EvaluatorTest do
   end
 
   test "only some of daily active addresses signals triggered", context do
+    data =
+      Enum.zip(context.datetimes, [100, 120, 100, 80, 200, 200, 400])
+      |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
+
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
-        [{"santiment", {100, 30}}]
+        [{"santiment", data}]
       end do
       [triggered | rest] =
         DailyActiveAddressesSettings.type()
@@ -102,10 +113,14 @@ defmodule Sanbase.Signal.EvaluatorTest do
     end
   end
 
-  test "none of daily active addresses signals triggered", _context do
+  test "none of daily active addresses signals triggered", context do
+    data =
+      Enum.zip(context.datetimes, [100, 100, 100, 100, 100, 100, 100])
+      |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
+
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
-        [{"santiment", {100, 100}}]
+        [{"santiment", data}]
       end do
       triggered =
         DailyActiveAddressesSettings.type()
@@ -120,16 +135,20 @@ defmodule Sanbase.Signal.EvaluatorTest do
   # We had the problem where the whole trigger struct was taken from the cache,
   # meaning everything including the id and title were overriden
   test "only payload and triggered are taken from cache", context do
+    data =
+      Enum.zip(context.datetimes, [100, 120, 100, 80, 100, 100, 500])
+      |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
+
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
-        [{"santiment", {100, 30}}]
+        [{"santiment", data}]
       end do
       trigger_settings1 = %{
         type: "daily_active_addresses",
         target: %{slug: "santiment"},
         channel: "telegram",
         time_window: "1d",
-        percent_threshold: 100.0
+        operation: %{percent_up: 100.0}
       }
 
       {:ok, trigger1} =
@@ -167,16 +186,20 @@ defmodule Sanbase.Signal.EvaluatorTest do
 
   test "last_triggered is taken into account for the cache key - different last_triggered",
        context do
+    data =
+      Enum.zip(context.datetimes, [100, 120, 100, 80, 20, 10, 5])
+      |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
+
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
-        [{"santiment", {100, 30}}]
+        [{"santiment", data}]
       end do
       trigger_settings1 = %{
         type: "daily_active_addresses",
         target: %{slug: "santiment"},
         channel: "telegram",
         time_window: "1d",
-        percent_threshold: 100.0
+        operation: %{percent_up: 100.0}
       }
 
       {:ok, trigger1} =
@@ -219,16 +242,20 @@ defmodule Sanbase.Signal.EvaluatorTest do
 
   test "last_triggered is taken into account for the cache key - same last_triggered",
        context do
+    data =
+      Enum.zip(context.datetimes, [100, 120, 100, 80, 20, 10, 5])
+      |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
+
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
-        [{"santiment", {100, 30}}]
+        [{"santiment", data}]
       end do
       trigger_settings1 = %{
         type: "daily_active_addresses",
         target: %{slug: "santiment"},
         channel: "telegram",
         time_window: "1d",
-        percent_threshold: 100.0
+        operation: %{percent_up: 100.0}
       }
 
       {:ok, trigger1} =

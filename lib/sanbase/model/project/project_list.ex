@@ -313,6 +313,27 @@ defmodule Sanbase.Model.Project.List do
     end)
   end
 
+  def contract_info_map() do
+    data =
+      from(p in Project,
+        where: not is_nil(p.coinmarketcap_id),
+        select: {p.coinmarketcap_id, p.main_contract_address, p.token_decimals}
+      )
+      |> Repo.all()
+
+    {:ok, eth_contract, eth_decimals} = Project.contract_info_by_slug("ethereum")
+    {:ok, btc_contract, btc_decimals} = Project.contract_info_by_slug("bitcoin")
+
+    data =
+      [
+        {"ethereum", eth_contract, eth_decimals},
+        {"bitcoin", btc_contract, btc_decimals}
+      ] ++ data
+
+    data
+    |> Map.new(fn {slug, contract, decimals} -> {slug, {contract, decimals}} end)
+  end
+
   defp project_is_trending?(words_mapset, %Project{} = p) do
     # Project is trending if the intersection of [name, ticker, slug] and the trending
     # words is not empty

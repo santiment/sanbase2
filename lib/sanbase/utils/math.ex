@@ -148,9 +148,11 @@ defmodule Sanbase.Math do
     end)
   end
 
-  def average(list, precision \\ 2)
+  def average(list, opts \\ [])
   def average([], _), do: 0
-  def average(values, precision), do: Float.round(Enum.sum(values) / length(values), precision)
+
+  def average(values, opts),
+    do: Float.round(Enum.sum(values) / length(values), Keyword.get(opts, :precision, 2))
 
   def median([]), do: nil
 

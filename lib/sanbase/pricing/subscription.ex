@@ -82,7 +82,7 @@ defmodule Sanbase.Pricing.Subscription do
              items: [
                %{
                  id: item_id,
-                 plan: subscription.plan.stripe_id
+                 plan: plan.stripe_id
                }
              ]
            }),

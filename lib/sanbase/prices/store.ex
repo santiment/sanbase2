@@ -83,8 +83,8 @@ defmodule Sanbase.Prices.Store do
     |> parse_time_series()
   end
 
-  def fetch_mean_volume(measurements, from, to) when is_list(measurements) do
-    fetch_mean_volume_query(measurements, from, to)
+  def fetch_average_volume(measurements, from, to) when is_list(measurements) do
+    fetch_average_volume_query(measurements, from, to)
     |> get()
     |> case do
       %{results: [%{series: series}]} ->
@@ -96,8 +96,8 @@ defmodule Sanbase.Prices.Store do
     end
   end
 
-  def fetch_mean_volume(measurement, from, to) do
-    fetch_mean_volume_query(measurement, from, to)
+  def fetch_average_volume(measurement, from, to) do
+    fetch_average_volume_query(measurement, from, to)
     |> get()
     |> parse_time_series()
   end
@@ -209,7 +209,7 @@ defmodule Sanbase.Prices.Store do
   end
 
   def volume_over_threshold(measurements, from, to, threshold) do
-    mean_volume_for_period_query(measurements, from, to)
+    average_volume_for_period_query(measurements, from, to)
     |> get()
     |> filter_volume_over_threshold(threshold)
   end
@@ -277,7 +277,7 @@ defmodule Sanbase.Prices.Store do
   end
 
   defp fetch_prices_with_resolution_query(measurement, from, to, resolution) do
-    ~s/SELECT MEAN(price_usd), MEAN(price_btc), MEAN(marketcap_usd), LAST(volume_usd)
+    ~s/SELECT LAST(price_usd), LAST(price_btc), LAST(marketcap_usd), LAST(volume_usd)
     FROM "#{measurement}"
     WHERE time >= #{DateTime.to_unix(from, :nanosecond)}
     AND time <= #{DateTime.to_unix(to, :nanosecond)}
@@ -285,7 +285,7 @@ defmodule Sanbase.Prices.Store do
   end
 
   defp fetch_volume_with_resolution_query(measurement, from, to, resolution) do
-    ~s/SELECT MEAN(volume_usd) as volume
+    ~s/SELECT LAST(volume_usd) as volume
     FROM "#{measurement}"
     WHERE time >= #{DateTime.to_unix(from, :nanosecond)}
     AND time <= #{DateTime.to_unix(to, :nanosecond)}
@@ -298,18 +298,12 @@ defmodule Sanbase.Prices.Store do
     WHERE time <= #{DateTime.to_unix(timestamp, :nanosecond)}/
   end
 
-  defp fetch_mean_volume_query(measurements, from, to) when is_list(measurements) do
-    measurements_str = measurements |> Enum.map(fn x -> ~s/"#{x}"/ end) |> Enum.join(", ")
+  defp fetch_average_volume_query(measurements, from, to) do
+    measurements_str =
+      measurements |> List.wrap() |> Enum.map(fn x -> ~s/"#{x}"/ end) |> Enum.join(", ")
 
     ~s/SELECT MEAN(volume_usd)
     FROM #{measurements_str}
-    WHERE time >= #{DateTime.to_unix(from, :nanosecond)}
-    AND time <= #{DateTime.to_unix(to, :nanosecond)}/
-  end
-
-  defp fetch_mean_volume_query(measurement, from, to) do
-    ~s/SELECT MEAN(volume_usd)
-    FROM "#{measurement}"
     WHERE time >= #{DateTime.to_unix(from, :nanosecond)}
     AND time <= #{DateTime.to_unix(to, :nanosecond)}/
   end
@@ -334,7 +328,7 @@ defmodule Sanbase.Prices.Store do
   end
 
   defp fetch_combined_mcap_volume_query(measurements_str, from, to, resolution) do
-    ~s/SELECT MEAN(volume_usd), MEAN(marketcap_usd)
+    ~s/SELECT LAST(volume_usd), LAST(marketcap_usd)
        FROM #{measurements_str}
        WHERE time >= #{DateTime.to_unix(from, :nanosecond)}
        AND time <= #{DateTime.to_unix(to, :nanosecond)}
@@ -399,7 +393,7 @@ defmodule Sanbase.Prices.Store do
     end)
   end
 
-  defp mean_volume_for_period_query(measurements, from, to) do
+  defp average_volume_for_period_query(measurements, from, to) do
     ~s/SELECT MEAN(volume_usd) as volume
     FROM #{measurements}
     WHERE time >= #{DateTime.to_unix(from, :nanosecond)}

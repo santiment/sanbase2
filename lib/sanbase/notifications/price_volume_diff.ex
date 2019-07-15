@@ -45,7 +45,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     measurement = Sanbase.Influxdb.Measurement.name_from(project)
 
     with {:ok, [[_dt, volume]]} <-
-           Sanbase.Prices.Store.fetch_mean_volume(measurement, from_datetime, to_datetime) do
+           Sanbase.Prices.Store.fetch_average_volume(measurement, from_datetime, to_datetime) do
       volume >= notification_volume_threshold()
     else
       _ -> false

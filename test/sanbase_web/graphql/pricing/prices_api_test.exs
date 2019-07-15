@@ -153,10 +153,10 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     assert Enum.count(history_price) == 1
 
     [history_price | _] = history_price
-    assert history_price["priceUsd"] == 21
-    assert history_price["priceBtc"] == 1100
+    assert history_price["priceUsd"] == 22
+    assert history_price["priceBtc"] == 1200
     assert history_price["volume"] == 300
-    assert history_price["marketcap"] == 650
+    assert history_price["marketcap"] == 800
   end
 
   test "too complex queries are denied", context do

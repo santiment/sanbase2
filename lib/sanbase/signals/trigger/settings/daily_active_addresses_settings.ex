@@ -211,9 +211,11 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
       interval = Sanbase.DateTimeUtils.interval_to_str(settings.time_window)
 
       """
-      **#{project.name}**'s Daily Active Addresses has gone up by **#{percent_change}%** up to #{
-        current_daa
-      } active addresses compared to the average active addresses for the last #{interval}.
+      **#{project.name}**'s Daily Active Addresses #{
+        Sanbase.Signal.OperationText.to_text(percent_change, settings.operation)
+      }* up to #{current_daa} active addresses compared to the average active addresses for the last #{
+        interval
+      }.
       Average Daily Active Addresses for last **#{interval}**: **#{average_daa}**.
       More info here: #{Project.sanbase_link(project)}
 
@@ -223,11 +225,13 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
       """
     end
 
-    defp payload(:absolute, slug, _settings, active_addresses) do
+    defp payload(:absolute, slug, settings, active_addresses) do
       project = Project.by_slug(slug)
 
       """
-      **#{project.name}**'s Daily Active Addresses are #{active_addresses}
+      **#{project.name}**'s Daily Active Addresses #{
+        Sanbase.Signal.OperationText.to_text(active_addresses, settings.operation)
+      }
       More info here: #{Project.sanbase_link(project)}
 
       ![Daily Active Addresses chart and OHCL price chart for the past 90 days](#{

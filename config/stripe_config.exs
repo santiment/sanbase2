@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :sanbase, Sanbase.StripeConfig, api_key: {:system, "STRIPE_SECRET_KEY", ""}
 

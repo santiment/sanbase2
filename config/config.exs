@@ -3,7 +3,7 @@
 #
 # This configuration file is loaded before any dependency and
 # is restricted to this project.
-use Mix.Config
+import Config
 
 # Latest version of timezone data (2019a) distributed by IANA has an error
 # Disable the autoupdate until it is fixed

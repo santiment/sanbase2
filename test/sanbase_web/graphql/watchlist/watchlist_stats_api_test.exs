@@ -17,6 +17,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
 
     project1 = insert(:random_erc20_project)
     project2 = insert(:random_erc20_project)
+    project3 = insert(:random_erc20_project)
 
     {:ok, watchlist} = UserList.create_user_list(user, %{name: "test watchlist"})
     {:ok, watchlist2} = UserList.create_user_list(user, %{name: "test watchlist2"})
@@ -31,6 +32,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
      conn: conn,
      project1: project1,
      project2: project2,
+     project3: project3,
      watchlist: watchlist,
      empty_watchlist: watchlist2}
   end
@@ -264,6 +266,35 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
            %{word: slug, score: 3},
            %{word: name, score: 4},
            %{word: ticker, score: 1},
+           %{word: "random", score: 1}
+         ]}
+      end do
+      result = fetch_watchlist_stats_trending_projects(context.conn, context.watchlist)
+
+      %{"data" => %{"watchlist" => %{"stats" => %{"trendingProjects" => projects}}}} = result
+
+      expected_result = [
+        %{"slug" => context.project1.coinmarketcap_id}
+      ]
+
+      assert projects == expected_result
+    end
+  end
+
+  test "project not in watchlist is not included", context do
+    slug = context.project1.coinmarketcap_id |> String.downcase()
+    name = context.project3.name |> String.downcase()
+    ticker = context.project3.ticker |> String.downcase()
+    slug2 = context.project3.coinmarketcap_id |> String.downcase()
+
+    with_mock Sanbase.SocialData.TrendingWords,
+      get_trending_now: fn _ ->
+        {:ok,
+         [
+           %{word: slug, score: 3},
+           %{word: name, score: 4},
+           %{word: ticker, score: 1},
+           %{word: slug2, score: 1},
            %{word: "random", score: 1}
          ]}
       end do

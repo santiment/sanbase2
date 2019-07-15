@@ -72,8 +72,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     slugs_set = MapSet.new(slugs)
     names_set = MapSet.new(names)
 
+    trending_assets =
+      tickers_set
+      |> MapSet.union(slugs_set)
+      |> MapSet.union(names_set)
+      |> MapSet.intersection(trending_words)
+
     trending_projects =
-      trending_words
+      trending_assets
       |> Enum.to_list()
       |> Project.List.by_name_ticker_slug()
 

@@ -3,7 +3,7 @@
 #
 # This configuration file is loaded before any dependency and
 # is restricted to this project.
-use Mix.Config
+import Config
 
 config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
   webhook_url: {:system, "PRICE_VOLUME_DIFF_WEBHOOK_URL"},

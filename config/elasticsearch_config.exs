@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :sanbase, Sanbase.Elasticsearch.Cluster,
   url: "http://managed-elasticsearch-scraping-data.default.svc.cluster.local",

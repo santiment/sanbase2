@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :sanbase, SanbaseWeb.Endpoint,
   http: [port: {:system, "PORT"}],

@@ -70,34 +70,13 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       "triggered?" => false
     }
 
-    trigger_settings_json = trigger_settings |> Jason.encode!()
-
-    query =
-      ~s|
-    mutation {
-      createTrigger(
-        settings: '#{trigger_settings_json}'
-        title: 'Generic title'
-      ) {
-        trigger{
-          id
-          settings
-        }
-      }
-    }
-    |
-      |> format_interpolated_json()
-
     # Telegram notification is not sent when creation is unsucessful
     refute_receive(
       {:telegram_to_self, "Successfully created a new signal of type: Daily Active Addresses"}
     )
 
     assert capture_log(fn ->
-             result =
-               conn
-               |> post("/graphql", %{"query" => query})
-               |> json_response(200)
+             result = create_trigger(conn, title: "Some title", settings: trigger_settings)
 
              error = result["errors"] |> List.first()
 
@@ -105,6 +84,24 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
                       "Trigger structure is invalid. Key `settings` is not valid. Reason: \"The trigger settings type 'unknown' is not a valid type.\""
            end) =~
              "UserTrigger struct is not valid. Reason: \"The trigger settings type 'unknown' is not a valid type"
+  end
+
+  test "create trigger with mistyped field in settings", %{conn: conn} do
+    trigger_settings = %{
+      "type" => "daily_active_addresses",
+      "target" => %{"slug" => "santiment"},
+      "channel" => "telegram",
+      "time_window" => "1d",
+      "operation" => %{"random_field_not_present" => 300}
+    }
+
+    capture_log(fn ->
+      %{"errors" => [%{"message" => error_message}]} =
+        create_trigger(conn, title: "Some title", settings: trigger_settings)
+
+      assert error_message =~ "Trigger structure is invalid. Key `settings` is not valid."
+    end) =~
+      "Trigger structure is invalid."
   end
 
   test "update trigger", %{user: user, conn: conn} do
@@ -321,30 +318,12 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       "trigger_time" => "12:00:00"
     }
 
-    trigger_settings_json = trigger_settings |> Jason.encode!()
-
-    query =
-      ~s|
-    mutation {
-      createTrigger(
-        settings: '#{trigger_settings_json}'
-        title: 'Generic title'
-        tags: ['SAN', 'santiment']
-      ) {
-        trigger{
-          id
-          settings
-          tags{ name }
-        }
-      }
-    }
-    |
-      |> format_interpolated_json()
-
     result =
-      conn
-      |> post("/graphql", %{"query" => query})
-      |> json_response(200)
+      create_trigger(conn,
+        title: "Generic title",
+        settings: trigger_settings,
+        tags: ["SAN", "santiment"]
+      )
 
     created_trigger = result["data"]["createTrigger"]["trigger"]
 
@@ -360,31 +339,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       "trigger_time" => "12:00:00"
     }
 
-    trigger_settings_json = trigger_settings |> Jason.encode!()
-
-    query =
-      ~s|
-    mutation {
-      createTrigger(
-        settings: '#{trigger_settings_json}'
-        title: 'Generic title'
-        tags: []
-      ) {
-        trigger{
-          id
-          settings
-          tags{ name }
-        }
-      }
-    }
-    |
-      |> format_interpolated_json()
-
-    result =
-      conn
-      |> post("/graphql", %{"query" => query})
-      |> json_response(200)
-
+    result = create_trigger(conn, title: "Some title", settings: trigger_settings, tags: [])
     created_trigger = result["data"]["createTrigger"]["trigger"]
 
     assert created_trigger["settings"] == trigger_settings
@@ -517,7 +472,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
     assert ut.trigger.is_active
 
-    updated_trigger = update_active_query(conn, ut.id, false)
+    updated_trigger = update_trigger_active_field(conn, ut.id, false)
 
     assert updated_trigger["isActive"] == false
   end
@@ -530,7 +485,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
     refute ut.trigger.is_active
 
-    updated_trigger = update_active_query(conn, ut.id, true)
+    updated_trigger = update_trigger_active_field(conn, ut.id, true)
 
     assert updated_trigger["isActive"] == true
   end
@@ -566,8 +521,8 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     result["data"]["signalsHistoricalActivity"]
   end
 
-  defp update_active_query(conn, id, is_active) do
-    query = """
+  defp update_trigger_active_field(conn, id, is_active) do
+    mutation = """
       mutation {
         updateTrigger(
           id: #{id},
@@ -582,10 +537,36 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
     result =
       conn
-      |> post("/graphql", %{"query" => query})
+      |> post("/graphql", %{"query" => mutation})
       |> json_response(200)
 
     result["data"]["updateTrigger"]["trigger"]
+  end
+
+  defp create_trigger(conn, opts) do
+    settings_json = Keyword.get(opts, :settings) |> Jason.encode!()
+
+    query =
+      ~s|
+    mutation {
+      createTrigger(
+        settings: '#{settings_json}'
+        title: '#{Keyword.get(opts, :title, "Generic title")}'
+        tags: [#{Keyword.get(opts, :tags, []) |> Enum.map(&"'#{&1}'") |> Enum.join(",")}]
+      ) {
+        trigger{
+          id
+          settings
+          tags{ name }
+        }
+      }
+    }
+    |
+      |> format_interpolated_json()
+
+    conn
+    |> post("/graphql", %{"query" => query})
+    |> json_response(200)
   end
 
   defp default_trigger_settings_string_keys() do

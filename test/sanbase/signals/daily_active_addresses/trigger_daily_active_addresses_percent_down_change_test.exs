@@ -1,4 +1,4 @@
-defmodule Sanbase.Signal.DailyActiveAddressesPercentChangeTest do
+defmodule Sanbase.Signal.DailyActiveAddressesPercentDownChangeTest do
   use Sanbase.DataCase, async: false
 
   import Mock
@@ -33,7 +33,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentChangeTest do
       target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "7d",
-      operation: %{percent_up: 300.0}
+      operation: %{percent_down: 50.0}
     }
 
     trigger_settings2 = %{
@@ -41,7 +41,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentChangeTest do
       target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "7d",
-      operation: %{percent_up: 200.0}
+      operation: %{percent_down: 25.0}
     }
 
     {:ok, trigger1} =
@@ -72,7 +72,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentChangeTest do
 
   test "all of daily active addresses signals triggered", context do
     data =
-      Enum.zip(context.datetimes, [100, 100, 100, 100, 100, 100, 5000])
+      Enum.zip(context.datetimes, [200, 150, 220, 80, 130, 30])
       |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
@@ -95,7 +95,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentChangeTest do
 
   test "only some of daily active addresses signals triggered", context do
     data =
-      Enum.zip(context.datetimes, [100, 120, 100, 80, 200, 200, 400])
+      Enum.zip(context.datetimes, [200, 150, 220, 80, 130, 80])
       |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
@@ -136,7 +136,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentChangeTest do
   # meaning everything including the id and title were overriden
   test "only payload and triggered are taken from cache", context do
     data =
-      Enum.zip(context.datetimes, [100, 120, 100, 80, 100, 100, 500])
+      Enum.zip(context.datetimes, [200, 150, 220, 80, 130, 30])
       |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
@@ -148,7 +148,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentChangeTest do
         target: %{slug: "santiment"},
         channel: "telegram",
         time_window: "1d",
-        operation: %{percent_up: 100.0}
+        operation: %{percent_down: 50.0}
       }
 
       {:ok, trigger1} =
@@ -187,7 +187,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentChangeTest do
   test "last_triggered is taken into account for the cache key - different last_triggered",
        context do
     data =
-      Enum.zip(context.datetimes, [100, 120, 100, 80, 20, 10, 5])
+      Enum.zip(context.datetimes, [200, 150, 220, 80, 130, 30])
       |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
@@ -199,7 +199,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentChangeTest do
         target: %{slug: "santiment"},
         channel: "telegram",
         time_window: "1d",
-        operation: %{percent_up: 100.0}
+        operation: %{percent_down: 50.0}
       }
 
       {:ok, trigger1} =
@@ -243,7 +243,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentChangeTest do
   test "last_triggered is taken into account for the cache key - same last_triggered",
        context do
     data =
-      Enum.zip(context.datetimes, [100, 120, 100, 80, 20, 10, 5])
+      Enum.zip(context.datetimes, [200, 150, 220, 80, 130, 30])
       |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
@@ -255,7 +255,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentChangeTest do
         target: %{slug: "santiment"},
         channel: "telegram",
         time_window: "1d",
-        operation: %{percent_up: 100.0}
+        operation: %{percent_down: 50.0}
       }
 
       {:ok, trigger1} =

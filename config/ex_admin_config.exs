@@ -12,6 +12,7 @@ config :ex_admin,
   modules: [
     Sanbase.ExAdmin.Dashboard,
     Sanbase.ExAdmin.Statistics,
+    Sanbase.ExAdmin.UsersWithWatchlist,
     Sanbase.ExAdmin.Model.Project,
     Sanbase.ExAdmin.Model.Currency,
     Sanbase.ExAdmin.Auth.EthAccount,

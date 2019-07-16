@@ -33,8 +33,8 @@ These are the fields describing a trigger.
     field(:is_public, :boolean, default: false) # Whether trigger is public or private
     field(:cooldown, :string, default: "24h") # After a signal is fired it can be again fired after `cooldown` time has passed. By default - `24h`
     field(:icon_url, :string) # Url of icon for the trigger
-    field(:active, :boolean, default: true) # Whether trigger is active. By default - yes
-    field(:repeating, :boolean, default: true) # Whether the signal will fire just one time or it will be working until manually turned off. By default - working until turned off.
+    field(:is_active, :boolean, default: true) # Whether trigger is active. By default - yes
+    field(:is_repeating, :boolean, default: true) # Whether the signal will fire just one time or it will be working until manually turned off. By default - working until turned off.
 ```
 
 ### Settings fields
@@ -44,7 +44,6 @@ These are the fields describing a trigger.
 - **channel**: `"telegram" | "email"` - Currently notifications are sent only in telegram
 - **time_window**: `1d`, `4w`, `1h` - Time string we use throughout the API for `interval`
 - **operation** - A map describing the operation that triggers the signal. Check the examples.
-- **percent_threshold** - Float representing a percent threhsold.
 - **threshold** - Float threshold used in `price_volume_difference`
 - **trigger_time** - At what time of the day to fire the signal. It ISO8601 UTC time used only in `trending_words`, ex: `"12:00:00"`
 
@@ -83,7 +82,7 @@ These are the fields describing a trigger.
 ```
 
 ```json
-// price <= 0.49 and price >= 0.51
+// price <= 0.49 or price >= 0.51
 {
   "type": "price_absolute_change",
   "target": { "slug": "santiment" },
@@ -125,7 +124,58 @@ These are the fields describing a trigger.
   "target": ["santiment", "ethereum"],
   "channel": "telegram",
   "time_window": "30d",
-  "percent_threshold": 300.0
+  "operation": { "percent_up": 300.0 }
+}
+```
+
+```json
+// number of daily active addresses decreased by 50% compared to the average for the past 30 days
+{
+  "type": "daily_active_addresses",
+  "target": ["santiment", "ethereum"],
+  "channel": "telegram",
+  "time_window": "30d",
+  "operation": { "percent_down": 50.0 }
+}
+```
+
+```json
+// number of daily active addresses decreased is above 1000
+{
+  "type": "daily_active_addresses",
+  "target": ["santiment", "ethereum"],
+  "channel": "telegram",
+  "operation": { "above": 1000 }
+}
+```
+
+```json
+// number of daily active addresses decreased is below 100
+{
+  "type": "daily_active_addresses",
+  "target": ["santiment", "ethereum"],
+  "channel": "telegram",
+  "operation": { "below": 100 }
+}
+```
+
+```json
+// number of daily active addresses decreased is between 100 and 200
+{
+  "type": "daily_active_addresses",
+  "target": ["santiment", "ethereum"],
+  "channel": "telegram",
+  "operation": { "inside_channel": [100, 200] }
+}
+```
+
+```json
+// number of daily active addresses decreased is below 100 or above 200
+{
+  "type": "daily_active_addresses",
+  "target": ["santiment", "ethereum"],
+  "channel": "telegram",
+  "operation": { "outside_channel": [100, 200] }
 }
 ```
 
@@ -253,7 +303,7 @@ These are the fields describing a trigger.
 mutation {
   createTrigger(
     title: "test ceco"
-    settings: "{\"channel\":\"telegram\",\"percent_threshold\":200.0,\"target\":{\"slug\": \"santiment\"},\"time_window\":\"30d\",\"type\":\"daily_active_addresses\"}"
+    settings: "{\"channel\":\"telegram\",\"operation\":{\"percent_up\": 200},\"target\":{\"slug\": \"santiment\"},\"time_window\":\"30d\",\"type\":\"daily_active_addresses\"}"
   ) {
     trigger {
       id
@@ -262,8 +312,8 @@ mutation {
       isPublic
       cooldown
       iconUrl
-      active
-      repeating
+      isActive
+      isRepeating
       settings
     }
   }
@@ -283,8 +333,8 @@ mutation {
       isPublic
       cooldown
       iconUrl
-      active
-      repeating
+      isActive
+      isRepeating
       settings
     }
   }
@@ -303,7 +353,7 @@ mutation {
   updateTrigger(
     id: 16
     isPublic: true
-    settings: "{\"channel\":\"telegram\",\"percent_threshold\":250.0,\"target\":{\"slug\": \"santiment\"},\"time_window\":\"30d\",\"type\":\"daily_active_addresses\"}"
+    settings: "{\"channel\":\"telegram\",\"operation\":{\"percent_up\": 250},\"target\":{\"slug\": \"santiment\"},\"time_window\":\"30d\",\"type\":\"daily_active_addresses\"}"
   ) {
     trigger {
       id
@@ -312,8 +362,8 @@ mutation {
       isPublic
       cooldown
       iconUrl
-      active
-      repeating
+      isActive
+      isRepeating
       settings
     }
   }
@@ -332,8 +382,8 @@ mutation {
       isPublic
       cooldown
       iconUrl
-      active
-      repeating
+      isActive
+      isRepeating
       settings
     }
   }
@@ -364,8 +414,8 @@ mutation {
       isPublic
       cooldown
       iconUrl
-      active
-      repeating
+      isActive
+      isRepeating
       settings
     }
   }
@@ -385,8 +435,8 @@ mutation {
       isPublic
       cooldown
       iconUrl
-      active
-      repeating
+      isActive
+      isRepeating
       settings
     }
   }
@@ -406,8 +456,8 @@ mutation {
       isPublic
       cooldown
       iconUrl
-      active
-      repeating
+      isActive
+      isRepeating
       settings
     }
   }
@@ -523,7 +573,7 @@ Takes currently filled settings and a chosen cooldown and calculates historical 
 {
   historicalTriggerPoints(
     cooldown: "2d"
-    settings: "{\"percent_threshold\":200.0,\"target\":{\"slug\": \"naga\"},\"time_window\":\"30d\",\"type\":\"daily_active_addresses\"}"
+    settings: "{\"operation\":{\"percent_up\": 200},\"target\":{\"slug\": \"naga\"},\"time_window\":\"30d\",\"type\":\"daily_active_addresses\"}"
   )
 }
 ```

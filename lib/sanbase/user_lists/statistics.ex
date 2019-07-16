@@ -3,6 +3,7 @@ defmodule Sanbase.UserLists.Statistics do
 
   alias Sanbase.Repo
   alias Sanbase.UserList
+  alias Sanbase.Auth.User
 
   def watchlists_created(%DateTime{} = from, %DateTime{} = to) do
     watchlists_query(from, to)
@@ -15,6 +16,17 @@ defmodule Sanbase.UserLists.Statistics do
       select: count(fragment("DISTINCT ?", ul.user_id))
     )
     |> Repo.one()
+  end
+
+  def users_with_watchlist_and_email() do
+    from(ul in UserList,
+      left_join: user in User,
+      on: ul.user_id == user.id,
+      where: not is_nil(user.email),
+      select: {user, fragment("COUNT(?)", ul.id)},
+      group_by: user.id
+    )
+    |> Repo.all()
   end
 
   # Private functions

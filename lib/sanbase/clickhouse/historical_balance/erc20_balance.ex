@@ -130,7 +130,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
   before balance, after balance and the balance change
   """
   @spec balance_change(
-          address,
+          address | list(address),
           contract,
           token_decimals,
           DateTime.t(),
@@ -139,24 +139,27 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
           {:ok, list({address, {balance_before, balance_after, balance_change}})}
           | {:error, String.t()}
         when balance_before: number(), balance_after: number(), balance_change: number()
-  def balance_change(address, contract, token_decimals, from, to) do
+  def balance_change(addr, contract, token_decimals, from, to) do
     token_decimals = Sanbase.Math.ipow(10, token_decimals)
 
     query = """
     SELECT
+      address,
       argMaxIf(value, dt, dt<=?3 AND sign = 1) AS start_balance,
       argMaxIf(value, dt, dt<=?4 AND sign = 1) AS end_balance,
       end_balance - start_balance AS diff
     FROM #{@table}
     PREWHERE
-      address = ?1 AND
+      address IN (?1) AND
       contract = ?2
+    GROUP BY address
     """
 
-    args = [address |> String.downcase(), contract, from, to]
+    addresses = addr |> List.wrap() |> Enum.map(&String.downcase/1)
+    args = [addresses, contract, from, to]
 
-    ClickhouseRepo.query_transform(query, args, fn [s, e, value] ->
-      {s / token_decimals, e / token_decimals, value / token_decimals}
+    ClickhouseRepo.query_transform(query, args, fn [a, s, e, value] ->
+      {a, {s / token_decimals, e / token_decimals, value / token_decimals}}
     end)
   end
 

@@ -149,11 +149,12 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
           {:ok, list({address, {balance_before, balance_after, balance_change}})}
           | {:error, String.t()}
         when balance_before: number(), balance_after: number(), balance_change: number()
-  def balance_change(addresses, from, to) when is_binary(addresses) or is_list(addresses) do
-    {query, args} = balance_change_query(addresses, from, to)
+  def balance_change(addr, from, to) when is_binary(addr) or is_list(addr) do
+    {query, args} = balance_change_query(addr, from, to)
 
-    ClickhouseRepo.query_transform(query, args, fn [addr, s, e, change] ->
-      {addr, {s / @eth_decimals, e / @eth_decimals, change / @eth_decimals}}
+    ClickhouseRepo.query_transform(query, args, fn [address, start_balance, end_balance, change] ->
+      {address,
+       {start_balance / @eth_decimals, end_balance / @eth_decimals, change / @eth_decimals}}
     end)
   end
 

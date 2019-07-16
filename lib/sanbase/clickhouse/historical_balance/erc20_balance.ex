@@ -158,8 +158,9 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     addresses = addr |> List.wrap() |> Enum.map(&String.downcase/1)
     args = [addresses, contract, from, to]
 
-    ClickhouseRepo.query_transform(query, args, fn [a, s, e, value] ->
-      {a, {s / token_decimals, e / token_decimals, value / token_decimals}}
+    ClickhouseRepo.query_transform(query, args, fn [address, start_balance, end_balance, change] ->
+      {address,
+       {start_balance / token_decimals, end_balance / token_decimals, change / token_decimals}}
     end)
   end
 

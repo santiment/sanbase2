@@ -93,9 +93,12 @@ defmodule Sanbase.Signal.Validation do
   end
 
   def valid_daily_active_addresses_operation?(op) do
-    valid? = [valid_percent_change_operation?(op), valid_absolute_change_operation?(op)]
+    has_valid_operation? = [
+      valid_percent_change_operation?(op),
+      valid_absolute_value_operation?(op)
+    ]
 
-    if Enum.member?(valid?, :ok) do
+    if Enum.member?(has_valid_operation?, :ok) do
       :ok
     else
       {:error, "#{inspect(op)} is not valid absolute change or percent change operation."}

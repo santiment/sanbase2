@@ -25,7 +25,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
             target: nil,
             filtered_target: %{list: []},
             channel: nil,
-            time_window: nil,
+            time_window: "2d",
             operation: nil,
             triggered?: false,
             payload: nil
@@ -62,7 +62,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
     |> Enum.map(fn slug ->
       case Map.get(contract_info_map, slug) do
         {contract, _token_decimals} when not is_nil(contract) ->
-          daily_active_addresses = average_active_addresses(contract, from, to)
+          daily_active_addresses = fetch_daily_active_addersses(contract, from, to, "1d")
 
           {slug, daily_active_addresses}
 
@@ -73,9 +73,9 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
     |> Enum.reject(&is_nil/1)
   end
 
-  defp average_active_addresses(contract, from, to) do
+  defp fetch_daily_active_addersses(contract, from, to, interval) do
     Cache.get_or_store("daa_#{contract}_current", fn ->
-      case DailyActiveAddresses.average_active_addresses([contract], from, to) do
+      case DailyActiveAddresses.average_active_addresses([contract], from, to, interval) do
         {:ok, [{_, result}]} ->
           result
 

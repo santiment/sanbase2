@@ -104,6 +104,44 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       "Trigger structure is invalid."
   end
 
+  test "load trigger with mistyped settings", %{conn: conn} do
+    trigger_settings = %{
+      "type" => "daily_active_addresses",
+      "target" => %{"slug" => "santiment"},
+      "channel" => "telegram",
+      "time_window" => "1d",
+      "operation" => %{"percent_up" => 300}
+    }
+
+    result = create_trigger(conn, title: "Some title", settings: trigger_settings)
+    id = result["data"]["createTrigger"]["trigger"]["id"]
+
+    # Manually update the field to bypass the validations
+    ut = Sanbase.Repo.get(UserTrigger, id)
+
+    Ecto.Changeset.change(ut, %{
+      trigger: %{settings: %{ut.trigger.settings | "operation" => %{"asdjasldjkasd" => 1209}}}
+    })
+    |> Sanbase.Repo.update()
+
+    query = """
+    {
+      currentUser {
+        id,
+        triggers {
+          id
+          settings
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "currentUser"))
+      |> json_response(200)
+  end
+
   test "update trigger", %{user: user, conn: conn} do
     trigger_settings = default_trigger_settings_string_keys()
 

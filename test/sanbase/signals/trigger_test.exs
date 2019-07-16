@@ -21,7 +21,7 @@ defmodule Sanbase.Signal.TriggersTest do
       target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 300.0
+      operation: %{percent_up: 300.0}
     }
 
     {:ok, created_trigger} =
@@ -75,7 +75,7 @@ defmodule Sanbase.Signal.TriggersTest do
       target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 300.0
+      operation: %{percent_up: 300.0}
     }
 
     {:error, changeset} =
@@ -97,7 +97,7 @@ defmodule Sanbase.Signal.TriggersTest do
       target: %{slug: "santiment"},
       channel: "unknown",
       time_window: "1d",
-      percent_threshold: 300.0,
+      operation: %{percent_up: 300.0},
       triggered?: false,
       payload: nil
     }
@@ -121,7 +121,7 @@ defmodule Sanbase.Signal.TriggersTest do
       type: "daily_active_addresses",
       target: %{slug: "santiment"},
       time_window: "1d",
-      percent_threshold: 300.0
+      operation: %{percent_up: 300.0}
     }
 
     assert UserTrigger.create_user_trigger(user, %{
@@ -197,7 +197,7 @@ defmodule Sanbase.Signal.TriggersTest do
       target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 300.0
+      operation: %{percent_up: 300.0}
     }
 
     insert(:user_trigger,
@@ -233,7 +233,7 @@ defmodule Sanbase.Signal.TriggersTest do
       target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 300.0
+      operation: %{percent_up: 300.0}
     }
 
     trigger_settings2 = %{
@@ -261,7 +261,7 @@ defmodule Sanbase.Signal.TriggersTest do
       target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 200.0
+      operation: %{percent_up: 200.0}
     }
 
     new_title = "New title"
@@ -300,7 +300,7 @@ defmodule Sanbase.Signal.TriggersTest do
       target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 200.0
+      operation: %{percent_up: 200.0}
     }
 
     insert(:user_trigger,

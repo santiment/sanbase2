@@ -7,7 +7,7 @@ defmodule Sanbase.Signal.TriggerPriceAbsoluteChangeTest do
 
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
-  alias Sanbase.Signal.{Trigger, UserTrigger, Evaluator}
+  alias Sanbase.Signal.{UserTrigger, Evaluator}
   alias Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings
 
   @ticker "SAN"

@@ -92,9 +92,12 @@ defmodule Sanbase.Signal.History.EthWalletTriggerHistory do
     end
 
     defp operation_type(%{operation: operation}) when is_map(operation) do
-      op_name = Map.keys(operation) |> List.first()
+      has_percent? =
+        Enum.any?(Map.keys(operation), fn name ->
+          name |> Atom.to_string() |> String.contains?("percent")
+        end)
 
-      if op_name |> Atom.to_string() |> String.contains?("percent") do
+      if has_percent? do
         :percent
       else
         :absolute

@@ -85,13 +85,13 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
 
     target_list
     |> Project.by_slug()
-    |> Enum.map(fn %Project{eth_addresses: eth_addresses, coinmarketcap_id: slug} = project ->
+    |> Enum.map(fn %Project{coinmarketcap_id: slug} = project ->
       from =
         Trigger.last_triggered(trigger, slug) ||
           settings.created_at |> from_iso8601!()
 
       project_balance_change =
-        balance_change(eth_addresses, settings.asset.slug, from, to)
+        balance_change(Project.eth_addresses(project), settings.asset.slug, from, to)
         |> Enum.map(fn {_, {_, _, change}} -> change end)
         |> Enum.sum()
 

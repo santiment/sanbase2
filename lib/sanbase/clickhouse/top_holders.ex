@@ -21,9 +21,16 @@ defmodule Sanbase.Clickhouse.TopHolders do
           DateTime.t(),
           DateTime.t()
         ) :: {:ok, list(percent_of_total_supply)} | {:error, String.t()}
-  def percent_of_total_supply(contract, token_decimals, number_of_holders, from, to) do
+  def percent_of_total_supply(contract, token_decimals, number_of_holders, from, to, interval) do
     {query, args} =
-      percent_of_total_supply_query(contract, token_decimals, number_of_holders, from, to)
+      percent_of_total_supply_query(
+        contract,
+        token_decimals,
+        number_of_holders,
+        from,
+        to,
+        interval
+      )
 
     ClickhouseRepo.query_transform(
       query,
@@ -39,10 +46,17 @@ defmodule Sanbase.Clickhouse.TopHolders do
     )
   end
 
-  defp percent_of_total_supply_query(contract, token_decimals, number_of_holders, from, to) do
+  defp percent_of_total_supply_query(
+         contract,
+         token_decimals,
+         number_of_holders,
+         from,
+         to,
+         interval
+       ) do
     from_datetime_unix = DateTime.to_unix(from)
     to_datetime_unix = DateTime.to_unix(to)
-    interval = DateTimeUtils.str_to_sec("1d")
+    interval_sec = DateTimeUtils.str_to_sec(interval)
 
     query = """
     SELECT
@@ -121,7 +135,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
       number_of_holders,
       from_datetime_unix,
       to_datetime_unix,
-      interval
+      interval_sec
     ]
 
     {query, args}

@@ -136,10 +136,9 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     }
     """
 
-    result =
-      conn
-      |> post("/graphql", query_skeleton(query, "currentUser"))
-      |> json_response(200)
+    conn
+    |> post("/graphql", query_skeleton(query, "currentUser"))
+    |> json_response(200)
   end
 
   test "update trigger", %{user: user, conn: conn} do

@@ -10,15 +10,15 @@ defmodule Sanbase.Signal.ValidationTest do
     test "not supported keys in settings return error" do
       # mistyped `time_window` as `time_windo`
       settings = %{
-        "type" => "price_percent",
+        "type" => "price_percent_change",
         "target" => %{"slug" => "santiment"},
         "channel" => "telegram",
         "time_windo" => "24h",
         "operation" => %{"above" => 5}
       }
 
-      assert StructMapTransformation.load_in_struct(settings) ==
-               {:error, "The trigger contains unsupported or mistyped field \"time_windo\""}
+      assert StructMapTransformation.load_in_struct_if_valid(settings) ==
+               {:error, ~s/The trigger contains unsupported or mistyped field "time_windo"/}
     end
 
     # The historical activity API accepts JSON string as settings. The string keys
@@ -37,7 +37,7 @@ defmodule Sanbase.Signal.ValidationTest do
       }
 
       assert UserTrigger.historical_trigger_points(trigger) ==
-               {:error, "The trigger contains unsupported or mistyped field \"operatio\""}
+               {:error, ~s/The trigger contains unsupported or mistyped field "operatio"/}
     end
   end
 

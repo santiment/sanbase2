@@ -240,6 +240,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:number_of_holders, non_null(:integer))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)

@@ -13,6 +13,7 @@ defmodule Sanbase.Clickhouse.TopHoldersTest do
       slug: project.coinmarketcap_id,
       contract: "ETH",
       token_decimals: 18,
+      interval: "1d",
       number_of_holders: 10,
       from: from_iso8601!("2019-01-01T00:00:00Z"),
       to: from_iso8601!("2019-01-03T00:00:00Z")
@@ -36,7 +37,8 @@ defmodule Sanbase.Clickhouse.TopHoldersTest do
           context.token_decimals,
           context.number_of_holders,
           context.from,
-          context.to
+          context.to,
+          context.interval
         )
 
       assert result ==
@@ -66,7 +68,8 @@ defmodule Sanbase.Clickhouse.TopHoldersTest do
           context.token_decimals,
           context.number_of_holders,
           context.from,
-          context.to
+          context.to,
+          context.interval
         )
 
       assert result == {:ok, []}

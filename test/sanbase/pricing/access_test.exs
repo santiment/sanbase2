@@ -42,6 +42,7 @@ defmodule Sanbase.Pricing.AccessTest do
       from = Timex.shift(Timex.now(), days: -(100 + 1))
       to = Timex.now()
       query = mvrv_query(from, to)
+
       result = execute_query(context.conn_apikey, query, "mvrvRatio")
 
       assert_called(Sanbase.Clickhouse.MVRV.mvrv_ratio(:_, from, to, :_))
@@ -95,9 +96,9 @@ defmodule Sanbase.Pricing.AccessTest do
 
       refute called(Sanbase.Clickhouse.MVRV.mvrv_ratio(:_, from, to, :_))
 
-      assert error_msg == """
+      assert error_msg =~ """
              Requested metric mvrv_ratio is not provided by the current subscription plan ESSENTIAL.
-             Please upgrade to PRO or PREMIUM or CUSTOM to get access to mvrv_ratio
+             Please upgrade to Pro or higher to get access to mvrv_ratio
              """
     end
   end

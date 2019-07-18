@@ -12,6 +12,8 @@ defmodule SanbaseWeb.Graphql.Schema.PriceQueries do
   object :price_queries do
     @desc "Fetch price history for a given slug and time interval."
     field :history_price, list_of(:price_point) do
+      meta(subscription: :free)
+
       arg(:slug, :string)
       arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       arg(:from, non_null(:datetime))
@@ -28,6 +30,8 @@ defmodule SanbaseWeb.Graphql.Schema.PriceQueries do
     """
 
     field :ohlc, list_of(:ohlc) do
+      meta(subscription: :free)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))

@@ -15,6 +15,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
   @compile {:inline,
             restrict_from: 3,
             restrict_to: 3,
+            do_call: 2,
             check_from_to_params: 1,
             required_san_stake_full_access: 0,
             restrict_to_in_days: 0,
@@ -27,102 +28,131 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
   alias Sanbase.Pricing.Subscription
 
   require Sanbase.Utils.Config, as: Config
+
   @allow_access_without_staking ["santiment"]
-
   @minimal_datetime_param from_iso8601!("2009-01-01T00:00:00Z")
-  @api_product_id 1
 
-  def call(%Resolution{state: :resolved} = resolution, _) do
+  def call(resolution, opts) do
+    # First call `check_from_to_params` and then pass the execution to do_call/2
+    resolution
+    |> check_from_to_params()
+    |> do_call(opts)
+  end
+
+  # If the query is resolved there's nothing to do here
+  # A query can get resolved if it's rejected by the AccessControl middleware
+  defp do_call(%Resolution{state: :resolved} = resolution, _) do
     resolution
   end
 
-  def call(resolution, %{allow_realtime_data: true, allow_historical_data: true}) do
+  # If the query is marked as having free realtime and historical data
+  # do not restrict anything
+  defp do_call(resolution, %{allow_realtime_data: true, allow_historical_data: true}) do
     resolution
   end
 
   # Allow access to historical data and real-time data for the Santiment project.
-  # This will serve the purpose of showing to anonymous and not-staking users how
-  # the data looks like.
-  def call(%Resolution{arguments: %{slug: slug}} = resolution, _)
-      when slug in @allow_access_without_staking do
+  # This will serve the purpose of showing to anonymous and users with lesser plans
+  # how the data looks like.
+  defp do_call(%Resolution{arguments: %{slug: slug}} = resolution, _)
+       when slug in @allow_access_without_staking do
     resolution
-    |> check_from_to_params()
   end
 
-  def call(
-        %Resolution{
-          definition: definition,
-          context: %{
-            auth: %{
-              current_user: current_user,
-              san_balance: san_balance
-            }
-          },
-          arguments: %{from: from, to: to} = args
-        } = resolution,
-        middleware_args
-      ) do
-    query = definition.name |> Macro.underscore()
+  # Dispatch the resolution of restricted and not-restricted queries to
+  # different functions if there are `from` and `to` parameters
+  defp do_call(
+         %Resolution{definition: definition, arguments: %{from: _from, to: _to}} = resolution,
+         middleware_args
+       ) do
+    query = definition.name |> Macro.underscore() |> String.to_existing_atom()
 
-    with true <- Subscription.is_restricted?(query),
-         subscription when not is_nil(subscription) <-
-           Subscription.current_subscription(current_user, @api_product_id) do
-      historical_data_in_days = Subscription.historical_data_in_days(subscription)
-
-      if historical_data_in_days do
-        resolution
-        |> update_resolution_from_to(
-          restrict_from(from, middleware_args, historical_data_in_days),
-          to
-        )
-      else
-        resolution
-      end
-      |> check_from_to_params()
+    if Subscription.is_restricted?(query) do
+      restricted_query(resolution, middleware_args)
     else
-      _ ->
-        case has_enough_san_tokens?(san_balance, required_san_stake_full_access()) do
-          true ->
-            resolution
-
-          _ ->
-            %Resolution{
-              resolution
-              | arguments: %{
-                  args
-                  | from: restrict_from(from, middleware_args, restrict_from_in_days()),
-                    to: restrict_to(to, middleware_args, restrict_to_in_days())
-                }
-            }
-        end
-        |> check_from_to_params()
+      not_restricted_query(resolution, middleware_args)
     end
   end
 
-  def call(%Resolution{arguments: %{from: from, to: to}} = resolution, middleware_args) do
+  defp do_call(resolution, _) do
+    resolution
+  end
+
+  # If there is no subscription give access only if there are enough SAN tokens
+  # TODO: This function will be deprecated - soon SAN staking will no longer
+  # be enough. Remove this function
+  defp restricted_query(
+         %Resolution{
+           context: %{auth: %{subscription: nil, san_balance: san_balance}},
+           arguments: %{from: from, to: to} = args
+         } = resolution,
+         middleware_args
+       ) do
+    case has_enough_san_tokens?(san_balance, required_san_stake_full_access()) do
+      true ->
+        resolution
+
+      _ ->
+        %Resolution{
+          resolution
+          | arguments: %{
+              args
+              | from: restrict_from(from, middleware_args, restrict_from_in_days()),
+                to: restrict_to(to, middleware_args, restrict_to_in_days())
+            }
+        }
+    end
+  end
+
+  # User has subscription
+  defp restricted_query(
+         %Resolution{
+           context: %{auth: %{subscription: subscription}},
+           arguments: %{from: from, to: to}
+         } = resolution,
+         middleware_args
+       )
+       when not is_nil(subscription) do
+    historical_data_in_days = Subscription.historical_data_in_days(subscription)
+    realtime_data_cut_off_in_days = Subscription.realtime_data_cut_off_in_days(subscription)
+
+    resolution
+    |> update_resolution_from_to(
+      restrict_from(from, middleware_args, historical_data_in_days),
+      restrict_to(to, middleware_args, realtime_data_cut_off_in_days)
+    )
+  end
+
+  # Access to restricted query by anonymous or not-paid user
+  defp restricted_query(
+         %Resolution{arguments: %{from: from, to: to}} = resolution,
+         middleware_args
+       ) do
     resolution
     |> update_resolution_from_to(
       restrict_from(from, middleware_args, restrict_from_in_days()),
       restrict_to(to, middleware_args, restrict_to_in_days())
     )
-    |> check_from_to_params()
   end
 
-  def call(resolution, _) do
+  defp not_restricted_query(resolution, _middleware_args) do
     resolution
-    |> check_from_to_params()
   end
 
+  # Move the `to` datetime back so access to realtime data is not given
   defp restrict_to(to_datetime, %{allow_realtime_data: true}, _), do: to_datetime
+  defp restrict_to(to_datetime, _, nil), do: to_datetime
 
   defp restrict_to(to_datetime, _, days) do
     restrict_to = Timex.shift(Timex.now(), days: -days)
     Enum.min_by([to_datetime, restrict_to], &DateTime.to_unix/1)
   end
 
+  # Move the `from` datetime forward so access to historical data is not given
   defp restrict_from(from_datetime, %{allow_historical_data: true}, _), do: from_datetime
+  defp restrict_from(from_datetime, _, nil), do: from_datetime
 
-  defp restrict_from(from_datetime, _, days) do
+  defp restrict_from(from_datetime, _, days) when is_integer(days) do
     restrict_from = Timex.shift(Timex.now(), days: -days)
     Enum.max_by([from_datetime, restrict_from], &DateTime.to_unix/1)
   end
@@ -131,13 +161,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
     Config.module_get(Sanbase, :required_san_stake_full_access) |> Sanbase.Math.to_float()
   end
 
-  defp restrict_to_in_days() do
-    Config.get(:restrict_to_in_days) |> String.to_integer()
-  end
-
-  defp restrict_from_in_days do
-    Config.get(:restrict_from_in_days) |> String.to_integer()
-  end
+  defp restrict_to_in_days(), do: Config.get(:restrict_to_in_days) |> String.to_integer()
+  defp restrict_from_in_days, do: Config.get(:restrict_from_in_days) |> String.to_integer()
 
   defp to_param_is_after_from(from, to) do
     if DateTime.compare(to, from) == :gt do
@@ -178,15 +203,15 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
 
   defp update_resolution_from_to(
          %Resolution{arguments: %{from: _from, to: _to} = args} = resolution,
-         restricted_from,
-         restricted_to
+         from,
+         to
        ) do
     %Resolution{
       resolution
       | arguments: %{
           args
-          | from: restricted_from,
-            to: restricted_to
+          | from: from,
+            to: to
         }
     }
   end

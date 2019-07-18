@@ -17,6 +17,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
   object :insight_queries do
     @desc "Fetch the currently running poll."
     field :current_poll, :poll do
+      meta(subscription: :free)
+
       cache_resolve(&InsightResolver.current_poll/3)
     end
 
@@ -25,6 +27,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
     The user must be logged in to access all fields for the post/insight.
     """
     field :post, :post do
+      meta(subscription: :free)
+
       deprecate("Use `insight` instead")
       arg(:id, non_null(:integer))
 
@@ -36,6 +40,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
     The user must be logged in to access all fields for the post/insight.
     """
     field :insight, :post do
+      meta(subscription: :free)
+
       arg(:id, non_null(:integer))
 
       resolve(&PostResolver.post/3)
@@ -47,6 +53,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
     It supports paginations with `page` and `page_size` args.
     """
     field :all_insights, list_of(:post) do
+      meta(subscription: :free)
+
       arg(:page, :integer, default_value: 1)
       arg(:page_size, :integer, default_value: 20)
       arg(:tags, list_of(:string))
@@ -56,6 +64,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
 
     @desc "Fetch a list of all posts for given user ID."
     field :all_insights_for_user, list_of(:post) do
+      meta(subscription: :free)
+
       arg(:user_id, non_null(:integer))
 
       resolve(&PostResolver.all_insights_for_user/3)
@@ -63,6 +73,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
 
     @desc "Fetch a list of all posts for which a user has voted."
     field :all_insights_user_voted, list_of(:post) do
+      meta(subscription: :free)
+
       arg(:user_id, non_null(:integer))
 
       resolve(&PostResolver.all_insights_user_voted_for/3)
@@ -73,6 +85,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
     The user must be logged in to access all fields for the post/insight.
     """
     field :all_insights_by_tag, list_of(:post) do
+      meta(subscriptionc: :free)
+
       arg(:tag, non_null(:string))
 
       resolve(&PostResolver.all_insights_by_tag/3)
@@ -80,6 +94,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
 
     @desc "Fetch a list of all tags used for posts/insights. This query also returns tags that are not yet in use."
     field :all_tags, list_of(:tag) do
+      meta(subscription: :free)
+
       cache_resolve(&PostResolver.all_tags/3)
     end
   end

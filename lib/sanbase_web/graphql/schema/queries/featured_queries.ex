@@ -10,14 +10,17 @@ defmodule SanbaseWeb.Graphql.Schema.FeaturedQueries do
 
   object :featured_queries do
     field :featured_insights, list_of(:post) do
+      meta(subscription: :free)
       cache_resolve(&FeaturedItemResolver.insights/3)
     end
 
     field :featured_watchlists, list_of(:user_list) do
+      meta(subscription: :free)
       cache_resolve(&FeaturedItemResolver.watchlists/3)
     end
 
     field :featured_user_triggers, list_of(:user_trigger) do
+      meta(subscription: :free)
       cache_resolve(&FeaturedItemResolver.user_triggers/3)
     end
   end

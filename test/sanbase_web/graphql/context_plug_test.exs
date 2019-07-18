@@ -24,7 +24,8 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
     assert conn_context.auth == %{
              auth_method: :user_token,
              current_user: user,
-             san_balance: 500_000.0
+             san_balance: 500_000.0,
+             subscription: nil
            }
 
     assert conn_context.remote_ip == {127, 0, 0, 1}

@@ -18,6 +18,8 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
   object :project_queries do
     @desc "Fetch all projects that have price data."
     field :all_projects, list_of(:project) do
+      meta(subscription: :free)
+
       arg(:page, :integer)
       arg(:page_size, :integer)
       arg(:min_volume, :integer)
@@ -28,36 +30,41 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
 
     @desc "Fetch all ERC20 projects."
     field :all_erc20_projects, list_of(:project) do
+      meta(subscription: :free)
+
       arg(:page, :integer)
       arg(:page_size, :integer)
       arg(:min_volume, :integer)
 
       middleware(ProjectPermissions)
-
       cache_resolve(&ProjectResolver.all_erc20_projects/3)
     end
 
     @desc "Fetch all currency projects. A currency project is a project that has price data but is not classified as ERC20."
     field :all_currency_projects, list_of(:project) do
+      meta(subscription: :free)
+
       arg(:page, :integer)
       arg(:page_size, :integer)
       arg(:min_volume, :integer)
 
       middleware(ProjectPermissions)
-
       cache_resolve(&ProjectResolver.all_currency_projects/3)
     end
 
     field :all_projects_by_function, list_of(:project) do
+      meta(subscription: :free)
+
       arg(:function, :json)
 
       middleware(ProjectPermissions)
-
       cache_resolve(&ProjectResolver.all_projects_by_function/3)
     end
 
     @desc "Fetch all project transparency projects. This query requires basic authentication."
     field :all_projects_project_transparency, list_of(:project) do
+      meta(subscription: :free)
+
       middleware(BasicAuth)
       resolve(&ProjectResolver.all_projects_project_transparency/3)
     end
@@ -66,13 +73,18 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
 
     @desc "Fetch a project by its ID."
     field :project, :project do
+      meta(subscription: :free)
+
       arg(:id, non_null(:id))
       resolve(&ProjectResolver.project/3)
     end
 
     @desc "Fetch a project by a unique identifier."
     field :project_by_slug, :project do
+      meta(subscription: :free)
+
       arg(:slug, non_null(:string))
+
       cache_resolve(&ProjectResolver.project_by_slug/3)
     end
 
@@ -80,6 +92,8 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
     Fetch data for each of the projects in the slugs lists
     """
     field :projects_list_stats, list_of(:project_stats) do
+      meta(subscription: :free)
+
       arg(:slugs, non_null(list_of(:string)))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -91,6 +105,8 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
 
     @desc "Returns the number of erc20 projects, currency projects and all projects"
     field :projects_count, :projects_count do
+      meta(subscription: :free)
+
       arg(:min_volume, :integer)
       cache_resolve(&ProjectResolver.projects_count/3)
     end
@@ -100,6 +116,8 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
     of the marketcaps and volumes of all projects for that given time interval
     """
     field :projects_list_history_stats, list_of(:combined_projects_stats) do
+      meta(subscription: :free)
+
       arg(:slugs, non_null(list_of(:string)))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -112,16 +130,19 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
 
     @desc "Fetch all market segments."
     field :all_market_segments, list_of(:market_segment) do
+      meta(subscription: :free)
       cache_resolve(&MarketSegmentResolver.all_market_segments/3)
     end
 
     @desc "Fetch ERC20 projects' market segments."
     field :erc20_market_segments, list_of(:market_segment) do
+      meta(subscription: :free)
       cache_resolve(&MarketSegmentResolver.erc20_market_segments/3)
     end
 
     @desc "Fetch currency projects' market segments."
     field :currencies_market_segments, list_of(:market_segment) do
+      meta(subscription: :free)
       cache_resolve(&MarketSegmentResolver.currencies_market_segments/3)
     end
   end
@@ -129,6 +150,8 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
   object :project_eth_spent_queries do
     @desc "Fetch the ETH spent by all projects within a given time period."
     field :eth_spent_by_all_projects, :float do
+      meta(subscription: :free)
+
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
@@ -143,6 +166,8 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
 
     @desc "Fetch the ETH spent by all ERC20 projects within a given time period."
     field :eth_spent_by_erc20_projects, :float do
+      meta(subscription: :free)
+
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
@@ -160,6 +185,8 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
     This query returns a list of values where each value is of length `interval`.
     """
     field :eth_spent_over_time_by_erc20_projects, list_of(:eth_spent_data) do
+      meta(subscription: :free)
+
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
@@ -178,6 +205,8 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
     This query returns a list of values where each value is of length `interval`.
     """
     field :eth_spent_over_time_by_all_projects, list_of(:eth_spent_data) do
+      meta(subscription: :free)
+
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")

@@ -20,6 +20,8 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
   object :user_queries do
     @desc "Returns the user currently logged in."
     field :current_user, :user do
+      meta(subscription: :free)
+
       resolve(&AccountResolver.current_user/3)
     end
 
@@ -30,6 +32,8 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
     and sanbase accounts are linked and the user can receive sanbase signals in telegram.
     """
     field :get_telegram_deep_link, :string do
+      meta(subscription: :free)
+
       middleware(JWTAuth)
       resolve(&TelegramResolver.get_telegram_deep_link/3)
     end

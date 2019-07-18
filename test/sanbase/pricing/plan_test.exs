@@ -20,17 +20,11 @@ defmodule Sanbase.Pricing.PlanTest do
 
   describe "#plans_with_metric" do
     test "with standart query - returns all plans" do
-      assert Plan.plans_with_metric("network_growth") == [
-               "FREE",
-               "ESSENTIAL",
-               "PRO",
-               "PREMIUM",
-               "CUSTOM"
-             ]
+      assert Plan.lowest_plan_with_metric(:network_growth) == :basic
     end
 
     test "with advanced query - returns only plans with advanced queries" do
-      assert Plan.plans_with_metric("mvrv_ratio") == ["PRO", "PREMIUM", "CUSTOM"]
+      assert Plan.lowest_plan_with_metric(:mvrv_ratio) == :pro
     end
   end
 

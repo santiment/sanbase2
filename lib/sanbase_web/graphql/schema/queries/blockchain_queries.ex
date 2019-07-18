@@ -34,6 +34,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     Grouping by interval works by summing all burn rate records in the interval.
     """
     field :burn_rate, list_of(:burn_rate_data) do
+      meta(subscription: :basic)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -46,6 +48,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     end
 
     field :token_age_consumed, list_of(:token_age_consumed_data) do
+      meta(subscription: :basic)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -66,6 +70,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     Grouping by interval works by summing all transaction volume records in the interval.
     """
     field :transaction_volume, list_of(:transaction_volume) do
+      meta(subscription: :basic)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -85,6 +91,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     This metric includes only on-chain transaction volume, not volume in exchanges.
     """
     field :average_token_age_consumed_in_days, list_of(:token_age) do
+      meta(subscription: :basic)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -101,6 +109,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     Projects are referred to by a unique identifier (slug).
     """
     field :token_circulation, list_of(:token_circulation) do
+      meta(subscription: :basic)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -118,6 +128,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     Projects are referred to by a unique identifier (slug).
     """
     field :token_velocity, list_of(:token_velocity) do
+      meta(subscription: :basic)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -142,6 +154,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     the exact number of unique addresses for each day.
     """
     field :daily_active_addresses, list_of(:active_addresses) do
+      meta(subscription: :basic)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -158,6 +172,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     This query returns the difference IN-OUT calculated for each interval.
     """
     field :exchange_funds_flow, list_of(:exchange_funds_flow) do
+      meta(subscription: :basic)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -173,18 +189,22 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     Calculates the exchange inflow and outflow volume in usd for a given exchange in a time interval.
     """
     field :exchange_volume, list_of(:exchange_volume) do
+      meta(subscription: :basic)
+
       arg(:exchange, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      middleware(TimeframeRestriction)
       cache_resolve(&ExchangeResolver.exchange_volume/3)
     end
 
     @desc "Network growth returns the newly created addresses for a project in a given timeframe"
     field :network_growth, list_of(:network_growth) do
+      meta(subscription: :basic)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -198,6 +218,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
 
     @desc "Returns what percent of token supply is on exchanges"
     field :percent_of_token_supply_on_exchanges, list_of(:percent_of_token_supply_on_exchanges) do
+      meta(subscription: :basic)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -215,6 +237,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     you must pay for that computation. That payment is calculated in Gas.
     """
     field :gas_used, list_of(:gas_used) do
+      meta(subscription: :basic)
+
       arg(:slug, :string, default_value: "ethereum")
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -236,6 +260,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
     """
     field :top_holders_percent_of_total_supply, list_of(:top_holders_percent_of_total_supply) do
+      meta(subscription: :basic)
+
       arg(:slug, non_null(:string))
       arg(:number_of_holders, non_null(:integer))
       arg(:from, non_null(:datetime))
@@ -254,6 +280,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     The realized value across the whole network is computed by summing the realized values
     of all wallets holding tokens at the moment."
     field :realized_value, list_of(:realized_value) do
+      meta(subscription: :pro)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -267,6 +295,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
 
     @desc "Returns MVRV(Market-Value-to-Realized-Value)"
     field :mvrv_ratio, list_of(:mvrv_ratio) do
+      meta(subscription: :pro)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -290,6 +320,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     a blockchain’s daily transaction throughput.
     """
     field :nvt_ratio, list_of(:nvt_ratio) do
+      meta(subscription: :pro)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -306,6 +338,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     Projects are referred to by a unique identifier (slug).
     """
     field :daily_active_deposits, list_of(:active_deposits) do
+      meta(subscription: :pro)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -322,6 +356,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     Fetch share of deposits from Daily Active Addresses.
     """
     field :share_of_deposits, list_of(:share_of_deposits) do
+      meta(subscription: :pro)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -334,6 +370,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
 
     @desc "Fetch a list of all exchange wallets. This query requires basic authentication."
     field :exchange_wallets, list_of(:wallet) do
+      meta(subscription: :restricted)
+
       arg(:slug, :string, default_value: "ethereum")
 
       middleware(BasicAuth)
@@ -344,6 +382,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     Return a list of assets that a wallet currently holds.
     """
     field :assets_held_by_address, list_of(:slug_balance) do
+      meta(subscription: :free)
+
       arg(:address, non_null(:string))
 
       cache_resolve(&ClickhouseResolver.assets_held_by_address/3)
@@ -354,18 +394,23 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     Returns the historical balance for a given address in the given interval.
     """
     field :historical_balance, list_of(:historical_balance) do
+      meta(subscription: :free)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:address, non_null(:string))
       arg(:interval, non_null(:string), default_value: "1d")
 
+      complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
       cache_resolve(&ClickhouseResolver.historical_balance/3)
     end
 
     @desc "List all exchanges"
     field :all_exchanges, list_of(:string) do
+      meta(subscription: :free)
+
       arg(:slug, :string, default_value: "ethereum")
 
       cache_resolve(&ExchangeResolver.all_exchanges/3)
@@ -377,6 +422,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     Currently only ETH is supported.
     """
     field :mining_pools_distribution, list_of(:mining_pools_distribution) do
+      meta(subscription: :basic)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -392,6 +439,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     Currently only ETH is supported.
     """
     field :miners_balance, list_of(:miners_balance) do
+      meta(subscription: :basic)
+
       arg(:slug, :string, default_value: "ethereum")
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))

@@ -230,22 +230,21 @@ defmodule Sanbase.Pricing.Subscription do
     subscription.plan.access["historical_data_in_days"]
   end
 
+  def realtime_data_cut_off_in_days(subscription) do
+    subscription.plan.access["realtime_data_cut_off_in_days"]
+  end
+
   @doc """
   Checks whether a query is in any plan.
   """
   def is_restricted?(query) do
-    query in AccessSeed.all_restricted_metrics()
+    AccessSeed.is_restricted?(query)
   end
 
   @doc """
   Query is in advanced subscription plans only
   """
-  def needs_advanced_plan?(query) do
-    advanced_metrics = AccessSeed.advanced_metrics()
-    standart_metrics = AccessSeed.standart_metrics()
-
-    query in advanced_metrics and query not in standart_metrics
-  end
+  defdelegate needs_advanced_plan?(query), to: AccessSeed
 
   def plan_name(subscription) do
     subscription.plan.name
@@ -339,8 +338,8 @@ defmodule Sanbase.Pricing.Subscription do
 
   defp subscription_access?(nil, _query), do: false
 
-  defp subscription_access?(subscription, query) do
-    query in subscription.plan.access["metrics"]
+  defp subscription_access?(%__MODULE__{plan: plan}, query) do
+    AccessSeed.plan_has_access?(Plan.plan_atom_name(plan), query)
   end
 
   defp user_subscriptions_query(user) do

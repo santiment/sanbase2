@@ -36,10 +36,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
 
     LogoFetcher.run([bitcoin, ethereum])
 
-    assert Repo.get(Project, bitcoin.id).logo_url ==
+    assert Repo.get(Project, bitcoin.id).logo_32_url ==
              "/tmp/sanbase/filestore-test/logo_bitcoin.png"
 
-    assert Repo.get(Project, ethereum.id).logo_url ==
+    assert Repo.get(Project, ethereum.id).logo_64_url ==
              "/tmp/sanbase/filestore-test/logo_ethereum.png"
   end
 

@@ -44,7 +44,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
                  {:ok, local_filepath_32} <-
                    resize_image(local_filepath_64, dir_path_32, file_name),
                  {:ok, _} <- upload(local_filepath_64),
-                 {:ok, _} <- upload(local_filepath_32) do
+                 {:ok, _} <- upload(local_filepath_32),
+                 {:ok, _} <-
+                   update_local_project(project, %{
+                     logo_32_url: local_filepath_32,
+                     logo_64_url: local_filepath_64
+                   }) do
               :ok
             else
               error ->
@@ -101,10 +106,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     end
   end
 
-  defp update_local_project(_filepath, nil), do: {:error, "Project not found"}
+  defp update_local_project(nil, _filepath), do: {:error, "Project not found"}
 
-  defp update_local_project(filepath, project) do
-    Project.changeset(project, %{logo_url: filepath}) |> Repo.update()
+  defp update_local_project(project, fields) do
+    Project.changeset(project, fields) |> Repo.update()
   end
 
   defp all_projects do

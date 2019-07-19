@@ -85,7 +85,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
     The user must be logged in to access all fields for the post/insight.
     """
     field :all_insights_by_tag, list_of(:post) do
-      meta(subscriptionc: :free)
+      meta(subscription: :free)
 
       arg(:tag, non_null(:string))
 

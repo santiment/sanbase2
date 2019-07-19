@@ -234,15 +234,16 @@ defmodule Sanbase.Pricing.Subscription do
     subscription.plan.access["realtime_data_cut_off_in_days"]
   end
 
-  @doc """
-  Checks whether a query is in any plan.
+  @doc ~s"""
+  Check if a query full access is given only to users with a plan higher than free.
+  A query can be restricted but still accessible by not-paid users or users with
+  lower plans. In this case historical and/or realtime data access can be cut off
   """
-  def is_restricted?(query) do
-    AccessSeed.is_restricted?(query)
-  end
+  defdelegate is_restricted?(query), to: AccessSeed
 
-  @doc """
-  Query is in advanced subscription plans only
+  @doc ~s"""
+  Check if a query access is given only to users with an advanced plan
+  (pro or higher). No access is given to users with lower plans
   """
   defdelegate needs_advanced_plan?(query), to: AccessSeed
 

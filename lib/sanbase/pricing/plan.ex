@@ -32,6 +32,8 @@ defmodule Sanbase.Pricing.Plan do
   def plan_atom_name(%__MODULE__{} = plan) do
     case plan do
       %{name: "FREE"} -> :free
+      %{name: "BASIC"} -> :basic
+      # should be renamed to basic in the DB
       %{name: "ESSENTIAL"} -> :basic
       %{name: "PRO"} -> :pro
       %{name: "PREMIUM"} -> :premium

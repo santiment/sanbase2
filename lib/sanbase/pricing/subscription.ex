@@ -32,6 +32,7 @@ defmodule Sanbase.Pricing.Subscription do
     field(:stripe_id, :string)
     field(:current_period_end, :utc_datetime)
     field(:cancel_at_period_end, :boolean, null: false, default: false)
+    field(:status, SubscriptionStatusEnum)
     belongs_to(:user, User)
     belongs_to(:plan, Plan)
   end
@@ -45,7 +46,8 @@ defmodule Sanbase.Pricing.Subscription do
       :user_id,
       :stripe_id,
       :current_period_end,
-      :cancel_at_period_end
+      :cancel_at_period_end,
+      :status
     ])
   end
 
@@ -87,10 +89,7 @@ defmodule Sanbase.Pricing.Subscription do
              ]
            }),
          {:ok, updated_subscription} <-
-           update_subscription_db(subscription, %{
-             plan_id: plan.id,
-             current_period_end: DateTime.from_unix!(stripe_subscription.current_period_end)
-           }) do
+           sync_with_stripe_subscription(stripe_subscription, subscription) do
       {:ok, updated_subscription |> Repo.preload([plan: [:product]], force: true)}
     end
   end
@@ -103,8 +102,8 @@ defmodule Sanbase.Pricing.Subscription do
   https://stripe.com/docs/billing/subscriptions/canceling-pausing#canceling
   """
   def cancel_subscription(subscription) do
-    with {:ok, _} <- StripeApi.cancel_subscription(subscription.stripe_id),
-         {:ok, _} <- update_subscription_db(subscription, %{cancel_at_period_end: true}) do
+    with {:ok, stripe_subscription} <- StripeApi.cancel_subscription(subscription.stripe_id),
+         {:ok, _} <- sync_with_stripe_subscription(stripe_subscription, subscription) do
       {:ok,
        %{
          is_scheduled_for_cancellation: true,
@@ -124,10 +123,7 @@ defmodule Sanbase.Pricing.Subscription do
          {:ok, stripe_subscription} <-
            StripeApi.update_subscription(subscription.stripe_id, %{cancel_at_period_end: false}),
          {:ok, updated_subscription} <-
-           update_subscription_db(subscription, %{
-             cancel_at_period_end: false,
-             current_period_end: DateTime.from_unix!(stripe_subscription.current_period_end)
-           }) do
+           sync_with_stripe_subscription(stripe_subscription, subscription) do
       {:ok, updated_subscription |> Repo.preload([plan: [:product]], force: true)}
     else
       {:end_period_reached?, _} ->
@@ -138,6 +134,59 @@ defmodule Sanbase.Pricing.Subscription do
 
       {:error, reason} ->
         {:error, reason}
+    end
+  end
+
+  def update_subscription_db(subscription, params) do
+    subscription
+    |> Subscription.changeset(params)
+    |> Repo.update()
+  end
+
+  def sync_all() do
+    Subscription
+    |> Repo.all()
+    |> Enum.each(&sync_with_stripe_subscription/1)
+  end
+
+  def sync_with_stripe_subscription(
+        %Stripe.Subscription{
+          current_period_end: current_period_end,
+          cancel_at_period_end: cancel_at_period_end,
+          status: status,
+          plan: %Stripe.Plan{id: stripe_plan_id}
+        },
+        db_subscription
+      ) do
+    Subscription.update_subscription_db(db_subscription, %{
+      current_period_end: DateTime.from_unix!(current_period_end),
+      cancel_at_period_end: cancel_at_period_end,
+      status: status,
+      plan_id: Plan.by_stripe_id(stripe_plan_id).id
+    })
+  end
+
+  def sync_with_stripe_subscription(%Subscription{stripe_id: stripe_id} = subscription) do
+    StripeApi.retrieve_subscription(stripe_id)
+    |> case do
+      {:ok,
+       %Stripe.Subscription{
+         current_period_end: current_period_end,
+         cancel_at_period_end: cancel_at_period_end,
+         status: status,
+         plan: %Stripe.Plan{id: stripe_plan_id}
+       }} ->
+        Subscription.update_subscription_db(subscription, %{
+          current_period_end: DateTime.from_unix!(current_period_end),
+          cancel_at_period_end: cancel_at_period_end,
+          status: status,
+          plan_id: Plan.by_stripe_id(stripe_plan_id).id
+        })
+
+      {:error, reason} ->
+        Logger.error(
+          "Error while syncing subscription: #{subscription.stripe_id}, reason: #{inspect(reason)}"
+        )
     end
   end
 
@@ -249,22 +298,26 @@ defmodule Sanbase.Pricing.Subscription do
     end
   end
 
-  defp create_subscription_db(stripe_subscription, user, plan) do
+  defp create_subscription_db(
+         %Stripe.Subscription{
+           id: stripe_id,
+           current_period_end: current_period_end,
+           cancel_at_period_end: cancel_at_period_end,
+           status: status
+         },
+         user,
+         plan
+       ) do
     %Subscription{}
     |> Subscription.changeset(%{
-      stripe_id: stripe_subscription.id,
+      stripe_id: stripe_id,
       user_id: user.id,
       plan_id: plan.id,
-      active: true,
-      current_period_end: DateTime.from_unix!(stripe_subscription.current_period_end)
+      current_period_end: DateTime.from_unix!(current_period_end),
+      cancel_at_period_end: cancel_at_period_end,
+      status: status
     })
     |> Repo.insert()
-  end
-
-  def update_subscription_db(subscription, params) do
-    subscription
-    |> Subscription.changeset(params)
-    |> Repo.update()
   end
 
   defp update_subscription_with_coupon(nil, subscription), do: subscription

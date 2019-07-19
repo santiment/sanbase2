@@ -249,7 +249,8 @@ defmodule Sanbase.Factory do
       amount: 35900,
       currency: "USD",
       interval: "month",
-      access: AccessSeed.pro()
+      access: AccessSeed.pro(),
+      stripe_id: plan_stripe_id()
     }
   end
 
@@ -349,5 +350,10 @@ defmodule Sanbase.Factory do
 
   def rand_hex_str(length \\ 10) do
     :crypto.strong_rand_bytes(length) |> Base.hex_encode32(case: :lower) |> binary_part(0, length)
+  end
+
+  defp plan_stripe_id do
+    {:ok, plan} = Sanbase.StripeApiTestReponse.create_plan_resp()
+    plan.id
   end
 end

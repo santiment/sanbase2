@@ -82,7 +82,7 @@ defmodule Sanbase.Mixfile do
       {:excoveralls, "~> 0.8", optional: true, only: [:dev, :test]},
       {:observer_cli, "~> 1.3"},
       {:earmark, "~> 1.2"},
-      {:ecto_enum, "~> 1.1"},
+      {:ecto_enum, "~> 1.3"},
       {:ex_machina, "~> 2.2", only: :test},
       {:clickhouse_ecto, git: "https://github.com/santiment/clickhouse_ecto"},
       {:jason, "~> 1.1"},

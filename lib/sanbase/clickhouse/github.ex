@@ -128,8 +128,8 @@ defmodule Sanbase.Clickhouse.Github do
           String.t(),
           non_neg_integer()
         ) :: {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
-  def github_activity(nil, _, _, _), do: {:ok, []}
-  def github_activity([], _, _, _), do: {:ok, []}
+  def github_activity(nil, _, _, _, _, _), do: {:ok, []}
+  def github_activity([], _, _, _, _, _), do: {:ok, []}
 
   def github_activity(organizations, from, to, interval, "None", _) do
     interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)

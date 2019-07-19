@@ -1,6 +1,17 @@
 defmodule SanbaseWeb.Graphql.Schema.PricingTypes do
   use Absinthe.Schema.Notation
 
+  enum :pricing_status do
+    value(:initial)
+    value(:incomplete)
+    value(:incomplete_expired)
+    value(:trialing)
+    value(:active)
+    value(:past_due)
+    value(:canceled)
+    value(:unpaid)
+  end
+
   object :product do
     field(:name, :string)
     field(:plans, list_of(:plan))
@@ -21,7 +32,7 @@ defmodule SanbaseWeb.Graphql.Schema.PricingTypes do
     field(:plan, :plan)
     field(:current_period_end, :datetime)
     field(:cancel_at_period_end, :boolean)
-    field(:status, :string)
+    field(:status, :pricing_status)
   end
 
   object :subscription_cancellation do

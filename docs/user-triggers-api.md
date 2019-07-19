@@ -22,7 +22,7 @@
     - [Historical activity request](#historical-activity-request)
     - [Historical activity response](#historical-activity-response)
 
-### Trigger structure
+## Trigger structure
 
 These are the fields describing a trigger.
 
@@ -82,12 +82,43 @@ These are the fields describing a trigger.
 ```
 
 ```json
+// price >= 0.49 and price <= 0.51
+{
+  "type": "price_absolute_change",
+  "target": { "slug": ["santiment", "augur"] },
+  "channel": "telegram",
+  "operation": { "inside_channel": [0.49, 0.51] }
+}
+```
+
+```json
 // price <= 0.49 or price >= 0.51
 {
   "type": "price_absolute_change",
   "target": { "slug": "santiment" },
   "channel": "telegram",
   "operation": { "outside_channel": [0.49, 0.51] }
+}
+```
+
+```json
+// price <= 0.98 or price >= 1.02
+{
+  "type": "price_absolute_change",
+  "target": { "slug": ["tether", "dai"] },
+  "channel": "telegram",
+  "operation": { "outside_channel": [0.98, 1.02] }
+}
+```
+
+```json
+// price <= 0.98 or price >= 1.02. Put the stablecoins watchlist id
+// in order to follow all stablecoins
+{
+  "type": "price_absolute_change",
+  "target": { "watchlist_id": 222 },
+  "channel": "telegram",
+  "operation": { "outside_channel": [0.98, 1.02] }
 }
 ```
 
@@ -121,7 +152,7 @@ These are the fields describing a trigger.
 // number of daily active addresses increased by 300% compared to the average for the past 30 days
 {
   "type": "daily_active_addresses",
-  "target": ["santiment", "ethereum"],
+  "target": { "slug": ["santiment", "ethereum"] },
   "channel": "telegram",
   "time_window": "30d",
   "operation": { "percent_up": 300.0 }
@@ -132,7 +163,7 @@ These are the fields describing a trigger.
 // number of daily active addresses decreased by 50% compared to the average for the past 30 days
 {
   "type": "daily_active_addresses",
-  "target": ["santiment", "ethereum"],
+  "target": { "slug": ["santiment", "ethereum"] },
   "channel": "telegram",
   "time_window": "30d",
   "operation": { "percent_down": 50.0 }
@@ -143,7 +174,7 @@ These are the fields describing a trigger.
 // number of daily active addresses decreased is above 1000
 {
   "type": "daily_active_addresses",
-  "target": ["santiment", "ethereum"],
+  "target": { "slug": ["santiment", "ethereum"] },
   "channel": "telegram",
   "operation": { "above": 1000 }
 }
@@ -153,7 +184,7 @@ These are the fields describing a trigger.
 // number of daily active addresses decreased is below 100
 {
   "type": "daily_active_addresses",
-  "target": ["santiment", "ethereum"],
+  "target": { "slug": ["santiment", "ethereum"] },
   "channel": "telegram",
   "operation": { "below": 100 }
 }
@@ -163,7 +194,7 @@ These are the fields describing a trigger.
 // number of daily active addresses decreased is between 100 and 200
 {
   "type": "daily_active_addresses",
-  "target": ["santiment", "ethereum"],
+  "target": { "slug": ["santiment", "ethereum"] },
   "channel": "telegram",
   "operation": { "inside_channel": [100, 200] }
 }
@@ -173,7 +204,7 @@ These are the fields describing a trigger.
 // number of daily active addresses decreased is below 100 or above 200
 {
   "type": "daily_active_addresses",
-  "target": ["santiment", "ethereum"],
+  "target": { "slug": "santiment" },
   "channel": "telegram",
   "operation": { "outside_channel": [100, 200] }
 }

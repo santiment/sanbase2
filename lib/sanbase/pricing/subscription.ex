@@ -280,9 +280,9 @@ defmodule Sanbase.Pricing.Subscription do
     end
   end
 
-  def percent_discount(balance) when balance >= 1000, do: @percent_discount_1000_san
-  def percent_discount(balance) when balance >= 200, do: @percent_discount_200_san
-  def percent_discount(_), do: nil
+  defp percent_discount(balance) when balance >= 1000, do: @percent_discount_1000_san
+  defp percent_discount(balance) when balance >= 200, do: @percent_discount_200_san
+  defp percent_discount(_), do: nil
 
   defp subscription_access?(nil, _query), do: false
 

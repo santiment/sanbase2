@@ -237,7 +237,7 @@ defmodule Sanbase.Pricing.Subscription do
     }
 
     user
-    |> User.san_balance!()
+    |> san_balance()
     |> percent_discount()
     |> update_subscription_with_coupon(subscription)
     |> case do
@@ -280,9 +280,9 @@ defmodule Sanbase.Pricing.Subscription do
     end
   end
 
-  defp percent_discount(balance) when balance >= 1000, do: @percent_discount_1000_san
-  defp percent_discount(balance) when balance >= 200, do: @percent_discount_200_san
-  defp percent_discount(_), do: nil
+  def percent_discount(balance) when balance >= 1000, do: @percent_discount_1000_san
+  def percent_discount(balance) when balance >= 200, do: @percent_discount_200_san
+  def percent_discount(_), do: nil
 
   defp subscription_access?(nil, _query), do: false
 
@@ -309,5 +309,12 @@ defmodule Sanbase.Pricing.Subscription do
       where: s.plan_id in fragment("select id from plans where product_id = ?", ^product_id),
       limit: 1
     )
+  end
+
+  defp san_balance(%User{} = user) do
+    case User.san_balance(user) do
+      {:ok, %Decimal{} = balance} -> balance |> Decimal.to_float()
+      _ -> 0
+    end
   end
 end

@@ -20,6 +20,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
       slug: project.coinmarketcap_id,
       contract: "ETH",
       token_decimals: 18,
+      interval: "1d",
       from: from_iso8601!("2019-01-01T00:00:00Z"),
       to: from_iso8601!("2019-01-03T00:00:00Z"),
       number_of_holders: 10
@@ -28,7 +29,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
 
   test "returns data from TopHolders calculation", context do
     with_mock TopHolders,
-      percent_of_total_supply: fn _, _, _, _, _ ->
+      percent_of_total_supply: fn _, _, _, _, _, _ ->
         {:ok,
          [
            %{
@@ -54,7 +55,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
           context.token_decimals,
           context.number_of_holders,
           context.from,
-          context.to
+          context.to,
+          context.interval
         )
       )
 
@@ -76,7 +78,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
   end
 
   test "returns empty array when there is no data", context do
-    with_mock TopHolders, percent_of_total_supply: fn _, _, _, _, _ -> {:ok, []} end do
+    with_mock TopHolders, percent_of_total_supply: fn _, _, _, _, _, _ -> {:ok, []} end do
       response = execute_query(context)
       holders = parse_response(response)
 
@@ -86,7 +88,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
           context.token_decimals,
           context.number_of_holders,
           context.from,
-          context.to
+          context.to,
+          context.interval
         )
       )
 
@@ -98,7 +101,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
     error = "Some error description here"
 
     with_mock TopHolders,
-      percent_of_total_supply: fn _, _, _, _, _ -> {:error, error} end do
+      percent_of_total_supply: fn _, _, _, _, _, _ -> {:error, error} end do
       assert capture_log(fn ->
                response = execute_query(context)
                holders = parse_response(response)
@@ -118,25 +121,27 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
         context.slug,
         context.number_of_holders,
         context.from,
-        context.to
+        context.to,
+        context.interval
       )
 
     context.conn
     |> post("/graphql", query_skeleton(query, "topHoldersPercentOfTotalSupply"))
   end
 
-  defp top_holders_percent_supply_query(slug, number_of_holders, from, to) do
+  defp top_holders_percent_supply_query(slug, number_of_holders, from, to, interval) do
     """
       {
         topHoldersPercentOfTotalSupply(
-          slug: "#{slug}",
+          slug: "#{slug}"
           number_of_holders: #{number_of_holders}
-          from: "#{from}",
+          from: "#{from}"
           to: "#{to}"
+          interval: "#{interval}"
         ){
-          datetime,
-          in_exchanges,
-          outside_exchanges,
+          datetime
+          in_exchanges
+          outside_exchanges
           in_top_holders_total
         }
       }

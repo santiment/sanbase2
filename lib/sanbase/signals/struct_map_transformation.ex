@@ -1,6 +1,7 @@
 defmodule Sanbase.Signal.StructMapTransformation do
   alias Sanbase.Signal.Trigger
 
+  @unsupported_fields_error :__internal_unsupported_field_errors__
   @module_type_pairs [
     {Trigger.DailyActiveAddressesSettings, "daily_active_addresses"},
     {Trigger.PricePercentChangeSettings, "price_percent_change"},
@@ -22,13 +23,24 @@ defmodule Sanbase.Signal.StructMapTransformation do
     %{trigger | settings: settings}
   end
 
+  def load_in_struct_if_valid(map) when is_map(map) do
+    atomized_map = map |> atomize_keys()
+    unsupported_fields_error = Process.get(@unsupported_fields_error)
+    Process.delete(@unsupported_fields_error)
+
+    case unsupported_fields_error do
+      nil ->
+        struct_from_map(atomized_map)
+
+      errors ->
+        {:error, errors |> Enum.join(",")}
+    end
+  end
+
   def load_in_struct(map) when is_map(map) do
     map
     |> atomize_keys()
-    |> case do
-      {:error, error} -> {:error, error}
-      atomized_map -> struct_from_map(atomized_map)
-    end
+    |> struct_from_map()
   end
 
   def load_in_struct(_), do: :error
@@ -62,24 +74,28 @@ defmodule Sanbase.Signal.StructMapTransformation do
   # Private functions
 
   defp atomize_keys(map) when is_map(map) do
-    try do
-      for {key, val} <- map, into: %{} do
-        if is_atom(key) do
-          {key, atomize_keys(val)}
-        else
-          {atomize(key), atomize_keys(val)}
-        end
+    Enum.reduce(map, %{}, fn {key, val}, acc ->
+      try do
+        Map.put(acc, atomize(key), atomize_keys(val))
+      rescue
+        ArgumentError ->
+          [{:erlang, :binary_to_existing_atom, [str, _], _} | _] = __STACKTRACE__
+
+          errors = Process.get(@unsupported_fields_error, [])
+
+          Process.put(@unsupported_fields_error, [
+            ~s/The trigger contains unsupported or mistyped field "#{str}"/ | errors
+          ])
+
+          acc
       end
-    rescue
-      ArgumentError ->
-        [{:erlang, :binary_to_existing_atom, [str, _], _} | _] = __STACKTRACE__
-        {:error, "The trigger contains unsupported or mistyped field #{inspect(str)}"}
-    end
+    end)
   end
 
   defp atomize_keys(data), do: data
 
   @compile {:inline, atomize: 1}
+  defp atomize(atom) when is_atom(atom), do: atom
   defp atomize("filtered_target_list"), do: :filtered_target_list
   defp atomize(str) when is_binary(str), do: String.to_existing_atom(str)
 end

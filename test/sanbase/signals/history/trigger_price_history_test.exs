@@ -47,7 +47,7 @@ defmodule Sanbase.Signal.TriggerPriceHistoryTest do
         target: %{slug: "santiment"},
         channel: "telegram",
         time_window: "2d",
-        percent_threshold: 200.0
+        operation: %{percent_up: 200.0}
       }
 
       insert(:project, %{

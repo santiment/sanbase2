@@ -3,7 +3,6 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
 
   import Mock
   import Sanbase.Factory
-  import ExUnit.CaptureLog
 
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement

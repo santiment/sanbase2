@@ -38,7 +38,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   def top_holders_percent_of_total_supply(
         _root,
-        %{slug: slug, number_of_holders: number_of_holders, from: from, to: to},
+        %{
+          slug: slug,
+          number_of_holders: number_of_holders,
+          from: from,
+          to: to,
+          interval: interval
+        },
         _resolution
       ) do
     with {:ok, contract, token_decimals} <- Project.contract_info_by_slug(slug),
@@ -48,7 +54,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
              token_decimals,
              number_of_holders,
              from,
-             to
+             to,
+             interval
            ) do
       {:ok, percent_of_total_supply}
     else

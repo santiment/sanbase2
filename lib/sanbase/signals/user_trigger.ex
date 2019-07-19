@@ -231,7 +231,7 @@ defmodule Sanbase.Signal.UserTrigger do
   end
 
   def historical_trigger_points(%{settings: settings} = params) do
-    with {:ok, settings_struct} <- load_in_struct(settings) do
+    with {:ok, settings_struct} <- load_in_struct_if_valid(settings) do
       trigger = struct!(Trigger, params)
 
       Trigger.historical_trigger_points(%{trigger | settings: settings_struct})
@@ -259,13 +259,14 @@ defmodule Sanbase.Signal.UserTrigger do
   defp valid_or_nil?(trigger), do: valid?(trigger)
 
   defp valid?(trigger) do
-    with {:load_in_struct, {:ok, trigger_struct}} <- {:load_in_struct, load_in_struct(trigger)},
+    with {:load_in_struct_if_valid, {:ok, trigger_struct}} <-
+           {:load_in_struct_if_valid, load_in_struct_if_valid(trigger)},
          {:valid?, true} <- {:valid?, Vex.valid?(trigger_struct)},
          {:map_from_struct, {:ok, _trigger_map}} <-
            {:map_from_struct, map_from_struct(trigger_struct)} do
       :ok
     else
-      {:load_in_struct, {:error, error}} ->
+      {:load_in_struct_if_valid, {:error, error}} ->
         Logger.warn("UserTrigger struct is not valid. Reason: #{inspect(error)}")
         {:error, error}
 

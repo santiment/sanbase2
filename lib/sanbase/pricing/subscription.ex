@@ -237,7 +237,7 @@ defmodule Sanbase.Pricing.Subscription do
     }
 
     user
-    |> User.san_balance!()
+    |> san_balance()
     |> percent_discount()
     |> update_subscription_with_coupon(subscription)
     |> case do
@@ -309,5 +309,12 @@ defmodule Sanbase.Pricing.Subscription do
       where: s.plan_id in fragment("select id from plans where product_id = ?", ^product_id),
       limit: 1
     )
+  end
+
+  defp san_balance(%User{} = user) do
+    case User.san_balance(user) do
+      {:ok, %Decimal{} = balance} -> balance |> Decimal.to_float()
+      _ -> 0
+    end
   end
 end

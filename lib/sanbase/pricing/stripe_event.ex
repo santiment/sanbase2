@@ -75,7 +75,26 @@ defmodule Sanbase.Pricing.StripeEvent do
          "type" => type,
          "data" => %{"object" => %{"subscription" => subscription_id}}
        })
-       when type in ["invoice.payment_succeeded", "invoice.payment_failed"] do
+       when type in [
+              "invoice.payment_succeeded",
+              "invoice.payment_failed"
+            ] do
+    handle_event_common(id, type, subscription_id)
+  end
+
+  defp handle_event(%{
+         "id" => id,
+         "type" => type,
+         "data" => %{"object" => %{"id" => subscription_id}}
+       })
+       when type in [
+              "customer.subscription.updated",
+              "customer.subscription.deleted"
+            ] do
+    handle_event_common(id, type, subscription_id)
+  end
+
+  defp handle_event_common(id, type, subscription_id) do
     with {:ok, stripe_subscription} <- StripeApi.retrieve_subscription(subscription_id),
          {:nil?, subscription} <-
            {:nil?, Repo.get_by(Subscription, stripe_id: stripe_subscription.id)},

@@ -353,7 +353,9 @@ defmodule Sanbase.Pricing.Subscription do
   # current_period_end > Timex.now - gratis days
   defp active_subscriptions_query(query) do
     from(s in query,
-      where: s.current_period_end > ^Timex.shift(Timex.now(), days: -@subscription_gratis_days)
+      where:
+        s.status != "canceled" and
+          s.current_period_end > ^Timex.shift(Timex.now(), days: -@subscription_gratis_days)
     )
   end
 

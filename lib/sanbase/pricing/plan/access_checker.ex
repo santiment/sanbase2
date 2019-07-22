@@ -121,6 +121,26 @@ defmodule Sanbase.Pricing.Plan.AccessChecker do
     Helper.mutations_mapset()
   end
 
+  def historical_data_in_days(plan) do
+    case plan do
+      :free -> @free_plan_stats[:historical_data_in_days]
+      :basic -> @basic_plan_stats[:historical_data_in_days]
+      :pro -> @pro_plan_stats[:historical_data_in_days]
+      :premium -> @premium_plan_stats[:historical_data_in_days]
+      :custom -> @premium_plan_stats[:historical_data_in_days]
+    end
+  end
+
+  def realtime_data_cut_off_in_days(plan) do
+    case plan do
+      :free -> @free_plan_stats[:realtime_data_cut_off_in_days] || 0
+      :basic -> @basic_plan_stats[:realtime_data_cut_off_in_days] || 0
+      :pro -> @pro_plan_stats[:realtime_data_cut_off_in_days] || 0
+      :premium -> @premium_plan_stats[:realtime_data_cut_off_in_days] || 0
+      :custom -> @premium_plan_stats[:realtime_data_cut_off_in_days] || 0
+    end
+  end
+
   @doc ~s"""
   Check if a query full access is given only to users with a plan higher than free.
   A query can be restricted but still accessible by not-paid users or users with
@@ -161,7 +181,6 @@ defmodule Sanbase.Pricing.Plan.AccessChecker do
       :pro -> query in @pro_metrics_mapset
       :premium -> query in @premium_metrics_mapset
       :custom -> query in @premium_metrics_mapset
-      _ -> false
     end
   end
 end

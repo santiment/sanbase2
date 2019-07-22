@@ -36,7 +36,7 @@ services:
 
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/santiment
-      TIMESCALE_DATABASE_URL: postgres://postgres:postgres@postgres:5432/santiment
+      TIMESCALE_DATABASE_URL: postgres://postgres:postgres@postgres:5432/santiment_timescale
       ADMIN_BASIC_AUTH_USERNAME: admin
       ADMIN_BASIC_AUTH_PASSWORD: admin
       INFLUXDB_HOST: influxdb

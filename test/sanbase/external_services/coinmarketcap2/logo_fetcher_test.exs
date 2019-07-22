@@ -1,6 +1,6 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
   use ExUnit.Case
-  use Sanbase.DataCase, async: true
+  use Sanbase.DataCase
 
   require Sanbase.Utils.Config, as: Config
 
@@ -9,7 +9,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
   import ExUnit.CaptureLog
 
   alias Sanbase.Repo
-  alias Sanbase.ExternalServices.Coinmarketcap.LogoFetcher, as: LogoFetcher
+  alias Sanbase.ExternalServices.Coinmarketcap.LogoFetcher
   alias Sanbase.Model.{Project}
 
   test "updates local projects with fetched logos" do
@@ -18,7 +18,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
 
     info_url =
       Config.module_get(Sanbase.ExternalServices.Coinmarketcap, :api_url) <>
-        "v1/cryptocurrency/info?slug=bitcoin,ethereum"
+        "v1/cryptocurrency/info?slug=#{bitcoin.coinmarketcap_id},#{ethereum.coinmarketcap_id}"
 
     mock(fn
       %{method: :get, url: ^info_url} ->
@@ -34,13 +34,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
         %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "data/1027.png"))}
     end)
 
-    LogoFetcher.run([bitcoin, ethereum])
+    LogoFetcher.run()
 
-    assert Repo.get(Project, bitcoin.id).logo_32_url ==
-             "/tmp/sanbase/filestore-test/logo_bitcoin.png"
-
-    assert Repo.get(Project, ethereum.id).logo_64_url ==
-             "/tmp/sanbase/filestore-test/logo_ethereum.png"
+    assert Repo.get(Project, bitcoin.id).logo_32_url =~ "/#{bitcoin.coinmarketcap_id}.png"
+    assert Repo.get(Project, ethereum.id).logo_64_url =~ "/#{ethereum.coinmarketcap_id}.png"
   end
 
   test "can handle invalid logo links" do
@@ -65,7 +62,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
     end)
 
     assert capture_log(fn ->
-             LogoFetcher.run([bitcoin])
+             LogoFetcher.run()
            end) =~ "Failed downloading logo: http://invalid. Status: 404"
 
     assert Repo.get(Project, bitcoin.id).logo_url == nil

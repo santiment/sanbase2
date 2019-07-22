@@ -91,9 +91,6 @@ defmodule Sanbase.Application do
         Sanbase.Application.Signals.init()
 
       "scrapers" ->
-        # Set the warning level here instead inside of `init/0` because
-        # it will be executed in the tests and tests checking for logs will fail
-        Logger.configure(level: :error)
         Sanbase.Application.Scrapers.init()
 
       _ ->

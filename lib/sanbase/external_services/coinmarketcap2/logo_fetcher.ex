@@ -10,20 +10,17 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
   alias Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo
   alias Sanbase.FileStore
 
-  def run(projects \\ all_projects()) do
+  @log_tag "[CMC][LogoFetcher]"
+
+  def run() do
     local_projects_map =
-      Enum.reduce(projects, %{}, fn project, acc ->
-        case(project.coinmarketcap_id) do
-          nil ->
-            acc
+      Project.List.projects()
+      |> Enum.map(fn %{coinmarketcap_id: cmc_id} = project -> {cmc_id, project} end)
+      |> Map.new()
 
-          _ ->
-            Map.put(acc, project.coinmarketcap_id, project)
-        end
-      end)
+    Logger.info("#{@log_tag} Started fetching logos from coinmarketcap.")
 
-    Logger.info("[CMC] Started fetching logos from coinmarketcap.")
-
+    Temp.track!()
     dir_path_64 = Temp.mkdir!("logos_64")
     dir_path_32 = Temp.mkdir!("logos_32")
 
@@ -33,38 +30,44 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
       {:ok, remote_projects} = CryptocurrencyInfo.fetch_data(slugs)
 
       Enum.each(remote_projects, fn remote_project ->
-        url = remote_project.logo
-        slug = remote_project.slug
-        file_extension = Path.extname(url |> String.downcase())
-        file_name = slug <> file_extension
-
-        case Map.get(local_projects_map, slug) do
-          %Project{} = project ->
-            with {:ok, local_filepath_64} <- download(url, dir_path_64, file_name),
-                 {:ok, local_filepath_32} <-
-                   resize_image(local_filepath_64, dir_path_32, file_name),
-                 {:ok, _} <- upload(local_filepath_64),
-                 {:ok, _} <- upload(local_filepath_32),
-                 {:ok, _} <-
-                   update_local_project(project, %{
-                     logo_32_url: local_filepath_32,
-                     logo_64_url: local_filepath_64
-                   }) do
-              :ok
-            else
-              error ->
-                error
-            end
-
-          _ ->
-            :ok
-        end
+        update_project_logos(remote_project, local_projects_map, dir_path_64, dir_path_32)
       end)
 
       remote_projects
     end)
 
-    Logger.info("[CMC] Finished fetching logos from coinmarketcap.")
+    Temp.cleanup()
+
+    Logger.info("#{@log_tag} Finished fetching logos from coinmarketcap.")
+  end
+
+  defp update_project_logos(remote_project, local_projects_map, dir_path_64, dir_path_32) do
+    url = remote_project.logo
+    slug = remote_project.slug
+    file_extension = Path.extname(url |> String.downcase())
+    file_name = slug <> file_extension
+
+    case Map.get(local_projects_map, slug) do
+      %Project{} = project ->
+        with {:ok, local_filepath_64} <- download(url, dir_path_64, file_name),
+             {:ok, local_filepath_32} <-
+               resize_image(local_filepath_64, dir_path_32, file_name),
+             {:ok, _} <- upload(local_filepath_64),
+             {:ok, _} <- upload(local_filepath_32),
+             {:ok, _} <-
+               update_local_project(project, %{
+                 logo_32_url: local_filepath_32,
+                 logo_64_url: local_filepath_64
+               }) do
+          :ok
+        else
+          error ->
+            error
+        end
+
+      _ ->
+        :ok
+    end
   end
 
   defp download(url, dir_path, file_name) do
@@ -72,18 +75,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
 
     case get(url) do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
-        Logger.info("[CMC] Successfully downloaded logo: #{url}")
+        Logger.info("#{@log_tag} Successfully downloaded logo: #{url}")
         File.write!(filepath, body)
         {:ok, filepath}
 
       {:ok, %Tesla.Env{status: status}} ->
-        error_msg = "[CMC] Failed downloading logo: #{url}. Status: #{status}"
+        error_msg = "#{@log_tag} Failed downloading logo: #{url}. Status: #{status}"
         Logger.error(error_msg)
         {:error, error_msg}
 
       {:error, error} ->
         error_msg = inspect(error)
-        Logger.error("[CMC] Error downloading logo: #{url}. Error message: #{error_msg}")
+        Logger.error("#{@log_tag} Error downloading logo: #{url}. Error message: #{error_msg}")
         {:error, error_msg}
     end
   end
@@ -96,12 +99,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
 
   defp upload(filepath) do
     with {:ok, file_name} <- FileStore.store({filepath, "logo"}) do
-      Logger.info("[CMC] Successfully uploaded logo: #{filepath}")
+      Logger.info("#{@log_tag} Successfully uploaded logo: #{filepath}")
       {:ok, FileStore.url({file_name, "logo"})}
     else
       {:error, error} ->
         error_msg = inspect(error)
-        Logger.error("[CMC] Failed uploading logo: #{filepath}. Error message: #{error_msg}")
+
+        Logger.error(
+          "#{@log_tag} Failed uploading logo: #{filepath}. Error message: #{error_msg}"
+        )
+
         {:error, error_msg}
     end
   end
@@ -110,9 +117,5 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
 
   defp update_local_project(project, fields) do
     Project.changeset(project, fields) |> Repo.update()
-  end
-
-  defp all_projects do
-    Project.List.projects()
   end
 end

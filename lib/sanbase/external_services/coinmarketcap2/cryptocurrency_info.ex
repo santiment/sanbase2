@@ -7,7 +7,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
   require Sanbase.Utils.Config, as: Config
 
   alias Sanbase.ExternalServices.Coinmarketcap
-  alias __MODULE__, as: CryptocurrencyInfo
 
   plug(Sanbase.ExternalServices.RateLimiting.Middleware, name: :api_coinmarketcap_rate_limiter)
 
@@ -55,7 +54,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
             inspect(error)
           }"
 
-        Logger.error(error_msg)
+        Logger.warn(error_msg)
         {:error, error_msg}
     end
   end
@@ -64,22 +63,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
     {:error,
      """
      Accepting over 100 slugs will most probably result in very long URL.
-     URLs over 2,000 characters will not work in the most popular web browsers.
-     Don't use them if you intend your site to work for the majority of Internet users.
+     URLs over 2,000 characters are considered problematic.
      """}
   end
 
   defp parse_invalid_slugs_error(error) do
-    %{"status" => status} =
-      error
-      |> Jason.decode!()
-
-    %{
-      "credit_count" => _credit_count,
-      "error_code" => _error_code,
-      "error_message" => error_message,
-      "timestamp" => _timestamp
-    } = status
+    %{"status" => %{"error_message" => error_message}} = Jason.decode!(error)
 
     slugs =
       case error_message do
@@ -94,23 +83,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
   end
 
   defp parse_json(json) do
-    %{"data" => data} =
-      json
-      |> Jason.decode!()
-
-    data
-    |> Enum.map(fn project_data ->
-      project_data = elem(project_data, 1)
-
-      %{
-        "logo" => logo,
-        "slug" => slug
-      } = project_data
-
-      %CryptocurrencyInfo{
-        slug: slug,
-        logo: logo
-      }
+    json
+    |> Jason.decode!()
+    |> Map.get("data")
+    |> Enum.map(fn {_, %{"slug" => slug, "logo" => logo}} ->
+      %__MODULE__{slug: slug, logo: logo}
     end)
   end
 end

@@ -91,7 +91,6 @@ defmodule Sanbase.Pricing.Plan.AccessChecker do
     api_calls_minute: 60,
     api_calls_month: 10_000,
     historical_data_in_days: 6 * 30,
-    realtime_data_cut_off_in_days: 0,
     metrics: @basic_metrics
   }
 

@@ -84,6 +84,10 @@ defmodule Sanbase.Signal.Validation do
     {:error, "Watchlists are not valid ethereum wallet target"}
   end
 
+  def valid_eth_wallet_target?(%{watchlist_id: _}) do
+    {:error, "Watchlists are not valid ethereum wallet target"}
+  end
+
   def valid_eth_wallet_target?(target), do: valid_target?(target)
 
   def valid_slug?(%{slug: slug}) when is_binary(slug), do: :ok

@@ -99,7 +99,7 @@ defmodule ApiCallDataExporterTest do
     for _ <- 1..10_000,
         do: :ok = Sanbase.ApiCallDataExporter.persist(exporter_pid, api_call_data())
 
-    Process.sleep(100)
+    Process.sleep(300)
     state = Sanbase.InMemoryKafka.Producer.get_state()
     topic_data = Map.get(state, topic)
     assert length(topic_data) == 10_000

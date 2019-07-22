@@ -35,6 +35,7 @@ defmodule Sanbase.ExAdmin.Auth.User do
       inputs do
         input(user, :test_san_balance)
         input(user, :email)
+        input(user, :stripe_customer_id)
       end
     end
   end

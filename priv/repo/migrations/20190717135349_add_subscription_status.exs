@@ -5,7 +5,7 @@ defmodule Sanbase.Repo.Migrations.AddSubscriptionStatus do
     SubscriptionStatusEnum.create_type()
 
     alter table(:subscriptions) do
-      add(:status, SubscriptionStatusEnum.type(), null: false, default: "initial")
+      add(:status, SubscriptionStatusEnum.type(), null: false, default: "active")
     end
   end
 

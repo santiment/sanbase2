@@ -80,13 +80,9 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
           result
 
         _ ->
-          {:error, :nodata}
+          []
       end
     end)
-    |> case do
-      {:error, _} -> 0
-      result -> result
-    end
   end
 
   defimpl Sanbase.Signal.Settings, for: DailyActiveAddressesSettings do

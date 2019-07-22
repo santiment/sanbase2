@@ -1,4 +1,19 @@
 defmodule SanbaseWeb.Graphql.Schema do
+  @moduledoc ~s"""
+  The definition of the GraphQL Schema.
+
+  There are no fields explicitlty defined here. Queries, mutations and types
+  are defined in modules separated by concern. Then they are imported
+  via import_types/1 or import_fields/1
+
+  When defining a query there must be defined also a meta key 'subscription'.
+  These subscriptions have the following values:
+    > free
+    > basic
+    > pro
+    > premium
+    > enterprise
+  """
   use Absinthe.Schema
   use Absinthe.Ecto, repo: Sanbase.Repo
 

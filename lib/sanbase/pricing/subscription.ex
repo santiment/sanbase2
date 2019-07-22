@@ -10,7 +10,7 @@ defmodule Sanbase.Pricing.Subscription do
   import Ecto.Query
 
   alias Sanbase.Pricing.{Plan, Subscription}
-  alias Sanbase.Pricing.Plan.AccessSeed
+  alias Sanbase.Pricing.Plan.AccessChecker
   alias Sanbase.Auth.User
   alias Sanbase.Repo
   alias Sanbase.StripeApi
@@ -239,13 +239,13 @@ defmodule Sanbase.Pricing.Subscription do
   A query can be restricted but still accessible by not-paid users or users with
   lower plans. In this case historical and/or realtime data access can be cut off
   """
-  defdelegate is_restricted?(query), to: AccessSeed
+  defdelegate is_restricted?(query), to: AccessChecker
 
   @doc ~s"""
   Check if a query access is given only to users with an advanced plan
   (pro or higher). No access is given to users with lower plans
   """
-  defdelegate needs_advanced_plan?(query), to: AccessSeed
+  defdelegate needs_advanced_plan?(query), to: AccessChecker
 
   def plan_name(subscription) do
     subscription.plan.name
@@ -340,7 +340,7 @@ defmodule Sanbase.Pricing.Subscription do
   defp subscription_access?(nil, _query), do: false
 
   defp subscription_access?(%__MODULE__{plan: plan}, query) do
-    AccessSeed.plan_has_access?(Plan.plan_atom_name(plan), query)
+    AccessChecker.plan_has_access?(Plan.plan_atom_name(plan), query)
   end
 
   defp user_subscriptions_query(user) do

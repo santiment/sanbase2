@@ -8,7 +8,7 @@ defmodule Sanbase.Pricing.Plan do
 
   import Ecto.Changeset
   alias Sanbase.Repo
-  alias Sanbase.Pricing.{Plan.AccessSeed, Product, Subscription}
+  alias Sanbase.Pricing.{Plan.AccessChecker, Product, Subscription}
 
   schema "plans" do
     field(:name, :string)
@@ -69,7 +69,7 @@ defmodule Sanbase.Pricing.Plan do
   Fetching only with `interval`=`month` because we have yearly metrics with the same metrics
   and names.
   """
-  defdelegate lowest_plan_with_metric(query), to: AccessSeed
+  defdelegate lowest_plan_with_metric(query), to: AccessChecker
 
   @doc """
   If a plan doesn't have filled `stripe_id` - create a plan in Stripe and update with the received

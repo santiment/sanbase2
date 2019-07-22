@@ -1,4 +1,4 @@
-defmodule Sanbase.Pricing.Plan.AccessSeed do
+defmodule Sanbase.Pricing.Plan.AccessChecker do
   @moduledoc """
   Module that contains functions for determining access based on the subscription
   plan.
@@ -150,6 +150,7 @@ defmodule Sanbase.Pricing.Plan.AccessSeed do
       :basic -> query in @basic_metrics_mapset
       :pro -> query in @pro_metrics_mapset
       :premium -> query in @premium_metrics_mapset
+      :custom -> query in @premium_metrics_mapset
       _ -> false
     end
   end

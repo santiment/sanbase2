@@ -144,12 +144,12 @@ defmodule Sanbase.Pricing.Subscription do
 
   def update_subscription_db(subscription, params) do
     subscription
-    |> Subscription.changeset(params)
+    |> changeset(params)
     |> Repo.update()
   end
 
   def sync_all() do
-    Subscription
+    __MODULE__
     |> Repo.all()
     |> Enum.each(&sync_with_stripe_subscription/1)
   end
@@ -163,7 +163,7 @@ defmodule Sanbase.Pricing.Subscription do
         },
         db_subscription
       ) do
-    Subscription.update_subscription_db(db_subscription, %{
+    update_subscription_db(db_subscription, %{
       current_period_end: DateTime.from_unix!(current_period_end),
       cancel_at_period_end: cancel_at_period_end,
       status: status,
@@ -171,7 +171,7 @@ defmodule Sanbase.Pricing.Subscription do
     })
   end
 
-  def sync_with_stripe_subscription(%Subscription{stripe_id: stripe_id} = subscription) do
+  def sync_with_stripe_subscription(%__MODULE__{stripe_id: stripe_id} = subscription) do
     StripeApi.retrieve_subscription(stripe_id)
     |> case do
       {:ok,
@@ -181,7 +181,7 @@ defmodule Sanbase.Pricing.Subscription do
          status: status,
          plan: %Stripe.Plan{id: stripe_plan_id}
        }} ->
-        Subscription.update_subscription_db(subscription, %{
+        update_subscription_db(subscription, %{
           current_period_end: DateTime.from_unix!(current_period_end),
           cancel_at_period_end: cancel_at_period_end,
           status: status,
@@ -315,8 +315,8 @@ defmodule Sanbase.Pricing.Subscription do
          user,
          plan
        ) do
-    %Subscription{}
-    |> Subscription.changeset(%{
+    %__MODULE__{}
+    |> changeset(%{
       stripe_id: stripe_id,
       user_id: user.id,
       plan_id: plan.id,

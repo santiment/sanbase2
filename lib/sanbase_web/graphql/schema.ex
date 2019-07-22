@@ -74,13 +74,13 @@ defmodule SanbaseWeb.Graphql.Schema do
 
   def middleware(middlewares, field, object) do
     prometeheus_middlewares =
-      middlewares
+      [AccessControl | middlewares]
       |> Prometheus.HistogramInstrumenter.instrument(field, object)
       |> Prometheus.CounterInstrumenter.instrument(field, object)
 
     case object.identifier do
       :query ->
-        prometeheus_middlewares ++ [ApiUsage, AccessControl]
+        [ApiUsage | prometeheus_middlewares]
 
       _ ->
         prometeheus_middlewares

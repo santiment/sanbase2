@@ -29,6 +29,10 @@ defmodule Sanbase.Pricing.Plan do
     |> cast(attrs, [:stripe_id, :access])
   end
 
+  def free_plan() do
+    %__MODULE__{name: "FREE"}
+  end
+
   def plan_atom_name(%__MODULE__{} = plan) do
     case plan do
       %{name: "FREE"} -> :free

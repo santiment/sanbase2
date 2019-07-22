@@ -80,7 +80,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     case object.identifier do
       :query ->
-        [ApiUsage, AccessControl | prometeheus_middlewares]
+        prometeheus_middlewares ++ [ApiUsage, AccessControl]
 
       _ ->
         prometeheus_middlewares

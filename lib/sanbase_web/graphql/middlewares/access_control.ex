@@ -15,6 +15,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   # define as module attribute to avoid function calls at runtime
   @mutations_mapset AccessChecker.mutations_mapset()
+  @free_subscription Subscription.free_subscription()
 
   def call(
         %Resolution{
@@ -24,13 +25,21 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
           }
         } = resolution,
         _config
-      ) do
+      )
+      when not is_nil(subscription) do
     query = definition.name |> Macro.underscore() |> String.to_existing_atom()
 
     check_access_to_query(subscription, resolution, query)
   end
 
-  def call(resolution, _), do: resolution
+  def call(%Resolution{} = resolution, _), do: resolution
+
+  # TODO: Leave this after staking is removed. To enable execution just delete
+  # the previous call/2
+  def call(%Resolution{definition: definition} = resolution, _) do
+    query = definition.name |> Macro.underscore() |> String.to_existing_atom()
+    check_access_to_query(@free_subscription, resolution, query)
+  end
 
   defp check_access_to_query(nil, resolution, _), do: resolution
 

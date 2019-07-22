@@ -51,6 +51,10 @@ defmodule Sanbase.Pricing.Subscription do
     ])
   end
 
+  def free_subscription() do
+    %__MODULE__{plan: Plan.free_plan()}
+  end
+
   @doc """
   Subscribe user with card_token to a plan.
 

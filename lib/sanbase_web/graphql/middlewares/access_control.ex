@@ -7,14 +7,14 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   """
   @behaviour Absinthe.Middleware
 
-  require SanbaseWeb.Graphql.Schema
-  @mutation_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :mutation)
-  @mutations_mapset MapSet.new(@mutation_type.fields |> Map.keys())
-
   alias Absinthe.Resolution
+  alias Sanbase.Pricing.Plan.AccessChecker
   alias Sanbase.Pricing.{Subscription, Plan}
 
   require Logger
+
+  # define as module attribute to avoid function calls at runtime
+  @mutations_mapset AccessChecker.mutations_mapset()
 
   def call(
         %Resolution{

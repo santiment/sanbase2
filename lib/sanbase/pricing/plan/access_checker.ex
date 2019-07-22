@@ -32,12 +32,19 @@ defmodule Sanbase.Pricing.Plan.AccessChecker do
     """
     require SanbaseWeb.Graphql.Schema
 
+    @mutation_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :mutation)
+    @mutations_mapset MapSet.new(@mutation_type.fields |> Map.keys())
+
     @query_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :query)
     @fields @query_type.fields |> Map.keys()
     def get_metrics_with_subscription_plan(plan) do
       Enum.filter(@fields, fn f ->
         Map.get(@query_type.fields, f) |> Absinthe.Type.meta(:subscription) == plan
       end)
+    end
+
+    def mutations_mapset() do
+      @mutations_mapset
     end
   end
 
@@ -110,6 +117,10 @@ defmodule Sanbase.Pricing.Plan.AccessChecker do
   def pro(), do: @pro_plan_stats
   def premium(), do: @premium_plan_stats
   def custom(), do: @custom_plan_stats
+
+  def mutations_mapset() do
+    Helper.mutations_mapset()
+  end
 
   @doc ~s"""
   Check if a query full access is given only to users with a plan higher than free.

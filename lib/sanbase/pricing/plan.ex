@@ -36,6 +36,11 @@ defmodule Sanbase.Pricing.Plan do
     |> Repo.preload(:product)
   end
 
+  def by_stripe_id(stripe_id) do
+    Repo.get_by(__MODULE__, stripe_id: stripe_id)
+    |> Repo.preload(:product)
+  end
+
   @doc """
   List all products with corresponding subscription plans
   """

@@ -72,16 +72,34 @@ defmodule Sanbase.Pricing.StripeEvent do
 
   defp handle_event(%{
          "id" => id,
-         "type" => "invoice.payment_succeeded",
+         "type" => type,
          "data" => %{"object" => %{"subscription" => subscription_id}}
-       }) do
+       })
+       when type in [
+              "invoice.payment_succeeded",
+              "invoice.payment_failed"
+            ] do
+    handle_event_common(id, type, subscription_id)
+  end
+
+  defp handle_event(%{
+         "id" => id,
+         "type" => type,
+         "data" => %{"object" => %{"id" => subscription_id}}
+       })
+       when type in [
+              "customer.subscription.updated",
+              "customer.subscription.deleted"
+            ] do
+    handle_event_common(id, type, subscription_id)
+  end
+
+  defp handle_event_common(id, type, subscription_id) do
     with {:ok, stripe_subscription} <- StripeApi.retrieve_subscription(subscription_id),
          {:nil?, subscription} <-
            {:nil?, Repo.get_by(Subscription, stripe_id: stripe_subscription.id)},
          {:ok, _subscription} <-
-           Subscription.update_subscription_db(subscription, %{
-             current_period_end: DateTime.from_unix!(stripe_subscription.current_period_end)
-           }) do
+           Subscription.sync_with_stripe_subscription(stripe_subscription, subscription) do
       update(id, %{is_processed: true})
     else
       {:nil?, _} ->
@@ -90,7 +108,7 @@ defmodule Sanbase.Pricing.StripeEvent do
         {:error, error_msg}
 
       {:error, reason} ->
-        Logger.error("Error handling invoice.payment_succeeded event: reason #{inspect(reason)}")
+        Logger.error("Error handling #{type} event: reason #{inspect(reason)}")
         {:error, reason}
     end
   end

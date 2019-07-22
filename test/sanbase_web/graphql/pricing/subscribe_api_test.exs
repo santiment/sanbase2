@@ -100,6 +100,7 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
       query = subscribe_mutation(context.plan_essential.id)
       response = execute_mutation(context.conn, query, "subscribe")
 
+      assert response["status"] == "ACTIVE"
       assert response["plan"]["name"] == context.plan_essential.name
     end
 
@@ -526,6 +527,8 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
     """
     mutation {
       subscribe(card_token: "card_token", plan_id: #{plan_id}) {
+        id,
+        status,
         plan {
           id
           name

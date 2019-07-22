@@ -320,7 +320,7 @@ defmodule Sanbase.Pricing.Subscription do
     |> Repo.insert()
   end
 
-  defp update_subscription_with_coupon(nil, subscription), do: subscription
+  defp update_subscription_with_coupon(nil, subscription), do: {:ok, subscription}
 
   defp update_subscription_with_coupon(percent_off, subscription) do
     StripeApi.create_coupon(%{percent_off: percent_off, duration: "forever"})

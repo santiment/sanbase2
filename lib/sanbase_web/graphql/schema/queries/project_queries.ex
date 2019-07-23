@@ -63,7 +63,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
 
     @desc "Fetch all project transparency projects. This query requires basic authentication."
     field :all_projects_project_transparency, list_of(:project) do
-      meta(subscription: :free)
+      meta(subscription: :restricted)
 
       middleware(BasicAuth)
       resolve(&ProjectResolver.all_projects_project_transparency/3)

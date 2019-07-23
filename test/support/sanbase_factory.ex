@@ -21,7 +21,7 @@ defmodule Sanbase.Factory do
 
   alias Sanbase.Signal.{UserTrigger, HistoricalActivity}
   alias Sanbase.Pricing.{Product, Plan, Subscription}
-  alias Sanbase.Pricing.Plan.AccessSeed
+  alias Sanbase.Pricing.Plan.AccessChecker
   alias Sanbase.Timeline.TimelineEvent
 
   def user_factory() do
@@ -227,7 +227,7 @@ defmodule Sanbase.Factory do
       amount: 0,
       currency: "USD",
       interval: "month",
-      access: AccessSeed.free()
+      access: AccessChecker.free()
     }
   end
 
@@ -238,7 +238,7 @@ defmodule Sanbase.Factory do
       amount: 15900,
       currency: "USD",
       interval: "month",
-      access: AccessSeed.essential()
+      access: AccessChecker.essential()
     }
   end
 
@@ -249,7 +249,7 @@ defmodule Sanbase.Factory do
       amount: 35900,
       currency: "USD",
       interval: "month",
-      access: AccessSeed.pro(),
+      access: AccessChecker.pro(),
       stripe_id: plan_stripe_id()
     }
   end
@@ -261,7 +261,7 @@ defmodule Sanbase.Factory do
       amount: 75900,
       currency: "USD",
       interval: "month",
-      access: AccessSeed.premium()
+      access: AccessChecker.premium()
     }
   end
 
@@ -272,7 +272,7 @@ defmodule Sanbase.Factory do
       amount: 0,
       currency: "USD",
       interval: "month",
-      access: AccessSeed.custom()
+      access: AccessChecker.custom()
     }
   end
 
@@ -283,7 +283,7 @@ defmodule Sanbase.Factory do
       amount: 128_520,
       currency: "USD",
       interval: "year",
-      access: AccessSeed.pro()
+      access: AccessChecker.pro()
     }
   end
 
@@ -294,7 +294,7 @@ defmodule Sanbase.Factory do
       amount: 387_720,
       currency: "USD",
       interval: "year",
-      access: AccessSeed.pro()
+      access: AccessChecker.pro()
     }
   end
 
@@ -305,7 +305,7 @@ defmodule Sanbase.Factory do
       amount: 819_720,
       currency: "USD",
       interval: "year",
-      access: AccessSeed.premium()
+      access: AccessChecker.premium()
     }
   end
 
@@ -316,7 +316,7 @@ defmodule Sanbase.Factory do
       amount: 0,
       currency: "USD",
       interval: "year",
-      access: AccessSeed.custom()
+      access: AccessChecker.custom()
     }
   end
 
@@ -330,6 +330,13 @@ defmodule Sanbase.Factory do
   def subscription_pro_factory() do
     %Subscription{
       plan_id: 3,
+      current_period_end: Timex.shift(Timex.now(), days: 1)
+    }
+  end
+
+  def subscription_premium_factory() do
+    %Subscription{
+      plan_id: 4,
       current_period_end: Timex.shift(Timex.now(), days: 1)
     }
   end

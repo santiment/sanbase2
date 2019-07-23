@@ -8,9 +8,9 @@ defmodule Sanbase.SocialData.SocialDominance do
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   require Sanbase.Utils.Config, as: Config
+  require SanbaseWeb.Graphql.Schema
 
   @recv_timeout 15_000
-
   @sources Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :social_dominance_sources).values
            |> Map.keys()
            |> List.delete(:all)

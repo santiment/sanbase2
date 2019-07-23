@@ -15,8 +15,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   import Plug.Conn
   require Sanbase.Utils.Config, as: Config
 
-  alias SanbaseWeb.Graphql.ContextPlug
   alias Sanbase.Auth.User
+  alias Sanbase.Pricing.Subscription
+  alias SanbaseWeb.Graphql.ContextPlug
 
   require Logger
 
@@ -26,6 +27,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     &ContextPlug.basic_authentication/1,
     &ContextPlug.apikey_authentication/1
   ]
+
+  @api_product_id 1
 
   def init(opts), do: opts
 
@@ -106,7 +109,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
           auth: %{
             auth_method: :user_token,
             current_user: current_user,
-            san_balance: san_balance(current_user)
+            san_balance: san_balance(current_user),
+            subscription: Subscription.current_subscription(current_user, @api_product_id)
           }
         }
 
@@ -126,7 +130,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         auth: %{
           auth_method: :user_token,
           current_user: current_user,
-          san_balance: san_balance(current_user)
+          san_balance: san_balance(current_user),
+          subscription: Subscription.current_subscription(current_user, @api_product_id)
         }
       }
     else
@@ -144,7 +149,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         auth: %{
           auth_method: :basic,
           current_user: current_user,
-          san_balance: 0
+          san_balance: 0,
+          subscription: nil
         }
       }
     else
@@ -164,7 +170,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
           auth_method: :apikey,
           current_user: current_user,
           token: token,
-          san_balance: san_balance(current_user)
+          san_balance: san_balance(current_user),
+          subscription: Subscription.current_subscription(current_user, @api_product_id)
         }
       }
     else

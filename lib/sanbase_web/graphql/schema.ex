@@ -1,10 +1,26 @@
 defmodule SanbaseWeb.Graphql.Schema do
+  @moduledoc ~s"""
+  The definition of the GraphQL Schema.
+
+  There are no fields explicitlty defined here. Queries, mutations and types
+  are defined in modules separated by concern. Then they are imported
+  via import_types/1 or import_fields/1
+
+  When defining a query there must be defined also a meta key 'subscription'.
+  These subscriptions have the following values:
+    > free
+    > basic
+    > pro
+    > premium
+    > enterprise
+  """
   use Absinthe.Schema
   use Absinthe.Ecto, repo: Sanbase.Repo
 
   alias SanbaseWeb.Graphql
+  alias SanbaseWeb.Graphql.Prometheus
   alias SanbaseWeb.Graphql.{SanbaseRepo, SanbaseDataloader}
-  alias SanbaseWeb.Graphql.Middlewares.ApiUsage
+  alias SanbaseWeb.Graphql.Middlewares.{ApiUsage, AccessControl}
 
   import_types(Absinthe.Plug.Types)
   import_types(Absinthe.Type.Custom)
@@ -58,8 +74,9 @@ defmodule SanbaseWeb.Graphql.Schema do
 
   def middleware(middlewares, field, object) do
     prometeheus_middlewares =
-      Graphql.Prometheus.HistogramInstrumenter.instrument(middlewares, field, object)
-      |> Graphql.Prometheus.CounterInstrumenter.instrument(field, object)
+      [AccessControl | middlewares]
+      |> Prometheus.HistogramInstrumenter.instrument(field, object)
+      |> Prometheus.CounterInstrumenter.instrument(field, object)
 
     case object.identifier do
       :query ->

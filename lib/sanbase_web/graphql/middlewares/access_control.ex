@@ -8,38 +8,48 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   @behaviour Absinthe.Middleware
 
   alias Absinthe.Resolution
+  alias Sanbase.Pricing.Plan.AccessChecker
   alias Sanbase.Pricing.{Subscription, Plan}
 
   require Logger
 
-  @api_product_id 1
+  # define as module attribute to avoid function calls at runtime
+  @mutations_mapset AccessChecker.mutations_mapset()
+  @free_subscription Subscription.free_subscription()
 
   def call(
         %Resolution{
           definition: definition,
           context: %{
-            auth: %{current_user: current_user}
+            auth: %{subscription: subscription}
           }
         } = resolution,
         _config
-      ) do
-    query = definition.name |> Macro.underscore()
+      )
+      when not is_nil(subscription) do
+    query = definition.name |> Macro.underscore() |> String.to_existing_atom()
 
-    current_user
-    |> Subscription.current_subscription(@api_product_id)
-    |> check_access_to_query(resolution, query)
+    check_access_to_query(subscription, resolution, query)
   end
 
-  def call(resolution, _), do: resolution
+  def call(%Resolution{} = resolution, _), do: resolution
+
+  # TODO: Leave this after staking is removed. To enable execution just delete
+  # the previous call/2
+  def call(%Resolution{definition: definition} = resolution, _) do
+    query = definition.name |> Macro.underscore() |> String.to_existing_atom()
+    check_access_to_query(@free_subscription, resolution, query)
+  end
 
   defp check_access_to_query(nil, resolution, _), do: resolution
 
-  defp check_access_to_query(current_subscription, resolution, query) do
-    if Subscription.has_access?(current_subscription, query) do
+  defp check_access_to_query(subscription, resolution, query) do
+    # Do not check mutations against the Subscription plan
+    if query in @mutations_mapset or Subscription.has_access?(subscription, query) do
       resolution
     else
       upgrade_message =
-        Plan.plans_with_metric(query)
+        Plan.lowest_plan_with_metric(query)
         |> upgrade_message(query)
 
       resolution
@@ -47,7 +57,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         :error,
         """
         Requested metric #{query} is not provided by the current subscription plan #{
-          Subscription.plan_name(current_subscription)
+          Subscription.plan_name(subscription)
         }.
         #{upgrade_message}
         """
@@ -55,9 +65,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     end
   end
 
-  defp upgrade_message([], _), do: ""
+  defp upgrade_message(nil, _), do: ""
 
-  defp upgrade_message(plan_names, query) when is_list(plan_names) do
-    "Please upgrade to #{plan_names |> Enum.join(" or ")} to get access to #{query}"
+  defp upgrade_message(plan_name, query) do
+    "Please upgrade to #{plan_name |> Atom.to_string() |> String.capitalize()} or higher to get access to #{
+      query
+    }"
   end
 end

@@ -9,19 +9,21 @@ defmodule Sanbase.Pricing.Subscription do
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Sanbase.Pricing.{Plan, Subscription}
-  alias Sanbase.Pricing.Plan.AccessSeed
+  alias Sanbase.Pricing.Plan
+  alias Sanbase.Pricing.Plan.AccessChecker
   alias Sanbase.Auth.User
   alias Sanbase.Repo
   alias Sanbase.StripeApi
 
   require Logger
 
-  @generic_error_message """
-  Current subscription attempt failed. Please, contact administrator of the site for more information.
-  """
   @percent_discount_1000_san 20
   @percent_discount_200_san 4
+  @generic_error_message """
+  Current subscription attempt failed.
+  Please, contact administrator of the site for more information.
+  """
+
   # After `current_period_end` timestamp passes there is some time until `invoice.payment_succeeded` event is generated
   # to update the field with new timestamp value. So we add 1 day gratis in which we should receive payment before
   # we decide that this subscription is not active.
@@ -33,13 +35,14 @@ defmodule Sanbase.Pricing.Subscription do
     field(:current_period_end, :utc_datetime)
     field(:cancel_at_period_end, :boolean, null: false, default: false)
     field(:status, SubscriptionStatusEnum)
+
     belongs_to(:user, User)
     belongs_to(:plan, Plan)
   end
 
   def generic_error_message, do: @generic_error_message
 
-  def changeset(%Subscription{} = subscription, attrs \\ %{}) do
+  def changeset(%__MODULE__{} = subscription, attrs \\ %{}) do
     subscription
     |> cast(attrs, [
       :plan_id,
@@ -49,6 +52,11 @@ defmodule Sanbase.Pricing.Subscription do
       :cancel_at_period_end,
       :status
     ])
+  end
+
+  @spec free_subscription() :: %__MODULE__{}
+  def free_subscription() do
+    %__MODULE__{plan: Plan.free_plan()}
   end
 
   @doc """
@@ -139,12 +147,12 @@ defmodule Sanbase.Pricing.Subscription do
 
   def update_subscription_db(subscription, params) do
     subscription
-    |> Subscription.changeset(params)
+    |> changeset(params)
     |> Repo.update()
   end
 
   def sync_all() do
-    Subscription
+    __MODULE__
     |> Repo.all()
     |> Enum.each(&sync_with_stripe_subscription/1)
   end
@@ -158,7 +166,7 @@ defmodule Sanbase.Pricing.Subscription do
         },
         db_subscription
       ) do
-    Subscription.update_subscription_db(db_subscription, %{
+    update_subscription_db(db_subscription, %{
       current_period_end: DateTime.from_unix!(current_period_end),
       cancel_at_period_end: cancel_at_period_end,
       status: status,
@@ -166,7 +174,7 @@ defmodule Sanbase.Pricing.Subscription do
     })
   end
 
-  def sync_with_stripe_subscription(%Subscription{stripe_id: stripe_id} = subscription) do
+  def sync_with_stripe_subscription(%__MODULE__{stripe_id: stripe_id} = subscription) do
     StripeApi.retrieve_subscription(stripe_id)
     |> case do
       {:ok,
@@ -176,7 +184,7 @@ defmodule Sanbase.Pricing.Subscription do
          status: status,
          plan: %Stripe.Plan{id: stripe_plan_id}
        }} ->
-        Subscription.update_subscription_db(subscription, %{
+        update_subscription_db(subscription, %{
           current_period_end: DateTime.from_unix!(current_period_end),
           cancel_at_period_end: cancel_at_period_end,
           status: status,
@@ -226,32 +234,34 @@ defmodule Sanbase.Pricing.Subscription do
   @doc """
   How much historical days a subscription plan can access.
   """
-  def historical_data_in_days(subscription) do
-    subscription.plan.access["historical_data_in_days"]
+  def historical_data_in_days(%__MODULE__{plan: plan}) do
+    plan
+    |> Plan.plan_atom_name()
+    |> AccessChecker.historical_data_in_days()
   end
 
-  @doc """
-  Checks whether a query is in any plan.
+  def realtime_data_cut_off_in_days(%__MODULE__{plan: plan}) do
+    plan
+    |> Plan.plan_atom_name()
+    |> AccessChecker.realtime_data_cut_off_in_days()
+  end
+
+  @doc ~s"""
+  Check if a query full access is given only to users with a plan higher than free.
+  A query can be restricted but still accessible by not-paid users or users with
+  lower plans. In this case historical and/or realtime data access can be cut off
   """
-  def is_restricted?(query) do
-    query in AccessSeed.all_restricted_metrics()
-  end
+  defdelegate is_restricted?(query), to: AccessChecker
 
-  @doc """
-  Query is in advanced subscription plans only
+  @doc ~s"""
+  Check if a query access is given only to users with an advanced plan
+  (pro or higher). No access is given to users with lower plans
   """
-  def needs_advanced_plan?(query) do
-    advanced_metrics = AccessSeed.advanced_metrics()
-    standart_metrics = AccessSeed.standart_metrics()
+  defdelegate needs_advanced_plan?(query), to: AccessChecker
 
-    query in advanced_metrics and query not in standart_metrics
-  end
+  def plan_name(subscription), do: subscription.plan.name
 
-  def plan_name(subscription) do
-    subscription.plan.name
-  end
-
-  # private functions
+  # Private functions
 
   defp create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)
        when is_nil(stripe_id) do
@@ -308,8 +318,8 @@ defmodule Sanbase.Pricing.Subscription do
          user,
          plan
        ) do
-    %Subscription{}
-    |> Subscription.changeset(%{
+    %__MODULE__{}
+    |> changeset(%{
       stripe_id: stripe_id,
       user_id: user.id,
       plan_id: plan.id,
@@ -339,12 +349,12 @@ defmodule Sanbase.Pricing.Subscription do
 
   defp subscription_access?(nil, _query), do: false
 
-  defp subscription_access?(subscription, query) do
-    query in subscription.plan.access["metrics"]
+  defp subscription_access?(%__MODULE__{plan: plan}, query) do
+    AccessChecker.plan_has_access?(Plan.plan_atom_name(plan), query)
   end
 
   defp user_subscriptions_query(user) do
-    from(s in Subscription,
+    from(s in __MODULE__,
       where: s.user_id == ^user.id,
       order_by: [desc: s.id]
     )

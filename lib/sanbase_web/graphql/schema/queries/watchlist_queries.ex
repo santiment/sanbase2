@@ -14,34 +14,46 @@ defmodule SanbaseWeb.Graphql.Schema.WatchlistQueries do
   object :user_list_queries do
     @desc "Fetch all favourites lists for current_user."
     field :fetch_user_lists, list_of(:user_list) do
+      meta(subscription: :free)
+
       deprecate("Use `fetchWatchlists` instead")
       resolve(&UserListResolver.fetch_user_lists/3)
     end
 
     @desc "Fetch all watchlists for the current user"
     field :fetch_watchlists, list_of(:user_list) do
+      meta(subscription: :free)
+
       resolve(&UserListResolver.fetch_user_lists/3)
     end
 
     @desc "Fetch all public favourites lists for current_user."
     field :fetch_public_user_lists, list_of(:user_list) do
+      meta(subscription: :free)
+
       deprecate("Use `fetchPublicWatchlists` instead")
       resolve(&UserListResolver.fetch_public_user_lists/3)
     end
 
     @desc "Fetch all public watchlists for current_user."
     field :fetch_public_watchlists, list_of(:user_list) do
+      meta(subscription: :free)
+
       resolve(&UserListResolver.fetch_public_user_lists/3)
     end
 
     @desc "Fetch all public favourites lists"
     field :fetch_all_public_user_lists, list_of(:user_list) do
+      meta(subscription: :free)
+
       deprecate("Use `fetchAllPublicWatchlists` instead")
       resolve(&UserListResolver.fetch_all_public_user_lists/3)
     end
 
     @desc "Fetch all public watchlists"
     field :fetch_all_public_watchlists, list_of(:user_list) do
+      meta(subscription: :free)
+
       resolve(&UserListResolver.fetch_all_public_user_lists/3)
     end
 
@@ -51,6 +63,8 @@ defmodule SanbaseWeb.Graphql.Schema.WatchlistQueries do
     This query returns either a single user list item or null.
     """
     field :user_list, :user_list do
+      meta(subscription: :free)
+
       deprecate("Use `watchlist` with argument `id` instead")
       arg(:user_list_id, non_null(:id))
 
@@ -58,6 +72,8 @@ defmodule SanbaseWeb.Graphql.Schema.WatchlistQueries do
     end
 
     field :watchlist, :user_list do
+      meta(subscription: :free)
+
       arg(:id, non_null(:id))
       resolve(&UserListResolver.watchlist/3)
     end

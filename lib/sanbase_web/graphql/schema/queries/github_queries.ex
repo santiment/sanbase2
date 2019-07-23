@@ -12,6 +12,7 @@ defmodule SanbaseWeb.Graphql.Schema.GithubQueries do
   object :github_queries do
     @desc "Returns a list of slugs of the projects that have a github link"
     field :github_availables_repos, list_of(:string) do
+      meta(subscription: :free)
       cache_resolve(&GithubResolver.available_repos/3)
     end
 
@@ -28,6 +29,8 @@ defmodule SanbaseWeb.Graphql.Schema.GithubQueries do
         It is used to calculate the moving avarage interval.
     """
     field :github_activity, list_of(:activity_point) do
+      meta(subscription: :free)
+
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -36,7 +39,7 @@ defmodule SanbaseWeb.Graphql.Schema.GithubQueries do
       arg(:moving_average_interval_base, :integer, default_value: 7)
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true})
+      middleware(TimeframeRestriction)
       cache_resolve(&GithubResolver.github_activity/3)
     end
 
@@ -45,6 +48,8 @@ defmodule SanbaseWeb.Graphql.Schema.GithubQueries do
     excluding Comments, Issues and PR Comments
     """
     field :dev_activity, list_of(:activity_point) do
+      meta(subscription: :free)
+
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -53,7 +58,7 @@ defmodule SanbaseWeb.Graphql.Schema.GithubQueries do
       arg(:moving_average_interval_base, :integer, default_value: 7)
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true})
+      middleware(TimeframeRestriction)
       cache_resolve(&GithubResolver.dev_activity/3, ttl: 600, max_ttl_offset: 600)
     end
   end

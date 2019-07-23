@@ -164,7 +164,7 @@ defmodule Sanbase.Pricing.Subscription do
       cancel_at_period_end: cancel_at_period_end,
       status: status
     })
-    |> Repo.insert()
+    |> Repo.insert(on_conflict: :nothing)
   end
 
   def update_subscription_db(subscription, params) do

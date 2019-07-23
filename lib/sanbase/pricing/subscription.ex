@@ -19,7 +19,10 @@ defmodule Sanbase.Pricing.Subscription do
 
   @percent_discount_1000_san 20
   @percent_discount_200_san 4
-  @generic_error_message "Current subscription attempt failed. Please, contact administrator of the site for more information."
+  @generic_error_message """
+  Current subscription attempt failed.
+  Please, contact administrator of the site for more information.
+  """
 
   # After `current_period_end` timestamp passes there is some time until `invoice.payment_succeeded` event is generated
   # to update the field with new timestamp value. So we add 1 day gratis in which we should receive payment before

@@ -217,7 +217,10 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
         resolution
         |> Resolution.put_result(
           {:error,
-           "Both `from` and `to` parameters are outside the allowed intervals you are allowed to query with your current subscription plan."}
+           """
+           Both `from` and `to` parameters are outside the allowed interval
+           you can query with your current subscription plan.
+           """}
         )
     end
   end

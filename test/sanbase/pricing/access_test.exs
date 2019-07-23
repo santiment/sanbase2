@@ -38,7 +38,7 @@ defmodule Sanbase.Pricing.AccessTest do
       query = history_price_query(context.project, from, to)
       result = execute_query(context.conn_staking, query, "historyPrice")
 
-      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(:_, from, to, "1d"))
+      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(:_, from, to, :_))
       assert result != nil
     end
 
@@ -70,12 +70,12 @@ defmodule Sanbase.Pricing.AccessTest do
       query = history_price_query(context.project, from, to)
       result = execute_query(context.conn, query, "historyPrice")
 
-      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(:_, from, to, "1d"))
+      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(:_, from, to, :_))
       assert result != nil
     end
 
     test "cannot access BASIC metrics for over 3 months", context do
-      from = Timex.shift(Timex.now(), days: -100)
+      from = Timex.shift(Timex.now(), days: -91)
       to = Timex.shift(Timex.now(), days: -10)
       query = network_growth_query(from, to)
       result = execute_query(context.conn, query, "networkGrowth")
@@ -95,7 +95,7 @@ defmodule Sanbase.Pricing.AccessTest do
     end
 
     test "can access BASIC metrics within 90 days and 1 day interval", context do
-      from = Timex.shift(Timex.now(), days: -85)
+      from = Timex.shift(Timex.now(), days: -89)
       to = Timex.shift(Timex.now(), days: -2)
       query = network_growth_query(from, to)
       result = execute_query(context.conn, query, "networkGrowth")
@@ -105,7 +105,7 @@ defmodule Sanbase.Pricing.AccessTest do
     end
 
     test "cannot access PRO metrics for over 3 months", context do
-      from = Timex.shift(Timex.now(), days: -100)
+      from = Timex.shift(Timex.now(), days: -91)
       to = Timex.shift(Timex.now(), days: -10)
       query = mvrv_query(from, to)
       result = execute_query(context.conn, query, "mvrvRatio")
@@ -124,8 +124,8 @@ defmodule Sanbase.Pricing.AccessTest do
       assert result != nil
     end
 
-    test "can access ADVANCED withing 90 days and 1 day interval", context do
-      from = Timex.shift(Timex.now(), days: -85)
+    test "can access PRO withing 90 days and 1 day interval", context do
+      from = Timex.shift(Timex.now(), days: -89)
       to = Timex.shift(Timex.now(), days: -2)
       query = mvrv_query(from, to)
       result = execute_query(context.conn, query, "mvrvRatio")
@@ -144,7 +144,7 @@ defmodule Sanbase.Pricing.AccessTest do
       query = history_price_query(context.project, from, to)
       result = execute_query(context.conn, query, "historyPrice")
 
-      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(:_, from, to, "1d"))
+      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(:_, from, to, :_))
       assert result != nil
     end
 
@@ -187,7 +187,7 @@ defmodule Sanbase.Pricing.AccessTest do
     test "cannot access PRO metrics", context do
       insert(:subscription_essential, user: context.user)
 
-      from = Timex.shift(Timex.now(), days: -100)
+      from = Timex.shift(Timex.now(), days: -91)
       to = Timex.now()
       query = mvrv_query(from, to)
 
@@ -211,7 +211,7 @@ defmodule Sanbase.Pricing.AccessTest do
       query = history_price_query(context.project, from, to)
       result = execute_query(context.conn, query, "historyPrice")
 
-      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(:_, from, to, "1d"))
+      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(:_, from, to, :_))
       assert result != nil
     end
 
@@ -273,7 +273,7 @@ defmodule Sanbase.Pricing.AccessTest do
       query = history_price_query(context.project, from, to)
       result = execute_query(context.conn, query, "historyPrice")
 
-      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(:_, from, to, "1d"))
+      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(:_, from, to, :_))
       assert result != nil
     end
 

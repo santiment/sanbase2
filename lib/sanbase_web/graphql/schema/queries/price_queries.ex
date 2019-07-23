@@ -12,6 +12,8 @@ defmodule SanbaseWeb.Graphql.Schema.PriceQueries do
   object :price_queries do
     @desc "Fetch price history for a given slug and time interval."
     field :history_price, list_of(:price_point) do
+      meta(subscription: :free)
+
       arg(:slug, :string)
       arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       arg(:from, non_null(:datetime))
@@ -19,7 +21,7 @@ defmodule SanbaseWeb.Graphql.Schema.PriceQueries do
       arg(:interval, :string, default_value: "")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      middleware(TimeframeRestriction)
       cache_resolve(&PriceResolver.history_price/3)
     end
 
@@ -28,13 +30,15 @@ defmodule SanbaseWeb.Graphql.Schema.PriceQueries do
     """
 
     field :ohlc, list_of(:ohlc) do
+      meta(subscription: :free)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      middleware(TimeframeRestriction)
       cache_resolve(&PriceResolver.ohlc/3)
     end
   end

@@ -24,6 +24,8 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
   object :social_data_queries do
     @desc "Fetch the current data for a Twitter account (currently includes only Twitter followers)."
     field :twitter_data, :twitter_data do
+      meta(subscription: :free)
+
       arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       arg(:slug, :string)
 
@@ -32,6 +34,8 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
     @desc "Fetch historical data for a Twitter account (currently includes only Twitter followers)."
     field :history_twitter_data, list_of(:twitter_data) do
+      meta(subscription: :free)
+
       arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
@@ -39,7 +43,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      middleware(TimeframeRestriction)
       cache_resolve(&TwitterResolver.history_twitter_data/3)
     end
 
@@ -58,6 +62,8 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
     """
     field :trending_words, list_of(:trending_words) do
+      meta(subscription: :basic)
+
       arg(:source, non_null(:trending_words_sources))
       arg(:size, non_null(:integer))
       arg(:hour, non_null(:integer))
@@ -83,6 +89,8 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
     """
     field :word_trend_score, list_of(:word_trend_score) do
+      meta(subscription: :basic)
+
       arg(:word, non_null(:string))
       arg(:source, non_null(:trending_words_sources))
       arg(:from, non_null(:datetime))
@@ -108,6 +116,8 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
     """
     field :word_context, list_of(:word_context) do
+      meta(subscription: :basic)
+
       arg(:word, non_null(:string))
       arg(:source, non_null(:trending_words_sources))
       arg(:size, non_null(:integer))
@@ -121,6 +131,8 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
     @desc "Fetch the Twitter mention count for a given ticker and time period."
     field :twitter_mention_count, list_of(:twitter_mention_count) do
+      meta(subscription: :free)
+
       arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -128,15 +140,18 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:result_size_tail, :integer, default_value: 0)
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      middleware(TimeframeRestriction)
       cache_resolve(&SocialDataResolver.twitter_mention_count/3)
     end
 
+    # TODO: Rework when removing staking
     @desc ~s"""
     Fetch the emoji sentiment for a given ticker and time period.
     This metric is a basic sentiment analysis, based on emojis used in social media.
     """
     field :emojis_sentiment, list_of(:emojis_sentiment) do
+      meta(subscription: :free)
+
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
@@ -144,7 +159,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
       middleware(MultipleAuth, [{JWTAuth, san_tokens: 1000}, {ApikeyAuth, san_tokens: 1000}])
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      middleware(TimeframeRestriction)
       cache_resolve(&SocialDataResolver.emojis_sentiment/3)
     end
 
@@ -163,6 +178,8 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
         4. "DISCORD_DISCUSSION_OVERVIEW" - shows how many times the given project has been mentioned in the discord channels
     """
     field :social_volume, list_of(:social_volume) do
+      meta(subscription: :basic)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -178,6 +195,8 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
     Returns a list of slugs for which there is social volume data.
     """
     field :social_volume_projects, list_of(:string) do
+      meta(subscription: :free)
+
       cache_resolve(&SocialDataResolver.social_volume_projects/3)
     end
 
@@ -196,6 +215,8 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
     """
     field :topic_search, :topic_search do
+      meta(subscription: :basic)
+
       arg(:source, non_null(:topic_search_sources))
       arg(:search_text, non_null(:string))
       arg(:from, non_null(:datetime))
@@ -223,6 +244,8 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
         5. ALL - shows the average value of the social dominance across all sources
     """
     field :social_dominance, list_of(:social_dominance) do
+      meta(subscription: :basic)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -244,6 +267,8 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       * size - size limit of the returned results
     """
     field :news, list_of(:news) do
+      meta(subscription: :free)
+
       arg(:tag, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -257,10 +282,12 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
     @desc "Returns statistics for the data stored in elasticsearch"
     field :elasticsearch_stats, :elasticsearch_stats do
+      meta(subscription: :free)
+
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      middleware(TimeframeRestriction)
       cache_resolve(&ElasticsearchResolver.stats/3)
     end
 
@@ -274,6 +301,8 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
     * `time_window` - the `change` time window in days. Should be between `2d` and `30d`.
     """
     field :top_social_gainers_losers, list_of(:top_social_gainers_losers) do
+      meta(subscription: :basic)
+
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:status, non_null(:social_gainers_losers_status_enum))
@@ -295,6 +324,8 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
     * `time_window` - the `change` time window in days. Should be between `2d` and `30d`.
     """
     field :social_gainers_losers_status, list_of(:social_gainers_losers_status) do
+      meta(subscription: :basic)
+
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))

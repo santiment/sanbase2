@@ -14,6 +14,8 @@ defmodule SanbaseWeb.Graphql.Schema.PricingQueries do
     List available products with corresponding subscription plans.
     """
     field :products_with_plans, list_of(:product) do
+      meta(subscription: :free)
+
       resolve(&PricingResolver.products_with_plans/3)
     end
 
@@ -21,6 +23,8 @@ defmodule SanbaseWeb.Graphql.Schema.PricingQueries do
     List all user invoice payments.
     """
     field :payments, list_of(:payments) do
+      meta(subscription: :free)
+
       middleware(JWTAuth)
 
       resolve(&PricingResolver.payments/3)

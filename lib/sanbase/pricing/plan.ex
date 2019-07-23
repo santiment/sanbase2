@@ -7,10 +7,8 @@ defmodule Sanbase.Pricing.Plan do
   use Ecto.Schema
 
   import Ecto.Changeset
-  import Ecto.Query
   alias Sanbase.Repo
-  alias Sanbase.Pricing.{Product, Subscription}
-  alias __MODULE__
+  alias Sanbase.Pricing.{Plan.AccessChecker, Product, Subscription}
 
   schema "plans" do
     field(:name, :string)
@@ -29,6 +27,23 @@ defmodule Sanbase.Pricing.Plan do
   def changeset(%__MODULE__{} = plan, attrs \\ %{}) do
     plan
     |> cast(attrs, [:stripe_id, :access])
+  end
+
+  def free_plan() do
+    %__MODULE__{name: "FREE"}
+  end
+
+  def plan_atom_name(%__MODULE__{} = plan) do
+    case plan do
+      %{name: "FREE"} -> :free
+      %{name: "BASIC"} -> :basic
+      # should be renamed to basic in the DB
+      %{name: "ESSENTIAL"} -> :basic
+      %{name: "PRO"} -> :pro
+      %{name: "PREMIUM"} -> :premium
+      %{name: "CUSTOM"} -> :custom
+      %{name: name} -> String.downcase(name) |> String.to_existing_atom()
+    end
   end
 
   def by_id(plan_id) do
@@ -58,14 +73,7 @@ defmodule Sanbase.Pricing.Plan do
   Fetching only with `interval`=`month` because we have yearly metrics with the same metrics
   and names.
   """
-  def plans_with_metric(query) do
-    from(
-      p in Plan,
-      where: p.interval == "month" and fragment(~s(access @> ?), ^%{metrics: [query]}),
-      select: p.name
-    )
-    |> Repo.all()
-  end
+  defdelegate lowest_plan_with_metric(query), to: AccessChecker
 
   @doc """
   If a plan doesn't have filled `stripe_id` - create a plan in Stripe and update with the received

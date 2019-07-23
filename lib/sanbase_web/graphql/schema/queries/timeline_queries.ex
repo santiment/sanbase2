@@ -9,11 +9,12 @@ defmodule SanbaseWeb.Graphql.Schema.TimelineQueries do
 
   object :timeline_queries do
     field :timeline_events, list_of(:timeline_events_paginated) do
+      meta(subscription: :free)
+
       arg(:cursor, :cursor_input)
       arg(:limit, :integer, default_value: 25)
 
       middleware(JWTAuth)
-
       resolve(&TimelineEventResolver.timeline_events/3)
     end
   end

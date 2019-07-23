@@ -32,6 +32,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
 
   @allow_access_without_staking ["santiment"]
   @minimal_datetime_param from_iso8601!("2009-01-01T00:00:00Z")
+  @free_subscription Subscription.free_subscription()
 
   def call(resolution, opts) do
     # First call `check_from_to_params` and then pass the execution to do_call/2
@@ -70,7 +71,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
     query = definition.name |> Macro.underscore() |> String.to_existing_atom()
 
     if Subscription.is_restricted?(query) do
-      restricted_query(resolution, middleware_args)
+      restricted_query(resolution, middleware_args, query)
     else
       not_restricted_query(resolution, middleware_args)
     end
@@ -88,7 +89,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
            context: %{auth: %{subscription: nil, san_balance: san_balance}},
            arguments: %{from: from, to: to} = args
          } = resolution,
-         middleware_args
+         middleware_args,
+         _query
        ) do
     case has_enough_san_tokens?(san_balance, required_san_stake_full_access()) do
       true ->
@@ -108,32 +110,20 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
 
   # User has subscription
   defp restricted_query(
-         %Resolution{
-           context: %{auth: %{subscription: subscription}},
-           arguments: %{from: from, to: to}
-         } = resolution,
-         middleware_args
-       )
-       when not is_nil(subscription) do
-    historical_data_in_days = Subscription.historical_data_in_days(subscription)
-    realtime_data_cut_off_in_days = Subscription.realtime_data_cut_off_in_days(subscription)
+         %Resolution{arguments: %{from: from, to: to}, context: context} = resolution,
+         middleware_args,
+         query
+       ) do
+    subscription = context[:auth][:subscription] || @free_subscription
+    historical_data_in_days = Subscription.historical_data_in_days(subscription, query)
+
+    realtime_data_cut_off_in_days =
+      Subscription.realtime_data_cut_off_in_days(subscription, query)
 
     resolution
     |> update_resolution_from_to(
       restrict_from(from, middleware_args, historical_data_in_days),
       restrict_to(to, middleware_args, realtime_data_cut_off_in_days)
-    )
-  end
-
-  # Access to restricted query by anonymous or not-paid user
-  defp restricted_query(
-         %Resolution{arguments: %{from: from, to: to}} = resolution,
-         middleware_args
-       ) do
-    resolution
-    |> update_resolution_from_to(
-      restrict_from(from, middleware_args, restrict_from_in_days()),
-      restrict_to(to, middleware_args, restrict_to_in_days())
     )
   end
 

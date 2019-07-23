@@ -35,9 +35,9 @@ defmodule Sanbase.Billing.SubscriptionTest do
   end
 
   describe "#is_restricted?" do
-    test "network_growth and mvrv_ratio are restricted" do
+    test "network_growth and daily_active_deposits are restricted" do
       assert Subscription.is_restricted?(:network_growth)
-      assert Subscription.is_restricted?(:mvrv_ratio)
+      assert Subscription.is_restricted?(:daily_active_deposits)
     end
 
     test "all_projects and history_price are not restricted" do
@@ -47,8 +47,8 @@ defmodule Sanbase.Billing.SubscriptionTest do
   end
 
   describe "#needs_advanced_plan?" do
-    test "mvrv_ratio needs advanced plan subscription" do
-      assert Subscription.needs_advanced_plan?(:mvrv_ratio)
+    test "daily_active_deposits needs advanced plan subscription" do
+      assert Subscription.needs_advanced_plan?(:daily_active_deposits)
     end
 
     test "network_growth, all_projects and history_price does not need advanced plan subscription" do
@@ -65,23 +65,23 @@ defmodule Sanbase.Billing.SubscriptionTest do
       assert Subscription.has_access?(subscription, :network_growth)
     end
 
-    test "subscription to ESSENTIAL plan does not have access to ADVANCED metrics", context do
+    test "subscription to BASIC plan does not have access to PRO metrics", context do
       subscription = insert(:subscription_essential, user: context.user) |> Repo.preload(:plan)
 
-      refute Subscription.has_access?(subscription, :mvrv_ratio)
+      refute Subscription.has_access?(subscription, :daily_active_deposits)
     end
 
-    test "subscription to ESSENTIAL plan has access to not restricted metrics", context do
+    test "subscription to BASIC plan has access to not restricted metrics", context do
       subscription = insert(:subscription_essential, user: context.user) |> Repo.preload(:plan)
 
       assert Subscription.has_access?(subscription, :history_price)
     end
 
-    test "subscription to PRO plan have access to both STANDART and ADVANCED metrics", context do
+    test "subscription to PRO plan have access to both BASIC and PRO metrics", context do
       subscription = insert(:subscription_pro, user: context.user) |> Repo.preload(:plan)
 
       assert Subscription.has_access?(subscription, :network_growth)
-      assert Subscription.has_access?(subscription, :mvrv_ratio)
+      assert Subscription.has_access?(subscription, :daily_active_deposits)
     end
 
     test "subscription to PRO plan has access to not restricted metrics", context do

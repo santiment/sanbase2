@@ -91,7 +91,6 @@ defmodule Sanbase.Billing.SubscriptionMetaFieldTest do
       expected_basic_queries =
         [
           :average_token_age_consumed_in_days,
-          :burn_rate,
           :exchange_funds_flow,
           :exchange_volume,
           :gas_used,
@@ -102,7 +101,6 @@ defmodule Sanbase.Billing.SubscriptionMetaFieldTest do
           :social_dominance,
           :social_gainers_losers_status,
           :social_volume,
-          :token_age_consumed,
           :token_circulation,
           :token_velocity,
           :top_holders_percent_of_total_supply,
@@ -124,7 +122,7 @@ defmodule Sanbase.Billing.SubscriptionMetaFieldTest do
         |> Enum.sort()
 
       expected_pro_queries =
-        [:daily_active_deposits, :mvrv_ratio, :nvt_ratio, :realized_value, :share_of_deposits]
+        [:daily_active_deposits, :nvt_ratio, :realized_value, :share_of_deposits]
         |> Enum.sort()
 
       assert pro_queries == expected_pro_queries
@@ -149,6 +147,19 @@ defmodule Sanbase.Billing.SubscriptionMetaFieldTest do
         [:all_projects_project_transparency, :exchange_wallets] |> Enum.sort()
 
       assert restricted_queries == expected_restricted_queries
+    end
+
+    test "custom access queries" do
+      custom_access_queries =
+        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_subscription_plan(
+          :custom_access
+        )
+        |> Enum.sort()
+
+      expected_custom_access_queries =
+        [:burn_rate, :mvrv_ratio, :token_age_consumed] |> Enum.sort()
+
+      assert custom_access_queries == expected_custom_access_queries
     end
   end
 end

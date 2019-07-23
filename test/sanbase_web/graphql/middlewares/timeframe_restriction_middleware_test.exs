@@ -37,22 +37,22 @@ defmodule SanbaseWeb.Graphql.TimeframeRestrictionMiddlewareTest do
     }
     |> Repo.insert!()
 
-    insert(:token_age_consumed, %{
+    insert(:transaction_volume, %{
       contract_address: contract_address,
       timestamp: hour_ago(),
-      token_age_consumed: 5000
+      transaction_volume: 5000
     })
 
-    insert(:token_age_consumed, %{
+    insert(:transaction_volume, %{
       contract_address: contract_address,
       timestamp: week_ago(),
-      token_age_consumed: 6000
+      transaction_volume: 6000
     })
 
-    insert(:token_age_consumed, %{
+    insert(:transaction_volume, %{
       contract_address: contract_address,
       timestamp: restricted_from(),
-      token_age_consumed: 7000
+      transaction_volume: 7000
     })
 
     staked_user =
@@ -82,14 +82,14 @@ defmodule SanbaseWeb.Graphql.TimeframeRestrictionMiddlewareTest do
       build_conn()
       |> post(
         "/graphql",
-        query_skeleton(tokenAgeConsumedQuery(context.not_santiment_slug), "tokenAgeConsumed")
+        query_skeleton(transaction_volume_query(context.not_santiment_slug), "transactionVolume")
       )
 
-    token_age_consumed = json_response(result, 200)["data"]["tokenAgeConsumed"]
+    transaction_volume = json_response(result, 200)["data"]["transactionVolume"]
 
-    refute %{"tokenAgeConsumed" => 5000.0} in token_age_consumed
-    assert %{"tokenAgeConsumed" => 6000.0} in token_age_consumed
-    refute %{"tokenAgeConsumed" => 7000.0} in token_age_consumed
+    refute %{"transactionVolume" => 5000.0} in transaction_volume
+    assert %{"transactionVolume" => 6000.0} in transaction_volume
+    refute %{"transactionVolume" => 7000.0} in transaction_volume
   end
 
   # The Santiment project treatment is special. It serves the purpose of showing how
@@ -100,14 +100,14 @@ defmodule SanbaseWeb.Graphql.TimeframeRestrictionMiddlewareTest do
       build_conn()
       |> post(
         "/graphql",
-        query_skeleton(tokenAgeConsumedQuery(context.santiment_slug), "tokenAgeConsumed")
+        query_skeleton(transaction_volume_query(context.santiment_slug), "transactionVolume")
       )
 
-    token_age_consumed = json_response(result, 200)["data"]["tokenAgeConsumed"]
+    transaction_volume = json_response(result, 200)["data"]["transactionVolume"]
 
-    assert %{"tokenAgeConsumed" => 5000.0} in token_age_consumed
-    assert %{"tokenAgeConsumed" => 6000.0} in token_age_consumed
-    assert %{"tokenAgeConsumed" => 7000.0} in token_age_consumed
+    assert %{"transactionVolume" => 5000.0} in transaction_volume
+    assert %{"transactionVolume" => 6000.0} in transaction_volume
+    assert %{"transactionVolume" => 7000.0} in transaction_volume
   end
 
   test "does not show real-time data for user without SAN stake", context do
@@ -117,14 +117,14 @@ defmodule SanbaseWeb.Graphql.TimeframeRestrictionMiddlewareTest do
       conn
       |> post(
         "/graphql",
-        query_skeleton(tokenAgeConsumedQuery(context.not_santiment_slug), "tokenAgeConsumed")
+        query_skeleton(transaction_volume_query(context.not_santiment_slug), "transactionVolume")
       )
 
-    token_age_consumed = json_response(result, 200)["data"]["tokenAgeConsumed"]
+    transaction_volume = json_response(result, 200)["data"]["transactionVolume"]
 
-    refute %{"tokenAgeConsumed" => 5000.0} in token_age_consumed
-    assert %{"tokenAgeConsumed" => 6000.0} in token_age_consumed
-    refute %{"tokenAgeConsumed" => 7000.0} in token_age_consumed
+    refute %{"transactionVolume" => 5000.0} in transaction_volume
+    assert %{"transactionVolume" => 6000.0} in transaction_volume
+    refute %{"transactionVolume" => 7000.0} in transaction_volume
   end
 
   test "shows real for user without SAN stake for Santiment project", context do
@@ -134,14 +134,14 @@ defmodule SanbaseWeb.Graphql.TimeframeRestrictionMiddlewareTest do
       conn
       |> post(
         "/graphql",
-        query_skeleton(tokenAgeConsumedQuery(context.santiment_slug), "tokenAgeConsumed")
+        query_skeleton(transaction_volume_query(context.santiment_slug), "transactionVolume")
       )
 
-    token_age_consumed = json_response(result, 200)["data"]["tokenAgeConsumed"]
+    transaction_volume = json_response(result, 200)["data"]["transactionVolume"]
 
-    assert %{"tokenAgeConsumed" => 5000.0} in token_age_consumed
-    assert %{"tokenAgeConsumed" => 6000.0} in token_age_consumed
-    assert %{"tokenAgeConsumed" => 7000.0} in token_age_consumed
+    assert %{"transactionVolume" => 5000.0} in transaction_volume
+    assert %{"transactionVolume" => 6000.0} in transaction_volume
+    assert %{"transactionVolume" => 7000.0} in transaction_volume
   end
 
   test "shows realtime data if user has SAN stake", context do
@@ -151,25 +151,25 @@ defmodule SanbaseWeb.Graphql.TimeframeRestrictionMiddlewareTest do
       conn
       |> post(
         "/graphql",
-        query_skeleton(tokenAgeConsumedQuery(context.not_santiment_slug), "tokenAgeConsumed")
+        query_skeleton(transaction_volume_query(context.not_santiment_slug), "transactionVolume")
       )
 
-    token_age_consumed = json_response(result, 200)["data"]["tokenAgeConsumed"]
+    transaction_volume = json_response(result, 200)["data"]["transactionVolume"]
 
-    assert %{"tokenAgeConsumed" => 5000.0} in token_age_consumed
-    assert %{"tokenAgeConsumed" => 6000.0} in token_age_consumed
-    assert %{"tokenAgeConsumed" => 7000.0} in token_age_consumed
+    assert %{"transactionVolume" => 5000.0} in transaction_volume
+    assert %{"transactionVolume" => 6000.0} in transaction_volume
+    assert %{"transactionVolume" => 7000.0} in transaction_volume
   end
 
   test "`from` later than `to` datetime" do
     query = """
      {
-      tokenAgeConsumed(
+      transactionVolume(
         slug: "santiment",
         from: "#{Timex.now()}",
         to: "#{Timex.shift(Timex.now(), days: -10)}"
         interval: "30m") {
-          tokenAgeConsumed
+          transactionVolume
       }
     }
     """
@@ -196,13 +196,13 @@ defmodule SanbaseWeb.Graphql.TimeframeRestrictionMiddlewareTest do
 
     query = """
      {
-      tokenAgeConsumed(
+      transactionVolume(
         slug: "santiment",
         from: "#{from_iso8601!("2008-12-31T23:59:59Z")}",
         to: "#{from_iso8601!("2009-01-02T00:00:00Z")}"
         interval: "1d") {
           datetime
-          tokenAgeConsumed
+          transactionVolume
       }
     }
     """
@@ -222,13 +222,13 @@ defmodule SanbaseWeb.Graphql.TimeframeRestrictionMiddlewareTest do
 
     query = """
      {
-      tokenAgeConsumed(
+      transactionVolume(
         slug: "santiment",
         from: "#{from_iso8601!("2008-12-30T23:59:59Z")}",
         to: "#{from_iso8601!("2008-12-31T23:59:59Z")}"
         interval: "1d") {
           datetime
-          tokenAgeConsumed
+          transactionVolume
       }
     }
     """
@@ -243,15 +243,15 @@ defmodule SanbaseWeb.Graphql.TimeframeRestrictionMiddlewareTest do
              "Cryptocurrencies didn't existed before 2009-01-01 00:00:00Z.\nPlease check `from` and/or `to` param values.\n"
   end
 
-  defp tokenAgeConsumedQuery(slug) do
+  defp transaction_volume_query(slug) do
     """
     {
-      tokenAgeConsumed(
+      transactionVolume(
         slug: "#{slug}",
         from: "#{before_restricted_from()}",
         to: "#{now()}"
         interval: "30m") {
-          tokenAgeConsumed
+          transactionVolume
       }
     }
     """

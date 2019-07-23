@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     Grouping by interval works by summing all burn rate records in the interval.
     """
     field :burn_rate, list_of(:burn_rate_data) do
-      meta(subscription: :basic)
+      meta(subscription: :custom_access)
 
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
@@ -46,7 +46,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     end
 
     field :token_age_consumed, list_of(:token_age_consumed_data) do
-      meta(subscription: :basic)
+      meta(subscription: :custom_access)
 
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
@@ -280,7 +280,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
 
     @desc "Returns MVRV(Market-Value-to-Realized-Value)"
     field :mvrv_ratio, list_of(:mvrv_ratio) do
-      meta(subscription: :pro)
+      meta(subscription: :custom_access)
 
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))

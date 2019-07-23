@@ -137,6 +137,28 @@ defmodule Sanbase.Pricing.Subscription do
     end
   end
 
+  def create_subscription_db(
+        %Stripe.Subscription{
+          id: stripe_id,
+          current_period_end: current_period_end,
+          cancel_at_period_end: cancel_at_period_end,
+          status: status
+        },
+        user,
+        plan
+      ) do
+    %Subscription{}
+    |> Subscription.changeset(%{
+      stripe_id: stripe_id,
+      user_id: user.id,
+      plan_id: plan.id,
+      current_period_end: DateTime.from_unix!(current_period_end),
+      cancel_at_period_end: cancel_at_period_end,
+      status: status
+    })
+    |> Repo.insert()
+  end
+
   def update_subscription_db(subscription, params) do
     subscription
     |> Subscription.changeset(params)
@@ -296,28 +318,6 @@ defmodule Sanbase.Pricing.Subscription do
       {:error, reason} ->
         {:error, reason}
     end
-  end
-
-  defp create_subscription_db(
-         %Stripe.Subscription{
-           id: stripe_id,
-           current_period_end: current_period_end,
-           cancel_at_period_end: cancel_at_period_end,
-           status: status
-         },
-         user,
-         plan
-       ) do
-    %Subscription{}
-    |> Subscription.changeset(%{
-      stripe_id: stripe_id,
-      user_id: user.id,
-      plan_id: plan.id,
-      current_period_end: DateTime.from_unix!(current_period_end),
-      cancel_at_period_end: cancel_at_period_end,
-      status: status
-    })
-    |> Repo.insert()
   end
 
   defp update_subscription_with_coupon(nil, subscription), do: {:ok, subscription}

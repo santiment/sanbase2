@@ -13,7 +13,8 @@ defmodule Sanbase.Pricing.StripeEvent do
   import Ecto.Changeset
 
   alias Sanbase.Repo
-  alias Sanbase.Pricing.Subscription
+  alias Sanbase.Auth.User
+  alias Sanbase.Pricing.{Subscription, Plan}
   alias Sanbase.StripeApi
 
   require Logger
@@ -94,9 +95,43 @@ defmodule Sanbase.Pricing.StripeEvent do
     handle_event_common(id, type, subscription_id)
   end
 
+  defp handle_event(%{
+         "id" => id,
+         "type" => "customer.subscription.created",
+         "data" => %{"object" => %{"id" => subscription_id}}
+       }) do
+    handle_subscription_created(id, "customer.subscription.created", subscription_id)
+  end
+
+  defp handle_subscription_created(id, type, subscription_id) do
+    with {:ok, stripe_subscription} <- StripeApi.retrieve_subscription(subscription_id),
+         {:user_nil?, %User{} = user} <-
+           {:user_nil?, Repo.get_by(User, stripe_customer_id: stripe_subscription.customer)},
+         {:plan_nil?, %Plan{} = plan} <-
+           {:plan_nil?, Plan.by_stripe_id(stripe_subscription.plan.id)},
+         {:ok, _subscription} <-
+           Subscription.create_subscription_db(stripe_subscription, user, plan) do
+      update(id, %{is_processed: true})
+    else
+      {:user_nil?, _} ->
+        error_msg = "Customer for subscription_id #{subscription_id} does not exist"
+        Logger.error(error_msg)
+        {:error, error_msg}
+
+      {:plan_nil?, _} ->
+        error_msg = "Plan for subscription_id #{subscription_id} does not exist"
+        Logger.error(error_msg)
+        {:error, error_msg}
+
+      {:error, reason} ->
+        Logger.error("Error handling #{type} event: reason #{inspect(reason)}")
+        {:error, reason}
+    end
+  end
+
   defp handle_event_common(id, type, subscription_id) do
     with {:ok, stripe_subscription} <- StripeApi.retrieve_subscription(subscription_id),
-         {:nil?, subscription} <-
+         {:nil?, %Subscription{} = subscription} <-
            {:nil?, Repo.get_by(Subscription, stripe_id: stripe_subscription.id)},
          {:ok, _subscription} <-
            Subscription.sync_with_stripe_subscription(stripe_subscription, subscription) do

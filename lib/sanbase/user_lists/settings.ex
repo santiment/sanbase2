@@ -104,7 +104,11 @@ defmodule Sanbase.UserList.Settings do
   end
 
   def settings_for(%UserList{} = ul, _) do
-    get_settings(ul.id, ul.user_id)
+    settings =
+      get_settings(ul.id, ul.user_id) ||
+        WatchlistSettings.default_settings()
+
+    {:ok, settings}
   end
 
   @doc ~s"""

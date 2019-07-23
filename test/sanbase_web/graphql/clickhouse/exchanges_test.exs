@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
   import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
 
   setup do
-    Sanbase.Pricing.TestSeed.seed_products_and_plans()
+    Sanbase.Billing.TestSeed.seed_products_and_plans()
 
     infr = insert(:infrastructure, %{code: "ETH"})
     user = insert(:user)

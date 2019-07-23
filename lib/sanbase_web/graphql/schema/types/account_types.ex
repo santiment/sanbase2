@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     UserSettingsResolver,
     UserTriggerResolver,
     PostResolver,
-    PricingResolver
+    BillingResolver
   }
 
   object :user do
@@ -66,7 +66,7 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     end
 
     field :subscriptions, list_of(:subscription_plan) do
-      resolve(&PricingResolver.subscriptions/3)
+      resolve(&BillingResolver.subscriptions/3)
     end
 
     @desc ~s"""

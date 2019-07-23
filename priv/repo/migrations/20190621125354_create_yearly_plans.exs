@@ -1,7 +1,7 @@
 defmodule Sanbase.Repo.Migrations.CreateYearlyPlans do
   use Ecto.Migration
 
-  alias Sanbase.Pricing.Plan.AccessChecker
+  alias Sanbase.Billing.Plan.AccessChecker
 
   def up do
     execute("""

@@ -4,7 +4,7 @@ defmodule Sanbase.Repo.Migrations.CreatePlansAndProductsInStripe do
   require Sanbase.Utils.Config
 
   alias Sanbase.Utils.Config
-  alias Sanbase.Pricing.{Product, Plan}
+  alias Sanbase.Billing.{Product, Plan}
   alias Sanbase.Repo
 
   def up do

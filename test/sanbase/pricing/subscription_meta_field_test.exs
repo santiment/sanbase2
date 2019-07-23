@@ -1,15 +1,15 @@
-defmodule Sanbase.Pricing.SubscriptionMetaFieldTest do
+defmodule Sanbase.Billing.SubscriptionMetaFieldTest do
   use ExUnit.Case, async: true
 
   # Assert that a query's subscription plan does not change incidentally
   describe "subscription meta" do
     test "there are no queries without defined subscription" do
-      assert Sanbase.Pricing.Plan.AccessChecker.Helper.queries_without_subsciption_plan() == []
+      assert Sanbase.Billing.Plan.AccessChecker.Helper.queries_without_subsciption_plan() == []
     end
 
     test "free queries" do
       free_queries =
-        Sanbase.Pricing.Plan.AccessChecker.Helper.get_metrics_with_subscription_plan(:free)
+        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_subscription_plan(:free)
         |> Enum.sort()
 
       expected_free_queries =
@@ -85,7 +85,7 @@ defmodule Sanbase.Pricing.SubscriptionMetaFieldTest do
 
     test "basic queries" do
       basic_queries =
-        Sanbase.Pricing.Plan.AccessChecker.Helper.get_metrics_with_subscription_plan(:basic)
+        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_subscription_plan(:basic)
         |> Enum.sort()
 
       expected_basic_queries =
@@ -120,7 +120,7 @@ defmodule Sanbase.Pricing.SubscriptionMetaFieldTest do
 
     test "pro queries" do
       pro_queries =
-        Sanbase.Pricing.Plan.AccessChecker.Helper.get_metrics_with_subscription_plan(:pro)
+        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_subscription_plan(:pro)
         |> Enum.sort()
 
       expected_pro_queries =
@@ -132,7 +132,7 @@ defmodule Sanbase.Pricing.SubscriptionMetaFieldTest do
 
     test "premium queries" do
       premium_queries =
-        Sanbase.Pricing.Plan.AccessChecker.Helper.get_metrics_with_subscription_plan(:premium)
+        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_subscription_plan(:premium)
         |> Enum.sort()
 
       expected_premium_queries = []
@@ -142,7 +142,7 @@ defmodule Sanbase.Pricing.SubscriptionMetaFieldTest do
 
     test "restricted queries" do
       restricted_queries =
-        Sanbase.Pricing.Plan.AccessChecker.Helper.get_metrics_with_subscription_plan(:restricted)
+        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_subscription_plan(:restricted)
         |> Enum.sort()
 
       expected_restricted_queries =

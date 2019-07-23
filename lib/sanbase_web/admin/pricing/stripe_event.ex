@@ -1,7 +1,7 @@
-defmodule Sanbase.ExAdmin.Pricing.StripeEvent do
+defmodule Sanbase.ExAdmin.Billing.StripeEvent do
   use ExAdmin.Register
 
-  register_resource Sanbase.Pricing.StripeEvent do
+  register_resource Sanbase.Billing.StripeEvent do
     action_items(only: [:show])
 
     index do

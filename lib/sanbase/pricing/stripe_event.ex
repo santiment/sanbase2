@@ -1,4 +1,4 @@
-defmodule Sanbase.Pricing.StripeEvent do
+defmodule Sanbase.Billing.StripeEvent do
   @moduledoc """
   Module for persisting and handling Stripe webhook events.
 
@@ -14,7 +14,7 @@ defmodule Sanbase.Pricing.StripeEvent do
 
   alias Sanbase.Repo
   alias Sanbase.Auth.User
-  alias Sanbase.Pricing.{Subscription, Plan}
+  alias Sanbase.Billing.{Subscription, Plan}
   alias Sanbase.StripeApi
 
   require Logger

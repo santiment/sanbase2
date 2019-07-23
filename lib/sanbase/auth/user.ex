@@ -18,7 +18,7 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.Telegram
   alias Sanbase.Signal.HistoricalActivity
   alias Sanbase.Following.UserFollower
-  alias Sanbase.Pricing.Subscription
+  alias Sanbase.Billing.Subscription
 
   require Sanbase.Utils.Config, as: Config
 

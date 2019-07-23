@@ -3,7 +3,7 @@ defmodule SanbaseWeb.StripeController do
 
   require Logger
 
-  alias Sanbase.Pricing.StripeEvent
+  alias Sanbase.Billing.StripeEvent
 
   def webhook(conn, _params) do
     stripe_event = conn.assigns[:stripe_event]

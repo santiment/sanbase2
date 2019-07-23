@@ -1,4 +1,4 @@
-defmodule Sanbase.Pricing.Plan do
+defmodule Sanbase.Billing.Plan do
   @moduledoc """
   Module for managing billing plans that define the amount and billing cycle
   for subscriptions.
@@ -8,7 +8,7 @@ defmodule Sanbase.Pricing.Plan do
 
   import Ecto.Changeset
   alias Sanbase.Repo
-  alias Sanbase.Pricing.{Plan.AccessChecker, Product, Subscription}
+  alias Sanbase.Billing.{Plan.AccessChecker, Product, Subscription}
 
   schema "plans" do
     field(:name, :string)

@@ -1,4 +1,4 @@
-defmodule Sanbase.Pricing.Product do
+defmodule Sanbase.Billing.Product do
   @moduledoc """
   Module for managing Sanbase products - objects that describe services
   a customer can subscribe to.
@@ -7,7 +7,7 @@ defmodule Sanbase.Pricing.Product do
 
   import Ecto.Changeset
 
-  alias Sanbase.Pricing.Plan
+  alias Sanbase.Billing.Plan
   alias Sanbase.Repo
 
   # Sanbase API product id. Ids for products are fixed.

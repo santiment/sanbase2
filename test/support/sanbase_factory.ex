@@ -20,8 +20,8 @@ defmodule Sanbase.Factory do
   }
 
   alias Sanbase.Signal.{UserTrigger, HistoricalActivity}
-  alias Sanbase.Pricing.{Product, Plan, Subscription}
-  alias Sanbase.Pricing.Plan.AccessChecker
+  alias Sanbase.Billing.{Product, Plan, Subscription}
+  alias Sanbase.Billing.Plan.AccessChecker
   alias Sanbase.Timeline.TimelineEvent
 
   def user_factory() do

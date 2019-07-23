@@ -156,7 +156,7 @@ alias Sanbase.Signal.Trigger.{
   TrendingWordsTriggerSettings
 }
 
-alias Sanbase.Pricing.{
+alias Sanbase.Billing.{
   Product,
   Plan,
   Subscription

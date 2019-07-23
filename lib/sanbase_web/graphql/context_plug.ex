@@ -16,7 +16,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   require Sanbase.Utils.Config, as: Config
 
   alias Sanbase.Auth.User
-  alias Sanbase.Pricing.Subscription
+  alias Sanbase.Billing.Subscription
   alias SanbaseWeb.Graphql.ContextPlug
 
   require Logger

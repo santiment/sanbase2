@@ -19,7 +19,7 @@ defmodule SanbaseWeb.Graphql.WatchlistHistoricalStatsApiTest do
     p1 = insert(:random_erc20_project)
     p2 = insert(:random_erc20_project)
 
-    %{from: from, to: to} = setup_pricing_db(p1, p2)
+    %{from: from, to: to} = setup_db(p1, p2)
 
     {:ok, watchlist} = UserList.create_user_list(user, %{name: "test watchlist"})
     {:ok, watchlist2} = UserList.create_user_list(user, %{name: "test watchlist2"})
@@ -113,7 +113,7 @@ defmodule SanbaseWeb.Graphql.WatchlistHistoricalStatsApiTest do
     assert result == expected_result
   end
 
-  def setup_pricing_db(p1, p2) do
+  def setup_db(p1, p2) do
     measurement1 = Measurement.name_from(p1)
     measurement2 = Measurement.name_from(p2)
 

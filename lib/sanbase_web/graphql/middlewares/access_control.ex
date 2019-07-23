@@ -8,8 +8,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   @behaviour Absinthe.Middleware
 
   alias Absinthe.Resolution
-  alias Sanbase.Pricing.Plan.AccessChecker
-  alias Sanbase.Pricing.{Subscription, Plan}
+  alias Sanbase.Billing.Plan.AccessChecker
+  alias Sanbase.Billing.{Subscription, Plan}
 
   require Logger
 

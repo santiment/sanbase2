@@ -1,5 +1,5 @@
-defmodule SanbaseWeb.Graphql.Resolvers.PricingResolver do
-  alias Sanbase.Pricing.{Subscription, Plan}
+defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
+  alias Sanbase.Billing.{Subscription, Plan}
   alias Sanbase.Auth.User
   alias Sanbase.Repo
 

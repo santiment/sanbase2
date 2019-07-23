@@ -1,22 +1,22 @@
-defmodule SanbaseWeb.Graphql.Schema.PricingQueries do
+defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Resolvers.PricingResolver
+  alias SanbaseWeb.Graphql.Resolvers.BillingResolver
 
   alias SanbaseWeb.Graphql.Middlewares.{
     JWTAuth
   }
 
-  import_types(SanbaseWeb.Graphql.Schema.PricingTypes)
+  import_types(SanbaseWeb.Graphql.Schema.BillingTypes)
 
-  object :pricing_queries do
+  object :billing_queries do
     @desc ~s"""
     List available products with corresponding subscription plans.
     """
     field :products_with_plans, list_of(:product) do
       meta(subscription: :free)
 
-      resolve(&PricingResolver.products_with_plans/3)
+      resolve(&BillingResolver.products_with_plans/3)
     end
 
     @desc ~s"""
@@ -27,11 +27,11 @@ defmodule SanbaseWeb.Graphql.Schema.PricingQueries do
 
       middleware(JWTAuth)
 
-      resolve(&PricingResolver.payments/3)
+      resolve(&BillingResolver.payments/3)
     end
   end
 
-  object :pricing_mutations do
+  object :billing_mutations do
     @desc ~s"""
     Subscribe logged in user to a chosen plan using card_token retuned by Stripe on filling
     card information.
@@ -42,7 +42,7 @@ defmodule SanbaseWeb.Graphql.Schema.PricingQueries do
 
       middleware(JWTAuth)
 
-      resolve(&PricingResolver.subscribe/3)
+      resolve(&BillingResolver.subscribe/3)
     end
 
     @desc ~s"""
@@ -54,7 +54,7 @@ defmodule SanbaseWeb.Graphql.Schema.PricingQueries do
 
       middleware(JWTAuth)
 
-      resolve(&PricingResolver.update_subscription/3)
+      resolve(&BillingResolver.update_subscription/3)
     end
 
     @desc ~s"""
@@ -66,7 +66,7 @@ defmodule SanbaseWeb.Graphql.Schema.PricingQueries do
 
       middleware(JWTAuth)
 
-      resolve(&PricingResolver.cancel_subscription/3)
+      resolve(&BillingResolver.cancel_subscription/3)
     end
 
     @desc ~s"""
@@ -78,7 +78,7 @@ defmodule SanbaseWeb.Graphql.Schema.PricingQueries do
 
       middleware(JWTAuth)
 
-      resolve(&PricingResolver.renew_cancelled_subscription/3)
+      resolve(&BillingResolver.renew_cancelled_subscription/3)
     end
   end
 end

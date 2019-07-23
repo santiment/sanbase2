@@ -26,7 +26,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
   import SanbaseWeb.Graphql.Middlewares.Helpers
 
   alias Absinthe.Resolution
-  alias Sanbase.Pricing.Subscription
+  alias Sanbase.Billing.Subscription
 
   require Sanbase.Utils.Config, as: Config
 

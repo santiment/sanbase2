@@ -1,4 +1,4 @@
-defmodule Sanbase.Pricing.Subscription do
+defmodule Sanbase.Billing.Subscription do
   @moduledoc """
   Module for managing user subscriptions - create, upgrade/downgrade, cancel.
   Also containing some helper functions that take user subscription as argument and
@@ -9,8 +9,8 @@ defmodule Sanbase.Pricing.Subscription do
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Sanbase.Pricing.Plan
-  alias Sanbase.Pricing.Plan.AccessChecker
+  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.Plan.AccessChecker
   alias Sanbase.Auth.User
   alias Sanbase.Repo
   alias Sanbase.StripeApi

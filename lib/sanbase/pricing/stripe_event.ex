@@ -1,4 +1,4 @@
-defmodule Sanbase.Pricing.StripeEvent do
+defmodule Sanbase.Billing.StripeEvent do
   @moduledoc """
   Module for persisting and handling Stripe webhook events.
 
@@ -13,7 +13,7 @@ defmodule Sanbase.Pricing.StripeEvent do
   import Ecto.Changeset
 
   alias Sanbase.Repo
-  alias Sanbase.Pricing.Subscription
+  alias Sanbase.Billing.Subscription
   alias Sanbase.StripeApi
 
   require Logger

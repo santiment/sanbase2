@@ -1,7 +1,7 @@
-defmodule Sanbase.ExAdmin.Pricing.Plan do
+defmodule Sanbase.ExAdmin.Billing.Plan do
   use ExAdmin.Register
 
-  register_resource Sanbase.Pricing.Plan do
+  register_resource Sanbase.Billing.Plan do
     action_items(only: [:show])
 
     index do

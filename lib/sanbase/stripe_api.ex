@@ -3,7 +3,7 @@ defmodule Sanbase.StripeApi do
   Module wrapping communication with Stripe.
   """
 
-  alias Sanbase.Pricing.{Product, Plan}
+  alias Sanbase.Billing.{Product, Plan}
   alias Sanbase.Auth.User
 
   @type subscription_item :: %{plan: String.t()}

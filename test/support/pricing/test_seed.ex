@@ -1,4 +1,4 @@
-defmodule Sanbase.Pricing.TestSeed do
+defmodule Sanbase.Billing.TestSeed do
   import Sanbase.Factory
 
   def seed_products_and_plans() do

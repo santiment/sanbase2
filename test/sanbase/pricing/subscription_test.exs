@@ -1,10 +1,10 @@
-defmodule Sanbase.Pricing.SubscriptionTest do
+defmodule Sanbase.Billing.SubscriptionTest do
   use SanbaseWeb.ConnCase
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.Pricing.Subscription
+  alias Sanbase.Billing.Subscription
   alias Sanbase.Auth.Apikey
   alias Sanbase.Repo
 

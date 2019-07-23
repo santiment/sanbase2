@@ -1,10 +1,10 @@
-defmodule Sanbase.Pricing.PlanTest do
+defmodule Sanbase.Billing.PlanTest do
   use Sanbase.DataCase, async: false
 
   import Mock
 
-  alias Sanbase.Pricing.{Plan, Product}
-  alias Sanbase.Pricing.TestSeed
+  alias Sanbase.Billing.{Plan, Product}
+  alias Sanbase.Billing.TestSeed
   alias Sanbase.Repo
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestReponse

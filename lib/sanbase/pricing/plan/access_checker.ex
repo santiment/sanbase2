@@ -1,4 +1,4 @@
-defmodule Sanbase.Pricing.Plan.AccessChecker do
+defmodule Sanbase.Billing.Plan.AccessChecker do
   @moduledoc """
   Module that contains functions for determining access based on the subscription
   plan.

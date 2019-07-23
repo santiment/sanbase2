@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
+defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   use SanbaseWeb.ConnCase
 
   import Sanbase.Factory
@@ -9,7 +9,7 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
   alias Sanbase.Auth.{User, Apikey}
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestReponse
-  alias Sanbase.Pricing.Subscription
+  alias Sanbase.Billing.Subscription
 
   setup_with_mocks([
     {StripeApi, [], [create_product: fn _ -> StripeApiTestReponse.create_product_resp() end]},
@@ -39,7 +39,7 @@ defmodule SanbaseWeb.Graphql.Pricing.SubscribeApiTest do
     user = insert(:staked_user)
     conn = setup_jwt_auth(build_conn(), user)
 
-    plans = Sanbase.Pricing.TestSeed.seed_products_and_plans()
+    plans = Sanbase.Billing.TestSeed.seed_products_and_plans()
 
     {:ok, apikey} = Apikey.generate_apikey(user)
     conn_apikey = setup_apikey_auth(build_conn(), apikey)

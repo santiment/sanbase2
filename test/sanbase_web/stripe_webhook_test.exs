@@ -6,7 +6,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
   import Sanbase.TestHelpers
   import ExUnit.CaptureLog
 
-  alias Sanbase.Pricing.StripeEvent
+  alias Sanbase.Billing.StripeEvent
   alias Sanbase.Repo
   alias Sanbase.StripeApiTestReponse
   alias Sanbase.StripeApi
@@ -17,7 +17,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
   ]) do
     clean_task_supervisor_children()
 
-    Sanbase.Pricing.TestSeed.seed_products_and_plans()
+    Sanbase.Billing.TestSeed.seed_products_and_plans()
 
     user = insert(:user)
     {:ok, user: user}

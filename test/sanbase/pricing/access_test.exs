@@ -1,4 +1,4 @@
-defmodule Sanbase.Pricing.AccessTest do
+defmodule Sanbase.Billing.AccessTest do
   use SanbaseWeb.ConnCase
 
   import Sanbase.Factory
@@ -7,7 +7,7 @@ defmodule Sanbase.Pricing.AccessTest do
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Sanbase.Auth.Apikey
-  alias Sanbase.Pricing.TestSeed
+  alias Sanbase.Billing.TestSeed
 
   setup_with_mocks([
     {Sanbase.Prices.Store, [], [fetch_prices_with_resolution: fn _, _, _, _ -> price_resp() end]},

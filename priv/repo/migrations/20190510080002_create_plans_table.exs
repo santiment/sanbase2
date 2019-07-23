@@ -1,7 +1,7 @@
 defmodule Sanbase.Repo.Migrations.CreatePlansTable do
   use Ecto.Migration
 
-  alias Sanbase.Pricing.Plan.AccessChecker
+  alias Sanbase.Billing.Plan.AccessChecker
 
   @table :plans
   def up do

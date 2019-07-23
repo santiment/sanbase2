@@ -47,7 +47,7 @@ defmodule SanbaseWeb.Graphql.Schema.TechIndicatorsQueries do
     * interval - an integer followed by one of: `m`, `h`, `d`, `w`
     """
     field :metric_anomaly, list_of(:anomaly_value) do
-      meta(subscription: :basic)
+      meta(subscription: :free)
 
       arg(:metric, non_null(:anomalies_metrics_enum))
       arg(:slug, non_null(:string))

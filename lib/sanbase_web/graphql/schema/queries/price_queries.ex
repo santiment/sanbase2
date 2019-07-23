@@ -21,7 +21,7 @@ defmodule SanbaseWeb.Graphql.Schema.PriceQueries do
       arg(:interval, :string, default_value: "")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      middleware(TimeframeRestriction)
       cache_resolve(&PriceResolver.history_price/3)
     end
 
@@ -38,7 +38,7 @@ defmodule SanbaseWeb.Graphql.Schema.PriceQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      middleware(TimeframeRestriction)
       cache_resolve(&PriceResolver.ohlc/3)
     end
   end

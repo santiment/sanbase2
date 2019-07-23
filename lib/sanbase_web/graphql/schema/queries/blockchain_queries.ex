@@ -147,7 +147,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     the exact number of unique addresses for each day.
     """
     field :daily_active_addresses, list_of(:active_addresses) do
-      meta(subscription: :basic)
+      meta(subscription: :free)
 
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
@@ -155,7 +155,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      middleware(TimeframeRestriction)
       cache_resolve(&ClickhouseResolver.daily_active_addresses/3)
     end
 
@@ -385,7 +385,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, non_null(:string), default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      middleware(TimeframeRestriction)
       cache_resolve(&ClickhouseResolver.historical_balance/3)
     end
 

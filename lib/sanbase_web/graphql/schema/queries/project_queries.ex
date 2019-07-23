@@ -99,7 +99,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       arg(:to, non_null(:datetime))
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      middleware(TimeframeRestriction)
       cache_resolve(&PriceResolver.multiple_projects_stats/3)
     end
 
@@ -124,7 +124,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       arg(:interval, non_null(:string), default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      middleware(TimeframeRestriction)
       cache_resolve(&ProjectResolver.combined_history_stats/3)
     end
 
@@ -156,7 +156,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       arg(:to, non_null(:datetime))
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      middleware(TimeframeRestriction)
 
       cache_resolve(&ProjectTransactionsResolver.eth_spent_by_all_projects/3,
         ttl: 600,
@@ -172,7 +172,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       arg(:to, non_null(:datetime))
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      middleware(TimeframeRestriction)
 
       cache_resolve(&ProjectTransactionsResolver.eth_spent_by_erc20_projects/3,
         ttl: 600,
@@ -192,7 +192,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      middleware(TimeframeRestriction)
 
       cache_resolve(&ProjectTransactionsResolver.eth_spent_over_time_by_erc20_projects/3,
         ttl: 600,
@@ -212,7 +212,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      middleware(TimeframeRestriction)
 
       cache_resolve(&ProjectTransactionsResolver.eth_spent_over_time_by_all_projects/3,
         ttl: 600,

@@ -43,7 +43,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      middleware(TimeframeRestriction)
       cache_resolve(&TwitterResolver.history_twitter_data/3)
     end
 
@@ -140,7 +140,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:result_size_tail, :integer, default_value: 0)
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      middleware(TimeframeRestriction)
       cache_resolve(&SocialDataResolver.twitter_mention_count/3)
     end
 
@@ -159,7 +159,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
       middleware(MultipleAuth, [{JWTAuth, san_tokens: 1000}, {ApikeyAuth, san_tokens: 1000}])
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      middleware(TimeframeRestriction)
       cache_resolve(&SocialDataResolver.emojis_sentiment/3)
     end
 
@@ -287,7 +287,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      middleware(TimeframeRestriction, %{allow_historical_data: true, allow_realtime_data: true})
+      middleware(TimeframeRestriction)
       cache_resolve(&ElasticsearchResolver.stats/3)
     end
 

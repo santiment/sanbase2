@@ -17,6 +17,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
             restrict_to: 3,
             do_call: 2,
             check_from_to_params: 1,
+            check_from_to_both_outside: 1,
             required_san_stake_full_access: 0,
             restrict_to_in_days: 0,
             restrict_from_in_days: 0}
@@ -37,6 +38,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
     resolution
     |> check_from_to_params()
     |> do_call(opts)
+    |> check_from_to_both_outside()
   end
 
   # If the query is resolved there's nothing to do here
@@ -199,7 +201,28 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
     end
   end
 
-  defp check_from_to_params(resolution), do: resolution
+  defp check_from_to_params(%Resolution{} = resolution), do: resolution
+
+  defp check_from_to_both_outside(%Resolution{state: :resolved} = resolution), do: resolution
+
+  defp check_from_to_both_outside(%Resolution{arguments: %{from: from, to: to}} = resolution) do
+    case to_param_is_after_from(from, to) do
+      true ->
+        resolution
+
+      _ ->
+        # If we reach here the first time we checked to < from was not true
+        # This means that the middleware rewrote the params in a way that this is
+        # now true. If that happens - both from and to are outside the allowed interval
+        resolution
+        |> Resolution.put_result(
+          {:error,
+           "Both `from` and `to` parameters are outside the allowed intervals you are allowed to query with your current subscription plan."}
+        )
+    end
+  end
+
+  defp check_from_to_both_outside(%Resolution{} = resolution), do: resolution
 
   defp update_resolution_from_to(
          %Resolution{arguments: %{from: _from, to: _to} = args} = resolution,

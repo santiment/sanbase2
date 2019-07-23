@@ -1,13 +1,18 @@
 defmodule SanbaseWeb.Graphql.ExchangesTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.Factory
   import Mock
+  import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
 
   setup do
+    Sanbase.Pricing.TestSeed.seed_products_and_plans()
+
     infr = insert(:infrastructure, %{code: "ETH"})
+    user = insert(:user)
+    insert(:subscription_premium, user: user)
+    conn = setup_jwt_auth(build_conn(), user)
 
     insert(:exchange_address, %{address: "0x234", name: "Binance", infrastructure_id: infr.id})
     insert(:exchange_address, %{address: "0x567", name: "Bitfinex", infrastructure_id: infr.id})
@@ -15,6 +20,7 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
 
     [
       exchange: "Binance",
+      conn: conn,
       from: from_iso8601!("2017-05-11T00:00:00Z"),
       to: from_iso8601!("2017-05-20T00:00:00Z")
     ]
@@ -50,11 +56,12 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
           context.to
         )
 
-      response =
+      result =
         context.conn
         |> post("/graphql", query_skeleton(query, "exchangeVolume"))
+        |> json_response(200)
 
-      exchanges = json_response(response, 200)["data"]["exchangeVolume"]
+      exchanges = result["data"]["exchangeVolume"]
 
       assert exchanges == [
                %{

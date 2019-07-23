@@ -334,6 +334,13 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def subscription_premium_factory() do
+    %Subscription{
+      plan_id: 4,
+      current_period_end: Timex.shift(Timex.now(), days: 1)
+    }
+  end
+
   def timeline_event_factory() do
     %TimelineEvent{}
   end

@@ -74,7 +74,7 @@ defmodule Sanbase.UserList.Settings do
     belongs_to(:user, User, foreign_key: :user_id, primary_key: true)
     belongs_to(:watchlist, UserList, foreign_key: :watchlist_id, primary_key: true)
 
-    embeds_one(:settings, WatchlistSettings)
+    embeds_one(:settings, WatchlistSettings, on_replace: :update)
   end
 
   def changeset(%__MODULE__{} = settings, attrs \\ %{}) do

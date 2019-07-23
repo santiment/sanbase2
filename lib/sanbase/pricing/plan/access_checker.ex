@@ -43,13 +43,17 @@ defmodule Sanbase.Pricing.Plan.AccessChecker do
       end)
     end
 
+    def queries_without_subsciption_plan() do
+      get_metrics_with_subscription_plan(nil) -- [:__typename, :__type, :__schema]
+    end
+
     def mutations_mapset() do
       @mutations_mapset
     end
   end
 
   # Emit a compile time warning if there is any query without subscription plan
-  case Helper.get_metrics_with_subscription_plan(nil) -- [:__typename, :__type, :__schema] do
+  case Helper.queries_without_subsciption_plan() do
     [] ->
       :ok
 

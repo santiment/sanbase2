@@ -30,6 +30,10 @@ defmodule Sanbase.Pricing.AccessTest do
     [user: user, conn_staking: conn_staking, conn: conn, project: project]
   end
 
+  test "there are no queries without defined subscription" do
+    assert Sanbase.Pricing.Plan.AccessChecker.Helper.queries_without_subsciption_plan() == []
+  end
+
   # TODO: Remove once staking is disabled
   describe "No subscription, staking tokens user" do
     test "can access FREE metrics for all time", context do

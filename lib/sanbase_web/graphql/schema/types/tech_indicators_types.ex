@@ -11,6 +11,7 @@ defmodule SanbaseWeb.Graphql.TechIndicatorsTypes do
   enum :anomalies_metrics_enum do
     value(:daily_active_addresses)
     value(:dev_activity)
+    value(:social_volume)
   end
 
   @desc ~s"""

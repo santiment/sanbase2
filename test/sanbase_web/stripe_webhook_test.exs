@@ -5,8 +5,9 @@ defmodule SanbaseWeb.StripeWebhookTest do
   import Sanbase.Factory
   import Sanbase.TestHelpers
   import ExUnit.CaptureLog
+  import Ecto.Query
 
-  alias Sanbase.Billing.StripeEvent
+  alias Sanbase.Billing.{StripeEvent, Plan, Subscription}
   alias Sanbase.Repo
   alias Sanbase.StripeApiTestReponse
   alias Sanbase.StripeApi
@@ -34,8 +35,8 @@ defmodule SanbaseWeb.StripeWebhookTest do
         stripe_id: stripe_id
       )
 
-      payload = json_payload()
-      response = post_stripe_webhook()
+      payload = payment_succeded_json()
+      response = post_stripe_webhook(:payment_succeded)
 
       assert_receive({_, {:ok, %StripeEvent{is_processed: true}}})
 
@@ -47,7 +48,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
 
     test "when event with this id exists - return 200 and don't process",
          context do
-      payload = json_payload()
+      payload = payment_succeded_json()
       StripeEvent.create(Jason.decode!(payload))
 
       {:ok, %Stripe.Subscription{id: stripe_id}} =
@@ -58,14 +59,14 @@ defmodule SanbaseWeb.StripeWebhookTest do
         stripe_id: stripe_id
       )
 
-      response = post_stripe_webhook()
+      response = post_stripe_webhook(:payment_succeded)
 
       refute_receive({_, {:ok, %StripeEvent{is_processed: true}}})
       assert response.status == 200
     end
 
     test "when signature signed with wrong secret - returns not valid message" do
-      payload = json_payload()
+      payload = payment_succeded_json()
 
       capture_log(fn ->
         response =
@@ -90,7 +91,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
          ]}
       ]) do
         capture_log(fn ->
-          response = post_stripe_webhook()
+          response = post_stripe_webhook(:payment_succeded)
 
           refute_receive({_, {:ok, %StripeEvent{is_processed: true}}})
           assert response.status == 200
@@ -99,8 +100,103 @@ defmodule SanbaseWeb.StripeWebhookTest do
     end
   end
 
-  defp post_stripe_webhook do
-    payload = json_payload()
+  describe "customer.subscription.created event" do
+    test "successfully create subscription" do
+      {:ok,
+       %Stripe.Subscription{
+         id: _stripe_id,
+         customer: stripe_customer_id,
+         plan: %Stripe.Plan{id: _stripe_plan_id}
+       }} = StripeApiTestReponse.retrieve_subscription_resp()
+
+      user = insert(:user, stripe_customer_id: stripe_customer_id)
+      response = post_stripe_webhook(:subscription_created)
+
+      assert_receive({_, {:ok, %StripeEvent{is_processed: true}}})
+      assert response.status == 200
+      assert from(s in Subscription, where: s.user_id == ^user.id) |> Repo.all() |> length() == 1
+    end
+
+    test "when there is existing subscription with the same stripe_id - event is processed succesfully, new subscription is not created" do
+      {:ok,
+       %Stripe.Subscription{
+         id: stripe_id,
+         customer: stripe_customer_id,
+         plan: %Stripe.Plan{id: _stripe_plan_id}
+       }} = StripeApiTestReponse.retrieve_subscription_resp()
+
+      user = insert(:user, stripe_customer_id: stripe_customer_id)
+
+      insert(:subscription_essential,
+        user: user,
+        stripe_id: stripe_id
+      )
+
+      response = post_stripe_webhook(:subscription_created)
+
+      assert_receive({_, {:ok, %StripeEvent{is_processed: true}}})
+      assert response.status == 200
+      assert from(s in Subscription, where: s.user_id == ^user.id) |> Repo.all() |> length() == 1
+    end
+
+    test "when customer does not exist - subscription is not created" do
+      {:ok,
+       %Stripe.Subscription{
+         id: stripe_id,
+         customer: _stripe_customer_id,
+         plan: %Stripe.Plan{id: _stripe_plan_id}
+       }} = StripeApiTestReponse.retrieve_subscription_resp()
+
+      user = insert(:user)
+
+      expected_error_msq = "Customer for subscription_id #{stripe_id} does not exist"
+
+      capture_log(fn ->
+        response = post_stripe_webhook(:subscription_created)
+
+        assert_receive({_, {:error, expected_error_msq}})
+        assert response.status == 200
+      end) =~ expected_error_msq
+
+      assert from(s in Subscription, where: s.user_id == ^user.id) |> Repo.all() |> length() == 0
+    end
+
+    test "when plan does not exist - subscription is not created" do
+      {:ok,
+       %Stripe.Subscription{
+         id: stripe_id,
+         customer: stripe_customer_id,
+         plan: %Stripe.Plan{id: stripe_plan_id}
+       }} = StripeApiTestReponse.retrieve_subscription_resp()
+
+      Plan.by_stripe_id(stripe_plan_id)
+      |> Plan.changeset(%{stripe_id: "non_existing"})
+      |> Repo.update!()
+
+      user = insert(:user, stripe_customer_id: stripe_customer_id)
+
+      expected_error_msq = "Plan for subscription_id #{stripe_id} does not exist"
+
+      capture_log(fn ->
+        response = post_stripe_webhook(:subscription_created)
+
+        assert_receive({_, {:error, expected_error_msq}})
+        assert response.status == 200
+      end) =~ expected_error_msq
+
+      assert from(s in Subscription, where: s.user_id == ^user.id) |> Repo.all() |> length() == 0
+    end
+  end
+
+  defp post_stripe_webhook(event) do
+    payload =
+      case event do
+        :payment_succeded ->
+          payment_succeded_json()
+
+        :subscription_created ->
+          subscription_created_json()
+      end
 
     build_conn()
     |> put_req_header("content-type", "application/json")
@@ -125,7 +221,151 @@ defmodule SanbaseWeb.StripeWebhookTest do
     |> Base.encode16(case: :lower)
   end
 
-  defp json_payload do
+  defp subscription_created_json do
+    """
+    {
+      "id": "evt_1Eud0qCA0hGU8IEVdOgcTrft",
+      "object": "event",
+      "api_version": "2019-02-19",
+      "created": 1562754419,
+      "type": "customer.subscription.created",
+      "livemode": false,
+      "pending_webhooks": 1,
+      "request": {
+        "id": "req_A9TTE0HJ036bgl",
+        "idempotency_key": null
+      },
+      "data": {
+        "object": {
+          "id": "sub_FUN4OEvs92vfLC",
+          "object": "subscription",
+          "application_fee_percent": null,
+          "billing": "charge_automatically",
+          "billing_cycle_anchor": 1563889630,
+          "billing_thresholds": null,
+          "cancel_at": null,
+          "cancel_at_period_end": false,
+          "canceled_at": null,
+          "collection_method": "charge_automatically",
+          "created": 1563889630,
+          "current_period_end": 1566568030,
+          "current_period_start": 1563889630,
+          "customer": "cus_FSmndgjh0wSz24",
+          "days_until_due": null,
+          "default_payment_method": null,
+          "default_source": null,
+          "default_tax_rates": [
+          ],
+          "discount": {
+            "object": "discount",
+            "coupon": {
+              "id": "PFXt9JdU",
+              "object": "coupon",
+              "amount_off": null,
+              "created": 1563889630,
+              "currency": null,
+              "duration": "forever",
+              "duration_in_months": null,
+              "livemode": false,
+              "max_redemptions": null,
+              "metadata": {
+              },
+              "name": null,
+              "percent_off": 20,
+              "redeem_by": null,
+              "times_redeemed": 1,
+              "valid": true
+            },
+            "customer": "cus_FSmndgjh0wSz24",
+            "end": null,
+            "start": 1563889630,
+            "subscription": "sub_FUN4OEvs92vfLC"
+          },
+          "ended_at": null,
+          "items": {
+            "object": "list",
+            "data": [
+              {
+                "id": "si_FUN45qx35cmYgh",
+                "object": "subscription_item",
+                "billing_thresholds": null,
+                "created": 1563889630,
+                "metadata": {
+                },
+                "plan": {
+                  "id": "plan_FJVlH8O0qGs1TM",
+                  "object": "plan",
+                  "active": true,
+                  "aggregate_usage": null,
+                  "amount": 11900,
+                  "billing_scheme": "per_unit",
+                  "created": 1561384894,
+                  "currency": "usd",
+                  "interval": "month",
+                  "interval_count": 1,
+                  "livemode": false,
+                  "metadata": {
+                  },
+                  "nickname": "ESSENTIAL",
+                  "product": "prod_FJVky7lugU5m6C",
+                  "tiers": null,
+                  "tiers_mode": null,
+                  "transform_usage": null,
+                  "trial_period_days": null,
+                  "usage_type": "licensed"
+                },
+                "quantity": 1,
+                "subscription": "sub_FUN4OEvs92vfLC",
+                "tax_rates": [
+                ]
+              }
+            ],
+            "has_more": false,
+            "total_count": 1,
+            "url": "/v1/subscription_items?subscription=sub_FUN4OEvs92vfLC"
+          },
+          "latest_invoice": "in_1EzOKgCA0hGU8IEVn1Gyk4yL",
+          "livemode": false,
+          "metadata": {
+          },
+          "pending_setup_intent": null,
+          "plan": {
+            "id": "plan_FJVlH8O0qGs1TM",
+            "object": "plan",
+            "active": true,
+            "aggregate_usage": null,
+            "amount": 11900,
+            "billing_scheme": "per_unit",
+            "created": 1561384894,
+            "currency": "usd",
+            "interval": "month",
+            "interval_count": 1,
+            "livemode": false,
+            "metadata": {
+            },
+            "nickname": "ESSENTIAL",
+            "product": "prod_FJVky7lugU5m6C",
+            "tiers": null,
+            "tiers_mode": null,
+            "transform_usage": null,
+            "trial_period_days": null,
+            "usage_type": "licensed"
+          },
+          "quantity": 1,
+          "schedule": null,
+          "start": 1563889630,
+          "start_date": 1563889630,
+          "status": "active",
+          "tax_percent": null,
+          "trial_end": null,
+          "trial_start": null
+        }
+      }
+    }
+    """
+  end
+
+  defp payment_succeded_json do
     """
     {
       "id": "evt_1Eud0qCA0hGU8IEVdOgcTrft",

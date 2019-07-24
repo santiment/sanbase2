@@ -16,8 +16,10 @@ defmodule Sanbase.Billing.StripeEvent do
   alias Sanbase.Auth.User
   alias Sanbase.Billing.{Subscription, Plan}
   alias Sanbase.StripeApi
+  alias Sanbase.Notifications.Discord
 
   require Logger
+  require Sanbase.Utils.Config, as: Config
 
   @primary_key false
   schema "stripe_events" do
@@ -69,7 +71,28 @@ defmodule Sanbase.Billing.StripeEvent do
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
       handle_event(stripe_event)
     end)
+
+    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+      handle_discord_notification(stripe_event)
+    end)
   end
+
+  defp handle_discord_notification(%{
+         "type" => "invoice.payment_succeeded",
+         "data" => %{"object" => %{"total" => total}}
+       }) do
+    payload =
+      ["New payment for #{total / 100}$ received"]
+      |> Discord.encode!(publish_user())
+
+    Discord.send_notification(
+      webhook_url(),
+      "Stripe Payment",
+      payload
+    )
+  end
+
+  defp handle_discord_notification(_), do: :ok
 
   defp handle_event(%{
          "id" => id,
@@ -146,5 +169,13 @@ defmodule Sanbase.Billing.StripeEvent do
         Logger.error("Error handling #{type} event: reason #{inspect(reason)}")
         {:error, reason}
     end
+  end
+
+  defp webhook_url() do
+    Config.get(:webhook_url)
+  end
+
+  defp publish_user() do
+    Config.get(:publish_user)
   end
 end

@@ -8,3 +8,7 @@ config :stripity_stripe,
 
 config :sanbase, SanbaseWeb.Plug.VerifyStripeWebhook,
   webhook_secret: {:system, "STRIPE_WEBHOOK_SECRET", ""}
+
+config :sanbase, Sanbase.Billing.StripeEvent,
+  webhook_url: {:system, "STRIPE_PAYMENT_DISCORD_WEBHOOK"},
+  publish_user: {:system, "STRIPE_PAYMENT_DISCORD_PUBLISH_USER", "Stripe Payments Bot"}

@@ -40,7 +40,7 @@ defmodule SanbaseWeb.Graphql.Schema.TechIndicatorsQueries do
     Field `metricValue` is the value from original metric that is considered abnormal.
 
     Arguments description:
-    * metric - name of metric (currently supports DAILY_ACTIVE_ADDRESSES and DEV_ACTIVITY)
+    * metric - name of metric (currently supports DAILY_ACTIVE_ADDRESSES, DEV_ACTIVITY, SOCIAL_VOLUME)
     * slug - project's slug
     * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
     * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"

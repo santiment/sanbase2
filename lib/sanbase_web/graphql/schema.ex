@@ -73,8 +73,15 @@ defmodule SanbaseWeb.Graphql.Schema do
   end
 
   def middleware(middlewares, field, object) do
+    # Do not check access for fields or mutation
+    middlewares =
+      case object.identifier do
+        :query -> [AccessControl | middlewares]
+        _ -> middlewares
+      end
+
     prometeheus_middlewares =
-      [AccessControl | middlewares]
+      middlewares
       |> Prometheus.HistogramInstrumenter.instrument(field, object)
       |> Prometheus.CounterInstrumenter.instrument(field, object)
 

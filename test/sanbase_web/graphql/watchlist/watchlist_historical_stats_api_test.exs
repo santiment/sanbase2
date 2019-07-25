@@ -8,9 +8,12 @@ defmodule SanbaseWeb.Graphql.WatchlistHistoricalStatsApiTest do
   alias Sanbase.Prices.Store
 
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.InfluxdbHelpers
   import Sanbase.Factory
 
   setup do
+    setup_prices_influxdb()
+
     clean_task_supervisor_children()
 
     user = insert(:user)
@@ -122,10 +125,6 @@ defmodule SanbaseWeb.Graphql.WatchlistHistoricalStatsApiTest do
     datetime3 = DateTime.from_naive!(~N[2017-05-15 21:45:00], "Etc/UTC")
     datetime4 = DateTime.from_naive!(~N[2017-05-16 21:45:00], "Etc/UTC")
     datetime5 = DateTime.from_naive!(~N[2017-05-16 23:59:59], "Etc/UTC")
-
-    Store.create_db()
-    Store.drop_measurement(measurement1)
-    Store.drop_measurement(measurement2)
 
     Store.import([
       %Measurement{

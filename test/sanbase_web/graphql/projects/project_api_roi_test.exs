@@ -8,9 +8,10 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
 
   import Plug.Conn
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.InfluxdbHelpers
 
   defp setup do
-    Store.create_db()
+    setup_prices_influxdb()
 
     %Project{}
     |> Project.changeset(%{name: "Ethereum", ticker: "ETH", coinmarketcap_id: "ethereum"})

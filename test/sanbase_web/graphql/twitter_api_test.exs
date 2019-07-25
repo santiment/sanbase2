@@ -7,12 +7,10 @@ defmodule Sanbase.Github.TwitterApiTest do
   alias Sanbase.Model.Project
 
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.InfluxdbHelpers
 
   setup do
-    Store.create_db()
-    Store.drop_measurement("SAN")
-    Store.drop_measurement("TEST1")
-    Store.drop_measurement("TEST2")
+    setup_twitter_influxdb()
 
     datetime1 = DateTime.from_naive!(~N[2017-05-13 18:00:00], "Etc/UTC")
     datetime2 = DateTime.from_naive!(~N[2017-05-14 18:00:00], "Etc/UTC")

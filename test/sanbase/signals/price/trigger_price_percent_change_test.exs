@@ -3,6 +3,7 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
 
   import Mock
   import Sanbase.Factory
+  import Sanbase.InfluxdbHelpers
 
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
@@ -91,9 +92,9 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
   end
 
   defp populate_influxdb() do
-    ticker_cmc_id = "#{@ticker}_#{@cmc_id}"
+    setup_prices_influxdb()
 
-    Store.drop_measurement(ticker_cmc_id)
+    ticker_cmc_id = "#{@ticker}_#{@cmc_id}"
 
     datetime1 = Timex.shift(Timex.now(), hours: -9)
     datetime2 = Timex.shift(Timex.now(), hours: -8)

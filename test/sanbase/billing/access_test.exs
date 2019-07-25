@@ -12,6 +12,8 @@ defmodule Sanbase.Billing.AccessTest do
   setup_with_mocks([
     {Sanbase.Prices.Store, [], [fetch_prices_with_resolution: fn _, _, _, _ -> price_resp() end]},
     {Sanbase.Clickhouse.MVRV, [], [mvrv_ratio: fn _, _, _, _ -> mvrv_resp() end]},
+    {Sanbase.Clickhouse.DailyActiveDeposits, [],
+     [active_deposits: fn _, _, _, _ -> daily_active_deposits_resp() end]},
     {Sanbase.Clickhouse.NetworkGrowth, [],
      [network_growth: fn _, _, _, _ -> network_growth_resp() end]}
   ]) do
@@ -54,11 +56,11 @@ defmodule Sanbase.Billing.AccessTest do
     test "can access PRO metrics for all time", context do
       from = Timex.shift(Timex.now(), days: -900)
       to = Timex.now()
-      query = mvrv_query(from, to)
+      query = daily_active_deposits_query(from, to)
 
-      result = execute_query(context.conn_staking, query, "mvrvRatio")
+      result = execute_query(context.conn_staking, query, "dailyActiveDeposits")
 
-      assert_called(Sanbase.Clickhouse.MVRV.mvrv_ratio(:_, from, to, :_))
+      assert_called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
       assert result != nil
     end
   end
@@ -107,30 +109,30 @@ defmodule Sanbase.Billing.AccessTest do
     test "cannot access PRO metrics for over 3 months", context do
       from = Timex.shift(Timex.now(), days: -91)
       to = Timex.shift(Timex.now(), days: -10)
-      query = mvrv_query(from, to)
-      result = execute_query(context.conn, query, "mvrvRatio")
+      query = daily_active_deposits_query(from, to)
+      result = execute_query(context.conn, query, "dailyActiveDeposits")
 
-      refute called(Sanbase.Clickhouse.MVRV.mvrv_ratio(:_, from, to, :_))
+      refute called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
       assert result != nil
     end
 
     test "cannot access PRO metrics realtime", context do
       from = Timex.shift(Timex.now(), days: -10)
       to = Timex.now()
-      query = mvrv_query(from, to)
-      result = execute_query(context.conn, query, "mvrvRatio")
+      query = daily_active_deposits_query(from, to)
+      result = execute_query(context.conn, query, "dailyActiveDeposits")
 
-      refute called(Sanbase.Clickhouse.MVRV.mvrv_ratio(:_, from, to, :_))
+      refute called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
       assert result != nil
     end
 
     test "can access PRO withing 90 days and 1 day interval", context do
       from = Timex.shift(Timex.now(), days: -89)
       to = Timex.shift(Timex.now(), days: -2)
-      query = mvrv_query(from, to)
-      result = execute_query(context.conn, query, "mvrvRatio")
+      query = daily_active_deposits_query(from, to)
+      result = execute_query(context.conn, query, "dailyActiveDeposits")
 
-      assert_called(Sanbase.Clickhouse.MVRV.mvrv_ratio(:_, from, to, :_))
+      assert_called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
       assert result != nil
     end
   end
@@ -189,15 +191,15 @@ defmodule Sanbase.Billing.AccessTest do
 
       from = Timex.shift(Timex.now(), days: -91)
       to = Timex.now()
-      query = mvrv_query(from, to)
+      query = daily_active_deposits_query(from, to)
 
-      error_msg = execute_query_with_error(context.conn, query, "mvrvRatio")
+      error_msg = execute_query_with_error(context.conn, query, "dailyActiveDeposits")
 
-      refute called(Sanbase.Clickhouse.MVRV.mvrv_ratio(:_, from, to, :_))
+      refute called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
 
       assert error_msg =~ """
-             Requested metric mvrv_ratio is not provided by the current subscription plan ESSENTIAL.
-             Please upgrade to Pro or higher to get access to mvrv_ratio
+             Requested metric daily_active_deposits is not provided by the current subscription plan ESSENTIAL.
+             Please upgrade to Pro or higher to get access to daily_active_deposits
              """
     end
   end
@@ -244,10 +246,10 @@ defmodule Sanbase.Billing.AccessTest do
 
       from = Timex.shift(Timex.now(), days: -(18 * 30 + 1))
       to = Timex.now()
-      query = mvrv_query(from, to)
-      result = execute_query(context.conn, query, "mvrvRatio")
+      query = daily_active_deposits_query(from, to)
+      result = execute_query(context.conn, query, "dailyActiveDeposits")
 
-      refute called(Sanbase.Clickhouse.MVRV.mvrv_ratio(:_, from, to, :_))
+      refute called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
       assert result != nil
     end
 
@@ -256,10 +258,10 @@ defmodule Sanbase.Billing.AccessTest do
 
       from = Timex.shift(Timex.now(), days: -(18 * 30 - 1))
       to = Timex.now()
-      query = mvrv_query(from, to)
-      result = execute_query(context.conn, query, "mvrvRatio")
+      query = daily_active_deposits_query(from, to)
+      result = execute_query(context.conn, query, "dailyActiveDeposits")
 
-      assert_called(Sanbase.Clickhouse.MVRV.mvrv_ratio(:_, from, to, :_))
+      assert_called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
       assert result != nil
     end
   end
@@ -294,10 +296,10 @@ defmodule Sanbase.Billing.AccessTest do
 
       from = Timex.shift(Timex.now(), days: -900)
       to = Timex.now()
-      query = mvrv_query(from, to)
-      result = execute_query(context.conn, query, "mvrvRatio")
+      query = daily_active_deposits_query(from, to)
+      result = execute_query(context.conn, query, "dailyActiveDeposits")
 
-      assert_called(Sanbase.Clickhouse.MVRV.mvrv_ratio(:_, from, to, :_))
+      assert_called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
       assert result != nil
     end
   end
@@ -308,6 +310,17 @@ defmodule Sanbase.Billing.AccessTest do
         mvrvRatio(slug: "ethereum", from: "#{from}", to: "#{to}", interval: "1d"){
           datetime
           ratio
+        }
+      }
+    """
+  end
+
+  defp daily_active_deposits_query(from, to) do
+    """
+      {
+        dailyActiveDeposits(slug: "ethereum", from: "#{from}", to: "#{to}", interval: "1d"){
+          datetime
+          activeDeposits
         }
       }
     """
@@ -340,6 +353,14 @@ defmodule Sanbase.Billing.AccessTest do
      [
        %{ratio: 0.1, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
        %{ratio: 0.2, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
+     ]}
+  end
+
+  defp daily_active_deposits_resp() do
+    {:ok,
+     [
+       %{active_deposits: 0.1, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
+       %{active_deposits: 0.2, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
      ]}
   end
 

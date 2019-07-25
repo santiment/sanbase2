@@ -19,12 +19,20 @@ defmodule Sanbase.Billing.PlanTest do
   end
 
   describe "#plans_with_metric" do
-    test "with standart query - returns all plans" do
+    test "free" do
       assert Plan.lowest_plan_with_metric(:network_growth) == :basic
     end
 
-    test "with advanced query - returns only plans with advanced queries" do
-      assert Plan.lowest_plan_with_metric(:mvrv_ratio) == :pro
+    test "basic" do
+      assert Plan.lowest_plan_with_metric(:network_growth) == :basic
+    end
+
+    test "pro" do
+      assert Plan.lowest_plan_with_metric(:daily_active_deposits) == :pro
+    end
+
+    test "custom_access" do
+      assert Plan.lowest_plan_with_metric(:mvrv_ratio) == :free
     end
   end
 

@@ -2,8 +2,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   @moduledoc """
   Module that currently checks whether current_user's plan has access to requested
   query and if not - returns error message to upgrade.
-  If user is not logged in passes to next middleware TimeframeRestriction
-  which restricts historical data usage to 90 days.
   """
   @behaviour Absinthe.Middleware
 
@@ -29,18 +27,17 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     check_access_to_query(subscription, resolution, query)
   end
 
+  # TODO: Remove after staking is disabled
   def call(%Resolution{} = resolution, _), do: resolution
 
-  # TODO: Leave this after staking is removed. To enable execution just delete
-  # the previous call/2
   def call(%Resolution{definition: definition} = resolution, _) do
-    query = definition.name |> Macro.underscore() |> String.to_existing_atom()
+    # It is safe to call Sting.to_atom() here because we cannot reach here
+    # with random strings but only with supported ones
+    query = definition.name |> Macro.underscore() |> String.to_atom()
     check_access_to_query(@free_subscription, resolution, query)
   end
 
-  defp check_access_to_query(nil, resolution, _), do: resolution
-
-  defp check_access_to_query(subscription, resolution, query) do
+  defp check_access_to_query(%Subscription{} = subscription, resolution, query) do
     # Do not check mutations against the Subscription plan
     if Subscription.has_access?(subscription, query) do
       resolution

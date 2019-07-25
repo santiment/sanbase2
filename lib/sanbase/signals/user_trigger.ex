@@ -225,7 +225,7 @@ defmodule Sanbase.Signal.UserTrigger do
     end
   end
 
-  @spec historical_trigger_points(%Trigger{} | map()) :: list(any)
+  @spec historical_trigger_points(%Trigger{} | map()) :: {:ok, list(any)} | {:error, String.t()}
   def historical_trigger_points(%Trigger{} = trigger) do
     Trigger.historical_trigger_points(trigger)
   end

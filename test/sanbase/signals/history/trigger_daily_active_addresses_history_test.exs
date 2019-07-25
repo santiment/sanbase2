@@ -9,6 +9,7 @@ defmodule Sanbase.Signal.TriggerDailyActiveAddressesHistoryTest do
 
   test "returns historical daa data with trigger points" do
     daa_result = [
+      %{datetime: from_iso8601!("2018-11-17T00:00:00Z"), active_addresses: 20},
       %{datetime: from_iso8601!("2018-11-17T00:00:00Z"), active_addresses: 23},
       %{datetime: from_iso8601!("2018-11-18T00:00:00Z"), active_addresses: 25},
       %{datetime: from_iso8601!("2018-11-19T00:00:00Z"), active_addresses: 60},
@@ -23,24 +24,9 @@ defmodule Sanbase.Signal.TriggerDailyActiveAddressesHistoryTest do
       %{datetime: from_iso8601!("2018-11-26T00:00:00Z"), active_addresses: 70}
     ]
 
-    prices_result = [
-      [from_iso8601!("2018-11-17T00:00:00Z"), 20, 1000, 500, 200],
-      [from_iso8601!("2018-11-18T00:00:00Z"), 20, 1000, 500, 200],
-      [from_iso8601!("2018-11-19T00:00:00Z"), 20, 1000, 500, 200],
-      [from_iso8601!("2018-11-20T00:00:00Z"), 20, 1000, 500, 200],
-      [from_iso8601!("2018-11-21T00:00:00Z"), 20, 1000, 500, 200],
-      [from_iso8601!("2018-11-22T00:00:00Z"), 20, 1000, 500, 200],
-      [from_iso8601!("2018-11-23T00:00:00Z"), 20, 1000, 500, 200],
-      [from_iso8601!("2018-11-24T00:00:00Z"), 20, 1000, 500, 200],
-      [from_iso8601!("2018-11-25T00:00:00Z"), 20, 1000, 500, 200],
-      [from_iso8601!("2018-11-26T00:00:00Z"), 20, 1000, 500, 200]
-    ]
-
     with_mocks([
       {Sanbase.Clickhouse.Erc20DailyActiveAddresses, [],
-       [average_active_addresses: fn _, _, _, _ -> {:ok, daa_result} end]},
-      {Sanbase.Prices.Store, [],
-       [fetch_prices_with_resolution: fn _, _, _, _ -> {:ok, prices_result} end]}
+       [average_active_addresses: fn _, _, _, _ -> {:ok, daa_result} end]}
     ]) do
       trigger_settings = %{
         type: "daily_active_addresses",

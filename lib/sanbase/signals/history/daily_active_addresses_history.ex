@@ -5,6 +5,7 @@ defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
   """
 
   alias __MODULE__
+  alias Sanbase.Signal.Trigger.DailyActiveAddressesSettings
 
   @type historical_trigger_points_type :: %{
           datetime: %DateTime{},
@@ -18,18 +19,20 @@ defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
     @historical_days_from 90
     @historical_days_interval "1d"
 
-    def get_data(slug) when is_binary(slug) do
+    def get_data(slug, time_window) when is_binary(slug) do
       with {:ok, contract, _} <- Sanbase.Model.Project.contract_info_by_slug(slug) do
         Sanbase.Clickhouse.DailyActiveAddresses.average_active_addresses(
           contract,
-          Timex.shift(Timex.now(), days: -@historical_days_from),
+          Timex.shift(Timex.now(),
+            days: -(@historical_days_from + Sanbase.DateTimeUtils.str_to_days(time_window))
+          ),
           Timex.now(),
           @historical_days_interval
         )
       end
     end
 
-    import Sanbase.DateTimeUtils, only: [str_to_hours: 1]
+    import Sanbase.DateTimeUtils, only: [str_to_days: 1]
     import Sanbase.Signal.Utils, only: [percent_change: 2]
     import Sanbase.Signal.OperationEvaluation, only: [operation_triggered?: 2]
 
@@ -41,11 +44,12 @@ defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
             {:ok, list(DailyActiveAddressesHistory.historical_trigger_points_type())}
             | {:error, String.t()}
     def historical_trigger_points(
-          %DailyActiveAddressesSettings{target: %{slug: slug}} = settings,
+          %DailyActiveAddressesSettings{target: %{slug: slug}, time_window: time_window} =
+            settings,
           cooldown
         )
         when is_binary(slug) do
-      with {:ok, data} <- get_data(slug) do
+      with {:ok, data} <- get_data(slug, time_window) do
         build_result(data, settings, cooldown)
       end
     end
@@ -57,52 +61,57 @@ defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
       end
     end
 
+    #
     defp build_percent_result(data, %{operation: operation} = settings, cooldown) do
       cooldown = Sanbase.DateTimeUtils.str_to_days(cooldown)
 
-      data
-      |> transform_percent(settings)
-      |> Enum.reduce({[], 0}, fn
-        %{percent_change: percent_change} = elem, {acc, 0} ->
-          case operation_triggered?(percent_change, operation) do
-            true ->
-              {[Map.put(elem, :triggered, true) | acc], cooldown}
+      {result, _} =
+        data
+        |> transform_percent(settings)
+        |> Enum.reduce({[], 0}, fn
+          %{percent_change: percent_change} = elem, {acc, 0} ->
+            case operation_triggered?(percent_change, operation) do
+              true ->
+                {[Map.put(elem, :triggered?, true) | acc], cooldown}
 
-            false ->
-              {[Map.put(elem, :triggered, false)], 0}
-          end
+              false ->
+                {[Map.put(elem, :triggered?, false) | acc], 0}
+            end
 
-        elem, {acc, cooldown_left} ->
-          {[Map.put(elem, :triggered, false) | acc], cooldown_left - 1}
-      end)
-      |> Enum.reverse()
+          elem, {acc, cooldown_left} ->
+            {[Map.put(elem, :triggered?, false) | acc], cooldown_left - 1}
+        end)
+
+      {:ok, result |> Enum.reverse()}
     end
 
     defp build_absolute_result(data, %{operation: operation}, cooldown) do
       cooldown = Sanbase.DateTimeUtils.str_to_days(cooldown)
 
-      data
-      |> Enum.reduce({%{}, 0}, fn
-        %{active_addresses: active_addresses} = elem, {acc, 0} ->
-          case operation_triggered?(active_addresses, operation) do
-            true ->
-              {[Map.put(elem, :triggered, true) | acc], cooldown}
+      {result, _} =
+        data
+        |> Enum.reduce({[], 0}, fn
+          %{active_addresses: active_addresses} = elem, {acc, 0} ->
+            case operation_triggered?(active_addresses, operation) do
+              true ->
+                {[Map.put(elem, :triggered?, true) | acc], cooldown}
 
-            false ->
-              {[Map.put(elem, :triggered, false)], 0}
-          end
+              false ->
+                {[Map.put(elem, :triggered?, false) | acc], 0}
+            end
 
-        elem, {acc, cooldown_left} ->
-          {[Map.put(elem, :triggered, false) | acc], cooldown_left - 1}
-      end)
-      |> Enum.reverse()
+          elem, {acc, cooldown_left} ->
+            {[Map.put(elem, :triggered?, false) | acc], cooldown_left - 1}
+        end)
+
+      {:ok, result |> Enum.reverse()}
     end
 
     defp transform_percent(data, settings) do
-      time_window_in_hours = Enum.max(str_to_hours(settings.time_window), 48)
+      time_window_in_days = Enum.max([str_to_days(settings.time_window), 2])
 
       data
-      |> Enum.chunk_every(time_window_in_hours, 1, :discard)
+      |> Enum.chunk_every(time_window_in_days, 1, :discard)
       |> Enum.map(fn chunk ->
         last_elem = List.last(chunk)
         %{active_addresses: first_active_addresses} = List.first(chunk)

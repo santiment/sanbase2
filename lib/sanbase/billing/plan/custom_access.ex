@@ -44,14 +44,17 @@ defmodule Sanbase.Billing.Plan.CustomAccess do
     }
   }
 
-  # Test that the accessbile_by_plan are all sorted. If they are not sorted this can
-  # lead to issues such as wrong `lowest_plan_with_access`
+  # Raise an error if the accessbile_by_plan are not all sorted.
+  # If they are not sorted this can lead to issues such as wrong
+  # `lowest_plan_with_access`
   @metric
   |> Enum.each(fn %{accessible_by_plan: plans} = stats ->
     if sort_plans(plans) != plans do
-      IO.warn("""
+      require Sanbase.Break, as: Break
+
+      Break.break("""
       The order of the plans inside #{inspect(stats.metric_name)} definition is not sorted. This will
-      lead to not desired behavior
+      lead to not desired behavior when checking if a plan has access to a query.
       """)
     end
   end)

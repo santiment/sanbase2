@@ -54,13 +54,15 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     end
   end
 
-  # Emit a compile time warning if there is any query without subscription plan
+  # Raise an error if there is any query without subscription plan
   case Helper.queries_without_subsciption_plan() do
     [] ->
       :ok
 
     queries ->
-      IO.warn("""
+      require Sanbase.Break, as: Break
+
+      Break.break("""
       There are GraphQL queries defined without specifying their subscription plan.
       Subscription plan belonging is marked by the `meta` field inside the query
       definition. Example: `meta(subscription: :pro)`
@@ -69,17 +71,25 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
       """)
   end
 
-  @custom_acess_queries_stats CustomAccess.get()
-  @custom_acess_queries @custom_acess_queries_stats |> Map.keys()
+  @custom_access_queries_stats CustomAccess.get()
+  @custom_access_queries @custom_access_queries_stats |> Map.keys() |> Enum.sort()
 
-  # Emit a compile time warning if there are queries with custom access logic
+  # Raise an error if there are queries with custom access logic
   # but the meta field `subscription` is not correct
-  custom_access_meta = Helper.get_metrics_with_subscription_plan(:custom_access)
+  custom_access_meta = Helper.get_metrics_with_subscription_plan(:custom_access) |> Enum.sort()
 
-  if @custom_acess_queries |> Enum.sort() != custom_access_meta |> Enum.sort() do
-    IO.warn("""
+  if @custom_access_queries != custom_access_meta do
+    require Sanbase.Break, as: Break
+
+    Break.break("""
     The list of GraphQL queries with special access defined in the CustomAccess
     module and with subscription meta field `:custom_access` is not the same.
+
+    Queries defined in the CustomAccess module but do not have the `:custom_access`
+    meta field: #{inspect(@custom_access_queries -- custom_access_meta)}.
+
+    Queries defined with the `:custom_access` meta field but not present in the
+    CustomAccess module: #{inspect(custom_access_meta -- @custom_access_queries)}.
     """)
   end
 
@@ -139,8 +149,8 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   def premium(), do: @premium_plan_stats
   def custom(), do: @custom_plan_stats
 
-  def historical_data_in_days(plan, query) when query in @custom_acess_queries do
-    Map.get(@custom_acess_queries_stats, query)
+  def historical_data_in_days(plan, query) when query in @custom_access_queries do
+    Map.get(@custom_access_queries_stats, query)
     |> Map.get(:plan_access)
     |> Map.get(plan, %{})
     |> Map.get(:historical_data_in_days)
@@ -156,8 +166,8 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     end
   end
 
-  def realtime_data_cut_off_in_days(plan, query) when query in @custom_acess_queries do
-    Map.get(@custom_acess_queries_stats, query)
+  def realtime_data_cut_off_in_days(plan, query) when query in @custom_access_queries do
+    Map.get(@custom_access_queries_stats, query)
     |> Map.get(:plan_access)
     |> Map.get(plan, %{})
     |> Map.get(:realtime_data_cut_off_in_days)
@@ -178,15 +188,15 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   A query can be restricted but still accessible by not-paid users or users with
   lower plans. In this case historical and/or realtime data access can be cut off
   """
-  def is_restricted?(query) when query in @custom_acess_queries, do: true
+  def is_restricted?(query) when query in @custom_access_queries, do: true
   def is_restricted?(query), do: not (query in @free_metrics_mapset)
 
   @doc ~s"""
   Check if a query access is given only to users with an advanced plan
   (pro or higher). No access is given to users with lower plans
   """
-  def needs_advanced_plan?(query) when query in @custom_acess_queries do
-    %{accessible_by_plan: [lowest_plan | _]} = Map.get(@custom_acess_queries_stats, query)
+  def needs_advanced_plan?(query) when query in @custom_access_queries do
+    %{accessible_by_plan: [lowest_plan | _]} = Map.get(@custom_access_queries_stats, query)
     lowest_plan != :free and lowest_plan != :basic
   end
 
@@ -197,8 +207,8 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   @doc ~s"""
   Return the atom name of the lowest plan that gives access to a metric
   """
-  def lowest_plan_with_metric(query) when query in @custom_acess_queries do
-    %{accessible_by_plan: [lowest_plan | _]} = Map.get(@custom_acess_queries_stats, query)
+  def lowest_plan_with_metric(query) when query in @custom_access_queries do
+    %{accessible_by_plan: [lowest_plan | _]} = Map.get(@custom_access_queries_stats, query)
     lowest_plan
   end
 

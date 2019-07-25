@@ -106,6 +106,12 @@ defmodule Sanbase.Influxdb.Store do
         |> post()
       end
 
+      def drop_db() do
+        Sanbase.Utils.Config.get(:database)
+        |> Instream.Admin.Database.drop()
+        |> post()
+      end
+
       def last_record(measurement) do
         ~s/SELECT * FROM "#{measurement}" ORDER BY time DESC LIMIT 1/
         |> get()

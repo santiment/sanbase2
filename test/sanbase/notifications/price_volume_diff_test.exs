@@ -7,10 +7,12 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
 
+  import Sanbase.InfluxdbHelpers
+
   @moduletag capture_log: true
 
   setup do
-    Store.create_db()
+    setup_prices_influxdb()
 
     # TODO: Make projects with cmc_id and import correctly!!!
 
@@ -35,10 +37,6 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
       |> Sanbase.Repo.insert!()
 
     ticker_cmc_id1 = ticker1 <> "_" <> slug1
-    ticker_cmc_id2 = ticker2 <> "_" <> slug2
-
-    Store.drop_measurement(ticker_cmc_id1)
-    Store.drop_measurement(ticker_cmc_id2)
 
     datetime =
       DateTime.utc_now()

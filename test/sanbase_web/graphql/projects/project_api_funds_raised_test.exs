@@ -3,6 +3,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
 
   import Sanbase.Utils.Config, only: [parse_config_value: 1]
   import Sanbase.Factory
+  import Sanbase.InfluxdbHelpers
 
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
@@ -11,7 +12,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
   import SanbaseWeb.Graphql.TestHelpers
 
   setup do
-    Store.create_db()
+    setup_prices_influxdb()
 
     # Add the Projects to the Postgres
     insert(:project, %{name: "Test project", coinmarketcap_id: "test", ticker: "TEST"})
@@ -22,10 +23,6 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     test_ticker_cmc_id = "TEST_test"
     btc_ticker_cmc_id = "BTC_bitcoin"
     eth_ticker_cmc_id = "ETH_ethereum"
-
-    Store.drop_measurement(test_ticker_cmc_id)
-    Store.drop_measurement(btc_ticker_cmc_id)
-    Store.drop_measurement(eth_ticker_cmc_id)
 
     date1 = "2017-08-19"
     {:ok, dt1} = Timex.parse!(date1, "{YYYY}-{0M}-{D}") |> DateTime.from_naive("Etc/UTC")

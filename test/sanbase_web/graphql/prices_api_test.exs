@@ -3,13 +3,14 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
   import Plug.Conn
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.InfluxdbHelpers
   import Sanbase.Factory
 
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
 
   setup do
-    Store.create_db()
+    setup_prices_influxdb()
 
     slug1 = "test122"
     ticker1 = "TEST"

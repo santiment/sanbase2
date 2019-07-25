@@ -5,6 +5,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint2, as: PricePoint
   alias Sanbase.Prices.Store
 
+  import Sanbase.InfluxdbHelpers
+
   @total_market_measurement "TOTAL_MARKET_total-market"
 
   test "fetching the first price datetime of a token" do
@@ -87,9 +89,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
       }
     end)
 
-    Store.create_db()
-    measurement_name = "TOTAL_MARKET_total-market"
-    Store.drop_measurement(measurement_name)
+    setup_prices_influxdb()
 
     # The HTTP GET request is mocked, this interval here does not play a role.
     # Put one day before now so we will have only one day range and won't make many HTTP queries

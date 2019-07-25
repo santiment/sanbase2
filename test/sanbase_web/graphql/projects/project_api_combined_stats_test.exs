@@ -3,20 +3,19 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.InfluxdbHelpers
 
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
 
   setup do
+    setup_prices_influxdb()
+
     p1 = insert(:random_erc20_project)
     p2 = insert(:random_erc20_project)
 
     measurement1 = Measurement.name_from(p1)
     measurement2 = Measurement.name_from(p2)
-
-    Store.create_db()
-    Store.drop_measurement(measurement1)
-    Store.drop_measurement(measurement2)
 
     datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
     datetime2 = DateTime.from_naive!(~N[2017-05-14 21:45:00], "Etc/UTC")

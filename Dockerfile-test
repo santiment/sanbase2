@@ -21,4 +21,4 @@ RUN mix deps.compile
 COPY . /app
 RUN mix format --check-formatted
 
-CMD mix test_all --trace
+CMD mix test_all --trace --slowest 20

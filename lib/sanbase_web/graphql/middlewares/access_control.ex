@@ -8,13 +8,10 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   @behaviour Absinthe.Middleware
 
   alias Absinthe.Resolution
-  alias Sanbase.Billing.Plan.AccessChecker
   alias Sanbase.Billing.{Subscription, Plan}
 
   require Logger
 
-  # define as module attribute to avoid function calls at runtime
-  @mutations_mapset AccessChecker.mutations_mapset()
   @free_subscription Subscription.free_subscription()
 
   def call(
@@ -45,7 +42,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   defp check_access_to_query(subscription, resolution, query) do
     # Do not check mutations against the Subscription plan
-    if query in @mutations_mapset or Subscription.has_access?(subscription, query) do
+    if Subscription.has_access?(subscription, query) do
       resolution
     else
       upgrade_message =

@@ -1,4 +1,4 @@
-defmodule Sanbase.Repo.Migrations.CreatePlansAndProductsInStripe do
+defmodule Sanbase.Repo.Migrations.CreateNewPlansInStripe do
   use Ecto.Migration
 
   require Sanbase.Utils.Config
@@ -10,13 +10,12 @@ defmodule Sanbase.Repo.Migrations.CreatePlansAndProductsInStripe do
   def up do
     Application.ensure_all_started(:tzdata)
     Application.ensure_all_started(:prometheus_ecto)
-    Application.ensure_all_started(:hackney)
     Sanbase.Prometheus.EctoInstrumenter.setup()
 
     stripe_api_key = stripe_api_key()
 
     if stripe_api_key != nil and stripe_api_key != "" do
-      Product |> Repo.all() |> Enum.map(&Product.maybe_create_product_in_stripe/1)
+      Product |> Repo.all() |> Enum.map(&Product.maybe_create_product_in_stripe/1) |> IO.inspect()
 
       Plan
       |> Repo.all()

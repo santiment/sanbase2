@@ -16,7 +16,7 @@ defmodule Sanbase.Repo.Migrations.CreateNewPlansInStripe do
     stripe_api_key = stripe_api_key()
 
     if stripe_api_key != nil and stripe_api_key != "" do
-      Product |> Repo.all() |> Enum.map(&Product.maybe_create_product_in_stripe/1) |> IO.inspect()
+      Product |> Repo.all() |> Enum.map(&Product.maybe_create_product_in_stripe/1)
 
       Plan
       |> Repo.all()

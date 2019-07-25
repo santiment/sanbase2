@@ -26,7 +26,7 @@ defmodule Sanbase.Billing.Plan.CustomAccess do
   Module.register_attribute(__MODULE__, :metric, accumulate: true)
 
   @metric %{
-    metric_name: :mvrv_ratio,
+    metric_name: [:mvrv_ratio, :realized_value],
     accessible_by_plan: [:free, :basic, :pro, :premium, :custom] |> sort_plans(),
     plan_full_access: :pro,
     plan_access: %{

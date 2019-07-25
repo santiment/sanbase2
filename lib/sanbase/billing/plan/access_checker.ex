@@ -79,7 +79,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   if @custom_acess_queries |> Enum.sort() != custom_access_meta |> Enum.sort() do
     IO.warn("""
     The list of GraphQL queries with special access defined in the CustomAccess
-    module and withsubscription meta field `:custom_access` is not the same.
+    module and with subscription meta field `:custom_access` is not the same.
     """)
   end
 

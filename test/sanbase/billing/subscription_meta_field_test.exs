@@ -122,7 +122,7 @@ defmodule Sanbase.Billing.SubscriptionMetaFieldTest do
         |> Enum.sort()
 
       expected_pro_queries =
-        [:daily_active_deposits, :nvt_ratio, :realized_value, :share_of_deposits]
+        [:daily_active_deposits, :nvt_ratio, :share_of_deposits]
         |> Enum.sort()
 
       assert pro_queries == expected_pro_queries
@@ -157,7 +157,7 @@ defmodule Sanbase.Billing.SubscriptionMetaFieldTest do
         |> Enum.sort()
 
       expected_custom_access_queries =
-        [:burn_rate, :mvrv_ratio, :token_age_consumed] |> Enum.sort()
+        [:burn_rate, :mvrv_ratio, :realized_value, :token_age_consumed] |> Enum.sort()
 
       assert custom_access_queries == expected_custom_access_queries
     end

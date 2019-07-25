@@ -266,7 +266,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     The realized value across the whole network is computed by summing the realized values
     of all wallets holding tokens at the moment."
     field :realized_value, list_of(:realized_value) do
-      meta(subscription: :pro)
+      meta(subscription: :custom_access)
 
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))

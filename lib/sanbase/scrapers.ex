@@ -1,4 +1,6 @@
 defmodule Sanbase.Application.Scrapers do
+  import Sanbase.ApplicationUtils
+
   def init(), do: :ok
 
   @doc ~s"""
@@ -78,7 +80,13 @@ defmodule Sanbase.Application.Scrapers do
       Sanbase.ExternalServices.TwitterData.Worker,
 
       # Twitter account historical data
-      Sanbase.ExternalServices.TwitterData.HistoricalData
+      Sanbase.ExternalServices.TwitterData.HistoricalData,
+
+      # Quantum Scheduler
+      start_if(
+        fn -> {Sanbase.Scheduler, []} end,
+        fn -> System.get_env("QUANTUM_SCHEDULER_ENABLED") end
+      )
     ]
 
     opts = [

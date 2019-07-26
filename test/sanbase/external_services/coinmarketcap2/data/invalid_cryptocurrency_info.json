@@ -1,0 +1,40 @@
+{
+  "data": {
+      "1": {
+          "urls": {
+              "website": [
+                  "https://bitcoin.org/"
+              ],
+              "twitter": [],
+              "reddit": [
+                  "https://reddit.com/r/bitcoin"
+              ],
+              "message_board": [
+                  "https://bitcointalk.org"
+              ],
+              "announcement": [],
+              "chat": [],
+              "explorer": [
+                  "https://blockchain.coinmarketcap.com/chain/bitcoin",
+                  "https://blockchain.info/",
+                  "https://live.blockcypher.com/btc/"
+              ],
+              "source_code": [
+                  "https://github.com/bitcoin/"
+              ]
+          },
+          "logo": "http://invalid",
+          "id": 1,
+          "name": "Bitcoin",
+          "symbol": "BTC",
+          "slug": "bitcoin",
+          "description": "Bitcoin (BTC) is a consensus network that enables a new payment system and a completely digital currency. Powered by its users, it is a peer to peer payment network that requires no central authority to operate. On October 31st, 2008, an individual or group of individuals operating under the pseudonym \"Satoshi Nakamoto\" published the Bitcoin Whitepaper and described it as: \"a purely peer-to-peer version of electronic cash, which would allow online payments to be sent directly from one party to another without going through a financial institution.\"",
+          "date_added": "2013-04-28T00:00:00.000Z",
+          "tags": [
+              "mineable"
+          ],
+          "platform": null,
+          "category": "coin"
+      }
+    }
+}

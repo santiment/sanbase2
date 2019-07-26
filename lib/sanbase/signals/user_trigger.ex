@@ -236,7 +236,7 @@ defmodule Sanbase.Signal.UserTrigger do
   defp get_trigger_by_id_query(nil, trigger_id) do
     from(
       ut in UserTrigger,
-      where: ut.id == ^trigger_id and ut.is_public == true,
+      where: ut.id == ^trigger_id and trigger_is_public(),
       preload: [:tags]
     )
   end
@@ -244,7 +244,7 @@ defmodule Sanbase.Signal.UserTrigger do
   defp get_trigger_by_id_query(%User{id: user_id}, trigger_id) do
     from(
       ut in UserTrigger,
-      where: ut.id == ^trigger_id and (ut.is_public == true or ut.user_id == ^user_id),
+      where: ut.id == ^trigger_id and (trigger_is_public() or ut.user_id == ^user_id),
       preload: [:tags]
     )
   end

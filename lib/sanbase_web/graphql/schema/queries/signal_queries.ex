@@ -20,7 +20,6 @@ defmodule SanbaseWeb.Graphql.Schema.SignalQueries do
 
       arg(:id, non_null(:integer))
 
-      middleware(JWTAuth)
       resolve(&UserTriggerResolver.get_trigger_by_id/3)
     end
 

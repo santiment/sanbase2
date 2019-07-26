@@ -56,6 +56,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
     |> handle_result("get by id")
   end
 
+  def get_trigger_by_id(_root, %{id: id}, _resolution) do
+    UserTrigger.get_trigger_by_id(nil, id)
+    |> handle_result("get by id")
+  end
+
   def public_triggers_for_user(_root, args, _resolution) do
     {:ok, UserTrigger.public_triggers_for(args.user_id) |> Enum.map(&transform_user_trigger/1)}
   end

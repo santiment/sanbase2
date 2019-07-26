@@ -13,7 +13,7 @@ defmodule Sanbase.Signal.History.EthWalletTriggerHistory do
   require Logger
 
   @historical_days_from 365
-  @historical_interval "1d"
+  @historical_interval "1h"
 
   @type historical_trigger_points_type :: %{
           datetime: %DateTime{},
@@ -21,8 +21,7 @@ defmodule Sanbase.Signal.History.EthWalletTriggerHistory do
           triggered?: boolean()
         }
 
-  @spec get_data(EthWalletTriggerSettings.t()) :: HistoricalBalance.historical_balance_return()
-  def get_data(%{target: target, asset: asset}) do
+  def get_data(%{target: target, asset: %{slug: asset}}) do
     {from, to, interval} = get_timeseries_params()
 
     case addresses_from_target(target) do
@@ -30,8 +29,21 @@ defmodule Sanbase.Signal.History.EthWalletTriggerHistory do
         {:error, "No ethereum addresses provided or the target does not have ethereum addreses."}
 
       addresses ->
-        addresses
-        |> HistoricalBalance.historical_balance(asset, from, to, interval)
+        result =
+          addresses
+          |> Enum.map(fn addr ->
+            {:ok, result} = HistoricalBalance.historical_balance(addr, asset, from, to, interval)
+
+            result
+          end)
+          |> Enum.zip()
+          |> Stream.map(&Tuple.to_list/1)
+          |> Enum.map(fn [%{datetime: dt} | _] = balances ->
+            balance = Enum.map(balances, & &1.balance) |> Enum.sum()
+            %{datetime: dt, balance: balance}
+          end)
+
+        {:ok, result}
     end
   end
 

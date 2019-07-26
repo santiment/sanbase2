@@ -21,7 +21,6 @@ defmodule Sanbase.Factory do
 
   alias Sanbase.Signal.{UserTrigger, HistoricalActivity}
   alias Sanbase.Billing.{Product, Plan, Subscription}
-  alias Sanbase.Billing.Plan.AccessChecker
   alias Sanbase.Timeline.TimelineEvent
 
   def user_factory() do
@@ -218,8 +217,20 @@ defmodule Sanbase.Factory do
     %UserList{name: "Generic User List name", color: :red, user: build(:user)}
   end
 
-  def product_factory() do
-    %Product{id: 1, name: "SanbaseAPI"}
+  def product_api_factory() do
+    %Product{id: 1, name: "SANapi"}
+  end
+
+  def product_sanbase_factory() do
+    %Product{id: 2, name: "SANBase"}
+  end
+
+  def product_sheets_factory() do
+    %Product{id: 3, name: "SANSheets"}
+  end
+
+  def product_graphs_factory() do
+    %Product{id: 4, name: "SANGraphs"}
   end
 
   def plan_free_factory() do
@@ -228,8 +239,7 @@ defmodule Sanbase.Factory do
       name: "FREE",
       amount: 0,
       currency: "USD",
-      interval: "month",
-      access: AccessChecker.free()
+      interval: "month"
     }
   end
 
@@ -239,8 +249,7 @@ defmodule Sanbase.Factory do
       name: "ESSENTIAL",
       amount: 15900,
       currency: "USD",
-      interval: "month",
-      access: AccessChecker.essential()
+      interval: "month"
     }
   end
 
@@ -251,7 +260,6 @@ defmodule Sanbase.Factory do
       amount: 35900,
       currency: "USD",
       interval: "month",
-      access: AccessChecker.pro(),
       stripe_id: plan_stripe_id()
     }
   end
@@ -262,8 +270,7 @@ defmodule Sanbase.Factory do
       name: "PREMIUM",
       amount: 75900,
       currency: "USD",
-      interval: "month",
-      access: AccessChecker.premium()
+      interval: "month"
     }
   end
 
@@ -273,8 +280,7 @@ defmodule Sanbase.Factory do
       name: "CUSTOM",
       amount: 0,
       currency: "USD",
-      interval: "month",
-      access: AccessChecker.custom()
+      interval: "month"
     }
   end
 
@@ -284,8 +290,7 @@ defmodule Sanbase.Factory do
       name: "ESSENTIAL",
       amount: 128_520,
       currency: "USD",
-      interval: "year",
-      access: AccessChecker.pro()
+      interval: "year"
     }
   end
 
@@ -295,8 +300,7 @@ defmodule Sanbase.Factory do
       name: "PRO",
       amount: 387_720,
       currency: "USD",
-      interval: "year",
-      access: AccessChecker.pro()
+      interval: "year"
     }
   end
 
@@ -306,8 +310,7 @@ defmodule Sanbase.Factory do
       name: "PREMIUM",
       amount: 819_720,
       currency: "USD",
-      interval: "year",
-      access: AccessChecker.premium()
+      interval: "year"
     }
   end
 
@@ -317,8 +320,7 @@ defmodule Sanbase.Factory do
       name: "CUSTOM",
       amount: 0,
       currency: "USD",
-      interval: "year",
-      access: AccessChecker.custom()
+      interval: "year"
     }
   end
 

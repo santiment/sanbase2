@@ -260,13 +260,13 @@ defmodule Sanbase.Billing.Subscription do
   def historical_data_in_days(%__MODULE__{plan: plan}, query) do
     plan
     |> Plan.plan_atom_name()
-    |> AccessChecker.historical_data_in_days(query)
+    |> AccessChecker.historical_data_in_days(query, plan.product_id)
   end
 
   def realtime_data_cut_off_in_days(%__MODULE__{plan: plan}, query) do
     plan
     |> Plan.plan_atom_name()
-    |> AccessChecker.realtime_data_cut_off_in_days(query)
+    |> AccessChecker.realtime_data_cut_off_in_days(query, plan.product_id)
   end
 
   @doc ~s"""

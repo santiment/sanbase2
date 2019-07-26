@@ -6,7 +6,7 @@ defmodule Sanbase.Billing.TestSeed do
   def seed_products_and_plans() do
     case Sanbase.Repo.get(Sanbase.Billing.Product, 1) do
       nil ->
-        product = insert(:product, %{id: 1})
+        product = insert(:product_api)
 
         data = %{
           product: product,

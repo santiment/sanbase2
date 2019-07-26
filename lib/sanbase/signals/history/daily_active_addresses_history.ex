@@ -24,7 +24,7 @@ defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
         Sanbase.Clickhouse.DailyActiveAddresses.average_active_addresses(
           contract,
           Timex.shift(Timex.now(),
-            days: -(@historical_days_from + Sanbase.DateTimeUtils.str_to_days(time_window))
+            days: -(@historical_days_from + Sanbase.DateTimeUtils.str_to_days(time_window) - 1)
           ),
           Timex.now(),
           @historical_days_interval
@@ -67,7 +67,7 @@ defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
 
       {result, _} =
         data
-        |> transform_percent(settings)
+        |> transform(settings, :percent)
         |> Enum.reduce({[], 0}, fn
           %{percent_change: percent_change} = elem, {acc, 0} ->
             case operation_triggered?(percent_change, operation) do
@@ -85,11 +85,12 @@ defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
       {:ok, result |> Enum.reverse()}
     end
 
-    defp build_absolute_result(data, %{operation: operation}, cooldown) do
+    defp build_absolute_result(data, %{operation: operation} = settings, cooldown) do
       cooldown = Sanbase.DateTimeUtils.str_to_days(cooldown)
 
       {result, _} =
         data
+        |> transform(settings, :absolute)
         |> Enum.reduce({[], 0}, fn
           %{active_addresses: active_addresses} = elem, {acc, 0} ->
             case operation_triggered?(active_addresses, operation) do
@@ -107,7 +108,14 @@ defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
       {:ok, result |> Enum.reverse()}
     end
 
-    defp transform_percent(data, settings) do
+    defp transform(data, settings, :absolute) do
+      # More data are taken so they can be used to calculate % change
+      # We do not need these previous data points when working with absolute
+      # values
+      Enum.drop(data, (settings.time_window |> str_to_days()) - 1)
+    end
+
+    defp transform(data, settings, :percent) do
       time_window_in_days = Enum.max([str_to_days(settings.time_window), 2])
 
       data

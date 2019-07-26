@@ -9,6 +9,7 @@ defmodule Sanbase.ExternalServices.RateLimiting.Server do
   @default_limit 5
   # miliseconds
   @default_time_between_requests 1000
+  @environment Mix.env()
 
   def child_spec(name, options \\ []) do
     %{
@@ -56,7 +57,7 @@ defmodule Sanbase.ExternalServices.RateLimiting.Server do
   end
 
   def sleep_algorithm({_bucket, _, _, time_between_requests}, {:allow, count}) do
-    Process.sleep(time_between_requests)
+    do_sleep_in(time_between_requests, [:dev, :prod])
     {:ok, count}
   end
 
@@ -67,7 +68,7 @@ defmodule Sanbase.ExternalServices.RateLimiting.Server do
       "Rate limit exceeded. bucket: #{bucket}, wait_period: #{wait_period}"
     end)
 
-    Process.sleep(wait_period)
+    do_sleep_in(wait_period, [:dev, :prod])
     sleep_algorithm(state, Hammer.check_rate(bucket, scale, limit))
   end
 
@@ -90,12 +91,19 @@ defmodule Sanbase.ExternalServices.RateLimiting.Server do
           } seconds. Sleeping."
         )
 
-        Process.sleep(wait_period)
+        do_sleep_in(wait_period, [:dev, :prod])
 
       _ ->
         :ok
     end
 
     {:reply, :ok, state}
+  end
+
+  defp do_sleep_in(wait_period, environments) do
+    case @environment in environments do
+      true -> Process.sleep(wait_period)
+      false -> :ok
+    end
   end
 end

@@ -7,7 +7,7 @@ RUN apk add --no-cache make \
                        g++ \ 
                        git \ 
                        nodejs \
-                       nodejs-npm 
+                       nodejs-npm
 
 RUN mix local.hex --force
 RUN mix local.rebar --force
@@ -34,8 +34,7 @@ RUN mix distillery.release
 # Release image
 FROM elixir:1.9.0-alpine
 
-RUN apk add --no-cache bash \
-                       imagemagick
+RUN apk add --no-cache bash
 
 WORKDIR /app
 

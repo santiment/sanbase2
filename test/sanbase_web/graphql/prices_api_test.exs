@@ -39,6 +39,10 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
       main_contract_address: "0x234"
     )
 
+    Store.drop_measurement(ticker_cmc_id1)
+    Store.drop_measurement(ticker_cmc_id2)
+    Store.drop_measurement(total_market_ticker_cmc_id)
+
     datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
     datetime2 = DateTime.from_naive!(~N[2017-05-14 21:45:00], "Etc/UTC")
     datetime3 = DateTime.from_naive!(~N[2017-05-15 21:45:00], "Etc/UTC")

@@ -22,7 +22,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
         }:#{__ENV__.line()}"
     )
 
-    Tesla.Mock.mock(fn %{method: :get} ->
+    Tesla.Mock.mock(fn _ ->
       %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "pro_cmc_api_2.json"))}
     end)
 

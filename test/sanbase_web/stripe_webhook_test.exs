@@ -14,7 +14,12 @@ defmodule SanbaseWeb.StripeWebhookTest do
 
   setup_with_mocks([
     {StripeApi, [],
-     [retrieve_subscription: fn _ -> StripeApiTestReponse.retrieve_subscription_resp() end]}
+     [retrieve_subscription: fn _ -> StripeApiTestReponse.retrieve_subscription_resp() end]},
+    {Sanbase.Notifications.Discord, [],
+     [
+       send_notification: fn _, _, _ -> :ok end,
+       encode!: fn _, _ -> "{}" end
+     ]}
   ]) do
     clean_task_supervisor_children()
 

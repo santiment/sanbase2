@@ -46,25 +46,74 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
   def work() do
     Logger.info("[CMC] Fetching realtime data from coinmarketcap")
     # Fetch current coinmarketcap data for many tickers
+    IO.inspect("BEFORE FETCH DATA",
+      label:
+        "#{Timex.now()} message; #{
+          String.replace_leading("#{__ENV__.file}", "#{File.cwd!()}", "") |> Path.relative()
+        }:#{__ENV__.line()}"
+    )
+
     {:ok, tickers} = Ticker.fetch_data()
+
+    IO.inspect("AFTER FETCH DATA",
+      label:
+        "#{Timex.now()} message; #{
+          String.replace_leading("#{__ENV__.file}", "#{File.cwd!()}", "") |> Path.relative()
+        }:#{__ENV__.line()}"
+    )
+
+    IO.inspect("BEFORE INSERT OR CREATE",
+      label:
+        "#{Timex.now()} message; #{
+          String.replace_leading("#{__ENV__.file}", "#{File.cwd!()}", "") |> Path.relative()
+        }:#{__ENV__.line()}"
+    )
 
     # Create a project if it's a new one in the top projects and we don't have it
     tickers
     |> Enum.take(top_projects_to_follow())
     |> Enum.each(&insert_or_create_project/1)
 
+    IO.inspect("AFTER INSERT OR CREATE",
+      label:
+        "#{Timex.now()} message; #{
+          String.replace_leading("#{__ENV__.file}", "#{File.cwd!()}", "") |> Path.relative()
+        }:#{__ENV__.line()}"
+    )
+
     # Store the data in LatestCoinmarketcapData in postgres
     tickers
     |> Enum.each(&store_latest_coinmarketcap_data!/1)
+
+    IO.inspect("AFTER STORING LATEST IN INFLUXDB",
+      label:
+        "#{Timex.now()} message; #{
+          String.replace_leading("#{__ENV__.file}", "#{File.cwd!()}", "") |> Path.relative()
+        }:#{__ENV__.line()}"
+    )
 
     # Store the data in Influxdb
     tickers
     |> Enum.map(&Ticker.convert_for_importing/1)
     |> Store.import()
 
+    IO.inspect("AFTER STORING IN INFLUXDB",
+      label:
+        "#{Timex.now()} message; #{
+          String.replace_leading("#{__ENV__.file}", "#{File.cwd!()}", "") |> Path.relative()
+        }:#{__ENV__.line()}"
+    )
+
     tickers
     |> Enum.flat_map(&TickerOld.convert_for_importing/1)
     |> Store.import()
+
+    IO.inspect("AFTER STORING OLD IN INFLUXDB",
+      label:
+        "#{Timex.now()} message; #{
+          String.replace_leading("#{__ENV__.file}", "#{File.cwd!()}", "") |> Path.relative()
+        }:#{__ENV__.line()}"
+    )
 
     Logger.info(
       "[CMC] Fetching realtime data from coinmarketcap done. The data is imported in the database."

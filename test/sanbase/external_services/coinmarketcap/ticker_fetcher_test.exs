@@ -12,13 +12,35 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
   @eth_measurement "ETH_ethereum"
 
   test "parsing the project page" do
+    IO.inspect("#{Timex.now()} BEGIN TEST")
     setup_prices_influxdb()
+
+    IO.inspect("",
+      label:
+        "#{Timex.now()} message; #{
+          String.replace_leading("#{__ENV__.file}", "#{File.cwd!()}", "") |> Path.relative()
+        }:#{__ENV__.line()}"
+    )
 
     Tesla.Mock.mock(fn %{method: :get} ->
       %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "pro_cmc_api_2.json"))}
     end)
 
+    IO.inspect("BEFORE WORK",
+      label:
+        "#{Timex.now()} message; #{
+          String.replace_leading("#{__ENV__.file}", "#{File.cwd!()}", "") |> Path.relative()
+        }:#{__ENV__.line()}"
+    )
+
     TickerFetcher.work()
+
+    IO.inspect("AFTER WORK",
+      label:
+        "#{Timex.now()} message; #{
+          String.replace_leading("#{__ENV__.file}", "#{File.cwd!()}", "") |> Path.relative()
+        }:#{__ENV__.line()}"
+    )
 
     from = DateTime.from_naive!(~N[2018-08-17 08:35:00], "Etc/UTC")
     to = DateTime.from_naive!(~N[2018-08-17 10:40:00], "Etc/UTC")

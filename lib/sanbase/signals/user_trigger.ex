@@ -104,24 +104,17 @@ defmodule Sanbase.Signal.UserTrigger do
   Get the trigger that has an id `trigger_id` if and only if it is owned by the
   user with id `user_id`
   """
-  @spec get_trigger_by_id(%User{}, trigger_id) :: {:ok, %UserTrigger{} | nil}
-  def get_trigger_by_id(%User{id: user_id} = _user, trigger_id) do
-    result =
-      from(
-        ut in UserTrigger,
-        where: ut.user_id == ^user_id and ut.id == ^trigger_id,
-        preload: [:tags]
-      )
-      |> Repo.one()
-      |> case do
-        %UserTrigger{} = ut ->
-          ut |> trigger_in_struct()
+  @spec get_trigger_by_id(%User{} | nil, trigger_id) :: {:ok, %UserTrigger{} | nil}
+  def get_trigger_by_id(user, trigger_id) do
+    get_trigger_by_id_query(user, trigger_id)
+    |> Repo.one()
+    |> case do
+      %UserTrigger{} = ut ->
+        {:ok, ut |> trigger_in_struct()}
 
-        nil ->
-          nil
-      end
-
-    {:ok, result}
+      nil ->
+        {:ok, nil}
+    end
   end
 
   @doc ~s"""
@@ -239,6 +232,22 @@ defmodule Sanbase.Signal.UserTrigger do
   end
 
   # Private functions
+
+  defp get_trigger_by_id_query(nil, trigger_id) do
+    from(
+      ut in UserTrigger,
+      where: ut.id == ^trigger_id and trigger_is_public(),
+      preload: [:tags]
+    )
+  end
+
+  defp get_trigger_by_id_query(%User{id: user_id}, trigger_id) do
+    from(
+      ut in UserTrigger,
+      where: ut.id == ^trigger_id and (trigger_is_public() or ut.user_id == ^user_id),
+      preload: [:tags]
+    )
+  end
 
   defp user_triggers_for(user_id) do
     from(ut in UserTrigger, where: ut.user_id == ^user_id, preload: [:tags])

@@ -56,7 +56,7 @@ defmodule Sanbase.ExAdmin.UsersWithWatchlist do
 
       h4 do
         div("-----------------------------")
-        br
+        br()
         div("Comma separated list of the emails")
       end
 

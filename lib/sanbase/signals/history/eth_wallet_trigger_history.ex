@@ -55,6 +55,7 @@ defmodule Sanbase.Signal.History.EthWalletTriggerHistory do
   end
 
   defimpl Sanbase.Signal.History, for: EthWalletTriggerSettings do
+    alias Sanbase.Signal.Operation
     alias Sanbase.Signal.History.EthWalletTriggerHistory
 
     @spec historical_trigger_points(%EthWalletTriggerSettings{}, String.t()) ::
@@ -82,25 +83,12 @@ defmodule Sanbase.Signal.History.EthWalletTriggerHistory do
     end
 
     defp do_historical_trigger_points(%EthWalletTriggerSettings{} = settings, cooldown) do
-      case operation_type(settings) do
+      case Operation.type(settings.operation) do
         :absolute ->
           evaluate(settings, cooldown)
 
         :percent ->
           {:error, "Historical trigger points for percent change are not implemented"}
-      end
-    end
-
-    defp operation_type(%{operation: operation}) when is_map(operation) do
-      has_percent? =
-        Enum.any?(Map.keys(operation), fn name ->
-          name |> Atom.to_string() |> String.contains?("percent")
-        end)
-
-      if has_percent? do
-        :percent
-      else
-        :absolute
       end
     end
 

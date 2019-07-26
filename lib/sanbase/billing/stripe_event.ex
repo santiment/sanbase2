@@ -106,6 +106,12 @@ defmodule Sanbase.Billing.StripeEvent do
     handle_event_common(id, type, subscription_id)
   end
 
+  # skip processing when payment is not connected to subscription
+  defp handle_event(%{"id" => id, "type" => type})
+       when type in ["invoice.payment_succeeded", "invoice.payment_failed"] do
+    update(id, %{is_processed: true})
+  end
+
   defp handle_event(%{
          "id" => id,
          "type" => type,

@@ -52,12 +52,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   def get_trigger_by_id(_root, %{id: id}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    UserTrigger.get_trigger_by_id(current_user, id)
+    case UserTrigger.get_trigger_by_id(current_user, id) do
+      {:ok, nil} ->
+        {:error,
+         "Trigger with id #{id} does not exist or it is a private trigger owned by another user."}
+
+      {:ok, trigger} ->
+        {:ok, trigger}
+    end
     |> handle_result("get by id")
   end
 
   def get_trigger_by_id(_root, %{id: id}, _resolution) do
-    UserTrigger.get_trigger_by_id(nil, id)
+    case UserTrigger.get_trigger_by_id(nil, id) do
+      {:ok, nil} ->
+        {:error,
+         "Trigger with id #{id} does not exist or it is a private trigger owned by another user."}
+
+      {:ok, trigger} ->
+        {:ok, trigger}
+    end
     |> handle_result("get by id")
   end
 
@@ -75,6 +89,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
 
   defp handle_result(result, operation) do
     case result do
+      {:ok, nil} ->
+        {:ok, nil}
+
       {:ok, ut} ->
         {:ok, transform_user_trigger(ut)}
 

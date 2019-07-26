@@ -221,31 +221,14 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   test "get trigger by id", %{user: user, conn: conn} do
     trigger_settings = default_trigger_settings_string_keys()
 
-    insert(:user_trigger,
-      user: user,
-      trigger: %{is_public: false, settings: trigger_settings, title: "Some generic title"}
-    )
+    ut =
+      insert(:user_trigger,
+        user: user,
+        trigger: %{is_public: false, settings: trigger_settings, title: "Some generic title"}
+      )
 
-    user_trigger = UserTrigger.triggers_for(user) |> List.first()
-    trigger_id = user_trigger.id
-
-    query = """
-    query {
-      getTriggerById(
-        id: #{trigger_id}
-        ) {
-          trigger{
-            id
-            settings
-        }
-      }
-    }
-    """
-
-    result =
-      conn
-      |> post("/graphql", %{"query" => query})
-      |> json_response(200)
+    trigger_id = ut.id
+    result = get_trigger_by_id(conn, trigger_id)
 
     trigger = result["data"]["getTriggerById"]["trigger"]
 
@@ -253,7 +236,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     assert trigger["id"] == trigger_id
   end
 
-  test "get public trigger by id of another user", %{conn: conn} do
+  test "can get other user public trigger", %{conn: conn} do
     ut =
       insert(:user_trigger,
         user: insert(:user),
@@ -264,25 +247,25 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         }
       )
 
-    query = """
-    query {
-      getTriggerById(
-        id: #{ut.id}
-        ) {
-          trigger{
-            id
-            settings
-        }
-      }
-    }
-    """
-
-    result =
-      conn
-      |> post("/graphql", %{"query" => query})
-      |> json_response(200)
+    result = get_trigger_by_id(conn, ut.id)
 
     assert result["data"]["getTriggerById"]["trigger"]["id"] == ut.id
+  end
+
+  test "cannot get other user prive trigger", %{conn: conn} do
+    ut =
+      insert(:user_trigger,
+        user: insert(:user),
+        trigger: %{
+          is_public: false,
+          settings: default_trigger_settings_string_keys(),
+          title: "Some generic title"
+        }
+      )
+
+    %{"errors" => [%{"message" => error_message}]} = get_trigger_by_id(conn, ut.id)
+
+    assert error_message =~ "does not exist or it is a private trigger owned by another user"
   end
 
   test "fetches triggers for current user", %{user: user, conn: conn} do
@@ -634,6 +617,26 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     conn
     |> post("/graphql", %{"query" => query})
     |> json_response(200)
+  end
+
+  defp get_trigger_by_id(conn, id) do
+    query = """
+    query {
+      getTriggerById(
+        id: #{id}
+        ) {
+          trigger{
+            id
+            settings
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", %{"query" => query})
+      |> json_response(200)
   end
 
   defp default_trigger_settings_string_keys() do

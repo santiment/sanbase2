@@ -3,12 +3,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
-  alias SanbaseWeb.Graphql.Middlewares.{
-    TimeframeRestriction,
-    ApikeyAuth,
-    MultipleAuth,
-    JWTAuth
-  }
+  alias SanbaseWeb.Graphql.Middlewares.TimeframeRestriction
 
   alias SanbaseWeb.Graphql.Resolvers.{
     SocialDataResolver,
@@ -150,14 +145,13 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
     This metric is a basic sentiment analysis, based on emojis used in social media.
     """
     field :emojis_sentiment, list_of(:emojis_sentiment) do
-      meta(subscription: :free)
+      meta(subscription: :pro)
 
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
       arg(:result_size_tail, :integer, default_value: 0)
 
-      middleware(MultipleAuth, [{JWTAuth, san_tokens: 1000}, {ApikeyAuth, san_tokens: 1000}])
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction)
       cache_resolve(&SocialDataResolver.emojis_sentiment/3)

@@ -10,7 +10,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.GasUsedTest do
   alias Sanbase.Clickhouse.GasUsed
 
   setup do
-    user = insert(:staked_user)
+    %{user: user} = insert(:subscription_premium, user: insert(:user))
     conn = setup_jwt_auth(build_conn(), user)
 
     [

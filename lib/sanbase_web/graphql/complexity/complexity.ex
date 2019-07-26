@@ -9,16 +9,19 @@ defmodule SanbaseWeb.Graphql.Complexity do
     0
   end
 
-  @doc ~s"""
-  Allow full access to a user if he or she has more than 1000 SAN tokens staked.
-  If the logged in user has no SAN tokens or they cannot be fetched, fallback
-  to the default complexity calculation
-  """
-  def from_to_interval(_args, _child_complexity, %Absinthe.Complexity{
-        context: %{auth: %{san_balance: san_balance}}
+  def from_to_interval(args, child_complexity, %Absinthe.Complexity{
+        context: %{auth: %{subscription: subscription}}
       })
-      when san_balance >= 1000 do
-    0
+      when not is_nil(subscription) do
+    complexity = calculate_complexity(args, child_complexity)
+
+    case Sanbase.Billing.Plan.plan_atom_name(subscription.plan) do
+      :free -> complexity
+      :basic -> div(complexity, 2)
+      :pro -> div(complexity, 5)
+      :premium -> div(complexity, 7)
+      :cusom -> div(complexity, 7)
+    end
   end
 
   @doc ~S"""

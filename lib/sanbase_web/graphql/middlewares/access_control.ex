@@ -27,9 +27,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     check_access_to_query(subscription, resolution, query)
   end
 
-  # TODO: Remove after staking is disabled
-  def call(%Resolution{} = resolution, _), do: resolution
-
   def call(%Resolution{definition: definition} = resolution, _) do
     # It is safe to call Sting.to_atom() here because we cannot reach here
     # with random strings but only with supported ones

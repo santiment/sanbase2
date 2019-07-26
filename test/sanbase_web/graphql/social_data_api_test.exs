@@ -2,12 +2,20 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mock
+  import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.SocialData
   alias Sanbase.DateTimeUtils
 
   @error_response "Error executing query. See logs for details."
+
+  setup do
+    %{user: user} = insert(:subscription_premium, user: insert(:user))
+    conn = setup_jwt_auth(build_conn(), user)
+
+    %{conn: conn}
+  end
 
   test "successfully fetch trending words", context do
     success_response = [
@@ -30,7 +38,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
       }
 
       query = trending_words_query(args)
-      result = execute_and_parse_success_response(context.staked_conn, query, "trendingWords")
+      result = execute_and_parse_success_response(context.conn, query, "trendingWords")
 
       assert result == %{
                "data" => %{
@@ -59,7 +67,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
       }
 
       query = trending_words_query(args)
-      error = execute_and_parse_error_response(context.staked_conn, query, "trendingWords")
+      error = execute_and_parse_error_response(context.conn, query, "trendingWords")
       assert error =~ @error_response
     end
   end
@@ -81,7 +89,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
       }
 
       query = word_context_query(args)
-      result = execute_and_parse_success_response(context.staked_conn, query, "wordContext")
+      result = execute_and_parse_success_response(context.conn, query, "wordContext")
 
       assert result == %{
                "data" => %{
@@ -106,7 +114,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
       }
 
       query = word_context_query(args)
-      error = execute_and_parse_error_response(context.staked_conn, query, "wordContext")
+      error = execute_and_parse_error_response(context.conn, query, "wordContext")
       assert error =~ @error_response
     end
   end
@@ -129,7 +137,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
       }
 
       query = word_trend_score_query(args)
-      result = execute_and_parse_success_response(context.staked_conn, query, "wordTrendScore")
+      result = execute_and_parse_success_response(context.conn, query, "wordTrendScore")
 
       assert result == %{
                "data" => %{
@@ -158,7 +166,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
       }
 
       query = word_trend_score_query(args)
-      error = execute_and_parse_error_response(context.staked_conn, query, "wordTrendScore")
+      error = execute_and_parse_error_response(context.conn, query, "wordTrendScore")
       assert error == error_response
     end
   end
@@ -193,8 +201,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
 
       query = top_social_gainers_losers_query(args)
 
-      result =
-        execute_and_parse_success_response(context.staked_conn, query, "topSocialGainersLosers")
+      result = execute_and_parse_success_response(context.conn, query, "topSocialGainersLosers")
 
       assert result == %{
                "data" => %{
@@ -232,8 +239,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
 
       query = top_social_gainers_losers_query(args)
 
-      error =
-        execute_and_parse_error_response(context.staked_conn, query, "topSocialGainersLosers")
+      error = execute_and_parse_error_response(context.conn, query, "topSocialGainersLosers")
 
       assert error =~ @error_response
     end
@@ -260,7 +266,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
 
       result =
         execute_and_parse_success_response(
-          context.staked_conn,
+          context.conn,
           query,
           "socialGainersLosersStatus"
         )
@@ -298,8 +304,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
 
       query = social_gainers_losers_status_query(args)
 
-      error =
-        execute_and_parse_error_response(context.staked_conn, query, "topSocialGainersLosers")
+      error = execute_and_parse_error_response(context.conn, query, "topSocialGainersLosers")
 
       assert error =~ @error_response
     end
@@ -326,7 +331,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
       }
 
       query = news_query(args)
-      result = execute_and_parse_success_response(context.staked_conn, query, "news")
+      result = execute_and_parse_success_response(context.conn, query, "news")
 
       assert result == %{
                "data" => %{
@@ -356,7 +361,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
 
       query = news_query(args)
 
-      error = execute_and_parse_error_response(context.staked_conn, query, "news")
+      error = execute_and_parse_error_response(context.conn, query, "news")
 
       assert error =~ @error_response
     end

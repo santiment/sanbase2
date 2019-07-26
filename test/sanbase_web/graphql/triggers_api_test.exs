@@ -633,10 +633,9 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     }
     """
 
-    result =
-      conn
-      |> post("/graphql", %{"query" => query})
-      |> json_response(200)
+    conn
+    |> post("/graphql", %{"query" => query})
+    |> json_response(200)
   end
 
   defp default_trigger_settings_string_keys() do

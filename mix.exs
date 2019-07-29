@@ -87,7 +87,7 @@ defmodule Sanbase.Mixfile do
       {:ex_machina, "~> 2.2", only: :test},
       {:clickhouse_ecto, git: "https://github.com/santiment/clickhouse_ecto"},
       {:jason, "~> 1.1"},
-      {:elasticsearch, "~> 0.5"},
+      {:elasticsearch, "~> 1.0"},
       {:quantum, "~> 2.3"},
       {:plug_cowboy, "~> 2.0"},
       {:prometheus_ex, "~> 3.0", override: true},

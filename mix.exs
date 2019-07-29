@@ -49,6 +49,7 @@ defmodule Sanbase.Mixfile do
       {:poison, ">= 1.0.0"},
       {:instream, "~> 0.16"},
       {:hammer, "~> 6.0"},
+      {:ex_queb, "~> 1.0"},
       {:ex_admin, github: "santiment/ex_admin", branch: "patch-exadmin"},
       {:basic_auth, "~> 2.2"},
       {:mock, "~> 0.3"},

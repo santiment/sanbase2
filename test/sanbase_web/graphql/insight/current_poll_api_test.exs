@@ -78,7 +78,7 @@ defmodule SanbaseWeb.Graphql.CurrentPollApiTest do
     currentPoll = json_response(result, 200)["data"]["currentPoll"]
 
     assert Timex.parse!(currentPoll["startAt"], "{ISO:Extended}") ==
-             Timex.beginning_of_week(Timex.now())
+             Timex.beginning_of_week(Timex.now()) |> DateTime.truncate(:second)
 
     assert %{
              "id" => Integer.to_string(approved_post.id),

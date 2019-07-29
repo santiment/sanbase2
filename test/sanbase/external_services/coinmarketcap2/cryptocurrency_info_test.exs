@@ -1,5 +1,4 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfoTest do
-  use ExUnit.Case
   use Sanbase.DataCase
 
   require Sanbase.Utils.Config, as: Config

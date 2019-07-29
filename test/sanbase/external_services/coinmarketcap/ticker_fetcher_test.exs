@@ -1,5 +1,4 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
-  use ExUnit.Case
   use Sanbase.DataCase, async: false
 
   # TODO: Change after old cmc scraper is removed

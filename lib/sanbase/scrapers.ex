@@ -1,5 +1,4 @@
 defmodule Sanbase.Application.Scrapers do
-  require Sanbase.Utils.Config, as: Config
   def init(), do: :ok
 
   @doc ~s"""

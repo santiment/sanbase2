@@ -89,9 +89,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
 
   defp handle_result(result, operation) do
     case result do
-      {:ok, nil} ->
-        {:ok, nil}
-
       {:ok, ut} ->
         {:ok, transform_user_trigger(ut)}
 

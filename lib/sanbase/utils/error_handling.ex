@@ -1,7 +1,6 @@
 defmodule Sanbase.Utils.ErrorHandling do
   require Logger
 
-  @spec changeset_errors_to_str(Ecto.Changeset.t()) :: String.t()
   def changeset_errors_to_str(%Ecto.Changeset{} = changeset) do
     changeset
     |> Ecto.Changeset.traverse_errors(&format_error/1)

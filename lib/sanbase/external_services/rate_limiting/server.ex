@@ -4,4 +4,5 @@ defmodule Sanbase.ExternalServices.RateLimiting.Server do
 
   defdelegate child_spec(name, options), to: @module
   defdelegate wait(name), to: @module
+  defdelegate wait_until(name, until), to: @module
 end

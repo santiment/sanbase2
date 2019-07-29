@@ -24,6 +24,9 @@ config :sanbase, Sanbase.ApiCallDataExporter,
   kafka_url: {:system, "KAFKA_URL", "blockchain-kafka-kafka"},
   kafka_port: {:system, "KAFKA_PORT", "9092"}
 
+config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
+  implementation_module: Sanbase.ExternalServices.RateLimiting.WaitServer
+
 config :sanbase, Sanbase.ClickhouseRepo, adapter: Ecto.Adapters.Postgres
 
 config :sanbase, Sanbase.Repo,

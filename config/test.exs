@@ -21,6 +21,9 @@ config :sanbase, Sanbase.ApiCallDataExporter,
   supervisor: Sanbase.InMemoryKafka.Supervisor,
   producer: Sanbase.InMemoryKafka.Producer
 
+config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
+  implementation_module: Sanbase.ExternalServices.RateLimiting.TestServer
+
 # Configure postgres database
 config :sanbase, Sanbase.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,

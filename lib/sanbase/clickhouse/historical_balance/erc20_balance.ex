@@ -139,6 +139,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
           {:ok, list({address, {balance_before, balance_after, balance_change}})}
           | {:error, String.t()}
         when balance_before: number(), balance_after: number(), balance_change: number()
+  def balance_change([], _, _, _, _), do: {:ok, []}
+
   def balance_change(addr, contract, token_decimals, from, to) do
     token_decimals = Sanbase.Math.ipow(10, token_decimals)
 

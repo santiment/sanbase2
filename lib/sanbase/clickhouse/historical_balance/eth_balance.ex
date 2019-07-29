@@ -149,6 +149,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
           {:ok, list({address, {balance_before, balance_after, balance_change}})}
           | {:error, String.t()}
         when balance_before: number(), balance_after: number(), balance_change: number()
+  def balance_change([], _, _), do: {:ok, []}
+
   def balance_change(addr, from, to) when is_binary(addr) or is_list(addr) do
     {query, args} = balance_change_query(addr, from, to)
 
@@ -165,6 +167,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
   @spec balance_change(address | list(address), DateTime.t(), DateTime.t(), interval) ::
           {:ok, list({address, %{datetime: DateTime.t(), balance_change: number()}})}
           | {:error, String.t()}
+  def balance_change([], _, _, _), do: {:ok, []}
+
   def balance_change(addresses, from, to, interval)
       when is_binary(addresses) or is_list(addresses) do
     {query, args} = balance_change_query(addresses, from, to, interval)

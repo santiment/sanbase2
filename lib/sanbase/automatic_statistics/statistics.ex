@@ -94,11 +94,18 @@ defmodule Sanbase.Statistics do
     overall =
       UserStatistics.newsletter_subscribed_users(Sanbase.Auth.Settings.daily_subscription_type())
 
+    newsletter_subscribed_new_users_14d =
+      UserStatistics.newsletter_subscribed_new_users(
+        Sanbase.Auth.Settings.daily_subscription_type(),
+        Timex.shift(Timex.now(), days: -14)
+      )
+
     %{
       "daily_updates_subscribed_user_count_last_7d" => last_7d,
       "daily_updates_subscribed_user_count_last_30d" => last_30d,
       "daily_updates_subscribed_user_count_last_180d" => last_180d,
-      "daily_updates_subscribed_user_count_overall" => overall
+      "daily_updates_subscribed_user_count_overall" => overall,
+      "newsletter_subscribed_new_users_14d" => newsletter_subscribed_new_users_14d
     }
   end
 
@@ -143,7 +150,11 @@ defmodule Sanbase.Statistics do
     last_30d = WatchlistStatistics.watchlists_created(Timex.shift(now, days: -30), now)
     last_180d = WatchlistStatistics.watchlists_created(Timex.shift(now, days: -180), now)
     overall = WatchlistStatistics.watchlists_created(@epoch_datetime, now)
+
     users_with_watchlist_count = WatchlistStatistics.users_with_watchlist_count()
+
+    new_users_with_watchlist_count_14d =
+      WatchlistStatistics.new_users_with_watchlist_count(Timex.shift(now, days: -14))
 
     average_watchlists_per_user =
       if users_with_watchlist_count > 0 do
@@ -159,7 +170,8 @@ defmodule Sanbase.Statistics do
       "watchlist_created_last_180d" => last_180d,
       "watchlist_created_overall" => overall,
       "users_with_watchlist_count" => users_with_watchlist_count,
-      "average_watchlists_per_user_with_watchlists" => average_watchlists_per_user
+      "average_watchlists_per_user_with_watchlists" => average_watchlists_per_user,
+      "new_users_with_watchlist_count_14d" => new_users_with_watchlist_count_14d
     }
   end
 end

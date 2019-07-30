@@ -71,6 +71,13 @@ defmodule Sanbase.Auth.Statistics do
     |> Repo.one()
   end
 
+  def newsletter_subscribed_new_users(subscription_type, datetime) do
+    user_settings_with_newsletter_subscription_query(subscription_type)
+    |> where([u], u.inserted_at < ^datetime)
+    |> count()
+    |> Repo.one()
+  end
+
   def newsletter_subscribed_users(subscription_type, from, to) do
     user_settings_with_newsletter_subscription_query(subscription_type)
     |> where(

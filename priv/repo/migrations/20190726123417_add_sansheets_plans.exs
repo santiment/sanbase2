@@ -8,8 +8,8 @@ defmodule Sanbase.Repo.Migrations.AddSansheetsPlans do
       (22, 'BASIC', 3, 8900, 'USD', 'month'),
       (23, 'PRO', 3, 18900, 'USD', 'month'),
       (24, 'ENTERPRISE', 3, 0, 'USD', 'month'),
-      (25, 'BASIC', 3, 8000, 'USD', 'year'),
-      (26, 'PRO', 3, 17000, 'USD', 'year'),
+      (25, 'BASIC', 3, 96120, 'USD', 'year'),
+      (26, 'PRO', 3, 204120, 'USD', 'year'),
       (27, 'ENTERPRISE', 3, 0, 'USD', 'year')
     """)
   end

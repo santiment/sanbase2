@@ -6,12 +6,13 @@ RUN apk add --no-cache make \
                        postgresql-client \
                        nodejs \
                        nodejs-npm \
-                       inotify-tools
+                       inotify-tools \ 
+                       imagemagick
 
 RUN mix local.hex --force
 RUN mix local.rebar --force
 RUN mix archive.install --force https://github.com/phoenixframework/archives/raw/master/phx_new.ez
 
-RUN mix format --check-formatted
+#RUN mix format --check-formatted
 
 WORKDIR /app

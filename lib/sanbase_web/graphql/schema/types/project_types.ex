@@ -36,6 +36,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field(:logo_url, :string)
+    field(:logo_32_url, :string)
+    field(:logo_64_url, :string)
     field(:website_link, :string)
     field(:email, :string)
     field(:btt_link, :string)

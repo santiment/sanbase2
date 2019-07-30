@@ -3,7 +3,8 @@ FROM elixir:1.9.0-alpine
 RUN apk add --no-cache make \
                        g++ \
                        git \
-                       postgresql-client
+                       postgresql-client \
+                       imagemagick
 
 ENV MIX_ENV test
 

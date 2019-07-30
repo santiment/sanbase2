@@ -30,7 +30,7 @@ defmodule Sanbase.Billing.Plan do
 
   def changeset(%__MODULE__{} = plan, attrs \\ %{}) do
     plan
-    |> cast(attrs, [:stripe_id, :access])
+    |> cast(attrs, [:amount, :name, :stripe_id, :access])
   end
 
   def free_plan() do

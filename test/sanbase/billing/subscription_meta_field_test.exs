@@ -76,7 +76,8 @@ defmodule Sanbase.Billing.SubscriptionMetaFieldTest do
           :all_insights_by_tag,
           :user_list,
           :dev_activity,
-          :watchlist
+          :watchlist,
+          :watchlist_by_slug
         ]
         |> Enum.sort()
 

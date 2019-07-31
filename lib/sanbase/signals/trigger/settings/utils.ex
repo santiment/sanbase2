@@ -37,7 +37,7 @@ defmodule Sanbase.Signal.Utils do
       do: 0
 
   def percent_change(previous, current) when is_number(previous) and is_number(current) do
-    Float.round((current - previous) / previous * 100)
+    Float.round((current - previous) / previous * 100, 2)
   end
 
   def chart_url(project, type) do

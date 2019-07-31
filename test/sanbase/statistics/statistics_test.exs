@@ -111,7 +111,9 @@ defmodule Sanbase.StatisticsTest do
               "weekly_updates_subscribed_user_count_last_180d" => 3,
               "weekly_updates_subscribed_user_count_last_30d" => 2,
               "weekly_updates_subscribed_user_count_last_7d" => 2,
-              "weekly_updates_subscribed_user_count_overall" => 3
+              "weekly_updates_subscribed_user_count_overall" => 3,
+              "weekly_updates_subscribed_new_user_count" => 1,
+              "weekly_updates_subscribed_old_user_count_last_14d" => 1
             }} in statistics
 
     assert {"daily_newsletter_subscriptions",
@@ -119,7 +121,9 @@ defmodule Sanbase.StatisticsTest do
               "daily_updates_subscribed_user_count_last_180d" => 1,
               "daily_updates_subscribed_user_count_last_30d" => 1,
               "daily_updates_subscribed_user_count_last_7d" => 1,
-              "daily_updates_subscribed_user_count_overall" => 1
+              "daily_updates_subscribed_user_count_overall" => 1,
+              "daily_updates_subscribed_new_user_count" => 1,
+              "daily_updates_subscribed_old_user_count_last_14d" => 1
             }} in statistics
 
     assert {"watchlists",
@@ -129,7 +133,9 @@ defmodule Sanbase.StatisticsTest do
               "watchlist_created_last_180d" => 5,
               "watchlist_created_last_30d" => 5,
               "watchlist_created_last_7d" => 5,
-              "watchlist_created_overall" => 5
+              "watchlist_created_overall" => 5,
+              "new_users_with_watchlist_count_14d" => 2,
+              "old_users_with_watchlist_count_14d" => 2
             }} in statistics
   end
 end

@@ -42,13 +42,17 @@ defmodule Sanbase.UserLists.Statistics do
     |> Repo.one()
   end
 
-  def old_users_with_new_watchlist_count() do
-    #
-    # from UserList
-    # join User
-    # where user.inserted at < ^registered_datetime
-    # and user_list.inserted_at > ^another_datetime
-    # count_distinct user_id
+  def old_users_with_new_watchlist_count(registered_datetime, watchlist_datetime) do
+    from(
+      ul in UserList,
+      left_join: user in User,
+      on: ul.user_id == user.id,
+      where:
+        user.inserted_at < ^registered_datetime and
+          ul.inserted_at > ^watchlist_datetime,
+      select: count(fragment("DISTINCT ?", ul.user_id))
+    )
+    |> Repo.one()
   end
 
   # Private functions

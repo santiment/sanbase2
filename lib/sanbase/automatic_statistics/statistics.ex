@@ -100,12 +100,20 @@ defmodule Sanbase.Statistics do
         Timex.shift(Timex.now(), days: -14)
       )
 
+    newsletter_subscribed_old_users_14d =
+      UserStatistics.newsletter_subscribed_old_users(
+        Sanbase.Auth.Settings.daily_subscription_type(),
+        Timex.shift(Timex.now(), days: -14),
+        Timex.shift(Timex.now(), days: -14)
+      )
+
     %{
       "daily_updates_subscribed_user_count_last_7d" => last_7d,
       "daily_updates_subscribed_user_count_last_30d" => last_30d,
       "daily_updates_subscribed_user_count_last_180d" => last_180d,
       "daily_updates_subscribed_user_count_overall" => overall,
-      "newsletter_subscribed_new_users_14d" => newsletter_subscribed_new_users_14d
+      "daily_updates_subscribed_new_user_count" => newsletter_subscribed_new_users_14d,
+      "daily_updates_subscribed_old_user_count_last_14d" => newsletter_subscribed_old_users_14d
     }
   end
 
@@ -136,11 +144,26 @@ defmodule Sanbase.Statistics do
     overall =
       UserStatistics.newsletter_subscribed_users(Sanbase.Auth.Settings.weekly_subscription_type())
 
+    newsletter_subscribed_new_users_14d =
+      UserStatistics.newsletter_subscribed_new_users(
+        Sanbase.Auth.Settings.weekly_subscription_type(),
+        Timex.shift(Timex.now(), days: -14)
+      )
+
+    newsletter_subscribed_old_users_14d =
+      UserStatistics.newsletter_subscribed_old_users(
+        Sanbase.Auth.Settings.weekly_subscription_type(),
+        Timex.shift(Timex.now(), days: -14),
+        Timex.shift(Timex.now(), days: -14)
+      )
+
     %{
       "weekly_updates_subscribed_user_count_last_7d" => last_7d,
       "weekly_updates_subscribed_user_count_last_30d" => last_30d,
       "weekly_updates_subscribed_user_count_last_180d" => last_180d,
-      "weekly_updates_subscribed_user_count_overall" => overall
+      "weekly_updates_subscribed_user_count_overall" => overall,
+      "weekly_updates_subscribed_new_user_count" => newsletter_subscribed_new_users_14d,
+      "weekly_updates_subscribed_old_user_count_last_14d" => newsletter_subscribed_old_users_14d
     }
   end
 
@@ -155,6 +178,12 @@ defmodule Sanbase.Statistics do
 
     new_users_with_watchlist_count_14d =
       WatchlistStatistics.new_users_with_watchlist_count(Timex.shift(now, days: -14))
+
+    old_users_with_watchlist_count_14d =
+      WatchlistStatistics.old_users_with_new_watchlist_count(
+        Timex.shift(now, days: -14),
+        Timex.shift(now, days: -14)
+      )
 
     average_watchlists_per_user =
       if users_with_watchlist_count > 0 do
@@ -171,7 +200,8 @@ defmodule Sanbase.Statistics do
       "watchlist_created_overall" => overall,
       "users_with_watchlist_count" => users_with_watchlist_count,
       "average_watchlists_per_user_with_watchlists" => average_watchlists_per_user,
-      "new_users_with_watchlist_count_14d" => new_users_with_watchlist_count_14d
+      "new_users_with_watchlist_count_14d" => new_users_with_watchlist_count_14d,
+      "old_users_with_watchlist_count_14d" => old_users_with_watchlist_count_14d
     }
   end
 end

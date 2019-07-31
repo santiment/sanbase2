@@ -41,6 +41,7 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
     field(:id, non_null(:id))
     field(:user, non_null(:post_author), resolve: dataloader(SanbaseRepo))
     field(:name, non_null(:string))
+    field(:slug, :string)
     field(:is_public, :boolean)
     field(:color, :color_enum)
     field(:function, :json)

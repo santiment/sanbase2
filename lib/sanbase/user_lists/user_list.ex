@@ -27,6 +27,7 @@ defmodule Sanbase.UserList do
 
   schema "user_lists" do
     field(:name, :string)
+    field(:slug, :string)
     field(:is_public, :boolean, default: false)
     field(:color, ColorEnum, default: :none)
     field(:function, WatchlistFunction, default: %WatchlistFunction{})
@@ -47,19 +48,26 @@ defmodule Sanbase.UserList do
 
   def create_changeset(%__MODULE__{} = user_list, attrs \\ %{}) do
     user_list
-    |> cast(attrs, [:user_id, :name, :is_public, :color, :function])
+    |> cast(attrs, [:user_id, :name, :slug, :is_public, :color, :function])
     |> validate_required([:name, :user_id])
+    |> unique_constraint(:slug)
   end
 
   def update_changeset(%__MODULE__{id: _id} = user_list, attrs \\ %{}) do
     user_list
-    |> cast(attrs, [:name, :is_public, :color, :function])
+    |> cast(attrs, [:name, :slug, :is_public, :color, :function])
     |> cast_assoc(:list_items)
     |> validate_required([:name])
+    |> unique_constraint(:slug)
   end
 
   def by_id(id) do
     from(ul in __MODULE__, where: ul.id == ^id)
+    |> Repo.one()
+  end
+
+  def by_slug(slug) when is_binary(slug) do
+    from(ul in __MODULE__, where: ul.slug == ^slug)
     |> Repo.one()
   end
 
@@ -122,6 +130,11 @@ defmodule Sanbase.UserList do
   def user_list(user_list_id, %User{id: id}) do
     query = user_list_query_by_user_id(id)
     {:ok, Repo.get(query, user_list_id)}
+  end
+
+  def user_list_by_slug(slug, %User{id: id}) do
+    query = user_list_query_by_user_id(id)
+    {:ok, Repo.get_by(query, slug: slug)}
   end
 
   # Private functions

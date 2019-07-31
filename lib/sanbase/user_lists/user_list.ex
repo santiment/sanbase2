@@ -127,13 +127,13 @@ defmodule Sanbase.UserList do
     {:ok, Repo.all(query)}
   end
 
-  def user_list(user_list_id, %User{id: id}) do
-    query = user_list_query_by_user_id(id)
+  def user_list(user_list_id, user) do
+    query = user_list_query_by_user_id(user)
     {:ok, Repo.get(query, user_list_id)}
   end
 
-  def user_list_by_slug(slug, %User{id: id}) do
-    query = user_list_query_by_user_id(id)
+  def user_list_by_slug(slug, user) do
+    query = user_list_query_by_user_id(user)
     {:ok, Repo.get_by(query, slug: slug)}
   end
 
@@ -146,12 +146,12 @@ defmodule Sanbase.UserList do
 
   defp maybe_create_event(error_result, _, _), do: error_result
 
-  defp user_list_query_by_user_id(nil) do
-    from(dul in __MODULE__, where: dul.is_public == true)
+  defp user_list_query_by_user_id(%User{id: user_id}) when is_integer(user_id) and user_id > 0 do
+    from(ul in __MODULE__, where: ul.is_public == true or ul.user_id == ^user_id)
   end
 
-  defp user_list_query_by_user_id(user_id) when is_integer(user_id) and user_id > 0 do
-    from(ul in __MODULE__, where: ul.is_public == true or ul.user_id == ^user_id)
+  defp user_list_query_by_user_id(_) do
+    from(dul in __MODULE__, where: dul.is_public == true)
   end
 
   defp update_list_items_params(%{list_items: list_items} = params, id)

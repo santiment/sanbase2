@@ -146,6 +146,17 @@ These are the fields describing a trigger.
 }
 ```
 
+```json
+// price went up by 10% OR down by 20% compared to 1 day ago
+{
+  "type": "price_percent_change",
+  "target": { "slug": "santiment" },
+  "channel": "telegram",
+  "time_window": "1d",
+  "operation": { "one_of": [{ "percent_up": 10.0 }, { "percent_down": 20.0 }] }
+}
+```
+
 #### Example settings structure for `daily_active_addresses`
 
 ```json

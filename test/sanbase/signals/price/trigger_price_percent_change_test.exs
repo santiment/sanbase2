@@ -89,6 +89,50 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
       assert trigger1.id == triggered.id
       assert Trigger.triggered?(triggered.trigger) == true
     end
+
+    test "moving up or move down - percent_up triggered", context do
+      trigger_settings =
+        price_percent_change_settings(%{
+          operation: %{one_of: [%{percent_up: 15}, %{percent_down: 100}]}
+        })
+
+      {:ok, trigger} = create_trigger(context.user, trigger_settings)
+
+      [triggered | rest] =
+        PricePercentChangeSettings.type()
+        |> UserTrigger.get_active_triggers_by_type()
+        |> Evaluator.run()
+
+      assert rest == []
+      assert Trigger.triggered?(triggered.trigger) == true
+      assert triggered.id == trigger.id
+    end
+
+    test "moving up or move down - percent_down triggered", context do
+      Store.import([
+        %Measurement{
+          timestamp: Timex.now() |> DateTime.to_unix(:nanosecond),
+          fields: %{price_usd: 1, price_btc: 1, volume_usd: 5, marketcap_usd: 500},
+          name: "#{@ticker}_#{@cmc_id}"
+        }
+      ])
+
+      trigger_settings =
+        price_percent_change_settings(%{
+          operation: %{one_of: [%{percent_up: 1500}, %{percent_down: 20}]}
+        })
+
+      {:ok, trigger} = create_trigger(context.user, trigger_settings)
+
+      [triggered | rest] =
+        PricePercentChangeSettings.type()
+        |> UserTrigger.get_active_triggers_by_type()
+        |> Evaluator.run()
+
+      assert rest == []
+      assert Trigger.triggered?(triggered.trigger) == true
+      assert triggered.id == trigger.id
+    end
   end
 
   defp populate_influxdb() do

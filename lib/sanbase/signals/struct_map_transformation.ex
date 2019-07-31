@@ -24,7 +24,10 @@ defmodule Sanbase.Signal.StructMapTransformation do
   end
 
   def load_in_struct_if_valid(map) when is_map(map) do
-    atomized_map = map |> atomize_keys()
+    atomized_map =
+      map
+      |> atomize_keys()
+
     unsupported_fields_error = Process.get(@unsupported_fields_error)
     Process.delete(@unsupported_fields_error)
 
@@ -72,6 +75,10 @@ defmodule Sanbase.Signal.StructMapTransformation do
   def map_from_struct(_), do: {:error, "The data passed to map_from_struct/1 is not a struct"}
 
   # Private functions
+
+  defp atomize_keys(list) when is_list(list) do
+    Enum.map(list, fn elem -> atomize_keys(elem) end)
+  end
 
   defp atomize_keys(map) when is_map(map) do
     Enum.reduce(map, %{}, fn {key, val}, acc ->

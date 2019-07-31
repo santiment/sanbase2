@@ -10,6 +10,17 @@ defmodule Sanbase.Signal.Validation do
   def valid_notification_channel?(channel),
     do: {:error, "#{inspect(channel)} is not a valid notification channel"}
 
+  def valid_percent_change_operation?(%{one_of: list} = operation) when is_list(list) do
+    Enum.all?(list, fn op -> valid_percent_change_operation?(op) == :ok end)
+    |> case do
+      true ->
+        :ok
+
+      false ->
+        {:error, "#{inspect(operation)} is not a valid percent change operation"}
+    end
+  end
+
   def valid_percent_change_operation?(%{percent_up: percent})
       when is_valid_percent_change(percent) do
     :ok

@@ -59,18 +59,18 @@ defmodule Sanbase.Auth.Statistics do
     |> Repo.one()
   end
 
-  def newsletter_subscribed_user_count(subscription_type) do
-    user_settings_with_newsletter_subscription_query(subscription_type)
-    |> count()
-    |> Repo.one()
-  end
-
+  @doc ~s"""
+  Return the number of registered users, which use a given subscription type
+  """
   def newsletter_subscribed_users(subscription_type) do
     user_settings_with_newsletter_subscription_query(subscription_type)
     |> count()
     |> Repo.one()
   end
 
+  @doc ~s"""
+  Return the number of newly-registered users, which use a given subscription type
+  """
   def newsletter_subscribed_new_users(subscription_type, datetime) do
     user_settings_with_newsletter_subscription_query(subscription_type)
     |> join(:inner, [u], us in assoc(u, :user))
@@ -79,22 +79,18 @@ defmodule Sanbase.Auth.Statistics do
     |> Repo.one()
   end
 
+  @doc ~s"""
+  Return the number of old registered users, which have subscribed in the given time period
+  """
   def newsletter_subscribed_old_users(
         subscription_type,
         registered_datetime,
         subscription_datetime
       ) do
-    user_settings_with_newsletter_subscription_query(subscription_type)
-    |> where(
-      fragment(
-        """
-        NOT settings->>'newsletter_subscription_updated_at_unix' IS NULL AND
-        (settings->>'newsletter_subscription_updated_at_unix')::NUMERIC >= ? AND
-        (settings->>'newsletter_subscription_updated_at_unix')::NUMERIC <= ?
-        """,
-        ^DateTime.to_unix(subscription_datetime),
-        ^DateTime.to_unix(Timex.now())
-      )
+    user_settings_newsletter_subscription_added(
+      subscription_type,
+      subscription_datetime,
+      Timex.now()
     )
     |> join(:inner, [u], us in assoc(u, :user))
     |> where([_us, u], u.inserted_at < ^registered_datetime)
@@ -104,17 +100,8 @@ defmodule Sanbase.Auth.Statistics do
 
   def newsletter_subscribed_users(subscription_type, from, to) do
     user_settings_with_newsletter_subscription_query(subscription_type)
-    |> where(
-      fragment(
-        """
-        NOT settings->>'newsletter_subscription_updated_at_unix' IS NULL AND
-        (settings->>'newsletter_subscription_updated_at_unix')::NUMERIC >= ? AND
-        (settings->>'newsletter_subscription_updated_at_unix')::NUMERIC <= ?
-        """,
-        ^DateTime.to_unix(from),
-        ^DateTime.to_unix(to)
-      )
-    )
+
+    user_settings_newsletter_subscription_added(subscription_type, from, to)
     |> count()
     |> Repo.one()
   end
@@ -130,6 +117,21 @@ defmodule Sanbase.Auth.Statistics do
           """,
           ^subscription_type
         )
+    )
+  end
+
+  defp user_settings_newsletter_subscription_added(subscription_type, from, to) do
+    user_settings_with_newsletter_subscription_query(subscription_type)
+    |> where(
+      fragment(
+        """
+        NOT settings->>'newsletter_subscription_updated_at_unix' IS NULL AND
+        (settings->>'newsletter_subscription_updated_at_unix')::NUMERIC >= ? AND
+        (settings->>'newsletter_subscription_updated_at_unix')::NUMERIC <= ?
+        """,
+        ^DateTime.to_unix(from),
+        ^DateTime.to_unix(to)
+      )
     )
   end
 

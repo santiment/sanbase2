@@ -97,14 +97,14 @@ defmodule Sanbase.Statistics do
     newsletter_subscribed_new_users_14d =
       UserStatistics.newsletter_subscribed_new_users(
         Sanbase.Auth.Settings.daily_subscription_type(),
-        Timex.shift(Timex.now(), days: -14)
+        Timex.shift(now, days: -14)
       )
 
     newsletter_subscribed_old_users_14d =
       UserStatistics.newsletter_subscribed_old_users(
         Sanbase.Auth.Settings.daily_subscription_type(),
-        Timex.shift(Timex.now(), days: -14),
-        Timex.shift(Timex.now(), days: -14)
+        Timex.shift(now, days: -14),
+        Timex.shift(now, days: -14)
       )
 
     %{
@@ -147,14 +147,14 @@ defmodule Sanbase.Statistics do
     newsletter_subscribed_new_users_14d =
       UserStatistics.newsletter_subscribed_new_users(
         Sanbase.Auth.Settings.weekly_subscription_type(),
-        Timex.shift(Timex.now(), days: -14)
+        Timex.shift(now, days: -14)
       )
 
     newsletter_subscribed_old_users_14d =
       UserStatistics.newsletter_subscribed_old_users(
         Sanbase.Auth.Settings.weekly_subscription_type(),
-        Timex.shift(Timex.now(), days: -14),
-        Timex.shift(Timex.now(), days: -14)
+        Timex.shift(now, days: -14),
+        Timex.shift(now, days: -14)
       )
 
     %{

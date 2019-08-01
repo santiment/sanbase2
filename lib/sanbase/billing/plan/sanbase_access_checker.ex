@@ -7,14 +7,6 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
 
   @all_metrics AccessChecker.all_restricted_metrics()
 
-  @bundle_metrics [
-    :mvrv_ratio,
-    :realized_value,
-    :nvt_ratio,
-    :token_age_consumed,
-    :burn_rate
-  ]
-
   @free_plan_stats %{
     historical_data_in_days: 2 * 365,
     realtime_data_cut_off_in_days: 30,

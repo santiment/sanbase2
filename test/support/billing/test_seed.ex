@@ -7,6 +7,7 @@ defmodule Sanbase.Billing.TestSeed do
     case Sanbase.Repo.get(Sanbase.Billing.Product, 1) do
       nil ->
         product = insert(:product_api)
+        product_sanbase = insert(:product_sanbase)
 
         data = %{
           product: product,
@@ -18,7 +19,10 @@ defmodule Sanbase.Billing.TestSeed do
           plan_essential_yearly: insert(:plan_essential_yearly, product: product),
           plan_pro_yearly: insert(:plan_pro_yearly, product: product),
           plan_premium_yearly: insert(:plan_premium_yearly, product: product),
-          plan_custom_yearly: insert(:plan_custom_yearly, product: product)
+          plan_custom_yearly: insert(:plan_custom_yearly, product: product),
+          plan_free_sanbase: insert(:plan_free_sanbase, product: product_sanbase),
+          plan_basic_sanbase: insert(:plan_basic_sanbase, product: product_sanbase),
+          plan_pro_sanbase: insert(:plan_pro_sanbase, product: product_sanbase)
         }
 
         :persistent_term.put(@key, data)

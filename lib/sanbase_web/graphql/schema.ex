@@ -23,7 +23,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   alias SanbaseWeb.Graphql.Middlewares.{ApiUsage, AccessControl}
 
   import_types(Absinthe.Plug.Types)
-  import_types(Absinthe.Type.Custom)
   import_types(Graphql.TagTypes)
   import_types(Graphql.CustomTypes)
   import_types(Graphql.AccountTypes)

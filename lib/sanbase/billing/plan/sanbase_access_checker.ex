@@ -1,16 +1,12 @@
 defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
-  alias Sanbase.Billing.Plan.AccessChecker
   alias Sanbase.Billing.Plan.CustomAccess
 
   @custom_access_queries_stats CustomAccess.get()
   @custom_access_queries @custom_access_queries_stats |> Map.keys() |> Enum.sort()
 
-  @all_metrics AccessChecker.all_metrics()
-
   @free_plan_stats %{
     historical_data_in_days: 2 * 365,
     realtime_data_cut_off_in_days: 30,
-    metrics: @all_metrics,
     signals_limit: 10,
     external_data_providers: false,
     sangraphs_access: false
@@ -19,7 +15,6 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
   @basic_plan_stats %{
     historical_data_in_days: 2 * 365,
     realtime_data_cut_off_in_days: 7,
-    metrics: @all_metrics,
     signals_limit: 10,
     external_data_providers: false,
     sangraphs_access: true
@@ -28,7 +23,6 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
   @pro_plan_stats %{
     historical_data_in_days: 3 * 365,
     realtime_data_cut_off_in_days: 0,
-    metrics: @all_metrics,
     external_data_providers: true,
     sangraphs_access: true
   }

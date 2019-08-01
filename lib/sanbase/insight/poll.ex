@@ -2,7 +2,6 @@ defmodule Sanbase.Insight.Poll do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
-  use Timex.Ecto.Timestamps
 
   alias Sanbase.Insight.{Poll, Post}
   alias Sanbase.Repo
@@ -10,8 +9,8 @@ defmodule Sanbase.Insight.Poll do
   @poll_length_days 7
 
   schema "polls" do
-    field(:start_at, Timex.Ecto.DateTime)
-    field(:end_at, Timex.Ecto.DateTime)
+    field(:start_at, :utc_datetime)
+    field(:end_at, :utc_datetime)
 
     has_many(:posts, Post, on_delete: :delete_all)
 

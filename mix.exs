@@ -37,9 +37,10 @@ defmodule Sanbase.Mixfile do
 
   defp deps() do
     [
+      {:ecto, "~> 3.0", override: true},
       {:phoenix, "~> 1.4.3"},
       {:phoenix_pubsub, "~> 1.1"},
-      {:phoenix_ecto, "~> 3.3"},
+      {:phoenix_ecto, "~> 4.0"},
       {:postgrex, ">= 0.0.0"},
       {:gettext, "~> 0.11"},
       {:cowboy, "~> 2.0"},
@@ -49,14 +50,12 @@ defmodule Sanbase.Mixfile do
       {:poison, ">= 1.0.0"},
       {:instream, "~> 0.16"},
       {:hammer, "~> 6.0"},
-      {:ex_queb, "~> 1.0"},
-      {:ex_admin, github: "santiment/ex_admin", branch: "patch-exadmin"},
+      {:ex_admin, github: "sublimecoder/ex_admin"},
       {:basic_auth, "~> 2.2"},
       {:mock, "~> 0.3"},
       {:mockery, "~> 2.2"},
       {:distillery, "~> 2.0", runtime: false},
       {:timex, "~> 3.0"},
-      {:timex_ecto, "~> 3.0"},
       {:hackney, "~> 1.15", override: true},
       {:guardian, "~> 1.0"},
       {:absinthe, github: "absinthe-graphql/absinthe", override: true},

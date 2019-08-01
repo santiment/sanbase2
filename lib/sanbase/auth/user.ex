@@ -1,6 +1,5 @@
 defmodule Sanbase.Auth.User do
   use Ecto.Schema
-  use Timex.Ecto.Timestamps
 
   import Ecto.Changeset
   import Ecto.Query
@@ -50,10 +49,10 @@ defmodule Sanbase.Auth.User do
     field(:username, :string)
     field(:salt, :string)
     field(:san_balance, :decimal)
-    field(:san_balance_updated_at, Timex.Ecto.DateTime)
+    field(:san_balance_updated_at, :utc_datetime)
     field(:email_token, :string)
-    field(:email_token_generated_at, Timex.Ecto.DateTime)
-    field(:email_token_validated_at, Timex.Ecto.DateTime)
+    field(:email_token_generated_at, :utc_datetime)
+    field(:email_token_validated_at, :utc_datetime)
     field(:email_candidate_token, :string)
     field(:email_candidate_token_generated_at, :naive_datetime)
     field(:email_candidate_token_validated_at, :naive_datetime)

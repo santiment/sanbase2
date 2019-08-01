@@ -1,8 +1,6 @@
 defmodule Sanbase.Insight.Post do
   use Ecto.Schema
 
-  use Timex.Ecto.Timestamps
-
   import Ecto.Changeset
   import Ecto.Query
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_to_str: 1]

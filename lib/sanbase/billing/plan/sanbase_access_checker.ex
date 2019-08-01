@@ -5,7 +5,7 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
   @custom_access_queries_stats CustomAccess.get()
   @custom_access_queries @custom_access_queries_stats |> Map.keys() |> Enum.sort()
 
-  @all_metrics AccessChecker.all_restricted_metrics()
+  @all_metrics AccessChecker.all_metrics()
 
   @free_plan_stats %{
     historical_data_in_days: 2 * 365,

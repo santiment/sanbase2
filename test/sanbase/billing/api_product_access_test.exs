@@ -1,4 +1,4 @@
-defmodule Sanbase.Billing.AccessTest do
+defmodule Sanbase.Billing.ApiProductAccessTest do
   use SanbaseWeb.ConnCase
 
   import Sanbase.Factory
@@ -21,13 +21,14 @@ defmodule Sanbase.Billing.AccessTest do
 
     {:ok, apikey} = Apikey.generate_apikey(user)
     conn = setup_apikey_auth(build_conn(), apikey)
+    conn_jwt = setup_jwt_auth(build_conn(), user)
 
-    [user: user, conn: conn, project: project]
+    [user: user, conn_jwt: conn_jwt, conn: conn, project: project]
   end
 
-  describe "SANApi product, No subscription, not staking user" do
+  describe "SANApi product, No subscription" do
     test "can access FREE metrics for all time", context do
-      from = Timex.shift(Timex.now(), days: -900)
+      from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       query = history_price_query(context.project, from, to)
       result = execute_query(context.conn, query, "historyPrice")
@@ -107,7 +108,7 @@ defmodule Sanbase.Billing.AccessTest do
     test "can access FREE metrics for all time", context do
       insert(:subscription_essential, user: context.user)
 
-      from = Timex.shift(Timex.now(), days: -900)
+      from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       query = history_price_query(context.project, from, to)
       result = execute_query(context.conn, query, "historyPrice")
@@ -174,7 +175,7 @@ defmodule Sanbase.Billing.AccessTest do
     test "can access FREE metrics for all time", context do
       insert(:subscription_pro, user: context.user)
 
-      from = Timex.shift(Timex.now(), days: -900)
+      from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       query = history_price_query(context.project, from, to)
       result = execute_query(context.conn, query, "historyPrice")
@@ -236,7 +237,7 @@ defmodule Sanbase.Billing.AccessTest do
     test "can access FREE metrics for all time", context do
       insert(:subscription_premium, user: context.user)
 
-      from = Timex.shift(Timex.now(), days: -900)
+      from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       query = history_price_query(context.project, from, to)
       result = execute_query(context.conn, query, "historyPrice")
@@ -248,7 +249,7 @@ defmodule Sanbase.Billing.AccessTest do
     test "can access BASIC metrics for all time", context do
       insert(:subscription_premium, user: context.user)
 
-      from = Timex.shift(Timex.now(), days: -900)
+      from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       query = network_growth_query(from, to)
       result = execute_query(context.conn, query, "networkGrowth")
@@ -260,7 +261,7 @@ defmodule Sanbase.Billing.AccessTest do
     test "can access PRO metrics for all time", context do
       insert(:subscription_premium, user: context.user)
 
-      from = Timex.shift(Timex.now(), days: -900)
+      from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       query = daily_active_deposits_query(from, to)
       result = execute_query(context.conn, query, "dailyActiveDeposits")
@@ -268,245 +269,6 @@ defmodule Sanbase.Billing.AccessTest do
       assert_called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
       assert result != nil
     end
-  end
-
-  describe "SANBase product, no subscripton, staking tokens user" do
-    test "can access FREE metrics for all time", context do
-      from = Timex.shift(Timex.now(), days: -900)
-      to = Timex.now()
-      query = history_price_query(context.project, from, to)
-      result = execute_query(context.conn_staking_jwt, query, "historyPrice")
-
-      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "can access BASIC metrics for all time", context do
-      from = Timex.shift(Timex.now(), days: -900)
-      to = Timex.now()
-      query = network_growth_query(from, to)
-      result = execute_query(context.conn_staking_jwt, query, "networkGrowth")
-      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "can access PRO metrics for all time", context do
-      from = Timex.shift(Timex.now(), days: -900)
-      to = Timex.now()
-      query = daily_active_deposits_query(from, to)
-
-      result = execute_query(context.conn_staking_jwt, query, "dailyActiveDeposits")
-
-      assert_called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
-      assert result != nil
-    end
-  end
-
-  describe "SANBase product, No subscription, not staking user" do
-    test "can access FREE metrics for all time", context do
-      from = Timex.shift(Timex.now(), days: -900)
-      to = Timex.now()
-      query = history_price_query(context.project, from, to)
-      result = execute_query(context.conn_jwt, query, "historyPrice")
-
-      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "cannot access BASIC metrics for over 2 years", context do
-      from = Timex.shift(Timex.now(), days: -(2 * 365 + 1))
-      to = Timex.shift(Timex.now(), days: -31)
-      query = network_growth_query(from, to)
-      result = execute_query(context.conn_jwt, query, "networkGrowth")
-
-      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "cannot access BASIC metrics for last 30 days", context do
-      from = Timex.shift(Timex.now(), days: -31)
-      to = Timex.shift(Timex.now(), days: -29)
-      query = network_growth_query(from, to)
-      result = execute_query(context.conn_jwt, query, "networkGrowth")
-
-      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "can access BASIC metrics within 2 years and 30 day ago interval", context do
-      from = Timex.shift(Timex.now(), days: -(2 * 365 - 1))
-      to = Timex.shift(Timex.now(), days: -31)
-      query = network_growth_query(from, to)
-      result = execute_query(context.conn_jwt, query, "networkGrowth")
-
-      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "cannot access PRO metrics for over 3 months", context do
-      from = Timex.shift(Timex.now(), days: -(2 * 365 + 1))
-      to = Timex.shift(Timex.now(), days: -31)
-      query = daily_active_deposits_query(from, to)
-      result = execute_query(context.conn_jwt, query, "dailyActiveDeposits")
-
-      refute called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "cannot access PRO metrics realtime", context do
-      from = Timex.shift(Timex.now(), days: -10)
-      to = Timex.now()
-      query = daily_active_deposits_query(from, to)
-      result = execute_query(context.conn_jwt, query, "dailyActiveDeposits")
-
-      refute called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "can access PRO withing 90 days and 1 day interval", context do
-      from = Timex.shift(Timex.now(), days: -(2 * 365 - 1))
-      to = Timex.shift(Timex.now(), days: -31)
-      query = daily_active_deposits_query(from, to)
-      result = execute_query(context.conn_jwt, query, "dailyActiveDeposits")
-
-      assert_called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
-      assert result != nil
-    end
-  end
-
-  describe "SANBase product, user with BASIC plan" do
-    test "can access FREE metrics for all time", context do
-      insert(:subscription_basic_sanbase, user: context.user)
-
-      from = Timex.shift(Timex.now(), days: -900)
-      to = Timex.now()
-      query = history_price_query(context.project, from, to)
-      result = execute_query(context.conn_jwt, query, "historyPrice")
-
-      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "cannot access BASIC metrics for more than 2 years", context do
-      insert(:subscription_basic_sanbase, user: context.user)
-
-      from = Timex.shift(Timex.now(), days: -(2 * 365 + 1))
-      to = Timex.shift(Timex.now(), days: -10)
-      query = network_growth_query(from, to)
-      result = execute_query(context.conn_jwt, query, "networkGrowth")
-
-      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "can access BASIC metrics for less than 2 years", context do
-      insert(:subscription_basic_sanbase, user: context.user)
-
-      from = Timex.shift(Timex.now(), days: -(2 * 365 - 1))
-      to = Timex.shift(Timex.now(), days: -8)
-      query = network_growth_query(from, to)
-      result = execute_query(context.conn_jwt, query, "networkGrowth")
-
-      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "can access BASIC metrics for more than 7 days ago", context do
-      insert(:subscription_basic_sanbase, user: context.user)
-
-      from = Timex.shift(Timex.now(), days: -10)
-      to = Timex.shift(Timex.now(), days: -8)
-      query = network_growth_query(from, to)
-      result = execute_query(context.conn_jwt, query, "networkGrowth")
-
-      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "can access PRO metrics", context do
-      insert(:subscription_basic_sanbase, user: context.user)
-
-      from = Timex.shift(Timex.now(), days: -10)
-      to = Timex.shift(Timex.now(), days: -8)
-      query = daily_active_deposits_query(from, to)
-      result = execute_query(context.conn_jwt, query, "dailyActiveDeposits")
-
-      assert_called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
-      assert result != nil
-    end
-  end
-
-  describe "SANBase product, user with PRO plan" do
-    test "can access FREE metrics for all time", context do
-      insert(:subscription_pro_sanbase, user: context.user)
-
-      from = Timex.shift(Timex.now(), days: -900)
-      to = Timex.now()
-      query = history_price_query(context.project, from, to)
-      result = execute_query(context.conn_jwt, query, "historyPrice")
-
-      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "cannot access BASIC metrics for more than 3 years", context do
-      insert(:subscription_pro_sanbase, user: context.user)
-
-      from = Timex.shift(Timex.now(), days: -(3 * 365 + 1))
-      to = Timex.now()
-      query = network_growth_query(from, to)
-      result = execute_query(context.conn_jwt, query, "networkGrowth")
-
-      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "can access BASIC metrics for less than 3 years", context do
-      insert(:subscription_pro_sanbase, user: context.user)
-
-      from = Timex.shift(Timex.now(), days: -(3 * 365 - 1))
-      to = Timex.now()
-      query = network_growth_query(from, to)
-      result = execute_query(context.conn_jwt, query, "networkGrowth")
-
-      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "cannot access PRO metrics for more than 3 years", context do
-      insert(:subscription_pro_sanbase, user: context.user)
-
-      from = Timex.shift(Timex.now(), days: -(3 * 365 + 1))
-      to = Timex.now()
-      query = daily_active_deposits_query(from, to)
-      result = execute_query(context.conn_jwt, query, "dailyActiveDeposits")
-
-      refute called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "can access PRO metrics for more less than 18 months", context do
-      insert(:subscription_pro_sanbase, user: context.user)
-
-      from = Timex.shift(Timex.now(), days: -(3 * 365 - 1))
-      to = Timex.now()
-      query = daily_active_deposits_query(from, to)
-      result = execute_query(context.conn_jwt, query, "dailyActiveDeposits")
-
-      assert_called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
-      assert result != nil
-    end
-  end
-
-  defp mvrv_query(from, to) do
-    """
-      {
-        mvrvRatio(slug: "ethereum", from: "#{from}", to: "#{to}", interval: "1d"){
-          datetime
-          ratio
-        }
-      }
-    """
   end
 
   defp daily_active_deposits_query(from, to) do
@@ -534,7 +296,7 @@ defmodule Sanbase.Billing.AccessTest do
   defp history_price_query(project, from, to) do
     """
       {
-        historyPrice(slug: "#{project.coinmarketcap_id}", from: "#{from}", to: "#{to}", interval: "1d"){
+        historyPrice(slug: "#{project.coinmarketcap_id}", from: "#{from}", to: "#{to}", interval: "30d"){
           datetime
           priceUsd
         }

@@ -27,7 +27,7 @@ defmodule Sanbase.Billing.Plan.CustomAccess do
 
   @metric %{
     metric_name: [:mvrv_ratio, :realized_value],
-    accessible_by_plan: [:free, :basic, :pro, :premium, :custom] |> sort_plans(),
+    accessible_by_plan: [:free, :basic, :pro, :premium, :enterprise] |> sort_plans(),
     plan_full_access: :pro,
     plan_access: %{
       free: %{realtime_data_cut_off_in_days: 30, historical_data_in_days: 365},
@@ -37,7 +37,7 @@ defmodule Sanbase.Billing.Plan.CustomAccess do
 
   @metric %{
     metric_name: [:token_age_consumed, :burn_rate],
-    accessible_by_plan: [:free, :basic, :pro, :premium, :custom] |> sort_plans(),
+    accessible_by_plan: [:free, :basic, :pro, :premium, :enterprise] |> sort_plans(),
     plan_full_access: :basic,
     plan_access: %{
       free: %{realtime_data_cut_off_in_days: 30}

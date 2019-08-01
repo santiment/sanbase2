@@ -11,7 +11,10 @@ defmodule Sanbase.Billing.Product do
   alias Sanbase.Repo
 
   # Sanbase API product id. Ids for products are fixed.
-  @sanbase_api 1
+  @product_api 1
+  @product_sanbase 2
+  @product_sheets 3
+  @product_sangraphs 4
 
   schema "products" do
     field(:name, :string)
@@ -20,7 +23,10 @@ defmodule Sanbase.Billing.Product do
     has_many(:plans, Plan)
   end
 
-  def sanbase_api(), do: @sanbase_api
+  def product_api(), do: @product_api
+  def product_sanbase(), do: @product_sanbase
+  def product_sheets(), do: @product_sheets
+  def product_sangraphs(), do: @product_sangraphs
 
   def changeset(%__MODULE__{} = product, attrs \\ %{}) do
     product

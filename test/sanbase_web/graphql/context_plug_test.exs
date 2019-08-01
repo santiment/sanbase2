@@ -184,12 +184,12 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
     assert conn_context.permissions == User.no_permissions()
   end
 
-  describe "requested_product is set in context" do
+  describe "product is set in context" do
     test "when no authorization and Origin sanbase - product is SANBase" do
       conn =
         build_conn()
         |> put_req_header(
-          "Origin",
+          "origin",
           "https://app.santiment.net"
         )
 
@@ -197,7 +197,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product_id == 2
+      assert conn_context.product == 2
     end
 
     test "when no authorization and other Origin - product is SANApi" do
@@ -205,7 +205,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product_id == 1
+      assert conn_context.product == 1
     end
 
     test "when JWT auth - product is SANBase" do
@@ -214,14 +214,14 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product_id == 2
+      assert conn_context.product == 2
     end
 
-    test "when Apikey and UA is sheets - product is SANSheets" do
-      "Mozilla/5.0 (compatible; Google-Apps-Script)"
-    end
+    # test "when Apikey and UA is sheets - product is SANSheets" do
+    #   "Mozilla/5.0 (compatible; Google-Apps-Script)"
+    # end
 
-    test "when Apikey and other Origin- product is SANApi" do
-    end
+    # test "when Apikey and other Origin- product is SANApi" do
+    # end
   end
 end

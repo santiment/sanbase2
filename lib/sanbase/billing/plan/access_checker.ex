@@ -22,6 +22,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   query without a subscription plan defined
   """
 
+  alias Sanbase.Billing.Product
   alias Sanbase.Billing.Plan.CustomAccess
 
   alias Sanbase.Billing.Plan.{
@@ -98,26 +99,23 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     """)
   end
 
-  @product_api 1
-  @product_sanbase 2
-  @product_sheets 3
-  @product_grafana 4
-
   @free_metrics Helper.get_metrics_with_subscription_plan(:free)
   @free_metrics_mapset MapSet.new(@free_metrics)
+  def free_metrics_mapset(), do: @free_metrics_mapset
 
   @basic_metrics @free_metrics ++ Helper.get_metrics_with_subscription_plan(:basic)
   @basic_metrics_mapset MapSet.new(@basic_metrics)
+  def basic_metrics_mapset(), do: @basic_metrics_mapset
 
   @pro_metrics @basic_metrics ++ Helper.get_metrics_with_subscription_plan(:pro)
   @pro_metrics_mapset MapSet.new(@pro_metrics)
+  def pro_metrics_mapset(), do: @pro_metrics_mapset
 
   @premium_metrics @pro_metrics ++ Helper.get_metrics_with_subscription_plan(:premium)
   @premium_metrics_mapset MapSet.new(@premium_metrics)
+  def premium_metrics_mapset(), do: @premium_metrics_mapset
 
-  @all_restricted_metrics @premium_metrics
-
-  def all_restricted_metrics, do: @all_restricted_metrics
+  def all_metrics, do: @premium_metrics
 
   @doc ~s"""
   Check if a query full access is given only to users with a plan higher than free.
@@ -167,22 +165,27 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
       :basic -> query in @basic_metrics_mapset
       :pro -> query in @pro_metrics_mapset
       :premium -> query in @premium_metrics_mapset
-      :custom -> query in @premium_metrics_mapset
+      :enterprise -> query in @premium_metrics_mapset
     end
   end
 
   def custom_access_queries_stats, do: @custom_access_queries_stats
   def custom_access_queries, do: @custom_access_queries
 
-  def historical_data_in_days(plan, query, @product_api),
-    do: ApiAccessChecker.historical_data_in_days(plan, query)
+  @product_to_access_module [
+    {Product.product_api(), ApiAccessChecker},
+    {Product.product_sanbase(), SanbaseAccessChecker},
+    {Product.product_sheets(), SanbaseAccessChecker},
+    {Product.product_sangraphs(), SanbaseAccessChecker}
+  ]
 
-  def historical_data_in_days(plan, query, @product_sanbase),
-    do: SanbaseAccessChecker.historical_data_in_days(plan, query)
+  for {product, module} <- @product_to_access_module do
+    def historical_data_in_days(plan, query, unquote(product)) do
+      unquote(module).historical_data_in_days(plan, query)
+    end
 
-  def realtime_data_cut_off_in_days(plan, query, @product_api),
-    do: ApiAccessChecker.realtime_data_cut_off_in_days(plan, query)
-
-  def realtime_data_cut_off_in_days(plan, query, @product_sanbase),
-    do: SanbaseAccessChecker.realtime_data_cut_off_in_days(plan, query)
+    def realtime_data_cut_off_in_days(plan, query, unquote(product)) do
+      unquote(module).realtime_data_cut_off_in_days(plan, query)
+    end
+  end
 end

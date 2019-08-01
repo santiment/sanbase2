@@ -16,7 +16,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   require Sanbase.Utils.Config, as: Config
 
   alias Sanbase.Auth.User
-  alias Sanbase.Billing.Subscription
+  alias Sanbase.Billing.{Subscription, Product}
   alias SanbaseWeb.Graphql.ContextPlug
 
   require Logger
@@ -28,7 +28,16 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     &ContextPlug.apikey_authentication/1
   ]
 
-  @api_product_id 1
+  @product_api Product.product_api()
+  @product_sanbase Product.product_sanbase()
+  # @product_sheets Product.product_sheets()
+  # @product_sangraphs Product.product_sangraphs()
+
+  @webapp_origins [
+    "https://app.santiment.net",
+    "https://app-stage.santiment.net",
+    "http://local.santiment.net"
+  ]
 
   def init(opts), do: opts
 
@@ -75,7 +84,11 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   defp build_context(conn, []) do
     case get_req_header(conn, "authorization") do
       header when no_auth_header(header) ->
-        {conn, %{permissions: User.no_permissions()}}
+        product =
+          get_req_header(conn, "origin")
+          |> get_product()
+
+        {conn, %{permissions: User.no_permissions(), product: product}}
 
       [header] ->
         Logger.warn("Unsupported authorization header value: #{inspect(header)}")
@@ -110,8 +123,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
             auth_method: :user_token,
             current_user: current_user,
             san_balance: san_balance(current_user),
-            subscription: Subscription.current_subscription(current_user, @api_product_id)
-          }
+            subscription: Subscription.current_subscription(current_user, @product_sanbase)
+          },
+          product: @product_sanbase
         }
 
       _ ->
@@ -131,8 +145,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
           auth_method: :user_token,
           current_user: current_user,
           san_balance: san_balance(current_user),
-          subscription: Subscription.current_subscription(current_user, @api_product_id)
-        }
+          subscription: Subscription.current_subscription(current_user, @product_sanbase)
+        },
+        product: @product_sanbase
       }
     else
       {:has_header?, _} -> :try_next
@@ -171,8 +186,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
           current_user: current_user,
           token: token,
           san_balance: san_balance(current_user),
-          subscription: Subscription.current_subscription(current_user, @api_product_id)
-        }
+          subscription: Subscription.current_subscription(current_user, @product_api)
+        },
+        product: @product_api
       }
     else
       {:has_header?, _} -> :try_next
@@ -220,4 +236,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       _ -> 0
     end
   end
+
+  defp get_product([origin]) when origin in @webapp_origins, do: @product_sanbase
+  defp get_product(_), do: @product_api
 end

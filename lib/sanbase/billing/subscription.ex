@@ -257,16 +257,16 @@ defmodule Sanbase.Billing.Subscription do
   @doc """
   How much historical days a subscription plan can access.
   """
-  def historical_data_in_days(%__MODULE__{plan: plan}, query) do
+  def historical_data_in_days(%__MODULE__{plan: plan}, query, product) do
     plan
     |> Plan.plan_atom_name()
-    |> AccessChecker.historical_data_in_days(query, plan.product_id)
+    |> AccessChecker.historical_data_in_days(query, product)
   end
 
-  def realtime_data_cut_off_in_days(%__MODULE__{plan: plan}, query) do
+  def realtime_data_cut_off_in_days(%__MODULE__{plan: plan}, query, product) do
     plan
     |> Plan.plan_atom_name()
-    |> AccessChecker.realtime_data_cut_off_in_days(query, plan.product_id)
+    |> AccessChecker.realtime_data_cut_off_in_days(query, product)
   end
 
   @doc ~s"""

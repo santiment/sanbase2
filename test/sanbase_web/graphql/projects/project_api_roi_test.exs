@@ -43,7 +43,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
       |> Project.changeset(%{name: "Project", ticker: "TEST", coinmarketcap_id: cmc_id})
       |> Repo.insert!()
 
-    now = Ecto.DateTime.utc()
+    now = DateTime.utc_now()
 
     %LatestCoinmarketcapData{}
     |> LatestCoinmarketcapData.changeset(%{

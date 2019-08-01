@@ -37,7 +37,7 @@ defmodule Sanbase.Mixfile do
 
   defp deps() do
     [
-      {:ecto, "~> 3.0", override: true},
+      {:ecto_sql, "~> 3.0"},
       {:phoenix, "~> 1.4.3"},
       {:phoenix_pubsub, "~> 1.1"},
       {:phoenix_ecto, "~> 4.0"},
@@ -84,7 +84,7 @@ defmodule Sanbase.Mixfile do
       {:earmark, "~> 1.2"},
       {:ecto_enum, "~> 1.3"},
       {:ex_machina, "~> 2.2", only: :test},
-      {:clickhouse_ecto, git: "https://github.com/santiment/clickhouse_ecto"},
+      {:clickhouse_ecto, github: "santiment/clickhouse_ecto", branch: "ecto3"},
       {:jason, "~> 1.1"},
       {:elasticsearch, "~> 1.0"},
       {:quantum, "~> 2.3"},
@@ -132,7 +132,6 @@ defmodule Sanbase.Mixfile do
       test: [
         "load_dotenv",
         "ecto.create -r Sanbase.Repo --quiet",
-        "ecto.load -r Sanbase.Repo",
         "test"
       ],
 

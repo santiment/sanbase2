@@ -70,7 +70,6 @@ config :sanbase, Sanbase.TimescaleRepo,
 # Clickhousex does not support `:system` tuples. The configuration is done
 # by defining defining `:url` in the ClickhouseRepo `init` function.
 config :sanbase, Sanbase.ClickhouseRepo,
-  adapter: ClickhouseEcto,
   loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
   hostname: "clickhouse",
   port: 8123,

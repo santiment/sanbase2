@@ -12,8 +12,8 @@ defmodule Sanbase.Model.Ico do
 
   schema "icos" do
     belongs_to(:project, Project)
-    field(:start_date, Ecto.Date)
-    field(:end_date, Ecto.Date)
+    field(:start_date, :date)
+    field(:end_date, :date)
     field(:token_usd_ico_price, :decimal)
     field(:token_eth_ico_price, :decimal)
     field(:token_btc_ico_price, :decimal)
@@ -99,7 +99,7 @@ defmodule Sanbase.Model.Ico do
          target_currency,
          date
        ) do
-    timestamp = Sanbase.DateTimeUtils.ecto_date_to_datetime(date)
+    timestamp = Sanbase.DateTimeUtils.date_to_datetime(date)
 
     Repo.preload(ico, ico_currencies: [:currency]).ico_currencies
     |> Enum.map(fn ic ->

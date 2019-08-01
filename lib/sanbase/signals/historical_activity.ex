@@ -18,7 +18,7 @@ defmodule Sanbase.Signal.HistoricalActivity do
     belongs_to(:user, User)
     belongs_to(:user_trigger, UserTrigger)
     field(:payload, :map)
-    field(:triggered_at, :naive_datetime)
+    field(:triggered_at, :utc_datetime)
   end
 
   def changeset(%HistoricalActivity{} = user_signal, attrs \\ %{}) do

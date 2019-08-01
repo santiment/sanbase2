@@ -111,8 +111,12 @@ defmodule Sanbase.Model.Project.Roi do
   defp calc_token_usd_ico_price(_price_from, _currency_from, nil, _current_datetime), do: nil
 
   defp calc_token_usd_ico_price(price_from, currency_from, ico_start_date, current_datetime) do
-    with :gt <- Ecto.DateTime.compare(current_datetime, Ecto.DateTime.from_date(ico_start_date)),
-         timestamp <- Sanbase.DateTimeUtils.ecto_date_to_datetime(ico_start_date),
+    with :gt <-
+           NaiveDateTime.compare(
+             current_datetime,
+             NaiveDateTime.new(ico_start_date, ~T[00:00:00])
+           ),
+         timestamp <- Sanbase.DateTimeUtils.date_to_datetime(ico_start_date),
          price_usd when not is_nil(price_usd) <-
            Sanbase.Prices.Utils.fetch_last_price_before(currency_from, "USD", timestamp) do
       Decimal.mult(price_from, Decimal.new(price_usd))

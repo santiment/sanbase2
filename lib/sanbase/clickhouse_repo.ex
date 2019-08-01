@@ -1,5 +1,5 @@
 defmodule Sanbase.ClickhouseRepo do
-  use Ecto.Repo, otp_app: :sanbase
+  use Ecto.Repo, otp_app: :sanbase, adapter: ClickhouseEcto
 
   require Sanbase.Utils.Config, as: Config
 

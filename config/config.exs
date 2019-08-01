@@ -14,8 +14,6 @@ config :sanbase, ecto_repos: [Sanbase.Repo, Sanbase.TimescaleRepo]
 
 config :phoenix, :json_library, Jason
 
-config :ecto, json_library: Jason
-
 config :sanbase, Sanbase,
   environment: "#{Mix.env()}",
   required_san_stake_full_access: {:system, "REQUIRED_SAN_STAKE_FULL_ACCESS", "1000"}
@@ -27,11 +25,8 @@ config :sanbase, Sanbase.ApiCallDataExporter,
 config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
   implementation_module: Sanbase.ExternalServices.RateLimiting.WaitServer
 
-config :sanbase, Sanbase.ClickhouseRepo, adapter: Ecto.Adapters.Postgres
-
 config :sanbase, Sanbase.Repo,
   loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
-  adapter: Ecto.Adapters.Postgres,
   pool_size: {:system, "SANBASE_POOL_SIZE", "20"},
   max_overflow: 5,
   # because of pgbouncer
@@ -39,7 +34,6 @@ config :sanbase, Sanbase.Repo,
 
 config :sanbase, Sanbase.TimescaleRepo,
   loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
-  adapter: Ecto.Adapters.Postgres,
   timeout: 30_000,
   pool_size: {:system, "TIMESCALE_POOL_SIZE", "30"},
   max_overflow: 5,

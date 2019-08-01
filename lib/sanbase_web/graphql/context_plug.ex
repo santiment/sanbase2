@@ -33,12 +33,6 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   # @product_sheets Product.product_sheets()
   # @product_sangraphs Product.product_sangraphs()
 
-  @webapp_origins [
-    "https://app.santiment.net",
-    "https://app-stage.santiment.net",
-    "http://local.santiment.net"
-  ]
-
   def init(opts), do: opts
 
   def call(conn, _) do
@@ -166,7 +160,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
           current_user: current_user,
           san_balance: 0,
           subscription: nil
-        }
+        },
+        product: @product_api
       }
     else
       {:has_header?, _} -> :try_next
@@ -237,6 +232,12 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     end
   end
 
-  defp get_product([origin]) when origin in @webapp_origins, do: @product_sanbase
+  defp get_product([origin]) do
+    case String.ends_with?(origin, "santiment.net") do
+      true -> @product_sanbase
+      false -> @product_api
+    end
+  end
+
   defp get_product(_), do: @product_api
 end

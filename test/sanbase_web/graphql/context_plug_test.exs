@@ -216,12 +216,5 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       assert conn_context.product == 2
     end
-
-    # test "when Apikey and UA is sheets - product is SANSheets" do
-    #   "Mozilla/5.0 (compatible; Google-Apps-Script)"
-    # end
-
-    # test "when Apikey and other Origin- product is SANApi" do
-    # end
   end
 end

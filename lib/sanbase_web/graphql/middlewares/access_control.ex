@@ -12,6 +12,10 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   @free_subscription Subscription.free_subscription()
 
+  def call(%Resolution{context: %{auth: %{auth_method: :basic}}} = resolution, _) do
+    resolution
+  end
+
   def call(
         %Resolution{
           definition: definition,

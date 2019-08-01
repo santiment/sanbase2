@@ -14,7 +14,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ShareOfDepositsTest do
   }
 
   setup do
-    %{user: user} = insert(:subscription_premium, user: insert(:user))
+    %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
     conn = setup_jwt_auth(build_conn(), user)
 
     token = insert(:project, %{main_contract_address: "0x123"})

@@ -56,6 +56,14 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
     resolution
   end
 
+  # Basic auth should have no restrictions
+  defp do_call(
+         %Resolution{context: %{auth: %{auth_method: :basic}}} = resolution,
+         _middleware_args
+       ) do
+    resolution
+  end
+
   # Dispatch the resolution of restricted and not-restricted queries to
   # different functions if there are `from` and `to` parameters
   defp do_call(

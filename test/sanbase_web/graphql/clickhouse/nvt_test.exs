@@ -10,7 +10,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.NVTTest do
   alias Sanbase.Clickhouse.NVT
 
   setup do
-    %{user: user} = insert(:subscription_premium, user: insert(:user))
+    %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
     conn = setup_jwt_auth(build_conn(), user)
 
     project = insert(:project, %{coinmarketcap_id: "santiment", ticker: "SAN"})

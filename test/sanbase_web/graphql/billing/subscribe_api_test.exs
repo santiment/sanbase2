@@ -304,7 +304,9 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       response = execute_mutation(context.conn, query, "cancelSubscription")
 
       assert response["isScheduledForCancellation"]
-      assert response["ScheduledForCancellationAt"] == DateTime.to_iso8601(tomorrow)
+
+      assert response["scheduledForCancellationAt"] ==
+               DateTime.to_iso8601(DateTime.truncate(tomorrow, :second))
     end
 
     test "returns error if subscription is scheduled for cancellation", context do
@@ -579,7 +581,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     mutation {
       cancelSubscription(subscriptionId: #{subscription_id}) {
         isScheduledForCancellation
-        ScheduledForCancellationAt
+        scheduledForCancellationAt
       }
     }
     """

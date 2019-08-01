@@ -68,8 +68,8 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     assert result |> hd() |> Map.get("events") |> length() == 3
 
     assert result |> hd() |> Map.get("cursor") == %{
-             "after" => DateTime.to_iso8601(event3.inserted_at),
-             "before" => DateTime.to_iso8601(event1.inserted_at)
+             "after" => DateTime.to_iso8601(DateTime.truncate(event3.inserted_at, :second)),
+             "before" => DateTime.to_iso8601(DateTime.truncate(event1.inserted_at, :second))
            }
   end
 

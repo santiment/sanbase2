@@ -3,29 +3,22 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
   @moduletag checkout_repo: [Sanbase.Repo, Sanbase.TimescaleRepo]
   @moduletag timescaledb: true
 
-  alias Sanbase.Model.Project
-  alias Sanbase.Repo
-
   require Sanbase.Factory
 
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.TimescaleFactory
 
   setup do
-    staked_user = Sanbase.Factory.insert(:staked_user)
-    conn = setup_jwt_auth(build_conn(), staked_user)
+    %{user: user} =
+      Sanbase.Factory.insert(:subscription_premium, user: Sanbase.Factory.insert(:user))
 
-    ticker = "SAN"
-    slug = "santiment"
-    contract_address = "0x1234"
+    conn = setup_jwt_auth(build_conn(), user)
 
-    %Project{
-      name: "Santiment",
-      ticker: ticker,
+    %{
       coinmarketcap_id: slug,
-      main_contract_address: contract_address
-    }
-    |> Repo.insert!()
+      main_contract_address: contract_address,
+      token_decimals: token_decimals
+    } = Sanbase.Factory.insert(:random_erc20_project)
 
     datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
     datetime2 = DateTime.from_naive!(~N[2017-05-13 21:55:00], "Etc/UTC")
@@ -39,53 +32,55 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
     insert(:transaction_volume, %{
       contract_address: contract_address,
       timestamp: datetime1,
-      transaction_volume: 1000.0
+      transaction_volume: Sanbase.Math.ipow(10, token_decimals) * 1000
     })
 
     insert(:transaction_volume, %{
       contract_address: contract_address,
       timestamp: datetime2,
-      transaction_volume: 555.0
+      transaction_volume: Sanbase.Math.ipow(10, token_decimals) * 555
     })
 
     insert(:transaction_volume, %{
       contract_address: contract_address,
       timestamp: datetime3,
-      transaction_volume: 123.0
+      transaction_volume: Sanbase.Math.ipow(10, token_decimals) * 123
     })
 
     insert(:transaction_volume, %{
       contract_address: contract_address,
       timestamp: datetime4,
-      transaction_volume: 6643.0
+      transaction_volume: Sanbase.Math.ipow(10, token_decimals) * 6643
     })
 
     insert(:transaction_volume, %{
       contract_address: contract_address,
       timestamp: datetime5,
-      transaction_volume: 64123.0
+      transaction_volume: Sanbase.Math.ipow(10, token_decimals) * 64123
     })
 
     insert(:transaction_volume, %{
       contract_address: contract_address,
       timestamp: datetime6,
-      transaction_volume: 1232.0
+      transaction_volume: Sanbase.Math.ipow(10, token_decimals) * 1232
     })
 
     insert(:transaction_volume, %{
       contract_address: contract_address,
       timestamp: datetime7,
-      transaction_volume: 555.0
+      transaction_volume: Sanbase.Math.ipow(10, token_decimals) * 555
     })
 
     insert(:transaction_volume, %{
       contract_address: contract_address,
       timestamp: datetime8,
-      transaction_volume: 12111.0
+      transaction_volume: Sanbase.Math.ipow(10, token_decimals) * 12111
     })
 
     [
       slug: slug,
+      from: datetime1,
+      to: datetime8,
       datetime1: datetime1,
       datetime2: datetime2,
       datetime3: datetime3,
@@ -103,8 +98,8 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
     {
       transactionVolume(
         slug: "#{context.slug}",
-        from: "#{context.datetime1}",
-        to: "#{context.datetime8}",
+        from: "#{context.from}",
+        to: "#{context.to}",
         interval: "") {
           datetime
           transactionVolume
@@ -132,8 +127,8 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
     {
       transactionVolume(
         slug: "#{context.slug}",
-        from: "#{context.datetime1}",
-        to: "#{context.datetime8}",
+        from: "#{context.from}",
+        to: "#{context.to}",
         interval: "5m") {
           datetime
           transactionVolume

@@ -26,7 +26,6 @@ defmodule Sanbase.DataCase do
   setup tags do
     require Sanbase.CaseHelpers
     Sanbase.CaseHelpers.checkout_shared(tags)
-
     :ok
   end
 

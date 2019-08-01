@@ -12,8 +12,10 @@ defmodule Sanbase.Etherbi.AverageTokenAgeConsumedInDaysApiTest do
   import Sanbase.TimescaleFactory
 
   setup do
-    staked_user = Sanbase.Factory.insert(:staked_user)
-    conn = setup_jwt_auth(build_conn(), staked_user)
+    %{user: user} =
+      Sanbase.Factory.insert(:subscription_premium, user: Sanbase.Factory.insert(:user))
+
+    conn = setup_jwt_auth(build_conn(), user)
 
     ticker = "SAN"
     slug = "santiment"

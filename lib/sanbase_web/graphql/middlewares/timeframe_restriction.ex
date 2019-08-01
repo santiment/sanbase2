@@ -17,18 +17,12 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
             restrict_to: 3,
             do_call: 2,
             check_from_to_params: 1,
-            check_from_to_both_outside: 1,
-            required_san_stake_full_access: 0,
-            restrict_to_in_days: 0,
-            restrict_from_in_days: 0}
+            check_from_to_both_outside: 1}
 
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
-  import SanbaseWeb.Graphql.Middlewares.Helpers
 
   alias Absinthe.Resolution
   alias Sanbase.Billing.Subscription
-
-  require Sanbase.Utils.Config, as: Config
 
   @allow_access_without_staking ["santiment"]
   @minimal_datetime_param from_iso8601!("2009-01-01T00:00:00Z")
@@ -81,34 +75,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
     resolution
   end
 
-  # If there is no subscription give access only if there are enough SAN tokens
-  # TODO: This function will be deprecated - soon SAN staking will no longer
-  # be enough. Remove this function
-  defp restricted_query(
-         %Resolution{
-           context: %{auth: %{subscription: nil, san_balance: san_balance}},
-           arguments: %{from: from, to: to} = args
-         } = resolution,
-         middleware_args,
-         _query
-       ) do
-    case has_enough_san_tokens?(san_balance, required_san_stake_full_access()) do
-      true ->
-        resolution
-
-      _ ->
-        %Resolution{
-          resolution
-          | arguments: %{
-              args
-              | from: restrict_from(from, middleware_args, restrict_from_in_days()),
-                to: restrict_to(to, middleware_args, restrict_to_in_days())
-            }
-        }
-    end
-  end
-
-  # User has subscription
   defp restricted_query(
          %Resolution{arguments: %{from: from, to: to}, context: context} = resolution,
          middleware_args,
@@ -149,13 +115,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
     Enum.max_by([from_datetime, restrict_from], &DateTime.to_unix/1)
   end
 
-  defp required_san_stake_full_access() do
-    Config.module_get(Sanbase, :required_san_stake_full_access) |> Sanbase.Math.to_float()
-  end
-
-  defp restrict_to_in_days(), do: Config.get(:restrict_to_in_days) |> String.to_integer()
-  defp restrict_from_in_days, do: Config.get(:restrict_from_in_days) |> String.to_integer()
-
   defp to_param_is_after_from(from, to) do
     if DateTime.compare(to, from) == :gt do
       true
@@ -192,7 +151,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
   end
 
   defp check_from_to_params(%Resolution{} = resolution), do: resolution
-
   defp check_from_to_both_outside(%Resolution{state: :resolved} = resolution), do: resolution
 
   defp check_from_to_both_outside(%Resolution{arguments: %{from: from, to: to}} = resolution) do

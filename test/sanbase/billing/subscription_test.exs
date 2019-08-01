@@ -2,36 +2,12 @@ defmodule Sanbase.Billing.SubscriptionTest do
   use SanbaseWeb.ConnCase
 
   import Sanbase.Factory
-  import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Billing.Subscription
-  alias Sanbase.Auth.Apikey
   alias Sanbase.Repo
 
   setup do
-    free_user = insert(:user)
-    user = insert(:staked_user)
-    conn = setup_jwt_auth(build_conn(), user)
-
-    product = insert(:product)
-    plan_essential = insert(:plan_essential, product: product)
-    plan_pro = insert(:plan_pro, product: product)
-    insert(:plan_premium, product: product)
-
-    {:ok, apikey} = Apikey.generate_apikey(user)
-    conn_apikey = setup_apikey_auth(build_conn(), apikey)
-
-    {:ok, apikey_free} = Apikey.generate_apikey(free_user)
-    conn_apikey_free = setup_apikey_auth(build_conn(), apikey_free)
-
-    {:ok,
-     conn: conn,
-     user: user,
-     product: product,
-     plan_essential: plan_essential,
-     plan_pro: plan_pro,
-     conn_apikey: conn_apikey,
-     conn_apikey_free: conn_apikey_free}
+    %{user: insert(:user)}
   end
 
   describe "#is_restricted?" do
@@ -119,7 +95,7 @@ defmodule Sanbase.Billing.SubscriptionTest do
       insert(:subscription_essential, user: context.user)
 
       current_subscription = Subscription.current_subscription(context.user, context.product.id)
-      assert current_subscription.plan.id == context.plan_essential.id
+      assert current_subscription.plan.id == context.plans.plan_essential.id
     end
 
     test "when there isn't - return nil", context do

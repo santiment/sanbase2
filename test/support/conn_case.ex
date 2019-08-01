@@ -32,11 +32,13 @@ defmodule SanbaseWeb.ConnCase do
     SanbaseWeb.Graphql.Cache.clear_all()
 
     Sanbase.CaseHelpers.checkout_shared(tags)
+
     conn = Phoenix.ConnTest.build_conn()
+    product_and_plans = Sanbase.Billing.TestSeed.seed_products_and_plans()
 
-    staked_conn =
-      SanbaseWeb.Graphql.TestHelpers.setup_jwt_auth(conn, Sanbase.Factory.insert(:staked_user))
-
-    {:ok, conn: conn, staked_conn: staked_conn}
+    {:ok,
+     conn: conn,
+     product: Map.get(product_and_plans, :product),
+     plans: Map.delete(product_and_plans, :product)}
   end
 end

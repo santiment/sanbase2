@@ -7,7 +7,6 @@ defmodule Sanbase.Billing.AccessTest do
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Sanbase.Auth.Apikey
-  alias Sanbase.Billing.TestSeed
 
   setup_with_mocks([
     {Sanbase.Prices.Store, [], [fetch_prices_with_resolution: fn _, _, _, _ -> price_resp() end]},
@@ -18,54 +17,15 @@ defmodule Sanbase.Billing.AccessTest do
      [network_growth: fn _, _, _, _ -> network_growth_resp() end]}
   ]) do
     user = insert(:user)
-    staking_user = insert(:staked_user)
     project = insert(:random_project)
-
-    TestSeed.seed_products_and_plans()
-
-    {:ok, apikey} = Apikey.generate_apikey(staking_user)
-    conn_staking = setup_apikey_auth(build_conn(), apikey)
 
     {:ok, apikey} = Apikey.generate_apikey(user)
     conn = setup_apikey_auth(build_conn(), apikey)
 
-    [user: user, conn_staking: conn_staking, conn: conn, project: project]
+    [user: user, conn: conn, project: project]
   end
 
-  # TODO: Remove once staking is disabled
-  describe "No subscription, staking tokens user" do
-    test "can access FREE metrics for all time", context do
-      from = Timex.shift(Timex.now(), days: -900)
-      to = Timex.now()
-      query = history_price_query(context.project, from, to)
-      result = execute_query(context.conn_staking, query, "historyPrice")
-
-      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "can access BASIC metrics for all time", context do
-      from = Timex.shift(Timex.now(), days: -900)
-      to = Timex.now()
-      query = network_growth_query(from, to)
-      result = execute_query(context.conn_staking, query, "networkGrowth")
-      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
-      assert result != nil
-    end
-
-    test "can access PRO metrics for all time", context do
-      from = Timex.shift(Timex.now(), days: -900)
-      to = Timex.now()
-      query = daily_active_deposits_query(from, to)
-
-      result = execute_query(context.conn_staking, query, "dailyActiveDeposits")
-
-      assert_called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
-      assert result != nil
-    end
-  end
-
-  describe "No subscription, not staking user" do
+  describe "No subscription" do
     test "can access FREE metrics for all time", context do
       from = Timex.shift(Timex.now(), days: -900)
       to = Timex.now()
@@ -110,30 +70,36 @@ defmodule Sanbase.Billing.AccessTest do
       from = Timex.shift(Timex.now(), days: -91)
       to = Timex.shift(Timex.now(), days: -10)
       query = daily_active_deposits_query(from, to)
-      result = execute_query(context.conn, query, "dailyActiveDeposits")
+      result = execute_query_with_error(context.conn, query, "dailyActiveDeposits")
 
       refute called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
-      assert result != nil
+
+      assert result =~
+               "Requested metric daily_active_deposits is not provided by the current subscription plan"
     end
 
     test "cannot access PRO metrics realtime", context do
       from = Timex.shift(Timex.now(), days: -10)
       to = Timex.now()
       query = daily_active_deposits_query(from, to)
-      result = execute_query(context.conn, query, "dailyActiveDeposits")
+      result = execute_query_with_error(context.conn, query, "dailyActiveDeposits")
 
       refute called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
-      assert result != nil
+
+      assert result =~
+               "Requested metric daily_active_deposits is not provided by the current subscription plan"
     end
 
-    test "can access PRO withing 90 days and 1 day interval", context do
+    test "cannot access PRO within 90 days and 1 day interval", context do
       from = Timex.shift(Timex.now(), days: -89)
       to = Timex.shift(Timex.now(), days: -2)
       query = daily_active_deposits_query(from, to)
-      result = execute_query(context.conn, query, "dailyActiveDeposits")
+      result = execute_query_with_error(context.conn, query, "dailyActiveDeposits")
 
-      assert_called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
-      assert result != nil
+      refute called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
+
+      assert result =~
+               "Requested metric daily_active_deposits is not provided by the current subscription plan"
     end
   end
 
@@ -302,17 +268,6 @@ defmodule Sanbase.Billing.AccessTest do
       assert_called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
       assert result != nil
     end
-  end
-
-  defp mvrv_query(from, to) do
-    """
-      {
-        mvrvRatio(slug: "ethereum", from: "#{from}", to: "#{to}", interval: "1d"){
-          datetime
-          ratio
-        }
-      }
-    """
   end
 
   defp daily_active_deposits_query(from, to) do

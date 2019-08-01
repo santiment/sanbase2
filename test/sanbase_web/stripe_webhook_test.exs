@@ -23,8 +23,6 @@ defmodule SanbaseWeb.StripeWebhookTest do
   ]) do
     clean_task_supervisor_children()
 
-    Sanbase.Billing.TestSeed.seed_products_and_plans()
-
     user = insert(:user)
     {:ok, user: user}
   end

@@ -1,5 +1,6 @@
 defmodule Sanbase.Blockchain.TokenAgeConsumedTest do
   use Sanbase.DataCase, async: true
+
   @moduletag checkout_repo: Sanbase.TimescaleRepo
   @moduletag timescaledb: true
 

@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.CurrentPollApiTest do
   alias Sanbase.Repo
 
   setup do
-    user = insert(:staked_user)
+    %{user: user} = insert(:subscription_premium, user: insert(:user))
     conn = setup_jwt_auth(build_conn(), user)
 
     {:ok, conn: conn, user: user}
@@ -59,13 +59,10 @@ defmodule SanbaseWeb.Graphql.CurrentPollApiTest do
     query = """
     {
       currentPoll {
-        startAt,
-        endAt,
+        startAt
+        endAt
         posts {
-          id,
-          votes{
-            totalSanVotes
-          }
+          id
         }
       }
     }
@@ -80,10 +77,7 @@ defmodule SanbaseWeb.Graphql.CurrentPollApiTest do
     assert Timex.parse!(currentPoll["startAt"], "{ISO:Extended}") ==
              Timex.beginning_of_week(Timex.now()) |> DateTime.truncate(:second)
 
-    assert %{
-             "id" => Integer.to_string(approved_post.id),
-             "votes" => %{"totalSanVotes" => Decimal.to_integer(user.san_balance)}
-           } in currentPoll["posts"]
+    assert %{"id" => Integer.to_string(approved_post.id)} in currentPoll["posts"]
   end
 
   test "getting the current poll with the dates when the current user voted", %{

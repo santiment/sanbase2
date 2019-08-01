@@ -52,6 +52,7 @@ defmodule Sanbase.Billing.Subscription do
       :cancel_at_period_end,
       :status
     ])
+    |> foreign_key_constraint(:plan_id, name: :subscriptions_plan_id_fkey)
   end
 
   @spec free_subscription() :: %__MODULE__{}

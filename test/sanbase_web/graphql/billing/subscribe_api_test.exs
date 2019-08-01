@@ -6,55 +6,44 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   import SanbaseWeb.Graphql.TestHelpers
   import ExUnit.CaptureLog
 
-  alias Sanbase.Auth.{User, Apikey}
+  alias Sanbase.Auth.User
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestReponse
   alias Sanbase.Billing.Subscription
 
   setup_with_mocks([
-    {StripeApi, [], [create_product: fn _ -> StripeApiTestReponse.create_product_resp() end]},
-    {StripeApi, [], [create_plan: fn _ -> StripeApiTestReponse.create_plan_resp() end]},
-    {StripeApi, [],
+    {StripeApi, [:passthrough],
+     [create_product: fn _ -> StripeApiTestReponse.create_product_resp() end]},
+    {StripeApi, [:passthrough],
+     [create_plan: fn _ -> StripeApiTestReponse.create_plan_resp() end]},
+    {StripeApi, [:passthrough],
      [create_customer: fn _, _ -> StripeApiTestReponse.create_or_update_customer_resp() end]},
-    {StripeApi, [],
+    {StripeApi, [:passthrough],
      [update_customer: fn _, _ -> StripeApiTestReponse.create_or_update_customer_resp() end]},
-    {StripeApi, [], [create_coupon: fn _ -> StripeApiTestReponse.create_coupon_resp() end]},
-    {StripeApi, [],
+    {StripeApi, [:passthrough],
+     [create_coupon: fn _ -> StripeApiTestReponse.create_coupon_resp() end]},
+    {StripeApi, [:passthrough],
      [create_subscription: fn _ -> StripeApiTestReponse.create_subscription_resp() end]},
-    {Sanbase.StripeApi, [], [get_subscription_first_item_id: fn _ -> {:ok, "item_id"} end]},
-    {Sanbase.StripeApi, [],
+    {Sanbase.StripeApi, [:passthrough],
+     [get_subscription_first_item_id: fn _ -> {:ok, "item_id"} end]},
+    {Sanbase.StripeApi, [:passthrough],
      [
        update_subscription: fn _, _ ->
          StripeApiTestReponse.update_subscription_resp()
        end
      ]},
-    {Sanbase.StripeApi, [],
+    {Sanbase.StripeApi, [:passthrough],
      [
        cancel_subscription: fn _ ->
          StripeApiTestReponse.update_subscription_resp()
        end
      ]}
   ]) do
-    free_user = insert(:user)
+    # Needs to be staked to apply the discount
     user = insert(:staked_user)
     conn = setup_jwt_auth(build_conn(), user)
 
-    plans = Sanbase.Billing.TestSeed.seed_products_and_plans()
-
-    {:ok, apikey} = Apikey.generate_apikey(user)
-    conn_apikey = setup_apikey_auth(build_conn(), apikey)
-
-    {:ok, apikey_free} = Apikey.generate_apikey(free_user)
-    conn_apikey_free = setup_apikey_auth(build_conn(), apikey_free)
-
-    {:ok,
-     conn: conn,
-     user: user,
-     product: plans.product,
-     plan_essential: plans.plan_essential,
-     plan_pro: plans.plan_pro,
-     conn_apikey: conn_apikey,
-     conn_apikey_free: conn_apikey_free}
+    {:ok, conn: conn, user: user}
   end
 
   test "list products with plans", context do
@@ -97,20 +86,20 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
   describe "subscribe mutation" do
     test "successfull subscribe returns subscription", context do
-      query = subscribe_mutation(context.plan_essential.id)
+      query = subscribe_mutation(context.plans.plan_essential.id)
       response = execute_mutation(context.conn, query, "subscribe")
 
       assert response["status"] == "ACTIVE"
-      assert response["plan"]["name"] == context.plan_essential.name
+      assert response["plan"]["name"] == context.plans.plan_essential.name
     end
 
     test "successfull subscribe when user has stripe_customer_id", context do
       context.user |> User.changeset(%{stripe_customer_id: "alabala"}) |> Sanbase.Repo.update!()
 
-      query = subscribe_mutation(context.plan_essential.id)
+      query = subscribe_mutation(context.plans.plan_essential.id)
       response = execute_mutation(context.conn, query, "subscribe")
 
-      assert response["plan"]["name"] == context.plan_essential.name
+      assert response["plan"]["name"] == context.plans.plan_essential.name
     end
 
     test "when not existing plan provided - returns proper error", context do
@@ -125,11 +114,11 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
     test "when creating customer in Stripe fails - logs the error and returns generic error",
          context do
-      with_mock StripeApi, [],
+      with_mock StripeApi, [:passthrough],
         create_customer: fn _, _ ->
           {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
         end do
-        query = subscribe_mutation(context.plan_essential.id)
+        query = subscribe_mutation(context.plans.plan_essential.id)
 
         assert capture_log(fn ->
                  error_msg = execute_mutation_with_error(context.conn, query)
@@ -141,16 +130,16 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
     test "when creating coupon fails - logs the error and returns generic error", context do
       with_mocks([
-        {StripeApi, [],
+        {StripeApi, [:passthrough],
          [create_customer: fn _, _ -> StripeApiTestReponse.create_or_update_customer_resp() end]},
-        {StripeApi, [],
+        {StripeApi, [:passthrough],
          [
            create_coupon: fn _ ->
              {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
            end
          ]}
       ]) do
-        query = subscribe_mutation(context.plan_essential.id)
+        query = subscribe_mutation(context.plans.plan_essential.id)
 
         assert capture_log(fn ->
                  error_msg = execute_mutation_with_error(context.conn, query)
@@ -163,17 +152,18 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     test "when creating subscription in Stripe fails - logs the error and returns generic error",
          context do
       with_mocks([
-        {StripeApi, [],
+        {StripeApi, [:passthrough],
          [create_customer: fn _, _ -> StripeApiTestReponse.create_or_update_customer_resp() end]},
-        {StripeApi, [], [create_coupon: fn _ -> StripeApiTestReponse.create_coupon_resp() end]},
-        {StripeApi, [],
+        {StripeApi, [:passthrough],
+         [create_coupon: fn _ -> StripeApiTestReponse.create_coupon_resp() end]},
+        {StripeApi, [:passthrough],
          [
            create_subscription: fn _ ->
              {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
            end
          ]}
       ]) do
-        query = subscribe_mutation(context.plan_essential.id)
+        query = subscribe_mutation(context.plans.plan_essential.id)
 
         assert capture_log(fn ->
                  error_msg = execute_mutation_with_error(context.conn, query)
@@ -187,10 +177,10 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   describe "update_subscription mutation" do
     test "successfully upgrade plan from ESSENTIAL to PRO", context do
       subscription = insert(:subscription_essential, user: context.user, stripe_id: "stripe_id")
-      query = update_subscription_mutation(subscription.id, context.plan_pro.id)
+      query = update_subscription_mutation(subscription.id, context.plans.plan_pro.id)
       response = execute_mutation(context.conn, query, "updateSubscription")
 
-      assert response["plan"]["name"] == context.plan_pro.name
+      assert response["plan"]["name"] == context.plans.plan_pro.name
     end
 
     test "returns error if subscription is scheduled for cancellation", context do
@@ -202,7 +192,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
           current_period_end: Timex.now()
         )
 
-      query = update_subscription_mutation(subscription.id, context.plan_pro.id)
+      query = update_subscription_mutation(subscription.id, context.plans.plan_pro.id)
 
       assert capture_log(fn ->
                error_msg = execute_mutation_with_error(context.conn, query)
@@ -225,7 +215,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "when not existing subscription provided - returns proper error", context do
-      query = update_subscription_mutation(-1, context.plan_pro.id)
+      query = update_subscription_mutation(-1, context.plans.plan_pro.id)
 
       assert capture_log(fn ->
                error_msg = execute_mutation_with_error(context.conn, query)
@@ -239,7 +229,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
       subscription = insert(:subscription_essential, user: user2, stripe_id: "stripe_id")
 
-      query = update_subscription_mutation(subscription.id, context.plan_pro.id)
+      query = update_subscription_mutation(subscription.id, context.plans.plan_pro.id)
 
       assert capture_log(fn ->
                error_msg = execute_mutation_with_error(context.conn, query)
@@ -257,7 +247,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
           {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
         end do
         subscription = insert(:subscription_essential, user: context.user, stripe_id: "stripe_id")
-        query = update_subscription_mutation(subscription.id, context.plan_pro.id)
+        query = update_subscription_mutation(subscription.id, context.plans.plan_pro.id)
 
         assert capture_log(fn ->
                  error_msg = execute_mutation_with_error(context.conn, query)
@@ -269,8 +259,9 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
     test "when updating subscription in Stripe fails - returns generic error", context do
       with_mocks([
-        {Sanbase.StripeApi, [], [get_subscription_first_item_id: fn _ -> {:ok, "item_id"} end]},
-        {StripeApi, [],
+        {Sanbase.StripeApi, [:passthrough],
+         [get_subscription_first_item_id: fn _ -> {:ok, "item_id"} end]},
+        {StripeApi, [:passthrough],
          [
            update_subscription: fn _, _ ->
              {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
@@ -278,7 +269,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
          ]}
       ]) do
         subscription = insert(:subscription_essential, user: context.user, stripe_id: "stripe_id")
-        query = update_subscription_mutation(subscription.id, context.plan_pro.id)
+        query = update_subscription_mutation(subscription.id, context.plans.plan_pro.id)
 
         assert capture_log(fn ->
                  error_msg = execute_mutation_with_error(context.conn, query)
@@ -355,7 +346,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
     test "when updating subscription in Stripe fails - returns generic error", context do
       with_mocks([
-        {StripeApi, [],
+        {StripeApi, [:passthrough],
          [
            cancel_subscription: fn _ ->
              {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
@@ -411,7 +402,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "when not existing subscription provided - returns error", context do
-      query = update_subscription_mutation(-1, context.plan_pro.id)
+      query = update_subscription_mutation(-1, context.plans.plan_pro.id)
 
       assert capture_log(fn ->
                error_msg = execute_mutation_with_error(context.conn, query)
@@ -464,7 +455,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
     test "when updating subscription in Stripe fails - returns generic error", context do
       with_mocks([
-        {StripeApi, [],
+        {StripeApi, [:passthrough],
          [
            update_subscription: fn _, _ ->
              {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
@@ -528,7 +519,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     mutation {
       subscribe(card_token: "card_token", plan_id: #{plan_id}) {
         id,
-        status,
+        status
         plan {
           id
           name

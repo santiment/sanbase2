@@ -9,7 +9,7 @@ defmodule Sanbase.Auth.UserTest do
   alias Sanbase.Repo
 
   test "san balance cache is stale when the cache is never updated" do
-    user = insert(:user, privacy_policy_accepted: true)
+    user = insert(:user, %{san_balance: nil, san_balance_updated_at: nil})
 
     assert User.san_balance_cache_stale?(user)
   end

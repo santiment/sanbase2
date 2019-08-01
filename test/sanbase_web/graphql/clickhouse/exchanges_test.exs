@@ -7,11 +7,9 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
   import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
 
   setup do
-    Sanbase.Billing.TestSeed.seed_products_and_plans()
-
     infr = insert(:infrastructure, %{code: "ETH"})
-    user = insert(:user)
-    insert(:subscription_premium, user: user)
+
+    %{user: user} = insert(:subscription_premium, user: insert(:user))
     conn = setup_jwt_auth(build_conn(), user)
 
     insert(:exchange_address, %{address: "0x234", name: "Binance", infrastructure_id: infr.id})

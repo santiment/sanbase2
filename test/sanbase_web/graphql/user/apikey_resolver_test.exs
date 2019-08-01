@@ -4,31 +4,21 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
   @moduletag timescaledb: true
 
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.Factory
   import Mockery
 
   alias Sanbase.Repo
 
   alias Sanbase.Auth.{
-    User,
     UserApikeyToken,
     Hmac
   }
 
   setup do
-    user =
-      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
-      |> Repo.insert!()
-
+    user = insert(:user)
     conn = setup_jwt_auth(build_conn(), user)
 
-    user2 =
-      %User{
-        salt: User.generate_salt(),
-        privacy_policy_accepted: true,
-        test_san_balance: Decimal.new(2000)
-      }
-      |> Repo.insert!()
-
+    %{user: user2} = insert(:subscription_premium, user: insert(:user))
     conn2 = setup_jwt_auth(build_conn(), user2)
 
     %{conn: conn, conn2: conn2, user: user, user2: user2}
@@ -241,7 +231,12 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
         |> json_response(200)
 
       err_struct = result["errors"] |> List.first()
-      assert err_struct["message"] =~ "unauthorized"
+
+      assert err_struct["message"] =~
+               """
+               Requested metric emojis_sentiment is not provided by the current subscription plan FREE.
+               Please upgrade to Pro or higher to get access to emojis_sentiment
+               """
     end
   end
 
@@ -353,29 +348,28 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
   end
 
   defp init_databases(slug, datetime1, datetime2) do
-    import Sanbase.TimescaleFactory
+    require Sanbase.TimescaleFactory
 
     contract_address = "0" <> Sanbase.TestUtils.random_string()
 
-    insert(:token_age_consumed, %{
+    Sanbase.TimescaleFactory.insert(:token_age_consumed, %{
       contract_address: contract_address,
       timestamp: datetime1,
       token_age_consumed: 5000
     })
 
-    insert(:token_age_consumed, %{
+    Sanbase.TimescaleFactory.insert(:token_age_consumed, %{
       contract_address: contract_address,
       timestamp: datetime2,
       token_age_consumed: 1000
     })
 
-    %Sanbase.Model.Project{
+    insert(:project, %{
       name: "Santiment",
       ticker: "SAN",
       coinmarketcap_id: slug,
       main_contract_address: contract_address
-    }
-    |> Repo.insert!()
+    })
   end
 
   defp token_age_consumed_query(slug, datetime1, datetime2) do

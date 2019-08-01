@@ -9,7 +9,7 @@ defmodule SanbaseWeb.Graphql.InsightTagOrderTest do
     clean_task_supervisor_children()
 
     Sanbase.Insight.Poll.find_or_insert_current_poll!()
-    user = insert(:staked_user)
+    %{user: user} = insert(:subscription_premium, user: insert(:user))
     conn = setup_jwt_auth(build_conn(), user)
 
     tags = ["first", "second", "3", "AAA", "XYZ", "BTC"] |> Enum.map(fn name -> %{name: name} end)

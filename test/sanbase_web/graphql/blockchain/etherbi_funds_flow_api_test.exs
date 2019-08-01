@@ -3,32 +3,21 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
   @moduletag checkout_repo: [Sanbase.Repo, Sanbase.TimescaleRepo]
   @moduletag timescaledb: true
 
-  alias Sanbase.Model.Project
-  alias Sanbase.Repo
-
   require Sanbase.Factory
 
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.TimescaleFactory
 
   setup do
-    staked_user = Sanbase.Factory.insert(:staked_user)
-    conn = setup_jwt_auth(build_conn(), staked_user)
+    %{user: user} =
+      Sanbase.Factory.insert(:subscription_premium, user: Sanbase.Factory.insert(:user))
 
-    ticker = "SAN"
-    slug = "santiment"
-    exchange_address = "0x4321"
-    contract_address = "0x1234"
+    conn = setup_jwt_auth(build_conn(), user)
 
-    project =
-      %Project{
-        name: "Santiment",
-        ticker: ticker,
-        coinmarketcap_id: slug,
-        main_contract_address: contract_address,
-        token_decimals: 2
-      }
-      |> Repo.insert!()
+    exchange_address = "0x" <> Sanbase.Factory.rand_hex_str()
+
+    project = Sanbase.Factory.insert(:random_erc20_project)
+    contract_address = project.main_contract_address
 
     token_decimals = :math.pow(10, project.token_decimals)
 
@@ -94,20 +83,14 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
       contract_address: contract_address,
       timestamp: datetime8,
       incoming_exchange_funds: 0,
-      outgoing_exchange_funds: 50_000 * token_decimals
+      outgoing_exchange_funds: 100 * token_decimals
     })
 
     [
       exchange_address: exchange_address,
-      slug: slug,
-      datetime1: datetime1,
-      datetime2: datetime2,
-      datetime3: datetime3,
-      datetime4: datetime4,
-      datetime5: datetime5,
-      datetime6: datetime6,
-      datetime7: datetime7,
-      datetime8: datetime8,
+      slug: project.coinmarketcap_id,
+      from: datetime1,
+      to: datetime8,
       conn: conn
     ]
   end
@@ -117,8 +100,8 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
     {
       exchangeFundsFlow(
         slug: "#{context.slug}",
-        from: "#{context.datetime1}",
-        to: "#{context.datetime8}") {
+        from: "#{context.from}",
+        to: "#{context.to}") {
           datetime
           inOutDifference
       }
@@ -141,8 +124,8 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
     {
       exchangeFundsFlow(
         slug: "#{context.slug}",
-        from: "#{context.datetime1}",
-        to: "#{context.datetime8}",
+        from: "#{context.from}",
+        to: "#{context.to}",
         interval: "1d") {
           datetime
           inOutDifference
@@ -170,6 +153,6 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
 
     assert %{"datetime" => "2017-05-19T00:00:00Z", "inOutDifference" => -8450.0} in funds_flow_list
 
-    assert %{"datetime" => "2017-05-20T00:00:00Z", "inOutDifference" => -5.0e4} in funds_flow_list
+    assert %{"datetime" => "2017-05-20T00:00:00Z", "inOutDifference" => -100.0} in funds_flow_list
   end
 end

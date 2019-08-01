@@ -29,7 +29,9 @@ defmodule Sanbase.Factory do
       username: :crypto.strong_rand_bytes(16) |> Base.encode16(),
       email: (:crypto.strong_rand_bytes(16) |> Base.encode16()) <> "@gmail.com",
       salt: User.generate_salt(),
-      privacy_policy_accepted: true
+      privacy_policy_accepted: true,
+      san_balance: Decimal.new(0),
+      san_balance_updated_at: Timex.now()
     }
   end
 
@@ -322,6 +324,7 @@ defmodule Sanbase.Factory do
 
   def subscription_essential_factory() do
     %Subscription{
+      stripe_id: rand_str(),
       plan_id: 2,
       current_period_end: Timex.shift(Timex.now(), days: 1)
     }
@@ -329,6 +332,7 @@ defmodule Sanbase.Factory do
 
   def subscription_pro_factory() do
     %Subscription{
+      stripe_id: rand_str(),
       plan_id: 3,
       current_period_end: Timex.shift(Timex.now(), days: 1)
     }
@@ -336,6 +340,7 @@ defmodule Sanbase.Factory do
 
   def subscription_premium_factory() do
     %Subscription{
+      stripe_id: rand_str(),
       plan_id: 4,
       current_period_end: Timex.shift(Timex.now(), days: 1)
     }

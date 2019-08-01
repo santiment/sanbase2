@@ -56,7 +56,6 @@ defmodule Sanbase.Billing.SubscriptionMetaFieldTest do
           :project_by_slug,
           :fetch_public_watchlists,
           :all_tags,
-          :emojis_sentiment,
           :fetch_all_public_user_lists,
           :projects_list_history_stats,
           :daily_active_addresses,
@@ -122,7 +121,7 @@ defmodule Sanbase.Billing.SubscriptionMetaFieldTest do
         |> Enum.sort()
 
       expected_pro_queries =
-        [:daily_active_deposits, :nvt_ratio, :share_of_deposits]
+        [:daily_active_deposits, :emojis_sentiment, :nvt_ratio, :share_of_deposits]
         |> Enum.sort()
 
       assert pro_queries == expected_pro_queries

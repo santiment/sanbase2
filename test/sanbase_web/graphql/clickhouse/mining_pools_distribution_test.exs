@@ -10,7 +10,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
   alias Sanbase.Clickhouse.MiningPoolsDistribution
 
   setup do
-    user = insert(:staked_user)
+    %{user: user} = insert(:subscription_premium, user: insert(:user))
     conn = setup_jwt_auth(build_conn(), user)
 
     [

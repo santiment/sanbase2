@@ -34,7 +34,7 @@ defmodule Sanbase.UserLists.Statistics do
   def new_users_with_watchlist_count(from_datetime) do
     from(
       ul in UserList,
-      left_join: user in User,
+      inner_join: user in User,
       on: ul.user_id == user.id,
       where: user.inserted_at > ^from_datetime,
       select: count(fragment("DISTINCT ?", ul.user_id))
@@ -45,7 +45,7 @@ defmodule Sanbase.UserLists.Statistics do
   def old_users_with_new_watchlist_count(registered_datetime, watchlist_datetime) do
     from(
       ul in UserList,
-      left_join: user in User,
+      inner_join: user in User,
       on: ul.user_id == user.id,
       where:
         user.inserted_at < ^registered_datetime and

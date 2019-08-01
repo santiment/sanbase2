@@ -1,51 +1,29 @@
 defmodule Sanbase.StatisticsTest do
   use Sanbase.DataCase
 
+  import Sanbase.Auth.Settings, only: [daily_subscription_type: 0, weekly_subscription_type: 0]
   import Sanbase.Factory
   import Mock
 
   setup do
-    u1 = insert(:user)
+    user1 = insert(:user, inserted_at: Timex.shift(Timex.now(), days: -600))
+    _user2 = insert(:user, inserted_at: Timex.shift(Timex.now(), days: -20))
+    user3 = insert(:user, inserted_at: Timex.shift(Timex.now(), days: -2))
+    user4 = insert(:staked_user, inserted_at: Timex.shift(Timex.now(), days: -500))
+    user5 = insert(:staked_user, inserted_at: Timex.shift(Timex.now(), days: -15))
+    user6 = insert(:staked_user, inserted_at: Timex.shift(Timex.now(), days: -1))
 
-    Ecto.Changeset.change(u1, %{inserted_at: Timex.shift(Timex.now(), days: -600)})
-    |> Sanbase.Repo.update()
-
-    Sanbase.Auth.UserSettings.change_newsletter_subscription(u1, %{
+    Sanbase.Auth.UserSettings.change_newsletter_subscription(user1, %{
       newsletter_subscription: :weekly
     })
 
-    u2 = insert(:user)
-
-    Ecto.Changeset.change(u2, %{inserted_at: Timex.shift(Timex.now(), days: -20)})
-    |> Sanbase.Repo.update()
-
-    u3 = insert(:user)
-
-    Ecto.Changeset.change(u3, %{inserted_at: Timex.shift(Timex.now(), days: -2)})
-    |> Sanbase.Repo.update()
-
-    Sanbase.Auth.UserSettings.change_newsletter_subscription(u3, %{
+    Sanbase.Auth.UserSettings.change_newsletter_subscription(user3, %{
       newsletter_subscription: :weekly
     })
 
-    u4 = insert(:staked_user)
-
-    Ecto.Changeset.change(u4, %{inserted_at: Timex.shift(Timex.now(), days: -500)})
-    |> Sanbase.Repo.update()
-
-    u5 = insert(:staked_user)
-
-    Ecto.Changeset.change(u5, %{inserted_at: Timex.shift(Timex.now(), days: -15)})
-    |> Sanbase.Repo.update()
-
-    Sanbase.Auth.UserSettings.change_newsletter_subscription(u5, %{
+    Sanbase.Auth.UserSettings.change_newsletter_subscription(user5, %{
       newsletter_subscription: :daily
     })
-
-    u6 = insert(:staked_user)
-
-    Ecto.Changeset.change(u6, %{inserted_at: Timex.shift(Timex.now(), days: -1)})
-    |> Sanbase.Repo.update()
 
     before_170d = Timex.shift(Timex.now(), days: -170)
 
@@ -53,16 +31,16 @@ defmodule Sanbase.StatisticsTest do
     # as the `newsletter_subscription_updated_at` is not accepted as param but is
     # internally set.
     with_mock(DateTime, [:passthrough], utc_now: fn -> before_170d end) do
-      Sanbase.Auth.UserSettings.change_newsletter_subscription(u6, %{
+      Sanbase.Auth.UserSettings.change_newsletter_subscription(user6, %{
         newsletter_subscription: :weekly
       })
     end
 
-    insert(:watchlist, %{user: u1})
-    insert(:watchlist, %{user: u1})
-    insert(:watchlist, %{user: u3})
-    insert(:watchlist, %{user: u4})
-    insert(:watchlist, %{user: u6})
+    insert(:watchlist, %{user: user1})
+    insert(:watchlist, %{user: user1})
+    insert(:watchlist, %{user: user3})
+    insert(:watchlist, %{user: user4})
+    insert(:watchlist, %{user: user6})
     %{}
   end
 
@@ -112,7 +90,7 @@ defmodule Sanbase.StatisticsTest do
               "weekly_updates_subscribed_user_count_last_30d" => 2,
               "weekly_updates_subscribed_user_count_last_7d" => 2,
               "weekly_updates_subscribed_user_count_overall" => 3,
-              "weekly_updates_subscribed_new_user_count" => 1,
+              "weekly_updates_subscribed_new_user_count" => 2,
               "weekly_updates_subscribed_old_user_count_last_14d" => 1
             }} in statistics
 
@@ -122,7 +100,7 @@ defmodule Sanbase.StatisticsTest do
               "daily_updates_subscribed_user_count_last_30d" => 1,
               "daily_updates_subscribed_user_count_last_7d" => 1,
               "daily_updates_subscribed_user_count_overall" => 1,
-              "daily_updates_subscribed_new_user_count" => 1,
+              "daily_updates_subscribed_new_user_count" => 0,
               "daily_updates_subscribed_old_user_count_last_14d" => 1
             }} in statistics
 
@@ -137,5 +115,41 @@ defmodule Sanbase.StatisticsTest do
               "new_users_with_watchlist_count_14d" => 2,
               "old_users_with_watchlist_count_14d" => 2
             }} in statistics
+  end
+
+  test "returns the number of users, which are subscribed" do
+    assert Sanbase.Auth.Statistics.newsletter_subscribed_users(daily_subscription_type()) == 1
+
+    assert Sanbase.Auth.Statistics.newsletter_subscribed_users(weekly_subscription_type()) == 3
+  end
+
+  test "returns the number of new users, which have a newsletter subscription" do
+    now = Timex.now()
+
+    assert Sanbase.Auth.Statistics.newsletter_subscribed_new_users(
+             daily_subscription_type(),
+             Timex.shift(now, days: -16)
+           ) == 1
+
+    assert Sanbase.Auth.Statistics.newsletter_subscribed_new_users(
+             weekly_subscription_type(),
+             Timex.shift(now, days: -14)
+           ) == 2
+  end
+
+  test "returns the number of old users, which have subscribed for the newsletter in a given time period" do
+    now = Timex.now()
+
+    assert Sanbase.Auth.Statistics.newsletter_subscribed_old_users(
+             daily_subscription_type(),
+             Timex.shift(now, days: -5),
+             Timex.shift(now, days: -14)
+           ) == 1
+
+    assert Sanbase.Auth.Statistics.newsletter_subscribed_old_users(
+             weekly_subscription_type(),
+             Timex.shift(now, days: -9),
+             Timex.shift(now, days: -25)
+           ) == 1
   end
 end

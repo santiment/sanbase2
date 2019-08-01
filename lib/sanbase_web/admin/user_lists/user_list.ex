@@ -10,6 +10,7 @@ defmodule Sanbase.ExAdmin.UserList do
     index do
       column(:id)
       column(:name)
+      column(:slug)
       column(:is_featured, &is_featured(&1))
       column(:is_public)
       column(:user)
@@ -19,6 +20,7 @@ defmodule Sanbase.ExAdmin.UserList do
     form user_list do
       inputs do
         input(user_list, :name)
+        input(user_list, :slug)
         input(user_list, :is_public)
         input(user_list, :function, type: :text)
 
@@ -34,6 +36,7 @@ defmodule Sanbase.ExAdmin.UserList do
       attributes_table do
         row(:id)
         row(:name)
+        row(:slug)
         row(:is_public)
         row(:is_featured, &is_featured(&1))
         row(:color)

@@ -205,6 +205,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     UserList.user_list(id, %User{id: nil})
   end
 
+  def watchlist_by_slug(_root, %{slug: slug}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    UserList.user_list_by_slug(slug, current_user)
+  end
+
+  def watchlist_by_slug(_root, %{slug: slug}, _resolution) do
+    UserList.user_list_by_slug(slug, %User{id: nil})
+  end
+
   def user_list(_root, %{user_list_id: user_list_id}, %{
         context: %{auth: %{current_user: current_user}}
       }) do

@@ -303,6 +303,29 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
   end
 
   describe "UserList" do
+    test "fetch watchlist by slug", context do
+      ws = insert(:watchlist, %{slug: "stablecoins", name: "Stablecoins", is_public: true})
+
+      query = """
+      {
+        watchlistBySlug(slug: "stablecoins") {
+          id
+          name
+          slug
+        }
+      }
+      """
+
+      result =
+        context.conn
+        |> post("/graphql", query_skeleton(query))
+        |> json_response(200)
+
+      assert result["data"]["watchlistBySlug"]["id"] |> Sanbase.Math.to_integer() == ws.id
+      assert result["data"]["watchlistBySlug"]["name"] == ws.name
+      assert result["data"]["watchlistBySlug"]["slug"] == ws.slug
+    end
+
     test "returns public lists for anonymous users", %{user2: user2} do
       project = insert(:project)
 

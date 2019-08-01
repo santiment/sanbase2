@@ -27,6 +27,7 @@ defmodule Sanbase.UserList do
 
   schema "user_lists" do
     field(:name, :string)
+    field(:slug, :string)
     field(:is_public, :boolean, default: false)
     field(:color, ColorEnum, default: :none)
     field(:function, WatchlistFunction, default: %WatchlistFunction{})
@@ -47,19 +48,26 @@ defmodule Sanbase.UserList do
 
   def create_changeset(%__MODULE__{} = user_list, attrs \\ %{}) do
     user_list
-    |> cast(attrs, [:user_id, :name, :is_public, :color, :function])
+    |> cast(attrs, [:user_id, :name, :slug, :is_public, :color, :function])
     |> validate_required([:name, :user_id])
+    |> unique_constraint(:slug)
   end
 
   def update_changeset(%__MODULE__{id: _id} = user_list, attrs \\ %{}) do
     user_list
-    |> cast(attrs, [:name, :is_public, :color, :function])
+    |> cast(attrs, [:name, :slug, :is_public, :color, :function])
     |> cast_assoc(:list_items)
     |> validate_required([:name])
+    |> unique_constraint(:slug)
   end
 
   def by_id(id) do
     from(ul in __MODULE__, where: ul.id == ^id)
+    |> Repo.one()
+  end
+
+  def by_slug(slug) when is_binary(slug) do
+    from(ul in __MODULE__, where: ul.slug == ^slug)
     |> Repo.one()
   end
 
@@ -119,9 +127,14 @@ defmodule Sanbase.UserList do
     {:ok, Repo.all(query)}
   end
 
-  def user_list(user_list_id, %User{id: id}) do
-    query = user_list_query_by_user_id(id)
+  def user_list(user_list_id, user) do
+    query = user_list_query_by_user_id(user)
     {:ok, Repo.get(query, user_list_id)}
+  end
+
+  def user_list_by_slug(slug, user) do
+    query = user_list_query_by_user_id(user)
+    {:ok, Repo.get_by(query, slug: slug)}
   end
 
   # Private functions
@@ -133,12 +146,12 @@ defmodule Sanbase.UserList do
 
   defp maybe_create_event(error_result, _, _), do: error_result
 
-  defp user_list_query_by_user_id(nil) do
-    from(dul in __MODULE__, where: dul.is_public == true)
+  defp user_list_query_by_user_id(%User{id: user_id}) when is_integer(user_id) and user_id > 0 do
+    from(ul in __MODULE__, where: ul.is_public == true or ul.user_id == ^user_id)
   end
 
-  defp user_list_query_by_user_id(user_id) when is_integer(user_id) and user_id > 0 do
-    from(ul in __MODULE__, where: ul.is_public == true or ul.user_id == ^user_id)
+  defp user_list_query_by_user_id(_) do
+    from(dul in __MODULE__, where: dul.is_public == true)
   end
 
   defp update_list_items_params(%{list_items: list_items} = params, id)

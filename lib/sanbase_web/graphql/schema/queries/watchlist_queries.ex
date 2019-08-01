@@ -77,6 +77,13 @@ defmodule SanbaseWeb.Graphql.Schema.WatchlistQueries do
       arg(:id, non_null(:id))
       resolve(&UserListResolver.watchlist/3)
     end
+
+    field :watchlist_by_slug, :user_list do
+      meta(subscription: :free)
+
+      arg(:slug, non_null(:string))
+      resolve(&UserListResolver.watchlist_by_slug/3)
+    end
   end
 
   object :user_list_mutations do

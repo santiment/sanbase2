@@ -5,19 +5,15 @@ defmodule Sanbase.Clickhouse.Metric do
   @external_resource availalbe_metrics_file =
                        Path.join(
                          __DIR__,
-                         "available_v2_metrics.txt"
+                         "available_v2_metrics.json"
                        )
-  @metrics (for line <- File.stream!(availalbe_metrics_file) do
-              line = line |> String.trim()
+  @metrics_json File.read!(availalbe_metrics_file) |> Jason.decode!()
 
-              case String.split(line, ",") do
-                [metric] -> {metric, nil}
-                [metric, aggregation] -> {String.trim(metric), String.trim(aggregation)}
-              end
-            end)
-
-  @metrics_mapset MapSet.new(@metrics |> Enum.map(&elem(&1, 0)))
-  @metric_aggregation_map Map.new(@metrics)
+  @metrics_mapset MapSet.new(@metrics_json |> Enum.map(fn %{"metric" => metric} -> metric end))
+  @metric_aggregation_map Map.new(
+                            @metrics_json
+                            |> Enum.map(fn %{"metric" => m, "aggregation" => a} -> {m, a} end)
+                          )
   @aggregations [nil, :any, :sum, :avg, :min, :max, :last, :first, :median]
 
   @table "daily_metrics_v2"

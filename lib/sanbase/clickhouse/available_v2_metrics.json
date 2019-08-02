@@ -1,0 +1,502 @@
+[
+  {
+    "metric": "average_price",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "daily_active_addresses",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "daily_avg_marketcap_usd",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "daily_avg_price_usd",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "daily_closing_marketcap_usd",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "daily_closing_price_usd",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "daily_high_price_usd",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "daily_low_price_usd",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "daily_opening_price_usd",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "daily_stack_circulation",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "daily_trading_volume_usd",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "exchange_balance",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "exchange_inflow",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "exchange_outflow",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mean_realized_price_usd_10y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mean_realized_price_usd_180d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mean_realized_price_usd_1d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mean_realized_price_usd_20y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mean_realized_price_usd_2y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mean_realized_price_usd_30d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mean_realized_price_usd_365d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mean_realized_price_usd_3y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mean_realized_price_usd_5y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mean_realized_price_usd_60d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mean_realized_price_usd_7d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mean_realized_price_usd_90d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mean_realized_price_usd_XXX",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mvrv_usd_10y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mvrv_usd_180d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mvrv_usd_1d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mvrv_usd_20y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mvrv_usd_2y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mvrv_usd_30d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mvrv_usd_365d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mvrv_usd_3y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mvrv_usd_5y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mvrv_usd_60d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mvrv_usd_7d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "mvrv_usd_90d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_age_consumed",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_age_consumed_5min",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_10y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_180d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_1d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_20y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_2y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_30d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_365d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_3y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_5y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_60d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_7d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_90d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_delta_10y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_delta_180d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_delta_1d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_delta_20y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_delta_2y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_delta_30d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_delta_365d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_delta_3y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_delta_5y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_delta_60d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_delta_7d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_circulation_delta_90d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_cumulative_age_consumed",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_liveliness",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_mean_age_days",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_mean_creation_timestamp",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_10y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_180d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_1d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_20y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_2y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_30d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_365d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_3y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_5y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_60d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_7d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_90d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_delta_10y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_delta_180d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_delta_1d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_delta_20y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_delta_2y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_delta_30d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_delta_365d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_delta_3y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_delta_5y",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_delta_60d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_delta_7d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd_delta_90d",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_total_age",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_total_creation_timestamp",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_total_creation_timestamp_delta",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "token_velocity",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "transaction_volume_5min",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "transaction_volume",
+    "subscription_plan": "free",
+    "aggregation": "last"
+  }
+]

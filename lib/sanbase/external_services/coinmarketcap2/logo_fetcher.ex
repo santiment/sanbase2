@@ -5,12 +5,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
 
   import Mogrify
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Model.{Project, CmcProject}
   alias Sanbase.Repo
   alias Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo
   alias Sanbase.FileStore
 
   @log_tag "[CMC][LogoFetcher]"
+  @hash_algorithm :sha256
 
   def run() do
     local_projects_map =
@@ -58,7 +59,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
                update_local_project(project, %{
                  logo32_url: local_filepath_32,
                  logo64_url: local_filepath_64
-               }) do
+               }),
+             {:ok, _} <- update_local_cmc_project(project, local_filepath_64) do
           :ok
         else
           error ->
@@ -113,9 +115,39 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     end
   end
 
+  defp update_local_cmc_project(project, downloaded_image_path) do
+    cmc_project = CmcProject.get_or_insert(project.id)
+    {:ok, image_hash} = image_content_hash(downloaded_image_path)
+
+    CmcProject.changeset(
+      cmc_project,
+      %{logo_hash: image_hash, logos_uploaded_at: Timex.now()}
+    )
+    |> Repo.update()
+  end
+
   defp update_local_project(nil, _filepath), do: {:error, "Project not found"}
 
   defp update_local_project(project, fields) do
     Project.changeset(project, fields) |> Repo.update()
+  end
+
+  defp image_content_hash(file_path) do
+    try do
+      hash =
+        File.stream!(file_path, [], 8192)
+        |> Enum.reduce(:crypto.hash_init(@hash_algorithm), fn line, acc ->
+          :crypto.hash_update(acc, line)
+        end)
+        |> :crypto.hash_final()
+        |> Base.encode16()
+        |> String.downcase()
+
+      {:ok, hash}
+    rescue
+      error in File.Error ->
+        %{reason: reason} = error
+        {:error, "Error calculating file's content hash. Reason: #{reason}"}
+    end
   end
 end

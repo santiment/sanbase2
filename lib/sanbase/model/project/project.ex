@@ -48,6 +48,7 @@ defmodule Sanbase.Model.Project do
     field(:main_contract_address, :string)
     field(:project_transparency_description, :string)
 
+    has_one(:cmc_project, CmcProject, on_delete: :delete_all)
     has_many(:icos, Ico)
     has_many(:github_organizations, Project.GithubOrganization)
     has_many(:eth_addresses, ProjectEthAddress)

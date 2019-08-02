@@ -1,4 +1,8 @@
 defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
+  @moduledoc ~s"""
+  Implement the restrictions for the Sanbase product
+  """
+
   alias Sanbase.Billing.Plan.CustomAccess
 
   @custom_access_queries_stats CustomAccess.get()

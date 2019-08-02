@@ -18,8 +18,13 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   compile-time and build the needed sets of data also compile time. There are no
   checks for mutations - mutations
 
-  Additionally, this module will arise a compile-time warning if there is a
-  query without a subscription plan defined
+  Additionally, this module will raise a compile-time warning if there is a
+  query without a subscription plan defined.
+
+  The actual historical/realtime restrictions are implemented in modules:
+  - ApiAccessChecker
+  - SanbaseAccessChecker
+  as we have different restrictions.
   """
 
   alias Sanbase.Billing.Product

@@ -38,7 +38,9 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.TimelineEventTypes)
   import_types(Graphql.InsightTypes)
   import_types(Graphql.TwitterTypes)
+  import_types(Graphql.MetricTypes)
 
+  import_types(Graphql.Schema.MetricQueries)
   import_types(Graphql.Schema.SocialDataQueries)
   import_types(Graphql.Schema.WatchlistQueries)
   import_types(Graphql.Schema.ProjectQueries)
@@ -89,6 +91,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   end
 
   query do
+    import_fields(:metric_queries)
     import_fields(:social_data_queries)
     import_fields(:user_list_queries)
     import_fields(:project_queries)

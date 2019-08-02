@@ -12,31 +12,31 @@ daily_trading_volume_usd
 exchange_balance
 exchange_inflow
 exchange_outflow
-mean_realized_price_usd_10y
-mean_realized_price_usd_180d
-mean_realized_price_usd_1d
-mean_realized_price_usd_20y
-mean_realized_price_usd_2y
-mean_realized_price_usd_30d
-mean_realized_price_usd_365d
-mean_realized_price_usd_3y
-mean_realized_price_usd_5y
-mean_realized_price_usd_60d
-mean_realized_price_usd_7d
-mean_realized_price_usd_90d
-mean_realized_price_usd_XXX
-mvrv_usd_10y
-mvrv_usd_180d
-mvrv_usd_1d
-mvrv_usd_20y
-mvrv_usd_2y
-mvrv_usd_30d
-mvrv_usd_365d
-mvrv_usd_3y
-mvrv_usd_5y
-mvrv_usd_60d
-mvrv_usd_7d
-mvrv_usd_90d
+mean_realized_price_usd_10y, last
+mean_realized_price_usd_180d, last
+mean_realized_price_usd_1d, last
+mean_realized_price_usd_20y, last
+mean_realized_price_usd_2y, last
+mean_realized_price_usd_30d, last
+mean_realized_price_usd_365d, last
+mean_realized_price_usd_3y, last
+mean_realized_price_usd_5y, last
+mean_realized_price_usd_60d, last
+mean_realized_price_usd_7d, last
+mean_realized_price_usd_90d, last
+mean_realized_price_usd_XXX, last
+mvrv_usd_10y, last
+mvrv_usd_180d, last
+mvrv_usd_1d, last
+mvrv_usd_20y, last
+mvrv_usd_2y, last
+mvrv_usd_30d, last
+mvrv_usd_365d, last
+mvrv_usd_3y, last
+mvrv_usd_5y, last
+mvrv_usd_60d, last
+mvrv_usd_7d, last
+mvrv_usd_90d, last
 stack_age_consumed
 stack_age_consumed_5min
 stack_circulation_10y

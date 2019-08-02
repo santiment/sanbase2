@@ -115,7 +115,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
             auth_method: :user_token,
             current_user: current_user,
             san_balance: san_balance(current_user),
-            subscription: Subscription.current_subscription(current_user, @product_sanbase)
+            subscription:
+              Subscription.current_subscription(current_user, @product_sanbase) ||
+                Subscription.current_subscription(current_user, @product_api)
           },
           product: @product_sanbase
         }
@@ -137,7 +139,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
           auth_method: :user_token,
           current_user: current_user,
           san_balance: san_balance(current_user),
-          subscription: Subscription.current_subscription(current_user, @product_sanbase)
+          subscription:
+            Subscription.current_subscription(current_user, @product_sanbase) ||
+              Subscription.current_subscription(current_user, @product_api)
         },
         product: @product_sanbase
       }

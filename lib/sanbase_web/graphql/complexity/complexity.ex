@@ -20,7 +20,7 @@ defmodule SanbaseWeb.Graphql.Complexity do
       :basic -> div(complexity, 2)
       :pro -> div(complexity, 5)
       :premium -> div(complexity, 7)
-      :cusom -> div(complexity, 7)
+      :enterprise -> div(complexity, 7)
     end
   end
 

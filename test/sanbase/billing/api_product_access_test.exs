@@ -21,9 +21,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     {:ok, apikey} = Apikey.generate_apikey(user)
     conn = setup_apikey_auth(build_conn(), apikey)
-    conn_jwt = setup_jwt_auth(build_conn(), user)
 
-    [user: user, conn_jwt: conn_jwt, conn: conn, project: project]
+    [user: user, conn: conn, project: project]
   end
 
   describe "SANApi product, No subscription" do
@@ -220,7 +219,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "can access PRO metrics for more less than 18 months", context do
+    test "can access PRO metrics for less than 18 months", context do
       insert(:subscription_pro, user: context.user)
 
       from = Timex.shift(Timex.now(), days: -(18 * 30 - 1))

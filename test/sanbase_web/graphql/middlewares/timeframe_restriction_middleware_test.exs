@@ -26,7 +26,7 @@ defmodule SanbaseWeb.Graphql.TimeframeRestrictionMiddlewareTest do
     p2 = Sanbase.Factory.insert(:random_erc20_project, %{main_contract_address: contract})
 
     %{user: user} =
-      Sanbase.Factory.insert(:subscription_premium, user: Sanbase.Factory.insert(:user))
+      Sanbase.Factory.insert(:subscription_pro_sanbase, user: Sanbase.Factory.insert(:user))
 
     conn = setup_jwt_auth(build_conn(), user)
 

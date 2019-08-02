@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.CurrentPollApiTest do
   alias Sanbase.Repo
 
   setup do
-    %{user: user} = insert(:subscription_premium, user: insert(:user))
+    %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
     conn = setup_jwt_auth(build_conn(), user)
 
     {:ok, conn: conn, user: user}

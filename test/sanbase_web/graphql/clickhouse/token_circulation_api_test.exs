@@ -9,7 +9,7 @@ defmodule Sanbase.Clickhouse.TokenCirculationApiTest do
   import ExUnit.CaptureLog
 
   setup do
-    %{user: user} = insert(:subscription_premium, user: insert(:user))
+    %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
     conn = setup_jwt_auth(build_conn(), user)
 
     slug = "santiment"

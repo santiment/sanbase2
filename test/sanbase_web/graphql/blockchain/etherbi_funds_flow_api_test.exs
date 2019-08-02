@@ -10,7 +10,7 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
 
   setup do
     %{user: user} =
-      Sanbase.Factory.insert(:subscription_premium, user: Sanbase.Factory.insert(:user))
+      Sanbase.Factory.insert(:subscription_pro_sanbase, user: Sanbase.Factory.insert(:user))
 
     conn = setup_jwt_auth(build_conn(), user)
 

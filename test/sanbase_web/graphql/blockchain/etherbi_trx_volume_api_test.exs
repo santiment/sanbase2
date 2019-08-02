@@ -110,7 +110,6 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
     result =
       context.conn
       |> post("/graphql", query_skeleton(query, "transactionVolume"))
-      |> IO.inspect()
 
     trx_volumes = json_response(result, 200)["data"]["transactionVolume"]
 

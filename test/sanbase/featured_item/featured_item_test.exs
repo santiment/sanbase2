@@ -14,7 +14,9 @@ defmodule Sanbase.FeaturedItemTest do
     test "marking insights as featured" do
       insight = insert(:post, state: Post.approved_state(), ready_state: Post.published())
       FeaturedItem.update_item(insight, true)
-      assert FeaturedItem.insights() == [insight]
+      [featured_insight] = FeaturedItem.insights()
+
+      assert featured_insight.id == insight.id
     end
 
     test "unmarking insights as featured" do
@@ -30,8 +32,8 @@ defmodule Sanbase.FeaturedItemTest do
       FeaturedItem.update_item(insight, true)
       FeaturedItem.update_item(insight, true)
       FeaturedItem.update_item(insight, true)
-
-      assert FeaturedItem.insights() == [insight]
+      [featured_insight] = FeaturedItem.insights()
+      assert featured_insight.id == insight.id
     end
   end
 

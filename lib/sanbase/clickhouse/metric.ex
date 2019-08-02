@@ -12,7 +12,7 @@ defmodule Sanbase.Clickhouse.Metric do
   @metrics_mapset MapSet.new(@metrics_json |> Enum.map(fn %{"metric" => metric} -> metric end))
   @metric_aggregation_map Map.new(
                             @metrics_json
-                            |> Enum.map(fn %{"metric" => m, "aggregation" => a} -> {m, a} end)
+                            |> Enum.map(&{&1["metric"], &1["aggregation"]})
                           )
   @aggregations [nil, :any, :sum, :avg, :min, :max, :last, :first, :median]
 
@@ -31,7 +31,15 @@ defmodule Sanbase.Clickhouse.Metric do
       when aggregation in @aggregations do
     case metric in @metrics_mapset do
       false ->
-        {:error, "The metric #{metric} is not available"}
+        close = Enum.find(@metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.9 end)
+
+        case close do
+          nil ->
+            {:error, "The metric '#{metric}' is not available"}
+
+          close ->
+            {:error, "The metric '#{metric}' is not available. Did you mean '#{close}'?"}
+        end
 
       true ->
         do_get(

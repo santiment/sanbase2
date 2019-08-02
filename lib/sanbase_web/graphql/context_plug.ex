@@ -30,8 +30,6 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   @product_api Product.product_api()
   @product_sanbase Product.product_sanbase()
-  # @product_sheets Product.product_sheets()
-  # @product_sangraphs Product.product_sangraphs()
 
   def init(opts), do: opts
 

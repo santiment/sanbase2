@@ -99,17 +99,17 @@ defmodule Sanbase.Graphql.ProjectApiTest do
         :random_project,
         %{
           logo_url: "logo_url.png",
-          logo_64_url: "logo_64_url.png",
-          logo_32_url: "logo_32_url.png"
+          logo64_url: "logo64_url.png",
+          logo32_url: "logo32_url.png"
         }
       )
 
     query = """
     {
       projectBySlug(slug: "#{project.coinmarketcap_id}") {
-        logo_url
-        logo_64_url
-        logo_32_url
+        logoUrl
+        logo64Url
+        logo32Url
       }
     }
     """
@@ -119,9 +119,9 @@ defmodule Sanbase.Graphql.ProjectApiTest do
       |> post("/graphql", query_skeleton(query, "projectBySlug"))
       |> json_response(200)
 
-    assert result["data"]["projectBySlug"]["logo_url"] == "logo_url.png"
-    assert result["data"]["projectBySlug"]["logo_64_url"] == "logo_64_url.png"
-    assert result["data"]["projectBySlug"]["logo_32_url"] == "logo_32_url.png"
+    assert result["data"]["projectBySlug"]["logoUrl"] == "logo_url.png"
+    assert result["data"]["projectBySlug"]["logo64Url"] == "logo64_url.png"
+    assert result["data"]["projectBySlug"]["logo32Url"] == "logo32_url.png"
   end
 
   test "Fetch project's github links", context do

@@ -24,8 +24,8 @@ defmodule Sanbase.Model.Project do
     field(:name, :string)
     field(:ticker, :string)
     field(:logo_url, :string)
-    field(:logo_32_url, :string)
-    field(:logo_64_url, :string)
+    field(:logo32_url, :string)
+    field(:logo64_url, :string)
     field(:website_link, :string)
     field(:email, :string)
     field(:btt_link, :string)
@@ -73,8 +73,8 @@ defmodule Sanbase.Model.Project do
       :name,
       :ticker,
       :logo_url,
-      :logo_32_url,
-      :logo_64_url,
+      :logo32_url,
+      :logo64_url,
       :coinmarketcap_id,
       :website_link,
       :email,

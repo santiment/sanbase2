@@ -35,8 +35,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
 
     LogoFetcher.run()
 
-    assert Repo.get(Project, bitcoin.id).logo_32_url =~ "/#{bitcoin.coinmarketcap_id}.png"
-    assert Repo.get(Project, ethereum.id).logo_64_url =~ "/#{ethereum.coinmarketcap_id}.png"
+    assert Repo.get(Project, bitcoin.id).logo32_url =~ "/#{bitcoin.coinmarketcap_id}.png"
+    assert Repo.get(Project, ethereum.id).logo64_url =~ "/#{ethereum.coinmarketcap_id}.png"
   end
 
   test "can handle invalid logo links" do

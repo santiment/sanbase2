@@ -28,6 +28,10 @@ defmodule Sanbase.Utils.ErrorHandling do
     "[#{Ecto.UUID.generate()}] Can't fetch #{metric_name} for #{description}: #{identifier}"
   end
 
+  def graphql_error_msg_eth(metric_name, identifier) do
+    "[#{Ecto.UUID.generate()}] Can't fetch #{metric_name} for project with slug #{identifier}, because the only slug, that can be used, is ethereum."
+  end
+
   def log_graphql_error(message, error) do
     Logger.warn("#{message}" <> ", Reason: #{inspect(error)}")
   end

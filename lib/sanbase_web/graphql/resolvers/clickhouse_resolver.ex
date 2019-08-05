@@ -9,7 +9,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   import Sanbase.Utils.ErrorHandling,
-    only: [log_graphql_error: 2, graphql_error_msg: 1, graphql_error_msg: 2, graphql_error_msg: 3]
+    only: [log_graphql_error: 2, graphql_error_msg: 1, graphql_error_msg: 2, graphql_error_msg: 3, "graphql_error_msg_eth": 2]
 
   alias Sanbase.Clickhouse.HistoricalBalance.MinersBalance
 
@@ -76,7 +76,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:ok, gas_used}
 
       {:error, error} ->
-        error_msg = graphql_error_msg("Gas Used", slug)
+        case slug do
+          "ethereum" ->
+            error_msg = graphql_error_msg("Gas Used", slug)
+          _ ->
+            error_msg = graphql_error_msg_eth("Gas Used", slug)
+        end
         log_graphql_error(error_msg, error)
         {:error, error_msg}
     end

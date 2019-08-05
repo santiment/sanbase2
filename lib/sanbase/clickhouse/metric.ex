@@ -8,12 +8,21 @@ defmodule Sanbase.Clickhouse.Metric do
                          "available_v2_metrics.json"
                        )
   @metrics_json File.read!(availalbe_metrics_file) |> Jason.decode!()
-
   @metrics_mapset MapSet.new(@metrics_json |> Enum.map(fn %{"metric" => metric} -> metric end))
+
+  @metric_plan_map Map.new(
+                     @metrics_json
+                     |> Enum.map(
+                       &{&1["metric"], &1["subscription_plan"] |> String.to_existing_atom()}
+                     )
+                   )
+  def metric_plan_map(), do: @metric_plan_map
+
   @metric_aggregation_map Map.new(
                             @metrics_json
                             |> Enum.map(&{&1["metric"], &1["aggregation"]})
                           )
+
   @aggregations [nil, :any, :sum, :avg, :min, :max, :last, :first, :median]
 
   @table "daily_metrics_v2"
@@ -48,7 +57,7 @@ defmodule Sanbase.Clickhouse.Metric do
           from,
           to,
           interval,
-          aggregation || Map.get(@metric_aggregation_map, metric, :any)
+          aggregation || Map.get(@metric_aggregation_map, metric, :last)
         )
     end
   end

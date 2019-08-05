@@ -44,6 +44,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     It is a different module because functions from the module where a module
     attribute is defined cannot be used
     """
+    alias Sanbase.Clickhouse.Metric
     require SanbaseWeb.Graphql.Schema
 
     @mutation_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :mutation)
@@ -52,9 +53,16 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     @query_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :query)
     @fields @query_type.fields |> Map.keys()
     def get_metrics_with_access_level(level) do
-      Enum.filter(@fields, fn f ->
-        Map.get(@query_type.fields, f) |> Absinthe.Type.meta(:access) == level
-      end)
+      from_schema =
+        Enum.filter(@fields, fn f ->
+          Map.get(@query_type.fields, f) |> Absinthe.Type.meta(:access) == level
+        end)
+
+      from_clickhouse =
+        Enum.filter(Metric.metric_plan_map(), fn {_k, v} -> v == plan end)
+        |> Enum.map(fn {_k, v} -> {:clickhouse_v2_metric, v} end)
+
+      from_schema ++ from_clickhouse
     end
 
     def get_metrics_without_access_level() do
@@ -76,7 +84,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
       There are GraphQL queries defined without specifying their access level.
       The access level could be either `free` or `restricted`.
 
-      Queries without subscription plan: #{inspect(queries)}
+      Queries without access level: #{inspect(queries)}
       """)
   end
 

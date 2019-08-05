@@ -3,10 +3,7 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
   Implement the restrictions for the API product
   """
 
-  alias Sanbase.Billing.Plan.{CustomAccess, AccessChecker}
-
-  @custom_access_queries_stats CustomAccess.get()
-  @custom_access_queries @custom_access_queries_stats |> Map.keys() |> Enum.sort()
+  alias Sanbase.Billing.Plan.AccessChecker
 
   # Below are defined lists and sets (for fast member check) of all metrics
   # available in a given plan. Each next plan contains all the metrics from theh
@@ -53,11 +50,6 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
   def premium(), do: @premium_plan_stats
   def enterprise(), do: @enterprise_plan_stats
 
-  def historical_data_in_days(plan, query) when query in @custom_access_queries do
-    Map.get(@custom_access_queries_stats, query)
-    |> get_in([:plan_access, plan, :historical_data_in_days])
-  end
-
   def historical_data_in_days(plan, _query) do
     case plan do
       :free -> @free_plan_stats[:historical_data_in_days]
@@ -66,11 +58,6 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
       :premium -> @premium_plan_stats[:historical_data_in_days]
       :enterprise -> @premium_plan_stats[:historical_data_in_days]
     end
-  end
-
-  def realtime_data_cut_off_in_days(plan, query) when query in @custom_access_queries do
-    Map.get(@custom_access_queries_stats, query)
-    |> get_in([:plan_access, plan, :realtime_data_cut_off_in_days])
   end
 
   def realtime_data_cut_off_in_days(plan, _query) do

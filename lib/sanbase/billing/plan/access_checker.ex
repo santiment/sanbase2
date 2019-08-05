@@ -32,7 +32,8 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
 
   alias Sanbase.Billing.Plan.{
     ApiAccessChecker,
-    SanbaseAccessChecker
+    SanbaseAccessChecker,
+    SansheetsAccessChecker
   }
 
   defmodule Helper do
@@ -136,9 +137,19 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   @product_to_access_module [
     {Product.product_api(), ApiAccessChecker},
     {Product.product_sanbase(), SanbaseAccessChecker},
-    {Product.product_sheets(), SanbaseAccessChecker},
+    {Product.product_sheets(), SansheetsAccessChecker},
     {Product.product_sangraphs(), SanbaseAccessChecker}
   ]
+
+  def historical_data_in_days(plan, query, _product) when query in @custom_access_queries do
+    Map.get(@custom_access_queries_stats, query)
+    |> get_in([:plan_access, plan, :historical_data_in_days])
+  end
+
+  def realtime_data_cut_off_in_days(plan, query) when query in @custom_access_queries do
+    Map.get(@custom_access_queries_stats, query)
+    |> get_in([:plan_access, plan, :realtime_data_cut_off_in_days])
+  end
 
   for {product, module} <- @product_to_access_module do
     def historical_data_in_days(plan, query, unquote(product)) do

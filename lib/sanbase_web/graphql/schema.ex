@@ -20,7 +20,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   alias SanbaseWeb.Graphql
   alias SanbaseWeb.Graphql.Prometheus
   alias SanbaseWeb.Graphql.{SanbaseRepo, SanbaseDataloader}
-  alias SanbaseWeb.Graphql.Middlewares.{ApiUsage, AccessControl}
+  alias SanbaseWeb.Graphql.Middlewares.ApiUsage
 
   import_types(Absinthe.Plug.Types)
   import_types(Absinthe.Type.Custom)
@@ -77,7 +77,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       :query ->
         [
           ApiUsage
-          | [AccessControl | middlewares]
+          | middlewares
             |> Prometheus.HistogramInstrumenter.instrument(field, object)
             |> Prometheus.CounterInstrumenter.instrument(field, object)
         ]

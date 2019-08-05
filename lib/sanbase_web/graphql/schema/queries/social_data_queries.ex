@@ -145,7 +145,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
     This metric is a basic sentiment analysis, based on emojis used in social media.
     """
     field :emojis_sentiment, list_of(:emojis_sentiment) do
-      meta(subscription: :pro)
+      meta(subscription: :basic)
 
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))

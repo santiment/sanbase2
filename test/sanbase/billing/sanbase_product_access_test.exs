@@ -63,13 +63,13 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       assert result != nil
     end
 
-    test "cannot access PRO metrics at all", context do
+    test "can access PRO metrics at all", context do
       from = Timex.shift(Timex.now(), days: -34)
       to = Timex.shift(Timex.now(), days: -31)
       query = daily_active_deposits_query(from, to)
-      result = execute_query_with_error(context.conn, query, "dailyActiveDeposits")
+      result = execute_query(context.conn, query, "dailyActiveDeposits")
 
-      refute called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
+      assert_called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
       assert result != nil
     end
 
@@ -147,15 +147,15 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       assert result != nil
     end
 
-    test "cannot access PRO metrics", context do
+    test "can access PRO metrics", context do
       insert(:subscription_basic_sanbase, user: context.user)
 
       from = Timex.shift(Timex.now(), days: -10)
       to = Timex.shift(Timex.now(), days: -8)
       query = daily_active_deposits_query(from, to)
-      result = execute_query_with_error(context.conn, query, "dailyActiveDeposits")
+      result = execute_query(context.conn, query, "dailyActiveDeposits")
 
-      refute called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
+      assert_called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
       assert result != nil
     end
   end

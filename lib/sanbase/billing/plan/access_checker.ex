@@ -130,50 +130,6 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   def is_restricted?(query) when query in @custom_access_queries, do: true
   def is_restricted?(query), do: not (query in @free_metrics_mapset)
 
-  @doc ~s"""
-  Check if a query access is given only to users with an advanced plan
-  (pro or higher). No access is given to users with lower plans
-  """
-  def needs_advanced_plan?(query) when query in @custom_access_queries do
-    %{accessible_by_plan: [lowest_plan | _]} = Map.get(@custom_access_queries_stats, query)
-    lowest_plan != :free and lowest_plan != :basic
-  end
-
-  def needs_advanced_plan?(query) when is_atom(query) do
-    query in @premium_metrics_mapset and not (query in @basic_metrics_mapset)
-  end
-
-  @doc ~s"""
-  Return the atom name of the lowest plan that gives access to a metric
-  """
-  def lowest_plan_with_metric(query) when query in @custom_access_queries do
-    %{accessible_by_plan: [lowest_plan | _]} = Map.get(@custom_access_queries_stats, query)
-    lowest_plan
-  end
-
-  def lowest_plan_with_metric(query) do
-    cond do
-      query in @free_metrics_mapset -> :free
-      query in @basic_metrics_mapset -> :basic
-      query in @pro_metrics_mapset -> :pro
-      query in @premium_metrics_mapset -> :premium
-      true -> nil
-    end
-  end
-
-  @doc ~s"""
-  Check if a plan (defined as its atom name) has access to a query
-  """
-  def plan_has_access?(plan, query) do
-    case plan do
-      :free -> query in @free_metrics_mapset
-      :basic -> query in @basic_metrics_mapset
-      :pro -> query in @pro_metrics_mapset
-      :premium -> query in @premium_metrics_mapset
-      :enterprise -> query in @premium_metrics_mapset
-    end
-  end
-
   def custom_access_queries_stats, do: @custom_access_queries_stats
   def custom_access_queries, do: @custom_access_queries
 

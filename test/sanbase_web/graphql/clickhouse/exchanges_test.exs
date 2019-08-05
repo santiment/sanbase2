@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
   import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
+  import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1]
 
   setup do
     infr = insert(:infrastructure, %{code: "ETH"})

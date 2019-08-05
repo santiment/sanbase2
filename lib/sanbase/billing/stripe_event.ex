@@ -80,9 +80,10 @@ defmodule Sanbase.Billing.StripeEvent do
   defp handle_discord_notification(%{
          "type" => "invoice.payment_succeeded",
          "data" => %{"object" => %{"total" => total}}
-       }) do
+       })
+       when total > 1 do
     payload =
-      ["New payment for #{total / 100}$ received"]
+      ["New payment for $#{total / 100} received"]
       |> Discord.encode!(publish_user())
 
     Discord.send_notification(

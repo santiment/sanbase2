@@ -56,6 +56,14 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
     resolution
   end
 
+  # Basic auth should have no restrictions
+  defp do_call(
+         %Resolution{context: %{auth: %{auth_method: :basic}}} = resolution,
+         _middleware_args
+       ) do
+    resolution
+  end
+
   # Dispatch the resolution of restricted and not-restricted queries to
   # different functions if there are `from` and `to` parameters
   defp do_call(
@@ -81,10 +89,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
          query
        ) do
     subscription = context[:auth][:subscription] || @free_subscription
-    historical_data_in_days = Subscription.historical_data_in_days(subscription, query)
+    product = subscription.plan.product_id || context.product
+    historical_data_in_days = Subscription.historical_data_in_days(subscription, query, product)
 
     realtime_data_cut_off_in_days =
-      Subscription.realtime_data_cut_off_in_days(subscription, query)
+      Subscription.realtime_data_cut_off_in_days(subscription, query, product)
 
     resolution
     |> update_resolution_from_to(

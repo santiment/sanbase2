@@ -18,11 +18,22 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   compile-time and build the needed sets of data also compile time. There are no
   checks for mutations - mutations
 
-  Additionally, this module will arise a compile-time warning if there is a
-  query without a subscription plan defined
+  Additionally, this module will raise a compile-time warning if there is a
+  query without a subscription plan defined.
+
+  The actual historical/realtime restrictions are implemented in modules:
+  - ApiAccessChecker
+  - SanbaseAccessChecker
+  as we have different restrictions.
   """
 
+  alias Sanbase.Billing.Product
   alias Sanbase.Billing.Plan.CustomAccess
+
+  alias Sanbase.Billing.Plan.{
+    ApiAccessChecker,
+    SanbaseAccessChecker
+  }
 
   defmodule Helper do
     @moduledoc ~s"""
@@ -93,95 +104,23 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     """)
   end
 
-  def mutations_mapset(), do: Helper.mutations_mapset()
-
-  # Below are defined lists and sets (for fast member check) of all metrics
-  # available in a given plan. Each next plan contains all the metrics from theh
-  # lower plans plus some additional metrics
-
   @free_metrics Helper.get_metrics_with_subscription_plan(:free)
   @free_metrics_mapset MapSet.new(@free_metrics)
+  def free_metrics_mapset(), do: @free_metrics_mapset
 
   @basic_metrics @free_metrics ++ Helper.get_metrics_with_subscription_plan(:basic)
   @basic_metrics_mapset MapSet.new(@basic_metrics)
+  def basic_metrics_mapset(), do: @basic_metrics_mapset
 
   @pro_metrics @basic_metrics ++ Helper.get_metrics_with_subscription_plan(:pro)
   @pro_metrics_mapset MapSet.new(@pro_metrics)
+  def pro_metrics_mapset(), do: @pro_metrics_mapset
 
   @premium_metrics @pro_metrics ++ Helper.get_metrics_with_subscription_plan(:premium)
   @premium_metrics_mapset MapSet.new(@premium_metrics)
+  def premium_metrics_mapset(), do: @premium_metrics_mapset
 
-  @free_plan_stats %{
-    api_calls_minute: 10,
-    api_calls_month: 1000,
-    historical_data_in_days: 3 * 30,
-    realtime_data_cut_off_in_days: 1,
-    metrics: @free_metrics
-  }
-
-  @basic_plan_stats %{
-    api_calls_minute: 60,
-    api_calls_month: 10_000,
-    historical_data_in_days: 6 * 30,
-    metrics: @basic_metrics
-  }
-
-  @pro_plan_stats %{
-    api_calls_minute: 120,
-    api_calls_month: 150_000,
-    historical_data_in_days: 18 * 30,
-    metrics: @pro_metrics
-  }
-
-  @premium_plan_stats %{
-    api_calls_minute: 180,
-    api_calls_month: 500_000,
-    metrics: @premium_metrics
-  }
-
-  @custom_plan_stats %{
-    metrics: @premium_plan_stats
-  }
-
-  def free(), do: @free_plan_stats
-  def essential(), do: @basic_plan_stats
-  def pro(), do: @pro_plan_stats
-  def premium(), do: @premium_plan_stats
-  def custom(), do: @custom_plan_stats
-
-  def historical_data_in_days(plan, query) when query in @custom_access_queries do
-    Map.get(@custom_access_queries_stats, query)
-    |> Map.get(:plan_access)
-    |> Map.get(plan, %{})
-    |> Map.get(:historical_data_in_days)
-  end
-
-  def historical_data_in_days(plan, _query) do
-    case plan do
-      :free -> @free_plan_stats[:historical_data_in_days]
-      :basic -> @basic_plan_stats[:historical_data_in_days]
-      :pro -> @pro_plan_stats[:historical_data_in_days]
-      :premium -> @premium_plan_stats[:historical_data_in_days]
-      :custom -> @premium_plan_stats[:historical_data_in_days]
-    end
-  end
-
-  def realtime_data_cut_off_in_days(plan, query) when query in @custom_access_queries do
-    Map.get(@custom_access_queries_stats, query)
-    |> Map.get(:plan_access)
-    |> Map.get(plan, %{})
-    |> Map.get(:realtime_data_cut_off_in_days)
-  end
-
-  def realtime_data_cut_off_in_days(plan, _query) do
-    case plan do
-      :free -> @free_plan_stats[:realtime_data_cut_off_in_days]
-      :basic -> @basic_plan_stats[:realtime_data_cut_off_in_days]
-      :pro -> @pro_plan_stats[:realtime_data_cut_off_in_days]
-      :premium -> @premium_plan_stats[:realtime_data_cut_off_in_days]
-      :custom -> @premium_plan_stats[:realtime_data_cut_off_in_days]
-    end
-  end
+  def all_metrics, do: @premium_metrics
 
   @doc ~s"""
   Check if a query full access is given only to users with a plan higher than free.
@@ -191,47 +130,23 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   def is_restricted?(query) when query in @custom_access_queries, do: true
   def is_restricted?(query), do: not (query in @free_metrics_mapset)
 
-  @doc ~s"""
-  Check if a query access is given only to users with an advanced plan
-  (pro or higher). No access is given to users with lower plans
-  """
-  def needs_advanced_plan?(query) when query in @custom_access_queries do
-    %{accessible_by_plan: [lowest_plan | _]} = Map.get(@custom_access_queries_stats, query)
-    lowest_plan != :free and lowest_plan != :basic
-  end
+  def custom_access_queries_stats, do: @custom_access_queries_stats
+  def custom_access_queries, do: @custom_access_queries
 
-  def needs_advanced_plan?(query) when is_atom(query) do
-    query in @premium_metrics_mapset and not (query in @basic_metrics_mapset)
-  end
+  @product_to_access_module [
+    {Product.product_api(), ApiAccessChecker},
+    {Product.product_sanbase(), SanbaseAccessChecker},
+    {Product.product_sheets(), SanbaseAccessChecker},
+    {Product.product_sangraphs(), SanbaseAccessChecker}
+  ]
 
-  @doc ~s"""
-  Return the atom name of the lowest plan that gives access to a metric
-  """
-  def lowest_plan_with_metric(query) when query in @custom_access_queries do
-    %{accessible_by_plan: [lowest_plan | _]} = Map.get(@custom_access_queries_stats, query)
-    lowest_plan
-  end
-
-  def lowest_plan_with_metric(query) do
-    cond do
-      query in @free_metrics_mapset -> :free
-      query in @basic_metrics_mapset -> :basic
-      query in @pro_metrics_mapset -> :pro
-      query in @premium_metrics_mapset -> :premium
-      true -> nil
+  for {product, module} <- @product_to_access_module do
+    def historical_data_in_days(plan, query, unquote(product)) do
+      unquote(module).historical_data_in_days(plan, query)
     end
-  end
 
-  @doc ~s"""
-  Check if a plan (defined as its atom name) has access to a query
-  """
-  def plan_has_access?(plan, query) do
-    case plan do
-      :free -> query in @free_metrics_mapset
-      :basic -> query in @basic_metrics_mapset
-      :pro -> query in @pro_metrics_mapset
-      :premium -> query in @premium_metrics_mapset
-      :custom -> query in @premium_metrics_mapset
+    def realtime_data_cut_off_in_days(plan, query, unquote(product)) do
+      unquote(module).realtime_data_cut_off_in_days(plan, query)
     end
   end
 end

@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
   @error_response "Error executing query. See logs for details."
 
   setup do
-    %{user: user} = insert(:subscription_premium, user: insert(:user))
+    %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
     conn = setup_jwt_auth(build_conn(), user)
 
     %{conn: conn}

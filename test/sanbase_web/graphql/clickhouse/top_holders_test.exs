@@ -10,7 +10,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
   alias Sanbase.Clickhouse.TopHolders
 
   setup do
-    %{user: user} = insert(:subscription_premium, user: insert(:user))
+    %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
     conn = setup_jwt_auth(build_conn(), user)
 
     project = insert(:project, %{coinmarketcap_id: "ethereum", ticker: "ETH"})

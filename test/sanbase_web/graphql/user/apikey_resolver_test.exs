@@ -160,86 +160,6 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
     assert err_struct["message"] =~ "Provided apikey is malformed or not valid"
   end
 
-  describe "tests with apikey an API protected with MultipleAuth" do
-    # user2 has 2000 test SAN balance
-    test "access when user has enough tokens", %{conn2: conn2} do
-      datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
-      datetime2 = DateTime.from_naive!(~N[2017-05-13 21:55:00], "Etc/UTC")
-
-      # Mock the queried api
-      mock(
-        HTTPoison,
-        :get,
-        {:ok,
-         %HTTPoison.Response{
-           body: emojis_sentiment_body(datetime1, datetime2),
-           status_code: 200
-         }}
-      )
-
-      [apikey] =
-        generate_apikey(conn2)
-        |> json_response(200)
-        |> extract_api_key_list()
-
-      conn_apikey = setup_apikey_auth(build_conn(), apikey)
-      query = emojis_sentiment_query(datetime1, datetime2)
-
-      result =
-        conn_apikey
-        |> post("/graphql", query_skeleton(query, "emojisSentiment"))
-        |> json_response(200)
-
-      %{
-        "data" => %{
-          "emojisSentiment" => emojis_sentiment
-        }
-      } = result
-
-      assert %{"sentiment" => 0} in emojis_sentiment
-      assert %{"sentiment" => 1234} in emojis_sentiment
-    end
-
-    # conn's user has 0 SAN balance
-    test "access refused when user does not have enough tokens",
-         %{conn: conn} do
-      datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
-      datetime2 = DateTime.from_naive!(~N[2017-05-13 21:55:00], "Etc/UTC")
-
-      # Mock the queried api
-      mock(
-        HTTPoison,
-        :get,
-        {:ok,
-         %HTTPoison.Response{
-           body: emojis_sentiment_body(datetime1, datetime2),
-           status_code: 200
-         }}
-      )
-
-      [apikey] =
-        generate_apikey(conn)
-        |> json_response(200)
-        |> extract_api_key_list()
-
-      conn_apikey = setup_apikey_auth(build_conn(), apikey)
-      query = emojis_sentiment_query(datetime1, datetime2)
-
-      result =
-        conn_apikey
-        |> post("/graphql", query_skeleton(query, "emojisSentiment"))
-        |> json_response(200)
-
-      err_struct = result["errors"] |> List.first()
-
-      assert err_struct["message"] =~
-               """
-               Requested metric emojis_sentiment is not provided by the current subscription plan FREE.
-               Please upgrade to Pro or higher to get access to emojis_sentiment
-               """
-    end
-  end
-
   test "access realtime data behind API delay san staking", %{conn2: conn2} do
     # Store some data recent data
     slug = "santiment"
@@ -320,31 +240,6 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
     """
 
     conn |> post("/graphql", mutation_skeleton(query))
-  end
-
-  defp emojis_sentiment_query(datetime1, datetime2) do
-    """
-    {
-      emojisSentiment(
-        from: "#{datetime1}",
-        to: "#{datetime2}",
-        interval:"1d"){
-          sentiment
-      }
-    }
-    """
-  end
-
-  defp emojis_sentiment_body(datetime1, datetime2) do
-    "[{
-        \"sentiment\": 0,
-        \"timestamp\": #{DateTime.to_unix(datetime1)}
-      },
-      {
-        \"sentiment\": 1234,
-        \"timestamp\": #{DateTime.to_unix(datetime2)}
-      }
-    ]"
   end
 
   defp init_databases(slug, datetime1, datetime2) do

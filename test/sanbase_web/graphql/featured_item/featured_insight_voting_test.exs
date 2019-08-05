@@ -11,7 +11,7 @@ defmodule Sanbase.FeaturedInsihgtVotingTest do
     insight = insert(:post, state: Post.approved_state(), ready_state: Post.published())
     FeaturedItem.update_item(insight, true)
 
-    %{user: user} = insert(:subscription_premium, user: insert(:user))
+    %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
     conn = setup_jwt_auth(build_conn(), user)
 
     {:ok, %{insight: insight, user: user, conn: conn}}

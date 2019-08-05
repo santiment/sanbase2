@@ -8,7 +8,7 @@ defmodule Sanbase.Billing.Plan do
 
   import Ecto.Changeset
   alias Sanbase.Repo
-  alias Sanbase.Billing.{Plan.AccessChecker, Product, Subscription}
+  alias Sanbase.Billing.{Product, Subscription}
 
   @plans_order [free: 0, basic: 1, pro: 2, premium: 3, custom: 4]
   def plans_order(), do: @plans_order
@@ -45,8 +45,8 @@ defmodule Sanbase.Billing.Plan do
       %{name: "ESSENTIAL"} -> :basic
       %{name: "PRO"} -> :pro
       %{name: "PREMIUM"} -> :premium
-      %{name: "CUSTOM"} -> :custom
-      %{name: "ENTERPRISE"} -> :custom
+      %{name: "CUSTOM"} -> :enterprise
+      %{name: "ENTERPRISE"} -> :enterprise
       %{name: name} -> String.downcase(name) |> String.to_existing_atom()
     end
   end
@@ -72,13 +72,6 @@ defmodule Sanbase.Billing.Plan do
 
     {:ok, product_with_plans}
   end
-
-  @doc """
-  Fetch all names of plans that give access to query.
-  Fetching only with `interval`=`month` because we have yearly metrics with the same metrics
-  and names.
-  """
-  defdelegate lowest_plan_with_metric(query), to: AccessChecker
 
   @doc """
   If a plan doesn't have filled `stripe_id` - create a plan in Stripe and update with the received

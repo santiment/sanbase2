@@ -304,7 +304,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     a blockchain’s daily transaction throughput.
     """
     field :nvt_ratio, list_of(:nvt_ratio) do
-      meta(subscription: :pro)
+      meta(subscription: :basic)
 
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))

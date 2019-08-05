@@ -4,12 +4,12 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
   import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
+  import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1]
 
   setup do
     infr = insert(:infrastructure, %{code: "ETH"})
 
-    %{user: user} = insert(:subscription_premium, user: insert(:user))
+    %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
     conn = setup_jwt_auth(build_conn(), user)
 
     insert(:exchange_address, %{address: "0x234", name: "Binance", infrastructure_id: infr.id})
@@ -19,8 +19,8 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
     [
       exchange: "Binance",
       conn: conn,
-      from: from_iso8601!("2017-05-11T00:00:00Z"),
-      to: from_iso8601!("2017-05-20T00:00:00Z")
+      from: Timex.shift(Timex.now(), days: -10),
+      to: Timex.now()
     ]
   end
 

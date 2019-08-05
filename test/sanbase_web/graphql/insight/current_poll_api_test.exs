@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.CurrentPollApiTest do
   alias Sanbase.Repo
 
   setup do
-    %{user: user} = insert(:subscription_premium, user: insert(:user))
+    %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
     conn = setup_jwt_auth(build_conn(), user)
 
     {:ok, conn: conn, user: user}
@@ -74,8 +74,10 @@ defmodule SanbaseWeb.Graphql.CurrentPollApiTest do
 
     currentPoll = json_response(result, 200)["data"]["currentPoll"]
 
-    assert Timex.parse!(currentPoll["startAt"], "{ISO:Extended}") ==
+    assert DateTime.compare(
+             Timex.parse!(currentPoll["startAt"], "{ISO:Extended}"),
              Timex.beginning_of_week(Timex.now())
+           ) == :eq
 
     assert %{"id" => Integer.to_string(approved_post.id)} in currentPoll["posts"]
   end

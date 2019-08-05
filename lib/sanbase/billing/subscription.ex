@@ -245,28 +245,18 @@ defmodule Sanbase.Billing.Subscription do
   end
 
   @doc """
-  By subscription and query name determines whether subscription can access the query.
-  """
-  def has_access?(subscription, query) do
-    case needs_advanced_plan?(query) do
-      true -> subscription_access?(subscription, query)
-      false -> true
-    end
-  end
-
-  @doc """
   How much historical days a subscription plan can access.
   """
-  def historical_data_in_days(%__MODULE__{plan: plan}, query) do
+  def historical_data_in_days(%__MODULE__{plan: plan}, query, product) do
     plan
     |> Plan.plan_atom_name()
-    |> AccessChecker.historical_data_in_days(query)
+    |> AccessChecker.historical_data_in_days(query, product)
   end
 
-  def realtime_data_cut_off_in_days(%__MODULE__{plan: plan}, query) do
+  def realtime_data_cut_off_in_days(%__MODULE__{plan: plan}, query, product) do
     plan
     |> Plan.plan_atom_name()
-    |> AccessChecker.realtime_data_cut_off_in_days(query)
+    |> AccessChecker.realtime_data_cut_off_in_days(query, product)
   end
 
   @doc ~s"""
@@ -275,12 +265,6 @@ defmodule Sanbase.Billing.Subscription do
   lower plans. In this case historical and/or realtime data access can be cut off
   """
   defdelegate is_restricted?(query), to: AccessChecker
-
-  @doc ~s"""
-  Check if a query access is given only to users with an advanced plan
-  (pro or higher). No access is given to users with lower plans
-  """
-  defdelegate needs_advanced_plan?(query), to: AccessChecker
 
   def plan_name(subscription), do: subscription.plan.name
 
@@ -347,12 +331,6 @@ defmodule Sanbase.Billing.Subscription do
   defp percent_discount(balance) when balance >= 1000, do: @percent_discount_1000_san
   defp percent_discount(balance) when balance >= 200, do: @percent_discount_200_san
   defp percent_discount(_), do: nil
-
-  defp subscription_access?(nil, _query), do: false
-
-  defp subscription_access?(%__MODULE__{plan: plan}, query) do
-    AccessChecker.plan_has_access?(Plan.plan_atom_name(plan), query)
-  end
 
   defp user_subscriptions_query(user) do
     from(s in __MODULE__,

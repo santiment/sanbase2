@@ -91,12 +91,14 @@ defmodule Sanbase.Billing.SubscriptionMetaFieldTest do
       expected_basic_queries =
         [
           :average_token_age_consumed_in_days,
+          :emojis_sentiment,
           :exchange_funds_flow,
           :exchange_volume,
           :gas_used,
           :miners_balance,
           :mining_pools_distribution,
           :network_growth,
+          :nvt_ratio,
           :percent_of_token_supply_on_exchanges,
           :social_dominance,
           :social_gainers_losers_status,
@@ -122,7 +124,7 @@ defmodule Sanbase.Billing.SubscriptionMetaFieldTest do
         |> Enum.sort()
 
       expected_pro_queries =
-        [:daily_active_deposits, :emojis_sentiment, :nvt_ratio, :share_of_deposits]
+        [:daily_active_deposits, :share_of_deposits]
         |> Enum.sort()
 
       assert pro_queries == expected_pro_queries

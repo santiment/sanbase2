@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
   use SanbaseWeb.ConnCase, async: false
 
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.Factory
   @moduletag capture_log: true
 
   alias Sanbase.Auth.User
@@ -181,5 +182,39 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
     refute Map.has_key?(conn_context, :auth)
     assert conn_context.remote_ip == {127, 0, 0, 1}
     assert conn_context.permissions == User.no_permissions()
+  end
+
+  describe "product is set in context" do
+    test "when no authorization and Origin sanbase - product is SANBase" do
+      conn =
+        build_conn()
+        |> put_req_header(
+          "origin",
+          "https://app.santiment.net"
+        )
+
+      conn = ContextPlug.call(conn, %{})
+
+      conn_context = conn.private.absinthe.context
+
+      assert conn_context.product == 2
+    end
+
+    test "when no authorization and other Origin - product is SANApi" do
+      conn = ContextPlug.call(build_conn(), %{})
+
+      conn_context = conn.private.absinthe.context
+
+      assert conn_context.product == 1
+    end
+
+    test "when JWT auth - product is SANBase" do
+      user = insert(:user)
+      conn = setup_jwt_auth(build_conn(), user)
+
+      conn_context = conn.private.absinthe.context
+
+      assert conn_context.product == 2
+    end
   end
 end

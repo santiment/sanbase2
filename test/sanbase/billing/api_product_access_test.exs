@@ -1,4 +1,4 @@
-defmodule Sanbase.Billing.AccessTest do
+defmodule Sanbase.Billing.ApiProductAccessTest do
   use SanbaseWeb.ConnCase
 
   import Sanbase.Factory
@@ -25,9 +25,9 @@ defmodule Sanbase.Billing.AccessTest do
     [user: user, conn: conn, project: project]
   end
 
-  describe "No subscription" do
+  describe "SANApi product, No subscription" do
     test "can access FREE metrics for all time", context do
-      from = Timex.shift(Timex.now(), days: -900)
+      from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       query = history_price_query(context.project, from, to)
       result = execute_query(context.conn, query, "historyPrice")
@@ -70,44 +70,40 @@ defmodule Sanbase.Billing.AccessTest do
       from = Timex.shift(Timex.now(), days: -91)
       to = Timex.shift(Timex.now(), days: -10)
       query = daily_active_deposits_query(from, to)
-      result = execute_query_with_error(context.conn, query, "dailyActiveDeposits")
+      result = execute_query(context.conn, query, "dailyActiveDeposits")
 
       refute called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
 
-      assert result =~
-               "Requested metric daily_active_deposits is not provided by the current subscription plan"
+      assert result != nil
     end
 
     test "cannot access PRO metrics realtime", context do
       from = Timex.shift(Timex.now(), days: -10)
       to = Timex.now()
       query = daily_active_deposits_query(from, to)
-      result = execute_query_with_error(context.conn, query, "dailyActiveDeposits")
+      result = execute_query(context.conn, query, "dailyActiveDeposits")
 
       refute called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
 
-      assert result =~
-               "Requested metric daily_active_deposits is not provided by the current subscription plan"
+      assert result != nil
     end
 
-    test "cannot access PRO within 90 days and 1 day interval", context do
+    test "can access PRO within 90 days and 1 day interval", context do
       from = Timex.shift(Timex.now(), days: -89)
       to = Timex.shift(Timex.now(), days: -2)
       query = daily_active_deposits_query(from, to)
-      result = execute_query_with_error(context.conn, query, "dailyActiveDeposits")
+      result = execute_query(context.conn, query, "dailyActiveDeposits")
 
-      refute called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
-
-      assert result =~
-               "Requested metric daily_active_deposits is not provided by the current subscription plan"
+      assert_called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
+      assert result != nil
     end
   end
 
-  describe "user with BASIC plan" do
+  describe "SANApi product, user with BASIC plan" do
     test "can access FREE metrics for all time", context do
       insert(:subscription_essential, user: context.user)
 
-      from = Timex.shift(Timex.now(), days: -900)
+      from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       query = history_price_query(context.project, from, to)
       result = execute_query(context.conn, query, "historyPrice")
@@ -152,29 +148,23 @@ defmodule Sanbase.Billing.AccessTest do
       assert result != nil
     end
 
-    test "cannot access PRO metrics", context do
+    test "can access PRO metrics", context do
       insert(:subscription_essential, user: context.user)
 
       from = Timex.shift(Timex.now(), days: -91)
       to = Timex.now()
       query = daily_active_deposits_query(from, to)
 
-      error_msg = execute_query_with_error(context.conn, query, "dailyActiveDeposits")
-
-      refute called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
-
-      assert error_msg =~ """
-             Requested metric daily_active_deposits is not provided by the current subscription plan ESSENTIAL.
-             Please upgrade to Pro or higher to get access to daily_active_deposits
-             """
+      result = execute_query(context.conn, query, "dailyActiveDeposits")
+      assert result != nil
     end
   end
 
-  describe "user with PRO plan" do
+  describe "SANApi product, user with PRO plan" do
     test "can access FREE metrics for all time", context do
       insert(:subscription_pro, user: context.user)
 
-      from = Timex.shift(Timex.now(), days: -900)
+      from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       query = history_price_query(context.project, from, to)
       result = execute_query(context.conn, query, "historyPrice")
@@ -219,7 +209,7 @@ defmodule Sanbase.Billing.AccessTest do
       assert result != nil
     end
 
-    test "can access PRO metrics for more less than 18 months", context do
+    test "can access PRO metrics for less than 18 months", context do
       insert(:subscription_pro, user: context.user)
 
       from = Timex.shift(Timex.now(), days: -(18 * 30 - 1))
@@ -232,11 +222,11 @@ defmodule Sanbase.Billing.AccessTest do
     end
   end
 
-  describe "user with PREMIUM plan" do
+  describe "SANApi product, user with PREMIUM plan" do
     test "can access FREE metrics for all time", context do
       insert(:subscription_premium, user: context.user)
 
-      from = Timex.shift(Timex.now(), days: -900)
+      from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       query = history_price_query(context.project, from, to)
       result = execute_query(context.conn, query, "historyPrice")
@@ -248,7 +238,7 @@ defmodule Sanbase.Billing.AccessTest do
     test "can access BASIC metrics for all time", context do
       insert(:subscription_premium, user: context.user)
 
-      from = Timex.shift(Timex.now(), days: -900)
+      from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       query = network_growth_query(from, to)
       result = execute_query(context.conn, query, "networkGrowth")
@@ -260,7 +250,7 @@ defmodule Sanbase.Billing.AccessTest do
     test "can access PRO metrics for all time", context do
       insert(:subscription_premium, user: context.user)
 
-      from = Timex.shift(Timex.now(), days: -900)
+      from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       query = daily_active_deposits_query(from, to)
       result = execute_query(context.conn, query, "dailyActiveDeposits")
@@ -295,7 +285,7 @@ defmodule Sanbase.Billing.AccessTest do
   defp history_price_query(project, from, to) do
     """
       {
-        historyPrice(slug: "#{project.coinmarketcap_id}", from: "#{from}", to: "#{to}", interval: "1d"){
+        historyPrice(slug: "#{project.coinmarketcap_id}", from: "#{from}", to: "#{to}", interval: "30d"){
           datetime
           priceUsd
         }

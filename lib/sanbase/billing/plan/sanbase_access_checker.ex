@@ -40,9 +40,7 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
 
   def historical_data_in_days(plan, query) when query in @custom_access_queries do
     Map.get(@custom_access_queries_stats, query)
-    |> Map.get(:plan_access)
-    |> Map.get(plan, %{})
-    |> Map.get(:historical_data_in_days)
+    |> get_in([:plan_access, plan, :historical_data_in_days])
   end
 
   def historical_data_in_days(plan, _query) do
@@ -56,9 +54,7 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
 
   def realtime_data_cut_off_in_days(plan, query) when query in @custom_access_queries do
     Map.get(@custom_access_queries_stats, query)
-    |> Map.get(:plan_access)
-    |> Map.get(plan, %{})
-    |> Map.get(:realtime_data_cut_off_in_days)
+    |> get_in([:plan_access, plan, :realtime_data_cut_off_in_days])
   end
 
   def realtime_data_cut_off_in_days(plan, _query) do

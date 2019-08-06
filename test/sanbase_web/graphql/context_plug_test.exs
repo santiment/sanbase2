@@ -9,6 +9,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.ContextPlug
   alias Sanbase.Auth.Apikey
+  alias Sanbase.Billing.Product
 
   test "loading the user from the current token", %{conn: conn} do
     user =
@@ -198,7 +199,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product == 2
+      assert conn_context.product == Product.product_sanbase()
     end
 
     test "when no authorization and other Origin - product is SANApi" do
@@ -206,7 +207,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product == 1
+      assert conn_context.product == Product.product_api()
     end
 
     test "when JWT auth - product is SANBase" do
@@ -215,7 +216,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product == 2
+      assert conn_context.product == Product.product_sanbase()
     end
 
     test "when Apikey and User-Agent is from sheets - product is SANSheets" do
@@ -233,7 +234,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product == 3
+      assert conn_context.product == Product.product_sheets()
     end
 
     test "when Apikey and other User-Agent - product is SANApi" do
@@ -244,7 +245,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product == 1
+      assert conn_context.product == Product.product_api()
     end
   end
 end

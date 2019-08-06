@@ -6,6 +6,11 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   import Mock
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
+  alias Sanbase.Signal.UserTrigger
+
+  @triggers_limit_reached_error "triggers limit reached"
+  @triggers_limit_count 10
+
   setup_with_mocks([
     {Sanbase.Prices.Store, [], [fetch_prices_with_resolution: fn _, _, _, _ -> price_resp() end]},
     {Sanbase.Clickhouse.MVRV, [], [mvrv_ratio: fn _, _, _, _ -> mvrv_resp() end]},
@@ -220,6 +225,61 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       assert_called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
       assert result != nil
     end
+  end
+
+  describe "Signals limits user has reached signals limit" do
+    test "user with FREE plan cannot create new trigger", context do
+      create_triggers(context.user, @triggers_limit_count)
+
+      assert create_trigger(context.user) == {:error, @triggers_limit_reached_error}
+    end
+
+    test "user with BASIC plan cannot create new trigger", context do
+      insert(:subscription_basic_sanbase, user: context.user)
+      create_triggers(context.user, @triggers_limit_count)
+
+      assert create_trigger(context.user) == {:error, @triggers_limit_reached_error}
+    end
+
+    test "user with PRO plan can create new trigger", context do
+      insert(:subscription_pro_sanbase, user: context.user)
+      create_triggers(context.user, @triggers_limit_count)
+
+      {:ok, user_trigger} = create_trigger(context.user)
+
+      assert user_trigger.id != nil
+    end
+  end
+
+  describe "Signals limits user has not reached signals limit" do
+    test "user with FREE plan can create new trigger", context do
+      create_triggers(context.user, @triggers_limit_count - 1)
+
+      {:ok, user_trigger} = create_trigger(context.user)
+
+      assert user_trigger.id != nil
+    end
+  end
+
+  def create_triggers(user, count) do
+    for _ <- 1..count do
+      create_trigger(user)
+    end
+  end
+
+  def create_trigger(user) do
+    trigger_settings = %{
+      type: "daily_active_addresses",
+      target: %{slug: "santiment"},
+      channel: "telegram",
+      time_window: "1d",
+      operation: %{percent_up: 200.0}
+    }
+
+    UserTrigger.create_user_trigger(
+      user,
+      %{title: "Generic title", is_public: false, settings: trigger_settings}
+    )
   end
 
   defp daily_active_deposits_query(from, to) do

@@ -157,8 +157,10 @@ defmodule Sanbase.Signal.UserTrigger do
   """
   @spec create_user_trigger(%User{}, map()) ::
           {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, %Ecto.Changeset{}}
-  def create_user_trigger(%User{id: user_id} = _user, %{settings: settings} = params) do
-    with {:nil?, false} <- {:nil?, is_nil(settings)},
+  def create_user_trigger(%User{id: user_id} = user, %{settings: settings} = params) do
+    with {:signals_limits_reached?, false} <-
+           {:signals_limits_reached?, triggers_limits_reached(user)},
+         {:nil?, false} <- {:nil?, is_nil(settings)},
          :ok <- valid?(settings) do
       changeset = %UserTrigger{} |> create_changeset(%{user_id: user_id, trigger: params})
 
@@ -168,9 +170,41 @@ defmodule Sanbase.Signal.UserTrigger do
       {:nil?, true} ->
         {:error, "Trigger structure is invalid. Key `settings` is empty."}
 
+      {:signals_limits_reached?, true} ->
+        {:error, "triggers limit reached"}
+
       {:error, error} ->
         {:error,
          "Trigger structure is invalid. Key `settings` is not valid. Reason: #{inspect(error)}"}
+    end
+  end
+
+  def triggers_limits_reached(user) do
+    triggers_for(user)
+    |> Enum.count()
+    |> reached_triggers_limits_for_user(user)
+  end
+
+  defp reached_triggers_limits_for_user(limit, user) do
+    subscription =
+      Sanbase.Billing.Subscription.current_subscription(
+        user,
+        Sanbase.Billing.Product.product_sanbase()
+      ) ||
+        Sanbase.Billing.Subscription.free_subscription()
+
+    subscription.plan
+    |> Sanbase.Billing.Plan.plan_atom_name()
+    |> Sanbase.Billing.Plan.SanbaseAccessChecker.signals_limits()
+    |> case do
+      :no_limit ->
+        false
+
+      n when n >= limit ->
+        true
+
+      _ ->
+        false
     end
   end
 

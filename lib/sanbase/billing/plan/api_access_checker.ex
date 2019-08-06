@@ -3,7 +3,7 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
   Implement the restrictions for the API product
   """
 
-  alias Sanbase.Billing.Plan.{CustomAccess, AccessChecker}
+  alias Sanbase.Billing.Plan.CustomAccess
 
   @custom_access_queries_stats CustomAccess.get()
   @custom_access_queries @custom_access_queries_stats |> Map.keys() |> Enum.sort()

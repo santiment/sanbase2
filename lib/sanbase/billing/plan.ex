@@ -22,7 +22,6 @@ defmodule Sanbase.Billing.Plan do
     # interval is one of `month` or `year`
     field(:interval, :string)
     field(:stripe_id, :string)
-    field(:access, :map, default: %{})
 
     belongs_to(:product, Product)
     has_many(:subscriptions, Subscription, on_delete: :delete_all)
@@ -30,7 +29,7 @@ defmodule Sanbase.Billing.Plan do
 
   def changeset(%__MODULE__{} = plan, attrs \\ %{}) do
     plan
-    |> cast(attrs, [:amount, :name, :stripe_id, :access])
+    |> cast(attrs, [:amount, :name, :stripe_id])
   end
 
   def free_plan() do

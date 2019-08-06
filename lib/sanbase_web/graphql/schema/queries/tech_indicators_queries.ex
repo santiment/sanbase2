@@ -20,7 +20,7 @@ defmodule SanbaseWeb.Graphql.Schema.TechIndicatorsQueries do
     specifically when price goes up as volume goes down.
     """
     field :price_volume_diff, list_of(:price_volume_diff) do
-      meta(subscription: :free)
+      meta(access: :free)
 
       arg(:slug, non_null(:string))
       @desc "Currently supported currencies: USD, BTC"
@@ -47,7 +47,7 @@ defmodule SanbaseWeb.Graphql.Schema.TechIndicatorsQueries do
     * interval - an integer followed by one of: `m`, `h`, `d`, `w`
     """
     field :metric_anomaly, list_of(:anomaly_value) do
-      meta(subscription: :free)
+      meta(access: :free)
 
       arg(:metric, non_null(:anomalies_metrics_enum))
       arg(:slug, non_null(:string))

@@ -4,12 +4,12 @@ defmodule Sanbase.Billing.SubscriptionMetaFieldTest do
   # Assert that a query's subscription plan does not change incidentally
   describe "subscription meta" do
     test "there are no queries without defined subscription" do
-      assert Sanbase.Billing.Plan.AccessChecker.Helper.queries_without_subsciption_plan() == []
+      assert Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_without_access_level() == []
     end
 
     test "free queries" do
       free_queries =
-        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_subscription_plan(:free)
+        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_access_level(:free)
         |> Enum.sort()
 
       expected_free_queries =
@@ -83,26 +83,32 @@ defmodule Sanbase.Billing.SubscriptionMetaFieldTest do
       assert free_queries == expected_free_queries
     end
 
-    test "basic queries" do
+    test "restricted queries" do
       basic_queries =
-        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_subscription_plan(:basic)
+        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_access_level(:restricted)
         |> Enum.sort()
 
       expected_basic_queries =
         [
           :average_token_age_consumed_in_days,
+          :burn_rate,
+          :daily_active_deposits,
           :emojis_sentiment,
           :exchange_funds_flow,
           :exchange_volume,
           :gas_used,
           :miners_balance,
           :mining_pools_distribution,
+          :mvrv_ratio,
           :network_growth,
           :nvt_ratio,
           :percent_of_token_supply_on_exchanges,
+          :realized_value,
+          :share_of_deposits,
           :social_dominance,
           :social_gainers_losers_status,
           :social_volume,
+          :token_age_consumed,
           :token_circulation,
           :token_velocity,
           :top_holders_percent_of_total_supply,
@@ -118,50 +124,16 @@ defmodule Sanbase.Billing.SubscriptionMetaFieldTest do
       assert basic_queries == expected_basic_queries
     end
 
-    test "pro queries" do
+    test "forbidden queries" do
       pro_queries =
-        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_subscription_plan(:pro)
+        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_access_level(:forbidden)
         |> Enum.sort()
 
       expected_pro_queries =
-        [:daily_active_deposits, :share_of_deposits]
+        [:exchange_wallets, :all_projects_project_transparency]
         |> Enum.sort()
 
       assert pro_queries == expected_pro_queries
-    end
-
-    test "premium queries" do
-      premium_queries =
-        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_subscription_plan(:premium)
-        |> Enum.sort()
-
-      expected_premium_queries = []
-
-      assert premium_queries == expected_premium_queries
-    end
-
-    test "restricted queries" do
-      restricted_queries =
-        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_subscription_plan(:restricted)
-        |> Enum.sort()
-
-      expected_restricted_queries =
-        [:all_projects_project_transparency, :exchange_wallets] |> Enum.sort()
-
-      assert restricted_queries == expected_restricted_queries
-    end
-
-    test "custom access queries" do
-      custom_access_queries =
-        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_subscription_plan(
-          :custom_access
-        )
-        |> Enum.sort()
-
-      expected_custom_access_queries =
-        [:burn_rate, :mvrv_ratio, :realized_value, :token_age_consumed] |> Enum.sort()
-
-      assert custom_access_queries == expected_custom_access_queries
     end
   end
 end

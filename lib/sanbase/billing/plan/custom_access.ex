@@ -36,12 +36,6 @@ defmodule Sanbase.Billing.Plan.CustomAccess do
     }
   }
 
-  @metric %{
-    metric_name: :get_timeseries_metric,
-    plan_full_access: :free,
-    plan_access: %{}
-  }
-
   @doc ~s"""
   Returns a map where the keys are the atom metric names and values are the
   custom access stats

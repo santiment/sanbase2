@@ -3,16 +3,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   alias Sanbase.Clickhouse.Metric
 
-  def get_timeseries_metric(
+  def get_available_metrics(_root, _args, _resolution), do: Metric.available_metrics()
+  def get_available_slugs(_root, _args, _resolution), do: Metric.available_slugs()
+  def get_metric(_root, %{metric: metric}, _resolution), do: {:ok, %{metric: metric}}
+
+  def get_metadata(%{}, _args, %{source: %{metric: _metric}}) do
+    {:ok, %{min_interval: "1d"}}
+  end
+
+  def get_timeseries_data(
         _root,
-        %{
-          metric: metric,
-          slug: slug,
-          from: from,
-          to: to,
-          interval: interval
-        } = args,
-        _resolution
+        %{slug: slug, from: from, to: to, interval: interval} = args,
+        %{source: %{metric: metric}}
       ) do
     Metric.get(metric, slug, from, to, interval, Map.get(args, :aggregation))
   end

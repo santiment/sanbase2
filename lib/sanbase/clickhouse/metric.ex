@@ -14,17 +14,18 @@ defmodule Sanbase.Clickhouse.Metric do
   # The metrics that are available are described in a json file
   @external_resource availalbe_metrics_file = Path.join(__DIR__, "available_v2_metrics.json")
   @metrics_json File.read!(availalbe_metrics_file) |> Jason.decode!()
-  @metrics_mapset MapSet.new(@metrics_json |> Enum.map(fn %{"metric" => metric} -> metric end))
+  @metrics_list @metrics_json |> Enum.map(fn %{"metric" => metric} -> metric end)
+  @metrics_mapset MapSet.new(@metrics_list)
 
-  @metric_plan_map @metrics_json
-                   |> Enum.map(&{&1["metric"], &1["plan"] |> String.to_existing_atom()})
-                   |> Map.new()
+  @metric_access_map @metrics_json
+                     |> Enum.map(&{&1["metric"], &1["access"] |> String.to_existing_atom()})
+                     |> Map.new()
 
   @metric_aggregation_map @metrics_json
                           |> Enum.map(&{&1["metric"], &1["aggregation"]})
                           |> Map.new()
 
-  def metric_plan_map(), do: @metric_plan_map
+  def metric_access_map(), do: @metric_access_map
 
   @type slug :: String.t()
   @type metric :: String.t()
@@ -46,25 +47,33 @@ defmodule Sanbase.Clickhouse.Metric do
   function can be changed by the last optional parameter. The available
   aggregations are #{inspect(@aggregations -- [nil])}
   """
-  @spec get(slug, metric, DateTime.t(), DateTime.t(), interval, aggregation) ::
+  @spec get(metric, slug, DateTime.t(), DateTime.t(), interval, aggregation) ::
           {:ok, list(metric_result)} | {:error, String.t()}
   def get(slug, metric, from, to, interval, aggregation \\ nil)
 
-  def get(_slug, _metric, _from, _to, _interval, aggregation)
+  def get(_metric, _slug, _from, _to, _interval, aggregation)
       when aggregation not in @aggregations do
     {:error, "The aggregation '#{inspect(aggregation)}' is not supported"}
   end
 
-  def get(slug, metric, from, to, interval, aggregation) do
+  def get(metric, slug, from, to, interval, aggregation) do
     case metric in @metrics_mapset do
       false ->
         metric_not_available_error(metric)
 
       true ->
         aggregation = aggregation || Map.get(@metric_aggregation_map, metric, :last)
-        do_get(metric, slug, from, to, interval, aggregation)
+        get_metric(metric, slug, from, to, interval, aggregation)
     end
   end
+
+  @spec available_metrics() :: {:ok, list(String.t())}
+  def available_metrics(), do: {:ok, @metrics_list}
+
+  @spec available_slugs() :: {:ok, list(String.t())} | {:error, String.t()}
+  def available_slugs(), do: get_available_slugs()
+
+  # Private functions
 
   defp metric_not_available_error(metric) do
     close = Enum.find(@metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.9 end)
@@ -76,7 +85,13 @@ defmodule Sanbase.Clickhouse.Metric do
     end
   end
 
-  defp do_get(metric, slug, from, to, interval, aggregation) do
+  defp get_available_slugs() do
+    {query, args} = available_slugs_query()
+
+    ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
+  end
+
+  defp get_metric(metric, slug, from, to, interval, aggregation) do
     {query, args} = metric_query(metric, slug, from, to, interval, aggregation)
 
     ClickhouseRepo.query_transform(query, args, fn [datetime, value] ->
@@ -131,6 +146,16 @@ defmodule Sanbase.Clickhouse.Metric do
       to,
       slug
     ]
+
+    {query, args}
+  end
+
+  defp available_slugs_query() do
+    query = """
+    SELECT DISTINCT(name) FROM asset_metadata
+    """
+
+    args = []
 
     {query, args}
   end

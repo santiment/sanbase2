@@ -58,11 +58,13 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
           Map.get(@query_type.fields, f) |> Absinthe.Type.meta(:access) == level
         end)
 
-      from_clickhouse =
-        Enum.filter(Metric.metric_plan_map(), fn {_k, v} -> v == plan end)
-        |> Enum.map(fn {_k, v} -> {:clickhouse_v2_metric, v} end)
+      clickhouse_v2_metrics =
+        Enum.filter(Metric.metric_access_map(), fn {_metric, metric_level} ->
+          level == metric_level
+        end)
+        |> Enum.map(fn {metric, _access} -> {:clickhouse_v2_metric, metric} end)
 
-      from_schema ++ from_clickhouse
+      from_schema ++ clickhouse_v2_metrics
     end
 
     def get_metrics_without_access_level() do

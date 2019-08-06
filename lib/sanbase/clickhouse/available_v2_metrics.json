@@ -1,502 +1,502 @@
 [
   {
     "metric": "average_price",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "daily_active_addresses",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "daily_avg_marketcap_usd",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "daily_avg_price_usd",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "daily_closing_marketcap_usd",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "daily_closing_price_usd",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "daily_high_price_usd",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "daily_low_price_usd",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "daily_opening_price_usd",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "daily_stack_circulation",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "daily_trading_volume_usd",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "exchange_balance",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "exchange_inflow",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "exchange_outflow",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "mean_realized_price_usd_10y",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mean_realized_price_usd_180d",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mean_realized_price_usd_1d",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mean_realized_price_usd_20y",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mean_realized_price_usd_2y",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mean_realized_price_usd_30d",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mean_realized_price_usd_365d",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mean_realized_price_usd_3y",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mean_realized_price_usd_5y",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mean_realized_price_usd_60d",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mean_realized_price_usd_7d",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mean_realized_price_usd_90d",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mean_realized_price_usd_XXX",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mvrv_usd_10y",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mvrv_usd_180d",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mvrv_usd_1d",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mvrv_usd_20y",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mvrv_usd_2y",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mvrv_usd_30d",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mvrv_usd_365d",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mvrv_usd_3y",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mvrv_usd_5y",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mvrv_usd_60d",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mvrv_usd_7d",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "mvrv_usd_90d",
-    "plan": "free",
+    "access": "restricted",
     "aggregation": "last"
   },
   {
     "metric": "stack_age_consumed",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_age_consumed_5min",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_10y",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_180d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_1d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_20y",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_2y",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_30d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_365d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_3y",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_5y",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_60d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_7d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_90d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_delta_10y",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_delta_180d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_delta_1d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_delta_20y",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_delta_2y",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_delta_30d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_delta_365d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_delta_3y",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_delta_5y",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_delta_60d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_delta_7d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_circulation_delta_90d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_cumulative_age_consumed",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_liveliness",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_mean_age_days",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_mean_creation_timestamp",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_10y",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_180d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_1d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_20y",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_2y",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_30d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_365d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_3y",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_5y",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_60d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_7d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_90d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_delta_10y",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_delta_180d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_delta_1d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_delta_20y",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_delta_2y",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_delta_30d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_delta_365d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_delta_3y",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_delta_5y",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_delta_60d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_delta_7d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_realized_cap_usd_delta_90d",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_total_age",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_total_creation_timestamp",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "stack_total_creation_timestamp_delta",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "token_velocity",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "transaction_volume_5min",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   },
   {
     "metric": "transaction_volume",
-    "plan": "free",
+    "access": "free",
     "aggregation": "last"
   }
 ]

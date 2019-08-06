@@ -38,12 +38,6 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
 
   @enterprise_plan_stats @premium_plan_stats
 
-  def free(), do: @free_plan_stats
-  def essential(), do: @basic_plan_stats
-  def pro(), do: @pro_plan_stats
-  def premium(), do: @premium_plan_stats
-  def enterprise(), do: @enterprise_plan_stats
-
   def historical_data_in_days(plan, query) when query in @custom_access_queries do
     Map.get(@custom_access_queries_stats, query)
     |> get_in([:plan_access, plan, :historical_data_in_days])

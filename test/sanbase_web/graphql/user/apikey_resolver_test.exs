@@ -5,7 +5,6 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
 
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
-  import Mockery
 
   alias Sanbase.Repo
 

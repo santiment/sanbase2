@@ -98,7 +98,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.GasUsedTest do
   end
 
   test "works only for ethereum", context do
-    error = "Currently only ethereum is supported!"
+    error = "Currently only ethereum is supported."
 
     with_mock GasUsed,
       gas_used: fn _, _, _, _ -> {:error, error} end do

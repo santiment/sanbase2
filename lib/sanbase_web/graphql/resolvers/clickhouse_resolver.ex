@@ -9,7 +9,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   import Sanbase.Utils.ErrorHandling,
-    only: [log_graphql_error: 2, graphql_error_msg: 1, graphql_error_msg: 2, graphql_error_msg: 3, "graphql_error_msg_eth": 2]
+    only: [
+      log_graphql_error: 2,
+      graphql_error_msg: 1,
+      graphql_error_msg: 2,
+      graphql_error_msg: 3
+    ]
 
   alias Sanbase.Clickhouse.HistoricalBalance.MinersBalance
 
@@ -68,7 +73,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   def gas_used(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval},
+        %{slug: slug = "ethereum", from: from, to: to, interval: interval},
         _resolution
       ) do
     case GasUsed.gas_used(slug, from, to, interval) do
@@ -76,15 +81,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:ok, gas_used}
 
       {:error, error} ->
-        case slug do
-          "ethereum" ->
-            error_msg = graphql_error_msg("Gas Used", slug)
-          _ ->
-            error_msg = graphql_error_msg_eth("Gas Used", slug)
-        end
+        error_msg = graphql_error_msg("Gas Used", slug)
         log_graphql_error(error_msg, error)
         {:error, error_msg}
     end
+  end
+
+  def gas_used(
+        _root,
+        %{slug: slug, from: _from, to: _to, interval: _interval},
+        _resolution
+      ) do
+    log_graphql_error(
+      "Can't fetch Gas Used for project with slug: #{slug}",
+      "Currently only ethereum is supported."
+    )
+
+    {:error,
+     "Can't fetch Gas Used for project with slug: #{slug}. Currently only ethereum is supported."}
   end
 
   def network_growth(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do

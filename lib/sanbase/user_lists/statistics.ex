@@ -12,14 +12,16 @@ defmodule Sanbase.UserLists.Statistics do
   end
 
   def users_with_watchlist_count() do
-    from(ul in UserList,
+    from(
+      ul in UserList,
       select: count(fragment("DISTINCT ?", ul.user_id))
     )
     |> Repo.one()
   end
 
   def users_with_watchlist_and_email() do
-    from(ul in UserList,
+    from(
+      ul in UserList,
       left_join: user in User,
       on: ul.user_id == user.id,
       where: not is_nil(user.email),
@@ -27,6 +29,30 @@ defmodule Sanbase.UserLists.Statistics do
       group_by: user.id
     )
     |> Repo.all()
+  end
+
+  def new_users_with_watchlist_count(from_datetime) do
+    from(
+      ul in UserList,
+      inner_join: user in User,
+      on: ul.user_id == user.id,
+      where: user.inserted_at > ^from_datetime,
+      select: count(fragment("DISTINCT ?", ul.user_id))
+    )
+    |> Repo.one()
+  end
+
+  def old_users_with_new_watchlist_count(registered_datetime, watchlist_datetime) do
+    from(
+      ul in UserList,
+      inner_join: user in User,
+      on: ul.user_id == user.id,
+      where:
+        user.inserted_at < ^registered_datetime and
+          ul.inserted_at > ^watchlist_datetime,
+      select: count(fragment("DISTINCT ?", ul.user_id))
+    )
+    |> Repo.one()
   end
 
   # Private functions

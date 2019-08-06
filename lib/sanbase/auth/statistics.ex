@@ -59,31 +59,52 @@ defmodule Sanbase.Auth.Statistics do
     |> Repo.one()
   end
 
-  def newsletter_subscribed_user_count(subscription_type) do
-    user_settings_with_newsletter_subscription_query(subscription_type)
-    |> count()
-    |> Repo.one()
-  end
-
+  @doc ~s"""
+  Return the number of registered users, which use a given subscription type
+  """
   def newsletter_subscribed_users(subscription_type) do
     user_settings_with_newsletter_subscription_query(subscription_type)
     |> count()
     |> Repo.one()
   end
 
-  def newsletter_subscribed_users(subscription_type, from, to) do
+  @doc ~s"""
+  Return the number of users registered after a given datetime, which use a given subscription type
+  """
+  def newsletter_subscribed_new_users(subscription_type, %DateTime{} = registered) do
     user_settings_with_newsletter_subscription_query(subscription_type)
-    |> where(
-      fragment(
-        """
-        NOT settings->>'newsletter_subscription_updated_at_unix' IS NULL AND
-        (settings->>'newsletter_subscription_updated_at_unix')::NUMERIC >= ? AND
-        (settings->>'newsletter_subscription_updated_at_unix')::NUMERIC <= ?
-        """,
-        ^DateTime.to_unix(from),
-        ^DateTime.to_unix(to)
-      )
+    |> join(:inner, [u], us in assoc(u, :user))
+    |> where([_us, u], u.inserted_at > ^registered)
+    |> count()
+    |> Repo.one()
+  end
+
+  @doc ~s"""
+  Return the number of users registered before a given datetime, which have subscribed in the given time period
+  """
+  def newsletter_subscribed_old_users(
+        subscription_type,
+        %DateTime{} = registered_before,
+        %DateTime{} = subscription_after
+      ) do
+    user_settings_with_newsletter_subscription_query(subscription_type)
+    |> newsletter_updated_filter_query(
+      subscription_after,
+      Timex.now()
     )
+    |> join(:inner, [u], us in assoc(u, :user))
+    |> where([_us, u], u.inserted_at < ^registered_before)
+    |> count()
+    |> Repo.one()
+  end
+
+  @doc ~s"""
+  Return the number of registered users, which use a given subscription type
+  over a given course of time
+  """
+  def newsletter_subscribed_users(subscription_type, %DateTime{} = from, %DateTime{} = to) do
+    user_settings_with_newsletter_subscription_query(subscription_type)
+    |> newsletter_updated_filter_query(from, to)
     |> count()
     |> Repo.one()
   end
@@ -99,6 +120,21 @@ defmodule Sanbase.Auth.Statistics do
           """,
           ^subscription_type
         )
+    )
+  end
+
+  defp newsletter_updated_filter_query(base_query, %DateTime{} = from, %DateTime{} = to) do
+    base_query
+    |> where(
+      fragment(
+        """
+        NOT settings->>'newsletter_subscription_updated_at_unix' IS NULL AND
+        (settings->>'newsletter_subscription_updated_at_unix')::NUMERIC >= ? AND
+        (settings->>'newsletter_subscription_updated_at_unix')::NUMERIC <= ?
+        """,
+        ^DateTime.to_unix(from),
+        ^DateTime.to_unix(to)
+      )
     )
   end
 

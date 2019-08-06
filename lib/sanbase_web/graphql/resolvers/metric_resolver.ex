@@ -14,6 +14,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         } = args,
         _resolution
       ) do
-    Metric.get(slug, metric, from, to, interval, Map.get(args, :aggregation))
+    Metric.get(metric, slug, from, to, interval, Map.get(args, :aggregation))
   end
 end

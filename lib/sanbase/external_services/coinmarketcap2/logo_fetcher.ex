@@ -52,12 +52,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
         with {:ok, local_filepath_64} <- download(url, dir_path_64, file_name),
              {:ok, local_filepath_32} <-
                resize_image(local_filepath_64, dir_path_32, file_name),
-             {:ok, _} <- upload(local_filepath_64),
-             {:ok, _} <- upload(local_filepath_32),
+             {:ok, uploaded_filepath_64} <- upload(local_filepath_64),
+             {:ok, uploaded_filepath_32} <- upload(local_filepath_32),
              {:ok, _} <-
                update_local_project(project, %{
-                 logo32_url: local_filepath_32,
-                 logo64_url: local_filepath_64
+                 logo32_url: uploaded_filepath_32,
+                 logo64_url: uploaded_filepath_64
                }) do
           :ok
         else

@@ -49,7 +49,7 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
       :basic -> @basic_plan_stats[:historical_data_in_days]
       :pro -> @pro_plan_stats[:historical_data_in_days]
       :premium -> @premium_plan_stats[:historical_data_in_days]
-      :enterprise -> @premium_plan_stats[:historical_data_in_days]
+      :enterprise -> @enterprise_plan_stats[:historical_data_in_days]
     end
   end
 

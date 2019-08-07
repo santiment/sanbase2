@@ -103,16 +103,20 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
 
   @custom_access_queries_stats CustomAccess.get()
   @custom_access_queries @custom_access_queries_stats |> Map.keys() |> Enum.sort()
+  @custom_access_queries_mapset MapSet.new(@custom_access_queries)
 
   # Raise an error if there are queries with custom access logic that are marked
   # as free. If there are such queries the access restriction logic will never
   # be applied
 
-  case @custom_access_queries -- @restricted_metrics do
-    [] ->
+  free_and_custom_intersection =
+    MapSet.intersection(@custom_access_queries_mapset, @free_metrics_mapset)
+
+  case Enum.empty?(free_and_custom_intersection) do
+    true ->
       :ok
 
-    queries ->
+    false ->
       require Sanbase.Break, as: Break
 
       Break.break("""
@@ -121,8 +125,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
       executed.
 
       Queries defined in the CustomAccess module but do not have the `:restricted`
-      access level field: #{inspect(queries)}.
-
+      access level field: #{inspect(free_and_custom_intersection |> Enum.to_list())}
       """)
   end
 
@@ -131,7 +134,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   A query can be restricted but still accessible by not-paid users or users with
   lower plans. In this case historical and/or realtime data access can be cut off
   """
-  def is_restricted?(query), do: query in @restricted_metrics_mapset
+  def is_restricted?(query), do: query not in @free_metrics_mapset
 
   def custom_access_queries_stats, do: @custom_access_queries_stats
   def custom_access_queries, do: @custom_access_queries

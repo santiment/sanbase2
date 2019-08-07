@@ -52,13 +52,7 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
 
   @spec get_data(%__MODULE__{}) :: TrendingWords.result()
   def get_data(%__MODULE__{}) do
-    case TrendingWords.get_trending_now(@trending_words_size) do
-      {:ok, words} ->
-        {:ok, words}
-
-      error ->
-        error
-    end
+    TrendingWords.get_trending_now(@trending_words_size)
   end
 
   # private functions

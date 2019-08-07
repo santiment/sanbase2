@@ -69,6 +69,11 @@ defmodule Sanbase.UserList.Settings do
   alias Sanbase.UserList
   alias __MODULE__.WatchlistSettings
 
+  @type t :: %__MODULE__{
+          user_id: non_neg_integer(),
+          watchlist_id: non_neg_integer(),
+          settings: WatchlistSettings.t()
+        }
   @primary_key false
   schema "watchlist_settings" do
     belongs_to(:user, User, foreign_key: :user_id, primary_key: true)
@@ -114,7 +119,8 @@ defmodule Sanbase.UserList.Settings do
   @doc ~s"""
   Create or update settings for a given watchlist and user
   """
-  @spec update_or_create_settings(watchlist_id, user_id, settings) :: {:ok, WatchlistSettings.t()}
+  @spec update_or_create_settings(watchlist_id, user_id, settings) ::
+          {:ok, t()} | {:error, Ecto.Changeset.t()}
         when watchlist_id: non_neg_integer,
              user_id: non_neg_integer,
              settings: WatchlistSettings.t()

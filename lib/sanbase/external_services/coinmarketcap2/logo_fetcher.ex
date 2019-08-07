@@ -51,6 +51,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     case Map.get(local_projects_map, slug) do
       %Project{} = project ->
         with {:ok, local_filepath_64} <- download(url, dir_path_64, file_name),
+             {:ok, _} <- file_hash_has_changed?(project, local_filepath_64),
              {:ok, local_filepath_32} <-
                resize_image(local_filepath_64, dir_path_32, file_name),
              {:ok, _} <- upload(local_filepath_64),
@@ -95,8 +96,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
 
   defp file_hash_has_changed?(project, filepath) do
     cmc_project = CmcProject.get_or_insert(project.id)
-    {:ok, image_hash} = image_content_hash(downloaded_image_path)
-    cmc_project.logo_hash != image_hash
+    {:ok, image_hash} = image_content_hash(filepath)
+
+    case cmc_project.logo_hash != image_hash do
+      true -> {:ok, true}
+      false -> {:error, false}
+    end
   end
 
   defp resize_image(source_filepath, dest_dir_path, file_name) do

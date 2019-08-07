@@ -67,6 +67,24 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
       assert CmcProject.by_project_id(context.ethereum.id).logo_hash ==
                "f7b004ff68915bc870fb5f4a9b884fc491e5320e12237e20105b25aaf0ceec23"
     end
+
+    test "will upload new logos when logo hash has changed", context do
+      cmc_project = CmcProject.get_or_insert(context.bitcoin.id)
+
+      CmcProject.changeset(
+        cmc_project,
+        %{logo_hash: "old_image_hash", logos_uploaded_at: Timex.shift(Timex.now(), days: -90)}
+      )
+      |> Repo.update()
+
+      LogoFetcher.run()
+
+      assert CmcProject.by_project_id(context.bitcoin.id).logo_hash ==
+               "480ab7007e9f1b19e932807a96d668508b4ed1b26061a9f1baf98f007f9553be"
+
+      bitcoin_logo_uploaded_at = CmcProject.by_project_id(context.bitcoin.id).logos_uploaded_at
+      assert Timex.diff(Timex.now(), bitcoin_logo_uploaded_at, :minutes) < 1
+    end
   end
 
   describe "when unsuccessful" do

@@ -7,8 +7,8 @@ defmodule Sanbase.Statistics do
     "staking_users",
     "registered_users",
     "registered_staking_users",
-    "daily_newsletter_subscriptions",
-    "weekly_newsletter_subscriptions",
+    "users_with_daily_newsletter_subscriptions",
+    "users_with_weekly_newsletter_subscriptions",
     "watchlists",
     "tokens_staked"
   ]
@@ -68,13 +68,20 @@ defmodule Sanbase.Statistics do
     UserStatistics.tokens_staked()
   end
 
-  def get("daily_newsletter_subscriptions") do
+  def get("users_with_daily_newsletter_subscriptions") do
     now = Timex.now()
 
     last_7d =
       UserStatistics.newsletter_subscribed_users(
         daily_subscription_type(),
         Timex.shift(now, days: -7),
+        now
+      )
+
+    last_14d =
+      UserStatistics.newsletter_subscribed_users(
+        daily_subscription_type(),
+        Timex.shift(now, days: -14),
         now
       )
 
@@ -108,22 +115,30 @@ defmodule Sanbase.Statistics do
       )
 
     %{
-      "daily_updates_subscribed_user_count_last_7d" => last_7d,
-      "daily_updates_subscribed_user_count_last_30d" => last_30d,
-      "daily_updates_subscribed_user_count_last_180d" => last_180d,
-      "daily_updates_subscribed_user_count_overall" => overall,
-      "daily_updates_subscribed_new_user_count" => newsletter_subscribed_new_users_14d,
-      "daily_updates_subscribed_old_user_count_last_14d" => newsletter_subscribed_old_users_14d
+      "subscribed_in_the_last_7_days" => last_7d,
+      "subscribed_in_the_last_14_days" => last_14d,
+      "subscribed_in_the_last_30_days" => last_30d,
+      "subscribed_in_the_last_180_days" => last_180d,
+      "subscribed_overall" => overall,
+      "subscribed_new_users" => newsletter_subscribed_new_users_14d,
+      "longtime_users_who_subscribed_in_the_last_14_days" => newsletter_subscribed_old_users_14d
     }
   end
 
-  def get("weekly_newsletter_subscriptions") do
+  def get("users_with_weekly_newsletter_subscriptions") do
     now = Timex.now()
 
     last_7d =
       UserStatistics.newsletter_subscribed_users(
         weekly_subscription_type(),
         Timex.shift(now, days: -7),
+        now
+      )
+
+    last_14d =
+      UserStatistics.newsletter_subscribed_users(
+        weekly_subscription_type(),
+        Timex.shift(now, days: -14),
         now
       )
 
@@ -157,12 +172,13 @@ defmodule Sanbase.Statistics do
       )
 
     %{
-      "weekly_updates_subscribed_user_count_last_7d" => last_7d,
-      "weekly_updates_subscribed_user_count_last_30d" => last_30d,
-      "weekly_updates_subscribed_user_count_last_180d" => last_180d,
-      "weekly_updates_subscribed_user_count_overall" => overall,
-      "weekly_updates_subscribed_new_user_count" => newsletter_subscribed_new_users_14d,
-      "weekly_updates_subscribed_old_user_count_last_14d" => newsletter_subscribed_old_users_14d
+      "subscribed_in_the_last_7_days" => last_7d,
+      "subscribed_in_the_last_14_days" => last_14d,
+      "subscribed_in_the_last_30_days" => last_30d,
+      "subscribed_in_the_last_180_days" => last_180d,
+      "subscribed_overall" => overall,
+      "subscribed_new_users" => newsletter_subscribed_new_users_14d,
+      "longtime_users_who_subscribed_in_the_last_14_days" => newsletter_subscribed_old_users_14d
     }
   end
 
@@ -200,7 +216,7 @@ defmodule Sanbase.Statistics do
       "users_with_watchlist_count" => users_with_watchlist_count,
       "average_watchlists_per_user_with_watchlists" => average_watchlists_per_user,
       "new_users_with_watchlist_count_14d" => new_users_with_watchlist_count_14d,
-      "old_users_with_watchlist_count_14d" => old_users_with_watchlist_count_14d
+      "longtime_users_with_watchlist_count_14d" => old_users_with_watchlist_count_14d
     }
   end
 end

@@ -11,7 +11,7 @@ defmodule Sanbase.StatisticsTest do
     user3 = insert(:user, inserted_at: Timex.shift(Timex.now(), days: -2))
     user4 = insert(:staked_user, inserted_at: Timex.shift(Timex.now(), days: -500))
     user5 = insert(:staked_user, inserted_at: Timex.shift(Timex.now(), days: -15))
-    user6 = insert(:staked_user, inserted_at: Timex.shift(Timex.now(), days: -1))
+    user6 = insert(:staked_user, inserted_at: Timex.shift(Timex.now(), days: -171))
 
     Sanbase.Auth.UserSettings.change_newsletter_subscription(user1, %{
       newsletter_subscription: :weekly
@@ -52,16 +52,16 @@ defmodule Sanbase.StatisticsTest do
     assert {"registered_users",
             %{
               "registered_users_last_180d" => 4,
-              "registered_users_last_30d" => 4,
-              "registered_users_last_7d" => 2,
+              "registered_users_last_30d" => 3,
+              "registered_users_last_7d" => 1,
               "registered_users_overall" => 6
             }} in statistics
 
     assert {"registered_staking_users",
             %{
               "registered_staking_users_last_180d" => 2,
-              "registered_staking_users_last_30d" => 2,
-              "registered_staking_users_last_7d" => 1,
+              "registered_staking_users_last_30d" => 1,
+              "registered_staking_users_last_7d" => 0,
               "registered_staking_users_overall" => 3
             }} in statistics
   end
@@ -84,24 +84,26 @@ defmodule Sanbase.StatisticsTest do
   test "get newsletter statistics" do
     statistics = Sanbase.Statistics.get_all()
 
-    assert {"weekly_newsletter_subscriptions",
+    assert {"users_with_weekly_newsletter_subscriptions",
             %{
-              "weekly_updates_subscribed_user_count_last_180d" => 3,
-              "weekly_updates_subscribed_user_count_last_30d" => 2,
-              "weekly_updates_subscribed_user_count_last_7d" => 2,
-              "weekly_updates_subscribed_user_count_overall" => 3,
-              "weekly_updates_subscribed_new_user_count" => 2,
-              "weekly_updates_subscribed_old_user_count_last_14d" => 1
+              "subscribed_in_the_last_180_days" => 3,
+              "subscribed_in_the_last_30_days" => 2,
+              "subscribed_in_the_last_14_days" => 2,
+              "subscribed_in_the_last_7_days" => 2,
+              "subscribed_overall" => 3,
+              "subscribed_new_users" => 1,
+              "longtime_users_who_subscribed_in_the_last_14_days" => 1
             }} in statistics
 
-    assert {"daily_newsletter_subscriptions",
+    assert {"users_with_daily_newsletter_subscriptions",
             %{
-              "daily_updates_subscribed_user_count_last_180d" => 1,
-              "daily_updates_subscribed_user_count_last_30d" => 1,
-              "daily_updates_subscribed_user_count_last_7d" => 1,
-              "daily_updates_subscribed_user_count_overall" => 1,
-              "daily_updates_subscribed_new_user_count" => 0,
-              "daily_updates_subscribed_old_user_count_last_14d" => 1
+              "subscribed_in_the_last_180_days" => 1,
+              "subscribed_in_the_last_30_days" => 1,
+              "subscribed_in_the_last_14_days" => 1,
+              "subscribed_in_the_last_7_days" => 1,
+              "subscribed_overall" => 1,
+              "subscribed_new_users" => 0,
+              "longtime_users_who_subscribed_in_the_last_14_days" => 1
             }} in statistics
 
     assert {"watchlists",
@@ -112,8 +114,8 @@ defmodule Sanbase.StatisticsTest do
               "watchlist_created_last_30d" => 5,
               "watchlist_created_last_7d" => 5,
               "watchlist_created_overall" => 5,
-              "new_users_with_watchlist_count_14d" => 2,
-              "old_users_with_watchlist_count_14d" => 2
+              "new_users_with_watchlist_count_14d" => 1,
+              "longtime_users_with_watchlist_count_14d" => 3
             }} in statistics
   end
 
@@ -134,7 +136,7 @@ defmodule Sanbase.StatisticsTest do
     assert Sanbase.Auth.Statistics.newsletter_subscribed_new_users(
              weekly_subscription_type(),
              Timex.shift(now, days: -14)
-           ) == 2
+           ) == 1
   end
 
   test "returns the number of old users, which have subscribed for the newsletter in a given time period" do
@@ -143,6 +145,12 @@ defmodule Sanbase.StatisticsTest do
     assert Sanbase.Auth.Statistics.newsletter_subscribed_old_users(
              daily_subscription_type(),
              Timex.shift(now, days: -5),
+             Timex.shift(now, days: -14)
+           ) == 1
+
+    assert Sanbase.Auth.Statistics.newsletter_subscribed_old_users(
+             weekly_subscription_type(),
+             Timex.shift(now, days: -14),
              Timex.shift(now, days: -14)
            ) == 1
 

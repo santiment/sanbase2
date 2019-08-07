@@ -21,10 +21,20 @@ defmodule Sanbase.Clickhouse.Metric do
                      |> Enum.map(&{&1["metric"], &1["access"] |> String.to_existing_atom()})
                      |> Map.new()
 
+  @free_metrics @metric_access_map
+                |> Enum.filter(fn {_m, a} -> a == :free end)
+                |> Keyword.keys()
+
+  @restricted_metrics @metric_access_map
+                      |> Enum.filter(fn {_m, a} -> a == :restricted end)
+                      |> Keyword.keys()
+
   @metric_aggregation_map @metrics_json
                           |> Enum.map(&{&1["metric"], &1["aggregation"]})
                           |> Map.new()
 
+  def free_metrics(), do: @free_metrics
+  def restricted_metrics(), do: @restricted_metrics
   def metric_access_map(), do: @metric_access_map
 
   @type slug :: String.t()

@@ -7,6 +7,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Sanbase.Auth.Apikey
+  alias Sanbase.Clickhouse.Metric
 
   setup_with_mocks([
     {Sanbase.Prices.Store, [], [fetch_prices_with_resolution: fn _, _, _, _ -> price_resp() end]},
@@ -14,7 +15,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     {Sanbase.Clickhouse.DailyActiveDeposits, [],
      [active_deposits: fn _, _, _, _ -> daily_active_deposits_resp() end]},
     {Sanbase.Clickhouse.NetworkGrowth, [],
-     [network_growth: fn _, _, _, _ -> network_growth_resp() end]}
+     [network_growth: fn _, _, _, _ -> network_growth_resp() end]},
+    {Metric, [:passthrough], [get: fn _, _, _, _, _, _ -> metric_resp() end]}
   ]) do
     user = insert(:user)
     project = insert(:random_project)
@@ -26,6 +28,28 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
   end
 
   describe "SANApi product, No subscription" do
+    test "can access FREE v2 clickhouse metrics for all time", context do
+      from = Timex.shift(Timex.now(), days: -1500)
+      to = Timex.now()
+      metric = v2_free_metric()
+      query = metric_query(metric, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+      assert_called(Metric.get(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "cannot access RESTRICTED v2 clickhouse metrics for over 3 months", context do
+      from = Timex.shift(Timex.now(), days: -91)
+      to = Timex.shift(Timex.now(), days: -10)
+      metric = v2_restricted_metric()
+      query = metric_query(metric, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+
+      assert_called(Metric.get(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.get(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
     test "can access FREE metrics for all time", context do
       from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
@@ -100,6 +124,58 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
   end
 
   describe "SANApi product, user with BASIC plan" do
+    test "can access FREE v2 clickhouse metrics for all time", context do
+      insert(:subscription_essential, user: context.user)
+
+      from = Timex.shift(Timex.now(), days: -1500)
+      to = Timex.now()
+      metric = v2_free_metric()
+      query = metric_query(metric, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+      assert called(Metric.get(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "can access RESTRICTED v2 clickhouse metrics for less than 180 days", context do
+      insert(:subscription_essential, user: context.user)
+
+      from = Timex.shift(Timex.now(), days: -179)
+      to = Timex.shift(Timex.now(), days: -170)
+      metric = v2_restricted_metric()
+      query = metric_query(metric, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+
+      assert called(Metric.get(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "cannot access RESTRICTED v2 clickhouse metrics for over 180 days", context do
+      insert(:subscription_essential, user: context.user)
+
+      from = Timex.shift(Timex.now(), days: -181)
+      to = Timex.shift(Timex.now(), days: -179)
+      metric = v2_restricted_metric()
+      query = metric_query(metric, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+
+      assert_called(Metric.get(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.get(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "can access RESTRICTED v2 clickhouse metrics realtime", context do
+      insert(:subscription_essential, user: context.user)
+
+      from = Timex.shift(Timex.now(), days: -10)
+      to = Timex.now()
+      metric = v2_restricted_metric()
+      query = metric_query(metric, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+
+      assert called(Metric.get(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
     test "can access FREE metrics for all time", context do
       insert(:subscription_essential, user: context.user)
 
@@ -161,6 +237,58 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
   end
 
   describe "SANApi product, user with PRO plan" do
+    test "can access FREE v2 clickhouse metrics for all time", context do
+      insert(:subscription_essential, user: context.user)
+
+      from = Timex.shift(Timex.now(), days: -1500)
+      to = Timex.now()
+      metric = v2_free_metric()
+      query = metric_query(metric, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+      assert called(Metric.get(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "can access RESTRICTED v2 clickhouse metrics for less than 18 months", context do
+      insert(:subscription_pro, user: context.user)
+
+      from = Timex.shift(Timex.now(), days: -(18 * 30 - 1))
+      to = Timex.shift(Timex.now(), days: -(18 * 30 - 2))
+      metric = v2_restricted_metric()
+      query = metric_query(metric, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+
+      assert called(Metric.get(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "cannot access RESTRICTED v2 clickhouse metrics for over 18 months", context do
+      insert(:subscription_pro, user: context.user)
+
+      from = Timex.shift(Timex.now(), days: -(18 * 30 + 1))
+      to = Timex.shift(Timex.now(), days: -(18 * 30 - 1))
+      metric = v2_restricted_metric()
+      query = metric_query(metric, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+
+      assert_called(Metric.get(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.get(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "can access RESTRICTED v2 clickhouse metrics realtime", context do
+      insert(:subscription_pro, user: context.user)
+
+      from = Timex.shift(Timex.now(), days: -10)
+      to = Timex.now()
+      metric = v2_restricted_metric()
+      query = metric_query(metric, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+
+      assert called(Metric.get(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
     test "can access FREE metrics for all time", context do
       insert(:subscription_pro, user: context.user)
 
@@ -223,6 +351,30 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
   end
 
   describe "SANApi product, user with PREMIUM plan" do
+    test "can access FREE v2 clickhouse metrics for all time", context do
+      insert(:subscription_premium, user: context.user)
+
+      from = Timex.shift(Timex.now(), days: -1500)
+      to = Timex.now()
+      metric = v2_free_metric()
+      query = metric_query(metric, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+      assert_called(Metric.get(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "can access RESTRICTED v2 clickhouse metrics for all time", context do
+      insert(:subscription_premium, user: context.user)
+
+      from = Timex.shift(Timex.now(), days: -1500)
+      to = Timex.now()
+      metric = v2_restricted_metric()
+      query = metric_query(metric, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+      assert_called(Metric.get(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
     test "can access FREE metrics for all time", context do
       insert(:subscription_premium, user: context.user)
 
@@ -260,6 +412,19 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
   end
 
+  defp metric_query(metric, from, to) do
+    """
+      {
+        getMetric(metric: "#{metric}") {
+          timeseriesData(slug: "ethereum", from: "#{from}", to: "#{to}", interval: "30d"){
+            datetime
+            value
+          }
+        }
+      }
+    """
+  end
+
   defp daily_active_deposits_query(from, to) do
     """
       {
@@ -282,16 +447,19 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     """
   end
 
-  defp history_price_query(project, from, to) do
+  defp history_price_query(%{coinmarketcap_id: slug}, from, to) do
     """
       {
-        historyPrice(slug: "#{project.coinmarketcap_id}", from: "#{from}", to: "#{to}", interval: "30d"){
+        historyPrice(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "30d"){
           datetime
           priceUsd
         }
       }
     """
   end
+
+  defp v2_free_metric(), do: Metric.free_metrics() |> Enum.random()
+  defp v2_restricted_metric(), do: Metric.restricted_metrics() |> Enum.random()
 
   defp mvrv_resp() do
     {:ok,
@@ -322,6 +490,14 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
      [
        %{new_addresses: 10, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
        %{new_addresses: 20, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
+     ]}
+  end
+
+  defp metric_resp() do
+    {:ok,
+     [
+       %{value: 10.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
+       %{value: 20.0, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
      ]}
   end
 end

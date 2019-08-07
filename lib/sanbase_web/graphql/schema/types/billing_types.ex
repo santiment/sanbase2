@@ -20,7 +20,6 @@ defmodule SanbaseWeb.Graphql.Schema.BillingTypes do
   object :plan do
     field(:id, :id)
     field(:name, :string)
-    field(:access, :json)
     field(:product, :product)
     field(:interval, :string)
     field(:amount, :integer)

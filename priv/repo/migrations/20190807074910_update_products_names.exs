@@ -11,7 +11,7 @@ defmodule Sanbase.Repo.Migrations.UpdateProductsNames do
 
     %{
       Product.product_api() => "Neuro by Santiment",
-      Product.product_sanbase() => "Sanabse by Santiment",
+      Product.product_sanbase() => "Sanbase by Santiment",
       Product.product_sheets() => "Sheets by Santiment",
       Product.product_sangraphs() => "Graphs by Santiment"
     }

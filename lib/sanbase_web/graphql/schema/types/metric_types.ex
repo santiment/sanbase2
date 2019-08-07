@@ -14,6 +14,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
   object :metadata do
     field(:min_interval, :string)
+    field(:default_aggregation, :aggregation)
   end
 
   object :metric do

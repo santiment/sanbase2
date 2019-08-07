@@ -1,4 +1,4 @@
-defmodule Sanbase.Billing.QueryAccessMetaFieldTest do
+defmodule Sanbase.Billing.QueryAccessLevelTest do
   use ExUnit.Case, async: true
 
   # Assert that a query's access level does not change incidentally

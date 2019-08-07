@@ -73,6 +73,9 @@ defmodule Sanbase.Clickhouse.Metric do
   @spec available_slugs() :: {:ok, list(String.t())} | {:error, String.t()}
   def available_slugs(), do: get_available_slugs()
 
+  @spec available_aggregations() :: {:ok, list(atom())}
+  def available_aggregations(), do: {:ok, @aggregations}
+
   # Private functions
 
   defp metric_not_available_error(metric) do

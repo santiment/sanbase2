@@ -544,6 +544,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
           interval
           amount
           product {
+            id
             name
           }
         }

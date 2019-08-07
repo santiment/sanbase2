@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
   object :metric do
     @desc ~s"""
-    Return a list of 'datetime' float 'value' for a given metric, slug
+    Return a list of 'datetime',  float 'value' for a given metric, slug
     and time period
     """
     field :timeseries_data, list_of(:metric_data) do

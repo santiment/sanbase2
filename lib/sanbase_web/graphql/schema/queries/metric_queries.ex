@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
 
   object :metric_queries do
     @desc ~s"""
-    Retrurn data for a given metric.
+    Return data for a given metric.
     """
     field :get_metric, list_of(:metric) do
       meta(access: :free)

@@ -19,10 +19,13 @@ defmodule Sanbase.Billing.Plan.CustomAccess do
     is missing it means that it is not restricted
   """
 
+  import Sanbase.Clickhouse.Metric.Helper,
+    only: [mvrv_metrics: 0, realized_value_metrics: 0, token_age_consumed_metrics: 0]
+
   Module.register_attribute(__MODULE__, :metric, accumulate: true)
 
   @metric %{
-    metric_name: [:mvrv_ratio, :realized_value],
+    metric_name: [:mvrv_ratio, :realized_value] ++ mvrv_metrics() ++ realized_value_metrics(),
     plan_access: %{
       free: %{realtime_data_cut_off_in_days: 30, historical_data_in_days: 365},
       basic: %{realtime_data_cut_off_in_days: 14, historical_data_in_days: 2 * 365}
@@ -30,7 +33,7 @@ defmodule Sanbase.Billing.Plan.CustomAccess do
   }
 
   @metric %{
-    metric_name: [:token_age_consumed, :burn_rate],
+    metric_name: [:token_age_consumed, :burn_rate] ++ token_age_consumed_metrics(),
     plan_access: %{
       free: %{realtime_data_cut_off_in_days: 30}
     }

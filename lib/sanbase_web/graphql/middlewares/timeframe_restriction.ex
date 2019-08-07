@@ -98,8 +98,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
     subscription = context[:auth][:subscription] || @free_subscription
     product = subscription.plan.product_id || context.product
 
-    [subscription.plan.name, query, product]
-
     historical_data_in_days = Subscription.historical_data_in_days(subscription, query, product)
 
     realtime_data_cut_off_in_days =

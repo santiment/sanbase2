@@ -113,9 +113,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     end
   end
 
-  defp update_local_project(nil, _filepath), do: {:error, "Project not found"}
-
-  defp update_local_project(project, fields) do
+  defp update_local_project(%Project{} = project, %{} = fields) do
     Project.changeset(project, fields) |> Repo.update()
   end
 end

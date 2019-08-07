@@ -14,7 +14,7 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
     List available products with corresponding subscription plans.
     """
     field :products_with_plans, list_of(:product) do
-      meta(subscription: :free)
+      meta(access: :free)
 
       resolve(&BillingResolver.products_with_plans/3)
     end
@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
     List all user invoice payments.
     """
     field :payments, list_of(:payments) do
-      meta(subscription: :free)
+      meta(access: :free)
 
       middleware(JWTAuth)
 

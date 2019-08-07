@@ -54,7 +54,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       |> execute_query(query, "productsWithPlans")
       |> hd()
 
-    assert result["name"] == "SANapi"
+    assert result["name"] == "Neuro by Santiment"
     assert length(result["plans"]) == 9
   end
 

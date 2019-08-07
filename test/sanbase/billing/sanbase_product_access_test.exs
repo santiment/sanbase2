@@ -7,8 +7,8 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Sanbase.Signal.UserTrigger
+  alias Sanbase.Billing.Plan.SanbaseAccessChecker
 
-  @triggers_limit_reached_error "triggers limit reached"
   @triggers_limit_count 10
 
   setup_with_mocks([
@@ -230,34 +230,55 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   describe "Signals limits user has reached signals limit" do
     test "user with FREE plan cannot create new trigger", context do
       create_triggers(context.user, @triggers_limit_count)
-
-      assert create_trigger(context.user) == {:error, @triggers_limit_reached_error}
+      query = create_trigger_mutation()
+      error = execute_mutation_with_error(context.conn, query)
+      assert error == SanbaseAccessChecker.signals_limits_upgrade_message()
     end
 
     test "user with BASIC plan cannot create new trigger", context do
       insert(:subscription_basic_sanbase, user: context.user)
       create_triggers(context.user, @triggers_limit_count)
-
-      assert create_trigger(context.user) == {:error, @triggers_limit_reached_error}
+      query = create_trigger_mutation()
+      error = execute_mutation_with_error(context.conn, query)
+      assert error == SanbaseAccessChecker.signals_limits_upgrade_message()
     end
 
     test "user with PRO plan can create new trigger", context do
       insert(:subscription_pro_sanbase, user: context.user)
       create_triggers(context.user, @triggers_limit_count)
 
-      {:ok, user_trigger} = create_trigger(context.user)
+      query = create_trigger_mutation()
+      result = execute_mutation(context.conn, query, "createTrigger")
+      assert result["trigger"]["id"] != nil
+    end
 
-      assert user_trigger.id != nil
+    test "with BASIC API plan can create new trigger", context do
+      user = insert(:user)
+      insert(:subscription_essential, user: context.user)
+      create_triggers(user, @triggers_limit_count)
+
+      query = create_trigger_mutation()
+      result = execute_mutation(context.conn, query, "createTrigger")
+      assert result["trigger"]["id"] != nil
+    end
+
+    test "with PREMIUM API plan can create new trigger", context do
+      user = insert(:user)
+      insert(:subscription_premium, user: context.user)
+      create_triggers(user, @triggers_limit_count)
+
+      query = create_trigger_mutation()
+      result = execute_mutation(context.conn, query, "createTrigger")
+      assert result["trigger"]["id"] != nil
     end
   end
 
   describe "Signals limits user has not reached signals limit" do
     test "user with FREE plan can create new trigger", context do
       create_triggers(context.user, @triggers_limit_count - 1)
-
-      {:ok, user_trigger} = create_trigger(context.user)
-
-      assert user_trigger.id != nil
+      query = create_trigger_mutation()
+      result = execute_mutation(context.conn, query, "createTrigger")
+      assert result["trigger"]["id"] != nil
     end
   end
 
@@ -345,5 +366,40 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
        %{new_addresses: 10, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
        %{new_addresses: 20, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
      ]}
+  end
+
+  defp create_trigger_mutation() do
+    trigger_settings = %{
+      type: "daily_active_addresses",
+      target: %{slug: "santiment"},
+      channel: "telegram",
+      time_window: "1d",
+      operation: %{percent_up: 200.0}
+    }
+
+    trigger_settings_json = trigger_settings |> Jason.encode!()
+
+    ~s|
+  mutation {
+    createTrigger(
+      settings: '#{trigger_settings_json}'
+      title: 'Generic title'
+      cooldown: '23h'
+    ) {
+      trigger{
+        id
+        cooldown
+        settings
+      }
+    }
+  }
+  |
+    |> format_interpolated_json()
+  end
+
+  defp format_interpolated_json(string) do
+    string
+    |> String.replace(~r|\"|, ~S|\\"|)
+    |> String.replace(~r|'|, ~S|"|)
   end
 end

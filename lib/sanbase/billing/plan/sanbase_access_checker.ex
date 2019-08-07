@@ -4,6 +4,13 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
   """
 
   alias Sanbase.Billing.Plan.CustomAccess
+  alias Sanbase.Billing.Plan
+  alias Sanbase.Signal.UserTrigger
+
+  @signals_limits_upgrade_message """
+  You have reached the maximum number of allowed signals for your current subscription plan.
+  Please upgrade to PRO subscription plan for unlimited signals.
+  """
 
   @custom_access_queries_stats CustomAccess.get()
   @custom_access_queries @custom_access_queries_stats |> Map.keys() |> Enum.sort()
@@ -60,10 +67,30 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
     |> Map.get(:realtime_data_cut_off_in_days)
   end
 
-  def signals_limits(plan) do
+  def signals_limit(plan) do
     plan_stats(plan)
     |> get_in([:signals, :limit])
   end
+
+  def signals_limits_reached?(user, subscription) do
+    created_signsls_count = UserTrigger.triggers_for(user) |> Enum.count()
+
+    subscription.plan
+    |> Plan.plan_atom_name()
+    |> signals_limit()
+    |> case do
+      :no_limit ->
+        false
+
+      limit when is_integer(limit) and created_signsls_count >= limit ->
+        true
+
+      _ ->
+        false
+    end
+  end
+
+  def signals_limits_upgrade_message(), do: @signals_limits_upgrade_message
 
   defp plan_stats(plan) do
     case plan do

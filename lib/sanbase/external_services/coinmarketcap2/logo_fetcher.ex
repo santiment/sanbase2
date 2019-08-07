@@ -93,6 +93,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     end
   end
 
+  defp file_hash_has_changed?(project, filepath) do
+    cmc_project = CmcProject.get_or_insert(project.id)
+    {:ok, image_hash} = image_content_hash(downloaded_image_path)
+    cmc_project.logo_hash != image_hash
+  end
+
   defp resize_image(source_filepath, dest_dir_path, file_name) do
     dest_file_path = dest_dir_path <> "/" <> file_name
     open(source_filepath) |> resize("32x32") |> save(path: dest_file_path)

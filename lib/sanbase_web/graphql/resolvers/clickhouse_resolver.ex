@@ -116,7 +116,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   def mining_pools_distribution(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval},
+        %{slug: slug = "ethereum", from: from, to: to, interval: interval},
         _resolution
       ) do
     case MiningPoolsDistribution.distribution(slug, from, to, interval) do
@@ -130,9 +130,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     end
   end
 
+  def mining_pools_distribution(
+        _root,
+        %{slug: slug, from: _from, to: _to, interval: _interval},
+        _resolution
+      ) do
+    log_graphql_error(
+      "Can't fetch Mining Pools Distribution for project with slug: #{slug}",
+      "Currently only ethereum is supported."
+    )
+
+    {:error,
+     "Can't fetch Mining Pools Distribution for project with slug: #{slug}. Currently only ethereum is supported."}
+  end
+
   def miners_balance(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval},
+        %{slug: slug = "ethereum", from: from, to: to, interval: interval},
         _resolution
       ) do
     with {:ok, from, to, interval} <-
@@ -154,6 +168,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         log_graphql_error(error_msg, error)
         {:error, error_msg}
     end
+  end
+
+  def miners_balance(
+        _root,
+        %{slug: slug, from: _from, to: _to, interval: _interval},
+        _resolution
+      ) do
+    log_graphql_error(
+      "Can't fetch Miners Balance for project with slug: #{slug}",
+      "Currently only ethereum is supported."
+    )
+
+    {:error,
+     "Can't fetch Miners Balance for project with slug: #{slug}. Currently only ethereum is supported."}
   end
 
   def mvrv_ratio(_root, %{slug: "bitcoin", from: from, to: to, interval: interval}, _resolution) do

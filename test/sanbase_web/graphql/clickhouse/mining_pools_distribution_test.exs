@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
   end
 
   test "works only for ethereum", context do
-    error = "Currently only ethereum is supported!"
+    error = "Currently only ethereum is supported."
 
     with_mock MiningPoolsDistribution,
       distribution: fn _, _, _, _ -> {:error, error} end do
@@ -32,7 +32,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
                result = parse_response(response)
                assert result == nil
              end) =~
-               graphql_error_msg("Mining Pools Distribution", error)
+               graphql_error_msg("Mining Pools Distribution", "unsupported", error)
     end
   end
 

@@ -104,6 +104,20 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalance.MinersBalanceTest do
     end
   end
 
+  test "returns error when something except ethereum is requested", context do
+    error = "Currently only ethereum is supported."
+
+    with_mock MinersBalance,
+      historical_balance: fn _, _, _, _ -> {:error, error} end do
+      assert capture_log(fn ->
+               response = execute_query("unsupported", context)
+               result = parse_response(response)
+               assert result == nil
+             end) =~
+               graphql_error_msg("Miners Balance", "unsupported", error)
+    end
+  end
+
   defp parse_response(response) do
     json_response(response, 200)["data"]["minersBalance"]
   end

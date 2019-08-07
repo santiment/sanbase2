@@ -7,10 +7,11 @@ defmodule Sanbase.Billing.QueryAccessMetaFieldTest do
       assert Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_without_access_level() == []
     end
 
-    test "free queries" do
+    test "free queries defined in the schema" do
       free_queries =
         Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_access_level(:free)
         |> Enum.sort()
+        |> Enum.filter(&is_atom/1)
 
       expected_free_queries =
         [
@@ -76,16 +77,46 @@ defmodule Sanbase.Billing.QueryAccessMetaFieldTest do
           :user_list,
           :dev_activity,
           :watchlist,
-          :watchlist_by_slug
+          :watchlist_by_slug,
+          :get_available_metrics,
+          :get_available_slugs,
+          :get_metric
         ]
         |> Enum.sort()
 
       assert free_queries == expected_free_queries
     end
 
-    test "restricted queries" do
+    test "free clickhouse v2 queries" do
+      free_queries =
+        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_access_level(:free)
+        |> Enum.sort()
+        |> Enum.reject(&is_atom/1)
+        |> Enum.map(&elem(&1, 1))
+        |> IO.inspect(label: "96", limit: :infinity)
+
+      expected_free_queries =
+        [
+          "average_price",
+          "daily_active_addresses",
+          "daily_avg_marketcap_usd",
+          "daily_avg_price_usd",
+          "daily_closing_marketcap_usd",
+          "daily_closing_price_usd",
+          "daily_high_price_usd",
+          "daily_low_price_usd",
+          "daily_opening_price_usd",
+          "daily_trading_volume_usd"
+        ]
+        |> Enum.sort()
+
+      assert free_queries == expected_free_queries
+    end
+
+    test "restricted queries defined in the schema" do
       basic_queries =
         Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_access_level(:restricted)
+        |> Enum.filter(&is_atom/1)
         |> Enum.sort()
 
       expected_basic_queries =
@@ -124,7 +155,84 @@ defmodule Sanbase.Billing.QueryAccessMetaFieldTest do
       assert basic_queries == expected_basic_queries
     end
 
-    test "forbidden queries" do
+    test "restricted clickhouse v2 queries" do
+      restricted_queries =
+        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_access_level(:restricted)
+        |> Enum.sort()
+        |> Enum.reject(&is_atom/1)
+        |> Enum.map(&elem(&1, 1))
+
+      expected_restricted_queries =
+        [
+          "daily_stack_circulation",
+          "exchange_balance",
+          "exchange_inflow",
+          "exchange_outflow",
+          "mean_realized_price_usd_10y",
+          "mean_realized_price_usd_180d",
+          "mean_realized_price_usd_1d",
+          "mean_realized_price_usd_20y",
+          "mean_realized_price_usd_2y",
+          "mean_realized_price_usd_30d",
+          "mean_realized_price_usd_365d",
+          "mean_realized_price_usd_3y",
+          "mean_realized_price_usd_5y",
+          "mean_realized_price_usd_60d",
+          "mean_realized_price_usd_7d",
+          "mean_realized_price_usd_90d",
+          "mvrv_usd_10y",
+          "mvrv_usd_180d",
+          "mvrv_usd_1d",
+          "mvrv_usd_20y",
+          "mvrv_usd_2y",
+          "mvrv_usd_30d",
+          "mvrv_usd_365d",
+          "mvrv_usd_3y",
+          "mvrv_usd_5y",
+          "mvrv_usd_60d",
+          "mvrv_usd_7d",
+          "mvrv_usd_90d",
+          "stack_age_consumed",
+          "stack_age_consumed_5min",
+          "stack_circulation_10y",
+          "stack_circulation_180d",
+          "stack_circulation_1d",
+          "stack_circulation_20y",
+          "stack_circulation_2y",
+          "stack_circulation_30d",
+          "stack_circulation_365d",
+          "stack_circulation_3y",
+          "stack_circulation_5y",
+          "stack_circulation_60d",
+          "stack_circulation_7d",
+          "stack_circulation_90d",
+          "stack_cumulative_age_consumed",
+          "stack_liveliness",
+          "stack_mean_age_days",
+          "stack_realized_cap_usd",
+          "stack_realized_cap_usd_10y",
+          "stack_realized_cap_usd_180d",
+          "stack_realized_cap_usd_1d",
+          "stack_realized_cap_usd_20y",
+          "stack_realized_cap_usd_2y",
+          "stack_realized_cap_usd_30d",
+          "stack_realized_cap_usd_365d",
+          "stack_realized_cap_usd_3y",
+          "stack_realized_cap_usd_5y",
+          "stack_realized_cap_usd_60d",
+          "stack_realized_cap_usd_7d",
+          "stack_realized_cap_usd_90d",
+          "stack_total_age",
+          "token_velocity",
+          "transaction_volume",
+          "transaction_volume_5min"
+        ]
+        |> Enum.sort()
+
+      assert restricted_queries == expected_restricted_queries
+    end
+
+    test "forbidden queries from the schema" do
       # Forbidden queries are acessible only by basic authorization
       pro_queries =
         Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_access_level(:forbidden)
@@ -135,6 +243,20 @@ defmodule Sanbase.Billing.QueryAccessMetaFieldTest do
         |> Enum.sort()
 
       assert pro_queries == expected_pro_queries
+    end
+
+    test "forbidden clickhouse v2 queries" do
+      forbidden_queries =
+        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_access_level(:forbidden)
+        |> Enum.sort()
+        |> Enum.reject(&is_atom/1)
+        |> Enum.map(&elem(&1, 1))
+
+      expected_forbidden_queries =
+        []
+        |> Enum.sort()
+
+      assert forbidden_queries == expected_forbidden_queries
     end
   end
 end

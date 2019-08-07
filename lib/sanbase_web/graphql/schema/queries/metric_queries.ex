@@ -10,7 +10,7 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
     Return data for a given metric.
     """
     field :get_metric, list_of(:metric) do
-      meta(access: :restricted)
+      meta(access: :free)
       arg(:metric, non_null(:string))
       cache_resolve(&MetricResolver.get_metric/3)
     end

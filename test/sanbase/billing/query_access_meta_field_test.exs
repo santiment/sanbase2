@@ -1,7 +1,7 @@
-defmodule Sanbase.Billing.SubscriptionMetaFieldTest do
+defmodule Sanbase.Billing.QueryAccessMetaFieldTest do
   use ExUnit.Case, async: true
 
-  # Assert that a query's subscription plan does not change incidentally
+  # Assert that a query's access level does not change incidentally
   describe "subscription meta" do
     test "there are no queries without defined subscription" do
       assert Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_without_access_level() == []
@@ -125,6 +125,7 @@ defmodule Sanbase.Billing.SubscriptionMetaFieldTest do
     end
 
     test "forbidden queries" do
+      # Forbidden queries are acessible only by basic authorization
       pro_queries =
         Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_access_level(:forbidden)
         |> Enum.sort()

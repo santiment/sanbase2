@@ -12,7 +12,7 @@ defmodule SanbaseWeb.Graphql.Schema.GithubQueries do
   object :github_queries do
     @desc "Returns a list of slugs of the projects that have a github link"
     field :github_availables_repos, list_of(:string) do
-      meta(subscription: :free)
+      meta(access: :free)
       cache_resolve(&GithubResolver.available_repos/3)
     end
 
@@ -29,7 +29,7 @@ defmodule SanbaseWeb.Graphql.Schema.GithubQueries do
         It is used to calculate the moving avarage interval.
     """
     field :github_activity, list_of(:activity_point) do
-      meta(subscription: :free)
+      meta(access: :free)
 
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
@@ -48,7 +48,7 @@ defmodule SanbaseWeb.Graphql.Schema.GithubQueries do
     excluding Comments, Issues and PR Comments
     """
     field :dev_activity, list_of(:activity_point) do
-      meta(subscription: :free)
+      meta(access: :free)
 
       arg(:slug, :string)
       arg(:from, non_null(:datetime))

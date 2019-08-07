@@ -9,7 +9,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   The subscription plan needed for a given query is given in the query definition
     ```
     field :network_growth, list_of(:network_growth) do
-        meta(subscription: :basic)
+        meta(access: :restricted)
         ...
     end
     ```
@@ -51,23 +51,21 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
 
     @query_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :query)
     @fields @query_type.fields |> Map.keys()
-    def get_metrics_with_subscription_plan(plan) do
+    def get_metrics_with_access_level(level) do
       Enum.filter(@fields, fn f ->
-        Map.get(@query_type.fields, f) |> Absinthe.Type.meta(:subscription) == plan
+        Map.get(@query_type.fields, f) |> Absinthe.Type.meta(:access) == level
       end)
     end
 
-    def queries_without_subsciption_plan() do
-      get_metrics_with_subscription_plan(nil) -- [:__typename, :__type, :__schema]
+    def get_metrics_without_access_level() do
+      get_metrics_with_access_level(nil) -- [:__typename, :__type, :__schema]
     end
 
-    def mutations_mapset() do
-      @mutations_mapset
-    end
+    def mutations_mapset(), do: @mutations_mapset
   end
 
   # Raise an error if there is any query without subscription plan
-  case Helper.queries_without_subsciption_plan() do
+  case Helper.get_metrics_without_access_level() do
     [] ->
       :ok
 
@@ -75,61 +73,55 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
       require Sanbase.Break, as: Break
 
       Break.break("""
-      There are GraphQL queries defined without specifying their subscription plan.
-      Subscription plan belonging is marked by the `meta` field inside the query
-      definition. Example: `meta(subscription: :pro)`
+      There are GraphQL queries defined without specifying their access level.
+      The access level could be either `free` or `restricted`.
 
       Queries without subscription plan: #{inspect(queries)}
       """)
   end
 
-  @custom_access_queries_stats CustomAccess.get()
-  @custom_access_queries @custom_access_queries_stats |> Map.keys() |> Enum.sort()
-
-  # Raise an error if there are queries with custom access logic
-  # but the meta field `subscription` is not correct
-  custom_access_meta = Helper.get_metrics_with_subscription_plan(:custom_access) |> Enum.sort()
-
-  if @custom_access_queries != custom_access_meta do
-    require Sanbase.Break, as: Break
-
-    Break.break("""
-    The list of GraphQL queries with special access defined in the CustomAccess
-    module and with subscription meta field `:custom_access` is not the same.
-
-    Queries defined in the CustomAccess module but do not have the `:custom_access`
-    meta field: #{inspect(@custom_access_queries -- custom_access_meta)}.
-
-    Queries defined with the `:custom_access` meta field but not present in the
-    CustomAccess module: #{inspect(custom_access_meta -- @custom_access_queries)}.
-    """)
-  end
-
-  @free_metrics Helper.get_metrics_with_subscription_plan(:free)
+  @free_metrics Helper.get_metrics_with_access_level(:free)
   @free_metrics_mapset MapSet.new(@free_metrics)
   def free_metrics_mapset(), do: @free_metrics_mapset
 
-  @basic_metrics @free_metrics ++ Helper.get_metrics_with_subscription_plan(:basic)
-  @basic_metrics_mapset MapSet.new(@basic_metrics)
-  def basic_metrics_mapset(), do: @basic_metrics_mapset
+  @restricted_metrics Helper.get_metrics_with_access_level(:restricted)
+  @restricted_metrics_mapset MapSet.new(@restricted_metrics)
+  def restricted_metrics_mapset(), do: @restricted_metrics_mapset
 
-  @pro_metrics @basic_metrics ++ Helper.get_metrics_with_subscription_plan(:pro)
-  @pro_metrics_mapset MapSet.new(@pro_metrics)
-  def pro_metrics_mapset(), do: @pro_metrics_mapset
+  @all_metrics @free_metrics ++ @restricted_metrics
+  def all_metrics, do: @all_metrics
 
-  @premium_metrics @pro_metrics ++ Helper.get_metrics_with_subscription_plan(:premium)
-  @premium_metrics_mapset MapSet.new(@premium_metrics)
-  def premium_metrics_mapset(), do: @premium_metrics_mapset
+  @custom_access_queries_stats CustomAccess.get()
+  @custom_access_queries @custom_access_queries_stats |> Map.keys() |> Enum.sort()
 
-  def all_metrics, do: @premium_metrics
+  # Raise an error if there are queries with custom access logic that are marked
+  # as free. If there are such queries the access restriction logic will never
+  # be applied
+
+  case @custom_access_queries -- @restricted_metrics do
+    [] ->
+      :ok
+
+    queries ->
+      require Sanbase.Break, as: Break
+
+      Break.break("""
+      There are queries with access level `:free` that are defined in the
+      CustomAccess module. These queries custom access logic will never be
+      executed.
+
+      Queries defined in the CustomAccess module but do not have the `:restricted`
+      access level field: #{inspect(queries)}.
+
+      """)
+  end
 
   @doc ~s"""
   Check if a query full access is given only to users with a plan higher than free.
   A query can be restricted but still accessible by not-paid users or users with
   lower plans. In this case historical and/or realtime data access can be cut off
   """
-  def is_restricted?(query) when query in @custom_access_queries, do: true
-  def is_restricted?(query), do: not (query in @free_metrics_mapset)
+  def is_restricted?(query), do: query in @restricted_metrics_mapset
 
   def custom_access_queries_stats, do: @custom_access_queries_stats
   def custom_access_queries, do: @custom_access_queries

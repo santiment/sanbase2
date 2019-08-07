@@ -28,11 +28,6 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
 
   @enterprise_plan_stats @pro_plan_stats
 
-  def free(), do: @free_plan_stats
-  def basic(), do: @basic_plan_stats
-  def pro(), do: @pro_plan_stats
-  def enterprise(), do: @enterprise_plan_stats
-
   def historical_data_in_days(plan, _query) do
     case plan do
       :free -> @free_plan_stats[:historical_data_in_days]

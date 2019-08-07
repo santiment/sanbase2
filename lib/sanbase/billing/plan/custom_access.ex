@@ -13,7 +13,6 @@ defmodule Sanbase.Billing.Plan.CustomAccess do
 
   The following keys must be present:
   - metric name
-  - plan_full_access - the lowest plan providing full access
   - plan_access - a map where the key is a plan name and the value is a map with
     the `historical_data_in_days` and/or `realtime_data_cut_off_in_days` keys.
     If a plan is missing it means that it has no restrictions. If a field in a plan
@@ -24,7 +23,6 @@ defmodule Sanbase.Billing.Plan.CustomAccess do
 
   @metric %{
     metric_name: [:mvrv_ratio, :realized_value],
-    plan_full_access: :pro,
     plan_access: %{
       free: %{realtime_data_cut_off_in_days: 30, historical_data_in_days: 365},
       basic: %{realtime_data_cut_off_in_days: 14, historical_data_in_days: 2 * 365}
@@ -33,7 +31,6 @@ defmodule Sanbase.Billing.Plan.CustomAccess do
 
   @metric %{
     metric_name: [:token_age_consumed, :burn_rate],
-    plan_full_access: :basic,
     plan_access: %{
       free: %{realtime_data_cut_off_in_days: 30}
     }

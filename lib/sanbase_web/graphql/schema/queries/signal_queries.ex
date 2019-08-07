@@ -16,7 +16,7 @@ defmodule SanbaseWeb.Graphql.Schema.SignalQueries do
   object :signal_queries do
     @desc "Get signal trigger by its id"
     field :get_trigger_by_id, :user_trigger do
-      meta(subscription: :free)
+      meta(access: :free)
 
       arg(:id, non_null(:integer))
 
@@ -25,7 +25,7 @@ defmodule SanbaseWeb.Graphql.Schema.SignalQueries do
 
     @desc "Get public signal triggers by user_id"
     field :public_triggers_for_user, list_of(:user_trigger) do
-      meta(subscription: :free)
+      meta(access: :free)
 
       arg(:user_id, non_null(:id))
 
@@ -34,14 +34,14 @@ defmodule SanbaseWeb.Graphql.Schema.SignalQueries do
 
     @desc "Get all public signal triggers"
     field :all_public_triggers, list_of(:user_trigger) do
-      meta(subscription: :free)
+      meta(access: :free)
 
       resolve(&UserTriggerResolver.all_public_triggers/3)
     end
 
     @desc "Get historical trigger points"
     field :historical_trigger_points, list_of(:json) do
-      meta(subscription: :free)
+      meta(access: :free)
 
       arg(:cooldown, :string)
       arg(:settings, non_null(:json))
@@ -57,7 +57,7 @@ defmodule SanbaseWeb.Graphql.Schema.SignalQueries do
     * `limit` argument defines the size of the page. Default value is 25
     """
     field :signals_historical_activity, :signal_historical_activity_paginated do
-      meta(subscription: :free)
+      meta(access: :free)
 
       arg(:cursor, :cursor_input)
       arg(:limit, :integer, default_value: 25)

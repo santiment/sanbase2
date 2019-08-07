@@ -491,7 +491,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
           plan {
             id
             name
-            access
             product {
               name
             }
@@ -509,7 +508,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
         name
         plans {
           name
-          access
         }
       }
     }
@@ -525,7 +523,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
         plan {
           id
           name
-          access
           interval
           amount
           product {
@@ -544,7 +541,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
         plan {
           id
           name
-          access
           interval
           amount
           product {

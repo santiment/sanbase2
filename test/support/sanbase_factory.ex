@@ -218,19 +218,19 @@ defmodule Sanbase.Factory do
   end
 
   def product_api_factory() do
-    %Product{id: 1, name: "SANapi"}
+    %Product{id: 1, name: "Neuro by Santiment"}
   end
 
   def product_sanbase_factory() do
-    %Product{id: 2, name: "SANBase"}
+    %Product{id: 2, name: "Sanabse by Santiment"}
   end
 
   def product_sheets_factory() do
-    %Product{id: 3, name: "SANSheets"}
+    %Product{id: 3, name: "Sheets by Santiment"}
   end
 
   def product_graphs_factory() do
-    %Product{id: 4, name: "SANGraphs"}
+    %Product{id: 4, name: "Graphs by Santiment"}
   end
 
   def plan_free_factory() do

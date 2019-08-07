@@ -33,7 +33,7 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
     [user: user, conn: conn, project: project]
   end
 
-  describe "SANSheets product, No subscription" do
+  describe "SANsheets product, No subscription" do
     test "can access FREE metrics for all time", context do
       from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
@@ -107,7 +107,7 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
     end
   end
 
-  describe "SANSheets product, user with BASIC plan" do
+  describe "SANsheets product, user with BASIC plan" do
     test "can access FREE metrics for all time", context do
       insert(:subscription_basic_sheets, user: context.user)
 
@@ -168,7 +168,7 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
     end
   end
 
-  describe "SANSheets product, user with PRO plan" do
+  describe "SANsheets product, user with PRO plan" do
     test "can access FREE metrics for all time", context do
       insert(:subscription_pro_sheets, user: context.user)
 

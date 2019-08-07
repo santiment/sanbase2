@@ -1,6 +1,6 @@
 defmodule Sanbase.Billing.Plan.SansheetsAccessChecker do
   @moduledoc ~s"""
-  Implement the restrictions for the SANSheets product
+  Implement the restrictions for the SANsheets product
   """
 
   @free_plan_stats %{

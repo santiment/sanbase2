@@ -11,9 +11,9 @@ defmodule Sanbase.Clickhouse.Metric do
   use Ecto.Schema
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
-  # The metrics that are available are described in a json file
-  @external_resource availalbe_metrics_file = Path.join(__DIR__, "available_v2_metrics.json")
-  @metrics_json File.read!(availalbe_metrics_file) |> Jason.decode!()
+  # The metrics that are available are described in a JSON file
+  @external_resource available_metrics_file = Path.join(__DIR__, "available_v2_metrics.json")
+  @metrics_json File.read!(available_metrics_file) |> Jason.decode!()
   @metrics_list @metrics_json |> Enum.map(fn %{"metric" => metric} -> metric end)
   @metrics_mapset MapSet.new(@metrics_list)
 

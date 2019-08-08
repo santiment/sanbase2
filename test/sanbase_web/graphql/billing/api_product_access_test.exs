@@ -2,6 +2,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
   use SanbaseWeb.ConnCase
 
   import Sanbase.Factory
+  import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
   import Mock
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
@@ -9,7 +10,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
   alias Sanbase.Auth.Apikey
   alias Sanbase.Clickhouse.Metric
 
-  setup_with_mocks([
+  setup_all_with_mocks([
     {Sanbase.Prices.Store, [], [fetch_prices_with_resolution: fn _, _, _, _ -> price_resp() end]},
     {Sanbase.Clickhouse.MVRV, [], [mvrv_ratio: fn _, _, _, _ -> mvrv_resp() end]},
     {Sanbase.Clickhouse.DailyActiveDeposits, [],
@@ -18,6 +19,10 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
      [network_growth: fn _, _, _, _ -> network_growth_resp() end]},
     {Metric, [:passthrough], [get: fn _, _, _, _, _, _ -> metric_resp() end]}
   ]) do
+    :ok
+  end
+
+  setup do
     user = insert(:user)
     project = insert(:random_project)
 

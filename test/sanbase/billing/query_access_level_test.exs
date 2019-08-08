@@ -93,7 +93,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         |> Enum.sort()
         |> Enum.reject(&is_atom/1)
         |> Enum.map(&elem(&1, 1))
-        |> IO.inspect(label: "96", limit: :infinity)
 
       expected_free_queries =
         [

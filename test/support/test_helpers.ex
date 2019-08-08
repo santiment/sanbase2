@@ -1,4 +1,18 @@
 defmodule Sanbase.TestHelpers do
+  defmacro setup_all_with_mocks(mocks, do: setup_block) do
+    quote do
+      setup_all do
+        require Mock
+        Mock.mock_modules(unquote(mocks))
+
+        # The mocks are linked to the process that setup all the tests and are
+        # automatically unloaded when that process shuts down
+
+        unquote(setup_block)
+      end
+    end
+  end
+
   defmacro supress_test_console_logging() do
     quote do
       Logger.remove_backend(:console)

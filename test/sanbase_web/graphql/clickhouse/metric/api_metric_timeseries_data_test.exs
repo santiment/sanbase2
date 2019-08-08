@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.Clickhouse.MetricTimeseriesDataTest do
+defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricTimeseriesDataTest do
   use SanbaseWeb.ConnCase, async: false
 
   import SanbaseWeb.Graphql.TestHelpers
@@ -150,7 +150,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MetricTimeseriesDataTest do
   end
 
   defp extract_timeseries_data(result) do
-    %{"data" => %{"getMetric" => [%{"timeseriesData" => timeseries_data}]}} = result
+    %{"data" => %{"getMetric" => %{"timeseriesData" => timeseries_data}}} = result
     timeseries_data
   end
 

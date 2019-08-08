@@ -35,7 +35,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       cache_resolve(&MetricResolver.get_timeseries_data/3)
     end
 
-    field :metadata, list_of(:metadata) do
+    field :metadata, :metadata do
       cache_resolve(&MetricResolver.get_metadata/3)
     end
   end

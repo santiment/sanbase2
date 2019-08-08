@@ -90,6 +90,16 @@ defmodule Sanbase.Clickhouse.Metric do
     end
   end
 
+  def metadata(metric) do
+    case metric in @metrics_mapset do
+      false ->
+        metric_not_available_error(metric)
+
+      true ->
+        get_metadata(metric)
+    end
+  end
+
   @spec available_metrics() :: {:ok, list(String.t())}
   def available_metrics(), do: {:ok, @metrics_list}
 
@@ -108,6 +118,27 @@ defmodule Sanbase.Clickhouse.Metric do
     case close do
       nil -> {:error, error_msg}
       close -> {:error, error_msg <> " Did you mean '#{close}'?"}
+    end
+  end
+
+  defp get_metadata(metric) do
+    min_interval = min_interval(metric)
+    default_aggregation = Map.get(@metric_aggregation_map, metric)
+
+    {:ok,
+     %{
+       min_interval: min_interval,
+       default_aggregation: default_aggregation
+     }}
+  end
+
+  defp min_interval("exchange_" <> _), do: "5m"
+
+  defp min_interval(metric) do
+    if String.ends_with?(metric, "5min") do
+      "5m"
+    else
+      "1d"
     end
   end
 

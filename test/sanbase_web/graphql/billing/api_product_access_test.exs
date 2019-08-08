@@ -124,9 +124,12 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
   end
 
   describe "SANApi product, user with BASIC plan" do
-    test "can access FREE v2 clickhouse metrics for all time", context do
+    setup context do
       insert(:subscription_essential, user: context.user)
+      :ok
+    end
 
+    test "can access FREE v2 clickhouse metrics for all time", context do
       from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       metric = v2_free_metric()
@@ -137,8 +140,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "can access RESTRICTED v2 clickhouse metrics for less than 180 days", context do
-      insert(:subscription_essential, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -179)
       to = Timex.shift(Timex.now(), days: -170)
       metric = v2_restricted_metric()
@@ -150,8 +151,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "cannot access RESTRICTED v2 clickhouse metrics for over 180 days", context do
-      insert(:subscription_essential, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -181)
       to = Timex.shift(Timex.now(), days: -179)
       metric = v2_restricted_metric()
@@ -164,8 +163,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "can access RESTRICTED v2 clickhouse metrics realtime", context do
-      insert(:subscription_essential, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -10)
       to = Timex.now()
       metric = v2_restricted_metric()
@@ -177,8 +174,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "can access FREE metrics for all time", context do
-      insert(:subscription_essential, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       query = history_price_query(context.project, from, to)
@@ -189,8 +184,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "cannot access BASIC metrics for more than 180 days", context do
-      insert(:subscription_essential, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -181)
       to = Timex.shift(Timex.now(), days: -3)
       query = network_growth_query(from, to)
@@ -201,8 +194,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "can access BASIC metrics for less than 180 days", context do
-      insert(:subscription_essential, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -179)
       to = Timex.shift(Timex.now(), days: -3)
       query = network_growth_query(from, to)
@@ -213,8 +204,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "can access BASIC metrics realtime", context do
-      insert(:subscription_essential, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -10)
       to = Timex.now()
       query = network_growth_query(from, to)
@@ -225,8 +214,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "can access PRO metrics", context do
-      insert(:subscription_essential, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -91)
       to = Timex.now()
       query = daily_active_deposits_query(from, to)
@@ -237,9 +224,12 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
   end
 
   describe "SANApi product, user with PRO plan" do
-    test "can access FREE v2 clickhouse metrics for all time", context do
-      insert(:subscription_essential, user: context.user)
+    setup context do
+      insert(:subscription_pro, user: context.user)
+      :ok
+    end
 
+    test "can access FREE v2 clickhouse metrics for all time", context do
       from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       metric = v2_free_metric()
@@ -250,8 +240,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "can access RESTRICTED v2 clickhouse metrics for less than 18 months", context do
-      insert(:subscription_pro, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -(18 * 30 - 1))
       to = Timex.shift(Timex.now(), days: -(18 * 30 - 2))
       metric = v2_restricted_metric()
@@ -263,8 +251,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "cannot access RESTRICTED v2 clickhouse metrics for over 18 months", context do
-      insert(:subscription_pro, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -(18 * 30 + 1))
       to = Timex.shift(Timex.now(), days: -(18 * 30 - 1))
       metric = v2_restricted_metric()
@@ -277,8 +263,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "can access RESTRICTED v2 clickhouse metrics realtime", context do
-      insert(:subscription_pro, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -10)
       to = Timex.now()
       metric = v2_restricted_metric()
@@ -290,8 +274,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "can access FREE metrics for all time", context do
-      insert(:subscription_pro, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       query = history_price_query(context.project, from, to)
@@ -302,8 +284,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "cannot access BASIC metrics for more than 18 months", context do
-      insert(:subscription_pro, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -(18 * 30 + 1))
       to = Timex.now()
       query = network_growth_query(from, to)
@@ -314,8 +294,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "can access BASIC metrics for less than 18 months", context do
-      insert(:subscription_pro, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -(18 * 30 - 1))
       to = Timex.now()
       query = network_growth_query(from, to)
@@ -326,8 +304,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "cannot access PRO metrics for more than 18 months", context do
-      insert(:subscription_pro, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -(18 * 30 + 1))
       to = Timex.now()
       query = daily_active_deposits_query(from, to)
@@ -338,8 +314,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "can access PRO metrics for less than 18 months", context do
-      insert(:subscription_pro, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -(18 * 30 - 1))
       to = Timex.now()
       query = daily_active_deposits_query(from, to)
@@ -351,9 +325,12 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
   end
 
   describe "SANApi product, user with PREMIUM plan" do
-    test "can access FREE v2 clickhouse metrics for all time", context do
+    setup context do
       insert(:subscription_premium, user: context.user)
+      :ok
+    end
 
+    test "can access FREE v2 clickhouse metrics for all time", context do
       from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       metric = v2_free_metric()
@@ -364,8 +341,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "can access RESTRICTED v2 clickhouse metrics for all time", context do
-      insert(:subscription_premium, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       metric = v2_restricted_metric()
@@ -376,8 +351,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "can access FREE metrics for all time", context do
-      insert(:subscription_premium, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       query = history_price_query(context.project, from, to)
@@ -388,8 +361,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "can access BASIC metrics for all time", context do
-      insert(:subscription_premium, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       query = network_growth_query(from, to)
@@ -400,8 +371,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "can access PRO metrics for all time", context do
-      insert(:subscription_premium, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       query = daily_active_deposits_query(from, to)
@@ -411,6 +380,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
   end
+
+  # Private functions
 
   defp metric_query(metric, from, to) do
     """

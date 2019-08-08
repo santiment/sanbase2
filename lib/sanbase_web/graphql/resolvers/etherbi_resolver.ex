@@ -230,6 +230,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     end
   end
 
+  def all_exchange_wallets(_root, _args, _resolution) do
+    {:ok, ExchangeAddress.all_exchange_wallets()}
+  end
+
   def exchange_wallets(_root, %{slug: "ethereum"}, _resolution) do
     {:ok, ExchangeAddress.exchange_wallets_by_infrastructure(Infrastructure.get("ETH"))}
   end

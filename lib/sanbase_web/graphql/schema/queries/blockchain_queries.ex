@@ -350,7 +350,17 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       cache_resolve(&ClickhouseResolver.share_of_deposits/3)
     end
 
-    @desc "Fetch a list of all exchange wallets. This query requires basic authentication."
+    field :all_exchange_wallets, list_of(:wallet) do
+      meta(access: :forbidden)
+
+      middleware(BasicAuth)
+      cache_resolve(&EtherbiResolver.all_exchange_wallets/3)
+    end
+
+    @desc """
+    Fetch a list of all exchange wallets on a given blockchain.
+    This query requires basic authentication.
+    """
     field :exchange_wallets, list_of(:wallet) do
       meta(access: :forbidden)
 

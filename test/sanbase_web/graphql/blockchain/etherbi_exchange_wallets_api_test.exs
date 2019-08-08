@@ -61,6 +61,9 @@ defmodule Sanbase.Etherbi.ExchangeWalletsApiTest do
       exchangeWallets{
         address
         name
+        infrastructure{
+          code
+        }
       }
     }
     """
@@ -71,7 +74,47 @@ defmodule Sanbase.Etherbi.ExchangeWalletsApiTest do
 
     exchange_wallets = json_response(result, 200)["data"]["exchangeWallets"]
 
-    assert %{"name" => "Binance", "address" => "0x12345"} in exchange_wallets
-    assert %{"name" => "Kraken", "address" => "0x54321"} in exchange_wallets
+    assert %{"name" => "Binance", "address" => "0x12345", "infrastructure" => %{"code" => "ETH"}} in exchange_wallets
+
+    assert %{"name" => "Kraken", "address" => "0x54321", "infrastructure" => %{"code" => "ETH"}} in exchange_wallets
+  end
+
+  test "returning a list of all wallets from the DB", context do
+    infr_eth = insert(:infrastructure, %{code: "ETH"})
+    infr_xrp = insert(:infrastructure, %{code: "XRP"})
+
+    insert(:exchange_address, %{
+      address: "0x12345",
+      name: "Binance",
+      infrastructure_id: infr_eth.id
+    })
+
+    insert(:exchange_address, %{
+      address: "0x54321",
+      name: "Kraken",
+      infrastructure_id: infr_xrp.id
+    })
+
+    query = """
+    {
+      allExchangeWallets{
+        address
+        name
+        infrastructure{
+          code
+        }
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "allExchangeWallets"))
+
+    exchange_wallets = json_response(result, 200)["data"]["allExchangeWallets"]
+
+    assert %{"name" => "Binance", "address" => "0x12345", "infrastructure" => %{"code" => "ETH"}} in exchange_wallets
+
+    assert %{"name" => "Kraken", "address" => "0x54321", "infrastructure" => %{"code" => "XRP"}} in exchange_wallets
   end
 end

@@ -47,12 +47,18 @@ defmodule Sanbase.Model.ExchangeAddress do
 
   def exchange_names_by_infrastructure(_), do: []
 
+  def all_exchange_wallets() do
+    from(e in __MODULE__, preload: [:infrastructure], limit: 10_000)
+    |> Repo.all()
+  end
+
   @doc ~s"List all exchange wallets"
   @spec exchange_wallets_by_infrastructure(%Infrastructure{}) :: list(String.t())
   def exchange_wallets_by_infrastructure(%Infrastructure{} = infr) do
     from(e in __MODULE__,
       where: e.infrastructure_id == ^infr.id,
-      limit: 5000
+      limit: 10_000,
+      preload: [:infrastructure]
     )
     |> Repo.all()
   end

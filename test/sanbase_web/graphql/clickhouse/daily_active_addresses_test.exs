@@ -157,6 +157,28 @@ defmodule SanbaseWeb.Graphql.Clickhouse.DailyActiveAddressesTest do
       end
     end
 
+    test "propagates message to the user", context do
+      error = "Some error description here"
+
+      error_msg =
+        "Can't fetch Daily Active Addresses for project with slug: santiment, Reason: \"" <>
+          error <> "\"\n"
+
+      with_mock DailyActiveAddresses,
+                [:passthrough],
+                average_active_addresses: fn _, _, _, _ ->
+                  {:error, error_msg}
+                end do
+        assert DailyActiveAddresses.average_active_addresses(
+                 context.token_slug,
+                 context.from,
+                 context.to,
+                 context.interval
+               ) ==
+                 {:error, graphql_error_msg("Daily Active Addresses", context.token_slug, error)}
+      end
+    end
+
     test "works with empty interval for erc20 tokens", context do
       with_mocks([
         {DailyActiveAddresses, [:passthrough],

@@ -9,7 +9,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   import Sanbase.Utils.ErrorHandling,
-    only: [log_graphql_error: 2, graphql_error_msg: 1, graphql_error_msg: 2, graphql_error_msg: 3]
+    only: [handle_graphql_error: 3, handle_graphql_error: 4]
 
   alias Sanbase.Clickhouse.HistoricalBalance.MinersBalance
 
@@ -60,9 +60,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       {:ok, percent_of_total_supply}
     else
       {:error, error} ->
-        error_msg = graphql_error_msg("Top Holders - percent of total supply", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error, handle_graphql_error("Top Holders - percent of total supply", slug, error)}
     end
   end
 
@@ -76,9 +74,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:ok, gas_used}
 
       {:error, error} ->
-        error_msg = graphql_error_msg("Gas Used", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error, handle_graphql_error("Gas Used", slug, error)}
     end
   end
 
@@ -89,9 +85,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       {:ok, network_growth}
     else
       {:error, error} ->
-        error_msg = graphql_error_msg("Network Growth", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error, handle_graphql_error("Network Growth", slug, error)}
     end
   end
 
@@ -105,9 +99,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:ok, distribution}
 
       {:error, error} ->
-        error_msg = graphql_error_msg("Mining Pools Distribution")
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error, handle_graphql_error("Mining Pools Distribution", slug, error)}
     end
   end
 
@@ -131,9 +123,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       {:ok, balance}
     else
       {:error, error} ->
-        error_msg = graphql_error_msg("Miners Balance", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error, handle_graphql_error("Miners Balance", slug, error)}
     end
   end
 
@@ -150,9 +140,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       {:ok, mvrv_ratio}
     else
       {:error, error} ->
-        error_msg = graphql_error_msg("MVRV Ratio", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error, handle_graphql_error("MVRV Ratio", slug, error)}
     end
   end
 
@@ -184,9 +172,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       {:ok, token_circulation |> fit_from_datetime(args)}
     else
       {:error, error} ->
-        error_msg = graphql_error_msg("Token Circulation", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error, handle_graphql_error("Token Circulation", slug, error)}
     end
   end
 
@@ -204,9 +190,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       {:ok, token_velocity |> fit_from_datetime(args)}
     else
       {:error, error} ->
-        error_msg = graphql_error_msg("Token Velocity", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error, handle_graphql_error("Token Velocity", slug, error)}
     end
   end
 
@@ -239,9 +223,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:error, error_msg}
 
       {:error, error} ->
-        error_msg = graphql_error_msg("Daily Active Addresses", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error, handle_graphql_error("Daily Active Addresses", slug, error)}
     end
   end
 
@@ -281,8 +263,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:ok, 0}
 
       {:error, error} ->
-        error_msg = "Can't fetch average daily active addresses for #{Project.describe(project)}"
-        log_graphql_error(error_msg, error)
+        error_msg = handle_graphql_error("average daily active addresses", project, error)
         {:ok, 0}
     end
   end
@@ -308,9 +289,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       {:ok, active_deposits}
     else
       {:error, error} ->
-        error_msg = graphql_error_msg("Daily Active Deposits", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error, handle_graphql_error("Daily Active Deposits", slug, error)}
     end
   end
 
@@ -324,9 +303,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:ok, realized_value}
 
       {:error, error} ->
-        error_msg = graphql_error_msg("Realized Value", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error, handle_graphql_error("Realized Value", slug, error)}
     end
   end
 
@@ -339,9 +316,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       {:ok, nvt_ratio}
     else
       {:error, error} ->
-        error_msg = graphql_error_msg("NVT Ratio", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error, handle_graphql_error("NVT Ratio", slug, error)}
     end
   end
 
@@ -352,9 +327,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:ok, result}
 
       {:error, error} ->
-        error_msg = graphql_error_msg("Assets held by address", address, description: "address")
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error,
+         handle_graphql_error("Assets held by address", address, error, description: "address")}
     end
   end
 
@@ -368,9 +342,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:ok, result}
 
       {:error, error} ->
-        error_msg = graphql_error_msg("Historical Balances", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error, handle_graphql_error("Historical Balances", slug, error)}
     end
   end
 
@@ -384,9 +356,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:ok, percent_tokens_on_exchanges}
 
       {:error, error} ->
-        error_msg = graphql_error_msg("Percent of Token Supply on Exchanges", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error, handle_graphql_error("Percent of Token Supply on Exchanges", slug, error)}
     end
   end
 
@@ -414,9 +384,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:error, error_msg}
 
       {:error, error} ->
-        error_msg = graphql_error_msg("Share of Deposits", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error, handle_graphql_error("Share of Deposits", slug, error)}
     end
   end
 end

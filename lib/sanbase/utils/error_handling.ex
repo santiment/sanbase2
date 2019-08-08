@@ -18,18 +18,23 @@ defmodule Sanbase.Utils.ErrorHandling do
     {:error, "[#{log_id}] Error executing #{query_name}. See logs for details."}
   end
 
-  def graphql_error_msg(metric_name) do
-    "[#{Ecto.UUID.generate()}] Can't fetch #{metric_name}"
-  end
-
-  def graphql_error_msg(metric_name, identifier, opts \\ []) do
+  def handle_graphql_error(metric, slug, reason, opts \\ []) do
     description = Keyword.get(opts, :description, "project with slug")
 
-    "[#{Ecto.UUID.generate()}] Can't fetch #{metric_name} for #{description}: #{identifier}"
-  end
+    error_msg = "[#{Ecto.UUID.generate()}] Can't fetch #{metric} for #{description}: #{slug}"
 
-  def log_graphql_error(message, error) do
-    Logger.warn("#{message}" <> ", Reason: #{inspect(error)}")
+    error_msg_with_reason =
+      error_msg <>
+        """
+        , Reason: \"#{reason}\"
+        """
+
+    Logger.warn(error_msg_with_reason)
+
+    case Keyword.get(opts, :propagate_reason, true) do
+      true -> error_msg_with_reason
+      false -> error_msg
+    end
   end
 
   # Private functions

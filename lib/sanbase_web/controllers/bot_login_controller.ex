@@ -8,7 +8,6 @@ defmodule SanbaseWeb.BotLoginController do
   def index(conn, _params) do
     user = User |> Sanbase.Repo.get_by(email: User.sanbase_bot_email())
     {:ok, token, _claims} = SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt})
-    IO.inspect(token)
 
     conn
     |> resp(200, token)

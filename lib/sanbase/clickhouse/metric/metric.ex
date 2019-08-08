@@ -11,11 +11,12 @@ defmodule Sanbase.Clickhouse.Metric do
   use Ecto.Schema
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
-  # The metrics that are available are described in a JSON file
-  @external_resource available_metrics_file = Path.join(__DIR__, "available_v2_metrics.json")
+  @metrics_file "available_v2_metrics.json"
+  @external_resource available_metrics_file = Path.join(__DIR__, @metrics_file)
   @metrics_json File.read!(available_metrics_file) |> Jason.decode!()
   @metrics_list @metrics_json |> Enum.map(fn %{"metric" => metric} -> metric end)
   @metrics_mapset MapSet.new(@metrics_list)
+  @aggregations [nil, :any, :sum, :avg, :min, :max, :last, :first, :median]
 
   @metric_access_map @metrics_json
                      |> Enum.map(&{&1["metric"], &1["access"] |> String.to_existing_atom()})
@@ -30,8 +31,21 @@ defmodule Sanbase.Clickhouse.Metric do
                       |> Keyword.keys()
 
   @metric_aggregation_map @metrics_json
-                          |> Enum.map(&{&1["metric"], &1["aggregation"]})
+                          |> Enum.map(&{&1["metric"], &1["aggregation"] |> String.to_atom()})
                           |> Map.new()
+
+  case Enum.filter(@metric_aggregation_map, fn {_, aggr} -> aggr not in @aggregations end) do
+    [] ->
+      :ok
+
+    metrics ->
+      require(Sanbase.Break, as: Break)
+
+      Break.break("""
+      There are metrics defined in the #{@metrics_file} that have not supported aggregation.
+      These metrics are: #{inspect(metrics |> Enum.map(fn {m, _} -> m end))}
+      """)
+  end
 
   def free_metrics(), do: @free_metrics
   def restricted_metrics(), do: @restricted_metrics
@@ -42,7 +56,6 @@ defmodule Sanbase.Clickhouse.Metric do
   @type interval :: String.t()
   @type metric_result :: %{datetime: Datetime.t(), value: float()}
   @type aggregation :: nil | :any | :sum | :avg | :min | :max | :last | :first | :median
-  @aggregations [nil, :any, :sum, :avg, :min, :max, :last, :first, :median]
 
   schema @table do
     field(:datetime, :utc_datetime, source: :dt)
@@ -72,7 +85,7 @@ defmodule Sanbase.Clickhouse.Metric do
         metric_not_available_error(metric)
 
       true ->
-        aggregation = aggregation || Map.get(@metric_aggregation_map, metric, :last)
+        aggregation = aggregation || Map.get(@metric_aggregation_map, metric)
         get_metric(metric, slug, from, to, interval, aggregation)
     end
   end

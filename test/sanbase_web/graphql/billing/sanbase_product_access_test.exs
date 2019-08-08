@@ -2,11 +2,12 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   use SanbaseWeb.ConnCase
 
   import Sanbase.Factory
+  import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
   import Mock
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
-  setup_with_mocks([
+  setup_all_with_mocks([
     {Sanbase.Prices.Store, [], [fetch_prices_with_resolution: fn _, _, _, _ -> price_resp() end]},
     {Sanbase.Clickhouse.MVRV, [], [mvrv_ratio: fn _, _, _, _ -> mvrv_resp() end]},
     {Sanbase.Clickhouse.DailyActiveDeposits, [],
@@ -14,6 +15,10 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     {Sanbase.Clickhouse.NetworkGrowth, [],
      [network_growth: fn _, _, _, _ -> network_growth_resp() end]}
   ]) do
+    :ok
+  end
+
+  setup do
     user = insert(:user)
     project = insert(:random_project)
 
@@ -24,8 +29,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
 
   describe "SANBase product, No subscription" do
     test "can access FREE metrics for all time", context do
-      from = Timex.shift(Timex.now(), days: -1500)
-      to = Timex.now()
+      {from, to} = from_to(1500, 0)
       query = history_price_query(context.project, from, to)
       result = execute_query(context.conn, query, "historyPrice")
 
@@ -34,8 +38,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
 
     test "cannot access BASIC metrics for over 2 years", context do
-      from = Timex.shift(Timex.now(), days: -(2 * 365 + 1))
-      to = Timex.shift(Timex.now(), days: -31)
+      {from, to} = from_to(2 * 365 + 1, 31)
       query = network_growth_query(from, to)
       result = execute_query(context.conn, query, "networkGrowth")
 
@@ -99,9 +102,12 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   end
 
   describe "SANBase product, user with BASIC plan" do
-    test "can access FREE metrics for all time", context do
+    setup context do
       insert(:subscription_basic_sanbase, user: context.user)
+      :ok
+    end
 
+    test "can access FREE metrics for all time", context do
       from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       query = history_price_query(context.project, from, to)
@@ -112,8 +118,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
 
     test "cannot access BASIC metrics for more than 2 years", context do
-      insert(:subscription_basic_sanbase, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -(2 * 365 + 1))
       to = Timex.shift(Timex.now(), days: -10)
       query = network_growth_query(from, to)
@@ -124,8 +128,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
 
     test "can access BASIC metrics for less than 2 years", context do
-      insert(:subscription_basic_sanbase, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -(2 * 365 - 1))
       to = Timex.shift(Timex.now(), days: -8)
       query = network_growth_query(from, to)
@@ -136,8 +138,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
 
     test "can access BASIC metrics for more than 7 days ago", context do
-      insert(:subscription_basic_sanbase, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -10)
       to = Timex.shift(Timex.now(), days: -8)
       query = network_growth_query(from, to)
@@ -148,8 +148,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
 
     test "can access PRO metrics", context do
-      insert(:subscription_basic_sanbase, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -10)
       to = Timex.shift(Timex.now(), days: -8)
       query = daily_active_deposits_query(from, to)
@@ -161,9 +159,12 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   end
 
   describe "SANBase product, user with PRO plan" do
-    test "can access FREE metrics for all time", context do
+    setup context do
       insert(:subscription_pro_sanbase, user: context.user)
+      :ok
+    end
 
+    test "can access FREE metrics for all time", context do
       from = Timex.shift(Timex.now(), days: -1500)
       to = Timex.now()
       query = history_price_query(context.project, from, to)
@@ -174,8 +175,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
 
     test "cannot access BASIC metrics for more than 3 years", context do
-      insert(:subscription_pro_sanbase, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -(3 * 365 + 1))
       to = Timex.now()
       query = network_growth_query(from, to)
@@ -186,8 +185,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
 
     test "can access BASIC metrics for less than 3 years", context do
-      insert(:subscription_pro_sanbase, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -(3 * 365 - 1))
       to = Timex.now()
       query = network_growth_query(from, to)
@@ -198,8 +195,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
 
     test "cannot access PRO metrics for more than 3 years", context do
-      insert(:subscription_pro_sanbase, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -(3 * 365 + 1))
       to = Timex.now()
       query = daily_active_deposits_query(from, to)
@@ -210,8 +205,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
 
     test "can access PRO metrics for more less than 18 months", context do
-      insert(:subscription_pro_sanbase, user: context.user)
-
       from = Timex.shift(Timex.now(), days: -(3 * 365 - 1))
       to = Timex.now()
       query = daily_active_deposits_query(from, to)
@@ -220,6 +213,11 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       assert_called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
       assert result != nil
     end
+  end
+
+  defp from_to(from_days_shift, to_days_shift) do
+    from = Timex.shift(Timex.now(), days: -from_days_shift)
+    to = Timex.shift(Timex.now(), days: -to_days_shift)
   end
 
   defp daily_active_deposits_query(from, to) do

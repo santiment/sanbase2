@@ -24,6 +24,10 @@ defmodule SanbaseWeb.Router do
     plug(SanbaseWeb.Plug.TelegramMatchPlug)
   end
 
+  pipeline :bot_login do
+    plug(SanbaseWeb.Plug.BotLoginPlug)
+  end
+
   use ExAdmin.Router
 
   scope "/admin", ExAdmin do
@@ -72,6 +76,16 @@ defmodule SanbaseWeb.Router do
     post(
       "/telegram/:path",
       TelegramController,
+      :index
+    )
+  end
+
+  scope "/bot", SanbaseWeb do
+    pipe_through([:bot_login])
+
+    get(
+      "/login/:path",
+      BotLoginController,
       :index
     )
   end

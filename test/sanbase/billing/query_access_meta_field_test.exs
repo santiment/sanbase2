@@ -131,7 +131,7 @@ defmodule Sanbase.Billing.QueryAccessMetaFieldTest do
         |> Enum.sort()
 
       expected_pro_queries =
-        [:exchange_wallets, :all_projects_project_transparency]
+        [:all_exchange_wallets, :exchange_wallets, :all_projects_project_transparency]
         |> Enum.sort()
 
       assert pro_queries == expected_pro_queries

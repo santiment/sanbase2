@@ -28,6 +28,7 @@ defimpl Sanbase.Signal, for: Any do
   end
 
   def send(%{
+        id: id,
         user: user,
         trigger: %{
           settings: %{channel: "telegram", triggered?: true, payload: payload_map}
@@ -36,7 +37,14 @@ defimpl Sanbase.Signal, for: Any do
       when is_map(payload_map) do
     payload_map
     |> Enum.map(fn {slug, payload} ->
-      {slug, Sanbase.Telegram.send_message(user, payload)}
+      {slug, Sanbase.Telegram.send_message(user, extend_payload(payload, id))}
     end)
+  end
+
+  defp extend_payload(payload, user_trigger_id) do
+    """
+    #{payload}
+    The signal was triggered by #{SanbaseWeb.Endpoint.show_signal_url(user_trigger_id)}
+    """
   end
 end

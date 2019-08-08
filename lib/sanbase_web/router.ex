@@ -80,11 +80,11 @@ defmodule SanbaseWeb.Router do
     )
   end
 
-  scope "/", SanbaseWeb do
+  scope "/bot", SanbaseWeb do
     pipe_through([:bot_login])
 
     get(
-      "/bot/:path",
+      "/login/:path",
       BotLoginController,
       :index
     )

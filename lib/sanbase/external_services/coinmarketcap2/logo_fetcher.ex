@@ -3,10 +3,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
 
   require Logger
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Model.{Project, LatestCoinmarketcapData}
   alias Sanbase.Repo
   alias Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo
   alias Sanbase.FileStore
+  alias Sanbase.Utils.FileHash
 
   @log_tag "[CMC][LogoFetcher]"
 
@@ -48,8 +49,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     case Map.get(local_projects_map, slug) do
       %Project{} = project ->
         with {:ok, local_filepath_64} <- download(url, dir_path_64, filename),
-             {:ok, local_filepath_32} <-
-               resize_image(local_filepath_64, dir_path_32, filename),
+             {:logo_has_changed?, true} <-
+               {:logo_has_changed?, logo_changed?(project, local_filepath_64)},
+             {:ok, local_filepath_32} <- resize_image(local_filepath_64, dir_path_32, filename),
              {:ok, uploaded_filepath_64} <- upload(local_filepath_64, 64),
              {:ok, uploaded_filepath_32} <- upload(local_filepath_32, 32),
              {:ok, _} <-
@@ -57,14 +59,39 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
                  logo32_url: uploaded_filepath_32,
                  logo64_url: uploaded_filepath_64
                }) do
-          :ok
+          Logger.info(
+            "#{@log_tag} Successfully updated logos for project: #{project.coinmarketcap_id}"
+          )
         else
+          {:logo_has_changed?, false} ->
+            :ok
+
           error ->
             error
         end
 
       _ ->
         :ok
+    end
+  end
+
+  defp logo_changed?(project, filepath) do
+    latest_cmc_data = LatestCoinmarketcapData.get_or_build(project.coinmarketcap_id)
+    {:ok, file_hash} = FileHash.calculate(filepath)
+
+    case latest_cmc_data.logo_hash do
+      ^file_hash ->
+        Logger.info("#{@log_tag} Logo for project: #{project.coinmarketcap_id} has not changed.")
+        false
+
+      _ ->
+        latest_cmc_data
+        |> LatestCoinmarketcapData.changeset(%{logo_hash: file_hash, logo_updated_at: Timex.now()})
+        |> Repo.insert_or_update!()
+
+        Logger.info("#{@log_tag} Logo for project: #{project.coinmarketcap_id} has changed.")
+
+        true
     end
   end
 
@@ -113,6 +140,5 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
 
   defp update_local_project(%Project{} = project, %{} = fields) do
     Project.changeset(project, fields) |> Repo.update()
-    Logger.info("#{@log_tag} Successfully updated logos for project: #{project.coinmarketcap_id}")
   end
 end

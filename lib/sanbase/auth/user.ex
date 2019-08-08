@@ -41,6 +41,9 @@ defmodule Sanbase.Auth.User do
   @insights_fallback_username "anonymous"
   @insights_fallback_email "anonymous@santiment.net"
 
+  # User with free subscription that is used for external integration testing
+  @sanbase_bot_email "sanbase.bot@santiment.net"
+
   require Mockery.Macro
   defp mandrill_api, do: Mockery.Macro.mockable(Sanbase.MandrillApi)
 
@@ -404,6 +407,10 @@ defmodule Sanbase.Auth.User do
     end
   end
 
+  def insights_fallback_username, do: @insights_fallback_username
+  def insights_fallback_email, do: @insights_fallback_email
+  def sanbase_bot_email, do: @sanbase_bot_email
+
   defp can_remove_eth_account?(%User{id: user_id, email: email}, address) do
     count_other_accounts =
       from(ea in EthAccount,
@@ -413,7 +420,4 @@ defmodule Sanbase.Auth.User do
 
     count_other_accounts > 0 or not is_nil(email)
   end
-
-  def insights_fallback_username, do: @insights_fallback_username
-  def insights_fallback_email, do: @insights_fallback_email
 end

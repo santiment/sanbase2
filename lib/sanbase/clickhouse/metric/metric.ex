@@ -171,24 +171,23 @@ defmodule Sanbase.Clickhouse.Metric do
     FROM(
       SELECT
         dt,
-        argMaxIf(value, computed_at, metric_name = ?2) AS value
+        argMax(value, computed_at) AS value
       FROM #{@table}
-      INNER JOIN (
-        SELECT
-          name AS metric_name,
-          metric_id
-        FROM
-          metric_metadata
-        PREWHERE
-          name = ?2
-      ) USING metric_id
       PREWHERE
           dt >= toDateTime(?3) AND
-          dt <= toDateTime(?4) AND
+          dt < toDateTime(?4) AND
           asset_id = (
             SELECT argMax(asset_id, computed_at)
             FROM asset_metadata
             PREWHERE name = ?5
+          ) AND
+          metric_id = (
+            SELECT
+              argMax(metric_id, computed_at) AS metric_id
+            FROM
+              metric_metadata
+            PREWHERE
+              name = ?2
           )
       GROUP BY dt
     )

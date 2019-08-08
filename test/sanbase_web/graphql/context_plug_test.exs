@@ -8,6 +8,8 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
   alias Sanbase.Auth.User
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.ContextPlug
+  alias Sanbase.Auth.Apikey
+  alias Sanbase.Billing.Product
 
   test "loading the user from the current token", %{conn: conn} do
     user =
@@ -197,7 +199,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product == 2
+      assert conn_context.product == Product.product_sanbase()
     end
 
     test "when no authorization and other Origin - product is SANApi" do
@@ -205,7 +207,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product == 1
+      assert conn_context.product == Product.product_api()
     end
 
     test "when JWT auth - product is SANBase" do
@@ -214,7 +216,36 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product == 2
+      assert conn_context.product == Product.product_sanbase()
+    end
+
+    test "when Apikey and User-Agent is from sheets - product is SANsheets" do
+      user = insert(:user)
+      {:ok, apikey} = Apikey.generate_apikey(user)
+
+      conn =
+        build_conn()
+        |> put_req_header(
+          "user-agent",
+          "Mozilla/5.0 (compatible; Google-Apps-Script)"
+        )
+
+      conn = setup_apikey_auth(conn, apikey)
+
+      conn_context = conn.private.absinthe.context
+
+      assert conn_context.product == Product.product_sheets()
+    end
+
+    test "when Apikey and other User-Agent - product is SANApi" do
+      user = insert(:user)
+      {:ok, apikey} = Apikey.generate_apikey(user)
+
+      conn = setup_apikey_auth(build_conn(), apikey)
+
+      conn_context = conn.private.absinthe.context
+
+      assert conn_context.product == Product.product_api()
     end
   end
 end

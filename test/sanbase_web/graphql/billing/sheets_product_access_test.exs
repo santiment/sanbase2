@@ -2,13 +2,14 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
   use SanbaseWeb.ConnCase
 
   import Sanbase.Factory
+  import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
   import Mock
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Sanbase.Auth.Apikey
 
-  setup_with_mocks([
+  setup_all_with_mocks([
     {Sanbase.Prices.Store, [], [fetch_prices_with_resolution: fn _, _, _, _ -> price_resp() end]},
     {Sanbase.Clickhouse.MVRV, [], [mvrv_ratio: fn _, _, _, _ -> mvrv_resp() end]},
     {Sanbase.Clickhouse.DailyActiveDeposits, [],
@@ -16,6 +17,10 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
     {Sanbase.Clickhouse.NetworkGrowth, [],
      [network_growth: fn _, _, _, _ -> network_growth_resp() end]}
   ]) do
+    :ok
+  end
+
+  setup do
     user = insert(:user)
     project = insert(:random_project)
 
@@ -35,8 +40,7 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
 
   describe "SANsheets product, No subscription" do
     test "can access FREE metrics for all time", context do
-      from = Timex.shift(Timex.now(), days: -1500)
-      to = Timex.now()
+      {from, to} = from_to(1500, 0)
       query = history_price_query(context.project, from, to)
       result = execute_query(context.conn, query, "historyPrice")
 
@@ -45,8 +49,7 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
     end
 
     test "cannot access BASIC metrics for over 3 months", context do
-      from = Timex.shift(Timex.now(), days: -91)
-      to = Timex.shift(Timex.now(), days: -10)
+      {from, to} = from_to(91, 10)
       query = network_growth_query(from, to)
       result = execute_query(context.conn, query, "networkGrowth")
 
@@ -55,8 +58,7 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
     end
 
     test "cannot access BASIC metrics realtime", context do
-      from = Timex.shift(Timex.now(), days: -10)
-      to = Timex.now()
+      {from, to} = from_to(10, 0)
       query = network_growth_query(from, to)
       result = execute_query(context.conn, query, "networkGrowth")
 
@@ -65,8 +67,7 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
     end
 
     test "can access BASIC metrics within 90 days and 1 day interval", context do
-      from = Timex.shift(Timex.now(), days: -89)
-      to = Timex.shift(Timex.now(), days: -2)
+      {from, to} = from_to(89, 2)
       query = network_growth_query(from, to)
       result = execute_query(context.conn, query, "networkGrowth")
 
@@ -75,8 +76,7 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
     end
 
     test "cannot access PRO metrics for over 3 months", context do
-      from = Timex.shift(Timex.now(), days: -91)
-      to = Timex.shift(Timex.now(), days: -10)
+      {from, to} = from_to(91, 10)
       query = daily_active_deposits_query(from, to)
       result = execute_query(context.conn, query, "dailyActiveDeposits")
 
@@ -86,8 +86,7 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
     end
 
     test "cannot access PRO metrics realtime", context do
-      from = Timex.shift(Timex.now(), days: -10)
-      to = Timex.now()
+      {from, to} = from_to(10, 0)
       query = daily_active_deposits_query(from, to)
       result = execute_query(context.conn, query, "dailyActiveDeposits")
 
@@ -97,8 +96,7 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
     end
 
     test "can access PRO within 90 days and 1 day interval", context do
-      from = Timex.shift(Timex.now(), days: -89)
-      to = Timex.shift(Timex.now(), days: -2)
+      {from, to} = from_to(89, 2)
       query = daily_active_deposits_query(from, to)
       result = execute_query(context.conn, query, "dailyActiveDeposits")
 
@@ -108,11 +106,13 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
   end
 
   describe "SANsheets product, user with BASIC plan" do
-    test "can access FREE metrics for all time", context do
+    setup context do
       insert(:subscription_basic_sheets, user: context.user)
+      :ok
+    end
 
-      from = Timex.shift(Timex.now(), days: -1500)
-      to = Timex.now()
+    test "can access FREE metrics for all time", context do
+      {from, to} = from_to(1500, 0)
       query = history_price_query(context.project, from, to)
       result = execute_query(context.conn, query, "historyPrice")
 
@@ -121,10 +121,7 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
     end
 
     test "cannot access BASIC metrics for more than 180 days", context do
-      insert(:subscription_basic_sheets, user: context.user)
-
-      from = Timex.shift(Timex.now(), days: -181)
-      to = Timex.shift(Timex.now(), days: -3)
+      {from, to} = from_to(181, 3)
       query = network_growth_query(from, to)
       result = execute_query(context.conn, query, "networkGrowth")
 
@@ -133,10 +130,7 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
     end
 
     test "can access BASIC metrics for less than 180 days", context do
-      insert(:subscription_basic_sheets, user: context.user)
-
-      from = Timex.shift(Timex.now(), days: -179)
-      to = Timex.shift(Timex.now(), days: -3)
+      {from, to} = from_to(179, 3)
       query = network_growth_query(from, to)
       result = execute_query(context.conn, query, "networkGrowth")
 
@@ -145,10 +139,7 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
     end
 
     test "can access BASIC metrics realtime", context do
-      insert(:subscription_basic_sheets, user: context.user)
-
-      from = Timex.shift(Timex.now(), days: -10)
-      to = Timex.now()
+      {from, to} = from_to(10, 0)
       query = network_growth_query(from, to)
       result = execute_query(context.conn, query, "networkGrowth")
 
@@ -157,10 +148,7 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
     end
 
     test "can access PRO metrics", context do
-      insert(:subscription_basic_sheets, user: context.user)
-
-      from = Timex.shift(Timex.now(), days: -91)
-      to = Timex.now()
+      {from, to} = from_to(91, 0)
       query = daily_active_deposits_query(from, to)
 
       result = execute_query(context.conn, query, "dailyActiveDeposits")
@@ -169,11 +157,13 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
   end
 
   describe "SANsheets product, user with PRO plan" do
-    test "can access FREE metrics for all time", context do
+    setup context do
       insert(:subscription_pro_sheets, user: context.user)
+      :ok
+    end
 
-      from = Timex.shift(Timex.now(), days: -1500)
-      to = Timex.now()
+    test "can access FREE metrics for all time", context do
+      {from, to} = from_to(1500, 0)
       query = history_price_query(context.project, from, to)
       result = execute_query(context.conn, query, "historyPrice")
 
@@ -182,10 +172,7 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
     end
 
     test "cannot access BASIC metrics for more than 12 months", context do
-      insert(:subscription_pro_sheets, user: context.user)
-
-      from = Timex.shift(Timex.now(), days: -(12 * 30 + 1))
-      to = Timex.now()
+      {from, to} = from_to(12 * 30 + 1, 0)
       query = network_growth_query(from, to)
       result = execute_query(context.conn, query, "networkGrowth")
 
@@ -194,10 +181,7 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
     end
 
     test "can access BASIC metrics for less than 12 months", context do
-      insert(:subscription_pro_sheets, user: context.user)
-
-      from = Timex.shift(Timex.now(), days: -(12 * 30 - 1))
-      to = Timex.now()
+      {from, to} = from_to(12 * 30 - 1, 0)
       query = network_growth_query(from, to)
       result = execute_query(context.conn, query, "networkGrowth")
 
@@ -206,10 +190,7 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
     end
 
     test "cannot access PRO metrics for more than 12 months", context do
-      insert(:subscription_pro_sheets, user: context.user)
-
-      from = Timex.shift(Timex.now(), days: -(12 * 30 + 1))
-      to = Timex.now()
+      {from, to} = from_to(12 * 30 + 1, 0)
       query = daily_active_deposits_query(from, to)
       result = execute_query(context.conn, query, "dailyActiveDeposits")
 
@@ -218,16 +199,21 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
     end
 
     test "can access PRO metrics for less than 12 months", context do
-      insert(:subscription_pro_sheets, user: context.user)
-
-      from = Timex.shift(Timex.now(), days: -(12 * 30 - 1))
-      to = Timex.now()
+      {from, to} = from_to(12 * 30 - 1, 0)
       query = daily_active_deposits_query(from, to)
       result = execute_query(context.conn, query, "dailyActiveDeposits")
 
       assert_called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
       assert result != nil
     end
+  end
+
+  # Private functions
+
+  defp from_to(from_days_shift, to_days_shift) do
+    from = Timex.shift(Timex.now(), days: -from_days_shift)
+    to = Timex.shift(Timex.now(), days: -to_days_shift)
+    {from, to}
   end
 
   defp daily_active_deposits_query(from, to) do

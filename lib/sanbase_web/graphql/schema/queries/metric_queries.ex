@@ -22,7 +22,7 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
 
     field :get_available_slugs, list_of(:string) do
       meta(access: :free)
-      resolve(&MetricResolver.get_available_metrics/3)
+      resolve(&MetricResolver.get_available_slugs/3)
     end
   end
 end

@@ -356,6 +356,9 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
   # Private functions
 
+  defp v2_free_metric(), do: Metric.free_metrics() |> Enum.random()
+  defp v2_restricted_metric(), do: Metric.restricted_metrics() |> Enum.random()
+
   defp from_to(from_days_shift, to_days_shift) do
     from = Timex.shift(Timex.now(), days: -from_days_shift)
     to = Timex.shift(Timex.now(), days: -to_days_shift)
@@ -408,8 +411,13 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     """
   end
 
-  defp v2_free_metric(), do: Metric.free_metrics() |> Enum.random()
-  defp v2_restricted_metric(), do: Metric.restricted_metrics() |> Enum.random()
+  defp metric_resp() do
+    {:ok,
+     [
+       %{value: 10.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
+       %{value: 20.0, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
+     ]}
+  end
 
   defp mvrv_resp() do
     {:ok,
@@ -440,14 +448,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
      [
        %{new_addresses: 10, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
        %{new_addresses: 20, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
-     ]}
-  end
-
-  defp metric_resp() do
-    {:ok,
-     [
-       %{value: 10.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
-       %{value: 20.0, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
      ]}
   end
 end

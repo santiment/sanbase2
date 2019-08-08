@@ -7,6 +7,7 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
   import Mock
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
+  alias Sanbase.Clickhouse.Metric
   alias Sanbase.Auth.Apikey
 
   setup_all_with_mocks([
@@ -15,7 +16,8 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
     {Sanbase.Clickhouse.DailyActiveDeposits, [],
      [active_deposits: fn _, _, _, _ -> daily_active_deposits_resp() end]},
     {Sanbase.Clickhouse.NetworkGrowth, [],
-     [network_growth: fn _, _, _, _ -> network_growth_resp() end]}
+     [network_growth: fn _, _, _, _ -> network_growth_resp() end]},
+    {Metric, [:passthrough], [get: fn _, _, _, _, _, _ -> metric_resp() end]}
   ]) do
     :ok
   end
@@ -162,6 +164,24 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
       :ok
     end
 
+    test "can access FREE v2 clickhouse metrics for all time", context do
+      {from, to} = from_to(1500, 0)
+      metric = v2_free_metric()
+      query = metric_query(metric, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+      assert_called(Metric.get(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "can access RESTRICTED v2 clickhouse metrics for 1 year", context do
+      {from, to} = from_to(12 * 30, 0)
+      metric = v2_restricted_metric()
+      query = metric_query(metric, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+      assert_called(Metric.get(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
     test "can access FREE metrics for all time", context do
       {from, to} = from_to(1500, 0)
       query = history_price_query(context.project, from, to)
@@ -210,10 +230,26 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
 
   # Private functions
 
+  defp v2_free_metric(), do: Metric.free_metrics() |> Enum.random()
+  defp v2_restricted_metric(), do: Metric.restricted_metrics() |> Enum.random()
+
   defp from_to(from_days_shift, to_days_shift) do
     from = Timex.shift(Timex.now(), days: -from_days_shift)
     to = Timex.shift(Timex.now(), days: -to_days_shift)
     {from, to}
+  end
+
+  defp metric_query(metric, from, to) do
+    """
+      {
+        getMetric(metric: "#{metric}") {
+          timeseriesData(slug: "ethereum", from: "#{from}", to: "#{to}", interval: "30d"){
+            datetime
+            value
+          }
+        }
+      }
+    """
   end
 
   defp daily_active_deposits_query(from, to) do
@@ -247,6 +283,14 @@ defmodule Sanbase.Billing.SheetsProductAccessTest do
         }
       }
     """
+  end
+
+  defp metric_resp() do
+    {:ok,
+     [
+       %{value: 10.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
+       %{value: 20.0, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
+     ]}
   end
 
   defp mvrv_resp() do

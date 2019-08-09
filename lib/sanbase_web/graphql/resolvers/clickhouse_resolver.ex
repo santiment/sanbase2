@@ -14,21 +14,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   alias Sanbase.Clickhouse.HistoricalBalance.MinersBalance
 
   alias Sanbase.Clickhouse.{
-    DailyActiveAddresses,
     DailyActiveDeposits,
     GasUsed,
     HistoricalBalance,
     MiningPoolsDistribution,
-    MVRV,
-    NetworkGrowth,
     NVT,
     PercentOfTokenSupplyOnExchanges,
-    RealizedValue,
     TopHolders,
     ShareOfDeposits,
-    TokenCirculation,
-    TokenVelocity,
-    Bitcoin
+    Metric
   }
 
   # Return this number of datapoints is the provided interval is an empty string
@@ -83,16 +77,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   end
 
   def network_growth(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
-    with {:ok, contract, _} <- Project.contract_info_by_slug(slug),
-         {:ok, network_growth} <-
-           NetworkGrowth.network_growth(contract, from, to, interval) do
-      {:ok, network_growth}
-    else
-      {:error, error} ->
-        error_msg = graphql_error_msg("Network Growth", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
-    end
+    Metric.get("network_growth", slug, from, to, interval)
+    |> transform_values(:new_addresses)
   end
 
   def mining_pools_distribution(
@@ -137,77 +123,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     end
   end
 
-  def mvrv_ratio(_root, %{slug: "bitcoin", from: from, to: to, interval: interval}, _resolution) do
-    with {:ok, from, to, interval} <-
-           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86_400, @datapoints) do
-      Bitcoin.mvrv_ratio(from, to, interval)
-    end
-  end
-
   def mvrv_ratio(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
-    # TODO: Check if interval is a whole day as in token circulation
-    with {:ok, mvrv_ratio} <- MVRV.mvrv_ratio(slug, from, to, interval) do
-      {:ok, mvrv_ratio}
-    else
-      {:error, error} ->
-        error_msg = graphql_error_msg("MVRV Ratio", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
-    end
+    Metric.get("mvrv_usd_20y", slug, from, to, interval)
+    |> transform_values(:mvrv_ratio)
   end
 
   def token_circulation(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval} = args,
+        %{slug: slug, from: from, to: to, interval: interval},
         _resolution
       ) do
-    with ticker when is_binary(ticker) <- Project.ticker_by_slug(slug),
-         ticker_slug <- ticker <> "_" <> slug,
-         {:ok, from, to, interval} <-
-           calibrate_interval(
-             TokenCirculation,
-             ticker_slug,
-             from,
-             to,
-             interval,
-             86_400,
-             @datapoints
-           ),
-         {:ok, token_circulation} <-
-           TokenCirculation.token_circulation(
-             :less_than_a_day,
-             ticker_slug,
-             from,
-             to,
-             interval
-           ) do
-      {:ok, token_circulation |> fit_from_datetime(args)}
-    else
-      {:error, error} ->
-        error_msg = graphql_error_msg("Token Circulation", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
-    end
+    Metric.get("stack_circulation_20y", slug, from, to, interval)
+    |> transform_values(:token_circulation)
   end
 
   def token_velocity(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval} = args,
+        %{slug: slug, from: from, to: to, interval: interval},
         _resolution
       ) do
-    with ticker when is_binary(ticker) <- Project.ticker_by_slug(slug),
-         ticker_slug <- ticker <> "_" <> slug,
-         {:ok, from, to, interval} <-
-           calibrate_interval(TokenVelocity, ticker_slug, from, to, interval, 86_400, @datapoints),
-         {:ok, token_velocity} <-
-           TokenVelocity.token_velocity(ticker_slug, from, to, interval) do
-      {:ok, token_velocity |> fit_from_datetime(args)}
-    else
-      {:error, error} ->
-        error_msg = graphql_error_msg("Token Velocity", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
-    end
+    Metric.get("token_velocity", slug, from, to, interval)
+    |> transform_values(:token_velocity)
   end
 
   def daily_active_addresses(
@@ -215,34 +151,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         %{slug: slug, from: from, to: to, interval: interval},
         _resolution
       ) do
-    with {:ok, contract, _} <- Project.contract_info_by_slug(slug),
-         {:ok, from, to, interval} <-
-           calibrate_interval(
-             DailyActiveAddresses,
-             contract,
-             from,
-             to,
-             interval,
-             86_400,
-             @datapoints
-           ),
-         {:ok, daily_active_addresses} <-
-           DailyActiveAddresses.average_active_addresses(
-             contract,
-             from,
-             to,
-             interval
-           ) do
-      {:ok, daily_active_addresses}
-    else
-      {:error, {:missing_contract, error_msg}} ->
-        {:error, error_msg}
-
-      {:error, error} ->
-        error_msg = graphql_error_msg("Daily Active Addresses", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
-    end
+    Metric.get("daily_active_addresses", slug, from, to, interval)
+    |> transform_values(:token_velocity)
   end
 
   @doc ~S"""
@@ -319,15 +229,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         %{slug: slug, from: from, to: to, interval: interval},
         _resolution
       ) do
-    case RealizedValue.realized_value(slug, from, to, interval) do
-      {:ok, realized_value} ->
-        {:ok, realized_value}
-
-      {:error, error} ->
-        error_msg = graphql_error_msg("Realized Value", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
-    end
+    Metric.get("stack_realized_cap_20y", slug, from, to, interval)
+    |> transform_values(:realized_Value)
   end
 
   def nvt_ratio(
@@ -418,5 +321,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         log_graphql_error(error_msg, error)
         {:error, error_msg}
     end
+  end
+
+  defp transform_values({:error, error}, _), do: {:error, error}
+
+  defp transform_values({:ok, data}, value_name) do
+    data =
+      data
+      |> Enum.map(fn %{datetime: datetime, value: value} ->
+        %{
+          value_name => value,
+          datetime: datetime
+        }
+      end)
+
+    {:ok, data}
   end
 end

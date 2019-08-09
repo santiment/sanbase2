@@ -164,9 +164,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
       expected_restricted_queries =
         [
           "daily_stack_circulation",
-          "exchange_balance",
-          "exchange_inflow",
-          "exchange_outflow",
           "mean_realized_price_usd_10y",
           "mean_realized_price_usd_180d",
           "mean_realized_price_usd_1d",
@@ -192,7 +189,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           "mvrv_usd_7d",
           "mvrv_usd_90d",
           "stack_age_consumed",
-          "stack_age_consumed_5min",
           "stack_circulation_10y",
           "stack_circulation_180d",
           "stack_circulation_1d",
@@ -223,8 +219,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           "stack_realized_cap_usd_90d",
           "stack_total_age",
           "token_velocity",
-          "transaction_volume",
-          "transaction_volume_5min"
+          "transaction_volume"
         ]
         |> Enum.sort()
 

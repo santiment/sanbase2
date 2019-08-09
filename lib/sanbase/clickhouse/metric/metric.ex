@@ -144,15 +144,7 @@ defmodule Sanbase.Clickhouse.Metric do
      }}
   end
 
-  defp min_interval("exchange_" <> _), do: "5m"
-
-  defp min_interval(metric) do
-    if String.ends_with?(metric, "5min") do
-      "5m"
-    else
-      "1d"
-    end
-  end
+  defp min_interval(metric), do: "1d"
 
   defp get_available_slugs() do
     {query, args} = available_slugs_query()

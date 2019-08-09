@@ -55,21 +55,6 @@
     "aggregation": "avg"
   },
   {
-    "metric": "exchange_balance",
-    "access": "restricted",
-    "aggregation": "sum"
-  },
-  {
-    "metric": "exchange_inflow",
-    "access": "restricted",
-    "aggregation": "sum"
-  },
-  {
-    "metric": "exchange_outflow",
-    "access": "restricted",
-    "aggregation": "sum"
-  },
-  {
     "metric": "mean_realized_price_usd_10y",
     "access": "restricted",
     "aggregation": "avg"
@@ -191,11 +176,6 @@
   },
   {
     "metric": "stack_age_consumed",
-    "access": "restricted",
-    "aggregation": "sum"
-  },
-  {
-    "metric": "stack_age_consumed_5min",
     "access": "restricted",
     "aggregation": "sum"
   },
@@ -348,11 +328,6 @@
     "metric": "token_velocity",
     "access": "restricted",
     "aggregation": "last"
-  },
-  {
-    "metric": "transaction_volume_5min",
-    "access": "restricted",
-    "aggregation": "sum"
   },
   {
     "metric": "transaction_volume",

@@ -210,7 +210,7 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
 
       More info here: #{Project.sanbase_link(project)}
 
-      ![Volume and OHCL price chart for the past 90 days](#{chart_url(project, :volume)})
+      ![Volume and OHLC price chart for the past 90 days](#{chart_url(project, :volume)})
       """
     end
 

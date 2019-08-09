@@ -209,6 +209,8 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       The project **#{project.name}** is in the trending words.
 
       More info here: #{Project.sanbase_link(project)}
+
+      ![Volume and OHCL price chart for the past 90 days](#{chart_url(project, :volume)})
       """
     end
 

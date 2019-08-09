@@ -215,7 +215,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
       Average Daily Active Addresses for last **#{interval}**: **#{average_daa}**.
       More info here: #{Project.sanbase_link(project)}
 
-      ![Daily Active Addresses chart and OHCL price chart for the past 90 days](#{
+      ![Daily Active Addresses chart and OHLC price chart for the past 90 days](#{
         chart_url(project, :daily_active_addresses)
       })
       """
@@ -230,7 +230,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
       }
       More info here: #{Project.sanbase_link(project)}
 
-      ![Daily Active Addresses chart and OHCL price chart for the past 90 days](#{
+      ![Daily Active Addresses chart and OHLC price chart for the past 90 days](#{
         chart_url(project, :daily_active_addresses)
       })
       """

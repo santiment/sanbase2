@@ -134,7 +134,7 @@ defmodule Sanbase.Chart do
       daa_values = daa_values |> Enum.join(",")
 
       %{
-        chtt: "#{project.name} - Daily Active Addresses and OHCL Price" |> URI.encode(),
+        chtt: "#{project.name} - Daily Active Addresses and OHLC Price" |> URI.encode(),
         chxt: ",x,r",
         chxl: "1:|#{datetime_values(from, to)}" |> URI.encode(),
         chxr: "|2,#{min},#{max}",
@@ -169,7 +169,7 @@ defmodule Sanbase.Chart do
       exchange_inflow_values = exchange_inflow_values |> Enum.join(",")
 
       %{
-        chtt: "#{project.name} - Exchange Inflow and OHCL Price" |> URI.encode(),
+        chtt: "#{project.name} - Exchange Inflow and OHLC Price" |> URI.encode(),
         chxt: ",x,r",
         chxl: "1:|#{datetime_values(from, to)}" |> URI.encode(),
         chxr: "|2,#{min},#{max}",
@@ -201,7 +201,7 @@ defmodule Sanbase.Chart do
       volumes_str = volumes |> Enum.join(",")
 
       %{
-        chtt: "#{project.name} - Trading Volume and OHCL Price" |> URI.encode(),
+        chtt: "#{project.name} - Trading Volume and OHLC Price" |> URI.encode(),
         chxt: ",x,r",
         chxl: "1:|#{datetime_values(from, to)}" |> URI.encode(),
         chxr: "|2,#{min},#{max}",

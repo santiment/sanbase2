@@ -72,7 +72,7 @@ defmodule Sanbase.Clickhouse.Metric do
   """
   @spec get(metric, slug, DateTime.t(), DateTime.t(), interval, aggregation) ::
           {:ok, list(metric_result)} | {:error, String.t()}
-  def get(slug, metric, from, to, interval, aggregation \\ nil)
+  def get(metric, slug, from, to, interval, aggregation \\ nil)
 
   def get(_metric, _slug, _from, _to, _interval, aggregation)
       when aggregation not in @aggregations do

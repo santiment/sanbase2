@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
   use Absinthe.Schema.Notation
 
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
 
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
 
@@ -12,7 +12,8 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
     field :get_metric, :metric do
       meta(access: :free)
       arg(:metric, non_null(:string))
-      cache_resolve(&MetricResolver.get_metric/3)
+
+      resolve(&MetricResolver.get_metric/3)
     end
 
     field :get_available_metrics, list_of(:string) do

@@ -125,19 +125,19 @@ defmodule SanbaseWeb.Graphql.Cache do
       %{id: id} = root, args, resolution ->
         fun = fn -> resolver_fn.(root, args, resolution) end
 
-        cache_key({name, id}, args, opts)
+        cache_key({name, id, resolution.source}, args, opts)
         |> get_or_store(fun)
 
       %{word: word} = root, args, resolution ->
         fun = fn -> resolver_fn.(root, args, resolution) end
 
-        cache_key({name, word}, args, opts)
+        cache_key({name, word, resolution.source}, args, opts)
         |> get_or_store(fun)
 
       %{}, args, resolution ->
         fun = fn -> resolver_fn.(%{}, args, resolution) end
 
-        cache_key(name, args, opts)
+        cache_key({name, resolution.source}, args, opts)
         |> get_or_store(fun)
     end
   end

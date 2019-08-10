@@ -354,7 +354,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       meta(access: :forbidden)
 
       middleware(BasicAuth)
-      cache_resolve(&EtherbiResolver.all_exchange_wallets/3)
+      cache_resolve(&ExchangeResolver.all_exchange_wallets/3)
     end
 
     @desc """
@@ -367,7 +367,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:slug, :string, default_value: "ethereum")
 
       middleware(BasicAuth)
-      cache_resolve(&EtherbiResolver.exchange_wallets/3)
+      cache_resolve(&ExchangeResolver.exchange_wallets/3)
     end
 
     @desc ~s"""

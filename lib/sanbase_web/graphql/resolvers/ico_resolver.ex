@@ -9,6 +9,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.IcoResolver do
 
   alias Sanbase.Repo
 
+  # TODO Rework with dataloader
   def cap_currency(%Ico{cap_currency_id: nil}, _args, _resolution), do: {:ok, nil}
 
   def cap_currency(%Ico{cap_currency_id: cap_currency_id}, _args, _resolution) do

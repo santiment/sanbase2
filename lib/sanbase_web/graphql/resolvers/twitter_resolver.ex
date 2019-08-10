@@ -18,6 +18,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
     async(fn -> calculate_twitter_data(slug) end)
   end
 
+  # TODO: Extract to Project.TwitterData module
   defp calculate_twitter_data(slug) do
     with %Project{twitter_link: twitter_link, ticker: ticker} <- Project.by_slug(slug),
          {:ok, twitter_name} <- extract_twitter_name(twitter_link),

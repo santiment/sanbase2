@@ -4,10 +4,11 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
+  alias Sanbase.Auth.EthAccount
+
   alias SanbaseWeb.Graphql.Resolvers.{
     ApikeyResolver,
     AccountResolver,
-    EthAccountResolver,
     UserSettingsResolver,
     UserTriggerResolver,
     PostResolver,
@@ -95,7 +96,9 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     field(:address, non_null(:string))
 
     field :san_balance, non_null(:integer) do
-      cache_resolve(&EthAccountResolver.san_balance/3)
+      cache_resolve(fn eth_account, _, _ ->
+        {:ok, EthAccount.san_balance(eth_account)}
+      end)
     end
   end
 

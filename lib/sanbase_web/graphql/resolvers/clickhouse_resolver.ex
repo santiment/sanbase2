@@ -2,11 +2,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   require Logger
 
   alias Sanbase.Model.Project
-  import SanbaseWeb.Graphql.Helpers.Utils, only: [fit_from_datetime: 2, calibrate_interval: 7]
+  import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 7]
 
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
+  alias SanbaseWeb.Graphql.Resolvers.MetricResolver
 
   import Sanbase.Utils.ErrorHandling,
     only: [log_graphql_error: 2, graphql_error_msg: 1, graphql_error_msg: 2, graphql_error_msg: 3]
@@ -123,36 +124,48 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     end
   end
 
-  def mvrv_ratio(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
-    Metric.get("mvrv_usd_20y", slug, from, to, interval)
+  def mvrv_ratio(_root, args, resolution) do
+    MetricResolver.get_timeseries_data(%{}, args, %{
+      resolution
+      | source: Map.put(resolution.source, :metric, "mvrv_usd_20y")
+    })
     |> transform_values(:mvrv_ratio)
   end
 
   def token_circulation(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval},
-        _resolution
+        args,
+        resolution
       ) do
-    Metric.get("stack_circulation_20y", slug, from, to, interval)
+    MetricResolver.get_timeseries_data(%{}, args, %{
+      resolution
+      | source: Map.put(resolution.source, :metric, "stack_circulation_20y")
+    })
     |> transform_values(:token_circulation)
   end
 
   def token_velocity(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval},
-        _resolution
+        args,
+        resolution
       ) do
-    Metric.get("token_velocity", slug, from, to, interval)
+    MetricResolver.get_timeseries_data(%{}, args, %{
+      resolution
+      | source: Map.put(resolution.source, :metric, "token_velocity")
+    })
     |> transform_values(:token_velocity)
   end
 
   def daily_active_addresses(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval},
-        _resolution
+        args,
+        resolution
       ) do
-    Metric.get("daily_active_addresses", slug, from, to, interval)
-    |> transform_values(:token_velocity)
+    MetricResolver.get_timeseries_data(%{}, args, %{
+      resolution
+      | source: Map.put(resolution.source, :metric, "daily_active_addresses")
+    })
+    |> transform_values(:daily_active_addresses)
   end
 
   @doc ~S"""
@@ -226,11 +239,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   def realized_value(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval},
-        _resolution
+        args,
+        resolution
       ) do
-    Metric.get("stack_realized_cap_20y", slug, from, to, interval)
-    |> transform_values(:realized_Value)
+    MetricResolver.get_timeseries_data(%{}, args, %{
+      resolution
+      | source: Map.put(resolution.source, :metric, "stack_realized_cap_usd")
+    })
+    |> transform_values(:stack_realized_cap_usd)
   end
 
   def nvt_ratio(

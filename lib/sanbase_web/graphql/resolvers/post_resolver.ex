@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   alias Sanbase.Tag
   alias Sanbase.Insight.Post
 
+  # TODO: Merge with `InsightResolver` under the `InsightResolver` name
   def insights(%User{} = user, _args, _resolution) do
     posts = Post.user_insights(user.id)
 

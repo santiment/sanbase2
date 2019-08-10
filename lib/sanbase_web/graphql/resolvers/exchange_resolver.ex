@@ -4,6 +4,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
   alias Sanbase.Model.{ExchangeAddress, Infrastructure}
   alias Sanbase.Clickhouse.EthTransfers
 
+  def all_exchange_wallets(_root, _args, _resolution) do
+    {:ok, ExchangeAddress.all_exchange_wallets()}
+  end
+
+  def exchange_wallets(_root, %{slug: "ethereum"}, _resolution) do
+    {:ok, ExchangeAddress.exchange_wallets_by_infrastructure(Infrastructure.get("ETH"))}
+  end
+
+  def exchange_wallets(_root, %{slug: "bitcoin"}, _resolution) do
+    {:ok, ExchangeAddress.exchange_wallets_by_infrastructure(Infrastructure.get("BTC"))}
+  end
+
+  def exchange_wallets(_, _, _) do
+    {:error, "Currently only ethereum and bitcoin exchanges are supported"}
+  end
+
   @doc ~s"List all exchanges"
   def all_exchanges(_root, %{slug: "ethereum"}, _resolution) do
     {:ok, ExchangeAddress.exchange_names_by_infrastructure(Infrastructure.get("ETH"))}

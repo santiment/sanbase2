@@ -36,6 +36,8 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     SansheetsAccessChecker
   }
 
+  alias Sanbase.Billing.Product
+
   defmodule Helper do
     @moduledoc ~s"""
     Contains a single function `get_metrics_with_subscription_plan/1` that examines
@@ -105,6 +107,8 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   @custom_access_queries @custom_access_queries_stats |> Map.keys() |> Enum.sort()
   @custom_access_queries_mapset MapSet.new(@custom_access_queries)
 
+  @free_subscription Sanbase.Billing.Subscription.free_subscription()
+
   # Raise an error if there are queries with custom access logic that are marked
   # as free. If there are such queries the access restriction logic will never
   # be applied
@@ -165,4 +169,17 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
       unquote(module).realtime_data_cut_off_in_days(plan, query)
     end
   end
+
+  def user_can_create_signal?(user, subscription) do
+    subscription = subscription || @free_subscription
+
+    cond do
+      # If user has API subscription - he has unlimited signals
+      subscription.plan.product_id == Product.product_api() -> true
+      SanbaseAccessChecker.signals_limits_not_reached?(user, subscription) -> true
+      true -> false
+    end
+  end
+
+  def signals_limits_upgrade_message(), do: SanbaseAccessChecker.signals_limits_upgrade_message()
 end

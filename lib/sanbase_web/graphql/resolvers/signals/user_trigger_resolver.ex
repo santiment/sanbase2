@@ -6,6 +6,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   alias Sanbase.Signal.{Trigger, UserTrigger}
   alias SanbaseWeb.Graphql.Helpers.Utils
   alias Sanbase.Telegram
+  alias Sanbase.Billing.Plan.AccessChecker
 
   def triggers(%User{} = user, _args, _resolution) do
     {:ok,
@@ -15,23 +16,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   end
 
   def create_trigger(_root, args, %{
-        context: %{auth: %{current_user: current_user}}
+        context: %{auth: %{current_user: current_user, subscription: subscription}}
       }) do
-    UserTrigger.create_user_trigger(current_user, args)
-    |> handle_result("create")
-    |> case do
-      {:ok, result} ->
-        Telegram.send_message(
-          current_user,
-          "Successfully created a new signal of type: #{
-            Trigger.human_readable_settings_type(args.settings["type"])
-          }"
-        )
-
-        {:ok, result}
-
-      error ->
-        error
+    if AccessChecker.user_can_create_signal?(current_user, subscription) do
+      do_create_trigger(current_user, args)
+    else
+      {:error, AccessChecker.signals_limits_upgrade_message()}
     end
   end
 
@@ -85,6 +75,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
 
   def historical_trigger_points(_root, args, _) do
     UserTrigger.historical_trigger_points(args)
+  end
+
+  # helpers
+
+  defp do_create_trigger(current_user, args) do
+    UserTrigger.create_user_trigger(current_user, args)
+    |> handle_result("create")
+    |> case do
+      {:ok, result} ->
+        Telegram.send_message(
+          current_user,
+          "Successfully created a new signal of type: #{
+            Trigger.human_readable_settings_type(args.settings["type"])
+          }"
+        )
+
+        {:ok, result}
+
+      error ->
+        error
+    end
   end
 
   defp handle_result(result, operation) do

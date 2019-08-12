@@ -7,7 +7,11 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
+  alias Sanbase.Signal.UserTrigger
+  alias Sanbase.Billing.Plan.SanbaseAccessChecker
   alias Sanbase.Clickhouse.Metric
+
+  @triggers_limit_count 10
 
   setup_all_with_mocks([
     {Sanbase.Prices.Store, [], [fetch_prices_with_resolution: fn _, _, _, _ -> price_resp() end]},
@@ -16,7 +20,8 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
      [active_deposits: fn _, _, _, _ -> daily_active_deposits_resp() end]},
     {Sanbase.Clickhouse.NetworkGrowth, [],
      [network_growth: fn _, _, _, _ -> network_growth_resp() end]},
-    {Metric, [:passthrough], [get: fn _, _, _, _, _, _ -> metric_resp() end]}
+    {Metric, [:passthrough], [get: fn _, _, _, _, _, _ -> metric_resp() end]},
+    {UserTrigger, [:passthrough], [triggers_count_for: fn _ -> @triggers_limit_count end]}
   ]) do
     :ok
   end
@@ -310,7 +315,75 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
   end
 
+  describe "for SANbase when signals limit reached" do
+    setup_with_mocks([
+      {UserTrigger, [:passthrough], [triggers_count_for: fn _ -> @triggers_limit_count end]}
+    ]) do
+      :ok
+    end
+
+    test "user with FREE plan cannot create new trigger", context do
+      assert create_trigger_mutation_with_error(context) ==
+               SanbaseAccessChecker.signals_limits_upgrade_message()
+    end
+
+    test "user with BASIC plan cannot create new trigger", context do
+      insert(:subscription_basic_sanbase, user: context.user)
+
+      assert create_trigger_mutation_with_error(context) ==
+               SanbaseAccessChecker.signals_limits_upgrade_message()
+    end
+
+    test "user with PRO plan can create new trigger", context do
+      insert(:subscription_pro_sanbase, user: context.user)
+
+      assert create_trigger_mutation(context)["trigger"]["id"] != nil
+    end
+  end
+
+  describe "for SANapi when signals limit reached" do
+    setup_with_mocks([
+      {UserTrigger, [:passthrough], [triggers_count_for: fn _ -> @triggers_limit_count end]}
+    ]) do
+      :ok
+    end
+
+    test "with BASIC plan can create new trigger", context do
+      insert(:subscription_essential, user: context.user)
+
+      assert create_trigger_mutation(context)["trigger"]["id"] != nil
+    end
+
+    test "with PREMIUM plan can create new trigger", context do
+      insert(:subscription_premium, user: context.user)
+
+      assert create_trigger_mutation(context)["trigger"]["id"] != nil
+    end
+  end
+
+  describe "for FREE plan when signals limits not reached" do
+    setup_with_mocks([
+      {UserTrigger, [:passthrough], [triggers_count_for: fn _ -> @triggers_limit_count - 1 end]}
+    ]) do
+      :ok
+    end
+
+    test "user can create new trigger", context do
+      assert create_trigger_mutation(context)["trigger"]["id"] != nil
+    end
+  end
+
   # Private functions
+
+  defp create_trigger_mutation(context) do
+    query = create_trigger_mutation()
+    execute_mutation(context.conn, query, "createTrigger")
+  end
+
+  defp create_trigger_mutation_with_error(context) do
+    query = create_trigger_mutation()
+    execute_mutation_with_error(context.conn, query)
+  end
 
   defp v2_free_metric(), do: Metric.free_metrics() |> Enum.random()
   defp v2_restricted_metric(), do: Metric.restricted_metrics() |> Enum.random()
@@ -405,5 +478,40 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
        %{new_addresses: 10, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
        %{new_addresses: 20, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
      ]}
+  end
+
+  defp create_trigger_mutation() do
+    trigger_settings = %{
+      type: "daily_active_addresses",
+      target: %{slug: "santiment"},
+      channel: "telegram",
+      time_window: "1d",
+      operation: %{percent_up: 200.0}
+    }
+
+    trigger_settings_json = trigger_settings |> Jason.encode!()
+
+    ~s|
+  mutation {
+    createTrigger(
+      settings: '#{trigger_settings_json}'
+      title: 'Generic title'
+      cooldown: '23h'
+    ) {
+      trigger{
+        id
+        cooldown
+        settings
+      }
+    }
+  }
+  |
+    |> format_interpolated_json()
+  end
+
+  defp format_interpolated_json(string) do
+    string
+    |> String.replace(~r|\"|, ~S|\\"|)
+    |> String.replace(~r|'|, ~S|"|)
   end
 end

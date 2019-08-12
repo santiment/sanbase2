@@ -59,7 +59,7 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
   end
 
   def signals_limits_not_reached?(user, subscription) do
-    created_signals_count = UserTrigger.triggers_for(user) |> Enum.count()
+    created_signals_count = UserTrigger.triggers_count_for(user)
 
     subscription.plan
     |> Plan.plan_atom_name()

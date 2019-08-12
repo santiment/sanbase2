@@ -79,6 +79,12 @@ defmodule Sanbase.Signal.UserTrigger do
     |> user_triggers_for()
   end
 
+  @spec triggers_count_for(%User{}) :: integer()
+  def triggers_count_for(user) do
+    triggers_for(user)
+    |> Enum.count()
+  end
+
   @doc ~s"""
   Get all public triggers for the user with id `user_id`
   The result is transformed so all trigger settings are loaded in their

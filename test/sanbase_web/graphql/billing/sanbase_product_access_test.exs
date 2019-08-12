@@ -20,7 +20,8 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
      [active_deposits: fn _, _, _, _ -> daily_active_deposits_resp() end]},
     {Sanbase.Clickhouse.NetworkGrowth, [],
      [network_growth: fn _, _, _, _ -> network_growth_resp() end]},
-    {Metric, [:passthrough], [get: fn _, _, _, _, _, _ -> metric_resp() end]}
+    {Metric, [:passthrough], [get: fn _, _, _, _, _, _ -> metric_resp() end]},
+    {UserTrigger, [:passthrough], [triggers_count_for: fn _ -> @triggers_limit_count end]}
   ]) do
     :ok
   end
@@ -315,7 +316,11 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   end
 
   describe "for SANbase when signals limit reached" do
-    setup [:create_max_limit_triggers]
+    setup_with_mocks([
+      {UserTrigger, [:passthrough], [triggers_count_for: fn _ -> @triggers_limit_count end]}
+    ]) do
+      :ok
+    end
 
     test "user with FREE plan cannot create new trigger", context do
       assert create_trigger_mutation_with_error(context) ==
@@ -337,7 +342,11 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   end
 
   describe "for SANapi when signals limit reached" do
-    setup [:create_max_limit_triggers]
+    setup_with_mocks([
+      {UserTrigger, [:passthrough], [triggers_count_for: fn _ -> @triggers_limit_count end]}
+    ]) do
+      :ok
+    end
 
     test "with BASIC plan can create new trigger", context do
       insert(:subscription_essential, user: context.user)
@@ -353,7 +362,11 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   end
 
   describe "for FREE plan when signals limits not reached" do
-    setup [:create_some_triggers]
+    setup_with_mocks([
+      {UserTrigger, [:passthrough], [triggers_count_for: fn _ -> @triggers_limit_count - 1 end]}
+    ]) do
+      :ok
+    end
 
     test "user can create new trigger", context do
       assert create_trigger_mutation(context)["trigger"]["id"] != nil
@@ -361,11 +374,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   end
 
   # Private functions
-
-  defp create_max_limit_triggers(context),
-    do: create_triggers(context.user, @triggers_limit_count)
-
-  defp create_some_triggers(context), do: create_triggers(context.user, @triggers_limit_count - 1)
 
   defp create_trigger_mutation(context) do
     query = create_trigger_mutation()
@@ -375,27 +383,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   defp create_trigger_mutation_with_error(context) do
     query = create_trigger_mutation()
     execute_mutation_with_error(context.conn, query)
-  end
-
-  defp create_triggers(user, count) do
-    for _ <- 1..count do
-      create_trigger(user)
-    end
-  end
-
-  defp create_trigger(user) do
-    trigger_settings = %{
-      type: "daily_active_addresses",
-      target: %{slug: "santiment"},
-      channel: "telegram",
-      time_window: "1d",
-      operation: %{percent_up: 200.0}
-    }
-
-    UserTrigger.create_user_trigger(
-      user,
-      %{title: "Generic title", is_public: false, settings: trigger_settings}
-    )
   end
 
   defp v2_free_metric(), do: Metric.free_metrics() |> Enum.random()

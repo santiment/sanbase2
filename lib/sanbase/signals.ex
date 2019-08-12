@@ -41,7 +41,7 @@ defmodule Sanbase.Application.Signals do
 
       # Quantum Scheduler
       start_if(
-        fn -> {Sanbase.Scheduler, []} end,
+        fn -> {Sanbase.Signals.Scheduler, []} end,
         fn -> System.get_env("QUANTUM_SCHEDULER_ENABLED") end
       )
     ]

@@ -7,7 +7,7 @@ import Config
 
 alias Sanbase.Signal.Trigger
 
-config :sanbase, Sanbase.Scheduler,
+config :sanbase, Sanbase.Signals.Scheduler,
   scheduler_enabled: {:system, "QUANTUM_SCHEDULER_ENABLED", false},
   global: true,
   timeout: 30_000,
@@ -44,7 +44,14 @@ config :sanbase, Sanbase.Scheduler,
     eth_wallet_signal: [
       schedule: "5-59/5 * * * *",
       task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.EthWalletTriggerSettings]}
-    ],
+    ]
+  ]
+
+config :sanbase, Sanbase.Scrapers.Scheduler,
+  scheduler_enabled: {:system, "QUANTUM_SCHEDULER_ENABLED", false},
+  global: true,
+  timeout: 30_000,
+  jobs: [
     sync_stripe_subscriptions: [
       schedule: "2-59/5 * * * *",
       task: {Sanbase.Billing.Subscription, :sync_all, []}

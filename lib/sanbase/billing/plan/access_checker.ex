@@ -174,7 +174,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     subscription = subscription || @free_subscription
 
     cond do
-      # If user has API subscription - he has unlimmited signals
+      # If user has API subscription - he has unlimited signals
       subscription.plan.product_id == Product.product_api() -> true
       SanbaseAccessChecker.signals_limits_not_reached?(user, subscription) -> true
       true -> false

@@ -43,6 +43,10 @@ defmodule Sanbase.ClickhouseRepo do
         e ->
           error_msg = """
           Cannot execute ClickHouse query. Reason: #{Exception.message(e)}
+
+          STACKTRACE:
+          #{inspect(__STACKTRACE__)}
+          #{inspect(e)}
           """
 
           {:error, error_msg}
@@ -73,7 +77,46 @@ defmodule Sanbase.ClickhouseRepo do
         e ->
           error_msg = """
           Cannot execute ClickHouse query. Reason: #{Exception.message(e)}
+
+          STACKTRACE:
+          #{inspect(__STACKTRACE__)}
           """
+
+          {:error, error_msg}
+      end
+    end
+  end
+
+  defmacro query_reduce(query, args, init, reducer) do
+    quote bind_quoted: [query: query, args: args, init: init, reducer: reducer] do
+      try do
+        require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+
+        ClickhouseRepo.query(query, args)
+        |> case do
+          {:ok, result} ->
+            result =
+              Enum.reduce(
+                result.rows,
+                init,
+                reducer
+              )
+
+            {:ok, result}
+
+          {:error, error} ->
+            {:error, error}
+        end
+      rescue
+        e ->
+          error_msg =
+            """
+            Cannot execute ClickHouse query. Reason: #{Exception.message(e)}
+
+            STACKTRACE:
+            #{inspect(__STACKTRACE__)}
+            """
+            |> IO.inspect(label: "118", pretty: true, limit: :infinity)
 
           {:error, error_msg}
       end

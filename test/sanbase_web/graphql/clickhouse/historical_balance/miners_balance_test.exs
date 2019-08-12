@@ -7,6 +7,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalance.MinersBalanceTest do
   import ExUnit.CaptureLog
   import Sanbase.Factory
 
+  @moduletag capture_log: true
+
   alias Sanbase.Clickhouse.HistoricalBalance.MinersBalance
 
   setup do
@@ -80,6 +82,22 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalance.MinersBalanceTest do
                result = parse_response(response)
                assert result == nil
              end) =~
+               graphql_error_msg("Miners Balance", context.slug, error)
+    end
+  end
+
+  test "returns error to the user when calculation errors", context do
+    error = "Some error description here"
+
+    with_mock MinersBalance,
+              [:passthrough],
+              historical_balance: fn _, _, _, _ ->
+                {:error, error}
+              end do
+      response = execute_query(context.slug, context)
+      [first_error | _] = json_response(response, 200)["errors"]
+
+      assert first_error["message"] =~
                graphql_error_msg("Miners Balance", context.slug, error)
     end
   end

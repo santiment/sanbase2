@@ -7,6 +7,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
   import ExUnit.CaptureLog
   import Sanbase.Factory
 
+  @moduletag capture_log: true
+
   alias Sanbase.Clickhouse.MiningPoolsDistribution
 
   setup do
@@ -112,6 +114,22 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
                result = parse_response(response)
                assert result == nil
              end) =~
+               graphql_error_msg("Mining Pools Distribution", context.slug, error)
+    end
+  end
+
+  test "returns error to the user when calculation errors", context do
+    error = "Some error description here"
+
+    with_mock MiningPoolsDistribution,
+              [:passthrough],
+              distribution: fn _, _, _, _ ->
+                {:error, error}
+              end do
+      response = execute_query(context.slug, context)
+      [first_error | _] = json_response(response, 200)["errors"]
+
+      assert first_error["message"] =~
                graphql_error_msg("Mining Pools Distribution", context.slug, error)
     end
   end

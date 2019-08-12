@@ -58,7 +58,7 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
     |> get_in([:signals, :limit])
   end
 
-  def signals_limits_reached?(user, subscription) do
+  def signals_limits_not_reached?(user, subscription) do
     created_signals_count = UserTrigger.triggers_for(user) |> Enum.count()
 
     subscription.plan
@@ -66,13 +66,13 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
     |> signals_limit()
     |> case do
       :no_limit ->
-        false
-
-      limit when is_integer(limit) and created_signals_count >= limit ->
         true
 
-      _ ->
+      limit when is_integer(limit) and created_signals_count >= limit ->
         false
+
+      _ ->
+        true
     end
   end
 

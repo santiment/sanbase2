@@ -6,9 +6,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   alias Sanbase.Signal.{Trigger, UserTrigger}
   alias SanbaseWeb.Graphql.Helpers.Utils
   alias Sanbase.Telegram
-  alias Sanbase.Billing.Plan.SanbaseAccessChecker
-  alias Sanbase.Billing.Product
-  @free_subscription Sanbase.Billing.Subscription.free_subscription()
+  alias Sanbase.Billing.Plan.AccessChecker
 
   def triggers(%User{} = user, _args, _resolution) do
     {:ok,
@@ -20,13 +18,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   def create_trigger(_root, args, %{
         context: %{auth: %{current_user: current_user, subscription: subscription}}
       }) do
-    subscription = subscription || @free_subscription
-
-    if subscription.plan.product_id != Product.product_api() and
-         SanbaseAccessChecker.signals_limits_reached?(current_user, subscription) do
-      {:error, SanbaseAccessChecker.signals_limits_upgrade_message()}
-    else
+    if AccessChecker.user_can_create_signal?(current_user, subscription) do
       do_create_trigger(current_user, args)
+    else
+      {:error, AccessChecker.signals_limits_upgrade_message()}
     end
   end
 

@@ -337,6 +337,8 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   end
 
   describe "for SANapi when signals limit reached" do
+    setup [:create_max_limit_triggers]
+
     test "with BASIC plan can create new trigger", context do
       insert(:subscription_essential, user: context.user)
 

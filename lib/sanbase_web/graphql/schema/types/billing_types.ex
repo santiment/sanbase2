@@ -13,6 +13,7 @@ defmodule SanbaseWeb.Graphql.Schema.BillingTypes do
   end
 
   object :product do
+    field(:id, :id)
     field(:name, :string)
     field(:plans, list_of(:plan))
   end

@@ -5,7 +5,7 @@ defmodule Sanbase.Repo.Migrations.AddProducts do
     execute("""
     INSERT INTO products (id, name) VALUES
       (2, 'SANBase'),
-      (3, 'SANSheets'),
+      (3, 'SANsheets'),
       (4, 'SANGraphs')
     """)
   end

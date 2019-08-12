@@ -70,7 +70,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
          %Resolution{definition: definition, arguments: %{from: _from, to: _to}} = resolution,
          middleware_args
        ) do
-    query = definition.name |> Macro.underscore() |> String.to_existing_atom()
+    query =
+      definition.name
+      |> Macro.underscore()
+      |> String.to_existing_atom()
+      |> get_query(resolution.source)
 
     if Subscription.is_restricted?(query) do
       restricted_query(resolution, middleware_args, query)
@@ -83,6 +87,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
     resolution
   end
 
+  defp get_query(:timeseries_data, %{metric: metric}), do: {:clickhouse_v2_metric, metric}
+  defp get_query(query, _), do: query
+
   defp restricted_query(
          %Resolution{arguments: %{from: from, to: to}, context: context} = resolution,
          middleware_args,
@@ -90,6 +97,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
        ) do
     subscription = context[:auth][:subscription] || @free_subscription
     product = subscription.plan.product_id || context.product
+
     historical_data_in_days = Subscription.historical_data_in_days(subscription, query, product)
 
     realtime_data_cut_off_in_days =

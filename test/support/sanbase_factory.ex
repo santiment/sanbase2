@@ -218,19 +218,19 @@ defmodule Sanbase.Factory do
   end
 
   def product_api_factory() do
-    %Product{id: 1, name: "SANapi"}
+    %Product{id: 1, name: "Neuro by Santiment"}
   end
 
   def product_sanbase_factory() do
-    %Product{id: 2, name: "SANBase"}
+    %Product{id: 2, name: "Sanabse by Santiment"}
   end
 
   def product_sheets_factory() do
-    %Product{id: 3, name: "SANSheets"}
+    %Product{id: 3, name: "Sheets by Santiment"}
   end
 
   def product_graphs_factory() do
-    %Product{id: 4, name: "SANGraphs"}
+    %Product{id: 4, name: "Graphs by Santiment"}
   end
 
   def plan_free_factory() do
@@ -354,6 +354,46 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def plan_free_sheets_factory() do
+    %Plan{
+      id: 21,
+      name: "FREE",
+      amount: 0,
+      currency: "USD",
+      interval: "month"
+    }
+  end
+
+  def plan_basic_sheets_factory() do
+    %Plan{
+      id: 22,
+      name: "BASIC",
+      amount: 8900,
+      currency: "USD",
+      interval: "month"
+    }
+  end
+
+  def plan_pro_sheets_factory() do
+    %Plan{
+      id: 23,
+      name: "PRO",
+      amount: 18900,
+      currency: "USD",
+      interval: "month"
+    }
+  end
+
+  def plan_enterprise_sheets_factory() do
+    %Plan{
+      id: 24,
+      name: "ENTERPRISE",
+      amount: 0,
+      currency: "USD",
+      interval: "month"
+    }
+  end
+
   def subscription_essential_factory() do
     %Subscription{
       stripe_id: rand_str(),
@@ -388,6 +428,27 @@ defmodule Sanbase.Factory do
   def subscription_pro_sanbase_factory() do
     %Subscription{
       plan_id: 13,
+      current_period_end: Timex.shift(Timex.now(), days: 1)
+    }
+  end
+
+  def subscription_basic_sheets_factory() do
+    %Subscription{
+      plan_id: 22,
+      current_period_end: Timex.shift(Timex.now(), days: 1)
+    }
+  end
+
+  def subscription_pro_sheets_factory() do
+    %Subscription{
+      plan_id: 23,
+      current_period_end: Timex.shift(Timex.now(), days: 1)
+    }
+  end
+
+  def subscription_pro_enterprise_factory() do
+    %Subscription{
+      plan_id: 24,
       current_period_end: Timex.shift(Timex.now(), days: 1)
     }
   end

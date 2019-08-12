@@ -30,6 +30,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   @product_api Product.product_api()
   @product_sanbase Product.product_sanbase()
+  @product_sheets Product.product_sheets()
 
   def init(opts), do: opts
 
@@ -78,7 +79,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       header when no_auth_header(header) ->
         product =
           get_req_header(conn, "origin")
-          |> get_product()
+          |> get_no_auth_product()
 
         {conn, %{permissions: User.no_permissions(), product: product}}
 
@@ -176,6 +177,10 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
            {:has_header?, get_req_header(conn, "authorization")},
          {:ok, current_user} <- apikey_authorize(apikey),
          {:ok, {token, _apikey}} <- Sanbase.Auth.Hmac.split_apikey(apikey) do
+      product =
+        get_req_header(conn, "user-agent")
+        |> get_apikey_product()
+
       %{
         permissions: User.permissions!(current_user),
         auth: %{
@@ -183,9 +188,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
           current_user: current_user,
           token: token,
           san_balance: san_balance(current_user),
-          subscription: Subscription.current_subscription(current_user, @product_api)
+          subscription: Subscription.current_subscription(current_user, product)
         },
-        product: @product_api
+        product: product
       }
     else
       {:has_header?, _} -> :try_next
@@ -234,12 +239,21 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     end
   end
 
-  defp get_product([origin]) do
+  defp get_no_auth_product([origin]) do
     case String.ends_with?(origin, "santiment.net") do
       true -> @product_sanbase
       false -> @product_api
     end
   end
 
-  defp get_product(_), do: @product_api
+  defp get_no_auth_product(_), do: @product_api
+
+  defp get_apikey_product([user_agent]) do
+    case String.contains?(user_agent, "Google-Apps-Script") do
+      true -> @product_sheets
+      false -> @product_api
+    end
+  end
+
+  defp get_apikey_product(_), do: @product_api
 end

@@ -1,0 +1,337 @@
+[
+  {
+    "metric": "average_price",
+    "access": "free",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "daily_active_addresses",
+    "access": "free",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "daily_avg_marketcap_usd",
+    "access": "free",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "daily_avg_price_usd",
+    "access": "free",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "daily_closing_marketcap_usd",
+    "access": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "daily_closing_price_usd",
+    "access": "free",
+    "aggregation": "last"
+  },
+  {
+    "metric": "daily_high_price_usd",
+    "access": "free",
+    "aggregation": "max"
+  },
+  {
+    "metric": "daily_low_price_usd",
+    "access": "free",
+    "aggregation": "min"
+  },
+  {
+    "metric": "daily_opening_price_usd",
+    "access": "free",
+    "aggregation": "first"
+  },
+  {
+    "metric": "daily_stack_circulation",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "daily_trading_volume_usd",
+    "access": "free",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mean_realized_price_usd_10y",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mean_realized_price_usd_180d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mean_realized_price_usd_1d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mean_realized_price_usd_20y",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mean_realized_price_usd_2y",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mean_realized_price_usd_30d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mean_realized_price_usd_365d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mean_realized_price_usd_3y",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mean_realized_price_usd_5y",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mean_realized_price_usd_60d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mean_realized_price_usd_7d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mean_realized_price_usd_90d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mvrv_usd_10y",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mvrv_usd_180d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mvrv_usd_1d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mvrv_usd_20y",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mvrv_usd_2y",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mvrv_usd_30d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mvrv_usd_365d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mvrv_usd_3y",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mvrv_usd_5y",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mvrv_usd_60d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mvrv_usd_7d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "mvrv_usd_90d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_age_consumed",
+    "access": "restricted",
+    "aggregation": "sum"
+  },
+  {
+    "metric": "stack_circulation_10y",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_circulation_180d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_circulation_1d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_circulation_20y",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_circulation_2y",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_circulation_30d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_circulation_365d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_circulation_3y",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_circulation_5y",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_circulation_60d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_circulation_7d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_circulation_90d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_cumulative_age_consumed",
+    "access": "restricted",
+    "aggregation": "sum"
+  },
+  {
+    "metric": "stack_liveliness",
+    "access": "restricted",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_mean_age_days",
+    "access": "restricted",
+    "aggregation": "last"
+  },
+  {
+    "metric": "stack_realized_cap_usd",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_realized_cap_usd_10y",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_realized_cap_usd_180d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_realized_cap_usd_1d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_realized_cap_usd_20y",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_realized_cap_usd_2y",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_realized_cap_usd_30d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_realized_cap_usd_365d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_realized_cap_usd_3y",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_realized_cap_usd_5y",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_realized_cap_usd_60d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_realized_cap_usd_7d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_realized_cap_usd_90d",
+    "access": "restricted",
+    "aggregation": "avg"
+  },
+  {
+    "metric": "stack_total_age",
+    "access": "restricted",
+    "aggregation": "last"
+  },
+  {
+    "metric": "token_velocity",
+    "access": "restricted",
+    "aggregation": "last"
+  },
+  {
+    "metric": "transaction_volume",
+    "access": "restricted",
+    "aggregation": "sum"
+  }
+]

@@ -2,8 +2,8 @@ defmodule Sanbase.Billing.Plan.CustomAccess do
   @moduledoc ~s"""
   Provide per-query custom access configuration.
 
-  Some queries have custom access logic. For example for MVRV we're showing
-  everything except the last 30 days for free users.
+  Some queries have custom access logic. For example for Token Age Consumed
+  we're showing everything except the last 30 days for free users.
 
   In order to add a new custom metric the description must be added under a new
   `@metric` module attribute. This attribute has the `accumulate: true` option
@@ -19,18 +19,23 @@ defmodule Sanbase.Billing.Plan.CustomAccess do
     is missing it means that it is not restricted
   """
 
+  import Sanbase.Clickhouse.Metric.Helper,
+    only: [mvrv_metrics: 0, realized_value_metrics: 0, token_age_consumed_metrics: 0]
+
   Module.register_attribute(__MODULE__, :metric, accumulate: true)
 
+  # MVRV and RV metrics from the schema and from Clickhouse
   @metric %{
-    metric_name: [:mvrv_ratio, :realized_value],
+    metric_name: [:mvrv_ratio, :realized_value] ++ mvrv_metrics() ++ realized_value_metrics(),
     plan_access: %{
       free: %{realtime_data_cut_off_in_days: 30, historical_data_in_days: 365},
       basic: %{realtime_data_cut_off_in_days: 14, historical_data_in_days: 2 * 365}
     }
   }
 
+  # Token age consumed metrics from the shcme and from Clickhouse
   @metric %{
-    metric_name: [:token_age_consumed, :burn_rate],
+    metric_name: [:token_age_consumed, :burn_rate] ++ token_age_consumed_metrics(),
     plan_access: %{
       free: %{realtime_data_cut_off_in_days: 30}
     }

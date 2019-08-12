@@ -32,7 +32,8 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
 
   alias Sanbase.Billing.Plan.{
     ApiAccessChecker,
-    SanbaseAccessChecker
+    SanbaseAccessChecker,
+    SansheetsAccessChecker
   }
 
   defmodule Helper do
@@ -43,6 +44,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     It is a different module because functions from the module where a module
     attribute is defined cannot be used
     """
+    alias Sanbase.Clickhouse.Metric
     require SanbaseWeb.Graphql.Schema
 
     @mutation_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :mutation)
@@ -51,9 +53,18 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     @query_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :query)
     @fields @query_type.fields |> Map.keys()
     def get_metrics_with_access_level(level) do
-      Enum.filter(@fields, fn f ->
-        Map.get(@query_type.fields, f) |> Absinthe.Type.meta(:access) == level
-      end)
+      from_schema =
+        Enum.filter(@fields, fn f ->
+          Map.get(@query_type.fields, f) |> Absinthe.Type.meta(:access) == level
+        end)
+
+      clickhouse_v2_metrics =
+        Enum.filter(Metric.metric_access_map(), fn {_metric, metric_level} ->
+          level == metric_level
+        end)
+        |> Enum.map(fn {metric, _access} -> {:clickhouse_v2_metric, metric} end)
+
+      from_schema ++ clickhouse_v2_metrics
     end
 
     def get_metrics_without_access_level() do
@@ -75,7 +86,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
       There are GraphQL queries defined without specifying their access level.
       The access level could be either `free` or `restricted`.
 
-      Queries without subscription plan: #{inspect(queries)}
+      Queries without access level: #{inspect(queries)}
       """)
   end
 
@@ -92,16 +103,20 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
 
   @custom_access_queries_stats CustomAccess.get()
   @custom_access_queries @custom_access_queries_stats |> Map.keys() |> Enum.sort()
+  @custom_access_queries_mapset MapSet.new(@custom_access_queries)
 
   # Raise an error if there are queries with custom access logic that are marked
   # as free. If there are such queries the access restriction logic will never
   # be applied
 
-  case @custom_access_queries -- @restricted_metrics do
-    [] ->
+  free_and_custom_intersection =
+    MapSet.intersection(@custom_access_queries_mapset, @free_metrics_mapset)
+
+  case Enum.empty?(free_and_custom_intersection) do
+    true ->
       :ok
 
-    queries ->
+    false ->
       require Sanbase.Break, as: Break
 
       Break.break("""
@@ -110,8 +125,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
       executed.
 
       Queries defined in the CustomAccess module but do not have the `:restricted`
-      access level field: #{inspect(queries)}.
-
+      access level field: #{inspect(free_and_custom_intersection |> Enum.to_list())}
       """)
   end
 
@@ -120,7 +134,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   A query can be restricted but still accessible by not-paid users or users with
   lower plans. In this case historical and/or realtime data access can be cut off
   """
-  def is_restricted?(query), do: query in @restricted_metrics_mapset
+  def is_restricted?(query), do: query not in @free_metrics_mapset
 
   def custom_access_queries_stats, do: @custom_access_queries_stats
   def custom_access_queries, do: @custom_access_queries
@@ -128,9 +142,19 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   @product_to_access_module [
     {Product.product_api(), ApiAccessChecker},
     {Product.product_sanbase(), SanbaseAccessChecker},
-    {Product.product_sheets(), SanbaseAccessChecker},
+    {Product.product_sheets(), SansheetsAccessChecker},
     {Product.product_sangraphs(), SanbaseAccessChecker}
   ]
+
+  def historical_data_in_days(plan, query, _product) when query in @custom_access_queries do
+    Map.get(@custom_access_queries_stats, query)
+    |> get_in([:plan_access, plan, :historical_data_in_days])
+  end
+
+  def realtime_data_cut_off_in_days(plan, query) when query in @custom_access_queries do
+    Map.get(@custom_access_queries_stats, query)
+    |> get_in([:plan_access, plan, :realtime_data_cut_off_in_days])
+  end
 
   for {product, module} <- @product_to_access_module do
     def historical_data_in_days(plan, query, unquote(product)) do

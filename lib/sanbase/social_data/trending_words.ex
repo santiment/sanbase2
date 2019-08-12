@@ -31,12 +31,10 @@ defmodule Sanbase.SocialData.TrendingWords do
           score: float()
         }
 
-  @type result :: {:ok, list(trending_word)} | {:error, String.t()}
-
   @doc ~s"""
   Get a list of the currently trending words
   """
-  @spec get_trending_now(non_neg_integer()) :: result
+  @spec get_trending_now(non_neg_integer()) :: {:ok, list(trending_word)} | {:error, String.t()}
   def get_trending_now(size \\ 10)
 
   def get_trending_now(size) do

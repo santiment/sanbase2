@@ -3,8 +3,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
 
   require Logger
 
-  import Mogrify
-
   alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo
@@ -45,19 +43,19 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     url = remote_project.logo
     slug = remote_project.slug
     file_extension = Path.extname(url |> String.downcase())
-    file_name = slug <> file_extension
+    filename = slug <> file_extension
 
     case Map.get(local_projects_map, slug) do
       %Project{} = project ->
-        with {:ok, local_filepath_64} <- download(url, dir_path_64, file_name),
+        with {:ok, local_filepath_64} <- download(url, dir_path_64, filename),
              {:ok, local_filepath_32} <-
-               resize_image(local_filepath_64, dir_path_32, file_name),
-             {:ok, _} <- upload(local_filepath_64),
-             {:ok, _} <- upload(local_filepath_32),
+               resize_image(local_filepath_64, dir_path_32, filename),
+             {:ok, uploaded_filepath_64} <- upload(local_filepath_64, 64),
+             {:ok, uploaded_filepath_32} <- upload(local_filepath_32, 32),
              {:ok, _} <-
                update_local_project(project, %{
-                 logo32_url: local_filepath_32,
-                 logo64_url: local_filepath_64
+                 logo32_url: uploaded_filepath_32,
+                 logo64_url: uploaded_filepath_64
                }) do
           :ok
         else
@@ -70,8 +68,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     end
   end
 
-  defp download(url, dir_path, file_name) do
-    filepath = Path.join(dir_path, file_name)
+  defp download(url, dir_path, filename) do
+    filepath = Path.join(dir_path, filename)
 
     case get(url) do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
@@ -91,16 +89,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     end
   end
 
-  defp resize_image(source_filepath, dest_dir_path, file_name) do
-    dest_file_path = dest_dir_path <> "/" <> file_name
-    open(source_filepath) |> resize("32x32") |> save(path: dest_file_path)
-    {:ok, dest_file_path}
+  defp resize_image(source_filepath, dest_dir_path, filename) do
+    dest_filepath = dest_dir_path <> "/" <> filename
+    Mogrify.open(source_filepath) |> Mogrify.resize("32x32") |> Mogrify.save(path: dest_filepath)
+    {:ok, dest_filepath}
   end
 
-  defp upload(filepath) do
-    with {:ok, file_name} <- FileStore.store({filepath, "logo"}) do
-      Logger.info("#{@log_tag} Successfully uploaded logo: #{filepath}")
-      {:ok, FileStore.url({file_name, "logo"})}
+  defp upload(filepath, size) do
+    with {:ok, filename} <- FileStore.store({filepath, "logo#{size}"}) do
+      Logger.info("#{@log_tag} Successfully uploaded logo from #{filepath} to: #{filename}")
+      {:ok, FileStore.url({filename, "logo#{size}"})}
     else
       {:error, error} ->
         error_msg = inspect(error)
@@ -113,9 +111,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     end
   end
 
-  defp update_local_project(nil, _filepath), do: {:error, "Project not found"}
-
-  defp update_local_project(project, fields) do
+  defp update_local_project(%Project{} = project, %{} = fields) do
     Project.changeset(project, fields) |> Repo.update()
+    Logger.info("#{@log_tag} Successfully updated logos for project: #{project.coinmarketcap_id}")
   end
 end

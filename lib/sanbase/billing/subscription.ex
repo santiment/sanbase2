@@ -180,6 +180,37 @@ defmodule Sanbase.Billing.Subscription do
     |> Enum.each(&sync_with_stripe_subscription/1)
   end
 
+  def sync_with_stripe_subscription(%__MODULE__{stripe_id: stripe_id} = subscription) do
+    with {:ok,
+          %Stripe.Subscription{
+            current_period_end: current_period_end,
+            cancel_at_period_end: cancel_at_period_end,
+            status: status,
+            plan: %Stripe.Plan{id: stripe_plan_id}
+          }} <- StripeApi.retrieve_subscription(stripe_id),
+         {:plan_not_exist?, %Plan{id: plan_id}} <-
+           {:plan_not_exist?, Plan.by_stripe_id(stripe_plan_id)} do
+      update_subscription_db(subscription, %{
+        current_period_end: DateTime.from_unix!(current_period_end),
+        cancel_at_period_end: cancel_at_period_end,
+        status: status,
+        plan_id: plan_id
+      })
+    else
+      {:plan_not_exist?, nil} ->
+        Logger.error(
+          "Error while syncing subscription: #{subscription.stripe_id}, reason: plan does not exist}"
+        )
+
+      {:error, reason} ->
+        Logger.error(
+          "Error while syncing subscription: #{subscription.stripe_id}, reason: #{inspect(reason)}"
+        )
+    end
+  end
+
+  def sync_with_stripe_subscription(_), do: :ok
+
   def sync_with_stripe_subscription(
         %Stripe.Subscription{
           current_period_end: current_period_end,
@@ -189,36 +220,18 @@ defmodule Sanbase.Billing.Subscription do
         },
         db_subscription
       ) do
+    plan_id =
+      case Plan.by_stripe_id(stripe_plan_id) do
+        %Plan{id: plan_id} -> plan_id
+        nil -> db_subscription.plan_id
+      end
+
     update_subscription_db(db_subscription, %{
       current_period_end: DateTime.from_unix!(current_period_end),
       cancel_at_period_end: cancel_at_period_end,
       status: status,
-      plan_id: Plan.by_stripe_id(stripe_plan_id).id
+      plan_id: plan_id
     })
-  end
-
-  def sync_with_stripe_subscription(%__MODULE__{stripe_id: stripe_id} = subscription) do
-    StripeApi.retrieve_subscription(stripe_id)
-    |> case do
-      {:ok,
-       %Stripe.Subscription{
-         current_period_end: current_period_end,
-         cancel_at_period_end: cancel_at_period_end,
-         status: status,
-         plan: %Stripe.Plan{id: stripe_plan_id}
-       }} ->
-        update_subscription_db(subscription, %{
-          current_period_end: DateTime.from_unix!(current_period_end),
-          cancel_at_period_end: cancel_at_period_end,
-          status: status,
-          plan_id: Plan.by_stripe_id(stripe_plan_id).id
-        })
-
-      {:error, reason} ->
-        Logger.error(
-          "Error while syncing subscription: #{subscription.stripe_id}, reason: #{inspect(reason)}"
-        )
-    end
   end
 
   @doc """

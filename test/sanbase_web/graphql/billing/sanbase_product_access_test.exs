@@ -314,62 +314,66 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
   end
 
-  describe "Signals limits user has reached signals limit" do
+  describe "for SANbase when signals limit reached" do
+    setup [:create_max_limit_triggers]
+
     test "user with FREE plan cannot create new trigger", context do
-      create_triggers(context.user, @triggers_limit_count)
-      query = create_trigger_mutation()
-      error = execute_mutation_with_error(context.conn, query)
-      assert error == SanbaseAccessChecker.signals_limits_upgrade_message()
+      assert create_trigger_mutation_with_error(context) ==
+               SanbaseAccessChecker.signals_limits_upgrade_message()
     end
 
     test "user with BASIC plan cannot create new trigger", context do
       insert(:subscription_basic_sanbase, user: context.user)
-      create_triggers(context.user, @triggers_limit_count)
-      query = create_trigger_mutation()
-      error = execute_mutation_with_error(context.conn, query)
-      assert error == SanbaseAccessChecker.signals_limits_upgrade_message()
+
+      assert create_trigger_mutation_with_error(context) ==
+               SanbaseAccessChecker.signals_limits_upgrade_message()
     end
 
     test "user with PRO plan can create new trigger", context do
       insert(:subscription_pro_sanbase, user: context.user)
-      create_triggers(context.user, @triggers_limit_count)
 
-      query = create_trigger_mutation()
-      result = execute_mutation(context.conn, query, "createTrigger")
-      assert result["trigger"]["id"] != nil
-    end
-
-    test "with BASIC API plan can create new trigger", context do
-      user = insert(:user)
-      insert(:subscription_essential, user: context.user)
-      create_triggers(user, @triggers_limit_count)
-
-      query = create_trigger_mutation()
-      result = execute_mutation(context.conn, query, "createTrigger")
-      assert result["trigger"]["id"] != nil
-    end
-
-    test "with PREMIUM API plan can create new trigger", context do
-      user = insert(:user)
-      insert(:subscription_premium, user: context.user)
-      create_triggers(user, @triggers_limit_count)
-
-      query = create_trigger_mutation()
-      result = execute_mutation(context.conn, query, "createTrigger")
-      assert result["trigger"]["id"] != nil
+      assert create_trigger_mutation(context)["trigger"]["id"] != nil
     end
   end
 
-  describe "Signals limits user has not reached signals limit" do
-    test "user with FREE plan can create new trigger", context do
-      create_triggers(context.user, @triggers_limit_count - 1)
-      query = create_trigger_mutation()
-      result = execute_mutation(context.conn, query, "createTrigger")
-      assert result["trigger"]["id"] != nil
+  describe "for SANapi when signals limit reached" do
+    test "with BASIC plan can create new trigger", context do
+      insert(:subscription_essential, user: context.user)
+
+      assert create_trigger_mutation(context)["trigger"]["id"] != nil
+    end
+
+    test "with PREMIUM plan can create new trigger", context do
+      insert(:subscription_premium, user: context.user)
+
+      assert create_trigger_mutation(context)["trigger"]["id"] != nil
+    end
+  end
+
+  describe "for FREE plan when signals limits not reached" do
+    setup [:create_some_triggers]
+
+    test "user can create new trigger", context do
+      assert create_trigger_mutation(context)["trigger"]["id"] != nil
     end
   end
 
   # Private functions
+
+  defp create_max_limit_triggers(context),
+    do: create_triggers(context.user, @triggers_limit_count)
+
+  defp create_some_triggers(context), do: create_triggers(context.user, @triggers_limit_count - 1)
+
+  defp create_trigger_mutation(context) do
+    query = create_trigger_mutation()
+    execute_mutation(context.conn, query, "createTrigger")
+  end
+
+  defp create_trigger_mutation_with_error(context) do
+    query = create_trigger_mutation()
+    execute_mutation_with_error(context.conn, query)
+  end
 
   defp create_triggers(user, count) do
     for _ <- 1..count do

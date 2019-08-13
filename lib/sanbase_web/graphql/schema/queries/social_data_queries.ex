@@ -51,7 +51,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
         2. PROFESSIONAL_TRADERS_CHAT
         3. REDDIT
         4. ALL
-      * size - an integer showing how many words should be included in the top list (max 100)
+      * size - an integer showing how many words should be included in the top list (max 30)
       * hour - an integer from 0 to 23 showing the hour of the day when the calculation was executed
       * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
       * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
@@ -68,6 +68,51 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction, %{allow_realtime_data: true})
       cache_resolve(&SocialDataResolver.trending_words/3, ttl: 600, max_ttl_offset: 240)
+    end
+
+    @desc ~s"""
+    Returns lists with trending words and their corresponding trend score.
+
+    * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * interval - a string representing at what interval the words are returned
+    * size - an integer showing how many words should be included in the top list (max 30)
+    """
+    field :get_trending_words, list_of(:trending_words) do
+      meta(access: :restricted)
+
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, non_null(:string))
+      arg(:size, non_null(:integer))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_realtime_data: true})
+      cache_resolve(&SocialDataResolver.get_trending_words/3, ttl: 600, max_ttl_offset: 240)
+    end
+
+    @desc ~s"""
+    Returns lists with the position of a word in the list of trending words
+    over time
+
+    * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * interval - a string representing at what interval the words are returned
+    * size - an integer showing how many top words should be considered in the check
+    """
+    field :get_trending_word_history, list_of(:trending_word_position) do
+      meta(access: :restricted)
+
+      arg(:word, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, non_null(:string))
+      arg(:size, non_null(:integer))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_realtime_data: true})
+
+      cache_resolve(&SocialDataResolver.get_trending_word_history/3, ttl: 600, max_ttl_offset: 240)
     end
 
     @desc ~s"""

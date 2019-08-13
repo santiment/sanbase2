@@ -70,6 +70,32 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     TechIndicators.topic_search(source, search_text, from, to, interval)
   end
 
+  def get_trending_words(
+        _root,
+        %{from: from, to: to, interval: interval, size: size},
+        _resolution
+      ) do
+    case SocialData.TrendingWords.get(from, to, interval, size) do
+      {:ok, result} ->
+        result =
+          result
+          |> Enum.map(fn {datetime, top_words} -> %{datetime: datetime, top_words: top_words} end)
+
+        {:ok, result}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  def get_trending_word_history(
+        _root,
+        %{word: word, from: from, to: to, interval: interval, size: size},
+        _resolution
+      ) do
+    SocialData.TrendingWords.get_word_stats(word, from, to, interval, size)
+  end
+
   def trending_words(
         _root,
         %{source: source, size: size, hour: hour, from: from, to: to},

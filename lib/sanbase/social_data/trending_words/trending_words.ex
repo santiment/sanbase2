@@ -136,6 +136,7 @@ defmodule Sanbase.SocialData.TrendingWords do
         """
         )
         GROUP BY t
+        ORDER BY t
         """
       ]
       |> to_string()

@@ -647,11 +647,36 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       assert String.contains?(error["message"], "Cannot update not owned insight")
     end
 
-    test "cannot update published insights", %{conn: conn, user: user, poll: poll} do
-      image_url = upload_image(conn)
+    test "cannot update title or text published insight", %{conn: conn, user: user, poll: poll} do
+      upload_image(conn)
 
-      tag1 = %Tag{name: "PRJ1"} |> Repo.insert!()
-      tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
+      post =
+        insert(:post,
+          poll: poll,
+          user: user,
+          ready_state: Post.published()
+        )
+
+      mutation = """
+        mutation {
+          updateInsight(id: #{post.id}, title: "Awesome post2", text: "Example body2") {
+            id
+          }
+        }
+      """
+
+      result =
+        conn
+        |> post("/graphql", mutation_skeleton(mutation))
+        |> json_response(200)
+
+      [error] = result["errors"]
+      assert error["message"] == "Only the tags can be updated for a published insight"
+    end
+
+    test "can update tags for published insight", %{conn: conn, user: user, poll: poll} do
+      tag1 = insert(:tag, name: "PRJ1")
+      tag2 = insert(:tag, name: "PRJ2")
 
       post =
         insert(:post,
@@ -663,16 +688,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
       mutation = """
         mutation {
-          updateInsight(id: #{post.id} title: "Awesome post2", text: "Example body2", tags: ["#{
-        tag2.name
-      }"], imageUrls: ["#{image_url}"]) {
-            id,
-            title,
-            text,
-            images{
-              imageUrl
-              contentHash
-            }
+          updateInsight(id: #{post.id}, tags: ["#{tag2.name}"]) {
             tags {
               name
             }
@@ -683,9 +699,11 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       result =
         conn
         |> post("/graphql", mutation_skeleton(mutation))
+        |> json_response(200)
 
-      [error] = json_response(result, 200)["errors"]
-      assert String.contains?(error["message"], "Cannot update published insight")
+      %{"data" => %{"updateInsight" => %{"tags" => tags}}} = result
+      assert tags != [tag1]
+      assert tags == [%{"name" => tag2.name}]
     end
   end
 

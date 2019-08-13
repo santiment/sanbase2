@@ -76,7 +76,6 @@ defmodule Sanbase.Insight.Post do
     |> cast(attrs, [:title, :short_desc, :link, :text, :moderation_comment, :state])
     |> Tag.put_tags(attrs)
     |> images_cast(attrs)
-    |> validate_required([:poll_id, :user_id, :title])
     |> validate_length(:title, max: 140)
     |> unique_constraint(:poll_id, name: :posts_poll_id_title_index)
   end
@@ -124,24 +123,37 @@ defmodule Sanbase.Insight.Post do
       %__MODULE__{user_id: ^user_id, ready_state: @draft} = post ->
         post
         |> Repo.preload([:tags, :images])
-        |> __MODULE__.update_changeset(args)
+        |> update_changeset(args)
         |> Repo.update()
-        |> case do
-          {:ok, post} ->
-            {:ok, post}
 
-          {:error, changeset} ->
-            {
-              :error,
-              message: "Cannot update insight", details: changeset_errors_to_str(changeset)
-            }
+      # Allow updating only the tags
+      %__MODULE__{user_id: ^user_id, ready_state: @published} = post ->
+        # Clean the id from the args as it's not needed
+        # and messes up with the check
+        Map.delete(args, :id)
+        |> Map.pop(:tags)
+        |> case do
+          {_, rest} when map_size(rest) > 0 ->
+            {:error, "Only the tags can be updated for a published insight"}
+
+          {tags, _} when is_list(tags) ->
+            post
+            |> Repo.preload([:tags])
+            |> update_changeset(%{tags: tags})
+            |> Repo.update()
+
+          _ ->
+            post
         end
 
-      %Post{user_id: another_user_id} when user_id != another_user_id ->
+      %__MODULE__{user_id: another_user_id} when user_id != another_user_id ->
         {:error, "Cannot update not owned insight: #{post_id}"}
 
-      %Post{user_id: ^user_id, ready_state: @published} ->
-        {:error, "Cannot update published insight: #{post_id}"}
+      {:error, changeset} ->
+        {
+          :error,
+          message: "Cannot update insight", details: changeset_errors_to_str(changeset)
+        }
 
       _post ->
         {:error, "Cannot update insight with id: #{post_id}"}

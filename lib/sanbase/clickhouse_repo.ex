@@ -41,15 +41,7 @@ defmodule Sanbase.ClickhouseRepo do
         end
       rescue
         e ->
-          error_msg = """
-          Cannot execute ClickHouse query. Reason: #{Exception.message(e)}
-
-          STACKTRACE:
-          #{inspect(__STACKTRACE__)}
-          #{inspect(e)}
-          """
-
-          {:error, error_msg}
+          {:error, "Cannot execute ClickHouse query. Reason: #{Exception.message(e)}"}
       end
     end
   end
@@ -75,14 +67,7 @@ defmodule Sanbase.ClickhouseRepo do
         end
       rescue
         e ->
-          error_msg = """
-          Cannot execute ClickHouse query. Reason: #{Exception.message(e)}
-
-          STACKTRACE:
-          #{inspect(__STACKTRACE__)}
-          """
-
-          {:error, error_msg}
+          {:error, "Cannot execute ClickHouse query. Reason: #{Exception.message(e)}"}
       end
     end
   end
@@ -109,16 +94,7 @@ defmodule Sanbase.ClickhouseRepo do
         end
       rescue
         e ->
-          error_msg =
-            """
-            Cannot execute ClickHouse query. Reason: #{Exception.message(e)}
-
-            STACKTRACE:
-            #{inspect(__STACKTRACE__)}
-            """
-            |> IO.inspect(label: "118", pretty: true, limit: :infinity)
-
-          {:error, error_msg}
+          {:error, "Cannot execute ClickHouse query. Reason: #{Exception.message(e)}"}
       end
     end
   end

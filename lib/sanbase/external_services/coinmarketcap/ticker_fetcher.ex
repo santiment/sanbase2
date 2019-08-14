@@ -55,19 +55,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
 
   # Helper functions
 
-  defp get_or_create_latest_coinmarketcap_data(coinmarketcap_id) do
-    case Repo.get_by(LatestCoinmarketcapData, coinmarketcap_id: coinmarketcap_id) do
-      nil ->
-        %LatestCoinmarketcapData{coinmarketcap_id: coinmarketcap_id}
-
-      entry ->
-        entry
-    end
-  end
-
   defp store_latest_coinmarketcap_data(ticker) do
     ticker.id
-    |> get_or_create_latest_coinmarketcap_data()
+    |> LatestCoinmarketcapData.get_or_build()
     |> LatestCoinmarketcapData.changeset(%{
       market_cap_usd: ticker.market_cap_usd,
       name: ticker.name,

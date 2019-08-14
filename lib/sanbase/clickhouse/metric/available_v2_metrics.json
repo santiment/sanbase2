@@ -1,10 +1,5 @@
 [
   {
-    "metric": "average_price",
-    "access": "free",
-    "aggregation": "avg"
-  },
-  {
     "metric": "daily_active_addresses",
     "access": "free",
     "aggregation": "avg"
@@ -44,11 +39,7 @@
     "access": "free",
     "aggregation": "first"
   },
-  {
-    "metric": "daily_stack_circulation",
-    "access": "restricted",
-    "aggregation": "avg"
-  },
+
   {
     "metric": "daily_trading_volume_usd",
     "access": "free",
@@ -240,24 +231,9 @@
     "aggregation": "avg"
   },
   {
-    "metric": "stack_cumulative_age_consumed",
-    "access": "restricted",
-    "aggregation": "sum"
-  },
-  {
-    "metric": "stack_liveliness",
-    "access": "restricted",
-    "aggregation": "last"
-  },
-  {
     "metric": "stack_mean_age_days",
     "access": "restricted",
     "aggregation": "last"
-  },
-  {
-    "metric": "stack_realized_cap_usd",
-    "access": "restricted",
-    "aggregation": "avg"
   },
   {
     "metric": "stack_realized_cap_usd_10y",
@@ -318,11 +294,6 @@
     "metric": "stack_realized_cap_usd_90d",
     "access": "restricted",
     "aggregation": "avg"
-  },
-  {
-    "metric": "stack_total_age",
-    "access": "restricted",
-    "aggregation": "last"
   },
   {
     "metric": "token_velocity",

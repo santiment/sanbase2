@@ -96,7 +96,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
 
       expected_free_queries =
         [
-          "average_price",
           "daily_active_addresses",
           "daily_avg_marketcap_usd",
           "daily_avg_price_usd",
@@ -157,13 +156,12 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
     test "restricted clickhouse v2 queries" do
       restricted_queries =
         Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_access_level(:restricted)
-        |> Enum.sort()
         |> Enum.reject(&is_atom/1)
         |> Enum.map(&elem(&1, 1))
+        |> Enum.sort()
 
       expected_restricted_queries =
         [
-          "daily_stack_circulation",
           "mean_realized_price_usd_10y",
           "mean_realized_price_usd_180d",
           "mean_realized_price_usd_1d",
@@ -201,10 +199,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           "stack_circulation_60d",
           "stack_circulation_7d",
           "stack_circulation_90d",
-          "stack_cumulative_age_consumed",
-          "stack_liveliness",
           "stack_mean_age_days",
-          "stack_realized_cap_usd",
           "stack_realized_cap_usd_10y",
           "stack_realized_cap_usd_180d",
           "stack_realized_cap_usd_1d",
@@ -217,9 +212,13 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           "stack_realized_cap_usd_60d",
           "stack_realized_cap_usd_7d",
           "stack_realized_cap_usd_90d",
-          "stack_total_age",
           "token_velocity",
-          "transaction_volume"
+          "transaction_volume",
+          "exchange_inflow",
+          "exchange_outflow",
+          "exchange_balance",
+          "transaction_volume_5min",
+          "stack_age_consumed_5min"
         ]
         |> Enum.sort()
 

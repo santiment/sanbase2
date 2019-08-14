@@ -2,307 +2,464 @@
   {
     "metric": "daily_active_addresses",
     "access": "free",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "daily_avg_marketcap_usd",
     "access": "free",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "daily_avg_price_usd",
     "access": "free",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "daily_closing_marketcap_usd",
     "access": "free",
-    "aggregation": "last"
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "daily_closing_price_usd",
     "access": "free",
-    "aggregation": "last"
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "daily_high_price_usd",
     "access": "free",
-    "aggregation": "max"
+    "aggregation": "max",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "daily_low_price_usd",
     "access": "free",
-    "aggregation": "min"
+    "aggregation": "min",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "daily_opening_price_usd",
     "access": "free",
-    "aggregation": "first"
+    "aggregation": "first",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
 
   {
     "metric": "daily_trading_volume_usd",
     "access": "free",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mean_realized_price_usd_10y",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mean_realized_price_usd_180d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mean_realized_price_usd_1d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mean_realized_price_usd_20y",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mean_realized_price_usd_2y",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mean_realized_price_usd_30d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mean_realized_price_usd_365d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mean_realized_price_usd_3y",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mean_realized_price_usd_5y",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mean_realized_price_usd_60d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mean_realized_price_usd_7d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mean_realized_price_usd_90d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mvrv_usd_10y",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mvrv_usd_180d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mvrv_usd_1d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mvrv_usd_20y",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mvrv_usd_2y",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mvrv_usd_30d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mvrv_usd_365d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mvrv_usd_3y",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mvrv_usd_5y",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mvrv_usd_60d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mvrv_usd_7d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "mvrv_usd_90d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_age_consumed",
     "access": "restricted",
-    "aggregation": "sum"
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_circulation_10y",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_circulation_180d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_circulation_1d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_circulation_20y",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_circulation_2y",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_circulation_30d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_circulation_365d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_circulation_3y",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_circulation_5y",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_circulation_60d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_circulation_7d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_circulation_90d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_mean_age_days",
     "access": "restricted",
-    "aggregation": "last"
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_realized_cap_usd_10y",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_realized_cap_usd_180d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_realized_cap_usd_1d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_realized_cap_usd_20y",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_realized_cap_usd_2y",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_realized_cap_usd_30d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_realized_cap_usd_365d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_realized_cap_usd_3y",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_realized_cap_usd_5y",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_realized_cap_usd_60d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_realized_cap_usd_7d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_realized_cap_usd_90d",
     "access": "restricted",
-    "aggregation": "avg"
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "token_velocity",
     "access": "restricted",
-    "aggregation": "last"
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "transaction_volume",
     "access": "restricted",
-    "aggregation": "sum"
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
+  },
+  {
+    "metric": "exchange_inflow",
+    "access": "restricted",
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "exchange_flow_metrics"
+  },
+  {
+    "metric": "exchange_outflow",
+    "access": "restricted",
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "exchange_flow_metrics"
+  },
+  {
+    "metric": "exchange_balance",
+    "access": "restricted",
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "exchange_flow_metrics"
+  },
+  {
+    "metric": "transaction_volume_5min",
+    "access": "restricted",
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "transaction_volume_metrics"
+  },
+  {
+    "metric": "stack_age_consumed_5min",
+    "access": "restricted",
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "token_age_consumed_metrics"
   }
 ]

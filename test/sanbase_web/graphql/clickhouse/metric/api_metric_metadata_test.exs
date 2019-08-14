@@ -16,7 +16,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricMetadataTest do
       %{"data" => %{"getMetric" => %{"metadata" => metadata}}} = fetch_metadata(conn, metric)
       assert match?(%{"defaultAggregation" => _, "minInterval" => _}, metadata)
       assert metadata["defaultAggregation"] in aggregations
-      assert metadata["minInterval"] == "1d"
+      assert metadata["minInterval"] in ["1d", "5m"]
     end
   end
 

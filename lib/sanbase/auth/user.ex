@@ -425,11 +425,13 @@ defmodule Sanbase.Auth.User do
     count_other_accounts > 0 or not is_nil(email)
   end
 
-  defp choose_login_template(origin_url) do
+  defp choose_login_template(origin_url) when is_binary(origin_url) do
     cond do
       String.contains?(origin_url, "neuro") -> @neuro_login_template
       String.contains?(origin_url, "sheets") -> @sheets_login_template
       true -> @sanbase_login_template
     end
   end
+
+  defp choose_login_template(_), do: @sanbase_login_template
 end

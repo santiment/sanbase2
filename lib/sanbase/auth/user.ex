@@ -22,7 +22,9 @@ defmodule Sanbase.Auth.User do
 
   require Sanbase.Utils.Config, as: Config
 
-  @login_email_template "login"
+  @sanbase_login_template "sanbase-login"
+  @neuro_login_template "neuro-login"
+  @sheets_login_template "sheets-login"
   @verification_email_template "verify email"
 
   # The Login links will be valid 1 hour
@@ -355,7 +357,9 @@ defmodule Sanbase.Auth.User do
   end
 
   def send_login_email(user, origin_url) do
-    mandrill_api().send(@login_email_template, user.email, %{
+    origin_url
+    |> choose_login_template()
+    |> mandrill_api().send(user.email, %{
       LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email, origin_url)
     })
   end
@@ -419,5 +423,13 @@ defmodule Sanbase.Auth.User do
       |> Repo.aggregate(:count, :id)
 
     count_other_accounts > 0 or not is_nil(email)
+  end
+
+  defp choose_login_template(origin_url) do
+    cond do
+      String.contains?(origin_url, "neuro") -> @neuro_login_template
+      String.contains?(origin_url, "sheets") -> @sheets_login_template
+      true -> @sanbase_login_template
+    end
   end
 end

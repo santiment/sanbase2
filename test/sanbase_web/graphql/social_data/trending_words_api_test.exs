@@ -21,7 +21,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
     ]
   end
 
-  describe "trending words api" do
+  describe "get trending words api" do
     test "success", context do
       %{dt1_str: dt1_str, dt2_str: dt2_str, dt3_str: dt3_str} = context
 
@@ -34,13 +34,14 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
           %{score: 3, word: "btx"},
           %{score: 4, word: "eth"}
         ],
-        DateTimeUtils.from_iso8601!(dt2_str) => [
+        DateTimeUtils.from_iso8601!(dt3_str) => [
           %{score: 5, word: "omg"},
           %{score: 6, word: "wtf"}
         ]
       }
 
-      with_mock SocialData.TrendingWords, get: fn _, _, _, _ -> {:ok, success_response} end do
+      with_mock SocialData.TrendingWords,
+        get_trending_words: fn _, _, _, _ -> {:ok, success_response} end do
         args = %{from: dt1_str, to: dt3_str, interval: "1d", size: 2}
 
         query = trending_words_query(args)
@@ -79,7 +80,8 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
     test "error", context do
       %{dt1_str: dt1_str, dt2_str: dt2_str} = context
 
-      with_mock SocialData.TrendingWords, get: fn _, _, _, _ -> {:error, "Something broke"} end do
+      with_mock SocialData.TrendingWords,
+        get_trending_words: fn _, _, _, _ -> {:error, "Something broke"} end do
         args = %{from: dt1_str, to: dt2_str, interval: "1h", size: 10}
 
         query = trending_words_query(args)
@@ -93,7 +95,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
     end
   end
 
-  describe "word trending history api" do
+  describe "get word trending history api" do
     test "success", context do
       %{dt1_str: dt1_str, dt2_str: dt2_str, dt3_str: dt3_str} = context
 
@@ -104,7 +106,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
       ]
 
       with_mock SocialData.TrendingWords,
-        get_word_stats: fn _, _, _, _, _ -> {:ok, success_response} end do
+        get_word_trending_history: fn _, _, _, _, _ -> {:ok, success_response} end do
         args = %{word: "word", from: dt1_str, to: dt3_str, interval: "1d", size: 10}
 
         query = word_trending_history_query(args)
@@ -112,7 +114,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
 
         assert result == %{
                  "data" => %{
-                   "getTrendingWordHistory" => [
+                   "getWordTrendingHistory" => [
                      %{"datetime" => dt1_str, "position" => nil},
                      %{"datetime" => dt2_str, "position" => 10},
                      %{"datetime" => dt3_str, "position" => 1}
@@ -126,7 +128,61 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
       %{dt1_str: dt1_str, dt2_str: dt2_str} = context
 
       with_mock SocialData.TrendingWords,
-        get_word_stats: fn _, _, _, _, _ -> {:error, "Something went wrong"} end do
+        get_word_trending_history: fn _, _, _, _, _ -> {:error, "Something went wrong"} end do
+        args = %{word: "word", from: dt1_str, to: dt2_str, interval: "1d", size: 10}
+
+        query = word_trending_history_query(args)
+
+        error_msg =
+          execute(context.conn, query)
+          |> get_error_message()
+
+        assert error_msg =~ "Something went wrong"
+      end
+    end
+  end
+
+  describe "get project trending history api" do
+    test "success", context do
+      %{dt1_str: dt1_str, dt2_str: dt2_str, dt3_str: dt3_str} = context
+      project = insert(:random_project)
+
+      success_response = [
+        %{datetime: from_iso8601!(dt1_str), position: 5},
+        %{datetime: from_iso8601!(dt2_str), position: nil},
+        %{datetime: from_iso8601!(dt3_str), position: 10}
+      ]
+
+      with_mock SocialData.TrendingWords,
+        get_project_trending_history: fn _, _, _, _, _ -> {:ok, success_response} end do
+        args = %{
+          slug: project.coinmarketcap_id,
+          from: dt1_str,
+          to: dt3_str,
+          interval: "1d",
+          size: 10
+        }
+
+        query = project_trending_history_query(args)
+        result = execute(context.conn, query)
+
+        assert result == %{
+                 "data" => %{
+                   "getProjectTrendingHistory" => [
+                     %{"datetime" => dt1_str, "position" => 5},
+                     %{"datetime" => dt2_str, "position" => nil},
+                     %{"datetime" => dt3_str, "position" => 10}
+                   ]
+                 }
+               }
+      end
+    end
+
+    test "error", context do
+      %{dt1_str: dt1_str, dt2_str: dt2_str} = context
+
+      with_mock SocialData.TrendingWords,
+        get_word_trending_history: fn _, _, _, _, _ -> {:error, "Something went wrong"} end do
         args = %{word: "word", from: dt1_str, to: dt2_str, interval: "1d", size: 10}
 
         query = word_trending_history_query(args)
@@ -162,8 +218,25 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
   defp word_trending_history_query(args) do
     """
     {
-    getTrendingWordHistory(
+    getWordTrendingHistory(
       word: "#{args.word}"
+      from: "#{args.from}"
+      to: "#{args.to}"
+      interval: "#{args.interval}"
+      size: #{args.size},
+      ){
+        datetime
+        position
+      }
+    }
+    """
+  end
+
+  defp project_trending_history_query(args) do
+    """
+    {
+    getProjectTrendingHistory(
+      slug: "#{args.slug}"
       from: "#{args.from}"
       to: "#{args.to}"
       interval: "#{args.interval}"

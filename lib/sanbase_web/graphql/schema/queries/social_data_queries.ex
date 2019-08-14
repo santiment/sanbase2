@@ -100,7 +100,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
     * interval - a string representing at what interval the words are returned
     * size - an integer showing how many top words should be considered in the check
     """
-    field :get_trending_word_history, list_of(:trending_word_position) do
+    field :get_word_trending_history, list_of(:trending_word_position) do
       meta(access: :restricted)
 
       arg(:word, non_null(:string))
@@ -112,7 +112,34 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       complexity(&Complexity.from_to_interval/3)
       middleware(TimeframeRestriction, %{allow_realtime_data: true})
 
-      cache_resolve(&SocialDataResolver.get_trending_word_history/3, ttl: 600, max_ttl_offset: 240)
+      cache_resolve(&SocialDataResolver.get_word_trending_history/3, ttl: 600, max_ttl_offset: 240)
+    end
+
+    @desc ~s"""
+    Returns lists with the position of a word in the list of trending words
+    over time
+
+    * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * interval - a string representing at what interval the words are returned
+    * size - an integer showing how many top words should be considered in the check
+    """
+    field :get_project_trending_history, list_of(:trending_word_position) do
+      meta(access: :restricted)
+
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, non_null(:string))
+      arg(:size, non_null(:integer))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(TimeframeRestriction, %{allow_realtime_data: true})
+
+      cache_resolve(&SocialDataResolver.get_project_trending_history/3,
+        ttl: 600,
+        max_ttl_offset: 240
+      )
     end
 
     @desc ~s"""

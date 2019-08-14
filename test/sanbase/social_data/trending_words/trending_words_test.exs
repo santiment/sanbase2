@@ -2,6 +2,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
   use Sanbase.DataCase
 
   import Mock
+  import Sanbase.Factory
   import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
 
   alias Sanbase.SocialData.TrendingWords
@@ -22,7 +23,13 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
         query: fn _, _ ->
           {:ok, %{rows: trending_words_rows(dt1_str, dt2_str, dt3_str)}}
         end do
-        result = TrendingWords.get(from_iso8601!(dt1_str), from_iso8601!(dt3_str), "1d", 2)
+        result =
+          TrendingWords.get_trending_words(
+            from_iso8601!(dt1_str),
+            from_iso8601!(dt3_str),
+            "1d",
+            2
+          )
 
         assert result ==
                  {:ok,
@@ -48,7 +55,14 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
 
       with_mock Sanbase.ClickhouseRepo,
         query: fn _, _ -> {:error, "Something went wrong"} end do
-        result = TrendingWords.get(from_iso8601!(dt1_str), from_iso8601!(dt3_str), "1d", 2)
+        result =
+          TrendingWords.get_trending_words(
+            from_iso8601!(dt1_str),
+            from_iso8601!(dt3_str),
+            "1d",
+            2
+          )
+
         assert result == {:error, "Something went wrong"}
       end
     end
@@ -78,7 +92,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
     end
   end
 
-  describe "get word history stats" do
+  describe "get word trending history stats" do
     test "clickhouse returns data", context do
       %{dt1_str: dt1_str, dt2_str: dt2_str, dt3_str: dt3_str} = context
 
@@ -87,8 +101,8 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
           {:ok, %{rows: word_trending_history_rows(dt1_str, dt2_str, dt3_str)}}
         end do
         result =
-          TrendingWords.get_word_stats(
-            "word'",
+          TrendingWords.get_word_trending_history(
+            "word",
             from_iso8601!(dt1_str),
             from_iso8601!(dt3_str),
             "1d",
@@ -105,10 +119,70 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
       end
     end
 
-    test "clickhouse returns error", _context do
+    test "clickhouse returns error", context do
+      %{dt1_str: dt1_str, dt2_str: dt2_str} = context
+
       with_mock Sanbase.ClickhouseRepo,
         query: fn _, _ -> {:error, "Something went wrong"} end do
-        result = TrendingWords.get_trending_now()
+        result =
+          TrendingWords.get_word_trending_history(
+            "word",
+            from_iso8601!(dt1_str),
+            from_iso8601!(dt2_str),
+            "1h",
+            10
+          )
+
+        assert result == {:error, "Something went wrong"}
+      end
+    end
+  end
+
+  describe "get project trending history stats" do
+    test "clickhouse returns data", context do
+      %{dt1_str: dt1_str, dt2_str: dt2_str, dt3_str: dt3_str} = context
+
+      project =
+        insert(:random_project)
+        |> IO.inspect(label: "145", limit: :infinity)
+
+      with_mock Sanbase.ClickhouseRepo,
+        query: fn _, _ ->
+          {:ok, %{rows: project_trending_history_rows(dt1_str, dt2_str, dt3_str)}}
+        end do
+        result =
+          TrendingWords.get_project_trending_history(
+            project.coinmarketcap_id,
+            from_iso8601!(dt1_str),
+            from_iso8601!(dt3_str),
+            "1d",
+            10
+          )
+
+        assert result ==
+                 {:ok,
+                  [
+                    %{datetime: from_iso8601!(dt1_str), position: 5},
+                    %{datetime: from_iso8601!(dt2_str), position: nil},
+                    %{datetime: from_iso8601!(dt3_str), position: 10}
+                  ]}
+      end
+    end
+
+    test "clickhouse returns error", context do
+      %{dt1_str: dt1_str, dt2_str: dt2_str} = context
+      project = insert(:random_project)
+
+      with_mock Sanbase.ClickhouseRepo,
+        query: fn _, _ -> {:error, "Something went wrong"} end do
+        result =
+          TrendingWords.get_project_trending_history(
+            project.coinmarketcap_id,
+            from_iso8601!(dt1_str),
+            from_iso8601!(dt2_str),
+            "1h",
+            10
+          )
 
         assert result == {:error, "Something went wrong"}
       end
@@ -123,14 +197,22 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
     ]
   end
 
+  defp project_trending_history_rows(dt1_str, dt2_str, dt3_str) do
+    [
+      [from_iso8601_to_unix!(dt1_str), 5],
+      [from_iso8601_to_unix!(dt2_str), 0],
+      [from_iso8601_to_unix!(dt3_str), 10]
+    ]
+  end
+
   defp trending_words_rows(dt1_str, dt2_str, dt3_str) do
     [
-      [from_iso8601_to_unix!(dt1_str), "bitcoin", 10],
-      [from_iso8601_to_unix!(dt1_str), "ethereum", 5],
-      [from_iso8601_to_unix!(dt2_str), "san", 2],
-      [from_iso8601_to_unix!(dt2_str), "boom", 70],
-      [from_iso8601_to_unix!(dt3_str), "eth", 1],
-      [from_iso8601_to_unix!(dt3_str), "xrp", 2]
+      [from_iso8601_to_unix!(dt1_str), "bitcoin", nil, 10],
+      [from_iso8601_to_unix!(dt1_str), "ethereum", nil, 5],
+      [from_iso8601_to_unix!(dt2_str), "san", nil, 2],
+      [from_iso8601_to_unix!(dt2_str), "boom", nil, 70],
+      [from_iso8601_to_unix!(dt3_str), "eth", nil, 1],
+      [from_iso8601_to_unix!(dt3_str), "xrp", nil, 2]
     ]
   end
 end

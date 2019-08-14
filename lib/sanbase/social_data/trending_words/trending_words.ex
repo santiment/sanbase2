@@ -23,6 +23,7 @@ defmodule Sanbase.SocialData.TrendingWords do
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
   @type word :: String.t()
+  @type slug :: String.t()
   @type interval :: String.t()
 
   @typedoc """
@@ -42,13 +43,13 @@ defmodule Sanbase.SocialData.TrendingWords do
           position: position
         }
 
-  @spec get(DateTime.t(), DateTime.t(), interval, non_neg_integer) ::
+  @spec get_trending_words(DateTime.t(), DateTime.t(), interval, non_neg_integer) ::
           {:ok, list(trending_word)} | {:error, String.t()}
-  def get(from, to, interval, size) do
-    {query, args} = get_query(from, to, interval, size)
+  def get_trending_words(from, to, interval, size) do
+    {query, args} = get_trending_words_query(from, to, interval, size)
 
     ClickhouseRepo.query_reduce(query, args, %{}, fn
-      [dt, word, score], acc ->
+      [dt, word, _project, score], acc ->
         datetime = DateTime.from_unix!(dt)
         elem = %{word: word, score: score}
         Map.update(acc, datetime, [elem], fn words -> [elem | words] end)
@@ -62,7 +63,7 @@ defmodule Sanbase.SocialData.TrendingWords do
   def get_trending_now(size \\ 10)
 
   def get_trending_now(size) do
-    case get(Timex.shift(Timex.now(), hours: -6), Timex.now(), "1h", size) do
+    case get_trending_words(Timex.shift(Timex.now(), hours: -6), Timex.now(), "1h", size) do
       {:ok, stats} ->
         {_, words} =
           stats
@@ -75,10 +76,10 @@ defmodule Sanbase.SocialData.TrendingWords do
     end
   end
 
-  @spec get_word_stats(word, DateTime.t(), DateTime.t(), interval, non_neg_integer) ::
+  @spec get_word_trending_history(word, DateTime.t(), DateTime.t(), interval, non_neg_integer) ::
           {:ok, list(word_stat)} | {:error, String.t()}
-  def get_word_stats(word, from, to, interval, size) do
-    {query, args} = word_stats_query(word, from, to, interval, size)
+  def get_word_trending_history(word, from, to, interval, size) do
+    {query, args} = word_trending_history_query(word, from, to, interval, size)
 
     ClickhouseRepo.query_transform(query, args, fn [dt, position] ->
       position = if position > 0, do: position
@@ -90,16 +91,33 @@ defmodule Sanbase.SocialData.TrendingWords do
     end)
   end
 
-  defp get_query(from, to, interval, size) do
+  @spec get_project_trending_history(slug, DateTime.t(), DateTime.t(), interval, non_neg_integer) ::
+          {:ok, list(word_stat)} | {:error, String.t()}
+  def get_project_trending_history(slug, from, to, interval, size) do
+    {query, args} = project_trending_history_query(slug, from, to, interval, size)
+
+    ClickhouseRepo.query_transform(query, args, fn [dt, position] ->
+      position = if position > 0, do: position
+
+      %{
+        datetime: DateTime.from_unix!(dt),
+        position: position
+      }
+    end)
+  end
+
+  defp get_trending_words_query(from, to, interval, size) do
     query = """
     SELECT
       t,
       word,
+      project,
       total_score AS score
     FROM(
         SELECT
            toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
            word,
+           project,
            SUM(score) / 4 AS total_score
         FROM trending_words
         PREWHERE
@@ -107,7 +125,7 @@ defmodule Sanbase.SocialData.TrendingWords do
           dt < toDateTime(?3) AND
           source NOT IN ('twitter', 'bitcointalk') AND
           dt = t
-        GROUP BY t, word
+        GROUP BY t, word, project
         ORDER BY total_score DESC
         LIMIT ?4 BY t
     )
@@ -119,8 +137,8 @@ defmodule Sanbase.SocialData.TrendingWords do
     {query, args}
   end
 
-  defp word_stats_query(word, from, to, interval, size) do
-    {query, args} = get_query(from, to, interval, size)
+  defp word_trending_history_query(word, from, to, interval, size) do
+    {query, args} = get_trending_words_query(from, to, interval, size)
     args_len = length(args)
     next_pos = args_len + 1
 
@@ -142,6 +160,42 @@ defmodule Sanbase.SocialData.TrendingWords do
       |> to_string()
 
     args = args ++ [word]
+    {query, args}
+  end
+
+  defp project_trending_history_query(slug, from, to, interval, size) do
+    IO.inspect(
+      label:
+        "message; #{
+          String.replace_leading("#{__ENV__.file}", "#{File.cwd!()}", "") |> Path.relative()
+        }:#{__ENV__.line()}"
+    )
+
+    {query, args} = get_trending_words_query(from, to, interval, size)
+    args_len = length(args)
+    next_pos = args_len + 1
+
+    query =
+      [
+        """
+        SELECT
+          t,
+          toUInt32(indexOf(groupArray(?#{args_len})(project), ?#{next_pos}))
+        FROM(
+        """,
+        query,
+        """
+        )
+        GROUP BY t
+        ORDER BY t
+        """
+      ]
+      |> to_string()
+
+    ticker =
+      Sanbase.Model.Project.ticker_by_slug(slug) |> IO.inspect(label: "195", limit: :infinity)
+
+    args = args ++ [ticker <> "_" <> slug]
     {query, args}
   end
 end

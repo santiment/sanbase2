@@ -126,6 +126,8 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :exchange_funds_flow,
           :exchange_volume,
           :gas_used,
+          :get_trending_word_history,
+          :get_trending_words,
           :miners_balance,
           :mining_pools_distribution,
           :mvrv_ratio,

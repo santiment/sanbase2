@@ -18,6 +18,7 @@ defmodule Sanbase.SocialData.TrendingWords do
   channels, including hundreds of telegram groups, subredits, discord groups,
   bitcointalk forums, etc.
   """
+  use Ecto.Schema
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
@@ -28,7 +29,7 @@ defmodule Sanbase.SocialData.TrendingWords do
 
   @typedoc """
   Defines the position in the list of trending words for a given datetime.
-  If it has an integer value it means that the word was in the list of emergin
+  If it has an integer value it means that the word was in the list of emerging
   words. If it has a nil value it means that the word was not in that list
   """
   @type position :: non_neg_integer() | nil
@@ -42,6 +43,25 @@ defmodule Sanbase.SocialData.TrendingWords do
           datetme: DateTime.t(),
           position: position
         }
+
+  # When calculating the trending now words fetch the data for the last
+  # N hours to ensure that there is some data and we're not in the middle
+  # of computing the latest data
+  @hours_back_ensure_has_data 3
+
+  @table "trending_words"
+  schema @table do
+    field(:dt, :utc_datetime)
+    field(:word, :string)
+    field(:volume, :float)
+    field(:volume_normalized, :float)
+    field(:unqiue_users, :integer)
+    field(:score, :float)
+    field(:source, :string)
+    # ticker_slug
+    field(:project, :string)
+    field(:computed_at, :string)
+  end
 
   @spec get_trending_words(DateTime.t(), DateTime.t(), interval, non_neg_integer) ::
           {:ok, list(trending_word)} | {:error, String.t()}
@@ -63,7 +83,14 @@ defmodule Sanbase.SocialData.TrendingWords do
   def get_trending_now(size \\ 10)
 
   def get_trending_now(size) do
-    case get_trending_words(Timex.shift(Timex.now(), hours: -6), Timex.now(), "1h", size) do
+    now = Timex.now()
+
+    case get_trending_words(
+           Timex.shift(now, hours: -@hours_back_ensure_has_data),
+           now,
+           "1h",
+           size
+         ) do
       {:ok, stats} ->
         {_, words} =
           stats
@@ -164,13 +191,6 @@ defmodule Sanbase.SocialData.TrendingWords do
   end
 
   defp project_trending_history_query(slug, from, to, interval, size) do
-    IO.inspect(
-      label:
-        "message; #{
-          String.replace_leading("#{__ENV__.file}", "#{File.cwd!()}", "") |> Path.relative()
-        }:#{__ENV__.line()}"
-    )
-
     {query, args} = get_trending_words_query(from, to, interval, size)
     args_len = length(args)
     next_pos = args_len + 1
@@ -192,8 +212,7 @@ defmodule Sanbase.SocialData.TrendingWords do
       ]
       |> to_string()
 
-    ticker =
-      Sanbase.Model.Project.ticker_by_slug(slug) |> IO.inspect(label: "195", limit: :infinity)
+    ticker = Sanbase.Model.Project.ticker_by_slug(slug)
 
     args = args ++ [ticker <> "_" <> slug]
     {query, args}

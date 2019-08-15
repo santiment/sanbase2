@@ -83,7 +83,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, non_null(:string))
+      arg(:interval, :string, default_value: "1d")
       arg(:size, non_null(:integer))
 
       complexity(&Complexity.from_to_interval/3)
@@ -106,7 +106,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:word, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, non_null(:string))
+      arg(:interval, :string, default_value: "1d")
       arg(:size, non_null(:integer))
 
       complexity(&Complexity.from_to_interval/3)
@@ -130,7 +130,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, non_null(:string))
+      arg(:interval, :string, default_value: "1d")
       arg(:size, non_null(:integer))
 
       complexity(&Complexity.from_to_interval/3)

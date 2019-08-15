@@ -142,9 +142,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
     test "clickhouse returns data", context do
       %{dt1_str: dt1_str, dt2_str: dt2_str, dt3_str: dt3_str} = context
 
-      project =
-        insert(:random_project)
-        |> IO.inspect(label: "145", limit: :infinity)
+      project = insert(:random_project)
 
       with_mock Sanbase.ClickhouseRepo,
         query: fn _, _ ->

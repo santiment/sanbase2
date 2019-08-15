@@ -153,7 +153,7 @@ These are the fields describing a trigger.
   "target": { "slug": "santiment" },
   "channel": "telegram",
   "time_window": "1d",
-  "operation": { "one_of": [{ "percent_up": 10.0 }, { "percent_down": 20.0 }] }
+  "operation": { "some_of": [{ "percent_up": 10.0 }, { "percent_down": 20.0 }] }
 }
 ```
 

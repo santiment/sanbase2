@@ -9,7 +9,7 @@ defmodule Sanbase.Signal.OperationEvaluation do
   defguard is_percent_change_moving_down(percent_change, percent)
            when percent_change < 0 and abs(percent_change) >= percent
 
-  def operation_triggered?(value, %{one_of: operations}) when is_list(operations) do
+  def operation_triggered?(value, %{some_of: operations}) when is_list(operations) do
     Enum.map(operations, fn op -> operation_triggered?(value, op) end)
     |> Enum.member?(true)
   end

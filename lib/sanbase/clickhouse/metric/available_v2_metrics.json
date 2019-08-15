@@ -148,6 +148,20 @@
     "table": "daily_metrics_v2"
   },
   {
+    "metric": "nvt",
+    "access": "restricted",
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
+  },
+  {
+    "metric": "mvrv_usd_long_short_diff",
+    "access": "restricted",
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
+  },
+  {
     "metric": "mvrv_usd_10y",
     "access": "restricted",
     "aggregation": "avg",

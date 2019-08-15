@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   import SanbaseWeb.Graphql.Helpers.Utils, only: [fit_from_datetime: 2, calibrate_interval: 7]
 
   import Sanbase.Utils.ErrorHandling,
-    only: [log_graphql_error: 2, graphql_error_msg: 2]
+    only: [handle_graphql_error: 3]
 
   alias Sanbase.Model.{Infrastructure, Project, ExchangeAddress}
 
@@ -56,9 +56,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       {:ok, token_age_consumed |> fit_from_datetime(args)}
     else
       {:error, error} ->
-        error_msg = graphql_error_msg("Burn Rate", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error, handle_graphql_error("Burn Rate", slug, error)}
     end
   end
 
@@ -84,9 +82,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       {:ok, token_age |> fit_from_datetime(args)}
     else
       {:error, error} ->
-        error_msg = graphql_error_msg("Average Token Age Consumed In Days", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error, handle_graphql_error("Average Token Age Consumed In Days", slug, error)}
     end
   end
 
@@ -117,9 +113,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       {:ok, trx_volumes |> fit_from_datetime(args)}
     else
       {:error, error} ->
-        error_msg = graphql_error_msg("Transaction Volume", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error, handle_graphql_error("Transaction Volume", slug, error)}
     end
   end
 
@@ -151,9 +145,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       {:ok, exchange_funds_flow |> fit_from_datetime(args)}
     else
       {:error, error} ->
-        error_msg = graphql_error_msg("Exchange Funds Flow", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error, handle_graphql_error("Exchange Funds Flow", slug, error)}
     end
   end
 
@@ -191,9 +183,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       {:ok, token_circulation |> fit_from_datetime(args)}
     else
       {:error, error} ->
-        error_msg = graphql_error_msg("Token Circulation", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error, handle_graphql_error("Token Circulation", slug, error)}
     end
   end
 
@@ -224,9 +214,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       {:ok, token_velocity |> fit_from_datetime(args)}
     else
       {:error, error} ->
-        error_msg = graphql_error_msg("Token Velocity", slug)
-        log_graphql_error(error_msg, error)
-        {:error, error_msg}
+        {:error, handle_graphql_error("Token Velocity", slug, error)}
     end
   end
 

@@ -7,6 +7,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.NVTTest do
   import ExUnit.CaptureLog
   import Sanbase.Factory
 
+  @moduletag capture_log: true
+
   alias Sanbase.Clickhouse.NVT
 
   setup do
@@ -81,6 +83,22 @@ defmodule SanbaseWeb.Graphql.Clickhouse.NVTTest do
                ratios = parse_response(response)
                assert ratios == nil
              end) =~
+               graphql_error_msg("NVT Ratio", context.slug, error)
+    end
+  end
+
+  test "returns error to the user when calculation errors", context do
+    error = "Some error description here"
+
+    with_mock NVT,
+              [:passthrough],
+              nvt_ratio: fn _, _, _, _ ->
+                {:error, error}
+              end do
+      response = execute_query(context)
+      [first_error | _] = json_response(response, 200)["errors"]
+
+      assert first_error["message"] =~
                graphql_error_msg("NVT Ratio", context.slug, error)
     end
   end

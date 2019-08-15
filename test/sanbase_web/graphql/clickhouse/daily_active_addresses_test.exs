@@ -7,6 +7,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.DailyActiveAddressesTest do
   import ExUnit.CaptureLog
   import Sanbase.Factory
 
+  @moduletag capture_log: true
+
   alias Sanbase.Clickhouse.{
     Bitcoin,
     DailyActiveAddresses,
@@ -153,6 +155,22 @@ defmodule SanbaseWeb.Graphql.Clickhouse.DailyActiveAddressesTest do
                  addresses = parse_daa_response(response)
                  assert addresses == nil
                end) =~
+                 graphql_error_msg("Daily Active Addresses", context.token_slug, error)
+      end
+    end
+
+    test "returns error to the user when calculation errors", context do
+      error = "Some error description here"
+
+      with_mock DailyActiveAddresses,
+                [:passthrough],
+                average_active_addresses: fn _, _, _, _ ->
+                  {:error, error}
+                end do
+        response = execute_daa_query(context.token_slug, context)
+        [first_error | _] = json_response(response, 200)["errors"]
+
+        assert first_error["message"] =~
                  graphql_error_msg("Daily Active Addresses", context.token_slug, error)
       end
     end

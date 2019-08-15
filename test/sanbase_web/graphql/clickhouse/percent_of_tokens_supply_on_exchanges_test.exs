@@ -7,6 +7,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.PercentOfTokenSupplyOnExchangesTest do
   import ExUnit.CaptureLog
   import Sanbase.Factory
 
+  @moduletag capture_log: true
+
   alias Sanbase.Clickhouse.PercentOfTokenSupplyOnExchanges
 
   setup do
@@ -89,6 +91,22 @@ defmodule SanbaseWeb.Graphql.Clickhouse.PercentOfTokenSupplyOnExchangesTest do
                values = parse_response(response)
                assert values == nil
              end) =~
+               graphql_error_msg("Percent of Token Supply on Exchanges", context.slug, error)
+    end
+  end
+
+  test "returns error to the user when calculation errors", context do
+    error = "Some error description here"
+
+    with_mock PercentOfTokenSupplyOnExchanges,
+              [:passthrough],
+              percent_on_exchanges: fn _, _, _, _ ->
+                {:error, error}
+              end do
+      response = execute_query(context)
+      [first_error | _] = json_response(response, 200)["errors"]
+
+      assert first_error["message"] =~
                graphql_error_msg("Percent of Token Supply on Exchanges", context.slug, error)
     end
   end

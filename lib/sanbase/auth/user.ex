@@ -46,6 +46,18 @@ defmodule Sanbase.Auth.User do
   # User with free subscription that is used for external integration testing
   @sanbase_bot_email "sanbase.bot@santiment.net"
 
+  @derive {Inspect,
+           except: [
+             :salt,
+             :email_token,
+             :email_token_generated_at,
+             :email_token_validated_at,
+             :email_candidate_token,
+             :email_candidate_token_generated_at,
+             :email_candidate_token_validated_at,
+             :consent_id
+           ]}
+
   require Mockery.Macro
   defp mandrill_api, do: Mockery.Macro.mockable(Sanbase.MandrillApi)
 

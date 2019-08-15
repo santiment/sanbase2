@@ -77,14 +77,10 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   end
 
   def graphql_error_msg(metric_name, error) do
-    """
-    Can't fetch #{metric_name}, Reason: "#{error}"
-    """
+    "Can't fetch #{metric_name}, Reason: \"#{error}\""
   end
 
   def graphql_error_msg(metric_name, slug, error) do
-    """
-    Can't fetch #{metric_name} for project with slug: #{slug}, Reason: "#{error}"
-    """
+    "Can't fetch #{metric_name} for project with slug: #{slug}, Reason: \"#{error}\""
   end
 end

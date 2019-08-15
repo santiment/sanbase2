@@ -218,7 +218,9 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           "exchange_outflow",
           "exchange_balance",
           "transaction_volume_5min",
-          "stack_age_consumed_5min"
+          "stack_age_consumed_5min",
+          "nvt",
+          "mvrv_usd_long_short_diff"
         ]
         |> Enum.sort()
 

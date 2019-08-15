@@ -93,7 +93,7 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
     test "moving up or move down - percent_up triggered", context do
       trigger_settings =
         price_percent_change_settings(%{
-          operation: %{one_of: [%{percent_up: 15}, %{percent_down: 100}]}
+          operation: %{some_of: [%{percent_up: 15}, %{percent_down: 100}]}
         })
 
       {:ok, trigger} = create_trigger(context.user, trigger_settings)
@@ -119,7 +119,7 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
 
       trigger_settings =
         price_percent_change_settings(%{
-          operation: %{one_of: [%{percent_up: 1500}, %{percent_down: 20}]}
+          operation: %{some_of: [%{percent_up: 1500}, %{percent_down: 20}]}
         })
 
       {:ok, trigger} = create_trigger(context.user, trigger_settings)

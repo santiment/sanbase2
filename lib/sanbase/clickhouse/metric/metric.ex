@@ -11,16 +11,24 @@ defmodule Sanbase.Clickhouse.Metric do
   use Ecto.Schema
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
+  @aggregations [nil, :any, :sum, :avg, :min, :max, :last, :first, :median]
+
   @metrics_file "available_v2_metrics.json"
   @external_resource available_metrics_file = Path.join(__DIR__, @metrics_file)
+
   @metrics_json File.read!(available_metrics_file) |> Jason.decode!()
   @metrics_list @metrics_json |> Enum.map(fn %{"metric" => metric} -> metric end)
   @metrics_mapset MapSet.new(@metrics_list)
-  @aggregations [nil, :any, :sum, :avg, :min, :max, :last, :first, :median]
 
   @metric_access_map @metrics_json
                      |> Enum.map(&{&1["metric"], &1["access"] |> String.to_existing_atom()})
                      |> Map.new()
+
+  @metric_table_map @metrics_json |> Enum.map(&{&1["metric"], &1["table"]}) |> Map.new()
+
+  @metric_min_interval_map @metrics_json
+                           |> Enum.map(&{&1["metric"], &1["min_interval"]})
+                           |> Map.new()
 
   @free_metrics @metric_access_map
                 |> Enum.filter(fn {_m, a} -> a == :free end)
@@ -31,7 +39,9 @@ defmodule Sanbase.Clickhouse.Metric do
                       |> Keyword.keys()
 
   @metric_aggregation_map @metrics_json
-                          |> Enum.map(&{&1["metric"], &1["aggregation"] |> String.to_atom()})
+                          |> Enum.map(
+                            &{&1["metric"], &1["aggregation"] |> String.to_existing_atom()}
+                          )
                           |> Map.new()
 
   case Enum.filter(@metric_aggregation_map, fn {_, aggr} -> aggr not in @aggregations end) do
@@ -144,7 +154,7 @@ defmodule Sanbase.Clickhouse.Metric do
      }}
   end
 
-  defp min_interval(metric), do: "1d"
+  defp min_interval(metric), do: Map.get(@metric_min_interval_map, metric)
 
   defp get_available_slugs() do
     {query, args} = available_slugs_query()
@@ -176,7 +186,7 @@ defmodule Sanbase.Clickhouse.Metric do
       SELECT
         dt,
         argMax(value, computed_at) AS value
-      FROM #{@table}
+      FROM #{Map.get(@metric_table_map, metric)}
       PREWHERE
           dt >= toDateTime(?3) AND
           dt < toDateTime(?4) AND

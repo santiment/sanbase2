@@ -37,7 +37,7 @@ defmodule Sanbase.Billing.SubscriptionTest do
       insert(:subscription_essential,
         user: context.user,
         cancel_at_period_end: true,
-        current_period_end: Timex.shift(Timex.now(), days: -1)
+        status: "canceled"
       )
 
       assert Subscription.user_subscriptions(context.user) == []
@@ -61,7 +61,7 @@ defmodule Sanbase.Billing.SubscriptionTest do
       insert(:subscription_essential,
         user: context.user,
         cancel_at_period_end: true,
-        current_period_end: Timex.shift(Timex.now(), days: -1)
+        status: "canceled"
       )
 
       current_subscription = Subscription.current_subscription(context.user, context.product.id)

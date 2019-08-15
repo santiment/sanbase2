@@ -9,42 +9,26 @@ defmodule Sanbase.Clickhouse.Metric do
   """
 
   use Ecto.Schema
+
+  alias __MODULE__.FileHandler
+
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
   @aggregations [nil, :any, :sum, :avg, :min, :max, :last, :first, :median]
 
   @metrics_file "available_v2_metrics.json"
-  @external_resource available_metrics_file = Path.join(__DIR__, @metrics_file)
+  @external_resource Path.join(__DIR__, @metrics_file)
 
-  @metrics_json File.read!(available_metrics_file) |> Jason.decode!()
-  @metrics_list @metrics_json |> Enum.map(fn %{"metric" => metric} -> metric end)
-  @metrics_mapset MapSet.new(@metrics_list)
+  @metrics_mapset FileHandler.metrics_mapset()
+  @metrics_list @metrics_mapset |> Enum.to_list()
+  @access_map FileHandler.access_map()
+  @table_map FileHandler.table_map()
+  @min_interval_map FileHandler.min_interval_map()
+  @free_metrics FileHandler.metrics_with_access(:free)
+  @restricted_metrics FileHandler.metrics_with_access(:restricted)
+  @aggregation_map FileHandler.aggregation_map()
 
-  @metric_access_map @metrics_json
-                     |> Enum.map(&{&1["metric"], &1["access"] |> String.to_existing_atom()})
-                     |> Map.new()
-
-  @metric_table_map @metrics_json |> Enum.map(&{&1["metric"], &1["table"]}) |> Map.new()
-
-  @metric_min_interval_map @metrics_json
-                           |> Enum.map(&{&1["metric"], &1["min_interval"]})
-                           |> Map.new()
-
-  @free_metrics @metric_access_map
-                |> Enum.filter(fn {_m, a} -> a == :free end)
-                |> Keyword.keys()
-
-  @restricted_metrics @metric_access_map
-                      |> Enum.filter(fn {_m, a} -> a == :restricted end)
-                      |> Keyword.keys()
-
-  @metric_aggregation_map @metrics_json
-                          |> Enum.map(
-                            &{&1["metric"], &1["aggregation"] |> String.to_existing_atom()}
-                          )
-                          |> Map.new()
-
-  case Enum.filter(@metric_aggregation_map, fn {_, aggr} -> aggr not in @aggregations end) do
+  case Enum.filter(@aggregation_map, fn {_, aggr} -> aggr not in @aggregations end) do
     [] ->
       :ok
 
@@ -53,13 +37,13 @@ defmodule Sanbase.Clickhouse.Metric do
 
       Break.break("""
       There are metrics defined in the #{@metrics_file} that have not supported aggregation.
-      These metrics are: #{inspect(metrics |> Enum.map(fn {m, _} -> m end))}
+      These metrics are: #{inspect(metrics)}
       """)
   end
 
   def free_metrics(), do: @free_metrics
   def restricted_metrics(), do: @restricted_metrics
-  def metric_access_map(), do: @metric_access_map
+  def metric_access_map(), do: @access_map
 
   @type slug :: String.t()
   @type metric :: String.t()
@@ -95,7 +79,7 @@ defmodule Sanbase.Clickhouse.Metric do
         metric_not_available_error(metric)
 
       true ->
-        aggregation = aggregation || Map.get(@metric_aggregation_map, metric)
+        aggregation = aggregation || Map.get(@aggregation_map, metric)
         get_metric(metric, slug, from, to, interval, aggregation)
     end
   end
@@ -145,7 +129,7 @@ defmodule Sanbase.Clickhouse.Metric do
 
   defp get_metadata(metric) do
     min_interval = min_interval(metric)
-    default_aggregation = Map.get(@metric_aggregation_map, metric)
+    default_aggregation = Map.get(@aggregation_map, metric)
 
     {:ok,
      %{
@@ -154,7 +138,7 @@ defmodule Sanbase.Clickhouse.Metric do
      }}
   end
 
-  defp min_interval(metric), do: Map.get(@metric_min_interval_map, metric)
+  defp min_interval(metric), do: Map.get(@min_interval_map, metric)
 
   defp get_available_slugs() do
     {query, args} = available_slugs_query()
@@ -183,11 +167,8 @@ defmodule Sanbase.Clickhouse.Metric do
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
       #{aggregation(aggregation, "value", "t")}
     FROM(
-      SELECT
         dt,
-        argMax(value, computed_at) AS value
-      FROM #{Map.get(@metric_table_map, metric)}
-      PREWHERE
+      FROM #{Map.get(@table_map, metric)}
           dt >= toDateTime(?3) AND
           dt < toDateTime(?4) AND
           asset_id = (

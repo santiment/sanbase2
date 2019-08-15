@@ -1,13 +1,13 @@
 # Elixir and phoenix assets build image
-FROM elixir:1.9.0-alpine as code_builder
+FROM elixir:1.9.1-alpine as code_builder
 
 ENV MIX_ENV prod
 
 RUN apk add --no-cache make \
-                       g++ \ 
-                       git \ 
+                       g++ \
+                       git \
                        nodejs \
-                       nodejs-npm 
+                       nodejs-npm
 
 RUN mix local.hex --force
 RUN mix local.rebar --force
@@ -32,7 +32,7 @@ RUN mix phx.digest
 RUN mix distillery.release
 
 # Release image
-FROM elixir:1.9.0-alpine
+FROM elixir:1.9.1-alpine
 
 RUN apk add --no-cache bash \
                        imagemagick

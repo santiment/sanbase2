@@ -11,12 +11,13 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
 
   use Vex.Struct
 
+  import Sanbase.Validation
   import Sanbase.Signal.Validation
   import Sanbase.Signal.OperationEvaluation
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
+  import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
 
   alias __MODULE__
-  alias Sanbase.Signal.{Type, Trigger}
+  alias Sanbase.Signal.Type
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.HistoricalBalance
   alias Sanbase.Signal.Evaluator.Cache
@@ -30,10 +31,10 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
             target: nil,
             asset: nil,
             operation: nil,
+            time_window: "1d",
             filtered_target: %{list: []},
             payload: %{},
-            triggered?: false,
-            created_at: DateTime.utc_now()
+            triggered?: false
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
@@ -41,33 +42,32 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
           target: Type.complex_target(),
           asset: Type.asset(),
           operation: Type.operation(),
+          time_window: Type.time_window(),
           filtered_target: Type.filtered_target(),
           triggered?: boolean(),
-          payload: Type.payload(),
-          created_at: DateTime.t()
+          payload: Type.payload()
         }
 
   validates(:channel, &valid_notification_channel?/1)
   validates(:target, &valid_eth_wallet_target?/1)
   validates(:asset, &valid_slug?/1)
   validates(:operation, &valid_absolute_change_operation?/1)
+  validates(:time_window, &valid_time_window?/1)
 
   @spec type() :: String.t()
   def type(), do: @trigger_type
 
   def get_data(
-        %__MODULE__{filtered_target: %{list: target_list, type: :eth_address}} = settings,
-        trigger
+        %__MODULE__{
+          filtered_target: %{list: target_list, type: :eth_address}
+        } = settings
       ) do
-    now = Timex.now()
+    to = Timex.now()
+    from = Timex.shift(to, seconds: -str_to_sec(settings.time_window))
 
     target_list
     |> Enum.map(fn addr ->
-      from =
-        Trigger.last_triggered(trigger, addr) ||
-          settings.created_at |> from_iso8601!()
-
-      case balance_change(addr, settings.asset.slug, from, now) do
+      case balance_change(addr, settings.asset.slug, from, to) do
         [{^addr, {_, _, balance_change}}] ->
           {:eth_address, addr, balance_change, from}
 
@@ -77,19 +77,13 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
     end)
   end
 
-  def get_data(
-        %__MODULE__{filtered_target: %{list: target_list, type: :slug}} = settings,
-        trigger
-      ) do
+  def get_data(%__MODULE__{filtered_target: %{list: target_list, type: :slug}} = settings) do
     to = Timex.now()
+    from = Timex.shift(to, seconds: -str_to_sec(settings.time_window))
 
     target_list
     |> Project.by_slug()
-    |> Enum.map(fn %Project{coinmarketcap_id: slug} = project ->
-      from =
-        Trigger.last_triggered(trigger, slug) ||
-          settings.created_at |> from_iso8601!()
-
+    |> Enum.map(fn %Project{} = project ->
       {:ok, eth_addresses} = Project.eth_addresses(project)
 
       project_balance_change =
@@ -129,8 +123,8 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
   defimpl Sanbase.Signal.Settings, for: EthWalletTriggerSettings do
     def triggered?(%EthWalletTriggerSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%EthWalletTriggerSettings{} = settings, trigger) do
-      case EthWalletTriggerSettings.get_data(settings, trigger) do
+    def evaluate(%EthWalletTriggerSettings{} = settings, _trigger) do
+      case EthWalletTriggerSettings.get_data(settings) do
         list when is_list(list) and list != [] ->
           build_result(list, settings)
 

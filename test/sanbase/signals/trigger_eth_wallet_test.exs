@@ -35,6 +35,7 @@ defmodule Sanbase.Signal.EthWalletTriggerTest do
       target: %{slug: project.coinmarketcap_id},
       asset: %{slug: "ethereum"},
       channel: "telegram",
+      time_window: "1d",
       operation: %{amount_up: 25.0}
     }
 

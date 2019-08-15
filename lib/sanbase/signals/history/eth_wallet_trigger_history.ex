@@ -126,8 +126,8 @@ defmodule Sanbase.Signal.History.EthWalletTriggerHistory do
       {acc, _, _} =
         data
         |> Enum.reduce({[], first_balance, 0}, fn
-          %{balance: balance} = elem, {acc, previously_triggered_balance, 0} ->
-            if operation_triggered?(balance - previously_triggered_balance, operation) do
+          %{balance: balance} = elem, {acc, previous_balance, 0} ->
+            if operation_triggered?(balance - previous_balance, operation) do
               {
                 [Map.put(elem, :triggered?, true) | acc],
                 balance,
@@ -136,15 +136,15 @@ defmodule Sanbase.Signal.History.EthWalletTriggerHistory do
             else
               {
                 [Map.put(elem, :triggered?, false) | acc],
-                previously_triggered_balance,
+                balance,
                 0
               }
             end
 
-          elem, {acc, previously_triggered_balance, cooldown_left} ->
+          elem, {acc, _previous_balance, cooldown_left} ->
             {
               [Map.put(elem, :triggered?, false) | acc],
-              previously_triggered_balance,
+              elem.balance,
               cooldown_left - 1
             }
         end)

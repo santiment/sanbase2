@@ -17,6 +17,9 @@ defmodule Sanbase.Billing.Subscription do
 
   require Logger
 
+  @promo_plans [5, 14, 24]
+  @promo_trial_period_days 14
+
   @percent_discount_1000_san 20
   @percent_discount_200_san 4
   @generic_error_message """
@@ -64,7 +67,7 @@ defmodule Sanbase.Billing.Subscription do
   def subscribe(user, card_token, plan) do
     with {:ok, %User{stripe_customer_id: stripe_customer_id} = user}
          when not is_nil(stripe_customer_id) <-
-           create_or_update_stripe_customer(user, card_token),
+           create_or_update_stripe_customer(user, %{source: card_token}),
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan),
          {:ok, subscription} <- create_subscription_db(stripe_subscription, user, plan) do
       {:ok, subscription |> Repo.preload(plan: [:product])}
@@ -275,11 +278,49 @@ defmodule Sanbase.Billing.Subscription do
 
   def plan_name(subscription), do: subscription.plan.name
 
-  # Private functions
+  def promo_subscription(user) do
+    unless user.stripe_customer_id do
+      create_or_update_stripe_customer(user)
+    end
 
-  defp create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)
+    promo_subscribe(user)
+  end
+
+  defp promo_subscribe(user) do
+    from(p in Plan, where: p.id in ^@promo_plans)
+    |> Repo.all()
+    |> Enum.map(&promo_subscribe(user, &1))
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> case do
+      true ->
+        user_subscriptions(user)
+
+      false ->
+        {:error, @generic_error_message}
+    end
+  end
+
+  defp promo_subscribe(user, plan) do
+    data = %{
+      customer: user.stripe_customer_id,
+      items: [%{plan: plan.stripe_id}],
+      trial_period_days: @promo_trial_period_days,
+      metadata: %{"devcon2019" => true},
+      cancel_at: Timex.shift(Timex.now(), days: @promo_trial_period_days) |> DateTime.to_unix()
+    }
+
+    with {:ok, stripe_subscription} <- StripeApi.create_subscription(data),
+         {:ok, subscription} <- create_subscription_db(stripe_subscription, user, plan) do
+      {:ok, subscription}
+    end
+  end
+
+  # Private functions
+  defp create_or_update_stripe_customer(_user, params \\ %{})
+
+  defp create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, params)
        when is_nil(stripe_id) do
-    StripeApi.create_customer(user, card_token)
+    StripeApi.create_customer(user, params)
     |> case do
       {:ok, stripe_customer} ->
         user
@@ -291,9 +332,9 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
-  defp create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)
+  defp create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, params)
        when is_binary(stripe_id) do
-    StripeApi.update_customer(user, card_token)
+    StripeApi.update_customer(user, params)
     |> case do
       {:ok, _} ->
         {:ok, user}

@@ -13,17 +13,23 @@ defmodule Sanbase.StripeApi do
           items: list(subscription_item)
         }
 
-  def create_customer(%User{username: username, email: email}, card_token) do
-    Stripe.Customer.create(%{
-      description: username,
-      email: email,
-      source: card_token
-    })
+  def create_customer(%User{username: username, email: email}, params \\ %{}) do
+    Stripe.Customer.create(
+      %{
+        description: username,
+        email: email
+      }
+      |> Map.merge(params)
+    )
   end
 
-  def update_customer(%User{stripe_customer_id: stripe_customer_id}, card_token) do
-    Stripe.Customer.update(stripe_customer_id, %{source: card_token})
+  def update_customer(_user, params \\ %{})
+
+  def update_customer(%User{stripe_customer_id: stripe_customer_id}, params) do
+    Stripe.Customer.update(stripe_customer_id, params)
   end
+
+  def update_customer(user, %{}), do: {:ok, user}
 
   def create_product(%Product{name: name}) do
     Stripe.Product.create(%{name: name, type: "service"})

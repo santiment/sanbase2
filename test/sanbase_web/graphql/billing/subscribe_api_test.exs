@@ -76,7 +76,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     test "when there are no active subscriptions - return []", context do
       insert(:subscription_essential,
         user: context.user,
-        current_period_end: Timex.shift(Timex.now(), days: -2)
+        status: "canceled"
       )
 
       current_user = execute_query(context.conn, current_user_query(), "currentUser")

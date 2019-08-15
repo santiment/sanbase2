@@ -24,12 +24,6 @@ defmodule Sanbase.Billing.Subscription do
   Please, contact administrator of the site for more information.
   """
 
-  # After `current_period_end` timestamp passes there is some time until `invoice.payment_succeeded` event is generated
-  # to update the field with new timestamp value. So we add 1 day gratis in which we should receive payment before
-  # we decide that this subscription is not active.
-  # Check for active subscription: current_period_end > Timex.now - @subscription_gratis_days
-  @subscription_gratis_days 1
-
   schema "subscriptions" do
     field(:stripe_id, :string)
     field(:current_period_end, :utc_datetime)
@@ -352,13 +346,8 @@ defmodule Sanbase.Billing.Subscription do
     )
   end
 
-  # current_period_end > Timex.now - gratis days
   defp active_subscriptions_query(query) do
-    from(s in query,
-      where:
-        s.status != "canceled" and
-          s.current_period_end > ^Timex.shift(Timex.now(), days: -@subscription_gratis_days)
-    )
+    from(s in query, where: s.status != "canceled")
   end
 
   defp last_subscription_for_product_query(query, product_id) do

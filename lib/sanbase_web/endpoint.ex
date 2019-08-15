@@ -123,4 +123,8 @@ defmodule SanbaseWeb.Endpoint do
       "/verify_email?" <>
       URI.encode_query(token: email_candidate_token, emailCandidate: email_candidate)
   end
+
+  def show_signal_url(id) do
+    sonar_url() <> "/signal/#{id}"
+  end
 end

@@ -41,9 +41,14 @@ defmodule Sanbase.Signal.StructMapTransformation do
   end
 
   def load_in_struct(map) when is_map(map) do
-    map
-    |> atomize_keys()
-    |> struct_from_map()
+    result =
+      map
+      |> atomize_keys()
+      |> struct_from_map()
+
+    Process.delete(@unsupported_fields_error)
+
+    result
   end
 
   def load_in_struct(_), do: :error

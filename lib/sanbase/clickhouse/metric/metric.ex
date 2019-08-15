@@ -27,6 +27,7 @@ defmodule Sanbase.Clickhouse.Metric do
   @free_metrics FileHandler.metrics_with_access(:free)
   @restricted_metrics FileHandler.metrics_with_access(:restricted)
   @aggregation_map FileHandler.aggregation_map()
+  @name_to_column_map FileHandler.name_to_column_map()
 
   case Enum.filter(@aggregation_map, fn {_, aggr} -> aggr not in @aggregations end) do
     [] ->
@@ -167,23 +168,26 @@ defmodule Sanbase.Clickhouse.Metric do
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
       #{aggregation(aggregation, "value", "t")}
     FROM(
+      SELECT
         dt,
+        argMax(value, computed_at) AS value
       FROM #{Map.get(@table_map, metric)}
-          dt >= toDateTime(?3) AND
-          dt < toDateTime(?4) AND
-          asset_id = (
-            SELECT argMax(asset_id, computed_at)
-            FROM asset_metadata
-            PREWHERE name = ?5
-          ) AND
-          metric_id = (
-            SELECT
-              argMax(metric_id, computed_at) AS metric_id
-            FROM
-              metric_metadata
-            PREWHERE
-              name = ?2
-          )
+      PREWHERE
+        dt >= toDateTime(?3) AND
+        dt < toDateTime(?4) AND
+        asset_id = (
+          SELECT argMax(asset_id, computed_at)
+          FROM asset_metadata
+          PREWHERE name = ?5
+        ) AND
+        metric_id = (
+          SELECT
+            argMax(metric_id, computed_at) AS metric_id
+          FROM
+            metric_metadata
+          PREWHERE
+            name = ?2
+        )
       GROUP BY dt
     )
     GROUP BY t
@@ -192,7 +196,7 @@ defmodule Sanbase.Clickhouse.Metric do
 
     args = [
       Sanbase.DateTimeUtils.str_to_sec(interval),
-      metric,
+      Map.get(@name_to_column_map, metric),
       from,
       to,
       slug

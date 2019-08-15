@@ -44,7 +44,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "cannot access RESTRICTED v2 clickhouse metrics for over 3 months", context do
       {from, to} = from_to(91, 10)
-      metric = v2_restricted_metric() |> IO.inspect(label: "47", limit: :infinity)
+      metric = v2_restricted_metric()
       query = metric_query(metric, from, to)
       result = execute_query(context.conn, query, "getMetric")
 

@@ -11,6 +11,18 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
                 end)
 
   @metrics_mapset MapSet.new(@metrics_list)
+  @name_to_column_map @metrics_json
+                      |> Enum.flat_map(fn
+                        %{"alias" => metric_alias, "metric" => metric} ->
+                          [
+                            {metric_alias, metric},
+                            {metric, metric}
+                          ]
+
+                        %{"metric" => metric} ->
+                          [{metric, metric}]
+                      end)
+                      |> Map.new()
 
   @access_map @metrics_json
               |> Enum.flat_map(fn
@@ -64,6 +76,7 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   def metrics_mapset(), do: @metrics_mapset
   def aggregation_map(), do: @aggregation_map
   def min_interval_map(), do: @min_interval_map
+  def name_to_column_map(), do: @name_to_column_map
 
   def metrics_with_access(level) when level in [:free, :restricted] do
     @access_map

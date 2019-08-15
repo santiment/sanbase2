@@ -55,5 +55,9 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     sync_stripe_subscriptions: [
       schedule: "2-59/5 * * * *",
       task: {Sanbase.Billing.Subscription, :sync_all, []}
+    ],
+    logo_fetcher: [
+      schedule: "@daily",
+      task: {Sanbase.ExternalServices.Coinmarketcap.LogoFetcher, :run, []}
     ]
   ]

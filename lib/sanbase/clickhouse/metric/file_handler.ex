@@ -1,4 +1,26 @@
 defmodule Sanbase.Clickhouse.Metric.FileHandler do
+  @moduledoc false
+
+  # Structure
+  #  This JSON file contains a list of metrics available in ClickHouse.
+  #  For every metric we have:
+  #  metric - the original metric name, the very same that is used in the
+  #  ClickHouse metric_metadata table
+  #  alias - the name we are exposing the metric from the API. It is a more
+  #  access - whether the metric is completely free or some time restrictions
+  #  should be applied
+  #  user-friendly name than the metric name
+  #  aggregation - the default aggregation that is applied to combine the values
+  #  if the data is queried with interval bigger than 'min_interval'
+  #  min-interval - the minimal interval the data is available for
+  #  table - the table name in ClickHouse where the metric is stored
+  # Orderig
+  #  The metrics order in this list is not important. For consistency and
+  #  to be easy-readable, the same metric with different time-bound are packed
+  #  together. In descending order we have the time-bound from biggest to
+  #  smallest.
+  #  `time-bound` means that the metric is calculated by taking into account
+  #  only the coins/tokens that moved in the past N days/years
   @metrics_file "available_v2_metrics.json"
   @external_resource available_metrics_file = Path.join(__DIR__, @metrics_file)
 

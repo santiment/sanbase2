@@ -1,8 +1,7 @@
 defmodule Sanbase.Auth.UserTest do
   use Sanbase.DataCase, async: false
 
-  use Mockery
-
+  import Mockery
   import Sanbase.Factory
   import ExUnit.CaptureLog
 

@@ -246,7 +246,7 @@
 
   {
     "metric": "stack_circulation_20y",
-    "alias": "circulation_20y",
+    "alias": "circulation",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",

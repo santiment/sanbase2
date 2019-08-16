@@ -163,7 +163,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
       aliases = [
         "mean_realized_price_usd",
         "mvrv_usd",
-        "circulation_20y",
+        "circulation",
         "circulation_10y",
         "circulation_5y",
         "circulation_3y",

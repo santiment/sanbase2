@@ -22,9 +22,9 @@ defmodule Sanbase.Auth.User do
 
   require Sanbase.Utils.Config, as: Config
 
-  @sanbase_login_template "sanbase-login"
-  @neuro_login_template "neuro-login"
-  @sheets_login_template "sheets-login"
+  @sanbase_login_templates %{login: "sanbase-sign-in", register: "sanbase-sign-up"}
+  @neuro_login_templates %{login: "neuro-sign-in", register: "neuro-sign-up"}
+  @sheets_login_templates %{login: "sheets-sign-in", register: "sheets-sign-up"}
   @verification_email_template "verify email"
 
   # The Login links will be valid 1 hour
@@ -370,7 +370,7 @@ defmodule Sanbase.Auth.User do
 
   def send_login_email(user, origin_url) do
     origin_url
-    |> choose_login_template()
+    |> choose_login_template(first_login?: user.first_login)
     |> mandrill_api().send(user.email, %{
       LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email, origin_url)
     })
@@ -437,13 +437,22 @@ defmodule Sanbase.Auth.User do
     count_other_accounts > 0 or not is_nil(email)
   end
 
-  defp choose_login_template(origin_url) when is_binary(origin_url) do
-    cond do
-      String.contains?(origin_url, "neuro") -> @neuro_login_template
-      String.contains?(origin_url, "sheets") -> @sheets_login_template
-      true -> @sanbase_login_template
-    end
+  defp choose_login_template(origin_url, first_login?: true) when is_binary(origin_url) do
+    template_by_product(origin_url, :register)
   end
 
-  defp choose_login_template(_), do: @sanbase_login_template
+  defp choose_login_template(origin_url, first_login?: false) when is_binary(origin_url) do
+    template_by_product(origin_url, :login)
+  end
+
+  defp choose_login_template(_, first_login?: true), do: @sanbase_login_templates[:register]
+  defp choose_login_template(_, first_login?: false), do: @sanbase_login_templates[:login]
+
+  defp template_by_product(origin_url, template) do
+    cond do
+      String.contains?(origin_url, "neuro") -> @neuro_login_templates[template]
+      String.contains?(origin_url, "sheets") -> @sheets_login_templates[template]
+      true -> @sanbase_login_templates[template]
+    end
+  end
 end

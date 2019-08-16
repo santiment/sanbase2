@@ -72,4 +72,16 @@ defmodule Sanbase.Validation do
   def valid_threshold?(t) do
     {:error, "#{inspect(t)} is not valid threshold. It must be a number bigger than 0"}
   end
+
+  def valid_metric?(metric) do
+    {:ok, metrics} = Sanbase.Clickhouse.Metric.available_metrics()
+
+    case metric in metrics do
+      true ->
+        :ok
+
+      false ->
+        {:error, "#{inspect(metric)} is not a valid metric."}
+    end
+  end
 end

@@ -81,9 +81,8 @@ defmodule Sanbase.Signal.UserTrigger do
 
   @spec triggers_count_for(%User{}) :: integer()
   def triggers_count_for(user) do
-    from(ut in UserTrigger, where: ut.user_id == ^user.id)
-    |> Repo.all()
-    |> Enum.count()
+    from(ut in UserTrigger, where: ut.user_id == ^user.id, select: fragment("count(*)"))
+    |> Repo.one()
   end
 
   @doc ~s"""

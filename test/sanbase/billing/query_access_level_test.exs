@@ -206,10 +206,10 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         "mean_realized_price_usd_60d",
         "mean_realized_price_usd_7d",
         "mean_realized_price_usd_90d",
+        "mvrv_usd_20y",
         "mvrv_usd_10y",
         "mvrv_usd_180d",
         "mvrv_usd_1d",
-        "mvrv_usd_20y",
         "mvrv_usd_2y",
         "mvrv_usd_30d",
         "mvrv_usd_365d",
@@ -257,7 +257,15 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
 
       expected_result = (aliases ++ queries) |> Enum.sort()
 
-      assert restricted_queries == expected_result
+      # The diff algorithm fails to nicely print that a single metric is
+      # missing but instead shows some not-understandable result when comparing
+      # the lists directly
+
+      assert MapSet.difference(MapSet.new(restricted_queries), MapSet.new(expected_result))
+             |> Enum.to_list() == []
+
+      assert MapSet.difference(MapSet.new(expected_result), MapSet.new(restricted_queries))
+             |> Enum.to_list() == []
     end
 
     test "forbidden queries from the schema" do

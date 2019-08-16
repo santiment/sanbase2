@@ -20,7 +20,7 @@ defmodule Sanbase.Clickhouse.Metric do
   @external_resource Path.join(__DIR__, @metrics_file)
 
   @metrics_mapset FileHandler.metrics_mapset()
-  @metrics_list @metrics_mapset |> Enum.to_list()
+  @metrics_public_name_list FileHandler.metrics_public_name_list()
   @access_map FileHandler.access_map()
   @table_map FileHandler.table_map()
   @min_interval_map FileHandler.min_interval_map()
@@ -95,8 +95,16 @@ defmodule Sanbase.Clickhouse.Metric do
     end
   end
 
+  @doc ~s"""
+  Return a list of available metrics.
+
+  If a metric has an alias only the alias is added to the list. But when a metric
+  is queries, the alias **and** the original metric name is accepted. This is
+  done so we do not pollute the public API with too much metric names and we
+  expose only the user-friendly ones.
+  """
   @spec available_metrics() :: {:ok, list(String.t())}
-  def available_metrics(), do: {:ok, @metrics_list}
+  def available_metrics(), do: {:ok, @metrics_public_name_list}
 
   @spec available_slugs() :: {:ok, list(String.t())} | {:error, String.t()}
   def available_slugs(), do: get_available_slugs()

@@ -22,11 +22,6 @@ defmodule Sanbase.Auth.User do
 
   require Sanbase.Utils.Config, as: Config
 
-  @sanbase_login_templates %{login: "sanbase-sign-in", register: "sanbase-sign-up"}
-  @neuro_login_templates %{login: "neuro-sign-in", register: "neuro-sign-up"}
-  @sheets_login_templates %{login: "sheets-sign-in", register: "sheets-sign-up"}
-  @verification_email_template "verify email"
-
   # The Login links will be valid 1 hour
   @login_email_valid_minutes 60
 
@@ -370,17 +365,21 @@ defmodule Sanbase.Auth.User do
 
   def send_login_email(user, origin_url) do
     origin_url
-    |> choose_login_template(first_login?: user.first_login)
+    |> Sanbase.Email.Template.choose_login_template(first_login?: user.first_login)
     |> mandrill_api().send(user.email, %{
       LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email, origin_url)
     })
   end
 
   def send_verify_email(user) do
-    mandrill_api().send(@verification_email_template, user.email_candidate, %{
-      VERIFY_LINK:
-        SanbaseWeb.Endpoint.verify_url(user.email_candidate_token, user.email_candidate)
-    })
+    mandrill_api().send(
+      Sanbase.Email.Template.verification_email_template(),
+      user.email_candidate,
+      %{
+        VERIFY_LINK:
+          SanbaseWeb.Endpoint.verify_url(user.email_candidate_token, user.email_candidate)
+      }
+    )
   end
 
   def by_id(user_id) when is_integer(user_id) do
@@ -435,24 +434,5 @@ defmodule Sanbase.Auth.User do
       |> Repo.aggregate(:count, :id)
 
     count_other_accounts > 0 or not is_nil(email)
-  end
-
-  defp choose_login_template(origin_url, first_login?: true) when is_binary(origin_url) do
-    template_by_product(origin_url, :register)
-  end
-
-  defp choose_login_template(origin_url, first_login?: false) when is_binary(origin_url) do
-    template_by_product(origin_url, :login)
-  end
-
-  defp choose_login_template(_, first_login?: true), do: @sanbase_login_templates[:register]
-  defp choose_login_template(_, first_login?: false), do: @sanbase_login_templates[:login]
-
-  defp template_by_product(origin_url, template) do
-    cond do
-      String.contains?(origin_url, "neuro") -> @neuro_login_templates[template]
-      String.contains?(origin_url, "sheets") -> @sheets_login_templates[template]
-      true -> @sanbase_login_templates[template]
-    end
   end
 end

@@ -324,6 +324,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     HistoricalBalance.assets_held_by_address(address)
     |> case do
       {:ok, result} ->
+        # We do this, because many contracts emit a transfer
+        # event when minting new tokens by setting 0x00...000
+        # as the from address, hence 0x00...000 is "sending"
+        # tokens it does not have which leads to "negative" balance
+
+        result =
+          result
+          |> Enum.reject(fn %{balance: balance} -> balance < 0 end)
+
         {:ok, result}
 
       {:error, error} ->

@@ -49,16 +49,28 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
   @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type
 
+  @doc ~s"""
+  Return a list of the `settings.metric` values for the necessary time range
+  """
+  @spec get_data(MetricTriggerSettings.t()) :: list(Metric.metric_result())
   def get_data(%__MODULE__{} = settings) do
-    %{metric: metric, interval: interval, filtered_target: %{list: target_list}} = settings
+    {from, to, interval} = get_timeseries_params(settings)
 
-    time_window_sec = str_to_sec(settings.time_window)
-    to = Timex.now()
-    from = Timex.shift(to, seconds: -time_window_sec)
+    %{metric: metric, filtered_target: %{list: target_list}} = settings
 
     target_list
     |> Enum.map(fn slug -> fetch_metric(metric, slug, from, to, interval) end)
     |> Enum.reject(&is_nil/1)
+  end
+
+  defp get_timeseries_params(settings) do
+    %{interval: interval, time_window: time_window} = settings
+
+    time_window_sec = str_to_sec(time_window)
+    to = Timex.now()
+    from = Timex.shift(to, seconds: -time_window_sec)
+
+    {from, to, interval}
   end
 
   defp fetch_metric(metric, slug, from, to, interval) do
@@ -76,7 +88,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
 
   defimpl Sanbase.Signal.Settings, for: MetricTriggerSettings do
     alias Sanbase.Signal.Trigger.MetricTriggerSettings
-    alias Sanbase.Signal.{Operation, OperationText, Trigger.MetricTriggerSettings}
+    alias Sanbase.Signal.{Operation, OperationText, ResultBuilder, Trigger.MetricTriggerSettings}
 
     import Sanbase.Signal.OperationEvaluation
 
@@ -100,77 +112,12 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
       end
     end
 
-    defp build_result_percent(
-           data,
-           %MetricTriggerSettings{operation: operation} = settings
-         ) do
-      payload =
-        transform_data_percent(data)
-        |> Enum.reduce(%{}, fn {slug, {previous_avg, current, percent_change}}, acc ->
-          case operation_triggered?(percent_change, operation) do
-            true ->
-              Map.put(
-                acc,
-                slug,
-                payload(:percent, slug, settings, {current, previous_avg, percent_change})
-              )
-
-            false ->
-              acc
-          end
-        end)
-
-      %MetricTriggerSettings{
-        settings
-        | triggered?: payload != %{},
-          payload: payload
-      }
+    defp build_result_percent(data, settings) do
+      ResultBuilder.build_result_percent(data, settings, &payload/4)
     end
 
-    defp build_result_absolute(
-           data,
-           %MetricTriggerSettings{operation: operation} = settings
-         ) do
-      payload =
-        transform_data_absolute(data)
-        |> Enum.reduce(%{}, fn {slug, active_addresses}, acc ->
-          case operation_triggered?(active_addresses, operation) do
-            true ->
-              Map.put(acc, slug, payload(:absolute, slug, settings, active_addresses))
-
-            false ->
-              acc
-          end
-        end)
-
-      %MetricTriggerSettings{
-        settings
-        | triggered?: payload != %{},
-          payload: payload
-      }
-    end
-
-    defp transform_data_percent(data) do
-      Enum.map(data, fn {slug, values} ->
-        # current is the last element, previous_list is the list of all other elements
-        {current, previous_list} =
-          values
-          |> Enum.map(& &1.value)
-          |> List.pop_at(-1)
-
-        previous_avg =
-          previous_list
-          |> Sanbase.Math.average(precision: 2)
-
-        {slug, {previous_avg, current, percent_change(previous_avg, current)}}
-      end)
-    end
-
-    defp transform_data_absolute(data) do
-      Enum.map(data, fn {slug, daa} ->
-        %{value: last} = List.last(daa)
-        {slug, last}
-      end)
+    defp build_result_absolute(data, settings) do
+      ResultBuilder.build_result_absolute(data, settings, &payload/4)
     end
 
     def cache_key(%MetricTriggerSettings{} = settings) do
@@ -184,7 +131,10 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
       ])
     end
 
-    defp payload(:percent, slug, settings, {current_daa, average_daa, percent_change}) do
+    defp payload(:percent, slug, settings, values) do
+      %{current: current_daa, previous_average: average_daa, percent_change: percent_change} =
+        values
+
       project = Project.by_slug(slug)
       interval = Sanbase.DateTimeUtils.interval_to_str(settings.time_window)
 
@@ -201,11 +151,13 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
       """
     end
 
-    defp payload(:absolute, slug, settings, value) do
+    defp payload(:absolute, slug, settings, %{current: current}) do
       project = Project.by_slug(slug)
 
       """
-      **#{project.name}**'s #{settings.metric} #{OperationText.to_text(value, settings.operation)}
+      **#{project.name}**'s #{settings.metric} #{
+        OperationText.to_text(current, settings.operation)
+      }
       More info here: #{Project.sanbase_link(project)}
 
       ![Daily Active Addresses chart and OHLC price chart for the past 90 days](#{

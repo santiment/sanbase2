@@ -34,7 +34,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
   validates(:channel, &valid_notification_channel?/1)
   validates(:time_window, &valid_time_window?/1)
   validates(:time_window, &time_window_is_whole_days?/1)
-  validates(:operation, &valid_daily_active_addresses_operation?/1)
+  validates(:operation, &valid_operation?/1)
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),

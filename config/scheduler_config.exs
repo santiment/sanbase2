@@ -42,7 +42,11 @@ config :sanbase, Sanbase.Signals.Scheduler,
       task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.TrendingWordsTriggerSettings]}
     ],
     eth_wallet_signal: [
-      schedule: "5-59/5 * * * *",
+      schedule: "3-59/5 * * * *",
+      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.MetricTriggerSettings]}
+    ],
+    metric_signal: [
+      schedule: "6-59/5 * * * *",
       task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.EthWalletTriggerSettings]}
     ]
   ]

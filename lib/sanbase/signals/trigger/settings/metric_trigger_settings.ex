@@ -1,6 +1,8 @@
 defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
   @moduledoc ~s"""
+  A signal based on the V2 ClickHouse metrics.
 
+  The metric we're following is configured via the 'metric' parameter
   """
   use Vex.Struct
 
@@ -16,7 +18,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
 
   @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
   @trigger_type "metric_signal"
-  @enforce_keys [:type, :target, :metric, :channel, :operation]
+  @enforce_keys [:type, :metric, :target, :channel, :operation]
   defstruct type: @trigger_type,
             metric: nil,
             target: nil,
@@ -31,6 +33,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
   validates(:metric, &valid_metric?/1)
   validates(:target, &valid_target?/1)
   validates(:channel, &valid_notification_channel?/1)
+  validates(:interval, &valid_time_window?/1)
   validates(:time_window, &valid_time_window?/1)
   validates(:operation, &valid_operation?/1)
 
@@ -38,9 +41,10 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
           type: Type.trigger_type(),
           metric: Type.metric(),
           target: Type.complex_target(),
-          operation: Type.operation(),
           channel: Type.channel(),
+          interval: Type.time_window(),
           time_window: Type.time_window(),
+          operation: Type.operation(),
           triggered?: boolean(),
           payload: Type.payload(),
           filtered_target: Type.filtered_target()
@@ -89,8 +93,6 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
   defimpl Sanbase.Signal.Settings, for: MetricTriggerSettings do
     alias Sanbase.Signal.Trigger.MetricTriggerSettings
     alias Sanbase.Signal.{Operation, OperationText, ResultBuilder, Trigger.MetricTriggerSettings}
-
-    import Sanbase.Signal.OperationEvaluation
 
     def triggered?(%MetricTriggerSettings{triggered?: triggered}), do: triggered
 

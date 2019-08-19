@@ -22,7 +22,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
        assets_held_by_address: fn _ ->
          {:ok,
           [
-            %{balance: 100.0, slug: context.p1.coinmarketcap_id},
+            %{balance: -100.0, slug: context.p1.coinmarketcap_id},
             %{balance: 200.0, slug: context.p2.coinmarketcap_id}
           ]}
        end},
@@ -44,7 +44,6 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
                "data" => %{
                  "assetsHeldByAddress" => [
                    %{"balance" => 1.0e3, "slug" => context.eth_project.coinmarketcap_id},
-                   %{"balance" => 100.0, "slug" => context.p1.coinmarketcap_id},
                    %{"balance" => 200.0, "slug" => context.p2.coinmarketcap_id}
                  ]
                }
@@ -102,6 +101,34 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
                assert error["message"] =~
                         "Can't fetch Assets held by address for address: #{address}"
              end) =~ "Can't fetch Assets held by address for address: #{address}"
+    end
+  end
+
+  test "negative balances are discarded", context do
+    with_mocks [
+      {Sanbase.Clickhouse.HistoricalBalance.Erc20Balance, [:passthrough],
+       assets_held_by_address: fn _ ->
+         {:ok,
+          [
+            %{balance: -100.0, slug: context.p1.coinmarketcap_id},
+            %{balance: -200.0, slug: context.p2.coinmarketcap_id}
+          ]}
+       end},
+      {Sanbase.Clickhouse.HistoricalBalance.EthBalance, [:passthrough],
+       assets_held_by_address: fn _ ->
+         {:ok, [%{balance: -500, slug: context.eth_project.coinmarketcap_id}]}
+       end}
+    ] do
+      address = "0x123"
+
+      query = assets_held_by_address_query(address)
+
+      result =
+        context.conn
+        |> post("/graphql", query_skeleton(query, "assetsHeldByAddress"))
+        |> json_response(200)
+
+      assert result == %{"data" => %{"assetsHeldByAddress" => []}}
     end
   end
 

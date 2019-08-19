@@ -148,6 +148,32 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
+  @doc """
+  Attach a subscription with a free trial of #{@promo_trial_period_days} days for all highest priced plans for all
+  products to the user. It doesn't require a credit card.
+  """
+  def promo_subscription(%User{stripe_customer_id: stripe_customer_id} = user)
+      when is_binary(stripe_customer_id) do
+    promo_subscribe(user)
+  end
+
+  def promo_subscription(%User{} = user) do
+    create_or_update_stripe_customer(user)
+    |> case do
+      {:ok, user} ->
+        promo_subscribe(user)
+
+      {:error, error} ->
+        Logger.error(
+          "Error creating promotional subscription for user: #{inspect(user)}, reason: #{
+            inspect(error)
+          }"
+        )
+
+        {:error, @generic_error_message}
+    end
+  end
+
   def create_subscription_db(
         %Stripe.Subscription{
           id: stripe_id,
@@ -282,28 +308,6 @@ defmodule Sanbase.Billing.Subscription do
   defdelegate is_restricted?(query), to: AccessChecker
 
   def plan_name(subscription), do: subscription.plan.name
-
-  def promo_subscription(%User{stripe_customer_id: stripe_customer_id} = user)
-      when is_binary(stripe_customer_id) do
-    promo_subscribe(user)
-  end
-
-  def promo_subscription(%User{} = user) do
-    create_or_update_stripe_customer(user)
-    |> case do
-      {:ok, user} ->
-        promo_subscribe(user)
-
-      {:error, error} ->
-        Logger.error(
-          "Error creating promotional subscription for user: #{inspect(user)}, reason: #{
-            inspect(error)
-          }"
-        )
-
-        {:error, @generic_error_message}
-    end
-  end
 
   # Private functions
   defp create_or_update_stripe_customer(_user, params \\ %{})

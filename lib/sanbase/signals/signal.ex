@@ -45,7 +45,7 @@ defimpl Sanbase.Signal, for: Any do
         id: id,
         user: user,
         trigger: %{
-          settings: %{channel: "telegram", triggered?: true, payload: payload_map}
+          settings: %{triggered?: true, payload: payload_map}
         }
       })
       when is_map(payload_map) do

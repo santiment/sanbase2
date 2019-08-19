@@ -558,13 +558,12 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
           before
         }
         activity {
-          payload,
-          triggered_at,
-          userTrigger {
-            trigger {
-              title,
-              description
-            }
+          payload
+          triggered_at
+          trigger {
+            id
+            title
+            description
           }
         }
       }

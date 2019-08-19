@@ -95,11 +95,10 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
           post {
             id
           }
-          userTrigger {
-            trigger {
-              title,
-              description
-            }
+          trigger {
+            id
+            title
+            description
           }
         }
       }

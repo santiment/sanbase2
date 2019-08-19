@@ -297,7 +297,7 @@ defmodule Sanbase.Model.Project.List do
   end
 
   def currently_trending_projects() do
-    {:ok, trending_words} = Sanbase.SocialData.TrendingWords.get_trending_now()
+    {:ok, trending_words} = Sanbase.SocialData.TrendingWords.get_currently_trending_words()
 
     trending_words_mapset =
       trending_words

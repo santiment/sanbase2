@@ -58,6 +58,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:main_contract_address, :string)
     field(:eth_addresses, list_of(:eth_address), resolve: dataloader(SanbaseRepo))
 
+    field :is_trending, :boolean do
+      cache_resolve(&ProjectResolver.is_trending/3)
+    end
+
     field :github_links, list_of(:string) do
       cache_resolve(&ProjectResolver.github_links/3)
     end

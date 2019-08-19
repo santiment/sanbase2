@@ -48,7 +48,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingProjectTest do
 
   test "evaluate trending words triggers", context do
     with_mock Sanbase.SocialData.TrendingWords, [:passthrough],
-      get_trending_now: fn _ ->
+      get_currently_trending_words: fn _ ->
         {:ok,
          [%{word: context.project.name |> String.upcase(), score: 10}] ++
            top_words()}
@@ -72,7 +72,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingProjectTest do
     end)
 
     with_mock Sanbase.SocialData.TrendingWords, [:passthrough],
-      get_trending_now: fn _ ->
+      get_currently_trending_words: fn _ ->
         {:ok, [%{word: context.project.name |> String.downcase(), score: 10}] ++ top_words()}
       end do
       assert capture_log(fn ->

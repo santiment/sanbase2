@@ -1,4 +1,4 @@
-defmodule Sanbase.Graphql.ProjectApiTokenTopTransactionsTest do
+defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mock

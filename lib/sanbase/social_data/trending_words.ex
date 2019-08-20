@@ -85,6 +85,9 @@ defmodule Sanbase.SocialData.TrendingWords do
     {query, args} = get_trending_words_query(from, to, interval, size)
 
     ClickhouseRepo.query_reduce(query, args, %{}, fn
+      [_dt, _word, nil, _score], acc ->
+        acc
+
       [dt, _word, project, score], acc ->
         datetime = DateTime.from_unix!(dt)
         [_ticker, slug] = String.split(project, "_")

@@ -1,4 +1,4 @@
-defmodule Sanbase.Graphql.ProjectApiGithubTest do
+defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mock

@@ -1,4 +1,4 @@
-defmodule Sanbase.Graphql.ProjectApiGetQueriesTest do
+defmodule SanbaseWeb.Graphql.ProjectApiGetQueriesTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory

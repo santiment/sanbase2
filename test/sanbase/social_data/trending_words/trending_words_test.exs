@@ -76,7 +76,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
         query: fn _, _ ->
           {:ok, %{rows: trending_words_rows(dt1_str, dt2_str, dt3_str)}}
         end do
-        result = TrendingWords.get_trending_now()
+        result = TrendingWords.get_currently_trending_words()
 
         assert result == {:ok, [%{score: 2, word: "xrp"}, %{score: 1, word: "eth"}]}
       end
@@ -85,7 +85,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
     test "clickhouse returns error", _context do
       with_mock Sanbase.ClickhouseRepo,
         query: fn _, _ -> {:error, "Something went wrong"} end do
-        result = TrendingWords.get_trending_now()
+        result = TrendingWords.get_currently_trending_words()
 
         assert result == {:error, "Something went wrong"}
       end

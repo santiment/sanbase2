@@ -39,6 +39,11 @@ defmodule Sanbase.SocialData.TrendingWords do
           score: float()
         }
 
+  @type trending_slug :: %{
+          slug: slug,
+          score: float()
+        }
+
   @type word_stat :: %{
           datetme: DateTime.t(),
           position: position
@@ -76,13 +81,29 @@ defmodule Sanbase.SocialData.TrendingWords do
     end)
   end
 
+  def get_trending_projects(from, to, interval, size) do
+    {query, args} = get_trending_words_query(from, to, interval, size)
+
+    ClickhouseRepo.query_reduce(query, args, %{}, fn
+      [_dt, _word, nil, _score], acc ->
+        acc
+
+      [dt, _word, project, score], acc ->
+        datetime = DateTime.from_unix!(dt)
+        [_ticker, slug] = String.split(project, "_")
+        elem = %{slug: slug, score: score}
+        Map.update(acc, datetime, [elem], fn slugs -> [elem | slugs] end)
+    end)
+  end
+
   @doc ~s"""
   Get a list of the currently trending words
   """
-  @spec get_trending_now(non_neg_integer()) :: {:ok, list(trending_word)} | {:error, String.t()}
-  def get_trending_now(size \\ 10)
+  @spec get_currently_trending_words(non_neg_integer()) ::
+          {:ok, list(trending_word)} | {:error, String.t()}
+  def get_currently_trending_words(size \\ 10)
 
-  def get_trending_now(size) do
+  def get_currently_trending_words(size) do
     now = Timex.now()
 
     case get_trending_words(
@@ -97,6 +118,34 @@ defmodule Sanbase.SocialData.TrendingWords do
           |> Enum.max_by(fn {dt, _} -> DateTime.to_unix(dt) end)
 
         {:ok, words}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  @doc ~s"""
+  Get a list of the currently trending projects
+  """
+  @spec get_currently_trending_projects(non_neg_integer()) ::
+          {:ok, list(trending_slug)} | {:error, String.t()}
+  def get_currently_trending_projects(size \\ 10)
+
+  def get_currently_trending_projects(size) do
+    now = Timex.now()
+
+    case get_trending_projects(
+           Timex.shift(now, hours: -@hours_back_ensure_has_data),
+           now,
+           "1h",
+           size
+         ) do
+      {:ok, stats} ->
+        {_, projects} =
+          stats
+          |> Enum.max_by(fn {dt, _} -> DateTime.to_unix(dt) end)
+
+        {:ok, projects}
 
       {:error, error} ->
         {:error, error}

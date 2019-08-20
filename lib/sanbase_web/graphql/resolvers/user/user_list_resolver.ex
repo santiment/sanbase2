@@ -49,7 +49,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     trending_words =
       Cache.wrap(
         fn ->
-          {:ok, words} = TrendingWords.get_trending_now(@trending_words_size)
+          {:ok, words} = TrendingWords.get_currently_trending_words(@trending_words_size)
 
           words
           |> Enum.map(fn %{word: word} -> String.downcase(word) end)

@@ -93,7 +93,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   def promo_subscription(_root, _args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    Subscription.promo_subscription(current_user)
+    Subscription.Promo.promo_subscription(current_user)
   end
 
   def payments(_root, _args, %{

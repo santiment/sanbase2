@@ -2,8 +2,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   alias Sanbase.Billing.{Subscription, Plan}
   alias Sanbase.Auth.User
   alias Sanbase.Repo
-
   alias Sanbase.StripeApi
+  alias Sanbase.FeatureFlag
 
   require Logger
 
@@ -93,7 +93,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   def promo_subscription(_root, _args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    Subscription.Promo.promo_subscription(current_user)
+    if FeatureFlag.enabled?(:enable_promo_subscription) do
+      Subscription.Promo.promo_subscription(current_user)
+    else
+      {:error, "Access denied!"}
+    end
   end
 
   def payments(_root, _args, %{

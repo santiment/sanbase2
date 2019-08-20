@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
   use Absinthe.Schema.Notation
 
-  require Sanbase.FeatureFlag, as: FeatureFlag
   alias SanbaseWeb.Graphql.Resolvers.BillingResolver
 
   alias SanbaseWeb.Graphql.Middlewares.{
@@ -82,12 +81,10 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
       resolve(&BillingResolver.renew_cancelled_subscription/3)
     end
 
-    FeatureFlag.feature_flag :enable_promo_subscription do
-      field :promo_subscription, list_of(:subscription_plan) do
-        middleware(JWTAuth)
+    field :promo_subscription, list_of(:subscription_plan) do
+      middleware(JWTAuth)
 
-        resolve(&BillingResolver.promo_subscription/3)
-      end
+      resolve(&BillingResolver.promo_subscription/3)
     end
   end
 end

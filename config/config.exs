@@ -157,7 +157,7 @@ config :sanbase, SanbaseWeb.Plug.SessionPlug,
 config :sanbase, SanbaseWeb.Plug.BotLoginPlug,
   bot_login_endpoint: {:system, "BOT_LOGIN_SECRET_ENDPOINT"}
 
-config :sanbase, Sanbase.Billing.Subscription,
+config :sanbase, Sanbase.FeatureFlag,
   enable_promo_subscription: {:system, "ENABLE_PROMO_SUBSCRIPTION", "false"}
 
 # Import configs

@@ -274,7 +274,7 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_custom_factory() do
+  def plan_enterprise_factory() do
     %Plan{
       id: 5,
       name: "CUSTOM",
@@ -314,7 +314,7 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_custom_yearly_factory() do
+  def plan_enterprise_yearly_factory() do
     %Plan{
       id: 9,
       name: "CUSTOM",
@@ -349,6 +349,16 @@ defmodule Sanbase.Factory do
       id: 13,
       name: "PRO",
       amount: 5100,
+      currency: "USD",
+      interval: "month"
+    }
+  end
+
+  def plan_enterprise_sanbase_factory() do
+    %Plan{
+      id: 14,
+      name: "ENTERPRISE",
+      amount: 0,
       currency: "USD",
       interval: "month"
     }

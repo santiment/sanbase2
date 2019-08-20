@@ -483,6 +483,14 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
   end
 
+  describe "promo subscription mutation" do
+    test "successfull subscribe returns subscription", context do
+      query = promo_subscription_mutation()
+      response = execute_mutation(context.conn, query, "promoSubscription")
+      assert response |> length() == 3
+    end
+  end
+
   defp current_user_query do
     """
     {
@@ -570,6 +578,22 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       cancelSubscription(subscriptionId: #{subscription_id}) {
         isScheduledForCancellation
         scheduledForCancellationAt
+      }
+    }
+    """
+  end
+
+  defp promo_subscription_mutation() do
+    """
+    mutation {
+      promoSubscription {
+        plan {
+          id
+          name
+          product {
+            name
+          }
+        }
       }
     }
     """

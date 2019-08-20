@@ -80,6 +80,9 @@ config :sanbase, Sanbase.Telegram,
   telegram_endpoint: "random_string",
   token: "token"
 
+config :sanbase, Sanbase.FeatureFlag,
+  enable_promo_subscription: {:system, "ENABLE_PROMO_SUBSCRIPTION", "true"}
+
 if File.exists?("config/test.secret.exs") do
   import_config "test.secret.exs"
 end

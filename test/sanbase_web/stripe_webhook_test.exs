@@ -12,9 +12,15 @@ defmodule SanbaseWeb.StripeWebhookTest do
   alias Sanbase.StripeApiTestReponse
   alias Sanbase.StripeApi
 
+  @stripe_id "sub_1234567891"
+
   setup_with_mocks([
     {StripeApi, [],
-     [retrieve_subscription: fn _ -> StripeApiTestReponse.retrieve_subscription_resp() end]},
+     [
+       retrieve_subscription: fn _ ->
+         StripeApiTestReponse.retrieve_subscription_resp(stripe_id: @stripe_id)
+       end
+     ]},
     {Sanbase.Notifications.Discord, [],
      [
        send_notification: fn _, _, _ -> :ok end,
@@ -30,12 +36,9 @@ defmodule SanbaseWeb.StripeWebhookTest do
   describe "invoice.payment_succeeded event" do
     test "when event with this id doesn't exist - create and process event successfully",
          context do
-      {:ok, %Stripe.Subscription{id: stripe_id}} =
-        StripeApiTestReponse.retrieve_subscription_resp()
-
       insert(:subscription_essential,
         user: context.user,
-        stripe_id: stripe_id
+        stripe_id: @stripe_id
       )
 
       payload = payment_succeded_json()
@@ -107,9 +110,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
     test "successfully create subscription" do
       {:ok,
        %Stripe.Subscription{
-         id: _stripe_id,
-         customer: stripe_customer_id,
-         plan: %Stripe.Plan{id: _stripe_plan_id}
+         customer: stripe_customer_id
        }} = StripeApiTestReponse.retrieve_subscription_resp()
 
       user = insert(:user, stripe_customer_id: stripe_customer_id)
@@ -123,16 +124,14 @@ defmodule SanbaseWeb.StripeWebhookTest do
     test "when there is existing subscription with the same stripe_id - event is processed succesfully, new subscription is not created" do
       {:ok,
        %Stripe.Subscription{
-         id: stripe_id,
-         customer: stripe_customer_id,
-         plan: %Stripe.Plan{id: _stripe_plan_id}
+         customer: stripe_customer_id
        }} = StripeApiTestReponse.retrieve_subscription_resp()
 
       user = insert(:user, stripe_customer_id: stripe_customer_id)
 
       insert(:subscription_essential,
         user: user,
-        stripe_id: stripe_id
+        stripe_id: @stripe_id
       )
 
       response = post_stripe_webhook(:subscription_created)
@@ -143,16 +142,9 @@ defmodule SanbaseWeb.StripeWebhookTest do
     end
 
     test "when customer does not exist - subscription is not created" do
-      {:ok,
-       %Stripe.Subscription{
-         id: stripe_id,
-         customer: _stripe_customer_id,
-         plan: %Stripe.Plan{id: _stripe_plan_id}
-       }} = StripeApiTestReponse.retrieve_subscription_resp()
-
       user = insert(:user)
 
-      expected_error_msq = "Customer for subscription_id #{stripe_id} does not exist"
+      expected_error_msq = "Customer for subscription_id #{@stripe_id} does not exist"
 
       capture_log(fn ->
         response = post_stripe_webhook(:subscription_created)
@@ -167,7 +159,6 @@ defmodule SanbaseWeb.StripeWebhookTest do
     test "when plan does not exist - subscription is not created" do
       {:ok,
        %Stripe.Subscription{
-         id: stripe_id,
          customer: stripe_customer_id,
          plan: %Stripe.Plan{id: stripe_plan_id}
        }} = StripeApiTestReponse.retrieve_subscription_resp()
@@ -178,7 +169,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
 
       user = insert(:user, stripe_customer_id: stripe_customer_id)
 
-      expected_error_msq = "Plan for subscription_id #{stripe_id} does not exist"
+      expected_error_msq = "Plan for subscription_id #{@stripe_id} does not exist"
 
       capture_log(fn ->
         response = post_stripe_webhook(:subscription_created)

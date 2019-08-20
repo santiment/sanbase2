@@ -210,7 +210,10 @@ defmodule Sanbase.StripeApiTestReponse do
      }}
   end
 
-  def create_subscription_resp do
+  def create_subscription_resp(opts \\ []) do
+    stripe_id = Keyword.get(opts, :stripe_id, nil)
+    stripe_id = stripe_id || "sub_" <> Base.encode16(:crypto.strong_rand_bytes(7))
+
     {:ok,
      %Stripe.Subscription{
        application_fee_percent: nil,
@@ -225,7 +228,7 @@ defmodule Sanbase.StripeApiTestReponse do
        days_until_due: nil,
        discount: nil,
        ended_at: nil,
-       id: "sub_F5dmKstgL3Yq3r",
+       id: stripe_id,
        items: %Stripe.List{
          data: [
            %Stripe.SubscriptionItem{
@@ -301,11 +304,11 @@ defmodule Sanbase.StripeApiTestReponse do
      }}
   end
 
-  def update_subscription_resp do
-    create_subscription_resp()
+  def update_subscription_resp(opts \\ []) do
+    create_subscription_resp(opts)
   end
 
-  def retrieve_subscription_resp do
-    create_subscription_resp()
+  def retrieve_subscription_resp(opts \\ []) do
+    create_subscription_resp(opts)
   end
 end

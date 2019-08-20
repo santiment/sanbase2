@@ -15,6 +15,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     TwitterResolver
   }
 
+  alias Sanbase.Model.Project
   alias SanbaseWeb.Graphql.SanbaseRepo
   alias SanbaseWeb.Graphql.Complexity
 
@@ -62,7 +63,13 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field :social_volume_query, :string do
-      cache_resolve(dataloader(SanbaseRepo))
+      cache_resolve(
+        dataloader(SanbaseRepo, :social_volume_query,
+          callback: fn query, project, _args ->
+            {:ok, query || Project.SocialVolumeQuery.default_query(project)}
+          end
+        )
+      )
     end
 
     field :is_trending, :boolean do

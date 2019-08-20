@@ -17,7 +17,24 @@ defmodule Sanbase.Model.Project.SocialVolumeQuery do
     |> unique_constraint(:project_id)
   end
 
-  defimpl String.Chars do
-    def to_string(%{query: query}), do: query
+  def default_query(%Project{} = project) do
+    %Project{ticker: ticker, name: name, coinmarketcap_id: cmc_id} = project
+
+    [ticker, name, cmc_id]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.map(fn elem -> ~s/"#{elem}"/ end)
+    |> Enum.join(" OR ")
+  end
+end
+
+defimpl String.Chars, for: Sanbase.Model.Project.SocialVolumeQuery do
+  import Sanbase.Model.Project.SocialVolumeQuery, only: [default_query: 1]
+
+  def to_string(%{query: nil, project: project}) do
+    default_query(project)
+  end
+
+  def to_string(%{query: query}) do
+    query
   end
 end

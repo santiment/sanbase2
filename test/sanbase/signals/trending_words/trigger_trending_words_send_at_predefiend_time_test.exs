@@ -63,9 +63,9 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
         %Tesla.Env{status: 200, body: "ok"}
     end)
 
-    with_mock Sanbase.SocialData, [:passthrough],
-      trending_words: fn _, _, _, _, _ ->
-        {:ok, [%{top_words: top_words()}]}
+    with_mock Sanbase.SocialData.TrendingWords, [],
+      get_trending_now: fn _ ->
+        {:ok, top_words()}
       end do
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
@@ -92,9 +92,9 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
         %Tesla.Env{status: 200, body: "ok"}
     end)
 
-    with_mock Sanbase.SocialData, [:passthrough],
-      trending_words: fn _, _, _, _, _ ->
-        {:ok, [%{top_words: top_words()}]}
+    with_mock Sanbase.SocialData.TrendingWords, [],
+      get_trending_now: fn _ ->
+        {:ok, top_words()}
       end do
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
@@ -129,9 +129,9 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
       is_repeating: false
     })
 
-    with_mock Sanbase.SocialData, [:passthrough],
-      trending_words: fn _, _, _, _, _ ->
-        {:ok, [%{top_words: top_words()}]}
+    with_mock Sanbase.SocialData.TrendingWords, [],
+      get_trending_now: fn _ ->
+        {:ok, top_words()}
       end do
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)

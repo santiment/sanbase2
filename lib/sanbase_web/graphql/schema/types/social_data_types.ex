@@ -89,6 +89,11 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     field(:top_words, list_of(:word_with_context))
   end
 
+  object :trending_word_position do
+    field(:datetime, non_null(:datetime))
+    field(:position, :integer)
+  end
+
   object :word_with_context do
     field :context, list_of(:word_context) do
       cache_resolve(&SocialDataResolver.word_context/3)

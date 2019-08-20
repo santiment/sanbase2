@@ -2,7 +2,6 @@ defmodule Sanbase.Model.Project.SocialVolumeQuery do
   use Ecto.Schema
 
   import Ecto.Changeset
-
   alias Sanbase.Model.Project
 
   schema "project_social_volume_query" do

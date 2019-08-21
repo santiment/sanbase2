@@ -193,7 +193,7 @@ defmodule Sanbase.SocialData.TrendingWords do
         SELECT
            toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
            word,
-           project,
+           any(project) AS project,
            SUM(score) / 4 AS total_score
         FROM trending_words
         PREWHERE
@@ -201,7 +201,7 @@ defmodule Sanbase.SocialData.TrendingWords do
           dt < toDateTime(?3) AND
           source NOT IN ('twitter', 'bitcointalk') AND
           dt = t
-        GROUP BY t, word, project
+        GROUP BY t, word
         ORDER BY total_score DESC
         LIMIT ?4 BY t
     )

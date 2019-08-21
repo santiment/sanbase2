@@ -9,16 +9,8 @@ defmodule Sanbase.Signal.Scheduler do
   > Update the `last_triggered` in the database
   > Log stats messages
   """
-  alias Sanbase.Signal.Trigger
 
-  @signal_modules [
-    Trigger.DailyActiveAddressesSettings,
-    Trigger.PricePercentChangeSettings,
-    Trigger.PriceAbsoluteChangeSettings,
-    Trigger.TrendingWordsTriggerSettings,
-    Trigger.PriceVolumeDifferenceTriggerSettings,
-    Trigger.EthWalletTriggerSettings
-  ]
+  @signal_modules Sanbase.Signal.List.get()
 
   alias Sanbase.Signal.{UserTrigger, HistoricalActivity}
   alias Sanbase.Signal.Evaluator

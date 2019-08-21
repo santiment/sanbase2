@@ -63,7 +63,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
     %{metric: metric, filtered_target: %{list: target_list}} = settings
 
     target_list
-    |> Enum.map(fn slug -> fetch_metric(metric, slug, from, to, interval) end)
+    |> Enum.map(fn slug -> {slug, fetch_metric(metric, slug, from, to, interval)} end)
     |> Enum.reject(&is_nil/1)
   end
 

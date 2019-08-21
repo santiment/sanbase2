@@ -4,6 +4,9 @@ defprotocol Sanbase.Signal.Settings do
 
   Every trigger has settings that define how it is evaluated, how it's cached
   and how to check if the evaluated signal is triggered.
+
+  After creating the module 3 things should be done in order to run the signal:
+  - Add a map between the StructMapTransformation
   """
 
   def evaluate(trigger_settings, trigger)

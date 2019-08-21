@@ -13,7 +13,6 @@ defmodule Sanbase.Model.Project.SocialVolumeQuery do
     query
     |> cast(attrs, [:query, :project_id])
     |> validate_required(:query)
-    |> validate_required(:query)
     |> unique_constraint(:project_id)
   end
 

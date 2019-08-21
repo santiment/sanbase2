@@ -26,7 +26,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiSocialVolumeQuery do
     assert result |> Enum.sort_by(& &1["slug"]) == expected_result |> Enum.sort_by(& &1["slug"])
   end
 
-  test " social volume for projects with predefined query", %{conn: conn} do
+  test "social volume for projects with predefined query", %{conn: conn} do
     p1 = insert(:random_erc20_project)
     p2 = insert(:random_erc20_project)
     insert(:social_volume_query, %{project: p1, query: "something"})

@@ -126,6 +126,10 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def social_volume_query_factory() do
+    %Project.SocialVolumeQuery{}
+  end
+
   def github_organization_factory() do
     %Project.GithubOrganization{
       organization: rand_str()

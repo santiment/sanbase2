@@ -21,6 +21,16 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     end)
   end
 
+  def active_users_count(from, to) do
+    {query, args} = active_users_count_query(from, to)
+
+    ClickhouseRepo.query_transform(query, args, fn value -> value end)
+    |> case do
+      {:ok, [result]} -> result
+      {:error, error} -> error
+    end
+  end
+
   defp api_call_history_query(user_id, from, to, interval) do
     interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
 
@@ -43,6 +53,25 @@ defmodule Sanbase.Clickhouse.ApiCallData do
       from,
       to,
       user_id
+    ]
+
+    {query, args}
+  end
+
+  defp active_users_count_query(from, to) do
+    query = """
+    SELECT
+      uniqExact(user_id)
+    FROM
+      sanbase_api_call_data
+    PREWHERE
+      dt >= toDateTime(?1) AND
+      dt < toDateTime(?2)
+    """
+
+    args = [
+      from,
+      to
     ]
 
     {query, args}

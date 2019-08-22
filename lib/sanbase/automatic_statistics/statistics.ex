@@ -1,5 +1,6 @@
 defmodule Sanbase.Statistics do
   import Sanbase.Auth.Settings, only: [daily_subscription_type: 0, weekly_subscription_type: 0]
+  alias Sanbase.Clickhouse.ApiCallData
   alias Sanbase.Auth.Statistics, as: UserStatistics
   alias Sanbase.UserLists.Statistics, as: WatchlistStatistics
 
@@ -10,7 +11,8 @@ defmodule Sanbase.Statistics do
     "users_with_daily_newsletter_subscriptions",
     "users_with_weekly_newsletter_subscriptions",
     "watchlists",
-    "tokens_staked"
+    "tokens_staked",
+    "active_users"
   ]
 
   @epoch_datetime 0 |> DateTime.from_unix!()
@@ -217,6 +219,25 @@ defmodule Sanbase.Statistics do
       "average_watchlists_per_user_with_watchlists" => average_watchlists_per_user,
       "new_users_with_watchlist_count_14d" => new_users_with_watchlist_count_14d,
       "longtime_users_with_watchlist_count_14d" => old_users_with_watchlist_count_14d
+    }
+  end
+
+  def get("active_users") do
+    now = Timex.now()
+
+    active_users_in_last_12h = ApiCallData.active_users_count(Timex.shift(now, hours: -12), now)
+
+    active_users_in_last_24h = ApiCallData.active_users_count(Timex.shift(now, days: -1), now)
+
+    active_users_in_last_7d = ApiCallData.active_users_count(Timex.shift(now, days: -7), now)
+
+    active_users_in_last_30d = ApiCallData.active_users_count(Timex.shift(now, days: -30), now)
+
+    %{
+      "active_users_in_last_12h" => active_users_in_last_12h,
+      "active_users_in_last_24h" => active_users_in_last_24h,
+      "active_users_in_last_7d" => active_users_in_last_7d,
+      "active_users_in_last_30d" => active_users_in_last_30d
     }
   end
 end

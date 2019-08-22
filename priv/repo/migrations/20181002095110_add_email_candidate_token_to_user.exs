@@ -1,4 +1,4 @@
-defmodule Sanbase.Repo.Migrations.AddEmailCandidateToUser do
+defmodule Sanbase.Repo.Migrations.AddEmailCandidateTokenToUser do
   use Ecto.Migration
 
   def change do

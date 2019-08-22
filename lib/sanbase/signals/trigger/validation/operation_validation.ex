@@ -1,6 +1,8 @@
 defmodule Sanbase.Signal.Validation.Operation do
   import Sanbase.Validation
 
+  alias Sanbase.Signal.Operation
+
   def valid_operation?(op) do
     has_valid_operation? = [
       valid_percent_change_operation?(op),
@@ -14,26 +16,28 @@ defmodule Sanbase.Signal.Validation.Operation do
     end
   end
 
-  def valid_percent_change_operation?(%{some_of: list} = operation) when is_list(list) do
-    Enum.all?(list, fn op -> valid_percent_change_operation?(op) == :ok end)
-    |> case do
-      true ->
-        :ok
-
-      false ->
-        {:error, "#{inspect(operation)} is not a valid percent change operation"}
-    end
+  def valid_percent_change_operation?(%{some_of: list}) when is_list(list) do
+    all_operations_valid?(list)
   end
 
-  def valid_percent_change_operation?(%{all_of: list} = operation) when is_list(list) do
-    Enum.all?(list, fn op -> valid_percent_change_operation?(op) == :ok end)
-    |> case do
-      true ->
-        :ok
+  def valid_percent_change_operation?(%{all_of: list}) when is_list(list) do
+    all_operations_valid?(list)
+  end
 
-      false ->
-        {:error, "#{inspect(operation)} is not a valid percent change operation"}
-    end
+  def valid_absolute_value_operation?(%{some_of: list}) when is_list(list) do
+    all_operations_valid?(list)
+  end
+
+  def valid_absolute_value_operation?(%{all_of: list}) when is_list(list) do
+    all_operations_valid?(list)
+  end
+
+  def valid_absolute_change_operation?(%{some_of: list}) when is_list(list) do
+    all_operations_valid?(list)
+  end
+
+  def valid_absolute_change_operation?(%{all_of: list}) when is_list(list) do
+    all_operations_valid?(list)
   end
 
   def valid_percent_change_operation?(%{percent_up: percent})
@@ -74,4 +78,22 @@ defmodule Sanbase.Signal.Validation.Operation do
 
   defp do_valid_absolute_value_operation?(operation, _),
     do: {:error, "#{inspect(operation)} is not a valid absolute value operation"}
+
+  defp all_operations_have_same_type?(list) do
+    Enum.map(list, &Operation.type/1)
+    |> Enum.uniq()
+    |> case do
+      [_] -> true
+      _ -> false
+    end
+  end
+
+  defp all_operations_valid?(list) do
+    with true <- all_operations_have_same_type?(list),
+         true <- Enum.all?(list, fn op -> valid_operation?(op) == :ok end) do
+      :ok
+    else
+      false -> {:error, "Some of the operations are not valid"}
+    end
+  end
 end

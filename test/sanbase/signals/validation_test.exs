@@ -99,6 +99,70 @@ defmodule Sanbase.Signal.ValidationTest do
       assert all_true?
     end
 
+    test "with all_of valid cases returns :ok" do
+      valid_cases = [
+        %{percent_up: 10},
+        %{percent_up: 10.5},
+        %{percent_down: 20}
+      ]
+
+      assert Validation.valid_percent_change_operation?(%{all_of: valid_cases}) == :ok
+    end
+
+    test "with some_of valid cases returns :ok" do
+      valid_cases = [
+        %{percent_up: 10},
+        %{percent_up: 10.5},
+        %{percent_down: 20}
+      ]
+
+      assert Validation.valid_percent_change_operation?(%{some_of: valid_cases}) == :ok
+    end
+
+    test "with different operations in all_of returns proper error message" do
+      valid_cases = [
+        %{above: 10},
+        %{percent_up: 10.5},
+        %{percent_down: 20}
+      ]
+
+      assert Validation.valid_percent_change_operation?(%{all_of: valid_cases}) ==
+               {:error, "Some of the operations are not valid"}
+    end
+
+    test "with different operations in some_of returns proper error message" do
+      valid_cases = [
+        %{above: 10},
+        %{percent_up: 10.5},
+        %{percent_down: 20}
+      ]
+
+      assert Validation.valid_percent_change_operation?(%{some_of: valid_cases}) ==
+               {:error, "Some of the operations are not valid"}
+    end
+
+    test "with invalid parameters in some_of returns proper error message" do
+      valid_cases = [
+        %{percent_up: 10},
+        %{percent_up: "NaN"},
+        %{percent_down: "5"}
+      ]
+
+      assert Validation.valid_percent_change_operation?(%{some_of: valid_cases}) ==
+               {:error, "Some of the operations are not valid"}
+    end
+
+    test "with invalid parameters in all_of returns proper error message" do
+      valid_cases = [
+        %{percent_up: 10},
+        %{percent_up: "NaN"},
+        %{percent_down: "5"}
+      ]
+
+      assert Validation.valid_percent_change_operation?(%{all_of: valid_cases}) ==
+               {:error, "Some of the operations are not valid"}
+    end
+
     test "with invalid cases returns {:error, error_message}" do
       error_cases = [
         %{percent_up: "10"},

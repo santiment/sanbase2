@@ -1,4 +1,26 @@
 defmodule Sanbase.Billing.Subscription.Promo do
+  @public_promo_code_stats %{
+    "DEVCON" => %{
+      # Highest plans from API, Sanbase and Sheets
+      plans: [5, 14, 24],
+      cancel_after_days: 14
+    }
+  }
+
+  @public_promo_codes Map.keys(@public_promo_code_stats)
+
+  @moduledoc """
+  Implements a way to create promotional subscriptions.
+  These are subscriptions with specific discount code that give access to some predefined plans
+  for a limited amount of time at a discount price (mostly free).
+
+  The multi use promo subscription is modelled by #{inspect(@public_promo_code_stats)} map.
+  The keys contain the public discount id previously created in Stripe. It can contain information
+  about the `percent_off`, the date by which the code should be redeemed.
+  The values contain info about:
+    * for which plans the customer should be subscribed
+    * for how much time the customer should be subscribed
+  """
   require Logger
 
   import Ecto.Query
@@ -8,28 +30,16 @@ defmodule Sanbase.Billing.Subscription.Promo do
   alias Sanbase.Billing.{Subscription, Plan}
   alias Sanbase.Repo
 
-  @promo_trial_period_days 14
-  @doc """
-  Enterprise plans from API, Sanbase and Sheets products are used for #{@promo_trial_period_days} days
-  promotional free trial of our services.
-  """
-  @promo_plans [5, 14, 24]
-  @promo_metadata %{"promo_event" => "devcon2019"}
-
-  @doc """
-  Attach a subscription with a free trial of #{@promo_trial_period_days} days for all highest priced plans for all
-  products to the user. It doesn't require a credit card.
-  """
-  def promo_subscription(%User{stripe_customer_id: stripe_customer_id} = user)
-      when is_binary(stripe_customer_id) do
-    promo_subscribe(user)
+  def create_promo_subscription(%User{stripe_customer_id: stripe_customer_id} = user, coupon)
+      when is_binary(stripe_customer_id) and coupon in @public_promo_codes do
+    promo_subscribe(user, coupon)
   end
 
-  def promo_subscription(%User{} = user) do
+  def create_promo_subscription(%User{} = user, coupon) when coupon in @public_promo_codes do
     Subscription.create_or_update_stripe_customer(user)
     |> case do
       {:ok, user} ->
-        promo_subscribe(user)
+        promo_subscribe(user, coupon)
 
       {:error, error} ->
         Logger.error(
@@ -42,10 +52,14 @@ defmodule Sanbase.Billing.Subscription.Promo do
     end
   end
 
-  defp promo_subscribe(user) do
-    from(p in Plan, where: p.id in ^@promo_plans)
+  def create_promo_subscription(_, _), do: {:error, "Unsupported promotional code"}
+
+  defp promo_subscribe(user, coupon) do
+    promo_plans = get_in(@public_promo_code_stats, [coupon, :plans])
+
+    from(p in Plan, where: p.id in ^promo_plans)
     |> Repo.all()
-    |> Enum.map(&promo_subscribe(user, &1))
+    |> Enum.map(&promo_subscribe(user, &1, coupon))
     |> Enum.filter(&match?({:error, _}, &1))
     |> case do
       [] ->
@@ -62,22 +76,23 @@ defmodule Sanbase.Billing.Subscription.Promo do
     end
   end
 
-  defp promo_subscribe(user, plan) do
+  defp promo_subscribe(user, plan, coupon) do
     with {:ok, stripe_subscription} <-
-           promotional_subsciption_data(user, plan) |> StripeApi.create_subscription(),
+           promotional_subsciption_data(user, plan, coupon) |> StripeApi.create_subscription(),
          {:ok, subscription} <-
            Subscription.create_subscription_db(stripe_subscription, user, plan) do
       {:ok, subscription}
     end
   end
 
-  defp promotional_subsciption_data(user, plan) do
+  defp promotional_subsciption_data(user, plan, coupon) do
+    cancel_after_days = get_in(@public_promo_code_stats, [coupon, :cancel_after_days])
+
     %{
       customer: user.stripe_customer_id,
       items: [%{plan: plan.stripe_id}],
-      trial_period_days: @promo_trial_period_days,
-      metadata: @promo_metadata,
-      cancel_at: Timex.shift(Timex.now(), days: @promo_trial_period_days) |> DateTime.to_unix()
+      cancel_at: Timex.shift(Timex.now(), days: cancel_after_days) |> DateTime.to_unix(),
+      coupon: coupon
     }
   end
 end

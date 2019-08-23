@@ -102,7 +102,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
            Sanbase.Prices.Store.fetch_combined_mcap_volume(measurements, from, to, interval) do
       {:ok, result}
     else
-      _error -> {:error, "Can't fetch historical stats for a watchlist"}
+      {:error, error} ->
+        {:error, "Can't fetch historical stats for a watchlist. Reason: #{inspect(error)}"}
+
+      _ ->
+        {:error, "Can't fetch historical stats for a watchlist."}
     end
   end
 

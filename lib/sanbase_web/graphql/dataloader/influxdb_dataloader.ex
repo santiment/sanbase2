@@ -21,21 +21,25 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
     measurements
     |> Enum.chunk_every(50)
     |> Sanbase.Parallel.map(
-      fn measurements ->
-        with {:ok, volumes_last_24h} <-
-               Prices.Store.fetch_average_volume(measurements, yesterday, now),
-             {:ok, volumes_previous_24h} <-
-               Prices.Store.fetch_average_volume(measurements, two_days_ago, yesterday) do
-          calculate_volume_percent_change_24h(volumes_previous_24h, volumes_last_24h)
-        else
-          {:error, error} ->
-            Logger.warn(
-              "Cannot fetch average volume for a list of projects. Reason: #{inspect(error)}"
-            )
+      fn
+        [_ | _] = measurements ->
+          with {:ok, volumes_last_24h} <-
+                 Prices.Store.fetch_average_volume(measurements, yesterday, now),
+               {:ok, volumes_previous_24h} <-
+                 Prices.Store.fetch_average_volume(measurements, two_days_ago, yesterday) do
+            calculate_volume_percent_change_24h(volumes_previous_24h, volumes_last_24h)
+          else
+            error ->
+              Logger.warn(
+                "Cannot fetch average volume for a list of projects. Reason: #{inspect(error)}"
+              )
 
-            nil
-        end
-        |> Enum.reject(&is_nil/1)
+              nil
+          end
+          |> Enum.reject(&is_nil/1)
+
+        [] ->
+          []
       end,
       max_concurrency: @max_concurrency,
       ordered: false,

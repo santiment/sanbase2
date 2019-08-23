@@ -383,8 +383,8 @@ defmodule Sanbase.Prices.Store do
 
         {:ok, data}
 
-      %{errors: [error | _]} ->
-        {:error, error}
+      %{errors: errors} ->
+        {:error, errors}
     end
   end
 

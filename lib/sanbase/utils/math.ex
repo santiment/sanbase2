@@ -8,25 +8,25 @@ defmodule Sanbase.Math do
 
     ## Examples
 
-      iex> Sanbase.Signal.Utils.percent_change(1.0, 2.0)
+      iex> Sanbase.Math.percent_change(1.0, 2.0)
       100.0
 
-      iex> Sanbase.Signal.Utils.percent_change(1.0, 1.05)
+      iex> Sanbase.Math.percent_change(1.0, 1.05)
       5.0
 
-      iex> Sanbase.Signal.Utils.percent_change(0, 2.0)
+      iex> Sanbase.Math.percent_change(0, 2.0)
       0.0
 
-      iex> Sanbase.Signal.Utils.percent_change(2.0, 1.0)
+      iex> Sanbase.Math.percent_change(2.0, 1.0)
       -50.0
 
-      iex> Sanbase.Signal.Utils.percent_change(2.0, 0.0)
+      iex> Sanbase.Math.percent_change(2.0, 0.0)
       -100.0
 
-      iex> Sanbase.Signal.Utils.percent_change(2.0, -1)
+      iex> Sanbase.Math.percent_change(2.0, -1)
       -150.0
 
-      iex> Sanbase.Signal.Utils.percent_change(10.0, 10.0)
+      iex> Sanbase.Math.percent_change(10.0, 10.0)
       0.0
   """
   def percent_change(0, _current_daa), do: 0.0

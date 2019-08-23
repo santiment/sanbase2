@@ -26,16 +26,7 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
                Prices.Store.fetch_average_volume(measurements, yesterday, now),
              {:ok, volumes_previous_24h} <-
                Prices.Store.fetch_average_volume(measurements, two_days_ago, yesterday) do
-          volumes_previous_24h_map = volumes_previous_24h |> Map.new()
-
-          volumes_last_24h
-          |> Enum.map(fn {name, today_vol} ->
-            yesterday_vol = Map.get(volumes_previous_24h_map, name, 0)
-
-            if yesterday_vol > 1 do
-              {name, Sanbase.Math.percent_change(yesterday_vol, today_vol)}
-            end
-          end)
+          calculate_volume_percent_change_24h(volumes_previous_24h, volumes_last_24h)
         else
           {:error, error} ->
             Logger.warn(
@@ -67,6 +58,19 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
   end
 
   # Helper functions
+
+  defp calculate_volume_percent_change_24h(volumes_previous_24h, volumes_last_24h) do
+    volumes_previous_24h_map = volumes_previous_24h |> Map.new()
+
+    volumes_last_24h
+    |> Enum.map(fn {name, today_vol} ->
+      yesterday_vol = Map.get(volumes_previous_24h_map, name, 0)
+
+      if yesterday_vol > 1 do
+        {name, Sanbase.Math.percent_change(yesterday_vol, today_vol)}
+      end
+    end)
+  end
 
   # TODO: not covered in tests
   defp fetch_price(measurement, :last) do

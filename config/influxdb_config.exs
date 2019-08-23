@@ -20,5 +20,5 @@ config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
   init: {Sanbase.ExternalServices.TwitterData.Store, :init},
   host: "localhost",
   port: 8086,
-  pool: [max_overflow: 10, size: 20],
+  pool: [max_overflow: 20, size: 20],
   database: "twitter_followers_data"

@@ -3,6 +3,8 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.Helpers.Utils
 
+  require Logger
+
   @max_concurrency 30
 
   def data() do
@@ -17,22 +19,31 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
     two_days_ago = Timex.shift(now, days: -2)
 
     measurements
-    |> Enum.chunk_every(80)
+    |> Enum.chunk_every(50)
     |> Sanbase.Parallel.map(
       fn measurements ->
-        volumes_last_24h = Prices.Store.fetch_average_volume(measurements, yesterday, now)
+        with {:ok, volumes_last_24h} <-
+               Prices.Store.fetch_average_volume(measurements, yesterday, now),
+             {:ok, volumes_previous_24h} <-
+               Prices.Store.fetch_average_volume(measurements, two_days_ago, yesterday) do
+          volumes_previous_24h_map = volumes_previous_24h |> Map.new()
 
-        volumes_previous_24h_map =
-          Prices.Store.fetch_average_volume(measurements, two_days_ago, yesterday) |> Map.new()
+          volumes_last_24h
+          |> Enum.map(fn {name, today_vol} ->
+            yesterday_vol = Map.get(volumes_previous_24h_map, name, 0)
 
-        volumes_last_24h
-        |> Enum.map(fn {name, today_vol} ->
-          yesterday_vol = Map.get(volumes_previous_24h_map, name, 0)
+            if yesterday_vol > 1 do
+              {name, (today_vol - yesterday_vol) * 100 / yesterday_vol}
+            end
+          end)
+        else
+          {:error, error} ->
+            Logger.warn(
+              "Cannot fetch average volume for a list of projects. Reason: #{inspect(error)}"
+            )
 
-          if yesterday_vol > 1 do
-            {name, (today_vol - yesterday_vol) * 100 / yesterday_vol}
-          end
-        end)
+            nil
+        end
         |> Enum.reject(&is_nil/1)
       end,
       max_concurrency: @max_concurrency,

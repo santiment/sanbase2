@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
             yesterday_vol = Map.get(volumes_previous_24h_map, name, 0)
 
             if yesterday_vol > 1 do
-              {name, (today_vol - yesterday_vol) * 100 / yesterday_vol}
+              {name, Sanbase.Math.percent_change(yesterday_vol, today_vol)}
             end
           end)
         else

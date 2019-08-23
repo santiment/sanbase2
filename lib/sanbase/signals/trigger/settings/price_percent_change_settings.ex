@@ -8,6 +8,7 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
 
   import Sanbase.{Validation, Signal.Validation}
   import Sanbase.Signal.{Utils, OperationEvaluation}
+  import Sanbase.Math, only: [percent_change: 2]
 
   alias __MODULE__
   alias Sanbase.Signal.Type

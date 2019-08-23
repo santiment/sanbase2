@@ -99,7 +99,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
       current_daa = get_daa_contract(Project.contract_address(project), today_daa_for_projects)
       {last_triggered_daa, hours} = last_triggered_daa(project, notification_type)
 
-      percent_change = percent_change(avg_daa, current_daa - last_triggered_daa)
+      percent_change = Sanbase.Math.percent_change(avg_daa, current_daa - last_triggered_daa)
 
       if percent_change > trigger_percent(project) * 100 do
         {project, avg_daa, current_daa, last_triggered_daa, percent_change, hours}
@@ -239,13 +239,6 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
 
   defp notification_emoji_up() do
     ":small_red_triangle:"
-  end
-
-  defp percent_change(0, _current), do: 0
-  defp percent_change(nil, _current), do: 0
-
-  defp percent_change(previous, current) do
-    Float.round((current - previous) / previous * 100)
   end
 
   defp webhook_url() do

@@ -33,7 +33,7 @@ defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
     end
 
     import Sanbase.DateTimeUtils, only: [str_to_days: 1]
-    import Sanbase.Signal.Utils, only: [percent_change: 2]
+    import Sanbase.Math, only: [percent_change: 2]
     import Sanbase.Signal.OperationEvaluation, only: [operation_triggered?: 2]
 
     alias Sanbase.Signal.History.DailyActiveAddressesHistory

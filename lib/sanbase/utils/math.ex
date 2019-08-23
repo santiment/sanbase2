@@ -1,6 +1,45 @@
 defmodule Sanbase.Math do
   require Integer
 
+  @epsilon 1.0e-6
+
+  @doc ~s"""
+  Calculate the % change that occured between the first and the second arguments
+
+    ## Examples
+
+      iex> Sanbase.Math.percent_change(1.0, 2.0)
+      100.0
+
+      iex> Sanbase.Math.percent_change(1.0, 1.05)
+      5.0
+
+      iex> Sanbase.Math.percent_change(0, 2.0)
+      0.0
+
+      iex> Sanbase.Math.percent_change(2.0, 1.0)
+      -50.0
+
+      iex> Sanbase.Math.percent_change(2.0, 0.0)
+      -100.0
+
+      iex> Sanbase.Math.percent_change(2.0, -1)
+      -150.0
+
+      iex> Sanbase.Math.percent_change(10.0, 10.0)
+      0.0
+  """
+  def percent_change(0, _current_daa), do: 0.0
+  def percent_change(nil, _current_daa), do: 0.0
+
+  def percent_change(previous, _current_daa)
+      when is_number(previous) and previous <= @epsilon,
+      do: 0
+
+  def percent_change(previous, current) when is_number(previous) and is_number(current) do
+    Float.round((current - previous) / previous * 100, 2)
+  end
+
   @doc ~S"""
   Integer power function. Erlang's :math is using floating point numbers.
   Sometimes the result is needed as Integer and not as Float (ex. for using in Decimal.div/1)

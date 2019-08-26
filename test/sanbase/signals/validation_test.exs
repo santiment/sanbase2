@@ -375,6 +375,18 @@ defmodule Sanbase.Signal.ValidationTest do
       assert Validation.valid_percent_change_operation?(valid_case) == :ok
     end
 
+    test "with valid cases in none_of returns :ok" do
+      valid_case = %{
+        none_of: [
+          %{percent_up: 10},
+          %{percent_down: 10.5},
+          %{percent_down: 20}
+        ]
+      }
+
+      assert Validation.valid_percent_change_operation?(valid_case) == :ok
+    end
+
     test "with invalid cases returns {:error, error_message}" do
       error_case = %{
         some_of: [
@@ -436,6 +448,27 @@ defmodule Sanbase.Signal.ValidationTest do
     test "with a not fitting operation in an absolute value all_of, because all must be absolute value ones, returns proper message" do
       assert Validation.valid_absolute_change_operation?(%{
                all_of: [%{above: 10}, %{amount_down: 10}]
+             }) ==
+               {:error, "Not all operations are from the same type"}
+    end
+
+    test "with a not fitting operation in a percent none_of returns proper message" do
+      assert Validation.valid_percent_change_operation?(%{
+               none_of: [%{percent_up: 10}, %{above: 10}]
+             }) ==
+               {:error, "Not all operations are from the same type"}
+    end
+
+    test "with a not fitting operation in an absolute change none_of, because all must be absolute change ones, returns proper message" do
+      assert Validation.valid_absolute_change_operation?(%{
+               none_of: [%{amount_up: 10}, %{above: 10}]
+             }) ==
+               {:error, "Not all operations are from the same type"}
+    end
+
+    test "with a not fitting operation in an absolute value none_of, because all must be absolute value ones, returns proper message" do
+      assert Validation.valid_absolute_change_operation?(%{
+               none_of: [%{above: 10}, %{amount_down: 10}]
              }) ==
                {:error, "Not all operations are from the same type"}
     end

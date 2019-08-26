@@ -133,6 +133,20 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
       assert Trigger.triggered?(triggered.trigger) == true
       assert triggered.id == trigger.id
     end
+
+    test "move up and move down - nothing triggered", context do
+      trigger_settings =
+        price_percent_change_settings(%{
+          operation: %{none_of: [%{percent_up: 0.001}, %{percent_down: 0.00001}]}
+        })
+
+      create_trigger(context.user, trigger_settings)
+
+      assert [] ==
+               PricePercentChangeSettings.type()
+               |> UserTrigger.get_active_triggers_by_type()
+               |> Evaluator.run()
+    end
   end
 
   test "move up and move down - triggered", context do

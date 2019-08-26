@@ -9,7 +9,7 @@ defmodule Sanbase.Signal.Validation.Operation do
   @absolute_operations @absolute_change_operations ++ @absolute_value_operations
 
   @channel_operations [:inside_channel, :outside_channel]
-  @combinator_operations [:some_of, :all_of]
+  @combinator_operations [:some_of, :all_of, :none_of]
 
   def valid_percent_change_operation?(operation) when is_map(operation) do
     case Map.keys(operation) do
@@ -68,23 +68,15 @@ defmodule Sanbase.Signal.Validation.Operation do
   end
 
   def valid_operation?(%{some_of: list}) when is_list(list) do
-    with true <- all_operations_valid?(list),
-         true <- all_operations_have_same_type?(list) do
-      :ok
-    else
-      {:error, message} -> {:error, message}
-      false -> {:error, "Not all operations are from the same type"}
-    end
+    valid_combinator_operation?(list)
   end
 
   def valid_operation?(%{all_of: list}) when is_list(list) do
-    with true <- all_operations_valid?(list),
-         true <- all_operations_have_same_type?(list) do
-      :ok
-    else
-      {:error, message} -> {:error, message}
-      false -> {:error, "Not all operations are from the same type"}
-    end
+    valid_combinator_operation?(list)
+  end
+
+  def valid_operation?(%{none_of: list}) when is_list(list) do
+    valid_combinator_operation?(list)
   end
 
   def valid_operation?(%{percent_up: percent}) when is_valid_percent_change(percent), do: :ok
@@ -146,6 +138,16 @@ defmodule Sanbase.Signal.Validation.Operation do
 
       not_valid_op ->
         {:error, "The list of operation contains not valid operation: #{inspect(not_valid_op)}"}
+    end
+  end
+
+  defp valid_combinator_operation?(list) do
+    with true <- all_operations_valid?(list),
+         true <- all_operations_have_same_type?(list) do
+      :ok
+    else
+      {:error, message} -> {:error, message}
+      false -> {:error, "Not all operations are from the same type"}
     end
   end
 end

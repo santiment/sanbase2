@@ -20,8 +20,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     Logger.info("#{@log_tag} Started fetching logos from coinmarketcap.")
 
     Temp.track!()
-    dir_path_64 = Temp.mkdir!("logos_64")
-    dir_path_32 = Temp.mkdir!("logos_32")
+    dir_path = Temp.mkdir!("logos")
 
     Map.keys(local_projects_map)
     |> Enum.chunk_every(100)
@@ -29,7 +28,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
       {:ok, remote_projects} = CryptocurrencyInfo.fetch_data(slugs)
 
       Enum.each(remote_projects, fn remote_project ->
-        update_project_logos(remote_project, local_projects_map, dir_path_64, dir_path_32)
+        update_project_logos(remote_project, local_projects_map, dir_path)
       end)
 
       remote_projects
@@ -40,7 +39,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     Logger.info("#{@log_tag} Finished fetching logos from coinmarketcap.")
   end
 
-  defp update_project_logos(remote_project, local_projects_map, dir_path_64, dir_path_32) do
+  defp update_project_logos(remote_project, local_projects_map, dir_path) do
     url = remote_project.logo
     slug = remote_project.slug
     file_extension = Path.extname(url |> String.downcase())
@@ -48,16 +47,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
 
     case Map.get(local_projects_map, slug) do
       %Project{} = project ->
-        with {:ok, local_filepath_64} <- download(url, dir_path_64, filename),
+        with {:ok, local_filepath} <- download(url, dir_path, filename),
              {:logo_has_changed?, true} <-
-               {:logo_has_changed?, logo_changed?(project, local_filepath_64)},
-             {:ok, local_filepath_32} <- resize_image(local_filepath_64, dir_path_32, filename),
-             {:ok, uploaded_filepath_64} <- upload(local_filepath_64, 64),
-             {:ok, uploaded_filepath_32} <- upload(local_filepath_32, 32),
+               {:logo_has_changed?, logo_changed?(project, local_filepath)},
+             {:ok, local_filepath} <- resize_image(local_filepath, dir_path, filename),
+             {:ok, uploaded_filepath} <- upload(local_filepath),
              {:ok, _} <-
                update_local_project(project, %{
-                 logo32_url: uploaded_filepath_32,
-                 logo64_url: uploaded_filepath_64
+                 logo_url: uploaded_filepath
                }) do
           Logger.info(
             "#{@log_tag} Successfully updated logos for project: #{project.coinmarketcap_id}"
@@ -95,6 +92,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     end
   end
 
+  defp resize_image(source_filepath, dest_dir_path, filename) do
+    dest_filepath = dest_dir_path <> "/" <> filename
+    Mogrify.open(source_filepath) |> Mogrify.resize("64x64") |> Mogrify.save(path: dest_filepath)
+    {:ok, dest_filepath}
+  end
+
   defp download(url, dir_path, filename) do
     filepath = Path.join(dir_path, filename)
 
@@ -116,16 +119,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     end
   end
 
-  defp resize_image(source_filepath, dest_dir_path, filename) do
-    dest_filepath = dest_dir_path <> "/" <> filename
-    Mogrify.open(source_filepath) |> Mogrify.resize("32x32") |> Mogrify.save(path: dest_filepath)
-    {:ok, dest_filepath}
-  end
-
-  defp upload(filepath, size) do
-    with {:ok, filename} <- FileStore.store({filepath, "logo#{size}"}) do
+  defp upload(filepath) do
+    with {:ok, filename} <- FileStore.store({filepath, "logo"}) do
       Logger.info("#{@log_tag} Successfully uploaded logo from #{filepath} to: #{filename}")
-      {:ok, FileStore.url({filename, "logo#{size}"})}
+      {:ok, FileStore.url({filename, "logo"})}
     else
       {:error, error} ->
         error_msg = inspect(error)

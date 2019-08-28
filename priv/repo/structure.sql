@@ -870,9 +870,7 @@ CREATE TABLE public.project (
     description text,
     email character varying(255),
     main_contract_address character varying(255),
-    long_description text,
-    logo32_url character varying(255),
-    logo64_url character varying(255)
+    long_description text
 );
 
 

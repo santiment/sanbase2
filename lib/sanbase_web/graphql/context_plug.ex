@@ -111,7 +111,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     case bearer_authorize(token) do
       {:ok, current_user} ->
         %{
-          permissions: User.permissions!(current_user),
+          permissions: User.permissions(current_user),
           auth: %{
             auth_method: :user_token,
             current_user: current_user,
@@ -135,7 +135,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
            {:has_header?, get_req_header(conn, "authorization")},
          {:ok, current_user} <- bearer_authorize(token) do
       %{
-        permissions: User.permissions!(current_user),
+        permissions: User.permissions(current_user),
         auth: %{
           auth_method: :user_token,
           current_user: current_user,
@@ -182,7 +182,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         |> get_apikey_product()
 
       %{
-        permissions: User.permissions!(current_user),
+        permissions: User.permissions(current_user),
         auth: %{
           auth_method: :apikey,
           current_user: current_user,

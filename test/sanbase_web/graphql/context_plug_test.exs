@@ -32,7 +32,6 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
            }
 
     assert conn_context.remote_ip == {127, 0, 0, 1}
-    assert conn_context.permissions == User.full_permissions()
   end
 
   test "verifying the user's salt when loading", %{conn: conn} do

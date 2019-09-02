@@ -18,7 +18,7 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.Telegram
   alias Sanbase.Signal.HistoricalActivity
   alias Sanbase.Following.UserFollower
-  alias Sanbase.Billing.Subscription
+  alias Sanbase.Billing.{Subscription, Product}
 
   require Sanbase.Utils.Config, as: Config
 
@@ -128,36 +128,32 @@ defmodule Sanbase.Auth.User do
   end
 
   def permissions(%__MODULE__{} = user) do
-    with {:ok, san_balance} <- san_balance(user) do
-      san_balance = san_balance |> Decimal.to_float()
+    active_subscriptions = Subscription.user_subscriptions(user) |> Enum.map(& &1.plan.product.id)
 
-      required_san_tokens =
-        Config.module_get(Sanbase, :required_san_stake_full_access)
-        |> Sanbase.Math.to_float()
-
-      case san_balance >= required_san_tokens do
-        true ->
-          {:ok, full_permissions()}
-
-        _ ->
-          {:ok, no_permissions()}
-      end
-    else
-      _ -> {:ok, no_permissions()}
-    end
-  end
-
-  def permissions!(%__MODULE__{} = user) do
-    {:ok, permissions} = permissions(user)
-    permissions
-  end
-
-  def full_permissions() do
-    %{historical_data: true, realtime_data: true, spreadsheet: true}
+    %{
+      api: Product.product_api() in active_subscriptions,
+      sanbase: Product.product_sanbase() in active_subscriptions,
+      spreadsheet: Product.product_sheets() in active_subscriptions,
+      sangraphs: Product.product_sangraphs() in active_subscriptions
+    }
   end
 
   def no_permissions() do
-    %{historical_data: false, realtime_data: false, spreadsheet: false}
+    %{
+      api: false,
+      sanbase: false,
+      spreadsheet: false,
+      sangraphs: false
+    }
+  end
+
+  def full_permissions() do
+    %{
+      api: true,
+      sanbase: true,
+      spreadsheet: true,
+      sangraphs: true
+    }
   end
 
   def ascii_username?(nil), do: true

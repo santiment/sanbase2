@@ -90,7 +90,7 @@ defmodule SanbaseWeb.Endpoint do
   def historical_balance_url(address, asset) when is_binary(address) and is_binary(asset) do
     website_url()
     |> Path.join("/labs/balance")
-    |> Path.join(URI.encode_query("assets[]": asset, address: address))
+    |> Path.join("?" <> URI.encode_query("assets[]": asset, address: address))
   end
 
   def user_account_url() do

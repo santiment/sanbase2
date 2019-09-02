@@ -18,9 +18,7 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.Telegram
   alias Sanbase.Signal.HistoricalActivity
   alias Sanbase.Following.UserFollower
-  alias Sanbase.Billing.{Subscription, Product}
-
-  require Sanbase.Utils.Config, as: Config
+  alias Sanbase.Billing.Subscription
 
   # The Login links will be valid 1 hour
   @login_email_valid_minutes 60
@@ -125,35 +123,6 @@ defmodule Sanbase.Auth.User do
     |> validate_change(:email_candidate, &validate_email_candidate_change/2)
     |> unique_constraint(:email)
     |> unique_constraint(:username)
-  end
-
-  def permissions(%__MODULE__{} = user) do
-    active_subscriptions = Subscription.user_subscriptions(user) |> Enum.map(& &1.plan.product.id)
-
-    %{
-      api: Product.product_api() in active_subscriptions,
-      sanbase: Product.product_sanbase() in active_subscriptions,
-      spreadsheet: Product.product_sheets() in active_subscriptions,
-      sangraphs: Product.product_sangraphs() in active_subscriptions
-    }
-  end
-
-  def no_permissions() do
-    %{
-      api: false,
-      sanbase: false,
-      spreadsheet: false,
-      sangraphs: false
-    }
-  end
-
-  def full_permissions() do
-    %{
-      api: true,
-      sanbase: true,
-      spreadsheet: true,
-      sangraphs: true
-    }
   end
 
   def ascii_username?(nil), do: true

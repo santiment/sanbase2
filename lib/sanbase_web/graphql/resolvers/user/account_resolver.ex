@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
         _args,
         _resolution
       ) do
-    User.permissions(user)
+    User.Permissions.permissions(user)
   end
 
   @spec san_balance(%User{}, map(), Absinthe.Resolution.t()) :: {:ok, float()}

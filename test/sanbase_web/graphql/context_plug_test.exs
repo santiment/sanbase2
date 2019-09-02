@@ -153,7 +153,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
     refute Map.has_key?(conn_context, :auth)
     assert conn_context.remote_ip == {127, 0, 0, 1}
-    assert conn_context.permissions == User.no_permissions()
+    assert conn_context.permissions == User.Permissions.no_permissions()
   end
 
   test "empty authorization header passes" do
@@ -170,7 +170,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
     refute Map.has_key?(conn_context, :auth)
     assert conn_context.remote_ip == {127, 0, 0, 1}
-    assert conn_context.permissions == User.no_permissions()
+    assert conn_context.permissions == User.Permissions.no_permissions()
   end
 
   test "no authorization header passes" do
@@ -182,7 +182,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
     refute Map.has_key?(conn_context, :auth)
     assert conn_context.remote_ip == {127, 0, 0, 1}
-    assert conn_context.permissions == User.no_permissions()
+    assert conn_context.permissions == User.Permissions.no_permissions()
   end
 
   describe "product is set in context" do

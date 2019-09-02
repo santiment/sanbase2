@@ -27,7 +27,7 @@ defmodule SanbaseWeb.TelegramController do
 
     If you’re seeing this message, you already have a SANbase account which you can use to make changes to the configuration of your signals.
 
-    Visit your account here: #{SanbaseWeb.Endpoint.sonar_url()}
+    Visit your signals here: #{SanbaseWeb.Endpoint.sonar_url()}
     """
   end
 end

@@ -242,7 +242,7 @@ defmodule Sanbase.Billing.Subscription do
   @doc """
   List active subcriptions' product ids
   """
-  def list_subscrption_products(user) do
+  def list_subscription_products(user) do
     user
     |> user_subscriptions_query()
     |> active_subscriptions_query()

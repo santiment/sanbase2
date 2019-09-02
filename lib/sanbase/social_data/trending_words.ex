@@ -54,7 +54,7 @@ defmodule Sanbase.SocialData.TrendingWords do
   # of computing the latest data
   @hours_back_ensure_has_data 3
 
-  @table "trending_words"
+  @table "trending_words_top_500"
   schema @table do
     field(:dt, :utc_datetime)
     field(:word, :string)

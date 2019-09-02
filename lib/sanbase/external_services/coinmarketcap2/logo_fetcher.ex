@@ -10,6 +10,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
   alias Sanbase.Utils.FileHash
 
   @log_tag "[CMC][LogoFetcher]"
+  @size 64
 
   def run() do
     local_projects_map =
@@ -94,7 +95,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
 
   defp resize_image(source_filepath, dest_dir_path, filename) do
     dest_filepath = dest_dir_path <> "/" <> filename
-    Mogrify.open(source_filepath) |> Mogrify.resize("64x64") |> Mogrify.save(path: dest_filepath)
+
+    Mogrify.open(source_filepath)
+    |> Mogrify.resize("#{@size}x#{@size}")
+    |> Mogrify.save(path: dest_filepath)
+
     {:ok, dest_filepath}
   end
 
@@ -120,9 +125,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
   end
 
   defp upload(filepath) do
-    with {:ok, filename} <- FileStore.store({filepath, "logo"}) do
+    with {:ok, filename} <- FileStore.store({filepath, "logo#{@size}"}) do
       Logger.info("#{@log_tag} Successfully uploaded logo from #{filepath} to: #{filename}")
-      {:ok, FileStore.url({filename, "logo"})}
+      {:ok, FileStore.url({filename, "logo#{@size}"})}
     else
       {:error, error} ->
         error_msg = inspect(error)

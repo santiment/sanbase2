@@ -25,16 +25,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     GenServer.start_link(__MODULE__, :ok)
   end
 
-  @spec init(any()) ::
-          :ignore
-          | {:ok,
-             %{
-               missing_info_update_interval: number(),
-               prices_update_interval: number(),
-               rescrape_prices: number(),
-               total_market_task_pid: nil,
-               total_market_update_interval: number()
-             }}
   def init(_arg) do
     if Config.get(:sync_enabled, false) do
       # Create an influxdb if it does not exists, no-op if it exists
@@ -71,7 +61,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
-      Project.List.projects(),
+      Project.List.projects_with_source("coinmarketcap"),
       &fetch_project_info/1,
       ordered: false,
       max_concurrency: 1,
@@ -155,18 +145,17 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     end
 
     for %ScheduleRescrapePrice{project: project, from: from} = srp <- rescrapes do
-      influxdb_slug = project |> Measurement.name_from()
+      measurement = project |> Measurement.name_from()
 
-      {:ok, original_last_updated} = influxdb_slug |> Store.last_history_datetime_cmc()
+      {:ok, original_last_updated} = measurement |> Store.last_history_datetime_cmc()
 
-      original_last_updated =
-        original_last_updated || GraphData.fetch_first_datetime(project.slug)
+      original_last_updated = original_last_updated || GraphData.fetch_first_datetime(project)
 
       kill_scheduled_scraping(project)
 
       :ok =
         Store.update_last_history_datetime_cmc(
-          influxdb_slug,
+          measurement,
           DateTime.from_naive!(from, "Etc/UTC")
         )
 
@@ -188,17 +177,17 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     rescrapes = ScheduleRescrapePrice.all_in_progress()
 
     for %ScheduleRescrapePrice{project: project, to: to} = srp <- rescrapes do
-      influxdb_slug = project |> Measurement.name_from()
+      measurement = project |> Measurement.name_from()
 
       {:ok, to} = DateTime.from_naive(to, "Etc/UTC")
-      {:ok, last_updated} = influxdb_slug |> Store.last_history_datetime_cmc()
+      {:ok, last_updated} = measurement |> Store.last_history_datetime_cmc()
 
       if last_updated && DateTime.compare(last_updated, to) == :gt do
         kill_scheduled_scraping(project)
 
         {:ok, original_last_update} = srp.original_last_updated |> DateTime.from_naive("Etc/UTC")
 
-        Store.update_last_history_datetime_cmc(influxdb_slug, original_last_update)
+        Store.update_last_history_datetime_cmc(measurement, original_last_update)
 
         srp
         |> ScheduleRescrapePrice.changeset(%{finished: true, in_progres: false})
@@ -233,30 +222,40 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   end
 
   defp fetching_price_registry_key(project) do
-    measurement_name = Measurement.name_from(project)
-    {:cmc_fetch_price, measurement_name}
+    measurement = Measurement.name_from(project)
+    {:cmc_fetch_price, measurement}
   end
 
   # Fetch history
-  defp fetch_and_process_price_data(%Project{slug: slug, ticker: ticker} = project)
-       when nil != ticker and nil != slug do
-    measurement_name = Measurement.name_from(project)
+  defp fetch_and_process_price_data(%Project{} = project) do
+    %Project{slug: slug, ticker: ticker} = project
+
+    if(slug != nil and ticker != nil) do
+      do_fetch_and_process_price_data(project)
+    else
+      :ok
+    end
+  end
+
+  defp do_fetch_and_process_price_data(project) do
+    measurement = Measurement.name_from(project)
     key = fetching_price_registry_key(project)
 
     if Registry.lookup(Sanbase.Registry, key) == [] do
       Registry.register(Sanbase.Registry, key, :running)
-      Logger.info("Fetch and process prices for #{measurement_name}")
+      Logger.info("Fetch and process prices for #{measurement}")
 
       case last_price_datetime(project) do
         nil ->
-          err_msg = "[CMC] Cannot fetch the last price datetime for #{slug} with ticker #{ticker}"
+          err_msg =
+            "[CMC] Cannot fetch the last price datetime for project with slug #{project.slug}"
 
           Logger.warn(err_msg)
           {:error, err_msg}
 
         last_price_datetime ->
           Logger.info(
-            "[CMC] Latest price datetime for #{measurement_name} - " <>
+            "[CMC] Latest price datetime for project with slug #{project.slug} - " <>
               inspect(last_price_datetime)
           )
 
@@ -268,7 +267,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       end
     else
       Logger.info(
-        "[CMC] Fetch and process job for #{measurement_name} is already running. Won't start it again"
+        "[CMC] Fetch and process job for project with slug #{project.slug} is already running. Won't start it again"
       )
     end
   end
@@ -277,16 +276,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     Sanbase.Notifications.PriceVolumeDiff.exec(project, "USD")
   end
 
-  defp last_price_datetime(%Project{slug: slug} = project) do
-    measurement_name = Measurement.name_from(project)
+  defp last_price_datetime(%Project{} = project) do
+    measurement = Measurement.name_from(project)
 
-    case Store.last_history_datetime_cmc!(measurement_name) do
+    case Store.last_history_datetime_cmc!(measurement) do
       nil ->
         Logger.info(
-          "[CMC] Last CMC history datetime scraped for #{measurement_name} not found in the database."
+          "[CMC] Last CMC history datetime scraped for project with slug #{project.slug} not found in the database."
         )
 
-        GraphData.fetch_first_datetime(slug)
+        GraphData.fetch_first_datetime(project)
 
       datetime ->
         datetime
@@ -294,15 +293,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   end
 
   defp last_marketcap_total_datetime() do
-    measurement_name = "TOTAL_MARKET_total-market"
+    measurement = "TOTAL_MARKET_total-market"
 
-    case Store.last_history_datetime_cmc!(measurement_name) do
+    case Store.last_history_datetime_cmc!(measurement) do
       nil ->
         Logger.info(
-          "[CMC] Last CMC history datetime scraped for #{measurement_name} not found in the database."
+          "[CMC] Last CMC history datetime scraped for #{measurement} not found in the database."
         )
 
-        GraphData.fetch_first_datetime(measurement_name)
+        GraphData.fetch_first_datetime(measurement)
 
       datetime ->
         datetime

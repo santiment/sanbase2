@@ -18,26 +18,28 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfoTest do
       }
     end)
 
-    {:ok, data} = CryptocurrencyInfo.fetch_data(["bitcoin", "ethereum"])
+    bitcoin = insert(:project, %{slug: "bitcoin"})
+    ethereum = insert(:project, %{slug: "ethereum"})
+    {:ok, data} = CryptocurrencyInfo.fetch_data([bitcoin, ethereum])
 
     assert Enum.at(data, 0).logo == "https://s2.coinmarketcap.com/static/img/coins/64x64/1.png"
     assert Enum.at(data, 1).logo == "https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png"
   end
 
-  test "returns error when slugs are more than 100" do
+  test "returns error when projects are more than 100" do
     {:error, error} = CryptocurrencyInfo.fetch_data(Enum.to_list(0..100))
 
     assert error == """
-           Accepting over 100 slugs will most probably result in very long URL.
+           Accepting over 100 projects will most probably result in very long URL.
            URLs over 2,000 characters are considered problematic.
            """
   end
 
   test "can handle invalid slugs" do
-    insert(:project, %{ticker: "BTC", slug: "bitcoin"})
-    insert(:project, %{ticker: "ETH", slug: "ethereum"})
-    insert(:project, %{ticker: "INV0", slug: "invalid0"})
-    insert(:project, %{ticker: "INV1", slug: "invalid1"})
+    p1 = insert(:project, %{ticker: "BTC", slug: "bitcoin"})
+    p2 = insert(:project, %{ticker: "ETH", slug: "ethereum"})
+    p3 = insert(:project, %{ticker: "INV0", slug: "invalid0"})
+    p4 = insert(:project, %{ticker: "INV1", slug: "invalid1"})
 
     url_with_invalid_slugs =
       Config.module_get(Sanbase.ExternalServices.Coinmarketcap, :api_url) <>
@@ -69,7 +71,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfoTest do
         }
     end)
 
-    {:ok, data} = CryptocurrencyInfo.fetch_data(["bitcoin", "ethereum", "invalid0", "invalid1"])
+    {:ok, data} = CryptocurrencyInfo.fetch_data([p1, p2, p3, p4])
 
     assert Enum.map(data, & &1.slug) == ["bitcoin", "ethereum"]
   end

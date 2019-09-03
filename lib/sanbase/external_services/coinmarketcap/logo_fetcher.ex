@@ -13,8 +13,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
   @size 64
 
   def run() do
+    projects = Project.List.projects_with_source("coinmarketcap")
+
     local_projects_map =
-      Project.List.projects()
+      projects
       |> Enum.map(fn %{slug: slug} = project -> {slug, project} end)
       |> Map.new()
 
@@ -23,10 +25,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     Temp.track!()
     dir_path = Temp.mkdir!("logos")
 
-    Map.keys(local_projects_map)
+    projects
     |> Enum.chunk_every(100)
-    |> Enum.flat_map(fn slugs ->
-      {:ok, remote_projects} = CryptocurrencyInfo.fetch_data(slugs)
+    |> Enum.flat_map(fn projects ->
+      {:ok, remote_projects} = CryptocurrencyInfo.fetch_data(projects)
 
       Enum.each(remote_projects, fn remote_project ->
         update_project_logos(remote_project, local_projects_map, dir_path)

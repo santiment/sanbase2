@@ -6,6 +6,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
   require Logger
   require Sanbase.Utils.Config, as: Config
 
+  alias Sanbase.Model.Project
   alias Sanbase.ExternalServices.Coinmarketcap
 
   plug(Sanbase.ExternalServices.RateLimiting.Middleware, name: :api_coinmarketcap_rate_limiter)
@@ -18,11 +19,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
   plug(Tesla.Middleware.Compression)
   plug(Tesla.Middleware.Logger)
 
-  def fetch_data(project_slugs) when length(project_slugs) <= 100 do
-    projects_count = Enum.count(project_slugs)
+  def fetch_data(projects) when is_list(projects) and length(projects) <= 100 do
+    projects_count = Enum.count(projects)
     Logger.info("[CMC] Fetching data for #{projects_count} projects")
 
-    "v1/cryptocurrency/info?slug=#{Enum.join(project_slugs, ",")}"
+    coinmarketcap_ids = Enum.map(projects, &Project.coinmarketcap_id/1)
+
+    "v1/cryptocurrency/info?slug=#{Enum.join(coinmarketcap_ids, ",")}"
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
@@ -44,7 +47,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
             {:error, error_msg}
 
           invalid_slugs when is_list(invalid_slugs) ->
-            cleaned = project_slugs -- invalid_slugs
+            cleaned =
+              Enum.reject(projects, fn project ->
+                Project.coinmarketcap_id(project) in invalid_slugs
+              end)
+
             fetch_data(cleaned)
         end
 
@@ -59,10 +66,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
     end
   end
 
-  def fetch_data(_project_slugs) do
+  def fetch_data(_projects) do
     {:error,
      """
-     Accepting over 100 slugs will most probably result in very long URL.
+     Accepting over 100 projects will most probably result in very long URL.
      URLs over 2,000 characters are considered problematic.
      """}
   end

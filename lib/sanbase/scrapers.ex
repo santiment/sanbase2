@@ -68,13 +68,10 @@ defmodule Sanbase.Application.Scrapers do
       ),
 
       # Price fetcher
-      # TODO: Change after switching over to only this cmc
       Sanbase.ExternalServices.Coinmarketcap,
-      Sanbase.ExternalServices.Coinmarketcap2,
 
       # Current marketcap fetcher
-      # TODO: Change after switching over to only this cmc
-      Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2,
+      Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
 
       # Twitter account data tracking worker
       Sanbase.ExternalServices.TwitterData.Worker,

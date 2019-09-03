@@ -1,12 +1,12 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.ScraperTest do
   use Sanbase.DataCase, async: false
 
-  alias Sanbase.ExternalServices.Coinmarketcap.Scraper2, as: Scraper
+  alias Sanbase.ExternalServices.Coinmarketcap.Scraper
   alias Sanbase.ExternalServices.ProjectInfo
 
   test "parsing the project page" do
     project_info =
-      File.read!(Path.join(__DIR__, "project_page.html"))
+      File.read!(Path.join(__DIR__, "data/project_page.html"))
       |> Scraper.parse_project_page(%ProjectInfo{coinmarketcap_id: "santiment"})
 
     assert project_info == %ProjectInfo{

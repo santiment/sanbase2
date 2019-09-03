@@ -17,6 +17,8 @@ config :logger, :console,
 # Test adapter that allows mocking
 config :tesla, adapter: Tesla.Mock
 
+config :tesla, Tesla.Middleware.Logger, debug: false
+
 config :sanbase, Sanbase.ApiCallDataExporter,
   supervisor: Sanbase.InMemoryKafka.Supervisor,
   producer: Sanbase.InMemoryKafka.Producer

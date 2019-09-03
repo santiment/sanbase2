@@ -5,7 +5,7 @@ defmodule Sanbase.Influxdb.Measurement do
   defstruct [:timestamp, :fields, :tags, :name]
 
   alias __MODULE__
-  alias Sanbase.ExternalServices.Coinmarketcap.Ticker2, as: Ticker
+  alias Sanbase.ExternalServices.Coinmarketcap.Ticker
   alias Sanbase.Model.Project
 
   @doc ~s"""

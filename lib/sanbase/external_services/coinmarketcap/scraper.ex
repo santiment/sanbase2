@@ -20,16 +20,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
         {:ok, body}
 
       {:ok, %Tesla.Env{status: status}} ->
-        error_msg = "Failed fetching project page for #{coinmarketcap_id}. Status: #{status}"
+        error_msg = "Failed fetching project page for #{coinmarketcap_id}. Status: #{status}."
 
         Logger.error(error_msg)
         {:error, error_msg}
 
       {:error, error} ->
-        error_msg =
-          "Failed fetching project page for #{coinmarketcap_id}. Reason: #{inspect(error)}"
+        error_msg = inspect(error)
 
-        Logger.error(error_msg)
+        Logger.error(
+          "Error fetching project page for #{coinmarketcap_id}. Error message: #{error_msg}"
+        )
+
         {:error, error_msg}
     end
   end
@@ -46,13 +48,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
     }
   end
 
+  # Private functions
+
   defp name(html) do
     Floki.attribute(html, ".logo-32x32", "alt")
     |> List.first()
   end
 
   defp ticker(html) do
-    Floki.find(html, "h1 > .text-bold.h3.text-gray.hidden-xs")
+    Floki.find(html, "h1 > .text-bold.h3.text-gray.text-large")
     |> hd
     |> Floki.text()
     |> String.replace(~r/[\(\)]/, "")
@@ -64,8 +68,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   end
 
   defp github_link(html) do
-    Floki.attribute(html, "a:fl-contains('Source Code')", "href")
-    |> List.first()
+    github_link =
+      Floki.attribute(html, "a:fl-contains('Source Code')", "href")
+      |> List.first()
+
+    if github_link && String.contains?(github_link, "https://github.com/") do
+      github_link
+    end
   end
 
   defp etherscan_token_name(html) do

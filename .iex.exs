@@ -80,14 +80,6 @@ alias Sanbase.ExternalServices.Coinmarketcap.{
   Ticker
 }
 
-alias Sanbase.ExternalServices.Coinmarketcap2.{
-  GraphData2,
-  PricePoint2,
-  Scraper2,
-  TickerFetcher2,
-  Ticker2
-}
-
 alias Sanbase.TechIndicators
 
 alias Sanbase.ExternalServices.Etherscan.Requests, as: EtherscanRequests

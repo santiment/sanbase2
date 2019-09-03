@@ -90,11 +90,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
-  def promo_subscription(_root, _args, %{
+  def create_promo_subscription(_root, %{coupon_code: coupon_code}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
     if FeatureFlag.enabled?(:enable_promo_subscription) do
-      Subscription.Promo.promo_subscription(current_user)
+      Subscription.Promo.create_promo_subscription(current_user, coupon_code)
     else
       {:error, "Access denied!"}
     end

@@ -81,10 +81,12 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
       resolve(&BillingResolver.renew_cancelled_subscription/3)
     end
 
-    field :promo_subscription, list_of(:subscription_plan) do
+    field :create_promo_subscription, list_of(:subscription_plan) do
+      arg(:coupon_code, non_null(:string))
+
       middleware(JWTAuth)
 
-      resolve(&BillingResolver.promo_subscription/3)
+      resolve(&BillingResolver.create_promo_subscription/3)
     end
   end
 end

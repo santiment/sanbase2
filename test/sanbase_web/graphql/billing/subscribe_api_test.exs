@@ -484,10 +484,35 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   end
 
   describe "promo subscription mutation" do
-    test "successfull subscribe returns subscription", context do
-      query = promo_subscription_mutation()
-      response = execute_mutation(context.conn, query, "promoSubscription")
+    test "with public coupon code successfully creates subscriptions", context do
+      query = promo_subscription_mutation("devcon2019")
+      response = execute_mutation(context.conn, query, "createPromoSubscription")
       assert response |> length() == 3
+    end
+
+    test "with unsupported coupon code returns proper error message", context do
+      query = promo_subscription_mutation("UNUSED")
+      error = execute_mutation_with_error(context.conn, query)
+      assert error == "Unsupported promotional code"
+    end
+
+    test "when subscribe in Stripe fails - returns generic error", context do
+      with_mocks([
+        {StripeApi, [:passthrough],
+         [
+           create_subscription: fn _ ->
+             {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
+           end
+         ]}
+      ]) do
+        query = promo_subscription_mutation("devcon2019")
+
+        capture_log(fn ->
+          error_msg = execute_mutation_with_error(context.conn, query)
+
+          assert error_msg == Subscription.Promo.generic_error_message()
+        end)
+      end
     end
   end
 
@@ -583,10 +608,10 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     """
   end
 
-  defp promo_subscription_mutation() do
+  defp promo_subscription_mutation(coupon) do
     """
     mutation {
-      promoSubscription {
+      createPromoSubscription(couponCode: "#{coupon}") {
         plan {
           id
           name

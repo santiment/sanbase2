@@ -1,6 +1,6 @@
 defmodule Sanbase.Billing.Subscription.Promo do
   @public_promo_code_stats %{
-    "DEVCON" => %{
+    "devcon2019" => %{
       # Highest plans from API, Sanbase and Sheets
       plans: [5, 14, 24],
       cancel_after_days: 14
@@ -8,6 +8,7 @@ defmodule Sanbase.Billing.Subscription.Promo do
   }
 
   @public_promo_codes Map.keys(@public_promo_code_stats)
+  @generic_error_message "Error creating promotional subscription."
 
   @moduledoc """
   Implements a way to create promotional subscriptions.
@@ -30,6 +31,8 @@ defmodule Sanbase.Billing.Subscription.Promo do
   alias Sanbase.Billing.{Subscription, Plan}
   alias Sanbase.Repo
 
+  def generic_error_message(), do: @generic_error_message
+
   def create_promo_subscription(%User{stripe_customer_id: stripe_customer_id} = user, coupon)
       when is_binary(stripe_customer_id) and coupon in @public_promo_codes do
     promo_subscribe(user, coupon)
@@ -48,7 +51,7 @@ defmodule Sanbase.Billing.Subscription.Promo do
           }"
         )
 
-        {:error, Subscription.generic_error_message()}
+        {:error, @generic_error_message}
     end
   end
 
@@ -65,6 +68,7 @@ defmodule Sanbase.Billing.Subscription.Promo do
       [] ->
         {:ok, Subscription.user_subscriptions(user)}
 
+      # we are subscribing to multiple plans so any of them can fail
       errors ->
         Logger.error(
           "Error creating promotional subscription for user: #{inspect(user)}, reason: #{
@@ -72,7 +76,7 @@ defmodule Sanbase.Billing.Subscription.Promo do
           }"
         )
 
-        {:error, Subscription.generic_error_message()}
+        {:error, @generic_error_message}
     end
   end
 

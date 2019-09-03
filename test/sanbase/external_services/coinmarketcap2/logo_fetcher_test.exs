@@ -42,10 +42,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
 
       file_store_path = "/tmp/sanbase/filestore-test"
 
-      assert Repo.get(Project, context.bitcoin.id).logo32_url =~
-               "#{file_store_path}/logo32_#{context.bitcoin.coinmarketcap_id}.png"
-
-      assert Repo.get(Project, context.ethereum.id).logo64_url =~
+      assert Repo.get(Project, context.ethereum.id).logo_url =~
                "#{file_store_path}/logo64_#{context.ethereum.coinmarketcap_id}.png"
     end
 

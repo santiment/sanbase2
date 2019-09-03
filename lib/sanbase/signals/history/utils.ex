@@ -1,5 +1,6 @@
 defmodule Sanbase.Signal.History.Utils do
-  import Sanbase.Signal.{Utils, OperationEvaluation}
+  import Sanbase.Signal.OperationEvaluation, only: [operation_triggered?: 2]
+  import Sanbase.Math, only: [percent_change: 2]
 
   @type percent_change_calculations :: {float(), boolean()}
 

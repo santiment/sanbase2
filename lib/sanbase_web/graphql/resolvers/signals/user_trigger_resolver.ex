@@ -101,7 +101,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   defp handle_result(result, operation) do
     case result do
       {:ok, ut} ->
-        {:ok, transform_user_trigger(ut)}
+        {:ok, Sanbase.Repo.preload(ut, :tags) |> transform_user_trigger()}
 
       {:error, error_msg} when is_binary(error_msg) ->
         {:error, error_msg}

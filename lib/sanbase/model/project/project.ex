@@ -24,8 +24,6 @@ defmodule Sanbase.Model.Project do
     field(:name, :string)
     field(:ticker, :string)
     field(:logo_url, :string)
-    field(:logo32_url, :string)
-    field(:logo64_url, :string)
     field(:website_link, :string)
     field(:email, :string)
     field(:btt_link, :string)
@@ -47,6 +45,8 @@ defmodule Sanbase.Model.Project do
     field(:project_transparency, :boolean, default: false)
     field(:main_contract_address, :string)
     field(:project_transparency_description, :string)
+
+    has_one(:social_volume_query, Project.SocialVolumeQuery)
 
     has_many(:icos, Ico)
     has_many(:github_organizations, Project.GithubOrganization)
@@ -73,8 +73,6 @@ defmodule Sanbase.Model.Project do
       :name,
       :ticker,
       :logo_url,
-      :logo32_url,
-      :logo64_url,
       :coinmarketcap_id,
       :website_link,
       :email,

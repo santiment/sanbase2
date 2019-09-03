@@ -111,6 +111,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end
   end
 
+  def is_trending(%Project{coinmarketcap_id: slug}, _args, _resolution) do
+    case trending_projects() do
+      {:ok, result} -> {:ok, slug in result}
+      _ -> {:nocache, {:ok, false}}
+    end
+  end
+
+  defp trending_projects() do
+    Cache.wrap(
+      fn ->
+        case Sanbase.SocialData.TrendingWords.get_currently_trending_projects() do
+          {:ok, data} -> {:ok, Enum.map(data, & &1.slug)}
+          {:error, error} -> {:error, error}
+        end
+      end,
+      :currently_trending_projects
+    ).()
+  end
+
   def funds_raised_icos(%Project{} = project, _args, _resolution) do
     funds_raised = Project.funds_raised_icos(project)
     {:ok, funds_raised}

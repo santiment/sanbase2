@@ -3,6 +3,7 @@ defmodule Sanbase.StatisticsTest do
 
   import Sanbase.Auth.Settings, only: [daily_subscription_type: 0, weekly_subscription_type: 0]
   import Sanbase.Factory
+  import Sanbase.Clickhouse.ApiCallData
   import Mock
 
   setup do
@@ -117,6 +118,21 @@ defmodule Sanbase.StatisticsTest do
               "new_users_with_watchlist_count_14d" => 1,
               "longtime_users_with_watchlist_count_14d" => 3
             }} in statistics
+  end
+
+  test "active users statistics" do
+    with_mock Sanbase.ClickhouseRepo,
+      query: fn _, _ -> {:ok, %{rows: [3]}} end do
+      statistics = Sanbase.Statistics.get_all()
+
+      assert {"active_users",
+              %{
+                "active_users_in_last_12h" => 3,
+                "active_users_in_last_24h" => 3,
+                "active_users_in_last_7d" => 3,
+                "active_users_in_last_30d" => 3
+              }} in statistics
+    end
   end
 
   test "returns the number of users, which are subscribed" do

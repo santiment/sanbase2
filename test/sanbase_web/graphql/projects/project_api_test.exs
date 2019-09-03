@@ -1,4 +1,4 @@
-defmodule Sanbase.Graphql.ProjectApiTest do
+defmodule SanbaseWeb.Graphql.ProjectApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   require Sanbase.Utils.Config, as: Config
@@ -98,9 +98,7 @@ defmodule Sanbase.Graphql.ProjectApiTest do
       insert(
         :random_project,
         %{
-          logo_url: "logo_url.png",
-          logo64_url: "logo64_url.png",
-          logo32_url: "logo32_url.png"
+          logo_url: "logo_url.png"
         }
       )
 
@@ -108,8 +106,6 @@ defmodule Sanbase.Graphql.ProjectApiTest do
     {
       projectBySlug(slug: "#{project.coinmarketcap_id}") {
         logoUrl
-        logo64Url
-        logo32Url
       }
     }
     """
@@ -120,8 +116,6 @@ defmodule Sanbase.Graphql.ProjectApiTest do
       |> json_response(200)
 
     assert result["data"]["projectBySlug"]["logoUrl"] == "logo_url.png"
-    assert result["data"]["projectBySlug"]["logo64Url"] == "logo64_url.png"
-    assert result["data"]["projectBySlug"]["logo32Url"] == "logo32_url.png"
   end
 
   test "Fetch project's github links", context do

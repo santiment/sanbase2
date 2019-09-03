@@ -36,6 +36,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
           id
           cooldown
           settings
+          tags {name}
         }
       }
     }
@@ -56,6 +57,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       assert created_trigger["settings"] == trigger_settings
       assert created_trigger["id"] != nil
       assert created_trigger["cooldown"] == "23h"
+      assert created_trigger["tags"] == []
     end
   end
 
@@ -281,6 +283,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         triggers {
           id
           settings
+          tags {name}
         }
       }
     }
@@ -297,6 +300,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
     assert trigger["settings"] == trigger_settings
     assert trigger["id"] == id
+    assert trigger["tags"] == []
   end
 
   test "fetches all public triggers", %{user: user, conn: conn} do
@@ -314,6 +318,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         trigger {
           id
           settings
+          tags {name}
         }
       }
     }
@@ -328,6 +333,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     assert length(triggers) == 1
     user_trigger = triggers |> List.first()
     assert user_trigger["trigger"]["settings"] == trigger_settings
+    assert user_trigger["trigger"]["tags"] == []
   end
 
   test "fetches public user triggers", %{conn: conn} do
@@ -345,6 +351,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         trigger{
           id
           settings
+          tags {name}
         }
       }
     }
@@ -359,6 +366,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     assert length(triggers) == 1
     trigger = triggers |> List.first()
     assert trigger["trigger"]["settings"] == trigger_settings
+    assert trigger["trigger"]["tags"] == []
   end
 
   test "create trending words trigger", %{conn: conn} do
@@ -550,13 +558,12 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
           before
         }
         activity {
-          payload,
-          triggered_at,
-          userTrigger {
-            trigger {
-              title,
-              description
-            }
+          payload
+          triggered_at
+          trigger {
+            id
+            title
+            description
           }
         }
       }

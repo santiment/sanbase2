@@ -3,6 +3,8 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.Helpers.Utils
 
+  require Logger
+
   @max_concurrency 30
 
   def data() do
@@ -17,23 +19,27 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
     two_days_ago = Timex.shift(now, days: -2)
 
     measurements
-    |> Enum.chunk_every(80)
+    |> Enum.chunk_every(50)
     |> Sanbase.Parallel.map(
-      fn measurements ->
-        volumes_last_24h = Prices.Store.fetch_average_volume(measurements, yesterday, now)
+      fn
+        [_ | _] = measurements ->
+          with {:ok, volumes_last_24h} <-
+                 Prices.Store.fetch_average_volume(measurements, yesterday, now),
+               {:ok, volumes_previous_24h} <-
+                 Prices.Store.fetch_average_volume(measurements, two_days_ago, yesterday) do
+            calculate_volume_percent_change_24h(volumes_previous_24h, volumes_last_24h)
+          else
+            error ->
+              Logger.warn(
+                "Cannot fetch average volume for a list of projects. Reason: #{inspect(error)}"
+              )
 
-        volumes_previous_24h_map =
-          Prices.Store.fetch_average_volume(measurements, two_days_ago, yesterday) |> Map.new()
-
-        volumes_last_24h
-        |> Enum.map(fn {name, today_vol} ->
-          yesterday_vol = Map.get(volumes_previous_24h_map, name, 0)
-
-          if yesterday_vol > 1 do
-            {name, (today_vol - yesterday_vol) * 100 / yesterday_vol}
+              nil
           end
-        end)
-        |> Enum.reject(&is_nil/1)
+          |> Enum.reject(&is_nil/1)
+
+        [] ->
+          []
       end,
       max_concurrency: @max_concurrency,
       ordered: false,
@@ -56,6 +62,19 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
   end
 
   # Helper functions
+
+  defp calculate_volume_percent_change_24h(volumes_previous_24h, volumes_last_24h) do
+    volumes_previous_24h_map = volumes_previous_24h |> Map.new()
+
+    volumes_last_24h
+    |> Enum.map(fn {name, today_vol} ->
+      yesterday_vol = Map.get(volumes_previous_24h_map, name, 0)
+
+      if yesterday_vol > 1 do
+        {name, Sanbase.Math.percent_change(yesterday_vol, today_vol)}
+      end
+    end)
+  end
 
   # TODO: not covered in tests
   defp fetch_price(measurement, :last) do

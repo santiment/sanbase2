@@ -119,9 +119,10 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
   end
 
   object :access_level do
-    field(:historical_data, non_null(:boolean))
-    field(:realtime_data, non_null(:boolean))
+    field(:api, non_null(:boolean))
+    field(:sanbase, non_null(:boolean))
     field(:spreadsheet, non_null(:boolean))
+    field(:sangraphs, non_null(:boolean))
   end
 
   object :user_follower do

@@ -102,16 +102,26 @@ defmodule Sanbase.Signal.TriggersTest do
       payload: nil
     }
 
-    assert capture_log(fn ->
-             assert UserTrigger.create_user_trigger(user, %{
-                      title: "Generic title",
-                      is_public: true,
-                      settings: trigger_settings
-                    }) ==
-                      {:error,
-                       "Trigger structure is invalid. Key `settings` is not valid. Reason: [\"\\\"unknown\\\" is not a valid notification channel\"]"}
-           end) =~
-             "UserTrigger struct is not valid. Reason: [\"\\\"unknown\\\" is not a valid notification channel\"]"
+    error_log =
+      capture_log(fn ->
+        {:error, error_msg} =
+          UserTrigger.create_user_trigger(user, %{
+            title: "Generic title",
+            is_public: true,
+            settings: trigger_settings
+          })
+
+        assert error_msg =~ "Trigger structure is invalid. Key `settings` is not valid. "
+
+        assert error_msg =~
+                 ~s/Reason: [\"\\\"unknown\\\" is not a valid notification channel. The available notification channels are [telegram, email, web_push]\\n\"]/
+      end)
+
+    assert error_log =~
+             "UserTrigger struct is not valid."
+
+    assert error_log =~
+             ~s/Reason: [\"\\\"unknown\\\" is not a valid notification channel. The available notification channels are [telegram, email, web_push]\\n\"]/
   end
 
   test "try creating user trigger with required field in struct" do
@@ -124,13 +134,17 @@ defmodule Sanbase.Signal.TriggersTest do
       operation: %{percent_up: 300.0}
     }
 
-    assert UserTrigger.create_user_trigger(user, %{
-             title: "Generic title",
-             is_public: true,
-             settings: settings
-           }) ==
-             {:error,
-              "Trigger structure is invalid. Key `settings` is not valid. Reason: [\"nil is not a valid notification channel\"]"}
+    {:error, error_msg} =
+      UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
+        is_public: true,
+        settings: settings
+      })
+
+    assert error_msg =~ "Trigger structure is invalid. Key `settings` is not valid."
+
+    assert error_msg =~
+             ~s/Reason: ["nil is not a valid notification channel. The available notification channels are [telegram, email, web_push]\\n\"]/
   end
 
   test "create user trigger with optional field missing" do

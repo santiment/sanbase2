@@ -20,13 +20,6 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.Following.UserFollower
   alias Sanbase.Billing.Subscription
 
-  require Sanbase.Utils.Config, as: Config
-
-  @sanbase_login_template "sanbase-login"
-  @neuro_login_template "neuro-login"
-  @sheets_login_template "sheets-login"
-  @verification_email_template "verify email"
-
   # The Login links will be valid 1 hour
   @login_email_valid_minutes 60
 
@@ -130,39 +123,6 @@ defmodule Sanbase.Auth.User do
     |> validate_change(:email_candidate, &validate_email_candidate_change/2)
     |> unique_constraint(:email)
     |> unique_constraint(:username)
-  end
-
-  def permissions(%__MODULE__{} = user) do
-    with {:ok, san_balance} <- san_balance(user) do
-      san_balance = san_balance |> Decimal.to_float()
-
-      required_san_tokens =
-        Config.module_get(Sanbase, :required_san_stake_full_access)
-        |> Sanbase.Math.to_float()
-
-      case san_balance >= required_san_tokens do
-        true ->
-          {:ok, full_permissions()}
-
-        _ ->
-          {:ok, no_permissions()}
-      end
-    else
-      _ -> {:ok, no_permissions()}
-    end
-  end
-
-  def permissions!(%__MODULE__{} = user) do
-    {:ok, permissions} = permissions(user)
-    permissions
-  end
-
-  def full_permissions() do
-    %{historical_data: true, realtime_data: true, spreadsheet: true}
-  end
-
-  def no_permissions() do
-    %{historical_data: false, realtime_data: false, spreadsheet: false}
   end
 
   def ascii_username?(nil), do: true
@@ -370,17 +330,21 @@ defmodule Sanbase.Auth.User do
 
   def send_login_email(user, origin_url) do
     origin_url
-    |> choose_login_template()
+    |> Sanbase.Email.Template.choose_login_template(first_login?: user.first_login)
     |> mandrill_api().send(user.email, %{
       LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email, origin_url)
     })
   end
 
   def send_verify_email(user) do
-    mandrill_api().send(@verification_email_template, user.email_candidate, %{
-      VERIFY_LINK:
-        SanbaseWeb.Endpoint.verify_url(user.email_candidate_token, user.email_candidate)
-    })
+    mandrill_api().send(
+      Sanbase.Email.Template.verification_email_template(),
+      user.email_candidate,
+      %{
+        VERIFY_LINK:
+          SanbaseWeb.Endpoint.verify_url(user.email_candidate_token, user.email_candidate)
+      }
+    )
   end
 
   def by_id(user_id) when is_integer(user_id) do
@@ -436,14 +400,4 @@ defmodule Sanbase.Auth.User do
 
     count_other_accounts > 0 or not is_nil(email)
   end
-
-  defp choose_login_template(origin_url) when is_binary(origin_url) do
-    cond do
-      String.contains?(origin_url, "neuro") -> @neuro_login_template
-      String.contains?(origin_url, "sheets") -> @sheets_login_template
-      true -> @sanbase_login_template
-    end
-  end
-
-  defp choose_login_template(_), do: @sanbase_login_template
 end

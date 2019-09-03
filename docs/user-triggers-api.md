@@ -536,11 +536,10 @@ mutation {
     activity {
       payload
       triggeredAt
-      userTrigger {
-        trigger {
-          title
-          description
-        }
+      trigger {
+        id
+        title
+        description
       }
     }
   }
@@ -559,12 +558,11 @@ mutation {
             "all": "Trending words for: `2019-03-11`\n\n```\nWord    | Score\n------- | -------\ntheta   | 704\nxlm     | 425\nqlc     | 224\nnxs     | 210\nmining  | 207\nnano    | 196\nherpes  | 178\nxrp     | 178\nasic    | 152\ntattoos | 128\n```\nMore info: http://localhost:4000/sonar\n"
           },
           "triggeredAt": "2019-03-11T11:56:41.970284Z",
-          "userTrigger": {
-            "trigger": {
-              "description": null,
-              "title": "alabala",
-              ...
-            }
+          "trigger": {
+            "id": 5,
+            "description": null,
+            "title": "alabala",
+            ...
           }
         }
       ],

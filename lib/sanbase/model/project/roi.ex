@@ -109,6 +109,7 @@ defmodule Sanbase.Model.Project.Roi do
 
   defp calc_token_usd_ico_price(nil, _currency_from, _ico_start_date, _current_datetime), do: nil
   defp calc_token_usd_ico_price(_price_from, _currency_from, nil, _current_datetime), do: nil
+  defp calc_token_usd_ico_price(_price_from, _currency_from, _ico_start_date, nil), do: nil
 
   defp calc_token_usd_ico_price(price_from, currency_from, ico_start_date, current_datetime) do
     with :gt <- Ecto.DateTime.compare(current_datetime, Ecto.DateTime.from_date(ico_start_date)),

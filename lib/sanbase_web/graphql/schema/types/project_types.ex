@@ -15,6 +15,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     TwitterResolver
   }
 
+  alias Sanbase.Model.Project
   alias SanbaseWeb.Graphql.SanbaseRepo
   alias SanbaseWeb.Graphql.Complexity
 
@@ -36,8 +37,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field(:logo_url, :string)
-    field(:logo32_url, :string)
-    field(:logo64_url, :string)
     field(:website_link, :string)
     field(:email, :string)
     field(:btt_link, :string)
@@ -56,7 +55,24 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:long_description, :string)
     field(:token_decimals, :integer)
     field(:main_contract_address, :string)
-    field(:eth_addresses, list_of(:eth_address), resolve: dataloader(SanbaseRepo))
+
+    field :eth_addresses, list_of(:eth_address) do
+      cache_resolve(dataloader(SanbaseRepo))
+    end
+
+    field :social_volume_query, :string do
+      cache_resolve(
+        dataloader(SanbaseRepo, :social_volume_query,
+          callback: fn query, project, _args ->
+            {:ok, query || Project.SocialVolumeQuery.default_query(project)}
+          end
+        )
+      )
+    end
+
+    field :is_trending, :boolean do
+      cache_resolve(&ProjectResolver.is_trending/3)
+    end
 
     field :github_links, list_of(:string) do
       cache_resolve(&ProjectResolver.github_links/3)

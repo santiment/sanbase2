@@ -88,11 +88,14 @@ defmodule Sanbase.Prices.Store do
     |> get()
     |> case do
       %{results: [%{series: series}]} ->
-        series
-        |> Enum.map(fn %{name: name, values: [[_, value]]} -> {name, value} end)
+        result =
+          series
+          |> Enum.map(fn %{name: name, values: [[_, value]]} -> {name, value} end)
 
-      _ ->
-        {:error, []}
+        {:ok, result}
+
+      error ->
+        {:error, error}
     end
   end
 
@@ -380,8 +383,8 @@ defmodule Sanbase.Prices.Store do
 
         {:ok, data}
 
-      %{errors: [error | _]} ->
-        {:error, error}
+      %{errors: errors} ->
+        {:error, errors}
     end
   end
 

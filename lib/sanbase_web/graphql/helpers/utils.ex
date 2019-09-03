@@ -123,6 +123,22 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
     }
   end
 
+  def replace_user_trigger_with_trigger(data) when is_map(data) do
+    case data do
+      %{user_trigger: ut} = elem when not is_nil(ut) ->
+        elem
+        |> Map.drop([:__struct__, :user_trigger])
+        |> Map.put(:trigger, Map.get(transform_user_trigger(ut), :trigger))
+
+      elem ->
+        elem
+    end
+  end
+
+  def replace_user_trigger_with_trigger(data) when is_list(data) do
+    data |> Enum.map(&replace_user_trigger_with_trigger/1)
+  end
+
   @spec requested_fields(%Absinthe.Resolution{}) :: MapSet.t()
   def requested_fields(%Absinthe.Resolution{} = resolution) do
     resolution.definition.selections

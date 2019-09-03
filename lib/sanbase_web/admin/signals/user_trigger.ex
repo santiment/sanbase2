@@ -69,7 +69,7 @@ defmodule Sanbase.ExAdmin.Signal.UserTrigger do
   def set_public(conn, params, resource, :update) do
     case params.user_trigger.is_public do
       str when str in ["true", "false"] ->
-        Sanbase.Signal.UserTrigger.changeset(resource, %{
+        Sanbase.Signal.UserTrigger.update_changeset(resource, %{
           trigger: %{is_public: str |> String.to_existing_atom()}
         })
         |> Sanbase.Repo.update!()

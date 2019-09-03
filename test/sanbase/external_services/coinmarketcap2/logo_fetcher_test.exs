@@ -43,7 +43,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
       file_store_path = "/tmp/sanbase/filestore-test"
 
       assert Repo.get(Project, context.ethereum.id).logo_url =~
-               "#{file_store_path}/logo_#{context.ethereum.coinmarketcap_id}.png"
+               "#{file_store_path}/logo64_#{context.ethereum.coinmarketcap_id}.png"
     end
 
     test "saves logo hash", context do

@@ -235,8 +235,19 @@ defmodule Sanbase.Billing.Subscription do
     user
     |> user_subscriptions_query()
     |> active_subscriptions_query()
+    |> join_plan_and_product_query()
     |> Repo.all()
-    |> Repo.preload(plan: [:product])
+  end
+
+  @doc """
+  List active subcriptions' product ids
+  """
+  def user_subscriptions_product_ids(user) do
+    user
+    |> user_subscriptions_query()
+    |> active_subscriptions_query()
+    |> select_product_id_query()
+    |> Repo.all()
   end
 
   @doc """
@@ -348,6 +359,19 @@ defmodule Sanbase.Billing.Subscription do
 
   defp active_subscriptions_query(query) do
     from(s in query, where: s.status != "canceled")
+  end
+
+  defp join_plan_and_product_query(query) do
+    from(
+      s in query,
+      join: p in assoc(s, :plan),
+      join: pr in assoc(p, :product),
+      preload: [plan: {p, product: pr}]
+    )
+  end
+
+  defp select_product_id_query(query) do
+    from(s in query, join: p in assoc(s, :plan), select: p.product_id)
   end
 
   defp last_subscription_for_product_query(query, product_id) do

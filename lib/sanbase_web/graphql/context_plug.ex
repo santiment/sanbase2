@@ -81,7 +81,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
           get_req_header(conn, "origin")
           |> get_no_auth_product()
 
-        {conn, %{permissions: User.no_permissions(), product: product}}
+        {conn, %{permissions: User.Permissions.no_permissions(), product: product}}
 
       [header] ->
         Logger.warn("Unsupported authorization header value: #{inspect(header)}")
@@ -111,7 +111,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     case bearer_authorize(token) do
       {:ok, current_user} ->
         %{
-          permissions: User.permissions!(current_user),
+          permissions: User.Permissions.permissions(current_user),
           auth: %{
             auth_method: :user_token,
             current_user: current_user,
@@ -135,7 +135,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
            {:has_header?, get_req_header(conn, "authorization")},
          {:ok, current_user} <- bearer_authorize(token) do
       %{
-        permissions: User.permissions!(current_user),
+        permissions: User.Permissions.permissions(current_user),
         auth: %{
           auth_method: :user_token,
           current_user: current_user,
@@ -157,7 +157,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
            {:has_header?, get_req_header(conn, "authorization")},
          {:ok, current_user} <- basic_authorize(auth_attempt) do
       %{
-        permissions: User.full_permissions(),
+        permissions: User.Permissions.full_permissions(),
         auth: %{
           auth_method: :basic,
           current_user: current_user,
@@ -182,7 +182,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         |> get_apikey_product()
 
       %{
-        permissions: User.permissions!(current_user),
+        permissions: User.Permissions.permissions(current_user),
         auth: %{
           auth_method: :apikey,
           current_user: current_user,
@@ -204,10 +204,10 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       {:ok, user}
     else
       {:error, :token_expired} ->
-        %{permissions: User.no_permissions()}
+        %{permissions: User.Permissions.no_permissions()}
 
       {:error, :invalid_token} ->
-        %{permissions: User.no_permissions()}
+        %{permissions: User.Permissions.no_permissions()}
 
       _ ->
         {:error, "Invalid JSON Web Token (JWT)"}

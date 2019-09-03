@@ -1,12 +1,13 @@
 defmodule SanbaseWeb.Graphql.AccountTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Auth.User
-  alias Sanbase.Repo
-
   import Mockery
   import SanbaseWeb.Graphql.TestHelpers
   import ExUnit.CaptureLog
+  import Sanbase.Factory
+
+  alias Sanbase.Auth.User
+  alias Sanbase.Repo
 
   setup do
     user =
@@ -42,8 +43,6 @@ defmodule SanbaseWeb.Graphql.AccountTest do
       currentUser {
         id
         permissions{
-          historicalData
-          realtimeData
           spreadsheet
         }
       }
@@ -56,24 +55,18 @@ defmodule SanbaseWeb.Graphql.AccountTest do
       |> json_response(200)
 
     assert result["data"]["currentUser"]["permissions"] == %{
-             "historicalData" => false,
-             "realtimeData" => false,
              "spreadsheet" => false
            }
   end
 
   test "user with san balance of 1000 has all permisions", context do
-    context.user
-    |> User.changeset(%{test_san_balance: 1000})
-    |> Repo.update!()
+    insert(:subscription_pro_sheets, user: context.user)
 
     query = """
     {
       currentUser {
         id
         permissions{
-          historicalData
-          realtimeData
           spreadsheet
         }
       }
@@ -86,8 +79,6 @@ defmodule SanbaseWeb.Graphql.AccountTest do
       |> json_response(200)
 
     assert result["data"]["currentUser"]["permissions"] == %{
-             "historicalData" => true,
-             "realtimeData" => true,
              "spreadsheet" => true
            }
   end

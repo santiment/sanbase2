@@ -1,16 +1,11 @@
-podTemplate(label: 'sanbase-builder', containers: [
-  containerTemplate(
-    name: 'docker-compose',
-    image: 'docker/compose:1.24.1',
-    ttyEnabled: true,
-    command: 'cat',
-    envVars: [
-      envVar(key: 'DOCKER_BUILDKIT', value: '1'),
-      envVar(key: 'DOCKER_HOST', value: 'tcp://docker-host-docker-host:2375')
+@Library('podTemplateLib')
+import net.santiment.utils.podTemplates
 
-    ])
-]) {
-  node('sanbase-builder') {
+properties([buildDiscarder(logRotator(artifactDaysToKeepStr: '30', artifactNumToKeepStr: '', daysToKeepStr: '30', numToKeepStr: ''))])
+slaveTemplates = new podTemplates()
+
+slaveTemplates.dockerComposeTemplate { label ->
+  node(label) {
     container('docker-compose') {
 
     def scmVars = checkout scm

@@ -1,8 +1,7 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
   use Sanbase.DataCase, async: false
 
-  alias Sanbase.ExternalServices.Coinmarketcap.GraphData2, as: GraphData
-  alias Sanbase.ExternalServices.Coinmarketcap.PricePoint2, as: PricePoint
+  alias Sanbase.ExternalServices.Coinmarketcap.{GraphData, PricePoint}
   alias Sanbase.Prices.Store
 
   import Sanbase.InfluxdbHelpers
@@ -14,7 +13,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
                          method: :get,
                          url: "https://graphs2.coinmarketcap.com/currencies/santiment/"
                        } ->
-      %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "btc_graph_data.json"))}
+      %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "data/btc_graph_data.json"))}
     end)
 
     assert GraphData.fetch_first_datetime("santiment") ==
@@ -23,7 +22,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
 
   test "fetching prices of a token" do
     Tesla.Mock.mock(fn %{method: :get} ->
-      %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "btc_graph_data.json"))}
+      %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "data/btc_graph_data.json"))}
     end)
 
     from_datetime = DateTime.from_unix!(1_507_991_665_000, :millisecond)
@@ -45,7 +44,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
                        } ->
       %Tesla.Env{
         status: 200,
-        body: File.read!(Path.join(__DIR__, "coinmarketcap_total_graph_data.json"))
+        body: File.read!(Path.join(__DIR__, "data/coinmarketcap_total_graph_data.json"))
       }
     end)
 
@@ -57,7 +56,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
     Tesla.Mock.mock(fn %{method: :get} ->
       %Tesla.Env{
         status: 200,
-        body: File.read!(Path.join(__DIR__, "coinmarketcap_total_graph_data.json"))
+        body: File.read!(Path.join(__DIR__, "data/coinmarketcap_total_graph_data.json"))
       }
     end)
 
@@ -85,7 +84,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
     Tesla.Mock.mock(fn %{method: :get} ->
       %Tesla.Env{
         status: 200,
-        body: File.read!(Path.join(__DIR__, "coinmarketcap_total_graph_data.json"))
+        body: File.read!(Path.join(__DIR__, "data/coinmarketcap_total_graph_data.json"))
       }
     end)
 

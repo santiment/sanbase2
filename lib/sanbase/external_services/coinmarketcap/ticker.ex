@@ -1,8 +1,6 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
   @projects_number 5_000
   @moduledoc ~s"""
-  NOTE: Old module that will be deprecated when all places where the data from it is used is removed.
-
   Fetches the ticker data from coinmarketcap API `https://api.coinmarketcap.com/v2/ticker`
 
   A single request fetchest all top #{@projects_number} tickers information. The coinmarketcap API
@@ -31,12 +29,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
 
   use Tesla
 
+  require Logger
   require Sanbase.Utils.Config, as: Config
 
   import Sanbase.Math, only: [to_integer: 1, to_float: 1]
 
   alias Sanbase.DateTimeUtils
-  alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
+  # TODO: Change after switching over to only this cmc
+  alias Sanbase.ExternalServices.Coinmarketcap.{PricePoint, TickerFetcher}
+  alias Sanbase.Influxdb.Measurement
+  alias Sanbase.ExternalServices.Coinmarketcap
 
   plug(Sanbase.ExternalServices.RateLimiting.Middleware, name: :api_coinmarketcap_rate_limiter)
 
@@ -52,21 +54,48 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
   plug(Tesla.Middleware.Compression)
   plug(Tesla.Middleware.Logger)
 
-  alias __MODULE__
+  alias __MODULE__, as: Ticker
 
+  @doc ~s"""
+  Fetch the current data for all top N projects.
+  Parse the binary received from the CMC response to a list of tickers
+  """
+  @spec fetch_data() :: {:error, String.t()} | {:ok, [%Ticker{}]}
   def fetch_data() do
-    "v1/cryptocurrency/listings/latest?start=1&sort=market_cap&limit=#{@projects_number}&cryptocurrency_type=all&convert=USD,BTC"
+    projects_number = Config.module_get(TickerFetcher, :projects_number) |> String.to_integer()
+
+    Logger.info("[CMC] Fetching the realtime data for top #{projects_number} projects")
+
+    "v1/cryptocurrency/listings/latest?start=1&sort=market_cap&limit=#{projects_number}&cryptocurrency_type=all&convert=USD,BTC"
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
-        parse_json(body)
+        Logger.info(
+          "[CMC] Successfully fetched the realtime data for top #{projects_number} projects."
+        )
 
-      _ ->
-        nil
+        {:ok, parse_json(body)}
+
+      {:ok, %Tesla.Env{status: status}} ->
+        error = "Failed fetching top #{projects_number} projects' information. Status: #{status}"
+
+        Logger.warn(error)
+        {:error, error}
+
+      {:error, error} ->
+        error_msg =
+          "Error fetching top #{projects_number} projects' information. Error message #{
+            inspect(error)
+          }"
+
+        Logger.error(error_msg)
+
+        {:error, error_msg}
     end
   end
 
-  def parse_json(json) do
+  @spec parse_json(String.t()) :: [%Ticker{}] | no_return
+  defp parse_json(json) do
     %{"data" => data} =
       json
       |> Jason.decode!()
@@ -89,7 +118,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
             "market_cap" => mcap_usd,
             "percent_change_1h" => percent_change_1h_usd,
             "percent_change_24h" => percent_change_24h_usd,
-            "percent_change_7d" => _percent_change_7d_usd
+            "percent_change_7d" => percent_change_7d_usd
           },
           "BTC" => %{
             "price" => price_btc,
@@ -116,31 +145,30 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
         total_supply: total_supply,
         percent_change_1h: percent_change_1h_usd,
         percent_change_24h: percent_change_24h_usd,
-        percent_change_7d: percent_change_24h_usd
+        percent_change_7d: percent_change_7d_usd
       }
     end)
     |> Enum.filter(fn %Ticker{last_updated: last_updated} -> last_updated end)
   end
 
-  def convert_for_importing(%{
-        symbol: ticker,
-        last_updated: last_updated,
-        price_btc: price_btc,
-        price_usd: price_usd,
-        "24h_volume_usd": volume_usd,
-        market_cap_usd: marketcap_usd
-      }) do
+  @spec convert_for_importing(%Ticker{}) :: %Measurement{}
+  def convert_for_importing(
+        %Ticker{
+          last_updated: last_updated,
+          price_btc: price_btc,
+          price_usd: price_usd,
+          "24h_volume_usd": volume_usd,
+          market_cap_usd: marketcap_usd
+        } = ticker
+      ) do
     price_point = %PricePoint{
-      marketcap: (marketcap_usd || 0) |> to_integer(),
+      marketcap_usd: (marketcap_usd || 0) |> to_integer(),
       volume_usd: (volume_usd || 0) |> to_integer(),
       price_btc: (price_btc || 0) |> to_float(),
       price_usd: (price_usd || 0) |> to_float(),
       datetime: DateTimeUtils.from_iso8601!(last_updated)
     }
 
-    [
-      PricePoint.convert_to_measurement(price_point, "USD", ticker),
-      PricePoint.convert_to_measurement(price_point, "BTC", ticker)
-    ]
+    PricePoint.convert_to_measurement(price_point, Measurement.name_from(ticker))
   end
 end

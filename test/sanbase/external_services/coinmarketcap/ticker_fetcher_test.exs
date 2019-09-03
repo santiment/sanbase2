@@ -1,8 +1,7 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
   use Sanbase.DataCase, async: false
 
-  # TODO: Change after old cmc scraper is removed
-  alias Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2, as: TickerFetcher
+  alias Sanbase.ExternalServices.Coinmarketcap.TickerFetcher
   alias Sanbase.Prices.Store
 
   import Sanbase.InfluxdbHelpers
@@ -14,7 +13,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
     setup_prices_influxdb()
 
     Tesla.Mock.mock(fn %{method: :get} ->
-      %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "pro_cmc_api_2.json"))}
+      %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "data/pro_cmc_api_2.json"))}
     end)
 
     TickerFetcher.work()

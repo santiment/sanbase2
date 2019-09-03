@@ -1,7 +1,7 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.PricePointTest do
   use Sanbase.DataCase, async: false
 
-  alias Sanbase.ExternalServices.Coinmarketcap.PricePoint2, as: PricePoint
+  alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Model.Project
 

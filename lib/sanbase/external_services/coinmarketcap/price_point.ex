@@ -1,66 +1,60 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
-  alias __MODULE__
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Model.Project
 
-  defstruct [:datetime, :marketcap, :price_usd, :volume_usd, :price_btc, :volume_btc]
+  defstruct [
+    :ticker,
+    :slug,
+    :datetime,
+    :marketcap_usd,
+    :volume_usd,
+    :price_usd,
+    :price_btc
+  ]
 
-  def convert_to_measurement(%PricePoint{datetime: datetime} = point, suffix, name) do
+  def convert_to_measurement(%__MODULE__{datetime: datetime} = point, name) do
     %Measurement{
       timestamp: DateTime.to_unix(datetime, :nanosecond),
-      fields: price_point_to_fields(point, suffix),
+      fields: price_point_fields(point),
       tags: [],
-      name: name <> "_#{suffix}"
+      name: name
     }
   end
 
-  def price_points_to_measurements(%PricePoint{} = price_point) do
-    [convert_to_measurement(price_point, "USD", "TOTAL_MARKET")]
-  end
-
-  def price_points_to_measurements(price_points) do
+  def price_points_to_measurements(price_points, "TOTAL_MARKET_total-market" = total_market) do
     price_points
-    |> Enum.flat_map(fn price_point ->
-      [convert_to_measurement(price_point, "USD", "TOTAL_MARKET")]
+    |> List.wrap()
+    |> Enum.map(fn price_point ->
+      convert_to_measurement(price_point, total_market)
     end)
   end
 
-  def price_points_to_measurements(%PricePoint{} = price_point, %Project{ticker: ticker}) do
-    [
-      convert_to_measurement(price_point, "USD", ticker),
-      convert_to_measurement(price_point, "BTC", ticker)
-    ]
-  end
-
-  def price_points_to_measurements(price_points, %Project{ticker: ticker}) do
+  def price_points_to_measurements(
+        price_points,
+        %Project{} = project
+      ) do
     price_points
-    |> Enum.flat_map(fn price_point ->
-      [
-        convert_to_measurement(price_point, "USD", ticker),
-        convert_to_measurement(price_point, "BTC", ticker)
-      ]
+    |> List.wrap()
+    |> Enum.map(fn price_point ->
+      convert_to_measurement(price_point, Measurement.name_from(project))
     end)
   end
 
-  defp price_point_to_fields(
-         %PricePoint{marketcap: marketcap, volume_usd: volume_usd, price_btc: price_btc},
-         "BTC"
-       ) do
-    %{
-      price: price_btc,
-      volume: volume_usd,
-      marketcap: marketcap
-    }
-  end
+  def price_points_to_measurements(_, _), do: []
 
-  defp price_point_to_fields(
-         %PricePoint{marketcap: marketcap, volume_usd: volume_usd, price_usd: price_usd},
-         "USD"
-       ) do
+  # Private functions
+
+  defp price_point_fields(%__MODULE__{
+         marketcap_usd: marketcap_usd,
+         volume_usd: volume_usd,
+         price_btc: price_btc,
+         price_usd: price_usd
+       }) do
     %{
-      price: price_usd,
-      volume: volume_usd,
-      marketcap: marketcap
+      price_usd: price_usd,
+      price_btc: price_btc,
+      volume_usd: volume_usd,
+      marketcap_usd: marketcap_usd
     }
   end
 end

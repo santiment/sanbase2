@@ -44,6 +44,7 @@ config :ex_admin,
     Sanbase.ExAdmin.UserList,
     Sanbase.ExAdmin.Auth.UserSettings,
     Sanbase.ExAdmin.Signal.UserTrigger,
+    Sanbase.ExAdmin.Model.Project.SlugSourceMapping,
     Sanbase.ExAdmin.Billing.StripeEvent
   ],
   basic_auth: [

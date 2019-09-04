@@ -24,6 +24,7 @@ defmodule Sanbase.Billing.Subscription do
   Please, contact administrator of the site for more information.
   """
   @free_trial_days_for_coupons 14
+  @percent_off_for_free_trial 100
 
   schema "subscriptions" do
     field(:stripe_id, :string)
@@ -363,7 +364,7 @@ defmodule Sanbase.Billing.Subscription do
          percent_off: percent_off,
          id: id
        })
-       when percent_off == 100 do
+       when percent_off == @percent_off_for_free_trial do
     subscription
     |> Map.put(:trial_period_days, @free_trial_days_for_coupons)
     |> Map.put(:metadata, %{coupon_id: id})

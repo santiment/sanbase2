@@ -24,7 +24,7 @@ defmodule Sanbase.Model.Project.SlugSourceMapping do
   end
 
   def create(attrs) do
-    changeset_fn(%__MODULE__{}, attrs) |> Repo.insert()
+    changeset(%__MODULE__{}, attrs) |> Repo.insert()
   end
 
   def get_source_slug(%Project{id: project_id}, source) do

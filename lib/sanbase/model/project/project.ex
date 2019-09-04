@@ -127,9 +127,7 @@ defmodule Sanbase.Model.Project do
   defdelegate contract_address(project), to: Project.ContractData
 
   def coinmarketcap_id(%Project{} = project) do
-    %__MODULE__{slug_source_mappings: mappings} = project |> Repo.preload([:slug_source_mappings])
-
-    mappings |> Enum.find(%{}, &(&1.source == "coinmarketcap")) |> Map.get(:source_slug)
+    Project.SlugSourceMapping.get_source_slug(project, "coinmarketcap")
   end
 
   def sanbase_link(%Project{slug: slug}) when not is_nil(slug) do

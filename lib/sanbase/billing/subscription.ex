@@ -62,7 +62,7 @@ defmodule Sanbase.Billing.Subscription do
   - Create subscription record in Stripe.
   - Create a subscription record locally so we can check access control without calling Stripe.
   """
-  def subscribe(user, card_token, plan, coupon) do
+  def subscribe(user, card_token, plan, coupon \\ nil) do
     with {:ok, %User{stripe_customer_id: stripe_customer_id} = user}
          when not is_nil(stripe_customer_id) <-
            create_or_update_stripe_customer(user, card_token),
@@ -261,6 +261,20 @@ defmodule Sanbase.Billing.Subscription do
     |> last_subscription_for_product_query(product_id)
     |> Repo.one()
     |> Repo.preload(plan: [:product])
+  end
+
+  @doc """
+  Return list of tuples
+    * coupon_code
+    * count of subscriptions created with coupon code
+  """
+  def subscriptions_count_by_coupon do
+    {:ok, all_subscriptions} = Stripe.Subscription.list()
+
+    all_subscriptions.data
+    |> Enum.group_by(fn s -> s.metadata |> Map.get("coupon_id") end)
+    |> Enum.reject(fn {coupon_id, _} -> is_nil(coupon_id) end)
+    |> Enum.map(fn {coupon_id, subscriptions} -> {coupon_id, length(subscriptions)} end)
   end
 
   @doc """

@@ -61,7 +61,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
   end
 
   test "one of the slugs is trending", context do
-    slug = context.project1.coinmarketcap_id |> String.downcase()
+    slug = context.project1.slug |> String.downcase()
 
     with_mock Sanbase.SocialData.TrendingWords,
       get_currently_trending_words: fn _ ->
@@ -120,7 +120,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
 
   test "both tickers and slugs are trending", context do
     ticker = context.project1.ticker |> String.downcase()
-    slug = context.project1.coinmarketcap_id |> String.downcase()
+    slug = context.project1.slug |> String.downcase()
 
     with_mock Sanbase.SocialData.TrendingWords,
       get_currently_trending_words: fn _ ->
@@ -220,8 +220,8 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
 
       expected_result =
         [
-          %{"slug" => context.project1.coinmarketcap_id},
-          %{"slug" => context.project2.coinmarketcap_id}
+          %{"slug" => context.project1.slug},
+          %{"slug" => context.project2.slug}
         ]
         |> Enum.sort_by(fn %{"slug" => slug} -> slug end)
 
@@ -232,7 +232,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
   end
 
   test "trending projects fetched by slug", context do
-    slug = context.project1.coinmarketcap_id |> String.downcase()
+    slug = context.project1.slug |> String.downcase()
 
     with_mock Sanbase.SocialData.TrendingWords,
       get_currently_trending_words: fn _ ->
@@ -247,7 +247,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
       %{"data" => %{"watchlist" => %{"stats" => %{"trendingProjects" => projects}}}} = result
 
       expected_result = [
-        %{"slug" => context.project1.coinmarketcap_id}
+        %{"slug" => context.project1.slug}
       ]
 
       assert projects == expected_result
@@ -255,7 +255,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
   end
 
   test "trending projects are uniq when slug, name and ticker are trending", context do
-    slug = context.project1.coinmarketcap_id |> String.downcase()
+    slug = context.project1.slug |> String.downcase()
     name = context.project1.name |> String.downcase()
     ticker = context.project1.ticker |> String.downcase()
 
@@ -274,7 +274,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
       %{"data" => %{"watchlist" => %{"stats" => %{"trendingProjects" => projects}}}} = result
 
       expected_result = [
-        %{"slug" => context.project1.coinmarketcap_id}
+        %{"slug" => context.project1.slug}
       ]
 
       assert projects == expected_result
@@ -282,10 +282,10 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
   end
 
   test "project not in watchlist is not included", context do
-    slug = context.project1.coinmarketcap_id |> String.downcase()
+    slug = context.project1.slug |> String.downcase()
     name = context.project3.name |> String.downcase()
     ticker = context.project3.ticker |> String.downcase()
-    slug2 = context.project3.coinmarketcap_id |> String.downcase()
+    slug2 = context.project3.slug |> String.downcase()
 
     with_mock Sanbase.SocialData.TrendingWords,
       get_currently_trending_words: fn _ ->
@@ -303,7 +303,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
       %{"data" => %{"watchlist" => %{"stats" => %{"trendingProjects" => projects}}}} = result
 
       expected_result = [
-        %{"slug" => context.project1.coinmarketcap_id}
+        %{"slug" => context.project1.slug}
       ]
 
       assert projects == expected_result

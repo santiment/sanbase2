@@ -99,8 +99,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end
   end
 
-  def slug(%Project{coinmarketcap_id: coinmarketcap_id}, _, _), do: {:ok, coinmarketcap_id}
-
   def project_by_slug(_parent, %{slug: slug}, _resolution) do
     case Project.by_slug(slug) do
       nil ->
@@ -111,7 +109,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end
   end
 
-  def is_trending(%Project{coinmarketcap_id: slug}, _args, _resolution) do
+  def is_trending(%Project{slug: slug}, _args, _resolution) do
     case trending_projects() do
       {:ok, result} -> {:ok, slug in result}
       _ -> {:nocache, {:ok, false}}

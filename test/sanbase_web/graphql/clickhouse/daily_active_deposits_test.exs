@@ -17,7 +17,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.DailyActiveDepositsTest do
 
     project =
       insert(:project, %{
-        coinmarketcap_id: "santiment",
+        slug: "santiment",
         ticker: "SAN",
         main_contract_address: "0x123"
       })
@@ -25,7 +25,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.DailyActiveDepositsTest do
     %{
       conn: conn,
       contract: project.main_contract_address,
-      slug: project.coinmarketcap_id,
+      slug: project.slug,
       from: from_iso8601!("2019-01-01T00:00:00Z"),
       to: from_iso8601!("2019-01-03T00:00:00Z"),
       interval: "1d"

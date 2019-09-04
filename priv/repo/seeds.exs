@@ -21,8 +21,7 @@ insert_on_conflict_nothing = fn item ->
   Repo.insert(item, on_conflict: :nothing)
 end
 
-make_project = fn {name, ticker, logo_url, coinmarkecap_id, infrastructure_code, contract,
-                   token_decimals} ->
+make_project = fn {name, ticker, logo_url, slug, infrastructure_code, contract, token_decimals} ->
   infrastructure =
     case infrastructure_code do
       "ETH" -> infrastructure_eth
@@ -34,7 +33,7 @@ make_project = fn {name, ticker, logo_url, coinmarkecap_id, infrastructure_code,
     name: name,
     ticker: ticker,
     logo_url: logo_url,
-    coinmarketcap_id: coinmarkecap_id,
+    slug: slug,
     infrastructure: infrastructure,
     main_contract_address: contract,
     token_decimals: token_decimals

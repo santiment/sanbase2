@@ -89,7 +89,7 @@ defmodule Sanbase.Model.Project.AvailableMetrics do
     btc_wallet_metrics ++ eth_wallet_metrics
   end
 
-  defp slug_metrics(%Project{coinmarketcap_id: slug}) do
+  defp slug_metrics(%Project{slug: slug}) do
     case slug do
       slug when is_binary(slug) and slug != "" ->
         ["historyPrice", "ohlc", "priceVolumeDiff"]
@@ -121,7 +121,7 @@ defmodule Sanbase.Model.Project.AvailableMetrics do
     end
   end
 
-  defp social_metrics(%Project{coinmarketcap_id: slug}) do
+  defp social_metrics(%Project{slug: slug}) do
     common_social_metrics = [
       "socialGainersLosersStatus"
     ]
@@ -170,11 +170,11 @@ defmodule Sanbase.Model.Project.AvailableMetrics do
     is_erc20? = Project.is_erc20?(project)
 
     case {project, is_erc20?} do
-      {%Project{coinmarketcap_id: "ethereum"}, _} ->
+      {%Project{slug: "ethereum"}, _} ->
         @mineable_specific_metrics ++
           @ethereum_specific_metrics ++ @erc20_specific_metrics ++ @common_blockchain_metrics
 
-      {%Project{coinmarketcap_id: "bitcoin"}, _} ->
+      {%Project{slug: "bitcoin"}, _} ->
         @mineable_specific_metrics ++ @bitcoin_specific_metrics ++ @common_blockchain_metrics
 
       {_, true} ->

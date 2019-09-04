@@ -156,7 +156,7 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
       with_mock SocialData.TrendingWords,
         get_project_trending_history: fn _, _, _, _, _ -> {:ok, success_response} end do
         args = %{
-          slug: project.coinmarketcap_id,
+          slug: project.slug,
           from: dt1_str,
           to: dt3_str,
           interval: "1d",

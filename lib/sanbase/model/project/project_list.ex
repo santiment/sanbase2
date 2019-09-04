@@ -152,7 +152,7 @@ defmodule Sanbase.Model.Project.List do
   defp projects_query(nil) do
     from(
       p in Project,
-      where: not is_nil(p.coinmarketcap_id),
+      where: not is_nil(p.slug),
       preload: ^@preloads
     )
   end
@@ -216,8 +216,8 @@ defmodule Sanbase.Model.Project.List do
 
   def project_slugs_with_github_link() do
     from(p in Project,
-      where: not is_nil(p.coinmarketcap_id) and not is_nil(p.github_link),
-      select: p.coinmarketcap_id
+      where: not is_nil(p.slug) and not is_nil(p.github_link),
+      select: p.slug
     )
     |> Repo.all()
   end
@@ -225,8 +225,8 @@ defmodule Sanbase.Model.Project.List do
   def slugs_by_field(values, field) do
     from(
       p in Project,
-      where: field(p, ^field) in ^values and not is_nil(p.coinmarketcap_id),
-      select: p.coinmarketcap_id
+      where: field(p, ^field) in ^values and not is_nil(p.slug),
+      select: p.slug
     )
     |> Repo.all()
   end
@@ -234,8 +234,8 @@ defmodule Sanbase.Model.Project.List do
   def field_slug_map(values, field) do
     from(
       p in Project,
-      where: field(p, ^field) in ^values and not is_nil(p.coinmarketcap_id),
-      select: {field(p, ^field), p.coinmarketcap_id}
+      where: field(p, ^field) in ^values and not is_nil(p.slug),
+      select: {field(p, ^field), p.slug}
     )
     |> Repo.all()
     |> Map.new()
@@ -243,9 +243,9 @@ defmodule Sanbase.Model.Project.List do
 
   def slug_price_change_map() do
     from(p in Project,
-      where: not is_nil(p.coinmarketcap_id),
+      where: not is_nil(p.slug),
       join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
-      select: {p.coinmarketcap_id, latest_cmc}
+      select: {p.slug, latest_cmc}
     )
     |> Repo.all()
     |> Enum.map(fn {slug, lcd} -> {slug, lcd} end)
@@ -263,7 +263,7 @@ defmodule Sanbase.Model.Project.List do
 
   def by_slugs(slugs) when is_list(slugs) do
     projects_query()
-    |> where([p], p.coinmarketcap_id in ^slugs)
+    |> where([p], p.slug in ^slugs)
     |> Repo.all()
   end
 
@@ -291,7 +291,7 @@ defmodule Sanbase.Model.Project.List do
       where:
         fragment("lower(?)", p.name) in ^values or
           fragment("lower(?)", p.ticker) in ^values or
-          fragment("lower(?)", p.coinmarketcap_id) in ^values
+          fragment("lower(?)", p.slug) in ^values
     )
     |> Repo.all()
   end
@@ -316,8 +316,8 @@ defmodule Sanbase.Model.Project.List do
   def contract_info_map() do
     data =
       from(p in Project,
-        where: not is_nil(p.coinmarketcap_id),
-        select: {p.coinmarketcap_id, p.main_contract_address, p.token_decimals}
+        where: not is_nil(p.slug),
+        select: {p.slug, p.main_contract_address, p.token_decimals}
       )
       |> Repo.all()
 
@@ -339,7 +339,7 @@ defmodule Sanbase.Model.Project.List do
     # words is not empty
     empty? =
       MapSet.intersection(
-        MapSet.new([p.ticker, p.name, p.coinmarketcap_id] |> Enum.map(&String.downcase/1)),
+        MapSet.new([p.ticker, p.name, p.slug] |> Enum.map(&String.downcase/1)),
         words_mapset
       )
       |> Enum.empty?()

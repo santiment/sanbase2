@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ShareOfDepositsTest do
 
     ethereum =
       insert(:project, %{
-        coinmarketcap_id: "ethereum",
+        slug: "ethereum",
         ticker: "ETH",
         main_contract_address: "0x789"
       })
@@ -44,11 +44,11 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ShareOfDepositsTest do
     with_mock ShareOfDeposits,
       share_of_deposits: fn _, _, _, _ -> {:error, error} end do
       assert capture_log(fn ->
-               response = execute_query(context, context.token.coinmarketcap_id)
+               response = execute_query(context, context.token.slug)
                result = parse_response(response)
                assert result == nil
              end) =~
-               graphql_error_msg("Share of Deposits", context.token.coinmarketcap_id, error)
+               graphql_error_msg("Share of Deposits", context.token.slug, error)
     end
   end
 
@@ -60,11 +60,11 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ShareOfDepositsTest do
               share_of_deposits: fn _, _, _, _ ->
                 {:error, error}
               end do
-      response = execute_query(context, context.token.coinmarketcap_id)
+      response = execute_query(context, context.token.slug)
       [first_error | _] = json_response(response, 200)["errors"]
 
       assert first_error["message"] =~
-               graphql_error_msg("Share of Deposits", context.token.coinmarketcap_id, error)
+               graphql_error_msg("Share of Deposits", context.token.slug, error)
     end
   end
 
@@ -73,7 +73,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ShareOfDepositsTest do
       query = """
         {
           shareOfDeposits(
-            slug: "#{context.token.coinmarketcap_id}",
+            slug: "#{context.token.slug}",
             from: "#{context.from}",
             to: "#{context.to}")
           {
@@ -105,8 +105,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ShareOfDepositsTest do
       {Erc20ShareOfDeposits, [:passthrough],
        first_datetime: fn _ -> {:ok, from_iso8601!("2019-01-01T00:00:00Z")} end}
     ]) do
-      query =
-        share_of_deposits_query(context.token.coinmarketcap_id, context.from, context.to, "")
+      query = share_of_deposits_query(context.token.slug, context.from, context.to, "")
 
       context.conn
       |> post("/graphql", query_skeleton(query, "shareOfDeposits"))
@@ -128,8 +127,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ShareOfDepositsTest do
       {EthShareOfDeposits, [:passthrough],
        first_datetime: fn _ -> {:ok, from_iso8601!("2019-01-01T00:00:00Z")} end}
     ]) do
-      query =
-        share_of_deposits_query(context.ethereum.coinmarketcap_id, context.from, context.to, "")
+      query = share_of_deposits_query(context.ethereum.slug, context.from, context.to, "")
 
       context.conn
       |> post("/graphql", query_skeleton(query, "shareOfDeposits"))
@@ -164,7 +162,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ShareOfDepositsTest do
            }
          ]}
       end do
-      response = execute_query(context, context.token.coinmarketcap_id)
+      response = execute_query(context, context.token.slug)
       results = parse_response(response)
 
       assert_called(
@@ -215,7 +213,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ShareOfDepositsTest do
       response =
         execute_query(
           context,
-          context.ethereum.coinmarketcap_id
+          context.ethereum.slug
         )
 
       results = parse_response(response)

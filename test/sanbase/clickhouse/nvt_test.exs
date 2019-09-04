@@ -9,10 +9,10 @@ defmodule Sanbase.Clickhouse.NVTTest do
   require Sanbase.ClickhouseRepo
 
   setup do
-    project = insert(:project, %{coinmarketcap_id: "ethereum", ticker: "ETH"})
+    project = insert(:project, %{slug: "ethereum", ticker: "ETH"})
 
     [
-      slug: project.coinmarketcap_id,
+      slug: project.slug,
       from: from_iso8601!("2019-01-01T00:00:00Z"),
       to: from_iso8601!("2019-01-03T00:00:00Z"),
       interval: "1d"

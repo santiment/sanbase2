@@ -15,9 +15,9 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     setup_prices_influxdb()
 
     # Add the Projects to the Postgres
-    insert(:project, %{name: "Test project", coinmarketcap_id: "test", ticker: "TEST"})
-    insert(:project, %{name: "Bitcoin", coinmarketcap_id: "bitcoin", ticker: "BTC"})
-    insert(:project, %{name: "Ethereum", coinmarketcap_id: "ethereum", ticker: "ETH"})
+    insert(:project, %{name: "Test project", slug: "test", ticker: "TEST"})
+    insert(:project, %{name: "Bitcoin", slug: "bitcoin", ticker: "BTC"})
+    insert(:project, %{name: "Ethereum", slug: "ethereum", ticker: "ETH"})
 
     # Initialize the Influxdb state
     test_ticker_cmc_id = "TEST_test"
@@ -61,8 +61,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     currency = insert(:currency, %{code: "TEST"})
 
     # Add a random project and its ICOs
-    project =
-      insert(:project, %{name: rand_str(), coinmarketcap_id: rand_str(), ticker: rand_str(4)})
+    project = insert(:project, %{name: rand_str(), slug: rand_str(), ticker: rand_str(4)})
 
     ico1 = insert(:ico, %{project_id: project.id, end_date: date1})
     insert(:ico_currency, %{ico_id: ico1.id, currency_id: currency_eth.id, amount: 150})
@@ -71,8 +70,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     ico2 = insert(:ico, %{project_id: project.id, end_date: date2})
     insert(:ico_currency, %{ico_id: ico2.id, currency_id: currency_btc.id, amount: 200})
 
-    project_no_ico =
-      insert(:project, %{name: rand_str(), coinmarketcap_id: rand_str(), ticker: rand_str(4)})
+    project_no_ico = insert(:project, %{name: rand_str(), slug: rand_str(), ticker: rand_str(4)})
 
     [
       project: project,

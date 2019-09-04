@@ -11,9 +11,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   require Sanbase.Utils.Config, as: Config
   require Logger
 
+  alias Sanbase.Repo
   alias Sanbase.DateTimeUtils
   alias Sanbase.Model.{LatestCoinmarketcapData, Project}
-  alias Sanbase.Repo
   alias Sanbase.ExternalServices.Coinmarketcap.Ticker
   alias Sanbase.Prices.Store
 
@@ -95,19 +95,19 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     |> Repo.insert_or_update!()
   end
 
-  defp insert_or_create_project(%Ticker{id: coinmarketcap_id, name: name, symbol: ticker}) do
-    find_or_init_project(%Project{name: name, coinmarketcap_id: coinmarketcap_id, ticker: ticker})
+  defp insert_or_create_project(%Ticker{id: slug, name: name, symbol: ticker}) do
+    find_or_init_project(%Project{name: name, slug: slug, ticker: ticker})
     |> Repo.insert_or_update!()
   end
 
-  defp find_or_init_project(%Project{coinmarketcap_id: coinmarketcap_id} = project) do
-    case Project.by_slug(coinmarketcap_id) do
+  defp find_or_init_project(%Project{slug: slug} = project) do
+    case Project.by_slug(slug) do
       nil ->
         Project.changeset(project)
 
       existing_project ->
         Project.changeset(existing_project, %{
-          coinmarketcap_id: coinmarketcap_id,
+          slug: slug,
           ticker: project.ticker
         })
     end

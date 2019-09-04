@@ -15,7 +15,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
   def run() do
     local_projects_map =
       Project.List.projects()
-      |> Enum.map(fn %{coinmarketcap_id: cmc_id} = project -> {cmc_id, project} end)
+      |> Enum.map(fn %{slug: slug} = project -> {slug, project} end)
       |> Map.new()
 
     Logger.info("#{@log_tag} Started fetching logos from coinmarketcap.")
@@ -57,9 +57,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
                update_local_project(project, %{
                  logo_url: uploaded_filepath
                }) do
-          Logger.info(
-            "#{@log_tag} Successfully updated logos for project: #{project.coinmarketcap_id}"
-          )
+          Logger.info("#{@log_tag} Successfully updated logos for project: #{project.slug}")
         else
           {:logo_has_changed?, false} ->
             :ok
@@ -74,12 +72,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
   end
 
   defp logo_changed?(project, filepath) do
-    latest_cmc_data = LatestCoinmarketcapData.get_or_build(project.coinmarketcap_id)
+    latest_cmc_data = LatestCoinmarketcapData.get_or_build(project.slug)
     {:ok, file_hash} = FileHash.calculate(filepath)
 
     case latest_cmc_data.logo_hash do
       ^file_hash ->
-        Logger.info("#{@log_tag} Logo for project: #{project.coinmarketcap_id} has not changed.")
+        Logger.info("#{@log_tag} Logo for project: #{project.slug} has not changed.")
         false
 
       _ ->
@@ -87,7 +85,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
         |> LatestCoinmarketcapData.changeset(%{logo_hash: file_hash, logo_updated_at: Timex.now()})
         |> Repo.insert_or_update!()
 
-        Logger.info("#{@log_tag} Logo for project: #{project.coinmarketcap_id} has changed.")
+        Logger.info("#{@log_tag} Logo for project: #{project.slug} has changed.")
 
         true
     end

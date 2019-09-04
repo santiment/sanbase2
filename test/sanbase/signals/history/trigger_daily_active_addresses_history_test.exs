@@ -11,7 +11,7 @@ defmodule Sanbase.Signal.TriggerDailyActiveAddressesHistoryTest do
     project =
       insert(:project, %{
         ticker: "SAN",
-        coinmarketcap_id: "santiment",
+        slug: "santiment",
         main_contract_address: "0x123"
       })
 
@@ -25,7 +25,7 @@ defmodule Sanbase.Signal.TriggerDailyActiveAddressesHistoryTest do
       end do
       trigger_settings = %{
         type: "daily_active_addresses",
-        target: %{slug: project.coinmarketcap_id},
+        target: %{slug: project.slug},
         channel: "telegram",
         time_window: "2d",
         operation: %{percent_up: 200.0}
@@ -60,7 +60,7 @@ defmodule Sanbase.Signal.TriggerDailyActiveAddressesHistoryTest do
       end do
       trigger_settings = %{
         type: "daily_active_addresses",
-        target: %{slug: project.coinmarketcap_id},
+        target: %{slug: project.slug},
         channel: "telegram",
         time_window: "2d",
         operation: %{percent_up: 200.0}
@@ -95,7 +95,7 @@ defmodule Sanbase.Signal.TriggerDailyActiveAddressesHistoryTest do
       end do
       trigger_settings = %{
         type: "daily_active_addresses",
-        target: %{slug: project.coinmarketcap_id},
+        target: %{slug: project.slug},
         channel: "telegram",
         time_window: "2d",
         operation: %{percent_down: 50.0}
@@ -136,7 +136,7 @@ defmodule Sanbase.Signal.TriggerDailyActiveAddressesHistoryTest do
       end do
       trigger_settings = %{
         type: "daily_active_addresses",
-        target: %{slug: project.coinmarketcap_id},
+        target: %{slug: project.slug},
         channel: "telegram",
         time_window: "2d",
         operation: %{above: 100}
@@ -171,7 +171,7 @@ defmodule Sanbase.Signal.TriggerDailyActiveAddressesHistoryTest do
       end do
       trigger_settings = %{
         type: "daily_active_addresses",
-        target: %{slug: project.coinmarketcap_id},
+        target: %{slug: project.slug},
         channel: "telegram",
         time_window: "2d",
         operation: %{below: 40}
@@ -206,7 +206,7 @@ defmodule Sanbase.Signal.TriggerDailyActiveAddressesHistoryTest do
       end do
       trigger_settings = %{
         type: "daily_active_addresses",
-        target: %{slug: project.coinmarketcap_id},
+        target: %{slug: project.slug},
         channel: "telegram",
         time_window: "2d",
         operation: %{below: 40}

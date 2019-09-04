@@ -261,7 +261,7 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
     insert(:project, %{
       name: "Santiment",
       ticker: "SAN",
-      coinmarketcap_id: slug,
+      slug: slug,
       main_contract_address: contract_address
     })
   end

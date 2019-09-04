@@ -30,7 +30,7 @@ defmodule Sanbase.TechIndicators.PriceVolumeDifference do
           non_neg_integer()
         ) :: {:error, String.t()} | {:ok, [price_volume_diff_point()]}
   def price_volume_diff(
-        %Project{ticker: ticker, coinmarketcap_id: slug} = project,
+        %Project{ticker: ticker, slug: slug} = project,
         currency,
         from,
         to,

@@ -21,7 +21,7 @@ defmodule Sanbase.SocialDominanceTest do
   setup do
     project =
       insert(:project, %{
-        coinmarketcap_id: "ethereum",
+        slug: "ethereum",
         ticker: "ETH"
       })
 

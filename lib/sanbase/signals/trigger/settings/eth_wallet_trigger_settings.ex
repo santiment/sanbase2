@@ -145,7 +145,7 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
           {_, _, balance_change, _} = elem, payload ->
             if operation_triggered?(balance_change, settings.operation) do
               case elem do
-                {:project, %Project{coinmarketcap_id: slug} = project, balance_change, from} ->
+                {:project, %Project{slug: slug} = project, balance_change, from} ->
                   Map.put(payload, slug, payload(project, settings, balance_change, from))
 
                 {:eth_address, address, balance_change, from} ->

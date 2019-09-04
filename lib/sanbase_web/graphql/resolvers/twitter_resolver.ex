@@ -14,7 +14,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
     calculate_twitter_data(slug)
   end
 
-  def twitter_data(%Project{coinmarketcap_id: slug}, _args, _resolution) do
+  def twitter_data(%Project{slug: slug}, _args, _resolution) do
     async(fn -> calculate_twitter_data(slug) end)
   end
 

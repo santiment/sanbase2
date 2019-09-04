@@ -432,7 +432,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   defp history_price_query(project, from, to) do
     """
       {
-        historyPrice(slug: "#{project.coinmarketcap_id}", from: "#{from}", to: "#{to}", interval: "30d"){
+        historyPrice(slug: "#{project.slug}", from: "#{from}", to: "#{to}", interval: "30d"){
           datetime
           priceUsd
         }

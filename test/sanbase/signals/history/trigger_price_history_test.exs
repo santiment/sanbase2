@@ -55,7 +55,7 @@ defmodule Sanbase.Signal.TriggerPriceHistoryTest do
 
       insert(:project, %{
         ticker: "SAN",
-        coinmarketcap_id: "santiment",
+        slug: "santiment",
         main_contract_address: "0x123"
       })
 
@@ -127,7 +127,7 @@ defmodule Sanbase.Signal.TriggerPriceHistoryTest do
 
       insert(:project, %{
         ticker: "SAN",
-        coinmarketcap_id: "santiment",
+        slug: "santiment",
         main_contract_address: "0x123"
       })
 

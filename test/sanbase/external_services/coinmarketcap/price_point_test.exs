@@ -21,7 +21,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePointTest do
 
     project = %Project{
       ticker: "SAN",
-      coinmarketcap_id: "santiment"
+      slug: "santiment"
     }
 
     expectation = %Measurement{

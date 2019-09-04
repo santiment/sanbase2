@@ -25,13 +25,13 @@ defmodule Sanbase.Project.AvailableMetricsTest do
   test "btcBalance present only when there are btc addresses" do
     project_with_btc =
       insert(:project, %{
-        coinmarketcap_id: rand_str(),
+        slug: rand_str(),
         btc_addresses: [build(:project_btc_address)]
       })
 
     project_without_btc =
       insert(:project, %{
-        coinmarketcap_id: rand_str(),
+        slug: rand_str(),
         btc_addresses: []
       })
 
@@ -42,13 +42,13 @@ defmodule Sanbase.Project.AvailableMetricsTest do
   test "ethBalance present only when there are eth addresses" do
     project_with_eth =
       insert(:project, %{
-        coinmarketcap_id: rand_str(),
+        slug: rand_str(),
         eth_addresses: [build(:project_eth_address)]
       })
 
     project_without_eth =
       insert(:project, %{
-        coinmarketcap_id: rand_str(),
+        slug: rand_str(),
         eth_addresses: []
       })
 
@@ -59,7 +59,7 @@ defmodule Sanbase.Project.AvailableMetricsTest do
   test "ethereum has specific metrics" do
     project =
       insert(:project, %{
-        coinmarketcap_id: "ethereum",
+        slug: "ethereum",
         github_link: "https://github.com/ethereum",
         eth_addresses: [build(:project_eth_address)]
       })
@@ -73,7 +73,7 @@ defmodule Sanbase.Project.AvailableMetricsTest do
   test "bitcoin has specific metrics" do
     project =
       insert(:project, %{
-        coinmarketcap_id: "bitcoin",
+        slug: "bitcoin",
         github_link: "https://github.com/bitcoin"
       })
 
@@ -89,7 +89,7 @@ defmodule Sanbase.Project.AvailableMetricsTest do
     # Override default values
     project =
       insert(:project, %{
-        coinmarketcap_id: "santiment",
+        slug: "santiment",
         github_link: nil,
         infrastructure: nil,
         main_contract_address: nil,

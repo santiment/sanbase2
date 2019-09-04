@@ -150,7 +150,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
         end do
         result =
           TrendingWords.get_project_trending_history(
-            project.coinmarketcap_id,
+            project.slug,
             from_iso8601!(dt1_str),
             from_iso8601!(dt3_str),
             "1d",
@@ -175,7 +175,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
         query: fn _, _ -> {:error, "Something went wrong"} end do
         result =
           TrendingWords.get_project_trending_history(
-            project.coinmarketcap_id,
+            project.slug,
             from_iso8601!(dt1_str),
             from_iso8601!(dt2_str),
             "1h",

@@ -7,10 +7,10 @@ defmodule Sanbase.Clickhouse.RealizedValueTest do
   require Sanbase.ClickhouseRepo
 
   setup do
-    project = insert(:project, %{coinmarketcap_id: "santiment", ticker: "SAN"})
+    project = insert(:project, %{slug: "santiment", ticker: "SAN"})
 
     [
-      slug: project.coinmarketcap_id,
+      slug: project.slug,
       from: from_iso8601!("2019-01-01T00:00:00Z"),
       to: from_iso8601!("2019-01-03T00:00:00Z"),
       interval: "1d"

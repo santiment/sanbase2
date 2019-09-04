@@ -15,11 +15,11 @@ defmodule SanbaseWeb.Graphql.Clickhouse.NVTTest do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
     conn = setup_jwt_auth(build_conn(), user)
 
-    project = insert(:project, %{coinmarketcap_id: "santiment", ticker: "SAN"})
+    project = insert(:project, %{slug: "santiment", ticker: "SAN"})
 
     %{
       conn: conn,
-      slug: project.coinmarketcap_id,
+      slug: project.slug,
       from: from_iso8601!("2019-01-01T00:00:00Z"),
       to: from_iso8601!("2019-01-03T00:00:00Z"),
       interval: "1d"

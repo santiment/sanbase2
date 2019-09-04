@@ -116,7 +116,7 @@ defmodule Sanbase.ExAdmin.Model.Project do
           collection: from(i in Infrastructure, order_by: i.code) |> Sanbase.Repo.all()
         )
 
-        input(project, :coinmarketcap_id)
+        input(project, :slug)
         input(project, :token_decimals)
         input(project, :token_supply)
         input(project, :description)
@@ -157,8 +157,8 @@ defmodule Sanbase.ExAdmin.Model.Project do
 
   defp set_infrastructure_default(%Project{} = project), do: project
 
-  defp add_tag(%Project{ticker: ticker, coinmarketcap_id: coinmarketcap_id} = _project)
-       when not is_nil(ticker) and not is_nil(coinmarketcap_id) do
+  defp add_tag(%Project{ticker: ticker, slug: slug} = _project)
+       when not is_nil(ticker) and not is_nil(slug) do
     %Tag{name: ticker}
     |> Tag.changeset()
     |> Repo.insert()

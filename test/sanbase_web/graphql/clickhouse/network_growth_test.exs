@@ -16,7 +16,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.NtworkGrowthTest do
 
     [
       project: project,
-      slug: project.coinmarketcap_id,
+      slug: project.slug,
       contract: project.main_contract_address,
       from: from_iso8601!("2019-01-01T00:00:00Z"),
       to: from_iso8601!("2019-01-03T00:00:00Z"),

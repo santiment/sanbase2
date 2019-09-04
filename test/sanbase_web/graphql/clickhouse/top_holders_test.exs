@@ -15,11 +15,11 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
     conn = setup_jwt_auth(build_conn(), user)
 
-    project = insert(:project, %{coinmarketcap_id: "ethereum", ticker: "ETH"})
+    project = insert(:project, %{slug: "ethereum", ticker: "ETH"})
 
     [
       conn: conn,
-      slug: project.coinmarketcap_id,
+      slug: project.slug,
       contract: "ETH",
       token_decimals: 18,
       interval: "1d",

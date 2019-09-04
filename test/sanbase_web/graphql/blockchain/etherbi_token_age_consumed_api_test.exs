@@ -24,7 +24,7 @@ defmodule Sanbase.Etherbi.TokenAgeConsumedApiTest do
     %Project{
       name: "Santiment",
       ticker: ticker,
-      coinmarketcap_id: slug,
+      slug: slug,
       main_contract_address: contract_address
     }
     |> Repo.insert!()

@@ -17,7 +17,7 @@ defmodule SanbaseWeb.Graphql.TargetUserListTest do
       insert(:project, %{
         name: "Santiment",
         ticker: "SAN",
-        coinmarketcap_id: "santiment",
+        slug: "santiment",
         main_contract_address: "0x123123"
       })
 
@@ -25,7 +25,7 @@ defmodule SanbaseWeb.Graphql.TargetUserListTest do
       insert(:project, %{
         name: "Maker",
         ticker: "MKR",
-        coinmarketcap_id: "maker",
+        slug: "maker",
         main_contract_address: "0x321321321"
       })
 

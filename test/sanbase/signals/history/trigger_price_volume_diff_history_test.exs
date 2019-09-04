@@ -19,7 +19,7 @@ defmodule Sanbase.Signal.PriceVolumeDiffHistoryTest do
       cooldown: "2h",
       settings: %{
         type: "price_volume_difference",
-        target: %{slug: project.coinmarketcap_id},
+        target: %{slug: project.slug},
         channel: "telegram",
         threshold: 0.015
       }

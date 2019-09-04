@@ -77,8 +77,8 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
       p in Project,
       preload: [:latest_coinmarketcap_data],
       where:
-        not is_nil(p.coinmarketcap_id) and
-          (p.coinmarketcap_id == "ethereum" or not is_nil(p.main_contract_address)) and
+        not is_nil(p.slug) and
+          (p.slug == "ethereum" or not is_nil(p.main_contract_address)) and
           not is_nil(p.token_decimals) and not is_nil(p.name)
     )
     |> Repo.all()
@@ -227,7 +227,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     )
   end
 
-  defp signal_trigger_percent(%Project{coinmarketcap_id: "ethereum"}) do
+  defp signal_trigger_percent(%Project{slug: "ethereum"}) do
     {trigger, ""} = Config.get(:ethereum_signal_trigger_percent) |> Float.parse()
     trigger
   end

@@ -480,7 +480,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     end
 
     test "create insight with tags", %{conn: conn} do
-      Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
+      Repo.insert!(%Project{name: "Santiment", ticker: "SAN", slug: "santiment"})
       tag = Repo.insert!(%Tag{name: "SAN"})
 
       mutation = """

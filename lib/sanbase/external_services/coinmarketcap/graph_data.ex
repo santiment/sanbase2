@@ -36,51 +36,47 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     end
   end
 
-  def fetch_first_datetime(coinmarketcap_id) do
-    all_time_project_price_points(coinmarketcap_id)
+  def fetch_first_datetime(slug) do
+    all_time_project_price_points(slug)
     |> List.first()
     |> case do
       %PricePoint{datetime: datetime} ->
-        Logger.info("[CMC] Fetched first datetime for #{coinmarketcap_id}: " <> inspect(datetime))
+        Logger.info("[CMC] Fetched first datetime for #{slug}: " <> inspect(datetime))
         datetime
 
       _ ->
-        Logger.warn(
-          "[CMC] Cannot fetch first datetime from coinmarketcap for #{coinmarketcap_id}"
-        )
+        Logger.warn("[CMC] Cannot fetch first datetime from coinmarketcap for #{slug}")
 
         nil
     end
   end
 
   @spec fetch_and_store_prices(%Project{}, any()) :: :ok
-  def fetch_and_store_prices(%Project{coinmarketcap_id: coinmarketcap_id}, nil) do
+  def fetch_and_store_prices(%Project{slug: slug}, nil) do
     Logger.warn(
-      "[CMC] Trying to fetch and store prices for project with coinmarketcap_id #{
-        coinmarketcap_id
-      } but the last_fetched_datetime is nil"
+      "[CMC] Trying to fetch and store prices for project with slug #{slug} but the last_fetched_datetime is nil"
     )
 
     :ok
   end
 
   def fetch_and_store_prices(
-        %Project{coinmarketcap_id: coinmarketcap_id} = project,
+        %Project{slug: slug} = project,
         last_fetched_datetime
       ) do
     Logger.info(
-      "[CMC] Fetching and storing prices for project with coinmarketcap id #{coinmarketcap_id} with last fetched datetime " <>
+      "[CMC] Fetching and storing prices for project with coinmarketcap id #{slug} with last fetched datetime " <>
         inspect(last_fetched_datetime)
     )
 
-    fetch_price_stream(coinmarketcap_id, last_fetched_datetime, DateTime.utc_now())
+    fetch_price_stream(slug, last_fetched_datetime, DateTime.utc_now())
     |> Enum.map(fn {stream, interval} -> {stream |> Enum.map(& &1), interval} end)
     |> Enum.each(&process_price_list(&1, project))
   end
 
-  def fetch_price_stream(coinmarketcap_id, from_datetime, to_datetime) do
+  def fetch_price_stream(slug, from_datetime, to_datetime) do
     day_ranges(from_datetime, to_datetime)
-    |> Stream.map(&extract_price_points_for_interval(coinmarketcap_id, &1))
+    |> Stream.map(&extract_price_points_for_interval(slug, &1))
   end
 
   def fetch_and_store_marketcap_total(nil) do
@@ -137,9 +133,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
   defp process_price_list(
          {price_list, interval},
-         %Project{coinmarketcap_id: coinmarketcap_id} = project
+         %Project{slug: slug} = project
        ) do
-    Logger.info("[CMC] Processing price stream for #{coinmarketcap_id}")
+    Logger.info("[CMC] Processing price stream for #{slug}")
 
     # Store each data point and the information when it was last updated
 
@@ -208,29 +204,23 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     {result, interval}
   end
 
-  defp all_time_project_price_points(coinmarketcap_id) do
-    all_time_project_url(coinmarketcap_id)
+  defp all_time_project_price_points(slug) do
+    all_time_project_url(slug)
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
         wait_rate_limit(resp)
-        all_time_project_price_points(coinmarketcap_id)
+        all_time_project_price_points(slug)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
 
       {:ok, %Tesla.Env{status: status}} ->
-        Logger.error(
-          "[CMC] Error fetching prices for #{coinmarketcap_id}. Status code: #{status}"
-        )
-
+        Logger.error("[CMC] Error fetching prices for #{slug}. Status code: #{status}")
         Process.exit(self(), :normal)
 
       {:error, error} ->
-        Logger.error(
-          "[CMC] Error fetching prices for #{coinmarketcap_id}. Reason: #{inspect(error)}"
-        )
-
+        Logger.error("[CMC] Error fetching prices for #{slug}. Reason: #{inspect(error)}")
         Process.exit(self(), :normal)
     end
   end
@@ -321,15 +311,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
   end
 
   defp extract_price_points_for_interval(
-         coinmarketcap_id,
+         slug,
          {start_interval_sec, end_interval_sec} = interval
        ) do
-    Logger.info(
-      "[CMC] Extracting price points for #{coinmarketcap_id} and interval #{inspect(interval)}"
-    )
+    Logger.info("[CMC] Extracting price points for #{slug} and interval #{inspect(interval)}")
 
     project_interval_url(
-      coinmarketcap_id,
+      slug,
       start_interval_sec * 1000,
       end_interval_sec * 1000
     )
@@ -337,22 +325,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
         wait_rate_limit(resp)
-        extract_price_points_for_interval(coinmarketcap_id, interval)
+        extract_price_points_for_interval(slug, interval)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points(interval)
 
       {:ok, %Tesla.Env{status: status}} ->
-        Logger.error(
-          "[CMC] Error fetching graph data for #{coinmarketcap_id}. Status code: #{status}"
-        )
+        Logger.error("[CMC] Error fetching graph data for #{slug}. Status code: #{status}")
 
         Process.exit(self(), :normal)
 
       {:error, error} ->
-        Logger.error(
-          "[CMC] Error fetching graph data for #{coinmarketcap_id}. Reason: #{inspect(error)}"
-        )
+        Logger.error("[CMC] Error fetching graph data for #{slug}. Reason: #{inspect(error)}")
 
         Process.exit(self(), :normal)
     end
@@ -386,12 +370,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     # Also if it's too big it will time out and kill the task
   end
 
-  defp all_time_project_url(coinmarketcap_id) do
-    "/currencies/#{coinmarketcap_id}/"
+  defp all_time_project_url(slug) do
+    "/currencies/#{slug}/"
   end
 
-  defp project_interval_url(coinmarketcap_id, from_timestamp, to_timestamp) do
-    "/currencies/#{coinmarketcap_id}/#{from_timestamp}/#{to_timestamp}/"
+  defp project_interval_url(slug, from_timestamp, to_timestamp) do
+    "/currencies/#{slug}/#{from_timestamp}/#{to_timestamp}/"
   end
 
   defp all_time_total_market_url() do

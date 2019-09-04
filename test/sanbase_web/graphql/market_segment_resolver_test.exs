@@ -28,7 +28,7 @@ defmodule SanbaseWeb.Graphql.MarketSegmentResolverTest do
       projects: [
         %Project{
           name: "Foo Project",
-          coinmarketcap_id: "fooproject",
+          slug: "fooproject",
           main_contract_address: contract_address,
           infrastructure_id: eth_infrastructure.id
         }
@@ -36,7 +36,7 @@ defmodule SanbaseWeb.Graphql.MarketSegmentResolverTest do
     }
     |> Repo.insert!()
 
-    # Missing coinmarketcap_id - won't appear in erc20 and currency market segments
+    # Missing slug - won't appear in erc20 and currency market segments
     %MarketSegment{
       name: "Bar",
       projects: [
@@ -55,7 +55,7 @@ defmodule SanbaseWeb.Graphql.MarketSegmentResolverTest do
       projects: [
         %Project{
           name: "Baz Project",
-          coinmarketcap_id: "bazproject",
+          slug: "bazproject",
           infrastructure_id: eth_infrastructure.id
         }
       ]
@@ -68,7 +68,7 @@ defmodule SanbaseWeb.Graphql.MarketSegmentResolverTest do
       projects: [
         %Project{
           name: "Qux Project",
-          coinmarketcap_id: "quxproject",
+          slug: "quxproject",
           main_contract_address: contract_address,
           infrastructure_id: btc_infrastructure.id
         }

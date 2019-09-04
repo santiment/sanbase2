@@ -11,12 +11,12 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionTest do
     coin = insert(:market_segment, %{name: "coin"})
     mineable = insert(:market_segment, %{name: "mineable"})
 
-    insert(:project, %{ticker: "TUSD", coinmarketcap_id: "tether", market_segment: stablecoin})
+    insert(:project, %{ticker: "TUSD", slug: "tether", market_segment: stablecoin})
     insert(:latest_cmc_data, %{coinmarketcap_id: "tether", rank: 4, volume_usd: 3_000_000_000})
 
     insert(:project, %{
       ticker: "DAI",
-      coinmarketcap_id: "dai",
+      slug: "dai",
       market_segment: stablecoin,
       infrastructure: infr_eth,
       main_contract_address: "0x" <> Sanbase.TestUtils.random_string()
@@ -24,18 +24,18 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionTest do
 
     insert(:latest_cmc_data, %{coinmarketcap_id: "dai", rank: 40, volume_usd: 15_000_000})
 
-    insert(:project, %{ticker: "ETH", coinmarketcap_id: "ethereum", market_segment: mineable})
+    insert(:project, %{ticker: "ETH", slug: "ethereum", market_segment: mineable})
     insert(:latest_cmc_data, %{coinmarketcap_id: "ethereum", rank: 2, volume_usd: 3_000_000_000})
 
-    insert(:project, %{ticker: "BTC", coinmarketcap_id: "bitcoin", market_segment: mineable})
+    insert(:project, %{ticker: "BTC", slug: "bitcoin", market_segment: mineable})
     insert(:latest_cmc_data, %{coinmarketcap_id: "bitcoin", rank: 1, volume_usd: 15_000_000_000})
 
-    insert(:project, %{ticker: "XRP", coinmarketcap_id: "ripple", market_segment: mineable})
+    insert(:project, %{ticker: "XRP", slug: "ripple", market_segment: mineable})
     insert(:latest_cmc_data, %{coinmarketcap_id: "ripple", rank: 3, volume_usd: 1_000_000_000})
 
     insert(:project, %{
       ticker: "MKR",
-      coinmarketcap_id: "maker",
+      slug: "maker",
       market_segment: coin,
       infrastructure: infr_eth,
       main_contract_address: "0x" <> Sanbase.TestUtils.random_string()
@@ -45,7 +45,7 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionTest do
 
     insert(:project, %{
       ticker: "SAN",
-      coinmarketcap_id: "santiment",
+      slug: "santiment",
       market_segment: coin,
       infrastructure: infr_eth,
       main_contract_address: "0x" <> Sanbase.TestUtils.random_string()

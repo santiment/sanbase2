@@ -70,12 +70,12 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
         )
         |> case do
           {:ok, [[_dt, first_usd_price, last_usd_price]]} ->
-            {project.coinmarketcap_id,
+            {project.slug,
              {:ok,
               {percent_change(first_usd_price, last_usd_price), first_usd_price, last_usd_price}}}
 
           error ->
-            {project.coinmarketcap_id, {:error, error}}
+            {project.slug, {:error, error}}
         end
       end
     )

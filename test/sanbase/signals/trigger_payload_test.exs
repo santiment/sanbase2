@@ -33,7 +33,7 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
 
     trigger_settings = %{
       type: "daily_active_addresses",
-      target: %{slug: project.coinmarketcap_id},
+      target: %{slug: project.slug},
       channel: "telegram",
       time_window: "1d",
       operation: %{above: 5}
@@ -51,7 +51,7 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
 
     with_mocks([
       {DailyActiveAddressesSettings, [:passthrough],
-       get_data: fn _ -> [{project.coinmarketcap_id, daily_active_addresses}] end},
+       get_data: fn _ -> [{project.slug, daily_active_addresses}] end},
       {Sanbase.Telegram, [:passthrough],
        send_message: fn _user, text ->
          send(self_pid, {:telegram_to_self, text})

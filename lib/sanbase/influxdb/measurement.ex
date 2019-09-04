@@ -5,7 +5,7 @@ defmodule Sanbase.Influxdb.Measurement do
   defstruct [:timestamp, :fields, :tags, :name]
 
   alias __MODULE__
-  alias Sanbase.ExternalServices.Coinmarketcap.Ticker
+  alias Sanbase.ExternalServices.Coinmarketcap
   alias Sanbase.Model.Project
 
   @doc ~s"""
@@ -48,12 +48,12 @@ defmodule Sanbase.Influxdb.Measurement do
     DateTime.from_unix!(ts, :nanosecond)
   end
 
-  def name_from(%Sanbase.Model.Project{ticker: ticker, coinmarketcap_id: coinmarketcap_id})
-      when nil != ticker and nil != coinmarketcap_id do
-    ticker <> "_" <> coinmarketcap_id
+  def name_from(%Sanbase.Model.Project{ticker: ticker, slug: slug})
+      when nil != ticker and nil != slug do
+    ticker <> "_" <> slug
   end
 
-  def name_from(%Ticker{symbol: ticker, id: coinmarketcap_id})
+  def name_from(%Coinmarketcap.Ticker{symbol: ticker, id: coinmarketcap_id})
       when nil != ticker and nil != coinmarketcap_id do
     ticker <> "_" <> coinmarketcap_id
   end

@@ -9,7 +9,7 @@ defmodule Sanbase.Clickhouse.DailyActiveDepositsTest do
   setup do
     project =
       insert(:project, %{
-        coinmarketcap_id: "santiment",
+        slug: "santiment",
         ticker: "SAN",
         main_contract_address: "0x123"
       })

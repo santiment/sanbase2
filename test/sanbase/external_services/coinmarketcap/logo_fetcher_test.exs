@@ -13,12 +13,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
 
   describe "when successful" do
     setup do
-      bitcoin = insert(:project, %{ticker: "BTC", coinmarketcap_id: "bitcoin"})
-      ethereum = insert(:project, %{ticker: "ETH", coinmarketcap_id: "ethereum"})
+      bitcoin = insert(:project, %{ticker: "BTC", slug: "bitcoin"})
+      ethereum = insert(:project, %{ticker: "ETH", slug: "ethereum"})
 
       info_url =
         Config.module_get(Sanbase.ExternalServices.Coinmarketcap, :api_url) <>
-          "v1/cryptocurrency/info?slug=#{bitcoin.coinmarketcap_id},#{ethereum.coinmarketcap_id}"
+          "v1/cryptocurrency/info?slug=#{bitcoin.slug},#{ethereum.slug}"
 
       mock(fn
         %{method: :get, url: ^info_url} ->
@@ -43,17 +43,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
       file_store_path = "/tmp/sanbase/filestore-test"
 
       assert Repo.get(Project, context.ethereum.id).logo_url =~
-               "#{file_store_path}/logo64_#{context.ethereum.coinmarketcap_id}.png"
+               "#{file_store_path}/logo64_#{context.ethereum.slug}.png"
     end
 
     test "saves logo hash", context do
       LogoFetcher.run()
 
-      latest_bitcoin_cmc_data =
-        LatestCoinmarketcapData.by_coinmarketcap_id(context.bitcoin.coinmarketcap_id)
+      latest_bitcoin_cmc_data = LatestCoinmarketcapData.by_coinmarketcap_id(context.bitcoin.slug)
 
       latest_ethereum_cmc_data =
-        LatestCoinmarketcapData.by_coinmarketcap_id(context.ethereum.coinmarketcap_id)
+        LatestCoinmarketcapData.by_coinmarketcap_id(context.ethereum.slug)
 
       assert latest_bitcoin_cmc_data.logo_hash ==
                "480ab7007e9f1b19e932807a96d668508b4ed1b26061a9f1baf98f007f9553be"
@@ -64,21 +63,21 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
 
     test "will upload new logos when logo hash has changed", context do
       insert(:latest_cmc_data, %{
-        coinmarketcap_id: context.bitcoin.coinmarketcap_id,
+        coinmarketcap_id: context.bitcoin.slug,
         logo_hash: "old_file_hash",
         logo_updated_at: Timex.shift(Timex.now(), days: -1)
       })
 
       LogoFetcher.run()
 
-      assert LatestCoinmarketcapData.get_or_build(context.bitcoin.coinmarketcap_id).logo_hash ==
+      assert LatestCoinmarketcapData.get_or_build(context.bitcoin.slug).logo_hash ==
                "480ab7007e9f1b19e932807a96d668508b4ed1b26061a9f1baf98f007f9553be"
     end
   end
 
   describe "when unsuccessful" do
     test "can handle invalid logo links" do
-      bitcoin = insert(:project, %{ticker: "BTC", coinmarketcap_id: "bitcoin"})
+      bitcoin = insert(:project, %{ticker: "BTC", slug: "bitcoin"})
 
       info_url =
         Config.module_get(Sanbase.ExternalServices.Coinmarketcap, :api_url) <>

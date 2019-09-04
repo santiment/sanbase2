@@ -29,16 +29,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
 
   use Tesla
 
-  require Logger
-  require Sanbase.Utils.Config, as: Config
-
   import Sanbase.Math, only: [to_integer: 1, to_float: 1]
 
   alias Sanbase.DateTimeUtils
-  # TODO: Change after switching over to only this cmc
-  alias Sanbase.ExternalServices.Coinmarketcap.{PricePoint, TickerFetcher}
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.ExternalServices.Coinmarketcap
+  alias Sanbase.ExternalServices.Coinmarketcap.{PricePoint, TickerFetcher}
+
+  require Logger
+  require Sanbase.Utils.Config, as: Config
 
   plug(Sanbase.ExternalServices.RateLimiting.Middleware, name: :api_coinmarketcap_rate_limiter)
 
@@ -54,13 +53,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
   plug(Tesla.Middleware.Compression)
   plug(Tesla.Middleware.Logger)
 
-  alias __MODULE__, as: Ticker
-
   @doc ~s"""
   Fetch the current data for all top N projects.
   Parse the binary received from the CMC response to a list of tickers
   """
-  @spec fetch_data() :: {:error, String.t()} | {:ok, [%Ticker{}]}
+  @spec fetch_data() :: {:error, String.t()} | {:ok, [%__MODULE__{}]}
   def fetch_data() do
     projects_number = Config.module_get(TickerFetcher, :projects_number) |> String.to_integer()
 
@@ -94,7 +91,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
     end
   end
 
-  @spec parse_json(String.t()) :: [%Ticker{}] | no_return
+  @spec parse_json(String.t()) :: [%__MODULE__{}] | no_return
   defp parse_json(json) do
     %{"data" => data} =
       json
@@ -131,7 +128,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
         }
       } = project_data
 
-      %Ticker{
+      %__MODULE__{
         id: slug,
         name: name,
         symbol: symbol,
@@ -148,12 +145,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
         percent_change_7d: percent_change_7d_usd
       }
     end)
-    |> Enum.filter(fn %Ticker{last_updated: last_updated} -> last_updated end)
+    |> Enum.filter(fn %__MODULE__{last_updated: last_updated} -> last_updated end)
   end
 
-  @spec convert_for_importing(%Ticker{}) :: %Measurement{}
+  @spec convert_for_importing(%__MODULE__{}) :: %Measurement{}
   def convert_for_importing(
-        %Ticker{
+        %__MODULE__{
           last_updated: last_updated,
           price_btc: price_btc,
           price_usd: price_usd,

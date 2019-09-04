@@ -12,7 +12,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiEthSpentOverTimeTest do
   setup do
     ticker = "TESTXYZ"
 
-    p = insert(:project, %{name: "Santiment", ticker: ticker, coinmarketcap_id: "santiment"})
+    p = insert(:project, %{name: "Santiment", ticker: ticker, slug: "santiment"})
     insert(:project_eth_address, %{project_id: p.id})
     insert(:project_eth_address, %{project_id: p.id})
 

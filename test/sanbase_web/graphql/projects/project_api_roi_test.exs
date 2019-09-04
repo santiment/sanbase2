@@ -14,7 +14,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
     setup_prices_influxdb()
 
     %Project{}
-    |> Project.changeset(%{name: "Ethereum", ticker: "ETH", coinmarketcap_id: "ethereum"})
+    |> Project.changeset(%{name: "Ethereum", ticker: "ETH", slug: "ethereum"})
     |> Repo.insert!()
 
     date1 = "2017-08-19"
@@ -36,16 +36,16 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
       }
     ])
 
-    cmc_id = "TEST_ID"
+    slug = "TEST_ID"
 
     project =
       %Project{}
-      |> Project.changeset(%{name: "Project", ticker: "TEST", coinmarketcap_id: cmc_id})
+      |> Project.changeset(%{name: "Project", ticker: "TEST", slug: slug})
       |> Repo.insert!()
 
     %LatestCoinmarketcapData{}
     |> LatestCoinmarketcapData.changeset(%{
-      coinmarketcap_id: cmc_id,
+      coinmarketcap_id: slug,
       price_usd: 50,
       available_supply: 500,
       update_time: Timex.now()

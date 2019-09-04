@@ -14,7 +14,7 @@ defmodule Sanbase.Clickhouse.TokenCirculationApiTest do
 
     slug = "santiment"
     ticker = "SAN"
-    insert(:project, %{coinmarketcap_id: slug, ticker: ticker})
+    insert(:project, %{slug: slug, ticker: ticker})
 
     datetime1 = DateTime.from_naive!(~N[2017-05-13 00:00:00], "Etc/UTC")
     datetime2 = DateTime.from_naive!(~N[2017-05-14 00:00:00], "Etc/UTC")

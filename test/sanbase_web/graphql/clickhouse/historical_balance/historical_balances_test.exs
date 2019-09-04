@@ -13,16 +13,16 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
 
   @eth_decimals 1_000_000_000_000_000_000
   setup do
-    project_without_contract = insert(:project, %{coinmarketcap_id: "someid1"})
+    project_without_contract = insert(:project, %{slug: "someid1"})
 
     project_with_contract =
       insert(:project, %{
         main_contract_address: "0x123",
-        coinmarketcap_id: "someid2",
+        slug: "someid2",
         token_decimals: 18
       })
 
-    insert(:project, %{coinmarketcap_id: "ethereum", ticker: "ETH"})
+    insert(:project, %{slug: "ethereum", ticker: "ETH"})
 
     [
       project_with_contract: project_with_contract,
@@ -197,7 +197,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       end do
       query =
         historical_balances_query(
-          context.project_with_contract.coinmarketcap_id,
+          context.project_with_contract.slug,
           context.address,
           context.from,
           context.to,
@@ -228,7 +228,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
   test "historical balances with project without contract", context do
     query =
       historical_balances_query(
-        context.project_without_contract.coinmarketcap_id,
+        context.project_without_contract.slug,
         context.address,
         context.from,
         context.to,
@@ -261,7 +261,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       end do
       query =
         historical_balances_query(
-          context.project_with_contract.coinmarketcap_id,
+          context.project_with_contract.slug,
           context.address,
           context.from,
           context.to,

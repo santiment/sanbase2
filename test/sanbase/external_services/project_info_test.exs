@@ -11,7 +11,7 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
   test "creating project info from a project" do
     project =
       %Project{
-        coinmarketcap_id: "coinmarketcap_id",
+        slug: "slug",
         name: "Name",
         website_link: "website.link.com",
         email: "email@link.com",
@@ -34,7 +34,7 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
     |> Repo.insert!()
 
     expected_project_info = %ProjectInfo{
-      coinmarketcap_id: "coinmarketcap_id",
+      slug: "slug",
       name: "Name",
       website_link: "website.link.com",
       email: "email@link.com",
@@ -57,14 +57,14 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
 
   test "updating project info if there is no ico attached to it" do
     project =
-      %Project{coinmarketcap_id: "santiment", name: "Santiment"}
+      %Project{slug: "santiment", name: "Santiment"}
       |> Repo.insert!()
 
     {:ok, project} =
       ProjectInfo.update_project(
         %ProjectInfo{
           name: "Santiment",
-          coinmarketcap_id: "santiment",
+          slug: "santiment",
           github_link: "https://github.com/santiment",
           main_contract_address: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098",
           contract_block_number: 3_972_935,
@@ -83,7 +83,7 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
 
   test "updating project info if there is ico attached to it" do
     project =
-      %Project{coinmarketcap_id: "santiment", name: "Santiment"}
+      %Project{slug: "santiment", name: "Santiment"}
       |> Repo.insert!()
 
     ico =
@@ -94,7 +94,7 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
       ProjectInfo.update_project(
         %ProjectInfo{
           name: "Santiment",
-          coinmarketcap_id: "santiment",
+          slug: "santiment",
           github_link: "https://github.com/santiment",
           main_contract_address: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098",
           contract_block_number: 3_972_935
@@ -113,14 +113,14 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
     ticker = "SAN"
 
     project =
-      %Project{coinmarketcap_id: "santiment", name: "Santiment"}
+      %Project{slug: "santiment", name: "Santiment"}
       |> Repo.insert!()
 
     {:ok, project} =
       ProjectInfo.update_project(
         %ProjectInfo{
           name: "Santiment",
-          coinmarketcap_id: "santiment",
+          slug: "santiment",
           ticker: "SAN"
         },
         project
@@ -137,14 +137,14 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
     |> Repo.insert!()
 
     project =
-      %Project{coinmarketcap_id: "santiment", name: "Santiment", ticker: "OLD_TICKR"}
+      %Project{slug: "santiment", name: "Santiment", ticker: "OLD_TICKR"}
       |> Repo.insert!()
 
     assert capture_log(fn ->
              ProjectInfo.update_project(
                %ProjectInfo{
                  name: "Santiment",
-                 coinmarketcap_id: "santiment",
+                 slug: "santiment",
                  ticker: "SAN"
                },
                project

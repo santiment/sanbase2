@@ -24,7 +24,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentUpChangeTest do
     Sanbase.Factory.insert(:project, %{
       name: "Santiment",
       ticker: "SAN",
-      coinmarketcap_id: "santiment",
+      slug: "santiment",
       main_contract_address: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
     })
 

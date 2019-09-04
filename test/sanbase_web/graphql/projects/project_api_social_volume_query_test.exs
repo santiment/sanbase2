@@ -14,11 +14,11 @@ defmodule SanbaseWeb.Graphql.ProjectApiSocialVolumeQuery do
 
     expected_result = [
       %{
-        "slug" => p1.coinmarketcap_id,
+        "slug" => p1.slug,
         "socialVolumeQuery" => Project.SocialVolumeQuery.default_query(p1)
       },
       %{
-        "slug" => p2.coinmarketcap_id,
+        "slug" => p2.slug,
         "socialVolumeQuery" => Project.SocialVolumeQuery.default_query(p2)
       }
     ]
@@ -35,11 +35,11 @@ defmodule SanbaseWeb.Graphql.ProjectApiSocialVolumeQuery do
 
     expected_result = [
       %{
-        "slug" => p1.coinmarketcap_id,
+        "slug" => p1.slug,
         "socialVolumeQuery" => "something"
       },
       %{
-        "slug" => p2.coinmarketcap_id,
+        "slug" => p2.slug,
         "socialVolumeQuery" => "something else"
       }
     ]

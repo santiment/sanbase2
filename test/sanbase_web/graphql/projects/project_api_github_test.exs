@@ -35,7 +35,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
       total_dev_activity: fn _, _, _ ->
         {:ok, [{org, 300}]}
       end do
-      result = avg_dev_activity(context.conn, project.coinmarketcap_id)
+      result = avg_dev_activity(context.conn, project.slug)
 
       expected = %{"data" => %{"projectBySlug" => %{"averageDevActivity" => 10.0}}}
       assert result == expected
@@ -50,7 +50,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
       total_dev_activity: fn _, _, _ ->
         {:ok, [{org1, 300}, {org2, 600}]}
       end do
-      result = avg_dev_activity(context.conn, project.coinmarketcap_id)
+      result = avg_dev_activity(context.conn, project.slug)
 
       expected = %{"data" => %{"projectBySlug" => %{"averageDevActivity" => 30.0}}}
       assert result == expected
@@ -65,7 +65,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
       total_dev_activity: fn _, _, _ ->
         {:ok, []}
       end do
-      result = avg_dev_activity(context.conn, project.coinmarketcap_id)
+      result = avg_dev_activity(context.conn, project.slug)
 
       expected = %{"data" => %{"projectBySlug" => %{"averageDevActivity" => nil}}}
       assert result == expected
@@ -80,7 +80,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
       total_dev_activity: fn _, _, _ ->
         {:ok, []}
       end do
-      result = avg_dev_activity(context.conn, project.coinmarketcap_id)
+      result = avg_dev_activity(context.conn, project.slug)
 
       expected = %{"data" => %{"projectBySlug" => %{"averageDevActivity" => 0}}}
       assert result == expected
@@ -99,8 +99,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
            %{datetime: context.dt3, activity: 300}
          ]}
       end do
-      result =
-        dev_activity(context.conn, project.coinmarketcap_id, context.dt1, context.dt2, "1d")
+      result = dev_activity(context.conn, project.slug, context.dt1, context.dt2, "1d")
 
       expected = %{
         "data" => %{
@@ -128,8 +127,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
            %{datetime: context.dt3, activity: 300}
          ]}
       end do
-      result =
-        dev_activity(context.conn, project.coinmarketcap_id, context.dt1, context.dt2, "1d")
+      result = dev_activity(context.conn, project.slug, context.dt1, context.dt2, "1d")
 
       expected = %{
         "data" => %{
@@ -152,8 +150,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
       dev_activity: fn _, _, _, _, _, _ ->
         {:ok, []}
       end do
-      result =
-        dev_activity(context.conn, project.coinmarketcap_id, context.dt1, context.dt2, "1d")
+      result = dev_activity(context.conn, project.slug, context.dt1, context.dt2, "1d")
 
       expected = %{
         "data" => %{

@@ -77,9 +77,9 @@ defmodule SanbaseWeb.Graphql.ProjectApiTest do
 
     query = """
     {
-      projectBySlug(slug: "#{project.coinmarketcap_id}") {
+      projectBySlug(slug: "#{project.slug}") {
         name
-        coinmarketcapId
+        slug
       }
     }
     """
@@ -90,7 +90,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTest do
       |> json_response(200)
 
     assert result["data"]["projectBySlug"]["name"] == project.name
-    assert result["data"]["projectBySlug"]["coinmarketcapId"] == project.coinmarketcap_id
+    assert result["data"]["projectBySlug"]["slug"] == project.slug
   end
 
   test "fetch project logos", context do
@@ -104,7 +104,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTest do
 
     query = """
     {
-      projectBySlug(slug: "#{project.coinmarketcap_id}") {
+      projectBySlug(slug: "#{project.slug}") {
         logoUrl
       }
     }
@@ -130,7 +130,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTest do
 
     query = """
     {
-      projectBySlug(slug: "#{project.coinmarketcap_id}") {
+      projectBySlug(slug: "#{project.slug}") {
         githubLinks
       }
     }
@@ -158,7 +158,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTest do
     {
       projectBySlug(slug: "#{cmc_id}") {
         name,
-        coinmarketcapId
+        slug
       }
     }
     """
@@ -180,7 +180,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTest do
     insert(:ico, %{project_id: project.id, token_usd_ico_price: Decimal.from_float(0.2)})
     insert(:ico, %{project_id: project.id, token_usd_ico_price: nil})
 
-    response = query_ico_price(context, project.coinmarketcap_id)
+    response = query_ico_price(context, project.slug)
 
     assert response["icoPrice"] == 0.2
   end
@@ -189,7 +189,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTest do
     project = insert(:random_project)
     insert(:ico, %{project_id: project.id, token_usd_ico_price: nil})
 
-    response = query_ico_price(context, project.coinmarketcap_id)
+    response = query_ico_price(context, project.slug)
 
     assert response["icoPrice"] == nil
   end
@@ -197,7 +197,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTest do
   test "fetch project ico_price when the project does not have ico record", context do
     project = insert(:random_project)
 
-    response = query_ico_price(context, project.coinmarketcap_id)
+    response = query_ico_price(context, project.slug)
 
     assert response["icoPrice"] == nil
   end

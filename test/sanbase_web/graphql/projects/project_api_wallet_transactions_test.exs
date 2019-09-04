@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
 
     p =
       %Project{}
-      |> Project.changeset(%{name: "Santiment", coinmarketcap_id: slug})
+      |> Project.changeset(%{name: "Santiment", slug: slug})
       |> Repo.insert!()
 
     %ProjectEthAddress{}
@@ -274,13 +274,13 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
       insert(:project, %{
         name: "Bitcoin",
         ticker: "BTC",
-        coinmarketcap_id: "bitcoin",
+        slug: "bitcoin",
         eth_addresses: []
       })
 
     query = """
     {
-      projectBySlug(slug: "#{project.coinmarketcap_id}") {
+      projectBySlug(slug: "#{project.slug}") {
         ethTopTransactions(
           from: "#{context.datetime_from}",
           to: "#{context.datetime_to}",

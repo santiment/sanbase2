@@ -1101,8 +1101,8 @@ ALTER SEQUENCE public.signals_historical_activity_id_seq OWNED BY public.signals
 
 CREATE TABLE public.slug_source_mappings (
     id bigint NOT NULL,
-    source character varying(255),
-    source_slug character varying(255),
+    source character varying(255) NOT NULL,
+    source_slug character varying(255) NOT NULL,
     project_id bigint
 );
 

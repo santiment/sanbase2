@@ -301,8 +301,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   end
 
   object :slug_source_mapping do
-    field(:source, :string)
-    field(:source_slug, :string)
+    field(:source, non_null(:string))
+    field(:source_slug, non_null(:string))
   end
 
   object :eth_address do

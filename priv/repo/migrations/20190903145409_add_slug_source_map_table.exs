@@ -4,8 +4,8 @@ defmodule Sanbase.Repo.Migrations.AddSlugSourceMapTable do
   @table "slug_source_mappings"
   def change do
     create table(@table) do
-      add(:source, :string)
-      add(:source_slug, :string)
+      add(:source, :string, null: false)
+      add(:source_slug, :string, null: false)
 
       add(:project_id, references(:project, on_delete: :delete_all))
     end

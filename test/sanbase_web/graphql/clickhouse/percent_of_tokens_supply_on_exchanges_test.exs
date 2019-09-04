@@ -15,7 +15,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.PercentOfTokenSupplyOnExchangesTest do
     project = insert(:project)
 
     [
-      slug: project.coinmarketcap_id,
+      slug: project.slug,
       from: from_iso8601!("2019-01-01T00:00:00Z"),
       to: from_iso8601!("2019-01-03T00:00:00Z"),
       interval: "1d"

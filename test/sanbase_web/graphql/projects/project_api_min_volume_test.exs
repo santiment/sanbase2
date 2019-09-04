@@ -340,7 +340,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeQueriesTest do
     %LatestCoinmarketcapData{}
     |> LatestCoinmarketcapData.changeset(
       %{
-        coinmarketcap_id: project.coinmarketcap_id,
+        coinmarketcap_id: project.slug,
         update_time: Timex.now()
       }
       |> Map.merge(args)

@@ -28,7 +28,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingProjectTest do
       type: TrendingWordsTriggerSettings.type(),
       channel: "telegram",
       operation: %{trending_project: true},
-      target: %{slug: project.coinmarketcap_id}
+      target: %{slug: project.slug}
     }
 
     {:ok, trigger_trending_words} =

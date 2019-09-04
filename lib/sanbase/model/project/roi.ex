@@ -7,8 +7,8 @@ defmodule Sanbase.Model.Project.Roi do
   We skip ICOs for which we can't calculate the initial_price or the tokens sold
   For ICOs that we don't have tokens sold we try to fill it heuristically by evenly distributing the rest of the total available supply
   """
-  def roi_usd(%Project{ticker: ticker, coinmarketcap_id: coinmarketcap_id} = project)
-      when not is_nil(ticker) and not is_nil(coinmarketcap_id) do
+  def roi_usd(%Project{ticker: ticker, slug: slug} = project)
+      when not is_nil(ticker) and not is_nil(slug) do
     with %Project{} = project <- Repo.preload(project, [:latest_coinmarketcap_data, :icos]),
          false <- is_nil(project.latest_coinmarketcap_data),
          false <- is_nil(project.latest_coinmarketcap_data.price_usd),

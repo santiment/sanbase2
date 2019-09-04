@@ -63,7 +63,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
       Enum.reduce(projects, {[], [], []}, fn proj, {tickers, slugs, names} ->
         {
           [String.downcase(proj.ticker) | tickers],
-          [String.downcase(proj.coinmarketcap_id) | slugs],
+          [String.downcase(proj.slug) | slugs],
           [String.downcase(proj.name) | names]
         }
       end)

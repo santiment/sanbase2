@@ -17,7 +17,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MarketSegmentResolver do
   def erc20_market_segments(_parent, _args, _resolution) do
     filter = fn %{projects: projects} ->
       Enum.any?(projects, fn project ->
-        not is_nil(project.coinmarketcap_id) and not is_nil(project.main_contract_address) and
+        not is_nil(project.slug) and not is_nil(project.main_contract_address) and
           not is_nil(project.infrastructure) and project.infrastructure.code === "ETH"
       end)
     end
@@ -30,7 +30,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MarketSegmentResolver do
   def currencies_market_segments(_parent, _args, _resolution) do
     filter = fn %{projects: projects} ->
       Enum.any?(projects, fn project ->
-        not is_nil(project.coinmarketcap_id) and
+        not is_nil(project.slug) and
           (is_nil(project.main_contract_address) or
              (not is_nil(project.infrastructure) and project.infrastructure.code !== "ETH"))
       end)

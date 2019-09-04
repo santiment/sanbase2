@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.PriceVolumeDiffApiTest do
   import ExUnit.CaptureLog
 
   setup do
-    project = insert(:project, %{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
+    project = insert(:project, %{name: "Santiment", ticker: "SAN", slug: "santiment"})
 
     [
       project: project,
@@ -134,7 +134,7 @@ defmodule SanbaseWeb.Graphql.PriceVolumeDiffApiTest do
     """
     {
       priceVolumeDiff(
-        slug: "#{context.project.coinmarketcap_id}"
+        slug: "#{context.project.slug}"
         currency: "USD"
         from: "#{context.datetime1}"
         to: "#{context.datetime2}") {

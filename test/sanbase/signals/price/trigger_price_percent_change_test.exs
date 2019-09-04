@@ -32,7 +32,7 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
     Sanbase.Factory.insert(:project, %{
       name: "Santiment",
       ticker: @ticker,
-      coinmarketcap_id: @cmc_id,
+      slug: @cmc_id,
       main_contract_address: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
     })
 

@@ -189,7 +189,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   end
 
   defp get_notification_log(
-         %Project{ticker: ticker, coinmarketcap_id: slug},
+         %Project{ticker: ticker, slug: slug},
          currency,
          from_datetime,
          to_datetime,

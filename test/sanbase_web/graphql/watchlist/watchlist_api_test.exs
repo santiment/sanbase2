@@ -59,7 +59,7 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
     {:ok, watchlist} = UserList.create_user_list(user, %{name: "My Test List"})
 
     project = insert(:project)
-    insert(:latest_cmc_data, %{coinmarketcap_id: project.coinmarketcap_id, price_usd: 0.5})
+    insert(:latest_cmc_data, %{coinmarketcap_id: project.slug, price_usd: 0.5})
 
     update_name = "My updated list"
 

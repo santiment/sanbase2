@@ -15,7 +15,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
       |> Project.changeset(%{
         name: "Santiment",
         main_contract_address: "0x123",
-        coinmarketcap_id: "santiment",
+        slug: "santiment",
         token_decimals: 18
       })
       |> Repo.insert!()
@@ -24,7 +24,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
       %Project{}
       |> Project.changeset(%{
         name: "Bantiment",
-        coinmarketcap_id: "bantiment",
+        slug: "bantiment",
         token_decimals: 18
       })
       |> Repo.insert!()
@@ -40,7 +40,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
       query = """
       {
         projectBySlug(
-          slug: "#{project.coinmarketcap_id}") {
+          slug: "#{project.slug}") {
           tokenTopTransactions(
             from: "#{DateTime.from_naive!(~N[2018-06-10 10:33:47], "Etc/UTC")}",
             to: "#{DateTime.from_naive!(~N[2018-06-18 12:33:47], "Etc/UTC")}"
@@ -70,7 +70,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
     query = """
     {
       projectBySlug(
-        slug: "#{project_no_contract.coinmarketcap_id}") {
+        slug: "#{project_no_contract.slug}") {
           tokenTopTransactions(
             from: "#{DateTime.from_naive!(~N[2018-06-10 10:33:47], "Etc/UTC")}",
             to: "#{DateTime.from_naive!(~N[2018-06-18 12:33:47], "Etc/UTC")}") {

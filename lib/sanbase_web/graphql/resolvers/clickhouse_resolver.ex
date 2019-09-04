@@ -263,7 +263,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:ok, 0}
 
       {:error, error} ->
-        handle_graphql_error("average daily active addresses", project.coinmarketcap_id, error)
+        handle_graphql_error("average daily active addresses", project.slug, error)
         {:ok, 0}
     end
   end

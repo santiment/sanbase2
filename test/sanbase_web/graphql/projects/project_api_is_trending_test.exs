@@ -9,8 +9,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiIsTrendingTest do
     p1 = insert(:random_erc20_project)
     p2 = insert(:random_erc20_project)
     p3 = insert(:random_erc20_project)
-    p4 = insert(:random_project, %{coinmarketcap_id: "eos"})
-    p5 = insert(:random_project, %{coinmarketcap_id: "bitcoin"})
+    p4 = insert(:random_project, %{slug: "eos"})
+    p5 = insert(:random_project, %{slug: "bitcoin"})
 
     with_mock Sanbase.SocialData.TrendingWords, [],
       get_currently_trending_projects: fn -> {:ok, trending_projects()} end do
@@ -21,11 +21,11 @@ defmodule SanbaseWeb.Graphql.ProjectApiIsTrendingTest do
 
       expected_result =
         [
-          %{"isTrending" => false, "slug" => p1.coinmarketcap_id},
-          %{"isTrending" => false, "slug" => p2.coinmarketcap_id},
-          %{"isTrending" => false, "slug" => p3.coinmarketcap_id},
-          %{"isTrending" => true, "slug" => p4.coinmarketcap_id},
-          %{"isTrending" => true, "slug" => p5.coinmarketcap_id}
+          %{"isTrending" => false, "slug" => p1.slug},
+          %{"isTrending" => false, "slug" => p2.slug},
+          %{"isTrending" => false, "slug" => p3.slug},
+          %{"isTrending" => true, "slug" => p4.slug},
+          %{"isTrending" => true, "slug" => p5.slug}
         ]
         |> Enum.sort_by(& &1["slug"])
 

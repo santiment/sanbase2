@@ -9,7 +9,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthAssetsHeldByAdderssTest do
   require Sanbase.ClickhouseRepo
 
   setup do
-    project = insert(:project, %{name: "Ethereum", coinmarketcap_id: "ethereum", ticker: "ETH"})
+    project = insert(:project, %{name: "Ethereum", slug: "ethereum", ticker: "ETH"})
 
     {:ok, [project: project]}
   end
@@ -27,7 +27,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthAssetsHeldByAdderssTest do
       assert EthBalance.assets_held_by_address("0x123") ==
                {:ok,
                 [
-                  %{balance: 1000, slug: context.project.coinmarketcap_id}
+                  %{balance: 1000, slug: context.project.slug}
                 ]}
     end
   end

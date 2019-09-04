@@ -19,7 +19,7 @@ defmodule Sanbase.Chart do
   @spec build_embedded_chart(%Project{}, %DateTime{}, %DateTime{}, list()) :: [
           %{image: %{url: String.t()}}
         ]
-  def build_embedded_chart(%Project{coinmarketcap_id: slug} = project, from, to, opts \\ []) do
+  def build_embedded_chart(%Project{slug: slug} = project, from, to, opts \\ []) do
     with {:ok, url} <- build_candlestick_image_url(project, from, to, opts),
          {:ok, resp} <- http_client().get(url),
          {:ok, filename} <-

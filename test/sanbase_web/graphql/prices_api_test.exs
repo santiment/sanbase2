@@ -25,7 +25,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
     insert(:project,
       name: "Test project",
-      coinmarketcap_id: slug1,
+      slug: slug1,
       ticker: ticker1,
       infrastructure: infr_eth,
       main_contract_address: "0x123"
@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
     insert(:project,
       name: "XYZ project",
-      coinmarketcap_id: slug2,
+      slug: slug2,
       ticker: ticker2,
       infrastructure: infr_eth,
       main_contract_address: "0x234"

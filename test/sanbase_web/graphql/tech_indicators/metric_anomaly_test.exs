@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.MetricAnomalyTest do
   import ExUnit.CaptureLog
 
   setup do
-    project = insert(:project, %{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
+    project = insert(:project, %{name: "Santiment", ticker: "SAN", slug: "santiment"})
 
     [
       project: project,
@@ -101,7 +101,7 @@ defmodule SanbaseWeb.Graphql.MetricAnomalyTest do
     {
       metricAnomaly(
         metric: DAILY_ACTIVE_ADDRESSES,
-        slug: "#{context.project.coinmarketcap_id}"
+        slug: "#{context.project.slug}"
         from: "#{context.datetime1}"
         to: "#{context.datetime2}"
       ) {

@@ -12,8 +12,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.AssetsHeldByAdderssTest do
     p1 = insert(:random_erc20_project)
     p2 = insert(:random_erc20_project)
 
-    eth_project =
-      insert(:project, %{name: "Ethereum", coinmarketcap_id: "ethereum", ticker: "ETH"})
+    eth_project = insert(:project, %{name: "Ethereum", slug: "ethereum", ticker: "ETH"})
 
     {:ok, [p1: p1, p2: p2, eth_project: eth_project]}
   end
@@ -24,21 +23,21 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.AssetsHeldByAdderssTest do
        assets_held_by_address: fn _ ->
          {:ok,
           [
-            %{balance: 100.0, slug: context.p1.coinmarketcap_id},
-            %{balance: 200.0, slug: context.p2.coinmarketcap_id}
+            %{balance: 100.0, slug: context.p1.slug},
+            %{balance: 200.0, slug: context.p2.slug}
           ]}
        end},
       {Sanbase.Clickhouse.HistoricalBalance.EthBalance, [:passthrough],
        assets_held_by_address: fn _ ->
-         {:ok, [%{balance: 1000.0, slug: context.eth_project.coinmarketcap_id}]}
+         {:ok, [%{balance: 1000.0, slug: context.eth_project.slug}]}
        end}
     ] do
       assert HistoricalBalance.assets_held_by_address("0x123") ==
                {:ok,
                 [
-                  %{slug: context.eth_project.coinmarketcap_id, balance: 1000.0},
-                  %{slug: context.p1.coinmarketcap_id, balance: 100.0},
-                  %{slug: context.p2.coinmarketcap_id, balance: 200.0}
+                  %{slug: context.eth_project.slug, balance: 1000.0},
+                  %{slug: context.p1.slug, balance: 100.0},
+                  %{slug: context.p2.slug, balance: 200.0}
                 ]}
     end
   end

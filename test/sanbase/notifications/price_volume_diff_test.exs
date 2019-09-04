@@ -21,7 +21,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
 
     project1 =
       %Project{}
-      |> Project.changeset(%{name: "Test project", coinmarketcap_id: slug1, ticker: ticker1})
+      |> Project.changeset(%{name: "Test project", slug: slug1, ticker: ticker1})
       |> Sanbase.Repo.insert!()
 
     ticker2 = "TESTNOVOLUME"
@@ -31,7 +31,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
       %Project{}
       |> Project.changeset(%{
         name: "Test no volume project",
-        coinmarketcap_id: slug2,
+        slug: slug2,
         ticker: ticker2
       })
       |> Sanbase.Repo.insert!()

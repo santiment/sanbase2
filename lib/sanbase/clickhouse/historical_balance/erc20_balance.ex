@@ -64,7 +64,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
               nil ->
                 nil
 
-              %_{token_decimals: token_decimals, coinmarketcap_id: slug} ->
+              %_{token_decimals: token_decimals, slug: slug} ->
                 %{
                   slug: slug,
                   balance: value / Sanbase.Math.ipow(10, token_decimals || 0)

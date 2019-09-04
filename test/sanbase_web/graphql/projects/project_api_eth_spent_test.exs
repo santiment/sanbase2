@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
       insert(:project, %{
         name: "Santiment",
         ticker: "SAN",
-        coinmarketcap_id: "santiment",
+        slug: "santiment",
         infrastructure_id: eth_infr.id,
         main_contract_address: "0x" <> rand_hex_str()
       })

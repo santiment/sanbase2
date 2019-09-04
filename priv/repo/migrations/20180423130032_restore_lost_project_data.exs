@@ -29,7 +29,7 @@ defmodule Sanbase.Repo.Migrations.RestoreLostProjectData do
       backup_record =
         backup_records
         |> Enum.find(fn row ->
-          row["coinmarketcap_id"] == project.coinmarketcap_id and project.coinmarketcap_id != nil
+          row["coinmarketcap_id"] == project.slug and project.slug != nil
         end)
 
       if backup_record do

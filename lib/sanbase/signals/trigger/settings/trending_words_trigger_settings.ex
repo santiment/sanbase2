@@ -132,7 +132,7 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
         |> Enum.map(&String.downcase(&1.word))
 
       project_words =
-        Enum.flat_map(projects, &[&1.name, &1.ticker, &1.coinmarketcap_id])
+        Enum.flat_map(projects, &[&1.name, &1.ticker, &1.slug])
         |> MapSet.new()
         |> Enum.map(&String.downcase/1)
 
@@ -149,7 +149,7 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
           payload =
             Enum.reduce(projects, %{}, fn project, acc ->
               if project_is_trending?(trending_words_mapset, project) do
-                Map.put(acc, project.coinmarketcap_id, payload(settings, project))
+                Map.put(acc, project.slug, payload(settings, project))
               else
                 acc
               end
@@ -164,7 +164,7 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       # words is not empty
       empty? =
         MapSet.intersection(
-          MapSet.new([p.ticker, p.name, p.coinmarketcap_id] |> Enum.map(&String.downcase/1)),
+          MapSet.new([p.ticker, p.name, p.slug] |> Enum.map(&String.downcase/1)),
           words_mapset
         )
         |> Enum.empty?()

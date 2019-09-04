@@ -19,7 +19,7 @@ defmodule SanbaseWeb.Graphql.TimeframeRestrictionMiddlewareTest do
     # while accessing through "santiment" does not
     p1 =
       Sanbase.Factory.insert(:random_erc20_project, %{
-        coinmarketcap_id: "santiment",
+        slug: "santiment",
         main_contract_address: contract
       })
 
@@ -50,8 +50,8 @@ defmodule SanbaseWeb.Graphql.TimeframeRestrictionMiddlewareTest do
 
     [
       conn: conn,
-      santiment_slug: p1.coinmarketcap_id,
-      not_santiment_slug: p2.coinmarketcap_id
+      santiment_slug: p1.slug,
+      not_santiment_slug: p2.slug
     ]
   end
 

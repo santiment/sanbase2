@@ -17,6 +17,7 @@ config :logger, :console,
 # Test adapter that allows mocking
 config :tesla, adapter: Tesla.Mock
 
+# The logger is causing issues with mocking otherwise. Not really sure why
 config :tesla, Tesla.Middleware.Logger, debug: false
 
 config :sanbase, Sanbase.ApiCallDataExporter,

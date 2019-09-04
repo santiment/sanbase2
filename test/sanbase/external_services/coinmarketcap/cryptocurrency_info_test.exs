@@ -34,10 +34,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfoTest do
   end
 
   test "can handle invalid slugs" do
-    insert(:project, %{ticker: "BTC", coinmarketcap_id: "bitcoin"})
-    insert(:project, %{ticker: "ETH", coinmarketcap_id: "ethereum"})
-    insert(:project, %{ticker: "INV0", coinmarketcap_id: "invalid0"})
-    insert(:project, %{ticker: "INV1", coinmarketcap_id: "invalid1"})
+    insert(:project, %{ticker: "BTC", slug: "bitcoin"})
+    insert(:project, %{ticker: "ETH", slug: "ethereum"})
+    insert(:project, %{ticker: "INV0", slug: "invalid0"})
+    insert(:project, %{ticker: "INV1", slug: "invalid1"})
 
     url_with_invalid_slugs =
       Config.module_get(Sanbase.ExternalServices.Coinmarketcap, :api_url) <>

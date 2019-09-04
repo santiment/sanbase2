@@ -89,7 +89,7 @@ defmodule Sanbase.Factory do
     %Project{
       name: rand_str(),
       ticker: rand_str(4),
-      coinmarketcap_id: rand_str(),
+      slug: rand_str(),
       token_decimals: 18,
       total_supply: :rand.uniform(50_000_000) + 10_000_000,
       github_organizations: [build(:github_organization)],
@@ -104,7 +104,7 @@ defmodule Sanbase.Factory do
     %Project{
       name: "Santiment",
       ticker: "SAN",
-      coinmarketcap_id: "santiment",
+      slug: "santiment",
       token_decimals: 18,
       total_supply: 83_000_000,
       github_organizations: [build(:github_organization)],
@@ -117,7 +117,7 @@ defmodule Sanbase.Factory do
     %Project{
       name: rand_str(),
       ticker: rand_hex_str() |> String.upcase(),
-      coinmarketcap_id: rand_str(),
+      slug: rand_str(),
       token_decimals: 18,
       total_supply: :rand.uniform(50_000_000) + 10_000_000,
       github_organizations: [build(:github_organization)],

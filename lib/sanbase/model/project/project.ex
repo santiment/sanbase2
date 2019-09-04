@@ -60,7 +60,7 @@ defmodule Sanbase.Model.Project do
     belongs_to(
       :latest_coinmarketcap_data,
       LatestCoinmarketcapData,
-      foreign_key: :coinmarketcap_id,
+      foreign_key: :slug,
       references: :coinmarketcap_id,
       type: :string,
       on_replace: :nilify
@@ -73,7 +73,7 @@ defmodule Sanbase.Model.Project do
       :name,
       :ticker,
       :logo_url,
-      :coinmarketcap_id,
+      :slug,
       :website_link,
       :email,
       :market_segment_id,
@@ -100,7 +100,7 @@ defmodule Sanbase.Model.Project do
       :total_supply
     ])
     |> validate_required([:name])
-    |> unique_constraint(:coinmarketcap_id)
+    |> unique_constraint(:slug)
   end
 
   defdelegate roi_usd(project), to: Project.Roi
@@ -125,8 +125,8 @@ defmodule Sanbase.Model.Project do
 
   defdelegate contract_address(project), to: Project.ContractData
 
-  def sanbase_link(%Project{coinmarketcap_id: cmc_id}) when not is_nil(cmc_id) do
-    SanbaseWeb.Endpoint.frontend_url() <> "/projects/#{cmc_id}"
+  def sanbase_link(%Project{slug: slug}) when not is_nil(slug) do
+    SanbaseWeb.Endpoint.frontend_url() <> "/projects/#{slug}"
   end
 
   def supply(%Project{} = project) do
@@ -150,27 +150,27 @@ defmodule Sanbase.Model.Project do
   def by_currency(%Currency{code: code}) do
     from(
       p in Project,
-      where: p.ticker == ^code and not is_nil(p.coinmarketcap_id)
+      where: p.ticker == ^code and not is_nil(p.slug)
     )
     |> Repo.one()
   end
 
   def id_by_slug(slug) do
-    from(p in __MODULE__, where: p.coinmarketcap_id == ^slug, select: p.id) |> Repo.one()
+    from(p in __MODULE__, where: p.slug == ^slug, select: p.id) |> Repo.one()
   end
 
   def by_slug(slug, opts \\ [])
 
   def by_slug(slug, opts) when is_binary(slug) do
     Project
-    |> where([p], p.coinmarketcap_id == ^slug)
+    |> where([p], p.slug == ^slug)
     |> preload_query(opts)
     |> Repo.one()
   end
 
   def by_slug(slugs, opts) when is_list(slugs) do
     Project
-    |> where([p], p.coinmarketcap_id in ^slugs)
+    |> where([p], p.slug in ^slugs)
     |> preload_query(opts)
     |> Repo.all()
   end
@@ -188,7 +188,7 @@ defmodule Sanbase.Model.Project do
   def ticker_by_slug(slug) when is_binary(slug) do
     from(
       p in Sanbase.Model.Project,
-      where: p.coinmarketcap_id == ^slug and not is_nil(p.ticker),
+      where: p.slug == ^slug and not is_nil(p.ticker),
       select: p.ticker
     )
     |> Sanbase.Repo.one()
@@ -200,8 +200,8 @@ defmodule Sanbase.Model.Project do
   def slug_by_ticker(ticker) do
     from(
       p in Project,
-      where: p.ticker == ^ticker and not is_nil(p.coinmarketcap_id),
-      select: p.coinmarketcap_id
+      where: p.ticker == ^ticker and not is_nil(p.slug),
+      select: p.slug
     )
     |> Repo.all()
     |> List.first()
@@ -210,8 +210,8 @@ defmodule Sanbase.Model.Project do
   def tickers_by_slug_list(slugs_list) when is_list(slugs_list) do
     from(
       p in Sanbase.Model.Project,
-      where: p.coinmarketcap_id in ^slugs_list and not is_nil(p.ticker),
-      select: {p.ticker, p.coinmarketcap_id}
+      where: p.slug in ^slugs_list and not is_nil(p.ticker),
+      select: {p.ticker, p.slug}
     )
     |> Sanbase.Repo.all()
   end

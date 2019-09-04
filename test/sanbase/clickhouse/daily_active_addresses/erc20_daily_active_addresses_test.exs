@@ -12,14 +12,14 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses.Erc20DailyActiveAddressesTest 
     project1 =
       insert(:project, %{
         ticker: "PRJ1",
-        coinmarketcap_id: "project1",
+        slug: "project1",
         main_contract_address: "0x123"
       })
 
     project2 =
       insert(:project, %{
         ticker: "PRJ2",
-        coinmarketcap_id: "project2",
+        slug: "project2",
         main_contract_address: "0x456"
       })
 

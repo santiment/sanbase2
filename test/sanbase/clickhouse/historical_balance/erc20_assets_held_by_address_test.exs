@@ -43,11 +43,11 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20AssetsHeldByAdderssTest do
       assert Erc20Balance.assets_held_by_address("0x123") ==
                {:ok,
                 [
-                  %{balance: 100, slug: context.p1.coinmarketcap_id},
-                  %{balance: 255, slug: context.p2.coinmarketcap_id},
-                  %{balance: 0.0, slug: context.p3.coinmarketcap_id},
-                  %{balance: 1643, slug: context.p4.coinmarketcap_id},
-                  %{balance: 0.0, slug: context.p5.coinmarketcap_id}
+                  %{balance: 100, slug: context.p1.slug},
+                  %{balance: 255, slug: context.p2.slug},
+                  %{balance: 0.0, slug: context.p3.slug},
+                  %{balance: 1643, slug: context.p4.slug},
+                  %{balance: 0.0, slug: context.p5.slug}
                 ]}
     end
   end

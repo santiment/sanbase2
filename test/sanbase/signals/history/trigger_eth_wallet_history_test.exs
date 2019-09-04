@@ -15,7 +15,7 @@ defmodule Sanbase.Signal.EthWalletTriggerHistoryTest do
 
     trigger_settings_down = %{
       type: "eth_wallet",
-      target: %{slug: project.coinmarketcap_id},
+      target: %{slug: project.slug},
       asset: %{slug: "ethereum"},
       channel: "telegram",
       operation: %{amount_down: 10}
@@ -23,7 +23,7 @@ defmodule Sanbase.Signal.EthWalletTriggerHistoryTest do
 
     trigger_settings_up = %{
       type: "eth_wallet",
-      target: %{slug: project.coinmarketcap_id},
+      target: %{slug: project.slug},
       asset: %{slug: "ethereum"},
       channel: "telegram",
       operation: %{amount_up: 100}
@@ -187,7 +187,7 @@ defmodule Sanbase.Signal.EthWalletTriggerHistoryTest do
   test "eth wallet signal historical data not implemented for % change", context do
     trigger_settings = %{
       type: "eth_wallet",
-      target: %{slug: context.project.coinmarketcap_id},
+      target: %{slug: context.project.slug},
       asset: %{slug: "ethereum"},
       channel: "telegram",
       operation: %{percent_up: 10}

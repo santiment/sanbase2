@@ -88,7 +88,7 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
 
     [
       exchange_address: exchange_address,
-      slug: project.coinmarketcap_id,
+      slug: project.slug,
       from: datetime1,
       to: datetime8,
       conn: conn

@@ -24,7 +24,7 @@ defmodule Sanbase.Github.TwitterApiTest do
       name: "Santiment",
       ticker: "SAN",
       twitter_link: "https://twitter.com/santimentfeed",
-      coinmarketcap_id: "santiment"
+      slug: "santiment"
     })
     |> Repo.insert!()
 
@@ -42,7 +42,7 @@ defmodule Sanbase.Github.TwitterApiTest do
       name: "TestProj3",
       ticker: "SAN",
       twitter_link: "https://m.twitter.com/some_test_acc3",
-      coinmarketcap_id: "test3"
+      slug: "test3"
     })
     |> Repo.insert!()
 
@@ -51,7 +51,7 @@ defmodule Sanbase.Github.TwitterApiTest do
       name: "TestProj",
       ticker: "TEST1",
       twitter_link: "https://twitter.com/some_test_acc",
-      coinmarketcap_id: "test1"
+      slug: "test1"
     })
     |> Repo.insert!()
 
@@ -60,7 +60,7 @@ defmodule Sanbase.Github.TwitterApiTest do
       name: "TestProj2",
       ticker: "TEST2",
       twitter_link: "https://m.twitter.com/some_test_acc2",
-      coinmarketcap_id: "test2"
+      slug: "test2"
     })
     |> Repo.insert!()
 

@@ -14,7 +14,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGetQueriesTest do
     p1 =
       insert(:project, %{
         name: rand_str(),
-        coinmarketcap_id: rand_str(),
+        slug: rand_str(),
         ticker: rand_str(4),
         main_contract_address: "0x123123",
         infrastructure_id: infr_eth.id
@@ -25,7 +25,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGetQueriesTest do
     p2 =
       insert(:project, %{
         name: rand_str(),
-        coinmarketcap_id: rand_str(),
+        slug: rand_str(),
         ticker: rand_str(4),
         infrastructure_id: infr_eth.id
       })
@@ -36,7 +36,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGetQueriesTest do
     p3 =
       insert(:project, %{
         name: rand_str(),
-        coinmarketcap_id: rand_str(),
+        slug: rand_str(),
         infrastructure_id: infr_btc.id,
         ticker: rand_str(4),
         main_contract_address: "0x1234567890"

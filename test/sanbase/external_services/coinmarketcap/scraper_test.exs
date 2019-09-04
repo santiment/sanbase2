@@ -7,10 +7,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScraperTest do
   test "parsing the project page" do
     project_info =
       File.read!(Path.join(__DIR__, "data/project_page.html"))
-      |> Scraper.parse_project_page(%ProjectInfo{coinmarketcap_id: "santiment"})
+      |> Scraper.parse_project_page(%ProjectInfo{slug: "santiment"})
 
     assert project_info == %ProjectInfo{
-             coinmarketcap_id: "santiment",
+             slug: "santiment",
              name: "Santiment Network Token",
              ticker: "SAN",
              website_link: "https://santiment.net/",

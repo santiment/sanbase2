@@ -51,8 +51,8 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     from(
       p in Project,
       where:
-        not is_nil(p.coinmarketcap_id) and
-          (not is_nil(p.main_contract_address) or p.coinmarketcap_id == "ethereum")
+        not is_nil(p.slug) and
+          (not is_nil(p.main_contract_address) or p.slug == "ethereum")
     )
     |> Repo.all()
   end
@@ -249,7 +249,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     Config.get(:publish_user)
   end
 
-  defp trigger_percent(%Project{coinmarketcap_id: "ethereum"}) do
+  defp trigger_percent(%Project{slug: "ethereum"}) do
     {trigger, ""} = Config.get(:ethereum_trigger_percent) |> Float.parse()
     trigger
   end

@@ -50,7 +50,7 @@ defmodule Sanbase.Prices.Utils do
   @doc ~s"""
     We need the next 4 cases when calling from `convert_amount`. There we get
     a currency code (a ticker that has to be unique) and we get the project from that
-    code so we can construct the `ticker_coinmarketcap_id` measurement name.
+    code so we can construct the `ticker_slug` measurement name.
   """
   def fetch_last_price_before(measurement, "USD", timestamp) do
     {price_usd, _price_btc} = fetch_last_prices_before(measurement, timestamp)
@@ -161,8 +161,7 @@ defmodule Sanbase.Prices.Utils do
       ) do
     alias Sanbase.Model.{Project, Currency}
 
-    %Project{ticker: ticker, coinmarketcap_id: cmc_id} =
-      Project.by_currency(%Currency{code: currency_from})
+    %Project{ticker: ticker, slug: cmc_id} = Project.by_currency(%Currency{code: currency_from})
 
     ticker_cmc_id = ticker <> "_" <> cmc_id
 

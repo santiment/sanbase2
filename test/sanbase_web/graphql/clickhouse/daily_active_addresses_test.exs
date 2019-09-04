@@ -18,15 +18,15 @@ defmodule SanbaseWeb.Graphql.Clickhouse.DailyActiveAddressesTest do
 
   setup do
     token = insert(:project, %{main_contract_address: "0x123"})
-    ethereum = insert(:project, %{coinmarketcap_id: "ethereum", ticker: "ETH"})
-    bitcoin = insert(:project, %{coinmarketcap_id: "bitcoin", ticker: "BTC", name: "Bitcoin"})
+    ethereum = insert(:project, %{slug: "ethereum", ticker: "ETH"})
+    bitcoin = insert(:project, %{slug: "bitcoin", ticker: "BTC", name: "Bitcoin"})
 
     [
       token_contract: token.main_contract_address,
-      token_slug: token.coinmarketcap_id,
-      ethereum_slug: ethereum.coinmarketcap_id,
+      token_slug: token.slug,
+      ethereum_slug: ethereum.slug,
       ethereum_ticker: ethereum.ticker,
-      bitcoin_slug: bitcoin.coinmarketcap_id,
+      bitcoin_slug: bitcoin.slug,
       bitcoin_ticker: bitcoin.ticker,
       from: from_iso8601!("2019-01-01T00:00:00Z"),
       to: from_iso8601!("2019-01-03T00:00:00Z"),

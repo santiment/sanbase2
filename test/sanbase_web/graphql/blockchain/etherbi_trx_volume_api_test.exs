@@ -15,7 +15,7 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
     conn = setup_jwt_auth(build_conn(), user)
 
     %{
-      coinmarketcap_id: slug,
+      slug: slug,
       main_contract_address: contract_address,
       token_decimals: token_decimals
     } = Sanbase.Factory.insert(:random_erc20_project)

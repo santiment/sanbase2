@@ -10,7 +10,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     collected information.
   """
   defstruct [
-    :coinmarketcap_id,
+    :slug,
     :name,
     :website_link,
     :email,
@@ -70,8 +70,8 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     |> struct(Map.to_list(find_or_create_initial_ico(project)))
   end
 
-  def fetch_coinmarketcap_info(%ProjectInfo{coinmarketcap_id: coinmarketcap_id} = project_info) do
-    coinmarketcap_id
+  def fetch_coinmarketcap_info(%ProjectInfo{slug: slug} = project_info) do
+    slug
     |> Coinmarketcap.Scraper.fetch_project_page()
     |> case do
       {:ok, scraped_project_info} ->
@@ -125,8 +125,8 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
 
   defp insert_tag({:error, reason}, _), do: {:error, reason}
 
-  defp do_insert_tag(%Project{coinmarketcap_id: coinmarketcap_id}, %ProjectInfo{ticker: ticker})
-       when not is_nil(ticker) and not is_nil(coinmarketcap_id) do
+  defp do_insert_tag(%Project{slug: slug}, %ProjectInfo{ticker: ticker})
+       when not is_nil(ticker) and not is_nil(slug) do
     %Tag{name: ticker}
     |> Tag.changeset()
     |> Repo.insert()

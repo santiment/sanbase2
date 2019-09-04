@@ -32,7 +32,7 @@ defmodule Sanbase.Signal.EthWalletTriggerTest do
 
     trigger_settings1 = %{
       type: "eth_wallet",
-      target: %{slug: project.coinmarketcap_id},
+      target: %{slug: project.slug},
       asset: %{slug: "ethereum"},
       channel: "telegram",
       time_window: "1d",

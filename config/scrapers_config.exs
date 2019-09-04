@@ -1,4 +1,3 @@
-# This file is responsible for configuring your application
 # and its dependencies with the aid of the Mix.Config module.
 #
 # This configuration file is loaded before any dependency and
@@ -7,8 +6,8 @@ import Config
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
   update_interval: 5 * 1000 * 60,
-  api_key: {:system, "COINMARKETCAP_API_KEY", ""},
   api_url: "https://sandbox-api.coinmarketcap.com/",
+  api_key: {:system, "COINMARKETCAP_API_KEY", ""},
   sync_enabled: {:system, "COINMARKETCAP_SCRAPER_ENABLED", false}
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,

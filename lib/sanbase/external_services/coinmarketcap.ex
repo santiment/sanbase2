@@ -160,7 +160,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       {:ok, original_last_updated} = influxdb_slug |> Store.last_history_datetime_cmc()
 
       original_last_updated =
-        original_last_updated || GraphData.fetch_first_datetime(project.coinmarketcap_id)
+        original_last_updated || GraphData.fetch_first_datetime(project.slug)
 
       kill_scheduled_scraping(project)
 
@@ -237,11 +237,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     {:cmc_fetch_price, measurement_name}
   end
 
-  # Fetch history coinmarketcap data and store it in DB
-  defp fetch_and_process_price_data(
-         %Project{coinmarketcap_id: coinmarketcap_id, ticker: ticker} = project
-       )
-       when nil != ticker and nil != coinmarketcap_id do
+  # Fetch history
+  defp fetch_and_process_price_data(%Project{slug: slug, ticker: ticker} = project)
+       when nil != ticker and nil != slug do
     measurement_name = Measurement.name_from(project)
     key = fetching_price_registry_key(project)
 
@@ -251,10 +249,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
       case last_price_datetime(project) do
         nil ->
-          err_msg =
-            "[CMC] Cannot fetch the last price datetime for #{coinmarketcap_id} with ticker #{
-              ticker
-            }"
+          err_msg = "[CMC] Cannot fetch the last price datetime for #{slug} with ticker #{ticker}"
 
           Logger.warn(err_msg)
           {:error, err_msg}
@@ -282,7 +277,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     Sanbase.Notifications.PriceVolumeDiff.exec(project, "USD")
   end
 
-  defp last_price_datetime(%Project{coinmarketcap_id: coinmarketcap_id} = project) do
+  defp last_price_datetime(%Project{slug: slug} = project) do
     measurement_name = Measurement.name_from(project)
 
     case Store.last_history_datetime_cmc!(measurement_name) do
@@ -291,7 +286,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
           "[CMC] Last CMC history datetime scraped for #{measurement_name} not found in the database."
         )
 
-        GraphData.fetch_first_datetime(coinmarketcap_id)
+        GraphData.fetch_first_datetime(slug)
 
       datetime ->
         datetime

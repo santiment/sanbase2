@@ -155,7 +155,7 @@ defmodule Sanbase.Signal.Trigger do
     watchlist_id
     |> Sanbase.UserList.by_id()
     |> Sanbase.UserList.get_projects()
-    |> Enum.map(& &1.coinmarketcap_id)
+    |> Enum.map(& &1.slug)
     |> remove_targets_on_cooldown(trigger, :slug)
   end
 

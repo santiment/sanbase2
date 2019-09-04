@@ -58,7 +58,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
     [
       from: datetime1,
       to: datetime4,
-      slugs: [p1.coinmarketcap_id, p2.coinmarketcap_id]
+      slugs: [p1.slug, p2.slug]
     ]
   end
 

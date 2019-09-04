@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiSocialVolumeQuery do
     query = Project.SocialVolumeQuery.default_query(p1)
     assert String.contains?(query, p1.ticker)
     assert String.contains?(query, p1.name)
-    assert String.contains?(query, p1.coinmarketcap_id)
+    assert String.contains?(query, p1.slug)
     assert String.contains?(query, "OR")
   end
 end

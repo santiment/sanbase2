@@ -30,12 +30,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field(:id, non_null(:id))
     field(:name, non_null(:string))
+    field(:slug, :string)
     field(:ticker, :string)
-
-    field(:slug, :string) do
-      resolve(&ProjectResolver.slug/3)
-    end
-
     field(:logo_url, :string)
     field(:website_link, :string)
     field(:email, :string)
@@ -121,7 +117,9 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve(&ProjectResolver.roi_usd/3)
     end
 
-    field(:coinmarketcap_id, :string)
+    field :coinmarketcap_id, :string do
+      resolve(fn %Project{slug: slug}, _, _ -> {:ok, slug} end)
+    end
 
     field :symbol, :string do
       resolve(&ProjectResolver.symbol/3)

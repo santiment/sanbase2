@@ -400,7 +400,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     """
   end
 
-  defp history_price_query(%{coinmarketcap_id: slug}, from, to) do
+  defp history_price_query(%{slug: slug}, from, to) do
     """
       {
         historyPrice(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "30d"){

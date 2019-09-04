@@ -17,9 +17,9 @@ defmodule Sanbase.Model.Project.SocialVolumeQuery do
   end
 
   def default_query(%Project{} = project) do
-    %Project{ticker: ticker, name: name, coinmarketcap_id: cmc_id} = project
+    %Project{ticker: ticker, name: name, slug: slug} = project
 
-    [ticker, name, cmc_id]
+    [ticker, name, slug]
     |> Enum.reject(&is_nil/1)
     |> Enum.map(fn elem -> ~s/"#{elem}"/ end)
     |> Enum.join(" OR ")

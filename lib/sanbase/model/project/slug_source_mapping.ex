@@ -23,6 +23,10 @@ defmodule Sanbase.Model.Project.SlugSourceMapping do
     |> unique_constraint(:source_slug, name: :source_slug_unique_combination)
   end
 
+  def create(attrs) do
+    changeset_fn(%__MODULE__{}, attrs) |> Repo.insert()
+  end
+
   def get_source_slug(%Project{id: project_id}, source) do
     from(
       ssm in __MODULE__,

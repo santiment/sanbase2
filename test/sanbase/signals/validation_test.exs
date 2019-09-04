@@ -54,7 +54,7 @@ defmodule Sanbase.Signal.ValidationTest do
       all_true? =
         valid_cases
         |> Enum.all?(fn operation ->
-          Validation.valid_absolute_value_operation?(operation) == :ok
+          Validation.valid_operation?(operation) == :ok
         end)
 
       assert all_true?
@@ -74,8 +74,7 @@ defmodule Sanbase.Signal.ValidationTest do
       all_errors? =
         error_cases
         |> Enum.all?(fn operation ->
-          Validation.valid_absolute_value_operation?(operation) ==
-            {:error, "#{inspect(operation)} is not a valid absolute value operation"}
+          Validation.valid_operation?(operation) |> elem(0) == :error
         end)
 
       assert all_errors?
@@ -93,7 +92,7 @@ defmodule Sanbase.Signal.ValidationTest do
       all_true? =
         valid_cases
         |> Enum.all?(fn operation ->
-          Validation.valid_percent_change_operation?(operation) == :ok
+          Validation.valid_operation?(operation) == :ok
         end)
 
       assert all_true?
@@ -106,7 +105,7 @@ defmodule Sanbase.Signal.ValidationTest do
         %{percent_down: 20}
       ]
 
-      assert Validation.valid_percent_change_operation?(%{all_of: valid_cases}) == :ok
+      assert Validation.valid_operation?(%{all_of: valid_cases}) == :ok
     end
 
     test "with some_of valid cases returns :ok" do
@@ -116,7 +115,7 @@ defmodule Sanbase.Signal.ValidationTest do
         %{percent_down: 20}
       ]
 
-      assert Validation.valid_percent_change_operation?(%{some_of: valid_cases}) == :ok
+      assert Validation.valid_operation?(%{some_of: valid_cases}) == :ok
     end
 
     test "with different operations in all_of returns proper error message" do
@@ -126,7 +125,7 @@ defmodule Sanbase.Signal.ValidationTest do
         %{percent_down: 20}
       ]
 
-      assert Validation.valid_percent_change_operation?(%{all_of: valid_cases}) ==
+      assert Validation.valid_operation?(%{all_of: valid_cases}) ==
                {:error, "Some of the operations are not valid"}
     end
 
@@ -137,7 +136,7 @@ defmodule Sanbase.Signal.ValidationTest do
         %{percent_down: 20}
       ]
 
-      assert Validation.valid_percent_change_operation?(%{some_of: valid_cases}) ==
+      assert Validation.valid_operation?(%{some_of: valid_cases}) ==
                {:error, "Some of the operations are not valid"}
     end
 
@@ -148,7 +147,7 @@ defmodule Sanbase.Signal.ValidationTest do
         %{percent_down: "5"}
       ]
 
-      assert Validation.valid_percent_change_operation?(%{some_of: valid_cases}) ==
+      assert Validation.valid_operation?(%{some_of: valid_cases}) ==
                {:error, "Some of the operations are not valid"}
     end
 
@@ -159,7 +158,7 @@ defmodule Sanbase.Signal.ValidationTest do
         %{percent_down: "5"}
       ]
 
-      assert Validation.valid_percent_change_operation?(%{all_of: valid_cases}) ==
+      assert Validation.valid_operation?(%{all_of: valid_cases}) ==
                {:error, "Some of the operations are not valid"}
     end
 
@@ -175,8 +174,7 @@ defmodule Sanbase.Signal.ValidationTest do
       all_errors? =
         error_cases
         |> Enum.all?(fn operation ->
-          Validation.valid_percent_change_operation?(operation) ==
-            {:error, "#{inspect(operation)} is not a valid percent change operation"}
+          Validation.valid_operation?(operation) |> elem(0) == :error
         end)
 
       assert all_errors?

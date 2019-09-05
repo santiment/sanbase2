@@ -58,7 +58,7 @@ defmodule Sanbase.Mixfile do
       {:timex, "~> 3.5.0"},
       {:timex_ecto, "~> 3.3.0"},
       {:hackney, "~> 1.15", override: true},
-      {:guardian, "~> 1.0"},
+      {:guardian, "~> 2.0"},
       {:absinthe, github: "absinthe-graphql/absinthe", override: true},
       {:absinthe_ecto, "~> 0.1.0"},
       {:absinthe_plug, github: "absinthe-graphql/absinthe_plug"},

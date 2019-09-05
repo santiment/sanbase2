@@ -74,6 +74,19 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       )
     end
 
+    field :market_segment, :string do
+      # Introduce a different function name so it does not share cache with the
+      # :market_segments as they query the same data
+      cache_resolve(
+        dataloader(SanbaseRepo, :market_segments,
+          callback: fn query, _project, _args ->
+            {:ok, query |> Enum.map(& &1.name) |> List.first()}
+          end
+        ),
+        fun_name: :market_segment
+      )
+    end
+
     field :market_segments, list_of(:string) do
       cache_resolve(
         dataloader(SanbaseRepo, :market_segments,
@@ -94,10 +107,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :related_posts, list_of(:post) do
       cache_resolve(&ProjectResolver.related_posts/3)
-    end
-
-    field :market_segment, :string do
-      cache_resolve(&ProjectResolver.market_segment/3)
     end
 
     field :infrastructure, :string do

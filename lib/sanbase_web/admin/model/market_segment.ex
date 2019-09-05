@@ -7,7 +7,7 @@ defmodule Sanbase.ExAdmin.Model.MarketSegment do
     show ms do
       attributes_table(all: true)
 
-      panel "Projects with this Market Segment #{inspect(ms)}" do
+      panel "Projects with this Market Segment" do
         table_for projects_with_market_segment(ms) do
           column(:name, link: true)
           column(:ticker)

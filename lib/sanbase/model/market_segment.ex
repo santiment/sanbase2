@@ -6,7 +6,14 @@ defmodule Sanbase.Model.MarketSegment do
 
   schema "market_segments" do
     field(:name, :string)
-    has_many(:projects, Project)
+
+    many_to_many(
+      :projects,
+      Project,
+      join_through: "project_market_segments",
+      on_replace: :delete,
+      on_delete: :delete_all
+    )
   end
 
   @doc false

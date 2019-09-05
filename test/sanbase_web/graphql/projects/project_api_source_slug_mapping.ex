@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.SourceSlugMapping do
+defmodule SanbaseWeb.Graphql.ProjectApiSourceSlugMappingTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory

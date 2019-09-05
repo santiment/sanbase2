@@ -97,10 +97,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
 
   defp insert_or_update_project(%Ticker{id: slug, name: name, symbol: ticker}) do
     case find_or_init_project(%Project{name: name, slug: slug, ticker: ticker}) do
-      %{id: nil} = project ->
+      {:not_existing_project, changeset} ->
         # If there is not id then the project was not returned from the DB
         # but initialized by the function
-        project = project |> Repo.insert_or_update!()
+        project = changeset |> Repo.insert_or_update!()
 
         Project.SourceSlugMapping.create(%{
           source: "coinmarketcap",
@@ -108,21 +108,22 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
           project_id: project.id
         })
 
-      project ->
-        Repo.insert_or_update!(project)
+      {:existing_project, changeset} ->
+        Repo.insert_or_update!(changeset)
     end
   end
 
   defp find_or_init_project(%Project{slug: slug} = project) do
     case Project.by_slug(slug) do
       nil ->
-        Project.changeset(project)
+        {:not_existing_project, Project.changeset(project)}
 
       existing_project ->
-        Project.changeset(existing_project, %{
-          slug: slug,
-          ticker: project.ticker
-        })
+        {:existing_project,
+         Project.changeset(existing_project, %{
+           slug: slug,
+           ticker: project.ticker
+         })}
     end
   end
 

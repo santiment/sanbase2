@@ -963,11 +963,31 @@ ALTER SEQUENCE public.project_id_seq OWNED BY public.project.id;
 --
 
 CREATE TABLE public.project_market_segments (
+    id bigint NOT NULL,
     project_id bigint,
     market_segment_id bigint,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
+
+
+--
+-- Name: project_market_segments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.project_market_segments_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: project_market_segments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.project_market_segments_id_seq OWNED BY public.project_market_segments.id;
 
 
 --
@@ -1715,6 +1735,13 @@ ALTER TABLE ONLY public.project_eth_address ALTER COLUMN id SET DEFAULT nextval(
 
 
 --
+-- Name: project_market_segments id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_market_segments ALTER COLUMN id SET DEFAULT nextval('public.project_market_segments_id_seq'::regclass);
+
+
+--
 -- Name: project_social_volume_query id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2025,6 +2052,14 @@ ALTER TABLE ONLY public.project_btc_address
 
 ALTER TABLE ONLY public.project_eth_address
     ADD CONSTRAINT project_eth_address_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: project_market_segments project_market_segments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_market_segments
+    ADD CONSTRAINT project_market_segments_pkey PRIMARY KEY (id);
 
 
 --

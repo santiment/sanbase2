@@ -2,7 +2,7 @@ defmodule Sanbase.Repo.Migrations.AddProjectMarketSegmentsTable do
   use Ecto.Migration
   @table "project_market_segments"
   def change do
-    create table(@table, primary_key: false) do
+    create table(@table) do
       add(:project_id, references(:project))
       add(:market_segment_id, references(:market_segments))
 

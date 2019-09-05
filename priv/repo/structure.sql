@@ -1096,22 +1096,22 @@ ALTER SEQUENCE public.signals_historical_activity_id_seq OWNED BY public.signals
 
 
 --
--- Name: slug_source_mappings; Type: TABLE; Schema: public; Owner: -
+-- Name: source_slug_mappings; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.slug_source_mappings (
+CREATE TABLE public.source_slug_mappings (
     id bigint NOT NULL,
     source character varying(255) NOT NULL,
-    source_slug character varying(255) NOT NULL,
+    slug character varying(255) NOT NULL,
     project_id bigint
 );
 
 
 --
--- Name: slug_source_mappings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: source_slug_mappings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.slug_source_mappings_id_seq
+CREATE SEQUENCE public.source_slug_mappings_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1120,10 +1120,10 @@ CREATE SEQUENCE public.slug_source_mappings_id_seq
 
 
 --
--- Name: slug_source_mappings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: source_slug_mappings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.slug_source_mappings_id_seq OWNED BY public.slug_source_mappings.id;
+ALTER SEQUENCE public.source_slug_mappings_id_seq OWNED BY public.source_slug_mappings.id;
 
 
 --
@@ -1731,10 +1731,10 @@ ALTER TABLE ONLY public.signals_historical_activity ALTER COLUMN id SET DEFAULT 
 
 
 --
--- Name: slug_source_mappings id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: source_slug_mappings id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.slug_source_mappings ALTER COLUMN id SET DEFAULT nextval('public.slug_source_mappings_id_seq'::regclass);
+ALTER TABLE ONLY public.source_slug_mappings ALTER COLUMN id SET DEFAULT nextval('public.source_slug_mappings_id_seq'::regclass);
 
 
 --
@@ -2064,11 +2064,11 @@ ALTER TABLE ONLY public.signals_historical_activity
 
 
 --
--- Name: slug_source_mappings slug_source_mappings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: source_slug_mappings source_slug_mappings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.slug_source_mappings
-    ADD CONSTRAINT slug_source_mappings_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.source_slug_mappings
+    ADD CONSTRAINT source_slug_mappings_pkey PRIMARY KEY (id);
 
 
 --
@@ -2306,7 +2306,7 @@ CREATE INDEX notifications_project_id_type_id_index ON public.notifications USIN
 -- Name: one_mapping_per_source; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX one_mapping_per_source ON public.slug_source_mappings USING btree (source, project_id);
+CREATE UNIQUE INDEX one_mapping_per_source ON public.source_slug_mappings USING btree (source, project_id);
 
 
 --
@@ -2446,7 +2446,7 @@ CREATE INDEX signals_historical_activity_user_id_triggered_at_index ON public.si
 -- Name: source_slug_unique_combination; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX source_slug_unique_combination ON public.slug_source_mappings USING btree (source, source_slug);
+CREATE UNIQUE INDEX source_slug_unique_combination ON public.source_slug_mappings USING btree (source, slug);
 
 
 --
@@ -2834,11 +2834,11 @@ ALTER TABLE ONLY public.signals_historical_activity
 
 
 --
--- Name: slug_source_mappings slug_source_mappings_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: source_slug_mappings source_slug_mappings_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.slug_source_mappings
-    ADD CONSTRAINT slug_source_mappings_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.source_slug_mappings
+    ADD CONSTRAINT source_slug_mappings_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
 
 
 --

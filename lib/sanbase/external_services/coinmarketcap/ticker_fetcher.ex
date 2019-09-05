@@ -102,9 +102,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
         # but initialized by the function
         project = project |> Repo.insert_or_update!()
 
-        Project.SlugSourceMapping.create(%{
+        Project.SourceSlugMapping.create(%{
           source: "coinmarketcap",
-          source_slug: project.slug,
+          slug: project.slug,
           project_id: project.id
         })
 

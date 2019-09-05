@@ -92,8 +92,8 @@ defmodule Sanbase.Factory do
       name: rand_str(),
       ticker: rand_str(4),
       slug: slug,
-      slug_source_mappings: [
-        build(:slug_source_mapping, %{source: "coinmarketcap", source_slug: slug})
+      source_slug_mappings: [
+        build(:source_slug_mapping, %{source: "coinmarketcap", slug: slug})
       ],
       token_decimals: 18,
       total_supply: :rand.uniform(50_000_000) + 10_000_000,
@@ -113,8 +113,8 @@ defmodule Sanbase.Factory do
       name: "Santiment",
       ticker: "SAN",
       slug: slug,
-      slug_source_mappings: [
-        build(:slug_source_mapping, %{source: "coinmarketcap", source_slug: slug})
+      source_slug_mappings: [
+        build(:source_slug_mapping, %{source: "coinmarketcap", slug: slug})
       ],
       token_decimals: 18,
       total_supply: 83_000_000,
@@ -132,8 +132,8 @@ defmodule Sanbase.Factory do
       name: rand_str(),
       ticker: rand_hex_str() |> String.upcase(),
       slug: slug,
-      slug_source_mappings: [
-        build(:slug_source_mapping, %{source: "coinmarketcap", source_slug: slug})
+      source_slug_mappings: [
+        build(:source_slug_mapping, %{source: "coinmarketcap", slug: slug})
       ],
       token_decimals: 18,
       total_supply: :rand.uniform(50_000_000) + 10_000_000,
@@ -144,8 +144,8 @@ defmodule Sanbase.Factory do
     |> merge_attributes(attrs)
   end
 
-  def slug_source_mapping_factory() do
-    %Project.SlugSourceMapping{}
+  def source_slug_mapping_factory() do
+    %Project.SourceSlugMapping{}
   end
 
   def social_volume_query_factory() do

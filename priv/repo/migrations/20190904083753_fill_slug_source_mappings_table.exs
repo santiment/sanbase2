@@ -1,4 +1,4 @@
-defmodule Sanbase.Repo.Migrations.FillSlugSourceMappingsTable do
+defmodule Sanbase.Repo.Migrations.FillSourceSlugMappingsTable do
   use Ecto.Migration
 
   alias Sanbase.Model.Project
@@ -11,10 +11,10 @@ defmodule Sanbase.Repo.Migrations.FillSlugSourceMappingsTable do
     insert_data =
       projects
       |> Enum.map(fn %{slug: slug, id: project_id} ->
-        %{source: "coinmarketcap", source_slug: slug, project_id: project_id}
+        %{source: "coinmarketcap", slug: slug, project_id: project_id}
       end)
 
-    Sanbase.Repo.insert_all(Project.SlugSourceMapping, insert_data)
+    Sanbase.Repo.insert_all(Project.SourceSlugMapping, insert_data)
   end
 
   def down do

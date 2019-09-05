@@ -47,14 +47,14 @@ defmodule Sanbase.ExAdmin.Model.Project do
       panel "Slug Source Mappings" do
         markup_contents do
           a ".btn .btn-primary",
-            href: "/admin/slug_source_mappings/new?project_id=" <> to_string(project.id) do
+            href: "/admin/source_slug_mappings/new?project_id=" <> to_string(project.id) do
             "New Slug Source Mapping"
           end
         end
 
-        table_for project.slug_source_mappings do
+        table_for project.source_slug_mappings do
           column(:source)
-          column(:source_slug)
+          column(:slug)
         end
       end
 

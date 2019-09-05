@@ -66,9 +66,9 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       )
     end
 
-    field :slug_source_mappings, list_of(:slug_source_mapping) do
+    field :source_slug_mappings, list_of(:source_slug_mapping) do
       cache_resolve(
-        dataloader(SanbaseRepo, :slug_source_mappings,
+        dataloader(SanbaseRepo, :source_slug_mappings,
           callback: fn query, _project, _args -> {:ok, query} end
         )
       )
@@ -300,9 +300,9 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
   end
 
-  object :slug_source_mapping do
+  object :source_slug_mapping do
     field(:source, non_null(:string))
-    field(:source_slug, non_null(:string))
+    field(:slug, non_null(:string))
   end
 
   object :eth_address do

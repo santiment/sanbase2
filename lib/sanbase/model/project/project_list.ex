@@ -143,9 +143,9 @@ defmodule Sanbase.Model.Project.List do
 
   def projects_with_source(source) do
     projects_query()
-    |> preload([:slug_source_mappings])
+    |> preload([:source_slug_mappings])
     |> Repo.all()
-    |> Enum.filter(fn project -> source in Enum.map(project.slug_source_mappings, & &1.source) end)
+    |> Enum.filter(fn project -> source in Enum.map(project.source_slug_mappings, & &1.source) end)
   end
 
   def projects_count(min_volume) do

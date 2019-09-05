@@ -20,8 +20,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
     project =
       insert(:project, %{
         slug: "santiment",
-        slug_source_mappings: [
-          build(:slug_source_mapping, %{source: "coinmarketcap", source_slug: "santiment"})
+        source_slug_mappings: [
+          build(:source_slug_mapping, %{source: "coinmarketcap", slug: "santiment"})
         ]
       })
 

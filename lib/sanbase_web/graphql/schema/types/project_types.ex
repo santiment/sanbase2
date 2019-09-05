@@ -74,6 +74,16 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       )
     end
 
+    field :market_segments, list_of(:string) do
+      cache_resolve(
+        dataloader(SanbaseRepo, :market_segments,
+          callback: fn query, _project, _args ->
+            {:ok, query |> Enum.map(& &1.name)}
+          end
+        )
+      )
+    end
+
     field :is_trending, :boolean do
       cache_resolve(&ProjectResolver.is_trending/3)
     end

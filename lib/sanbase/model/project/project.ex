@@ -66,6 +66,14 @@ defmodule Sanbase.Model.Project do
       type: :string,
       on_replace: :nilify
     )
+
+    many_to_many(
+      :market_segments,
+      MarketSegment,
+      join_through: "project_market_segments",
+      on_replace: :delete,
+      on_delete: :delete_all
+    )
   end
 
   def changeset(%Project{} = project, attrs \\ %{}) do

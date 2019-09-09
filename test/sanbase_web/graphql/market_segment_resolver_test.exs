@@ -1,80 +1,21 @@
 defmodule SanbaseWeb.Graphql.MarketSegmentResolverTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.Repo
-  alias Sanbase.Model.{Project, MarketSegment, Infrastructure}
-  alias Sanbase.Auth.User
-
   setup do
-    user =
-      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
-      |> Repo.insert!()
+    user = insert(:user)
 
-    contract_address = "0x123123123"
+    ms1 = insert(:market_segment, %{name: "Foo"})
+    ms2 = insert(:market_segment, %{name: "Bar"})
+    ms3 = insert(:market_segment, %{name: "Qux"})
 
-    eth_infrastructure =
-      %Infrastructure{code: "ETH"}
-      |> Repo.insert!()
+    insert(:market_segment, %{name: "Baz"})
 
-    btc_infrastructure =
-      %Infrastructure{code: "BTC"}
-      |> Repo.insert!()
-
-    # All necesarry fields
-    %MarketSegment{
-      name: "Foo",
-      projects: [
-        %Project{
-          name: "Foo Project",
-          slug: "fooproject",
-          main_contract_address: contract_address,
-          infrastructure_id: eth_infrastructure.id
-        }
-      ]
-    }
-    |> Repo.insert!()
-
-    # Missing slug - won't appear in erc20 and currency market segments
-    %MarketSegment{
-      name: "Bar",
-      projects: [
-        %Project{
-          name: "Bar Project",
-          main_contract_address: contract_address,
-          infrastructure_id: eth_infrastructure.id
-        }
-      ]
-    }
-    |> Repo.insert!()
-
-    # Missing main_contract_address - won't appear in erc20 market segments
-    %MarketSegment{
-      name: "Baz",
-      projects: [
-        %Project{
-          name: "Baz Project",
-          slug: "bazproject",
-          infrastructure_id: eth_infrastructure.id
-        }
-      ]
-    }
-    |> Repo.insert!()
-
-    # Infrastructure is not "ETH" - won't appear in erc20 market segments
-    %MarketSegment{
-      name: "Qux",
-      projects: [
-        %Project{
-          name: "Qux Project",
-          slug: "quxproject",
-          main_contract_address: contract_address,
-          infrastructure_id: btc_infrastructure.id
-        }
-      ]
-    }
-    |> Repo.insert!()
+    insert(:random_erc20_project, %{market_segments: [ms1]})
+    insert(:random_project, %{market_segments: [ms2]})
+    insert(:random_project, %{market_segments: [ms3]})
 
     conn = setup_jwt_auth(build_conn(), user)
 
@@ -87,14 +28,22 @@ defmodule SanbaseWeb.Graphql.MarketSegmentResolverTest do
       |> json_response(200)
       |> extract_all_market_segments()
 
+    market_segments =
+      market_segments
+      |> Enum.sort_by(& &1["name"])
+
+    expected_market_segments =
+      [
+        %{"count" => 1, "name" => "Foo"},
+        %{"count" => 1, "name" => "Bar"},
+        %{"count" => 0, "name" => "Baz"},
+        %{"count" => 1, "name" => "Qux"}
+      ]
+      |> Enum.sort_by(& &1["name"])
+
     assert Enum.count(market_segments) === 4
 
-    assert market_segments === [
-             %{"count" => 1, "name" => "Foo"},
-             %{"count" => 1, "name" => "Bar"},
-             %{"count" => 1, "name" => "Baz"},
-             %{"count" => 1, "name" => "Qux"}
-           ]
+    assert market_segments == expected_market_segments
   end
 
   test "erc20_market_segments/3", %{conn: conn} do
@@ -119,7 +68,7 @@ defmodule SanbaseWeb.Graphql.MarketSegmentResolverTest do
     assert Enum.count(market_segments) === 2
 
     assert market_segments === [
-             %{"count" => 1, "name" => "Baz"},
+             %{"count" => 1, "name" => "Bar"},
              %{"count" => 1, "name" => "Qux"}
            ]
   end
@@ -128,7 +77,7 @@ defmodule SanbaseWeb.Graphql.MarketSegmentResolverTest do
     query = """
     {
       #{query_name} {
-        name,
+        name
         count
       }
     }

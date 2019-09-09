@@ -965,9 +965,7 @@ ALTER SEQUENCE public.project_id_seq OWNED BY public.project.id;
 CREATE TABLE public.project_market_segments (
     id bigint NOT NULL,
     project_id bigint,
-    market_segment_id bigint,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    market_segment_id bigint
 );
 
 

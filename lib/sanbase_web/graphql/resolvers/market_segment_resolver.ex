@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MarketSegmentResolver do
   require Logger
 
   alias Sanbase.Model.{
+    Project,
     MarketSegment
   }
 
@@ -16,10 +17,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MarketSegmentResolver do
 
   def erc20_market_segments(_parent, _args, _resolution) do
     filter = fn %{projects: projects} ->
-      Enum.any?(projects, fn project ->
-        not is_nil(project.slug) and not is_nil(project.main_contract_address) and
-          not is_nil(project.infrastructure) and project.infrastructure.code === "ETH"
-      end)
+      Enum.any?(projects, &Project.is_erc20?/1)
     end
 
     market_segments = market_segments(filter)
@@ -29,11 +27,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MarketSegmentResolver do
 
   def currencies_market_segments(_parent, _args, _resolution) do
     filter = fn %{projects: projects} ->
-      Enum.any?(projects, fn project ->
-        not is_nil(project.slug) and
-          (is_nil(project.main_contract_address) or
-             (not is_nil(project.infrastructure) and project.infrastructure.code !== "ETH"))
-      end)
+      Enum.any?(projects, &Project.is_currency?/1)
     end
 
     market_segments = market_segments(filter)
@@ -42,7 +36,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MarketSegmentResolver do
   end
 
   defp market_segments(filter) do
-    Repo.all(MarketSegment)
+    MarketSegment.all()
     |> Repo.preload(projects: :infrastructure)
     |> Enum.filter(filter)
     |> Enum.map(fn %{name: name, projects: projects} ->

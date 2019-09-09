@@ -108,6 +108,7 @@ defmodule Sanbase.Model.Project do
       :token_decimals,
       :total_supply
     ])
+    |> cast_assoc(:market_segments)
     |> validate_required([:name])
     |> unique_constraint(:slug)
   end
@@ -320,6 +321,10 @@ defmodule Sanbase.Model.Project do
       _ ->
         false
     end
+  end
+
+  def is_currency?(%Project{} = project) do
+    not is_erc20?(project)
   end
 
   def preloads(), do: @preloads

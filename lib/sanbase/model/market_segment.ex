@@ -23,4 +23,6 @@ defmodule Sanbase.Model.MarketSegment do
     |> validate_required([:name])
     |> unique_constraint(:name)
   end
+
+  def all(), do: Sanbase.Repo.all(__MODULE__)
 end

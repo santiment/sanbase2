@@ -7,16 +7,9 @@ defmodule Sanbase.Repo.Migrations.FillProjectMarketSegmentsTable do
     setup()
     projects = projects_with_market_segment()
 
-    now = NaiveDateTime.utc_now()
-
     insert_data =
       Enum.map(projects, fn project ->
-        %{
-          project_id: project.id,
-          market_segment_id: project.market_segment.id,
-          inserted_at: now,
-          updated_at: now
-        }
+        %{project_id: project.id, market_segment_id: project.market_segment.id}
       end)
 
     Sanbase.Repo.insert_all(Project.ProjectMarketSegment, insert_data)

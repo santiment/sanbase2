@@ -9,8 +9,6 @@ defmodule Sanbase.Model.Project.ProjectMarketSegment do
   schema "project_market_segments" do
     belongs_to(:project, Project, primary_key: true)
     belongs_to(:market_segment, MarketSegment, primary_key: true)
-
-    timestamps()
   end
 
   def changeset(%__MODULE__{} = ms, attrs \\ %{}) do

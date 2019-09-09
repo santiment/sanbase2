@@ -95,13 +95,13 @@ defmodule Sanbase.Billing.StripeEvent do
 
   defp handle_discord_notification(%{
          "id" => id,
-         "type" => "payment_intent.payment_failed",
+         "type" => "charge.failed",
          "data" => %{"object" => %{"amount" => amount}}
        })
        when amount > 1 do
     payload =
       [
-        "Failed payment intent for $#{amount / 100} . Details: https://dashboard.stripe.com/events/${id}"
+        "Failed card charge for $#{amount / 100} . Details: https://dashboard.stripe.com/events/${id}"
       ]
       |> Discord.encode!(publish_user())
 

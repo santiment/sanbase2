@@ -34,7 +34,7 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
                 "Cannot fetch average volume for a list of projects. Reason: #{inspect(error)}"
               )
 
-              nil
+              []
           end
           |> Enum.reject(&is_nil/1)
 

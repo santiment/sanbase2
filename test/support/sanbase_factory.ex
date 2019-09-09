@@ -173,7 +173,7 @@ defmodule Sanbase.Factory do
   end
 
   def market_segment_factory() do
-    %MarketSegment{name: "currency"}
+    %MarketSegment{name: rand_str()}
   end
 
   def currency_factory() do

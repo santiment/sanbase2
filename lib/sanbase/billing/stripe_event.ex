@@ -93,6 +93,25 @@ defmodule Sanbase.Billing.StripeEvent do
     )
   end
 
+  defp handle_discord_notification(%{
+         "id" => id,
+         "type" => "charge.failed",
+         "data" => %{"object" => %{"amount" => amount}}
+       })
+       when amount > 1 do
+    payload =
+      [
+        "Failed card charge for $#{amount / 100} . Details: https://dashboard.stripe.com/events/${id}"
+      ]
+      |> Discord.encode!(publish_user())
+
+    Discord.send_notification(
+      webhook_url(),
+      "Stripe Payment",
+      payload
+    )
+  end
+
   defp handle_discord_notification(_), do: :ok
 
   defp handle_event(%{
@@ -132,6 +151,8 @@ defmodule Sanbase.Billing.StripeEvent do
        }) do
     handle_subscription_created(id, "customer.subscription.created", subscription_id)
   end
+
+  defp handle_event(_), do: :ok
 
   defp handle_subscription_created(id, type, subscription_id) do
     with {:ok, stripe_subscription} <- StripeApi.retrieve_subscription(subscription_id),

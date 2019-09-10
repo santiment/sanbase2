@@ -66,6 +66,14 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       )
     end
 
+    field :source_slug_mappings, list_of(:source_slug_mapping) do
+      cache_resolve(
+        dataloader(SanbaseRepo, :source_slug_mappings,
+          callback: fn query, _project, _args -> {:ok, query} end
+        )
+      )
+    end
+
     field :is_trending, :boolean do
       cache_resolve(&ProjectResolver.is_trending/3)
     end
@@ -290,6 +298,11 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
         max_ttl_offset: 240
       )
     end
+  end
+
+  object :source_slug_mapping do
+    field(:source, non_null(:string))
+    field(:slug, non_null(:string))
   end
 
   object :eth_address do

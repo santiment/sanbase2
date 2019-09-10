@@ -49,7 +49,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     # Create a project if it's a new one in the top projects and we don't have it
     tickers
     |> Enum.take(top_projects_to_follow())
-    |> Enum.each(&insert_or_create_project/1)
+    |> Enum.each(&insert_or_update_project/1)
 
     # Store the data in LatestCoinmarketcapData in postgres
     tickers
@@ -95,21 +95,35 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     |> Repo.insert_or_update!()
   end
 
-  defp insert_or_create_project(%Ticker{id: slug, name: name, symbol: ticker}) do
-    find_or_init_project(%Project{name: name, slug: slug, ticker: ticker})
-    |> Repo.insert_or_update!()
+  defp insert_or_update_project(%Ticker{id: slug, name: name, symbol: ticker}) do
+    case find_or_init_project(%Project{name: name, slug: slug, ticker: ticker}) do
+      {:not_existing_project, changeset} ->
+        # If there is not id then the project was not returned from the DB
+        # but initialized by the function
+        project = changeset |> Repo.insert_or_update!()
+
+        Project.SourceSlugMapping.create(%{
+          source: "coinmarketcap",
+          slug: project.slug,
+          project_id: project.id
+        })
+
+      {:existing_project, changeset} ->
+        Repo.insert_or_update!(changeset)
+    end
   end
 
   defp find_or_init_project(%Project{slug: slug} = project) do
     case Project.by_slug(slug) do
       nil ->
-        Project.changeset(project)
+        {:not_existing_project, Project.changeset(project)}
 
       existing_project ->
-        Project.changeset(existing_project, %{
-          slug: slug,
-          ticker: project.ticker
-        })
+        {:existing_project,
+         Project.changeset(existing_project, %{
+           slug: slug,
+           ticker: project.ticker
+         })}
     end
   end
 

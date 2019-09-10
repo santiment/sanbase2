@@ -12,20 +12,23 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   plug(Tesla.Middleware.Compression)
   plug(Tesla.Middleware.Logger)
 
-  def fetch_project_page(slug) do
-    case get("/#{slug}/") do
+  def fetch_project_page(coinmarketcap_id) do
+    case get("/#{coinmarketcap_id}/") do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         {:ok, body}
 
       {:ok, %Tesla.Env{status: status}} ->
-        error_msg = "Failed fetching project page for #{slug}. Status: #{status}."
+        error_msg = "Failed fetching project page for #{coinmarketcap_id}. Status: #{status}."
 
         Logger.error(error_msg)
         {:error, error_msg}
 
       {:error, error} ->
         error_msg = inspect(error)
-        Logger.error("Error fetching project page for #{slug}. Error message: #{error_msg}")
+
+        Logger.error(
+          "Error fetching project page for #{coinmarketcap_id}. Error message: #{error_msg}"
+        )
 
         {:error, error_msg}
     end

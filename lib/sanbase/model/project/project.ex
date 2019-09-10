@@ -48,6 +48,7 @@ defmodule Sanbase.Model.Project do
 
     has_one(:social_volume_query, Project.SocialVolumeQuery)
 
+    has_many(:source_slug_mappings, Project.SourceSlugMapping)
     has_many(:icos, Ico)
     has_many(:github_organizations, Project.GithubOrganization)
     has_many(:eth_addresses, ProjectEthAddress)
@@ -124,6 +125,10 @@ defmodule Sanbase.Model.Project do
   defdelegate contract_info(project), to: Project.ContractData
 
   defdelegate contract_address(project), to: Project.ContractData
+
+  def coinmarketcap_id(%Project{} = project) do
+    Project.SourceSlugMapping.get_slug(project, "coinmarketcap")
+  end
 
   def sanbase_link(%Project{slug: slug}) when not is_nil(slug) do
     SanbaseWeb.Endpoint.frontend_url() <> "/projects/#{slug}"

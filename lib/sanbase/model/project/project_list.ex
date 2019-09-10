@@ -141,6 +141,13 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
   end
 
+  def projects_with_source(source) do
+    projects_query()
+    |> preload([:source_slug_mappings])
+    |> Repo.all()
+    |> Enum.filter(fn project -> source in Enum.map(project.source_slug_mappings, & &1.source) end)
+  end
+
   def projects_count(min_volume) do
     projects_query(min_volume)
     |> select([p], fragment("count(*)"))

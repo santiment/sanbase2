@@ -4,6 +4,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
   alias Sanbase.ExternalServices.Coinmarketcap.{GraphData, PricePoint}
   alias Sanbase.Prices.Store
 
+  import Sanbase.Factory
   import Sanbase.InfluxdbHelpers
 
   @total_market_measurement "TOTAL_MARKET_total-market"
@@ -16,7 +17,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
       %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "data/btc_graph_data.json"))}
     end)
 
-    assert GraphData.fetch_first_datetime("santiment") ==
+    project =
+      insert(:project, %{
+        slug: "santiment",
+        source_slug_mappings: [
+          build(:source_slug_mapping, %{source: "coinmarketcap", slug: "santiment"})
+        ]
+      })
+
+    assert GraphData.fetch_first_datetime(project) ==
              DateTime.from_unix!(1_507_991_665_000, :millisecond)
   end
 

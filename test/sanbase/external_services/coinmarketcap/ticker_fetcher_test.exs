@@ -3,19 +3,43 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
 
   alias Sanbase.ExternalServices.Coinmarketcap.TickerFetcher
   alias Sanbase.Prices.Store
+  alias Sanbase.Model.Project
 
   import Sanbase.InfluxdbHelpers
 
   @btc_measurement "BTC_bitcoin"
   @eth_measurement "ETH_ethereum"
 
-  test "parsing the project page" do
+  setup do
     setup_prices_influxdb()
 
     Tesla.Mock.mock(fn %{method: :get} ->
       %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "data/pro_cmc_api_2.json"))}
     end)
 
+    :ok
+  end
+
+  test "ticker fetcher inserts new projects" do
+    assert length(Project.List.projects()) == 0
+    assert length(Project.List.projects_with_source("coinmarketcap")) == 0
+
+    TickerFetcher.work()
+
+    assert length(Project.List.projects()) == 2
+    assert length(Project.List.projects_with_source("coinmarketcap")) == 2
+  end
+
+  test "ticker fetcher inserts new projects with correct coinmarketcap mapping" do
+    TickerFetcher.work()
+    projects = Project.List.projects_with_source("coinmarketcap")
+
+    for project <- projects do
+      assert project.slug == project.source_slug_mappings |> List.first() |> Map.get(:slug)
+    end
+  end
+
+  test "ticker fetcher fetches prices" do
     TickerFetcher.work()
 
     from = DateTime.from_naive!(~N[2018-08-17 08:35:00], "Etc/UTC")

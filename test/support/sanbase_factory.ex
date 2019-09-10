@@ -85,11 +85,16 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def random_erc20_project_factory() do
+  def random_erc20_project_factory(attrs) do
+    slug = Map.get(attrs, :slug, rand_str())
+
     %Project{
       name: rand_str(),
       ticker: rand_str(4),
-      slug: rand_str(),
+      slug: slug,
+      source_slug_mappings: [
+        build(:source_slug_mapping, %{source: "coinmarketcap", slug: slug})
+      ],
       token_decimals: 18,
       total_supply: :rand.uniform(50_000_000) + 10_000_000,
       github_organizations: [build(:github_organization)],
@@ -98,32 +103,49 @@ defmodule Sanbase.Factory do
       eth_addresses: [build(:project_eth_address)],
       main_contract_address: "0x" <> rand_hex_str()
     }
+    |> merge_attributes(attrs)
   end
 
-  def project_factory() do
+  def project_factory(attrs) do
+    slug = Map.get(attrs, :slug, "santiment")
+
     %Project{
       name: "Santiment",
       ticker: "SAN",
-      slug: "santiment",
+      slug: slug,
+      source_slug_mappings: [
+        build(:source_slug_mapping, %{source: "coinmarketcap", slug: slug})
+      ],
       token_decimals: 18,
       total_supply: 83_000_000,
       github_organizations: [build(:github_organization)],
       infrastructure: nil,
       eth_addresses: [build(:project_eth_address)]
     }
+    |> merge_attributes(attrs)
   end
 
-  def random_project_factory() do
+  def random_project_factory(attrs) do
+    slug = Map.get(attrs, :slug, rand_str())
+
     %Project{
       name: rand_str(),
       ticker: rand_hex_str() |> String.upcase(),
-      slug: rand_str(),
+      slug: slug,
+      source_slug_mappings: [
+        build(:source_slug_mapping, %{source: "coinmarketcap", slug: slug})
+      ],
       token_decimals: 18,
       total_supply: :rand.uniform(50_000_000) + 10_000_000,
       github_organizations: [build(:github_organization)],
       infrastructure: nil,
       eth_addresses: [build(:project_eth_address)]
     }
+    |> merge_attributes(attrs)
+  end
+
+  def source_slug_mapping_factory() do
+    %Project.SourceSlugMapping{}
   end
 
   def social_volume_query_factory() do

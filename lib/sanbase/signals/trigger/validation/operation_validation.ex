@@ -20,13 +20,7 @@ defmodule Sanbase.Signal.Validation.Operation do
         {:error, "#{inspect(operation)} is an absolute operation, not a percent change one."}
 
       [op] when op in @combinator_operations ->
-        list = Map.values(operation) |> List.first()
-
-        if check_operations?(list, @percent_operations) and all_operations_valid?(list) do
-          :ok
-        else
-          {:error, "#{inspect(operation)} is not a valid percent change operation"}
-        end
+        combinator_operation_valid?(operation, @percent_operations)
 
       _ ->
         {:error, "#{inspect(operation)} is not a valid percent change operation"}
@@ -40,19 +34,13 @@ defmodule Sanbase.Signal.Validation.Operation do
 
       [op] when op in @absolute_value_operations ->
         {:error,
-         "#{inspect(operation)} is an absolute value operation, not an absolute percent change one."}
+         "#{inspect(operation)} is an absolute value operation, not an absolute change one."}
 
       [op] when op in @percent_operations ->
-        {:error, "#{inspect(operation)} is a percent, not an absolute percent change one."}
+        {:error, "#{inspect(operation)} is a percent, not an absolute change one."}
 
       [op] when op in @combinator_operations ->
-        list = Map.values(operation) |> List.first()
-
-        if check_operations?(list, @absolute_change_operations) and all_operations_valid?(list) do
-          :ok
-        else
-          {:error, "#{inspect(operation)} is not a valid absolute change operation"}
-        end
+        combinator_operation_valid?(operation, @absolute_change_operations)
 
       _ ->
         {:error, "#{inspect(operation)} is not a valid absolute change operation"}
@@ -66,27 +54,39 @@ defmodule Sanbase.Signal.Validation.Operation do
 
       [op] when op in @absolute_change_operations ->
         {:error,
-         "#{inspect(operation)} is an absolute change operation, not an absolute value change one."}
+         "#{inspect(operation)} is an absolute change operation, not an absolute value one."}
 
       [op] when op in @percent_operations ->
-        {:error, "#{inspect(operation)} is a percent, not an absolute value change one."}
+        {:error, "#{inspect(operation)} is a percent, not an absolute value one."}
 
       [op] when op in @combinator_operations ->
-        list = Map.values(operation) |> List.first()
-
-        if check_operations?(list, @absolute_value_operations) and all_operations_valid?(list) do
-          :ok
-        else
-          {:error, "#{inspect(operation)} is not a valid absoltue value operation"}
-        end
+        combinator_operation_valid?(operation, @absolute_value_operations)
 
       _ ->
-        {:error, "#{inspect(operation)} is not a valid absoltue value operatio"}
+        {:error, "#{inspect(operation)} is not a valid absolute value operation"}
     end
   end
 
-  def valid_operation?(%{some_of: list}) when is_list(list), do: all_operations_valid?(list)
-  def valid_operation?(%{all_of: list}) when is_list(list), do: all_operations_valid?(list)
+  def valid_operation?(%{some_of: list}) when is_list(list) do
+    with true <- all_operations_valid?(list),
+         true <- all_operations_have_same_type?(list) do
+      :ok
+    else
+      {:error, message} -> {:error, message}
+      false -> {:error, "Not all operations are from the same type"}
+    end
+  end
+
+  def valid_operation?(%{all_of: list}) when is_list(list) do
+    with true <- all_operations_valid?(list),
+         true <- all_operations_have_same_type?(list) do
+      :ok
+    else
+      {:error, message} -> {:error, message}
+      false -> {:error, "Not all operations are from the same type"}
+    end
+  end
+
   def valid_operation?(%{percent_up: percent}) when is_valid_percent_change(percent), do: :ok
   def valid_operation?(%{percent_down: percent}) when is_valid_percent_change(percent), do: :ok
   def valid_operation?(%{above: above}) when is_valid_price(above), do: :ok
@@ -103,7 +103,7 @@ defmodule Sanbase.Signal.Validation.Operation do
   def valid_operation?(op), do: {:error, "#{inspect(op)} is not a valid operation"}
 
   # Private functions
-  defp check_operations?(list, operation_type) do
+  defp all_operations_have_same_type?(list, operation_type) do
     Enum.all?(list, fn elem ->
       type = Map.keys(elem) |> List.first()
       type in operation_type
@@ -127,14 +127,25 @@ defmodule Sanbase.Signal.Validation.Operation do
     end
   end
 
-  defp all_operations_valid?(list) do
-    list = List.wrap(list)
+  defp combinator_operation_valid?(operation, type) do
+    list = Map.values(operation) |> List.first()
 
-    with true <- all_operations_have_same_type?(list),
-         true <- Enum.all?(list, fn op -> valid_operation?(op) == :ok end) do
+    with true <- all_operations_valid?(list),
+         true <- all_operations_have_same_type?(list, type) do
       :ok
     else
-      false -> {:error, "Some of the operations are not valid"}
+      {:error, message} -> {:error, message}
+      false -> {:error, "Not all operations are from the same type"}
+    end
+  end
+
+  defp all_operations_valid?(list) do
+    case Enum.find(list, fn op -> valid_operation?(op) != :ok end) do
+      nil ->
+        true
+
+      not_valid_op ->
+        {:error, "The list of operation contains not valid operation: #{inspect(not_valid_op)}"}
     end
   end
 end

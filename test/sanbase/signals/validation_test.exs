@@ -41,7 +41,7 @@ defmodule Sanbase.Signal.ValidationTest do
     end
   end
 
-  describe "#valid_absolute_value_operation?" do
+  describe "#valid_operation? for absolute value operations" do
     test "with valid cases returns :ok" do
       valid_cases = [
         %{above: 10},
@@ -81,7 +81,7 @@ defmodule Sanbase.Signal.ValidationTest do
     end
   end
 
-  describe "#valid_percent_change_operation?" do
+  describe "#valid_operation? for percent change operations" do
     test "with valid cases returns :ok" do
       valid_cases = [
         %{percent_up: 10},
@@ -92,7 +92,7 @@ defmodule Sanbase.Signal.ValidationTest do
       all_true? =
         valid_cases
         |> Enum.all?(fn operation ->
-          Validation.valid_operation?(operation) == :ok
+          Validation.valid_percent_change_operation?(operation) == :ok
         end)
 
       assert all_true?
@@ -126,7 +126,7 @@ defmodule Sanbase.Signal.ValidationTest do
       ]
 
       assert Validation.valid_operation?(%{all_of: valid_cases}) ==
-               {:error, "Some of the operations are not valid"}
+               {:error, "Not all operations are from the same type"}
     end
 
     test "with different operations in some_of returns proper error message" do
@@ -137,7 +137,7 @@ defmodule Sanbase.Signal.ValidationTest do
       ]
 
       assert Validation.valid_operation?(%{some_of: valid_cases}) ==
-               {:error, "Some of the operations are not valid"}
+               {:error, "Not all operations are from the same type"}
     end
 
     test "with invalid parameters in some_of returns proper error message" do
@@ -148,7 +148,8 @@ defmodule Sanbase.Signal.ValidationTest do
       ]
 
       assert Validation.valid_operation?(%{some_of: valid_cases}) ==
-               {:error, "Some of the operations are not valid"}
+               {:error,
+                "The list of operation contains not valid operation: %{percent_up: \"NaN\"}"}
     end
 
     test "with invalid parameters in all_of returns proper error message" do
@@ -159,7 +160,8 @@ defmodule Sanbase.Signal.ValidationTest do
       ]
 
       assert Validation.valid_operation?(%{all_of: valid_cases}) ==
-               {:error, "Some of the operations are not valid"}
+               {:error,
+                "The list of operation contains not valid operation: %{percent_up: \"NaN\"}"}
     end
 
     test "with invalid cases returns {:error, error_message}" do
@@ -178,6 +180,264 @@ defmodule Sanbase.Signal.ValidationTest do
         end)
 
       assert all_errors?
+    end
+  end
+
+  describe "#valid_absolute_change_operation?" do
+    test "with valid cases returns :ok" do
+      valid_cases = [
+        %{amount_up: 10},
+        %{amount_up: 10.5},
+        %{amount_down: 20},
+        %{inside_channel: [10, 20]},
+        %{outside_channel: [10, 20]}
+      ]
+
+      all_true? =
+        valid_cases
+        |> Enum.all?(fn operation ->
+          Validation.valid_absolute_change_operation?(operation) == :ok
+        end)
+
+      assert all_true?
+    end
+
+    test "with invalid cases returns {:error, error_message}" do
+      error_cases = [
+        %{amount_up: "10"},
+        %{"amount_down" => 20},
+        %{inside_channel: [20, 10]},
+        %{inside_channel: [10, 20, 30]},
+        %{inside_channel: ["10", "20"]},
+        %{outside_channel: [10, 10]},
+        %{non_existing: 10}
+      ]
+
+      all_errors? =
+        error_cases
+        |> Enum.all?(fn operation ->
+          Validation.valid_absolute_change_operation?(operation) |> elem(0) == :error
+        end)
+
+      assert all_errors?
+    end
+
+    test "with invalid as a whole operation returns proper error message" do
+      assert Validation.valid_absolute_change_operation?(%{amount_up: "10"}) ==
+               {:error, "%{amount_up: \"10\"} is not a valid operation"}
+    end
+
+    test "with invalid operation, because it is a percent one, returns proper error message" do
+      assert Validation.valid_absolute_change_operation?(%{percent_up: 10}) ==
+               {:error, "%{percent_up: 10} is a percent, not an absolute change one."}
+    end
+
+    test "with invalid operation, because it is a absolute value one, returns proper error message" do
+      assert Validation.valid_absolute_change_operation?(%{above: 10}) ==
+               {:error,
+                "%{above: 10} is an absolute value operation, not an absolute change one."}
+    end
+  end
+
+  describe "#valid_absolute_value_operation?" do
+    test "with valid cases returns :ok" do
+      valid_cases = [
+        %{above: 10},
+        %{above: 10.5},
+        %{below: 20},
+        %{inside_channel: [10, 20]},
+        %{outside_channel: [10, 20]}
+      ]
+
+      all_true? =
+        valid_cases
+        |> Enum.all?(fn operation ->
+          Validation.valid_absolute_value_operation?(operation) == :ok
+        end)
+
+      assert all_true?
+    end
+
+    test "with invalid cases returns {:error, error_message}" do
+      error_cases = [
+        %{above: "10"},
+        %{"below" => 20},
+        %{inside_channel: [20, 10]},
+        %{inside_channel: [10, 20, 30]},
+        %{inside_channel: ["10", "20"]},
+        %{outside_channel: [10, 10]},
+        %{non_existing: 10}
+      ]
+
+      all_errors? =
+        error_cases
+        |> Enum.all?(fn operation ->
+          Validation.valid_absolute_value_operation?(operation) |> elem(0) == :error
+        end)
+
+      assert all_errors?
+    end
+
+    test "with invalid as a whole operation returns proper error message" do
+      assert Validation.valid_absolute_value_operation?(%{above: "10"}) ==
+               {:error, "%{above: \"10\"} is not a valid operation"}
+    end
+
+    test "with invalid operation, because it is a percent one, returns proper error message" do
+      assert Validation.valid_absolute_value_operation?(%{percent_up: 10}) ==
+               {:error, "%{percent_up: 10} is a percent, not an absolute value one."}
+    end
+
+    test "with invalid operation, because it is a absolute change one, returns proper error message" do
+      assert Validation.valid_absolute_value_operation?(%{amount_up: 10}) ==
+               {:error,
+                "%{amount_up: 10} is an absolute change operation, not an absolute value one."}
+    end
+  end
+
+  describe "#valid_percent_change_operation?" do
+    test "with valid cases returns :ok" do
+      valid_cases = [
+        %{percent_up: 10},
+        %{percent_down: 10.5},
+        %{percent_down: 20},
+        %{inside_channel: [10, 20]},
+        %{outside_channel: [10, 20]}
+      ]
+
+      all_true? =
+        valid_cases
+        |> Enum.all?(fn operation ->
+          Validation.valid_percent_change_operation?(operation) == :ok
+        end)
+
+      assert all_true?
+    end
+
+    test "with invalid cases returns {:error, error_message}" do
+      error_cases = [
+        %{percent_up: "10"},
+        %{"percent_up" => 20},
+        %{inside_channel: [20, 10]},
+        %{inside_channel: [10, 20, 30]},
+        %{inside_channel: ["10", "20"]},
+        %{outside_channel: [10, 10]},
+        %{non_existing: 10}
+      ]
+
+      all_errors? =
+        error_cases
+        |> Enum.all?(fn operation ->
+          Validation.valid_percent_change_operation?(operation) |> elem(0) == :error
+        end)
+
+      assert all_errors?
+    end
+
+    test "with invalid as a whole operation returns proper error message}" do
+      assert Validation.valid_percent_change_operation?(%{percent_up: "10"}) ==
+               {:error, "%{percent_up: \"10\"} is not a valid operation"}
+    end
+
+    test "with invalid operation, because it is an absolute value one, returns proper error message" do
+      assert Validation.valid_percent_change_operation?(%{above: 10}) ==
+               {:error, "%{above: 10} is an absolute operation, not a percent change one."}
+    end
+
+    test "with invalid operation, because it is a absolute change one, returns proper error message" do
+      assert Validation.valid_percent_change_operation?(%{amount_up: 10}) ==
+               {:error, "%{amount_up: 10} is an absolute operation, not a percent change one."}
+    end
+  end
+
+  describe "#combinator operations?" do
+    test "with valid cases in some_of returns :ok" do
+      valid_case = %{
+        some_of: [
+          %{percent_up: 10},
+          %{percent_down: 10.5},
+          %{percent_down: 20}
+        ]
+      }
+
+      assert Validation.valid_percent_change_operation?(valid_case) == :ok
+    end
+
+    test "with valid cases in all_of returns :ok" do
+      valid_case = %{
+        all_of: [
+          %{percent_up: 10},
+          %{percent_down: 10.5},
+          %{percent_down: 20}
+        ]
+      }
+
+      assert Validation.valid_percent_change_operation?(valid_case) == :ok
+    end
+
+    test "with invalid cases returns {:error, error_message}" do
+      error_case = %{
+        some_of: [
+          %{percent_up: "10"},
+          %{"percent_up" => 20},
+          %{inside_channel: [20, 10]},
+          %{inside_channel: [10, 20, 30]},
+          %{inside_channel: ["10", "20"]},
+          %{outside_channel: [10, 10]},
+          %{non_existing: 10}
+        ]
+      }
+
+      assert Validation.valid_percent_change_operation?(error_case) |> elem(0) == :error
+    end
+
+    test "with a not fitting operation in a percent some_of returns proper message" do
+      assert Validation.valid_percent_change_operation?(%{
+               some_of: [%{percent_up: 10}, %{above: 10}]
+             }) ==
+               {:error, "Not all operations are from the same type"}
+    end
+
+    test "with invalid operation in a some_of returns proper message" do
+      assert Validation.valid_percent_change_operation?(%{
+               some_of: [%{percent_up: 10}, %{above: "10"}]
+             }) ==
+               {:error, "The list of operation contains not valid operation: %{above: \"10\"}"}
+    end
+
+    test "with a not fitting operation in an absolute change some_of, because all must be absolute change ones, returns proper message" do
+      assert Validation.valid_absolute_change_operation?(%{
+               some_of: [%{amount_up: 10}, %{above: 10}]
+             }) ==
+               {:error, "Not all operations are from the same type"}
+    end
+
+    test "with a not fitting operation in an absolute value some_of, because all must be absolute value ones, returns proper message" do
+      assert Validation.valid_absolute_change_operation?(%{
+               some_of: [%{above: 10}, %{amount_down: 10}]
+             }) ==
+               {:error, "Not all operations are from the same type"}
+    end
+
+    test "with a not fitting operation in a percent all_of returns proper message" do
+      assert Validation.valid_percent_change_operation?(%{
+               all_of: [%{percent_up: 10}, %{above: 10}]
+             }) ==
+               {:error, "Not all operations are from the same type"}
+    end
+
+    test "with a not fitting operation in an absolute change all_of, because all must be absolute change ones, returns proper message" do
+      assert Validation.valid_absolute_change_operation?(%{
+               all_of: [%{amount_up: 10}, %{above: 10}]
+             }) ==
+               {:error, "Not all operations are from the same type"}
+    end
+
+    test "with a not fitting operation in an absolute value all_of, because all must be absolute value ones, returns proper message" do
+      assert Validation.valid_absolute_change_operation?(%{
+               all_of: [%{above: 10}, %{amount_down: 10}]
+             }) ==
+               {:error, "Not all operations are from the same type"}
     end
   end
 end

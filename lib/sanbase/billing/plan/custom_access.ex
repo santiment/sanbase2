@@ -19,6 +19,8 @@ defmodule Sanbase.Billing.Plan.CustomAccess do
     is missing it means that it is not restricted
   """
 
+  @doc documentation_ref: "# DOCS access-plans/index.md"
+
   import Sanbase.Clickhouse.Metric.Helper,
     only: [mvrv_metrics: 0, realized_value_metrics: 0, token_age_consumed_metrics: 0]
 

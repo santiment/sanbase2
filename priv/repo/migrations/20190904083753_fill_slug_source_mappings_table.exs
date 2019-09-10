@@ -14,7 +14,7 @@ defmodule Sanbase.Repo.Migrations.FillSourceSlugMappingsTable do
         %{source: "coinmarketcap", slug: slug, project_id: project_id}
       end)
 
-    Sanbase.Repo.insert_all(Project.SourceSlugMapping, insert_data)
+    Sanbase.Repo.insert_all(Project.SourceSlugMapping, insert_data, on_conflict: :nothing)
   end
 
   def down do

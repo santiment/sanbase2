@@ -23,8 +23,6 @@ defmodule Sanbase.Billing.Subscription do
   Current subscription attempt failed.
   Please, contact administrator of the site for more information.
   """
-  @free_trial_days_for_coupons 14
-  @percent_off_for_free_trial 100
 
   schema "subscriptions" do
     field(:stripe_id, :string)
@@ -265,20 +263,6 @@ defmodule Sanbase.Billing.Subscription do
   end
 
   @doc """
-  Return list of tuples
-    * coupon_code
-    * count of subscriptions created with coupon code
-  """
-  def subscriptions_count_by_coupon do
-    {:ok, all_subscriptions} = Stripe.Subscription.list()
-
-    all_subscriptions.data
-    |> Enum.group_by(fn s -> s.metadata |> Map.get("coupon_id") end)
-    |> Enum.reject(fn {coupon_id, _} -> is_nil(coupon_id) end)
-    |> Enum.map(fn {coupon_id, subscriptions} -> {coupon_id, length(subscriptions)} end)
-  end
-
-  @doc """
   How much historical days a subscription plan can access.
   """
   def historical_data_in_days(%__MODULE__{plan: plan}, query, product) do
@@ -331,15 +315,13 @@ defmodule Sanbase.Billing.Subscription do
   end
 
   defp create_stripe_subscription(user, plan, nil) do
-    subscription = %{
-      customer: user.stripe_customer_id,
-      items: [%{plan: plan.stripe_id}]
-    }
+    percent_off =
+      user
+      |> san_balance()
+      |> percent_discount()
 
-    user
-    |> san_balance()
-    |> percent_discount()
-    |> update_subscription_with_coupon(subscription)
+    subscription_defaults(user, plan)
+    |> update_subscription_with_coupon(percent_off)
     |> case do
       {:ok, subscription} ->
         StripeApi.create_subscription(subscription)
@@ -351,41 +333,31 @@ defmodule Sanbase.Billing.Subscription do
 
   defp create_stripe_subscription(user, plan, coupon) when not is_nil(coupon) do
     with {:ok, stripe_coupon} <- StripeApi.retrieve_coupon(coupon) do
-      %{
-        customer: user.stripe_customer_id,
-        items: [%{plan: plan.stripe_id}]
-      }
-      |> modify_subscription_by_coupon(stripe_coupon)
+      subscription_defaults(user, plan)
+      |> update_subscription_with_coupon(stripe_coupon)
       |> StripeApi.create_subscription()
     end
   end
 
-  defp modify_subscription_by_coupon(subscription, %Stripe.Coupon{
-         percent_off: percent_off,
-         id: id
-       })
-       when percent_off == @percent_off_for_free_trial do
-    subscription
-    |> Map.put(:trial_period_days, @free_trial_days_for_coupons)
-    |> Map.put(:metadata, %{coupon_id: id})
+  defp subscription_defaults(user, plan) do
+    %{
+      customer: user.stripe_customer_id,
+      items: [%{plan: plan.stripe_id}]
+    }
   end
 
-  defp modify_subscription_by_coupon(subscription, %Stripe.Coupon{id: coupon_id}) do
+  defp update_subscription_with_coupon(subscription, %Stripe.Coupon{id: coupon_id}) do
     Map.put(subscription, :coupon, coupon_id)
   end
 
-  defp update_subscription_with_coupon(nil, subscription), do: {:ok, subscription}
-
-  defp update_subscription_with_coupon(percent_off, subscription) when is_integer(percent_off) do
-    StripeApi.create_coupon(%{percent_off: percent_off, duration: "forever"})
-    |> case do
-      {:ok, coupon} ->
-        {:ok, Map.put(subscription, :coupon, coupon.id)}
-
-      {:error, reason} ->
-        {:error, reason}
+  defp update_subscription_with_coupon(subscription, percent_off) when is_integer(percent_off) do
+    with {:ok, coupon} <-
+           StripeApi.create_coupon(%{percent_off: percent_off, duration: "forever"}) do
+      {:ok, Map.put(subscription, :coupon, coupon.id)}
     end
   end
+
+  defp update_subscription_with_coupon(subscription, nil), do: {:ok, subscription}
 
   defp percent_discount(balance) when balance >= 1000, do: @percent_discount_1000_san
   defp percent_discount(balance) when balance >= 200, do: @percent_discount_200_san

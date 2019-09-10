@@ -11,6 +11,8 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   alias Sanbase.StripeApiTestReponse
   alias Sanbase.Billing.Subscription
 
+  @coupon_code "test_coupon"
+
   setup_with_mocks([
     {StripeApi, [:passthrough],
      [create_product: fn _ -> StripeApiTestReponse.create_product_resp() end]},
@@ -24,6 +26,8 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
      [create_coupon: fn _ -> StripeApiTestReponse.create_coupon_resp() end]},
     {StripeApi, [:passthrough],
      [create_subscription: fn _ -> StripeApiTestReponse.create_subscription_resp() end]},
+    {StripeApi, [:passthrough],
+     [retrieve_coupon: fn _ -> {:ok, %Stripe.Coupon{id: @coupon_code}} end]},
     {Sanbase.StripeApi, [:passthrough],
      [get_subscription_first_item_id: fn _ -> {:ok, "item_id"} end]},
     {Sanbase.StripeApi, [:passthrough],
@@ -171,6 +175,15 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
                  assert error_msg == Subscription.generic_error_message()
                end) =~ "test error"
       end
+    end
+
+    test "subscribe with coupon works", context do
+      query = subscribe_with_coupon_mutation(context.plans.plan_essential.id, @coupon_code)
+      response = execute_mutation(context.conn, query, "subscribe")
+
+      assert_called(StripeApi.retrieve_coupon(@coupon_code))
+      assert response["status"] == "ACTIVE"
+      assert response["plan"]["name"] == context.plans.plan_essential.name
     end
   end
 
@@ -518,6 +531,26 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     """
     mutation {
       subscribe(card_token: "card_token", plan_id: #{plan_id}) {
+        id,
+        status
+        plan {
+          id
+          name
+          interval
+          amount
+          product {
+            name
+          }
+        }
+      }
+    }
+    """
+  end
+
+  defp subscribe_with_coupon_mutation(plan_id, coupon) do
+    """
+    mutation {
+      subscribe(card_token: "card_token", plan_id: #{plan_id}, coupon: "#{coupon}") {
         id,
         status
         plan {

@@ -51,6 +51,7 @@ defmodule SanbaseWeb.Graphql.Schema.GithubQueries do
       meta(access: :free)
 
       arg(:slug, :string)
+      arg(:selector, :selector)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, non_null(:string))

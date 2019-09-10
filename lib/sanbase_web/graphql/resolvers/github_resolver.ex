@@ -37,6 +37,88 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
     end
   end
 
+  def dev_activity(
+        _root,
+        %{
+          selector: %{slug: slug},
+          from: from,
+          to: to,
+          interval: interval,
+          transform: transform,
+          moving_average_interval_base: moving_average_interval_base
+        },
+        _resolution
+      ) do
+    with {:ok, github_organizations} <- Project.github_organizations(slug),
+         {:ok, result} <-
+           Sanbase.Clickhouse.Github.dev_activity(
+             github_organizations,
+             from,
+             to,
+             interval,
+             transform,
+             moving_average_interval_base
+           ) do
+      {:ok, result}
+    else
+      {:error, {:github_link_error, _error}} ->
+        {:ok, []}
+
+      error ->
+        Logger.error("Cannot fetch github activity for #{slug}. Reason: #{inspect(error)}")
+        {:error, "Cannot fetch github activity for #{slug}"}
+    end
+  end
+
+  def dev_activity(
+        _root,
+        %{
+          selector: %{market_segments: market_segments},
+          from: from,
+          to: to,
+          interval: interval,
+          transform: transform,
+          moving_average_interval_base: moving_average_interval_base
+        },
+        _resolution
+      ) do
+    with {:ok, projects} <- Project.List.by_market_segments(market_segments),
+         {:ok, organizations} <- github_organizations(projects),
+         {:ok, result} <-
+           Sanbase.Clickhouse.Github.dev_activity(
+             organizations,
+             from,
+             to,
+             interval,
+             transform,
+             moving_average_interval_base
+           ) do
+      {:ok, result}
+    else
+      {:error, {:github_link_error, _error}} ->
+        {:ok, []}
+
+      error ->
+        Logger.error(
+          "Cannot fetch github activity for market segments #{inspect(market_segments)}. Reason: #{
+            inspect(error)
+          }"
+        )
+
+        {:error, "Cannot fetch github activity for market segments #{inspect(market_segments)}"}
+    end
+  end
+
+  defp github_organizations(projects) when is_list(projects) do
+    organizations =
+      Enum.map(projects, &Project.github_organizations/1)
+      |> Enum.filter(&match?({:ok, _}, &1))
+      |> Enum.map(fn {:ok, orgs} -> orgs end)
+      |> List.flatten()
+
+    {:ok, organizations}
+  end
+
   def github_activity(
         _root,
         %{

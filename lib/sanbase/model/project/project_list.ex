@@ -275,8 +275,10 @@ defmodule Sanbase.Model.Project.List do
   end
 
   def by_field(values, field) when is_list(values) do
-    projects_query()
-    |> where([p], field(p, ^field) in ^values)
+    from(
+      p in Project,
+      where: field(p, ^field) in ^values and not is_nil(p.slug)
+    )
     |> Repo.all()
   end
 

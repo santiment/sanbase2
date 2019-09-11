@@ -3,6 +3,8 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
   Implement the restrictions for the Sanbase product
   """
 
+  @doc documentation_ref: "# DOCS access-plans/index.md"
+
   alias Sanbase.Billing.Plan
   alias Sanbase.Signal.UserTrigger
 

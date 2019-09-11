@@ -3,6 +3,8 @@ defmodule Sanbase.Billing.Plan.SansheetsAccessChecker do
   Implement the restrictions for the SANsheets product
   """
 
+  @doc documentation_ref: "# DOCS access-plans/index.md"
+
   @free_plan_stats %{
     historical_data_in_days: 3 * 30,
     realtime_data_cut_off_in_days: 1

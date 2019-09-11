@@ -7,6 +7,8 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
   # available in a given plan. Each next plan contains all the metrics from theh
   # lower plans plus some additional metrics
 
+  @doc documentation_ref: "# DOCS access-plans/index.md"
+
   @free_plan_stats %{
     api_calls_minute: 10,
     api_calls_month: 1000,

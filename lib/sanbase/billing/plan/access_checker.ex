@@ -27,6 +27,8 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   as we have different restrictions.
   """
 
+  @doc documentation_ref: "# DOCS access-plans/index.md"
+
   alias Sanbase.Billing.Product
   alias Sanbase.Billing.Plan.CustomAccess
 

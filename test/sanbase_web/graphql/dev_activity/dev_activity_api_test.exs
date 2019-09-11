@@ -1,0 +1,223 @@
+defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
+  use SanbaseWeb.ConnCase, async: false
+
+  import Mock
+  import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
+  alias Sanbase.Model.Project
+  alias Sanbase.Clickhouse.Github
+
+  setup do
+    market_segment_without_projects = insert(:market_segment)
+    market_segment = insert(:market_segment)
+
+    project1 =
+      insert(:random_project, %{
+        github_organizations: [build(:github_organization)],
+        market_segments: [market_segment]
+      })
+
+    project2 =
+      insert(:random_project, %{
+        github_organizations: [build(:github_organization), build(:github_organization)],
+        market_segments: [market_segment]
+      })
+
+    project3 =
+      insert(:random_project, %{
+        github_organizations: [],
+        market_segments: []
+      })
+
+    dt1 = "2019-01-01T00:00:00Z" |> from_iso8601!()
+    dt2 = "2019-01-02T00:00:00Z" |> from_iso8601!()
+    dt3 = "2019-01-03T00:00:00Z" |> from_iso8601!()
+
+    %{
+      project1: project1,
+      project2: project2,
+      project3: project3,
+      dt1: dt1,
+      dt2: dt2,
+      dt3: dt3,
+      market_segment: market_segment,
+      market_segment_without_projects: market_segment_without_projects
+    }
+  end
+
+  describe "dev activity for slug" do
+    test "with 1 organization", %{project1: project} = context do
+      {:ok, [_]} = Project.github_organizations(project)
+
+      with_mock Github,
+        dev_activity: fn _, _, _, _, _, _ ->
+          {:ok,
+           [
+             %{datetime: context.dt1, activity: 100},
+             %{datetime: context.dt2, activity: 200},
+             %{datetime: context.dt3, activity: 300}
+           ]}
+        end do
+        result = dev_activity_by_slug(context.conn, project.slug, context.dt1, context.dt3, "1d")
+
+        expected = %{
+          "data" => %{
+            "devActivity" => [
+              %{"activity" => 100, "datetime" => DateTime.to_iso8601(context.dt1)},
+              %{"activity" => 200, "datetime" => DateTime.to_iso8601(context.dt2)},
+              %{"activity" => 300, "datetime" => DateTime.to_iso8601(context.dt3)}
+            ]
+          }
+        }
+
+        assert result == expected
+      end
+    end
+
+    test "with multiple organizations", %{project2: project} = context do
+      {:ok, [_, _ | _]} = Project.github_organizations(project)
+
+      with_mock Github,
+        dev_activity: fn _, _, _, _, _, _ ->
+          {:ok,
+           [
+             %{datetime: context.dt1, activity: 100},
+             %{datetime: context.dt2, activity: 200},
+             %{datetime: context.dt3, activity: 300}
+           ]}
+        end do
+        result = dev_activity_by_slug(context.conn, project.slug, context.dt1, context.dt3, "1d")
+
+        expected = %{
+          "data" => %{
+            "devActivity" => [
+              %{"activity" => 100, "datetime" => DateTime.to_iso8601(context.dt1)},
+              %{"activity" => 200, "datetime" => DateTime.to_iso8601(context.dt2)},
+              %{"activity" => 300, "datetime" => DateTime.to_iso8601(context.dt3)}
+            ]
+          }
+        }
+
+        assert result == expected
+      end
+    end
+
+    test "with 0 organizations", %{project3: project} = context do
+      {:ok, []} = Project.github_organizations(project)
+
+      with_mock Github,
+        dev_activity: fn _, _, _, _, _, _ ->
+          {:ok, []}
+        end do
+        result = dev_activity_by_slug(context.conn, project.slug, context.dt1, context.dt3, "1d")
+
+        expected = %{
+          "data" => %{
+            "devActivity" => []
+          }
+        }
+
+        assert result == expected
+      end
+    end
+  end
+
+  describe "dev activity for market segments" do
+    test "one segment with multiple projects", context do
+      with_mock Github,
+        dev_activity: fn _, _, _, _, _, _ ->
+          {:ok,
+           [
+             %{datetime: context.dt1, activity: 100},
+             %{datetime: context.dt2, activity: 200},
+             %{datetime: context.dt3, activity: 300}
+           ]}
+        end do
+        result =
+          dev_activity_by_market_segments(
+            context.conn,
+            [context.market_segment.name],
+            context.dt1,
+            context.dt3,
+            "1d"
+          )
+
+        expected = %{
+          "data" => %{
+            "devActivity" => [
+              %{"activity" => 100, "datetime" => DateTime.to_iso8601(context.dt1)},
+              %{"activity" => 200, "datetime" => DateTime.to_iso8601(context.dt2)},
+              %{"activity" => 300, "datetime" => DateTime.to_iso8601(context.dt3)}
+            ]
+          }
+        }
+
+        assert result == expected
+      end
+    end
+
+    test "multiple segments that no project has", context do
+      with_mock Github,
+        dev_activity: fn _, _, _, _, _, _ -> {:ok, []} end do
+        result =
+          dev_activity_by_market_segments(
+            context.conn,
+            [context.market_segment.name, context.market_segment_without_projects.name],
+            context.dt1,
+            context.dt3,
+            "1d"
+          )
+
+        expected = %{
+          "data" => %{
+            "devActivity" => []
+          }
+        }
+
+        assert result == expected
+
+        # Called without organizations as there were not projects matched
+        assert called(Github.dev_activity([], :_, :_, :_, :_, :_))
+      end
+    end
+  end
+
+  def dev_activity_by_slug(conn, slug, from, to, interval) do
+    query = """
+    {
+      devActivity(
+        selector: {slug: "#{slug}"},
+        from: "#{from}",
+        to: "#{to}",
+        interval: "#{interval}") {
+          datetime
+          activity
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query, "projectBySlug"))
+    |> json_response(200)
+  end
+
+  def dev_activity_by_market_segments(conn, market_segments, from, to, interval) do
+    query = """
+    {
+      devActivity(
+        selector: {marketSegments: #{inspect(market_segments)}},
+        from: "#{from}",
+        to: "#{to}",
+        interval: "#{interval}") {
+          datetime
+          activity
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query, "projectBySlug"))
+    |> json_response(200)
+  end
+end

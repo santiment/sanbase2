@@ -117,18 +117,13 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionTest do
   defp query(function, additional_fields \\ []) when is_map(function) do
     function = function |> Jason.encode!()
 
-    ~s|
-    {
+    ~s| {
       allProjectsByFunction(
         function: '#{function}'
         ) {
          slug
-         #{additional_fields |> Enum.join(" ")}
       }
-    }
-    |
-    |> String.replace(~r|\"|, ~S|\\"|)
-    |> String.replace(~r|'|, ~S|"|)
+    } | |> String.replace(~r|\"|, ~S|\\"|) |> String.replace(~r|'|, ~S|"|)
   end
 
   defp execute_query(conn, query) do

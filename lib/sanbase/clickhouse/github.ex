@@ -104,8 +104,7 @@ defmodule Sanbase.Clickhouse.Github do
           String.t(),
           integer() | nil
         ) :: {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
-  def dev_activity(nil, _, _, _, _, _), do: []
-  def dev_activity([], _, _, _, _, _), do: []
+  def dev_activity([], _, _, _, _, _), do: {:ok, []}
 
   def dev_activity(organizations, from, to, interval, transform, ma_base)
       when length(organizations) > 10 do

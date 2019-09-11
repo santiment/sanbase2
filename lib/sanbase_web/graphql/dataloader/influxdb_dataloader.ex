@@ -12,7 +12,8 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
   end
 
   def query(:volume_change_24h, args) do
-    measurements = args |> Enum.map(&Sanbase.Influxdb.Measurement.name_from/1)
+    measurements =
+      args |> Enum.map(&Sanbase.Influxdb.Measurement.name_from/1) |> Enum.reject(&is_nil/1)
 
     now = Timex.now()
     yesterday = Timex.shift(now, days: -1)

@@ -13,6 +13,11 @@ defmodule Sanbase.WatchlistFunction do
     Project.List.by_market_segment(market_segment)
   end
 
+  def evaluate(%__MODULE__{name: "market_segments", args: args}) do
+    market_segments = Map.get(args, "market_segments") || Map.get(args, :market_segments)
+    Project.List.by_market_segments(market_segments)
+  end
+
   def evaluate(%__MODULE__{name: "top_erc20_projects", args: args}) do
     size = Map.get(args, "size") || Map.fetch!(args, :size)
     ignored_projects = Map.get(args, "ignored_projects") || Map.get(args, :ignored_projects) || []

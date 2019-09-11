@@ -113,8 +113,14 @@ defmodule SanbaseWeb.Graphql.Cache do
   @doc false
   def from(captured_mfa, opts) when is_function(captured_mfa) do
     # Public so it can be used by the resolve macros. You should not use it.
-    fun_name = captured_mfa |> :erlang.fun_info() |> Keyword.get(:name)
-    resolver(captured_mfa, fun_name, opts)
+    case Keyword.pop(opts, :fun_name) do
+      {nil, opts} ->
+        fun_name = captured_mfa |> :erlang.fun_info() |> Keyword.get(:name)
+        resolver(captured_mfa, fun_name, opts)
+
+      {fun_name, opts} ->
+        resolver(captured_mfa, fun_name, opts)
+    end
   end
 
   # Private functions

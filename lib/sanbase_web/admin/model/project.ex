@@ -13,34 +13,18 @@ defmodule Sanbase.ExAdmin.Model.Project do
 
   register_resource Sanbase.Model.Project do
     show project do
-      attributes_table()
+      attributes_table(all: true)
 
-      panel "ICO Events" do
+      panel "Market Segments" do
         markup_contents do
-          a ".btn .btn-primary", href: "/admin/icos/new?project_id=" <> to_string(project.id) do
-            "New ICO"
+          a ".btn .btn-primary",
+            href: "/admin/project_market_segments/new?project_id=" <> to_string(project.id) do
+            "New Market Segment"
           end
         end
 
-        table_for Sanbase.Repo.preload(project.icos, [:cap_currency, ico_currencies: [:currency]]) do
-          column(:id, link: true)
-          column(:start_date)
-          column(:end_date)
-          column(:token_usd_ico_price)
-          column(:token_eth_ico_price)
-          column(:token_btc_ico_price)
-          column(:tokens_issued_at_ico)
-          column(:tokens_sold_at_ico)
-          column(:minimal_cap_amount)
-          column(:maximal_cap_amount)
-          column(:comments)
-          column(:cap_currency)
-
-          column("Currency used and collected amount", [], fn ico ->
-            ico.ico_currencies
-            |> Enum.map(fn ic -> "#{ic.currency.code}: #{ic.amount}" end)
-            |> Enum.join("<br/>")
-          end)
+        table_for Sanbase.Repo.preload(project, [:market_segments]).market_segments do
+          column(:name, link: true)
         end
       end
 
@@ -83,6 +67,35 @@ defmodule Sanbase.ExAdmin.Model.Project do
         table_for project.btc_addresses do
           column(:id, link: true)
           column(:address)
+        end
+      end
+
+      panel "ICO Events" do
+        markup_contents do
+          a ".btn .btn-primary", href: "/admin/icos/new?project_id=" <> to_string(project.id) do
+            "New ICO"
+          end
+        end
+
+        table_for Sanbase.Repo.preload(project.icos, [:cap_currency, ico_currencies: [:currency]]) do
+          column(:id, link: true)
+          column(:start_date)
+          column(:end_date)
+          column(:token_usd_ico_price)
+          column(:token_eth_ico_price)
+          column(:token_btc_ico_price)
+          column(:tokens_issued_at_ico)
+          column(:tokens_sold_at_ico)
+          column(:minimal_cap_amount)
+          column(:maximal_cap_amount)
+          column(:comments)
+          column(:cap_currency)
+
+          column("Currency used and collected amount", [], fn ico ->
+            ico.ico_currencies
+            |> Enum.map(fn ic -> "#{ic.currency.code}: #{ic.amount}" end)
+            |> Enum.join("<br/>")
+          end)
         end
       end
     end

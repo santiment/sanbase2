@@ -133,22 +133,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, funds_raised}
   end
 
-  def market_segment(%Project{market_segment_id: nil}, _args, _resolution), do: {:ok, nil}
-
-  def market_segment(%Project{market_segment_id: msi}, _args, %{context: %{loader: loader}}) do
-    loader
-    |> Dataloader.load(SanbaseDataloader, :market_segment, msi)
-    |> on_load(&market_segment_from_loader(&1, msi))
-  end
-
-  defp market_segment_from_loader(loader, msi) do
-    market_segment =
-      loader
-      |> Dataloader.get(SanbaseDataloader, :market_segment, msi)
-
-    {:ok, market_segment}
-  end
-
   def infrastructure(%Project{infrastructure_id: nil}, _args, _resolution), do: {:ok, nil}
 
   def infrastructure(%Project{infrastructure_id: infrastructure_id}, _args, %{

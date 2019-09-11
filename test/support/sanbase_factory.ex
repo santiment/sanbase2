@@ -98,6 +98,7 @@ defmodule Sanbase.Factory do
       token_decimals: 18,
       total_supply: :rand.uniform(50_000_000) + 10_000_000,
       github_organizations: [build(:github_organization)],
+      market_segments: [build(:market_segment)],
       infrastructure:
         Sanbase.Repo.get_by(Infrastructure, code: "ETH") || build(:infrastructure, %{code: "ETH"}),
       eth_addresses: [build(:project_eth_address)],
@@ -119,6 +120,7 @@ defmodule Sanbase.Factory do
       token_decimals: 18,
       total_supply: 83_000_000,
       github_organizations: [build(:github_organization)],
+      market_segments: [build(:market_segment)],
       infrastructure: nil,
       eth_addresses: [build(:project_eth_address)]
     }
@@ -138,6 +140,7 @@ defmodule Sanbase.Factory do
       token_decimals: 18,
       total_supply: :rand.uniform(50_000_000) + 10_000_000,
       github_organizations: [build(:github_organization)],
+      market_segments: [build(:market_segment)],
       infrastructure: nil,
       eth_addresses: [build(:project_eth_address)]
     }
@@ -170,7 +173,7 @@ defmodule Sanbase.Factory do
   end
 
   def market_segment_factory() do
-    %MarketSegment{name: "currency"}
+    %MarketSegment{name: rand_str()}
   end
 
   def currency_factory() do

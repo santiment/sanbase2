@@ -6,7 +6,14 @@ defmodule Sanbase.Model.MarketSegment do
 
   schema "market_segments" do
     field(:name, :string)
-    has_many(:projects, Project)
+
+    many_to_many(
+      :projects,
+      Project,
+      join_through: "project_market_segments",
+      on_replace: :delete,
+      on_delete: :delete_all
+    )
   end
 
   @doc false
@@ -16,4 +23,6 @@ defmodule Sanbase.Model.MarketSegment do
     |> validate_required([:name])
     |> unique_constraint(:name)
   end
+
+  def all(), do: Sanbase.Repo.all(__MODULE__)
 end

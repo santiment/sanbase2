@@ -12,7 +12,7 @@ defmodule Sanbase.Repo.Migrations.FillProjectMarketSegmentsTable do
         %{project_id: project.id, market_segment_id: project.market_segment.id}
       end)
 
-    Sanbase.Repo.insert_all(Project.ProjectMarketSegment, insert_data)
+    Sanbase.Repo.insert_all(Project.ProjectMarketSegment, insert_data, on_conflict: :nothing)
   end
 
   def down, do: :ok

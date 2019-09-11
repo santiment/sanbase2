@@ -58,6 +58,8 @@ defmodule Sanbase.Influxdb.Measurement do
     ticker <> "_" <> coinmarketcap_id
   end
 
+  def name_from(_), do: nil
+
   def name_from_slug(slug) when is_nil(slug), do: nil
 
   def name_from_slug(slug) do

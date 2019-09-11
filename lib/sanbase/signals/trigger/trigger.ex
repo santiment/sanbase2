@@ -152,11 +152,16 @@ defmodule Sanbase.Signal.Trigger do
   end
 
   defp remove_targets_on_cooldown(%{watchlist_id: watchlist_id}, trigger) do
-    watchlist_id
-    |> Sanbase.UserList.by_id()
-    |> Sanbase.UserList.get_projects()
-    |> Enum.map(& &1.slug)
-    |> remove_targets_on_cooldown(trigger, :slug)
+    case Sanbase.UserList.by_id(watchlist_id) do
+      nil ->
+        %{list: [], type: :slug}
+
+      %Sanbase.UserList{} = ul ->
+        ul
+        |> Sanbase.UserList.get_projects()
+        |> Enum.map(& &1.slug)
+        |> remove_targets_on_cooldown(trigger, :slug)
+    end
   end
 
   defp remove_targets_on_cooldown(%{slug: slug}, trigger)

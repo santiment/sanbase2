@@ -109,6 +109,43 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
     end
   end
 
+  def dev_activity(
+        _root,
+        %{
+          selector: %{organizations: organizations},
+          from: from,
+          to: to,
+          interval: interval,
+          transform: transform,
+          moving_average_interval_base: moving_average_interval_base
+        },
+        _resolution
+      ) do
+    with {:ok, result} <-
+           Sanbase.Clickhouse.Github.dev_activity(
+             organizations,
+             from,
+             to,
+             interval,
+             transform,
+             moving_average_interval_base
+           ) do
+      {:ok, result}
+    else
+      {:error, {:github_link_error, _error}} ->
+        {:ok, []}
+
+      error ->
+        Logger.error(
+          "Cannot fetch github activity for organizations #{inspect(organizations)}. Reason: #{
+            inspect(error)
+          }"
+        )
+
+        {:error, "Cannot fetch github activity for organizations #{inspect(organizations)}"}
+    end
+  end
+
   defp github_organizations(projects) when is_list(projects) do
     organizations =
       Enum.map(projects, &Project.github_organizations/1)

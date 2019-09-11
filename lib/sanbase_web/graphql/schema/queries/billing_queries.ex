@@ -39,6 +39,7 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
     field :subscribe, :subscription_plan do
       arg(:card_token, non_null(:string))
       arg(:plan_id, non_null(:integer))
+      arg(:coupon, :string, default_value: nil)
 
       middleware(JWTAuth)
 

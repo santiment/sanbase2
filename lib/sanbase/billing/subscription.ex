@@ -61,11 +61,11 @@ defmodule Sanbase.Billing.Subscription do
   - Create subscription record in Stripe.
   - Create a subscription record locally so we can check access control without calling Stripe.
   """
-  def subscribe(user, card_token, plan) do
+  def subscribe(user, card_token, plan, coupon \\ nil) do
     with {:ok, %User{stripe_customer_id: stripe_customer_id} = user}
          when not is_nil(stripe_customer_id) <-
            create_or_update_stripe_customer(user, card_token),
-         {:ok, stripe_subscription} <- create_stripe_subscription(user, plan),
+         {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, subscription} <- create_subscription_db(stripe_subscription, user, plan) do
       {:ok, subscription |> Repo.preload(plan: [:product])}
     end
@@ -314,16 +314,14 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
-  defp create_stripe_subscription(user, plan) do
-    subscription = %{
-      customer: user.stripe_customer_id,
-      items: [%{plan: plan.stripe_id}]
-    }
+  defp create_stripe_subscription(user, plan, nil) do
+    percent_off =
+      user
+      |> san_balance()
+      |> percent_discount()
 
-    user
-    |> san_balance()
-    |> percent_discount()
-    |> update_subscription_with_coupon(subscription)
+    subscription_defaults(user, plan)
+    |> update_subscription_with_coupon(percent_off)
     |> case do
       {:ok, subscription} ->
         StripeApi.create_subscription(subscription)
@@ -333,18 +331,33 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
-  defp update_subscription_with_coupon(nil, subscription), do: {:ok, subscription}
-
-  defp update_subscription_with_coupon(percent_off, subscription) do
-    StripeApi.create_coupon(%{percent_off: percent_off, duration: "forever"})
-    |> case do
-      {:ok, coupon} ->
-        {:ok, Map.put(subscription, :coupon, coupon.id)}
-
-      {:error, reason} ->
-        {:error, reason}
+  defp create_stripe_subscription(user, plan, coupon) when not is_nil(coupon) do
+    with {:ok, stripe_coupon} <- StripeApi.retrieve_coupon(coupon) do
+      subscription_defaults(user, plan)
+      |> update_subscription_with_coupon(stripe_coupon)
+      |> StripeApi.create_subscription()
     end
   end
+
+  defp subscription_defaults(user, plan) do
+    %{
+      customer: user.stripe_customer_id,
+      items: [%{plan: plan.stripe_id}]
+    }
+  end
+
+  defp update_subscription_with_coupon(subscription, %Stripe.Coupon{id: coupon_id}) do
+    Map.put(subscription, :coupon, coupon_id)
+  end
+
+  defp update_subscription_with_coupon(subscription, percent_off) when is_integer(percent_off) do
+    with {:ok, coupon} <-
+           StripeApi.create_coupon(%{percent_off: percent_off, duration: "forever"}) do
+      {:ok, Map.put(subscription, :coupon, coupon.id)}
+    end
+  end
+
+  defp update_subscription_with_coupon(subscription, nil), do: {:ok, subscription}
 
   defp percent_discount(balance) when balance >= 1000, do: @percent_discount_1000_san
   defp percent_discount(balance) when balance >= 200, do: @percent_discount_200_san

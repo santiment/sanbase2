@@ -11,6 +11,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   def get_available_metrics(_root, _args, _resolution), do: Metric.available_metrics()
   def get_available_slugs(_root, _args, _resolution), do: Metric.available_slugs()
   def get_metadata(%{}, _args, %{source: %{metric: metric}}), do: Metric.metadata(metric)
+  def available_since(_root, %{slug: slug}, _), do: Metric.first_datetime(slug)
 
   def get_timeseries_data(
         _root,

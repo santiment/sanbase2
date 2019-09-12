@@ -74,6 +74,16 @@ defmodule Sanbase.Clickhouse.Github do
           {:ok, list({String.t(), non_neg_integer()})} | {:error, String.t()}
   def total_dev_activity([], _from, _to), do: {:ok, []}
 
+  def total_dev_activity(organizations, from, to) when length(organizations) > 10 do
+    total_dev_activity =
+      Stream.chunk_every(organizations, 10)
+      |> Stream.map(&total_dev_activity(&1, from, to))
+      |> Stream.filter(&match?({:ok, _}, &1))
+      |> Enum.flat_map(&elem(&1, 1))
+
+    {:ok, total_dev_activity}
+  end
+
   def total_dev_activity(organizations, from, to) do
     {query, args} = total_dev_activity_query(organizations, from, to)
 
@@ -94,8 +104,29 @@ defmodule Sanbase.Clickhouse.Github do
           String.t(),
           integer() | nil
         ) :: {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
-  def dev_activity(nil, _, _, _, _, _), do: []
-  def dev_activity([], _, _, _, _, _), do: []
+  def dev_activity([], _, _, _, _, _), do: {:ok, []}
+
+  def dev_activity(organizations, from, to, interval, transform, ma_base)
+      when length(organizations) > 10 do
+    dev_activity =
+      Stream.chunk_every(organizations, 10)
+      |> Stream.map(&dev_activity(&1, from, to, interval, transform, ma_base))
+      |> Stream.filter(&match?({:ok, _}, &1))
+      |> Stream.map(&elem(&1, 1))
+      |> Stream.zip()
+      |> Enum.map(fn tuple ->
+        [%{datetime: datetime} | _] = data = Tuple.to_list(tuple)
+
+        combined_dev_activity =
+          Enum.reduce(data, 0, fn
+            %{activity: activity}, total -> total + activity
+          end)
+
+        %{datetime: datetime, activity: combined_dev_activity}
+      end)
+
+    {:ok, dev_activity}
+  end
 
   def dev_activity(organizations, from, to, interval, "None", _) do
     interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)

@@ -268,6 +268,32 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
   end
 
+  @doc ~s"""
+  Return a list of projects that have all of the provided market segments.
+  Projects with only some of the segments are not returned.
+  """
+  def by_market_segments(segments) when is_list(segments) do
+    projects =
+      projects_query()
+      |> preload([:market_segments])
+      |> join(:left, [p], ms in assoc(p, :market_segments))
+      |> where([_p, ms], ms.name in ^segments)
+      |> distinct(true)
+      |> Repo.all()
+      |> Enum.filter(fn
+        %{market_segments: []} ->
+          false
+
+        %{market_segments: ms} ->
+          # The query returns all projects that have at least one of the market
+          # segments needed. We leave only those that have all segments
+          segment_names = Enum.map(ms, & &1.name)
+          Enum.all?(segments, &(&1 in segment_names))
+      end)
+
+    {:ok, projects}
+  end
+
   def by_slugs(slugs) when is_list(slugs) do
     projects_query()
     |> where([p], p.slug in ^slugs)

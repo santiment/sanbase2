@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
+defmodule SanbaseWeb.Graphql.ProjectApiDevActivityTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mock
@@ -87,105 +87,11 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
     end
   end
 
-  test "dev activity for project with 1 organization", %{project1: project} = context do
-    {:ok, [_]} = Project.github_organizations(project)
-
-    with_mock Github,
-      dev_activity: fn _, _, _, _, _, _ ->
-        {:ok,
-         [
-           %{datetime: context.dt1, activity: 100},
-           %{datetime: context.dt2, activity: 200},
-           %{datetime: context.dt3, activity: 300}
-         ]}
-      end do
-      result = dev_activity(context.conn, project.slug, context.dt1, context.dt2, "1d")
-
-      expected = %{
-        "data" => %{
-          "devActivity" => [
-            %{"activity" => 100, "datetime" => DateTime.to_iso8601(context.dt1)},
-            %{"activity" => 200, "datetime" => DateTime.to_iso8601(context.dt2)},
-            %{"activity" => 300, "datetime" => DateTime.to_iso8601(context.dt3)}
-          ]
-        }
-      }
-
-      assert result == expected
-    end
-  end
-
-  test "dev activity for project with multiple organizations", %{project2: project} = context do
-    {:ok, [_, _]} = Project.github_organizations(project)
-
-    with_mock Github,
-      dev_activity: fn _, _, _, _, _, _ ->
-        {:ok,
-         [
-           %{datetime: context.dt1, activity: 100},
-           %{datetime: context.dt2, activity: 200},
-           %{datetime: context.dt3, activity: 300}
-         ]}
-      end do
-      result = dev_activity(context.conn, project.slug, context.dt1, context.dt2, "1d")
-
-      expected = %{
-        "data" => %{
-          "devActivity" => [
-            %{"activity" => 100, "datetime" => DateTime.to_iso8601(context.dt1)},
-            %{"activity" => 200, "datetime" => DateTime.to_iso8601(context.dt2)},
-            %{"activity" => 300, "datetime" => DateTime.to_iso8601(context.dt3)}
-          ]
-        }
-      }
-
-      assert result == expected
-    end
-  end
-
-  test "dev activity for project with 0 organizations", %{project3: project} = context do
-    {:ok, []} = Project.github_organizations(project)
-
-    with_mock Github,
-      dev_activity: fn _, _, _, _, _, _ ->
-        {:ok, []}
-      end do
-      result = dev_activity(context.conn, project.slug, context.dt1, context.dt2, "1d")
-
-      expected = %{
-        "data" => %{
-          "devActivity" => []
-        }
-      }
-
-      assert result == expected
-    end
-  end
-
   def avg_dev_activity(conn, slug) do
     query = """
     {
       projectBySlug(slug: "#{slug}") {
         averageDevActivity(days: 30)
-      }
-    }
-    """
-
-    conn
-    |> post("/graphql", query_skeleton(query, "projectBySlug"))
-    |> json_response(200)
-  end
-
-  def dev_activity(conn, slug, from, to, interval) do
-    query = """
-    {
-      devActivity(
-        slug: "#{slug}",
-        from: "#{from}",
-        to: "#{to}",
-        interval: "#{interval}") {
-          datetime
-          activity
       }
     }
     """

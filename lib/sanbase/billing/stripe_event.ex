@@ -101,7 +101,9 @@ defmodule Sanbase.Billing.StripeEvent do
        when amount > 1 do
     payload =
       [
-        "Failed card charge for $#{amount / 100} . Details: https://dashboard.stripe.com/events/${id}"
+        "Failed card charge for $#{amount / 100} . Details: https://dashboard.stripe.com/events/#{
+          id
+        }"
       ]
       |> Discord.encode!(publish_user())
 

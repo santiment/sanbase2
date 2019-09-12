@@ -94,7 +94,7 @@ defmodule Sanbase.Billing.StripeEvent do
   end
 
   defp handle_discord_notification(%{
-         "id" => id,
+         "id" => _id,
          "type" => "charge.failed",
          "data" => %{"object" => %{"amount" => amount}}
        })

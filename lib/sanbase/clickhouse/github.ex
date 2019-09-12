@@ -109,8 +109,8 @@ defmodule Sanbase.Clickhouse.Github do
   def dev_activity(organizations, from, to, interval, transform, ma_base)
       when length(organizations) > 10 do
     dev_activity =
-      Stream.chunk_every(organizations, 10)
-      |> Stream.map(&dev_activity(&1, from, to, interval, transform, ma_base))
+      Enum.chunk_every(organizations, 10)
+      |> Sanbase.Parallel.map(&dev_activity(&1, from, to, interval, transform, ma_base))
       |> Stream.filter(&match?({:ok, _}, &1))
       |> Stream.map(&elem(&1, 1))
       |> Stream.zip()

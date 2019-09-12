@@ -35,6 +35,11 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       cache_resolve(&MetricResolver.get_timeseries_data/3)
     end
 
+    field :available_since, :datetime do
+      arg(:slug, non_null(:string))
+      cache_resolve(&MetricResolver.available_since/3)
+    end
+
     field :metadata, :metadata do
       cache_resolve(&MetricResolver.get_metadata/3)
     end

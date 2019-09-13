@@ -46,11 +46,10 @@ defmodule SanbaseWeb.Graphql.UserEthAccountApiTest do
   test "cannot remove eth account if there is no email or another eth account set", context do
     add_eth_address(context.conn, @address)
 
-    assert capture_log(fn ->
-             result = remove_eth_address(context.conn, @address)
-             %{"errors" => [error]} = result
-             assert error["message"] == "Could not remove an ethereum address."
-           end) =~ "There must be an email or other ethereum address set."
+    result = remove_eth_address(context.conn, @address)
+    %{"errors" => [error]} = result
+    assert error["message"] =~ "Could not remove an ethereum address"
+    assert error["message"] =~ "There must be an email or other ethereum address set"
   end
 
   test "can remove eth account if there is another account set", context do

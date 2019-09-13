@@ -122,6 +122,7 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionTest do
         function: '#{function}'
         ) {
          slug
+         #{additional_fields |> Enum.join(" ")}
       }
     } | |> String.replace(~r|\"|, ~S|\\"|) |> String.replace(~r|'|, ~S|"|)
   end

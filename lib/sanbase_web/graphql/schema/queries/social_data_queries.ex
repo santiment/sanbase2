@@ -211,7 +211,6 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       cache_resolve(&SocialDataResolver.twitter_mention_count/3)
     end
 
-    # TODO: Rework when removing staking
     @desc ~s"""
     Fetch the emoji sentiment for a given ticker and time period.
     This metric is a basic sentiment analysis, based on emojis used in social media.

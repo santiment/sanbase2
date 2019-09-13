@@ -63,9 +63,8 @@ defmodule Sanbase.Influxdb.Measurement do
   def name_from_slug(slug) when is_nil(slug), do: nil
 
   def name_from_slug(slug) do
-    with ticker when not is_nil(ticker) <- Project.ticker_by_slug(slug) do
-      ticker <> "_" <> slug
-    else
+    case Project.ticker_by_slug(slug) do
+      ticker when is_binary(ticker) -> ticker <> "_" <> slug
       _ -> nil
     end
   end

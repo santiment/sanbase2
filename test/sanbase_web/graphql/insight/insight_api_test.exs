@@ -503,11 +503,11 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
       [tag] = json_response(result, 200)["data"]["createInsight"]["tags"]
       [related_projects] = json_response(result, 200)["data"]["createInsight"]["relatedProjects"]
-      readyState = json_response(result, 200)["data"]["createInsight"]["readyState"]
+      ready_state = json_response(result, 200)["data"]["createInsight"]["readyState"]
 
       assert tag == %{"name" => "SAN"}
       assert related_projects == %{"ticker" => "SAN"}
-      assert readyState == Post.draft()
+      assert ready_state == Post.draft()
     end
 
     @test_file_hash "15e9f3c52e8c7f2444c5074f3db2049707d4c9ff927a00ddb8609bfae5925399"
@@ -726,9 +726,9 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         conn
         |> post("/graphql", mutation_skeleton(query))
 
-      sanbasePost = json_response(result, 200)["data"]["deleteInsight"]
+      result_post = json_response(result, 200)["data"]["deleteInsight"]
 
-      assert sanbasePost["id"] == Integer.to_string(sanbase_post.id)
+      assert result_post["id"] == Integer.to_string(sanbase_post.id)
     end
 
     test "deleting an insight which does not belong to the user - returns error", %{
@@ -948,10 +948,10 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       |> post("/graphql", mutation_skeleton(query))
       |> json_response(200)
 
-    sanbasePost = result["data"]["vote"]
+    result_post = result["data"]["vote"]
 
-    assert sanbasePost["id"] == Integer.to_string(sanbase_post.id)
-    assert sanbasePost["votes"]["totalSanVotes"] == Decimal.to_integer(user.san_balance)
+    assert result_post["id"] == Integer.to_string(sanbase_post.id)
+    assert result_post["votes"]["totalSanVotes"] == Decimal.to_integer(user.san_balance)
   end
 
   test "unvoting an insight", %{conn: conn, user: user} do

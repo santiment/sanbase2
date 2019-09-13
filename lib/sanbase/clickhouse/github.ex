@@ -49,7 +49,7 @@ defmodule Sanbase.Clickhouse.Github do
   @doc ~s"""
   Return the number of all github events for a given organization and time period
   """
-  @spec total_github_activity(String.t(), DateTime.t(), DateTime.t()) ::
+  @spec total_github_activity(list(String.t()), DateTime.t(), DateTime.t()) ::
           {:ok, float()}
           | {:error, String.t()}
   def total_github_activity([], _from, _to), do: {:ok, []}
@@ -97,13 +97,13 @@ defmodule Sanbase.Clickhouse.Github do
   Pure development activity is all events excluding comments, issues, forks, stars, etc.
   """
   @spec dev_activity(
-          String.t(),
+          list(String.t()),
           DateTime.t(),
           DateTime.t(),
           String.t(),
           String.t(),
           integer() | nil
-        ) :: {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
+        ) :: {:ok, list(t)} | {:error, String.t()}
   def dev_activity([], _, _, _, _, _), do: {:ok, []}
 
   def dev_activity(organizations, from, to, interval, transform, ma_base)
@@ -152,14 +152,13 @@ defmodule Sanbase.Clickhouse.Github do
   Pure development activity is all events excluding comments, issues, forks, stars, etc.
   """
   @spec github_activity(
-          String.t() | nil,
+          list(String.t()),
           DateTime.t(),
           DateTime.t(),
           String.t(),
           String.t(),
           non_neg_integer()
         ) :: {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
-  def github_activity(nil, _, _, _, _, _), do: {:ok, []}
   def github_activity([], _, _, _, _, _), do: {:ok, []}
 
   def github_activity(organizations, from, to, interval, "None", _) do

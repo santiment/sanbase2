@@ -2,11 +2,10 @@ defmodule SanbaseWeb.Graphql.ProjectApiSocialVolumeQuery do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
-  import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Model.Project
 
-  test "default query contains project name, slug and ticker", %{conn: conn} do
+  test "default query contains project name, slug and ticker" do
     p1 = insert(:random_erc20_project)
     query = Project.SocialVolumeQuery.default_query(p1)
     assert String.contains?(query, p1.ticker)

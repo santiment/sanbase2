@@ -115,7 +115,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
              from,
              to,
              interval,
-             86400,
+             86_400,
              @datapoints
            ),
          {:ok, balance} <-
@@ -136,9 +136,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   def mvrv_ratio(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
     # TODO: Check if interval is a whole day as in token circulation
-    with {:ok, mvrv_ratio} <- MVRV.mvrv_ratio(slug, from, to, interval) do
-      {:ok, mvrv_ratio}
-    else
+    case MVRV.mvrv_ratio(slug, from, to, interval) do
+      {:ok, mvrv_ratio} ->
+        {:ok, mvrv_ratio}
+
       {:error, error} ->
         {:error, handle_graphql_error("MVRV Ratio", slug, error)}
     end
@@ -248,17 +249,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   end
 
   defp average_daily_active_addresses_on_load(loader, project) do
-    with {:ok, contract_address, _token_decimals} <- Project.contract_info(project) do
-      average_daily_active_addresses =
-        loader
-        |> Dataloader.get(
-          SanbaseDataloader,
-          :average_daily_active_addresses,
-          contract_address
-        ) || 0
+    case Project.contract_info(project) do
+      {:ok, contract_address, _token_decimals} ->
+        average_daily_active_addresses =
+          loader
+          |> Dataloader.get(
+            SanbaseDataloader,
+            :average_daily_active_addresses,
+            contract_address
+          ) || 0
 
-      {:ok, average_daily_active_addresses}
-    else
+        {:ok, average_daily_active_addresses}
+
       {:error, {:missing_contract, _}} ->
         {:ok, 0}
 
@@ -312,9 +314,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         %{slug: slug, from: from, to: to, interval: interval},
         _resolution
       ) do
-    with {:ok, nvt_ratio} <- NVT.nvt_ratio(slug, from, to, interval) do
-      {:ok, nvt_ratio}
-    else
+    case NVT.nvt_ratio(slug, from, to, interval) do
+      {:ok, nvt_ratio} ->
+        {:ok, nvt_ratio}
+
       {:error, error} ->
         {:error, handle_graphql_error("NVT Ratio", slug, error)}
     end

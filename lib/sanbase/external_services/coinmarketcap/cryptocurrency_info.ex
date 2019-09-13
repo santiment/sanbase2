@@ -35,25 +35,35 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
 
         {:ok, parse_json(body)}
 
-      {:ok, %Tesla.Env{status: status, body: body}} ->
-        case parse_invalid_slugs_error(body) do
-          [] ->
-            error_msg =
-              "[CMC] Failed fetching cryptocurrency info for: #{projects_count} projects. Status: #{
-                status
-              }"
+      {:ok, %Tesla.Env{} = resp} ->
+        handle_error_response(projects, resp)
+    end
+  end
 
-            Logger.warn(error_msg)
-            {:error, error_msg}
+  def fetch_data(_projects) do
+    {:error,
+     """
+     Accepting over 100 projects will most probably result in very long URL.
+     URLs over 2,000 characters are considered problematic.
+     """}
+  end
 
-          invalid_slugs when is_list(invalid_slugs) ->
-            cleaned =
-              Enum.reject(projects, fn project ->
-                Project.coinmarketcap_id(project) in invalid_slugs
-              end)
+  defp handle_error_response(projects, resp) do
+    %Tesla.Env{status: status, body: body} = resp
+    projects_count = Enum.count(projects)
 
-            fetch_data(cleaned)
-        end
+    case parse_invalid_slugs_error(body) do
+      [] ->
+        error_msg =
+          "[CMC] Failed fetching cryptocurrency info for: #{projects_count} projects. Status: #{
+            status
+          }"
+
+        Logger.warn(error_msg)
+        {:error, error_msg}
+
+      invalid_slugs when is_list(invalid_slugs) ->
+        fetch_data(clean_invalid_slugs(projects, invalid_slugs))
 
       {:error, error} ->
         error_msg =
@@ -64,14 +74,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
         Logger.warn(error_msg)
         {:error, error_msg}
     end
-  end
-
-  def fetch_data(_projects) do
-    {:error,
-     """
-     Accepting over 100 projects will most probably result in very long URL.
-     URLs over 2,000 characters are considered problematic.
-     """}
   end
 
   defp parse_invalid_slugs_error(error) do
@@ -87,6 +89,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
     |> String.trim_leading("\"")
     |> String.trim_trailing("\"")
     |> String.split(",")
+  end
+
+  defp clean_invalid_slugs(projects, invalid_slugs) do
+    Enum.reject(projects, fn project ->
+      Project.coinmarketcap_id(project) in invalid_slugs
+    end)
   end
 
   defp parse_json(json) do

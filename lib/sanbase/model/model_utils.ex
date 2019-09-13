@@ -1,5 +1,5 @@
 defmodule Sanbase.Model.ModelUtils do
-  def removeThousandsSeparator(attrs, key) do
+  def remove_thousands_separator(attrs, key) do
     attrs
     |> Map.get(key)
     |> case do

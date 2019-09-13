@@ -84,16 +84,18 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
           | {:error, String.t()}
         when balance_before: number(), balance_after: number(), balance_change: number()
   def balance_change(address, slug, from, to) do
-    with {:ok, contract, token_decimals} <- Project.contract_info_by_slug(slug) do
-      case contract do
-        "ETH" ->
-          EthBalance.balance_change(address, from, to)
+    case Project.contract_info_by_slug(slug) do
+      {:ok, contract, token_decimals} ->
+        case contract do
+          "ETH" ->
+            EthBalance.balance_change(address, from, to)
 
-        _ ->
-          Erc20Balance.balance_change(address, contract, token_decimals, from, to)
-      end
-    else
-      {:error, error} -> {:error, inspect(error)}
+          _ ->
+            Erc20Balance.balance_change(address, contract, token_decimals, from, to)
+        end
+
+      {:error, error} ->
+        {:error, inspect(error)}
     end
   end
 
@@ -104,16 +106,18 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   @spec historical_balance(address | list(address), slug, DateTime.t(), DateTime.t(), interval) ::
           historical_balance_return
   def historical_balance(address, slug, from, to, interval) do
-    with {:ok, contract, token_decimals} <- Project.contract_info_by_slug(slug) do
-      case contract do
-        "ETH" ->
-          EthBalance.historical_balance(address, from, to, interval)
+    case Project.contract_info_by_slug(slug) do
+      {:ok, contract, token_decimals} ->
+        case contract do
+          "ETH" ->
+            EthBalance.historical_balance(address, from, to, interval)
 
-        _ ->
-          Erc20Balance.historical_balance(address, contract, token_decimals, from, to, interval)
-      end
-    else
-      {:error, error} -> {:error, inspect(error)}
+          _ ->
+            Erc20Balance.historical_balance(address, contract, token_decimals, from, to, interval)
+        end
+
+      {:error, error} ->
+        {:error, inspect(error)}
     end
   end
 
@@ -128,17 +132,21 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   @spec eth_spent(address | list(address), DateTime.t(), DateTime.t()) ::
           {:ok, number()} | {:error, String.t()}
   def eth_spent(addresses, from, to) do
-    with {:ok, balance_changes} <- eth_balance_change(addresses, from, to) do
-      eth_spent =
-        balance_changes
-        |> Enum.map(fn {_, {_, _, change}} -> change end)
-        |> Enum.sum()
-        |> case do
-          change when change < 0 -> abs(change)
-          _ -> 0
-        end
+    case eth_balance_change(addresses, from, to) do
+      {:ok, balance_changes} ->
+        eth_spent =
+          balance_changes
+          |> Enum.map(fn {_, {_, _, change}} -> change end)
+          |> Enum.sum()
+          |> case do
+            change when change < 0 -> abs(change)
+            _ -> 0
+          end
 
-      {:ok, eth_spent}
+        {:ok, eth_spent}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -155,18 +163,22 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
           | {:error, String.t()}
   def eth_spent_over_time(addresses, from, to, interval)
       when is_binary(addresses) or is_list(addresses) do
-    with {:ok, balance_changes} <- eth_balance_change(addresses, from, to, interval) do
-      eth_spent_over_time =
-        balance_changes
-        |> Enum.map(fn
-          %{balance_change: change, datetime: dt} when change < 0 ->
-            %{datetime: dt, eth_spent: abs(change)}
+    case eth_balance_change(addresses, from, to, interval) do
+      {:ok, balance_changes} ->
+        eth_spent_over_time =
+          balance_changes
+          |> Enum.map(fn
+            %{balance_change: change, datetime: dt} when change < 0 ->
+              %{datetime: dt, eth_spent: abs(change)}
 
-          %{datetime: dt} ->
-            %{datetime: dt, eth_spent: 0}
-        end)
+            %{datetime: dt} ->
+              %{datetime: dt, eth_spent: 0}
+          end)
 
-      {:ok, eth_spent_over_time}
+        {:ok, eth_spent_over_time}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 end

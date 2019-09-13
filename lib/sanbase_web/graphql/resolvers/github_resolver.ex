@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
   require Logger
 
+  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3, handle_graphql_error: 4]
+
   alias SanbaseWeb.Graphql.Helpers.Utils
   alias Sanbase.Model.Project
 
@@ -28,12 +30,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
            ) do
       {:ok, result}
     else
-      {:error, {:github_link_error, _error}} ->
-        {:ok, []}
-
-      error ->
-        Logger.error("Cannot fetch github activity for #{slug}. Reason: #{inspect(error)}")
-        {:error, "Cannot fetch github activity for #{slug}"}
+      {:error, error} ->
+        {:error, handle_graphql_error("dev_activity", slug, error)}
     end
   end
 
@@ -65,8 +63,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
         {:ok, []}
 
       error ->
-        Logger.error("Cannot fetch github activity for #{slug}. Reason: #{inspect(error)}")
-        {:error, "Cannot fetch github activity for #{slug}"}
+        {:error, handle_graphql_error("dev_activity", slug, error)}
     end
   end
 
@@ -95,17 +92,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
            ) do
       {:ok, result}
     else
-      {:error, {:github_link_error, _error}} ->
-        {:ok, []}
-
-      error ->
-        Logger.error(
-          "Cannot fetch github activity for market segments #{inspect(market_segments)}. Reason: #{
-            inspect(error)
-          }"
-        )
-
-        {:error, "Cannot fetch github activity for market segments #{inspect(market_segments)}"}
+      {:error, error} ->
+        {:error,
+         handle_graphql_error("dev_activity", market_segments, error,
+           description: "market segments"
+         )}
     end
   end
 
@@ -121,28 +112,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
         },
         _resolution
       ) do
-    with {:ok, result} <-
-           Sanbase.Clickhouse.Github.dev_activity(
-             organizations,
-             from,
-             to,
-             interval,
-             transform,
-             moving_average_interval_base
-           ) do
-      {:ok, result}
-    else
-      {:error, {:github_link_error, _error}} ->
-        {:ok, []}
+    case Sanbase.Clickhouse.Github.dev_activity(
+           organizations,
+           from,
+           to,
+           interval,
+           transform,
+           moving_average_interval_base
+         ) do
+      {:ok, result} ->
+        {:ok, result}
 
       error ->
-        Logger.error(
-          "Cannot fetch github activity for organizations #{inspect(organizations)}. Reason: #{
-            inspect(error)
-          }"
-        )
-
-        {:error, "Cannot fetch github activity for organizations #{inspect(organizations)}"}
+        {:error,
+         handle_graphql_error("dev_activity", organizations, error, description: "organizations")}
     end
   end
 
@@ -189,12 +172,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
            ) do
       {:ok, result}
     else
-      {:error, {:github_link_error, _error}} ->
-        {:ok, []}
-
-      error ->
-        Logger.error("Cannot fetch github activity for #{slug}. Reason: #{inspect(error)}")
-        {:error, "Cannot fetch github activity for #{slug}"}
+      {:error, error} ->
+        {:error, handle_graphql_error("github_activity", slug, error)}
     end
   end
 

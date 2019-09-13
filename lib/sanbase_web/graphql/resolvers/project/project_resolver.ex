@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   require Logger
 
+  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
   import Absinthe.Resolution.Helpers, except: [async: 1]
   import SanbaseWeb.Graphql.Helpers.Async
 
@@ -266,28 +267,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   defp calculate_average_github_activity(%Project{} = project, %{days: days}) do
-    with {:ok, organizations} <- Project.github_organizations(project) do
-      month_ago = Timex.shift(Timex.now(), days: -days)
+    case Project.github_organizations(project) do
+      {:ok, organizations} ->
+        month_ago = Timex.shift(Timex.now(), days: -days)
 
-      case Sanbase.Clickhouse.Github.total_github_activity(organizations, month_ago, Timex.now()) do
-        {:ok, total_activity} ->
-          {:ok, total_activity / days}
+        case Sanbase.Clickhouse.Github.total_github_activity(
+               organizations,
+               month_ago,
+               Timex.now()
+             ) do
+          {:ok, total_activity} ->
+            {:ok, total_activity / days}
 
-        _ ->
-          {:ok, 0}
-      end
-    else
-      {:error, {:github_link_error, _error}} ->
-        {:ok, nil}
+          _ ->
+            {:ok, 0}
+        end
 
-      error ->
-        Logger.error(
-          "Cannot fetch github activity for #{Project.describe(project)}. Reason: #{
-            inspect(error)
-          }"
-        )
-
-        {:error, "Cannot fetch github activity for #{Project.describe(project)}"}
+      {:error, error} ->
+        {:error, handle_graphql_error("average github activity", project.slug, error)}
     end
   rescue
     e ->
@@ -310,17 +307,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def average_dev_activity_from_loader(loader, project) do
-    with {:ok, orgs} when is_list(orgs) and orgs != [] <- Project.github_organizations(project) do
-      average_dev_activity = average_dev_activity_per_org(loader, orgs)
-      values = for {:ok, val} <- average_dev_activity, is_number(val), do: val
+    case Project.github_organizations(project) do
+      {:ok, orgs} when is_list(orgs) and orgs != [] ->
+        average_dev_activity = average_dev_activity_per_org(loader, orgs)
+        values = for {:ok, val} <- average_dev_activity, is_number(val), do: val
 
-      if Enum.member?(values, &match?({:error, _}, &1)) do
-        {:nocache, {:ok, Enum.sum(values)}}
-      else
-        {:ok, Enum.sum(values)}
-      end
-    else
-      _ -> {:ok, nil}
+        if Enum.member?(values, &match?({:error, _}, &1)) do
+          {:nocache, {:ok, Enum.sum(values)}}
+        else
+          {:ok, Enum.sum(values)}
+        end
+
+      _ ->
+        {:ok, nil}
     end
   end
 

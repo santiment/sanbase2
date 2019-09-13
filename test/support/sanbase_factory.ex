@@ -276,7 +276,7 @@ defmodule Sanbase.Factory do
     %Plan{
       id: 2,
       name: "ESSENTIAL",
-      amount: 15900,
+      amount: 15_900,
       currency: "USD",
       interval: "month"
     }
@@ -286,7 +286,7 @@ defmodule Sanbase.Factory do
     %Plan{
       id: 3,
       name: "PRO",
-      amount: 35900,
+      amount: 35_900,
       currency: "USD",
       interval: "month",
       stripe_id: plan_stripe_id()
@@ -297,7 +297,7 @@ defmodule Sanbase.Factory do
     %Plan{
       id: 4,
       name: "PREMIUM",
-      amount: 75900,
+      amount: 75_900,
       currency: "USD",
       interval: "month"
     }
@@ -407,7 +407,7 @@ defmodule Sanbase.Factory do
     %Plan{
       id: 23,
       name: "PRO",
-      amount: 18900,
+      amount: 18_900,
       currency: "USD",
       interval: "month"
     }

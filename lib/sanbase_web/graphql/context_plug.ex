@@ -199,10 +199,10 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   end
 
   defp bearer_authorize(token) do
-    with {:ok, %User{salt: salt} = user, %{"salt" => salt}} <-
-           SanbaseWeb.Guardian.resource_from_token(token) do
-      {:ok, user}
-    else
+    case SanbaseWeb.Guardian.resource_from_token(token) do
+      {:ok, %User{salt: salt} = user, %{"salt" => salt}} ->
+        {:ok, user}
+
       {:error, :token_expired} ->
         %{permissions: User.Permissions.no_permissions()}
 

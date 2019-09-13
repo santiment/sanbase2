@@ -22,7 +22,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
   """
   def exchange_volume(_root, %{exchange: exchange, from: from, to: to}, _resolution) do
     with {:ok, addresses} <- ExchangeAddress.addresses_for_exchange(exchange),
-         {:ok, exchange_volume} = EthTransfers.exchange_volume(addresses, from, to) do
+         {:ok, exchange_volume} <- EthTransfers.exchange_volume(addresses, from, to) do
       {:ok, exchange_volume}
     else
       error ->

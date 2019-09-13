@@ -17,6 +17,9 @@ defmodule Sanbase.Billing.Subscription do
 
   require Logger
 
+  @free_trial_days 14
+  # Free trial plans are Sanbase and Sansheets PRO plans
+  @free_trial_plans [13, 23]
   @percent_discount_1000_san 20
   @percent_discount_200_san 4
   @generic_error_message """
@@ -61,7 +64,10 @@ defmodule Sanbase.Billing.Subscription do
   - Create subscription record in Stripe.
   - Create a subscription record locally so we can check access control without calling Stripe.
   """
-  def subscribe(user, card_token, plan, coupon \\ nil) do
+  @type string_or_nil :: String.t() | nil
+  @spec subscribe(%User{}, %Plan{}, string_or_nil, string_or_nil) ::
+          {:ok, %__MODULE__{}} | {atom(), String.t()}
+  def subscribe(user, plan, card_token \\ nil, coupon \\ nil) do
     with {:ok, %User{stripe_customer_id: stripe_customer_id} = user}
          when not is_nil(stripe_customer_id) <-
            create_or_update_stripe_customer(user, card_token),
@@ -302,6 +308,11 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
+  defp create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, nil)
+       when is_binary(stripe_id) do
+    {:ok, user}
+  end
+
   defp create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)
        when is_binary(stripe_id) do
     StripeApi.update_customer(user, card_token)
@@ -337,6 +348,15 @@ defmodule Sanbase.Billing.Subscription do
       |> update_subscription_with_coupon(stripe_coupon)
       |> StripeApi.create_subscription()
     end
+  end
+
+  defp subscription_defaults(user, %Plan{id: plan_id, stripe_id: stripe_id})
+       when plan_id in @free_trial_plans do
+    %{
+      customer: user.stripe_customer_id,
+      items: [%{plan: stripe_id}],
+      trial_period_days: @free_trial_days
+    }
   end
 
   defp subscription_defaults(user, plan) do

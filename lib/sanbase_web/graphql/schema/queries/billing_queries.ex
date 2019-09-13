@@ -33,12 +33,14 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
 
   object :billing_mutations do
     @desc ~s"""
-    Subscribe logged in user to a chosen plan using card_token retuned by Stripe on filling
-    card information.
+    Subscribe logged in user to a chosen plan.
+    Some plans have free trial and doesn't need credit card.
+      * `card_token` is an id returned by Stripe upon filling card information.
+      * `coupon` is coupon code id giving some percentage off on the price.
     """
     field :subscribe, :subscription_plan do
-      arg(:card_token, non_null(:string))
       arg(:plan_id, non_null(:integer))
+      arg(:card_token, :string, default_value: nil)
       arg(:coupon, :string, default_value: nil)
 
       middleware(JWTAuth)

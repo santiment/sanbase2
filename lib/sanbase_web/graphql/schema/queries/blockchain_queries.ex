@@ -366,7 +366,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
 
       arg(:slug, :string, default_value: "ethereum")
 
-      middleware(BasicAuth)
+      middleware(TimeframeRestriction)
       cache_resolve(&EtherbiResolver.exchange_wallets/3)
     end
 

@@ -211,7 +211,7 @@ defmodule Sanbase.Signal.TriggersTest do
       target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
-      operation: %{percent_up: 300.0}
+      operation: %{percent_down: 300.0}
     }
 
     insert(:user_trigger,
@@ -226,7 +226,7 @@ defmodule Sanbase.Signal.TriggersTest do
       target: %{slug: "santiment"},
       channel: "email",
       time_window: "1d",
-      operation: %{percent_up: 10.0}
+      operation: %{percent_down: 250.0}
     }
 
     {:ok, _} =

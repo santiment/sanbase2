@@ -135,6 +135,24 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
     end
   end
 
+  test "move up and move down - triggered", context do
+    trigger_settings =
+      price_percent_change_settings(%{
+        operation: %{all_of: [%{percent_up: 15}, %{percent_up: 10}]}
+      })
+
+    {:ok, trigger} = create_trigger(context.user, trigger_settings)
+
+    [triggered | rest] =
+      PricePercentChangeSettings.type()
+      |> UserTrigger.get_active_triggers_by_type()
+      |> Evaluator.run()
+
+    assert rest == []
+    assert Trigger.triggered?(triggered.trigger) == true
+    assert triggered.id == trigger.id
+  end
+
   defp populate_influxdb() do
     setup_prices_influxdb()
 

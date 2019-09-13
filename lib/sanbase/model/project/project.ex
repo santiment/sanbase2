@@ -329,6 +329,17 @@ defmodule Sanbase.Model.Project do
     not is_erc20?(project)
   end
 
+  def is_trending?(%Project{} = project, trending_words_mapset) do
+    # Project is trending if the intersection of [name, ticker, slug]
+    # and the trending words is not empty
+    [project.ticker, project.name, project.slug]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.map(&String.downcase/1)
+    |> MapSet.new()
+    |> MapSet.intersection(trending_words_mapset)
+    |> Enum.any?()
+  end
+
   def preloads(), do: @preloads
 
   def preload_assocs(projects, opts \\ []) do

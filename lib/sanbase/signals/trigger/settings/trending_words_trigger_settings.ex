@@ -148,7 +148,7 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
         false ->
           payload =
             Enum.reduce(projects, %{}, fn project, acc ->
-              if project_is_trending?(trending_words_mapset, project) do
+              if Project.is_trending?(project, trending_words_mapset) do
                 Map.put(acc, project.slug, payload(settings, project))
               else
                 acc
@@ -157,19 +157,6 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
 
           %TrendingWordsTriggerSettings{settings | triggered?: true, payload: payload}
       end
-    end
-
-    defp project_is_trending?(words_mapset, %Project{} = p) do
-      # Project is trending if the intersection of [name, ticker, slug] and the trending
-      # words is not empty
-      empty? =
-        MapSet.intersection(
-          MapSet.new([p.ticker, p.name, p.slug] |> Enum.map(&String.downcase/1)),
-          words_mapset
-        )
-        |> Enum.empty?()
-
-      !empty?
     end
 
     defp payload(%{operation: %{send_at_predefined_time: true}}, top_words) do

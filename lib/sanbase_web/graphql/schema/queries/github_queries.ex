@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.Schema.GithubQueries do
 
   alias SanbaseWeb.Graphql.Resolvers.GithubResolver
   alias SanbaseWeb.Graphql.Complexity
-  alias SanbaseWeb.Graphql.Middlewares.TimeframeRestriction
+  alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
   import_types(SanbaseWeb.Graphql.GithubTypes)
 
@@ -39,7 +39,7 @@ defmodule SanbaseWeb.Graphql.Schema.GithubQueries do
       arg(:moving_average_interval_base, :integer, default_value: 7)
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&GithubResolver.github_activity/3)
     end
 
@@ -59,7 +59,7 @@ defmodule SanbaseWeb.Graphql.Schema.GithubQueries do
       arg(:moving_average_interval_base, :integer, default_value: 7)
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&GithubResolver.dev_activity/3, ttl: 600, max_ttl_offset: 600)
     end
   end

@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
   alias SanbaseWeb.Graphql.Complexity
-  alias SanbaseWeb.Graphql.Middlewares.TimeframeRestriction
+  alias SanbaseWeb.Graphql.Middlewares.AccessControl
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
 
   object :metric_data do
@@ -30,7 +30,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:aggregation, :aggregation, default_value: nil)
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
 
       cache_resolve(&MetricResolver.get_timeseries_data/3)
     end

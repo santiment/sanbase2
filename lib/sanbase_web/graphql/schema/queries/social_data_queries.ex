@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
-  alias SanbaseWeb.Graphql.Middlewares.TimeframeRestriction
+  alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
   alias SanbaseWeb.Graphql.Resolvers.{
     SocialDataResolver,
@@ -38,7 +38,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&TwitterResolver.history_twitter_data/3)
     end
 
@@ -66,7 +66,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:to, non_null(:datetime))
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_realtime_data: true})
+      middleware(AccessControl, %{allow_realtime_data: true})
       cache_resolve(&SocialDataResolver.trending_words/3, ttl: 600, max_ttl_offset: 240)
     end
 
@@ -87,7 +87,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:size, non_null(:integer))
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_realtime_data: true})
+      middleware(AccessControl, %{allow_realtime_data: true})
       cache_resolve(&SocialDataResolver.get_trending_words/3, ttl: 600, max_ttl_offset: 240)
     end
 
@@ -110,7 +110,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:size, non_null(:integer))
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_realtime_data: true})
+      middleware(AccessControl, %{allow_realtime_data: true})
 
       cache_resolve(&SocialDataResolver.get_word_trending_history/3, ttl: 600, max_ttl_offset: 240)
     end
@@ -134,7 +134,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:size, non_null(:integer))
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_realtime_data: true})
+      middleware(AccessControl, %{allow_realtime_data: true})
 
       cache_resolve(&SocialDataResolver.get_project_trending_history/3,
         ttl: 600,
@@ -164,7 +164,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:to, non_null(:datetime))
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_realtime_data: true})
+      middleware(AccessControl, %{allow_realtime_data: true})
       cache_resolve(&SocialDataResolver.word_trend_score/3, ttl: 600, max_ttl_offset: 240)
     end
 
@@ -192,7 +192,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:to, non_null(:datetime))
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_realtime_data: true})
+      middleware(AccessControl, %{allow_realtime_data: true})
       cache_resolve(&SocialDataResolver.word_context/3, ttl: 600, max_ttl_offset: 240)
     end
 
@@ -207,7 +207,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:result_size_tail, :integer, default_value: 0)
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&SocialDataResolver.twitter_mention_count/3)
     end
 
@@ -225,7 +225,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:result_size_tail, :integer, default_value: 0)
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&SocialDataResolver.emojis_sentiment/3)
     end
 
@@ -253,7 +253,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:social_volume_type, non_null(:social_volume_type))
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_realtime_data: true})
+      middleware(AccessControl, %{allow_realtime_data: true})
       resolve(&SocialDataResolver.social_volume/3)
     end
 
@@ -290,7 +290,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:interval, non_null(:string), default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_realtime_data: true})
+      middleware(AccessControl, %{allow_realtime_data: true})
       cache_resolve(&SocialDataResolver.topic_search/3, ttl: 600, max_ttl_offset: 240)
     end
 
@@ -319,7 +319,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:source, non_null(:social_dominance_sources), default_value: :all)
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       resolve(&SocialDataResolver.social_dominance/3)
     end
 
@@ -341,7 +341,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:size, :integer, default_value: 10)
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
 
       cache_resolve(&SocialDataResolver.news/3)
     end
@@ -353,7 +353,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&ElasticsearchResolver.stats/3)
     end
 
@@ -376,7 +376,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:time_window, non_null(:string))
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_realtime_data: true})
+      middleware(AccessControl, %{allow_realtime_data: true})
       cache_resolve(&SocialDataResolver.top_social_gainers_losers/3)
     end
 
@@ -398,7 +398,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:time_window, non_null(:string))
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction, %{allow_realtime_data: true})
+      middleware(AccessControl, %{allow_realtime_data: true})
       cache_resolve(&SocialDataResolver.social_gainers_losers_status/3)
     end
   end

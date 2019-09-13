@@ -1,11 +1,11 @@
-defmodule SanbaseWeb.Graphql.TimeframeRestrictionMiddlewareTest do
+defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
   use SanbaseWeb.ConnCase
   require Sanbase.Utils.Config, as: Config
 
   @moduletag checkout_repo: [Sanbase.Repo, Sanbase.TimescaleRepo]
   @moduletag timescaledb: true
 
-  alias SanbaseWeb.Graphql.Middlewares.TimeframeRestriction
+  alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.TimescaleFactory
@@ -139,6 +139,6 @@ defmodule SanbaseWeb.Graphql.TimeframeRestrictionMiddlewareTest do
 
   defp restrict_from_in_days do
     -1 *
-      (Config.module_get(TimeframeRestriction, :restrict_from_in_days) |> String.to_integer())
+      (Config.module_get(AccessControl, :restrict_from_in_days) |> String.to_integer())
   end
 end

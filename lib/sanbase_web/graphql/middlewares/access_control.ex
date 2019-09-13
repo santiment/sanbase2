@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
+defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   @moduledoc """
   Middleware that is used to restrict the API access in a certain timeframe.
 

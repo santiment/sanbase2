@@ -9,7 +9,7 @@ defmodule SanbaseWeb.Graphql.Schema.TechIndicatorsQueries do
   alias SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver
   alias SanbaseWeb.Graphql.Complexity
 
-  alias SanbaseWeb.Graphql.Middlewares.TimeframeRestriction
+  alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
   import_types(SanbaseWeb.Graphql.TechIndicatorsTypes)
 
@@ -31,7 +31,7 @@ defmodule SanbaseWeb.Graphql.Schema.TechIndicatorsQueries do
       arg(:size, :integer, default_value: 0)
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&TechIndicatorsResolver.price_volume_diff/3)
     end
 
@@ -56,7 +56,7 @@ defmodule SanbaseWeb.Graphql.Schema.TechIndicatorsQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&TechIndicatorsResolver.metric_anomaly/3)
     end
   end

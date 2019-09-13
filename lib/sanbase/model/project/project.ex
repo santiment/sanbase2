@@ -22,6 +22,7 @@ defmodule Sanbase.Model.Project do
 
   schema "project" do
     field(:name, :string)
+    field(:coinmarketcap_id, :string)
     field(:ticker, :string)
     field(:logo_url, :string)
     field(:website_link, :string)
@@ -83,6 +84,7 @@ defmodule Sanbase.Model.Project do
       :ticker,
       :logo_url,
       :slug,
+      :coinmarketcap_id,
       :website_link,
       :email,
       :market_segment_id,

@@ -159,7 +159,7 @@ defmodule Sanbase.Model.Project.List do
   defp projects_query(nil) do
     from(
       p in Project,
-      where: not is_nil(p.slug),
+      where: not is_nil(p.slug) and not is_nil(p.ticker),
       preload: ^@preloads
     )
   end

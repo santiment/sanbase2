@@ -185,6 +185,27 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       assert response["status"] == "ACTIVE"
       assert response["plan"]["name"] == context.plans.plan_essential.name
     end
+
+    test "subscribe to sanbase PRO plan gives 14 days free trial", context do
+      query = subscribe_mutation(context.plans.plan_pro_sanbase.id)
+      response = execute_mutation(context.conn, query, "subscribe")
+      assert_called(StripeApi.create_subscription(%{trial_period_days: 14}))
+      assert response["plan"]["name"] == context.plans.plan_pro_sanbase.name
+    end
+
+    test "subscribe to neuro PRO plan doesn't give free trial", context do
+      query = subscribe_mutation(context.plans.plan_pro.id)
+      response = execute_mutation(context.conn, query, "subscribe")
+      refute called(StripeApi.create_subscription(%{trial_period_days: 14}))
+      assert response["plan"]["name"] == context.plans.plan_pro.name
+    end
+
+    test "subscribe without card to sanbase PRO plan gives 14 days free trial", context do
+      query = subscribe_without_card_mutation(context.plans.plan_pro_sanbase.id)
+      response = execute_mutation(context.conn, query, "subscribe")
+      assert_called(StripeApi.create_subscription(%{trial_period_days: 14}))
+      assert response["plan"]["name"] == context.plans.plan_pro_sanbase.name
+    end
   end
 
   describe "update_subscription mutation" do
@@ -551,6 +572,26 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     """
     mutation {
       subscribe(card_token: "card_token", plan_id: #{plan_id}, coupon: "#{coupon}") {
+        id,
+        status
+        plan {
+          id
+          name
+          interval
+          amount
+          product {
+            name
+          }
+        }
+      }
+    }
+    """
+  end
+
+  defp subscribe_without_card_mutation(plan_id) do
+    """
+    mutation {
+      subscribe(plan_id: #{plan_id}) {
         id,
         status
         plan {

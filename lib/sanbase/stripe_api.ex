@@ -13,6 +13,13 @@ defmodule Sanbase.StripeApi do
           items: list(subscription_item)
         }
 
+  def create_customer(%User{username: username, email: email}, nil) do
+    Stripe.Customer.create(%{
+      description: username,
+      email: email
+    })
+  end
+
   def create_customer(%User{username: username, email: email}, card_token) do
     Stripe.Customer.create(%{
       description: username,

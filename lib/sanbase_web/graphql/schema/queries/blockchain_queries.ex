@@ -10,7 +10,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
   }
 
   alias SanbaseWeb.Graphql.Complexity
-
+  alias Sanbase.Billing.Product
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
   import_types(SanbaseWeb.Graphql.EtherbiTypes)
@@ -352,7 +352,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     This query requires you to have a plan extension or basic authentication.
     """
     field :all_exchange_wallets, list_of(:wallet) do
-      meta(access: :extension)
+      meta(access: :extension, product: Product.product_exchange_wallets())
 
       middleware(AccessControl)
       cache_resolve(&EtherbiResolver.all_exchange_wallets/3)
@@ -363,7 +363,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     This query requires you to have a plan extension or basic authentication.
     """
     field :exchange_wallets, list_of(:wallet) do
-      meta(access: :extension)
+      meta(access: :extension, product: Product.product_exchange_wallets())
 
       arg(:slug, :string, default_value: "ethereum")
 

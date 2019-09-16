@@ -16,17 +16,20 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
             restrict_from: 3,
             restrict_to: 3,
             do_call: 2,
+            transform_resolution: 1,
             check_from_to_params: 1,
             check_from_to_both_outside: 1}
 
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Absinthe.Resolution
-  alias Sanbase.Billing.{Subscription, Product}
+  alias Sanbase.Billing.{Subscription, Product, Plan}
 
   @allow_access_without_staking ["santiment"]
   @minimal_datetime_param from_iso8601!("2009-01-01T00:00:00Z")
   @free_subscription Subscription.free_subscription()
+  @exchange_wallets_product Product.product_exchange_wallets()
+  @extension_metrics Plan.AccessChecker.extension_metrics()
 
   def call(resolution, opts) do
     # First call `check_from_to_params` and then pass the execution to do_call/2
@@ -37,6 +40,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     |> check_from_to_both_outside()
   end
 
+  # The name of the query/mutation can be passed in snake case or camel case.
+  # Here we transform the name to an atom in snake case for consistency
+  # and faster comparison of atoms
   defp transform_resolution(%Resolution{} = resolution) do
     %{context: context, definition: definition} = resolution
 
@@ -72,10 +78,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     resolution
   end
 
-  @exchange_wallets_product Product.product_exchange_wallets()
-  @plan_extension_needed [:exchange_wallets]
   defp do_call(%Resolution{context: %{__query_atom_name__: query}} = resolution, _)
-       when query in @plan_extension_needed do
+       when query in @extension_metrics do
     case resolution.context[:auth][:current_user] do
       %Sanbase.Auth.User{} = user ->
         if @exchange_wallets_product in Subscription.user_subscriptions_product_ids(user) do

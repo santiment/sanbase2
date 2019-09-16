@@ -19,7 +19,7 @@ defmodule Sanbase.Application.Web do
       Sanbase.TimescaleRepo,
 
       # Start the Clickhouse Repo
-      start_in({Sanbase.ClickhouseRepo, []}, [:dev, :prod]),
+      start_in({Sanbase.ClickhouseRepo, []}, [:prod]),
 
       # Start the Elasticsearch Cluster connection
       Sanbase.Elasticsearch.Cluster,

@@ -1,11 +1,10 @@
 defmodule Sanbase.Billing.GraphqlSchema do
   @moduledoc ~s"""
-  Contains a single function `get_metrics_with_subscription_plan/1` that examines
-  the Absinthe's compile-time build schema.
-
-  It is a different module because functions from the module where a module
-  attribute is defined cannot be used
+  Contains functions that help examining the GraphQL schema.
+  It allows you to work easily with access logic of queries.
   """
+
+  alias Sanbase.Billing.Product
   alias Sanbase.Clickhouse.Metric
   require SanbaseWeb.Graphql.Schema
 
@@ -15,6 +14,13 @@ defmodule Sanbase.Billing.GraphqlSchema do
   @query_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :query)
   @fields @query_type.fields |> Map.keys()
 
+  @doc ~s"""
+  Return a map of {query, product_id} key-value pairs. The key is a query that
+  needs an extension plan to be accessed and the value is the product_id that
+  is needed for that access. If a user has a subscription plan with that product_id
+  he/she will have access to that query
+  """
+  @spec extension_metric_product_map :: %{required(atom()) => Product.product_id()}
   def extension_metric_product_map() do
     @fields
     |> Enum.filter(fn f ->
@@ -34,7 +40,13 @@ defmodule Sanbase.Billing.GraphqlSchema do
     |> Map.new()
   end
 
-  def get_field_value_matches(fields, values) do
+  @doc ~s"""
+  Return all query names that have all `fields` with the values specified in
+  the corresponding position of the `values` lis
+  """
+  @spec get_field_value_matches(list(atom()), list(any)) :: list(atom())
+  def get_field_value_matches(fields, values)
+      when is_list(fields) and is_list(values) and length(fields) == length(values) do
     field_value_pairs = Enum.zip(fields, values)
 
     Enum.filter(@fields, fn f ->

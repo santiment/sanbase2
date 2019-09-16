@@ -10,6 +10,8 @@ defmodule Sanbase.Billing.Product do
   alias Sanbase.Billing.Plan
   alias Sanbase.Repo
 
+  @type product_id :: non_neg_integer()
+
   # Sanbase API product id. Ids for products are fixed.
   @product_api 1
   @product_sanbase 2

@@ -46,6 +46,7 @@ defmodule Sanbase.Billing.Plan do
       %{name: "PREMIUM"} -> :premium
       %{name: "CUSTOM"} -> :enterprise
       %{name: "ENTERPRISE"} -> :enterprise
+      %{name: "EXTENSION"} -> :extension
       %{name: name} -> String.downcase(name) |> String.to_existing_atom()
     end
   end

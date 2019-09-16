@@ -22,7 +22,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Absinthe.Resolution
-  alias Sanbase.Billing.Subscription
+  alias Sanbase.Billing.{Subscription, Product}
 
   @allow_access_without_staking ["santiment"]
   @minimal_datetime_param from_iso8601!("2009-01-01T00:00:00Z")
@@ -72,11 +72,21 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     resolution
   end
 
-  @forbidden_queries [:exchange_wallets]
+  @exchange_wallets_product Product.product_exchange_wallets()
+  @plan_extension_needed [:exchange_wallets]
   defp do_call(%Resolution{context: %{__query_atom_name__: query}} = resolution, _)
-       when query in @forbidden_queries do
-    resolution
-    |> Resolution.put_result({:error, :unauthorized})
+       when query in @plan_extension_needed do
+    case resolution.context[:auth][:current_user] do
+      %Sanbase.Auth.User{} = user ->
+        if @exchange_wallets_product in Subscription.user_subscriptions_product_ids(user) do
+          resolution
+        else
+          Resolution.put_result(resolution, {:error, :unauthorized})
+        end
+
+      _ ->
+        Resolution.put_result(resolution, {:error, :unauthorized})
+    end
   end
 
   # Allow access to historical data and real-time data for the Santiment project.

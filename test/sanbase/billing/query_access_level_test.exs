@@ -278,7 +278,20 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         |> Enum.sort()
 
       expected_pro_queries =
-        [:all_exchange_wallets, :exchange_wallets, :all_projects_project_transparency]
+        [:all_projects_project_transparency]
+        |> Enum.sort()
+
+      assert pro_queries == expected_pro_queries
+    end
+
+    test "extension needed queries from the schema" do
+      # Forbidden queries are acessible only by basic authorization
+      pro_queries =
+        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_access_level(:extension)
+        |> Enum.sort()
+
+      expected_pro_queries =
+        [:exchange_wallets, :all_exchange_wallets]
         |> Enum.sort()
 
       assert pro_queries == expected_pro_queries

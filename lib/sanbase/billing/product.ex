@@ -15,6 +15,7 @@ defmodule Sanbase.Billing.Product do
   @product_sanbase 2
   @product_sheets 3
   @product_sangraphs 4
+  @product_exchange_wallets 5
 
   schema "products" do
     field(:name, :string)
@@ -27,6 +28,7 @@ defmodule Sanbase.Billing.Product do
   def product_sanbase(), do: @product_sanbase
   def product_sheets(), do: @product_sheets
   def product_sangraphs(), do: @product_sangraphs
+  def product_exchange_wallets(), do: @product_exchange_wallets
 
   def changeset(%__MODULE__{} = product, attrs \\ %{}) do
     product

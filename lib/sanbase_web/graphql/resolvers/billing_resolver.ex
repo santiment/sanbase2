@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     Plan.product_with_plans()
   end
 
-  def subscribe(_root, %{card_token: card_token, plan_id: plan_id} = args, %{
+  def subscribe(_root, %{plan_id: plan_id} = args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
     card_token = Map.get(args, :card_token)

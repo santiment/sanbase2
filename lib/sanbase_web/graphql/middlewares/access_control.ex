@@ -23,13 +23,13 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Absinthe.Resolution
-  alias Sanbase.Billing.{Subscription, Product, Plan}
+  alias Sanbase.Billing.{Subscription, Product, Plan, GraphqlSchema}
 
   @allow_access_without_staking ["santiment"]
   @minimal_datetime_param from_iso8601!("2009-01-01T00:00:00Z")
   @free_subscription Subscription.free_subscription()
-  @exchange_wallets_product Product.product_exchange_wallets()
   @extension_metrics Plan.AccessChecker.extension_metrics()
+  @extension_metric_product_map GraphqlSchema.extension_metric_product_map()
 
   def call(resolution, opts) do
     # First call `check_from_to_params` and then pass the execution to do_call/2
@@ -82,7 +82,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
        when query in @extension_metrics do
     case resolution.context[:auth][:current_user] do
       %Sanbase.Auth.User{} = user ->
-        if @exchange_wallets_product in Subscription.user_subscriptions_product_ids(user) do
+        product_ids = Subscription.user_subscriptions_product_ids(user)
+
+        if Map.get(@extension_metric_product_map, query) in product_ids do
           resolution
         else
           Resolution.put_result(resolution, {:error, :unauthorized})

@@ -15,22 +15,23 @@ defmodule Sanbase.Billing.GraphqlSchema do
   @query_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :query)
   @fields @query_type.fields |> Map.keys()
 
-  def get_extension_products() do
-    @query_type.fields
-    |> Enum.filter(fn {k, _v} ->
-      Map.get(@query_type.fields, k) |> Absinthe.Type.meta(:access) == :extension
+  def extension_metric_product_map() do
+    @fields
+    |> Enum.filter(fn f ->
+      Map.get(@query_type.fields, f) |> Absinthe.Type.meta(:access) == :extension
     end)
-    |> Enum.map(fn {k, _v} ->
+    |> Enum.map(fn f ->
       # The `product` key value is something like `Product.exchange_wallets_product`
       # so the value is its AST instead of the actual value because of how
       # the graphql schema is being built compile time. It is preferable to have
       # more complicated code here instead of having to make the call at compile
       # time, save it into module attribute and use that instead
-      product_ast = Map.get(@query_type.fields, k) |> Absinthe.Type.meta(:product)
+      product_ast = Map.get(@query_type.fields, f) |> Absinthe.Type.meta(:product)
       {{_, _, [module, func]}, _, _} = product_ast
       product_id = apply(module, func, [])
-      {k, product_id}
+      {f, product_id}
     end)
+    |> Map.new()
   end
 
   def get_field_value_matches(fields, values) do

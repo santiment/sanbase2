@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Absinthe.Resolution
-  alias Sanbase.Billing.{Subscription, Product, Plan, GraphqlSchema}
+  alias Sanbase.Billing.{Subscription, Plan, GraphqlSchema}
 
   @allow_access_without_staking ["santiment"]
   @minimal_datetime_param from_iso8601!("2009-01-01T00:00:00Z")

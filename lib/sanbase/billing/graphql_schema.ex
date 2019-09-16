@@ -42,7 +42,7 @@ defmodule Sanbase.Billing.GraphqlSchema do
 
   @doc ~s"""
   Return all query names that have all `fields` with the values specified in
-  the corresponding position of the `values` lis
+  the corresponding position of the `values` list
   """
   @spec get_field_value_matches(list(atom()), list(any)) :: list(atom())
   def get_field_value_matches(fields, values)

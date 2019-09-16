@@ -25,6 +25,7 @@ defmodule SanbaseWeb.Router do
   end
 
   pipeline :bot_login do
+    plug(:fetch_session)
     plug(SanbaseWeb.Plug.BotLoginPlug)
   end
 

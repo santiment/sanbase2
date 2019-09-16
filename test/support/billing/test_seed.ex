@@ -9,6 +9,7 @@ defmodule Sanbase.Billing.TestSeed do
         product = insert(:product_api)
         product_sanbase = insert(:product_sanbase)
         product_sheets = insert(:product_sheets)
+        product_exchange_wallets = insert(:product_exchange_wallets)
 
         data = %{
           product: product,
@@ -26,7 +27,9 @@ defmodule Sanbase.Billing.TestSeed do
           plan_pro_sanbase: insert(:plan_pro_sanbase, product: product_sanbase),
           plan_free_sheets: insert(:plan_free_sheets, product: product_sheets),
           plan_basic_sheets: insert(:plan_basic_sheets, product: product_sheets),
-          plan_pro_sheets: insert(:plan_pro_sheets, product: product_sheets)
+          plan_pro_sheets: insert(:plan_pro_sheets, product: product_sheets),
+          plan_exchange_wallets_extension:
+            insert(:plan_exchange_wallets_extension, product: product_exchange_wallets)
         }
 
         :persistent_term.put(@key, data)

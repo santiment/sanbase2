@@ -10,11 +10,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
   }
 
   alias SanbaseWeb.Graphql.Complexity
-
-  alias SanbaseWeb.Graphql.Middlewares.{
-    TimeframeRestriction,
-    BasicAuth
-  }
+  alias Sanbase.Billing.Product
+  alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
   import_types(SanbaseWeb.Graphql.EtherbiTypes)
   import_types(SanbaseWeb.Graphql.ClickhouseTypes)
@@ -41,7 +38,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&EtherbiResolver.token_age_consumed/3)
     end
 
@@ -54,7 +51,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&EtherbiResolver.token_age_consumed/3)
     end
 
@@ -75,7 +72,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&EtherbiResolver.transaction_volume/3)
     end
 
@@ -95,7 +92,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&EtherbiResolver.average_token_age_consumed_in_days/3)
     end
 
@@ -113,7 +110,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&ClickhouseResolver.token_circulation/3)
     end
 
@@ -131,7 +128,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&ClickhouseResolver.token_velocity/3)
     end
 
@@ -155,7 +152,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&ClickhouseResolver.daily_active_addresses/3)
     end
 
@@ -172,7 +169,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&EtherbiResolver.exchange_funds_flow/3)
     end
 
@@ -187,7 +184,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:to, non_null(:datetime))
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&ExchangeResolver.exchange_volume/3)
     end
 
@@ -201,7 +198,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, non_null(:string), default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&ClickhouseResolver.network_growth/3)
     end
 
@@ -215,7 +212,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&ClickhouseResolver.percent_of_token_supply_on_exchanges/3)
     end
 
@@ -233,7 +230,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&ClickhouseResolver.gas_used/3)
     end
 
@@ -256,7 +253,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&ClickhouseResolver.top_holders_percent_of_total_supply/3)
     end
 
@@ -274,7 +271,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&ClickhouseResolver.realized_value/3)
     end
 
@@ -288,7 +285,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, non_null(:string), default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&ClickhouseResolver.mvrv_ratio/3)
     end
 
@@ -312,7 +309,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&ClickhouseResolver.nvt_ratio/3)
     end
 
@@ -329,7 +326,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&ClickhouseResolver.daily_active_deposits/3)
     end
 
@@ -346,27 +343,31 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&ClickhouseResolver.share_of_deposits/3)
     end
 
+    @desc """
+    Fetch a list of all exchange wallets.
+    This query requires you to have a plan extension or basic authentication.
+    """
     field :all_exchange_wallets, list_of(:wallet) do
-      meta(access: :forbidden)
+      meta(access: :extension, product: Product.product_exchange_wallets())
 
-      middleware(BasicAuth)
+      middleware(AccessControl)
       cache_resolve(&EtherbiResolver.all_exchange_wallets/3)
     end
 
     @desc """
     Fetch a list of all exchange wallets on a given blockchain.
-    This query requires basic authentication.
+    This query requires you to have a plan extension or basic authentication.
     """
     field :exchange_wallets, list_of(:wallet) do
-      meta(access: :forbidden)
+      meta(access: :extension, product: Product.product_exchange_wallets())
 
       arg(:slug, :string, default_value: "ethereum")
 
-      middleware(BasicAuth)
+      middleware(AccessControl)
       cache_resolve(&EtherbiResolver.exchange_wallets/3)
     end
 
@@ -395,7 +396,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, non_null(:string), default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&ClickhouseResolver.historical_balance/3)
     end
 
@@ -422,7 +423,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&ClickhouseResolver.mining_pools_distribution/3)
     end
 
@@ -439,7 +440,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&ClickhouseResolver.miners_balance/3)
     end
   end

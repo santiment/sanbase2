@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
+defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   @moduledoc """
   Middleware that is used to restrict the API access in a certain timeframe.
 
@@ -16,24 +16,46 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
             restrict_from: 3,
             restrict_to: 3,
             do_call: 2,
+            transform_resolution: 1,
             check_from_to_params: 1,
             check_from_to_both_outside: 1}
 
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Absinthe.Resolution
-  alias Sanbase.Billing.Subscription
+  alias Sanbase.Billing.{Subscription, Plan, GraphqlSchema}
 
   @allow_access_without_staking ["santiment"]
   @minimal_datetime_param from_iso8601!("2009-01-01T00:00:00Z")
   @free_subscription Subscription.free_subscription()
+  @extension_metrics Plan.AccessChecker.extension_metrics()
+  @extension_metric_product_map GraphqlSchema.extension_metric_product_map()
 
   def call(resolution, opts) do
     # First call `check_from_to_params` and then pass the execution to do_call/2
     resolution
+    |> transform_resolution()
     |> check_from_to_params()
     |> do_call(opts)
     |> check_from_to_both_outside()
+  end
+
+  # The name of the query/mutation can be passed in snake case or camel case.
+  # Here we transform the name to an atom in snake case for consistency
+  # and faster comparison of atoms
+  defp transform_resolution(%Resolution{} = resolution) do
+    %{context: context, definition: definition} = resolution
+
+    query_name =
+      definition.name
+      |> Macro.underscore()
+      |> String.to_existing_atom()
+      |> get_query(resolution.source)
+
+    %Resolution{
+      resolution
+      | context: Map.put(context, :__query_atom_name__, query_name)
+    }
   end
 
   # If the query is resolved there's nothing to do here
@@ -48,14 +70,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
     resolution
   end
 
-  # Allow access to historical data and real-time data for the Santiment project.
-  # This will serve the purpose of showing to anonymous and users with lesser plans
-  # how the data looks like.
-  defp do_call(%Resolution{arguments: %{slug: slug}} = resolution, _)
-       when slug in @allow_access_without_staking do
-    resolution
-  end
-
   # Basic auth should have no restrictions
   defp do_call(
          %Resolution{context: %{auth: %{auth_method: :basic}}} = resolution,
@@ -64,18 +78,38 @@ defmodule SanbaseWeb.Graphql.Middlewares.TimeframeRestriction do
     resolution
   end
 
+  defp do_call(%Resolution{context: %{__query_atom_name__: query}} = resolution, _)
+       when query in @extension_metrics do
+    case resolution.context[:auth][:current_user] do
+      %Sanbase.Auth.User{} = user ->
+        product_ids = Subscription.user_subscriptions_product_ids(user)
+
+        if Map.get(@extension_metric_product_map, query) in product_ids do
+          resolution
+        else
+          Resolution.put_result(resolution, {:error, :unauthorized})
+        end
+
+      _ ->
+        Resolution.put_result(resolution, {:error, :unauthorized})
+    end
+  end
+
+  # Allow access to historical data and real-time data for the Santiment project.
+  # This will serve the purpose of showing to anonymous and users with lesser plans
+  # how the data looks like.
+  defp do_call(%Resolution{arguments: %{slug: slug}} = resolution, _)
+       when slug in @allow_access_without_staking do
+    resolution
+  end
+
   # Dispatch the resolution of restricted and not-restricted queries to
   # different functions if there are `from` and `to` parameters
   defp do_call(
-         %Resolution{definition: definition, arguments: %{from: _from, to: _to}} = resolution,
+         %Resolution{context: %{__query_atom_name__: query}, arguments: %{from: _from, to: _to}} =
+           resolution,
          middleware_args
        ) do
-    query =
-      definition.name
-      |> Macro.underscore()
-      |> String.to_existing_atom()
-      |> get_query(resolution.source)
-
     if Subscription.is_restricted?(query) do
       restricted_query(resolution, middleware_args, query)
     else

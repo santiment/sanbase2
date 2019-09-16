@@ -4,12 +4,12 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
   # Assert that a query's access level does not change incidentally
   describe "subscription meta" do
     test "there are no queries without defined subscription" do
-      assert Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_without_access_level() == []
+      assert Sanbase.Billing.GraphqlSchema.get_metrics_without_access_level() == []
     end
 
     test "free queries defined in the schema" do
       free_queries =
-        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_access_level(:free)
+        Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:free)
         |> Enum.sort()
         |> Enum.filter(&is_atom/1)
 
@@ -89,7 +89,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
 
     test "free clickhouse v2 queries" do
       free_queries =
-        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_access_level(:free)
+        Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:free)
         |> Enum.sort()
         |> Enum.reject(&is_atom/1)
         |> Enum.map(&elem(&1, 1))
@@ -113,7 +113,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
 
     test "restricted queries defined in the schema" do
       basic_queries =
-        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_access_level(:restricted)
+        Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:restricted)
         |> Enum.filter(&is_atom/1)
         |> Enum.sort()
 
@@ -158,7 +158,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
 
     test "restricted clickhouse v2 queries" do
       restricted_queries =
-        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_access_level(:restricted)
+        Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:restricted)
         |> Enum.reject(&is_atom/1)
         |> Enum.map(&elem(&1, 1))
         |> Enum.sort()
@@ -274,11 +274,24 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
     test "forbidden queries from the schema" do
       # Forbidden queries are acessible only by basic authorization
       pro_queries =
-        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_access_level(:forbidden)
+        Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:forbidden)
         |> Enum.sort()
 
       expected_pro_queries =
-        [:all_exchange_wallets, :exchange_wallets, :all_projects_project_transparency]
+        [:all_projects_project_transparency]
+        |> Enum.sort()
+
+      assert pro_queries == expected_pro_queries
+    end
+
+    test "extension needed queries from the schema" do
+      # Forbidden queries are acessible only by basic authorization
+      pro_queries =
+        Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:extension)
+        |> Enum.sort()
+
+      expected_pro_queries =
+        [:exchange_wallets, :all_exchange_wallets]
         |> Enum.sort()
 
       assert pro_queries == expected_pro_queries
@@ -286,7 +299,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
 
     test "forbidden clickhouse v2 queries" do
       forbidden_queries =
-        Sanbase.Billing.Plan.AccessChecker.Helper.get_metrics_with_access_level(:forbidden)
+        Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:forbidden)
         |> Enum.sort()
         |> Enum.reject(&is_atom/1)
         |> Enum.map(&elem(&1, 1))

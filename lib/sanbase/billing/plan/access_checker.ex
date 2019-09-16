@@ -39,47 +39,10 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   }
 
   alias Sanbase.Billing.Product
-
-  defmodule Helper do
-    @moduledoc ~s"""
-    Contains a single function `get_metrics_with_subscription_plan/1` that examines
-    the Absinthe's compile-time build schema.
-
-    It is a different module because functions from the module where a module
-    attribute is defined cannot be used
-    """
-    alias Sanbase.Clickhouse.Metric
-    require SanbaseWeb.Graphql.Schema
-
-    @mutation_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :mutation)
-    @mutations_mapset MapSet.new(@mutation_type.fields |> Map.keys())
-
-    @query_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :query)
-    @fields @query_type.fields |> Map.keys()
-    def get_metrics_with_access_level(level) do
-      from_schema =
-        Enum.filter(@fields, fn f ->
-          Map.get(@query_type.fields, f) |> Absinthe.Type.meta(:access) == level
-        end)
-
-      clickhouse_v2_metrics =
-        Enum.filter(Metric.metric_access_map(), fn {_metric, metric_level} ->
-          level == metric_level
-        end)
-        |> Enum.map(fn {metric, _access} -> {:clickhouse_v2_metric, metric} end)
-
-      from_schema ++ clickhouse_v2_metrics
-    end
-
-    def get_metrics_without_access_level() do
-      get_metrics_with_access_level(nil) -- [:__typename, :__type, :__schema]
-    end
-
-    def mutations_mapset(), do: @mutations_mapset
-  end
+  alias Sanbase.Billing.GraphqlSchema
 
   # Raise an error if there is any query without subscription plan
-  case Helper.get_metrics_without_access_level() do
+  case GraphqlSchema.get_metrics_without_access_level() do
     [] ->
       :ok
 
@@ -94,11 +57,14 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
       """)
   end
 
-  @free_metrics Helper.get_metrics_with_access_level(:free)
+  @extension_metrics GraphqlSchema.get_metrics_with_access_level(:extension)
+  def extension_metrics(), do: @extension_metrics
+
+  @free_metrics GraphqlSchema.get_metrics_with_access_level(:free)
   @free_metrics_mapset MapSet.new(@free_metrics)
   def free_metrics_mapset(), do: @free_metrics_mapset
 
-  @restricted_metrics Helper.get_metrics_with_access_level(:restricted)
+  @restricted_metrics GraphqlSchema.get_metrics_with_access_level(:restricted)
   @restricted_metrics_mapset MapSet.new(@restricted_metrics)
   def restricted_metrics_mapset(), do: @restricted_metrics_mapset
 

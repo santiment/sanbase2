@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.Schema.PriceQueries do
 
   alias SanbaseWeb.Graphql.Resolvers.PriceResolver
   alias SanbaseWeb.Graphql.Complexity
-  alias SanbaseWeb.Graphql.Middlewares.TimeframeRestriction
+  alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
   import_types(SanbaseWeb.Graphql.PriceTypes)
 
@@ -21,7 +21,7 @@ defmodule SanbaseWeb.Graphql.Schema.PriceQueries do
       arg(:interval, :string, default_value: "")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&PriceResolver.history_price/3)
     end
 
@@ -38,7 +38,7 @@ defmodule SanbaseWeb.Graphql.Schema.PriceQueries do
       arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(TimeframeRestriction)
+      middleware(AccessControl)
       cache_resolve(&PriceResolver.ohlc/3)
     end
   end

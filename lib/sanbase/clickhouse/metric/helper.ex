@@ -10,18 +10,18 @@ defmodule Sanbase.Clickhouse.Metric.Helper do
   end
 
   @doc documentation_ref: """
-  DOCS access-plans/index.md
-  """
+       DOCS access-plans/index.md
+       """
   def mvrv_metrics(), do: metric_with_name_containing("mvrv") |> wrap()
 
   @doc documentation_ref: """
-  DOCS access-plans/index.md
-  """
+       DOCS access-plans/index.md
+       """
   def realized_value_metrics(), do: metric_with_name_containing("realized") |> wrap()
 
   @doc documentation_ref: """
-  DOCS access-plans/index.md
-  """
+       DOCS access-plans/index.md
+       """
   def token_age_consumed_metrics(), do: metric_with_name_containing("age_consumed") |> wrap()
 
   defp wrap(list) do

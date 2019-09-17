@@ -36,7 +36,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
   alias Sanbase.ExternalServices.Coinmarketcap
   alias Sanbase.ExternalServices.Etherscan
   alias Sanbase.ExternalServices.ProjectInfo
-  alias Sanbase.InternalServices.Parity
+  alias Sanbase.InternalServices.{Parity, Ethauth}
   alias Sanbase.Repo
   alias Sanbase.Model.{Project, Ico}
   alias Sanbase.Tag
@@ -58,11 +58,12 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
         ticker: ticker,
         name: name,
         token_decimals: token_decimals,
+        total_supply: total_supply,
         main_contract_address: main_contract_address
       }) do
     !website_link or !email or !reddit_link or !twitter_link or !btt_link or !blog_link or
       !github_link or !telegram_link or !slack_link or !facebook_link or !whitepaper_link or
-      !ticker or !name or !main_contract_address or !token_decimals
+      !ticker or !name or !main_contract_address or !token_decimals or !total_supply
   end
 
   def from_project(project) do
@@ -71,15 +72,19 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
   end
 
   def fetch_coinmarketcap_info(%ProjectInfo{slug: slug} = project_info) do
-    slug
-    |> Coinmarketcap.Scraper.fetch_project_page()
-    |> case do
+    case Coinmarketcap.Scraper.fetch_project_page(slug) do
       {:ok, scraped_project_info} ->
         {:ok, Coinmarketcap.Scraper.parse_project_page(scraped_project_info, project_info)}
 
       _ ->
-        nil
+        project_info
     end
+  end
+
+  def fetch_from_ethereum_node(%ProjectInfo{} = project_info) do
+    project_info
+    |> fetch_token_decimals()
+    |> fetch_total_supply()
   end
 
   def fetch_contract_info(%ProjectInfo{main_contract_address: nil} = project_info),
@@ -147,6 +152,30 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
       ico -> ico
     end
   end
+
+  defp fetch_total_supply(
+         %ProjectInfo{main_contract_address: contract, total_supply: nil} = project_info
+       )
+       when is_binary(contract) do
+    case Ethauth.total_supply(contract) do
+      {:ok, total_supply} -> %ProjectInfo{project_info | total_supply: total_supply}
+      _ -> project_info
+    end
+  end
+
+  defp fetch_total_supply(%ProjectInfo{} = project_info), do: project_info
+
+  defp fetch_token_decimals(
+         %ProjectInfo{main_contract_address: contract, token_decimals: nil} = project_info
+       )
+       when is_binary(contract) do
+    case Ethauth.token_decimals(contract) do
+      {:ok, token_decimals} -> %ProjectInfo{project_info | token_decimals: token_decimals}
+      _ -> project_info
+    end
+  end
+
+  defp fetch_token_decimals(%ProjectInfo{} = project_info), do: project_info
 
   defp fetch_block_number(%ProjectInfo{creation_transaction: nil} = project_info),
     do: project_info

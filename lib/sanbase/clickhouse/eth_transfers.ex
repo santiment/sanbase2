@@ -97,16 +97,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   @spec eth_spent_over_time(%Project{} | wallets, %DateTime{}, %DateTime{}, String.t()) ::
           {:ok, list(spent_over_time_type)} | {:error, String.t()}
   def eth_spent_over_time(%Project{} = project, from_datetime, to_datetime, interval) do
-    with {:ok, eth_addresses} <- Project.eth_addresses(project) do
-      eth_spent_over_time(eth_addresses, from_datetime, to_datetime, interval)
-    else
-      {:error, error} ->
-        Logger.warn(
-          "Cannot get ETH addresses for project with id #{project.id}. Reason: #{inspect(error)}"
-        )
-
-        {:error, error}
-    end
+    {:ok, eth_addresses} = Project.eth_addresses(project)
+    eth_spent_over_time(eth_addresses, from_datetime, to_datetime, interval)
   end
 
   def eth_spent_over_time([], _, _, _), do: {:ok, []}

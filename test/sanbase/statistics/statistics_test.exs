@@ -3,7 +3,6 @@ defmodule Sanbase.StatisticsTest do
 
   import Sanbase.Auth.Settings, only: [daily_subscription_type: 0, weekly_subscription_type: 0]
   import Sanbase.Factory
-  import Sanbase.Clickhouse.ApiCallData
   import Mock
 
   setup do

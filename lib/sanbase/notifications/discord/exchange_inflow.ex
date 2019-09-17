@@ -11,10 +11,10 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
   import Ecto.Query
 
-  alias Sanbase.Model.Project
   alias Sanbase.Repo
+  alias Sanbase.Model.Project
+  alias Sanbase.Blockchain.ExchangeFundsFlow
   alias Sanbase.Notifications.{Discord, Notification, Type}
-
   @impl true
   def run() do
     Logger.info("Running ExchangeInflow signal")
@@ -33,7 +33,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
     projects
     |> Enum.map(&Project.contract_address/1)
-    |> Sanbase.Blockchain.ExchangeFundsFlow.transactions_in(from, to)
+    |> ExchangeFundsFlow.transactions_in(from, to)
     |> case do
       {:ok, list} ->
         notification_type = Type.get_or_create("exchange_inflow")
@@ -82,9 +82,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
           not is_nil(p.token_decimals) and not is_nil(p.name)
     )
     |> Repo.all()
-    |> Enum.reject(fn %Project{} = project ->
-      !Project.supply(project)
-    end)
+    |> Enum.reject(fn %Project{} = project -> !Project.supply(project) end)
   end
 
   defp build_payload(projects, list) do
@@ -124,43 +122,41 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     if percent_of_total_supply > signal_trigger_percent(project) do
       # If there was a signal less than interval_days() ago then recalculate the exchange inflow
       # since the last signal trigger time
-      case Notification.get_cooldown(
-             project,
-             notification_type,
-             cooldown_days() * 86_400
-           ) do
+      case Notification.get_cooldown(project, notification_type, cooldown_days() * 86_400) do
         {true, %DateTime{} = cooldown} ->
-          with {:ok, [%{inflow: new_inflow}]} <-
-                 Sanbase.Blockchain.ExchangeFundsFlow.transactions_in(
-                   [Project.contract_address(project)],
-                   cooldown,
-                   Timex.now()
-                 ) do
-            new_percent_of_total_supply = percent_of_total_supply(project, new_inflow)
-
-            if new_inflow && new_percent_of_total_supply > signal_trigger_percent(project) do
-              content =
-                notification_message(
-                  project,
-                  Timex.diff(cooldown, Timex.now(), :hours) |> abs(),
-                  :hour,
-                  inflow,
-                  new_inflow
-                )
-
-              embeds = notification_embeds(project)
-              {project, content, embeds, new_percent_of_total_supply}
-            end
-          else
-            _ ->
-              nil
-          end
+          build_payload(project, cooldown, inflow)
 
         {false, _} ->
           content = notification_message(project, interval_days(), :day, inflow)
           embeds = notification_embeds(project)
           {project, content, embeds, percent_of_total_supply}
       end
+    end
+  end
+
+  defp build_payload(project, cooldown, inflow) do
+    addresses = [Project.contract_address(project)]
+
+    case ExchangeFundsFlow.transactions_in(addresses, cooldown, Timex.now()) do
+      {:ok, [%{inflow: new_inflow}]} ->
+        new_percent_of_total_supply = percent_of_total_supply(project, new_inflow)
+
+        if new_inflow && new_percent_of_total_supply > signal_trigger_percent(project) do
+          content =
+            notification_message(
+              project,
+              Timex.diff(cooldown, Timex.now(), :hours) |> abs(),
+              :hour,
+              inflow,
+              new_inflow
+            )
+
+          embeds = notification_embeds(project)
+          {project, content, embeds, new_percent_of_total_supply}
+        end
+
+      _ ->
+        nil
     end
   end
 

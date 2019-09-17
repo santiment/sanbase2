@@ -95,13 +95,17 @@ defmodule Sanbase.Clickhouse.EthDailyActiveAddresses do
 
     args = [from_datetime_unix, to_datetime_unix]
 
-    {:ok, result} =
-      ClickhouseRepo.query_transform(query, args, fn
-        [nil] -> 0
-        [avg_active_addresses] -> avg_active_addresses |> to_integer()
-      end)
+    ClickhouseRepo.query_transform(query, args, fn
+      [nil] -> 0
+      [avg_active_addresses] -> avg_active_addresses |> to_integer()
+    end)
+    |> case do
+      {:ok, result} ->
+        {:ok, result |> List.first()}
 
-    {:ok, result |> List.first()}
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   @doc ~s"""

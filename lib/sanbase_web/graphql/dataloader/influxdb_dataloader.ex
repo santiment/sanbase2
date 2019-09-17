@@ -100,11 +100,12 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
   end
 
   defp fetch_last_price_record(measurement) do
-    with {:ok, [[_dt, _mcap, price_btc, price_usd, _volume]]} <-
-           Prices.Store.last_record(measurement) do
-      {price_usd, price_btc}
-    else
-      _error -> {nil, nil}
+    case Prices.Store.last_record(measurement) do
+      {:ok, [[_dt, _mcap, price_btc, price_usd, _volume]]} ->
+        {price_usd, price_btc}
+
+      _error ->
+        {nil, nil}
     end
   end
 end

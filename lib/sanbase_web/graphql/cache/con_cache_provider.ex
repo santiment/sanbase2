@@ -46,33 +46,35 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
   @impl true
   def get_or_store(cache, key, func, cache_modify_middleware) do
     {result, error_if_any} =
-      if (result = ConCache.get(cache, key)) != nil do
-        {:stored, value} = result
-        {value, nil}
-      else
-        ConCache.isolated(cache, key, fn ->
-          if (result = ConCache.get(cache, key)) != nil do
-            {:stored, value} = result
-            {value, nil}
-          else
-            case func.() do
-              {:error, _} = error ->
-                {nil, error}
+      case ConCache.get(cache, key) do
+        {:stored, value} ->
+          {value, nil}
 
-              {:middleware, _, _} = tuple ->
-                # Decides on its behalf whether or not to put the value in the cache
-                {cache_modify_middleware.(cache, key, tuple), nil}
-
-              {:nocache, {:ok, _result} = value} ->
-                Process.put(:do_not_cache_query, true)
+        _ ->
+          ConCache.isolated(cache, key, fn ->
+            case ConCache.get(cache, key) do
+              {:stored, value} ->
                 {value, nil}
 
-              value ->
-                cache_item(cache, key, {:stored, value})
-                {value, nil}
+              _ ->
+                case func.() do
+                  {:error, _} = error ->
+                    {nil, error}
+
+                  {:middleware, _, _} = tuple ->
+                    # Decides on its behalf whether or not to put the value in the cache
+                    {cache_modify_middleware.(cache, key, tuple), nil}
+
+                  {:nocache, {:ok, _result} = value} ->
+                    Process.put(:do_not_cache_query, true)
+                    {value, nil}
+
+                  value ->
+                    cache_item(cache, key, {:stored, value})
+                    {value, nil}
+                end
             end
-          end
-        end)
+          end)
       end
 
     if error_if_any != nil do

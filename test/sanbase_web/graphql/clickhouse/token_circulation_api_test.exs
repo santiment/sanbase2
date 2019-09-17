@@ -92,12 +92,12 @@ defmodule Sanbase.Clickhouse.TokenCirculationApiTest do
 
       assert %{
                "datetime" => "2017-05-16T00:00:00Z",
-               "tokenCirculation" => 15000
+               "tokenCirculation" => 15_000
              } in token_circulation
 
       assert %{
                "datetime" => "2017-05-17T00:00:00Z",
-               "tokenCirculation" => 65000
+               "tokenCirculation" => 65_000
              } in token_circulation
 
       assert %{

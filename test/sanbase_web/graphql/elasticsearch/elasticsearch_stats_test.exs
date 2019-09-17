@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.ElasticsearchResolverTest do
     assert stats == %{
              "data" => %{
                "elasticsearchStats" => %{
-                 "averageDocumentsPerDay" => 33333,
+                 "averageDocumentsPerDay" => 33_333,
                  "documentsCount" => 1_000_000,
                  "sizeInMegabytes" => 5,
                  "subredditsCount" => 10,

@@ -31,12 +31,12 @@ defmodule SanbaseWeb.Graphql.CurrentPollApiTest do
       build_conn()
       |> post("/graphql", query_skeleton(query, "currentPoll"))
 
-    currentPoll = json_response(result, 200)["data"]["currentPoll"]
+    current_poll = json_response(result, 200)["data"]["currentPoll"]
 
-    assert Timex.parse!(currentPoll["startAt"], "{ISO:Extended}") ==
+    assert Timex.parse!(current_poll["startAt"], "{ISO:Extended}") ==
              Timex.beginning_of_week(Timex.now()) |> DateTime.truncate(:second)
 
-    assert currentPoll["posts"] == []
+    assert current_poll["posts"] == []
   end
 
   test "getting the current poll with some posts and votes", %{user: user} do
@@ -72,14 +72,14 @@ defmodule SanbaseWeb.Graphql.CurrentPollApiTest do
       build_conn()
       |> post("/graphql", query_skeleton(query, "currentPoll"))
 
-    currentPoll = json_response(result, 200)["data"]["currentPoll"]
+    current_poll = json_response(result, 200)["data"]["currentPoll"]
 
     assert DateTime.compare(
-             Timex.parse!(currentPoll["startAt"], "{ISO:Extended}"),
+             Timex.parse!(current_poll["startAt"], "{ISO:Extended}"),
              Timex.beginning_of_week(Timex.now())
            ) == :eq
 
-    assert %{"id" => Integer.to_string(approved_post.id)} in currentPoll["posts"]
+    assert %{"id" => Integer.to_string(approved_post.id)} in current_poll["posts"]
   end
 
   test "getting the current poll with the dates when the current user voted", %{
@@ -118,8 +118,8 @@ defmodule SanbaseWeb.Graphql.CurrentPollApiTest do
       conn
       |> post("/graphql", query_skeleton(query, "currentPoll"))
 
-    currentPoll = json_response(result, 200)["data"]["currentPoll"]
-    [post] = currentPoll["posts"]
+    current_poll = json_response(result, 200)["data"]["currentPoll"]
+    [post] = current_poll["posts"]
 
     assert Timex.parse!(post["voted_at"], "{ISO:Extended}") == vote.inserted_at
   end

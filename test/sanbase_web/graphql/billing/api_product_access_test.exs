@@ -438,8 +438,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
   defp price_resp() do
     {:ok,
      [
-       [from_iso8601!("2019-01-01T00:00:00Z"), 10, 0.1, 10000, 500],
-       [from_iso8601!("2019-01-01T00:00:00Z"), 20, 0.2, 20000, 1500]
+       [from_iso8601!("2019-01-01T00:00:00Z"), 10, 0.1, 10_000, 500],
+       [from_iso8601!("2019-01-01T00:00:00Z"), 20, 0.2, 20_000, 1500]
      ]}
   end
 

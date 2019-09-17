@@ -125,7 +125,7 @@ defmodule Sanbase.Etherbi.TokenAgeConsumedApiTest do
            end)
 
     assert Enum.find(token_age_consumed, fn %{"tokenAgeConsumed" => value} ->
-             value == 85555
+             value == 85_555
            end)
   end
 
@@ -166,12 +166,12 @@ defmodule Sanbase.Etherbi.TokenAgeConsumedApiTest do
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime4),
-             "tokenAgeConsumed" => 15000.0
+             "tokenAgeConsumed" => 15_000.0
            } in token_age_consumed
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime5),
-             "tokenAgeConsumed" => 65000.0
+             "tokenAgeConsumed" => 65_000.0
            } in token_age_consumed
 
     assert %{
@@ -218,7 +218,7 @@ defmodule Sanbase.Etherbi.TokenAgeConsumedApiTest do
 
     assert %{
              "datetime" => "2017-05-13T22:00:00Z",
-             "tokenAgeConsumed" => 80500.0
+             "tokenAgeConsumed" => 80_500.0
            } in token_age_consumed
 
     assert %{

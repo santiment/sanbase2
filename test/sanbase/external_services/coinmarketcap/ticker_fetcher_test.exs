@@ -21,8 +21,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
   end
 
   test "ticker fetcher inserts new projects" do
-    assert length(Project.List.projects()) == 0
-    assert length(Project.List.projects_with_source("coinmarketcap")) == 0
+    assert Project.List.projects() == []
+    assert Project.List.projects_with_source("coinmarketcap") == []
 
     TickerFetcher.work()
 

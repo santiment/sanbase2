@@ -54,13 +54,13 @@ defmodule Sanbase.Model.Ico do
   def changeset_ex_admin(%Ico{} = ico, attrs \\ %{}) do
     attrs =
       attrs
-      |> ModelUtils.removeThousandsSeparator(:token_usd_ico_price)
-      |> ModelUtils.removeThousandsSeparator(:token_eth_ico_price)
-      |> ModelUtils.removeThousandsSeparator(:token_btc_ico_price)
-      |> ModelUtils.removeThousandsSeparator(:tokens_issued_at_ico)
-      |> ModelUtils.removeThousandsSeparator(:tokens_sold_at_ico)
-      |> ModelUtils.removeThousandsSeparator(:minimal_cap_amount)
-      |> ModelUtils.removeThousandsSeparator(:maximal_cap_amount)
+      |> ModelUtils.remove_thousands_separator(:token_usd_ico_price)
+      |> ModelUtils.remove_thousands_separator(:token_eth_ico_price)
+      |> ModelUtils.remove_thousands_separator(:token_btc_ico_price)
+      |> ModelUtils.remove_thousands_separator(:tokens_issued_at_ico)
+      |> ModelUtils.remove_thousands_separator(:tokens_sold_at_ico)
+      |> ModelUtils.remove_thousands_separator(:minimal_cap_amount)
+      |> ModelUtils.remove_thousands_separator(:maximal_cap_amount)
 
     ico
     |> changeset(attrs)

@@ -86,9 +86,8 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
   defp do_btc_average_active_addresses([], _, _), do: {:ok, []}
 
   defp do_btc_average_active_addresses([_ | _], from, to) do
-    with {:ok, result} <- Bitcoin.average_active_addresses(from, to) do
-      {:ok, [{"BTC", result}]}
-    else
+    case Bitcoin.average_active_addresses(from, to) do
+      {:ok, result} -> {:ok, [{"BTC", result}]}
       {:error, error} -> handle_error("Bitcoin", error)
     end
   end
@@ -96,9 +95,8 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
   defp do_eth_average_active_addresses([], _, _), do: {:ok, []}
 
   defp do_eth_average_active_addresses([_ | _], from, to) do
-    with {:ok, result} <- Eth.average_active_addresses(from, to) do
-      {:ok, [{"ETH", result}]}
-    else
+    case Eth.average_active_addresses(from, to) do
+      {:ok, result} -> {:ok, [{"ETH", result}]}
       {:error, error} -> handle_error("Ethereum", error)
     end
   end
@@ -106,9 +104,8 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
   defp do_erc20_average_active_addresses([], _, _), do: {:ok, []}
 
   defp do_erc20_average_active_addresses(contracts, from, to) do
-    with {:ok, result} <- Erc20.average_active_addresses(contracts, from, to) do
-      {:ok, result}
-    else
+    case Erc20.average_active_addresses(contracts, from, to) do
+      {:ok, result} -> {:ok, result}
       {:error, error} -> handle_error("ERC20 contracts", error)
     end
   end

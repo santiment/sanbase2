@@ -56,7 +56,7 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
     insert(:transaction_volume, %{
       contract_address: contract_address,
       timestamp: datetime5,
-      transaction_volume: Sanbase.Math.ipow(10, token_decimals) * 64123
+      transaction_volume: Sanbase.Math.ipow(10, token_decimals) * 64_123
     })
 
     insert(:transaction_volume, %{
@@ -74,7 +74,7 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
     insert(:transaction_volume, %{
       contract_address: contract_address,
       timestamp: datetime8,
-      transaction_volume: Sanbase.Math.ipow(10, token_decimals) * 12111
+      transaction_volume: Sanbase.Math.ipow(10, token_decimals) * 12_111
     })
 
     [
@@ -113,12 +113,12 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
 
     trx_volumes = json_response(result, 200)["data"]["transactionVolume"]
 
-    assert Enum.find(trx_volumes, fn %{"transactionVolume" => transactionVolume} ->
-             transactionVolume == 1555
+    assert Enum.find(trx_volumes, fn %{"transactionVolume" => transaction_volume} ->
+             transaction_volume == 1555
            end)
 
-    assert Enum.find(trx_volumes, fn %{"transactionVolume" => transactionVolume} ->
-             transactionVolume == 84787
+    assert Enum.find(trx_volumes, fn %{"transactionVolume" => transaction_volume} ->
+             transaction_volume == 84_787
            end)
   end
 
@@ -164,7 +164,7 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime5),
-             "transactionVolume" => 64123.0
+             "transactionVolume" => 64_123.0
            } in trx_volumes
 
     assert %{
@@ -225,7 +225,7 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
 
     assert %{
              "datetime" => "2017-05-13T22:45:00Z",
-             "transactionVolume" => 12666.0
+             "transactionVolume" => 12_666.0
            } in trx_volumes
   end
 end

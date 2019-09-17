@@ -52,7 +52,7 @@ defmodule Sanbase.StripeApiTestReponse do
      %Stripe.Plan{
        active: true,
        aggregate_usage: nil,
-       amount: 35900,
+       amount: 35_900,
        billing_scheme: "per_unit",
        created: 1_558_178_870,
        currency: "usd",
@@ -237,7 +237,7 @@ defmodule Sanbase.StripeApiTestReponse do
              plan: %Stripe.Plan{
                active: true,
                aggregate_usage: nil,
-               amount: 35900,
+               amount: 35_900,
                billing_scheme: "per_unit",
                created: 1_558_178_870,
                currency: "usd",
@@ -272,7 +272,7 @@ defmodule Sanbase.StripeApiTestReponse do
        plan: %Stripe.Plan{
          active: true,
          aggregate_usage: nil,
-         amount: 35900,
+         amount: 35_900,
          billing_scheme: "per_unit",
          created: 1_558_178_870,
          currency: "usd",

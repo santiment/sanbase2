@@ -27,14 +27,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
 
     projects
     |> Enum.chunk_every(100)
-    |> Enum.flat_map(fn projects ->
+    |> Enum.each(fn projects ->
       {:ok, remote_projects} = CryptocurrencyInfo.fetch_data(projects)
 
       Enum.each(remote_projects, fn remote_project ->
         update_project_logos(remote_project, local_projects_map, dir_path)
       end)
-
-      remote_projects
     end)
 
     Temp.cleanup()
@@ -125,10 +123,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
   end
 
   defp upload(filepath) do
-    with {:ok, filename} <- FileStore.store({filepath, "logo#{@size}"}) do
-      Logger.info("#{@log_tag} Successfully uploaded logo from #{filepath} to: #{filename}")
-      {:ok, FileStore.url({filename, "logo#{@size}"})}
-    else
+    case FileStore.store({filepath, "logo#{@size}"}) do
+      {:ok, filename} ->
+        Logger.info("#{@log_tag} Successfully uploaded logo from #{filepath} to: #{filename}")
+        {:ok, FileStore.url({filename, "logo#{@size}"})}
+
       {:error, error} ->
         error_msg = inspect(error)
 

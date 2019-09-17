@@ -5,8 +5,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
   use Tesla
 
-  # TODO: Change after switching over to only this cmc
-  alias __MODULE__, as: GraphData
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Model.Project
@@ -210,14 +208,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
   defp json_to_price_points(json) do
     json
-    |> Poison.decode!(as: %GraphData{})
+    |> Poison.decode!(as: %__MODULE__{})
     |> convert_to_price_points()
   end
 
   defp json_to_price_points(json, interval) do
     result =
       json
-      |> Poison.decode!(as: %GraphData{})
+      |> Poison.decode!(as: %__MODULE__{})
       |> convert_to_price_points()
 
     {result, interval}
@@ -273,7 +271,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     end
   end
 
-  defp convert_to_price_points(%GraphData{
+  defp convert_to_price_points(%__MODULE__{
          market_cap_by_available_supply: market_cap_by_available_supply,
          price_usd: nil,
          volume_usd: volume_usd,
@@ -289,7 +287,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     end)
   end
 
-  defp convert_to_price_points(%GraphData{
+  defp convert_to_price_points(%__MODULE__{
          market_cap_by_available_supply: market_cap_by_available_supply,
          price_usd: price_usd,
          price_btc: price_btc,

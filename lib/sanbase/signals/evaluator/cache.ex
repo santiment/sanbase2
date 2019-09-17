@@ -16,28 +16,30 @@ defmodule Sanbase.Signal.Evaluator.Cache do
 
   def get_or_store(key, func) when is_function(func, 0) do
     {result, error_if_any} =
-      if (result = ConCache.get(@cache_name, key)) != nil do
-        {:stored, value} = result
-        {value, nil}
-      else
-        ConCache.isolated(@cache_name, key, fn ->
-          if (result = ConCache.get(@cache_name, key)) != nil do
-            {:stored, value} = result
-            {value, nil}
-          else
-            case func.() do
-              {:error, _} = error ->
-                {nil, error}
+      case ConCache.get(@cache_name, key) do
+        {:stored, value} ->
+          {value, nil}
 
-              {:nocache, value} ->
+        _ ->
+          ConCache.isolated(@cache_name, key, fn ->
+            case ConCache.get(@cache_name, key) do
+              {:stored, value} ->
                 {value, nil}
 
-              value ->
-                ConCache.put(@cache_name, key, {:stored, value})
-                {value, nil}
+              _ ->
+                case func.() do
+                  {:error, _} = error ->
+                    {nil, error}
+
+                  {:nocache, value} ->
+                    {value, nil}
+
+                  value ->
+                    ConCache.put(@cache_name, key, {:stored, value})
+                    {value, nil}
+                end
             end
-          end
-        end)
+          end)
       end
 
     if error_if_any != nil do

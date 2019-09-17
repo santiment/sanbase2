@@ -15,13 +15,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.ApikeyResolver do
   def generate_apikey(_root, _args, %{
         context: %{auth: %{auth_method: :user_token, current_user: user}}
       }) do
-    with {:ok, _apikey} <- Apikey.generate_apikey(user) do
-      {:ok, user}
-    else
-      error ->
-        Logger.error("#{inspect(error)}")
+    case Apikey.generate_apikey(user) do
+      {:ok, _apikey} ->
+        {:ok, user}
 
-        {:error, "Failed to generate apikey."}
+      {:error, error} ->
+        error_msg =
+          "Failed to generate apikey for user with id #{user.id}. Reason: #{inspect(error)}"
+
+        Logger.error(error_msg)
+
+        {:error, error_msg}
     end
   end
 
@@ -32,12 +36,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ApikeyResolver do
   def revoke_apikey(_root, %{apikey: apikey}, %{
         context: %{auth: %{auth_method: :user_token, current_user: user}}
       }) do
-    with :ok <- Apikey.revoke_apikey(user, apikey) do
-      {:ok, user}
-    else
-      error ->
-        Logger.info("#{inspect(error)}")
+    case Apikey.revoke_apikey(user, apikey) do
+      :ok ->
+        {:ok, user}
 
+      _error ->
         {:error, "Failed to revoke apikey. Provided apikey is malformed or not valid."}
     end
   end

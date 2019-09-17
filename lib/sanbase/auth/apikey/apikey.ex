@@ -82,22 +82,12 @@ defmodule Sanbase.Auth.Apikey do
   @doc ~s"""
   Return a list of all apikeys for a given user
   """
-  @spec apikeys_list(%User{}) :: List.t()
-  def apikeys_list(%User{id: user_id} = user) do
-    with {:ok, tokens} <- UserApikeyToken.user_tokens(user) do
-      apikeys =
-        Enum.map(tokens, fn token ->
-          Hmac.generate_apikey(token)
-        end)
+  @spec apikeys_list(%User{}) :: {:ok, list(String.t())}
+  def apikeys_list(%User{} = user) do
+    {:ok, tokens} = UserApikeyToken.user_tokens(user)
 
-      {:ok, apikeys}
-    else
-      error ->
-        err_msg =
-          "Error getting apikeys list for user with id #{user_id} Error: #{inspect(error)}"
+    apikeys = Enum.map(tokens, fn token -> Hmac.generate_apikey(token) end)
 
-        Logger.error(err_msg)
-        {:error, err_msg}
-    end
+    {:ok, apikeys}
   end
 end

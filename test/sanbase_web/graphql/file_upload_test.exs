@@ -52,14 +52,14 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
       conn
       |> post("/graphql", %{"query" => mutation, "img" => upload})
 
-    [imageData] = json_response(result, 200)["data"]["uploadImage"]
+    [image_data] = json_response(result, 200)["data"]["uploadImage"]
 
     test_file_content = File.read!(@test_file_path)
-    saved_file_content = File.read!(imageData["imageUrl"])
+    saved_file_content = File.read!(image_data["imageUrl"])
 
-    assert imageData["contentHash"] == @test_file_hash
+    assert image_data["contentHash"] == @test_file_hash
 
-    assert String.ends_with?(imageData["fileName"], @test_file_name)
+    assert String.ends_with?(image_data["fileName"], @test_file_name)
     assert test_file_content == saved_file_content
   end
 
@@ -85,12 +85,12 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
       conn
       |> post("/graphql", %{"query" => mutation, "img" => upload})
 
-    [imageData] = json_response(result, 200)["data"]["uploadImage"]
+    [image_data] = json_response(result, 200)["data"]["uploadImage"]
 
-    assert imageData["error"] != nil
-    assert String.ends_with?(imageData["fileName"], @invalid_test_file_name)
-    assert imageData["imageUrl"] == nil
-    assert imageData["contentHash"] == nil
+    assert image_data["error"] != nil
+    assert String.ends_with?(image_data["fileName"], @invalid_test_file_name)
+    assert image_data["imageUrl"] == nil
+    assert image_data["contentHash"] == nil
   end
 
   test "upload of one valid and one invalid image", %{conn: conn} do
@@ -158,8 +158,8 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
       conn
       |> post("/graphql", %{"query" => mutation, "img" => upload})
 
-    [imageData] = json_response(result, 200)["data"]["uploadImage"]
-    image_url = imageData["imageUrl"]
+    [image_data] = json_response(result, 200)["data"]["uploadImage"]
+    image_url = image_data["imageUrl"]
 
     image_meta_data = Repo.one(PostImage, image_url: image_url)
 

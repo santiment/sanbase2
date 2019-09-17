@@ -22,13 +22,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
         _args,
         _res
       ) do
-    with {:ok, san_balance} <- User.san_balance(user) do
-      san_balance = san_balance || Decimal.new(0)
-      {:ok, Decimal.to_float(san_balance)}
-    else
-      error ->
+    case User.san_balance(user) do
+      {:ok, san_balance} ->
+        san_balance = san_balance || Decimal.new(0)
+        {:ok, Decimal.to_float(san_balance)}
+
+      {:error, error} ->
         Logger.warn("Error getting a user's san balance. Reason: #{inspect(error)}")
-        {:ok, 0.0}
+        {:nocache, {:ok, 0.0}}
     end
   end
 
@@ -155,15 +156,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
   def remove_user_eth_address(_root, %{address: address}, %{
         context: %{auth: %{auth_method: :user_token, current_user: user}}
       }) do
-    with true <- User.remove_eth_account(user, address) do
-      {:ok, user}
-    else
-      {:error, reason} ->
-        Logger.warn(
-          "Could not remove an ethereum address for user #{user.id}. Reason: #{inspect(reason)}"
-        )
+    case User.remove_eth_account(user, address) do
+      true ->
+        {:ok, user}
 
-        {:error, "Could not remove an ethereum address."}
+      {:error, reason} ->
+        error_msg =
+          "Could not remove an ethereum address for user #{user.id}. Reason: #{inspect(reason)}"
+
+        {:error, error_msg}
     end
   end
 

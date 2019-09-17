@@ -12,11 +12,11 @@ defmodule Sanbase.Auth.UserPermissionsTest do
 
   test "user with subscriptions to some products", %{user: user} do
     insert(:subscription_pro, user: user)
-    insert(:subscription_pro_sheets, user: user)
+    insert(:subscription_pro_sanbase, user: user)
 
     assert User.Permissions.permissions(user) == %{
              api: true,
-             sanbase: false,
+             sanbase: true,
              spreadsheet: true,
              sangraphs: false
            }

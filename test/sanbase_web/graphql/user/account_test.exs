@@ -60,7 +60,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
   end
 
   test "user with san balance of 1000 has all permisions", context do
-    insert(:subscription_pro_sheets, user: context.user)
+    insert(:subscription_pro_sanbase, user: context.user)
 
     query = """
     {

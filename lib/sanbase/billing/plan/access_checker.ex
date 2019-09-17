@@ -34,8 +34,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
 
   alias Sanbase.Billing.Plan.{
     ApiAccessChecker,
-    SanbaseAccessChecker,
-    SansheetsAccessChecker
+    SanbaseAccessChecker
   }
 
   alias Sanbase.Billing.Product
@@ -114,7 +113,6 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   @product_to_access_module [
     {Product.product_api(), ApiAccessChecker},
     {Product.product_sanbase(), SanbaseAccessChecker},
-    {Product.product_sheets(), SansheetsAccessChecker},
     {Product.product_sangraphs(), SanbaseAccessChecker}
   ]
 

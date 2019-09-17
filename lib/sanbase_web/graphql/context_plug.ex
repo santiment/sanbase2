@@ -250,7 +250,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   defp get_apikey_product([user_agent]) do
     case String.contains?(user_agent, "Google-Apps-Script") do
-      true -> @product_sheets
+      true -> @product_sanbase
       false -> @product_api
     end
   end

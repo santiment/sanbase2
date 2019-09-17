@@ -38,16 +38,16 @@ config :sanbase, Sanbase.Signals.Scheduler,
       task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.PriceAbsoluteChangeSettings]}
     ],
     eth_wallet_signal: [
-      schedule: "4-59/5 * * * *",
-      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.MetricTriggerSettings]}
+      schedule: "5-59/5 * * * *",
+      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.EthWalletTriggerSettings]}
     ],
     trending_words_sonar_signal: [
       schedule: "5-59/5 * * * *",
       task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.TrendingWordsTriggerSettings]}
     ],
     metric_signal: [
-      schedule: "6-59/5 * * * *",
-      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.EthWalletTriggerSettings]}
+      schedule: "0 3 * * *",
+      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.MetricTriggerSettings]}
     ]
   ]
 

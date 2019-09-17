@@ -13,22 +13,28 @@ defmodule Sanbase.FailedTestFormatter do
   end
 
   def handle_cast({:test_finished, %ExUnit.Test{state: {:failed, _}} = test}, config) do
-    %ExUnit.Test{
-      state:
-        {:failed,
-         [
-           {:error, _error,
-            [
-              {_module, _test_name, _, [file: file, line: line]}
-            ]}
-         ]}
-    } = test
+    config =
+      case test do
+        %ExUnit.Test{
+          state:
+            {:failed,
+             [
+               {:error, _error,
+                [
+                  {_module, _test_name, _, [file: file, line: line]} | _
+                ]}
+             ]}
+        } ->
+          %{
+            config
+            | failed: ["#{file}:#{line}" | config.failed],
+              failure_counter: config.failure_counter + 1
+          }
 
-    config = %{
-      config
-      | failed: ["#{file}:#{line}" | config.failed],
-        failure_counter: config.failure_counter + 1
-    }
+        _ ->
+          IO.warn("Unexpected failed test format.")
+          config
+      end
 
     {:noreply, config}
   end

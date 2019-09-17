@@ -6,6 +6,13 @@ defmodule Sanbase.StripeApi do
   alias Sanbase.Billing.{Product, Plan}
   alias Sanbase.Auth.User
 
+  @promo_coupon_percent_off 25
+  @promo_end_datetime "2019-11-01T00:00:00Z"
+  @promo_name_map %{
+    "jp" => "Promo discount for japanese magazine readers",
+    "devcon" => "Promo discount for devcon attendees"
+  }
+
   @type subscription_item :: %{plan: String.t()}
   @type subscription :: %{
           optional(:coupon) => String.t(),
@@ -94,6 +101,16 @@ defmodule Sanbase.StripeApi do
 
   def retrieve_coupon(coupon_id) do
     Stripe.Coupon.retrieve(coupon_id)
+  end
+
+  def create_promo_coupon(promo_type) do
+    Stripe.Coupon.create(%{
+      name: @promo_name_map[promo_type],
+      percent_off: @promo_coupon_percent_off,
+      duration: "once",
+      max_redemptions: 1,
+      redeem_by: Sanbase.DateTimeUtils.from_iso8601_to_unix!(@promo_end_datetime)
+    })
   end
 
   def list_payments(%User{stripe_customer_id: stripe_customer_id})

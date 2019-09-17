@@ -115,7 +115,22 @@ defmodule SanbaseWeb.Endpoint do
   end
 
   def login_url(token, email, origin_url) do
-    origin_url <> "/email_login?" <> URI.encode_query(token: token, email: email)
+    cond do
+      String.contains?(origin_url, "devcon") ->
+        {:ok, coupon} = Sanbase.StripeApi.create_promo_coupon("devcon")
+
+        frontend_url() <>
+          "/email_login?" <> URI.encode_query(token: token, email: email, coupon: coupon.id)
+
+      String.contains?(origin_url, "jp") ->
+        {:ok, coupon} = Sanbase.StripeApi.create_promo_coupon("jp")
+
+        frontend_url() <>
+          "/email_login?" <> URI.encode_query(token: token, email: email, coupon: coupon.id)
+
+      true ->
+        origin_url <> "/email_login?" <> URI.encode_query(token: token, email: email)
+    end
   end
 
   def verify_url(email_candidate_token, email_candidate) do

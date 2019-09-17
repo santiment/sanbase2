@@ -2,6 +2,8 @@ defmodule Sanbase.Email.Template do
   @sanbase_login_templates %{login: "sanbase-sign-in", register: "sanbase-sign-up"}
   @neuro_login_templates %{login: "neuro-sign-in", register: "neuro-sign-up"}
   @sheets_login_templates %{login: "sheets-sign-in", register: "sheets-sign-up"}
+  @devcon_templates %{login: "sanbase-sign-in", register: "sanbase-sign-up"}
+  @jp_templates %{login: "sanbase-sign-in", register: "sanbase-sign-up"}
   @verification_email_template "verify email"
 
   def verification_email_template(), do: @verification_email_template
@@ -21,6 +23,8 @@ defmodule Sanbase.Email.Template do
     cond do
       String.contains?(origin_url, "neuro") -> @neuro_login_templates[template]
       String.contains?(origin_url, "sheets") -> @sheets_login_templates[template]
+      String.contains?(origin_url, "jp") -> @devcon_templates[template]
+      String.contains?(origin_url, "devcon") -> @jp_templates[template]
       true -> @sanbase_login_templates[template]
     end
   end

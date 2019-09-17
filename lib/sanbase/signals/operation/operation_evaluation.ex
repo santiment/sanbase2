@@ -19,6 +19,11 @@ defmodule Sanbase.Signal.OperationEvaluation do
     |> Enum.all?(&(&1 == true))
   end
 
+  def operation_triggered?(value, %{none_of: operations}) when is_list(operations) do
+    Enum.map(operations, fn op -> operation_triggered?(value, op) end)
+    |> Enum.all?(&(&1 == false))
+  end
+
   def operation_triggered?(value, %{above: above}), do: value >= above
   def operation_triggered?(value, %{below: below}), do: value <= below
 

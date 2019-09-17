@@ -222,7 +222,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
   def exchange_wallets(_root, %{slug: "ethereum"}, _resolution) do
     {:ok, ExchangeAddress.exchange_wallets_by_infrastructure(Infrastructure.get("ETH"))}
-    |> IO.inspect(label: "227", limit: :infinity)
   end
 
   def exchange_wallets(_root, %{slug: "bitcoin"}, _resolution) do

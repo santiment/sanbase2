@@ -11,7 +11,6 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
 
   import Sanbase.{Validation, Signal.Validation}
   import Sanbase.Signal.Utils
-  import Sanbase.Math, only: [percent_change: 2]
 
   alias __MODULE__
   alias Sanbase.Signal.Type

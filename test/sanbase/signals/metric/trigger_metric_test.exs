@@ -31,7 +31,7 @@ defmodule Sanbase.Signal.TriggerMetricTest do
     user = insert(:user)
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
-    project = Sanbase.Factory.insert(:project)
+    project = Sanbase.Factory.insert(:random_project)
 
     datetimes = generate_datetimes(~U[2019-01-01 00:00:00Z], "1d", 7)
 
@@ -48,7 +48,7 @@ defmodule Sanbase.Signal.TriggerMetricTest do
     trigger_settings = %{
       type: "metric_signal",
       metric: random_metric(),
-      target: %{slug: project.coinmarketcap_id},
+      target: %{slug: project.slug},
       channel: "telegram",
       operation: %{above: 300}
     }
@@ -81,7 +81,7 @@ defmodule Sanbase.Signal.TriggerMetricTest do
     trigger_settings = %{
       type: "metric_signal",
       metric: random_metric(),
-      target: %{slug: project.coinmarketcap_id},
+      target: %{slug: project.slug},
       channel: "telegram",
       operation: %{percent_up: 100}
     }
@@ -117,7 +117,7 @@ defmodule Sanbase.Signal.TriggerMetricTest do
       trigger_settings = %{
         type: "metric_signal",
         metric: metric,
-        target: %{slug: project.coinmarketcap_id},
+        target: %{slug: project.slug},
         channel: "telegram",
         operation: %{above: 300}
       }
@@ -141,7 +141,7 @@ defmodule Sanbase.Signal.TriggerMetricTest do
       trigger_settings = %{
         type: "metric_signal",
         metric: metric,
-        target: %{slug: project.coinmarketcap_id},
+        target: %{slug: project.slug},
         channel: "telegram",
         operation: %{above: 300}
       }

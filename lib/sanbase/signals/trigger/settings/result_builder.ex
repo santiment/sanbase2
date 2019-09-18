@@ -1,6 +1,6 @@
 defmodule Sanbase.Signal.ResultBuilder do
   import Sanbase.Signal.OperationEvaluation
-  import Sanbase.Signal.Utils, only: [percent_change: 2]
+  import Sanbase.Math, only: [percent_change: 2]
 
   def build_result_percent(
         data,

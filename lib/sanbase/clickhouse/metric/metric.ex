@@ -243,7 +243,7 @@ defmodule Sanbase.Clickhouse.Metric do
       value > 0
     """
 
-    args = [slug, metric]
+    args = [slug, Map.get(@name_to_column_map, metric)]
 
     {query, args}
   end

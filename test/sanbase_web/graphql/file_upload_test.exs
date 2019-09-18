@@ -12,8 +12,7 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
     user =
       %User{
         salt: User.generate_salt(),
-        san_balance:
-          Decimal.mult(Decimal.new("10.000000000000000000"), Ethauth.san_token_decimals()),
+        san_balance: Decimal.mult(Decimal.new(10), Sanbase.SantimentContract.decimals_expanded()),
         san_balance_updated_at: Timex.now(),
         privacy_policy_accepted: true
       }

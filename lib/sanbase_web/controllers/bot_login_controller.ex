@@ -8,9 +8,9 @@ defmodule SanbaseWeb.BotLoginController do
   def index(conn, _params) do
     user = User |> Sanbase.Repo.get_by(email: User.sanbase_bot_email())
     {:ok, token, _claims} = SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt})
-    Plug.Conn.put_session(conn, :auth_token, token)
 
     conn
+    |> Plug.Conn.put_session(:auth_token, token)
     |> resp(200, token)
     |> send_resp()
   end

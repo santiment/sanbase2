@@ -112,8 +112,8 @@ defmodule Sanbase.Clickhouse.Metric do
   @spec available_aggregations() :: {:ok, list(atom())}
   def available_aggregations(), do: {:ok, @aggregations}
 
-  def first_datetime(slug) when is_binary(slug) do
-    {query, args} = first_datetime_query(slug)
+  def first_datetime(metric, slug) do
+    {query, args} = first_datetime_query(metric, slug)
 
     ClickhouseRepo.query_transform(query, args, fn [datetime] ->
       DateTime.from_unix!(datetime)
@@ -223,7 +223,7 @@ defmodule Sanbase.Clickhouse.Metric do
     {query, args}
   end
 
-  defp first_datetime_query(slug) do
+  defp first_datetime_query(metric, slug) do
     query = """
     SELECT
       toUnixTimestamp(toDateTime(min(dt)))
@@ -233,11 +233,17 @@ defmodule Sanbase.Clickhouse.Metric do
         SELECT argMax(asset_id, computed_at)
         FROM asset_metadata
         PREWHERE name = ?1
-      ) AND
+      ) AND metric_id = (
+        SELECT
+          argMax(metric_id, computed_at) AS metric_id
+        FROM
+          metric_metadata
+        PREWHERE
+          name = ?2 ) AND
       value > 0
     """
 
-    args = [slug]
+    args = [slug, metric]
 
     {query, args}
   end

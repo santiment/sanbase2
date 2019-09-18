@@ -145,4 +145,18 @@ defmodule Sanbase.DateTimeUtils do
       {:error, "The provided string #{interval_string} is not a valid string interval"}
     end
   end
+
+  @doc ~s"""
+  Round the given datetime to the nearest datetime, which in its UNIX
+  representation is divisible by `seconds`
+
+  This function is used to bucket all datetimes in a given interval to a single
+  datetime, usable in cache key construction
+  """
+  def round_datetime(datetime, seconds \\ 300) do
+    DateTime.to_unix(datetime)
+    |> div(seconds)
+    |> Kernel.*(seconds)
+    |> DateTime.from_unix!()
+  end
 end

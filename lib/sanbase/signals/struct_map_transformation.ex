@@ -2,14 +2,10 @@ defmodule Sanbase.Signal.StructMapTransformation do
   alias Sanbase.Signal.Trigger
 
   @unsupported_fields_error :__internal_unsupported_field_errors__
-  @module_type_pairs [
-    {Trigger.DailyActiveAddressesSettings, "daily_active_addresses"},
-    {Trigger.PricePercentChangeSettings, "price_percent_change"},
-    {Trigger.PriceAbsoluteChangeSettings, "price_absolute_change"},
-    {Trigger.PriceVolumeDifferenceTriggerSettings, "price_volume_difference"},
-    {Trigger.TrendingWordsTriggerSettings, "trending_words"},
-    {Trigger.EthWalletTriggerSettings, "eth_wallet"}
-  ]
+
+  @signal_modules Sanbase.Signal.List.get()
+
+  @module_type_pairs for module <- @signal_modules, do: {module, module.type}
 
   # Use __struct__ instead of %module{} to avoid circular dependencies
   def trigger_in_struct(

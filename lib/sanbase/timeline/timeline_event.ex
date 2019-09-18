@@ -79,12 +79,10 @@ defmodule Sanbase.Timeline.TimelineEvent do
   The events can be paginated with time-based cursor pagination.
   """
   @spec events(%User{}, cursor_with_limit) :: {:ok, events_with_cursor} | {:error, String.t()}
-  def(
-    events(
-      %User{id: user_id},
-      %{limit: limit, cursor: %{type: cursor_type, datetime: cursor_datetime}}
-    )
-  ) do
+  def events(
+        %User{id: user_id},
+        %{limit: limit, cursor: %{type: cursor_type, datetime: cursor_datetime}}
+      ) do
     TimelineEvent
     |> events_by_followed_users(user_id, min(limit, @max_events_returned))
     |> by_cursor(cursor_type, cursor_datetime)

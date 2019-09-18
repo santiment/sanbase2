@@ -11,7 +11,6 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
 
   import Sanbase.{Validation, Signal.Validation}
   import Sanbase.Signal.Utils
-  import Sanbase.Math, only: [percent_change: 2]
 
   alias __MODULE__
   alias Sanbase.Signal.Type
@@ -87,7 +86,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
   end
 
   defimpl Sanbase.Signal.Settings, for: DailyActiveAddressesSettings do
-    import Sanbase.Signal.OperationEvaluation
+    alias Sanbase.Signal.{Operation, ResultBuilder}
 
     def triggered?(%DailyActiveAddressesSettings{triggered?: triggered}), do: triggered
 
@@ -102,83 +101,18 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
     end
 
     def build_result(data, %DailyActiveAddressesSettings{} = settings) do
-      case operation_type(settings) do
+      case Operation.type(settings.operation) do
         :percent -> build_result_percent(data, settings)
         :absolute -> build_result_absolute(data, settings)
       end
     end
 
-    defp build_result_percent(
-           data,
-           %DailyActiveAddressesSettings{operation: operation} = settings
-         ) do
-      payload =
-        transform_data_percent(data)
-        |> Enum.reduce(%{}, fn {slug, {previous_avg, current, percent_change}}, acc ->
-          case operation_triggered?(percent_change, operation) do
-            true ->
-              Map.put(
-                acc,
-                slug,
-                payload(:percent, slug, settings, {current, previous_avg, percent_change})
-              )
-
-            false ->
-              acc
-          end
-        end)
-
-      %DailyActiveAddressesSettings{
-        settings
-        | triggered?: payload != %{},
-          payload: payload
-      }
+    defp build_result_percent(data, settings) do
+      ResultBuilder.build_result_percent(data, settings, &payload/4, value_key: :active_addresses)
     end
 
-    defp build_result_absolute(
-           data,
-           %DailyActiveAddressesSettings{operation: operation} = settings
-         ) do
-      payload =
-        transform_data_absolute(data)
-        |> Enum.reduce(%{}, fn {slug, active_addresses}, acc ->
-          case operation_triggered?(active_addresses, operation) do
-            true ->
-              Map.put(acc, slug, payload(:absolute, slug, settings, active_addresses))
-
-            false ->
-              acc
-          end
-        end)
-
-      %DailyActiveAddressesSettings{
-        settings
-        | triggered?: payload != %{},
-          payload: payload
-      }
-    end
-
-    defp transform_data_percent(data) do
-      Enum.map(data, fn {slug, daa} ->
-        # current is the last element, previous_list is the list of all other elements
-        {current, previous_list} =
-          daa
-          |> Enum.map(& &1.active_addresses)
-          |> List.pop_at(-1)
-
-        previous_avg =
-          previous_list
-          |> Sanbase.Math.average(precision: 2)
-
-        {slug, {previous_avg, current, percent_change(previous_avg, current)}}
-      end)
-    end
-
-    defp transform_data_absolute(data) do
-      Enum.map(data, fn {slug, daa} ->
-        %{active_addresses: last} = List.last(daa)
-        {slug, last}
-      end)
+    defp build_result_absolute(data, settings) do
+      ResultBuilder.build_result_absolute(data, settings, &payload/4, value_key: :active_addresses)
     end
 
     def cache_key(%DailyActiveAddressesSettings{} = settings) do
@@ -190,20 +124,10 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
       ])
     end
 
-    defp operation_type(%{operation: operation}) when is_map(operation) do
-      has_percent? =
-        Enum.any?(Map.keys(operation), fn name ->
-          name |> Atom.to_string() |> String.contains?("percent")
-        end)
+    defp payload(:percent, slug, settings, values) do
+      %{current: current_daa, previous_average: average_daa, percent_change: percent_change} =
+        values
 
-      if has_percent? do
-        :percent
-      else
-        :absolute
-      end
-    end
-
-    defp payload(:percent, slug, settings, {current_daa, average_daa, percent_change}) do
       project = Project.by_slug(slug)
       interval = Sanbase.DateTimeUtils.interval_to_str(settings.time_window)
 
@@ -222,7 +146,8 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
       """
     end
 
-    defp payload(:absolute, slug, settings, active_addresses) do
+    defp payload(:absolute, slug, settings, values) do
+      %{current: active_addresses} = values
       project = Project.by_slug(slug)
 
       """

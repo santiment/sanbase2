@@ -207,10 +207,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       )
 
       ProjectInfo.from_project(project)
-      |> ProjectInfo.fetch_coinmarketcap_info()
-      |> ProjectInfo.fetch_etherscan_token_summary()
       |> ProjectInfo.fetch_from_ethereum_node()
-      |> ProjectInfo.fetch_contract_info()
+      |> ProjectInfo.fetch_coinmarketcap_info()
       |> ProjectInfo.update_project(project)
     end
   end

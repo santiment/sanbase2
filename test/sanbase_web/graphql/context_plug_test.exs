@@ -233,7 +233,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product == Product.product_sheets()
+      assert conn_context.product == Product.product_sanbase()
     end
 
     test "when Apikey and other User-Agent - product is SANApi" do

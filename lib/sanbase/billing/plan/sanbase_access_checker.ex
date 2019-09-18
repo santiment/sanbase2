@@ -23,16 +23,6 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
     sangraphs_access: false
   }
 
-  @basic_plan_stats %{
-    historical_data_in_days: 2 * 365,
-    realtime_data_cut_off_in_days: 7,
-    signals: %{
-      limit: 10
-    },
-    external_data_providers: false,
-    sangraphs_access: true
-  }
-
   @pro_plan_stats %{
     historical_data_in_days: 3 * 365,
     realtime_data_cut_off_in_days: 0,
@@ -42,6 +32,8 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
     external_data_providers: true,
     sangraphs_access: true
   }
+
+  @basic_plan_stats @pro_plan_stats
 
   @enterprise_plan_stats @pro_plan_stats
 

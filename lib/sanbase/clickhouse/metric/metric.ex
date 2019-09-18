@@ -113,6 +113,18 @@ defmodule Sanbase.Clickhouse.Metric do
   def available_aggregations(), do: {:ok, @aggregations}
 
   def first_datetime(metric, slug) do
+    case metric in @metrics_mapset do
+      false ->
+        metric_not_available_error(metric)
+
+      true ->
+        get_first_datetime(metric, slug)
+    end
+  end
+
+  # Private functions
+
+  defp get_first_datetime(metric, slug) do
     {query, args} = first_datetime_query(metric, slug)
 
     ClickhouseRepo.query_transform(query, args, fn [datetime] ->
@@ -123,8 +135,6 @@ defmodule Sanbase.Clickhouse.Metric do
       {:error, error} -> {:error, error}
     end
   end
-
-  # Private functions
 
   defp metric_not_available_error(metric) do
     close = Enum.find(@metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.9 end)
@@ -243,7 +253,7 @@ defmodule Sanbase.Clickhouse.Metric do
       value > 0
     """
 
-    args = [slug, metric]
+    args = [slug, Map.get(@name_to_column_map, metric)]
 
     {query, args}
   end

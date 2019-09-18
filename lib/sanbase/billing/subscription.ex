@@ -32,6 +32,7 @@ defmodule Sanbase.Billing.Subscription do
     field(:current_period_end, :utc_datetime)
     field(:cancel_at_period_end, :boolean, null: false, default: false)
     field(:status, SubscriptionStatusEnum)
+    field(:trial_end, :utc_datetime)
 
     belongs_to(:user, User)
     belongs_to(:plan, Plan)
@@ -46,6 +47,7 @@ defmodule Sanbase.Billing.Subscription do
       :user_id,
       :stripe_id,
       :current_period_end,
+      :trial_end,
       :cancel_at_period_end,
       :status
     ])
@@ -151,7 +153,8 @@ defmodule Sanbase.Billing.Subscription do
           id: stripe_id,
           current_period_end: current_period_end,
           cancel_at_period_end: cancel_at_period_end,
-          status: status
+          status: status,
+          trial_end: trial_end
         },
         user,
         plan
@@ -163,7 +166,8 @@ defmodule Sanbase.Billing.Subscription do
       plan_id: plan.id,
       current_period_end: DateTime.from_unix!(current_period_end),
       cancel_at_period_end: cancel_at_period_end,
-      status: status
+      status: status,
+      trial_end: format_trial_end(trial_end)
     })
     |> Repo.insert(on_conflict: :nothing)
   end
@@ -186,7 +190,8 @@ defmodule Sanbase.Billing.Subscription do
             current_period_end: current_period_end,
             cancel_at_period_end: cancel_at_period_end,
             status: status,
-            plan: %Stripe.Plan{id: stripe_plan_id}
+            plan: %Stripe.Plan{id: stripe_plan_id},
+            trial_end: trial_end
           }} <- StripeApi.retrieve_subscription(stripe_id),
          {:plan_not_exist?, %Plan{id: plan_id}} <-
            {:plan_not_exist?, Plan.by_stripe_id(stripe_plan_id)} do
@@ -194,7 +199,8 @@ defmodule Sanbase.Billing.Subscription do
         current_period_end: DateTime.from_unix!(current_period_end),
         cancel_at_period_end: cancel_at_period_end,
         status: status,
-        plan_id: plan_id
+        plan_id: plan_id,
+        trial_end: format_trial_end(trial_end)
       })
     else
       {:plan_not_exist?, nil} ->
@@ -216,7 +222,8 @@ defmodule Sanbase.Billing.Subscription do
           current_period_end: current_period_end,
           cancel_at_period_end: cancel_at_period_end,
           status: status,
-          plan: %Stripe.Plan{id: stripe_plan_id}
+          plan: %Stripe.Plan{id: stripe_plan_id},
+          trial_end: trial_end
         },
         db_subscription
       ) do
@@ -230,7 +237,8 @@ defmodule Sanbase.Billing.Subscription do
       current_period_end: DateTime.from_unix!(current_period_end),
       cancel_at_period_end: cancel_at_period_end,
       status: status,
-      plan_id: plan_id
+      plan_id: plan_id,
+      trial_end: format_trial_end(trial_end)
     })
   end
 
@@ -420,4 +428,7 @@ defmodule Sanbase.Billing.Subscription do
       _ -> 0
     end
   end
+
+  defp format_trial_end(nil), do: nil
+  defp format_trial_end(trial_end), do: DateTime.from_unix!(trial_end)
 end

@@ -74,7 +74,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
   def fetch_coinmarketcap_info(%ProjectInfo{slug: slug} = project_info) do
     case Coinmarketcap.Scraper.fetch_project_page(slug) do
       {:ok, scraped_project_info} ->
-        {:ok, Coinmarketcap.Scraper.parse_project_page(scraped_project_info, project_info)}
+        Coinmarketcap.Scraper.parse_project_page(scraped_project_info, project_info)
 
       _ ->
         project_info

@@ -33,6 +33,7 @@ defmodule SanbaseWeb.Graphql.Schema.BillingTypes do
     field(:current_period_end, :datetime)
     field(:cancel_at_period_end, :boolean)
     field(:status, :billing_status)
+    field(:trial_end, :datetime)
   end
 
   object :subscription_cancellation do

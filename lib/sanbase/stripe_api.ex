@@ -6,6 +6,11 @@ defmodule Sanbase.StripeApi do
   alias Sanbase.Billing.{Product, Plan}
   alias Sanbase.Auth.User
 
+  @promo_coupon_percent_off 25
+  # FIXME end date of promotion ?
+  @promo_end_datetime "2019-11-01T00:00:00Z"
+  @promo_name "Promotional discount 25%"
+
   @type subscription_item :: %{plan: String.t()}
   @type subscription :: %{
           optional(:coupon) => String.t(),
@@ -90,6 +95,16 @@ defmodule Sanbase.StripeApi do
 
   def create_coupon(%{percent_off: percent_off, duration: duration}) do
     Stripe.Coupon.create(%{percent_off: percent_off, duration: duration})
+  end
+
+  def create_promo_coupon() do
+    Stripe.Coupon.create(%{
+      name: @promo_name,
+      percent_off: @promo_coupon_percent_off,
+      duration: "once",
+      max_redemptions: 1,
+      redeem_by: Sanbase.DateTimeUtils.from_iso8601_to_unix!(@promo_end_datetime)
+    })
   end
 
   def retrieve_coupon(coupon_id) do

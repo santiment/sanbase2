@@ -115,6 +115,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     {:ok, Subscription.user_subscriptions(user)}
   end
 
+  def send_promo_coupon(_root, args, _resolution) do
+    case Subscription.PromoCoupon.send_coupon(args) do
+      {:ok, result} ->
+        {:ok, %{success: true}}
+
+      {:error, reason} ->
+        Logger.error("Error sending coupon code: #{inspect(reason)}")
+        {:ok, %{success: false}}
+    end
+  end
+
   # private functions
   defp transform_payments(%Stripe.List{data: payments}) do
     payments

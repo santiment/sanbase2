@@ -48,4 +48,8 @@ defmodule SanbaseWeb.Graphql.Schema.BillingTypes do
     field(:status, :string)
     field(:description, :string)
   end
+
+  object :send_coupon_success do
+    field(:success, non_null(:boolean))
+  end
 end

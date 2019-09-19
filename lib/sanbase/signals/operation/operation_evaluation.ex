@@ -1,14 +1,8 @@
 defmodule Sanbase.Signal.OperationEvaluation do
-  defguard is_between_exclusive(value, low, high)
-           when is_number(value) and is_number(low) and is_number(high) and value > low and
-                  value < high
-
-  defguard is_percent_change_moving_up(percent_change, percent)
-           when percent_change > 0 and percent_change >= percent
-
-  defguard is_percent_change_moving_down(percent_change, percent)
-           when percent_change < 0 and abs(percent_change) >= percent
-
+  @moduledoc ~s"""
+  Module providing a single function operation_triggered?/2 that by a given
+  value and operation returns true or false
+  """
   def operation_triggered?(value, %{some_of: operations}) when is_list(operations) do
     Enum.map(operations, fn op -> operation_triggered?(value, op) end)
     |> Enum.member?(true)
@@ -24,36 +18,60 @@ defmodule Sanbase.Signal.OperationEvaluation do
     |> Enum.all?(&(&1 == false))
   end
 
+  # Above
+  def operation_triggered?(%{current: value}, %{above: above}), do: value >= above
   def operation_triggered?(value, %{above: above}), do: value >= above
+
+  # Below
+  def operation_triggered?(%{current: value}, %{below: below}), do: value <= below
   def operation_triggered?(value, %{below: below}), do: value <= below
 
-  def operation_triggered?(value, %{inside_channel: [lower, upper]}) when lower < upper do
-    value >= lower and value <= upper
-  end
+  # Inside channel
+  def operation_triggered?(%{current: value}, %{inside_channel: [lower, upper]})
+      when lower < upper,
+      do: value >= lower and value <= upper
 
-  def operation_triggered?(value, %{outside_channel: [lower, upper]}) when lower < upper do
-    value <= lower or value >= upper
-  end
+  def operation_triggered?(value, %{inside_channel: [lower, upper]})
+      when lower < upper,
+      do: value >= lower and value <= upper
 
-  def operation_triggered?(percent_change, %{percent_up: percent})
-      when is_percent_change_moving_up(percent_change, percent) do
-    true
-  end
+  # Outside channel
+  def operation_triggered?(%{current: value}, %{outside_channel: [lower, upper]})
+      when lower < upper,
+      do: value <= lower or value >= upper
 
-  def operation_triggered?(percent_change, %{percent_down: percent})
-      when is_percent_change_moving_down(percent_change, percent) do
-    true
-  end
+  def operation_triggered?(value, %{outside_channel: [lower, upper]})
+      when lower < upper,
+      do: value <= lower or value >= upper
 
-  def operation_triggered?(amount_changed, %{amount_up: amount})
-      when is_number(amount_changed) and is_number(amount) and amount > 0 do
-    amount_changed >= amount
-  end
+  # Percent up
 
-  def operation_triggered?(amount_changed, %{amount_down: amount})
-      when is_number(amount_changed) and is_number(amount) and amount > 0 do
-    amount_changed < 0 and abs(amount_changed) >= amount
-  end
+  def operation_triggered?(%{percent_change: percent_change}, %{percent_up: percent}),
+    do: percent_change > 0 and percent_change >= percent
+
+  def operation_triggered?(percent_change, %{percent_up: percent}),
+    do: percent_change > 0 and percent_change >= percent
+
+  # Percent down
+  def operation_triggered?(%{percent_change: percent_change}, %{percent_down: percent}),
+    do: percent_change < 0 and abs(percent_change) >= percent
+
+  def operation_triggered?(percent_change, %{percent_down: percent}),
+    do: percent_change < 0 and abs(percent_change) >= percent
+
+  # Amount up
+  def operation_triggered?(%{absolute_change: amount_changed}, %{amount_up: amount}),
+    do: amount_changed > 0 and amount_changed >= amount
+
+  def operation_triggered?(amount_changed, %{amount_up: amount}),
+    do: amount_changed > 0 and amount_changed >= amount
+
+  # Amount down
+  def operation_triggered?(%{absolute_change: amount_changed}, %{amount_down: amount}),
+    do: amount_changed < 0 and abs(amount_changed) >= amount
+
+  def operation_triggered?(amount_changed, %{amount_down: amount}),
+    do: amount_changed < 0 and abs(amount_changed) >= amount
 
   def operation_triggered?(_, _), do: false
 end

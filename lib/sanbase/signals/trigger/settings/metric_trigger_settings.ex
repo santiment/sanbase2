@@ -92,7 +92,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
 
   defimpl Sanbase.Signal.Settings, for: MetricTriggerSettings do
     alias Sanbase.Signal.Trigger.MetricTriggerSettings
-    alias Sanbase.Signal.{Operation, OperationText, ResultBuilder, Trigger.MetricTriggerSettings}
+    alias Sanbase.Signal.{OperationText, ResultBuilder, Trigger.MetricTriggerSettings}
 
     def triggered?(%MetricTriggerSettings{triggered?: triggered}), do: triggered
 
@@ -108,18 +108,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
     end
 
     def build_result(data, %MetricTriggerSettings{} = settings) do
-      case Operation.type(settings.operation) do
-        :percent -> build_result_percent(data, settings)
-        :absolute -> build_result_absolute(data, settings)
-      end
-    end
-
-    defp build_result_percent(data, settings) do
-      ResultBuilder.build_result_percent(data, settings, &payload/4)
-    end
-
-    defp build_result_absolute(data, settings) do
-      ResultBuilder.build_result_absolute(data, settings, &payload/4)
+      ResultBuilder.build(data, settings, &payload/2)
     end
 
     def cache_key(%MetricTriggerSettings{} = settings) do
@@ -133,38 +122,31 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
       ])
     end
 
-    defp payload(:percent, slug, settings, values) do
-      %{current: current_daa, previous_average: average_daa, percent_change: percent_change} =
-        values
+    def payload(values, settings) do
+      %{
+        slug: slug
+        # current: current,
+        # percent_change: percent_change,
+        # absolute_change: absolute_change
+      } = values
 
       project = Project.by_slug(slug)
-      interval = Sanbase.DateTimeUtils.interval_to_str(settings.time_window)
 
       """
       **#{project.name}**'s #{settings.metric} #{
-        OperationText.to_text(percent_change, settings.operation)
-      }* up to #{current_daa}  compared to the average value for the last #{interval}.
-      Average #{settings.metric} for last **#{interval}**: **#{average_daa}**.
+        OperationText.to_text(values, settings.operation)
+      }**.
       More info here: #{Project.sanbase_link(project)}
 
-      ![Daily Active Addresses chart and OHLC price chart for the past 90 days](#{
+      ![Data & OHLC Pricechart for the past 90 days](#{
         chart_url(project, :daily_active_addresses)
       })
       """
     end
 
-    defp payload(:absolute, slug, settings, %{current: current}) do
-      project = Project.by_slug(slug)
-
+    def message(:absolute_change, value, op) do
       """
-      **#{project.name}**'s #{settings.metric} #{
-        OperationText.to_text(current, settings.operation)
-      }
-      More info here: #{Project.sanbase_link(project)}
 
-      ![Daily Active Addresses chart and OHLC price chart for the past 90 days](#{
-        chart_url(project, :daily_active_addresses)
-      })
       """
     end
   end

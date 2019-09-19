@@ -17,7 +17,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       %{source: %{metric: "age_destroyed"}}
     )
     |> Sanbase.Utils.Transform.duplicate_map_keys(:value, :burn_rate)
-    |> Sanbase.Utils.Transform.rename_map_keys(:value, :token_age_consumed)
+    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :token_age_consumed)
   end
 
   @doc ~S"""
@@ -54,7 +54,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       args,
       %{source: %{metric: "transaction_volume"}}
     )
-    |> Sanbase.Utils.Transform.rename_map_keys(:value, :transaction_volume)
+    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :transaction_volume)
   end
 
   @doc ~S"""
@@ -71,7 +71,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       args,
       %{source: %{metric: "exchange_balance"}}
     )
-    |> Sanbase.Utils.Transform.rename_map_keys(:value, :in_out_difference)
+    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :in_out_difference)
   end
 
   def token_velocity(
@@ -84,7 +84,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       args,
       %{source: %{metric: "velocity"}}
     )
-    |> Sanbase.Utils.Transform.rename_map_keys(:value, :token_velocity)
+    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :token_velocity)
   end
 
   def all_exchange_wallets(_root, _args, _resolution) do

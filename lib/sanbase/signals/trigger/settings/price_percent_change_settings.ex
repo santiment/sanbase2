@@ -9,11 +9,11 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
   import Sanbase.{Validation, Signal.Validation}
   import Sanbase.Signal.{Utils, OperationEvaluation}
   import Sanbase.Math, only: [percent_change: 2]
+  import Sanbase.DateTimeUtils, only: [str_to_sec: 1, interval_to_str: 1, round_datetime: 2]
 
   alias __MODULE__
   alias Sanbase.Signal.Type
   alias Sanbase.Model.Project
-  alias Sanbase.DateTimeUtils
   alias Sanbase.Signal.Evaluator.Cache
 
   @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
@@ -50,7 +50,7 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
   @spec get_data(__MODULE__.t()) :: list({Type.target(), any()})
   def get_data(%__MODULE__{filtered_target: %{list: target_list}} = settings)
       when is_list(target_list) do
-    time_window_sec = DateTimeUtils.str_to_sec(settings.time_window)
+    time_window_sec = str_to_sec(settings.time_window)
     projects = Project.by_slug(target_list)
     to = Timex.now()
     from = Timex.shift(to, seconds: -time_window_sec)
@@ -60,8 +60,12 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
   end
 
   defp price_percent_change(project, from, to) do
+    cache_key =
+      {:price_percent_signal, project.slug, round_datetime(from, 300), round_datetime(to, 300)}
+      |> :erlang.phash2()
+
     Cache.get_or_store(
-      cache_key_datetimes(project, from, to),
+      cache_key,
       fn ->
         Sanbase.Prices.Store.first_last_price(
           Sanbase.Influxdb.Measurement.name_from(project),
@@ -79,14 +83,6 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
         end
       end
     )
-  end
-
-  defp cache_key_datetimes(project, from, to) do
-    # prices are present at 5 minute intervals
-    from_rounded = div(DateTime.to_unix(from, :second), 300) * 300
-    to_rounded = div(DateTime.to_unix(to, :second), 300) * 300
-
-    "first_last_#{project.id}_#{from_rounded}_#{to_rounded}"
   end
 
   defimpl Sanbase.Signal.Settings, for: PricePercentChangeSettings do
@@ -148,9 +144,7 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
       """
       **#{project.name}**'s price has #{operation_text} by **#{percent_change}%** from $#{
         round_price(first_price)
-      } to $#{round_price(last_price)} for the last #{
-        DateTimeUtils.interval_to_str(settings.time_window)
-      }.
+      } to $#{round_price(last_price)} for the last #{interval_to_str(settings.time_window)}.
       More info here: #{Sanbase.Model.Project.sanbase_link(project)}
       ![Price chart over the past 90 days](#{chart_url(project, :volume)})
       """

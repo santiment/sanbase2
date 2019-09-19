@@ -16,7 +16,7 @@ defmodule Sanbase.Application.Web do
     # Define workers and child supervisors to be supervised
     children = [
       # Start the Clickhouse Repo
-      start_in({Sanbase.ClickhouseRepo, []}, [:dev, :prod]),
+      start_in({Sanbase.ClickhouseRepo, []}, [:prod]),
 
       # Start the Elasticsearch Cluster connection
       Sanbase.Elasticsearch.Cluster,

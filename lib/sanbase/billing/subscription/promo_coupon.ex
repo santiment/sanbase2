@@ -1,6 +1,6 @@
 defmodule Sanbase.Billing.Subscription.PromoCoupon do
   @moduledoc """
-  Module for persisting and sending coupons to user's emails entered through our
+  Module for persisting and sending coupons to customer's emails entered through our
   promotional sites.
   """
   use Ecto.Schema
@@ -44,7 +44,8 @@ defmodule Sanbase.Billing.Subscription.PromoCoupon do
   end
 
   @doc """
-  Create a promotional coupon
+  Create a promotional coupon and send it to customer's specified email.
+  If same email is entered more than once if resends the old coupon to this email.
   """
   @spec send_coupon(send_coupon_args) :: {:ok, any()} | {:error, any()}
   def send_coupon(%{email: email} = args) do

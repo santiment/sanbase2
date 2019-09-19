@@ -24,6 +24,7 @@ defmodule Sanbase.Billing.Subscription.PromoCoupon do
     max_redemptions: 1,
     redeem_by: Sanbase.DateTimeUtils.from_iso8601_to_unix!(@promo_end_datetime)
   }
+  @promo_email_subject "Get #{@promo_coupon_percent_off}% off ANY Santiment product!"
 
   @type send_coupon_args :: %{email: String.t(), message: String.t() | nil}
 
@@ -94,9 +95,16 @@ defmodule Sanbase.Billing.Subscription.PromoCoupon do
   end
 
   defp send_coupon_email(email, %Stripe.Coupon{id: id, percent_off: percent_off}) do
-    MandrillApi.send(@email_template, email, %{
-      "DISCOUNT" => percent_off,
-      "COUPON_CODE" => id
-    })
+    MandrillApi.send(
+      @email_template,
+      email,
+      %{
+        "DISCOUNT" => percent_off,
+        "COUPON_CODE" => id
+      },
+      %{
+        subject: @promo_email_subject
+      }
+    )
   end
 end

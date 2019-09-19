@@ -4,6 +4,7 @@ end
 
 defimpl Sanbase.Signal, for: Any do
   require Logger
+  require Sanbase.Utils.Config, as: Config
 
   def send(%{
         trigger: %{settings: %{triggered?: false}}
@@ -21,9 +22,16 @@ defimpl Sanbase.Signal, for: Any do
     channel
     |> List.wrap()
     |> Enum.map(fn
-      "telegram" -> send_telegram(user_trigger)
-      "email" -> send_email(user_trigger)
-      "web_push" -> []
+      "telegram" ->
+        send_telegram(user_trigger)
+
+      "email" ->
+        if send_email_enabled?(),
+          do: send_email(user_trigger),
+          else: {:error, "Email channel is not implemeted"}
+
+      "web_push" ->
+        []
     end)
     |> List.flatten()
   end
@@ -87,5 +95,9 @@ defimpl Sanbase.Signal, for: Any do
       {:ok, _} -> :ok
       {:error, reason} -> {:error, reason}
     end
+  end
+
+  defp send_email_enabled? do
+    Config.module_get(Sanbase.Signal, :email_channel_enabled) == "true"
   end
 end

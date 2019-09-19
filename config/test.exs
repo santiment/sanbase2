@@ -75,6 +75,8 @@ config :sanbase, Sanbase.Elasticsearch, indices: "index1,index2,index3,index4"
 
 config :sanbase, SanbaseWeb.Plug.VerifyStripeWebhook, webhook_secret: "stripe_webhook_secret"
 
+config :sanbase, Sanbase.Signal, email_channel_enabled: {:system, "EMAIL_CHANNEL_ENABLED", "true"}
+
 # So the router can read it compile time
 System.put_env("TELEGRAM_ENDPOINT_RANDOM_STRING", "random_string")
 

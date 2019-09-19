@@ -58,6 +58,8 @@ defmodule Sanbase.Billing.Subscription.PromoCoupon do
     end
   end
 
+  def promo_coupon_args, do: @promo_coupon_args
+
   # helpers
 
   defp get_or_create_coupon(%__MODULE__{coupon: nil} = promo_coupon) do

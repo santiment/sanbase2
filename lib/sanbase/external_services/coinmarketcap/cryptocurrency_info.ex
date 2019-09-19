@@ -64,15 +64,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
 
       invalid_slugs when is_list(invalid_slugs) ->
         fetch_data(clean_invalid_slugs(projects, invalid_slugs))
-
-      {:error, error} ->
-        error_msg =
-          "[CMC] Error fetching cryptocurrency info for: #{projects_count} projects. Error message: #{
-            inspect(error)
-          }"
-
-        Logger.warn(error_msg)
-        {:error, error_msg}
     end
   end
 

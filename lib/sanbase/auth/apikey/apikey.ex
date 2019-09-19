@@ -48,7 +48,7 @@ defmodule Sanbase.Auth.Apikey do
   Generates a new User Token and stores it in the database.
   Generate the corresponding Apikey and return it.
   """
-  @spec generate_apikey(%User{}) :: {:ok, String.t()} | {:error | String.t()}
+  @spec generate_apikey(%User{}) :: {:ok, String.t()} | {:error, String.t()}
   def generate_apikey(%User{id: user_id} = user) do
     with token when is_non_empty_string(token) <- Hmac.generate_token(),
          {:ok, _user_apikey_token} <- UserApikeyToken.add_user_token(user, token),

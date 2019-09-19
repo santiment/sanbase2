@@ -1,14 +1,31 @@
 defmodule Sanbase.Billing.Subscription.PromoCoupon do
+  @moduledoc """
+  Module for persisting and sending coupons to user's emails entered through our
+  promotional sites.
+  """
   use Ecto.Schema
 
   import Ecto.Changeset
-  import Ecto.Query
 
   alias Sanbase.Repo
   alias Sanbase.StripeApi
   alias Sanbase.MandrillApi
 
-  @template "Coupon for products"
+  @email_template "Coupon for products"
+
+  @promo_coupon_percent_off 25
+  # FIXME end date of promotion ?
+  @promo_end_datetime "2019-11-01T00:00:00Z"
+  @promo_name "Promotional discount 25%"
+  @promo_coupon_args %{
+    name: @promo_name,
+    percent_off: @promo_coupon_percent_off,
+    duration: "once",
+    max_redemptions: 1,
+    redeem_by: Sanbase.DateTimeUtils.from_iso8601_to_unix!(@promo_end_datetime)
+  }
+
+  @type send_coupon_args :: %{email: String.t(), message: String.t() | nil}
 
   schema "promo_coupons" do
     field(:email, :string, null: false)
@@ -23,8 +40,13 @@ defmodule Sanbase.Billing.Subscription.PromoCoupon do
       :message,
       :coupon
     ])
+    |> unique_constraint(:email)
   end
 
+  @doc """
+  Create a promotional coupon
+  """
+  @spec send_coupon(send_coupon_args) :: {:ok, any()} | {:error, any()}
   def send_coupon(%{email: email} = args) do
     with {:ok, promo_coupon} <- create_or_update(args),
          {:ok, coupon} <- get_or_create_coupon(promo_coupon) do
@@ -32,8 +54,10 @@ defmodule Sanbase.Billing.Subscription.PromoCoupon do
     end
   end
 
+  # helpers
+
   defp get_or_create_coupon(%__MODULE__{coupon: nil} = promo_coupon) do
-    case StripeApi.create_promo_coupon() do
+    case StripeApi.create_promo_coupon(@promo_coupon_args) do
       {:ok, coupon} ->
         do_update(promo_coupon, %{coupon: coupon.id})
         {:ok, coupon}
@@ -67,7 +91,7 @@ defmodule Sanbase.Billing.Subscription.PromoCoupon do
   end
 
   defp send_coupon_email(email, %Stripe.Coupon{id: id, percent_off: percent_off}) do
-    MandrillApi.send(@template, email, %{
+    MandrillApi.send(@email_template, email, %{
       "DISCOUNT" => percent_off,
       "COUPON_CODE" => id
     })

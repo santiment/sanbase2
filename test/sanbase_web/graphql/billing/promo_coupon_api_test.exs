@@ -7,7 +7,6 @@ defmodule SanbaseWeb.Graphql.Billing.PromoCouponApiTest do
   import ExUnit.CaptureLog
 
   alias Sanbase.StripeApi
-  alias Sanbase.Billing.Subscription
   alias Sanbase.MandrillApi
 
   @coupon_code "test_coupon"
@@ -23,7 +22,7 @@ defmodule SanbaseWeb.Graphql.Billing.PromoCouponApiTest do
      ]},
     {StripeApi, [:passthrough],
      [
-       create_promo_coupon: fn ->
+       create_promo_coupon: fn _ ->
          {:ok, %Stripe.Coupon{id: @coupon_code, percent_off: @promo_percent_off}}
        end
      ]},
@@ -45,7 +44,7 @@ defmodule SanbaseWeb.Graphql.Billing.PromoCouponApiTest do
       query = send_promo_coupon_mutation(context.user.email)
       response = execute_mutation(context.conn, query, "sendPromoCoupon")
 
-      assert_called(StripeApi.create_promo_coupon())
+      assert_called(StripeApi.create_promo_coupon(:_))
 
       assert_called(
         MandrillApi.send(:_, :_, %{
@@ -63,7 +62,7 @@ defmodule SanbaseWeb.Graphql.Billing.PromoCouponApiTest do
       response = execute_mutation(context.conn, query, "sendPromoCoupon")
 
       assert_called(StripeApi.retrieve_coupon(@coupon_code))
-      refute called(StripeApi.create_promo_coupon())
+      refute called(StripeApi.create_promo_coupon(:_))
 
       assert_called(
         MandrillApi.send(:_, :_, %{
@@ -78,7 +77,7 @@ defmodule SanbaseWeb.Graphql.Billing.PromoCouponApiTest do
     test "when create coupon in Stripe return error - return success false and logs error",
          context do
       with_mock StripeApi, [:passthrough],
-        create_promo_coupon: fn ->
+        create_promo_coupon: fn _ ->
           {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
         end do
         query = send_promo_coupon_mutation(context.user.email)

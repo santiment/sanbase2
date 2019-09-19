@@ -92,12 +92,7 @@ defmodule Sanbase.Billing.Subscription do
          # More info here: https://github.com/code-corps/stripity_stripe/pull/499
          {:ok, stripe_subscription} <-
            StripeApi.update_subscription(subscription.stripe_id, %{
-             items: [
-               %{
-                 id: item_id,
-                 plan: plan.stripe_id
-               }
-             ]
+             items: [%{id: item_id, plan: plan.stripe_id}]
            }),
          {:ok, updated_subscription} <-
            sync_with_stripe_subscription(stripe_subscription, subscription) do

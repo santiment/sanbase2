@@ -1085,7 +1085,8 @@ CREATE TABLE public.promo_coupons (
     id bigint NOT NULL,
     email character varying(255) NOT NULL,
     message text,
-    coupon character varying(255)
+    coupon character varying(255),
+    origin_url character varying(255)
 );
 
 

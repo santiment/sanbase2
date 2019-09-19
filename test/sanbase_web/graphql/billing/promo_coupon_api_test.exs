@@ -36,6 +36,13 @@ defmodule SanbaseWeb.Graphql.Billing.PromoCouponApiTest do
     user = insert(:user, email: @test_email)
     conn = setup_jwt_auth(build_conn(), user)
 
+    conn =
+      conn
+      |> put_req_header(
+        "origin",
+        "https://app.santiment.net"
+      )
+
     {:ok, conn: conn, user: user}
   end
 

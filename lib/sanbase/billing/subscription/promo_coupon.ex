@@ -31,6 +31,7 @@ defmodule Sanbase.Billing.Subscription.PromoCoupon do
     field(:email, :string, null: false)
     field(:message, :string)
     field(:coupon, :string)
+    field(:origin_url, :string)
   end
 
   def changeset(%__MODULE__{} = promo_coupon, attrs \\ %{}) do
@@ -38,7 +39,8 @@ defmodule Sanbase.Billing.Subscription.PromoCoupon do
     |> cast(attrs, [
       :email,
       :message,
-      :coupon
+      :coupon,
+      :origin_url
     ])
     |> unique_constraint(:email)
   end

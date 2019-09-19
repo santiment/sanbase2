@@ -115,9 +115,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     {:ok, Subscription.user_subscriptions(user)}
   end
 
-  def send_promo_coupon(_root, args, _resolution) do
+  def send_promo_coupon(_root, args, %{
+        context: %{origin_url: origin_url}
+      }) do
+    args = Map.put(args, :origin_url, origin_url)
+
     case Subscription.PromoCoupon.send_coupon(args) do
-      {:ok, result} ->
+      {:ok, _} ->
         {:ok, %{success: true}}
 
       {:error, reason} ->

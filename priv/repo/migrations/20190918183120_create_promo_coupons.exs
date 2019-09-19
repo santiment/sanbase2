@@ -6,6 +6,7 @@ defmodule Sanbase.Repo.Migrations.CreatePromoCoupons do
       add(:email, :string, null: false)
       add(:message, :text)
       add(:coupon, :string)
+      add(:origin_url, :string)
     end
 
     create(unique_index(:promo_coupons, [:email]))

@@ -16,7 +16,7 @@ defmodule SanbaseWeb.Graphql.Billing.PromoCouponApiTest do
   setup_with_mocks([
     {MandrillApi, [:passthrough],
      [
-       send: fn _, _, _ ->
+       send: fn _, _, _, _ ->
          {:ok, %{}}
        end
      ]},
@@ -54,10 +54,15 @@ defmodule SanbaseWeb.Graphql.Billing.PromoCouponApiTest do
       assert_called(StripeApi.create_promo_coupon(:_))
 
       assert_called(
-        MandrillApi.send(:_, :_, %{
-          "COUPON_CODE" => @coupon_code,
-          "DISCOUNT" => @promo_percent_off
-        })
+        MandrillApi.send(
+          :_,
+          :_,
+          %{
+            "COUPON_CODE" => @coupon_code,
+            "DISCOUNT" => @promo_percent_off
+          },
+          :_
+        )
       )
 
       assert response["success"]
@@ -72,10 +77,15 @@ defmodule SanbaseWeb.Graphql.Billing.PromoCouponApiTest do
       refute called(StripeApi.create_promo_coupon(:_))
 
       assert_called(
-        MandrillApi.send(:_, :_, %{
-          "COUPON_CODE" => @coupon_code,
-          "DISCOUNT" => @promo_percent_off
-        })
+        MandrillApi.send(
+          :_,
+          :_,
+          %{
+            "COUPON_CODE" => @coupon_code,
+            "DISCOUNT" => @promo_percent_off
+          },
+          :_
+        )
       )
 
       assert response["success"]
@@ -98,7 +108,7 @@ defmodule SanbaseWeb.Graphql.Billing.PromoCouponApiTest do
 
     test "when send email returns error - return success false and logs error", context do
       with_mock MandrillApi, [:passthrough],
-        send: fn _, _, _ ->
+        send: fn _, _, _, _ ->
           {:error, "test error"}
         end do
         query = send_promo_coupon_mutation(context.user.email)

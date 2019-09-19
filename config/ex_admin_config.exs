@@ -46,7 +46,8 @@ config :ex_admin,
     Sanbase.ExAdmin.Auth.UserSettings,
     Sanbase.ExAdmin.Signal.UserTrigger,
     Sanbase.ExAdmin.Model.Project.SourceSlugMapping,
-    Sanbase.ExAdmin.Billing.StripeEvent
+    Sanbase.ExAdmin.Billing.StripeEvent,
+    Sanbase.ExAdmin.Billing.PromoCoupon
   ],
   basic_auth: [
     username: {:system, "ADMIN_BASIC_AUTH_USERNAME"},

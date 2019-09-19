@@ -83,5 +83,15 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
 
       resolve(&BillingResolver.renew_cancelled_subscription/3)
     end
+
+    @desc ~s"""
+    Request a discount code for all sanbase products.
+    """
+    field :send_promo_coupon, :send_coupon_success do
+      arg(:email, non_null(:string))
+      arg(:message, :string)
+
+      resolve(&BillingResolver.send_promo_coupon/3)
+    end
   end
 end

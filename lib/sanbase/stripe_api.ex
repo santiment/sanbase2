@@ -92,6 +92,10 @@ defmodule Sanbase.StripeApi do
     Stripe.Coupon.create(%{percent_off: percent_off, duration: duration})
   end
 
+  def create_promo_coupon(promo_args) do
+    Stripe.Coupon.create(promo_args)
+  end
+
   def retrieve_coupon(coupon_id) do
     Stripe.Coupon.retrieve(coupon_id)
   end

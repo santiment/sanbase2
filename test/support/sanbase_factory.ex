@@ -513,6 +513,10 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def promo_coupon_factory() do
+    %Subscription.PromoCoupon{}
+  end
+
   def timeline_event_factory() do
     %TimelineEvent{}
   end

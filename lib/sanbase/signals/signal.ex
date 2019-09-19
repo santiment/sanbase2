@@ -89,7 +89,7 @@ defimpl Sanbase.Signal, for: Any do
 
   defp do_send_email(email, payload, trigger_id) do
     Sanbase.MandrillApi.send("signals", email, %{
-      payload: extend_payload(payload, trigger_id)
+      payload: extend_payload(payload, trigger_id) |> Earmark.as_html!()
     })
     |> case do
       {:ok, _} -> :ok

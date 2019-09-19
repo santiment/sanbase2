@@ -46,3 +46,6 @@ config :sanbase, Sanbase.Telegram,
   bot_username: {:system, "TELEGRAM_NOTIFICATAIONS_BOT_USERNAME", "SanbaseSignalsStageBot"},
   telegram_endpoint: {:system, "TELEGRAM_ENDPOINT_RANDOM_STRING", "some_random_string"},
   token: {:system, "TELEGRAM_SIGNALS_BOT_TOKEN"}
+
+config :sanbase, Sanbase.Signal,
+  email_channel_enabled: {:system, "EMAIL_CHANNEL_ENABLED", "false"}

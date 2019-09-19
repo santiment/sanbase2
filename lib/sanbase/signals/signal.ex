@@ -4,6 +4,7 @@ end
 
 defimpl Sanbase.Signal, for: Any do
   require Logger
+  require Sanbase.Utils.Config, as: Config
 
   def send(%{
         trigger: %{settings: %{triggered?: false}}
@@ -21,14 +22,38 @@ defimpl Sanbase.Signal, for: Any do
     channel
     |> List.wrap()
     |> Enum.map(fn
-      "telegram" -> send_telegram(user_trigger)
-      "email" -> send_email(user_trigger)
-      "web_push" -> []
+      "telegram" ->
+        send_telegram(user_trigger)
+
+      "email" ->
+        if send_email_enabled?(),
+          do: send_email(user_trigger),
+          else: {:error, "Email channel is not implemeted"}
+
+      "web_push" ->
+        []
     end)
     |> List.flatten()
   end
 
-  def send_email(_), do: {:error, "Not implemented"}
+  def send_email(%{
+        id: id,
+        user: %Sanbase.Auth.User{
+          email: email,
+          user_settings: %{settings: %{signal_notify_email: true}}
+        },
+        trigger: %{
+          settings: %{triggered?: true, payload: payload_map}
+        }
+      })
+      when is_map(payload_map) do
+    payload_map
+    |> Enum.map(fn {identifier, payload} ->
+      {identifier, do_send_email(email, payload, id)}
+    end)
+  end
+
+  def send_email(_), do: :ok
 
   def send_telegram(%{
         user: %Sanbase.Auth.User{
@@ -60,5 +85,19 @@ defimpl Sanbase.Signal, for: Any do
     #{payload}
     The signal was triggered by #{SanbaseWeb.Endpoint.show_signal_url(user_trigger_id)}
     """
+  end
+
+  defp do_send_email(email, payload, trigger_id) do
+    Sanbase.MandrillApi.send("signals", email, %{
+      payload: extend_payload(payload, trigger_id)
+    })
+    |> case do
+      {:ok, _} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp send_email_enabled? do
+    Config.module_get(Sanbase.Signal, :email_channel_enabled) == "true"
   end
 end

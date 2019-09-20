@@ -15,16 +15,9 @@ defmodule Sanbase.FailedTestFormatter do
   def handle_cast({:test_finished, %ExUnit.Test{state: {:failed, _}} = test}, config) do
     config =
       case test do
-        %ExUnit.Test{
-          state:
-            {:failed,
-             [
-               {:error, _error,
-                [
-                  {_module, _test_name, _, [file: file, line: line]} | _
-                ]}
-             ]}
-        } ->
+        %ExUnit.Test{state: {:failed, [{:error, _error, failures}]}} when is_list(failures) ->
+          {_module, _test_name, _, [file: file, line: line]} = List.last(failures)
+
           %{
             config
             | failed: ["#{file}:#{line}" | config.failed],

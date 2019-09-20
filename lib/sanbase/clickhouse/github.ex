@@ -26,7 +26,10 @@ defmodule Sanbase.Clickhouse.Github do
     "FollowEvent",
     "ForkEvent",
     "DownloadEvent",
-    "WatchEvent"
+    "WatchEvent",
+    "ProjectCardEvent",
+    "ProjectColumnEvent",
+    "ProjectEvent"
   ]
 
   @table "github"
@@ -76,9 +79,13 @@ defmodule Sanbase.Clickhouse.Github do
 
   def total_dev_activity(organizations, from, to) when length(organizations) > 10 do
     total_dev_activity =
-      Stream.chunk_every(organizations, 10)
-      |> Stream.map(&total_dev_activity(&1, from, to))
-      |> Stream.filter(&match?({:ok, _}, &1))
+      Enum.chunk_every(organizations, 10)
+      |> Sanbase.Parallel.map(&total_dev_activity(&1, from, to),
+        timeout: 25_000,
+        max_concurrency: 8,
+        ordered: false
+      )
+      |> Enum.filter(&match?({:ok, _}, &1))
       |> Enum.flat_map(&elem(&1, 1))
 
     {:ok, total_dev_activity}
@@ -110,10 +117,14 @@ defmodule Sanbase.Clickhouse.Github do
       when length(organizations) > 10 do
     dev_activity =
       Enum.chunk_every(organizations, 10)
-      |> Sanbase.Parallel.map(&dev_activity(&1, from, to, interval, transform, ma_base))
-      |> Stream.filter(&match?({:ok, _}, &1))
-      |> Stream.map(&elem(&1, 1))
-      |> Stream.zip()
+      |> Sanbase.Parallel.map(&dev_activity(&1, from, to, interval, transform, ma_base),
+        timeout: 25_000,
+        max_concurrency: 8,
+        ordered: false
+      )
+      |> Enum.filter(&match?({:ok, _}, &1))
+      |> Enum.map(&elem(&1, 1))
+      |> Enum.zip()
       |> Enum.map(fn tuple ->
         [%{datetime: datetime} | _] = data = Tuple.to_list(tuple)
 
@@ -230,7 +241,7 @@ defmodule Sanbase.Clickhouse.Github do
             AND dt >= toDateTime(?4)
             AND dt <= toDateTime(?5)
             AND event NOT IN (?6)
-            GROUP BY owner, dt
+            GROUP BY owner, repo, dt, event
           )
           GROUP BY time
       )
@@ -272,7 +283,7 @@ defmodule Sanbase.Clickhouse.Github do
             PREWHERE owner IN (?3)
             AND dt >= toDateTime(?4)
             AND dt <= toDateTime(?5)
-            GROUP BY owner, dt
+            GROUP BY owner, repo, dt, event
           )
           GROUP BY time
       )

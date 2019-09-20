@@ -90,6 +90,7 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
     field :send_promo_coupon, :send_coupon_success do
       arg(:email, non_null(:string))
       arg(:message, :string)
+      arg(:lang, :promo_email_lang_enum)
 
       resolve(&BillingResolver.send_promo_coupon/3)
     end

@@ -11,7 +11,17 @@ defmodule Sanbase.Billing.Subscription.PromoCoupon do
   alias Sanbase.StripeApi
   alias Sanbase.MandrillApi
 
-  @email_template "Coupon for products"
+  @default_template "Coupon for products"
+  @email_templates_map %{
+    jp_magazine: %{
+      en: @default_template,
+      jp: @default_template
+    },
+    devcon: %{
+      en: @default_template,
+      jp: @default_template
+    }
+  }
 
   @promo_coupon_percent_off 25
   # FIXME end date of promotion ?
@@ -24,7 +34,10 @@ defmodule Sanbase.Billing.Subscription.PromoCoupon do
     max_redemptions: 1,
     redeem_by: Sanbase.DateTimeUtils.from_iso8601_to_unix!(@promo_end_datetime)
   }
-  @promo_email_subject "Get #{@promo_coupon_percent_off}% off ANY Santiment product!"
+  @promo_email_subject %{
+    en: "Get #{@promo_coupon_percent_off}% off ANY Santiment product!",
+    jp: "Santimentの、どのプロダクトも２５%オフに!"
+  }
 
   @type send_coupon_args :: %{email: String.t(), message: String.t() | nil}
 
@@ -33,6 +46,7 @@ defmodule Sanbase.Billing.Subscription.PromoCoupon do
     field(:message, :string)
     field(:coupon, :string)
     field(:origin_url, :string)
+    field(:lang, LangEnum, default: :en)
   end
 
   def changeset(%__MODULE__{} = promo_coupon, attrs \\ %{}) do
@@ -41,7 +55,8 @@ defmodule Sanbase.Billing.Subscription.PromoCoupon do
       :email,
       :message,
       :coupon,
-      :origin_url
+      :origin_url,
+      :lang
     ])
     |> unique_constraint(:email)
   end
@@ -51,10 +66,10 @@ defmodule Sanbase.Billing.Subscription.PromoCoupon do
   If same email is entered more than once if resends the old coupon to this email.
   """
   @spec send_coupon(send_coupon_args) :: {:ok, any()} | {:error, any()}
-  def send_coupon(%{email: email} = args) do
+  def send_coupon(args) do
     with {:ok, promo_coupon} <- create_or_update(args),
          {:ok, coupon} <- get_or_create_coupon(promo_coupon) do
-      send_coupon_email(email, coupon)
+      send_coupon_email(promo_coupon, coupon)
     end
   end
 
@@ -96,17 +111,36 @@ defmodule Sanbase.Billing.Subscription.PromoCoupon do
     |> Repo.update()
   end
 
-  defp send_coupon_email(email, %Stripe.Coupon{id: id, percent_off: percent_off}) do
-    MandrillApi.send(
-      @email_template,
+  defp send_coupon_email(
+         %__MODULE__{email: email, lang: lang} = promo_coupon,
+         %Stripe.Coupon{id: id, percent_off: percent_off}
+       ) do
+    promo_coupon
+    |> get_email_template()
+    |> MandrillApi.send(
       email,
       %{
         "DISCOUNT" => percent_off,
         "COUPON_CODE" => id
       },
       %{
-        subject: @promo_email_subject
+        subject: @promo_email_subject[lang]
       }
     )
+  end
+
+  defp get_email_template(%__MODULE__{origin_url: origin_url, lang: lang}) do
+    origin_url = origin_url || ""
+
+    cond do
+      String.contains?(origin_url, "jp_magazine") ->
+        @email_templates_map[:jp_magazine][lang]
+
+      String.contains?(origin_url, "devcon") ->
+        @email_templates_map[:devcon][lang]
+
+      true ->
+        @default_template
+    end
   end
 end

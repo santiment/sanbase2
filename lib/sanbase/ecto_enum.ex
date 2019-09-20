@@ -13,3 +13,5 @@ defenum(SubscriptionStatusEnum, :status, [
   "canceled",
   "unpaid"
 ])
+
+defenum(LangEnum, :lang, ["en", "jp"])

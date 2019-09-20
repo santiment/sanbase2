@@ -124,7 +124,7 @@ defmodule SanbaseWeb.Graphql.Billing.PromoCouponApiTest do
   defp send_promo_coupon_mutation(email, message \\ "message") do
     """
     mutation {
-      sendPromoCoupon(email: "#{email}", message: "#{message}") {
+      sendPromoCoupon(email: "#{email}", message: "#{message}", lang: JP) {
         success
       }
     }

@@ -2,7 +2,13 @@ defmodule Sanbase.Repo.Migrations.AddLangPromoCoupons do
   use Ecto.Migration
 
   def up do
-    LangEnum.create_type()
+    execute("""
+    DO $$ BEGIN
+      CREATE TYPE public.lang AS ENUM ('en', 'jp');
+    EXCEPTION
+      WHEN duplicate_object THEN null;
+    END $$;
+    """)
 
     alter table(:promo_coupons) do
       add(:lang, :lang)

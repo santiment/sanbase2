@@ -26,7 +26,10 @@ defmodule Sanbase.Clickhouse.Github do
     "FollowEvent",
     "ForkEvent",
     "DownloadEvent",
-    "WatchEvent"
+    "WatchEvent",
+    "ProjectCardEvent",
+    "ProjectColumnEvent",
+    "ProjectEvent"
   ]
 
   @table "github"

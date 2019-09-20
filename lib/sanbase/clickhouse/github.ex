@@ -233,7 +233,7 @@ defmodule Sanbase.Clickhouse.Github do
             AND dt >= toDateTime(?4)
             AND dt <= toDateTime(?5)
             AND event NOT IN (?6)
-            GROUP BY owner, dt
+            GROUP BY owner, repo, dt, event
           )
           GROUP BY time
       )
@@ -275,7 +275,7 @@ defmodule Sanbase.Clickhouse.Github do
             PREWHERE owner IN (?3)
             AND dt >= toDateTime(?4)
             AND dt <= toDateTime(?5)
-            GROUP BY owner, dt
+            GROUP BY owner, repo, dt, event
           )
           GROUP BY time
       )

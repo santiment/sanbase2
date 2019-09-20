@@ -36,7 +36,7 @@ defmodule Sanbase.Billing.Subscription.PromoCoupon do
   }
   @promo_email_subject %{
     en: "Get #{@promo_coupon_percent_off}% off ANY Santiment product!",
-    jp: "Santimentの、どのプロダクトも２５%オフに!"
+    jp: "Santimentの、どのプロダクトも#{@promo_coupon_percent_off}%オフに!"
   }
 
   @type send_coupon_args :: %{email: String.t(), message: String.t() | nil}

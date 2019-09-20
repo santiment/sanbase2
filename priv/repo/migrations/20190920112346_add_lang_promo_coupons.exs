@@ -10,7 +10,10 @@ defmodule Sanbase.Repo.Migrations.AddLangPromoCoupons do
   end
 
   def down do
-    drop(table(:user_lists))
+    alter table(:promo_coupons) do
+      remove(:lang)
+    end
+
     LangEnum.drop_type()
   end
 end

@@ -12,6 +12,11 @@ defmodule SanbaseWeb.Graphql.Schema.BillingTypes do
     value(:unpaid)
   end
 
+  enum :promo_email_lang_enum do
+    value(:en)
+    value(:jp)
+  end
+
   object :product do
     field(:id, :id)
     field(:name, :string)

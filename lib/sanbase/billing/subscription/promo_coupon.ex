@@ -12,14 +12,15 @@ defmodule Sanbase.Billing.Subscription.PromoCoupon do
   alias Sanbase.MandrillApi
 
   @default_template "Coupon for products"
+  @default_template_jp "coupon-jp"
   @email_templates_map %{
     jp_magazine: %{
       en: @default_template,
-      jp: @default_template
+      jp: @default_template_jp
     },
     devcon: %{
       en: @default_template,
-      jp: @default_template
+      jp: @default_template_jp
     }
   }
 
@@ -138,6 +139,9 @@ defmodule Sanbase.Billing.Subscription.PromoCoupon do
 
       String.contains?(origin_url, "devcon") ->
         @email_templates_map[:devcon][lang]
+
+      lang == :jp ->
+        @default_template_jp
 
       true ->
         @default_template

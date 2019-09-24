@@ -28,6 +28,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve(&ProjectResolver.available_metrics/3, ttl: 1800)
     end
 
+    field :available_queries, list_of(:string) do
+      cache_resolve(&ProjectResolver.available_metrics/3, ttl: 1800)
+    end
+
     field(:id, non_null(:id))
     field(:name, non_null(:string))
     field(:slug, :string)

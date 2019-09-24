@@ -30,7 +30,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.ProjectPermissions do
       "fundsRaisedEthIcoEndPrice",
       "fundsRaisedUsdIcoEndPrice",
       "fundsRaisedBtcIcoEndPrice",
-      "availableMetrics"
+      "availableMetrics",
+      "availableQueries"
     ]
 
     requested_fields = Utils.requested_fields(resolution)

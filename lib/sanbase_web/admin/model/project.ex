@@ -12,6 +12,27 @@ defmodule Sanbase.ExAdmin.Model.Project do
   alias Sanbase.Repo
 
   register_resource Sanbase.Model.Project do
+    filter([
+      :name,
+      :ticker,
+      :slug,
+      :website_link,
+      :token_decimals,
+      :main_contract_address,
+      :infrastructure
+    ])
+
+    index do
+      column(:id, link: true)
+      column(:ticker)
+      column(:name)
+      column(:slug)
+      column(:website_link)
+      column(:infrastructure)
+      column(:token_decimals)
+      column(:main_contract_address)
+    end
+
     show project do
       attributes_table(all: true)
 
@@ -109,7 +130,6 @@ defmodule Sanbase.ExAdmin.Model.Project do
         input(project, :email)
         input(project, :btt_link)
         input(project, :facebook_link)
-        input(project, :github_link)
         input(project, :reddit_link)
         input(project, :twitter_link)
         input(project, :whitepaper_link)

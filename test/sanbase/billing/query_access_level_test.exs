@@ -15,7 +15,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
 
       expected_free_queries =
         [
-          :check_coupon,
+          :get_coupon,
           :get_trigger_by_id,
           :payments,
           :current_user,

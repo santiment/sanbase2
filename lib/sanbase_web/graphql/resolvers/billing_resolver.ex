@@ -111,7 +111,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
-  def check_coupon(_root, %{coupon: coupon}, _resolution) do
+  def get_coupon(_root, %{coupon: coupon}, _resolution) do
     Sanbase.StripeApi.retrieve_coupon(coupon)
     |> case do
       {:ok,
@@ -123,7 +123,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
          amount_off: amount_off
        }} ->
         {:ok,
-         %{valid: valid, id: id, name: name, percent_off: percent_off, amount_off: amount_off}}
+         %{is_valid: valid, id: id, name: name, percent_off: percent_off, amount_off: amount_off}}
 
       {:error, %Stripe.Error{message: message} = reason} ->
         Logger.error("Error checking coupon: #{inspect(reason)}")

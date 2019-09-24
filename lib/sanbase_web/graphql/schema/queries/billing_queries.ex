@@ -33,12 +33,12 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
     @desc ~s"""
     Check coupon validity and parameters
     """
-    field :check_coupon, :coupon do
+    field :get_coupon, :coupon do
       meta(access: :free)
 
       arg(:coupon, non_null(:string))
 
-      resolve(&BillingResolver.check_coupon/3)
+      resolve(&BillingResolver.get_coupon/3)
     end
   end
 

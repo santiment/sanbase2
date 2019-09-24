@@ -64,10 +64,10 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       end do
       query = check_coupon(@coupon_code)
 
-      coupon = execute_query(context.conn, query, "checkCoupon")
+      coupon = execute_query(context.conn, query, "getCoupon")
 
       assert coupon["percentOff"] == 50
-      assert coupon["valid"]
+      assert coupon["isValid"]
     end
   end
 
@@ -541,10 +541,10 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   defp check_coupon(coupon) do
     """
     {
-      checkCoupon(coupon: "#{coupon}") {
+      getCoupon(coupon: "#{coupon}") {
+        isValid
         id
         name
-        valid
         amountOff
         percentOff
       }

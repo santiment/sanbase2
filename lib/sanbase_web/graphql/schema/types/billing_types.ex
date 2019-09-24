@@ -59,9 +59,9 @@ defmodule SanbaseWeb.Graphql.Schema.BillingTypes do
   end
 
   object :coupon do
+    field(:is_valid, :boolean)
     field(:id, :string)
     field(:name, :string)
-    field(:valid, :boolean)
     field(:amount_off, :float)
     field(:percent_off, :float)
   end

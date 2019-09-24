@@ -118,37 +118,6 @@ ALTER SEQUENCE public.currencies_id_seq OWNED BY public.currencies.id;
 
 
 --
--- Name: employees; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.employees (
-    id integer NOT NULL,
-    name text,
-    year integer
-);
-
-
---
--- Name: employees_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.employees_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: employees_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.employees_id_seq OWNED BY public.employees.id;
-
-
---
 -- Name: eth_accounts; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1637,14 +1606,6 @@ CREATE TABLE public.watchlist_settings (
 
 ALTER TABLE ONLY public.currencies ALTER COLUMN id SET DEFAULT nextval('public.currencies_id_seq'::regclass);
 
-
---
--- Name: employees id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.employees ALTER COLUMN id SET DEFAULT nextval('public.employees_id_seq'::regclass);
-
-
 --
 -- Name: eth_accounts id; Type: DEFAULT; Schema: public; Owner: -
 --
@@ -1938,14 +1899,6 @@ ALTER TABLE ONLY public.votes ALTER COLUMN id SET DEFAULT nextval('public.votes_
 
 ALTER TABLE ONLY public.currencies
     ADD CONSTRAINT currencies_pkey PRIMARY KEY (id);
-
-
---
--- Name: employees employees_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.employees
-    ADD CONSTRAINT employees_pkey PRIMARY KEY (id);
 
 
 --

@@ -15,6 +15,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
 
       expected_free_queries =
         [
+          :get_coupon,
           :get_trigger_by_id,
           :payments,
           :current_user,
@@ -179,6 +180,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         "circulation_7d",
         "circulation_1d",
         "mean_age",
+        "mean_dollar_invested_age",
         "realized_value_usd",
         "realized_value_usd_10y",
         "realized_value_usd_5y",
@@ -235,6 +237,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         "stack_circulation_7d",
         "stack_circulation_90d",
         "stack_mean_age_days",
+        "stack_mean_age_dollar_days",
         "stack_realized_cap_usd_10y",
         "stack_realized_cap_usd_180d",
         "stack_realized_cap_usd_1d",

@@ -57,7 +57,7 @@ defmodule Sanbase.Mixfile do
       {:distillery, "~> 2.0", runtime: false},
       {:timex, "~> 3.5.0"},
       {:timex_ecto, "~> 3.3.0"},
-      {:hackney, "~> 1.15", override: true},
+      {:hackney, github: "benoitc/hackney", override: true},
       {:guardian, "~> 2.0"},
       {:absinthe, github: "absinthe-graphql/absinthe", override: true},
       {:absinthe_ecto, "~> 0.1.0"},

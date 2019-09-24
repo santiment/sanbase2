@@ -352,6 +352,16 @@
   },
 
   {
+    "metric": "stack_mean_age_dollar_days",
+    "alias": "mean_dollar_invested_age",
+    "access": "restricted",
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "unit": "days"
+  },
+
+  {
     "metric": "stack_realized_cap_usd_20y",
     "alias": "realized_value_usd",
     "access": "restricted",

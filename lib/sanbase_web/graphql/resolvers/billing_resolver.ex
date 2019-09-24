@@ -111,6 +111,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
+  def get_coupon(_root, %{coupon: coupon}, _resolution) do
+    Sanbase.StripeApi.retrieve_coupon(coupon)
+    |> case do
+      {:ok,
+       %Stripe.Coupon{
+         valid: valid,
+         id: id,
+         name: name,
+         percent_off: percent_off,
+         amount_off: amount_off
+       }} ->
+        {:ok,
+         %{is_valid: valid, id: id, name: name, percent_off: percent_off, amount_off: amount_off}}
+
+      {:error, %Stripe.Error{message: message} = reason} ->
+        Logger.error("Error checking coupon: #{inspect(reason)}")
+        {:error, message}
+    end
+  end
+
   def subscriptions(%User{} = user, _args, _resolution) do
     {:ok, Subscription.user_subscriptions(user)}
   end

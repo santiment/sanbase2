@@ -29,6 +29,17 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
 
       resolve(&BillingResolver.payments/3)
     end
+
+    @desc ~s"""
+    Check coupon validity and parameters
+    """
+    field :get_coupon, :coupon do
+      meta(access: :free)
+
+      arg(:coupon, non_null(:string))
+
+      resolve(&BillingResolver.get_coupon/3)
+    end
   end
 
   object :billing_mutations do

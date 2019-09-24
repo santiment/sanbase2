@@ -112,6 +112,9 @@ defmodule Sanbase.Clickhouse.Metric do
   @spec available_aggregations() :: {:ok, list(atom())}
   def available_aggregations(), do: {:ok, @aggregations}
 
+  @spec available_aggregations!() :: list(atom())
+  def available_aggregations!(), do: @aggregations
+
   def first_datetime(metric, slug) do
     case metric in @metrics_mapset do
       false ->

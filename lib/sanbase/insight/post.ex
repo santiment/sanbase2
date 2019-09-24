@@ -256,6 +256,17 @@ defmodule Sanbase.Insight.Post do
   end
 
   @doc """
+  All public insights published after datetime
+  """
+  def public_insights_after(datetime) do
+    published_and_approved_insights()
+    |> after_datetime(datetime)
+    |> order_by_published_at()
+    |> Repo.all()
+    |> Repo.preload(@preloads)
+  end
+
+  @doc """
   All published and approved insights by given tag
   """
   def public_insights_by_tag(tag) do
@@ -360,6 +371,13 @@ defmodule Sanbase.Insight.Post do
     from(
       p in query,
       order_by: [desc: p.published_at]
+    )
+  end
+
+  defp after_datetime(query, datetime) do
+    from(
+      p in query,
+      where: p.published_at >= ^datetime
     )
   end
 

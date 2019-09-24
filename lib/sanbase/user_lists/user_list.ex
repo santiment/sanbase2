@@ -31,6 +31,7 @@ defmodule Sanbase.UserList do
     field(:is_public, :boolean, default: false)
     field(:color, ColorEnum, default: :none)
     field(:function, WatchlistFunction, default: %WatchlistFunction{})
+    field(:is_monitored, :boolean, default: false)
 
     belongs_to(:user, User)
 
@@ -55,7 +56,7 @@ defmodule Sanbase.UserList do
 
   def update_changeset(%__MODULE__{id: _id} = user_list, attrs \\ %{}) do
     user_list
-    |> cast(attrs, [:name, :slug, :is_public, :color, :function])
+    |> cast(attrs, [:name, :slug, :is_public, :color, :function, :is_monitored])
     |> cast_assoc(:list_items)
     |> validate_required([:name])
     |> unique_constraint(:slug)

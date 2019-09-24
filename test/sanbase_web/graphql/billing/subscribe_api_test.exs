@@ -50,6 +50,27 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     {:ok, conn: conn, user: user}
   end
 
+  test "check coupon", context do
+    with_mock StripeApi, [:passthrough],
+      retrieve_coupon: fn _ ->
+        {:ok,
+         %Stripe.Coupon{
+           id: @coupon_code,
+           name: "alabala",
+           valid: true,
+           percent_off: 50,
+           amount_off: nil
+         }}
+      end do
+      query = check_coupon(@coupon_code)
+
+      coupon = execute_query(context.conn, query, "checkCoupon")
+
+      assert coupon["percentOff"] == 50
+      assert coupon["valid"]
+    end
+  end
+
   test "list products with plans", context do
     query = products_with_plans_query()
 
@@ -515,6 +536,20 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
                end) =~ "test error"
       end
     end
+  end
+
+  defp check_coupon(coupon) do
+    """
+    {
+      checkCoupon(coupon: "#{coupon}") {
+        id
+        name
+        valid
+        amountOff
+        percentOff
+      }
+    }
+    """
   end
 
   defp current_user_query do

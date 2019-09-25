@@ -529,7 +529,7 @@ defmodule Sanbase.Factory do
     %Role{
       id: 2,
       name: "Santiment Clan member",
-      code: "san_clan"
+      code: "san_family"
     }
   end
 

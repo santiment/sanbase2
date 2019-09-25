@@ -20,8 +20,8 @@ defmodule Sanbase.Repo.Migrations.CreateUserRoles do
 
     execute("""
     INSERT INTO roles (id, name, code) VALUES
-      (1, 'Santiment Team member', 'san_team'),
-      (2, 'Santiment Clan member', 'san_clan')
+      (1, 'Santiment Team Member', 'san_team'),
+      (2, 'Santiment Family Member', 'san_family')
     """)
   end
 

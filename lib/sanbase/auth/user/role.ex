@@ -14,10 +14,11 @@ defmodule Sanbase.Auth.Role do
   def changeset(%__MODULE__{} = role, attrs \\ %{}) do
     role
     |> cast(attrs, [:name, :code])
+    |> unique_constraint(:code)
   end
 
-  def san_clan_role_id() do
-    Repo.get_by(__MODULE__, code: "san_clan")
+  def san_family_role_id() do
+    Repo.get_by(__MODULE__, code: "san_family")
     |> Map.get(:id)
   end
 end
@@ -39,5 +40,6 @@ defmodule Sanbase.Auth.UserRole do
   def changeset(%__MODULE__{} = user_role, attrs \\ %{}) do
     user_role
     |> cast(attrs, [:user_id, :role_id])
+    |> unique_constraint(:user, name: :user_roles_user_id_role_id_index)
   end
 end

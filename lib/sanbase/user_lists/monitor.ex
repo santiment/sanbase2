@@ -14,7 +14,7 @@ defmodule Sanbase.UserList.Monitor do
 
   @doc """
   Take all published and approved insights from the last week from
-  authors followed by the user OR san clan members. Filter only the insights
+  authors followed by the user OR san family members. Filter only the insights
   that contain tags for projects that are in some of the user's monitored watchlists.
   """
   def insights_to_send(user) do
@@ -50,12 +50,12 @@ defmodule Sanbase.UserList.Monitor do
 
   defp insights_by_followed_users_or_sanclan(insights, user_id) do
     followed_users = Sanbase.Following.UserFollower.followed_by(user_id)
-    san_clan_ids = san_clan_ids()
+    san_family_ids = san_family_ids()
 
     insights
     |> Enum.filter(fn %Post{user_id: author_id} ->
       author_id != user_id and
-        (author_id in san_clan_ids or author_id in followed_users)
+        (author_id in san_family_ids or author_id in followed_users)
     end)
   end
 
@@ -73,9 +73,9 @@ defmodule Sanbase.UserList.Monitor do
 
   defp week_ago(), do: Timex.shift(Timex.now(), days: -7)
 
-  defp san_clan_ids() do
+  defp san_family_ids() do
     from(ur in UserRole,
-      where: ur.role_id == ^Role.san_clan_role_id(),
+      where: ur.role_id == ^Role.san_family_role_id(),
       select: ur.user_id
     )
     |> Repo.all()

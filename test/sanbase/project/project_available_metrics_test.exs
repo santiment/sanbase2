@@ -1,10 +1,10 @@
-defmodule Sanbase.Project.AvailableMetricsTest do
+defmodule Sanbase.Project.AvailableQueriesTest do
   use Sanbase.DataCase, async: false
 
   import Mock
   import Sanbase.Factory
 
-  alias Sanbase.Model.Project.AvailableMetrics
+  alias Sanbase.Model.Project.AvailableQueries
 
   @slug_metrics [
     "historyPrice",
@@ -35,8 +35,8 @@ defmodule Sanbase.Project.AvailableMetricsTest do
         btc_addresses: []
       })
 
-    assert "btcBalance" in AvailableMetrics.get(project_with_btc)
-    assert "btcBalance" not in AvailableMetrics.get(project_without_btc)
+    assert "btcBalance" in AvailableQueries.get(project_with_btc)
+    assert "btcBalance" not in AvailableQueries.get(project_without_btc)
   end
 
   test "ethBalance present only when there are eth addresses" do
@@ -52,8 +52,8 @@ defmodule Sanbase.Project.AvailableMetricsTest do
         eth_addresses: []
       })
 
-    assert "ethBalance" in AvailableMetrics.get(project_with_eth)
-    assert "ethBalance" not in AvailableMetrics.get(project_without_eth)
+    assert "ethBalance" in AvailableQueries.get(project_with_eth)
+    assert "ethBalance" not in AvailableQueries.get(project_without_eth)
   end
 
   test "ethereum has specific metrics" do
@@ -64,7 +64,7 @@ defmodule Sanbase.Project.AvailableMetricsTest do
         eth_addresses: [build(:project_eth_address)]
       })
 
-    available_metrics = AvailableMetrics.get(project)
+    available_metrics = AvailableQueries.get(project)
     assert "gasUsed" in available_metrics
     assert "allExchanges" in available_metrics
     assert "exchangeWallets" in available_metrics
@@ -77,7 +77,7 @@ defmodule Sanbase.Project.AvailableMetricsTest do
         github_link: "https://github.com/bitcoin"
       })
 
-    available_metrics = AvailableMetrics.get(project)
+    available_metrics = AvailableQueries.get(project)
 
     # There is no gas used for Bitcoin
     assert "gasUsed" not in available_metrics
@@ -97,7 +97,7 @@ defmodule Sanbase.Project.AvailableMetricsTest do
         github_organizations: []
       })
 
-    assert AvailableMetrics.get(project) == @slug_metrics
+    assert AvailableQueries.get(project) == @slug_metrics
   end
 
   test "project with slug, github, infrastructure, contract and eth addresses" do
@@ -108,7 +108,7 @@ defmodule Sanbase.Project.AvailableMetricsTest do
         eth_addresses: [build(:project_eth_address)]
       })
 
-    available_metrics = AvailableMetrics.get(project)
+    available_metrics = AvailableQueries.get(project)
 
     # some github metrics
     assert Enum.all?(

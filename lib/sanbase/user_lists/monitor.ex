@@ -1,7 +1,7 @@
 defmodule Sanbase.UserList.Monitor do
   @moduledoc """
   Watchlist can be monitored - this means the creator will receive an email if any
-  of the assets in the watchlist is present in the insights' tags created by SanClan
+  of the assets in the watchlist is present in the insights' tags created by SAN family
   or by followed authors.
   """
 
@@ -22,7 +22,7 @@ defmodule Sanbase.UserList.Monitor do
 
     week_ago()
     |> Post.public_insights_after()
-    |> insights_by_followed_users_or_sanclan(user.id)
+    |> insights_by_followed_users_or_sanfamily(user.id)
     |> insights_with_asset_in_monitored_watchlist(watchlists)
   end
 
@@ -48,7 +48,7 @@ defmodule Sanbase.UserList.Monitor do
     |> Repo.all()
   end
 
-  defp insights_by_followed_users_or_sanclan(insights, user_id) do
+  defp insights_by_followed_users_or_sanfamily(insights, user_id) do
     followed_users = Sanbase.Following.UserFollower.followed_by(user_id)
     san_family_ids = san_family_ids()
 

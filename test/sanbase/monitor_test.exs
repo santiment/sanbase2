@@ -25,6 +25,28 @@ defmodule Sanbase.MonitorTest do
     ]
   end
 
+  describe "#watchlists_tags" do
+    test "when watchlist has projects - returns tags", context do
+      watchlist = create_watchlist(context) |> Sanbase.Repo.preload(list_items: [:project])
+
+      assert Monitor.watchlists_tags([watchlist]) ==
+               MapSet.new([
+                 context.project.slug,
+                 context.project.name,
+                 context.project.ticker,
+                 context.project2.slug,
+                 context.project2.name,
+                 context.project2.ticker
+               ])
+    end
+
+    test "when watchlist has no projects - returns []", context do
+      watchlist = create_watchlist(context, %{}, %{list_items: []})
+
+      assert Monitor.watchlists_tags([watchlist]) == MapSet.new([])
+    end
+  end
+
   describe "#insights_to_send" do
     test "with insight from followed author returns it", context do
       UserFollower.follow(context.author.id, context.user.id)
@@ -127,13 +149,18 @@ defmodule Sanbase.MonitorTest do
     insert(:post, params)
   end
 
-  def create_watchlist(context, opts \\ %{}) do
-    params = %{user: context.user, is_monitored: true} |> Map.merge(opts)
-    watchlist = insert(:watchlist, params)
+  def create_watchlist(context, create_opts \\ %{}, update_opts \\ %{}) do
+    create_opts = %{user: context.user, is_monitored: true} |> Map.merge(create_opts)
+    watchlist = insert(:watchlist, create_opts)
 
-    UserList.update_user_list(%{
-      id: watchlist.id,
-      list_items: [%{project_id: context.project.id}, %{project_id: context.project2.id}]
-    })
+    update_opts =
+      %{
+        id: watchlist.id,
+        list_items: [%{project_id: context.project.id}, %{project_id: context.project2.id}]
+      }
+      |> Map.merge(update_opts)
+
+    {:ok, watchlist} = UserList.update_user_list(update_opts)
+    watchlist
   end
 end

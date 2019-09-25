@@ -3,7 +3,7 @@ defmodule Sanbase.Factory do
 
   alias Sanbase.Tag
   alias Sanbase.UserList
-  alias Sanbase.Auth.{User, UserSettings}
+  alias Sanbase.Auth.{User, UserSettings, Role, UserRole}
   alias Sanbase.Insight.{Post, Poll}
 
   alias Sanbase.Model.{
@@ -22,7 +22,6 @@ defmodule Sanbase.Factory do
   alias Sanbase.Signal.{UserTrigger, HistoricalActivity}
   alias Sanbase.Billing.{Product, Plan, Subscription}
   alias Sanbase.Timeline.TimelineEvent
-  alias Sanbase.Auth.User.{Role, UserRole}
 
   def user_factory() do
     %User{
@@ -265,16 +264,6 @@ defmodule Sanbase.Factory do
 
   def product_exchange_wallets_factory() do
     %Product{id: 5, name: "Exchange Wallets by Santiment"}
-  end
-
-  def plan_free_factory() do
-    %Plan{
-      id: 1,
-      name: "FREE",
-      amount: 0,
-      currency: "USD",
-      interval: "month"
-    }
   end
 
   def plan_free_factory() do

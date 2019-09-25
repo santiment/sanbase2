@@ -17,7 +17,7 @@ defmodule Sanbase.UserList.Monitor do
     watchlists = monitored_watchlists_for(user)
 
     week_ago()
-    |> insights_after_datetime()
+    |> Post.public_insights_after()
     |> insights_by_followed_users_or_sanclan(user.id)
     |> insights_with_asset_in_monitored_watchlist(watchlists)
   end
@@ -37,10 +37,6 @@ defmodule Sanbase.UserList.Monitor do
       preload: [list_items: [:project]]
     )
     |> Repo.all()
-  end
-
-  defp insights_after_datetime(datetime) do
-    Post.public_insights_after(datetime)
   end
 
   defp insights_by_followed_users_or_sanclan(insights, user_id) do

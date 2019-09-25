@@ -25,38 +25,111 @@ defmodule Sanbase.MonitorTest do
     ]
   end
 
-  test "#insights_to_send with followed author", context do
-    UserFollower.follow(context.author.id, context.user.id)
-    insight = create_insight(context)
-    create_monitored_watchlist(context)
+  describe "#insights_to_send" do
+    test "with insight from followed author returns it", context do
+      UserFollower.follow(context.author.id, context.user.id)
+      insight = create_insight(context)
+      create_watchlist(context)
 
-    insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
-    assert insights_to_send == [insight.id]
+      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      assert insights_to_send == [insight.id]
+    end
+
+    test "with author in san clan returns it", context do
+      insight = create_insight(context)
+
+      insert(:user_role, user: context.author, role: context.role_san_clan)
+      create_watchlist(context)
+
+      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      assert insights_to_send == [insight.id]
+    end
+
+    test "with not followed author, nor in san clan - returns []", context do
+      create_insight(context)
+
+      create_watchlist(context)
+
+      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      assert insights_to_send == []
+    end
+
+    test "when insight is published more than one week ago - returns []", context do
+      create_insight(context, %{
+        published_at: Timex.shift(Timex.now(), days: -8) |> DateTime.to_naive()
+      })
+
+      create_watchlist(context)
+
+      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      assert insights_to_send == []
+    end
+
+    test "when insight is with other tags - returns []", context do
+      insert(:user_role, user: context.author, role: context.role_san_clan)
+
+      create_insight(context, %{
+        tags: [build(:tag, name: "alabala")]
+      })
+
+      create_watchlist(context)
+
+      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      assert insights_to_send == []
+    end
+
+    test "when the user is insight author - returns []", context do
+      insert(:user_role, user: context.author, role: context.role_san_clan)
+
+      create_insight(context, %{user: context.user})
+
+      create_watchlist(context)
+
+      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      assert insights_to_send == []
+    end
+
+    test "when insight is with tag the name of the project - it returns it", context do
+      insert(:user_role, user: context.author, role: context.role_san_clan)
+
+      insight =
+        create_insight(context, %{
+          tags: [build(:tag, name: "Ethereum")]
+        })
+
+      create_watchlist(context)
+
+      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      assert insights_to_send == [insight.id]
+    end
+
+    test "when watchlist is not monitored - returns []", context do
+      UserFollower.follow(context.author.id, context.user.id)
+      create_insight(context)
+      create_watchlist(context, %{is_monitored: false})
+
+      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      assert insights_to_send == []
+    end
   end
 
-  test "#insights_to_send with author in san clan", context do
-    insight = create_insight(context)
+  defp create_insight(context, opts \\ %{}) do
+    params =
+      %{
+        state: Post.approved_state(),
+        ready_state: Post.published(),
+        user: context.author,
+        tags: [build(:tag, name: "BTC"), build(:tag, name: "santiment")],
+        published_at: DateTime.to_naive(Timex.now())
+      }
+      |> Map.merge(opts)
 
-    insert(:user_role, user: context.author, role: context.role_san_clan)
-    create_monitored_watchlist(context)
-
-    insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
-    assert insights_to_send == [insight.id]
+    insert(:post, params)
   end
 
-  defp create_insight(context) do
-    insert(
-      :post,
-      state: Post.approved_state(),
-      ready_state: Post.published(),
-      user: context.author,
-      tags: [build(:tag, name: "BTC"), build(:tag, name: "santiment")],
-      published_at: DateTime.to_naive(Timex.now())
-    )
-  end
-
-  def create_monitored_watchlist(context) do
-    watchlist = insert(:watchlist, user: context.user, is_monitored: true)
+  def create_watchlist(context, opts \\ %{}) do
+    params = %{user: context.user, is_monitored: true} |> Map.merge(opts)
+    watchlist = insert(:watchlist, params)
 
     UserList.update_user_list(%{
       id: watchlist.id,

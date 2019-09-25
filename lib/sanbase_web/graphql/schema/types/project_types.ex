@@ -56,13 +56,27 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     @desc ~s"""
     Returns a list of GraphQL queries that have data for the given slug.
 
-    For example, any of the queries returned from the query
+    For example, any of the queries returned from the query:
     ```
     {
       projectBySlug(slug: "ethereum"){ availableQueries }
     }
     ```
     can be executed with "ethereum" slug as parameter and it will have data.
+    `devActivity` query will be part of the result if that project has a known
+    github link. So the following query will have data:
+    ```
+    {
+      devActivity(
+        slug: "ethereum"
+        from: "2019-01-01T00:00:00Z"
+        to: "2019-02-01T00:00:00Z"
+        interval: "1d"){
+          datetime
+          activity
+        }
+    }
+    ```
     """
     field :available_queries, list_of(:string) do
       cache_resolve(&ProjectResolver.available_queries/3, ttl: 1800)

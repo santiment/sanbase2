@@ -111,7 +111,7 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
         [] ->
           %TrendingWordsTriggerSettings{settings | triggered?: false}
 
-        [_] = words ->
+        [_ | _] = words ->
           payload =
             Enum.reduce(words, %{}, fn word, acc ->
               Map.put(acc, word, payload(settings, word))

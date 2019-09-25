@@ -173,15 +173,18 @@ defmodule Sanbase.Signal.UserTrigger do
   def update_user_trigger(%User{} = user, %{id: trigger_id} = params) do
     settings = Map.get(params, :settings)
 
-    case valid_or_nil?(settings) do
-      :ok ->
-        {:ok, struct} = get_trigger_by_id(user, trigger_id)
+    with {:valid?, :ok} <- {:valid?, valid_or_nil?(settings)},
+         {:get_trigger, {:ok, struct}} when not is_nil(struct) <-
+           {:get_trigger, get_trigger_by_id(user, trigger_id)} do
+      struct
+      |> update_changeset(%{trigger: clean_params(params)})
+      |> Repo.update()
+    else
+      {:get_trigger, _} ->
+        {:error,
+         "Trigger with id #{trigger_id} does not exist or is not owned by the current user"}
 
-        struct
-        |> update_changeset(%{trigger: clean_params(params)})
-        |> Repo.update()
-
-      {:error, error} ->
+      {:valid?, {:error, error}} ->
         {:error,
          "Trigger structure is invalid. Key `settings` is not valid. Reason: #{inspect(error)}"}
     end

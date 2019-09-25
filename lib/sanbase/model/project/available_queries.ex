@@ -1,4 +1,4 @@
-defmodule Sanbase.Model.Project.AvailableMetrics do
+defmodule Sanbase.Model.Project.AvailableQueries do
   @moduledoc ~s"""
   Module for determining what metrics are available for a given project
   """
@@ -26,25 +26,36 @@ defmodule Sanbase.Model.Project.AvailableMetrics do
   @spec get(Sanbase.Model.Project.t()) :: [String.t()]
   def get(%Project{} = project) do
     [
-      &slug_metrics/1,
-      &github_metrics/1,
-      &twitter_metrics/1,
-      &social_metrics/1,
-      &blockchain_metrics/1,
-      &database_defined_metrics/1,
-      &wallets_metrics/1,
-      &ico_metrics/1
+      &slug_queries/1,
+      &github_queries/1,
+      &twitter_queries/1,
+      &social_queries/1,
+      &blockchain_queries/1,
+      &database_defined_queries/1,
+      &wallets_queries/1,
+      &ico_queries/1,
+      &get_metric_queries/1
     ]
     |> Enum.flat_map(fn fun -> fun.(project) end)
     |> Enum.uniq()
   end
 
   # Metrics can also be added from the admin dashboard
-  defp database_defined_metrics(%Project{} = _project) do
+  defp database_defined_queries(%Project{} = _project) do
     []
   end
 
-  defp ico_metrics(%Project{} = project) do
+  defp get_metric_queries(%Project{slug: slug}) do
+    case Sanbase.Clickhouse.Metric.available_slugs() do
+      {:ok, list} ->
+        if slug in list, do: ["getMetric"], else: []
+
+      _ ->
+        []
+    end
+  end
+
+  defp ico_queries(%Project{} = project) do
     project
     |> Sanbase.Repo.preload([:icos])
     |> case do
@@ -63,12 +74,12 @@ defmodule Sanbase.Model.Project.AvailableMetrics do
     end
   end
 
-  defp wallets_metrics(%Project{} = project) do
+  defp wallets_queries(%Project{} = project) do
     project =
       project
       |> Sanbase.Repo.preload([:eth_addresses, :btc_addresses])
 
-    eth_wallet_metrics =
+    eth_wallet_queries =
       case project do
         %Project{eth_addresses: addresses} when addresses != [] ->
           ["ethSpent", "ethSpentOverTime", "ethTopTransactions", "ethBalance", "usdBalance"]
@@ -77,7 +88,7 @@ defmodule Sanbase.Model.Project.AvailableMetrics do
           []
       end
 
-    btc_wallet_metrics =
+    btc_wallet_queries =
       case project do
         %Project{btc_addresses: addresses} when addresses != [] ->
           ["btcBalance", "usdBalance"]
@@ -86,10 +97,10 @@ defmodule Sanbase.Model.Project.AvailableMetrics do
           []
       end
 
-    btc_wallet_metrics ++ eth_wallet_metrics
+    btc_wallet_queries ++ eth_wallet_queries
   end
 
-  defp slug_metrics(%Project{slug: slug}) do
+  defp slug_queries(%Project{slug: slug}) do
     case slug do
       slug when is_binary(slug) and slug != "" ->
         ["historyPrice", "ohlc", "priceVolumeDiff"]
@@ -99,7 +110,7 @@ defmodule Sanbase.Model.Project.AvailableMetrics do
     end
   end
 
-  defp github_metrics(%Project{} = project) do
+  defp github_queries(%Project{} = project) do
     case Project.github_organizations(project) do
       {:ok, orgs} when is_list(orgs) and orgs != [] ->
         [
@@ -114,34 +125,34 @@ defmodule Sanbase.Model.Project.AvailableMetrics do
     end
   end
 
-  defp twitter_metrics(%Project{twitter_link: twitter_link}) do
+  defp twitter_queries(%Project{twitter_link: twitter_link}) do
     case twitter_link do
       l when is_binary(l) and l != "" -> ["historyTwitterData", "twitterData"]
       _ -> []
     end
   end
 
-  defp social_metrics(%Project{slug: slug}) do
-    common_social_metrics = [
+  defp social_queries(%Project{slug: slug}) do
+    common_social_queries = [
       "socialGainersLosersStatus"
     ]
 
     case slug in social_volume_projects() do
-      true -> common_social_metrics ++ ["socialVolume", "socialDominance"]
-      false -> common_social_metrics
+      true -> common_social_queries ++ ["socialVolume", "socialDominance"]
+      false -> common_social_queries
     end
   end
 
-  @mineable_specific_metrics ["exchangeWallets", "allExchanges"]
+  @mineable_specific_queries ["exchangeWallets", "allExchanges"]
 
-  @ethereum_specific_metrics [
+  @ethereum_specific_queries [
     "exchangeWallets",
     "miningPoolsDistribution",
     "dailyActiveDeposits",
     "gasUsed"
   ]
 
-  @erc20_specific_metrics [
+  @erc20_specific_queries [
     "exchangeFundsFlow",
     "historicalBalance",
     "topHoldersPercentOfTotalSupply",
@@ -150,9 +161,9 @@ defmodule Sanbase.Model.Project.AvailableMetrics do
     "tokenTopTransactions"
   ]
 
-  @bitcoin_specific_metrics []
+  @bitcoin_specific_queries []
 
-  @common_blockchain_metrics [
+  @common_blockchain_queries [
     "realizedValue",
     "networkGrowth",
     "mvrvRatio",
@@ -166,19 +177,19 @@ defmodule Sanbase.Model.Project.AvailableMetrics do
     "tokenCirculation"
   ]
 
-  defp blockchain_metrics(%Project{} = project) do
+  defp blockchain_queries(%Project{} = project) do
     is_erc20? = Project.is_erc20?(project)
 
     case {project, is_erc20?} do
       {%Project{slug: "ethereum"}, _} ->
-        @mineable_specific_metrics ++
-          @ethereum_specific_metrics ++ @erc20_specific_metrics ++ @common_blockchain_metrics
+        @mineable_specific_queries ++
+          @ethereum_specific_queries ++ @erc20_specific_queries ++ @common_blockchain_queries
 
       {%Project{slug: "bitcoin"}, _} ->
-        @mineable_specific_metrics ++ @bitcoin_specific_metrics ++ @common_blockchain_metrics
+        @mineable_specific_queries ++ @bitcoin_specific_queries ++ @common_blockchain_queries
 
       {_, true} ->
-        @erc20_specific_metrics ++ @common_blockchain_metrics
+        @erc20_specific_queries ++ @common_blockchain_queries
 
       _ ->
         []

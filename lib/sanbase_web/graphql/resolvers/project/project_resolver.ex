@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     LatestCoinmarketcapData
   }
 
+  alias Sanbase.Clickhouse.Metric
   alias Sanbase.Insight.Post
   alias Sanbase.Prices
   alias Sanbase.Influxdb.Measurement
@@ -17,9 +18,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
-  def available_metrics(%Project{} = project, _args, _resolution) do
-    available_metrics = Project.AvailableMetrics.get(project)
-    {:ok, available_metrics}
+  def available_metrics(%Project{slug: slug}, _args, _resolution) do
+    case Metric.available_slugs() do
+      {:ok, list} ->
+        if slug in list, do: {:ok, Metric.available_metrics!()}, else: {:ok, []}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  def available_queries(%Project{} = project, _args, _resolution) do
+    {:ok, Project.AvailableQueries.get(project)}
   end
 
   def projects_count(_root, args, _resolution) do

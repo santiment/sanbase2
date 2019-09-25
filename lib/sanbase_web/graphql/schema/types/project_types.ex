@@ -24,8 +24,48 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   A type fully describing a project.
   """
   object :project do
+    @desc ~s"""
+    Returns a list of available metrics. Every one of the metrics in the list
+    can be passed as the `metric` argument of the `getMetric` query.
+
+    For example, any of of the metrics from the query:
+    ```
+    {
+      projectBySlug(slug: "ethereum"){ availableMetrics }
+    }
+    ```
+    can be used like this:
+    ```
+    {
+      getMetric(metric: "<metric>"){
+        timeseriesData(
+          slug: "ethereum"
+          from: "2019-01-01T00:00:00Z"
+          to: "2019-02-01T00:00:00Z"
+          interval: "1d"){
+            datetime
+            value
+          }
+      }
+    ```
+    """
     field :available_metrics, list_of(:string) do
       cache_resolve(&ProjectResolver.available_metrics/3, ttl: 1800)
+    end
+
+    @desc ~s"""
+    Returns a list of GraphQL queries that have data for the given slug.
+
+    For example, any of the queries returned from the query
+    ```
+    {
+      projectBySlug(slug: "ethereum"){ availableQueries }
+    }
+    ```
+    can be executed with "ethereum" slug as parameter and it will have data.
+    """
+    field :available_queries, list_of(:string) do
+      cache_resolve(&ProjectResolver.available_queries/3, ttl: 1800)
     end
 
     field(:id, non_null(:id))

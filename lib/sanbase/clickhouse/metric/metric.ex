@@ -106,11 +106,17 @@ defmodule Sanbase.Clickhouse.Metric do
   @spec available_metrics() :: {:ok, list(String.t())}
   def available_metrics(), do: {:ok, @metrics_public_name_list}
 
+  @spec available_metrics!() :: list(String.t())
+  def available_metrics!(), do: @metrics_public_name_list
+
   @spec available_slugs() :: {:ok, list(String.t())} | {:error, String.t()}
   def available_slugs(), do: get_available_slugs()
 
   @spec available_aggregations() :: {:ok, list(atom())}
   def available_aggregations(), do: {:ok, @aggregations}
+
+  @spec available_aggregations!() :: list(atom())
+  def available_aggregations!(), do: @aggregations
 
   def first_datetime(metric, slug) do
     case metric in @metrics_mapset do

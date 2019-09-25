@@ -22,6 +22,7 @@ defmodule Sanbase.Factory do
   alias Sanbase.Signal.{UserTrigger, HistoricalActivity}
   alias Sanbase.Billing.{Product, Plan, Subscription}
   alias Sanbase.Timeline.TimelineEvent
+  alias Sanbase.Auth.User.{Role, UserRole}
 
   def user_factory() do
     %User{
@@ -525,6 +526,26 @@ defmodule Sanbase.Factory do
     %Ico{
       project_id: 1
     }
+  end
+
+  def role_san_team_factory() do
+    %Role{
+      id: 1,
+      name: "Santiment Team member",
+      code: "san_team"
+    }
+  end
+
+  def role_san_clan_factory() do
+    %Role{
+      id: 2,
+      name: "Santiment Clan member",
+      code: "san_clan"
+    }
+  end
+
+  def user_role_factory() do
+    %UserRole{}
   end
 
   def rand_str(length \\ 10) do

@@ -69,17 +69,19 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
         id: #{watchlist.id},
         name: "#{update_name}",
         color: BLACK,
-        listItems: [{project_id: #{project.id}}]
+        listItems: [{project_id: #{project.id}}],
+        isMonitored: true
       ) {
-        name,
-        color,
-        is_public,
+        name
+        color
+        isPublic
+        isMonitored
         user {
           id
-        },
+        }
         listItems {
           project {
-            id,
+            id
             priceUsd
           }
         }
@@ -95,7 +97,8 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
     watchlist = result["data"]["updateWatchlist"]
     assert watchlist["name"] == update_name
     assert watchlist["color"] == "BLACK"
-    assert watchlist["is_public"] == false
+    assert watchlist["isPublic"] == false
+    assert watchlist["isMonitored"] == true
 
     assert watchlist["listItems"] == [
              %{"project" => %{"id" => project.id |> to_string(), "priceUsd" => 0.5}}

@@ -125,6 +125,7 @@ defmodule SanbaseWeb.Graphql.Schema.WatchlistQueries do
       arg(:color, :color_enum)
       arg(:function, :json)
       arg(:list_items, list_of(:input_list_item))
+      arg(:is_monitored, :boolean)
 
       middleware(JWTAuth)
       resolve(&UserListResolver.update_user_list/3)
@@ -140,6 +141,7 @@ defmodule SanbaseWeb.Graphql.Schema.WatchlistQueries do
       arg(:color, :color_enum)
       arg(:function, :json)
       arg(:list_items, list_of(:input_list_item))
+      arg(:is_monitored, :boolean)
 
       middleware(JWTAuth)
       resolve(&UserListResolver.update_user_list/3)

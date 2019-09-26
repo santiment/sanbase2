@@ -112,12 +112,13 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
           %TrendingWordsTriggerSettings{settings | triggered?: false}
 
         [_ | _] = words ->
-          payload =
-            Enum.reduce(words, %{}, fn word, acc ->
-              Map.put(acc, word, payload(settings, word))
-            end)
+          payload = %{words => payload(settings, words)}
 
-          %TrendingWordsTriggerSettings{settings | triggered?: true, payload: payload}
+          %TrendingWordsTriggerSettings{
+            settings
+            | triggered?: true,
+              payload: payload
+          }
       end
     end
 
@@ -183,11 +184,22 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       """
     end
 
-    defp payload(%{operation: %{trending_word: true}}, word) do
+    defp payload(%{operation: %{trending_word: true}}, [word]) do
       """
       The word **#{word}** is in the trending words.
 
       More info here: #{SanbaseWeb.Endpoint.trending_word_url(word)}
+      """
+    end
+
+    defp payload(%{operation: %{trending_word: true}}, [_, _ | _] = words) do
+      {last, previous} = List.pop_at(words, -1)
+      words_str = (Enum.map(previous, &"**#{&1}**") |> Enum.join(",")) <> " and **#{last}**"
+
+      """
+      The words #{words_str} are in the trending words.
+
+      More info here: #{SanbaseWeb.Endpoint.trending_word_url(words)}
       """
     end
 

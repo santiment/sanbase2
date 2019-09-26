@@ -77,9 +77,9 @@ defmodule Sanbase.Clickhouse.Github do
           {:ok, list({String.t(), non_neg_integer()})} | {:error, String.t()}
   def total_dev_activity([], _from, _to), do: {:ok, []}
 
-  def total_dev_activity(organizations, from, to) when length(organizations) > 10 do
+  def total_dev_activity(organizations, from, to) when length(organizations) > 20 do
     total_dev_activity =
-      Enum.chunk_every(organizations, 10)
+      Enum.chunk_every(organizations, 20)
       |> Sanbase.Parallel.map(&total_dev_activity(&1, from, to),
         timeout: 25_000,
         max_concurrency: 8,

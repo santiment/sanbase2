@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   alias Sanbase.Clickhouse
   alias Sanbase.Model.Project
 
-  @max_concurrency 100
+  @max_concurrency 20
   alias Sanbase.Clickhouse.DailyActiveAddresses
 
   def data() do
@@ -42,21 +42,18 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
       {:ok, organizations} = Project.github_organizations(project)
       organizations
     end)
-    |> Enum.chunk_every(100)
-    |> Enum.reject(fn orgs -> orgs == nil or orgs == [] end)
-    |> Sanbase.Parallel.map(
-      fn organizations ->
-        {:ok, dev_activity} = Clickhouse.Github.total_dev_activity(organizations, from, to)
-
-        dev_activity
+    |> Clickhouse.Github.total_dev_activity(from, to)
+    |> case do
+      {:ok, result} ->
+        result
         |> Enum.map(fn {organization, dev_activity} ->
           {organization, {:ok, dev_activity / days}}
         end)
-      end,
-      map_type: :flat_map,
-      max_concurrency: @max_concurrency
-    )
-    |> Map.new()
+        |> Map.new()
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   @doc ~s"""

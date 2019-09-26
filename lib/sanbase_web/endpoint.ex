@@ -87,6 +87,14 @@ defmodule SanbaseWeb.Endpoint do
     |> Path.join(word)
   end
 
+  def trending_word_url(words) when is_list(words) do
+    words_uri = words |> Enum.map(&~s/"#{&1}"/) |> Enum.join(" OR ") |> URI.encode()
+
+    website_url()
+    |> Path.join("labs/trends/explore")
+    |> Path.join(words_uri)
+  end
+
   def historical_balance_url(address, asset) when is_binary(address) and is_binary(asset) do
     website_url()
     |> Path.join("/labs/balance")

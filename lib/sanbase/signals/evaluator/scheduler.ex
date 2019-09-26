@@ -115,6 +115,12 @@ defmodule Sanbase.Signal.Scheduler do
     last_triggered =
       send_results_list
       |> Enum.reduce(last_triggered, fn
+        # If the key is a list we'll record each individual element separately
+        # because we're checking every item in the list separately if it was
+        # triggered or not.
+        {list, :ok}, acc when is_list(list) ->
+          Enum.map(list, fn elem -> {elem, now} end) |> Map.new() |> Map.merge(acc)
+
         {slug, :ok}, acc ->
           Map.put(acc, slug, now)
 

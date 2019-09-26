@@ -81,6 +81,49 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingWordTest do
     end
   end
 
+  test "cache works when more than 1 word is triggered", _context do
+    Tesla.Mock.mock_global(fn
+      %{method: :post} ->
+        %Tesla.Env{status: 200, body: "ok"}
+    end)
+
+    with_mock Sanbase.SocialData.TrendingWords, [:passthrough],
+      get_currently_trending_words: fn _ ->
+        {:ok, [%{word: "santiment", score: 10}, %{word: "san", score: 11}] ++ top_words()}
+      end do
+      assert capture_log(fn ->
+               Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
+             end) =~ "In total 1/1 trending_words signals were sent successfully"
+
+      Sanbase.Signal.Evaluator.Cache.clear()
+
+      assert capture_log(fn ->
+               Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
+             end) =~ "There were no signals triggered of type"
+    end
+  end
+
+  test "payload is correct when more than 1 word is triggered", context do
+    Tesla.Mock.mock_global(fn
+      %{method: :post} ->
+        %Tesla.Env{status: 200, body: "ok"}
+    end)
+
+    with_mock Sanbase.SocialData.TrendingWords, [:passthrough],
+      get_currently_trending_words: fn _ ->
+        {:ok, [%{word: "santiment", score: 10}, %{word: "san", score: 11}] ++ top_words()}
+      end do
+      [triggered] =
+        TrendingWordsTriggerSettings.type()
+        |> UserTrigger.get_active_triggers_by_type()
+        |> Evaluator.run()
+
+      assert context.trigger_trending_words.id == triggered.id
+      payload = triggered.trigger.settings.payload |> Map.values() |> List.first()
+      assert payload =~ "The words **san** and **santiment** are in the trending words"
+    end
+  end
+
   defp top_words() do
     [
       %{score: 1740.2647984845628, word: "bat"},

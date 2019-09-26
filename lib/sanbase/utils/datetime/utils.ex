@@ -66,6 +66,7 @@ defmodule Sanbase.DateTimeUtils do
       "ms" -> div(int_interval, 1_000_000)
       "s" -> int_interval
       "m" -> int_interval * 60
+      "min" -> int_interval * 60
       "h" -> int_interval * 60 * 60
       "d" -> int_interval * 24 * 60 * 60
       "w" -> int_interval * 7 * 24 * 60 * 60
@@ -87,6 +88,7 @@ defmodule Sanbase.DateTimeUtils do
       "ms" -> "#{int_interval} millisecond(s)"
       "s" -> "#{int_interval} second(s)"
       "m" -> "#{int_interval} minute(s)"
+      "min" -> "#{int_interval} minute(s)"
       "h" -> "#{int_interval} hour(s)"
       "d" -> "#{int_interval} day(s)"
       "w" -> "#{int_interval} week(s)"
@@ -95,8 +97,12 @@ defmodule Sanbase.DateTimeUtils do
 
   def valid_compound_duration?(value) do
     case Integer.parse(value) do
-      {int, string} when is_integer(int) and string in ["ns", "s", "m", "h", "d", "w"] -> true
-      _ -> false
+      {int, string}
+      when is_integer(int) and string in ["ns", "ms", "s", "m", "min", "h", "d", "w"] ->
+        true
+
+      _ ->
+        false
     end
   end
 

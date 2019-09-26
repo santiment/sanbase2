@@ -469,28 +469,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end)
   end
 
-  def signals(%Project{} = project, _args, %{context: %{loader: loader}}) do
-    loader
-    |> ProjectBalanceResolver.usd_balance_loader(project)
-    |> on_load(fn loader ->
-      with {:ok, usd_balance} <- ProjectBalanceResolver.usd_balance_from_loader(loader, project),
-           {:ok, market_cap} <- marketcap_usd(project, nil, nil),
-           false <- is_nil(usd_balance) || is_nil(market_cap),
-           true <- usd_balance > market_cap do
-        {:ok,
-         [
-           %{
-             name: "balance_bigger_than_mcap",
-             description: "The balance of the project is bigger than its market capitalization"
-           }
-         ]}
-      else
-        _ ->
-          {:ok, []}
-      end
-    end)
-  end
-
   @doc ~s"""
   Returns the combined data for all projects in the slugs list.
   The result is a list of data points with a datetime. For each datetime the marketcap

@@ -308,10 +308,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve(&ProjectResolver.ico_price/3)
     end
 
-    field :signals, list_of(:signal) do
-      cache_resolve(&ProjectResolver.signals/3)
-    end
-
     field :price_to_book_ratio, :float do
       cache_resolve(&ProjectResolver.price_to_book_ratio/3)
     end
@@ -435,11 +431,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   object :currency_amount do
     field(:currency_code, :string)
     field(:amount, :float)
-  end
-
-  object :signal do
-    field(:name, non_null(:string))
-    field(:description, non_null(:string))
   end
 
   object :eth_spent_data do

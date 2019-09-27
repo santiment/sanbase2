@@ -22,9 +22,12 @@ defmodule SanbaseWeb.Graphql.Schema do
   alias SanbaseWeb.Graphql.{SanbaseRepo, SanbaseDataloader}
   alias SanbaseWeb.Graphql.Middlewares.ApiUsage
 
+  import_types(Graphql.CustomTypes.Decimal)
+  import_types(Graphql.CustomTypes.DateTime)
+  import_types(Graphql.CustomTypes.JSON)
+  import_types(Graphql.CustomTypes.Interval)
   import_types(Absinthe.Plug.Types)
   import_types(Graphql.TagTypes)
-  import_types(Graphql.CustomTypes)
   import_types(Graphql.AccountTypes)
   import_types(Graphql.TransactionTypes)
   import_types(Graphql.FileTypes)
@@ -32,8 +35,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.MarketSegmentTypes)
   import_types(Graphql.UserSettingsTypes)
   import_types(Graphql.UserTriggerTypes)
-  import_types(Graphql.CustomTypes.JSON)
-  import_types(Graphql.CustomTypes.Interval)
   import_types(Graphql.PaginationTypes)
   import_types(Graphql.SignalsHistoricalActivityTypes)
   import_types(Graphql.TimelineEventTypes)

@@ -119,7 +119,9 @@ defmodule Sanbase.Signal.Scheduler do
         # because we're checking every item in the list separately if it was
         # triggered or not.
         {list, :ok}, acc when is_list(list) ->
-          Enum.map(list, fn elem -> {elem, now} end) |> Map.new() |> Map.merge(acc)
+          Enum.reduce(list, acc, fn elem, inner_acc ->
+            Map.put(inner_acc, elem, now)
+          end)
 
         {slug, :ok}, acc ->
           Map.put(acc, slug, now)

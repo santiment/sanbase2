@@ -33,6 +33,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.UserSettingsTypes)
   import_types(Graphql.UserTriggerTypes)
   import_types(Graphql.CustomTypes.JSON)
+  import_types(Graphql.CustomTypes.Interval)
   import_types(Graphql.PaginationTypes)
   import_types(Graphql.SignalsHistoricalActivityTypes)
   import_types(Graphql.TimelineEventTypes)

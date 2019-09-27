@@ -9,7 +9,7 @@ defmodule Sanbase.Repo.Migrations.CreatePlansTable do
       add(:name, :string, null: false)
       add(:amount, :integer, null: false)
       add(:currency, :string, null: false)
-      add(:interval, :string, null: false)
+      add(:interval, :interval, null: false)
       add(:product_id, references(:products), null: false)
       add(:stripe_id, :string)
       add(:access, :jsonb)

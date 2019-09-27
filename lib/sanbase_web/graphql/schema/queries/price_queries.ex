@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.Schema.PriceQueries do
       arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :interval, default_value: "")
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
@@ -35,7 +35,7 @@ defmodule SanbaseWeb.Graphql.Schema.PriceQueries do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
+      arg(:interval, :interval, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)

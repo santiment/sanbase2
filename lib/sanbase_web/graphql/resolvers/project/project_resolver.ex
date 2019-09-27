@@ -306,20 +306,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def average_dev_activity(%Project{} = project, %{days: days}, %{context: %{loader: loader}}) do
+    data = %{project: project, days: days}
+
     loader
-    |> Dataloader.load(SanbaseDataloader, :average_dev_activity, %{
-      project: project,
-      from: Timex.shift(Timex.now(), days: -days),
-      to: Timex.now(),
-      days: days
-    })
-    |> on_load(&average_dev_activity_from_loader(&1, project))
+    |> Dataloader.load(
+      SanbaseDataloader,
+      :average_dev_activity,
+      data
+    )
+    |> on_load(&average_dev_activity_from_loader(&1, data))
   end
 
-  def average_dev_activity_from_loader(loader, project) do
+  def average_dev_activity_from_loader(loader, data) do
+    %{project: project, days: days} = data
+
     case Project.github_organizations(project) do
       {:ok, orgs} when is_list(orgs) and orgs != [] ->
-        average_dev_activity = average_dev_activity_per_org(loader, orgs)
+        average_dev_activity = average_dev_activity_per_org(loader, orgs, days)
         values = for {:ok, val} <- average_dev_activity, is_number(val), do: val
 
         if Enum.member?(values, &match?({:error, _}, &1)) do
@@ -333,11 +336,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end
   end
 
-  defp average_dev_activity_per_org(loader, organizations) do
+  defp average_dev_activity_per_org(loader, organizations, days) do
+    dev_activity_map =
+      loader
+      |> Dataloader.get(SanbaseDataloader, :average_dev_activity, days) ||
+        %{}
+
     organizations
     |> Enum.map(fn org ->
-      loader
-      |> Dataloader.get(SanbaseDataloader, :average_dev_activity, org)
+      dev_activity_map
+      |> Map.get(org)
       |> case do
         nil -> {:ok, 0}
         result -> result

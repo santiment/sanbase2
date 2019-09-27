@@ -35,27 +35,11 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
 
   def query(:average_dev_activity, args) do
     args = Enum.to_list(args)
-    [%{from: from, to: to, days: days} | _] = args
 
-    args
-    |> Enum.flat_map(fn %{project: project} ->
-      {:ok, organizations} = Project.github_organizations(project)
-      organizations
+    Enum.group_by(args, fn %{days: days} -> days end)
+    |> Sanbase.Parallel.map(fn {days, group} ->
+      {days, average_dev_activity(group, days)}
     end)
-    |> Enum.chunk_every(100)
-    |> Enum.reject(fn orgs -> orgs == nil or orgs == [] end)
-    |> Sanbase.Parallel.map(
-      fn organizations ->
-        {:ok, dev_activity} = Clickhouse.Github.total_dev_activity(organizations, from, to)
-
-        dev_activity
-        |> Enum.map(fn {organization, dev_activity} ->
-          {organization, {:ok, dev_activity / days}}
-        end)
-      end,
-      map_type: :flat_map,
-      max_concurrency: @max_concurrency
-    )
     |> Map.new()
   end
 
@@ -83,6 +67,32 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
       {project.id, eth_spent_per_project(project, eth_spent)}
     end)
     |> Map.new()
+  end
+
+  defp average_dev_activity(group, days) do
+    to = Timex.now()
+    from = Timex.shift(to, days: -days)
+
+    organizations =
+      group
+      |> Enum.flat_map(fn %{project: project} ->
+        {:ok, organizations} = Project.github_organizations(project)
+        organizations
+      end)
+
+    organizations
+    |> Clickhouse.Github.total_dev_activity(from, to)
+    |> case do
+      {:ok, result} ->
+        result
+        |> Enum.map(fn {org, dev_activity} ->
+          {org, {:ok, dev_activity / days}}
+        end)
+        |> Map.new()
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   # Calculate the ethereum spent for a single project by summing the ethereum

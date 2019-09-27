@@ -473,7 +473,7 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
-    "table": "transaction_volume_metrics"
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "transaction_volume_5min",
@@ -511,7 +511,7 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
-    "table": "token_age_consumed_metrics"
+    "table": "daily_metrics_v2"
   },
   {
     "metric": "stack_age_consumed_5min",

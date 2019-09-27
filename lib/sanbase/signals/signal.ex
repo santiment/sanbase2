@@ -46,14 +46,14 @@ defimpl Sanbase.Signal, for: Any do
           settings: %{triggered?: true, payload: payload_map}
         }
       })
-      when is_map(payload_map) do
+      when is_binary(email) and is_map(payload_map) do
     payload_map
     |> Enum.map(fn {identifier, payload} ->
       {identifier, do_send_email(email, payload, id)}
     end)
   end
 
-  def send_email(_), do: :ok
+  def send_email(_), do: []
 
   def send_telegram(%{
         user: %Sanbase.Auth.User{

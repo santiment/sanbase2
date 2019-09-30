@@ -193,6 +193,13 @@ defmodule Sanbase.Clickhouse.Github do
     end
   end
 
+  def metadata(metric) when metric in ["dev_activity", "github_activity"] do
+    %{
+      min_interval: "1m",
+      default_aggregation: :sum
+    }
+  end
+
   def first_datetime(slug) do
     query = """
     SELECT min(dt) FROM #{@table} WHERE owner = ?1

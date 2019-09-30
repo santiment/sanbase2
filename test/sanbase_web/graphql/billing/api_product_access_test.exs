@@ -8,7 +8,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Sanbase.Auth.Apikey
-  alias Sanbase.Clickhouse.Metric
+  alias Sanbase.Metric
 
   setup_all_with_mocks([
     {Sanbase.Prices.Store, [], [fetch_prices_with_resolution: fn _, _, _, _ -> price_resp() end]},

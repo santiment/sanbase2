@@ -4,13 +4,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 8]
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
 
-  alias Sanbase.Clickhouse.Metric
+  alias Sanbase.Metric
 
   @datapoints 300
 
   def get_metric(_root, %{metric: metric}, _resolution), do: {:ok, %{metric: metric}}
   def get_available_metrics(_root, _args, _resolution), do: Metric.available_metrics()
-  def get_available_slugs(_root, _args, _resolution), do: Metric.available_slugs()
+
+  def get_available_slugs(_root, _args, %{source: %{metric: metric}}),
+    do: Metric.available_slugs(metric)
+
   def get_metadata(%{}, _args, %{source: %{metric: metric}}), do: Metric.metadata(metric)
 
   def available_since(_root, %{slug: slug}, %{source: %{metric: metric}}),

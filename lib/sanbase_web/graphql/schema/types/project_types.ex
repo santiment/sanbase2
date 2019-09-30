@@ -326,7 +326,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :eth_spent_over_time, list_of(:eth_spent_data) do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
+      arg(:interval, :interval, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
 

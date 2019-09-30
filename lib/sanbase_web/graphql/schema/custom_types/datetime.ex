@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.CustomTypes do
+defmodule SanbaseWeb.Graphql.CustomTypes.DateTime do
   use Absinthe.Schema.Notation
 
   scalar :ecto_date, name: "EctoDate" do
@@ -47,19 +47,6 @@ defmodule SanbaseWeb.Graphql.CustomTypes do
 
     serialize(&Time.to_iso8601/1)
     parse(&parse_time/1)
-  end
-
-  if Code.ensure_loaded?(Decimal) do
-    scalar :decimal do
-      description("""
-      The `Decimal` scalar type represents signed double-precision fractional
-      values parsed by the `Decimal` library.  The Decimal appears in a JSON
-      response as a string to preserve precision.
-      """)
-
-      serialize(&Absinthe.Type.Custom.Decimal.serialize/1)
-      parse(&Absinthe.Type.Custom.Decimal.parse/1)
-    end
   end
 
   @spec parse_ecto_date(Absinthe.Blueprint.Input.String.t()) :: {:ok, Ecto.Date.type()} | :error

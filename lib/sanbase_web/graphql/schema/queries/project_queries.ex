@@ -121,7 +121,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       arg(:slugs, non_null(list_of(:string)))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, non_null(:string), default_value: "1d")
+      arg(:interval, non_null(:interval), default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
@@ -189,7 +189,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
 
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
+      arg(:interval, :interval, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
@@ -209,7 +209,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
 
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
+      arg(:interval, :interval, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)

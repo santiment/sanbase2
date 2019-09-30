@@ -35,7 +35,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
+      arg(:interval, :interval, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
@@ -83,7 +83,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
+      arg(:interval, :interval, default_value: "1d")
       arg(:size, non_null(:integer))
 
       complexity(&Complexity.from_to_interval/3)
@@ -106,7 +106,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:word, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
+      arg(:interval, :interval, default_value: "1d")
       arg(:size, non_null(:integer))
 
       complexity(&Complexity.from_to_interval/3)
@@ -130,7 +130,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
+      arg(:interval, :interval, default_value: "1d")
       arg(:size, non_null(:integer))
 
       complexity(&Complexity.from_to_interval/3)
@@ -203,7 +203,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
+      arg(:interval, :interval, default_value: "1d")
       arg(:result_size_tail, :integer, default_value: 0)
 
       complexity(&Complexity.from_to_interval/3)
@@ -220,7 +220,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
+      arg(:interval, :interval, default_value: "1d")
       arg(:result_size_tail, :integer, default_value: 0)
 
       complexity(&Complexity.from_to_interval/3)
@@ -248,7 +248,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, non_null(:string), default_value: "1d")
+      arg(:interval, non_null(:interval), default_value: "1d")
       arg(:social_volume_type, non_null(:social_volume_type))
 
       complexity(&Complexity.from_to_interval/3)
@@ -286,7 +286,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:search_text, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, :datetime)
-      arg(:interval, non_null(:string), default_value: "1d")
+      arg(:interval, non_null(:interval), default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl, %{allow_realtime_data: true})
@@ -314,7 +314,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, non_null(:string), default_value: "1d")
+      arg(:interval, non_null(:interval), default_value: "1d")
       arg(:source, non_null(:social_dominance_sources), default_value: :all)
 
       complexity(&Complexity.from_to_interval/3)

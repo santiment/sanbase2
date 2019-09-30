@@ -55,7 +55,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
+      arg(:interval, :interval, default_value: "1d")
       arg(:aggregation, :aggregation, default_value: nil)
 
       complexity(&Complexity.from_to_interval/3)

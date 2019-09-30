@@ -76,7 +76,7 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     field :api_calls_history, list_of(:api_call_data) do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
+      arg(:interval, :interval, default_value: "1d")
 
       cache_resolve(&AccountResolver.api_calls_history/3)
     end

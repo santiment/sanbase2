@@ -34,7 +34,7 @@ defmodule SanbaseWeb.Graphql.Schema.GithubQueries do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
+      arg(:interval, :interval, default_value: "1d")
       arg(:transform, :string, default_value: "None")
       arg(:moving_average_interval_base, :integer, default_value: 7)
 
@@ -54,7 +54,7 @@ defmodule SanbaseWeb.Graphql.Schema.GithubQueries do
       arg(:selector, :github_organizations_selector)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, non_null(:string))
+      arg(:interval, non_null(:interval))
       arg(:transform, :string, default_value: "None")
       arg(:moving_average_interval_base, :integer, default_value: 7)
 

@@ -123,8 +123,7 @@ defmodule Sanbase.Model.Project.AvailableQueries do
     "historicalBalance",
     "topHoldersPercentOfTotalSupply",
     "percentOfTokenSupplyOnExchanges",
-    "shareOfDeposits",
-    "tokenTopTransactions"
+    "shareOfDeposits"
   ]
 
   @bitcoin_specific_queries []
@@ -135,13 +134,13 @@ defmodule Sanbase.Model.Project.AvailableQueries do
     case {project, is_erc20?} do
       {%Project{slug: "ethereum"}, _} ->
         @mineable_specific_queries ++
-          @ethereum_specific_queries ++ @erc20_specific_queries ++ @common_blockchain_queries
+          @ethereum_specific_queries ++ @erc20_specific_queries
 
       {%Project{slug: "bitcoin"}, _} ->
-        @mineable_specific_queries ++ @bitcoin_specific_queries ++ @common_blockchain_queries
+        @mineable_specific_queries ++ @bitcoin_specific_queries
 
       {_, true} ->
-        @erc20_specific_queries ++ @common_blockchain_queries
+        @erc20_specific_queries
 
       _ ->
         []

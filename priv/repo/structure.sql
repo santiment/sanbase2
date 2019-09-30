@@ -116,6 +116,7 @@ CREATE SEQUENCE public.currencies_id_seq
 
 ALTER SEQUENCE public.currencies_id_seq OWNED BY public.currencies.id;
 
+
 --
 -- Name: eth_accounts; Type: TABLE; Schema: public; Owner: -
 --
@@ -1094,8 +1095,7 @@ ALTER SEQUENCE public.promo_coupons_id_seq OWNED BY public.promo_coupons.id;
 
 CREATE TABLE public.roles (
     id bigint NOT NULL,
-    name character varying(255) NOT NULL,
-    code character varying(255) NOT NULL
+    name character varying(255) NOT NULL
 );
 
 
@@ -1648,6 +1648,7 @@ CREATE TABLE public.watchlist_settings (
 
 ALTER TABLE ONLY public.currencies ALTER COLUMN id SET DEFAULT nextval('public.currencies_id_seq'::regclass);
 
+
 --
 -- Name: eth_accounts id; Type: DEFAULT; Schema: public; Owner: -
 --
@@ -1948,6 +1949,7 @@ ALTER TABLE ONLY public.votes ALTER COLUMN id SET DEFAULT nextval('public.votes_
 
 ALTER TABLE ONLY public.currencies
     ADD CONSTRAINT currencies_pkey PRIMARY KEY (id);
+
 
 --
 -- Name: eth_accounts eth_accounts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
@@ -2606,13 +2608,6 @@ CREATE UNIQUE INDEX project_transparency_statuses_name_index ON public.project_t
 --
 
 CREATE UNIQUE INDEX promo_coupons_email_index ON public.promo_coupons USING btree (email);
-
-
---
--- Name: roles_code_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX roles_code_index ON public.roles USING btree (code);
 
 
 --

@@ -520,16 +520,14 @@ defmodule Sanbase.Factory do
   def role_san_team_factory() do
     %Role{
       id: 1,
-      name: "Santiment Team member",
-      code: "san_team"
+      name: "Santiment Team member"
     }
   end
 
   def role_san_clan_factory() do
     %Role{
       id: 2,
-      name: "Santiment Clan member",
-      code: "san_family"
+      name: "Santiment Clan member"
     }
   end
 

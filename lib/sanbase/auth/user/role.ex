@@ -3,22 +3,20 @@ defmodule Sanbase.Auth.Role do
 
   import Ecto.Changeset
 
-  alias Sanbase.Auth.User
-  alias Sanbase.Repo
+  @san_team_role_id 1
+  @san_family_role_id 2
 
   schema "roles" do
     field(:name, :string)
-    field(:code, :string)
+
+    has_many(:users, {"user_roles", Sanbase.Auth.UserRole}, on_delete: :delete_all)
   end
 
   def changeset(%__MODULE__{} = role, attrs \\ %{}) do
     role
-    |> cast(attrs, [:name, :code])
-    |> unique_constraint(:code)
+    |> cast(attrs, [:name])
   end
 
-  def san_family_role_id() do
-    Repo.get_by(__MODULE__, code: "san_family")
-    |> Map.get(:id)
-  end
+  def san_team_role_id(), do: @san_team_role_id
+  def san_family_role_id(), do: @san_family_role_id
 end

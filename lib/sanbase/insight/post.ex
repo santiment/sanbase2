@@ -263,7 +263,6 @@ defmodule Sanbase.Insight.Post do
     |> after_datetime(datetime)
     |> order_by_published_at()
     |> Repo.all()
-    |> Repo.preload(@preloads)
   end
 
   @doc """
@@ -377,7 +376,9 @@ defmodule Sanbase.Insight.Post do
   defp after_datetime(query, datetime) do
     from(
       p in query,
-      where: p.published_at >= ^datetime
+      where: p.published_at >= ^datetime,
+      preload: [:tags],
+      select: [:id, :user_id]
     )
   end
 

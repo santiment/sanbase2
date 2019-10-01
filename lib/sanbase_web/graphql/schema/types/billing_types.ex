@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.Schema.BillingTypes do
     field(:id, :id)
     field(:name, :string)
     field(:product, :product)
-    field(:interval, :string)
+    field(:interval, :interval)
     field(:amount, :integer)
   end
 

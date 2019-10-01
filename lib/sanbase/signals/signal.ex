@@ -46,14 +46,14 @@ defimpl Sanbase.Signal, for: Any do
           settings: %{triggered?: true, payload: payload_map}
         }
       })
-      when is_map(payload_map) do
+      when is_binary(email) and is_map(payload_map) do
     payload_map
     |> Enum.map(fn {identifier, payload} ->
       {identifier, do_send_email(email, payload, id)}
     end)
   end
 
-  def send_email(_), do: :ok
+  def send_email(_), do: []
 
   def send_telegram(%{
         user: %Sanbase.Auth.User{
@@ -89,7 +89,7 @@ defimpl Sanbase.Signal, for: Any do
 
   defp do_send_email(email, payload, trigger_id) do
     Sanbase.MandrillApi.send("signals", email, %{
-      payload: extend_payload(payload, trigger_id) |> Earmark.as_html!()
+      payload: extend_payload(payload, trigger_id) |> Earmark.as_html!(breaks: true)
     })
     |> case do
       {:ok, _} -> :ok

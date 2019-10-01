@@ -56,13 +56,27 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     @desc ~s"""
     Returns a list of GraphQL queries that have data for the given slug.
 
-    For example, any of the queries returned from the query
+    For example, any of the queries returned from the query:
     ```
     {
       projectBySlug(slug: "ethereum"){ availableQueries }
     }
     ```
     can be executed with "ethereum" slug as parameter and it will have data.
+    `devActivity` query will be part of the result if that project has a known
+    github link. So the following query will have data:
+    ```
+    {
+      devActivity(
+        slug: "ethereum"
+        from: "2019-01-01T00:00:00Z"
+        to: "2019-02-01T00:00:00Z"
+        interval: "1d"){
+          datetime
+          activity
+        }
+    }
+    ```
     """
     field :available_queries, list_of(:string) do
       cache_resolve(&ProjectResolver.available_queries/3, ttl: 1800)
@@ -294,10 +308,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve(&ProjectResolver.ico_price/3)
     end
 
-    field :signals, list_of(:signal) do
-      cache_resolve(&ProjectResolver.signals/3)
-    end
-
     field :price_to_book_ratio, :float do
       cache_resolve(&ProjectResolver.price_to_book_ratio/3)
     end
@@ -316,7 +326,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :eth_spent_over_time, list_of(:eth_spent_data) do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
+      arg(:interval, :interval, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
 
@@ -421,11 +431,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   object :currency_amount do
     field(:currency_code, :string)
     field(:amount, :float)
-  end
-
-  object :signal do
-    field(:name, non_null(:string))
-    field(:description, non_null(:string))
   end
 
   object :eth_spent_data do

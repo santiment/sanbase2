@@ -19,7 +19,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   def available_metrics(%Project{slug: slug}, _args, _resolution) do
-    case Metric.available_slugs() do
+    case Cache.wrap(fn -> Metric.available_slugs() end, ttl: 600).() do
       {:ok, list} ->
         if slug in list, do: {:ok, Metric.available_metrics!()}, else: {:ok, []}
 
@@ -306,20 +306,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def average_dev_activity(%Project{} = project, %{days: days}, %{context: %{loader: loader}}) do
+    data = %{project: project, days: days}
+
     loader
-    |> Dataloader.load(SanbaseDataloader, :average_dev_activity, %{
-      project: project,
-      from: Timex.shift(Timex.now(), days: -days),
-      to: Timex.now(),
-      days: days
-    })
-    |> on_load(&average_dev_activity_from_loader(&1, project))
+    |> Dataloader.load(
+      SanbaseDataloader,
+      :average_dev_activity,
+      data
+    )
+    |> on_load(&average_dev_activity_from_loader(&1, data))
   end
 
-  def average_dev_activity_from_loader(loader, project) do
+  def average_dev_activity_from_loader(loader, data) do
+    %{project: project, days: days} = data
+
     case Project.github_organizations(project) do
       {:ok, orgs} when is_list(orgs) and orgs != [] ->
-        average_dev_activity = average_dev_activity_per_org(loader, orgs)
+        average_dev_activity = average_dev_activity_per_org(loader, orgs, days)
         values = for {:ok, val} <- average_dev_activity, is_number(val), do: val
 
         if Enum.member?(values, &match?({:error, _}, &1)) do
@@ -333,11 +336,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end
   end
 
-  defp average_dev_activity_per_org(loader, organizations) do
+  defp average_dev_activity_per_org(loader, organizations, days) do
+    dev_activity_map =
+      loader
+      |> Dataloader.get(SanbaseDataloader, :average_dev_activity, days) ||
+        %{}
+
     organizations
     |> Enum.map(fn org ->
-      loader
-      |> Dataloader.get(SanbaseDataloader, :average_dev_activity, org)
+      dev_activity_map
+      |> Map.get(org)
       |> case do
         nil -> {:ok, 0}
         result -> result
@@ -465,28 +473,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       else
         _ ->
           {:ok, nil}
-      end
-    end)
-  end
-
-  def signals(%Project{} = project, _args, %{context: %{loader: loader}}) do
-    loader
-    |> ProjectBalanceResolver.usd_balance_loader(project)
-    |> on_load(fn loader ->
-      with {:ok, usd_balance} <- ProjectBalanceResolver.usd_balance_from_loader(loader, project),
-           {:ok, market_cap} <- marketcap_usd(project, nil, nil),
-           false <- is_nil(usd_balance) || is_nil(market_cap),
-           true <- usd_balance > market_cap do
-        {:ok,
-         [
-           %{
-             name: "balance_bigger_than_mcap",
-             description: "The balance of the project is bigger than its market capitalization"
-           }
-         ]}
-      else
-        _ ->
-          {:ok, []}
       end
     end)
   end

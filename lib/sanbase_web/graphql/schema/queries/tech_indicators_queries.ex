@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.Schema.TechIndicatorsQueries do
       arg(:currency, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
+      arg(:interval, :interval, default_value: "1d")
       arg(:size, :integer, default_value: 0)
 
       complexity(&Complexity.from_to_interval/3)
@@ -53,7 +53,7 @@ defmodule SanbaseWeb.Graphql.Schema.TechIndicatorsQueries do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
+      arg(:interval, :interval, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)

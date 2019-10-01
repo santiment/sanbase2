@@ -20,7 +20,6 @@ defmodule Sanbase.Model.Project.SourceSlugMapping do
     ssm
     |> cast(attrs, [:source, :slug, :project_id])
     |> validate_required([:source, :slug, :project_id])
-    |> unique_constraint(:slug, name: :slug_unique_combination)
   end
 
   def create(attrs) do

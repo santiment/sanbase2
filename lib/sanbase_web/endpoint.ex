@@ -123,9 +123,6 @@ defmodule SanbaseWeb.Endpoint do
   end
 
   def login_url(token, email, origin_url) do
-    # FIXME remove
-    origin_url = "devcon.santiment.net"
-
     cond do
       String.contains?(origin_url, "devcon") ->
         {:ok, coupon} =

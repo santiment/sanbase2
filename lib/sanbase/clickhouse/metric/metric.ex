@@ -7,6 +7,7 @@ defmodule Sanbase.Clickhouse.Metric do
   The metrics are stored in the '#{@table}' clickhouse table where each metric
   is defined by a `metric_id` and every project is defined by an `asset_id`.
   """
+  @behaviour Sanbase.Metric.Behaviour
 
   use Ecto.Schema
 
@@ -60,8 +61,12 @@ defmodule Sanbase.Clickhouse.Metric do
     field(:computed_at, :utc_datetime)
   end
 
+  @impl Sanbase.Metric.Behaviour
   def free_metrics(), do: @free_metrics
+
+  @impl Sanbase.Metric.Behaviour
   def restricted_metrics(), do: @restricted_metrics
+
   def metric_access_map(), do: @access_map
 
   @doc ~s"""
@@ -69,8 +74,7 @@ defmodule Sanbase.Clickhouse.Metric do
   function can be changed by the last optional parameter. The available
   aggregations are #{inspect(@aggregations -- [nil])}
   """
-  @spec get(metric, slug, DateTime.t(), DateTime.t(), interval, aggregation) ::
-          {:ok, list(metric_result)} | {:error, String.t()}
+  @impl Sanbase.Metric.Behaviour
   def get(metric, slug, from, to, interval, aggregation \\ nil)
 
   def get(_metric, _slug, _from, _to, _interval, aggregation)
@@ -113,6 +117,7 @@ defmodule Sanbase.Clickhouse.Metric do
     end
   end
 
+  @impl Sanbase.Metric.Behaviour
   def metadata(metric) do
     case metric in @metrics_mapset do
       false ->
@@ -141,13 +146,13 @@ defmodule Sanbase.Clickhouse.Metric do
   done so we do not pollute the public API with too much metric names and we
   expose only the user-friendly ones.
   """
-  @spec available_metrics() :: {:ok, list(String.t())}
+  @impl Sanbase.Metric.Behaviour
   def available_metrics(), do: {:ok, @metrics_public_name_list}
 
   @spec available_metrics!() :: list(String.t())
   def available_metrics!(), do: @metrics_public_name_list
 
-  @spec available_slugs() :: {:ok, list(String.t())} | {:error, String.t()}
+  @impl Sanbase.Metric.Behaviour
   def available_slugs(), do: get_available_slugs()
 
   @spec available_aggregations() :: {:ok, list(atom())}
@@ -156,6 +161,7 @@ defmodule Sanbase.Clickhouse.Metric do
   @spec available_aggregations!() :: list(atom())
   def available_aggregations!(), do: @aggregations
 
+  @impl Sanbase.Metric.Behaviour
   def first_datetime(metric, slug) do
     case metric in @metrics_mapset do
       false ->

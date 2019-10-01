@@ -123,7 +123,23 @@ defmodule SanbaseWeb.Endpoint do
   end
 
   def login_url(token, email, origin_url) do
-    origin_url <> "/email_login?" <> URI.encode_query(token: token, email: email)
+    # FIXME remove
+    origin_url = "devcon.santiment.net"
+
+    cond do
+      String.contains?(origin_url, "devcon") ->
+        {:ok, coupon} =
+          Sanbase.Billing.Subscription.PromoFreeTrial.promo_code_stats()["devcon2019"][
+            :coupon_args
+          ]
+          |> Sanbase.StripeApi.create_promo_coupon()
+
+        frontend_url() <>
+          "/email_login?" <> URI.encode_query(token: token, email: email, coupon: coupon.id)
+
+      true ->
+        origin_url <> "/email_login?" <> URI.encode_query(token: token, email: email)
+    end
   end
 
   def verify_url(email_candidate_token, email_candidate) do

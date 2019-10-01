@@ -55,7 +55,6 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2"
   },
-
   {
     "metric": "daily_active_addresses",
     "access": "free",
@@ -63,7 +62,6 @@
     "min_interval": "1d",
     "table": "daily_metrics_v2"
   },
-
   {
     "metric": "mean_realized_price_usd_20y",
     "alias": "mean_realized_price_usd",

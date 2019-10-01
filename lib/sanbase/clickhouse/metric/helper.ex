@@ -40,8 +40,8 @@ defmodule Sanbase.Clickhouse.Metric.Helper do
   end
 
   def metric_with_name_containing(str) do
-    {:ok, metrics} = Metric.available_metrics()
-    Enum.filter(metrics, fn metric -> String.contains?(metric, str) end)
+    Metric.available_metrics()
+    |> Enum.filter(fn metric -> String.contains?(metric, str) end)
   end
 
   def mvrv_metrics(), do: metric_with_name_containing("mvrv") |> wrap()

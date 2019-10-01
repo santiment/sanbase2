@@ -155,7 +155,7 @@ defmodule Sanbase.Clickhouse.Github do
     dev_activity_query(organizations, from, to, interval_sec)
     |> datetime_activity_execute()
     |> case do
-      {:ok, result} -> sma(result, ma_base)
+      {:ok, result} -> Sanbase.Math.simple_moving_average(result, ma_base, value_key: :activity)
       error -> error
     end
   end
@@ -188,16 +188,9 @@ defmodule Sanbase.Clickhouse.Github do
     github_activity_query(organizations, from, to, interval_sec)
     |> datetime_activity_execute()
     |> case do
-      {:ok, result} -> sma(result, ma_base)
+      {:ok, result} -> Sanbase.Math.simple_moving_average(result, ma_base, value_key: :activity)
       error -> error
     end
-  end
-
-  def metadata(metric) when metric in ["dev_activity", "github_activity"] do
-    %{
-      min_interval: "1m",
-      default_aggregation: :sum
-    }
   end
 
   def first_datetime(slug) do
@@ -357,33 +350,5 @@ defmodule Sanbase.Clickhouse.Github do
     ]
 
     {query, args}
-  end
-
-  # Simple moving average of the github activity datapoints. Used to smooth the
-  # noise created by the less amount of events created during the night and weekends
-  defp sma(list, period) when is_list(list) and is_integer(period) and period > 0 do
-    result =
-      list
-      |> Enum.chunk_every(period, 1, :discard)
-      |> Enum.map(fn elems ->
-        {datetime, activity} = average(elems)
-
-        %{
-          datetime: datetime,
-          activity: Float.round(activity, 3)
-        }
-      end)
-
-    {:ok, result}
-  end
-
-  defp average([]), do: nil
-
-  defp average(l) when is_list(l) do
-    values = Enum.map(l, fn %{activity: da} -> da end)
-    %{datetime: datetime} = List.last(l)
-    avg_activity = Sanbase.Math.average(values)
-
-    {datetime, avg_activity}
   end
 end

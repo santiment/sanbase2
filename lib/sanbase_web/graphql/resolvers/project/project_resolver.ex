@@ -21,7 +21,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   def available_metrics(%Project{slug: slug}, _args, _resolution) do
     case Cache.wrap(fn -> Metric.available_slugs_all_metrics() end, ttl: 600).() do
       {:ok, list} ->
-        if slug in list, do: {:ok, Metric.available_metrics!()}, else: {:ok, []}
+        if slug in list, do: {:ok, Metric.available_metrics()}, else: {:ok, []}
 
       {:error, error} ->
         {:error, error}

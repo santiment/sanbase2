@@ -14,8 +14,7 @@ defmodule Sanbase.Project.AvailableMetricsTest do
       result = get_available_metrics(project)
       %{"data" => %{"projectBySlug" => %{"availableMetrics" => available_metrics}}} = result
 
-      expected_metrics = Sanbase.Clickhouse.Metric.available_metrics!()
-      assert available_metrics == expected_metrics
+      assert available_metrics == Sanbase.Clickhouse.Metric.available_metrics()
     end
   end
 

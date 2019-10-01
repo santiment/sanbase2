@@ -5,186 +5,120 @@ defmodule Sanbase.Metric do
   """
 
   alias Sanbase.Clickhouse
-  alias Sanbase.TechIndicators
 
-  @clickhouse_metrics_mapset MapSet.new(Clickhouse.Metric.available_metrics!())
+  @metric_modules [
+    Clickhouse.Github.MetricAdapter,
+    Clickhouse.Metric
+  ]
+
+  Module.register_attribute(__MODULE__, :available_aggregations_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :free_metrics_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :restricted_metrics_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :access_map_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :metric_module_mapping_acc, accumulate: true)
+
+  for module <- @metric_modules do
+    @available_aggregations_acc module.available_aggregations()
+    @free_metrics_acc module.free_metrics()
+    @restricted_metrics_acc module.restricted_metrics()
+    @access_map_acc module.access_map()
+    @metric_module_mapping_acc Enum.map(
+                                 module.available_metrics(),
+                                 fn metric -> %{metric: metric, module: module} end
+                               )
+  end
+
+  @available_aggregations List.flatten(@available_aggregations_acc) |> Enum.uniq()
+  @free_metrics List.flatten(@free_metrics_acc) |> Enum.uniq()
+  @restricted_metrics List.flatten(@restricted_metrics_acc) |> Enum.uniq()
+  @metrics_module_mapping List.flatten(@metric_module_mapping_acc) |> Enum.uniq()
+  @access_map Enum.reduce(@access_map_acc, %{}, fn map, acc -> Map.merge(map, acc) end)
+
+  @metrics Enum.map(@metrics_module_mapping, & &1.metric)
 
   @doc ~s"""
-  TODO
+
   """
-  def get(metric, identifier, from, to, interval, opts) do
-    if metric in @clickhouse_metrics_mapset do
-      {:clickhouse_metric, metric}
-    else
-      metric
+  def get(metric, identifier, from, to, interval, opts \\ [])
+
+  @doc ~s"""
+
+  """
+  def get_aggregated(metric, identifier, from, to, opts \\ [])
+
+  for %{metric: metric, module: module} <- @metrics_module_mapping do
+    def get(unquote(metric), identifier, from, to, interval, opts) do
+      unquote(module).get(
+        unquote(metric),
+        identifier,
+        from,
+        to,
+        interval,
+        opts
+      )
     end
-    |> get_metric(identifier, from, to, interval, opts)
-  end
 
-  @doc ~s"""
-  TODO
-  """
-  def metadata(metric) do
-    if metric in @clickhouse_metrics_mapset do
-      {:clickhouse_metric, metric}
-    else
-      metric
+    def get_aggregated(unquote(metric), identifier, from, to, opts) do
+      unquote(module).get_aggregated(
+        unquote(metric),
+        identifier,
+        from,
+        to,
+        opts
+      )
     end
-    |> get_metadata()
-  end
 
-  @doc ~s"""
-  TODO
-  """
-  def first_datetime(metric, slug) do
-    if metric in @clickhouse_metrics_mapset do
-      {:clickhouse_metric, metric}
-    else
-      metric
+    def metadata(unquote(metric)) do
+      unquote(module).metadata(unquote(metric))
     end
-    |> get_first_datetime(slug)
+
+    def first_datetime(unquote(metric), slug) do
+      unquote(module).first_datetime(unquote(metric), slug)
+    end
+
+    def available_slugs(unquote(metric)) do
+      unquote(module).available_slugs(unquote(metric))
+    end
   end
+
+  def get(metric, _, _, _, _, _), do: {:error, "The '#{metric}' metric is not supported."}
+  def metadata(metric), do: {:error, "The '#{metric}' metric is not supported."}
+  def first_datetime(metric, _), do: {:error, "The '#{metric}' metric is not supported."}
 
   @doc ~s"""
   TODO
   """
-  def available_metrics(), do: Clickhouse.Metric.available_metrics()
-
-  def available_metrics!() do
-    {:ok, result} = available_metrics()
-    result
-  end
+  def available_aggregations(), do: @available_aggregations
 
   @doc ~s"""
   TODO
   """
-  def available_slugs_all_metrics(), do: Clickhouse.Metric.available_slugs()
+  def available_metrics(), do: @metrics
 
   @doc ~s"""
   TODO
   """
-  def available_slugs(_metric) do
-    Clickhouse.Metric.available_slugs()
-  end
-
-  def free_metrics(), do: Sanbase.Clickhouse.Metric.free_metrics()
-  def restricted_metrics(), do: Sanbase.Clickhouse.Metric.restricted_metrics()
-
-  # Private functions
-  defp get_metric({:clickhouse_metric, metric}, identifier, from, to, interval, opts) do
-    Clickhouse.Metric.get(
-      metric,
-      identifier,
-      from,
-      to,
-      interval,
-      Keyword.get(opts, :aggregation)
-    )
-  end
-
-  defp get_metric("dev_activity", identifier, from, to, interval, opts) do
-    Clickhouse.Github.dev_activity(
-      identifier,
-      from,
-      to,
-      interval,
-      Keyword.get(opts, :transformation),
-      Keyword.get(opts, :ma_base)
-    )
-    |> transform_to_value_pairs(:activity)
-  end
-
-  defp get_metric("github_activity", identifier, from, to, interval, opts) do
-    Clickhouse.Github.github_activity(
-      identifier,
-      from,
-      to,
-      interval,
-      Keyword.get(opts, :transformation),
-      Keyword.get(opts, :ma_base)
-    )
-    |> transform_to_value_pairs(:activity)
-  end
-
-  defp get_metric("discord_social_volume", identifier, from, to, interval, _opts) do
-    TechIndicators.social_volume(
-      identifier,
-      from,
-      to,
-      interval,
-      :discord_discussion_overview
-    )
-    |> transform_to_value_pairs(:mentions_count)
-  end
-
-  defp get_metric("telegram_social_volume", identifier, from, to, interval, _opts) do
-    TechIndicators.social_volume(
-      identifier,
-      from,
-      to,
-      interval,
-      :telegram_discussion_overview
-    )
-    |> transform_to_value_pairs(:mentions_count)
-  end
-
-  defp get_metric(
-         "professional_traders_chat_social_volume",
-         identifier,
-         from,
-         to,
-         interval,
-         _opts
-       ) do
-    TechIndicators.social_volume(
-      identifier,
-      from,
-      to,
-      interval,
-      :professional_traders_chat_overview
-    )
-    |> transform_to_value_pairs(:mentions_count)
-  end
-
-  defp get_metric(metric, _, _, _, _, _), do: {:error, "The '#{metric}' metric is not supported."}
-
-  defp transform_to_value_pairs({:ok, result}, key_name) do
-    result =
-      result
-      |> Enum.map(fn %{^key_name => value, datetime: datetime} ->
-        %{value: value, datetime: datetime}
+  def available_slugs_all_metrics() do
+    Sanbase.Cache.get_or_store({:metric_available_slugs_all_metrics, 1800}, fn ->
+      Enum.flat_map(@metric_modules, fn module ->
+        module.available_slugs()
       end)
-
-    {:ok, result}
+      |> Enum.uniq()
+    end)
   end
 
-  defp transform_to_value_pairs({:error, error}, _), do: {:error, error}
+  @doc ~s"""
+  TODO
+  """
+  def free_metrics(), do: @free_metrics
 
-  defp get_metadata({:clickhouse_metric, metric}), do: Clickhouse.Metric.metadata(metric)
-  defp get_metadata("dev_activity" = metric), do: Clickhouse.Github.metadata(metric)
-  defp get_metadata("github_activity" = metric), do: Clickhouse.Github.metadata(metric)
-  defp get_metadata("discord_social_volume" = metric), do: TechIndicators.Metadata.get(metric)
-  defp get_metadata("telegram_social_volume" = metric), do: TechIndicators.Metadata.get(metric)
+  @doc ~s"""
+  TODO
+  """
+  def restricted_metrics(), do: @restricted_metrics
 
-  defp get_metadata("professional_traders_chat_social_volume" = metric),
-    do: TechIndicators.Metadata.get(metric)
-
-  defp get_metadata(metric), do: {:error, "The '#{metric}' metric is not supported."}
-
-  defp get_first_datetime({:clickhouse_metric, metric}, slug),
-    do: Clickhouse.Metric.first_datetime(metric, slug)
-
-  defp get_first_datetime("dev_activity", slug), do: Clickhouse.Github.first_datetime(slug)
-  defp get_first_datetime("github_activity", slug), do: Clickhouse.Github.first_datetime(slug)
-
-  defp get_first_datetime("discord_social_volume", slug),
-    do: TechIndicators.Metadata.first_datetime(slug)
-
-  defp get_first_datetime("telegram_social_volume", slug),
-    do: TechIndicators.Metadata.first_datetime(slug)
-
-  defp get_first_datetime("professional_traders_chat_social_volume", slug),
-    do: TechIndicators.Metadata.first_datetime(slug)
-
-  defp get_first_datetime(metric, _), do: {:error, "The '#{metric}' metric is not supported."}
+  @doc ~s"""
+  TODO
+  """
+  def access_map(), do: @access_map
 end

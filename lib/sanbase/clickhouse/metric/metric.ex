@@ -18,7 +18,8 @@ defmodule Sanbase.Clickhouse.Metric do
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
-  @aggregations [nil, :any, :sum, :avg, :min, :max, :last, :first, :median]
+  @plain_aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median]
+  @aggregations [nil] ++ @plain_aggregations
 
   @metrics_file "available_v2_metrics.json"
   @external_resource Path.join(__DIR__, @metrics_file)
@@ -50,8 +51,6 @@ defmodule Sanbase.Clickhouse.Metric do
   @type slug :: String.t()
   @type metric :: String.t()
   @type interval :: String.t()
-  @type metric_result :: %{datetime: Datetime.t(), value: float()}
-  @type aggregation :: nil | :any | :sum | :avg | :min | :max | :last | :first | :median
 
   schema @table do
     field(:datetime, :utc_datetime, source: :dt)
@@ -67,7 +66,8 @@ defmodule Sanbase.Clickhouse.Metric do
   @impl Sanbase.Metric.Behaviour
   def restricted_metrics(), do: @restricted_metrics
 
-  def metric_access_map(), do: @access_map
+  @impl Sanbase.Metric.Behaviour
+  def access_map(), do: @access_map
 
   @doc ~s"""
   Get a given metric for a slug and time range. The metric's aggregation
@@ -93,6 +93,7 @@ defmodule Sanbase.Clickhouse.Metric do
     end
   end
 
+  @impl Sanbase.Metric.Behaviour
   def get_aggregated(metric, slug, from, to, aggregation \\ nil)
 
   def get_aggregated(_metric, nil, _from, _to, _aggregation), do: {:ok, []}
@@ -128,6 +129,7 @@ defmodule Sanbase.Clickhouse.Metric do
     end
   end
 
+  @impl Sanbase.Metric.Behaviour
   def human_readable_name(metric) do
     case metric in @metrics_mapset do
       false ->
@@ -147,19 +149,16 @@ defmodule Sanbase.Clickhouse.Metric do
   expose only the user-friendly ones.
   """
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(), do: {:ok, @metrics_public_name_list}
-
-  @spec available_metrics!() :: list(String.t())
-  def available_metrics!(), do: @metrics_public_name_list
+  def available_metrics(), do: @metrics_public_name_list
 
   @impl Sanbase.Metric.Behaviour
   def available_slugs(), do: get_available_slugs()
 
-  @spec available_aggregations() :: {:ok, list(atom())}
-  def available_aggregations(), do: {:ok, @aggregations}
+  @impl Sanbase.Metric.Behaviour
+  def available_slugs(_metric), do: get_available_slugs()
 
-  @spec available_aggregations!() :: list(atom())
-  def available_aggregations!(), do: @aggregations
+  @impl Sanbase.Metric.Behaviour
+  def available_aggregations(), do: @aggregations
 
   @impl Sanbase.Metric.Behaviour
   def first_datetime(metric, slug) do
@@ -203,7 +202,8 @@ defmodule Sanbase.Clickhouse.Metric do
     {:ok,
      %{
        min_interval: min_interval,
-       default_aggregation: default_aggregation
+       default_aggregation: default_aggregation,
+       available_aggregations: @plain_aggregations
      }}
   end
 

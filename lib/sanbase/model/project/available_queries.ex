@@ -33,7 +33,6 @@ defmodule Sanbase.Model.Project.AvailableQueries do
       &blockchain_queries/1,
       &database_defined_queries/1,
       &wallets_queries/1,
-      &ico_queries/1,
       &get_metric_queries/1
     ]
     |> Enum.flat_map(fn fun -> fun.(project) end)
@@ -55,49 +54,18 @@ defmodule Sanbase.Model.Project.AvailableQueries do
     end
   end
 
-  defp ico_queries(%Project{} = project) do
-    project
-    |> Sanbase.Repo.preload([:icos])
-    |> case do
-      %Project{icos: icos} when icos != [] ->
-        [
-          "icos",
-          "icoPrice",
-          "initialIco",
-          "fundsRaisedUsdIcoEndPrice",
-          "fundsRaisedEthIcoEndPrice",
-          "fundsRaisedBtcIcoEndPrice"
-        ]
-
-      _ ->
-        []
-    end
-  end
-
   defp wallets_queries(%Project{} = project) do
     project =
       project
       |> Sanbase.Repo.preload([:eth_addresses, :btc_addresses])
 
-    eth_wallet_queries =
-      case project do
-        %Project{eth_addresses: addresses} when addresses != [] ->
-          ["ethSpent", "ethSpentOverTime", "ethTopTransactions", "ethBalance", "usdBalance"]
+    case project do
+      %Project{eth_addresses: addresses} when addresses != [] ->
+        ["ethSpentOverTime"]
 
-        _ ->
-          []
-      end
-
-    btc_wallet_queries =
-      case project do
-        %Project{btc_addresses: addresses} when addresses != [] ->
-          ["btcBalance", "usdBalance"]
-
-        _ ->
-          []
-      end
-
-    btc_wallet_queries ++ eth_wallet_queries
+      _ ->
+        []
+    end
   end
 
   defp slug_queries(%Project{slug: slug}) do
@@ -115,9 +83,7 @@ defmodule Sanbase.Model.Project.AvailableQueries do
       {:ok, orgs} when is_list(orgs) and orgs != [] ->
         [
           "devActivity",
-          "githubActivity",
-          "aveargeDevActivity",
-          "averageGithubActivity"
+          "githubActivity"
         ]
 
       _ ->
@@ -157,25 +123,10 @@ defmodule Sanbase.Model.Project.AvailableQueries do
     "historicalBalance",
     "topHoldersPercentOfTotalSupply",
     "percentOfTokenSupplyOnExchanges",
-    "shareOfDeposits",
-    "tokenTopTransactions"
+    "shareOfDeposits"
   ]
 
   @bitcoin_specific_queries []
-
-  @common_blockchain_queries [
-    "realizedValue",
-    "networkGrowth",
-    "mvrvRatio",
-    "dailyActiveAddresses",
-    "tokenAgeConsumed",
-    "burnRate",
-    "averageTokenAgeConsumedInDays",
-    "tokenVelocity",
-    "nvtRatio",
-    "transactionVolume",
-    "tokenCirculation"
-  ]
 
   defp blockchain_queries(%Project{} = project) do
     is_erc20? = Project.is_erc20?(project)
@@ -183,13 +134,13 @@ defmodule Sanbase.Model.Project.AvailableQueries do
     case {project, is_erc20?} do
       {%Project{slug: "ethereum"}, _} ->
         @mineable_specific_queries ++
-          @ethereum_specific_queries ++ @erc20_specific_queries ++ @common_blockchain_queries
+          @ethereum_specific_queries ++ @erc20_specific_queries
 
       {%Project{slug: "bitcoin"}, _} ->
-        @mineable_specific_queries ++ @bitcoin_specific_queries ++ @common_blockchain_queries
+        @mineable_specific_queries ++ @bitcoin_specific_queries
 
       {_, true} ->
-        @erc20_specific_queries ++ @common_blockchain_queries
+        @erc20_specific_queries
 
       _ ->
         []

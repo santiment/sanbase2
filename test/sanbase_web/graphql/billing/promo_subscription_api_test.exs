@@ -39,7 +39,7 @@ defmodule SanbaseWeb.Graphql.Billing.PromoSubscriprionApiTest do
     test "with right coupon code successfully creates subscriptions", context do
       query = promo_subscription_mutation(@coupon_code)
       response = execute_mutation(context.conn, query, "createPromoSubscription")
-      assert response |> length() == 2
+      assert response |> length() == 3
     end
 
     test "when retrieving this coupon code errors - returns proper error message", context do

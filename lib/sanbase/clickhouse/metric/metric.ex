@@ -239,6 +239,27 @@ defmodule Sanbase.Clickhouse.Metric do
     {query, args}
   end
 
+  defp first_datetime_query(metric, nil) do
+    query = """
+    SELECT
+      toUnixTimestamp(toDateTime(min(dt)))
+    FROM #{@table}
+    PREWHERE
+      metric_id = (
+        SELECT
+          argMax(metric_id, computed_at) AS metric_id
+        FROM
+          metric_metadata
+        PREWHERE
+          name = ?1 ) AND
+      value > 0
+    """
+
+    args = [Map.get(@name_to_column_map, metric)]
+
+    {query, args}
+  end
+
   defp first_datetime_query(metric, slug) do
     query = """
     SELECT

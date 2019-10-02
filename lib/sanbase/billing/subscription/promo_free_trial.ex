@@ -14,8 +14,7 @@ defmodule Sanbase.Billing.Subscription.PromoFreeTrial do
   @promo_code_stats %{
     "devcon2019" => %{
       # API Pro, Sanbase Pro and Grafana Pro
-      # Fixme add grafana plan here
-      promo_plans: [3, 13],
+      promo_plans: [3, 13, 42],
       cancel_after_days: 14,
       coupon_args: %{
         name: "Devcon 2019 santiment free trial",

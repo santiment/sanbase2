@@ -109,8 +109,6 @@ defmodule Sanbase.Billing.Subscription.PromoFreeTrial do
   end
 
   defp handle_error(user, error) do
-    IO.inspect(error)
-
     case error do
       %Stripe.Error{message: message} = error ->
         log(user, error)

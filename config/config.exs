@@ -157,6 +157,11 @@ config :sanbase, SanbaseWeb.Plug.SessionPlug,
 config :sanbase, SanbaseWeb.Plug.BotLoginPlug,
   bot_login_endpoint: {:system, "BOT_LOGIN_SECRET_ENDPOINT"}
 
+config :sanbase, Sanbase.GrafanaApi,
+  grafana_base_url: {:system, "GRAFANA_BASE_URL"},
+  grafana_user: {:system, "GRAFANA_USER"},
+  grafana_pass: {:system, "GRAFANA_PASS"}
+
 # Import configs
 import_config "ex_admin_config.exs"
 import_config "influxdb_config.exs"

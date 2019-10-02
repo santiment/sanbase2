@@ -294,11 +294,10 @@ defmodule Sanbase.Billing.Subscription do
   defdelegate is_restricted?(query), to: AccessChecker
 
   def plan_name(subscription), do: subscription.plan.name
+  def create_or_update_stripe_customer(_, _card_token \\ nil)
 
-  # Private functions
-
-  defp create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)
-       when is_nil(stripe_id) do
+  def create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)
+      when is_nil(stripe_id) do
     StripeApi.create_customer(user, card_token)
     |> case do
       {:ok, stripe_customer} ->
@@ -311,13 +310,13 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
-  defp create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, nil)
-       when is_binary(stripe_id) do
+  def create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, nil)
+      when is_binary(stripe_id) do
     {:ok, user}
   end
 
-  defp create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)
-       when is_binary(stripe_id) do
+  def create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)
+      when is_binary(stripe_id) do
     StripeApi.update_customer(user, card_token)
     |> case do
       {:ok, _} ->
@@ -327,6 +326,8 @@ defmodule Sanbase.Billing.Subscription do
         {:error, reason}
     end
   end
+
+  # Private functions
 
   defp create_stripe_subscription(user, plan, nil) do
     percent_off =

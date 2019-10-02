@@ -1,5 +1,7 @@
-defmodule SanbaseWeb.Graphql.Clickhouse.NVTTest do
+defmodule SanbaseWeb.Graphql.NVTApiTest do
   use SanbaseWeb.ConnCase, async: false
+
+  alias Sanbase.Clickhouse.NVT
 
   import SanbaseWeb.Graphql.TestHelpers
   import Mock
@@ -8,8 +10,6 @@ defmodule SanbaseWeb.Graphql.Clickhouse.NVTTest do
   import Sanbase.Factory
 
   @moduletag capture_log: true
-
-  alias Sanbase.Clickhouse.NVT
 
   setup do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))

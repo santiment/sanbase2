@@ -84,19 +84,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     |> Sanbase.Utils.Transform.rename_map_keys(:value, :in_out_difference)
   end
 
-  def token_circulation(
-        _root,
-        %{slug: _slug, from: _from, to: _to, interval: _interval} = args,
-        _resolution
-      ) do
-    SanbaseWeb.Graphql.Resolvers.MetricResolver.get_timeseries_data(
-      %{},
-      args,
-      %{source: %{metric: "circulation_1d"}}
-    )
-    |> Sanbase.Utils.Transform.rename_map_keys(:value, :token_circulation)
-  end
-
   def token_velocity(
         _root,
         %{slug: _slug, from: _from, to: _to, interval: _interval} = args,

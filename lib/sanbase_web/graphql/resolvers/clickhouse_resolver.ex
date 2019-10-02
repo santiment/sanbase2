@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   require Logger
 
   alias Sanbase.Model.Project
-  import SanbaseWeb.Graphql.Helpers.Utils, only: [fit_from_datetime: 2, calibrate_interval: 7]
+  import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 7]
 
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
 
@@ -14,21 +14,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   alias Sanbase.Clickhouse.HistoricalBalance.MinersBalance
 
   alias Sanbase.Clickhouse.{
-    DailyActiveAddresses,
+    NVT,
+    RealizedValue,
     DailyActiveDeposits,
     GasUsed,
     HistoricalBalance,
     MiningPoolsDistribution,
-    MVRV,
     NetworkGrowth,
-    NVT,
     PercentOfTokenSupplyOnExchanges,
-    RealizedValue,
     TopHolders,
-    ShareOfDeposits,
-    TokenCirculation,
-    TokenVelocity,
-    Bitcoin
+    ShareOfDeposits
   }
 
   # Return this number of datapoints is the provided interval is an empty string
@@ -127,105 +122,52 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     end
   end
 
-  def mvrv_ratio(_root, %{slug: "bitcoin", from: from, to: to, interval: interval}, _resolution) do
-    with {:ok, from, to, interval} <-
-           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86_400, @datapoints) do
-      Bitcoin.mvrv_ratio(from, to, interval)
-    end
-  end
-
-  def mvrv_ratio(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
-    # TODO: Check if interval is a whole day as in token circulation
-    case MVRV.mvrv_ratio(slug, from, to, interval) do
-      {:ok, mvrv_ratio} ->
-        {:ok, mvrv_ratio}
-
-      {:error, error} ->
-        {:error, handle_graphql_error("MVRV Ratio", slug, error)}
-    end
+  def mvrv_ratio(_root, %{slug: _, from: _, to: _, interval: _} = args, _resolution) do
+    SanbaseWeb.Graphql.Resolvers.MetricResolver.get_timeseries_data(
+      %{},
+      args,
+      %{source: %{metric: "mvrv_usd"}}
+    )
+    |> Sanbase.Utils.Transform.rename_map_keys(:value, :ratio)
   end
 
   def token_circulation(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval} = args,
+        %{slug: _, from: _, to: _, interval: _} = args,
         _resolution
       ) do
-    with ticker when is_binary(ticker) <- Project.ticker_by_slug(slug),
-         ticker_slug <- ticker <> "_" <> slug,
-         {:ok, from, to, interval} <-
-           calibrate_interval(
-             TokenCirculation,
-             ticker_slug,
-             from,
-             to,
-             interval,
-             86_400,
-             @datapoints
-           ),
-         {:ok, token_circulation} <-
-           TokenCirculation.token_circulation(
-             :less_than_a_day,
-             ticker_slug,
-             from,
-             to,
-             interval
-           ) do
-      {:ok, token_circulation |> fit_from_datetime(args)}
-    else
-      {:error, error} ->
-        {:error, handle_graphql_error("Token Circulation", slug, error)}
-    end
+    SanbaseWeb.Graphql.Resolvers.MetricResolver.get_timeseries_data(
+      %{},
+      args,
+      %{source: %{metric: "circulation_1d"}}
+    )
+    |> Sanbase.Utils.Transform.rename_map_keys(:value, :token_circulation)
   end
 
   def token_velocity(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval} = args,
+        %{slug: _, from: _, to: _, interval: _} = args,
         _resolution
       ) do
-    with ticker when is_binary(ticker) <- Project.ticker_by_slug(slug),
-         ticker_slug <- ticker <> "_" <> slug,
-         {:ok, from, to, interval} <-
-           calibrate_interval(TokenVelocity, ticker_slug, from, to, interval, 86_400, @datapoints),
-         {:ok, token_velocity} <-
-           TokenVelocity.token_velocity(ticker_slug, from, to, interval) do
-      {:ok, token_velocity |> fit_from_datetime(args)}
-    else
-      {:error, error} ->
-        {:error, handle_graphql_error("Token Velocity", slug, error)}
-    end
+    SanbaseWeb.Graphql.Resolvers.MetricResolver.get_timeseries_data(
+      %{},
+      args,
+      %{source: %{metric: "velocity"}}
+    )
+    |> Sanbase.Utils.Transform.rename_map_keys(:value, :token_velocity)
   end
 
   def daily_active_addresses(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval},
+        %{slug: _, from: _, to: _, interval: _} = args,
         _resolution
       ) do
-    with {:ok, contract, _} <- Project.contract_info_by_slug(slug),
-         {:ok, from, to, interval} <-
-           calibrate_interval(
-             DailyActiveAddresses,
-             contract,
-             from,
-             to,
-             interval,
-             86_400,
-             @datapoints
-           ),
-         {:ok, daily_active_addresses} <-
-           DailyActiveAddresses.average_active_addresses(
-             contract,
-             from,
-             to,
-             interval
-           ) do
-      {:ok, daily_active_addresses}
-    else
-      {:error, {:missing_contract, error_msg}} ->
-        {:error, error_msg}
-
-      {:error, error} ->
-        {:error, handle_graphql_error("Daily Active Addresses", slug, error)}
-    end
+    SanbaseWeb.Graphql.Resolvers.MetricResolver.get_timeseries_data(
+      %{},
+      args,
+      %{source: %{metric: "daily_active_addresses"}}
+    )
+    |> Sanbase.Utils.Transform.rename_map_keys(:value, :active_addresses)
   end
 
   @doc ~S"""

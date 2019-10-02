@@ -37,8 +37,9 @@ defmodule Sanbase.Billing.Subscription.PromoFreeTrial do
 
   def create_promo_subscription(%User{stripe_customer_id: stripe_customer_id} = user, coupon)
       when is_binary(stripe_customer_id) do
-    with {:ok, coupon} <- check_coupon(coupon) do
-      promo_subscribe(user, coupon)
+    with {:ok, coupon} <- check_coupon(coupon),
+         {:ok, subscriptions} <- promo_subscribe(user, coupon) do
+      {:ok, subscriptions}
     else
       {:error, error} ->
         handle_error(user, error)
@@ -47,8 +48,9 @@ defmodule Sanbase.Billing.Subscription.PromoFreeTrial do
 
   def create_promo_subscription(%User{} = user, coupon) do
     with {:ok, coupon} <- check_coupon(coupon),
-         {:ok, user} <- Subscription.create_or_update_stripe_customer(user) do
-      promo_subscribe(user, coupon)
+         {:ok, user} <- Subscription.create_or_update_stripe_customer(user),
+         {:ok, subscriptions} <- promo_subscribe(user, coupon) do
+      {:ok, subscriptions}
     else
       {:error, error} ->
         handle_error(user, error)
@@ -67,14 +69,8 @@ defmodule Sanbase.Billing.Subscription.PromoFreeTrial do
         {:ok, Subscription.user_subscriptions(user)}
 
       # we are subscribing to multiple plans so any of them can fail
-      errors ->
-        Logger.error(
-          "Error creating promotional subscription for user: #{inspect(user)}, reason: #{
-            inspect(errors)
-          }"
-        )
-
-        {:error, @generic_error_message}
+      [error | _] ->
+        error
     end
   end
 
@@ -104,18 +100,37 @@ defmodule Sanbase.Billing.Subscription.PromoFreeTrial do
          true <- coupon.valid and coupon.metadata["current_promotion"] in @current_promotions do
       {:ok, coupon}
     else
+      {:error, %Stripe.Error{} = error} ->
+        {:error, error}
+
       _ ->
-        {:error, "Invalid coupon code"}
+        {:error, "The coupon code is not valid or the promotion is outdated."}
     end
   end
 
   defp handle_error(user, error) do
+    IO.inspect(error)
+
+    case error do
+      %Stripe.Error{message: message} = error ->
+        log(user, error)
+        {:error, message}
+
+      error_msg when is_binary(error_msg) ->
+        log(user, error)
+        {:error, error_msg}
+
+      error ->
+        log(user, error)
+        {:error, @generic_error_message}
+    end
+  end
+
+  defp log(user, error) do
     Logger.error(
       "Error creating promotional subscription for user: #{inspect(user)}, reason: #{
         inspect(error)
       }"
     )
-
-    {:error, @generic_error_message}
   end
 end

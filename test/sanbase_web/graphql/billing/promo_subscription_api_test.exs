@@ -8,9 +8,9 @@ defmodule SanbaseWeb.Graphql.Billing.PromoSubscriprionApiTest do
 
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestReponse
-  alias Sanbase.Billing.Subscription
 
   @coupon_code "test_coupon"
+  @error_msg "something happened"
 
   setup_with_mocks([
     {StripeApi, [:passthrough],
@@ -29,7 +29,6 @@ defmodule SanbaseWeb.Graphql.Billing.PromoSubscriprionApiTest do
        end
      ]}
   ]) do
-    # Needs to be staked to apply the discount
     user = insert(:staked_user)
     conn = setup_jwt_auth(build_conn(), user)
 
@@ -43,13 +42,12 @@ defmodule SanbaseWeb.Graphql.Billing.PromoSubscriprionApiTest do
       assert response |> length() == 2
     end
 
-    test "with unsupported coupon code returns proper error message", context do
+    test "when retrieving this coupon code errors - returns proper error message", context do
       with_mocks([
         {StripeApi, [:passthrough],
          [
            retrieve_coupon: fn _ ->
-             {:error,
-              %Stripe.Error{message: "Unsupported promotional code", source: "ala", code: "bala"}}
+             {:error, %Stripe.Error{message: @error_msg, source: "ala", code: "bala"}}
            end
          ]}
       ]) do
@@ -58,9 +56,100 @@ defmodule SanbaseWeb.Graphql.Billing.PromoSubscriprionApiTest do
         capture_log(fn ->
           error_msg = execute_mutation_with_error(context.conn, query)
 
-          assert error_msg == Subscription.PromoFreeTrial.generic_error_message()
+          assert error_msg == @error_msg
         end)
       end
+    end
+  end
+
+  test "with invalid/unsupported coupon code returns proper error message", context do
+    with_mocks([
+      {StripeApi, [:passthrough],
+       [
+         retrieve_coupon: fn _ ->
+           {:ok,
+            %Stripe.Coupon{
+              id: @coupon_code,
+              valid: false
+            }}
+         end
+       ]}
+    ]) do
+      query = promo_subscription_mutation("UNUSED")
+
+      capture_log(fn ->
+        error_msg = execute_mutation_with_error(context.conn, query)
+
+        assert error_msg =~ "The coupon code is not valid"
+      end)
+    end
+  end
+
+  test "creating Stripe customer fails - return proper message", context do
+    with_mocks([
+      {StripeApi, [:passthrough],
+       [
+         create_customer: fn _, _ ->
+           {:error, %Stripe.Error{message: @error_msg, source: "ala", code: "bala"}}
+         end
+       ]},
+      {StripeApi, [:passthrough],
+       [create_subscription: fn _ -> StripeApiTestReponse.create_subscription_resp() end]},
+      {StripeApi, [:passthrough],
+       [
+         retrieve_coupon: fn _ ->
+           {:ok,
+            %Stripe.Coupon{
+              id: @coupon_code,
+              valid: true,
+              metadata: %{"current_promotion" => "devcon2019"}
+            }}
+         end
+       ]}
+    ]) do
+      query = promo_subscription_mutation(@coupon_code)
+
+      capture_log(fn ->
+        error_msg = execute_mutation_with_error(context.conn, query)
+
+        assert error_msg =~ @error_msg
+      end)
+    end
+  end
+
+  test "creating subscription in Stripe fails - return proper message", context do
+    with_mocks([
+      {StripeApi, [:passthrough],
+       [
+         create_customer: fn _, _ ->
+           StripeApiTestReponse.create_or_update_customer_resp()
+         end
+       ]},
+      {StripeApi, [:passthrough],
+       [
+         create_subscription: fn _ ->
+           {:error, %Stripe.Error{message: @error_msg, source: "ala", code: "bala"}}
+         end
+       ]},
+      {StripeApi, [:passthrough],
+       [
+         retrieve_coupon: fn _ ->
+           {:ok,
+            %Stripe.Coupon{
+              id: @coupon_code,
+              valid: true,
+              metadata: %{"current_promotion" => "devcon2019"}
+            }}
+         end
+       ]}
+    ]) do
+      query = promo_subscription_mutation(@coupon_code)
+
+      capture_log(fn ->
+        error_msg = execute_mutation_with_error(context.conn, query)
+
+        assert error_msg =~ @error_msg
+      end)
     end
   end
 

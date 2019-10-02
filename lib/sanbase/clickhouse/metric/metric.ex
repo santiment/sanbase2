@@ -174,9 +174,9 @@ defmodule Sanbase.Clickhouse.Metric do
   defp get_metric(metric, slug, from, to, interval, aggregation) do
     {query, args} = metric_query(metric, slug, from, to, interval, aggregation)
 
-    ClickhouseRepo.query_transform(query, args, fn [datetime, value] ->
+    ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
       %{
-        datetime: DateTime.from_unix!(datetime),
+        datetime: DateTime.from_unix!(unix),
         value: value
       }
     end)

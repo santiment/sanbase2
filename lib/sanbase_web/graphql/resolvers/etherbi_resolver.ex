@@ -10,8 +10,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     TokenVelocity,
     TokenCirculation,
     TokenAgeConsumed,
-    TransactionVolume,
-    ExchangeFundsFlow
+    TransactionVolume
   }
 
   alias Sanbase.Clickhouse.Bitcoin
@@ -122,28 +121,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   def exchange_funds_flow(
         _root,
         %{
-          slug: slug,
-          from: from,
-          to: to,
-          interval: interval
+          slug: _slug,
+          from: _from,
+          to: _to,
+          interval: _interval
         } = args,
         _resolution
       ) do
-    with {:ok, contract, token_decimals} <- Project.contract_info_by_slug(slug),
-         {:ok, from, to, interval} <-
-           calibrate_interval(ExchangeFundsFlow, contract, from, to, interval, 3600, @datapoints),
-         {:ok, exchange_funds_flow} <-
-           ExchangeFundsFlow.transactions_in_out_difference(
-             contract,
-             from,
-             to,
-             interval,
-             token_decimals
-           ) do
-      {:ok, exchange_funds_flow |> fit_from_datetime(args)}
-    else
+    SanbaseWeb.Graphql.Resolvers.MetricResolver.get_timeseries_data(
+      %{},
+      args,
+      %{source: %{metric: "exchange_balance"}}
+    )
+    |> case do
+      {:ok, result} ->
+        result =
+          result
+          |> Enum.map(fn %{value: value, datetime: datetime} ->
+            %{in_out_difference: value, datetime: datetime}
+          end)
+
+        {:ok, result}
+
       {:error, error} ->
-        {:error, handle_graphql_error("Exchange Funds Flow", slug, error)}
+        {:error, error}
     end
   end
 

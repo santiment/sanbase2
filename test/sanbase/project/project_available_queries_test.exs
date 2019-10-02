@@ -22,6 +22,40 @@ defmodule Sanbase.Project.AvailableQueriesTest do
     []
   end
 
+  test "btcBalance present only when there are btc addresses" do
+    project_with_btc =
+      insert(:project, %{
+        slug: rand_str(),
+        btc_addresses: [build(:project_btc_address)]
+      })
+
+    project_without_btc =
+      insert(:project, %{
+        slug: rand_str(),
+        btc_addresses: []
+      })
+
+    assert "btcBalance" in AvailableQueries.get(project_with_btc)
+    assert "btcBalance" not in AvailableQueries.get(project_without_btc)
+  end
+
+  test "ethBalance present only when there are eth addresses" do
+    project_with_eth =
+      insert(:project, %{
+        slug: rand_str(),
+        eth_addresses: [build(:project_eth_address)]
+      })
+
+    project_without_eth =
+      insert(:project, %{
+        slug: rand_str(),
+        eth_addresses: []
+      })
+
+    assert "ethBalance" in AvailableQueries.get(project_with_eth)
+    assert "ethBalance" not in AvailableQueries.get(project_without_eth)
+  end
+
   test "ethereum has specific metrics" do
     project =
       insert(:project, %{
@@ -78,7 +112,7 @@ defmodule Sanbase.Project.AvailableQueriesTest do
 
     # some github metrics
     assert Enum.all?(
-             ["githubActivity", "devActivity"],
+             ["githubActivity", "aveargeDevActivity", "averageGithubActivity"],
              &Enum.member?(available_metrics, &1)
            )
 
@@ -90,13 +124,19 @@ defmodule Sanbase.Project.AvailableQueriesTest do
 
     # some eth addresses metrics
     assert Enum.all?(
-             ["ethSpentOverTime"],
+             ["ethSpent", "ethSpentOverTime", "ethTopTransactions", "ethBalance"],
              &Enum.member?(available_metrics, &1)
            )
 
     # some ERC20 metrics
     assert Enum.all?(
-             ["exchangeFundsFlow", "historicalBalance"],
+             [
+               "dailyActiveAddresses",
+               "transactionVolume",
+               "tokenVelocity",
+               "exchangeFundsFlow",
+               "historicalBalance"
+             ],
              &Enum.member?(available_metrics, &1)
            )
   end

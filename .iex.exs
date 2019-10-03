@@ -37,10 +37,7 @@ alias Sanbase.UserList
 alias Sanbase.UserList.ListItem
 
 alias Sanbase.Blockchain.{
-  BurnRate,
-  DailyActiveAddresses,
-  TransactionVolume,
-  TokenAgeConsumed
+  DailyActiveAddresses
 }
 
 alias Sanbase.Clickhouse.{

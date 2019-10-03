@@ -45,8 +45,7 @@ alias Sanbase.Clickhouse.{
   EthDailyActiveAddresses,
   Erc20DailyActiveAddresses,
   Erc20Transfers,
-  MarkExchanges,
-  Erc20TransactionVolume
+  MarkExchanges
 }
 
 alias Sanbase.{

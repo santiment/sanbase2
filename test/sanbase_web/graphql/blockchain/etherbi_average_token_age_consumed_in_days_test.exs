@@ -6,14 +6,11 @@ defmodule Sanbase.Etherbi.AverageTokenAgeConsumedInDaysApiTest do
   alias Sanbase.Model.Project
   alias Sanbase.Repo
 
-  require Sanbase.Factory
-
+  import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.TimescaleFactory
 
   setup do
-    %{user: user} =
-      Sanbase.Factory.insert(:subscription_pro_sanbase, user: Sanbase.Factory.insert(:user))
+    %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
 
     conn = setup_jwt_auth(build_conn(), user)
 

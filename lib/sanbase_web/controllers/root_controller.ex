@@ -40,11 +40,13 @@ defmodule SanbaseWeb.RootController do
 
     with {:ok, user} <- bearer_authorize(token),
          {:ok, access_token} <- Hydra.get_access_token(),
-         {:ok, redirect_url, client_id} <- Hydra.get_consent_data(consent, access_token),
-         :ok <- Hydra.manage_consent(consent, access_token, user, client_id) do
+         {:ok, redirect_url, _client_id} <- Hydra.get_consent_data(consent, access_token),
+         {:ok, _} <- Hydra.manage_consent(consent, access_token, user) do
       redirect(conn, external: redirect_url)
     else
-      _ -> redirect(conn, to: "/")
+      error ->
+        Logger.error("Error in ouath #{inspect(error)}")
+        redirect(conn, to: "/")
     end
   end
 

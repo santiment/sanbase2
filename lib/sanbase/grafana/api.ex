@@ -24,18 +24,33 @@ defmodule Sanbase.GrafanaApi do
     |> handle_response()
   end
 
-  def add_subscribed_user_to_team(%User{} = user, plan_id) do
+  def create_user(%User{username: username, email: email}) do
+    request_path = "api/admin/users"
+
+    data =
+      %{
+        "name" => username || email,
+        "email" => email || username,
+        "login" => username || email,
+        "password" => :crypto.strong_rand_bytes(16) |> Base.encode64() |> binary_part(0, 16)
+      }
+      |> Jason.encode!()
+
+    http_client().post(base_url() <> request_path, data, headers())
+    |> handle_response()
+  end
+
+  def add_subscribed_user_to_team(grafana_user_id, plan_id) do
     team_name = @plan_team_map[plan_id]
 
     with {:ok, %{"id" => team_id}} <- get_team_by_name(team_name),
-         {:ok, %{"id" => user_id}} <- get_user_by_email_or_metamask(user),
          {:ok, team_members} <- get_team_members(team_id) do
       team_members
-      |> Enum.find(fn %{"userId" => uid} -> uid == user_id end)
+      |> Enum.find(fn %{"userId" => user_id} -> user_id == grafana_user_id end)
       |> case do
         nil ->
-          remove_user_from_all_teams(user_id)
-          add_user_to_team(user_id, team_id)
+          remove_user_from_all_teams(grafana_user_id)
+          add_user_to_team(grafana_user_id, team_id)
 
         _ ->
           {:ok, "User is already in this team"}

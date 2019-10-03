@@ -4,6 +4,7 @@ defmodule Sanbase.Oauth2.Hydra do
 
   alias Sanbase.Auth.User
   alias Sanbase.Billing.{Product, Subscription, Plan}
+  alias Sanbase.GrafanaApi
 
   def get_access_token() do
     with {:ok, %HTTPoison.Response{body: json_body, status_code: 200}} <- do_fetch_access_token(),
@@ -28,25 +29,42 @@ defmodule Sanbase.Oauth2.Hydra do
   def manage_consent(consent, access_token, user) do
     case Subscription.current_subscription(user, Product.product_sangraphs()) do
       %Subscription{plan: %Plan{id: plan_id}} ->
-        accept_consent(consent, access_token, user)
+        find_or_create_grafana_user(user)
+        |> IO.inspect()
+        |> case do
+          {:ok, %{"id" => grafana_user_id}} ->
+            GrafanaApi.add_subscribed_user_to_team(grafana_user_id, plan_id)
+            |> IO.inspect()
 
-        # If user does not exist it will be created only after user browser is redirected so we don' have control here.
-        # We wait for 2 secs and add this user async to the corresponding team to mitigate this issue.
-        add_user_to_team_async_with_sleep(user, plan_id)
-        {:ok, "Adding user to the corresponding team"}
+            accept_consent(consent, access_token, user)
+
+          {:error, reason} ->
+            Logger.error("Error find_or_create_grafana_user: reason #{inspect(reason)}")
+
+            reject_consent(
+              consent,
+              access_token,
+              "Unexpected error occured! Please, try again or contact site administrator."
+            )
+        end
 
       nil ->
-        Logger.warn("#{user.email || user.username} doesn't have grafana subscription")
-        reject_consent(consent, access_token, user)
+        error_msg = "#{user.email || user.username} doesn't have an active Sangraphs subscription"
+        Logger.error(error_msg)
+        reject_consent(consent, access_token, error_msg)
     end
   end
 
   # helpers
-  defp add_user_to_team_async_with_sleep(user, plan_id) do
-    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-      Process.sleep(2000)
-      Sanbase.GrafanaApi.add_subscribed_user_to_team(user, plan_id)
-    end)
+
+  defp find_or_create_grafana_user(user) do
+    case GrafanaApi.get_user_by_email_or_metamask(user) do
+      {:ok, grafana_user} ->
+        {:ok, grafana_user}
+
+      _ ->
+        GrafanaApi.create_user(user)
+    end
   end
 
   defp accept_consent(consent, access_token, user) do
@@ -54,8 +72,8 @@ defmodule Sanbase.Oauth2.Hydra do
     |> handle_consent_result("accept")
   end
 
-  defp reject_consent(consent, access_token, user) do
-    do_reject_consent(consent, access_token, user)
+  defp reject_consent(consent, access_token, error_msg) do
+    do_reject_consent(consent, access_token, error_msg)
     |> handle_consent_result("reject")
   end
 
@@ -101,10 +119,12 @@ defmodule Sanbase.Oauth2.Hydra do
     ])
   end
 
-  defp do_reject_consent(consent, access_token, %User{username: username, email: email}) do
-    data = %{
-      "reason" => "#{email || username} doesn't have an active Sangraphs subscription"
-    }
+  defp do_reject_consent(
+         consent,
+         access_token,
+         error_msg
+       ) do
+    data = %{"reason" => error_msg}
 
     HTTPoison.patch(consent_url() <> "/#{consent}/reject", Jason.encode!(data), [
       {"Authorization", "Bearer #{access_token}"},

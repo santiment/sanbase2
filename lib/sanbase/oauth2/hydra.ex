@@ -3,7 +3,7 @@ defmodule Sanbase.Oauth2.Hydra do
   require Logger
 
   alias Sanbase.Auth.User
-  alias Sanbase.Billing.{Product, Subscription}
+  alias Sanbase.Billing.{Product, Subscription, Plan}
 
   def get_access_token() do
     with {:ok, %HTTPoison.Response{body: json_body, status_code: 200}} <- do_fetch_access_token(),
@@ -26,30 +26,35 @@ defmodule Sanbase.Oauth2.Hydra do
   end
 
   def manage_consent(consent, access_token, user) do
-    subscription = Subscription.current_subscription(user, Product.product_sangraphs())
+    case Subscription.current_subscription(user, Product.product_sangraphs()) do
+      %Subscription{plan: %Plan{id: plan_id}} ->
+        accept_consent(consent, access_token, user)
+        Sanbase.GrafanaApi.add_subscribed_user_to_team(user, plan_id)
 
-    if subscription do
-      accept_consent(consent, access_token, user)
-      Sanbase.GrafanaApi.add_user_to_team(user, subscription.plan.id)
-      :ok
-    else
-      Logger.warn("#{user.email || user.username} doesn't have grafana subscription")
-
-      reject_consent(consent, access_token, user)
+      nil ->
+        Logger.warn("#{user.email || user.username} doesn't have grafana subscription")
+        reject_consent(consent, access_token, user)
     end
   end
 
   def accept_consent(consent, access_token, user) do
-    case do_accept_consent(consent, access_token, user) do
-      {:ok, %HTTPoison.Response{status_code: 204}} -> :ok
-      error -> Logger.warn("Error accepting consent: " <> inspect(error))
-    end
+    do_accept_consent(consent, access_token, user)
+    |> handle_consent_result("accept")
   end
 
   def reject_consent(consent, access_token, user) do
-    case do_reject_consent(consent, access_token, user) do
-      {:ok, %HTTPoison.Response{status_code: 204}} -> :ok
-      error -> Logger.warn("Error rejecting consent: " <> inspect(error))
+    do_reject_consent(consent, access_token, user)
+    |> handle_consent_result("reject")
+  end
+
+  defp handle_consent_result(result, type) do
+    case result do
+      {:ok, %HTTPoison.Response{status_code: 204}} ->
+        {:ok, "Consent #{type} success"}
+
+      error ->
+        Logger.warn("Error #{type} consent: " <> inspect(error))
+        {:ok, "Consent #{type} error"}
     end
   end
 

@@ -7,7 +7,11 @@ defmodule Sanbase.GrafanaApi do
 
   @plan_team_map %{
     41 => "Sangraphs-Basic",
-    42 => "Sangraphs-Pro"
+    42 => "Sangraphs-Pro",
+    43 => "Sangraphs-Premium",
+    44 => "Sangraphs-Basic",
+    45 => "Sangraphs-Pro",
+    46 => "Sangraphs-Premium"
   }
 
   def plan_team_map, do: @plan_team_map
@@ -21,8 +25,12 @@ defmodule Sanbase.GrafanaApi do
       team_members
       |> Enum.find(fn %{"userId" => uid} -> uid == user_id end)
       |> case do
-        nil -> add_user_to_team(user_id, team_id)
-        _ -> {:ok, "User is already in this team"}
+        nil ->
+          remove_user_from_all_teams(user_id)
+          add_user_to_team(user_id, team_id)
+
+        _ ->
+          {:ok, "User is already in this team"}
       end
     else
       error -> error
@@ -30,6 +38,36 @@ defmodule Sanbase.GrafanaApi do
   end
 
   # helpers
+  def remove_user_from_all_teams(user_id) do
+    ["Sangraphs-Basic", "Sangraphs-Pro", "Sangraphs-Premium"]
+    |> Enum.each(&remove_user_from_team(user_id, &1))
+  end
+
+  def remove_user_from_team(user_id, team_name) do
+    with {:ok, %{"id" => team_id}} <- get_team_by_name(team_name),
+         {:ok, team_members} <- get_team_members(team_id) do
+      team_members
+      |> Enum.find(fn %{"userId" => uid} -> uid == user_id end)
+      |> case do
+        nil -> {:ok, "User is not in this team"}
+        _ -> do_remove_user_from_team(user_id, team_id)
+      end
+    else
+      error ->
+        Logger.error(
+          "Error removing grafana user: #{user_id} from team: #{team_name}: #{inspect(error)}"
+        )
+
+        error
+    end
+  end
+
+  defp do_remove_user_from_team(user_id, team_id) do
+    request_path = "api/teams/#{team_id}/members/#{user_id}"
+
+    http_client().delete(base_url() <> request_path, headers())
+    |> handle_response()
+  end
 
   defp get_team_by_name(name) do
     request_path = "api/teams/search?name=#{name}"
@@ -37,6 +75,9 @@ defmodule Sanbase.GrafanaApi do
     http_client().get(base_url() <> request_path, headers())
     |> handle_response()
     |> case do
+      {:ok, %{"teams" => []}} ->
+        {:error, "No such team: #{name}"}
+
       {:ok, teams} ->
         {:ok, Map.get(teams, "teams") |> hd()}
 
@@ -60,7 +101,7 @@ defmodule Sanbase.GrafanaApi do
     |> handle_response()
   end
 
-  defp get_user_by_email_or_metamask(%User{username: username, email: email}) do
+  def get_user_by_email_or_metamask(%User{username: username, email: email}) do
     token = email || username
     request_path = "api/users/lookup?loginOrEmail=#{token}"
 

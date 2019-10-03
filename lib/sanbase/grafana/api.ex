@@ -7,22 +7,55 @@ defmodule Sanbase.GrafanaApi do
 
   @plan_team_map %{
     41 => "Sangraphs-Basic",
-    42 => "Sangraphs-Pro"
+    42 => "Sangraphs-Pro",
+    43 => "Sangraphs-Premium",
+    44 => "Sangraphs-Basic",
+    45 => "Sangraphs-Pro",
+    46 => "Sangraphs-Premium"
   }
 
   def plan_team_map, do: @plan_team_map
 
-  def add_subscribed_user_to_team(%User{} = user, plan_id) do
+  def get_user_by_email_or_username(%User{username: username, email: email}) do
+    token = email || username
+    request_path = "api/users/lookup?loginOrEmail=#{token}"
+
+    Path.join(base_url(), request_path)
+    |> http_client().get(headers())
+    |> handle_response()
+  end
+
+  def create_user(%User{username: username, email: email}) do
+    request_path = "api/admin/users"
+
+    data =
+      %{
+        "name" => username || email,
+        "email" => email || username,
+        "login" => username || email,
+        "password" => :crypto.strong_rand_bytes(16) |> Base.encode64() |> binary_part(0, 16)
+      }
+      |> Jason.encode!()
+
+    Path.join(base_url(), request_path)
+    |> http_client().post(data, headers())
+    |> handle_response()
+  end
+
+  def add_subscribed_user_to_team(grafana_user_id, plan_id) do
     team_name = @plan_team_map[plan_id]
 
     with {:ok, %{"id" => team_id}} <- get_team_by_name(team_name),
-         {:ok, %{"id" => user_id}} <- get_user_by_email_or_metamask(user),
          {:ok, team_members} <- get_team_members(team_id) do
       team_members
-      |> Enum.find(fn %{"userId" => uid} -> uid == user_id end)
+      |> Enum.find(fn %{"userId" => user_id} -> user_id == grafana_user_id end)
       |> case do
-        nil -> add_user_to_team(user_id, team_id)
-        _ -> {:ok, "User is already in this team"}
+        nil ->
+          remove_user_from_all_teams(grafana_user_id)
+          add_user_to_team(grafana_user_id, team_id)
+
+        _ ->
+          {:ok, "User is already in this team"}
       end
     else
       error -> error
@@ -30,13 +63,48 @@ defmodule Sanbase.GrafanaApi do
   end
 
   # helpers
+  defp remove_user_from_all_teams(user_id) do
+    ["Sangraphs-Basic", "Sangraphs-Pro", "Sangraphs-Premium"]
+    |> Enum.each(&remove_user_from_team(user_id, &1))
+  end
+
+  defp remove_user_from_team(user_id, team_name) do
+    with {:ok, %{"id" => team_id}} <- get_team_by_name(team_name),
+         {:ok, team_members} <- get_team_members(team_id) do
+      team_members
+      |> Enum.find(fn %{"userId" => uid} -> uid == user_id end)
+      |> case do
+        nil -> {:ok, "User is not in the #{team_name} team"}
+        _ -> do_remove_user_from_team(user_id, team_id)
+      end
+    else
+      {:error, error} ->
+        Logger.error(
+          "Error removing grafana user: #{user_id} from team: #{team_name}: #{inspect(error)}"
+        )
+
+        {:error, error}
+    end
+  end
+
+  defp do_remove_user_from_team(user_id, team_id) do
+    request_path = "api/teams/#{team_id}/members/#{user_id}"
+
+    Path.join(base_url(), request_path)
+    |> http_client().delete(headers())
+    |> handle_response()
+  end
 
   defp get_team_by_name(name) do
     request_path = "api/teams/search?name=#{name}"
 
-    http_client().get(base_url() <> request_path, headers())
+    Path.join(base_url(), request_path)
+    |> http_client().get(headers())
     |> handle_response()
     |> case do
+      {:ok, %{"teams" => []}} ->
+        {:error, "No such team: #{name}"}
+
       {:ok, teams} ->
         {:ok, Map.get(teams, "teams") |> hd()}
 
@@ -48,7 +116,8 @@ defmodule Sanbase.GrafanaApi do
   defp get_team_members(team_id) do
     request_path = "api/teams/#{team_id}/members"
 
-    http_client().get(base_url() <> request_path, headers())
+    Path.join(base_url(), request_path)
+    |> http_client().get(headers())
     |> handle_response()
   end
 
@@ -56,15 +125,8 @@ defmodule Sanbase.GrafanaApi do
     request_path = "api/teams/#{team_id}/members"
     data = %{"userId" => user_id} |> Jason.encode!()
 
-    http_client().post(base_url() <> request_path, data, headers())
-    |> handle_response()
-  end
-
-  defp get_user_by_email_or_metamask(%User{username: username, email: email}) do
-    token = email || username
-    request_path = "api/users/lookup?loginOrEmail=#{token}"
-
-    http_client().get(base_url() <> request_path, headers())
+    Path.join(base_url(), request_path)
+    |> http_client().post(data, headers())
     |> handle_response()
   end
 

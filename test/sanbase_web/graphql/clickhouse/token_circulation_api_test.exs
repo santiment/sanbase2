@@ -1,67 +1,93 @@
-defmodule Sanbase.Clickhouse.TokenCirculationApiTest do
+defmodule SanbaseWeb.Graphql.TokenCirculationApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  require Sanbase.Factory
   import Mock
-
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
-  import ExUnit.CaptureLog
+  import Sanbase.TestHelpers
+  import SanbaseWeb.Graphql.TestHelpers
 
   setup do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
     conn = setup_jwt_auth(build_conn(), user)
-
-    slug = "santiment"
-    ticker = "SAN"
-    insert(:project, %{slug: slug, ticker: ticker})
-
-    datetime1 = DateTime.from_naive!(~N[2017-05-13 00:00:00], "Etc/UTC")
-    datetime2 = DateTime.from_naive!(~N[2017-05-14 00:00:00], "Etc/UTC")
-    datetime3 = DateTime.from_naive!(~N[2017-05-15 00:00:00], "Etc/UTC")
-    datetime4 = DateTime.from_naive!(~N[2017-05-16 00:00:00], "Etc/UTC")
-    datetime5 = DateTime.from_naive!(~N[2017-05-17 00:00:00], "Etc/UTC")
-    datetime6 = DateTime.from_naive!(~N[2017-05-18 00:00:00], "Etc/UTC")
-    datetime7 = DateTime.from_naive!(~N[2017-05-19 00:00:00], "Etc/UTC")
-    datetime8 = DateTime.from_naive!(~N[2017-05-20 00:00:00], "Etc/UTC")
+    project = insert(:random_erc20_project)
+    datetimes = generate_datetimes(~U[2017-05-13 00:00:00Z], "1d", 3)
 
     [
-      slug: slug,
-      dt1: datetime1,
-      dt2: datetime2,
-      dt3: datetime3,
-      dt4: datetime4,
-      dt5: datetime5,
-      dt6: datetime6,
-      dt7: datetime7,
-      dt8: datetime8,
+      slug: project.slug,
+      from: List.first(datetimes),
+      to: List.last(datetimes),
+      datetimes: datetimes,
       conn: conn
     ]
   end
 
-  test "fetch token circulation", context do
-    with_mock Sanbase.ClickhouseRepo, [:passthrough],
-      query: fn _, _ ->
-        {:ok,
-         %{
-           rows: [
-             [context.dt1 |> DateTime.to_unix(), 5000],
-             [context.dt2 |> DateTime.to_unix(), 1000],
-             [context.dt3 |> DateTime.to_unix(), 500],
-             [context.dt4 |> DateTime.to_unix(), 15_000],
-             [context.dt5 |> DateTime.to_unix(), 65_000],
-             [context.dt6 |> DateTime.to_unix(), 50],
-             [context.dt7 |> DateTime.to_unix(), 5],
-             [context.dt8 |> DateTime.to_unix(), 5000]
-           ]
-         }}
-      end do
+  test "when no interval is provided", context do
+    %{datetimes: datetimes} = context
+
+    with_mocks([
+      {Sanbase.Clickhouse.Metric, [:passthrough],
+       [
+         first_datetime: fn _, _ -> {:ok, context.from} end,
+         get: fn _, _, _, _, _, _ ->
+           {:ok,
+            [
+              %{datetime: Enum.at(datetimes, 0), value: 100},
+              %{datetime: Enum.at(datetimes, 1), value: 200},
+              %{datetime: Enum.at(datetimes, 2), value: 300}
+            ]}
+         end
+       ]}
+    ]) do
       query = """
       {
         tokenCirculation(
           slug: "#{context.slug}",
-          from: "#{context.dt1}",
-          to: "#{context.dt8}",
+          from: "#{context.from}",
+          to: "#{context.to}",
+          interval: "") {
+            datetime
+            tokenCirculation
+        }
+      }
+      """
+
+      result =
+        context.conn
+        |> post("/graphql", query_skeleton(query, "tokenCirculation"))
+        |> json_response(200)
+
+      trx_volumes = result["data"]["tokenCirculation"]
+
+      assert trx_volumes == [
+               %{"datetime" => "2017-05-13T00:00:00Z", "tokenCirculation" => 100},
+               %{"datetime" => "2017-05-14T00:00:00Z", "tokenCirculation" => 200},
+               %{"datetime" => "2017-05-15T00:00:00Z", "tokenCirculation" => 300}
+             ]
+    end
+  end
+
+  test "when interval is provided", context do
+    %{datetimes: datetimes} = context
+
+    with_mocks([
+      {Sanbase.Clickhouse.Metric, [:passthrough],
+       [
+         get: fn _, _, _, _, _, _ ->
+           {:ok,
+            [
+              %{datetime: Enum.at(datetimes, 0), value: 100},
+              %{datetime: Enum.at(datetimes, 1), value: 200},
+              %{datetime: Enum.at(datetimes, 2), value: 300}
+            ]}
+         end
+       ]}
+    ]) do
+      query = """
+      {
+        tokenCirculation(
+          slug: "#{context.slug}",
+          from: "#{context.from}",
+          to: "#{context.to}",
           interval: "1d") {
             datetime
             tokenCirculation
@@ -72,68 +98,15 @@ defmodule Sanbase.Clickhouse.TokenCirculationApiTest do
       result =
         context.conn
         |> post("/graphql", query_skeleton(query, "tokenCirculation"))
+        |> json_response(200)
 
-      token_circulation = json_response(result, 200)["data"]["tokenCirculation"]
+      trx_volumes = result["data"]["tokenCirculation"]
 
-      assert %{
-               "datetime" => "2017-05-13T00:00:00Z",
-               "tokenCirculation" => 5000
-             } in token_circulation
-
-      assert %{
-               "datetime" => "2017-05-14T00:00:00Z",
-               "tokenCirculation" => 1000
-             } in token_circulation
-
-      assert %{
-               "datetime" => "2017-05-15T00:00:00Z",
-               "tokenCirculation" => 500
-             } in token_circulation
-
-      assert %{
-               "datetime" => "2017-05-16T00:00:00Z",
-               "tokenCirculation" => 15_000
-             } in token_circulation
-
-      assert %{
-               "datetime" => "2017-05-17T00:00:00Z",
-               "tokenCirculation" => 65_000
-             } in token_circulation
-
-      assert %{
-               "datetime" => "2017-05-18T00:00:00Z",
-               "tokenCirculation" => 50
-             } in token_circulation
-
-      assert %{
-               "datetime" => "2017-05-19T00:00:00Z",
-               "tokenCirculation" => 5
-             } in token_circulation
-
-      assert %{
-               "datetime" => "2017-05-20T00:00:00Z",
-               "tokenCirculation" => 5000
-             } in token_circulation
+      assert trx_volumes == [
+               %{"datetime" => "2017-05-13T00:00:00Z", "tokenCirculation" => 100},
+               %{"datetime" => "2017-05-14T00:00:00Z", "tokenCirculation" => 200},
+               %{"datetime" => "2017-05-15T00:00:00Z", "tokenCirculation" => 300}
+             ]
     end
-  end
-
-  test "fetch token circulation for interval that doesn't consist of full days", context do
-    query = """
-    {
-      tokenCirculation(
-        slug: "#{context.slug}",
-        from: "#{context.dt1}",
-        to: "#{context.dt2}",
-        interval: "25h") {
-          datetime
-          tokenCirculation
-      }
-    }
-    """
-
-    assert capture_log(fn ->
-             context.conn
-             |> post("/graphql", query_skeleton(query, "tokenCirculation"))
-           end) =~ "The interval must consist of whole days"
   end
 end

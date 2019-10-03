@@ -6,7 +6,6 @@ defmodule Sanbase.ExAdmin.Model.Project do
   alias Sanbase.Tag
   alias Sanbase.Model.Project
   alias Sanbase.Model.Infrastructure
-  alias Sanbase.Model.MarketSegment
   alias Sanbase.Model.ProjectTransparencyStatus
 
   alias Sanbase.Repo
@@ -125,9 +124,17 @@ defmodule Sanbase.ExAdmin.Model.Project do
       inputs do
         input(project, :name)
         input(project, :ticker)
-        input(project, :logo_url)
+        input(project, :slug)
+        input(project, :description)
+        input(project, :long_description, type: :text)
+
+        input(
+          project,
+          :infrastructure,
+          collection: from(i in Infrastructure, order_by: i.code) |> Sanbase.Repo.all()
+        )
+
         input(project, :website_link)
-        input(project, :email)
         input(project, :btt_link)
         input(project, :facebook_link)
         input(project, :reddit_link)
@@ -137,10 +144,10 @@ defmodule Sanbase.ExAdmin.Model.Project do
         input(project, :slack_link)
         input(project, :linkedin_link)
         input(project, :telegram_link)
-        input(project, :token_address)
         input(project, :main_contract_address)
-        input(project, :team_token_wallet)
         input(project, :project_transparency)
+
+        input(project, :email)
 
         input(
           project,
@@ -151,23 +158,8 @@ defmodule Sanbase.ExAdmin.Model.Project do
 
         input(project, :project_transparency_description)
 
-        input(
-          project,
-          :market_segment,
-          collection: from(m in MarketSegment, order_by: m.name) |> Sanbase.Repo.all()
-        )
-
-        input(
-          project,
-          :infrastructure,
-          collection: from(i in Infrastructure, order_by: i.code) |> Sanbase.Repo.all()
-        )
-
-        input(project, :slug)
         input(project, :token_decimals)
         input(project, :token_supply)
-        input(project, :description)
-        input(project, :long_description, type: :text)
       end
     end
 

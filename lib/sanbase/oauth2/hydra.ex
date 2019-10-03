@@ -3,6 +3,8 @@ defmodule Sanbase.Oauth2.Hydra do
   require Logger
 
   alias Sanbase.Auth.User
+  alias Sanbase.Billing.{Product, Subscription, Plan}
+  alias Sanbase.GrafanaApi
 
   def get_access_token() do
     with {:ok, %HTTPoison.Response{body: json_body, status_code: 200}} <- do_fetch_access_token(),
@@ -24,35 +26,63 @@ defmodule Sanbase.Oauth2.Hydra do
     end
   end
 
-  def manage_consent(consent, access_token, user, client_id) do
-    user_san_balance = san_balance!(user)
+  def manage_consent(consent, access_token, user) do
+    case Subscription.current_subscription(user, Product.product_sangraphs()) do
+      %Subscription{plan: %Plan{id: plan_id}} ->
+        find_or_create_grafana_user(user)
+        |> case do
+          {:ok, %{"id" => grafana_user_id}} ->
+            GrafanaApi.add_subscribed_user_to_team(grafana_user_id, plan_id)
 
-    if has_enough_san_tokens?(
-         user_san_balance,
-         required_san_tokens_by_client(:clients_that_require_san_tokens, client_id)
-       ) do
-      accept_consent(consent, access_token, user)
-    else
-      Logger.info(
-        "#{user.email || user.username} doesn't have enough SAN tokens" <>
-          inspect(user_san_balance)
-      )
+            accept_consent(consent, access_token, user)
 
-      reject_consent(consent, access_token, user)
+          {:error, reason} ->
+            Logger.error("Error find_or_create_grafana_user: reason #{inspect(reason)}")
+
+            reject_consent(
+              consent,
+              access_token,
+              "Unexpected error occured! Please, try again or contact site administrator."
+            )
+        end
+
+      nil ->
+        error_msg = "#{user.email || user.username} doesn't have an active Sangraphs subscription"
+        Logger.error(error_msg)
+        reject_consent(consent, access_token, error_msg)
     end
   end
 
-  def accept_consent(consent, access_token, user) do
-    case do_accept_consent(consent, access_token, user) do
-      {:ok, %HTTPoison.Response{status_code: 204}} -> :ok
-      error -> Logger.warn("Error accepting consent: " <> inspect(error))
+  # helpers
+
+  defp find_or_create_grafana_user(user) do
+    case GrafanaApi.get_user_by_email_or_username(user) do
+      {:ok, grafana_user} ->
+        {:ok, grafana_user}
+
+      _ ->
+        GrafanaApi.create_user(user)
     end
   end
 
-  def reject_consent(consent, access_token, user) do
-    case do_reject_consent(consent, access_token, user) do
-      {:ok, %HTTPoison.Response{status_code: 204}} -> :ok
-      error -> Logger.warn("Error rejecting consent: " <> inspect(error))
+  defp accept_consent(consent, access_token, user) do
+    do_accept_consent(consent, access_token, user)
+    |> handle_consent_result("accept")
+  end
+
+  defp reject_consent(consent, access_token, error_msg) do
+    do_reject_consent(consent, access_token, error_msg)
+    |> handle_consent_result("reject")
+  end
+
+  defp handle_consent_result(result, type) do
+    case result do
+      {:ok, %HTTPoison.Response{status_code: 204}} ->
+        {:ok, "Consent #{type} success"}
+
+      error ->
+        Logger.warn("Error #{type} consent: " <> inspect(error))
+        {:ok, "Consent #{type} error"}
     end
   end
 
@@ -87,10 +117,12 @@ defmodule Sanbase.Oauth2.Hydra do
     ])
   end
 
-  defp do_reject_consent(consent, access_token, %User{username: username, email: email}) do
-    data = %{
-      "reason" => "#{email || username} doesn't have enough SAN tokens"
-    }
+  defp do_reject_consent(
+         consent,
+         access_token,
+         error_msg
+       ) do
+    data = %{"reason" => error_msg}
 
     HTTPoison.patch(consent_url() <> "/#{consent}/reject", Jason.encode!(data), [
       {"Authorization", "Bearer #{access_token}"},
@@ -111,22 +143,4 @@ defmodule Sanbase.Oauth2.Hydra do
 
   defp basic_auth(),
     do: [hackney: [basic_auth: {Config.get(:client_id), Config.get(:client_secret)}]]
-
-  defp has_enough_san_tokens?(san_balance, required_san_tokens)
-       when not is_nil(required_san_tokens) do
-    Decimal.cmp(san_balance, Decimal.new(required_san_tokens)) != :lt
-  end
-
-  defp has_enough_san_tokens?(%User{} = _user, _), do: true
-
-  defp san_balance!(user) do
-    User.san_balance!(user)
-  end
-
-  # json config value example: {"grafana": 200}
-  defp required_san_tokens_by_client(key, client_id) do
-    Config.get(key)
-    |> Jason.decode!()
-    |> Map.get(client_id, 0)
-  end
 end

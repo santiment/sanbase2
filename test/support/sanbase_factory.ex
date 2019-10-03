@@ -427,6 +427,16 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def plan_pro_graphs_factory() do
+    %Plan{
+      id: 42,
+      name: "PRO",
+      amount: 14000,
+      currency: "USD",
+      interval: "month"
+    }
+  end
+
   def plan_exchange_wallets_extension_factory() do
     %Plan{
       id: 51,

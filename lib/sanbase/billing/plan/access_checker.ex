@@ -112,8 +112,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
 
   @product_to_access_module [
     {Product.product_api(), ApiAccessChecker},
-    {Product.product_sanbase(), SanbaseAccessChecker},
-    {Product.product_sangraphs(), SanbaseAccessChecker}
+    {Product.product_sanbase(), SanbaseAccessChecker}
   ]
 
   def historical_data_in_days(plan, query, _product) when query in @custom_access_queries do

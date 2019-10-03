@@ -174,9 +174,9 @@ defmodule Sanbase.Clickhouse.Metric do
   defp get_metric(metric, slug, from, to, interval, aggregation) do
     {query, args} = metric_query(metric, slug, from, to, interval, aggregation)
 
-    ClickhouseRepo.query_transform(query, args, fn [datetime, value] ->
+    ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
       %{
-        datetime: DateTime.from_unix!(datetime),
+        datetime: DateTime.from_unix!(unix),
         value: value
       }
     end)
@@ -235,6 +235,27 @@ defmodule Sanbase.Clickhouse.Metric do
     """
 
     args = []
+
+    {query, args}
+  end
+
+  defp first_datetime_query(metric, nil) do
+    query = """
+    SELECT
+      toUnixTimestamp(toDateTime(min(dt)))
+    FROM #{@table}
+    PREWHERE
+      metric_id = (
+        SELECT
+          argMax(metric_id, computed_at) AS metric_id
+        FROM
+          metric_metadata
+        PREWHERE
+          name = ?1 ) AND
+      value > 0
+    """
+
+    args = [Map.get(@name_to_column_map, metric)]
 
     {query, args}
   end

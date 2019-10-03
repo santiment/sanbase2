@@ -150,6 +150,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     end
   end
 
+  def create_promo_subscription(_root, %{coupon_code: coupon_code}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    Subscription.PromoFreeTrial.create_promo_subscription(current_user, coupon_code)
+  end
+
   # private functions
   defp transform_payments(%Stripe.List{data: payments}) do
     payments

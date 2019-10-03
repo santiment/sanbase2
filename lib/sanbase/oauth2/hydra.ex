@@ -30,11 +30,9 @@ defmodule Sanbase.Oauth2.Hydra do
     case Subscription.current_subscription(user, Product.product_sangraphs()) do
       %Subscription{plan: %Plan{id: plan_id}} ->
         find_or_create_grafana_user(user)
-        |> IO.inspect()
         |> case do
           {:ok, %{"id" => grafana_user_id}} ->
             GrafanaApi.add_subscribed_user_to_team(grafana_user_id, plan_id)
-            |> IO.inspect()
 
             accept_consent(consent, access_token, user)
 

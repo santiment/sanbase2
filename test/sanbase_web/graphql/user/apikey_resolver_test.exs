@@ -159,37 +159,6 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
     assert err_struct["message"] =~ "Provided apikey is malformed or not valid"
   end
 
-  test "access realtime data behind API delay san staking", %{conn2: conn2} do
-    # Store some data recent data
-    slug = "santiment"
-    datetime1 = Timex.shift(Timex.now(), hours: -1)
-    datetime2 = Timex.now()
-    init_databases(slug, datetime1, datetime2)
-
-    # Get an apikey and build API conn
-    [apikey] =
-      generate_apikey(conn2)
-      |> json_response(200)
-      |> extract_api_key_list()
-
-    conn_apikey = setup_apikey_auth(build_conn(), apikey)
-
-    query = token_age_consumed_query(slug, datetime1, datetime2)
-
-    result =
-      conn_apikey
-      |> post("/graphql", query_skeleton(query, "tokenAgeConsumed"))
-      |> json_response(200)
-
-    %{
-      "data" => %{
-        "tokenAgeConsumed" => token_age_consumed
-      }
-    } = result
-
-    assert length(token_age_consumed) > 0
-  end
-
   # Private functions
 
   defp apikey_valid?(apikey) do
@@ -239,45 +208,5 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
     """
 
     conn |> post("/graphql", mutation_skeleton(query))
-  end
-
-  defp init_databases(slug, datetime1, datetime2) do
-    require Sanbase.TimescaleFactory
-
-    contract_address = "0" <> Sanbase.TestUtils.random_string()
-
-    Sanbase.TimescaleFactory.insert(:token_age_consumed, %{
-      contract_address: contract_address,
-      timestamp: datetime1,
-      token_age_consumed: 5000
-    })
-
-    Sanbase.TimescaleFactory.insert(:token_age_consumed, %{
-      contract_address: contract_address,
-      timestamp: datetime2,
-      token_age_consumed: 1000
-    })
-
-    insert(:project, %{
-      name: "Santiment",
-      ticker: "SAN",
-      slug: slug,
-      main_contract_address: contract_address
-    })
-  end
-
-  defp token_age_consumed_query(slug, datetime1, datetime2) do
-    """
-    {
-      tokenAgeConsumed(
-        slug: "#{slug}",
-        from: "#{datetime1}",
-        to: "#{datetime2}",
-        interval: "30m") {
-          tokenAgeConsumed
-          datetime
-      }
-    }
-    """
   end
 end

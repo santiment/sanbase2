@@ -121,7 +121,7 @@ defmodule Sanbase.Clickhouse.Metric do
   Return a list of available metrics.
 
   If a metric has an alias only the alias is added to the list. But when a metric
-  is queries, the alias **and** the original metric name is accepted. This istw
+  is queries, the alias **and** the original metric name is accepted. This is
   done so we do not pollute the public API with too much metric names and we
   expose only the user-friendly ones.
   """

@@ -64,4 +64,7 @@ defmodule Sanbase.Utils.Transform do
   def rename_map_keys({:error, error}, _, _) do
     {:error, error}
   end
+
+  def unpack_value({:ok, [value]}), do: {:ok, value}
+  def unpack_value({:error, error}), do: {:error, error}
 end

@@ -6,7 +6,7 @@ defmodule Sanbase.Chart do
   alias Sanbase.Prices.Store, as: PricesStore
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Model.Project
-  alias Sanbase.Blockchain.ExchangeFundsFlow
+  alias Sanbase.Clickhouse
   alias Sanbase.Clickhouse.Erc20DailyActiveAddresses
   alias Sanbase.FileStore
   alias Sanbase.Math
@@ -154,12 +154,11 @@ defmodule Sanbase.Chart do
     end
   end
 
-  defp chart_values(:exchange_inflow, %Project{} = project, _from, to, size) do
+  defp chart_values(:exchange_inflow, %Project{slug: slug} = project, _from, to, size) do
     from = Timex.shift(to, days: -size + 1)
 
-    with {:ok, contract, token_decimals} <- Project.contract_info(project),
-         {:ok, exchange_inflow} <-
-           ExchangeFundsFlow.transactions_in_over_time(contract, from, to, "1d", token_decimals),
+    with {:ok, exchange_inflow} <-
+           Clickhouse.Metric.get("exchange_inflow", slug, from, to, "1d"),
          supply when not is_nil(supply) <- Project.supply(project) do
       exchange_inflow_values =
         exchange_inflow |> Enum.map(fn %{inflow: value} -> value / supply end)

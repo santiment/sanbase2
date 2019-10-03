@@ -13,7 +13,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
   alias Sanbase.Repo
   alias Sanbase.Model.Project
-  alias Sanbase.Blockchain.ExchangeFundsFlow
+  alias Sanbase.Clickhouse.Metric
   alias Sanbase.Notifications.{Discord, Notification, Type}
   @impl true
   def run() do
@@ -31,9 +31,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
         %Project{project | main_contract_address: Project.contract_address(project)}
       end)
 
-    projects
-    |> Enum.map(&Project.contract_address/1)
-    |> ExchangeFundsFlow.transactions_in(from, to)
+    Metric.get_aggregated("exchange_inflow", projects, from, to, :sum)
     |> case do
       {:ok, list} ->
         notification_type = Type.get_or_create("exchange_inflow")
@@ -86,15 +84,15 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   end
 
   defp build_payload(projects, list) do
-    contract_inflow_map =
-      Enum.map(list, fn %{contract: contract, inflow: inflow} -> {contract, inflow} end)
+    slug_inflow_map =
+      Enum.map(list, fn %{slug: slug, value: inflow} -> {slug, inflow} end)
       |> Map.new()
 
     notification_type = Type.get_or_create("exchange_inflow")
 
     projects
-    |> Enum.map(fn %Project{} = project ->
-      inflow = Map.get(contract_inflow_map, Project.contract_address(project))
+    |> Enum.map(fn %Project{slug: slug} = project ->
+      inflow = Map.get(slug_inflow_map, slug)
 
       build_project_payload(project, notification_type, inflow)
     end)
@@ -134,18 +132,18 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     end
   end
 
-  defp build_payload(project, cooldown, inflow) do
-    addresses = [Project.contract_address(project)]
+  defp build_payload(%Project{} = project, from, inflow) do
+    %Project{slug: slug} = project
 
-    case ExchangeFundsFlow.transactions_in(addresses, cooldown, Timex.now()) do
-      {:ok, [%{inflow: new_inflow}]} ->
+    case Metric.get_aggregated("exchange_inflow", slug, from, Timex.now(), :sum) do
+      {:ok, [%{slug: ^slug, value: new_inflow}]} ->
         new_percent_of_total_supply = percent_of_total_supply(project, new_inflow)
 
         if new_inflow && new_percent_of_total_supply > signal_trigger_percent(project) do
           content =
             notification_message(
               project,
-              Timex.diff(cooldown, Timex.now(), :hours) |> abs(),
+              Timex.diff(from, Timex.now(), :hours) |> abs(),
               :hour,
               inflow,
               new_inflow

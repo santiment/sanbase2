@@ -2,14 +2,10 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
   use SanbaseWeb.ConnCase
   require Sanbase.Utils.Config, as: Config
 
-  @moduletag checkout_repo: [Sanbase.Repo, Sanbase.TimescaleRepo]
-  @moduletag timescaledb: true
-
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
+  import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.TimescaleFactory
-  require Sanbase.Factory
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   setup do
@@ -18,35 +14,16 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
     # Accessing through the slug that is not "santiment" has timeframe restriction
     # while accessing through "santiment" does not
     p1 =
-      Sanbase.Factory.insert(:random_erc20_project, %{
+      insert(:random_erc20_project, %{
         slug: "santiment",
         main_contract_address: contract
       })
 
-    p2 = Sanbase.Factory.insert(:random_erc20_project, %{main_contract_address: contract})
+    p2 = insert(:random_erc20_project, %{main_contract_address: contract})
 
-    %{user: user} =
-      Sanbase.Factory.insert(:subscription_pro_sanbase, user: Sanbase.Factory.insert(:user))
+    %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
 
     conn = setup_jwt_auth(build_conn(), user)
-
-    insert(:transaction_volume, %{
-      contract_address: contract,
-      timestamp: hour_ago(),
-      transaction_volume: 5000
-    })
-
-    insert(:transaction_volume, %{
-      contract_address: contract,
-      timestamp: week_ago(),
-      transaction_volume: 6000
-    })
-
-    insert(:transaction_volume, %{
-      contract_address: contract,
-      timestamp: restricted_from(),
-      transaction_volume: 7000
-    })
 
     [
       conn: conn,

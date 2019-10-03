@@ -10,6 +10,9 @@ defmodule Sanbase.Clickhouse.Metric do
 
   use Ecto.Schema
 
+  import Sanbase.Clickhouse.Metric.Helper,
+    only: [slug_asset_id_map: 0, asset_id_slug_map: 0, metric_name_id_map: 0]
+
   alias __MODULE__.FileHandler
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
@@ -82,6 +85,25 @@ defmodule Sanbase.Clickhouse.Metric do
       true ->
         aggregation = aggregation || Map.get(@aggregation_map, metric)
         get_metric(metric, slug, from, to, interval, aggregation)
+    end
+  end
+
+  def get_aggregated(_metric, _slug, _from, _to, aggregation)
+      when aggregation not in @aggregations do
+    {:error, "The aggregation '#{inspect(aggregation)}' is not supported"}
+  end
+
+  def get_aggregated(metric, slug_or_slugs, from, to, aggregation)
+      when is_binary(slug_or_slugs) or is_list(slug_or_slugs) do
+    slugs = slug_or_slugs |> List.wrap()
+
+    case metric in @metrics_mapset do
+      false ->
+        metric_not_available_error(metric)
+
+      true ->
+        aggregation = aggregation || Map.get(@aggregation_map, metric)
+        get_aggregated_metric(metric, slugs, from, to, aggregation)
     end
   end
 
@@ -182,6 +204,33 @@ defmodule Sanbase.Clickhouse.Metric do
     end)
   end
 
+  defp get_aggregated_metric(metric, slugs, from, to, aggregation)
+       when is_list(slugs) and length(slugs) > 20 do
+    result =
+      Enum.chunk_every(slugs, 20)
+      |> Sanbase.Parallel.map(&get_aggregated_metric(metric, &1, from, to, aggregation),
+        timeout: 25_000,
+        max_concurrency: 8,
+        ordered: false
+      )
+      |> Enum.filter(&match?({:ok, _}, &1))
+      |> Enum.flat_map(&elem(&1, 1))
+
+    {:ok, result}
+  end
+
+  defp get_aggregated_metric(metric, slugs, from, to, aggregation) when is_list(slugs) do
+    {:ok, asset_map} = slug_asset_id_map()
+    {:ok, asset_id_map} = asset_id_slug_map()
+
+    asset_ids = Map.take(asset_map, slugs) |> Map.values()
+    {query, args} = aggregated_metric_query(metric, asset_ids, from, to, aggregation)
+
+    ClickhouseRepo.query_transform(query, args, fn [asset_id, value] ->
+      %{slug: Map.get(asset_id_map, asset_id), value: value}
+    end)
+  end
+
   defp aggregation(:last, value_column, dt_column), do: "argMax(#{value_column}, #{dt_column})"
   defp aggregation(:first, value_column, dt_column), do: "argMin(#{value_column}, #{dt_column})"
   defp aggregation(aggr, value_column, _dt_column), do: "#{aggr}(#{value_column})"
@@ -224,6 +273,39 @@ defmodule Sanbase.Clickhouse.Metric do
       from,
       to,
       slug
+    ]
+
+    {query, args}
+  end
+
+  defp aggregated_metric_query(metric, asset_ids, from, to, aggregation) do
+    query = """
+    SELECT
+      toUInt32(asset_id),
+      #{aggregation(aggregation, "value", "t")}
+    FROM(
+      SELECT
+        dt,
+        asset_id,
+        argMax(value, computed_at) AS value
+      FROM #{Map.get(@table_map, metric)}
+      PREWHERE
+        dt >= toDateTime(?3) AND
+        dt < toDateTime(?4) AND
+        asset_id IN (?1) AND
+        metric_id = ?2
+      GROUP BY dt, asset_id
+    )
+    GROUP BY asset_id
+    """
+
+    {:ok, metric_map} = metric_name_id_map()
+
+    args = [
+      asset_ids,
+      Map.get(metric_map, Map.get(@name_to_column_map, metric)),
+      from,
+      to
     ]
 
     {query, args}

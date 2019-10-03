@@ -16,13 +16,18 @@ defmodule Sanbase.FailedTestFormatter do
     config =
       case test do
         %ExUnit.Test{state: {:failed, [{:error, _error, failures}]}} when is_list(failures) ->
-          {_module, _test_name, _, [file: file, line: line]} = List.last(failures)
+          case List.last(failures) do
+            {_module, _test_name, _, [file: file, line: line]} ->
+              %{
+                config
+                | failed: ["#{file}:#{line}" | config.failed],
+                  failure_counter: config.failure_counter + 1
+              }
 
-          %{
-            config
-            | failed: ["#{file}:#{line}" | config.failed],
-              failure_counter: config.failure_counter + 1
-          }
+            elem ->
+              IO.warn("Unexpected element in failures: #{inspect(elem)}")
+              config
+          end
 
         _ ->
           IO.warn("Unexpected failed test format.")

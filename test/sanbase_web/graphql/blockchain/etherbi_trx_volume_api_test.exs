@@ -8,11 +8,8 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
 
   setup do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
-
     conn = setup_jwt_auth(build_conn(), user)
-
     project = insert(:random_erc20_project)
-
     datetimes = generate_datetimes(~U[2017-05-13 00:00:00Z], "1d", 3)
 
     [

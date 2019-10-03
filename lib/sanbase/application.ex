@@ -143,6 +143,18 @@ defmodule Sanbase.Application do
         scale: 1000,
         limit: 30,
         time_between_requests: 10
+      ),
+
+      # General purpose cache available in all types
+      Supervisor.child_spec(
+        {ConCache,
+         [
+           name: Sanbase.Cache.name(),
+           ttl_check_interval: :timer.seconds(30),
+           global_ttl: :timer.minutes(5),
+           acquire_lock_timeout: 30_000
+         ]},
+        id: :sanbase_generic_cache
       )
     ]
   end

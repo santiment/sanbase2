@@ -56,7 +56,7 @@ defmodule Sanbase.Oauth2.Hydra do
   # helpers
 
   defp find_or_create_grafana_user(user) do
-    case GrafanaApi.get_user_by_email_or_metamask(user) do
+    case GrafanaApi.get_user_by_email_or_username(user) do
       {:ok, grafana_user} ->
         {:ok, grafana_user}
 

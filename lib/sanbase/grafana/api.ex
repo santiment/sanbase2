@@ -16,11 +16,12 @@ defmodule Sanbase.GrafanaApi do
 
   def plan_team_map, do: @plan_team_map
 
-  def get_user_by_email_or_metamask(%User{username: username, email: email}) do
+  def get_user_by_email_or_username(%User{username: username, email: email}) do
     token = email || username
     request_path = "api/users/lookup?loginOrEmail=#{token}"
 
-    http_client().get(base_url() <> request_path, headers())
+    Path.join(base_url(), request_path)
+    |> http_client().get(headers())
     |> handle_response()
   end
 
@@ -36,7 +37,8 @@ defmodule Sanbase.GrafanaApi do
       }
       |> Jason.encode!()
 
-    http_client().post(base_url() <> request_path, data, headers())
+    Path.join(base_url(), request_path)
+    |> http_client().post(data, headers())
     |> handle_response()
   end
 
@@ -61,12 +63,12 @@ defmodule Sanbase.GrafanaApi do
   end
 
   # helpers
-  def remove_user_from_all_teams(user_id) do
+  defp remove_user_from_all_teams(user_id) do
     ["Sangraphs-Basic", "Sangraphs-Pro", "Sangraphs-Premium"]
     |> Enum.each(&remove_user_from_team(user_id, &1))
   end
 
-  def remove_user_from_team(user_id, team_name) do
+  defp remove_user_from_team(user_id, team_name) do
     with {:ok, %{"id" => team_id}} <- get_team_by_name(team_name),
          {:ok, team_members} <- get_team_members(team_id) do
       team_members
@@ -88,14 +90,16 @@ defmodule Sanbase.GrafanaApi do
   defp do_remove_user_from_team(user_id, team_id) do
     request_path = "api/teams/#{team_id}/members/#{user_id}"
 
-    http_client().delete(base_url() <> request_path, headers())
+    Path.join(base_url(), request_path)
+    |> http_client().delete(headers())
     |> handle_response()
   end
 
   defp get_team_by_name(name) do
     request_path = "api/teams/search?name=#{name}"
 
-    http_client().get(base_url() <> request_path, headers())
+    Path.join(base_url(), request_path)
+    |> http_client().get(headers())
     |> handle_response()
     |> case do
       {:ok, %{"teams" => []}} ->
@@ -112,7 +116,8 @@ defmodule Sanbase.GrafanaApi do
   defp get_team_members(team_id) do
     request_path = "api/teams/#{team_id}/members"
 
-    http_client().get(base_url() <> request_path, headers())
+    Path.join(base_url(), request_path)
+    |> http_client().get(headers())
     |> handle_response()
   end
 
@@ -120,7 +125,8 @@ defmodule Sanbase.GrafanaApi do
     request_path = "api/teams/#{team_id}/members"
     data = %{"userId" => user_id} |> Jason.encode!()
 
-    http_client().post(base_url() <> request_path, data, headers())
+    Path.join(base_url(), request_path)
+    |> http_client().post(data, headers())
     |> handle_response()
   end
 

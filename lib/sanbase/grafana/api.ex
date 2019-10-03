@@ -74,7 +74,7 @@ defmodule Sanbase.GrafanaApi do
       team_members
       |> Enum.find(fn %{"userId" => uid} -> uid == user_id end)
       |> case do
-        nil -> {:ok, "User is not in this team"}
+        nil -> {:ok, "User is not in the #{team_name} team"}
         _ -> do_remove_user_from_team(user_id, team_id)
       end
     else

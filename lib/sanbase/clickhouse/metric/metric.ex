@@ -10,6 +10,9 @@ defmodule Sanbase.Clickhouse.Metric do
 
   use Ecto.Schema
 
+  import Sanbase.Clickhouse.Metric.Helper,
+    only: [slug_asset_id_map: 0, asset_id_slug_map: 0, metric_name_id_map: 0]
+
   alias __MODULE__.FileHandler
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
@@ -118,7 +121,7 @@ defmodule Sanbase.Clickhouse.Metric do
   Return a list of available metrics.
 
   If a metric has an alias only the alias is added to the list. But when a metric
-  is queries, the alias **and** the original metric name is accepted. This is
+  is queries, the alias **and** the original metric name is accepted. This istw
   done so we do not pollute the public API with too much metric names and we
   expose only the user-friendly ones.
   """
@@ -201,9 +204,24 @@ defmodule Sanbase.Clickhouse.Metric do
     end)
   end
 
+  defp get_aggregated_metric(metric, slugs, from, to, aggregation)
+       when is_list(slugs) and length(slugs) > 20 do
+    result =
+      Enum.chunk_every(slugs, 20)
+      |> Sanbase.Parallel.map(&get_aggregated_metric(metric, &1, from, to, aggregation),
+        timeout: 25_000,
+        max_concurrency: 8,
+        ordered: false
+      )
+      |> Enum.filter(&match?({:ok, _}, &1))
+      |> Enum.flat_map(&elem(&1, 1))
+
+    {:ok, result}
+  end
+
   defp get_aggregated_metric(metric, slugs, from, to, aggregation) when is_list(slugs) do
-    asset_map = Sanbase.Clickhouse.Metric.Helper.slug_asset_id_map()
-    asset_id_map = Sanbase.Clickhouse.Metric.Helper.asset_id_slug_map()
+    {:ok, asset_map} = slug_asset_id_map()
+    {:ok, asset_id_map} = asset_id_slug_map()
 
     asset_ids = Map.take(asset_map, slugs) |> Map.values()
     {query, args} = aggregated_metric_query(metric, asset_ids, from, to, aggregation)
@@ -261,9 +279,6 @@ defmodule Sanbase.Clickhouse.Metric do
   end
 
   defp aggregated_metric_query(metric, asset_ids, from, to, aggregation) do
-    metric_map = Sanbase.Clickhouse.Metric.Helper.metric_name_id_map()
-    metric_id = Map.get(metric_map, Map.get(@name_to_column_map, metric))
-
     query = """
     SELECT
       toUInt32(asset_id),
@@ -283,6 +298,8 @@ defmodule Sanbase.Clickhouse.Metric do
     )
     GROUP BY asset_id
     """
+
+    metric_id = Map.get(metric_name_id_map(), Map.get(@name_to_column_map, metric))
 
     args = [
       asset_ids,

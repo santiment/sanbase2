@@ -25,13 +25,16 @@ defmodule Sanbase.Application.Web do
       Sanbase.Elasticsearch.Cluster,
 
       # Start the graphQL in-memory cache
-      {ConCache,
-       [
-         name: :graphql_cache,
-         ttl_check_interval: :timer.seconds(30),
-         global_ttl: :timer.minutes(5),
-         acquire_lock_timeout: 30_000
-       ]},
+      Supervisor.child_spec(
+        {ConCache,
+         [
+           name: :graphql_cache,
+           ttl_check_interval: :timer.seconds(30),
+           global_ttl: :timer.minutes(5),
+           acquire_lock_timeout: 30_000
+         ]},
+        id: :api_cache
+      ),
 
       # Time sereies TwitterData DB connection
       Sanbase.ExternalServices.TwitterData.Store.child_spec(),

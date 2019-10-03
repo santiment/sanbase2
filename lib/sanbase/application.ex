@@ -146,13 +146,16 @@ defmodule Sanbase.Application do
       ),
 
       # General purpose cache available in all types
-      {ConCache,
-       [
-         name: :sanbase_cache,
-         ttl_check_interval: :timer.seconds(30),
-         global_ttl: :timer.minutes(5),
-         acquire_lock_timeout: 30_000
-       ]}
+      Supervisor.child_spec(
+        {ConCache,
+         [
+           name: Sanbase.Cache.name(),
+           ttl_check_interval: :timer.seconds(30),
+           global_ttl: :timer.minutes(5),
+           acquire_lock_timeout: 30_000
+         ]},
+        id: :sanbase_generic_cache
+      )
     ]
   end
 

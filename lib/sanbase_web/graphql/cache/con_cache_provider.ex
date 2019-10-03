@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.ConCacheProvider do
-  @behaviour SanbaseWeb.Graphql.CacheProvider
+  @behaviour Sanbase.Cache.Behaviour
 
   @compile :inline_list_funcs
   @compile {:inline, get: 2, store: 3, get_or_store: 4, cache_item: 3}

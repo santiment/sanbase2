@@ -3,19 +3,29 @@ defmodule Sanbase.Clickhouse.Metric.Helper do
   Provides some helper functions for filtering the clickhouse v2 metrics
   """
   alias Sanbase.Clickhouse.Metric
+  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
   def slug_asset_id_map() do
-    %{
-      "santiment" => 2095,
-      "maker" => 1909
-    }
+    Sanbase.Cache.get_or_store({__MODULE__, __ENV__.function}, fn ->
+      query = "SELECT toUInt32(asset_id), name FROM asset_metadata"
+      args = []
+
+      ClickhouseRepo.query_reduce(query, args, %{}, fn [asset_id, slug], acc ->
+        Map.put(acc, asset_id, slug)
+      end)
+    end)
   end
 
   def asset_id_slug_map() do
-    %{
-      2095 => "santiment",
-      1909 => "maker"
-    }
+    Sanbase.Cache.get_or_store({__MODULE__, __ENV__.function}, fn ->
+      case slug_asset_id_map() do
+        {:ok, data} ->
+          {:ok, data |> Enum.reduce(%{}, fn {k, v}, acc -> Map.put(acc, v, k) end)}
+
+        {:error, error} ->
+          {:error, error}
+      end
+    end)
   end
 
   def metric_name_id_map() do

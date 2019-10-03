@@ -78,12 +78,12 @@ defmodule Sanbase.GrafanaApi do
         _ -> do_remove_user_from_team(user_id, team_id)
       end
     else
-      error ->
+      {:error, error} ->
         Logger.error(
           "Error removing grafana user: #{user_id} from team: #{team_name}: #{inspect(error)}"
         )
 
-        error
+        {:error, error}
     end
   end
 

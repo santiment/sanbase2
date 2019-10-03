@@ -3,7 +3,7 @@ defmodule Sanbase.Factory do
 
   alias Sanbase.Tag
   alias Sanbase.UserList
-  alias Sanbase.Auth.{User, UserSettings}
+  alias Sanbase.Auth.{User, UserSettings, Role, UserRole}
   alias Sanbase.Insight.{Post, Poll}
 
   alias Sanbase.Model.{
@@ -276,16 +276,6 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def plan_free_factory() do
-    %Plan{
-      id: 1,
-      name: "FREE",
-      amount: 0,
-      currency: "USD",
-      interval: "month"
-    }
-  end
-
   def plan_essential_factory() do
     %Plan{
       id: 2,
@@ -535,6 +525,24 @@ defmodule Sanbase.Factory do
     %Ico{
       project_id: 1
     }
+  end
+
+  def role_san_team_factory() do
+    %Role{
+      id: 1,
+      name: "Santiment Team member"
+    }
+  end
+
+  def role_san_clan_factory() do
+    %Role{
+      id: 2,
+      name: "Santiment Clan member"
+    }
+  end
+
+  def user_role_factory() do
+    %UserRole{}
   end
 
   def rand_str(length \\ 10) do

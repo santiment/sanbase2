@@ -16,6 +16,14 @@ defmodule Sanbase.GrafanaApi do
 
   def plan_team_map, do: @plan_team_map
 
+  def get_user_by_email_or_metamask(%User{username: username, email: email}) do
+    token = email || username
+    request_path = "api/users/lookup?loginOrEmail=#{token}"
+
+    http_client().get(base_url() <> request_path, headers())
+    |> handle_response()
+  end
+
   def add_subscribed_user_to_team(%User{} = user, plan_id) do
     team_name = @plan_team_map[plan_id]
 
@@ -98,14 +106,6 @@ defmodule Sanbase.GrafanaApi do
     data = %{"userId" => user_id} |> Jason.encode!()
 
     http_client().post(base_url() <> request_path, data, headers())
-    |> handle_response()
-  end
-
-  def get_user_by_email_or_metamask(%User{username: username, email: email}) do
-    token = email || username
-    request_path = "api/users/lookup?loginOrEmail=#{token}"
-
-    http_client().get(base_url() <> request_path, headers())
     |> handle_response()
   end
 

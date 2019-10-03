@@ -29,7 +29,8 @@ defmodule Sanbase.Oauth2.Hydra do
     case Subscription.current_subscription(user, Product.product_sangraphs()) do
       %Subscription{plan: %Plan{id: plan_id}} ->
         accept_consent(consent, access_token, user)
-        Sanbase.GrafanaApi.add_subscribed_user_to_team(user, plan_id)
+        add_user_to_team(user, plan_id)
+        {:ok, "Adding user to the corresponding team"}
 
       nil ->
         Logger.warn("#{user.email || user.username} doesn't have grafana subscription")
@@ -37,12 +38,20 @@ defmodule Sanbase.Oauth2.Hydra do
     end
   end
 
-  def accept_consent(consent, access_token, user) do
+  # helpers
+  defp add_user_to_team(user, plan_id) do
+    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+      Process.sleep(2000)
+      Sanbase.GrafanaApi.add_subscribed_user_to_team(user, plan_id)
+    end)
+  end
+
+  defp accept_consent(consent, access_token, user) do
     do_accept_consent(consent, access_token, user)
     |> handle_consent_result("accept")
   end
 
-  def reject_consent(consent, access_token, user) do
+  defp reject_consent(consent, access_token, user) do
     do_reject_consent(consent, access_token, user)
     |> handle_consent_result("reject")
   end

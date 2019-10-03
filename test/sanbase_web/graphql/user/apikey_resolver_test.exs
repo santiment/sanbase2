@@ -1,7 +1,5 @@
 defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
   use SanbaseWeb.ConnCase, async: false
-  @moduletag checkout_repo: [Sanbase.Repo, Sanbase.TimescaleRepo]
-  @moduletag timescaledb: true
 
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory

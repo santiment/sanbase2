@@ -29,7 +29,10 @@ defmodule Sanbase.Oauth2.Hydra do
     case Subscription.current_subscription(user, Product.product_sangraphs()) do
       %Subscription{plan: %Plan{id: plan_id}} ->
         accept_consent(consent, access_token, user)
-        add_user_to_team(user, plan_id)
+
+        # If user does not exist it will be created only after user browser is redirected so we don' have control here.
+        # We wait for 2 secs and add this user async to the corresponding team to mitigate this issue.
+        add_user_to_team_async_with_sleep(user, plan_id)
         {:ok, "Adding user to the corresponding team"}
 
       nil ->
@@ -39,7 +42,7 @@ defmodule Sanbase.Oauth2.Hydra do
   end
 
   # helpers
-  defp add_user_to_team(user, plan_id) do
+  defp add_user_to_team_async_with_sleep(user, plan_id) do
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
       Process.sleep(2000)
       Sanbase.GrafanaApi.add_subscribed_user_to_team(user, plan_id)

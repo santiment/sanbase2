@@ -26,4 +26,21 @@ defmodule Sanbase.Clickhouse.Metric.Description do
   to mixers and gives a much better view of the actual amount of tokens that are being
   transacted
   """
+
+  @velocity """
+    Token Velocity is a metric which estimates the average frequency
+    at which the tokens change hands during some period of time.
+
+    Example:
+    * Alice gives Bob 10 tokens at block 1 and
+    * Bob gives Charlie 10 tokens at block 2
+
+    The total transaction volume which is generated for block 1 and 2 is `10 + 10 = 20`
+    The tokens being in circulation is actually `10` - because the same 10 tokens have been transacted.
+    Token Velocity for blocks 1 and 2 is `20 / 10 = 2`
+  """
+
+  def description() do
+    %{"circulation" => @circulation, "velocity" => @velocity}
+  end
 end

@@ -13,7 +13,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
   alias Sanbase.Repo
   alias Sanbase.Model.Project
-  alias Sanbase.Blockchain.ExchangeFundsFlow
+  alias Sanbase.Clickhouse.Metric
   alias Sanbase.Notifications.{Discord, Notification, Type}
   @impl true
   def run() do
@@ -32,8 +32,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
       end)
 
     projects
-    |> Enum.map(&Project.contract_address/1)
-    |> ExchangeFundsFlow.transactions_in(from, to)
+    |> Enum.map(&Metric.get_aggregated("exchange_inflow", &1.slug, from, to, :sum))
     |> case do
       {:ok, list} ->
         notification_type = Type.get_or_create("exchange_inflow")

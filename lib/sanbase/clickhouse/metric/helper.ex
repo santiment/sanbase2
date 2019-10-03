@@ -4,6 +4,26 @@ defmodule Sanbase.Clickhouse.Metric.Helper do
   """
   alias Sanbase.Clickhouse.Metric
 
+  def slug_asset_id_map() do
+    %{
+      "santiment" => 2095,
+      "maker" => 1909
+    }
+  end
+
+  def asset_id_slug_map() do
+    %{
+      2095 => "santiment",
+      1909 => "maker"
+    }
+  end
+
+  def metric_name_id_map() do
+    %{
+      "transaction_volume" => 2
+    }
+  end
+
   def metric_with_name_containing(str) do
     {:ok, metrics} = Metric.available_metrics()
     Enum.filter(metrics, fn metric -> String.contains?(metric, str) end)

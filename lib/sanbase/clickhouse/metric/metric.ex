@@ -85,6 +85,25 @@ defmodule Sanbase.Clickhouse.Metric do
     end
   end
 
+  def get_aggregated(_metric, _slug, _from, _to, aggregation)
+      when aggregation not in @aggregations do
+    {:error, "The aggregation '#{inspect(aggregation)}' is not supported"}
+  end
+
+  def get_aggregated(metric, slug_or_slugs, from, to, aggregation)
+      when is_binary(slug_or_slugs) or is_list(slug_or_slugs) do
+    slugs = slug_or_slugs |> List.wrap()
+
+    case metric in @metrics_mapset do
+      false ->
+        metric_not_available_error(metric)
+
+      true ->
+        aggregation = aggregation || Map.get(@aggregation_map, metric)
+        get_aggregated_metric(metric, slugs, from, to, aggregation)
+    end
+  end
+
   def metadata(metric) do
     case metric in @metrics_mapset do
       false ->
@@ -182,6 +201,18 @@ defmodule Sanbase.Clickhouse.Metric do
     end)
   end
 
+  defp get_aggregated_metric(metric, slugs, from, to, aggregation) when is_list(slugs) do
+    asset_map = Sanbase.Clickhouse.Metric.Helper.slug_asset_id_map()
+    asset_id_map = Sanbase.Clickhouse.Metric.Helper.asset_id_slug_map()
+
+    asset_ids = Map.take(asset_map, slugs) |> Map.values()
+    {query, args} = aggregated_metric_query(metric, asset_ids, from, to, aggregation)
+
+    ClickhouseRepo.query_transform(query, args, fn [asset_id, value] ->
+      %{slug: Map.get(asset_id_map, asset_id), value: value}
+    end)
+  end
+
   defp aggregation(:last, value_column, dt_column), do: "argMax(#{value_column}, #{dt_column})"
   defp aggregation(:first, value_column, dt_column), do: "argMin(#{value_column}, #{dt_column})"
   defp aggregation(aggr, value_column, _dt_column), do: "#{aggr}(#{value_column})"
@@ -224,6 +255,40 @@ defmodule Sanbase.Clickhouse.Metric do
       from,
       to,
       slug
+    ]
+
+    {query, args}
+  end
+
+  defp aggregated_metric_query(metric, asset_ids, from, to, aggregation) do
+    metric_map = Sanbase.Clickhouse.Metric.Helper.metric_name_id_map()
+    metric_id = Map.get(metric_map, Map.get(@name_to_column_map, metric))
+
+    query = """
+    SELECT
+      toUInt32(asset_id),
+      #{aggregation(aggregation, "value", "t")}
+    FROM(
+      SELECT
+        dt,
+        asset_id,
+        argMax(value, computed_at) AS value
+      FROM #{Map.get(@table_map, metric)}
+      PREWHERE
+        dt >= toDateTime(?3) AND
+        dt < toDateTime(?4) AND
+        asset_id IN (?1) AND
+        metric_id = ?2
+      GROUP BY dt, asset_id
+    )
+    GROUP BY asset_id
+    """
+
+    args = [
+      asset_ids,
+      metric_id,
+      from,
+      to
     ]
 
     {query, args}

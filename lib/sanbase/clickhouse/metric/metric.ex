@@ -299,11 +299,11 @@ defmodule Sanbase.Clickhouse.Metric do
     GROUP BY asset_id
     """
 
-    metric_id = Map.get(metric_name_id_map(), Map.get(@name_to_column_map, metric))
+    {:ok, metric_map} = metric_name_id_map()
 
     args = [
       asset_ids,
-      metric_id,
+      Map.get(metric_map, Map.get(@name_to_column_map, metric)),
       from,
       to
     ]

@@ -11,7 +11,7 @@ defmodule Sanbase.Clickhouse.Metric.Helper do
       args = []
 
       ClickhouseRepo.query_reduce(query, args, %{}, fn [asset_id, slug], acc ->
-        Map.put(acc, asset_id, slug)
+        Map.put(acc, slug, asset_id)
       end)
     end)
   end
@@ -29,9 +29,14 @@ defmodule Sanbase.Clickhouse.Metric.Helper do
   end
 
   def metric_name_id_map() do
-    %{
-      "transaction_volume" => 2
-    }
+    Sanbase.Cache.get_or_store({__MODULE__, __ENV__.function}, fn ->
+      query = "SELECT toUInt32(metric_id), name FROM metric_metadata"
+      args = []
+
+      ClickhouseRepo.query_reduce(query, args, %{}, fn [metric_id, name], acc ->
+        Map.put(acc, name, metric_id)
+      end)
+    end)
   end
 
   def metric_with_name_containing(str) do

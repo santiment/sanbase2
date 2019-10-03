@@ -2,14 +2,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   require Logger
 
   import SanbaseWeb.Graphql.Helpers.Utils, only: [fit_from_datetime: 2, calibrate_interval: 7]
-  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
 
-  alias Sanbase.Model.{Infrastructure, Project, ExchangeAddress}
-
-  alias Sanbase.Blockchain.TokenAgeConsumed
-
-  # Return this number of datapoints is the provided interval is an empty string
-  @datapoints 50
+  alias Sanbase.Model.{Infrastructure, ExchangeAddress}
 
   @doc ~S"""
   Return the token age consumed for the given slug and time period.
@@ -32,25 +26,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   Return the average age of the tokens that were transacted for the given slug and time period.
   """
   def average_token_age_consumed_in_days(
-        _root,
-        %{slug: slug, from: from, to: to, interval: interval} = args,
-        _resolution
+        root,
+        %{slug: _, from: _, to: _, interval: _} = args,
+        resolution
       ) do
-    with {:ok, contract, token_decimals} <- Project.contract_info_by_slug(slug),
-         {:ok, from, to, interval} <-
-           calibrate_interval(TokenAgeConsumed, contract, from, to, interval, 3600, @datapoints),
-         {:ok, token_age} <-
-           TokenAgeConsumed.average_token_age_consumed_in_days(
-             contract,
-             from,
-             to,
-             interval,
-             token_decimals
-           ) do
-      {:ok, token_age |> fit_from_datetime(args)}
-    else
-      {:error, error} ->
-        {:error, handle_graphql_error("Average Token Age Consumed In Days", slug, error)}
+    with {:ok, age_consumed} <- token_age_consumed(root, args, resolution),
+         {:ok, transaction_volume} <- transaction_volume(root, args, resolution) do
+      average_token_age_consumed_in_days =
+        Enum.zip(age_consumed, transaction_volume)
+        |> Enum.map(fn {%{token_age_consumed: token_age_consumed, datetime: datetime},
+                        %{transaction_volume: trx_volume}} ->
+          %{
+            datetime: datetime,
+            token_age: token_age_in_days(token_age_consumed, trx_volume)
+          }
+        end)
+
+      {:ok, average_token_age_consumed_in_days}
     end
   end
 
@@ -111,5 +103,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
   def exchange_wallets(_, _, _) do
     {:error, "Currently only ethereum and bitcoin exchanges are supported"}
+  end
+
+  defp token_age_in_days(token_age_consumed, trx_volume)
+       when token_age_consumed <= 0.1 or trx_volume <= 0.1 do
+    0
+  end
+
+  defp token_age_in_days(token_age_consumed, trx_volume) do
+    token_age_consumed / trx_volume
   end
 end

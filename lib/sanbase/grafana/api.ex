@@ -16,9 +16,9 @@ defmodule Sanbase.GrafanaApi do
 
   def plan_team_map, do: @plan_team_map
 
-  def get_user_by_email_or_username(%User{username: username, email: email}) do
+  def get_user_by_email_or_username(%{username: username, email: email}) do
     token = email || username
-    request_path = "api/users/lookup?loginOrEmail=#{token}"
+    request_path = "api/users/lookup?" <> URI.encode_query(%{"loginOrEmail" => token})
 
     Path.join(base_url(), request_path)
     |> http_client().get(headers())
@@ -156,8 +156,17 @@ defmodule Sanbase.GrafanaApi do
         {:ok, body |> Jason.decode!()}
 
       other ->
-        Logger.error("Error response from grafana API: #{inspect(other)}")
+        Logger.error("Error response from grafana API: #{inspect(filter_response(other))}")
         {:error, "Error response from grafana API"}
     end
   end
+
+  defp filter_response(
+         {:ok, %HTTPoison.Response{request: %HTTPoison.Request{headers: _}} = response}
+       ) do
+    response
+    |> Map.put(:request, Map.put(Map.from_struct(response.request), :headers, "***filtered***"))
+  end
+
+  defp filter_response(other), do: other
 end

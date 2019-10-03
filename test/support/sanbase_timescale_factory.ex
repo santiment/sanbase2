@@ -3,8 +3,7 @@ defmodule Sanbase.TimescaleFactory do
 
   alias Sanbase.Blockchain.{
     TokenAgeConsumed,
-    TransactionVolume,
-    ExchangeFundsFlow
+    TransactionVolume
   }
 
   @contract_address "0x1234"
@@ -22,15 +21,6 @@ defmodule Sanbase.TimescaleFactory do
       contract_address: @contract_address,
       timestamp: DateTime.utc_now(),
       transaction_volume: 1000.0
-    }
-  end
-
-  def exchange_funds_flow_factory() do
-    %ExchangeFundsFlow{
-      contract_address: @contract_address,
-      timestamp: DateTime.utc_now(),
-      incoming_exchange_funds: 1000,
-      outgoing_exchange_funds: 1000
     }
   end
 end

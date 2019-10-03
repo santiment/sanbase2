@@ -1,8 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   require Logger
 
-  import SanbaseWeb.Graphql.Helpers.Utils, only: [fit_from_datetime: 2, calibrate_interval: 7]
-
   alias Sanbase.Model.{Infrastructure, ExchangeAddress}
 
   @doc ~S"""

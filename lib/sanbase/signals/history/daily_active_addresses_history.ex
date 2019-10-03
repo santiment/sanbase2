@@ -20,16 +20,17 @@ defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
     @historical_days_interval "1d"
 
     def get_data(slug, time_window) when is_binary(slug) do
-      with {:ok, contract, _} <- Sanbase.Model.Project.contract_info_by_slug(slug) do
-        Sanbase.Clickhouse.DailyActiveAddresses.average_active_addresses(
-          contract,
-          Timex.shift(Timex.now(),
-            days: -(@historical_days_from + Sanbase.DateTimeUtils.str_to_days(time_window) - 1)
-          ),
-          Timex.now(),
-          @historical_days_interval
-        )
-      end
+      to = Timex.now()
+      shift = @historical_days_from + Sanbase.DateTimeUtils.str_to_days(time_window) - 1
+
+      Sanbase.Clickhouse.Metric.get(
+        "daily_active_addresses",
+        slug,
+        Timex.shift(to, days: -shift),
+        to,
+        @historical_days_interval,
+        :avg
+      )
     end
 
     import Sanbase.DateTimeUtils, only: [str_to_days: 1]

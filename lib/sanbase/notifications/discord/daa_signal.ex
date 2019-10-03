@@ -13,6 +13,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
 
   alias Sanbase.Model.Project
   alias Sanbase.Repo
+  alias Sanbase.Clickhouse.Metric
   alias Sanbase.Clickhouse.DailyActiveAddresses
 
   alias Sanbase.Notifications.{Discord, Notification, Type}
@@ -184,13 +185,12 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   end
 
   defp get_average_active_addresses(projects) do
-    projects
-    |> Enum.map(&Project.contract_address/1)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.chunk_every(50)
-    |> Enum.map(fn contracts ->
-      DailyActiveAddresses.average_active_addresses(contracts, timeframe_from(), timeframe_to())
-    end)
+    slugs =
+      projects
+      |> Enum.map(& &1.slug)
+      |> Enum.reject(&is_nil/1)
+
+    Metric.get_aggregated("daily_active_addresses", slugs, timeframe_from(), timeframe_to(), :avg)
     |> handle_result()
   end
 

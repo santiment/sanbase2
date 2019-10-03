@@ -191,25 +191,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   end
 
   defp average_daily_active_addresses_on_load(loader, project) do
-    case Project.contract_info(project) do
-      {:ok, contract_address, _token_decimals} ->
-        average_daily_active_addresses =
-          loader
-          |> Dataloader.get(
-            SanbaseDataloader,
-            :average_daily_active_addresses,
-            contract_address
-          ) || 0
+    average_daily_active_addresses =
+      loader
+      |> Dataloader.get(
+        SanbaseDataloader,
+        :average_daily_active_addresses,
+        project.slug
+      ) || 0
 
-        {:ok, average_daily_active_addresses}
-
-      {:error, {:missing_contract, _}} ->
-        {:ok, 0}
-
-      {:error, error} ->
-        handle_graphql_error("average daily active addresses", project.slug, error)
-        {:ok, 0}
-    end
+    {:ok, average_daily_active_addresses}
   end
 
   def daily_active_deposits(

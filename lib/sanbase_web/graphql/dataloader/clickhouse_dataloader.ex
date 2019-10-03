@@ -3,7 +3,6 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   alias Sanbase.Model.Project
 
   @max_concurrency 100
-  alias Sanbase.Clickhouse.DailyActiveAddresses
 
   def data() do
     Dataloader.KV.new(&query/2)
@@ -13,24 +12,21 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     args = Enum.to_list(args)
     [%{from: from, to: to} | _] = args
 
-    args
-    |> Enum.map(fn %{project: project} -> Project.contract_address(project) end)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.chunk_every(100)
-    |> Sanbase.Parallel.map(
-      fn contract_addresses ->
-        {:ok, daily_active_addresses} =
-          DailyActiveAddresses.average_active_addresses(contract_addresses, from, to)
+    slugs =
+      args
+      |> Enum.map(fn %{project: project} -> project.slug end)
+      |> Enum.reject(&is_nil/1)
 
-        daily_active_addresses
-      end,
-      map_type: :flat_map,
-      max_concurrency: @max_concurrency
-    )
-    |> Enum.map(fn {contract_address, addresses} ->
-      {contract_address, addresses}
-    end)
-    |> Map.new()
+    Sanbase.Clickhouse.Metric.get_aggregated("daily_active_addresses", slugs, from, to, :avg)
+    |> case do
+      {:ok, result} ->
+        result
+        |> Enum.map(fn %{slug: slug, value: value} -> {slug, value} end)
+        |> Map.new()
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   def query(:average_dev_activity, args) do

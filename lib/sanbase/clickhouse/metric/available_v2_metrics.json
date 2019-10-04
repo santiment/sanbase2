@@ -467,7 +467,8 @@
   },
 
   {
-    "metric": "transaction_volume",
+    "metric": "transaction_volume_5min",
+    "alias": "transaction_volume",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
@@ -504,7 +505,7 @@
   },
 
   {
-    "metric": "stack_age_consumed",
+    "metric": "stack_age_consumed_5min",
     "alias": "age_destroyed",
     "access": "restricted",
     "aggregation": "sum",

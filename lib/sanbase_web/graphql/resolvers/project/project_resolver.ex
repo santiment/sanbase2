@@ -347,8 +347,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       dev_activity_map
       |> Map.get(org)
       |> case do
-        nil -> {:ok, 0}
-        result -> result
+        value when is_number(value) -> {:ok, value}
+        _ -> {:error, :nodata}
       end
     end)
   end

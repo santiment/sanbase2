@@ -89,7 +89,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
       {:ok, result} ->
         result
         |> Enum.map(fn {org, dev_activity} ->
-          {org, {:ok, dev_activity / days}}
+          {org, dev_activity / days}
         end)
         |> Map.new()
 

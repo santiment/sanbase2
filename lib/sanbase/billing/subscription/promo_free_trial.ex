@@ -86,11 +86,14 @@ defmodule Sanbase.Billing.Subscription.PromoFreeTrial do
     cancel_after_days =
       get_in(@promo_code_stats, [coupon.metadata["current_promotion"], :cancel_after_days])
 
+    end_utime = Timex.shift(Timex.now(), days: cancel_after_days) |> DateTime.to_unix()
+
     %{
       customer: user.stripe_customer_id,
       items: [%{plan: plan.stripe_id}],
-      cancel_at: Timex.shift(Timex.now(), days: cancel_after_days) |> DateTime.to_unix(),
-      coupon: coupon.id
+      cancel_at: end_utime,
+      coupon: coupon.id,
+      trial_end: end_utime
     }
   end
 

@@ -42,7 +42,7 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
         [] ->
           []
       end,
-      max_concurrency: @max_concurrency,
+      max_concurrency: 8,
       ordered: false,
       map_type: :flat_map
     )

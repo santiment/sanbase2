@@ -14,8 +14,8 @@ defmodule Sanbase.Influxdb.Store do
       require Logger
 
       alias Sanbase.Influxdb.Measurement
-      @query_timeout 10_000
-      @pool_timeout 10_000
+      @query_timeout 20_000
+      @pool_timeout 20_000
 
       def init(conn) do
         config =

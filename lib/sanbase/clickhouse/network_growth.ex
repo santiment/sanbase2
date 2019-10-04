@@ -11,23 +11,23 @@ defmodule Sanbase.Clickhouse.NetworkGrowth do
     query = """
     SELECT
       toUnixTimestamp(time) AS dt,
-      SUM(value) AS new_addresses
+      SUM(new_addresses) AS new_addresses
     FROM (
       SELECT
         toDateTime(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) AS time,
-        toUInt32(0) AS value
+        toUInt32(0) AS new_addresses
       FROM numbers(?2)
 
       UNION ALL
 
       SELECT
-        toDateTime(intDiv(toUInt32(dt), ?1) * ?1) AS time,
-        SUM(total_addresses) AS value
+        toDateTime(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS time,
+        SUM(value) AS new_addresses
       FROM eth_network_growth
       PREWHERE
         contract = ?3 AND
-        dt >= toDateTime(?4) AND
-        dt <= toDateTime(?5)
+        dt >= toDate(toDateTime(?4)) AND
+        dt <= toDate(toDateTime(?5))
       GROUP BY time
     )
     GROUP BY dt

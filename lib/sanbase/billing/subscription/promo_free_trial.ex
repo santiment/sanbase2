@@ -15,7 +15,7 @@ defmodule Sanbase.Billing.Subscription.PromoFreeTrial do
     "devcon2019" => %{
       # API Pro, Sanbase Pro and Grafana Pro
       promo_plans: [3, 13, 42],
-      cancel_after_days: 14,
+      trial_days: 14,
       coupon_args: %{
         name: "Devcon 2019 santiment free trial",
         percent_off: 100,
@@ -83,15 +83,13 @@ defmodule Sanbase.Billing.Subscription.PromoFreeTrial do
   end
 
   defp promotional_subsciption_data(user, plan, coupon) do
-    cancel_after_days =
-      get_in(@promo_code_stats, [coupon.metadata["current_promotion"], :cancel_after_days])
+    trial_days = get_in(@promo_code_stats, [coupon.metadata["current_promotion"], :trial_days])
 
-    end_utime = Timex.shift(Timex.now(), days: cancel_after_days) |> DateTime.to_unix()
+    end_utime = Timex.shift(Timex.now(), days: trial_days) |> DateTime.to_unix()
 
     %{
       customer: user.stripe_customer_id,
       items: [%{plan: plan.stripe_id}],
-      cancel_at: end_utime,
       coupon: coupon.id,
       trial_end: end_utime
     }

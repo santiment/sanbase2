@@ -93,7 +93,7 @@ defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
         data
         |> transform(settings, :absolute)
         |> Enum.reduce({[], 0}, fn
-          %{active_addresses: active_addresses} = elem, {acc, 0} ->
+          %{value: active_addresses} = elem, {acc, 0} ->
             case operation_triggered?(active_addresses, operation) do
               true ->
                 {[Map.put(elem, :triggered?, true) | acc], cooldown}
@@ -123,8 +123,8 @@ defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
       |> Enum.chunk_every(time_window_in_days, 1, :discard)
       |> Enum.map(fn chunk ->
         last_elem = List.last(chunk)
-        %{active_addresses: first_active_addresses} = List.first(chunk)
-        %{active_addresses: last_active_addresses} = last_elem
+        %{value: first_active_addresses} = List.first(chunk)
+        %{value: last_active_addresses} = last_elem
 
         Map.put(
           last_elem,

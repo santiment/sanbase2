@@ -10,7 +10,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
 
   def query(:average_daily_active_addresses, args) do
     args
-    |> Enum.to_lits()
+    |> Enum.to_list()
     |> Enum.group_by(fn %{from: from, to: to} -> {from, to} end)
     |> Sanbase.Parallel.map(fn {{from, to}, group} ->
       {{from, to}, average_daily_active_addresses(group, from, to)}

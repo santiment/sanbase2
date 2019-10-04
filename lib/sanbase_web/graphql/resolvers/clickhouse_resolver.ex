@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 7]
 
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
+  import Sanbase.DateTimeUtils, only: [round_datetime: 2]
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
@@ -178,8 +179,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         args,
         %{context: %{loader: loader}}
       ) do
-    to = Map.get(args, :to, Timex.now())
-    from = Map.get(args, :from, Timex.shift(to, days: -30))
+    to = Map.get(args, :to, Timex.now()) |> round_datetime(300)
+    from = Map.get(args, :from, Timex.shift(to, days: -30)) |> round_datetime(300)
+
     data = %{project: project, from: from, to: to}
 
     loader
@@ -212,7 +214,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         case Project.contract_info(project) do
           # If we do not have an ok tuple but there is a contract then we failed to
           # fetch that value, so it won't be cached
-          {:ok, _, _} -> {:ok, {:nocache, 0}}
+          {:ok, _, _} -> {:nocache, {:ok, 0}}
           _ -> {:ok, nil}
         end
     end

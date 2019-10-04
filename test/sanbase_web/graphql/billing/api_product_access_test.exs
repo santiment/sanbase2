@@ -12,7 +12,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
   setup_all_with_mocks([
     {Sanbase.Prices.Store, [], [fetch_prices_with_resolution: fn _, _, _, _ -> price_resp() end]},
-    {Sanbase.Clickhouse.MVRV, [], [mvrv_ratio: fn _, _, _, _ -> mvrv_resp() end]},
     {Sanbase.Clickhouse.DailyActiveDeposits, [],
      [active_deposits: fn _, _, _, _ -> daily_active_deposits_resp() end]},
     {Sanbase.Clickhouse.NetworkGrowth, [],
@@ -416,14 +415,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
      [
        %{value: 10.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
        %{value: 20.0, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
-     ]}
-  end
-
-  defp mvrv_resp() do
-    {:ok,
-     [
-       %{ratio: 0.1, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
-       %{ratio: 0.2, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
      ]}
   end
 

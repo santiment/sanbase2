@@ -207,7 +207,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         %{}
 
     case Map.get(average_daa_activity_map, project.slug) do
-      {:ok, value} ->
+      value when is_number(value) ->
         {:ok, value}
 
       _ ->

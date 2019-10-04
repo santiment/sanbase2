@@ -88,6 +88,8 @@ defmodule Sanbase.Clickhouse.Metric do
     end
   end
 
+  def get_aggregated(metric, slug, from, to, aggregation \\ nil)
+
   def get_aggregated(_metric, _slug, _from, _to, aggregation)
       when aggregation not in @aggregations do
     {:error, "The aggregation '#{inspect(aggregation)}' is not supported"}

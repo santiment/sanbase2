@@ -24,7 +24,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.NtworkGrowthTest do
     ]
   end
 
-  test "returns data from MVRV calculation", context do
+  test "returns data from NetworkGrowth calculation", context do
     with_mock NetworkGrowth,
       network_growth: fn _, _, _, _ ->
         {:ok,

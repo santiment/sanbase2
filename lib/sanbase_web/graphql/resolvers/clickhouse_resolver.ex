@@ -190,12 +190,32 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   defp average_daily_active_addresses_on_load(loader, data) do
     %{project: project, from: from, to: to} = data
 
+    # The dataloader result is a map where the values are maps, too.
+    # The top level keys are `{from, to}` so if a query like:
+    # {
+    #  allProjects{
+    #    avg1: averageDailyActiveAddresses(from: <from1>, to: <to1>)
+    #    avg2: averageDailyActiveAddresses(from: <from2>, to: <to2>)
+    #  }
+    # }
+    # will correctly group and calculate the different average addresses.
     average_daa_activity_map =
       loader
       |> Dataloader.get(SanbaseDataloader, :average_daily_active_addresses, {from, to}) ||
         %{}
 
-    Map.get(average_daa_activity_map, project.slug)
+    case Map.get(average_daa_activity_map, project.slug) do
+      {:ok, value} ->
+        {:ok, value}
+
+      _ ->
+        case Project.contract_info(project) do
+          # If we do not have an ok tuple but there is a contract then we failed to
+          # fetch that value, so it won't be cached
+          {:ok, _, _} -> {:ok, {:nocache, 0}}
+          _ -> {:ok, nil}
+        end
+    end
   end
 
   def daily_active_deposits(

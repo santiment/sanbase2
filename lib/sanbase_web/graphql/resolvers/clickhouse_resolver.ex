@@ -180,26 +180,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       ) do
     to = Map.get(args, :to, Timex.now())
     from = Map.get(args, :from, Timex.shift(to, days: -30))
+    data = %{project: project, from: from, to: to}
 
     loader
-    |> Dataloader.load(SanbaseDataloader, :average_daily_active_addresses, %{
-      project: project,
-      from: from,
-      to: to
-    })
-    |> on_load(&average_daily_active_addresses_on_load(&1, project))
+    |> Dataloader.load(SanbaseDataloader, :average_daily_active_addresses, data)
+    |> on_load(&average_daily_active_addresses_on_load(&1, data))
   end
 
-  defp average_daily_active_addresses_on_load(loader, project) do
-    average_daily_active_addresses =
-      loader
-      |> Dataloader.get(
-        SanbaseDataloader,
-        :average_daily_active_addresses,
-        project.slug
-      ) || 0
+  defp average_daily_active_addresses_on_load(loader, data) do
+    %{project: project, from: from, to: to} = data
 
-    {:ok, average_daily_active_addresses}
+    average_daa_activity_map =
+      loader
+      |> Dataloader.get(SanbaseDataloader, :average_daily_active_addresses, {from, to}) ||
+        %{}
+
+    Map.get(average_daa_activity_map, project.slug)
   end
 
   def daily_active_deposits(

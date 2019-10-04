@@ -9,24 +9,13 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   end
 
   def query(:average_daily_active_addresses, args) do
-    args = Enum.to_list(args)
-    [%{from: from, to: to} | _] = args
-
-    slugs =
-      args
-      |> Enum.map(fn %{project: project} -> project.slug end)
-      |> Enum.reject(&is_nil/1)
-
-    Sanbase.Clickhouse.Metric.get_aggregated("daily_active_addresses", slugs, from, to, :avg)
-    |> case do
-      {:ok, result} ->
-        result
-        |> Enum.map(fn %{slug: slug, value: value} -> {slug, value} end)
-        |> Map.new()
-
-      {:error, error} ->
-        {:error, error}
-    end
+    args
+    |> Enum.to_lits()
+    |> Enum.group_by(fn %{from: from, to: to} -> {from, to} end)
+    |> Sanbase.Parallel.map(fn {{from, to}, group} ->
+      {{from, to}, average_daily_active_addresses(group, from, to)}
+    end)
+    |> Map.new()
   end
 
   def query(:average_dev_activity, args) do
@@ -63,6 +52,24 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
       {project.id, eth_spent_per_project(project, eth_spent)}
     end)
     |> Map.new()
+  end
+
+  defp average_daily_active_addresses(args, from, to) do
+    slugs =
+      args
+      |> Enum.map(fn %{project: project} -> project.slug end)
+      |> Enum.reject(&is_nil/1)
+
+    Sanbase.Clickhouse.Metric.get_aggregated("daily_active_addresses", slugs, from, to, :avg)
+    |> case do
+      {:ok, result} ->
+        result
+        |> Enum.map(fn %{slug: slug, value: value} -> {slug, value} end)
+        |> Map.new()
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   defp average_dev_activity(group, days) do

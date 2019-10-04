@@ -226,6 +226,7 @@ defmodule Sanbase.Clickhouse.Metric do
     {:ok, asset_id_map} = asset_id_slug_map()
 
     asset_ids = Map.take(asset_map, slugs) |> Map.values()
+
     {query, args} = aggregated_metric_query(metric, asset_ids, from, to, aggregation)
 
     ClickhouseRepo.query_transform(query, args, fn [asset_id, value] ->

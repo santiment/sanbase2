@@ -108,6 +108,7 @@ defmodule Sanbase.Signal.Trigger do
     %Trigger{trigger | settings: trigger_settings}
   end
 
+  @spec historical_trigger_points(Sanbase.Signal.Trigger.t()) :: {:error, any} | {:ok, [any]}
   def historical_trigger_points(%Trigger{settings: trigger_settings, cooldown: cooldown}) do
     Sanbase.Signal.History.historical_trigger_points(trigger_settings, cooldown)
   end

@@ -180,35 +180,41 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       ) do
     to = Map.get(args, :to, Timex.now())
     from = Map.get(args, :from, Timex.shift(to, days: -30))
+    data = %{project: project, from: from, to: to}
 
     loader
-    |> Dataloader.load(SanbaseDataloader, :average_daily_active_addresses, %{
-      project: project,
-      from: from,
-      to: to
-    })
-    |> on_load(&average_daily_active_addresses_on_load(&1, project))
+    |> Dataloader.load(SanbaseDataloader, :average_daily_active_addresses, data)
+    |> on_load(&average_daily_active_addresses_on_load(&1, data))
   end
 
-  defp average_daily_active_addresses_on_load(loader, project) do
-    case Project.contract_info(project) do
-      {:ok, contract_address, _token_decimals} ->
-        average_daily_active_addresses =
-          loader
-          |> Dataloader.get(
-            SanbaseDataloader,
-            :average_daily_active_addresses,
-            contract_address
-          ) || 0
+  defp average_daily_active_addresses_on_load(loader, data) do
+    %{project: project, from: from, to: to} = data
 
-        {:ok, average_daily_active_addresses}
+    # The dataloader result is a map where the values are maps, too.
+    # The top level keys are `{from, to}` so if a query like:
+    # {
+    #  allProjects{
+    #    avg1: averageDailyActiveAddresses(from: <from1>, to: <to1>)
+    #    avg2: averageDailyActiveAddresses(from: <from2>, to: <to2>)
+    #  }
+    # }
+    # will correctly group and calculate the different average addresses.
+    average_daa_activity_map =
+      loader
+      |> Dataloader.get(SanbaseDataloader, :average_daily_active_addresses, {from, to}) ||
+        %{}
 
-      {:error, {:missing_contract, _}} ->
-        {:ok, 0}
+    case Map.get(average_daa_activity_map, project.slug) do
+      {:ok, value} ->
+        {:ok, value}
 
-      {:error, error} ->
-        handle_graphql_error("average daily active addresses", project.slug, error)
-        {:ok, 0}
+      _ ->
+        case Project.contract_info(project) do
+          # If we do not have an ok tuple but there is a contract then we failed to
+          # fetch that value, so it won't be cached
+          {:ok, _, _} -> {:ok, {:nocache, 0}}
+          _ -> {:ok, nil}
+        end
     end
   end
 

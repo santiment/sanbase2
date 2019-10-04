@@ -34,6 +34,8 @@ defmodule Sanbase.Model.Project.ContractData do
   # the contract address contains simply 'ETH'
   def contract_info(%Project{slug: "ethereum"}), do: {:ok, "ETH", 18}
   def contract_info(%Project{slug: "bitcoin"}), do: {:ok, "BTC", 8}
+  def contract_info(%Project{slug: "eos"}), do: {:ok, "EOS", 0}
+  def contract_info(%Project{slug: "ripple"}), do: {:ok, "XRP", 0}
 
   def contract_info(%Project{
         main_contract_address: main_contract_address,

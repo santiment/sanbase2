@@ -149,7 +149,8 @@ defmodule Sanbase.Billing.Subscription do
           current_period_end: current_period_end,
           cancel_at_period_end: cancel_at_period_end,
           status: status,
-          trial_end: trial_end
+          trial_end: trial_end,
+          cancel_at: cancel_at
         },
         user,
         plan
@@ -162,7 +163,7 @@ defmodule Sanbase.Billing.Subscription do
       current_period_end: DateTime.from_unix!(current_period_end),
       cancel_at_period_end: cancel_at_period_end,
       status: status,
-      trial_end: format_trial_end(trial_end)
+      trial_end: format_trial_end(trial_end || cancel_at)
     })
     |> Repo.insert(on_conflict: :nothing)
   end
@@ -186,7 +187,8 @@ defmodule Sanbase.Billing.Subscription do
             cancel_at_period_end: cancel_at_period_end,
             status: status,
             plan: %Stripe.Plan{id: stripe_plan_id},
-            trial_end: trial_end
+            trial_end: trial_end,
+            cancel_at: cancel_at
           }} <- StripeApi.retrieve_subscription(stripe_id),
          {:plan_not_exist?, %Plan{id: plan_id}} <-
            {:plan_not_exist?, Plan.by_stripe_id(stripe_plan_id)} do
@@ -195,7 +197,7 @@ defmodule Sanbase.Billing.Subscription do
         cancel_at_period_end: cancel_at_period_end,
         status: status,
         plan_id: plan_id,
-        trial_end: format_trial_end(trial_end)
+        trial_end: format_trial_end(trial_end || cancel_at)
       })
     else
       {:plan_not_exist?, nil} ->
@@ -218,7 +220,8 @@ defmodule Sanbase.Billing.Subscription do
           cancel_at_period_end: cancel_at_period_end,
           status: status,
           plan: %Stripe.Plan{id: stripe_plan_id},
-          trial_end: trial_end
+          trial_end: trial_end,
+          cancel_at: cancel_at
         },
         db_subscription
       ) do
@@ -233,7 +236,7 @@ defmodule Sanbase.Billing.Subscription do
       cancel_at_period_end: cancel_at_period_end,
       status: status,
       plan_id: plan_id,
-      trial_end: format_trial_end(trial_end)
+      trial_end: format_trial_end(trial_end || cancel_at)
     })
   end
 

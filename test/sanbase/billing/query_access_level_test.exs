@@ -223,7 +223,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         "mvrv_usd_60d",
         "mvrv_usd_7d",
         "mvrv_usd_90d",
-        "stack_age_consumed",
         "stack_circulation_10y",
         "stack_circulation_180d",
         "stack_circulation_1d",

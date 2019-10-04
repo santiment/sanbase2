@@ -223,7 +223,9 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field :volume_change24h, :float do
-      cache_resolve(&ProjectResolver.volume_change_24h/3)
+      cache_resolve(&ProjectResolver.volume_change_24h/3,
+        max_ttl_offset: 600
+      )
     end
 
     field :average_dev_activity, :float do
@@ -364,7 +366,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
       cache_resolve(&ClickhouseResolver.average_daily_active_addresses/3,
         ttl: 600,
-        max_ttl_offset: 240
+        max_ttl_offset: 600
       )
     end
   end

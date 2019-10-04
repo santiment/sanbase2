@@ -80,7 +80,13 @@ defmodule Sanbase.Clickhouse.Github do
   def total_dev_activity(organizations, from, to) when length(organizations) > 20 do
     total_dev_activity =
       Enum.chunk_every(organizations, 20)
-      |> Sanbase.Parallel.map(&total_dev_activity(&1, from, to),
+      |> Enum.map(&Enum.sort/1)
+      |> Sanbase.Parallel.map(
+        fn orgs ->
+          Sanbase.Cache.get_or_store({:erlang.phash2(orgs), 600}, fn ->
+            total_dev_activity(orgs, from, to)
+          end)
+        end,
         timeout: 25_000,
         max_concurrency: 8,
         ordered: false

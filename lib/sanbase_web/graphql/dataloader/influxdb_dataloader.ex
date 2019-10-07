@@ -32,7 +32,9 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
           else
             error ->
               Logger.warn(
-                "Cannot fetch average volume for a list of projects. Reason: #{inspect(error)}"
+                "Cannot fetch average volume for a list of projects #{inspect(measurements)}. Reason: #{
+                  inspect(error)
+                }"
               )
 
               []

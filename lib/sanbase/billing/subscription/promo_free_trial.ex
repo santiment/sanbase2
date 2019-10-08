@@ -90,7 +90,8 @@ defmodule Sanbase.Billing.Subscription.PromoFreeTrial do
       customer: user.stripe_customer_id,
       items: [%{plan: plan.stripe_id}],
       cancel_at: Timex.shift(Timex.now(), days: cancel_after_days) |> DateTime.to_unix(),
-      coupon: coupon.id
+      coupon: coupon.id,
+      metadata: %{"current_promotion" => "devcon2019"}
     }
   end
 

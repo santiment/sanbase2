@@ -129,6 +129,7 @@ defmodule SanbaseWeb.Endpoint do
           Sanbase.Billing.Subscription.PromoFreeTrial.promo_code_stats()["devcon2019"][
             :coupon_args
           ]
+          |> put_in([:metadata, "email"], email)
           |> Sanbase.StripeApi.create_promo_coupon()
 
         frontend_url() <>

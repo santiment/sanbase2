@@ -430,6 +430,20 @@ defmodule Sanbase.Billing.Subscription do
     format_trial_end(trial_end || cancel_at)
   end
 
+  defp calculate_trial_end(%Stripe.Subscription{
+         trial_end: trial_end,
+         cancel_at: cancel_at,
+         created: created
+       })
+       when not is_nil(cancel_at) and not is_nil(created) do
+    # set trial_end if subscription is set to end 14 days after it is created
+    if ((cancel_at - created) / (3600 * 24)) |> Float.round() == 14 do
+      format_trial_end(trial_end || cancel_at)
+    else
+      format_trial_end(trial_end)
+    end
+  end
+
   defp calculate_trial_end(%Stripe.Subscription{trial_end: trial_end}) do
     format_trial_end(trial_end)
   end

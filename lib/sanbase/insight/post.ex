@@ -377,8 +377,8 @@ defmodule Sanbase.Insight.Post do
     from(
       p in query,
       where: p.published_at >= ^datetime,
-      preload: [:tags],
-      select: [:id, :user_id]
+      preload: [:tags, :user],
+      select: [:id, :title, :published_at, :user_id]
     )
   end
 

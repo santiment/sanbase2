@@ -358,6 +358,11 @@ defmodule Sanbase.Auth.User do
     end
   end
 
+  def users_with_emails() do
+    from(u in User, where: not is_nil(u.email))
+    |> Repo.all()
+  end
+
   @spec add_eth_account(%User{}, String.t()) :: {:ok, %User{}} | {:error, Ecto.Changeset.t()}
   def add_eth_account(%User{id: user_id}, address) do
     EthAccount.changeset(%EthAccount{}, %{user_id: user_id, address: address})

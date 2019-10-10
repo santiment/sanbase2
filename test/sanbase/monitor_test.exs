@@ -1,6 +1,7 @@
 defmodule Sanbase.MonitorTest do
   use Sanbase.DataCase, async: false
 
+  import Mock
   import Sanbase.Factory
 
   alias Sanbase.UserList
@@ -8,9 +9,21 @@ defmodule Sanbase.MonitorTest do
   alias Sanbase.Insight.Post
   alias Sanbase.Following.UserFollower
 
-  setup do
+  setup_with_mocks([
+    {Sanbase.Prices.Store, [:passthrough],
+     [
+       fetch_volume_mcap_multiple_measurements: fn _, _, _ ->
+         {:ok,
+          [
+            {"santiment", 3295, 23_478_250, 1.3e-4},
+            {"bitcoin", 20_305_395_991, 154_445_333_816, 0.88107},
+            {"ethereum", 9_414_231_425, 20_823_808_375, 0.11879}
+          ]}
+       end
+     ]}
+  ]) do
     user = insert(:user)
-    author = insert(:user)
+    author = insert(:user, username: "tsetso")
     role_san_clan = insert(:role_san_clan)
 
     project = insert(:project, slug: "santiment")
@@ -21,7 +34,8 @@ defmodule Sanbase.MonitorTest do
       author: author,
       role_san_clan: role_san_clan,
       project: project,
-      project2: project2
+      project2: project2,
+      week_ago: Timex.shift(Timex.now(), days: -7)
     ]
   end
 
@@ -52,8 +66,16 @@ defmodule Sanbase.MonitorTest do
       UserFollower.follow(context.author.id, context.user.id)
       insight = create_insight(context)
       create_watchlist(context)
+      Monitor.monitored_watchlists_for(context.user)
 
-      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      insights_to_send =
+        Monitor.insights_to_send(
+          context.user,
+          Monitor.monitored_watchlists_for(context.user),
+          context.week_ago
+        )
+        |> Enum.map(& &1.id)
+
       assert insights_to_send == [insight.id]
     end
 
@@ -63,7 +85,14 @@ defmodule Sanbase.MonitorTest do
       insert(:user_role, user: context.author, role: context.role_san_clan)
       create_watchlist(context)
 
-      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      insights_to_send =
+        Monitor.insights_to_send(
+          context.user,
+          Monitor.monitored_watchlists_for(context.user),
+          context.week_ago
+        )
+        |> Enum.map(& &1.id)
+
       assert insights_to_send == [insight.id]
     end
 
@@ -72,7 +101,14 @@ defmodule Sanbase.MonitorTest do
 
       create_watchlist(context)
 
-      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      insights_to_send =
+        Monitor.insights_to_send(
+          context.user,
+          Monitor.monitored_watchlists_for(context.user),
+          context.week_ago
+        )
+        |> Enum.map(& &1.id)
+
       assert insights_to_send == []
     end
 
@@ -83,7 +119,14 @@ defmodule Sanbase.MonitorTest do
 
       create_watchlist(context)
 
-      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      insights_to_send =
+        Monitor.insights_to_send(
+          context.user,
+          Monitor.monitored_watchlists_for(context.user),
+          context.week_ago
+        )
+        |> Enum.map(& &1.id)
+
       assert insights_to_send == []
     end
 
@@ -96,7 +139,14 @@ defmodule Sanbase.MonitorTest do
 
       create_watchlist(context)
 
-      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      insights_to_send =
+        Monitor.insights_to_send(
+          context.user,
+          Monitor.monitored_watchlists_for(context.user),
+          context.week_ago
+        )
+        |> Enum.map(& &1.id)
+
       assert insights_to_send == []
     end
 
@@ -107,7 +157,14 @@ defmodule Sanbase.MonitorTest do
 
       create_watchlist(context)
 
-      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      insights_to_send =
+        Monitor.insights_to_send(
+          context.user,
+          Monitor.monitored_watchlists_for(context.user),
+          context.week_ago
+        )
+        |> Enum.map(& &1.id)
+
       assert insights_to_send == []
     end
 
@@ -121,7 +178,14 @@ defmodule Sanbase.MonitorTest do
 
       create_watchlist(context)
 
-      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      insights_to_send =
+        Monitor.insights_to_send(
+          context.user,
+          Monitor.monitored_watchlists_for(context.user),
+          context.week_ago
+        )
+        |> Enum.map(& &1.id)
+
       assert insights_to_send == [insight.id]
     end
 
@@ -130,7 +194,14 @@ defmodule Sanbase.MonitorTest do
       create_insight(context)
       create_watchlist(context, %{is_monitored: false})
 
-      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      insights_to_send =
+        Monitor.insights_to_send(
+          context.user,
+          Monitor.monitored_watchlists_for(context.user),
+          context.week_ago
+        )
+        |> Enum.map(& &1.id)
+
       assert insights_to_send == []
     end
   end
@@ -140,6 +211,7 @@ defmodule Sanbase.MonitorTest do
       %{
         state: Post.approved_state(),
         ready_state: Post.published(),
+        title: "Test insight",
         user: context.author,
         tags: [build(:tag, name: "BTC"), build(:tag, name: "santiment")],
         published_at: DateTime.to_naive(Timex.now())
@@ -155,6 +227,7 @@ defmodule Sanbase.MonitorTest do
 
     update_opts =
       %{
+        name: "My watch list of assets",
         id: watchlist.id,
         list_items: [%{project_id: context.project.id}, %{project_id: context.project2.id}]
       }

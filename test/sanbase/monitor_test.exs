@@ -12,7 +12,7 @@ defmodule Sanbase.MonitorTest do
   setup_with_mocks([
     {Sanbase.Prices.Store, [:passthrough],
      [
-       fetch_volume_mcap_multiple_measurements: fn _, _, _ ->
+       fetch_volume_mcap_multiple_measurements_no_cache: fn _, _, _ ->
          {:ok,
           [
             {"santiment", 3295, 23_478_250, 1.3e-4},

@@ -98,7 +98,7 @@ defmodule Sanbase.UserList.Monitor do
 
     with {:ok, measurement_slugs_map} <- Sanbase.Influxdb.Measurement.names_from_slugs(slugs),
          {:ok, result} <-
-           Sanbase.Prices.Store.fetch_volume_mcap_multiple_measurements(
+           Sanbase.Prices.Store.fetch_volume_mcap_multiple_measurements_no_cache(
              measurement_slugs_map,
              week_ago,
              now

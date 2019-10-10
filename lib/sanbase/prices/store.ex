@@ -211,6 +211,24 @@ defmodule Sanbase.Prices.Store do
     |> volume_mcap_multiple_measurements_reducer(measurement_slug_map)
   end
 
+  def fetch_volume_mcap_multiple_measurements_no_cache(measurement_slug_map, from, to) do
+    measurement_slug_map
+    |> Map.keys()
+    |> Enum.chunk_every(10)
+    |> Sanbase.Parallel.map(
+      fn measurements ->
+        measurements = Enum.sort(measurements)
+        measurements_str = measurements |> Enum.map(fn x -> ~s/"#{x}"/ end) |> Enum.join(", ")
+
+        fetch_volume_mcap_multiple_measurements_query(measurements_str, from, to)
+        |> get()
+      end,
+      ordered: false,
+      max_concurrency: 10
+    )
+    |> volume_mcap_multiple_measurements_reducer(measurement_slug_map)
+  end
+
   def volume_over_threshold(measurements, from, to, threshold) do
     average_volume_for_period_query(measurements, from, to)
     |> get()

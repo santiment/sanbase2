@@ -34,7 +34,8 @@ defmodule Sanbase.MonitorTest do
       author: author,
       role_san_clan: role_san_clan,
       project: project,
-      project2: project2
+      project2: project2,
+      week_ago: Timex.shift(Timex.now(), days: -7)
     ]
   end
 
@@ -65,8 +66,16 @@ defmodule Sanbase.MonitorTest do
       UserFollower.follow(context.author.id, context.user.id)
       insight = create_insight(context)
       create_watchlist(context)
+      Monitor.monitored_watchlists_for(context.user)
 
-      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      insights_to_send =
+        Monitor.insights_to_send(
+          context.user,
+          Monitor.monitored_watchlists_for(context.user),
+          context.week_ago
+        )
+        |> Enum.map(& &1.id)
+
       assert insights_to_send == [insight.id]
     end
 
@@ -76,7 +85,14 @@ defmodule Sanbase.MonitorTest do
       insert(:user_role, user: context.author, role: context.role_san_clan)
       create_watchlist(context)
 
-      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      insights_to_send =
+        Monitor.insights_to_send(
+          context.user,
+          Monitor.monitored_watchlists_for(context.user),
+          context.week_ago
+        )
+        |> Enum.map(& &1.id)
+
       assert insights_to_send == [insight.id]
     end
 
@@ -85,7 +101,14 @@ defmodule Sanbase.MonitorTest do
 
       create_watchlist(context)
 
-      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      insights_to_send =
+        Monitor.insights_to_send(
+          context.user,
+          Monitor.monitored_watchlists_for(context.user),
+          context.week_ago
+        )
+        |> Enum.map(& &1.id)
+
       assert insights_to_send == []
     end
 
@@ -96,7 +119,14 @@ defmodule Sanbase.MonitorTest do
 
       create_watchlist(context)
 
-      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      insights_to_send =
+        Monitor.insights_to_send(
+          context.user,
+          Monitor.monitored_watchlists_for(context.user),
+          context.week_ago
+        )
+        |> Enum.map(& &1.id)
+
       assert insights_to_send == []
     end
 
@@ -109,7 +139,14 @@ defmodule Sanbase.MonitorTest do
 
       create_watchlist(context)
 
-      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      insights_to_send =
+        Monitor.insights_to_send(
+          context.user,
+          Monitor.monitored_watchlists_for(context.user),
+          context.week_ago
+        )
+        |> Enum.map(& &1.id)
+
       assert insights_to_send == []
     end
 
@@ -120,7 +157,14 @@ defmodule Sanbase.MonitorTest do
 
       create_watchlist(context)
 
-      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      insights_to_send =
+        Monitor.insights_to_send(
+          context.user,
+          Monitor.monitored_watchlists_for(context.user),
+          context.week_ago
+        )
+        |> Enum.map(& &1.id)
+
       assert insights_to_send == []
     end
 
@@ -134,7 +178,14 @@ defmodule Sanbase.MonitorTest do
 
       create_watchlist(context)
 
-      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      insights_to_send =
+        Monitor.insights_to_send(
+          context.user,
+          Monitor.monitored_watchlists_for(context.user),
+          context.week_ago
+        )
+        |> Enum.map(& &1.id)
+
       assert insights_to_send == [insight.id]
     end
 
@@ -143,7 +194,14 @@ defmodule Sanbase.MonitorTest do
       create_insight(context)
       create_watchlist(context, %{is_monitored: false})
 
-      insights_to_send = Monitor.insights_to_send(context.user) |> Enum.map(& &1.id)
+      insights_to_send =
+        Monitor.insights_to_send(
+          context.user,
+          Monitor.monitored_watchlists_for(context.user),
+          context.week_ago
+        )
+        |> Enum.map(& &1.id)
+
       assert insights_to_send == []
     end
   end

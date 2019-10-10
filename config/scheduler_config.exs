@@ -63,5 +63,10 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     logo_fetcher: [
       schedule: "@daily",
       task: {Sanbase.ExternalServices.Coinmarketcap.LogoFetcher, :run, []}
+    ],
+    send_weekly_monitor_watchlist_digest: [
+      # FIXME for now run every hour
+      schedule: "0 * * * *",
+      task: {Sanbase.UserList.Monitor, :run, []}
     ]
   ]

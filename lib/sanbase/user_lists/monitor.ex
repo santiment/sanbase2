@@ -5,6 +5,7 @@ defmodule Sanbase.UserList.Monitor do
   or by followed authors.
   """
 
+  require Logger
   import Ecto.Query
 
   alias Sanbase.UserList
@@ -12,15 +13,53 @@ defmodule Sanbase.UserList.Monitor do
   alias Sanbase.Insight.Post
   alias Sanbase.Repo
 
+  def run() do
+    Repo.get_by(User, email: "tsvetozar.penov@gmail.com")
+    |> run_for_user()
+  end
+
+  def run_for_user(user) do
+    now = Timex.now()
+    week_ago = week_ago(now)
+    watchlists = monitored_watchlists_for(user)
+    insights = insights_to_send(user, watchlists, week_ago)
+
+    if length(insights) > 0 do
+      send_params = create_email_params(watchlists, insights, week_ago, now)
+      send_email(user, send_params)
+
+      Logger.info(
+        "Inspect watchlist monitor. Sending to email: [#{user.email}], send_params: [#{
+          inspect(send_params)
+        }]"
+      )
+    end
+
+    :ok
+  end
+
+  def send_email(user, send_params) do
+    Sanbase.MandrillApi.send("Monitoring watchlist", user.email, send_params, %{
+      merge_language: "handlebars"
+    })
+  end
+
+  def create_email_params(watchlists, insights, week_ago, now) do
+    %{
+      dates: format_dates(week_ago, now),
+      watchlists:
+        Enum.map(watchlists, &format_watchlist(&1, week_ago, now)) |> Enum.reject(&is_nil/1),
+      insights: Enum.map(insights, &format_insight(&1))
+    }
+  end
+
   @doc """
   Take all published and approved insights from the last week from
   authors followed by the user OR san family members. Filter only the insights
   that contain tags for projects that are in some of the user's monitored watchlists.
   """
-  def insights_to_send(user) do
-    watchlists = monitored_watchlists_for(user)
-
-    week_ago()
+  def insights_to_send(user, watchlists, week_ago) do
+    week_ago
     |> Post.public_insights_after()
     |> insights_by_followed_users_or_sanfamily(user.id)
     |> insights_with_asset_in_monitored_watchlist(watchlists)
@@ -40,12 +79,79 @@ defmodule Sanbase.UserList.Monitor do
     |> MapSet.new()
   end
 
-  defp monitored_watchlists_for(%User{id: user_id}) do
+  def monitored_watchlists_for(%User{id: user_id}) do
     from(ul in UserList,
       where: ul.user_id == ^user_id and ul.is_monitored == true,
       preload: [list_items: [:project]]
     )
     |> Repo.all()
+  end
+
+  defp format_dates(week_ago, now) do
+    "#{Timex.format!(week_ago, "%B %d", :strftime)} - #{Timex.format!(now, "%B %d", :strftime)}"
+  end
+
+  defp format_watchlist(%UserList{id: id, name: name, list_items: list_items}, week_ago, now) do
+    slugs =
+      list_items
+      |> Enum.map(& &1.project.slug)
+
+    with {:ok, measurement_slugs_map} <- Sanbase.Influxdb.Measurement.names_from_slugs(slugs),
+         {:ok, result} <-
+           Sanbase.Prices.Store.fetch_volume_mcap_multiple_measurements(
+             measurement_slugs_map,
+             week_ago,
+             now
+           ) do
+      combined_mcap = result |> Enum.reduce(0, fn {_, _, mcap, _}, acc -> acc + mcap end)
+      name_query = URI.encode_query(%{"name" => name})
+
+      %{
+        "watchlist-title" => name,
+        "watchlist-marketcap" => "$ #{format_number(combined_mcap)}",
+        "watchlist-link" => "https://app.santiment.net/assets/list?#{name_query}@#{id}"
+      }
+    else
+      error ->
+        Logger.error(
+          "error computing combined marketcap for slugs: #{inspect(slugs)}. Reason: #{
+            inspect(error)
+          }"
+        )
+
+        nil
+    end
+  end
+
+  defp format_insight(%Post{
+         id: id,
+         title: title,
+         user: %User{username: author},
+         published_at: published_at,
+         tags: tags
+       }) do
+    tags = tags |> Enum.map(fn %{name: name} -> name end)
+
+    %{
+      "insight-title" => title,
+      "insight-author" => author,
+      "insight-date" => Timex.format!(published_at, "%B %d, %Y", :strftime),
+      "insight-link" => "https://insights.santiment.net/read/#{id}",
+      "tags" => tags
+    }
+  end
+
+  defp format_number(number) do
+    cond do
+      number / 1_000_000_000 > 1 ->
+        (number / 1_000_000_000) |> Float.round(2) |> Float.to_string() |> Kernel.<>("B")
+
+      number / 1_000_000 > 1 ->
+        (number / 1_000_000) |> Float.round(2) |> Float.to_string() |> Kernel.<>("M")
+
+      true ->
+        number |> Integer.to_string()
+    end
   end
 
   defp insights_by_followed_users_or_sanfamily(insights, user_id) do
@@ -71,7 +177,7 @@ defmodule Sanbase.UserList.Monitor do
     end)
   end
 
-  defp week_ago(), do: Timex.shift(Timex.now(), days: -7)
+  defp week_ago(now), do: Timex.shift(now, days: -7)
 
   defp san_family_ids() do
     from(ur in UserRole,

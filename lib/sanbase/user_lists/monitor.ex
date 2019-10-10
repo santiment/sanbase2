@@ -14,8 +14,8 @@ defmodule Sanbase.UserList.Monitor do
   alias Sanbase.Repo
 
   def run() do
-    Repo.get_by(User, email: "tsvetozar.penov@gmail.com")
-    |> run_for_user()
+    User.users_with_emails()
+    |> Enum.each(&run_for_user/1)
   end
 
   def run_for_user(user) do
@@ -27,21 +27,23 @@ defmodule Sanbase.UserList.Monitor do
     if length(insights) > 0 do
       send_params = create_email_params(watchlists, insights, week_ago, now)
       send_email(user, send_params)
-
-      Logger.info(
-        "Inspect watchlist monitor. Sending to email: [#{user.email}], send_params: [#{
-          inspect(send_params)
-        }]"
-      )
     end
 
     :ok
   end
 
+  def send_email(_user, %{watchlists: []}), do: :ok
+
   def send_email(user, send_params) do
-    Sanbase.MandrillApi.send("Monitoring watchlist", user.email, send_params, %{
-      merge_language: "handlebars"
-    })
+    send_result =
+      Sanbase.MandrillApi.send("Monitoring watchlist", user.email, send_params, %{
+        merge_language: "handlebars"
+      })
+
+    Logger.info("Inspect watchlist monitor.
+      sent to email: [#{user.email}]
+      send_params: [#{inspect(send_params)}]
+      send_result: #{inspect(send_result)}")
   end
 
   def create_email_params(watchlists, insights, week_ago, now) do

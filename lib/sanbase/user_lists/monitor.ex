@@ -14,36 +14,49 @@ defmodule Sanbase.UserList.Monitor do
   alias Sanbase.Repo
 
   def run() do
-    User.users_with_emails()
+    User.users_with_monitored_watchlist_and_email()
     |> Enum.each(&run_for_user/1)
   end
 
   def run_for_user(user) do
     now = Timex.now()
     week_ago = week_ago(now)
+
     watchlists = monitored_watchlists_for(user)
-    insights = insights_to_send(user, watchlists, week_ago)
 
-    if length(insights) > 0 do
-      send_params = create_email_params(watchlists, insights, week_ago, now)
-      send_email(user, send_params)
-    end
-
-    :ok
+    insights_to_send(user, watchlists, week_ago)
+    |> try_sending_email(watchlists, user, week_ago, now)
   end
 
-  def send_email(_user, %{watchlists: []}), do: :ok
+  def try_sending_email([], _, _, _, _), do: :ok
 
-  def send_email(user, send_params) do
+  def try_sending_email(insights, watchlists, user, week_ago, now) do
+    create_email_params(watchlists, insights, week_ago, now)
+    |> send_email(user)
+  end
+
+  def send_email(%{watchlists: watchlists, insights: insights} = send_params, user)
+      when is_list(watchlists) and is_list(insights) and length(watchlists) > 0 and
+             length(insights) > 0 do
     send_result =
       Sanbase.MandrillApi.send("Monitoring watchlist", user.email, send_params, %{
         merge_language: "handlebars"
       })
 
-    Logger.info("Inspect watchlist monitor.
+    Logger.info("Inspect watchlist monitor digest.
       sent to email: [#{user.email}]
       send_params: [#{inspect(send_params)}]
       send_result: #{inspect(send_result)}")
+  end
+
+  def send_email(send_params, user) do
+    Logger.warn(
+      "Failed sending watchlist monitor digest to user: #{inspect(user)}. Send params: #{
+        inspect(send_params)
+      }"
+    )
+
+    :ok
   end
 
   def create_email_params(watchlists, insights, week_ago, now) do
@@ -60,6 +73,9 @@ defmodule Sanbase.UserList.Monitor do
   authors followed by the user OR san family members. Filter only the insights
   that contain tags for projects that are in some of the user's monitored watchlists.
   """
+
+  def insights_to_send(_user, [], _), do: []
+
   def insights_to_send(user, watchlists, week_ago) do
     week_ago
     |> Post.public_insights_after()
@@ -132,7 +148,7 @@ defmodule Sanbase.UserList.Monitor do
          published_at: published_at,
          tags: tags
        }) do
-    tags = tags |> Enum.map(fn %{name: name} -> name end)
+    tags = tags |> Enum.map(fn %{name: name} -> String.downcase(name) end)
 
     %{
       "insight-title" => title,

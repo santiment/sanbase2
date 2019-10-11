@@ -49,7 +49,7 @@ defmodule Sanbase.UserList do
 
   def create_changeset(%__MODULE__{} = user_list, attrs \\ %{}) do
     user_list
-    |> cast(attrs, [:user_id, :name, :slug, :is_public, :color, :function])
+    |> cast(attrs, [:user_id, :name, :slug, :is_public, :color, :function, :is_monitored])
     |> validate_required([:name, :user_id])
     |> unique_constraint(:slug)
   end

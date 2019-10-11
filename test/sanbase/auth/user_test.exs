@@ -380,4 +380,24 @@ defmodule Sanbase.Auth.UserTest do
 
     assert errors_on(changeset)[:email] |> Enum.at(0) == "Email has already been taken"
   end
+
+  describe "#users_with_monitored_watchlist_and_email" do
+    test "user has email and monitored watchlist - returns 1 record" do
+      user = insert(:user)
+      Sanbase.UserList.create_user_list(user, %{name: "test", is_monitored: true})
+      assert length(User.users_with_monitored_watchlist_and_email()) == 1
+    end
+
+    test "user without email - returns 0 records" do
+      user = insert(:user, email: nil)
+      Sanbase.UserList.create_user_list(user, %{name: "test", is_monitored: true})
+      assert length(User.users_with_monitored_watchlist_and_email()) == 0
+    end
+
+    test "user's watchlist is not monitored" do
+      user = insert(:user)
+      Sanbase.UserList.create_user_list(user, %{name: "test"})
+      assert length(User.users_with_monitored_watchlist_and_email()) == 0
+    end
+  end
 end

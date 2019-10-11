@@ -358,8 +358,12 @@ defmodule Sanbase.Auth.User do
     end
   end
 
-  def users_with_emails() do
-    from(u in User, where: not is_nil(u.email))
+  def users_with_monitored_watchlist_and_email() do
+    from(u in User,
+      join: ul in UserList,
+      on: ul.user_id == u.id,
+      where: not is_nil(u.email) and ul.is_monitored == true
+    )
     |> Repo.all()
   end
 

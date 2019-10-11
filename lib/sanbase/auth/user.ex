@@ -362,7 +362,8 @@ defmodule Sanbase.Auth.User do
     from(u in User,
       join: ul in UserList,
       on: ul.user_id == u.id,
-      where: not is_nil(u.email) and ul.is_monitored == true
+      where: not is_nil(u.email) and ul.is_monitored == true,
+      distinct: true
     )
     |> Repo.all()
   end

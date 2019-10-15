@@ -257,6 +257,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         "transaction_volume_5min",
         "stack_age_consumed_5min",
         "nvt",
+        "nvt_transaction_volume",
         "mvrv_usd_long_short_diff"
       ]
 

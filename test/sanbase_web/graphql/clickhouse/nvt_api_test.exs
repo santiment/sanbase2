@@ -53,9 +53,7 @@ defmodule SanbaseWeb.Graphql.NVTApiTest do
     ]) do
       response = execute_query(context)
 
-      ratios =
-        parse_response(response)
-        |> IO.inspect(label: "60", limit: :infinity)
+      ratios = parse_response(response)
 
       assert ratios == [
                %{

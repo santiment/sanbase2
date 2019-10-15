@@ -109,13 +109,4 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
     assert error ==
              "Cryptocurrencies didn't existed before 2009-01-01 00:00:00Z.\nPlease check `from` and/or `to` param values.\n"
   end
-
-  defp hour_ago(), do: Timex.shift(Timex.now(), hours: -1)
-  defp week_ago(), do: Timex.shift(Timex.now(), days: -7)
-  defp restricted_from(), do: Timex.shift(Timex.now(), days: restrict_from_in_days() - 1)
-
-  defp restrict_from_in_days do
-    -1 *
-      (Config.module_get(AccessControl, :restrict_from_in_days) |> String.to_integer())
-  end
 end

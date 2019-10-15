@@ -36,7 +36,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
   describe "invoice.payment_succeeded event" do
     test "when event with this id doesn't exist - create and process event successfully",
          context do
-      {:ok, %Stripe.Subscription{id: stripe_id}} =
+      {:ok, %Stripe.Subscription{id: _stripe_id}} =
         StripeApiTestReponse.retrieve_subscription_resp()
 
       insert(:subscription_essential,
@@ -162,7 +162,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
     test "when plan does not exist - subscription is not created" do
       {:ok,
        %Stripe.Subscription{
-         id: stripe_id,
+         id: _stripe_id,
          customer: stripe_customer_id,
          plan: %Stripe.Plan{id: stripe_plan_id}
        }} = StripeApiTestReponse.retrieve_subscription_resp()

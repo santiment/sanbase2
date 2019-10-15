@@ -1,12 +1,11 @@
 defmodule SanbaseWeb.Graphql.NVTApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Sanbase.TestHelpers
-  import SanbaseWeb.Graphql.TestHelpers
   import Mock
   import Sanbase.Factory
-
-  @moduletag capture_log: true
+  import Sanbase.TestHelpers
+  import ExUnit.CaptureLog
+  import SanbaseWeb.Graphql.TestHelpers
 
   setup do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
@@ -95,9 +94,15 @@ defmodule SanbaseWeb.Graphql.NVTApiTest do
 
     with_mock Sanbase.Clickhouse.Metric,
       get: fn _, _, _, _, _, _ -> {:error, error} end do
-      response = execute_query(context)
-      ratios = parse_response(response)
-      assert ratios == nil
+      log =
+        capture_log(fn ->
+          response = execute_query(context)
+          ratios = parse_response(response)
+          assert ratios == nil
+        end)
+
+      assert log =~ "Can't fetch nvt"
+      assert log =~ "Some error description here"
     end
   end
 

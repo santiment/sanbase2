@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   require Logger
 
   import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 8]
+  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
 
   alias Sanbase.Clickhouse.Metric
 
@@ -21,8 +22,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         %{source: %{metric: metric}}
       ) do
     with {:ok, from, to, interval} <-
-           calibrate_interval(Metric, metric, slug, from, to, interval, 86_400, @datapoints) do
-      Metric.get(metric, slug, from, to, interval, Map.get(args, :aggregation))
+           calibrate_interval(Metric, metric, slug, from, to, interval, 86_400, @datapoints),
+         {:ok, result} <-
+           Metric.get(metric, slug, from, to, interval, Map.get(args, :aggregation)) do
+      {:ok, result}
+    else
+      {:error, error} ->
+        {:error, handle_graphql_error(metric, slug, error)}
     end
   end
 end

@@ -1,8 +1,5 @@
 defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
   use SanbaseWeb.ConnCase
-  require Sanbase.Utils.Config, as: Config
-
-  alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers

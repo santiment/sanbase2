@@ -1,12 +1,9 @@
 defmodule SanbaseWeb.Graphql.NVTApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Clickhouse.NVT
-
+  import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
   import Mock
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
-  import ExUnit.CaptureLog
   import Sanbase.Factory
 
   @moduletag capture_log: true
@@ -14,97 +11,100 @@ defmodule SanbaseWeb.Graphql.NVTApiTest do
   setup do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
     conn = setup_jwt_auth(build_conn(), user)
+    datetimes = generate_datetimes(~U[2019-01-01 00:00:00Z], "1d", 3)
 
     project = insert(:project, %{slug: "santiment", ticker: "SAN"})
 
     %{
       conn: conn,
       slug: project.slug,
-      from: from_iso8601!("2019-01-01T00:00:00Z"),
-      to: from_iso8601!("2019-01-03T00:00:00Z"),
+      from: List.first(datetimes),
+      to: List.last(datetimes),
+      datetimes: datetimes,
       interval: "1d"
     }
   end
 
   test "returns data from NVT calculation", context do
-    with_mock NVT,
-      nvt_ratio: fn _, _, _, _ ->
-        {:ok,
-         [
-           %{
-             nvt_ratio_circulation: 0.1,
-             nvt_ratio_tx_volume: 0.11,
-             datetime: from_iso8601!("2019-01-01T00:00:00Z")
-           },
-           %{
-             nvt_ratio_circulation: 0.2,
-             nvt_ratio_tx_volume: 0.22,
-             datetime: from_iso8601!("2019-01-02T00:00:00Z")
-           }
-         ]}
-      end do
-      response = execute_query(context)
-      ratios = parse_response(response)
+    %{datetimes: datetimes} = context
 
-      assert_called(NVT.nvt_ratio(context.slug, context.from, context.to, context.interval))
+    with_mocks([
+      {Sanbase.Clickhouse.Metric, [:passthrough],
+       [
+         first_datetime: fn _, _ -> {:ok, context.from} end,
+         get: fn
+           "nvt_transaction_volume", _, _, _, _, _ ->
+             {:ok,
+              [
+                %{datetime: Enum.at(datetimes, 0), value: 100},
+                %{datetime: Enum.at(datetimes, 1), value: 200},
+                %{datetime: Enum.at(datetimes, 2), value: 300}
+              ]}
+
+           "nvt", _, _, _, _, _ ->
+             {:ok,
+              [
+                %{datetime: Enum.at(datetimes, 0), value: 50},
+                %{datetime: Enum.at(datetimes, 1), value: 70},
+                %{datetime: Enum.at(datetimes, 2), value: 30}
+              ]}
+         end
+       ]}
+    ]) do
+      response = execute_query(context)
+
+      ratios =
+        parse_response(response)
+        |> IO.inspect(label: "60", limit: :infinity)
 
       assert ratios == [
                %{
-                 "nvtRatioCirculation" => 0.1,
-                 "nvtRatioTxVolume" => 0.11,
-                 "datetime" => "2019-01-01T00:00:00Z"
+                 "nvtRatioCirculation" => 50,
+                 "nvtRatioTxVolume" => 100,
+                 "datetime" => DateTime.to_iso8601(Enum.at(datetimes, 0))
                },
                %{
-                 "nvtRatioCirculation" => 0.2,
-                 "nvtRatioTxVolume" => 0.22,
-                 "datetime" => "2019-01-02T00:00:00Z"
+                 "nvtRatioCirculation" => 70,
+                 "nvtRatioTxVolume" => 200,
+                 "datetime" => DateTime.to_iso8601(Enum.at(datetimes, 1))
+               },
+               %{
+                 "nvtRatioCirculation" => 30,
+                 "nvtRatioTxVolume" => 300,
+                 "datetime" => DateTime.to_iso8601(Enum.at(datetimes, 2))
                }
              ]
     end
   end
 
   test "returns empty array when there is no data", context do
-    with_mock NVT, nvt_ratio: fn _, _, _, _ -> {:ok, []} end do
+    with_mocks([
+      {Sanbase.Clickhouse.Metric, [:passthrough],
+       [
+         first_datetime: fn _, _ -> {:ok, context.from} end,
+         get: fn _, _, _, _, _, _ -> {:ok, []} end
+       ]}
+    ]) do
       response = execute_query(context)
       ratios = parse_response(response)
 
-      assert_called(NVT.nvt_ratio(context.slug, context.from, context.to, context.interval))
       assert ratios == []
-    end
-  end
-
-  test "logs warning when calculation errors", context do
-    error = "Some error description here"
-
-    with_mock NVT,
-      nvt_ratio: fn _, _, _, _ -> {:error, error} end do
-      assert capture_log(fn ->
-               response = execute_query(context)
-               ratios = parse_response(response)
-               assert ratios == nil
-             end) =~
-               graphql_error_msg("NVT Ratio", context.slug, error)
     end
   end
 
   test "returns error to the user when calculation errors", context do
     error = "Some error description here"
 
-    with_mock NVT,
-              [:passthrough],
-              nvt_ratio: fn _, _, _, _ ->
-                {:error, error}
-              end do
+    with_mock Sanbase.Clickhouse.Metric,
+      get: fn _, _, _, _, _, _ -> {:error, error} end do
       response = execute_query(context)
-      [first_error | _] = json_response(response, 200)["errors"]
-
-      assert first_error["message"] =~
-               graphql_error_msg("NVT Ratio", context.slug, error)
+      ratios = parse_response(response)
+      assert ratios == nil
     end
   end
 
   test "uses 1d as default interval", context do
-    with_mock NVT, nvt_ratio: fn _, _, _, _ -> {:ok, []} end do
+    with_mock Sanbase.Clickhouse.Metric, get: fn _, _, _, _, _, _ -> {:ok, []} end do
       query = """
         {
           nvtRatio(slug: "#{context.slug}", from: "#{context.from}", to: "#{context.to}"){
@@ -118,7 +118,7 @@ defmodule SanbaseWeb.Graphql.NVTApiTest do
       context.conn
       |> post("/graphql", query_skeleton(query, "nvtRatio"))
 
-      assert_called(NVT.nvt_ratio(context.slug, context.from, context.to, "1d"))
+      assert_called(Sanbase.Clickhouse.Metric.get(:_, :_, context.from, context.to, "1d", :_))
     end
   end
 

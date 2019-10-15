@@ -15,7 +15,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   alias Sanbase.Clickhouse.HistoricalBalance.MinersBalance
 
   alias Sanbase.Clickhouse.{
-    NVT,
     RealizedValue,
     DailyActiveDeposits,
     GasUsed,
@@ -261,15 +260,33 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   def nvt_ratio(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval},
+        %{slug: _, from: _, to: _, interval: _} = args,
         _resolution
       ) do
-    case NVT.nvt_ratio(slug, from, to, interval) do
-      {:ok, nvt_ratio} ->
-        {:ok, nvt_ratio}
+    with {:ok, nvt_circulation} <-
+           SanbaseWeb.Graphql.Resolvers.MetricResolver.get_timeseries_data(
+             %{},
+             args,
+             %{source: %{metric: "nvt"}}
+           ),
+         {:ok, nvt_transaction_volume} <-
+           SanbaseWeb.Graphql.Resolvers.MetricResolver.get_timeseries_data(
+             %{},
+             args,
+             %{source: %{metric: "nvt_transaction_volume"}}
+           ) do
+      result =
+        Enum.zip([nvt_circulation, nvt_transaction_volume])
+        |> Enum.map(fn {%{datetime: datetime, value: nvt_ratio_circulation},
+                        %{value: nvt_transaction_volume}} ->
+          %{
+            datetime: datetime,
+            nvt_ratio_circulation: nvt_ratio_circulation,
+            nvt_ratio_tx_volume: nvt_transaction_volume
+          }
+        end)
 
-      {:error, error} ->
-        {:error, handle_graphql_error("NVT Ratio", slug, error)}
+      {:ok, result}
     end
   end
 

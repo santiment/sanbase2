@@ -226,15 +226,20 @@ defmodule Sanbase.Clickhouse.Metric do
 
   defp get_aggregated_metric(metric, slugs, from, to, aggregation) when is_list(slugs) do
     {:ok, asset_map} = slug_asset_id_map()
-    {:ok, asset_id_map} = asset_id_slug_map()
 
-    asset_ids = Map.take(asset_map, slugs) |> Map.values()
+    case Map.take(asset_map, slugs) |> Map.values() do
+      [] ->
+        {:ok, []}
 
-    {query, args} = aggregated_metric_query(metric, asset_ids, from, to, aggregation)
+      asset_ids ->
+        {:ok, asset_id_map} = asset_id_slug_map()
 
-    ClickhouseRepo.query_transform(query, args, fn [asset_id, value] ->
-      %{slug: Map.get(asset_id_map, asset_id), value: value}
-    end)
+        {query, args} = aggregated_metric_query(metric, asset_ids, from, to, aggregation)
+
+        ClickhouseRepo.query_transform(query, args, fn [asset_id, value] ->
+          %{slug: Map.get(asset_id_map, asset_id), value: value}
+        end)
+    end
   end
 
   defp aggregation(:last, value_column, dt_column), do: "argMax(#{value_column}, #{dt_column})"

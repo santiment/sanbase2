@@ -19,7 +19,7 @@ defmodule SanbaseWeb.Graphql.CustomTypes.IntervalTypeTest do
     """
 
     result =
-      conn
+      build_conn()
       |> post("/graphql", query_skeleton(query))
       |> json_response(200)
 

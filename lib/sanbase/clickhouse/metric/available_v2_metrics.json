@@ -527,5 +527,13 @@
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2"
+  },
+
+  {
+    "metric": "nvt_transaction_volume",
+    "access": "restricted",
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   }
 ]

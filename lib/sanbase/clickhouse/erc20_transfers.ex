@@ -80,12 +80,11 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
       to,
       toUnixTimestamp(dt) AS datetime,
       transactionHash,
-      any(value) / ?1 AS value
-    FROM #{@table}
+      value / ?1 AS value
+    FROM #{@table} FINAL
     PREWHERE contract = ?2
     AND dt >= toDateTime(?3)
     AND dt <= toDateTime(?4)
-    GROUP BY contract, from, to, dt, transactionHash, logIndex
     ORDER BY value DESC
     LIMIT ?5
     """

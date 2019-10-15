@@ -158,13 +158,12 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     to_datetime_unix = DateTime.to_unix(to_datetime)
 
     query = """
-    SELECT from, type, to, dt, transactionHash, any(value) / #{@eth_decimals} as value
-    FROM #{@table}
+    SELECT from, type, to, dt, transactionHash, any(value) / #{@eth_decimals} AS value
+    FROM #{@table} FINAL
     PREWHERE from IN (?1) AND NOT to IN (?1)
     AND dt >= toDateTime(?2)
     AND dt <= toDateTime(?3)
     AND type == 'call'
-    GROUP BY from, type, to, dt, transactionHash
     ORDER BY value DESC
     LIMIT ?4
     """
@@ -184,13 +183,12 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     to_datetime_unix = DateTime.to_unix(to_datetime)
 
     query = """
-    SELECT from, type, to, dt, transactionHash, any(value) / #{@eth_decimals} as value
-    FROM #{@table}
+    SELECT from, type, to, dt, transactionHash, any(value) / #{@eth_decimals} AS value
+    FROM #{@table} FINAL
     PREWHERE NOT from IN (?1) AND to IN (?1)
     AND dt >= toDateTime(?2)
     AND dt <= toDateTime(?3)
     AND type == 'call'
-    GROUP BY from, type, to, dt, transactionHash
     ORDER BY value desc
     LIMIT ?4
     """
@@ -211,14 +209,13 @@ defmodule Sanbase.Clickhouse.EthTransfers do
 
     query = """
     SELECT from, type, to, dt, transactionHash, any(value) / #{@eth_decimals} as value
-    FROM #{@table}
+    FROM #{@table} FINAL
     PREWHERE (
       (from IN (?1) AND NOT to IN (?1)) OR
       (NOT from IN (?1) AND to IN (?1)))
     AND dt >= toDateTime(?2)
     AND dt <= toDateTime(?3)
     AND type == 'call'
-    GROUP BY from, type, to, dt, transactionHash
     ORDER BY value desc
     LIMIT ?4
     """
@@ -247,15 +244,11 @@ defmodule Sanbase.Clickhouse.EthTransfers do
 
     query = """
     SELECT from, SUM(value)
-    FROM (
-      SELECT any(value) as value, from
-      FROM #{@table}
-      PREWHERE (#{prewhere_clause})
-      AND dt >= toDateTime(?1)
-      AND dt <= toDateTime(?2)
-      AND type == 'call'
-      GROUP BY from, type, to, dt, transactionHash
-    )
+    FROM #{@table} FINAL
+    PREWHERE (#{prewhere_clause})
+    AND dt >= toDateTime(?1)
+    AND dt <= toDateTime(?2)
+    AND type == 'call'
     GROUP BY from
     """
 
@@ -283,16 +276,12 @@ defmodule Sanbase.Clickhouse.EthTransfers do
 
         UNION ALL
 
-        SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, sum(value) as value
-          FROM (
-            SELECT any(value) as value, dt
-            FROM #{@table}
-            PREWHERE from IN (?3) AND NOT to IN (?3)
-            AND dt >= toDateTime(?4)
-            AND dt <= toDateTime(?5)
-            AND type == 'call'
-            GROUP BY from, type, to, dt, transactionHash
-          )
+        SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) AS time, sum(value) AS value
+        FROM #{@table} FINAL
+        PREWHERE from IN (?3) AND NOT to IN (?3)
+        AND dt >= toDateTime(?4)
+        AND dt <= toDateTime(?5)
+        AND type == 'call'
         GROUP BY time
       )
     GROUP BY time
@@ -313,17 +302,17 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   defp exchange_volume_query(exchange_addresses, from_datetime, to_datetime) do
     query = """
     SELECT
-      toUnixTimestamp(dt) as datetime,
-     (inflow * price_usd) as exchange_inflow,
-     (outflow * price_usd) as exchange_outflow
+      toUnixTimestamp(dt) AS datetime,
+     (inflow * price_usd) AS exchange_inflow,
+     (outflow * price_usd) AS exchange_outflow
     FROM
     (
      SELECT dt, inflow, outflow
       FROM
       (
       SELECT
-    	  toStartOfDay(dt) as dt,
-    	  sum(value) / #{@eth_decimals} as inflow
+    	  toStartOfDay(dt) AS dt,
+    	  sum(value) / #{@eth_decimals} AS inflow
       FROM #{@table}
       PREWHERE
           to IN (?1) AND NOT from IN (?1)
@@ -334,8 +323,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
      ALL INNER JOIN
      (
       SELECT
-    	  toStartOfDay(dt) as dt,
-    	  sum(value) / #{@eth_decimals} as outflow
+    	  toStartOfDay(dt) AS dt,
+    	  sum(value) / #{@eth_decimals} AS outflow
       FROM #{@table}
         PREWHERE
           from IN (?1) AND NOT to IN (?1)
@@ -347,7 +336,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     ALL INNER JOIN
     (
      SELECT
-      toStartOfDay(dt) as dt, AVG(price_usd) as "price_usd"
+      toStartOfDay(dt) AS dt, AVG(price_usd) AS "price_usd"
      FROM prices
       PREWHERE
         name = 'ETH_ethereum'

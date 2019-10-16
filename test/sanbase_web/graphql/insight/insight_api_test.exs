@@ -647,20 +647,23 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       assert String.contains?(error["message"], "Cannot update not owned insight")
     end
 
-    test "cannot update title or text published insight", %{conn: conn, user: user, poll: poll} do
+    test "can update title and text of published insight", %{conn: conn, user: user, poll: poll} do
       upload_image(conn)
 
       post =
         insert(:post,
           poll: poll,
           user: user,
-          ready_state: Post.published()
+          ready_state: Post.published(),
+          updated_at: Timex.shift(Timex.now(), seconds: -1)
         )
 
       mutation = """
         mutation {
           updateInsight(id: #{post.id}, title: "Awesome post2", text: "Example body2") {
-            id
+            title
+            text
+            updatedAt
           }
         }
       """
@@ -670,8 +673,13 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         |> post("/graphql", mutation_skeleton(mutation))
         |> json_response(200)
 
-      [error] = result["errors"]
-      assert error["message"] == "Only the tags can be updated for a published insight"
+      assert result["data"]["updateInsight"]["title"] == "Awesome post2"
+      assert result["data"]["updateInsight"]["text"] == "Example body2"
+
+      updated_at =
+        Sanbase.DateTimeUtils.from_iso8601!(result["data"]["updateInsight"]["updatedAt"])
+
+      assert DateTime.compare(updated_at, post.updated_at) == :gt
     end
 
     test "can update tags for published insight", %{conn: conn, user: user, poll: poll} do

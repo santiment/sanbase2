@@ -120,31 +120,11 @@ defmodule Sanbase.Insight.Post do
 
   def update(post_id, %User{id: user_id}, args) do
     case Repo.get(__MODULE__, post_id) do
-      %__MODULE__{user_id: ^user_id, ready_state: @draft} = post ->
+      %__MODULE__{user_id: ^user_id} = post ->
         post
         |> Repo.preload([:tags, :images])
         |> update_changeset(args)
         |> Repo.update()
-
-      # Allow updating only the tags
-      %__MODULE__{user_id: ^user_id, ready_state: @published} = post ->
-        # Clean the id from the args as it's not needed
-        # and messes up with the check
-        Map.delete(args, :id)
-        |> Map.pop(:tags)
-        |> case do
-          {_, rest} when map_size(rest) > 0 ->
-            {:error, "Only the tags can be updated for a published insight"}
-
-          {tags, _} when is_list(tags) ->
-            post
-            |> Repo.preload([:tags])
-            |> update_changeset(%{tags: tags})
-            |> Repo.update()
-
-          _ ->
-            post
-        end
 
       %__MODULE__{user_id: another_user_id} when user_id != another_user_id ->
         {:error, "Cannot update not owned insight: #{post_id}"}

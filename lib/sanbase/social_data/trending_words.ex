@@ -165,6 +165,10 @@ defmodule Sanbase.SocialData.TrendingWords do
         position: position
       }
     end)
+    |> case do
+      {:ok, result} -> {:ok, Enum.reject(result, &is_nil(&1.position))}
+      {:error, error} -> {:error, error}
+    end
   end
 
   @spec get_project_trending_history(slug, DateTime.t(), DateTime.t(), interval, non_neg_integer) ::
@@ -180,6 +184,10 @@ defmodule Sanbase.SocialData.TrendingWords do
         position: position
       }
     end)
+    |> case do
+      {:ok, result} -> {:ok, Enum.reject(result, &is_nil(&1.position))}
+      {:error, error} -> {:error, error}
+    end
   end
 
   defp get_trending_words_query(from, to, interval, size) do

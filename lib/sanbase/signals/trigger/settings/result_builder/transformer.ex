@@ -14,8 +14,8 @@ defmodule Sanbase.Signal.ResultBuilder.Transformer do
         previous_average: previous_average,
         absolute_change: current - previous,
         percent_change: percent_change(previous_average, current),
-        data: Sanbase.Utils.Transform.rename_map_keys(data, old_key: value_key, new_key: :value),
-        value_key: value_key
+        data:
+          Sanbase.Utils.Transform.rename_map_keys({:ok, data}, old_key: value_key, new_key: :value)
       }
     end)
   end

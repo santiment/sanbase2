@@ -45,8 +45,8 @@ defmodule Sanbase.Utils.Transform do
       iex> Sanbase.Utils.Transform.rename_map_keys({:error, "bad"}, old_key: :a, new_key: :b)
       {:error, "bad"}
   """
-  @spec rename_map_keys({:ok, list(map)}, any(), any()) :: {:ok, list(map)}
-  @spec rename_map_keys({:error, any()}, any(), any()) :: {:error, any()}
+  @spec rename_map_keys({:ok, list(map)}, keyword(atom())) :: {:ok, list(map)}
+  @spec rename_map_keys({:error, any()}, keyword(atom())) :: {:error, any()}
   def rename_map_keys({:ok, data}, opts) do
     old_key = Keyword.get(opts, :old_key)
     new_key = Keyword.get(opts, :new_key)

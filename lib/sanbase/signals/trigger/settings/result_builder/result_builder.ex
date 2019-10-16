@@ -14,13 +14,13 @@ defmodule Sanbase.Signal.ResultBuilder do
       when trigger_module in @trigger_modules do
     payload =
       Transformer.transform(data, Keyword.get(opts, :value_key, :value))
-      |> Enum.reduce(%{}, fn %{} = value, acc ->
-        case operation_triggered?(value, operation) do
+      |> Enum.reduce(%{}, fn %{} = transformed_data, acc ->
+        case operation_triggered?(transformed_data, operation) do
           true ->
             Map.put(
               acc,
-              value.slug,
-              payload_fun.(value, settings)
+              transformed_data.slug,
+              payload_fun.(transformed_data, settings)
             )
 
           false ->

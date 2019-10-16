@@ -11,7 +11,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
 
   import Sanbase.{Validation, Signal.Validation}
   import Sanbase.Signal.Utils
-  import Sanbase.DateTimeUtils, only: [round_datetime: 2, str_to_sec: 1]
+  import Sanbase.DateTimeUtils, only: [round_datetime: 2, str_to_sec: 1, interval_to_str: 1]
 
   alias __MODULE__
   alias Sanbase.Signal.Type

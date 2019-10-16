@@ -70,16 +70,15 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
   defp get_timeseries_params(settings) do
     %{interval: interval, time_window: time_window} = settings
 
-    time_window_sec = str_to_sec(time_window)
     to = Timex.now()
-    from = Timex.shift(to, seconds: -time_window_sec)
+    from = Timex.shift(to, seconds: -str_to_sec(time_window))
 
     {from, to, interval}
   end
 
   defp fetch_metric(metric, slug, from, to, interval) do
     cache_key =
-      {metric, slug, round_datetime(from, 300), round_datetime(to, 300), interval}
+      {:metric_signal, metric, slug, round_datetime(from, 300), round_datetime(to, 300), interval}
       |> :erlang.phash2()
 
     Cache.get_or_store(cache_key, fn ->
@@ -131,9 +130,10 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
       } = values
 
       project = Project.by_slug(slug)
+      {:ok, human_readable_name} = Sanbase.Clickhouse.Metric.human_readable_name(settings.metric)
 
       """
-      **#{project.name}**'s #{settings.metric} #{
+      **#{project.name}**'s #{human_readable_name} #{
         OperationText.to_text(values, settings.operation)
       }**.
       More info here: #{Project.sanbase_link(project)}
@@ -144,10 +144,10 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
       """
     end
 
-    def message(:absolute_change, value, op) do
-      """
+    # defp message(:absolute_change, _value, _op) do
+    #   """
 
-      """
-    end
+    #   """
+    # end
   end
 end

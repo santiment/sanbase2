@@ -51,9 +51,17 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     |> Enum.take(top_projects_to_follow())
     |> Enum.each(&insert_or_update_project/1)
 
+    # Create a map where the coinmarketcap_id is key and the values is the list of
+    # santiment slugs that have that coinmarketcap_id
+    cmc_id_to_slugs_mapping =
+      Project.List.projects_with_source("coinmarketcap")
+      |> Enum.reduce(%{}, fn %Project{slug: slug} = project, acc ->
+        Map.update(acc, Project.coinmarketcap_id(project), [], fn slugs -> [slug | slugs] end)
+      end)
+
     # Store the data in LatestCoinmarketcapData in postgres
     tickers
-    |> Enum.each(&store_latest_coinmarketcap_data!/1)
+    |> Enum.each(&store_latest_coinmarketcap_data!(&1, cmc_id_to_slugs_mapping))
 
     # Store the data in Influxdb
     tickers
@@ -74,25 +82,36 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     {:noreply, state}
   end
 
-  defp store_latest_coinmarketcap_data!(%Ticker{id: coinmarketcap_id} = ticker) do
-    coinmarketcap_id
-    |> LatestCoinmarketcapData.get_or_build()
-    |> LatestCoinmarketcapData.changeset(%{
-      market_cap_usd: ticker.market_cap_usd,
-      name: ticker.name,
-      price_usd: ticker.price_usd,
-      price_btc: ticker.price_btc,
-      rank: ticker.rank,
-      volume_usd: ticker."24h_volume_usd",
-      available_supply: ticker.available_supply,
-      total_supply: ticker.total_supply,
-      symbol: ticker.symbol,
-      percent_change_1h: ticker.percent_change_1h,
-      percent_change_24h: ticker.percent_change_24h,
-      percent_change_7d: ticker.percent_change_7d,
-      update_time: DateTimeUtils.from_iso8601!(ticker.last_updated)
-    })
-    |> Repo.insert_or_update!()
+  defp store_latest_coinmarketcap_data!(
+         %Ticker{id: coinmarketcap_id} = ticker,
+         cmc_id_to_slugs_mapping
+       ) do
+    case Map.get(cmc_id_to_slugs_mapping, coinmarketcap_id, []) |> List.wrap() do
+      [] ->
+        :ok
+
+      slugs ->
+        Enum.each(slugs, fn slug ->
+          slug
+          |> LatestCoinmarketcapData.get_or_build()
+          |> LatestCoinmarketcapData.changeset(%{
+            market_cap_usd: ticker.market_cap_usd,
+            name: ticker.name,
+            price_usd: ticker.price_usd,
+            price_btc: ticker.price_btc,
+            rank: ticker.rank,
+            volume_usd: ticker."24h_volume_usd",
+            available_supply: ticker.available_supply,
+            total_supply: ticker.total_supply,
+            symbol: ticker.symbol,
+            percent_change_1h: ticker.percent_change_1h,
+            percent_change_24h: ticker.percent_change_24h,
+            percent_change_7d: ticker.percent_change_7d,
+            update_time: DateTimeUtils.from_iso8601!(ticker.last_updated)
+          })
+          |> Repo.insert_or_update!()
+        end)
+    end
   end
 
   defp insert_or_update_project(%Ticker{id: slug, name: name, symbol: ticker}) do

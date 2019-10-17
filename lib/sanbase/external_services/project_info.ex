@@ -12,6 +12,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
   defstruct [
     :slug,
     :name,
+    :coinmarketcap_id,
     :website_link,
     :email,
     :reddit_link,
@@ -67,12 +68,21 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
   end
 
   def from_project(project) do
-    struct(__MODULE__, Map.to_list(project))
-    |> struct(Map.to_list(find_or_create_initial_ico(project)))
+    project_info =
+      struct(__MODULE__, Map.to_list(project))
+      |> struct(Map.to_list(find_or_create_initial_ico(project)))
+
+    case Project.coinmarketcap_id(project) do
+      nil -> project_info
+      cmc_id -> %__MODULE__{project_info | coinmarketcap_id: cmc_id}
+    end
   end
 
-  def fetch_coinmarketcap_info(%ProjectInfo{slug: slug} = project_info) do
-    case Coinmarketcap.Scraper.fetch_project_page(slug) do
+  def fetch_coinmarketcap_info(%ProjectInfo{coinmarketcap_id: nil} = project_info),
+    do: project_info
+
+  def fetch_coinmarketcap_info(%ProjectInfo{coinmarketcap_id: cmc_id} = project_info) do
+    case Coinmarketcap.Scraper.fetch_project_page(cmc_id) do
       {:ok, scraped_project_info} ->
         Coinmarketcap.Scraper.parse_project_page(scraped_project_info, project_info)
 

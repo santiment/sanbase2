@@ -13,6 +13,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
   defstruct [
     :id,
     :name,
+    :slug,
     :symbol,
     :price_usd,
     :price_btc,

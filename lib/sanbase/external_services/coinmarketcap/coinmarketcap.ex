@@ -220,9 +220,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
   # Fetch history
   defp fetch_and_process_price_data(%Project{} = project) do
+    cmc_id = Project.coinmarketcap_id(project)
     %Project{slug: slug, ticker: ticker} = project
 
-    if slug != nil and ticker != nil do
+    if cmc_id != nil and slug != nil and ticker != nil do
       do_fetch_and_process_price_data(project)
     else
       :ok

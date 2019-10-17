@@ -113,8 +113,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                  {:ok,
                   [
                     %{datetime: from_iso8601!(dt1_str), position: 10},
-                    %{datetime: from_iso8601!(dt2_str), position: 1},
-                    %{datetime: from_iso8601!(dt3_str), position: nil}
+                    %{datetime: from_iso8601!(dt2_str), position: 1}
                   ]}
       end
     end
@@ -161,7 +160,6 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                  {:ok,
                   [
                     %{datetime: from_iso8601!(dt1_str), position: 5},
-                    %{datetime: from_iso8601!(dt2_str), position: nil},
                     %{datetime: from_iso8601!(dt3_str), position: 10}
                   ]}
       end

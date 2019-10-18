@@ -122,12 +122,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
     end
 
     def payload(values, settings) do
-      %{
-        slug: slug
-        # current: current,
-        # percent_change: percent_change,
-        # absolute_change: absolute_change
-      } = values
+      %{slug: slug} = values
 
       project = Project.by_slug(slug)
       {:ok, human_readable_name} = Sanbase.Clickhouse.Metric.human_readable_name(settings.metric)
@@ -138,16 +133,10 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
       }**.
       More info here: #{Project.sanbase_link(project)}
 
-      ![Data & OHLC Pricechart for the past 90 days](#{
-        chart_url(project, :daily_active_addresses)
+      ![#{human_readable_name} & OHLC  for the past 90 days](#{
+        chart_url(project, {:metric, settings.metric})
       })
       """
     end
-
-    # defp message(:absolute_change, _value, _op) do
-    #   """
-
-    #   """
-    # end
   end
 end

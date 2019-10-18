@@ -118,6 +118,9 @@ defmodule Sanbase.Chart do
       :volume ->
         chart_values(:volume, project, from, to, size)
 
+      {:metric, _} = metric ->
+        chart_values(metric, project, from, to, size)
+
       _ ->
         empty_values(from, to)
     end
@@ -212,6 +215,34 @@ defmodule Sanbase.Chart do
       error ->
         Logger.error(
           "Cannot fetch volume for #{Project.describe(project)}. Reason: #{inspect(error)}"
+        )
+
+        empty_values(from, to)
+    end
+  end
+
+  defp chart_values({:metric, metric}, %Project{} = project, _from, to, size) do
+    %Project{slug: slug, name: name} = project
+    from = Timex.shift(to, days: -size + 1)
+    metric_name = Sanbase.Clickhouse.Metric.human_readable_name(metric)
+
+    with {:ok, data} <- Sanbase.Clickhouse.Metric.get(metric, slug, from, to, "1d") do
+      values = data |> Enum.map(& &1["value"])
+      {min, max} = Math.min_max(values)
+
+      %{
+        chtt: "#{name} - #{metric_name} and OHLC Price" |> URI.encode(),
+        chxt: ",x,r",
+        chxl: "1:|#{datetime_values(from, to)}" |> URI.encode(),
+        chxr: "|2,#{min},#{max}",
+        chxs: "|2N*cUSDs*",
+        chds: "#{min},#{max},",
+        chd: "t1:#{values |> Enum.join(",")}"
+      }
+    else
+      error ->
+        Logger.error(
+          "Cannot fetch #{metric_name} for #{Project.describe(project)}. Reason: #{inspect(error)}"
         )
 
         empty_values(from, to)

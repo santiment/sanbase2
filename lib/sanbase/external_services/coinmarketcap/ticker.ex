@@ -32,6 +32,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
 
   import Sanbase.Math, only: [to_integer: 1, to_float: 1]
 
+  alias Sanbase.Model.Project
   alias Sanbase.DateTimeUtils
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.ExternalServices.Coinmarketcap
@@ -174,9 +175,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
             datetime: DateTimeUtils.from_iso8601!(last_updated)
           }
 
+          symbol = if ticker.id == slug, do: ticker.symbol, else: Project.ticker_by_slug(slug)
+
           PricePoint.convert_to_measurement(
             price_point,
-            Measurement.name_from(%{ticker | id: slug})
+            Measurement.name_from(%{ticker | id: slug, symbol: symbol})
           )
         end)
     end

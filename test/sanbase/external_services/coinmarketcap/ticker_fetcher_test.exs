@@ -72,7 +72,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
   test "ticker fetcher fetches stores in multiple measurements" do
     project =
       insert(:project, %{
-        ticker: "ETH",
+        ticker: "ETH2",
         slug: "ethereum2",
         source_slug_mappings: [
           build(:source_slug_mapping, %{source: "coinmarketcap", slug: "ethereum"})
@@ -106,7 +106,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
              ]
            ]
 
-    assert Store.fetch_price_points!("ETH_ethereum2", from, to) == [
+    assert Store.fetch_price_points!("ETH2_ethereum2", from, to) == [
              [
                DateTime.from_naive!(~N[2018-08-17 08:54:55], "Etc/UTC"),
                300.96820061,

@@ -65,7 +65,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
 
     # Store the data in Influxdb
     tickers
-    |> Enum.map(&Ticker.convert_for_importing/1)
+    |> Enum.flat_map(&Ticker.convert_for_importing(&1, cmc_id_to_slugs_mapping))
     |> Store.import()
 
     Logger.info(

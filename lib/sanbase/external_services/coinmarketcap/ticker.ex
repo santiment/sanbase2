@@ -149,7 +149,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
     |> Enum.filter(fn %__MODULE__{last_updated: last_updated} -> last_updated end)
   end
 
-  @spec convert_for_importing(%__MODULE__{}) :: %Measurement{}
+  @spec convert_for_importing(%__MODULE__{}, %{}) :: [%Measurement{}]
   def convert_for_importing(
         %__MODULE__{
           last_updated: last_updated,
@@ -157,16 +157,28 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
           price_usd: price_usd,
           "24h_volume_usd": volume_usd,
           market_cap_usd: marketcap_usd
-        } = ticker
+        } = ticker,
+        cmc_id_to_slugs_mapping
       ) do
-    price_point = %PricePoint{
-      marketcap_usd: (marketcap_usd || 0) |> to_integer(),
-      volume_usd: (volume_usd || 0) |> to_integer(),
-      price_btc: (price_btc || 0) |> to_float(),
-      price_usd: (price_usd || 0) |> to_float(),
-      datetime: DateTimeUtils.from_iso8601!(last_updated)
-    }
+    case Map.get(cmc_id_to_slugs_mapping, ticker.id, []) |> List.wrap() do
+      [] ->
+        []
 
-    PricePoint.convert_to_measurement(price_point, Measurement.name_from(ticker))
+      slugs ->
+        Enum.map(slugs, fn slug ->
+          price_point = %PricePoint{
+            marketcap_usd: (marketcap_usd || 0) |> to_integer(),
+            volume_usd: (volume_usd || 0) |> to_integer(),
+            price_btc: (price_btc || 0) |> to_float(),
+            price_usd: (price_usd || 0) |> to_float(),
+            datetime: DateTimeUtils.from_iso8601!(last_updated)
+          }
+
+          PricePoint.convert_to_measurement(
+            price_point,
+            Measurement.name_from(%{ticker | id: slug})
+          )
+        end)
+    end
   end
 end

@@ -150,6 +150,7 @@
 
   {
     "metric": "mvrv_usd_long_short_diff",
+    "alias": "mvrv_long_short_diff_usd",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",

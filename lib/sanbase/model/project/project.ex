@@ -137,6 +137,15 @@ defmodule Sanbase.Model.Project do
 
   defdelegate contract_address(project), to: Project.ContractData
 
+  def coinmarketcap_id(%Project{source_slug_mappings: []}), do: nil
+
+  def coinmarketcap_id(%Project{source_slug_mappings: [_ | _] = source_slug_mappings}) do
+    case Enum.find(source_slug_mappings, &(&1.source == "coinmarketcap")) do
+      nil -> nil
+      %_{slug: slug} -> slug
+    end
+  end
+
   def coinmarketcap_id(%Project{} = project) do
     Project.SourceSlugMapping.get_slug(project, "coinmarketcap")
   end

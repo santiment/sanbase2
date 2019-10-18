@@ -56,7 +56,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     cmc_id_to_slugs_mapping =
       Project.List.projects_with_source("coinmarketcap")
       |> Enum.reduce(%{}, fn %Project{slug: slug} = project, acc ->
-        Map.update(acc, Project.coinmarketcap_id(project), [], fn slugs -> [slug | slugs] end)
+        Map.update(acc, Project.coinmarketcap_id(project), [slug], fn slugs -> [slug | slugs] end)
       end)
 
     # Store the data in LatestCoinmarketcapData in postgres

@@ -1,10 +1,18 @@
 defmodule Sanbase.Signal.ResultBuilder do
-  import Sanbase.Signal.OperationEvaluation
+  @moduledoc """
+  Help determine if a signal should be triggered
+  """
 
+  import Sanbase.Signal.OperationEvaluation
   alias Sanbase.Signal.ResultBuilder.Transformer
 
   @trigger_modules Sanbase.Signal.List.get()
 
+  @doc ~s"""
+  Provided the raw data and the settings, and returns the trigger settings with
+  updated `triggered?` and `payload` fields. These fields are updated by computing
+  whether or not the signal should be triggered.
+  """
   def build(
         data,
         %trigger_module{operation: operation} = settings,
@@ -22,110 +30,6 @@ defmodule Sanbase.Signal.ResultBuilder do
               transformed_data.slug,
               payload_fun.(transformed_data, settings)
             )
-
-          false ->
-            acc
-        end
-      end)
-
-    %{
-      settings
-      | triggered?: payload != %{},
-        payload: payload
-    }
-  end
-
-  def build_result_percent(
-        data,
-        %_trigger_module{operation: operation} = settings,
-        payload_fun,
-        opts \\ []
-      ) do
-    payload =
-      Transformer.transform(data, Keyword.get(opts, :value_key, :value))
-      |> Enum.reduce(%{}, fn %{} = value, acc ->
-        case operation_triggered?(value, operation) do
-          true ->
-            Map.put(
-              acc,
-              value.slug,
-              payload_fun.(:percent, value.slug, settings, value)
-            )
-
-          false ->
-            acc
-        end
-      end)
-
-    %{
-      settings
-      | triggered?: payload != %{},
-        payload: payload
-    }
-  end
-
-  def build_result_absolute_value(
-        data,
-        %_trigger_module{operation: operation} = settings,
-        payload_fun,
-        opts \\ []
-      ) do
-    payload =
-      Transformer.transform(data, Keyword.get(opts, :value_key, :value))
-      |> Enum.reduce(%{}, fn %{} = value, acc ->
-        case operation_triggered?(value, operation) do
-          true ->
-            Map.put(acc, value.slug, payload_fun.(:absolute, value.slug, settings, value))
-
-          false ->
-            acc
-        end
-      end)
-
-    %{
-      settings
-      | triggered?: payload != %{},
-        payload: payload
-    }
-  end
-
-  def build_result_absolute_change(
-        data,
-        %_trigger_module{operation: operation} = settings,
-        payload_fun,
-        opts \\ []
-      ) do
-    payload =
-      Transformer.transform(data, Keyword.get(opts, :value_key, :value))
-      |> Enum.reduce(%{}, fn %{} = value, acc ->
-        case operation_triggered?(value, operation) do
-          true ->
-            Map.put(acc, value.slug, payload_fun.(:absolute, value.slug, settings, value))
-
-          false ->
-            acc
-        end
-      end)
-
-    %{
-      settings
-      | triggered?: payload != %{},
-        payload: payload
-    }
-  end
-
-  def build_result_combinator(
-        data,
-        %_trigger_module{operation: operation} = settings,
-        payload_fun,
-        opts \\ []
-      ) do
-    payload =
-      Transformer.transform_absolute_change(data, Keyword.get(opts, :value_key, :value))
-      |> Enum.reduce(%{}, fn %{} = value, acc ->
-        case operation_triggered?(value, operation) do
-          true ->
-            Map.put(acc, value.slug, payload_fun.(:absolute, value.slug, settings, value))
 
           false ->
             acc

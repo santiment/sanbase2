@@ -86,7 +86,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
          %Ticker{id: coinmarketcap_id} = ticker,
          cmc_id_to_slugs_mapping
        ) do
-    case Map.get(cmc_id_to_slugs_mapping, coinmarketcap_id, []) |> List.wrap() do
+    case Map.get(cmc_id_to_slugs_mapping, coinmarketcap_id, []) do
       [] ->
         :ok
 

@@ -31,6 +31,7 @@ defmodule Sanbase.Clickhouse.Metric do
   @restricted_metrics FileHandler.metrics_with_access(:restricted)
   @aggregation_map FileHandler.aggregation_map()
   @name_to_column_map FileHandler.name_to_column_map()
+  @human_readable_name_map FileHandler.human_readable_name_map()
 
   case Enum.filter(@aggregation_map, fn {_, aggr} -> aggr not in @aggregations end) do
     [] ->
@@ -45,10 +46,6 @@ defmodule Sanbase.Clickhouse.Metric do
       """)
   end
 
-  def free_metrics(), do: @free_metrics
-  def restricted_metrics(), do: @restricted_metrics
-  def metric_access_map(), do: @access_map
-
   @type slug :: String.t()
   @type metric :: String.t()
   @type interval :: String.t()
@@ -62,6 +59,10 @@ defmodule Sanbase.Clickhouse.Metric do
     field(:value, :float)
     field(:computed_at, :utc_datetime)
   end
+
+  def free_metrics(), do: @free_metrics
+  def restricted_metrics(), do: @restricted_metrics
+  def metric_access_map(), do: @access_map
 
   @doc ~s"""
   Get a given metric for a slug and time range. The metric's aggregation
@@ -119,6 +120,16 @@ defmodule Sanbase.Clickhouse.Metric do
 
       true ->
         get_metadata(metric)
+    end
+  end
+
+  def human_readable_name(metric) do
+    case metric in @metrics_mapset do
+      false ->
+        metric_not_available_error(metric)
+
+      true ->
+        {:ok, Map.get(@human_readable_name_map, metric)}
     end
   end
 

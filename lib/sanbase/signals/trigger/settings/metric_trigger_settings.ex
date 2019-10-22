@@ -70,16 +70,15 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
   defp get_timeseries_params(settings) do
     %{interval: interval, time_window: time_window} = settings
 
-    time_window_sec = str_to_sec(time_window)
     to = Timex.now()
-    from = Timex.shift(to, seconds: -time_window_sec)
+    from = Timex.shift(to, seconds: -str_to_sec(time_window))
 
     {from, to, interval}
   end
 
   defp fetch_metric(metric, slug, from, to, interval) do
     cache_key =
-      {metric, slug, round_datetime(from, 300), round_datetime(to, 300), interval}
+      {:metric_signal, metric, slug, round_datetime(from, 300), round_datetime(to, 300), interval}
       |> :erlang.phash2()
 
     Cache.get_or_store(cache_key, fn ->
@@ -92,7 +91,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
 
   defimpl Sanbase.Signal.Settings, for: MetricTriggerSettings do
     alias Sanbase.Signal.Trigger.MetricTriggerSettings
-    alias Sanbase.Signal.{Operation, OperationText, ResultBuilder, Trigger.MetricTriggerSettings}
+    alias Sanbase.Signal.{OperationText, ResultBuilder, Trigger.MetricTriggerSettings}
 
     def triggered?(%MetricTriggerSettings{triggered?: triggered}), do: triggered
 
@@ -108,18 +107,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
     end
 
     def build_result(data, %MetricTriggerSettings{} = settings) do
-      case Operation.type(settings.operation) do
-        :percent -> build_result_percent(data, settings)
-        :absolute -> build_result_absolute(data, settings)
-      end
-    end
-
-    defp build_result_percent(data, settings) do
-      ResultBuilder.build_result_percent(data, settings, &payload/4)
-    end
-
-    defp build_result_absolute(data, settings) do
-      ResultBuilder.build_result_absolute(data, settings, &payload/4)
+      ResultBuilder.build(data, settings, &payload/2)
     end
 
     def cache_key(%MetricTriggerSettings{} = settings) do
@@ -133,37 +121,20 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
       ])
     end
 
-    defp payload(:percent, slug, settings, values) do
-      %{current: current_daa, previous_average: average_daa, percent_change: percent_change} =
-        values
+    def payload(values, settings) do
+      %{slug: slug} = values
 
       project = Project.by_slug(slug)
-      interval = Sanbase.DateTimeUtils.interval_to_str(settings.time_window)
+      {:ok, human_readable_name} = Sanbase.Clickhouse.Metric.human_readable_name(settings.metric)
 
       """
-      **#{project.name}**'s #{settings.metric} #{
-        OperationText.to_text(percent_change, settings.operation)
-      }* up to #{current_daa}  compared to the average value for the last #{interval}.
-      Average #{settings.metric} for last **#{interval}**: **#{average_daa}**.
+      **#{project.name}**'s #{human_readable_name} #{
+        OperationText.to_text(values, settings.operation)
+      }**.
       More info here: #{Project.sanbase_link(project)}
 
-      ![Daily Active Addresses chart and OHLC price chart for the past 90 days](#{
-        chart_url(project, :daily_active_addresses)
-      })
-      """
-    end
-
-    defp payload(:absolute, slug, settings, %{current: current}) do
-      project = Project.by_slug(slug)
-
-      """
-      **#{project.name}**'s #{settings.metric} #{
-        OperationText.to_text(current, settings.operation)
-      }
-      More info here: #{Project.sanbase_link(project)}
-
-      ![Daily Active Addresses chart and OHLC price chart for the past 90 days](#{
-        chart_url(project, :daily_active_addresses)
+      ![#{human_readable_name} & OHLC  for the past 90 days](#{
+        chart_url(project, {:metric, settings.metric})
       })
       """
     end

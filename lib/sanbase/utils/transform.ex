@@ -3,14 +3,14 @@ defmodule Sanbase.Utils.Transform do
   Transform the maps from the :ok tuple data so the `key` is renamed to `new_key`
 
   ## Examples:
-      iex> Sanbase.Utils.Transform.rename_map_keys({:ok, [%{a: 1}, %{a: 2}]}, :a, :b)
+      iex> Sanbase.Utils.Transform.rename_map_keys({:ok, [%{a: 1}, %{a: 2}]}, old_key: :a, new_key: :b)
       {:ok, [%{b: 1}, %{b: 2}]}
 
-      iex> Sanbase.Utils.Transform.rename_map_keys({:ok, [%{a: 1}, %{d: 2}]}, :a, :b)
+      iex> Sanbase.Utils.Transform.rename_map_keys({:ok, [%{a: 1}, %{d: 2}]}, old_key: :a, new_key: :b)
       {:ok, [%{b: 1}, %{d: 2}]}
 
 
-      iex> Sanbase.Utils.Transform.rename_map_keys({:error, "bad"}, :a, :b)
+      iex> Sanbase.Utils.Transform.rename_map_keys({:error, "bad"}, old_key: :a, new_key: :b)
       {:error, "bad"}
   """
   @spec duplicate_map_keys({:ok, list(map)}, any(), any()) :: {:ok, list(map)}
@@ -35,19 +35,22 @@ defmodule Sanbase.Utils.Transform do
   named `new_key`
 
   ## Examples:
-      iex> Sanbase.Utils.Transform.rename_map_keys({:ok, [%{a: 1}, %{a: 2}]}, :a, :b)
+      iex> Sanbase.Utils.Transform.rename_map_keys({:ok, [%{a: 1}, %{a: 2}]}, old_key: :a, new_key: :b)
       {:ok, [%{b: 1}, %{b: 2}]}
 
-      iex> Sanbase.Utils.Transform.rename_map_keys({:ok, [%{a: 1}, %{d: 2}]}, :a, :b)
+      iex> Sanbase.Utils.Transform.rename_map_keys({:ok, [%{a: 1}, %{d: 2}]}, old_key: :a, new_key: :b)
       {:ok, [%{b: 1}, %{d: 2}]}
 
 
-      iex> Sanbase.Utils.Transform.rename_map_keys({:error, "bad"}, :a, :b)
+      iex> Sanbase.Utils.Transform.rename_map_keys({:error, "bad"}, old_key: :a, new_key: :b)
       {:error, "bad"}
   """
-  @spec rename_map_keys({:ok, list(map)}, any(), any()) :: {:ok, list(map)}
-  @spec rename_map_keys({:error, any()}, any(), any()) :: {:error, any()}
-  def rename_map_keys({:ok, data}, old_key, new_key) do
+  @spec rename_map_keys({:ok, list(map)}, keyword(atom())) :: {:ok, list(map)}
+  @spec rename_map_keys({:error, any()}, keyword(atom())) :: {:error, any()}
+  def rename_map_keys({:ok, data}, opts) do
+    old_key = Keyword.get(opts, :old_key)
+    new_key = Keyword.get(opts, :new_key)
+
     result =
       data
       |> Enum.map(fn
@@ -61,7 +64,7 @@ defmodule Sanbase.Utils.Transform do
     {:ok, result}
   end
 
-  def rename_map_keys({:error, error}, _, _) do
+  def rename_map_keys({:error, error}, _) do
     {:error, error}
   end
 

@@ -11,6 +11,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
 
   import Sanbase.{Validation, Signal.Validation}
   import Sanbase.Signal.Utils
+  import Sanbase.DateTimeUtils, only: [round_datetime: 2, str_to_sec: 1, interval_to_str: 1]
 
   alias __MODULE__
   alias Sanbase.Signal.Type
@@ -52,7 +53,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
 
   def get_data(%__MODULE__{filtered_target: %{list: target_list}} = settings)
       when is_list(target_list) do
-    time_window_sec = Sanbase.DateTimeUtils.str_to_sec(settings.time_window)
+    time_window_sec = str_to_sec(settings.time_window)
     from = Timex.shift(Timex.now(), seconds: -time_window_sec)
     to = Timex.shift(Timex.now(), days: -1)
 
@@ -74,7 +75,11 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
   end
 
   defp fetch_daily_active_addersses(contract, from, to, interval) do
-    Cache.get_or_store("daa_#{contract}_current", fn ->
+    cache_key =
+      {:daa_signal, contract, round_datetime(from, 300), round_datetime(to, 300), interval}
+      |> :erlang.phash2()
+
+    Cache.get_or_store(cache_key, fn ->
       case DailyActiveAddresses.average_active_addresses(contract, from, to, interval) do
         {:ok, result} ->
           result
@@ -86,7 +91,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
   end
 
   defimpl Sanbase.Signal.Settings, for: DailyActiveAddressesSettings do
-    alias Sanbase.Signal.{Operation, ResultBuilder}
+    alias Sanbase.Signal.ResultBuilder
 
     def triggered?(%DailyActiveAddressesSettings{triggered?: triggered}), do: triggered
 
@@ -100,19 +105,8 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
       end
     end
 
-    def build_result(data, %DailyActiveAddressesSettings{} = settings) do
-      case Operation.type(settings.operation) do
-        :percent -> build_result_percent(data, settings)
-        :absolute -> build_result_absolute(data, settings)
-      end
-    end
-
-    defp build_result_percent(data, settings) do
-      ResultBuilder.build_result_percent(data, settings, &payload/4, value_key: :active_addresses)
-    end
-
-    defp build_result_absolute(data, settings) do
-      ResultBuilder.build_result_absolute(data, settings, &payload/4, value_key: :active_addresses)
+    defp build_result(data, %DailyActiveAddressesSettings{} = settings) do
+      ResultBuilder.build(data, settings, &payload/2, value_key: :active_addresses)
     end
 
     def cache_key(%DailyActiveAddressesSettings{} = settings) do
@@ -124,36 +118,18 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
       ])
     end
 
-    defp payload(:percent, slug, settings, values) do
-      %{current: current_daa, previous_average: average_daa, percent_change: percent_change} =
-        values
+    defp payload(%{slug: slug} = values, settings) do
+      %{current: current_daa, previous_average: average_daa} = values
 
       project = Project.by_slug(slug)
-      interval = Sanbase.DateTimeUtils.interval_to_str(settings.time_window)
+      interval = interval_to_str(settings.time_window)
 
       """
       **#{project.name}**'s Daily Active Addresses #{
-        Sanbase.Signal.OperationText.to_text(percent_change, settings.operation)
-      }* up to #{current_daa} active addresses compared to the average active addresses for the last #{
-        interval
-      }.
+        Sanbase.Signal.OperationText.to_text(values, settings.operation)
+      }* up to #{current_daa} active addresses.
+
       Average Daily Active Addresses for last **#{interval}**: **#{average_daa}**.
-      More info here: #{Project.sanbase_link(project)}
-
-      ![Daily Active Addresses chart and OHLC price chart for the past 90 days](#{
-        chart_url(project, :daily_active_addresses)
-      })
-      """
-    end
-
-    defp payload(:absolute, slug, settings, values) do
-      %{current: active_addresses} = values
-      project = Project.by_slug(slug)
-
-      """
-      **#{project.name}**'s Daily Active Addresses #{
-        Sanbase.Signal.OperationText.to_text(active_addresses, settings.operation)
-      }
       More info here: #{Project.sanbase_link(project)}
 
       ![Daily Active Addresses chart and OHLC price chart for the past 90 days](#{

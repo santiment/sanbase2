@@ -56,15 +56,18 @@ defmodule Sanbase.Signal.TriggersTest do
       operation: %{percent_up: 300.0}
     }
 
-    {:error, message} =
-      UserTrigger.create_user_trigger(user, %{
-        title: "Generic title",
-        is_public: true,
-        settings: trigger_settings
-      })
+    assert capture_log(fn ->
+             {:error, message} =
+               UserTrigger.create_user_trigger(user, %{
+                 title: "Generic title",
+                 is_public: true,
+                 settings: trigger_settings
+               })
 
-    assert message ==
-             "Trigger structure is invalid. Key `settings` is not valid. Reason: \"The trigger settings type 'unknown' is not a valid type.\""
+             assert message ==
+                      ~s/Trigger structure is invalid. Key `settings` is not valid. Reason: "The trigger settings type 'unknown' is not a valid type."/
+           end) =~
+             ~s/UserTrigger struct is not valid. Reason: "The trigger settings type 'unknown' is not a valid type./
   end
 
   test "try creating user trigger with not valid icon url" do
@@ -134,17 +137,19 @@ defmodule Sanbase.Signal.TriggersTest do
       operation: %{percent_up: 300.0}
     }
 
-    {:error, error_msg} =
-      UserTrigger.create_user_trigger(user, %{
-        title: "Generic title",
-        is_public: true,
-        settings: settings
-      })
+    assert capture_log(fn ->
+             {:error, error_msg} =
+               UserTrigger.create_user_trigger(user, %{
+                 title: "Generic title",
+                 is_public: true,
+                 settings: settings
+               })
 
-    assert error_msg =~ "Trigger structure is invalid. Key `settings` is not valid."
+             assert error_msg =~ "Trigger structure is invalid. Key `settings` is not valid."
 
-    assert error_msg =~
-             ~s/Reason: ["nil is not a valid notification channel. The available notification channels are [telegram, email, web_push]\\n\"]/
+             assert error_msg =~
+                      ~s/Reason: ["nil is not a valid notification channel. The available notification channels are [telegram, email, web_push]\\n\"]/
+           end) =~ "UserTrigger struct is not valid"
   end
 
   test "create user trigger with optional field missing" do

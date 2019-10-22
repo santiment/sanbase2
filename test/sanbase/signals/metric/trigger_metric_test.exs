@@ -21,6 +21,11 @@ defmodule Sanbase.Signal.TriggerMetricTest do
       Sanbase.Timeline.TimelineEvent,
       [:passthrough],
       maybe_create_event_async: fn user_trigger_tuple, _, _ -> user_trigger_tuple end
+    },
+    {
+      Sanbase.Clickhouse.Metric,
+      [:passthrough],
+      get: fn _, _, _, _, _ -> {:ok, []} end
     }
   ]) do
     # Clean children on exit, otherwise DB calls from async tasks can be attempted

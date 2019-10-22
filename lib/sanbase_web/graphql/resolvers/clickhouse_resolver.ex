@@ -128,7 +128,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       args,
       %{source: %{metric: "mvrv_usd"}}
     )
-    |> Sanbase.Utils.Transform.rename_map_keys(:value, :ratio)
+    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :ratio)
   end
 
   def token_circulation(
@@ -141,7 +141,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       args,
       %{source: %{metric: "circulation_1d"}}
     )
-    |> Sanbase.Utils.Transform.rename_map_keys(:value, :token_circulation)
+    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :token_circulation)
   end
 
   def token_velocity(
@@ -154,7 +154,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       args,
       %{source: %{metric: "velocity"}}
     )
-    |> Sanbase.Utils.Transform.rename_map_keys(:value, :token_velocity)
+    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :token_velocity)
   end
 
   def daily_active_addresses(
@@ -167,7 +167,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       args,
       %{source: %{metric: "daily_active_addresses"}}
     )
-    |> Sanbase.Utils.Transform.rename_map_keys(:value, :active_addresses)
+    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :active_addresses)
   end
 
   @doc ~S"""

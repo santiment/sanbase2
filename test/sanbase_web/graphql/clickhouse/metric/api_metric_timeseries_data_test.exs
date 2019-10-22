@@ -1,10 +1,11 @@
 defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricTimeseriesDataTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import SanbaseWeb.Graphql.TestHelpers
   import Mock
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
   import Sanbase.Factory
+  import ExUnit.CaptureLog
+  import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Sanbase.Clickhouse.Metric
 
@@ -122,6 +123,22 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricTimeseriesDataTest do
     assert Enum.all?(result, &match?(%{"errors" => _}, &1))
   end
 
+  test "logs warnings for unavailable metrics", context do
+    %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
+    aggregation = :avg
+    {:ok, metrics} = Metric.available_metrics()
+    rand_metrics = Enum.map(1..100, fn _ -> rand_str() end)
+    rand_metrics = rand_metrics -- metrics
+
+    # Do not mock the `get` function because it's the one that rejects
+    for metric <- rand_metrics do
+      assert capture_log(fn ->
+               get_metric(conn, metric, slug, from, to, interval, aggregation)
+             end) =~ "Can't fetch #{metric} for project with slug: #{slug}"
+    end
+  end
+
+  @moduletag capture_log: true
   test "returns error for unavailable metrics", context do
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
     aggregation = :avg

@@ -195,7 +195,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         "realized_value_usd_1d",
         "velocity",
         "age_destroyed",
-        "age_destroyed_5min",
         "mvrv_long_short_diff_usd"
       ]
 

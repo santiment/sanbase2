@@ -1,14 +1,13 @@
-defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
+defmodule Sanbase.Signal.Trigger.PriceSettings do
   @moduledoc ~s"""
-  PricePercentChangeSettings configures the settings for a signal that is fired
+  PriceSettings configures the settings for a signal that is fired
   when the price of `target` moves up or down by specified percent for the
   specified `time_window` time.
   """
   use Vex.Struct
 
   import Sanbase.{Validation, Signal.Validation}
-  import Sanbase.Signal.{Utils, OperationEvaluation}
-  import Sanbase.Math, only: [percent_change: 2]
+  import Sanbase.Signal.Utils
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1, interval_to_str: 1, round_datetime: 2]
 
   alias __MODULE__
@@ -17,7 +16,7 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
   alias Sanbase.Signal.Evaluator.Cache
 
   @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
-  @trigger_type "price_percent_change"
+  @trigger_type "price"
   @enforce_keys [:type, :target, :channel, :time_window]
   defstruct type: @trigger_type,
             target: nil,
@@ -42,7 +41,7 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
   validates(:target, &valid_target?/1)
   validates(:channel, &valid_notification_channel?/1)
   validates(:time_window, &valid_time_window?/1)
-  validates(:operation, &valid_percent_change_operation?/1)
+  validates(:operation, &valid_operation?/1)
 
   @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type
@@ -56,12 +55,13 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
     from = Timex.shift(to, seconds: -time_window_sec)
 
     projects
-    |> Enum.map(&price_percent_change(&1, from, to))
+    |> Enum.map(&get_price(&1, from, to))
+    |> Enum.reject(&is_nil/1)
   end
 
-  defp price_percent_change(project, from, to) do
+  defp get_price(project, from, to) do
     cache_key =
-      {:price_percent_signal, project.slug, round_datetime(from, 300), round_datetime(to, 300)}
+      {:price_signal, project.slug, round_datetime(from, 300), round_datetime(to, 300)}
       |> :erlang.phash2()
 
     Cache.get_or_store(
@@ -74,52 +74,40 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
         )
         |> case do
           {:ok, [[_dt, first_usd_price, last_usd_price]]} ->
-            {project.slug,
-             {:ok,
-              {percent_change(first_usd_price, last_usd_price), first_usd_price, last_usd_price}}}
+            data = [
+              %{datetime: from, value: first_usd_price},
+              %{datetime: to, value: last_usd_price}
+            ]
 
-          error ->
-            {project.slug, {:error, error}}
+            {project.slug, data}
+
+          _error ->
+            {project.slug, nil}
         end
       end
     )
   end
 
-  defimpl Sanbase.Signal.Settings, for: PricePercentChangeSettings do
-    def triggered?(%PricePercentChangeSettings{triggered?: triggered}), do: triggered
+  defimpl Sanbase.Signal.Settings, for: PriceSettings do
+    alias Sanbase.Signal.ResultBuilder
 
-    def evaluate(%PricePercentChangeSettings{} = settings, _trigger) do
-      case PricePercentChangeSettings.get_data(settings) do
-        list when is_list(list) and list != [] ->
-          build_result(list, settings)
+    def triggered?(%PriceSettings{triggered?: triggered}), do: triggered
+
+    def evaluate(%PriceSettings{} = settings, _trigger) do
+      case PriceSettings.get_data(settings) do
+        data when is_list(data) and data != [] ->
+          build_result(data, settings)
 
         _ ->
-          %PricePercentChangeSettings{settings | triggered?: false}
+          %PriceSettings{settings | triggered?: false}
       end
     end
 
     defp build_result(
-           list,
-           %PricePercentChangeSettings{operation: operation} = settings
+           data,
+           %PriceSettings{} = settings
          ) do
-      payload =
-        Enum.reduce(list, %{}, fn
-          {slug, {:ok, {percent_change, _, _} = price_data}}, acc ->
-            if operation_triggered?(percent_change, operation) do
-              Map.put(acc, slug, payload(slug, settings, price_data))
-            else
-              acc
-            end
-
-          _, acc ->
-            acc
-        end)
-
-      %PricePercentChangeSettings{
-        settings
-        | triggered?: payload != %{},
-          payload: payload
-      }
+      ResultBuilder.build(data, settings, &payload/2, value_key: :value)
     end
 
     @doc ~s"""
@@ -127,7 +115,7 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
     Parameters like `channel` are discarded. The `type` is included
     so different triggers with the same parameter names can be distinguished
     """
-    def cache_key(%PricePercentChangeSettings{} = settings) do
+    def cache_key(%PriceSettings{} = settings) do
       construct_cache_key([
         settings.type,
         settings.target,
@@ -136,15 +124,16 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
       ])
     end
 
-    defp payload(slug, settings, {percent_change, first_price, last_price}) do
+    defp payload(values, settings) do
+      %{slug: slug, current: current, previous: previous, percent_change: percent_change} = values
       project = Sanbase.Model.Project.by_slug(slug)
 
       operation_text = if percent_change > 0, do: "moved up", else: "moved down"
 
       """
       **#{project.name}**'s price has #{operation_text} by **#{percent_change}%** from $#{
-        round_price(first_price)
-      } to $#{round_price(last_price)} for the last #{interval_to_str(settings.time_window)}.
+        round_price(previous)
+      } to $#{round_price(current)} for the last #{interval_to_str(settings.time_window)}.
       More info here: #{Sanbase.Model.Project.sanbase_link(project)}
       ![Price chart over the past 90 days](#{chart_url(project, :volume)})
       """

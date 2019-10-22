@@ -99,6 +99,23 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
                     end)
                     |> Map.new()
 
+  @human_readable_name_map @metrics_json
+                           |> Enum.flat_map(fn
+                             %{
+                               "alias" => metric_alias,
+                               "metric" => metric,
+                               "human_readable_name" => human_readable_name
+                             } ->
+                               [
+                                 {metric, human_readable_name},
+                                 {metric_alias, human_readable_name}
+                               ]
+
+                             %{"metric" => metric, "human_readable_name" => human_readable_name} ->
+                               [{metric, human_readable_name}]
+                           end)
+                           |> Map.new()
+
   def access_map(), do: @access_map
   def table_map(), do: @table_map
   def metrics_mapset(), do: @metrics_mapset
@@ -106,6 +123,7 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   def aggregation_map(), do: @aggregation_map
   def min_interval_map(), do: @min_interval_map
   def name_to_column_map(), do: @name_to_column_map
+  def human_readable_name_map(), do: @human_readable_name_map
 
   def metrics_with_access(level) when level in [:free, :restricted] do
     @access_map

@@ -16,30 +16,14 @@ defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
         }
 
   defimpl Sanbase.Signal.History, for: DailyActiveAddressesSettings do
-    @historical_days_from 90
-    @historical_days_interval "1d"
-
-    def get_data(slug, time_window) when is_binary(slug) do
-      to = Timex.now()
-      shift = @historical_days_from + Sanbase.DateTimeUtils.str_to_days(time_window) - 1
-
-      Sanbase.Clickhouse.Metric.get(
-        "daily_active_addresses",
-        slug,
-        Timex.shift(to, days: -shift),
-        to,
-        @historical_days_interval,
-        :avg
-      )
-    end
-
     import Sanbase.DateTimeUtils, only: [str_to_days: 1]
-    import Sanbase.Math, only: [percent_change: 2]
-    import Sanbase.Signal.OperationEvaluation, only: [operation_triggered?: 2]
 
+    alias Sanbase.Signal.History.ResultBuilder
     alias Sanbase.Signal.History.DailyActiveAddressesHistory
     alias Sanbase.Signal.Trigger.DailyActiveAddressesSettings
-    alias Sanbase.Signal.Operation
+
+    @historical_days_from 90
+    @historical_days_interval "1d"
 
     @spec historical_trigger_points(%DailyActiveAddressesSettings{}, String.t()) ::
             {:ok, list(DailyActiveAddressesHistory.historical_trigger_points_type())}
@@ -50,88 +34,35 @@ defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
           cooldown
         )
         when is_binary(slug) do
-      with {:ok, data} <- get_data(slug, time_window) do
-        build_result(data, settings, cooldown)
+      case get_data(slug, time_window) do
+        {:ok, data} ->
+          ResultBuilder.build(data, settings, cooldown, value_key: :value)
+          |> Sanbase.Utils.Transform.rename_map_keys(
+            old_key: :current,
+            new_key: :active_addresses
+          )
+
+        {:error, error} ->
+          {:error, error}
       end
     end
 
-    defp build_result(data, settings, cooldown) do
-      case Operation.type(settings.operation) do
-        :percent -> build_percent_result(data, settings, cooldown)
-        :absolute -> build_absolute_result(data, settings, cooldown)
-      end
+    def historical_trigger_points(_, _) do
+      {:error, "Historical trigger points is available only when the target is a slug"}
     end
 
-    #
-    defp build_percent_result(data, %{operation: operation} = settings, cooldown) do
-      cooldown = Sanbase.DateTimeUtils.str_to_days(cooldown)
+    defp get_data(slug, time_window) when is_binary(slug) do
+      to = Timex.now()
+      shift = @historical_days_from + str_to_days(time_window) - 1
 
-      {result, _} =
-        data
-        |> transform(settings, :percent)
-        |> Enum.reduce({[], 0}, fn
-          %{percent_change: percent_change} = elem, {acc, 0} ->
-            case operation_triggered?(percent_change, operation) do
-              true ->
-                {[Map.put(elem, :triggered?, true) | acc], cooldown}
-
-              false ->
-                {[Map.put(elem, :triggered?, false) | acc], 0}
-            end
-
-          elem, {acc, cooldown_left} ->
-            {[Map.put(elem, :triggered?, false) | acc], cooldown_left - 1}
-        end)
-
-      {:ok, result |> Enum.reverse()}
-    end
-
-    defp build_absolute_result(data, %{operation: operation} = settings, cooldown) do
-      cooldown = Sanbase.DateTimeUtils.str_to_days(cooldown)
-
-      {result, _} =
-        data
-        |> transform(settings, :absolute)
-        |> Enum.reduce({[], 0}, fn
-          %{value: active_addresses} = elem, {acc, 0} ->
-            case operation_triggered?(active_addresses, operation) do
-              true ->
-                {[Map.put(elem, :triggered?, true) | acc], cooldown}
-
-              false ->
-                {[Map.put(elem, :triggered?, false) | acc], 0}
-            end
-
-          elem, {acc, cooldown_left} ->
-            {[Map.put(elem, :triggered?, false) | acc], cooldown_left - 1}
-        end)
-
-      {:ok, result |> Enum.reverse()}
-    end
-
-    defp transform(data, settings, :absolute) do
-      # More data are taken so they can be used to calculate % change
-      # We do not need these previous data points when working with absolute
-      # values
-      Enum.drop(data, (settings.time_window |> str_to_days()) - 1)
-    end
-
-    defp transform(data, settings, :percent) do
-      time_window_in_days = Enum.max([str_to_days(settings.time_window), 2])
-
-      data
-      |> Enum.chunk_every(time_window_in_days, 1, :discard)
-      |> Enum.map(fn chunk ->
-        last_elem = List.last(chunk)
-        %{value: first_active_addresses} = List.first(chunk)
-        %{value: last_active_addresses} = last_elem
-
-        Map.put(
-          last_elem,
-          :percent_change,
-          percent_change(first_active_addresses, last_active_addresses)
-        )
-      end)
+      Sanbase.Clickhouse.Metric.get(
+        "daily_active_addresses",
+        slug,
+        Timex.shift(to, days: -shift),
+        to,
+        @historical_days_interval,
+        :avg
+      )
     end
   end
 end

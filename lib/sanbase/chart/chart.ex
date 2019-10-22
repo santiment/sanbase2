@@ -7,7 +7,6 @@ defmodule Sanbase.Chart do
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse
-  alias Sanbase.Clickhouse.Erc20DailyActiveAddresses
   alias Sanbase.FileStore
   alias Sanbase.Math
 
@@ -109,81 +108,13 @@ defmodule Sanbase.Chart do
 
   defp build_line_chart(project, from, to, size, opts) do
     case Keyword.get(opts, :chart_type) do
-      :daily_active_addresses ->
-        chart_values(:daily_active_addresses, project, from, to, size)
-
-      :exchange_inflow ->
-        chart_values(:exchange_inflow, project, from, to, size)
-
       :volume ->
         chart_values(:volume, project, from, to, size)
 
+      {:metric, _} = metric ->
+        chart_values(metric, project, from, to, size)
+
       _ ->
-        empty_values(from, to)
-    end
-  end
-
-  defp chart_values(:daily_active_addresses, %Project{} = project, _from, to, size) do
-    from = Timex.shift(to, days: -size + 1)
-
-    with {:ok, contract, _} <- Project.contract_info(project),
-         {:ok, daa} <-
-           Erc20DailyActiveAddresses.average_active_addresses(contract, from, to, "1d") do
-      daa_values = daa |> Enum.map(fn %{active_addresses: value} -> value end)
-      {min, max} = Math.min_max(daa_values)
-      daa_values = daa_values |> Enum.join(",")
-
-      %{
-        chtt: "#{project.name} - Daily Active Addresses and OHLC Price" |> URI.encode(),
-        chxt: ",x,r",
-        chxl: "1:|#{datetime_values(from, to)}" |> URI.encode(),
-        chxr: "|2,#{min},#{max}",
-        chds: "#{min},#{max},",
-        chd: "t1:#{daa_values}",
-        chxs: ""
-      }
-    else
-      error ->
-        Logger.error(
-          "Cannot fetch Daily Active Addresses for #{Project.describe(project)}. Reason: #{
-            inspect(error)
-          }"
-        )
-
-        empty_values(from, to)
-    end
-  end
-
-  defp chart_values(:exchange_inflow, %Project{slug: slug} = project, _from, to, size) do
-    from = Timex.shift(to, days: -size + 1)
-
-    with {:ok, exchange_inflow} <-
-           Clickhouse.Metric.get("exchange_inflow", slug, from, to, "1d"),
-         supply when not is_nil(supply) <- Project.supply(project) do
-      exchange_inflow_values =
-        exchange_inflow |> Enum.map(fn %{inflow: value} -> value / supply end)
-
-      {min, max} = Math.min_max(exchange_inflow_values)
-
-      exchange_inflow_values = exchange_inflow_values |> Enum.join(",")
-
-      %{
-        chtt: "#{project.name} - Exchange Inflow and OHLC Price" |> URI.encode(),
-        chxt: ",x,r",
-        chxl: "1:|#{datetime_values(from, to)}" |> URI.encode(),
-        chxr: "|2,#{min},#{max}",
-        chxs: "|2N*p2*",
-        chds: "#{min},#{max},",
-        chd: "t1:#{exchange_inflow_values}"
-      }
-    else
-      error ->
-        Logger.error(
-          "Cannot fetch Exchange Inflow for #{Project.describe(project)}. Reason: #{
-            inspect(error)
-          }"
-        )
-
         empty_values(from, to)
     end
   end
@@ -192,11 +123,9 @@ defmodule Sanbase.Chart do
     from = Timex.shift(to, days: -size + 1)
 
     with measurement when not is_nil(measurement) <- Measurement.name_from(project),
-         {:ok, volumes} <- PricesStore.fetch_volume_with_resolution(measurement, from, to, "1d") do
-      volumes = volumes |> Enum.map(fn [_dt, volume] -> volume end)
-
-      {min, max} = Math.min_max(volumes)
-
+         {:ok, data} <- PricesStore.fetch_volume_with_resolution(measurement, from, to, "1d"),
+         [_ | _] = volumes <- data |> Enum.map(fn [_dt, volume] -> volume end),
+         {min, max} <- Math.min_max(volumes) do
       volumes_str = volumes |> Enum.join(",")
 
       %{
@@ -209,11 +138,44 @@ defmodule Sanbase.Chart do
         chd: "t1:#{volumes_str}"
       }
     else
-      error ->
+      {:error, error} ->
         Logger.error(
           "Cannot fetch volume for #{Project.describe(project)}. Reason: #{inspect(error)}"
         )
 
+        empty_values(from, to)
+
+      _ ->
+        empty_values(from, to)
+    end
+  end
+
+  defp chart_values({:metric, metric}, %Project{} = project, _from, to, size) do
+    %Project{slug: slug, name: name} = project
+    from = Timex.shift(to, days: -size + 1)
+
+    with {:ok, metric_name} <- Clickhouse.Metric.human_readable_name(metric),
+         {:ok, data} <- Clickhouse.Metric.get(metric, slug, from, to, "1d"),
+         [_ | _] = values <- data |> Enum.map(& &1.value) |> Enum.reject(&is_nil/1),
+         {min, max} <- Math.min_max(values) do
+      %{
+        chtt: "#{name} - #{metric_name} and OHLC Price" |> URI.encode(),
+        chxt: ",x,r",
+        chxl: "1:|#{datetime_values(from, to)}" |> URI.encode(),
+        chxr: "|2,#{min},#{max}",
+        chds: "#{min},#{max},",
+        chd: "t1:#{values |> Enum.join(",")}",
+        chxs: ""
+      }
+    else
+      {:error, error} ->
+        Logger.error(
+          "Cannot fetch #{metric} for #{Project.describe(project)}. Reason: #{inspect(error)}"
+        )
+
+        empty_values(from, to)
+
+      _ ->
         empty_values(from, to)
     end
   end

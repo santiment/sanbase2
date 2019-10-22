@@ -1,6 +1,7 @@
 [
   {
     "metric": "daily_avg_marketcap_usd",
+    "human_readable_name": "Daily Average USD Marketcap",
     "access": "free",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -8,6 +9,7 @@
   },
   {
     "metric": "daily_avg_price_usd",
+    "human_readable_name": "Daily Average USD Price",
     "access": "free",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -15,6 +17,7 @@
   },
   {
     "metric": "daily_closing_marketcap_usd",
+    "human_readable_name": "Daily Closing USD Marketcap",
     "access": "free",
     "aggregation": "last",
     "min_interval": "1d",
@@ -22,6 +25,7 @@
   },
   {
     "metric": "daily_closing_price_usd",
+    "human_readable_name": "Daily Closing USD Price",
     "access": "free",
     "aggregation": "last",
     "min_interval": "1d",
@@ -29,6 +33,7 @@
   },
   {
     "metric": "daily_high_price_usd",
+    "human_readable_name": "Daily High USD Price",
     "access": "free",
     "aggregation": "max",
     "min_interval": "1d",
@@ -36,6 +41,7 @@
   },
   {
     "metric": "daily_low_price_usd",
+    "human_readable_name": "Daily Low USD Price",
     "access": "free",
     "aggregation": "min",
     "min_interval": "1d",
@@ -43,6 +49,7 @@
   },
   {
     "metric": "daily_opening_price_usd",
+    "human_readable_name": "Daily Opening USD Price",
     "access": "free",
     "aggregation": "first",
     "min_interval": "1d",
@@ -50,6 +57,7 @@
   },
   {
     "metric": "daily_trading_volume_usd",
+    "human_readable_name": "Daily Trading USD Volume",
     "access": "free",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -57,6 +65,7 @@
   },
   {
     "metric": "daily_active_addresses",
+    "human_readable_name": "Daily Active Addresses",
     "access": "free",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -64,6 +73,7 @@
   },
   {
     "metric": "mean_realized_price_usd_20y",
+    "human_readable_name": "Mean Realized USD Price",
     "alias": "mean_realized_price_usd",
     "access": "restricted",
     "aggregation": "avg",
@@ -72,6 +82,7 @@
   },
   {
     "metric": "mean_realized_price_usd_10y",
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 10 years",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -79,6 +90,7 @@
   },
   {
     "metric": "mean_realized_price_usd_5y",
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 5 years",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -86,6 +98,7 @@
   },
   {
     "metric": "mean_realized_price_usd_3y",
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 3 years",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -93,6 +106,7 @@
   },
   {
     "metric": "mean_realized_price_usd_2y",
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 2 years",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -100,6 +114,7 @@
   },
   {
     "metric": "mean_realized_price_usd_365d",
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 1 year",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -107,6 +122,7 @@
   },
   {
     "metric": "mean_realized_price_usd_180d",
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 180 days",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -114,6 +130,7 @@
   },
   {
     "metric": "mean_realized_price_usd_90d",
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 90 days",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -121,6 +138,7 @@
   },
   {
     "metric": "mean_realized_price_usd_60d",
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 60 days",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -128,6 +146,7 @@
   },
   {
     "metric": "mean_realized_price_usd_30d",
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 30 days",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -135,6 +154,7 @@
   },
   {
     "metric": "mean_realized_price_usd_7d",
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 7 days",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -142,6 +162,7 @@
   },
   {
     "metric": "mean_realized_price_usd_1d",
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 1 day",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -150,6 +171,7 @@
 
   {
     "metric": "mvrv_usd_long_short_diff",
+    "human_readable_name": "MVRV Long/Short Difference",
     "alias": "mvrv_long_short_diff_usd",
     "access": "restricted",
     "aggregation": "avg",
@@ -159,6 +181,7 @@
 
   {
     "metric": "mvrv_usd_20y",
+    "human_readable_name": "MVRV",
     "alias": "mvrv_usd",
     "access": "restricted",
     "aggregation": "avg",
@@ -167,6 +190,7 @@
   },
   {
     "metric": "mvrv_usd_10y",
+    "human_readable_name": "MVRV for coins that moved in the past 10 years",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -174,6 +198,7 @@
   },
   {
     "metric": "mvrv_usd_5y",
+    "human_readable_name": "MVRV for coins that moved in the past 5 years",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -181,6 +206,7 @@
   },
   {
     "metric": "mvrv_usd_3y",
+    "human_readable_name": "MVRV for coins that moved in the past 3 years",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -188,6 +214,7 @@
   },
   {
     "metric": "mvrv_usd_2y",
+    "human_readable_name": "MVRV for coins that moved in the past 2 years",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -195,6 +222,7 @@
   },
   {
     "metric": "mvrv_usd_365d",
+    "human_readable_name": "MVRV for coins that moved in the past 1 year",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -202,6 +230,7 @@
   },
   {
     "metric": "mvrv_usd_180d",
+    "human_readable_name": "MVRV for coins that moved in the past 180 days",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -209,6 +238,7 @@
   },
   {
     "metric": "mvrv_usd_90d",
+    "human_readable_name": "MVRV for coins that moved in the past 90 days",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -216,6 +246,7 @@
   },
   {
     "metric": "mvrv_usd_60d",
+    "human_readable_name": "MVRV for coins that moved in the past 60 days",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -223,6 +254,7 @@
   },
   {
     "metric": "mvrv_usd_30d",
+    "human_readable_name": "MVRV for coins that moved in the past 30 days",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -230,6 +262,7 @@
   },
   {
     "metric": "mvrv_usd_7d",
+    "human_readable_name": "MVRV for coins that moved in the past 7 days",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -237,6 +270,7 @@
   },
   {
     "metric": "mvrv_usd_1d",
+    "human_readable_name": "MVRV for coins that moved in the past 1 day",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -245,6 +279,7 @@
 
   {
     "metric": "stack_circulation_20y",
+    "human_readable_name": "Circulation",
     "alias": "circulation",
     "access": "restricted",
     "aggregation": "sum",
@@ -253,6 +288,7 @@
   },
   {
     "metric": "stack_circulation_10y",
+    "human_readable_name": "Circulation for coins that moved in the past 10 years",
     "alias": "circulation_10y",
     "access": "restricted",
     "aggregation": "sum",
@@ -261,6 +297,7 @@
   },
   {
     "metric": "stack_circulation_5y",
+    "human_readable_name": "Circulation for coins that moved in the past 5 years",
     "alias": "circulation_5y",
     "access": "restricted",
     "aggregation": "sum",
@@ -269,6 +306,7 @@
   },
   {
     "metric": "stack_circulation_3y",
+    "human_readable_name": "Circulation for coins that moved in the past 3 years",
     "alias": "circulation_3y",
     "access": "restricted",
     "aggregation": "sum",
@@ -277,6 +315,7 @@
   },
   {
     "metric": "stack_circulation_2y",
+    "human_readable_name": "Circulation for coins that moved in the past 2 years",
     "alias": "circulation_2y",
     "access": "restricted",
     "aggregation": "sum",
@@ -285,6 +324,7 @@
   },
   {
     "metric": "stack_circulation_365d",
+    "human_readable_name": "Circulation for coins that moved in the past 1 year",
     "alias": "circulation_365d",
     "access": "restricted",
     "aggregation": "sum",
@@ -293,6 +333,7 @@
   },
   {
     "metric": "stack_circulation_180d",
+    "human_readable_name": "Circulation for coins that moved in the past 180 days",
     "alias": "circulation_180d",
     "access": "restricted",
     "aggregation": "sum",
@@ -301,6 +342,7 @@
   },
   {
     "metric": "stack_circulation_90d",
+    "human_readable_name": "Circulation for coins that moved in the past 90 days",
     "alias": "circulation_90d",
     "access": "restricted",
     "aggregation": "sum",
@@ -309,6 +351,7 @@
   },
   {
     "metric": "stack_circulation_60d",
+    "human_readable_name": "Circulation for coins that moved in the past 60 days",
     "alias": "circulation_60d",
     "access": "restricted",
     "aggregation": "sum",
@@ -317,6 +360,7 @@
   },
   {
     "metric": "stack_circulation_30d",
+    "human_readable_name": "Circulation for coins that moved in the past 30 days",
     "alias": "circulation_30d",
     "access": "restricted",
     "aggregation": "sum",
@@ -325,6 +369,7 @@
   },
   {
     "metric": "stack_circulation_7d",
+    "human_readable_name": "Circulation for coins that moved in the past 7 days",
     "alias": "circulation_7d",
     "access": "restricted",
     "aggregation": "sum",
@@ -333,6 +378,7 @@
   },
   {
     "metric": "stack_circulation_1d",
+    "human_readable_name": "Circulation for coins that moved in the past 1 day",
     "alias": "circulation_1d",
     "access": "restricted",
     "aggregation": "sum",
@@ -342,6 +388,7 @@
 
   {
     "metric": "stack_mean_age_days",
+    "human_readable_name": "Mean Age in days",
     "alias": "mean_age",
     "access": "restricted",
     "aggregation": "last",
@@ -352,6 +399,7 @@
 
   {
     "metric": "stack_mean_age_dollar_days",
+    "human_readable_name": "Mean Dollar Invested Age in days for coins that moved",
     "alias": "mean_dollar_invested_age",
     "access": "restricted",
     "aggregation": "last",
@@ -362,6 +410,7 @@
 
   {
     "metric": "stack_realized_cap_usd_20y",
+    "human_readable_name": "Realized Value",
     "alias": "realized_value_usd",
     "access": "restricted",
     "aggregation": "avg",
@@ -370,6 +419,7 @@
   },
   {
     "metric": "stack_realized_cap_usd_10y",
+    "human_readable_name": "Realized Value for coins that moved in the past 10 years",
     "alias": "realized_value_usd_10y",
     "access": "restricted",
     "aggregation": "avg",
@@ -379,6 +429,7 @@
 
   {
     "metric": "stack_realized_cap_usd_5y",
+    "human_readable_name": "Realized Value for coins that moved in the past 5 years",
     "alias": "realized_value_usd_5y",
     "access": "restricted",
     "aggregation": "avg",
@@ -387,6 +438,7 @@
   },
   {
     "metric": "stack_realized_cap_usd_3y",
+    "human_readable_name": "Realized Value for coins that moved in the past 3 years",
     "alias": "realized_value_usd_3y",
     "access": "restricted",
     "aggregation": "avg",
@@ -395,6 +447,7 @@
   },
   {
     "metric": "stack_realized_cap_usd_2y",
+    "human_readable_name": "Realized Value for coins that moved in the past 2 years",
     "alias": "realized_value_usd_2y",
     "access": "restricted",
     "aggregation": "avg",
@@ -403,6 +456,7 @@
   },
   {
     "metric": "stack_realized_cap_usd_365d",
+    "human_readable_name": "Realized Value for coins that moved in the past 1 year",
     "alias": "realized_value_usd_365d",
     "access": "restricted",
     "aggregation": "avg",
@@ -411,6 +465,7 @@
   },
   {
     "metric": "stack_realized_cap_usd_180d",
+    "human_readable_name": "Realized Value for coins that moved in the past 180 days",
     "alias": "realized_value_usd_180d",
     "access": "restricted",
     "aggregation": "avg",
@@ -419,6 +474,7 @@
   },
   {
     "metric": "stack_realized_cap_usd_90d",
+    "human_readable_name": "Realized Value for coins that moved in the past 90 days",
     "alias": "realized_value_usd_90d",
     "access": "restricted",
     "aggregation": "avg",
@@ -427,6 +483,7 @@
   },
   {
     "metric": "stack_realized_cap_usd_60d",
+    "human_readable_name": "Realized Value for coins that moved in the past 60 days",
     "alias": "realized_value_usd_60d",
     "access": "restricted",
     "aggregation": "avg",
@@ -435,6 +492,7 @@
   },
   {
     "metric": "stack_realized_cap_usd_30d",
+    "human_readable_name": "Realized Value for coins that moved in the past 30 days",
     "alias": "realized_value_usd_30d",
     "access": "restricted",
     "aggregation": "avg",
@@ -443,6 +501,7 @@
   },
   {
     "metric": "stack_realized_cap_usd_7d",
+    "human_readable_name": "Realized Value for coins that moved in the past 7 days",
     "alias": "realized_value_usd_7d",
     "access": "restricted",
     "aggregation": "avg",
@@ -451,6 +510,7 @@
   },
   {
     "metric": "stack_realized_cap_usd_1d",
+    "human_readable_name": "Realized Value for coins that moved in the past 1 day",
     "alias": "realized_value_usd_1d",
     "access": "restricted",
     "aggregation": "avg",
@@ -460,6 +520,7 @@
 
   {
     "metric": "token_velocity",
+    "human_readable_name": "Velocity",
     "alias": "velocity",
     "access": "restricted",
     "aggregation": "last",
@@ -469,14 +530,8 @@
 
   {
     "metric": "transaction_volume_5min",
+    "human_readable_name": "On-Chain Transaction Volume",
     "alias": "transaction_volume",
-    "access": "restricted",
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "transaction_volume_metrics"
-  },
-  {
-    "metric": "transaction_volume_5min",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "5m",
@@ -485,6 +540,7 @@
 
   {
     "metric": "exchange_inflow",
+    "human_readable_name": "Exchange Inflow",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "5m",
@@ -492,6 +548,7 @@
   },
   {
     "metric": "exchange_outflow",
+    "human_readable_name": "Exchange Inflow",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "5m",
@@ -499,6 +556,7 @@
   },
   {
     "metric": "exchange_balance",
+    "human_readable_name": "Exchange Balance (Inflow - Outflow)",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "5m",
@@ -507,15 +565,8 @@
 
   {
     "metric": "stack_age_consumed_5min",
+    "human_readable_name": "Age Destroyed",
     "alias": "age_destroyed",
-    "access": "restricted",
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "token_age_consumed_metrics"
-  },
-  {
-    "metric": "stack_age_consumed_5min",
-    "alias": "age_destroyed_5min",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "5m",
@@ -524,6 +575,7 @@
 
   {
     "metric": "nvt",
+    "human_readable_name": "NVT (Using Circulation)",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -532,6 +584,7 @@
 
   {
     "metric": "nvt_transaction_volume",
+    "human_readable_name": "NVT (Using Transaction Volume)",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -540,6 +593,7 @@
 
   {
     "metric": "network_growth",
+    "human_readable_name": "Network Growth",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",

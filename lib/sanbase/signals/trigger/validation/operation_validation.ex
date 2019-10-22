@@ -3,13 +3,12 @@ defmodule Sanbase.Signal.Validation.Operation do
 
   alias Sanbase.Signal.Operation
 
-  @percent_operations [:percent_up, :percent_down]
-  @absolute_value_operations [:above, :below]
-  @absolute_change_operations [:amount_up, :amount_down]
-  @absolute_operations @absolute_change_operations ++ @absolute_value_operations
-
-  @channel_operations [:inside_channel, :outside_channel]
-  @combinator_operations [:some_of, :all_of, :none_of]
+  @percent_operations Operation.percent_operations()
+  @absolute_value_operations Operation.absolute_value_operations()
+  @absolute_change_operations Operation.absolute_change_operations()
+  @absolute_operations Operation.absolute_operations()
+  @channel_operations Operation.channel_operations()
+  @combinator_operations Operation.combinator_operations()
 
   def valid_percent_change_operation?(operation) when is_map(operation) do
     case Map.keys(operation) do

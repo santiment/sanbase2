@@ -593,6 +593,7 @@
 
   {
     "metric": "network_growth",
+    "human_readable_name": "Network Growth",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",

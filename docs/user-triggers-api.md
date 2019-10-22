@@ -10,6 +10,7 @@
     - [Example settings structure for `trending_words`](#example-settings-structure-for-trending_words)
     - [Example settings structure for `price_volume_difference`](#example-settings-structure-for-price_volume_difference)
     - [Example settings structure for `eth_wallet`](#example-settings-structure-for-eth_wallet)
+    - [Example settings structure for `metric_signal`](#example-settings-structure-for-metric_signal)
   - [Create trigger](#create-trigger)
   - [Get all triggers for current user](#get-all-triggers-for-current-user)
   - [Update trigger by id](#update-trigger-by-id)
@@ -157,6 +158,18 @@ These are the fields describing a trigger.
 }
 ```
 
+```json
+// price did not go up by more than 5% AND did go down by more than 5% compared to 1 day ago
+// this is basically implementing inside channel for percentage
+{
+  "type": "price_percent_change",
+  "target": { "slug": "santiment" },
+  "channel": "telegram",
+  "time_window": "1d",
+  "operation": { "none_of": [{ "percent_up": 5.0 }, { "percent_down": 5.0 }] }
+}
+```
+
 #### Example settings structure for `daily_active_addresses`
 
 ```json
@@ -218,6 +231,44 @@ These are the fields describing a trigger.
   "target": { "slug": "santiment" },
   "channel": "telegram",
   "operation": { "outside_channel": [100, 200] }
+}
+```
+
+```json
+// daa went up by 100% OR went down by 50%
+{
+  "type": "daily_active_addresses",
+  "target": { "slug": "santiment" },
+  "channel": "telegram",
+  "time_window": "1d",
+  "operation": {
+    "some_of": [{ "percent_up": 100.0 }, { "percent_down": 50.0 }]
+  }
+}
+```
+
+```json
+// daa went up by 100% AND is above 50
+{
+  "type": "daily_active_addresses",
+  "target": { "slug": "santiment" },
+  "channel": "telegram",
+  "time_window": "1d",
+  "operation": {
+    "all_of": [{ "percent_up": 100.0 }, { "above": 50 }]
+  }
+}
+```
+
+```json
+// daa did not go up by more than 5% AND did go down by more than 5% compared to 1 day ago
+// this is basically implementing inside channel for percent changes
+{
+  "type": "daily_active_addresses",
+  "target": { "slug": "santiment" },
+  "channel": "telegram",
+  "time_window": "1d",
+  "operation": { "none_of": [{ "percent_up": 5.0 }, { "percent_down": 5.0 }] }
 }
 ```
 
@@ -336,6 +387,53 @@ These are the fields describing a trigger.
   "target": { "eth_address": "0x123" },
   "asset": { "slug": "santiment" },
   "operation": { "amount_up": 1000 }
+}
+```
+
+#### Example settings structure for `metric_signal`
+
+```json
+// The MVRV of Santiment's project is above 2
+{
+  "type": "metric_signal",
+  "metric": "mvrv_usd",
+  "channel": "telegram",
+  "target": { "slug": "santiment" },
+  "operation": { "above": 2 }
+}
+```
+
+```json
+// The Circulation of Santiment's tokens increased by 10% compared to 1 day ago
+{
+  "type": "metric_signal",
+  "metric": "circulation_1d",
+  "time_window": "1d",
+  "channel": "telegram",
+  "target": { "slug": "santiment" },
+  "operation": { "percent_up": 10 }
+}
+```
+
+```json
+// The Exchange Inflow of Santiment's project increased by 10% AND is above 10_000
+{
+  "type": "metric_signal",
+  "metric": "exchange_inflow",
+  "channel": "telegram",
+  "target": { "slug": "santiment" },
+  "operation": { "all_of": [{ "percent_up": 10 }, { "above": 10000 }] }
+}
+```
+
+```json
+// The Exchange Outflow of Santiment's project increased by 10% OR is above 10_000
+{
+  "type": "metric_signal",
+  "metric": "exchange_outflow",
+  "channel": "telegram",
+  "target": { "slug": "santiment" },
+  "operation": { "some_of": [{ "percent_up": 10 }, { "above": 10000 }] }
 }
 ```
 

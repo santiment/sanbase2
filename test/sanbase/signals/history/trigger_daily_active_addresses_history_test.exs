@@ -216,6 +216,48 @@ defmodule Sanbase.Signal.TriggerDailyActiveAddressesHistoryTest do
            |> Map.get(:triggered?) == true
   end
 
+  test "percent change up 100% and absolute value above 50", %{project: project} do
+    trigger_settings = %{
+      type: "daily_active_addresses",
+      target: %{slug: project.slug},
+      channel: "telegram",
+      time_window: "2d",
+      operation: %{all_of: [%{above: 50}, %{percent_up: 100}]}
+    }
+
+    trigger = %{settings: trigger_settings, cooldown: "12h"}
+
+    {:ok, points} = UserTrigger.historical_trigger_points(trigger)
+
+    assert Enum.filter(points, & &1.triggered?) |> length() == 4
+    assert Enum.filter(points, &(!&1.triggered?)) |> length() == 6
+    assert length(points) == 10
+
+    assert points
+           |> Enum.find(fn %{datetime: dt} ->
+             DateTime.to_iso8601(dt) == "2018-11-17T00:00:00Z"
+           end)
+           |> Map.get(:triggered?) == true
+
+    assert points
+           |> Enum.find(fn %{datetime: dt} ->
+             DateTime.to_iso8601(dt) == "2018-11-19T00:00:00Z"
+           end)
+           |> Map.get(:triggered?) == true
+
+    assert points
+           |> Enum.find(fn %{datetime: dt} ->
+             DateTime.to_iso8601(dt) == "2018-11-22T00:00:00Z"
+           end)
+           |> Map.get(:triggered?) == true
+
+    assert points
+           |> Enum.find(fn %{datetime: dt} ->
+             DateTime.to_iso8601(dt) == "2018-11-23T00:00:00Z"
+           end)
+           |> Map.get(:triggered?) == true
+  end
+
   defp daa_resp() do
     [
       %{datetime: ~U[2018-11-16 00:00:00Z], value: 20},

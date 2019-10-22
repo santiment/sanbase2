@@ -123,11 +123,9 @@ defmodule Sanbase.Chart do
     from = Timex.shift(to, days: -size + 1)
 
     with measurement when not is_nil(measurement) <- Measurement.name_from(project),
-         {:ok, volumes} <- PricesStore.fetch_volume_with_resolution(measurement, from, to, "1d") do
-      volumes = volumes |> Enum.map(fn [_dt, volume] -> volume end)
-
-      {min, max} = Math.min_max(volumes)
-
+         {:ok, data} <- PricesStore.fetch_volume_with_resolution(measurement, from, to, "1d"),
+         [_ | _] = volumes <- data |> Enum.map(fn [_dt, volume] -> volume end),
+         {min, max} <- Math.min_max(volumes) do
       volumes_str = volumes |> Enum.join(",")
 
       %{
@@ -140,40 +138,44 @@ defmodule Sanbase.Chart do
         chd: "t1:#{volumes_str}"
       }
     else
-      error ->
+      {:error, error} ->
         Logger.error(
           "Cannot fetch volume for #{Project.describe(project)}. Reason: #{inspect(error)}"
         )
 
+        empty_values(from, to)
+
+      _ ->
         empty_values(from, to)
     end
   end
 
   defp chart_values({:metric, metric}, %Project{} = project, _from, to, size) do
     %Project{slug: slug, name: name} = project
-    {:ok, metric_name} = Clickhouse.Metric.human_readable_name(metric)
     from = Timex.shift(to, days: -size + 1)
 
-    case Clickhouse.Metric.get(metric, slug, from, to, "1d") do
-      {:ok, data} ->
-        values = data |> Enum.map(& &1.value) |> Enum.reject(&is_nil/1)
-        {min, max} = Math.min_max(values)
-
-        %{
-          chtt: "#{name} - #{metric_name} and OHLC Price" |> URI.encode(),
-          chxt: ",x,r",
-          chxl: "1:|#{datetime_values(from, to)}" |> URI.encode(),
-          chxr: "|2,#{min},#{max}",
-          chds: "#{min},#{max},",
-          chd: "t1:#{values |> Enum.join(",")}",
-          chxs: ""
-        }
-
-      error ->
+    with {:ok, metric_name} <- Clickhouse.Metric.human_readable_name(metric),
+         {:ok, data} <- Clickhouse.Metric.get(metric, slug, from, to, "1d"),
+         [_ | _] = values <- data |> Enum.map(& &1.value) |> Enum.reject(&is_nil/1),
+         {min, max} <- Math.min_max(values) do
+      %{
+        chtt: "#{name} - #{metric_name} and OHLC Price" |> URI.encode(),
+        chxt: ",x,r",
+        chxl: "1:|#{datetime_values(from, to)}" |> URI.encode(),
+        chxr: "|2,#{min},#{max}",
+        chds: "#{min},#{max},",
+        chd: "t1:#{values |> Enum.join(",")}",
+        chxs: ""
+      }
+    else
+      {:error, error} ->
         Logger.error(
-          "Cannot fetch #{metric_name} for #{Project.describe(project)}. Reason: #{inspect(error)}"
+          "Cannot fetch #{metric} for #{Project.describe(project)}. Reason: #{inspect(error)}"
         )
 
+        empty_values(from, to)
+
+      _ ->
         empty_values(from, to)
     end
   end

@@ -1,4 +1,4 @@
-defmodule Sanbase.Signal.TriggerDailyActiveAddressesHistoryTest do
+defmodule Sanbase.Signal.TriggerMetricHistoryTest do
   use Sanbase.DataCase, async: false
 
   import Mock

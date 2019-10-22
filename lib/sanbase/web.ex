@@ -15,9 +15,6 @@ defmodule Sanbase.Application.Web do
   def children() do
     # Define workers and child supervisors to be supervised
     children = [
-      # Start the TimescaleDB Ecto repository
-      Sanbase.TimescaleRepo,
-
       # Start the Clickhouse Repo
       start_in({Sanbase.ClickhouseRepo, []}, [:dev, :prod]),
 

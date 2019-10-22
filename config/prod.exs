@@ -10,9 +10,6 @@ config :sanbase, SanbaseWeb.Endpoint,
   load_from_system_env: true,
   secret_key_base: "${SECRET_KEY_BASE}"
 
-# So only migrations for Sanbase.Repo are run. Do not run migrations for
-# Sanbase.TimescaleRepo as this database is not managed by sanbase, but we want
-# to have it locally for test and development
 config :sanbase, ecto_repos: [Sanbase.Repo]
 
 # Clickhousex does not support `:system` tuples. The configuration is done

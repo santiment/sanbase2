@@ -33,14 +33,6 @@ config :sanbase, Sanbase.Repo,
   database: "sanbase_test",
   pool_size: 5
 
-# Configure your database
-config :sanbase, Sanbase.TimescaleRepo,
-  pool: Ecto.Adapters.SQL.Sandbox,
-  database: "sanbase_timescale_test",
-  pool_size: 5
-
-config :sanbase, Sanbase.Timescaledb, blockchain_schema: nil
-
 config :sanbase, Sanbase.Auth.Hmac, secret_key: "Non_empty_key_used_in_tests_only"
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap, sync_enabled: false

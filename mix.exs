@@ -164,12 +164,6 @@ defmodule Sanbase.Mixfile do
         "load_dotenv",
         "ecto.rollback",
         "ecto.dump"
-      ],
-      test_all: [
-        "load_dotenv",
-        "ecto.create --quiet",
-        "ecto.load",
-        "test --include timescaledb"
       ]
     ]
   end

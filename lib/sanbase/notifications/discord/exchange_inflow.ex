@@ -67,9 +67,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   # Private functions
 
   # Return all projects where the fields that will be used in the signal are not nil
-  # In the case of ethereum do not check for main_contract_address. The caller will
-  # rewrite it so it uses "ETH" as a contract address. It is used in TimescaleDB to
-  # fill the `contract` column for ethereum
+  # In the case of ethereum do not check for main_contract_address.
   defp projects() do
     from(
       p in Project,

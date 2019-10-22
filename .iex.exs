@@ -47,9 +47,7 @@ alias Sanbase.Clickhouse.{
 
 alias Sanbase.{
   Repo,
-  TimescaleRepo,
   ClickhouseRepo,
-  Timescaledb,
   FileStore,
   DateTimeUtils,
   ApplicationUtils,

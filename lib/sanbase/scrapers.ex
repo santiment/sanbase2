@@ -10,9 +10,6 @@ defmodule Sanbase.Application.Scrapers do
   """
   def children() do
     children = [
-      # Start the TimescaleDB Ecto repository
-      Sanbase.TimescaleRepo,
-
       # Start a Registry
       {Registry, keys: :unique, name: Sanbase.Registry},
 

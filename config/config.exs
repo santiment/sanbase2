@@ -10,7 +10,7 @@ import Config
 config :tzdata, :autoupdate, :disabled
 
 # General application configuration
-config :sanbase, ecto_repos: [Sanbase.Repo, Sanbase.TimescaleRepo]
+config :sanbase, ecto_repos: [Sanbase.Repo]
 
 config :phoenix, :json_library, Jason
 
@@ -36,18 +36,6 @@ config :sanbase, Sanbase.Repo,
   max_overflow: 5,
   # because of pgbouncer
   prepare: :unnamed
-
-config :sanbase, Sanbase.TimescaleRepo,
-  loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
-  adapter: Ecto.Adapters.Postgres,
-  timeout: 30_000,
-  pool_size: {:system, "TIMESCALE_POOL_SIZE", "30"},
-  max_overflow: 5,
-  # because of pgbouncer
-  prepare: :unnamed
-
-config :sanbase, Sanbase.Timescaledb,
-  blockchain_schema: {:system, "TIMESCALEDB_BLOCKCHAIN_SCHEMA", "etherbi"}
 
 config :sanbase, Sanbase.Auth.Hmac, secret_key: {:system, "APIKEY_HMAC_SECRET_KEY", nil}
 

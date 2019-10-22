@@ -59,14 +59,6 @@ config :sanbase, Sanbase.Repo,
   database: "sanbase_dev",
   hostname: "localhost"
 
-# Configure your database
-config :sanbase, Sanbase.TimescaleRepo,
-  username: "postgres",
-  password: "postgres",
-  database: "sanbase_timescale_dev",
-  hostname: "localhost",
-  pool_size: 3
-
 # Clickhousex does not support `:system` tuples. The configuration is done
 # by defining defining `:url` in the ClickhouseRepo `init` function.
 config :sanbase, Sanbase.ClickhouseRepo,
@@ -80,8 +72,6 @@ config :sanbase, Sanbase.ClickhouseRepo,
   pool_timeout: 60_000,
   timeout: 60_000,
   pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "3"}
-
-config :sanbase, Sanbase.Timescaledb, blockchain_schema: nil
 
 config :ex_admin,
   basic_auth: [

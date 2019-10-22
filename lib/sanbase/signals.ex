@@ -10,9 +10,6 @@ defmodule Sanbase.Application.Signals do
   """
   def children() do
     children = [
-      # Start the TimescaleDB Ecto repository
-      Sanbase.TimescaleRepo,
-
       # Start the Clickhouse Repo
       start_in({Sanbase.ClickhouseRepo, []}, [:prod]),
 

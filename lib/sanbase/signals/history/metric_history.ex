@@ -4,7 +4,7 @@ defmodule Sanbase.Signal.History.MetricHistory do
   Currently it is bucketed in `1 day` intervals and goes 90 days back.
   """
 
-  alias __MODULE__
+  alias Sanbase.Signal.Trigger.MetricTriggerSettings
 
   @type historical_trigger_points_type :: %{
           datetime: %DateTime{},
@@ -14,12 +14,11 @@ defmodule Sanbase.Signal.History.MetricHistory do
           triggered?: boolean()
         }
 
-  defimpl Sanbase.Signal.History, for: MetricHistory do
+  defimpl Sanbase.Signal.History, for: MetricTriggerSettings do
     import Sanbase.DateTimeUtils, only: [str_to_days: 1]
 
     alias Sanbase.Signal.History.ResultBuilder
     alias Sanbase.Signal.History.MetricHistory
-    alias Sanbase.Signal.Trigger.MetricTriggerSettings
 
     @historical_days_from 90
     @historical_days_interval "1d"

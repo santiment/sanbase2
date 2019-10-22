@@ -109,12 +109,6 @@ defmodule Sanbase.Chart do
 
   defp build_line_chart(project, from, to, size, opts) do
     case Keyword.get(opts, :chart_type) do
-      :daily_active_addresses ->
-        chart_values(:daily_active_addresses, project, from, to, size)
-
-      :exchange_inflow ->
-        chart_values(:exchange_inflow, project, from, to, size)
-
       :volume ->
         chart_values(:volume, project, from, to, size)
 
@@ -122,71 +116,6 @@ defmodule Sanbase.Chart do
         chart_values(metric, project, from, to, size)
 
       _ ->
-        empty_values(from, to)
-    end
-  end
-
-  defp chart_values(:daily_active_addresses, %Project{} = project, _from, to, size) do
-    from = Timex.shift(to, days: -size + 1)
-
-    with {:ok, contract, _} <- Project.contract_info(project),
-         {:ok, daa} <-
-           Erc20DailyActiveAddresses.average_active_addresses(contract, from, to, "1d") do
-      daa_values = daa |> Enum.map(fn %{active_addresses: value} -> value end)
-      {min, max} = Math.min_max(daa_values)
-      daa_values = daa_values |> Enum.join(",")
-
-      %{
-        chtt: "#{project.name} - Daily Active Addresses and OHLC Price" |> URI.encode(),
-        chxt: ",x,r",
-        chxl: "1:|#{datetime_values(from, to)}" |> URI.encode(),
-        chxr: "|2,#{min},#{max}",
-        chds: "#{min},#{max},",
-        chd: "t1:#{daa_values}",
-        chxs: ""
-      }
-    else
-      error ->
-        Logger.error(
-          "Cannot fetch Daily Active Addresses for #{Project.describe(project)}. Reason: #{
-            inspect(error)
-          }"
-        )
-
-        empty_values(from, to)
-    end
-  end
-
-  defp chart_values(:exchange_inflow, %Project{slug: slug} = project, _from, to, size) do
-    from = Timex.shift(to, days: -size + 1)
-
-    with {:ok, exchange_inflow} <-
-           Clickhouse.Metric.get("exchange_inflow", slug, from, to, "1d"),
-         supply when not is_nil(supply) <- Project.supply(project) do
-      exchange_inflow_values =
-        exchange_inflow |> Enum.map(fn %{inflow: value} -> value / supply end)
-
-      {min, max} = Math.min_max(exchange_inflow_values)
-
-      exchange_inflow_values = exchange_inflow_values |> Enum.join(",")
-
-      %{
-        chtt: "#{project.name} - Exchange Inflow and OHLC Price" |> URI.encode(),
-        chxt: ",x,r",
-        chxl: "1:|#{datetime_values(from, to)}" |> URI.encode(),
-        chxr: "|2,#{min},#{max}",
-        chxs: "|2N*p2*",
-        chds: "#{min},#{max},",
-        chd: "t1:#{exchange_inflow_values}"
-      }
-    else
-      error ->
-        Logger.error(
-          "Cannot fetch Exchange Inflow for #{Project.describe(project)}. Reason: #{
-            inspect(error)
-          }"
-        )
-
         empty_values(from, to)
     end
   end
@@ -223,23 +152,24 @@ defmodule Sanbase.Chart do
 
   defp chart_values({:metric, metric}, %Project{} = project, _from, to, size) do
     %Project{slug: slug, name: name} = project
+    {:ok, metric_name} = Clickhouse.Metric.human_readable_name(metric)
     from = Timex.shift(to, days: -size + 1)
-    metric_name = Sanbase.Clickhouse.Metric.human_readable_name(metric)
 
-    with {:ok, data} <- Sanbase.Clickhouse.Metric.get(metric, slug, from, to, "1d") do
-      values = data |> Enum.map(& &1["value"])
-      {min, max} = Math.min_max(values)
+    case Clickhouse.Metric.get(metric, slug, from, to, "1d") do
+      {:ok, data} ->
+        values = data |> Enum.map(& &1.value) |> Enum.reject(&is_nil/1)
+        {min, max} = Math.min_max(values)
 
-      %{
-        chtt: "#{name} - #{metric_name} and OHLC Price" |> URI.encode(),
-        chxt: ",x,r",
-        chxl: "1:|#{datetime_values(from, to)}" |> URI.encode(),
-        chxr: "|2,#{min},#{max}",
-        chxs: "|2N*cUSDs*",
-        chds: "#{min},#{max},",
-        chd: "t1:#{values |> Enum.join(",")}"
-      }
-    else
+        %{
+          chtt: "#{name} - #{metric_name} and OHLC Price" |> URI.encode(),
+          chxt: ",x,r",
+          chxl: "1:|#{datetime_values(from, to)}" |> URI.encode(),
+          chxr: "|2,#{min},#{max}",
+          chds: "#{min},#{max},",
+          chd: "t1:#{values |> Enum.join(",")}",
+          chxs: ""
+        }
+
       error ->
         Logger.error(
           "Cannot fetch #{metric_name} for #{Project.describe(project)}. Reason: #{inspect(error)}"

@@ -215,7 +215,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
       project,
       Timex.shift(Timex.now(), days: -90),
       Timex.now(),
-      chart_type: :exchange_inflow
+      chart_type: {:metric, "exchange_inflow"}
     )
   end
 

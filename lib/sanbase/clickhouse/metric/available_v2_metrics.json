@@ -536,5 +536,13 @@
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2"
+  },
+
+  {
+    "metric": "network_growth",
+    "access": "restricted",
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2"
   }
 ]

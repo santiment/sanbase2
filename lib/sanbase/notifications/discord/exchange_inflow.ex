@@ -7,7 +7,6 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
   require Logger
   require Sanbase.Utils.Config, as: Config
-  require Mockery.Macro
 
   import Ecto.Query
 
@@ -24,14 +23,16 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     from = Timex.shift(to, days: -interval_days())
 
     projects =
-      projects()
+      Project.List.projects()
       |> Project.projects_over_volume_threshold(volume_threshold)
       |> Enum.map(fn project ->
         # Downcase the contract address and transform it to "ETH" in case of Ethereum
         %Project{project | main_contract_address: Project.contract_address(project)}
       end)
 
-    Metric.get_aggregated("exchange_inflow", projects, from, to, :sum)
+    slugs = Enum.map(projects, & &1.slug) |> Enum.reject(&is_nil/1)
+
+    Metric.get_aggregated("exchange_inflow", slugs, from, to, :sum)
     |> case do
       {:ok, list} ->
         notification_type = Type.get_or_create("exchange_inflow")
@@ -66,21 +67,6 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
   # Private functions
 
-  # Return all projects where the fields that will be used in the signal are not nil
-  # In the case of ethereum do not check for main_contract_address.
-  defp projects() do
-    from(
-      p in Project,
-      preload: [:latest_coinmarketcap_data],
-      where:
-        not is_nil(p.slug) and
-          (p.slug == "ethereum" or not is_nil(p.main_contract_address)) and
-          not is_nil(p.token_decimals) and not is_nil(p.name)
-    )
-    |> Repo.all()
-    |> Enum.reject(fn %Project{} = project -> !Project.supply(project) end)
-  end
-
   defp build_payload(projects, list) do
     slug_inflow_map =
       Enum.map(list, fn %{slug: slug, value: inflow} -> {slug, inflow} end)
@@ -101,11 +87,10 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   defp percent_of_total_supply(_, nil), do: nil
 
   defp percent_of_total_supply(
-         %Project{token_decimals: token_decimals} = project,
+         %Project{} = project,
          inflow
        ) do
     tokens_amount = Project.supply(project)
-    inflow = inflow / :math.pow(10, token_decimals)
     percent = inflow / tokens_amount * 100
     percent |> Float.round(3)
   end

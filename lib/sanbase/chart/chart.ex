@@ -7,7 +7,6 @@ defmodule Sanbase.Chart do
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse
-  alias Sanbase.Clickhouse.Erc20DailyActiveAddresses
   alias Sanbase.FileStore
   alias Sanbase.Math
 

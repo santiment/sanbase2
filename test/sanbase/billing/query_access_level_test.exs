@@ -259,7 +259,8 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         "stack_age_consumed_5min",
         "nvt",
         "nvt_transaction_volume",
-        "mvrv_usd_long_short_diff"
+        "mvrv_usd_long_short_diff",
+        "network_growth"
       ]
 
       expected_result = (aliases ++ queries) |> Enum.sort()

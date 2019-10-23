@@ -16,19 +16,30 @@ defmodule Sanbase.Signal.ResultBuilder.Transformer do
       []
   """
   def transform(data, value_key) do
-    Enum.map(data, fn {slug, values} ->
-      [previous, current] = Enum.take(values, -2) |> Enum.map(&Map.get(&1, value_key))
-      previous_list = Enum.drop(values, -1) |> Enum.map(&Map.get(&1, value_key))
-      previous_average = previous_list |> Sanbase.Math.average(precision: 2)
+    Enum.map(data, fn
+      {slug, [_, _ | _] = values} ->
+        [previous, current] = Enum.take(values, -2) |> Enum.map(&Map.get(&1, value_key))
+        previous_list = Enum.drop(values, -1) |> Enum.map(&Map.get(&1, value_key))
+        previous_average = previous_list |> Sanbase.Math.average(precision: 2)
 
-      %{
-        slug: slug,
-        current: current,
-        previous: previous,
-        previous_average: previous_average,
-        absolute_change: current - previous,
-        percent_change: percent_change(previous_average, current)
-      }
+        %{
+          slug: slug,
+          current: current,
+          previous: previous,
+          previous_average: previous_average,
+          absolute_change: current - previous,
+          percent_change: percent_change(previous_average, current)
+        }
+
+      {slug, [value]} ->
+        %{
+          slug: slug,
+          current: value,
+          previous: nil,
+          previous_average: nil,
+          absolute_change: nil,
+          percent_change: nil
+        }
     end)
   end
 end

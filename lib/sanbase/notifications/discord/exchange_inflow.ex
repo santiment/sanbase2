@@ -8,9 +8,6 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   require Logger
   require Sanbase.Utils.Config, as: Config
 
-  import Ecto.Query
-
-  alias Sanbase.Repo
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.Metric
   alias Sanbase.Notifications.{Discord, Notification, Type}

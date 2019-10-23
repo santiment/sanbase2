@@ -53,8 +53,10 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
 
   def get_data(%__MODULE__{filtered_target: %{list: target_list}} = settings)
       when is_list(target_list) do
-    time_window_in_days = Enum.max([str_to_days(settings.time_window), 2])
-    from = Timex.shift(Timex.now(), days: -(2 * time_window_in_days))
+    time_window_in_days = Enum.max([str_to_days(settings.time_window), 1])
+    # Ensure there are enough data points in the interval. The not needed
+    # ones are ignored
+    from = Timex.shift(Timex.now(), days: -(3 * time_window_in_days))
     to = Timex.now()
 
     contract_info_map = Project.List.contract_info_map()

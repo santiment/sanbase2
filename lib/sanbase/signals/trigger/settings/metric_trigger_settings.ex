@@ -8,7 +8,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
 
   import Sanbase.{Validation, Signal.Validation}
   import Sanbase.Signal.Utils
-  import Sanbase.DateTimeUtils, only: [round_datetime: 2, str_to_sec: 1]
+  import Sanbase.DateTimeUtils, only: [round_datetime: 2, str_to_days: 1]
 
   alias __MODULE__
   alias Sanbase.Signal.Type
@@ -23,7 +23,6 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
             metric: nil,
             target: nil,
             channel: nil,
-            interval: "1d",
             time_window: "1d",
             operation: nil,
             triggered?: false,
@@ -33,7 +32,6 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
   validates(:metric, &valid_metric?/1)
   validates(:target, &valid_target?/1)
   validates(:channel, &valid_notification_channel?/1)
-  validates(:interval, &valid_time_window?/1)
   validates(:time_window, &valid_time_window?/1)
   validates(:operation, &valid_operation?/1)
 
@@ -42,7 +40,6 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
           metric: Type.metric(),
           target: Type.complex_target(),
           channel: Type.channel(),
-          interval: Type.time_window(),
           time_window: Type.time_window(),
           operation: Type.operation(),
           triggered?: boolean(),
@@ -68,12 +65,15 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
   end
 
   defp get_timeseries_params(settings) do
-    %{interval: interval, time_window: time_window} = settings
+    %{time_window: time_window} = settings
 
+    time_window_in_days = Enum.max([str_to_days(time_window), 1])
     to = Timex.now()
-    from = Timex.shift(to, seconds: -str_to_sec(time_window))
+    # Ensure there are enough data points in the interval. The not needed
+    # ones are ignored    from = Timex.shift(to, days: -(3 * time_window_in_days))
+    from = Timex.shift(to, days: -(3 * time_window_in_days))
 
-    {from, to, interval}
+    {from, to, time_window}
   end
 
   defp fetch_metric(metric, slug, from, to, interval) do
@@ -116,7 +116,6 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
         settings.target,
         settings.metric,
         settings.time_window,
-        settings.interval,
         settings.operation
       ])
     end

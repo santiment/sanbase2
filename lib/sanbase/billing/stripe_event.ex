@@ -14,7 +14,7 @@ defmodule Sanbase.Billing.StripeEvent do
 
   alias Sanbase.Repo
   alias Sanbase.Auth.User
-  alias Sanbase.Billing.{Subscription, Plan}
+  alias Sanbase.Billing.{Subscription, Plan, Product}
   alias Sanbase.StripeApi
   alias Sanbase.Notifications.Discord
 
@@ -77,13 +77,15 @@ defmodule Sanbase.Billing.StripeEvent do
     end)
   end
 
-  defp handle_discord_notification(%{
-         "type" => "invoice.payment_succeeded",
-         "data" => %{"object" => %{"total" => total}}
-       })
+  defp handle_discord_notification(
+         %{
+           "type" => "invoice.payment_succeeded",
+           "data" => %{"object" => %{"total" => total}}
+         } = event
+       )
        when total > 1 do
     payload =
-      ["New payment for $#{total / 100} received"]
+      build_payload(event)
       |> Discord.encode!(publish_user())
 
     Discord.send_notification(
@@ -199,6 +201,67 @@ defmodule Sanbase.Billing.StripeEvent do
         Logger.error("Error handling #{type} event: reason #{inspect(reason)}")
         {:error, reason}
     end
+  end
+
+  defp build_payload(%{
+         "data" => %{"object" => %{"total" => total, "subscription" => subscription}}
+       })
+       when is_binary(subscription) do
+    Repo.get_by(Subscription, stripe_id: subscription)
+    |> Repo.preload([:user, plan: [:product]])
+    |> payload_for_subscription(total)
+  end
+
+  defp build_payload(%{"id" => id, "data" => %{"object" => %{"total" => total}}}) do
+    [
+      "New payment for $#{total / 100} received. Details: https://dashboard.stripe.com/events/#{
+        id
+      }"
+    ]
+  end
+
+  defp payload_for_subscription(
+         %Subscription{
+           plan: %Plan{name: plan_name, product: %Product{name: product_name}},
+           inserted_at: inserted_at,
+           user: user
+         },
+         total
+       ) do
+    calculate_recurring_month(inserted_at)
+    |> case do
+      1 ->
+        [
+          "New payment for $#{total / 100} for #{product_name} / #{plan_name} by #{
+            mask_user(user)
+          }"
+        ]
+
+      count ->
+        [
+          "Recurring payment for $#{total / 100} for #{product_name} / #{plan_name} (month #{
+            count
+          }) by #{mask_user(user)}"
+        ]
+    end
+  end
+
+  defp mask_user(%User{email: email}) when is_binary(email) do
+    Regex.replace(~r/(.*@)/, email, "***@")
+  end
+
+  defp mask_user(_) do
+    "Metamask user"
+  end
+
+  # checks which month of recurring subscription it is by the subscription creation date
+  defp calculate_recurring_month(inserted_at) do
+    now_unix = Timex.now() |> DateTime.to_unix()
+    created_at_unix = inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
+
+    ((now_unix - created_at_unix) / (29 * 86400))
+    |> floor()
+    |> Kernel.+(1)
   end
 
   defp webhook_url() do

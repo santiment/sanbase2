@@ -11,7 +11,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
 
   import Sanbase.{Validation, Signal.Validation}
   import Sanbase.Signal.Utils
-  import Sanbase.DateTimeUtils, only: [round_datetime: 2, str_to_sec: 1, interval_to_str: 1]
+  import Sanbase.DateTimeUtils, only: [round_datetime: 2, str_to_days: 1, interval_to_str: 1]
 
   alias __MODULE__
   alias Sanbase.Signal.Type
@@ -53,22 +53,26 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
 
   def get_data(%__MODULE__{filtered_target: %{list: target_list}} = settings)
       when is_list(target_list) do
-    time_window_sec = str_to_sec(settings.time_window)
-    from = Timex.shift(Timex.now(), seconds: -time_window_sec)
-    to = Timex.shift(Timex.now(), days: -1)
+    time_window_in_days = Enum.max([str_to_days(settings.time_window), 1])
+    # Ensure there are enough data points in the interval. The not needed
+    # ones are ignored
+    from = Timex.shift(Timex.now(), days: -(3 * time_window_in_days))
+    to = Timex.now()
 
     contract_info_map = Project.List.contract_info_map()
 
     target_list
     |> Enum.map(fn slug ->
-      case Map.get(contract_info_map, slug) do
-        {contract, _token_decimals} when not is_nil(contract) ->
-          daily_active_addresses = fetch_daily_active_addersses(contract, from, to, "1d")
-
-          {slug, daily_active_addresses}
-
-        _ ->
-          nil
+      with {contract, _token_decimals} when not is_nil(contract) <-
+             Map.get(contract_info_map, slug),
+           daa when length(daa) >= time_window_in_days <-
+             fetch_daily_active_addersses(contract, from, to, "1d") do
+        last = List.last(daa)
+        previous = Enum.at(daa, -time_window_in_days)
+        daily_active_addresses = [previous, last]
+        {slug, daily_active_addresses}
+      else
+        _ -> nil
       end
     end)
     |> Enum.reject(&is_nil/1)

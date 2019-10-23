@@ -132,7 +132,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
       }**.
       More info here: #{Project.sanbase_link(project)}
 
-      ![#{human_readable_name} & OHLC  for the past 90 days](#{
+      ![#{human_readable_name} & OHLC for the past 90 days](#{
         chart_url(project, {:metric, settings.metric})
       })
       """

@@ -78,16 +78,15 @@ defmodule Sanbase.Telegram do
   """
   @spec send_message_to_chat_id(non_neg_integer(), message) :: :ok | {:error, String.t()}
   def send_message_to_chat_id(chat_id, text) do
-    post(
-      "sendMessage",
+    content =
       %{
         parse_mode: "markdown",
         chat_id: chat_id,
         text: text
       }
       |> Jason.encode!()
-    )
-    |> case do
+
+    case post("sendMessage", content) do
       {:ok, %Tesla.Env{status: 200}} ->
         :ok
 

@@ -131,13 +131,13 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
       """
       **#{project.name}**'s Daily Active Addresses #{
         Sanbase.Signal.OperationText.to_text(values, settings.operation)
-      }* up to #{current_daa} active addresses.
+      } up to #{current_daa} active addresses.
 
       Average Daily Active Addresses for last **#{interval}**: **#{average_daa}**.
       More info here: #{Project.sanbase_link(project)}
 
       ![Daily Active Addresses chart and OHLC price chart for the past 90 days](#{
-        chart_url(project, :daily_active_addresses)
+        chart_url(project, {:metric, "daily_active_addresses"})
       })
       """
     end

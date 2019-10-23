@@ -23,6 +23,9 @@ defmodule Sanbase.ExAdmin.Billing.Subscription do
       column("Product", fn subscription ->
         subscription.plan.product.name
       end)
+
+      column(:inserted_at)
+      column(:updated_at)
     end
 
     show _subscription do
@@ -39,6 +42,9 @@ defmodule Sanbase.ExAdmin.Billing.Subscription do
         row("Product", fn subscription ->
           subscription.plan.product.name
         end)
+
+        row(:inserted_at)
+        row(:updated_at)
       end
     end
   end

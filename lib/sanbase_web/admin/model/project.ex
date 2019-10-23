@@ -134,6 +134,7 @@ defmodule Sanbase.ExAdmin.Model.Project do
           collection: from(i in Infrastructure, order_by: i.code) |> Sanbase.Repo.all()
         )
 
+        input(project, :logo_url)
         input(project, :website_link)
         input(project, :btt_link)
         input(project, :facebook_link)

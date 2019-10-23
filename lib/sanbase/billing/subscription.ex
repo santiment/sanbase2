@@ -36,6 +36,8 @@ defmodule Sanbase.Billing.Subscription do
 
     belongs_to(:user, User)
     belongs_to(:plan, Plan)
+
+    timestamps()
   end
 
   def generic_error_message, do: @generic_error_message
@@ -49,7 +51,8 @@ defmodule Sanbase.Billing.Subscription do
       :current_period_end,
       :trial_end,
       :cancel_at_period_end,
-      :status
+      :status,
+      :inserted_at
     ])
     |> foreign_key_constraint(:plan_id, name: :subscriptions_plan_id_fkey)
   end
@@ -148,7 +151,8 @@ defmodule Sanbase.Billing.Subscription do
           id: stripe_id,
           current_period_end: current_period_end,
           cancel_at_period_end: cancel_at_period_end,
-          status: status
+          status: status,
+          created: created
         } = stripe_subscription,
         user,
         plan
@@ -161,7 +165,8 @@ defmodule Sanbase.Billing.Subscription do
       current_period_end: DateTime.from_unix!(current_period_end),
       cancel_at_period_end: cancel_at_period_end,
       status: status,
-      trial_end: calculate_trial_end(stripe_subscription)
+      trial_end: calculate_trial_end(stripe_subscription),
+      inserted_at: DateTime.from_unix!(created) |> DateTime.to_naive()
     })
     |> Repo.insert(on_conflict: :nothing)
   end
@@ -184,7 +189,8 @@ defmodule Sanbase.Billing.Subscription do
             current_period_end: current_period_end,
             cancel_at_period_end: cancel_at_period_end,
             status: status,
-            plan: %Stripe.Plan{id: stripe_plan_id}
+            plan: %Stripe.Plan{id: stripe_plan_id},
+            created: created
           } = stripe_subscription} <- StripeApi.retrieve_subscription(stripe_id),
          {:plan_not_exist?, %Plan{id: plan_id}} <-
            {:plan_not_exist?, Plan.by_stripe_id(stripe_plan_id)} do
@@ -193,7 +199,8 @@ defmodule Sanbase.Billing.Subscription do
         cancel_at_period_end: cancel_at_period_end,
         status: status,
         plan_id: plan_id,
-        trial_end: calculate_trial_end(stripe_subscription)
+        trial_end: calculate_trial_end(stripe_subscription),
+        inserted_at: DateTime.from_unix!(created) |> DateTime.to_naive()
       })
     else
       {:plan_not_exist?, nil} ->

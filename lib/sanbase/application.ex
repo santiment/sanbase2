@@ -127,6 +127,7 @@ defmodule Sanbase.Application do
     [
       # Start the endpoint when the application starts
       SanbaseWeb.Endpoint,
+      {Absinthe.Subscription, SanbaseWeb.Endpoint},
 
       # Start the Postgres Ecto repository
       Sanbase.Repo,

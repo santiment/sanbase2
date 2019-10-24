@@ -61,7 +61,7 @@ defmodule Sanbase.Mixfile do
       {:guardian, "~> 2.0"},
       {:absinthe, github: "absinthe-graphql/absinthe", override: true},
       {:absinthe_ecto, "~> 0.1.0"},
-      {:absinthe_plug, github: "absinthe-graphql/absinthe_plug"},
+      {:absinthe_phoenix, github: "absinthe-graphql/absinthe_phoenix", override: true},
       {:temp, "~> 0.4"},
       {:httpoison, "~> 1.2", override: true},
       {:floki, "~> 0.20"},
@@ -102,10 +102,13 @@ defmodule Sanbase.Mixfile do
       {:stripity_stripe, git: "https://github.com/code-corps/stripity_stripe"},
       {:async_with, github: "fertapric/async_with"},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
+      {:kafka_protocol, github: "qzhuyan/kafka_protocol", branch: "lz4-nif", override: true},
+      {:kaffe, path: "../kaffe", override: true},
       {:san_exporter_ex, github: "santiment/san-exporter-ex"},
       {:faker, "~> 0.12"},
       {:inflex, "~> 2.0", override: true},
-      {:mogrify, "~> 0.7.2"}
+      {:mogrify, "~> 0.7.2"},
+      {:lz4b, "0.0.4"}
     ]
   end
 

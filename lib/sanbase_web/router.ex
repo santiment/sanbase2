@@ -59,6 +59,7 @@ defmodule SanbaseWeb.Router do
       Absinthe.Plug.GraphiQL,
       json_codec: Jason,
       schema: SanbaseWeb.Graphql.Schema,
+      socket: SanbaseWeb.UserSocket,
       document_providers: [
         SanbaseWeb.Graphql.DocumentProvider,
         Absinthe.Plug.DocumentProvider.Default

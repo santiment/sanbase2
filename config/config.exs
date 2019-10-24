@@ -24,6 +24,16 @@ config :sanbase, Sanbase.ApiCallDataExporter,
   kafka_url: {:system, "KAFKA_URL", "blockchain-kafka-kafka"},
   kafka_port: {:system, "KAFKA_PORT", "9092"}
 
+config :kaffe,
+  consumer: [
+    endpoints: [{"blockchain-kafka-kafka", 9092}],
+    topics: ["exchange_market_depth"],
+    consumer_group: "sanbase_kafka_cansumer",
+    message_handler: Sanbase.MessageProcessor,
+    async_message_ack: false,
+    start_with_earliest_message: true
+  ]
+
 config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
   implementation_module: Sanbase.ExternalServices.RateLimiting.WaitServer
 
@@ -48,7 +58,8 @@ config :sanbase, SanbaseWeb.Endpoint,
   # should be removed after app.santiment.net migration
   website_url: {:system, "WEBSITE_URL", "http://localhost:4000"},
   backend_url: {:system, "BACKEND_URL", "http://localhost:4000"},
-  frontend_url: {:system, "FRONTEND_URL", "http://localhost:4000"}
+  frontend_url: {:system, "FRONTEND_URL", "http://localhost:4000"},
+  pubsub: [name: Sanbase.PubSub, adapter: Phoenix.PubSub.PG2]
 
 # Do not log SASL crash reports
 config :sasl, sasl_error_logger: false

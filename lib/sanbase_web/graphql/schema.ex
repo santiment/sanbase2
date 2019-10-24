@@ -116,4 +116,63 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:user_mutations)
     import_fields(:billing_mutations)
   end
+
+  object :exchange_market_depth do
+    field(:source, :string)
+    field(:symbol, :string)
+    field(:timestamp, :datetime)
+    field(:ask, :float)
+    field(:asks_025_percent_depth, :float)
+    field(:asks_025_percent_volume, :float)
+    field(:asks_05_percent_depth, :float)
+    field(:asks_05_percent_volume, :float)
+    field(:asks_075_percent_depth, :float)
+    field(:asks_075_percent_volume, :float)
+    field(:asks_10_percent_depth, :float)
+    field(:asks_10_percent_volume, :float)
+    field(:asks_1_percent_depth, :float)
+    field(:asks_1_percent_volume, :float)
+    field(:asks_20_percent_depth, :float)
+    field(:asks_20_percent_volume, :float)
+    field(:asks_2_percent_depth, :float)
+    field(:asks_2_percent_volume, :float)
+    field(:asks_30_percent_depth, :float)
+    field(:asks_30_percent_volume, :float)
+    field(:asks_5_percent_depth, :float)
+    field(:asks_5_percent_volume, :float)
+    field(:bid, :float)
+    field(:bids_025_percent_depth, :float)
+    field(:bids_025_percent_volume, :float)
+    field(:bids_05_percent_depth, :float)
+    field(:bids_05_percent_volume, :float)
+    field(:bids_075_percent_depth, :float)
+    field(:bids_075_percent_volume, :float)
+    field(:bids_10_percent_depth, :float)
+    field(:bids_10_percent_volume, :float)
+    field(:bids_1_percent_depth, :float)
+    field(:bids_1_percent_volume, :float)
+    field(:bids_20_percent_depth, :float)
+    field(:bids_20_percent_volume, :float)
+    field(:bids_2_percent_depth, :float)
+    field(:bids_2_percent_volume, :float)
+    field(:bids_30_percent_depth, :float)
+    field(:bids_30_percent_volume, :float)
+    field(:bids_5_percent_depth, :float)
+    field(:bids_5_percent_volume, :float)
+  end
+
+  subscription do
+    field :exchange_market_depth, :exchange_market_depth do
+      arg(:source, non_null(:string))
+      arg(:symbol, :string)
+
+      config(fn
+        %{source: source, symbol: symbol}, _ when not is_nil(symbol) ->
+          {:ok, topic: source <> symbol}
+
+        %{source: source}, _ ->
+          {:ok, topic: source}
+      end)
+    end
+  end
 end

@@ -17,7 +17,7 @@ defmodule Sanbase.MessageProcessor do
 
     emd =
       emd
-      |> Enum.map(fn {k, v} -> {Regex.replace(~r/(\d+)_(\d+)/, k, "\\1\\2"), v} end)
+      |> Enum.map(fn {k, v} -> {Regex.replace(~r/_(\d+)/, k, "\\1"), v} end)
       |> Enum.into(%{})
 
     emd = for {key, val} <- emd, into: %{}, do: {String.to_atom(key), val}

@@ -167,24 +167,21 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
         Timex.now()
       )
 
-    normalized_inflow = inflow / :math.pow(10, project.token_decimals)
-    normalized_cooldown_inflow = cooldown_inflow / :math.pow(10, project.token_decimals)
-
     """
     Project **#{project.name}** has **#{percent_of_total_supply(project, cooldown_inflow)}%** of its circulating supply (#{
-      normalized_cooldown_inflow |> Number.Delimit.number_to_delimited(precision: 0)
+      cooldown_inflow |> Number.Delimit.number_to_delimited(precision: 0)
     } out of #{Project.supply(project) |> Number.Delimit.number_to_delimited(precision: 0)} tokens) deposited into exchanges in the past #{
       timespan
     } #{timespan_format}(s).
     The approximate USD value of the moved tokens is $#{
-      Number.Delimit.number_to_delimited(normalized_cooldown_inflow * avg_price_usd)
+      Number.Delimit.number_to_delimited(cooldown_inflow * avg_price_usd)
     }
 
     In total #{percent_of_total_supply(project, inflow)}% (#{
-      normalized_inflow |> Number.Delimit.number_to_delimited(precision: 0)
+      inflow |> Number.Delimit.number_to_delimited(precision: 0)
     } tokens) were deposited into exchanges in the past #{interval_days()} day(s).
     The approximate USD value of total tokens moved is $#{
-      Number.Delimit.number_to_delimited(normalized_inflow * avg_price_usd)
+      Number.Delimit.number_to_delimited(inflow * avg_price_usd)
     }
     #{Project.sanbase_link(project)}
     """

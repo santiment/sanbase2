@@ -15,6 +15,12 @@ defmodule Sanbase.Application.Web do
   def children() do
     # Define workers and child supervisors to be supervised
     children = [
+      %{
+        id: Kaffe.GroupMemberSupervisor,
+        start: {Kaffe.GroupMemberSupervisor, :start_link, []},
+        type: :supervisor
+      },
+
       # Start the Clickhouse Repo
       start_in({Sanbase.ClickhouseRepo, []}, [:dev, :prod]),
 

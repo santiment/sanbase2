@@ -117,6 +117,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:billing_mutations)
   end
 
+  enum(:side_enum, values: [:buy, :sell])
+
   object :exchange_market_depth do
     field(:source, :string)
     field(:symbol, :string)
@@ -161,6 +163,16 @@ defmodule SanbaseWeb.Graphql.Schema do
     field(:bids5_percent_volume, :float)
   end
 
+  object :exchange_trade do
+    field(:source, :string)
+    field(:symbol, :string)
+    field(:timestamp, :datetime)
+    field(:side, :side_enum)
+    field(:amount, :float)
+    field(:price, :float)
+    field(:cost, :float)
+  end
+
   subscription do
     field :exchange_market_depth, :exchange_market_depth do
       arg(:source, non_null(:string))
@@ -172,6 +184,22 @@ defmodule SanbaseWeb.Graphql.Schema do
 
         %{source: source}, _ ->
           {:ok, topic: source}
+      end)
+    end
+
+    field :exchange_trades, :exchange_trade do
+      arg(:source, :string)
+      arg(:symbol, :string)
+
+      config(fn
+        %{source: source, symbol: symbol}, _ when not is_nil(symbol) ->
+          {:ok, topic: source <> symbol}
+
+        %{source: source}, _ when not is_nil(source) ->
+          {:ok, topic: source}
+
+        _, _ ->
+          {:ok, topic: "*"}
       end)
     end
   end

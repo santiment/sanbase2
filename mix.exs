@@ -103,7 +103,7 @@ defmodule Sanbase.Mixfile do
       {:async_with, github: "fertapric/async_with"},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:kafka_protocol, github: "qzhuyan/kafka_protocol", branch: "lz4-nif", override: true},
-      {:kaffe, path: "../kaffe", override: true},
+      {:kaffe, github: "santiment/kaffe", override: true},
       {:san_exporter_ex, github: "santiment/san-exporter-ex"},
       {:faker, "~> 0.12"},
       {:inflex, "~> 2.0", override: true},

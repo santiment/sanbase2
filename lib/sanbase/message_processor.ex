@@ -102,7 +102,7 @@ defmodule Sanbase.Kafka.ExchangeMarketDepth do
   end
 end
 
-defmodule Sanbase.Kafka.ExchangeTrades do
+defmodule Sanbase.Kafka.ExchangeTrade do
   defstruct [:source, :symbol, :timestamp, :amount, :cost, :price, :side]
 
   def example do
@@ -123,38 +123,38 @@ defmodule Sanbase.Kafka.ExchangeTrades do
     |> Enum.map(fn {k, v} -> {String.to_existing_atom(k), v} end)
     |> Enum.into(%{})
     |> format_timestamp()
+    |> format_side()
   end
 
-  defp format_timestamp(%{timestamp: timestamp} = exchange_market_depth) do
-    %{exchange_market_depth | timestamp: DateTime.from_unix!(floor(timestamp), :millisecond)}
+  defp format_timestamp(%{timestamp: timestamp} = exchange_trade) do
+    %{exchange_trade | timestamp: DateTime.from_unix!(floor(timestamp), :millisecond)}
+  end
+
+  defp format_side(%{side: side} = exchange_trade) do
+    %{exchange_trade | side: String.to_existing_atom(side)}
   end
 end
 
 defmodule Sanbase.Kafka.MessageProcessor do
   def handle_messages(messages) do
-    for %{key: key, value: value} = message <- messages do
-      IO.inspect(message)
-      IO.puts("#{key}: #{value}")
+    for message <- messages do
+      handle_message(message)
     end
 
     # Important!
     :ok
   end
 
-  def handle_message(%{value: value, topic: "exchange_trades"} = message) do
-    IO.inspect(message)
-
+  def handle_message(%{value: value, topic: "exchange_trades"}) do
     value
     |> Jason.decode!()
-    |> Sanbase.Kafka.ExchangeTrades.format_message()
+    |> Sanbase.Kafka.ExchangeTrade.format_message()
     |> publish_async(:exchange_trades)
 
     :ok
   end
 
-  def handle_message(%{value: value, topic: "exchange_market_depth"} = message) do
-    IO.inspect(message)
-
+  def handle_message(%{value: value, topic: "exchange_market_depth"}) do
     value
     |> Jason.decode!()
     |> Sanbase.Kafka.ExchangeMarketDepth.format_message()
@@ -164,18 +164,22 @@ defmodule Sanbase.Kafka.MessageProcessor do
   end
 
   defp publish_async(message, topic) do
-    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-      Absinthe.Subscription.publish(
-        SanbaseWeb.Endpoint,
-        message,
-        Keyword.new([{topic, message.source <> message.symbol}])
-      )
+    Absinthe.Subscription.publish(
+      SanbaseWeb.Endpoint,
+      message,
+      Keyword.new([{topic, "*"}])
+    )
 
-      Absinthe.Subscription.publish(
-        SanbaseWeb.Endpoint,
-        message,
-        Keyword.new([{topic, message.source}])
-      )
-    end)
+    Absinthe.Subscription.publish(
+      SanbaseWeb.Endpoint,
+      message,
+      Keyword.new([{topic, message.source <> message.symbol}])
+    )
+
+    Absinthe.Subscription.publish(
+      SanbaseWeb.Endpoint,
+      message,
+      Keyword.new([{topic, message.source}])
+    )
   end
 end

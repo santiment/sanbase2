@@ -27,11 +27,12 @@ config :sanbase, Sanbase.ApiCallDataExporter,
 config :kaffe,
   consumer: [
     endpoints: [{"blockchain-kafka-kafka", 9092}],
-    topics: ["exchange_market_depth", "exchange_trades"],
+    topics: ["exchange_trades", "exchange_market_depth"],
     consumer_group: "sanbase_kafka_cansumer",
     message_handler: Sanbase.Kafka.MessageProcessor,
     async_message_ack: false,
-    start_with_earliest_message: true
+    start_with_earliest_message: false,
+    offset_reset_policy: :reset_to_latest
   ]
 
 config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,

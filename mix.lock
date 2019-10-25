@@ -64,7 +64,7 @@
   "instream": {:hex, :instream, "0.21.0", "9660449133120cb19851d92173c92164cf3f70deb32c4b7ee2a772b575fa7df8", [:mix], [{:hackney, "~> 1.1", [hex: :hackney, repo: "hexpm", optional: false]}, {:influxql, "~> 0.2.0", [hex: :influxql, repo: "hexpm", optional: false]}, {:poison, "~> 3.0", [hex: :poison, repo: "hexpm", optional: false]}, {:poolboy, "~> 1.5", [hex: :poolboy, repo: "hexpm", optional: false]}], "hexpm"},
   "jason": {:hex, :jason, "1.1.2", "b03dedea67a99223a2eaf9f1264ce37154564de899fd3d8b9a21b1a6fd64afe7", [:mix], [{:decimal, "~> 1.0", [hex: :decimal, repo: "hexpm", optional: true]}], "hexpm"},
   "jose": {:hex, :jose, "1.9.0", "4167c5f6d06ffaebffd15cdb8da61a108445ef5e85ab8f5a7ad926fdf3ada154", [:mix, :rebar3], [{:base64url, "~> 0.0.1", [hex: :base64url, repo: "hexpm", optional: false]}], "hexpm"},
-  "kaffe": {:git, "https://github.com/IvanIvanoff/kaffe.git", "804863d6f405055b8956df74fb2d82220485f84b", []},
+  "kaffe": {:git, "https://github.com/santiment/kaffe.git", "b46f7c5850025d18df0209626bc3ed0b58313cbb", []},
   "kafka_protocol": {:git, "https://github.com/qzhuyan/kafka_protocol.git", "6696c1aaabe11f963f687037149a0cfccdfd499d", [branch: "lz4-nif"]},
   "libcluster": {:hex, :libcluster, "3.1.1", "cbab97b96141f47f2fe5563183c444bbce9282b3991ef054d69b8805546f0122", [:mix], [{:jason, "~> 1.1.2", [hex: :jason, repo: "hexpm", optional: false]}], "hexpm"},
   "libring": {:hex, :libring, "1.4.0", "41246ba2f3fbc76b3971f6bce83119dfec1eee17e977a48d8a9cfaaf58c2a8d6", [:mix], [], "hexpm"},

@@ -25,7 +25,7 @@ defmodule SanbaseWeb.Graphql.TokenCirculationApiTest do
     %{datetimes: datetimes} = context
 
     with_mocks([
-      {Sanbase.Clickhouse.Metric, [:passthrough],
+      {Sanbase.Metric, [:passthrough],
        [
          first_datetime: fn _, _ -> {:ok, context.from} end,
          get: fn _, _, _, _, _, _ ->
@@ -70,7 +70,7 @@ defmodule SanbaseWeb.Graphql.TokenCirculationApiTest do
     %{datetimes: datetimes} = context
 
     with_mocks([
-      {Sanbase.Clickhouse.Metric, [:passthrough],
+      {Sanbase.Metric, [:passthrough],
        [
          get: fn _, _, _, _, _, _ ->
            {:ok,

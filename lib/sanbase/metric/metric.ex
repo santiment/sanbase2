@@ -47,25 +47,29 @@ defmodule Sanbase.Metric do
   def get_aggregated(metric, identifier, from, to, opts \\ [])
 
   for %{metric: metric, module: module} <- @metrics_module_mapping do
-    def get(unquote(metric), identifier, from, to, interval, opts) do
+    def get(unquote(metric), identifier, from, to, interval, aggregation) do
       unquote(module).get(
         unquote(metric),
         identifier,
         from,
         to,
         interval,
-        opts
+        aggregation
       )
     end
 
-    def get_aggregated(unquote(metric), identifier, from, to, opts) do
+    def get_aggregated(unquote(metric), identifier, from, to, aggregation) do
       unquote(module).get_aggregated(
         unquote(metric),
         identifier,
         from,
         to,
-        opts
+        aggregation
       )
+    end
+
+    def human_readable_name(unquote(metric)) do
+      unquote(module).human_readable_name(unquote(metric))
     end
 
     def metadata(unquote(metric)) do
@@ -100,10 +104,18 @@ defmodule Sanbase.Metric do
   """
   def available_slugs_all_metrics() do
     Sanbase.Cache.get_or_store({:metric_available_slugs_all_metrics, 1800}, fn ->
-      Enum.flat_map(@metric_modules, fn module ->
-        module.available_slugs()
-      end)
-      |> Enum.uniq()
+      {slugs, errors} =
+        Enum.reduce(@metric_modules, {[], []}, fn module, {slugs_acc, errors} ->
+          case module.available_slugs() do
+            {:ok, slugs} -> {[slugs | slugs_acc], errors}
+            {:error, error} -> {slugs_acc, [error | errors]}
+          end
+        end)
+
+      case errors do
+        [] -> slugs |> Enum.uniq()
+        _ -> {:error, "Cannot fetch all available slugs"}
+      end
     end)
   end
 

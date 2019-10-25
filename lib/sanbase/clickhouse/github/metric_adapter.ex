@@ -21,7 +21,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   @restricted_metrics []
 
   @impl Sanbase.Metric.Behaviour
-  def get(metric, organizations, from, to, interval, opts) when metric in @metrics do
+  def get(metric, organizations, from, to, interval, _aggregation) when metric in @metrics do
     apply(
       Github,
       Map.get(@metrics_function_mapping, metric),
@@ -30,15 +30,15 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
         from,
         to,
         interval,
-        Keyword.get(opts, :transform, "None"),
-        Keyword.get(opts, :ma_base)
+        "None",
+        nil
       ]
     )
     |> transform_to_value_pairs(:activity)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def get_aggregated(metric, organizations, from, to, _opts) do
+  def get_aggregated(metric, organizations, from, to, _aggregation) do
     apply(
       Github,
       Map.get(@aggregated_metrics_function_mapping, metric),

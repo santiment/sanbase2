@@ -43,7 +43,7 @@ defmodule Sanbase.Signal.History.MetricHistory do
       to = Timex.now()
       shift = @historical_days_from + str_to_days(time_window) - 1
 
-      Sanbase.Clickhouse.Metric.get(
+      Sanbase.Metric.get(
         metric,
         slug,
         Timex.shift(to, days: -shift),

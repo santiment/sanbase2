@@ -4,7 +4,7 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
   """
   use AsyncWith
 
-  alias Sanbase.Clickhouse.Metric
+  alias Sanbase.Metric
   alias Sanbase.Clickhouse.Erc20DailyActiveAddresses, as: Erc20
   alias Sanbase.Clickhouse.EthDailyActiveAddresses, as: Eth
 

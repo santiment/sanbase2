@@ -3,7 +3,7 @@ defmodule Sanbase.Clickhouse.V2ClickhouseMetadataTest do
 
   import Sanbase.Factory
 
-  alias Sanbase.Clickhouse.Metric
+  alias Sanbase.Metric
 
   test "can fetch metadata for all available metrics" do
     metrics = Metric.available_metrics()
@@ -22,12 +22,12 @@ defmodule Sanbase.Clickhouse.V2ClickhouseMetadataTest do
 
   test "metadata properties" do
     metrics = Metric.available_metrics()
-    {:ok, aggregations} = Metric.available_aggregations()
+    aggregations = Metric.available_aggregations()
 
     for metric <- metrics do
       {:ok, metadata} = Metric.metadata(metric)
       assert metadata.default_aggregation in aggregations
-      assert metadata.min_interval in ["1d", "5m"]
+      assert metadata.min_interval in ["1m", "5m", "1d"]
     end
   end
 end

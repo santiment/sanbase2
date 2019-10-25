@@ -51,7 +51,7 @@ defmodule Sanbase.Clickhouse.Metric.Helper do
   defp wrap(list) do
     list
     |> Enum.map(fn mvrv ->
-      {:clickhouse_v2_metric, String.to_atom(mvrv)}
+      {:metric, String.to_atom(mvrv)}
     end)
   end
 end

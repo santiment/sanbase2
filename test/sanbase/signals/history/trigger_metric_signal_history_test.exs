@@ -7,7 +7,7 @@ defmodule Sanbase.Signal.TriggerMetricHistoryTest do
   alias Sanbase.Signal.UserTrigger
 
   setup_with_mocks([
-    {Sanbase.Clickhouse.Metric, [:passthrough], [get: fn _, _, _, _, _ -> {:ok, resp()} end]}
+    {Sanbase.Metric, [:passthrough], [get: fn _, _, _, _, _ -> {:ok, resp()} end]}
   ]) do
     :ok
   end

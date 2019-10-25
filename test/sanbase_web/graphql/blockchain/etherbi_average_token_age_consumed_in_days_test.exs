@@ -28,7 +28,7 @@ defmodule Sanbase.Etherbi.AverageTokenAgeConsumedInDaysApiTest do
     %{datetimes: datetimes} = context
 
     with_mocks([
-      {Sanbase.Clickhouse.Metric, [:passthrough],
+      {Sanbase.Metric, [:passthrough],
        [
          get: fn
            "age_destroyed", _, _, _, _, _ ->

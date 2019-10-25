@@ -13,7 +13,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
 
   alias Sanbase.Model.Project
   alias Sanbase.Repo
-  alias Sanbase.Clickhouse.Metric
+  alias Sanbase.Metric
   alias Sanbase.Clickhouse.DailyActiveAddresses
 
   alias Sanbase.Notifications.{Discord, Notification, Type}

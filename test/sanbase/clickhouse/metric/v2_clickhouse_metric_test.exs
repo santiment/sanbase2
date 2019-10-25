@@ -5,25 +5,19 @@ defmodule Sanbase.Clickhouse.V2ClickhouseMetricTest do
   import Sanbase.Factory
   import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
 
-  alias Sanbase.Clickhouse.Metric
+  alias Sanbase.Metric
 
   test "can fetch all available metrics" do
     to = Timex.now()
     from = Timex.shift(to, days: -30)
-    to_unix = DateTime.to_unix(to)
-    from_unix = DateTime.to_unix(from)
 
-    with_mock Sanbase.ClickhouseRepo,
-      query: fn _, _ ->
-        {:ok,
-         %{
-           rows: [
-             [from_unix, 10.0],
-             [to_unix, 20.0]
-           ]
-         }}
-      end do
-      {:ok, metrics} = Metric.available_metrics()
+    resp = {:ok, [%{datetime: from, value: 10}, %{datetime: to, value: 20}]}
+
+    with_mocks [
+      {Sanbase.Clickhouse.Metric, [], get: fn _, _, _, _, _, _ -> resp end},
+      {Sanbase.Clickhouse.Github.MetricAdapter, [], get: fn _, _, _, _, _, _ -> resp end}
+    ] do
+      metrics = Metric.available_metrics()
 
       results =
         for metric <- metrics do
@@ -50,7 +44,7 @@ defmodule Sanbase.Clickhouse.V2ClickhouseMetricTest do
            ]
          }}
       end do
-      {:ok, metrics} = Metric.available_metrics()
+      metrics = Metric.available_metrics()
       rand_metrics = Enum.map(1..100, fn _ -> rand_str() end)
       rand_metrics = rand_metrics -- metrics
 
@@ -80,8 +74,8 @@ defmodule Sanbase.Clickhouse.V2ClickhouseMetricTest do
          }}
       end do
       # Fetch some available metric
-      {:ok, [metric | _]} = Metric.available_metrics()
-      {:ok, aggregations} = Metric.available_aggregations()
+      [metric | _] = Metric.available_metrics()
+      aggregations = Metric.available_aggregations()
 
       results =
         for aggregation <- aggregations do
@@ -109,8 +103,8 @@ defmodule Sanbase.Clickhouse.V2ClickhouseMetricTest do
          }}
       end do
       # Fetch some available metric
-      {:ok, [metric | _]} = Metric.available_metrics()
-      {:ok, aggregations} = Metric.available_aggregations()
+      [metric | _] = Metric.available_metrics()
+      aggregations = Metric.available_aggregations()
       rand_aggregations = Enum.map(1..10, fn _ -> rand_str() |> String.to_atom() end)
       rand_aggregations = rand_aggregations -- aggregations
 
@@ -140,7 +134,7 @@ defmodule Sanbase.Clickhouse.V2ClickhouseMetricTest do
          }}
       end do
       # Fetch some available metric
-      {:ok, [metric | _]} = Metric.available_metrics()
+      [metric | _] = Metric.available_metrics()
 
       result =
         Metric.get(

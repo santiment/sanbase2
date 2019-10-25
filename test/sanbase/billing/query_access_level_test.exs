@@ -88,7 +88,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
       assert free_queries == expected_free_queries
     end
 
-    test "free clickhouse v2 queries" do
+    test "free metrics" do
       free_queries =
         Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:free)
         |> Enum.sort()
@@ -105,7 +105,9 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           "daily_high_price_usd",
           "daily_low_price_usd",
           "daily_opening_price_usd",
-          "daily_trading_volume_usd"
+          "daily_trading_volume_usd",
+          "dev_activity",
+          "github_activity"
         ]
         |> Enum.sort()
 

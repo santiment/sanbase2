@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     with {:ok, from, to, interval} <-
            calibrate_interval(Metric, metric, slug, from, to, interval, 86_400, @datapoints),
          {:ok, result} <-
-           Metric.get(metric, slug, from, to, interval, Map.get(args, :aggregation)) do
+           Metric.get(metric, slug, from, to, interval, args[:aggregation]) do
       {:ok, result |> Enum.reject(&is_nil/1)}
     else
       {:error, error} ->

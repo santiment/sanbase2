@@ -7,7 +7,7 @@ defmodule Sanbase.Signal.TriggerDailyActiveAddressesHistoryTest do
   alias Sanbase.Signal.UserTrigger
 
   setup_with_mocks([
-    {Sanbase.Clickhouse.Metric, [:passthrough],
+    {Sanbase.Metric, [:passthrough],
      [get: fn "daily_active_addresses", _, _, _, _, _ -> {:ok, daa_resp()} end]}
   ]) do
     :ok

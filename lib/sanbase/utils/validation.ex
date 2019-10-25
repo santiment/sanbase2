@@ -74,9 +74,7 @@ defmodule Sanbase.Validation do
   end
 
   def valid_metric?(metric) do
-    {:ok, metrics} = Sanbase.Clickhouse.Metric.available_metrics()
-
-    case metric in metrics do
+    case metric in Sanbase.Metric.available_metrics() do
       true ->
         :ok
 

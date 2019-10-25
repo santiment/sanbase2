@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricTimeseriesDataTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
-  alias Sanbase.Clickhouse.Metric
+  alias Sanbase.Metric
 
   setup do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
@@ -25,7 +25,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricTimeseriesDataTest do
   test "returns data for an available metric", context do
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
     aggregation = :avg
-    {:ok, [metric | _]} = Metric.available_metrics()
+    [metric | _] = Metric.available_metrics()
 
     with_mock Metric, [],
       get: fn _, _, _, _, _, _ ->
@@ -57,7 +57,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricTimeseriesDataTest do
   test "returns data for all available metrics", context do
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
     aggregation = :avg
-    {:ok, metrics} = Metric.available_metrics()
+    metrics = Metric.available_metrics()
 
     with_mock Metric, [],
       get: fn _, _, _, _, _, _ ->
@@ -80,10 +80,10 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricTimeseriesDataTest do
 
   test "returns data for all available aggregations", context do
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
-    {:ok, aggregations} = Metric.available_aggregations()
+    aggregations = Metric.available_aggregations()
     # nil means aggregation is not passed, we should not explicitly pass it
     aggregations = aggregations -- [nil]
-    {:ok, [metric | _]} = Metric.available_metrics()
+    [metric | _] = Metric.available_metrics()
 
     with_mock Metric, [],
       get: fn _, _, _, _, _, _ ->
@@ -106,10 +106,10 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricTimeseriesDataTest do
 
   test "returns error for unavailable aggregations", context do
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
-    {:ok, aggregations} = Metric.available_aggregations()
+    aggregations = Metric.available_aggregations()
     rand_aggregations = Enum.map(1..10, fn _ -> rand_str() |> String.to_atom() end)
     rand_aggregations = rand_aggregations -- aggregations
-    {:ok, [metric | _]} = Metric.available_metrics()
+    [metric | _] = Metric.available_metrics()
 
     # Do not mock the `get` function. It will reject the query if the execution
     # reaches it. Currently the execution is halted even earlier because the

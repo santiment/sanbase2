@@ -27,9 +27,9 @@ config :sanbase, Sanbase.ApiCallDataExporter,
 config :kaffe,
   consumer: [
     endpoints: [{"blockchain-kafka-kafka", 9092}],
-    topics: ["exchange_market_depth"],
+    topics: ["exchange_market_depth", "exchange_trades"],
     consumer_group: "sanbase_kafka_cansumer",
-    message_handler: Sanbase.MessageProcessor,
+    message_handler: Sanbase.Kafka.MessageProcessor,
     async_message_ack: false,
     start_with_earliest_message: true
   ]

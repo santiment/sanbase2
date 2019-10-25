@@ -225,7 +225,7 @@ defmodule Sanbase.Model.Project.List do
     from(p in Project,
       full_join: gl in Project.GithubOrganization,
       on: p.id == gl.project_id,
-      where: not is_nil(gl.project_id),
+      where: not is_nil(gl.project_id) and not is_nil(p.slug),
       select: p.slug
     )
     |> Repo.all()

@@ -59,6 +59,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   def metadata(metric) when metric in @metrics do
     {:ok,
      %{
+       metric: metric,
        min_interval: "1m",
        default_aggregation: :sum,
        available_aggregations: [:sum]

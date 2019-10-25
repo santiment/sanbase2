@@ -9,6 +9,7 @@ defmodule Sanbase.Metric.Behaviour do
   @type options :: Keyword.t()
 
   @type metadata :: %{
+          metric: metric,
           min_interval: interval(),
           default_aggregation: atom(),
           available_aggregations: list()

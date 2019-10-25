@@ -201,6 +201,7 @@ defmodule Sanbase.Clickhouse.Metric do
 
     {:ok,
      %{
+       metric: metric,
        min_interval: min_interval,
        default_aggregation: default_aggregation,
        available_aggregations: @plain_aggregations

@@ -159,7 +159,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
       assert basic_queries == expected_basic_queries
     end
 
-    test "restricted clickhouse v2 queries" do
+    test "restricted metrics" do
       restricted_queries =
         Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:restricted)
         |> Enum.reject(&is_atom/1)
@@ -303,7 +303,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
       assert pro_queries == expected_pro_queries
     end
 
-    test "forbidden clickhouse v2 queries" do
+    test "forbidden metrics" do
       forbidden_queries =
         Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:forbidden)
         |> Enum.sort()

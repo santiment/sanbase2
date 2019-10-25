@@ -37,14 +37,45 @@ defmodule Sanbase.Metric do
   @metrics Enum.map(@metrics_module_mapping, & &1.metric)
 
   @doc ~s"""
-
+  Get a given metric for an identifier and time range. The metric's aggregation
+  function can be changed by the last optional parameter. The available
+  aggregations are #{@available_aggregations}. If no aggregation is provided,
+  a default one (based on the metric) will be used.
   """
-  def get(metric, identifier, from, to, interval, opts \\ [])
+  def get(metric, identifier, from, to, interval, aggregation \\ nil)
 
   @doc ~s"""
-
+  Get the aggregated value for a metric, an identifier and time range.
+  The metric's aggregation function can be changed by the last optional parameter.
+  The available aggregations are #{@available_aggregations}. If no aggregation is
+  provided, a default one (based on the metric) will be used.
   """
-  def get_aggregated(metric, identifier, from, to, opts \\ [])
+  def get_aggregated(metric, identifier, from, to, aggregation \\ nil)
+
+  @doc ~s"""
+  Get the human readable name representation of a given metric
+  """
+  def human_readable_name(metric)
+
+  @doc ~s"""
+  Get metadata for a given metric. This includes:
+  - The minimal interval for which the metric is available
+    (every 5 minutes, once a day, etc.)
+  - The default aggregation applied if none is provided
+  - The available aggregations for the metric
+  - The available slugs for the metric
+  """
+  def metadata(metric)
+
+  @doc ~s"""
+  Get the first datetime for which a given metric is available for a given slug
+  """
+  def first_datetime(metric, slug)
+
+  @doc ~s"""
+  Get all available slugs for a given metric
+  """
+  def available_slugs(metric)
 
   for %{metric: metric, module: module} <- @metrics_module_mapping do
     def get(unquote(metric), identifier, from, to, interval, aggregation) do
@@ -90,17 +121,17 @@ defmodule Sanbase.Metric do
   def first_datetime(metric, _), do: {:error, "The '#{metric}' metric is not supported."}
 
   @doc ~s"""
-  TODO
+  Get all available aggregations
   """
   def available_aggregations(), do: @available_aggregations
 
   @doc ~s"""
-  TODO
+  Get all available metrics
   """
   def available_metrics(), do: @metrics
 
   @doc ~s"""
-  TODO
+  Get all slugs for which at least one of the metrics is available
   """
   def available_slugs_all_metrics() do
     Sanbase.Cache.get_or_store({:metric_available_slugs_all_metrics, 1800}, fn ->
@@ -120,17 +151,17 @@ defmodule Sanbase.Metric do
   end
 
   @doc ~s"""
-  TODO
+  Get all free metrics
   """
   def free_metrics(), do: @free_metrics
 
   @doc ~s"""
-  TODO
+  Get all restricted metrics
   """
   def restricted_metrics(), do: @restricted_metrics
 
   @doc ~s"""
-  TODO
+  Get a map where the key is a metric and the value is the access level
   """
   def access_map(), do: @access_map
 end

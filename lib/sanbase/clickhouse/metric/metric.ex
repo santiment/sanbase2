@@ -77,11 +77,6 @@ defmodule Sanbase.Clickhouse.Metric do
   @impl Sanbase.Metric.Behaviour
   def get(metric, slug, from, to, interval, aggregation \\ nil)
 
-  def get(_metric, _slug, _from, _to, _interval, aggregation)
-      when aggregation not in @aggregations do
-    {:error, "The aggregation '#{inspect(aggregation)}' is not supported"}
-  end
-
   def get(metric, slug, from, to, interval, aggregation) do
     case metric in @metrics_mapset do
       false ->

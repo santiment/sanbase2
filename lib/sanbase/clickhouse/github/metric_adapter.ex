@@ -21,29 +21,36 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   @restricted_metrics []
 
   @impl Sanbase.Metric.Behaviour
-  def get(metric, organizations, from, to, interval, _aggregation) when metric in @metrics do
-    apply(
-      Github,
-      Map.get(@metrics_function_mapping, metric),
-      [
-        organizations,
-        from,
-        to,
-        interval,
-        "None",
-        nil
-      ]
-    )
-    |> transform_to_value_pairs(:activity)
+  def get(metric, slug, from, to, interval, _aggregation) when metric in @metrics do
+    case Project.github_organizations(slug) do
+      {:ok, organizations} ->
+        apply(
+          Github,
+          Map.get(@metrics_function_mapping, metric),
+          [
+            organizations,
+            from,
+            to,
+            interval,
+            "None",
+            nil
+          ]
+        )
+        |> transform_to_value_pairs(:activity)
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   @impl Sanbase.Metric.Behaviour
-  def get_aggregated(metric, organizations, from, to, _aggregation) do
+  def get_aggregated(metric, organizations, from, to, _aggregation)
+      when is_binary(organizations) or is_list(organizations) do
     apply(
       Github,
       Map.get(@aggregated_metrics_function_mapping, metric),
       [
-        organizations,
+        List.wrap(organizations),
         from,
         to
       ]

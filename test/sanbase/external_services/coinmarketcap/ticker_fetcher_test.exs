@@ -70,14 +70,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
   end
 
   test "ticker fetcher fetches stores in multiple measurements" do
-    project =
-      insert(:project, %{
-        ticker: "ETH2",
-        slug: "ethereum2",
-        source_slug_mappings: [
-          build(:source_slug_mapping, %{source: "coinmarketcap", slug: "ethereum"})
-        ]
-      })
+    insert(:project, %{
+      ticker: "ETH2",
+      slug: "ethereum2",
+      source_slug_mappings: [
+        build(:source_slug_mapping, %{source: "coinmarketcap", slug: "ethereum"})
+      ]
+    })
 
     TickerFetcher.work()
 

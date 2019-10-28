@@ -1,14 +1,18 @@
 defmodule Sanbase.Metric do
   @moduledoc """
-  Dispatch module
-  TODO DOCS
+  Dispatch module used for fetching metrics.
+
+  This module dispatches the fetching to modules implementing the
+  `Sanbase.Metric.Behaviour` behaviour. Such modules are added to the
+  @metric_modules list and everything else happens automatically.
   """
 
   alias Sanbase.Clickhouse
 
   @metric_modules [
     Clickhouse.Github.MetricAdapter,
-    Clickhouse.Metric
+    Clickhouse.Metric,
+    Sanbase.SocialData.MetricAdapter
   ]
 
   Module.register_attribute(__MODULE__, :available_aggregations_acc, accumulate: true)
@@ -33,21 +37,27 @@ defmodule Sanbase.Metric do
   @restricted_metrics List.flatten(@restricted_metrics_acc) |> Enum.uniq()
   @metrics_module_mapping List.flatten(@metric_module_mapping_acc) |> Enum.uniq()
   @access_map Enum.reduce(@access_map_acc, %{}, fn map, acc -> Map.merge(map, acc) end)
+  @aggregation_arg_supported [nil] ++ @available_aggregations
 
   @metrics Enum.map(@metrics_module_mapping, & &1.metric)
+  @metrics_mapset MapSet.new(@metrics)
 
   @doc ~s"""
   Get a given metric for an identifier and time range. The metric's aggregation
   function can be changed by the last optional parameter. The available
-  aggregations are #{@available_aggregations}. If no aggregation is provided,
+  aggregations are #{inspect(@available_aggregations)}. If no aggregation is provided,
   a default one (based on the metric) will be used.
   """
   def get(metric, identifier, from, to, interval, aggregation \\ nil)
 
+  def get(_, _, _, _, _, aggregation) when aggregation not in @aggregation_arg_supported do
+    {:error, "The aggregation '#{inspect(aggregation)}' is not supported"}
+  end
+
   @doc ~s"""
   Get the aggregated value for a metric, an identifier and time range.
   The metric's aggregation function can be changed by the last optional parameter.
-  The available aggregations are #{@available_aggregations}. If no aggregation is
+  The available aggregations are #{inspect(@available_aggregations)}. If no aggregation is
   provided, a default one (based on the metric) will be used.
   """
   def get_aggregated(metric, identifier, from, to, aggregation \\ nil)
@@ -116,9 +126,9 @@ defmodule Sanbase.Metric do
     end
   end
 
-  def get(metric, _, _, _, _, _), do: {:error, "The '#{metric}' metric is not supported."}
-  def metadata(metric), do: {:error, "The '#{metric}' metric is not supported."}
-  def first_datetime(metric, _), do: {:error, "The '#{metric}' metric is not supported."}
+  def get(metric, _, _, _, _, _), do: metric_not_available_error(metric)
+  def metadata(metric), do: metric_not_available_error(metric)
+  def first_datetime(metric, _), do: metric_not_available_error(metric)
 
   @doc ~s"""
   Get all available aggregations
@@ -164,4 +174,16 @@ defmodule Sanbase.Metric do
   Get a map where the key is a metric and the value is the access level
   """
   def access_map(), do: @access_map
+
+  # Private functions
+
+  defp metric_not_available_error(metric) do
+    close = Enum.find(@metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.9 end)
+    error_msg = "The metric '#{inspect(metric)}' is not available."
+
+    case close do
+      nil -> {:error, error_msg}
+      close -> {:error, error_msg <> " Did you mean '#{close}'?"}
+    end
+  end
 end

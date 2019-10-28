@@ -197,7 +197,15 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         "realized_value_usd_1d",
         "velocity",
         "age_destroyed",
-        "mvrv_long_short_diff_usd"
+        "mvrv_long_short_diff_usd",
+        "discord_social_dominance",
+        "discord_social_volume",
+        "reddit_social_dominance",
+        "reddit_social_volume",
+        "telegram_social_dominance",
+        "telegram_social_volume",
+        "twitter_social_dominance",
+        "twitter_social_volume"
       ]
 
       queries = [

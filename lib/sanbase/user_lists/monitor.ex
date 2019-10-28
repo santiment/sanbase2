@@ -65,7 +65,7 @@ defmodule Sanbase.UserList.Monitor do
       |> Enum.reject(&is_nil/1)
 
     # add new watchlist box if odd number of watchlists
-    new_watchlist = length(watchlists) |> rem(2) == 0
+    new_watchlist = length(watchlists) |> rem(2) != 0
 
     %{
       new_watchlist: new_watchlist,

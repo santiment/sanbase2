@@ -16,9 +16,7 @@ config :phoenix, :json_library, Jason
 
 config :ecto, json_library: Jason
 
-config :sanbase, Sanbase,
-  environment: "#{Mix.env()}",
-  required_san_stake_full_access: {:system, "REQUIRED_SAN_STAKE_FULL_ACCESS", "1000"}
+config :sanbase, Sanbase, environment: "#{Mix.env()}"
 
 config :sanbase, Sanbase.ApiCallDataExporter,
   kafka_url: {:system, "KAFKA_URL", "blockchain-kafka-kafka"},

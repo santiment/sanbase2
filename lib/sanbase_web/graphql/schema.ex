@@ -56,6 +56,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.UserQueries)
   import_types(Graphql.Schema.TimelineQueries)
   import_types(Graphql.Schema.BillingQueries)
+  import_types(Graphql.Schema.Subscriptions.KafkaSubscriptions)
 
   def dataloader() do
     Dataloader.new(timeout: :timer.seconds(20))
@@ -117,90 +118,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:billing_mutations)
   end
 
-  enum(:side_enum, values: [:buy, :sell])
-
-  object :exchange_market_depth do
-    field(:source, :string)
-    field(:symbol, :string)
-    field(:timestamp, :datetime)
-    field(:ask, :float)
-    field(:asks025_percent_depth, :float)
-    field(:asks025_percent_volume, :float)
-    field(:asks05_percent_depth, :float)
-    field(:asks05_percent_volume, :float)
-    field(:asks075_percent_depth, :float)
-    field(:asks075_percent_volume, :float)
-    field(:asks10_percent_depth, :float)
-    field(:asks10_percent_volume, :float)
-    field(:asks1_percent_depth, :float)
-    field(:asks1_percent_volume, :float)
-    field(:asks20_percent_depth, :float)
-    field(:asks20_percent_volume, :float)
-    field(:asks2_percent_depth, :float)
-    field(:asks2_percent_volume, :float)
-    field(:asks30_percent_depth, :float)
-    field(:asks30_percent_volume, :float)
-    field(:asks5_percent_depth, :float)
-    field(:asks5_percent_volume, :float)
-    field(:bid, :float)
-    field(:bids025_percent_depth, :float)
-    field(:bids025_percent_volume, :float)
-    field(:bids05_percent_depth, :float)
-    field(:bids05_percent_volume, :float)
-    field(:bids075_percent_depth, :float)
-    field(:bids075_percent_volume, :float)
-    field(:bids10_percent_depth, :float)
-    field(:bids10_percent_volume, :float)
-    field(:bids1_percent_depth, :float)
-    field(:bids1_percent_volume, :float)
-    field(:bids20_percent_depth, :float)
-    field(:bids20_percent_volume, :float)
-    field(:bids2_percent_depth, :float)
-    field(:bids2_percent_volume, :float)
-    field(:bids30_percent_depth, :float)
-    field(:bids30_percent_volume, :float)
-    field(:bids5_percent_depth, :float)
-    field(:bids5_percent_volume, :float)
-  end
-
-  object :exchange_trade do
-    field(:source, :string)
-    field(:symbol, :string)
-    field(:timestamp, :datetime)
-    field(:side, :side_enum)
-    field(:amount, :float)
-    field(:price, :float)
-    field(:cost, :float)
-  end
-
   subscription do
-    field :exchange_market_depth, :exchange_market_depth do
-      arg(:source, non_null(:string))
-      arg(:symbol, :string)
-
-      config(fn
-        %{source: source, symbol: symbol}, _ when not is_nil(symbol) ->
-          {:ok, topic: source <> symbol}
-
-        %{source: source}, _ ->
-          {:ok, topic: source}
-      end)
-    end
-
-    field :exchange_trades, :exchange_trade do
-      arg(:source, :string)
-      arg(:symbol, :string)
-
-      config(fn
-        %{source: source, symbol: symbol}, _ when not is_nil(symbol) ->
-          {:ok, topic: source <> symbol}
-
-        %{source: source}, _ when not is_nil(source) ->
-          {:ok, topic: source}
-
-        _, _ ->
-          {:ok, topic: "*"}
-      end)
-    end
+    import_fields(:kafka_subscriptions)
   end
 end

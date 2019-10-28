@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
   use SanbaseWeb.SubscriptionCase
 
   alias Sanbase.Kafka.Subscription
+  alias Sanbase.Kafka.Topic.{ExchangeTrade, ExchangeMarketDepth}
 
   @exchange_trades_sub """
   subscription($source: String!, $symbol: String) {
@@ -91,8 +92,8 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
       ref = push_doc(socket, @exchange_trades_sub, variables: %{"source" => "Kraken"})
       assert_reply(ref, :ok, %{subscriptionId: subscription_id})
 
-      message = Sanbase.Kafka.ExchangeTrade.format_message(@exchange_trade_example)
-      Subscription.publish(message, :exchange_trades)
+      message = ExchangeTrade.format_message(@exchange_trade_example)
+      Subscription.publish(message, "exchange_trades")
 
       expected = expected_exchange_trade(subscription_id)
       assert_push("subscription:data", expected)
@@ -102,9 +103,9 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
       ref = push_doc(socket, @exchange_trades_sub, variables: %{"source" => "Poloniex"})
       assert_reply(ref, :ok, %{subscriptionId: subscription_id})
 
-      message = Sanbase.Kafka.ExchangeTrade.format_message(@exchange_trade_example)
+      message = ExchangeTrade.format_message(@exchange_trade_example)
 
-      Subscription.publish(message, :exchange_trades)
+      Subscription.publish(message, "exchange_trades")
 
       expected = expected_exchange_trade(subscription_id)
       refute_push("subscription:data", expected)
@@ -118,9 +119,9 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
 
       assert_reply(ref, :ok, %{subscriptionId: subscription_id})
 
-      message = Sanbase.Kafka.ExchangeTrade.format_message(@exchange_trade_example)
+      message = ExchangeTrade.format_message(@exchange_trade_example)
 
-      Subscription.publish(message, :exchange_trades)
+      Subscription.publish(message, "exchange_trades")
 
       expected = expected_exchange_trade(subscription_id)
       assert_push("subscription:data", expected)
@@ -134,9 +135,9 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
 
       assert_reply(ref, :ok, %{subscriptionId: subscription_id})
 
-      message = Sanbase.Kafka.ExchangeTrade.format_message(@exchange_trade_example)
+      message = ExchangeTrade.format_message(@exchange_trade_example)
 
-      Subscription.publish(message, :exchange_trades)
+      Subscription.publish(message, "exchange_trades")
 
       expected = expected_exchange_trade(subscription_id)
       refute_push("subscription:data", expected)
@@ -148,8 +149,8 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
       ref = push_doc(socket, @exchange_market_depth_sub, variables: %{"source" => "Kraken"})
       assert_reply(ref, :ok, %{subscriptionId: subscription_id})
 
-      message = Sanbase.Kafka.ExchangeMarketDepth.format_message(@exchange_market_depth_example)
-      Subscription.publish(message, :exchange_market_depth)
+      message = ExchangeMarketDepth.format_message(@exchange_market_depth_example)
+      Subscription.publish(message, "exchange_market_depth")
 
       expected = expected_exchange_market_depth(subscription_id)
       assert_push("subscription:data", expected)
@@ -159,8 +160,8 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
       ref = push_doc(socket, @exchange_market_depth_sub, variables: %{"source" => "Poloniex"})
       assert_reply(ref, :ok, %{subscriptionId: subscription_id})
 
-      message = Sanbase.Kafka.ExchangeMarketDepth.format_message(@exchange_market_depth_example)
-      Subscription.publish(message, :exchange_market_depth)
+      message = ExchangeMarketDepth.format_message(@exchange_market_depth_example)
+      Subscription.publish(message, "exchange_market_depth")
 
       expected = expected_exchange_market_depth(subscription_id)
       refute_push("subscription:data", expected)
@@ -174,8 +175,8 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
 
       assert_reply(ref, :ok, %{subscriptionId: subscription_id})
 
-      message = Sanbase.Kafka.ExchangeMarketDepth.format_message(@exchange_market_depth_example)
-      Subscription.publish(message, :exchange_market_depth)
+      message = ExchangeMarketDepth.format_message(@exchange_market_depth_example)
+      Subscription.publish(message, "exchange_market_depth")
 
       expected = expected_exchange_market_depth(subscription_id)
       assert_push("subscription:data", expected)
@@ -189,8 +190,8 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
 
       assert_reply(ref, :ok, %{subscriptionId: subscription_id})
 
-      message = Sanbase.Kafka.ExchangeMarketDepth.format_message(@exchange_market_depth_example)
-      Subscription.publish(message, :exchange_market_depth)
+      message = ExchangeMarketDepth.format_message(@exchange_market_depth_example)
+      Subscription.publish(message, "exchange_market_depth")
 
       expected = expected_exchange_market_depth(subscription_id)
       refute_push("subscription:data", expected)

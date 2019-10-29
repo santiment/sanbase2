@@ -15,6 +15,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
      |> Enum.map(& &1.trigger)}
   end
 
+  def public_triggers(%User{} = user, _args, _resolution) do
+    {:ok,
+     UserTrigger.public_triggers_for(user)
+     |> Enum.map(&transform_user_trigger/1)
+     |> Enum.map(& &1.trigger)}
+  end
+
   def create_trigger(_root, args, %{
         context: %{auth: %{current_user: current_user, subscription: subscription}}
       }) do

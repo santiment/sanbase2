@@ -358,6 +358,10 @@ defmodule Sanbase.Auth.User do
     end
   end
 
+  def by_selector(%{id: id}), do: Repo.get_by(__MODULE__, id: id)
+  def by_selector(%{email: email}), do: Repo.get_by(__MODULE__, email: email)
+  def by_selector(%{username: username}), do: Repo.get_by(__MODULE__, username: username)
+
   def users_with_monitored_watchlist_and_email() do
     from(u in User,
       join: ul in UserList,

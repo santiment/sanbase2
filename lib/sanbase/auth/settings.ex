@@ -5,6 +5,7 @@ defmodule Sanbase.Auth.Settings do
   @newsletter_subscription_types ["DAILY", "WEEKLY", "OFF"]
 
   embedded_schema do
+    field(:hide_privacy_data, :boolean, default: true)
     field(:theme, :string, default: "default")
     field(:page_size, :integer, default: 20)
     field(:is_beta_mode, :boolean, default: false)
@@ -26,7 +27,8 @@ defmodule Sanbase.Auth.Settings do
       :table_columns,
       :signal_notify_email,
       :signal_notify_telegram,
-      :telegram_chat_id
+      :telegram_chat_id,
+      :hide_privacy_data
     ])
     |> normalize_newsletter_subscription(
       :newsletter_subscription,

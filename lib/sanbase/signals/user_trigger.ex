@@ -90,11 +90,9 @@ defmodule Sanbase.Signal.UserTrigger do
   The result is transformed so all trigger settings are loaded in their
   corresponding struct
   """
-  @spec public_triggers_for(non_neg_integer()) :: list(Trigger.t())
-  def public_triggers_for(user_id) do
-    user_id
-    |> public_user_triggers_for()
-  end
+  @spec public_triggers_for(non_neg_integer() | %User{}) :: list(Trigger.t())
+  def public_triggers_for(%User{id: user_id}), do: user_id |> public_user_triggers_for()
+  def public_triggers_for(user_id), do: user_id |> public_user_triggers_for()
 
   @doc ~s"""
   Get all public triggers from the database

@@ -9,7 +9,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   require Sanbase.Utils.Config, as: Config
 
   alias Sanbase.Model.Project
-  alias Sanbase.Clickhouse.Metric
+  alias Sanbase.Metric
   alias Sanbase.Notifications.{Discord, Notification, Type}
   @impl true
   def run() do

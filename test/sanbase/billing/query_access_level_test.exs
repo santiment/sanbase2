@@ -88,7 +88,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
       assert free_queries == expected_free_queries
     end
 
-    test "free clickhouse v2 queries" do
+    test "free metrics" do
       free_queries =
         Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:free)
         |> Enum.sort()
@@ -105,7 +105,9 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           "daily_high_price_usd",
           "daily_low_price_usd",
           "daily_opening_price_usd",
-          "daily_trading_volume_usd"
+          "daily_trading_volume_usd",
+          "dev_activity",
+          "github_activity"
         ]
         |> Enum.sort()
 
@@ -157,7 +159,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
       assert basic_queries == expected_basic_queries
     end
 
-    test "restricted clickhouse v2 queries" do
+    test "restricted metrics" do
       restricted_queries =
         Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:restricted)
         |> Enum.reject(&is_atom/1)
@@ -195,7 +197,15 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         "realized_value_usd_1d",
         "velocity",
         "age_destroyed",
-        "mvrv_long_short_diff_usd"
+        "mvrv_long_short_diff_usd",
+        "discord_social_dominance",
+        "discord_social_volume",
+        "reddit_social_dominance",
+        "reddit_social_volume",
+        "telegram_social_dominance",
+        "telegram_social_volume",
+        "twitter_social_dominance",
+        "twitter_social_volume"
       ]
 
       queries = [
@@ -301,7 +311,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
       assert pro_queries == expected_pro_queries
     end
 
-    test "forbidden clickhouse v2 queries" do
+    test "forbidden metrics" do
       forbidden_queries =
         Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:forbidden)
         |> Enum.sort()

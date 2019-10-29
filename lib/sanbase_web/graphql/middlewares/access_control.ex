@@ -121,7 +121,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     resolution
   end
 
-  defp get_query(:timeseries_data, %{metric: metric}), do: {:clickhouse_v2_metric, metric}
+  defp get_query(:timeseries_data, %{metric: metric}), do: {:metric, metric}
   defp get_query(query, _), do: query
 
   defp restricted_query(

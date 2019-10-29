@@ -178,6 +178,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
   end
 
   def available_repos(_root, _args, _resolution) do
-    {:ok, Project.List.project_slugs_with_github_link()}
+    {:ok, Project.List.project_slugs_with_organization()}
   end
 end

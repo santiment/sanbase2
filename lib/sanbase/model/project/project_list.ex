@@ -221,9 +221,11 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
   end
 
-  def project_slugs_with_github_link() do
+  def project_slugs_with_organization() do
     from(p in Project,
-      where: not is_nil(p.slug) and not is_nil(p.github_link),
+      full_join: gl in Project.GithubOrganization,
+      on: p.id == gl.project_id,
+      where: not is_nil(gl.project_id) and not is_nil(p.slug),
       select: p.slug
     )
     |> Repo.all()

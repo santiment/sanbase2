@@ -13,7 +13,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
   alias __MODULE__
   alias Sanbase.Signal.Type
   alias Sanbase.Model.Project
-  alias Sanbase.Clickhouse.Metric
+  alias Sanbase.Metric
   alias Sanbase.Signal.Evaluator.Cache
 
   @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
@@ -124,7 +124,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
       %{slug: slug} = values
 
       project = Project.by_slug(slug)
-      {:ok, human_readable_name} = Sanbase.Clickhouse.Metric.human_readable_name(settings.metric)
+      {:ok, human_readable_name} = Sanbase.Metric.human_readable_name(settings.metric)
 
       """
       **#{project.name}**'s #{human_readable_name} #{

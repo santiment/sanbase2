@@ -8,7 +8,7 @@ defmodule Sanbase.Signal.TriggerMetricTest do
 
   alias Sanbase.Signal.UserTrigger
   alias Sanbase.Signal.Evaluator
-  alias Sanbase.Clickhouse.Metric
+  alias Sanbase.Metric
   alias Sanbase.Signal.Trigger.MetricTriggerSettings
 
   setup_with_mocks([
@@ -23,7 +23,7 @@ defmodule Sanbase.Signal.TriggerMetricTest do
       maybe_create_event_async: fn user_trigger_tuple, _, _ -> user_trigger_tuple end
     },
     {
-      Sanbase.Clickhouse.Metric,
+      Metric,
       [:passthrough],
       get: fn _, _, _, _, _ -> {:ok, []} end
     }
@@ -116,9 +116,7 @@ defmodule Sanbase.Signal.TriggerMetricTest do
   test "can create triggers with all available metrics", context do
     %{project: project, user: user} = context
 
-    {:ok, metrics} = Metric.available_metrics()
-
-    Enum.each(metrics, fn metric ->
+    Enum.each(Metric.available_metrics(), fn metric ->
       trigger_settings = %{
         type: "metric_signal",
         metric: metric,
@@ -164,7 +162,6 @@ defmodule Sanbase.Signal.TriggerMetricTest do
   end
 
   defp random_metric() do
-    {:ok, metrics} = Metric.available_metrics()
-    metrics |> Enum.random()
+    Metric.available_metrics() |> Enum.random()
   end
 end

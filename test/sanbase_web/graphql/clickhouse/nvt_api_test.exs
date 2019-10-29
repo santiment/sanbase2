@@ -28,7 +28,7 @@ defmodule SanbaseWeb.Graphql.NVTApiTest do
     %{datetimes: datetimes} = context
 
     with_mocks([
-      {Sanbase.Clickhouse.Metric, [:passthrough],
+      {Sanbase.Metric, [:passthrough],
        [
          first_datetime: fn _, _ -> {:ok, context.from} end,
          get: fn
@@ -76,7 +76,7 @@ defmodule SanbaseWeb.Graphql.NVTApiTest do
 
   test "returns empty array when there is no data", context do
     with_mocks([
-      {Sanbase.Clickhouse.Metric, [:passthrough],
+      {Sanbase.Metric, [:passthrough],
        [
          first_datetime: fn _, _ -> {:ok, context.from} end,
          get: fn _, _, _, _, _, _ -> {:ok, []} end
@@ -92,7 +92,7 @@ defmodule SanbaseWeb.Graphql.NVTApiTest do
   test "returns error to the user when calculation errors", context do
     error = "Some error description here"
 
-    with_mock Sanbase.Clickhouse.Metric,
+    with_mock Sanbase.Metric,
       get: fn _, _, _, _, _, _ -> {:error, error} end do
       log =
         capture_log(fn ->
@@ -107,7 +107,7 @@ defmodule SanbaseWeb.Graphql.NVTApiTest do
   end
 
   test "uses 1d as default interval", context do
-    with_mock Sanbase.Clickhouse.Metric, get: fn _, _, _, _, _, _ -> {:ok, []} end do
+    with_mock Sanbase.Metric, get: fn _, _, _, _, _, _ -> {:ok, []} end do
       query = """
         {
           nvtRatio(slug: "#{context.slug}", from: "#{context.from}", to: "#{context.to}"){
@@ -121,7 +121,7 @@ defmodule SanbaseWeb.Graphql.NVTApiTest do
       context.conn
       |> post("/graphql", query_skeleton(query, "nvtRatio"))
 
-      assert_called(Sanbase.Clickhouse.Metric.get(:_, :_, context.from, context.to, "1d", :_))
+      assert_called(Sanbase.Metric.get(:_, :_, context.from, context.to, "1d", :_))
     end
   end
 

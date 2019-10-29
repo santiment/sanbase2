@@ -9,7 +9,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
 
   alias Sanbase.Signal.UserTrigger
   alias Sanbase.Billing.Plan.SanbaseAccessChecker
-  alias Sanbase.Clickhouse.Metric
+  alias Sanbase.Metric
 
   @triggers_limit_count 10
 

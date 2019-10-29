@@ -5,7 +5,7 @@ defmodule Sanbase.Billing.GraphqlSchema do
   """
 
   alias Sanbase.Billing.Product
-  alias Sanbase.Clickhouse.Metric
+  alias Sanbase.Metric
   require SanbaseWeb.Graphql.Schema
 
   @mutation_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :mutation)
@@ -59,13 +59,13 @@ defmodule Sanbase.Billing.GraphqlSchema do
   def get_metrics_with_access_level(level) do
     from_schema = get_field_value_matches([:access], [level])
 
-    clickhouse_v2_metrics =
-      Enum.filter(Metric.metric_access_map(), fn {_metric, metric_level} ->
+    metrics_access =
+      Enum.filter(Metric.access_map(), fn {_metric, metric_level} ->
         level == metric_level
       end)
-      |> Enum.map(fn {metric, _access} -> {:clickhouse_v2_metric, metric} end)
+      |> Enum.map(fn {metric, _access} -> {:metric, metric} end)
 
-    from_schema ++ clickhouse_v2_metrics
+    from_schema ++ metrics_access
   end
 
   def get_metrics_without_access_level() do

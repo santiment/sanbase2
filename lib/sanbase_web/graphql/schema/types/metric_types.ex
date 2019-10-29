@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
-  alias Sanbase.Clickhouse.Metric
+  alias Sanbase.Metric
 
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
@@ -36,7 +36,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     the `timeseriesData` field. Available aggregations are:
     [
     #{
-      (Metric.available_aggregations!() -- [nil])
+      (Metric.available_aggregations() -- [nil])
       |> Enum.map(&Atom.to_string/1)
       |> Enum.map(&String.upcase/1)
       |> Enum.join(",")
@@ -44,6 +44,12 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     ]
     """
     field(:default_aggregation, :aggregation)
+
+    @desc ~s"""
+    The supported aggregations for this metric. For more information about
+    aggregations see the documentation for `defaultAggregation`
+    """
+    field(:available_aggregations, list_of(:aggregation))
   end
 
   object :metric do

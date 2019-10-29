@@ -217,4 +217,29 @@ defmodule Sanbase.Math do
         average([m1, m2])
     end
   end
+
+  def simple_moving_average(values, period) do
+    values
+    |> Enum.chunk_every(period, 1, :discard)
+    |> Enum.map(&average/1)
+  end
+
+  def simple_moving_average(list, period, opts) do
+    value_key = Keyword.fetch!(opts, :value_key)
+
+    result =
+      list
+      |> Enum.chunk_every(period, 1, :discard)
+      |> Enum.map(fn elems ->
+        datetime = Map.get(List.last(elems), :datetime)
+        values = Enum.map(elems, & &1[value_key])
+
+        %{
+          value_key => average(values),
+          :datetime => datetime
+        }
+      end)
+
+    {:ok, result}
+  end
 end

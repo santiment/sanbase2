@@ -4,13 +4,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 8]
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
 
-  alias Sanbase.Clickhouse.Metric
+  alias Sanbase.Metric
 
   @datapoints 300
 
   def get_metric(_root, %{metric: metric}, _resolution), do: {:ok, %{metric: metric}}
-  def get_available_metrics(_root, _args, _resolution), do: Metric.available_metrics()
-  def get_available_slugs(_root, _args, _resolution), do: Metric.available_slugs()
+  def get_available_metrics(_root, _args, _resolution), do: {:ok, Metric.available_metrics()}
+
+  def get_available_slugs(_root, _args, %{source: %{metric: metric}}),
+    do: Metric.available_slugs(metric)
+
   def get_metadata(%{}, _args, %{source: %{metric: metric}}), do: Metric.metadata(metric)
 
   def available_since(_root, %{slug: slug}, %{source: %{metric: metric}}),
@@ -24,8 +27,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     with {:ok, from, to, interval} <-
            calibrate_interval(Metric, metric, slug, from, to, interval, 86_400, @datapoints),
          {:ok, result} <-
-           Metric.get(metric, slug, from, to, interval, Map.get(args, :aggregation)) do
-      {:ok, result}
+           Metric.get(metric, slug, from, to, interval, args[:aggregation]) do
+      {:ok, result |> Enum.reject(&is_nil/1)}
     else
       {:error, error} ->
         {:error, handle_graphql_error(metric, slug, error)}

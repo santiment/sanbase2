@@ -121,6 +121,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_slugs() do
+    # Providing a 2 element tuple `{any, integer}` will use that second element
+    # as TTL for the cache key
     Sanbase.Cache.get_or_store({:social_metrics_available_slugs, 1800}, fn ->
       Sanbase.TechIndicators.social_volume_projects()
     end)

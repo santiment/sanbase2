@@ -144,6 +144,8 @@ defmodule Sanbase.Metric do
   Get all slugs for which at least one of the metrics is available
   """
   def available_slugs_all_metrics() do
+    # Providing a 2 element tuple `{any, integer}` will use that second element
+    # as TTL for the cache key
     Sanbase.Cache.get_or_store({:metric_available_slugs_all_metrics, 1800}, fn ->
       {slugs, errors} =
         Enum.reduce(@metric_modules, {[], []}, fn module, {slugs_acc, errors} ->

@@ -88,11 +88,18 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_slugs(), do: {:ok, Project.List.project_slugs_with_organization()}
+  def available_slugs() do
+    # Providing a 2 element tuple `{any, integer}` will use that second element
+    # as TTL for the cache key
+    Sanbase.Cache.get_or_store({:slugs_with_github_org, 1800}, fn ->
+      {:ok, Project.List.project_slugs_with_organization()}
+    end)
+  end
 
   @impl Sanbase.Metric.Behaviour
-  def available_slugs(metric) when metric in @metrics,
-    do: {:ok, Project.List.project_slugs_with_organization()}
+  def available_slugs(metric) when metric in @metrics do
+    available_slugs()
+  end
 
   @impl Sanbase.Metric.Behaviour
   def free_metrics(), do: @free_metrics

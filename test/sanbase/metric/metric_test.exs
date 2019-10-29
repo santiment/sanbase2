@@ -1,4 +1,4 @@
-defmodule Sanbase.Clickhouse.V2ClickhouseMetricTest do
+defmodule Sanbase.MetricTest do
   use Sanbase.DataCase
 
   import Mock

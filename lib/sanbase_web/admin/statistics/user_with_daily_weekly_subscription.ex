@@ -1,12 +1,12 @@
-defmodule Sanbase.ExAdmin.Statistics.UsersWithWatchlist do
+defmodule Sanbase.ExAdmin.Statistics.UsersWithWeeklyNewsletterSubscription do
   use ExAdmin.Register
 
-  register_page "UsersWithWatchlist" do
-    menu(priority: 1, label: "UsersWithWatchlist")
+  register_page "UsersWithWeeklyNewsletterSubscription" do
+    menu(priority: 1, label: "UsersWithWeeklyNewsletterSubscription")
 
     content do
       h2 do
-        div("Users with watchlist")
+        div("Users with weekly Newsletter subscription")
       end
 
       table do
@@ -21,18 +21,14 @@ defmodule Sanbase.ExAdmin.Statistics.UsersWithWatchlist do
         th do
           pre("| username", style: "all: initial; margin: 0 10px 0 10px;")
         end
-
-        th do
-          pre("| watchlist count", style: "all: initial; margin: 0 10px 0 10px;")
-        end
       end
 
-      list =
-        Sanbase.UserLists.Statistics.users_with_watchlist_and_email()
-        |> Enum.sort_by(fn {_, count} -> count end, &>=/2)
+      users =
+        Sanbase.Auth.Settings.weekly_subscription_type()
+        |> Sanbase.Auth.Statistics.newsletter_subscribed_users()
 
-      list
-      |> Enum.map(fn {user, watchlist_count} ->
+      users
+      |> Enum.map(fn user ->
         p do
           tr do
             td do
@@ -46,10 +42,6 @@ defmodule Sanbase.ExAdmin.Statistics.UsersWithWatchlist do
             td do
               pre("| #{user.username}", style: "all: initial; margin: 0 10px 0 10px;")
             end
-
-            td do
-              pre("| #{watchlist_count}", style: "all: initial; margin: 0 10px 0 10px;")
-            end
           end
         end
       end)
@@ -60,7 +52,7 @@ defmodule Sanbase.ExAdmin.Statistics.UsersWithWatchlist do
         div("Comma separated list of the emails")
       end
 
-      list |> Enum.map(fn {user, _} -> user.email end) |> Enum.join(",")
+      users |> Enum.map(& &1.email) |> Enum.reject(&is_nil/1) |> Enum.join(",")
     end
   end
 end

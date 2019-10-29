@@ -62,16 +62,23 @@ defmodule Sanbase.Auth.Statistics do
   @doc ~s"""
   Return the number of registered users, which use a given subscription type
   """
-  def newsletter_subscribed_users(subscription_type) do
+  def newsletter_subscribed_users_count(subscription_type) do
     user_settings_with_newsletter_subscription_query(subscription_type)
     |> count()
     |> Repo.one()
   end
 
+  def newsletter_subscribed_users(subscription_type) do
+    user_settings_with_newsletter_subscription_query(subscription_type)
+    |> preload([:user])
+    |> Repo.all()
+    |> Enum.map(& &1.user)
+  end
+
   @doc ~s"""
   Return the number of users registered after a given datetime, which use a given subscription type
   """
-  def newsletter_subscribed_new_users(subscription_type, %DateTime{} = registered) do
+  def newsletter_subscribed_new_users_count(subscription_type, %DateTime{} = registered) do
     user_settings_with_newsletter_subscription_query(subscription_type)
     |> join(:inner, [u], us in assoc(u, :user))
     |> where([_us, u], u.inserted_at > ^registered)
@@ -102,7 +109,7 @@ defmodule Sanbase.Auth.Statistics do
   Return the number of registered users, which use a given subscription type
   over a given course of time
   """
-  def newsletter_subscribed_users(subscription_type, %DateTime{} = from, %DateTime{} = to) do
+  def newsletter_subscribed_users_count(subscription_type, %DateTime{} = from, %DateTime{} = to) do
     user_settings_with_newsletter_subscription_query(subscription_type)
     |> newsletter_updated_filter_query(from, to)
     |> count()

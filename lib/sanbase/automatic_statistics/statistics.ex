@@ -74,37 +74,37 @@ defmodule Sanbase.Statistics do
     now = Timex.now()
 
     last_7d =
-      UserStatistics.newsletter_subscribed_users(
+      UserStatistics.newsletter_subscribed_users_count(
         daily_subscription_type(),
         Timex.shift(now, days: -7),
         now
       )
 
     last_14d =
-      UserStatistics.newsletter_subscribed_users(
+      UserStatistics.newsletter_subscribed_users_count(
         daily_subscription_type(),
         Timex.shift(now, days: -14),
         now
       )
 
     last_30d =
-      UserStatistics.newsletter_subscribed_users(
+      UserStatistics.newsletter_subscribed_users_count(
         daily_subscription_type(),
         Timex.shift(now, days: -30),
         now
       )
 
     last_180d =
-      UserStatistics.newsletter_subscribed_users(
+      UserStatistics.newsletter_subscribed_users_count(
         daily_subscription_type(),
         Timex.shift(now, days: -180),
         now
       )
 
-    overall = UserStatistics.newsletter_subscribed_users(daily_subscription_type())
+    overall = UserStatistics.newsletter_subscribed_users_count(daily_subscription_type())
 
     newsletter_subscribed_new_users_14d =
-      UserStatistics.newsletter_subscribed_new_users(
+      UserStatistics.newsletter_subscribed_new_users_count(
         daily_subscription_type(),
         Timex.shift(now, days: -14)
       )
@@ -131,37 +131,37 @@ defmodule Sanbase.Statistics do
     now = Timex.now()
 
     last_7d =
-      UserStatistics.newsletter_subscribed_users(
+      UserStatistics.newsletter_subscribed_users_count(
         weekly_subscription_type(),
         Timex.shift(now, days: -7),
         now
       )
 
     last_14d =
-      UserStatistics.newsletter_subscribed_users(
+      UserStatistics.newsletter_subscribed_users_count(
         weekly_subscription_type(),
         Timex.shift(now, days: -14),
         now
       )
 
     last_30d =
-      UserStatistics.newsletter_subscribed_users(
+      UserStatistics.newsletter_subscribed_users_count(
         weekly_subscription_type(),
         Timex.shift(now, days: -30),
         now
       )
 
     last_180d =
-      UserStatistics.newsletter_subscribed_users(
+      UserStatistics.newsletter_subscribed_users_count(
         weekly_subscription_type(),
         Timex.shift(now, days: -180),
         now
       )
 
-    overall = UserStatistics.newsletter_subscribed_users(weekly_subscription_type())
+    overall = UserStatistics.newsletter_subscribed_users_count(weekly_subscription_type())
 
     newsletter_subscribed_new_users_14d =
-      UserStatistics.newsletter_subscribed_new_users(
+      UserStatistics.newsletter_subscribed_new_users_count(
         weekly_subscription_type(),
         Timex.shift(now, days: -14)
       )

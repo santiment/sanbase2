@@ -44,14 +44,17 @@ defmodule Sanbase.MonitorTest do
       watchlist = create_watchlist(context) |> Sanbase.Repo.preload(list_items: [:project])
 
       assert Monitor.watchlists_tags([watchlist]) ==
-               MapSet.new([
-                 context.project.slug,
-                 context.project.name,
-                 context.project.ticker,
-                 context.project2.slug,
-                 context.project2.name,
-                 context.project2.ticker
-               ])
+               MapSet.new(
+                 [
+                   context.project.slug,
+                   context.project.name,
+                   context.project.ticker,
+                   context.project2.slug,
+                   context.project2.name,
+                   context.project2.ticker
+                 ]
+                 |> Enum.map(&String.downcase/1)
+               )
     end
 
     test "when watchlist has no projects - returns []", context do

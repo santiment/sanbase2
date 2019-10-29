@@ -156,7 +156,10 @@ defmodule Sanbase.UserList.Monitor do
          published_at: published_at,
          tags: tags
        }) do
-    tags = tags |> Enum.map(fn %{name: name} -> String.downcase(name) end)
+    tags =
+      tags
+      |> Enum.reject(fn %{name: name} -> String.contains?(name, "trending-words") end)
+      |> Enum.map(fn %{name: name} -> String.downcase(name) end)
 
     %{
       "insight-title" => title,

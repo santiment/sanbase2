@@ -60,10 +60,17 @@ defmodule Sanbase.UserList.Monitor do
   end
 
   def create_email_params(watchlists, insights, week_ago, now) do
+    watchlists =
+      Enum.map(watchlists, &format_watchlist(&1, week_ago, now))
+      |> Enum.reject(&is_nil/1)
+
+    # add new watchlist box if odd number of watchlists
+    new_watchlist = length(watchlists) |> rem(2) != 0
+
     %{
+      new_watchlist: new_watchlist,
       dates: format_dates(week_ago, now),
-      watchlists:
-        Enum.map(watchlists, &format_watchlist(&1, week_ago, now)) |> Enum.reject(&is_nil/1),
+      watchlists: watchlists,
       insights: Enum.map(insights, &format_insight(&1))
     }
   end
@@ -94,6 +101,7 @@ defmodule Sanbase.UserList.Monitor do
       |> Enum.flat_map(&[&1.project.slug, &1.project.ticker, &1.project.name])
     end)
     |> Enum.reject(&is_nil/1)
+    |> Enum.map(&String.downcase/1)
     |> MapSet.new()
   end
 
@@ -190,7 +198,7 @@ defmodule Sanbase.UserList.Monitor do
     |> Enum.filter(fn %Post{tags: tags} ->
       tags
       |> Enum.any?(fn tag ->
-        tag.name in watchlists_tags
+        String.downcase(tag.name) in watchlists_tags
       end)
     end)
   end

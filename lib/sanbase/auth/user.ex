@@ -403,8 +403,7 @@ defmodule Sanbase.Auth.User do
   def sanbase_bot_email, do: @sanbase_bot_email
 
   def sanbase_bot_email(idx) do
-    [left, right] = String.split(@sanbase_bot_email, "@")
-    left <> to_string(idx) <> right
+    String.replace(@sanbase_bot_email, "@", "#{idx}@")
   end
 
   defp can_remove_eth_account?(%User{id: user_id, email: email}, address) do

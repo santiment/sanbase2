@@ -4,19 +4,7 @@ defmodule Sanbase.Application.Web do
 
   def init() do
     # Config kafka consumer with uuid consumer group suffix
-    config = Application.get_env(:kaffe, :consumer)
-
-    Application.put_env(
-      :kaffe,
-      :consumer,
-      Keyword.put(
-        config,
-        :consumer_group,
-        Keyword.get(config, :consumer_group) <> Ecto.UUID.generate()
-      )
-    )
-
-    Logger.info("Kafka consumer configuration: #{inspect(Kaffe.Config.Consumer.configuration())}")
+    Sanbase.Kafka.init()
 
     # API metrics
     SanbaseWeb.Graphql.Prometheus.HistogramInstrumenter.install(SanbaseWeb.Graphql.Schema)
@@ -63,7 +51,7 @@ defmodule Sanbase.Application.Web do
           start: {Kaffe.GroupMemberSupervisor, :start_link, []},
           type: :supervisor
         },
-        [:prod]
+        [:dev, :prod]
       ),
 
       # Start libcluster

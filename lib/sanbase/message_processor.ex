@@ -1,9 +1,6 @@
 defmodule Sanbase.Kafka.MessageProcessor do
   def handle_messages(messages) do
     Enum.each(messages, &handle_message/1)
-
-    # Important!
-    :ok
   end
 
   def handle_message(%{value: value, topic: "exchange_trades"}) do
@@ -11,8 +8,6 @@ defmodule Sanbase.Kafka.MessageProcessor do
     |> Jason.decode!()
     |> Sanbase.Kafka.Topic.ExchangeTrade.format_message()
     |> Sanbase.Kafka.Subscription.publish("exchange_trades")
-
-    :ok
   end
 
   def handle_message(%{value: value, topic: "exchange_market_depth"}) do
@@ -20,7 +15,5 @@ defmodule Sanbase.Kafka.MessageProcessor do
     |> Jason.decode!()
     |> Sanbase.Kafka.Topic.ExchangeMarketDepth.format_message()
     |> Sanbase.Kafka.Subscription.publish("exchange_market_depth")
-
-    :ok
   end
 end

@@ -5,8 +5,17 @@ defmodule SanbaseWeb.BotLoginController do
 
   alias Sanbase.Auth.User
 
+  def index(conn, %{"user" => user_idx}) do
+    Sanbase.Repo.get_by(User, email: User.sanbase_bot_email(user_idx))
+    |> send_response(conn)
+  end
+
   def index(conn, _params) do
-    user = User |> Sanbase.Repo.get_by(email: User.sanbase_bot_email())
+    Sanbase.Repo.get_by(User, email: User.sanbase_bot_email())
+    |> send_response(conn)
+  end
+
+  defp send_response(user, conn) do
     {:ok, token, _claims} = SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt})
 
     conn

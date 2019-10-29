@@ -89,6 +89,12 @@ defmodule SanbaseWeb.Router do
       BotLoginController,
       :index
     )
+
+    get(
+      "/login/:path/:user",
+      BotLoginController,
+      :index
+    )
   end
 
   scope "/", SanbaseWeb do

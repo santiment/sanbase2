@@ -135,20 +135,22 @@ defmodule Sanbase.StatisticsTest do
   end
 
   test "returns the number of users, which are subscribed" do
-    assert Sanbase.Auth.Statistics.newsletter_subscribed_users(daily_subscription_type()) == 1
+    assert Sanbase.Auth.Statistics.newsletter_subscribed_users_count(daily_subscription_type()) ==
+             1
 
-    assert Sanbase.Auth.Statistics.newsletter_subscribed_users(weekly_subscription_type()) == 3
+    assert Sanbase.Auth.Statistics.newsletter_subscribed_users_count(weekly_subscription_type()) ==
+             3
   end
 
   test "returns the number of new users, which have a newsletter subscription" do
     now = Timex.now()
 
-    assert Sanbase.Auth.Statistics.newsletter_subscribed_new_users(
+    assert Sanbase.Auth.Statistics.newsletter_subscribed_new_users_count(
              daily_subscription_type(),
              Timex.shift(now, days: -16)
            ) == 1
 
-    assert Sanbase.Auth.Statistics.newsletter_subscribed_new_users(
+    assert Sanbase.Auth.Statistics.newsletter_subscribed_new_users_count(
              weekly_subscription_type(),
              Timex.shift(now, days: -14)
            ) == 1

@@ -27,7 +27,7 @@ defmodule Sanbase.Kafka do
 
   def endpoints do
     [
-      {Config.get(:kafka_url), Config.get(:kafka_port)}
+      {Config.get(:kafka_url), Config.get(:kafka_port) |> String.to_integer()}
     ]
   end
 end

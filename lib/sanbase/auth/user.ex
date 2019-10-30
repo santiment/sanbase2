@@ -17,7 +17,7 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.Repo
   alias Sanbase.Telegram
   alias Sanbase.Signal.HistoricalActivity
-  alias Sanbase.Following.UserFollower
+  alias Sanbase.Auth.UserFollower
   alias Sanbase.Billing.Subscription
 
   # The Login links will be valid 1 hour

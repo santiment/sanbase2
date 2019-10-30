@@ -30,8 +30,13 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       cache_resolve(&UserTriggerResolver.public_triggers/3, ttl: 60)
     end
 
-    field(:following, list_of(:user_follower), resolve: assoc(:following))
-    field(:followers, list_of(:user_follower), resolve: assoc(:followers))
+    field :following, :follower_data do
+      resolve(&UserResolver.following/3)
+    end
+
+    field :followers, :follower_data do
+      resolve(&UserResolver.followers/3)
+    end
 
     field :insights, list_of(:post) do
       cache_resolve(&PostResolver.public_insights/3, ttl: 60)
@@ -86,8 +91,13 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       resolve(&UserTriggerResolver.triggers/3)
     end
 
-    field(:following, list_of(:user_follower), resolve: assoc(:following))
-    field(:followers, list_of(:user_follower), resolve: assoc(:followers))
+    field :following, :follower_data do
+      cache_resolve(&UserResolver.following/3)
+    end
+
+    field :followers, :follower_data do
+      cache_resolve(&UserResolver.followers/3)
+    end
 
     field :insights, list_of(:post) do
       resolve(&PostResolver.insights/3)
@@ -151,6 +161,11 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:sanbase, non_null(:boolean))
     field(:spreadsheet, non_null(:boolean))
     field(:sangraphs, non_null(:boolean))
+  end
+
+  object :follower_data do
+    field(:count, non_null(:integer))
+    field(:users, non_null(list_of(:public_user)))
   end
 
   object :user_follower do

@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.Following.UserFollower
+  alias Sanbase.Auth.UserFollower
 
   setup do
     user = insert(:user)

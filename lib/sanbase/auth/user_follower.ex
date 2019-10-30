@@ -1,4 +1,4 @@
-defmodule Sanbase.Following.UserFollower do
+defmodule Sanbase.Auth.UserFollower do
   @moduledoc """
   Module implementing follow/unfollow functionality between users.
   """
@@ -31,8 +31,9 @@ defmodule Sanbase.Following.UserFollower do
   end
 
   def follow(_, _), do: {:error, "User can't follow oneself"}
+  def unfollow(user_id, user_id), do: {:error, "User can't unfollow oneself"}
 
-  def unfollow(user_id, follower_id) when user_id != follower_id do
+  def unfollow(user_id, follower_id) do
     from(uf in __MODULE__, where: uf.user_id == ^user_id and uf.follower_id == ^follower_id)
     |> Repo.delete_all()
     |> case do
@@ -41,16 +42,16 @@ defmodule Sanbase.Following.UserFollower do
     end
   end
 
-  def unfollow(_, _), do: {:error, "User can't unfollow oneself"}
-
   @doc """
   Returns all user ids of users that are followed by certain user
   """
   def followed_by(user_id) do
     from(
       uf in __MODULE__,
+      inner_join: u in User,
+      on: u.id == uf.user_id,
       where: uf.follower_id == ^user_id,
-      select: uf.user_id
+      select: u
     )
     |> Repo.all()
   end
@@ -58,11 +59,13 @@ defmodule Sanbase.Following.UserFollower do
   @doc """
   Returns all user ids of users that follow certain user
   """
-  def following(user_id) do
+  def followers_of(user_id) do
     from(
       uf in __MODULE__,
+      inner_join: u in User,
+      on: u.id == uf.follower_id,
       where: uf.user_id == ^user_id,
-      select: uf.follower_id
+      select: u
     )
     |> Repo.all()
   end

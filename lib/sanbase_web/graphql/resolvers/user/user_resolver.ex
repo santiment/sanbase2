@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   alias SanbaseWeb.Graphql.Helpers.Utils
   alias Sanbase.Auth.{User, EthAccount}
   alias Sanbase.InternalServices.Ethauth
-  alias Sanbase.Auth.{User, EthAccount}
+  alias Sanbase.Auth.{User, EthAccount, UserFollower}
   alias Sanbase.Repo
   alias Ecto.Multi
 
@@ -54,6 +54,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
       nil -> {:error, "Cannot fetch user by: #{inspect(selector)}"}
       user -> {:ok, user |> User.Public.hide_private_data()}
     end
+  end
+
+  def following(%User{id: user_id}, _args, _resolution) do
+    following = UserFollower.followed_by(user_id)
+
+    {:ok, %{count: length(following), users: following}}
+  end
+
+  def followers(%User{id: user_id}, _args, _resolution) do
+    followers = UserFollower.followers_of(user_id)
+
+    {:ok, %{count: length(followers), users: followers}}
   end
 
   def eth_login(

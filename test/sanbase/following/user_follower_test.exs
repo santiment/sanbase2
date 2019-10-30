@@ -1,9 +1,9 @@
-defmodule Sanbase.Following.UserFollowerTest do
+defmodule Sanbase.Auth.UserFollowerTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
 
-  alias Sanbase.Following.UserFollower
+  alias Sanbase.Auth.UserFollower
 
   setup do
     user = insert(:user)
@@ -25,11 +25,11 @@ defmodule Sanbase.Following.UserFollowerTest do
       UserFollower.follow(user2.id, user.id)
       UserFollower.follow(user.id, user2.id)
 
-      following = UserFollower.followed_by(user.id)
-      followers = UserFollower.following(user.id)
+      following_ids = UserFollower.followed_by(user.id) |> Enum.map(& &1.id)
+      followers_ids = UserFollower.followers_of(user.id) |> Enum.map(& &1.id)
 
-      assert following == [user2.id]
-      assert followers == [user2.id]
+      assert following_ids == [user2.id]
+      assert followers_ids == [user2.id]
     end
   end
 
@@ -45,7 +45,7 @@ defmodule Sanbase.Following.UserFollowerTest do
       UserFollower.unfollow(user.id, user2.id)
 
       following = UserFollower.followed_by(user.id)
-      followers = UserFollower.following(user.id)
+      followers = UserFollower.followers_of(user.id)
 
       assert following == []
       assert followers == []
@@ -65,13 +65,15 @@ defmodule Sanbase.Following.UserFollowerTest do
       UserFollower.follow(user2.id, user.id)
       UserFollower.follow(user3.id, user.id)
 
-      assert UserFollower.followed_by(user.id) == [user2.id, user3.id]
+      following_ids = UserFollower.followed_by(user.id) |> Enum.map(& &1.id) |> Enum.sort()
+      expected_following_ids = [user2.id, user3.id] |> Enum.sort()
+      assert following_ids == expected_following_ids
     end
   end
 
   describe "#following" do
     test "returns empty list when no users are following", %{user: user} do
-      assert UserFollower.following(user.id) == []
+      assert UserFollower.followers_of(user.id) == []
     end
 
     test "returns the list of users following certain user", %{
@@ -82,7 +84,9 @@ defmodule Sanbase.Following.UserFollowerTest do
       UserFollower.follow(user.id, user2.id)
       UserFollower.follow(user.id, user3.id)
 
-      assert UserFollower.following(user.id) == [user2.id, user3.id]
+      followers_ids = UserFollower.followers_of(user.id) |> Enum.map(& &1.id) |> Enum.sort()
+      expected_followers_ids = [user2.id, user3.id] |> Enum.sort()
+      assert followers_ids == expected_followers_ids
     end
   end
 end

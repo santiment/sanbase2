@@ -117,6 +117,8 @@ defmodule Sanbase.UserList.Monitor do
     "#{Timex.format!(week_ago, "%B %d", :strftime)} - #{Timex.format!(now, "%B %d", :strftime)}"
   end
 
+  defp format_watchlist(%UserList{list_items: []}, _, _), do: nil
+
   defp format_watchlist(%UserList{id: id, name: name, list_items: list_items}, week_ago, now) do
     slugs =
       list_items

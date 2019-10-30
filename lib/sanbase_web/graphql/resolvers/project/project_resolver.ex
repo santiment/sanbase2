@@ -19,7 +19,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   def available_metrics(%Project{slug: slug}, _args, _resolution) do
-    case Cache.wrap(fn -> Metric.available_slugs_all_metrics() end, ttl: 600).() do
+    case Sanbase.Cache.get_or_store(
+           {:metric_available_slugs_mapset, 600},
+           fn -> Metric.available_slugs_mapset() end
+         ) do
       {:ok, list} ->
         if slug in list, do: {:ok, Metric.available_metrics()}, else: {:ok, []}
 

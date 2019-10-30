@@ -46,7 +46,7 @@ defmodule Sanbase.Model.Project.AvailableQueries do
   end
 
   defp get_metric_queries(%Project{slug: slug}) do
-    case Sanbase.Metric.available_slugs_all_metrics() do
+    case Sanbase.Metric.available_slugs() do
       {:ok, list} ->
         if slug in list, do: ["getMetric"], else: []
 

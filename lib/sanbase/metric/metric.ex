@@ -143,23 +143,30 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Get all slugs for which at least one of the metrics is available
   """
-  def available_slugs_all_metrics() do
+  def available_slugs() do
     # Providing a 2 element tuple `{any, integer}` will use that second element
     # as TTL for the cache key
     Sanbase.Cache.get_or_store({:metric_available_slugs_all_metrics, 1800}, fn ->
       {slugs, errors} =
         Enum.reduce(@metric_modules, {[], []}, fn module, {slugs_acc, errors} ->
           case module.available_slugs() do
-            {:ok, slugs} -> {[slugs | slugs_acc], errors}
+            {:ok, slugs} -> {slugs ++ slugs_acc, errors}
             {:error, error} -> {slugs_acc, [error | errors]}
           end
         end)
 
       case errors do
-        [] -> slugs |> Enum.uniq()
+        [] -> {:ok, slugs |> Enum.uniq()}
         _ -> {:error, "Cannot fetch all available slugs"}
       end
     end)
+  end
+
+  def available_slugs_mapset() do
+    case available_slugs() do
+      {:ok, list} -> {:ok, MapSet.new(list)}
+      {:error, error} -> {:error, error}
+    end
   end
 
   @doc ~s"""

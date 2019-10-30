@@ -8,7 +8,14 @@ defmodule SanbaseWeb.Endpoint do
   socket("/socket", SanbaseWeb.UserSocket,
     # or list of options
     websocket: true,
-    longpoll: [check_origin: Phoenix.Transports.LongPoll]
+    longpoll: [
+      check_origin: [
+        "https://api-stage.santiment.net",
+        "https://api.santiment.net",
+        "https://app-stage.santiment.net",
+        "https://app.santiment.net"
+      ]
+    ]
   )
 
   # Serve at "/" the static files from "priv/static" directory.

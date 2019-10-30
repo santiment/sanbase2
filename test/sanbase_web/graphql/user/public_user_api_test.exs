@@ -12,6 +12,85 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
     {:ok, user: user, user2: user2}
   end
 
+  test "fetch public watchlists of a user", context do
+    %{conn: conn, user: user} = context
+
+    watchlist = insert(:watchlist, %{user: user, is_public: true})
+    insert(:watchlist, %{user: user, is_public: false})
+
+    result = get_user(conn, user)
+
+    assert result == %{
+             "data" => %{
+               "getUser" => %{
+                 "email" => "<hidden>",
+                 "followers" => [],
+                 "following" => [],
+                 "id" => "#{user.id}",
+                 "insights" => [],
+                 "triggers" => [],
+                 "username" => "#{user.username}",
+                 "watchlists" => [
+                   %{"id" => "#{watchlist.id}"}
+                 ]
+               }
+             }
+           }
+  end
+
+  test "fetch public insights of a user", context do
+    %{conn: conn, user: user} = context
+
+    post = insert(:post, %{user: user, state: "approved", ready_state: "published"})
+    insert(:post, %{user: user})
+
+    result = get_user(conn, user)
+
+    assert result == %{
+             "data" => %{
+               "getUser" => %{
+                 "email" => "<hidden>",
+                 "followers" => [],
+                 "following" => [],
+                 "id" => "#{user.id}",
+                 "insights" => [
+                   %{"id" => "#{post.id}"}
+                 ],
+                 "triggers" => [],
+                 "username" => "#{user.username}",
+                 "watchlists" => []
+               }
+             }
+           }
+  end
+
+  test "fetch public triggers of a user", context do
+    %{conn: conn, user: user} = context
+
+    user_trigger =
+      insert(:user_trigger, %{
+        user: user,
+        trigger: %{title: "ASD", is_public: true, settings: trigger_settings()}
+      })
+
+    result = get_user(conn, user)
+
+    assert result == %{
+             "data" => %{
+               "getUser" => %{
+                 "email" => "<hidden>",
+                 "followers" => [],
+                 "following" => [],
+                 "id" => "#{user.id}",
+                 "insights" => [],
+                 "triggers" => [%{"id" => user_trigger.id}],
+                 "username" => "#{user.username}",
+                 "watchlists" => []
+               }
+             }
+           }
+  end
+
   test "fetch data for user that hides privacy data", context do
     %{conn: conn, user: user} = context
 
@@ -26,7 +105,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "id" => "#{user.id}",
                  "insights" => [],
                  "triggers" => [],
-                 "username" => "#{user.username}"
+                 "username" => "#{user.username}",
+                 "watchlists" => []
                }
              }
            }
@@ -46,7 +126,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "id" => "#{user.id}",
                  "insights" => [],
                  "triggers" => [],
-                 "username" => "#{user.username}"
+                 "username" => "#{user.username}",
+                 "watchlists" => []
                }
              }
            }
@@ -61,6 +142,7 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
         username
         insights{ id }
         triggers{ id }
+        watchlists{ id }
         followers{ followerId }
         following{ followerId }
       }
@@ -70,5 +152,15 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
     conn
     |> post("/graphql", query_skeleton(query, "currentUser"))
     |> json_response(200)
+  end
+
+  defp trigger_settings() do
+    %{
+      "type" => "daily_active_addresses",
+      "target" => %{"slug" => "santiment"},
+      "channel" => "telegram",
+      "time_window" => "1d",
+      "operation" => %{"percent_up" => 300.0}
+    }
   end
 end

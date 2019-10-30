@@ -61,7 +61,7 @@ defmodule Sanbase.Factory do
   def post_factory() do
     %Post{
       user: build(:user),
-      poll: build(:poll),
+      poll: Sanbase.Repo.all(Sanbase.Insight.Poll) |> List.first() || build(:poll),
       title: "Awesome analysis",
       link: "http://example.com",
       text: "Text of the post",

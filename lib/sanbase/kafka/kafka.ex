@@ -11,7 +11,7 @@ defmodule Sanbase.Kafka do
       consumer_group: Keyword.get(config, :consumer_group) <> Ecto.UUID.generate()
     ]
 
-    new_config = Keyword.merge(config, new_values) |> IO.inspect()
+    new_config = Keyword.merge(config, new_values)
 
     Application.put_env(:kaffe, :consumer, new_config)
 

@@ -3,7 +3,7 @@ defmodule Sanbase.Application.Web do
   require Logger
 
   def init() do
-    # Config kafka consumer with uuid consumer group suffix
+    # Change kafka consumer configuration at runtime before consumer supervisor is started
     Sanbase.Kafka.init()
 
     # API metrics

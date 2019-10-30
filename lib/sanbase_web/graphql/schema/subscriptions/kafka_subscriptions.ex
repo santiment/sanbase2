@@ -27,9 +27,6 @@ defmodule SanbaseWeb.Graphql.Schema.Subscriptions.KafkaSubscriptions do
 
         %{source: source}, _ when not is_nil(source) ->
           {:ok, topic: source}
-
-        _, _ ->
-          {:ok, topic: "*"}
       end)
     end
   end

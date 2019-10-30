@@ -4,10 +4,12 @@ FROM elixir:1.9.1-alpine as code_builder
 ENV MIX_ENV prod
 
 RUN apk add --no-cache make \
-                       g++ \
-                       git \
-                       nodejs \
-                       nodejs-npm
+  g++ \
+  git \
+  nodejs \
+  nodejs-npm \
+  openssl \
+  wget
 
 RUN mix local.hex --force
 RUN mix local.rebar --force
@@ -35,7 +37,7 @@ RUN mix distillery.release
 FROM elixir:1.9.1-alpine
 
 RUN apk add --no-cache bash \
-                       imagemagick
+  imagemagick
 
 WORKDIR /app
 

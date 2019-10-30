@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
   use Absinthe.Schema.Notation
   use Absinthe.Ecto, repo: Sanbase.Repo
 
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
   alias SanbaseWeb.Graphql.Resolvers.{
     ApikeyResolver,
@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     EthAccountResolver,
     UserSettingsResolver,
     UserTriggerResolver,
+    UserListResolver,
     PostResolver,
     BillingResolver
   }
@@ -26,14 +27,18 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:username, :string)
 
     field :triggers, list_of(:trigger) do
-      resolve(&UserTriggerResolver.public_triggers/3)
+      cache_resolve(&UserTriggerResolver.public_triggers/3, ttl: 60)
     end
 
     field(:following, list_of(:user_follower), resolve: assoc(:following))
     field(:followers, list_of(:user_follower), resolve: assoc(:followers))
 
     field :insights, list_of(:post) do
-      resolve(&PostResolver.public_insights/3)
+      cache_resolve(&PostResolver.public_insights/3, ttl: 60)
+    end
+
+    field :watchlists, list_of(:user_list) do
+      cache_resolve(&UserListResolver.public_watchlists/3, ttl: 60)
     end
   end
 

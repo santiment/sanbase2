@@ -87,49 +87,6 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
     "bids_20_percent_depth" => nil
   }
 
-  defmacro expected_exchange_trade(subscription_id) do
-    quote do
-      %{
-        result: %{
-          data: %{
-            "exchangeTrades" => %{
-              "amount" => 2.11604737,
-              "cost" => 337.7846416731,
-              "price" => 159.63,
-              "source" => "Kraken",
-              "symbol" => "ETH/EUR",
-              "timestamp" => "2019-09-28T20:53:45Z"
-            }
-          }
-        },
-        subscriptionId: unquote(subscription_id)
-      }
-    end
-  end
-
-  defmacrop expected_exchange_market_depth(subscription_id) do
-    quote do
-      %{
-        result: %{
-          data: %{
-            "exchangeMarketDepth" => %{
-              "ask" => 0.00455979,
-              "asks025PercentDepth" => 0.0012996121796948,
-              "asks025PercentVolume" => 0.28495291,
-              "bid" => 0.00455005,
-              "bids025PercentDepth" => 0.7868672411467281,
-              "bids025PercentVolume" => 173.00153222999998,
-              "source" => "Kraken",
-              "symbol" => "ZEC/BTC",
-              "timestamp" => "2019-10-18T16:50:28Z"
-            }
-          }
-        },
-        subscriptionId: unquote(subscription_id)
-      }
-    end
-  end
-
   describe "exchange_trades" do
     test "subscribe to given source - receive only those", %{socket: socket} do
       ref = push_doc(socket, @exchange_trades_sub, variables: %{"source" => "Kraken"})
@@ -138,7 +95,9 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
       message = ExchangeTrade.format_message(@exchange_trade_example)
       Subscription.publish(message, "exchange_trades")
 
-      assert_push("subscription:data", expected_exchange_trade(subscription_id))
+      expected = expected_exchange_trade(subscription_id)
+      assert_push("subscription:data", push)
+      assert expected == push
     end
 
     test "subscribe to given source - doesn't receive other sources", %{socket: socket} do
@@ -149,7 +108,7 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
 
       Subscription.publish(message, "exchange_trades")
 
-      refute_push("subscription:data", %{})
+      refute_push("subscription:data", _push)
     end
 
     test "subscribe to source and symbol - receive only those", %{socket: socket} do
@@ -164,7 +123,9 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
 
       Subscription.publish(message, "exchange_trades")
 
-      assert_push("subscription:data", expected_exchange_trade(subscription_id))
+      expected = expected_exchange_trade(subscription_id)
+      assert_push("subscription:data", push)
+      assert expected == push
     end
 
     test "subscribe to source and symbol - doesn't receive for other symbols", %{socket: socket} do
@@ -179,7 +140,7 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
 
       Subscription.publish(message, "exchange_trades")
 
-      refute_push("subscription:data", %{})
+      refute_push("subscription:data", _push)
     end
   end
 
@@ -191,7 +152,9 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
       message = ExchangeMarketDepth.format_message(@exchange_market_depth_example)
       Subscription.publish(message, "exchange_market_depth")
 
-      assert_push("subscription:data", expected_exchange_market_depth(subscription_id))
+      expected = expected_exchange_market_depth(subscription_id)
+      assert_push("subscription:data", push)
+      assert expected == push
     end
 
     test "subscribe to given source - doesn't receive other sources", %{socket: socket} do
@@ -201,7 +164,7 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
       message = ExchangeMarketDepth.format_message(@exchange_market_depth_example)
       Subscription.publish(message, "exchange_market_depth")
 
-      refute_push("subscription:data", %{})
+      refute_push("subscription:data", _push)
     end
 
     test "subscribe to source and symbol - receive only those", %{socket: socket} do
@@ -215,7 +178,9 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
       message = ExchangeMarketDepth.format_message(@exchange_market_depth_example)
       Subscription.publish(message, "exchange_market_depth")
 
-      assert_push("subscription:data", expected_exchange_market_depth(subscription_id))
+      expected = expected_exchange_market_depth(subscription_id)
+      assert_push("subscription:data", push)
+      assert expected == push
     end
 
     test "subscribe to source and symbol - doesn't receive for other symbols", %{socket: socket} do
@@ -229,7 +194,46 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
       message = ExchangeMarketDepth.format_message(@exchange_market_depth_example)
       Subscription.publish(message, "exchange_market_depth")
 
-      refute_push("subscription:data", %{})
+      refute_push("subscription:data", _push)
     end
+  end
+
+  defp expected_exchange_trade(subscription_id) do
+    %{
+      result: %{
+        data: %{
+          "exchangeTrades" => %{
+            "amount" => 2.11604737,
+            "cost" => 337.7846416731,
+            "price" => 159.63,
+            "source" => "Kraken",
+            "symbol" => "ETH/EUR",
+            "timestamp" => "2019-09-28T20:53:45Z"
+          }
+        }
+      },
+      subscriptionId: subscription_id
+    }
+  end
+
+  defp expected_exchange_market_depth(subscription_id) do
+    %{
+      result: %{
+        data: %{
+          "exchangeMarketDepth" => %{
+            "ask" => 0.00455979,
+            "asks025PercentDepth" => 0.0012996121796948,
+            "asks025PercentVolume" => 0.28495291,
+            "bid" => 0.00455005,
+            "bids025PercentDepth" => 0.7868672411467281,
+            "bids025PercentVolume" => 173.00153222999998,
+            "source" => "Kraken",
+            "symbol" => "ZEC/BTC",
+            "timestamp" => "2019-10-18T16:50:28Z"
+          }
+        }
+      },
+      subscriptionId: subscription_id
+    }
   end
 end

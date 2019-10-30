@@ -20,8 +20,8 @@ defmodule Sanbase.Auth.UserSettings do
     |> unique_constraint(:user_id)
   end
 
-  def settings_for(%User{user_settings: %{settings: _} = user_settings}) do
-    user_settings
+  def settings_for(%User{user_settings: %{settings: %Settings{} = settings}}) do
+    settings
   end
 
   def settings_for(%User{id: user_id}) do

@@ -172,6 +172,10 @@ defmodule Sanbase.Signal.Scheduler do
   defp log_sent_messages_stats(list, type) do
     successful_messages = list |> Enum.count(fn {_elem, status} -> status == :ok end)
 
+    for {_, {:error, error}} <- list do
+      Logger.warn("Cannot send a signal. Reason: #{inspect(error)}")
+    end
+
     Logger.info(
       "In total #{successful_messages}/#{length(list)} #{type} signals were sent successfully"
     )

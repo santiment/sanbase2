@@ -1,7 +1,11 @@
 defmodule Sanbase.Application.Web do
   import Sanbase.ApplicationUtils
+  require Logger
 
   def init() do
+    # Change kafka consumer configuration at runtime before consumer supervisor is started
+    Sanbase.Kafka.init()
+
     # API metrics
     SanbaseWeb.Graphql.Prometheus.HistogramInstrumenter.install(SanbaseWeb.Graphql.Schema)
     SanbaseWeb.Graphql.Prometheus.CounterInstrumenter.install(SanbaseWeb.Graphql.Schema)
@@ -15,6 +19,8 @@ defmodule Sanbase.Application.Web do
   def children() do
     # Define workers and child supervisors to be supervised
     children = [
+      {Absinthe.Subscription, SanbaseWeb.Endpoint},
+
       # Start the Clickhouse Repo
       start_in({Sanbase.ClickhouseRepo, []}, [:dev, :prod]),
 
@@ -39,6 +45,16 @@ defmodule Sanbase.Application.Web do
       # Transform a list of transactions into a list of transactions
       # where addresses are marked whether or not they are an exchange address
       Sanbase.Clickhouse.MarkExchanges,
+
+      # Start Kafka consumer supervisor
+      start_in(
+        %{
+          id: Kaffe.GroupMemberSupervisor,
+          start: {Kaffe.GroupMemberSupervisor, :start_link, []},
+          type: :supervisor
+        },
+        [:prod]
+      ),
 
       # Start libcluster
       start_in(

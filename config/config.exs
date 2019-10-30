@@ -16,13 +16,25 @@ config :phoenix, :json_library, Jason
 
 config :ecto, json_library: Jason
 
-config :sanbase, Sanbase,
-  environment: "#{Mix.env()}",
-  required_san_stake_full_access: {:system, "REQUIRED_SAN_STAKE_FULL_ACCESS", "1000"}
+config :sanbase, Sanbase, environment: "#{Mix.env()}"
 
 config :sanbase, Sanbase.ApiCallDataExporter,
   kafka_url: {:system, "KAFKA_URL", "blockchain-kafka-kafka"},
   kafka_port: {:system, "KAFKA_PORT", "9092"}
+
+config :sanbase, Sanbase.Kafka,
+  url: {:system, "KAFKA_URL", "blockchain-kafka-kafka"},
+  port: {:system, "KAFKA_PORT", "9092"},
+  topics: {:system, "KAFKA_TOPICS_CSV_STRING", "exchange_trades, exchange_market_depth"},
+  consumer_group_basename: {:system, "KAFKA_CONSUMER_GROUP_BASENAME", "sanbase_kafka_consumer"}
+
+config :kaffe,
+  consumer: [
+    message_handler: Sanbase.Kafka.MessageProcessor,
+    async_message_ack: false,
+    start_with_earliest_message: false,
+    offset_reset_policy: :reset_to_latest
+  ]
 
 config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
   implementation_module: Sanbase.ExternalServices.RateLimiting.WaitServer
@@ -48,7 +60,8 @@ config :sanbase, SanbaseWeb.Endpoint,
   # should be removed after app.santiment.net migration
   website_url: {:system, "WEBSITE_URL", "http://localhost:4000"},
   backend_url: {:system, "BACKEND_URL", "http://localhost:4000"},
-  frontend_url: {:system, "FRONTEND_URL", "http://localhost:4000"}
+  frontend_url: {:system, "FRONTEND_URL", "http://localhost:4000"},
+  pubsub: [name: Sanbase.PubSub, adapter: Phoenix.PubSub.PG2]
 
 # Do not log SASL crash reports
 config :sasl, sasl_error_logger: false

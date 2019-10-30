@@ -56,6 +56,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.UserQueries)
   import_types(Graphql.Schema.TimelineQueries)
   import_types(Graphql.Schema.BillingQueries)
+  import_types(Graphql.Schema.Subscriptions.KafkaSubscriptions)
 
   def dataloader() do
     Dataloader.new(timeout: :timer.seconds(20))
@@ -115,5 +116,9 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:signal_mutations)
     import_fields(:user_mutations)
     import_fields(:billing_mutations)
+  end
+
+  subscription do
+    import_fields(:kafka_subscriptions)
   end
 end

@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :sanbase
   use SanbaseWeb.Endpoint.ErrorHandler
+  use Absinthe.Phoenix.Endpoint
 
   require Sanbase.Utils.Config, as: Config
 

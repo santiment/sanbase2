@@ -1,5 +1,6 @@
 defmodule SanbaseWeb.UserSocket do
   use Phoenix.Socket
+  use Absinthe.Phoenix.Socket, schema: SanbaseWeb.Graphql.Schema
 
   ## Channels
   # channel "room:*", SanbaseWeb.RoomChannel

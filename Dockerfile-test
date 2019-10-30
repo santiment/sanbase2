@@ -4,7 +4,9 @@ RUN apk add --no-cache make \
                        g++ \
                        git \
                        postgresql-client \
-                       imagemagick
+                       imagemagick \
+											 openssl \
+											 wget
 
 ENV MIX_ENV test
 

@@ -8,7 +8,13 @@ config :sanbase, SanbaseWeb.Endpoint,
   root: '.',
   version: Application.spec(:sanbase, :vsn),
   load_from_system_env: true,
-  secret_key_base: "${SECRET_KEY_BASE}"
+  secret_key_base: "${SECRET_KEY_BASE}",
+  check_origin: [
+    "https://api-stage.santiment.net",
+    "https://api.santiment.net",
+    "https://app-stage.santiment.net",
+    "https://app.santiment.net"
+  ]
 
 config :sanbase, ecto_repos: [Sanbase.Repo]
 

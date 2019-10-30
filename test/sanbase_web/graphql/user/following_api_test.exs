@@ -20,7 +20,10 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
         current_user_query()
         |> execute_and_handle_success("currentUser", conn)
 
-      assert result == %{"followers" => [], "following" => []}
+      assert result == %{
+               "followers" => %{"count" => 0, "users" => []},
+               "following" => %{"count" => 0, "users" => []}
+             }
     end
 
     test "when following another user - following list includes users that he follows",
@@ -33,8 +36,8 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
         |> execute_and_handle_success("currentUser", conn)
 
       assert result == %{
-               "followers" => [],
-               "following" => [%{"userId" => "#{user_to_follow.id}"}]
+               "followers" => %{"count" => 0, "users" => []},
+               "following" => %{"count" => 1, "users" => [%{"id" => "#{user_to_follow.id}"}]}
              }
     end
 
@@ -48,8 +51,8 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
         |> execute_and_handle_success("currentUser", conn)
 
       assert result == %{
-               "followers" => [%{"followerId" => "#{follower.id}"}],
-               "following" => []
+               "followers" => %{"count" => 1, "users" => [%{"id" => "#{follower.id}"}]},
+               "following" => %{"count" => 0, "users" => []}
              }
     end
   end
@@ -65,8 +68,8 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
         |> get_in(["data", "follow"])
 
       assert result == %{
-               "followers" => [],
-               "following" => [%{"userId" => "#{user_to_follow.id}"}]
+               "followers" => %{"count" => 0, "users" => []},
+               "following" => %{"count" => 1, "users" => [%{"id" => "#{user_to_follow.id}"}]}
              }
     end
 
@@ -110,7 +113,10 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
         |> execute_follow_unfollow(conn)
         |> get_in(["data", "unfollow"])
 
-      assert result == %{"followers" => [], "following" => []}
+      assert result == %{
+               "followers" => %{"count" => 0, "users" => []},
+               "following" => %{"count" => 0, "users" => []}
+             }
     end
 
     test "can't unfollow user that has not been followed", %{conn: conn} do
@@ -133,10 +139,12 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
     mutation {
       #{type}(user_id: "#{user_id}") {
         following {
-          userId
+          count
+          users { id }
         }
         followers {
-          followerId
+          count
+          users { id }
         }
       }
     }
@@ -148,10 +156,12 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
     {
       currentUser {
         following {
-          userId
+          count
+          users { id }
         }
         followers {
-          followerId
+          count
+          users { id }
         }
       }
     }

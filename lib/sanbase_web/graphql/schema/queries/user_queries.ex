@@ -32,7 +32,6 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       meta(access: :free)
 
       resolve(&UserResolver.get_user/3)
-      # middleware(MaybeHidePrivacyData)
     end
 
     @desc """

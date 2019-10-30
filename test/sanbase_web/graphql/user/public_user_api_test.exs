@@ -24,8 +24,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
              "data" => %{
                "getUser" => %{
                  "email" => "<hidden>",
-                 "followers" => [],
-                 "following" => [],
+                 "followers" => %{"count" => 0, "users" => []},
+                 "following" => %{"count" => 0, "users" => []},
                  "id" => "#{user.id}",
                  "insights" => [],
                  "triggers" => [],
@@ -50,8 +50,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
              "data" => %{
                "getUser" => %{
                  "email" => "<hidden>",
-                 "followers" => [],
-                 "following" => [],
+                 "followers" => %{"count" => 0, "users" => []},
+                 "following" => %{"count" => 0, "users" => []},
                  "id" => "#{user.id}",
                  "insights" => [
                    %{"id" => "#{post.id}"}
@@ -79,8 +79,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
              "data" => %{
                "getUser" => %{
                  "email" => "<hidden>",
-                 "followers" => [],
-                 "following" => [],
+                 "followers" => %{"count" => 0, "users" => []},
+                 "following" => %{"count" => 0, "users" => []},
                  "id" => "#{user.id}",
                  "insights" => [],
                  "triggers" => [%{"id" => user_trigger.id}],
@@ -100,8 +100,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
              "data" => %{
                "getUser" => %{
                  "email" => "<hidden>",
-                 "followers" => [],
-                 "following" => [],
+                 "followers" => %{"count" => 0, "users" => []},
+                 "following" => %{"count" => 0, "users" => []},
                  "id" => "#{user.id}",
                  "insights" => [],
                  "triggers" => [],
@@ -121,8 +121,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
              "data" => %{
                "getUser" => %{
                  "email" => "#{user.email}",
-                 "followers" => [],
-                 "following" => [],
+                 "followers" => %{"count" => 0, "users" => []},
+                 "following" => %{"count" => 0, "users" => []},
                  "id" => "#{user.id}",
                  "insights" => [],
                  "triggers" => [],
@@ -143,8 +143,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
         insights{ id }
         triggers{ id }
         watchlists{ id }
-        followers{ followerId }
-        following{ followerId }
+        followers{ count users { id } }
+        following{ count users { id } }
       }
     }
     """

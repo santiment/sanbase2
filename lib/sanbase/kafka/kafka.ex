@@ -8,7 +8,8 @@ defmodule Sanbase.Kafka do
     new_values = [
       endpoints: endpoints(),
       topics: topics(),
-      consumer_group: Keyword.get(config, :consumer_group) <> Ecto.UUID.generate()
+      # generate unique consumer group on boot
+      consumer_group: consumer_group_basename() <> Ecto.UUID.generate()
     ]
 
     new_config = Keyword.merge(config, new_values)
@@ -18,16 +19,20 @@ defmodule Sanbase.Kafka do
     Logger.info("Kafka consumer configuration: #{inspect(Kaffe.Config.Consumer.configuration())}")
   end
 
-  def topics do
+  defp topics do
     # string like: "topic1, topic2 ..."
     Config.get(:topics)
     |> String.split(",", trim: true)
     |> Enum.map(&String.trim/1)
   end
 
-  def endpoints do
+  defp endpoints do
     [
-      {Config.get(:kafka_url), Config.get(:kafka_port) |> String.to_integer()}
+      {Config.get(:url), Config.get(:port) |> String.to_integer()}
     ]
+  end
+
+  defp consumer_group_basename do
+    Config.get(:consumer_group_basename)
   end
 end

@@ -23,15 +23,13 @@ config :sanbase, Sanbase.ApiCallDataExporter,
   kafka_port: {:system, "KAFKA_PORT", "9092"}
 
 config :sanbase, Sanbase.Kafka,
-  kafka_url: {:system, "KAFKA_URL", "blockchain-kafka-kafka"},
-  kafka_port: {:system, "KAFKA_PORT", "9092"},
-  topics: {:system, "KAFKA_TOPICS_CSV_STRING", "exchange_trades, exchange_market_depth"}
+  url: {:system, "KAFKA_URL", "blockchain-kafka-kafka"},
+  port: {:system, "KAFKA_PORT", "9092"},
+  topics: {:system, "KAFKA_TOPICS_CSV_STRING", "exchange_trades, exchange_market_depth"},
+  consumer_group_basename: {:system, "KAFKA_CONSUMER_GROUP_BASENAME", "sanbase_kafka_consumer"}
 
 config :kaffe,
   consumer: [
-    endpoints: [{"blockchain-kafka-kafka", 9092}],
-    topics: ["exchange_trades", "exchange_market_depth"],
-    consumer_group: "sanbase_kafka_cansumer",
     message_handler: Sanbase.Kafka.MessageProcessor,
     async_message_ack: false,
     start_with_earliest_message: false,

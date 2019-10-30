@@ -6,9 +6,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   alias Sanbase.Insight.Post
 
   def insights(%User{} = user, _args, _resolution) do
-    posts = Post.user_insights(user.id)
+    {:ok, Post.user_insights(user.id)}
+  end
 
-    {:ok, posts}
+  def public_insights(%User{} = user, _args, _resolution) do
+    {:ok, Post.user_public_insights(user.id)}
   end
 
   def related_projects(%Post{} = post, _, _) do

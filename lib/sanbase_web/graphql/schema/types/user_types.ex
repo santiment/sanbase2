@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.AccountTypes do
+defmodule SanbaseWeb.Graphql.UserTypes do
   use Absinthe.Schema.Notation
   use Absinthe.Ecto, repo: Sanbase.Repo
 
@@ -6,13 +6,36 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
 
   alias SanbaseWeb.Graphql.Resolvers.{
     ApikeyResolver,
-    AccountResolver,
+    UserResolver,
     EthAccountResolver,
     UserSettingsResolver,
     UserTriggerResolver,
     PostResolver,
     BillingResolver
   }
+
+  input_object :user_selector_input_object do
+    field(:id, :id)
+    field(:email, :string)
+    field(:username, :string)
+  end
+
+  object :public_user do
+    field(:id, non_null(:id))
+    field(:email, :string)
+    field(:username, :string)
+
+    field :triggers, list_of(:trigger) do
+      resolve(&UserTriggerResolver.public_triggers/3)
+    end
+
+    field(:following, list_of(:user_follower), resolve: assoc(:following))
+    field(:followers, list_of(:user_follower), resolve: assoc(:followers))
+
+    field :insights, list_of(:post) do
+      resolve(&PostResolver.public_insights/3)
+    end
+  end
 
   object :user do
     field(:id, non_null(:id))
@@ -24,11 +47,11 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     field(:first_login, :boolean, default_value: false)
 
     field :permissions, :access_level do
-      resolve(&AccountResolver.permissions/3)
+      resolve(&UserResolver.permissions/3)
     end
 
     field :san_balance, :float do
-      cache_resolve(&AccountResolver.san_balance/3)
+      cache_resolve(&UserResolver.san_balance/3)
     end
 
     @desc ~s"""
@@ -78,7 +101,7 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
       arg(:to, non_null(:datetime))
       arg(:interval, :interval, default_value: "1d")
 
-      cache_resolve(&AccountResolver.api_calls_history/3)
+      cache_resolve(&UserResolver.api_calls_history/3)
     end
   end
 

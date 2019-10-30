@@ -99,7 +99,7 @@ alias Sanbase.Utils.{
 alias SanbaseWeb.Graphql.Schema
 
 alias SanbaseWeb.Graphql.Resolvers.{
-  AccountResolver,
+  UserResolver,
   ApikeyResolver,
   EthAccountResolver,
   ElasticsearchResolver,

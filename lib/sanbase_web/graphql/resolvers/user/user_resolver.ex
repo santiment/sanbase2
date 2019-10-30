@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
+defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   require Logger
 
   alias SanbaseWeb.Graphql.Helpers.Utils
@@ -44,6 +44,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
   end
 
   def current_user(_root, _args, _context), do: {:ok, nil}
+
+  def get_user(_root, %{selector: selector}, _resolution) when map_size(selector) != 1 do
+    {:error, "Provide exactly one field in the user selector object"}
+  end
+
+  def get_user(_root, %{selector: selector}, _resolution) do
+    case User.by_selector(selector) do
+      nil -> {:error, "Cannot fetch user by: #{inspect(selector)}"}
+      user -> {:ok, user |> User.Public.hide_private_data()}
+    end
+  end
 
   def eth_login(
         %{signature: signature, address: address, message_hash: message_hash} = args,
@@ -196,6 +207,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
   # Private functions
 
   # No eth account and there is a user logged in
+
   defp fetch_user(
          %{address: address, context: %{auth: %{auth_method: :user_token, current_user: user}}},
          nil

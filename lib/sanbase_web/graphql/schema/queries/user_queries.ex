@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
   use Absinthe.Schema.Notation
 
   alias SanbaseWeb.Graphql.Resolvers.{
-    AccountResolver,
+    UserResolver,
     ApikeyResolver,
     UserSettingsResolver,
     TelegramResolver,
@@ -22,7 +22,16 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
     field :current_user, :user do
       meta(access: :free)
 
-      resolve(&AccountResolver.current_user/3)
+      resolve(&UserResolver.current_user/3)
+    end
+
+    @desc "Returns the selected."
+    field :get_user, :public_user do
+      arg(:selector, non_null(:user_selector_input_object))
+
+      meta(access: :free)
+
+      resolve(&UserResolver.get_user/3)
     end
 
     @desc """
@@ -45,7 +54,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       arg(:address, non_null(:string))
       arg(:message_hash, non_null(:string))
 
-      resolve(&AccountResolver.eth_login/2)
+      resolve(&UserResolver.eth_login/2)
       middleware(CreateOrDeleteSession)
     end
 
@@ -58,7 +67,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       arg(:username, :string)
       arg(:consent, :string)
 
-      resolve(&AccountResolver.email_login/2)
+      resolve(&UserResolver.email_login/2)
     end
 
     @desc ~s"""
@@ -68,7 +77,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       arg(:email, non_null(:string))
       arg(:token, non_null(:string))
 
-      resolve(&AccountResolver.email_login_verify/2)
+      resolve(&UserResolver.email_login_verify/2)
       middleware(CreateOrDeleteSession)
     end
 
@@ -85,7 +94,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       arg(:email_candidate, non_null(:string))
       arg(:token, non_null(:string))
 
-      resolve(&AccountResolver.email_change_verify/2)
+      resolve(&UserResolver.email_change_verify/2)
     end
 
     @desc ~s"""
@@ -96,14 +105,14 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       arg(:email, non_null(:string))
 
       middleware(JWTAuth)
-      resolve(&AccountResolver.change_email/3)
+      resolve(&UserResolver.change_email/3)
     end
 
     field :change_username, :user do
       arg(:username, non_null(:string))
 
       middleware(JWTAuth)
-      resolve(&AccountResolver.change_username/3)
+      resolve(&UserResolver.change_username/3)
     end
 
     @desc ~s"""
@@ -118,7 +127,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       arg(:message_hash, non_null(:string))
 
       middleware(JWTAuth)
-      resolve(&AccountResolver.add_user_eth_address/3)
+      resolve(&UserResolver.add_user_eth_address/3)
     end
 
     @desc ~s"""
@@ -130,7 +139,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       arg(:address, non_null(:string))
 
       middleware(JWTAuth)
-      resolve(&AccountResolver.remove_user_eth_address/3)
+      resolve(&UserResolver.remove_user_eth_address/3)
     end
 
     @desc ~s"""
@@ -144,7 +153,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
 
       # Allow this mutation to be executed when the user has not accepted the privacy policy.
       middleware(JWTAuth, allow_access: true)
-      resolve(&AccountResolver.update_terms_and_conditions/3)
+      resolve(&UserResolver.update_terms_and_conditions/3)
     end
 
     @desc ~s"""

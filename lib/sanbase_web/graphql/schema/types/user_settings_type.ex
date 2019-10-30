@@ -8,6 +8,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
   end
 
   object :user_settings do
+    field(:hide_privacy_data, :boolean)
     field(:is_beta_mode, :boolean)
     field(:theme, :string)
     field(:page_size, :integer)
@@ -19,6 +20,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
   end
 
   input_object :user_settings_input_object do
+    field(:hide_privacy_data, :boolean)
     field(:is_beta_mode, :boolean)
     field(:theme, :string)
     field(:page_size, :integer)

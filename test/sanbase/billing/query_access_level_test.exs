@@ -81,7 +81,8 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :watchlist_by_slug,
           :get_available_metrics,
           :get_available_slugs,
-          :get_metric
+          :get_metric,
+          :get_user
         ]
         |> Enum.sort()
 

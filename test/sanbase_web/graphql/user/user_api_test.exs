@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.AccountTest do
+defmodule SanbaseWeb.Graphql.UserApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mockery

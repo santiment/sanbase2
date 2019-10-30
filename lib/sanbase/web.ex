@@ -51,7 +51,7 @@ defmodule Sanbase.Application.Web do
           start: {Kaffe.GroupMemberSupervisor, :start_link, []},
           type: :supervisor
         },
-        [:dev, :prod]
+        [:prod]
       ),
 
       # Start libcluster

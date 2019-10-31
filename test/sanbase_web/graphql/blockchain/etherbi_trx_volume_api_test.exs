@@ -28,7 +28,7 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
       {Sanbase.Metric, [:passthrough],
        [
          first_datetime: fn _, _ -> {:ok, context.from} end,
-         get: fn _, _, _, _, _, _ ->
+         timeseries_data: fn _, _, _, _, _, _ ->
            {:ok,
             [
               %{datetime: Enum.at(datetimes, 0), value: 100},
@@ -72,7 +72,7 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
     with_mocks([
       {Sanbase.Metric, [:passthrough],
        [
-         get: fn _, _, _, _, _, _ ->
+         timeseries_data: fn _, _, _, _, _, _ ->
            {:ok,
             [
               %{datetime: Enum.at(datetimes, 0), value: 100},

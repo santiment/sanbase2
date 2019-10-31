@@ -154,7 +154,7 @@ defmodule Sanbase.Chart do
     from = Timex.shift(to, days: -size + 1)
 
     with {:ok, metric_name} <- Sanbase.Metric.human_readable_name(metric),
-         {:ok, data} <- Sanbase.Metric.get(metric, slug, from, to, "1d"),
+         {:ok, data} <- Sanbase.Metric.timeseries_data(metric, slug, from, to, "1d"),
          [_ | _] = values <- data |> Enum.map(& &1.value) |> Enum.reject(&is_nil/1),
          {min, max} <- Math.min_max(values) do
       %{

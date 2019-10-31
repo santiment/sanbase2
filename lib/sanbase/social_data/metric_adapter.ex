@@ -35,7 +35,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
   @access_map Enum.reduce(@metrics, %{}, fn metric, acc -> Map.put(acc, metric, :restricted) end)
 
   @impl Sanbase.Metric.Behaviour
-  def get(metric, slug, from, to, interval, _aggregation) when metric in @social_volume_metrics do
+  def timeseries_data(metric, slug, from, to, interval, _aggregation)
+      when metric in @social_volume_metrics do
     [source, _] = String.split(metric, "_", parts: 2)
 
     Sanbase.TechIndicators.social_volume(
@@ -48,7 +49,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     |> transform_to_value_pairs(:mentions_count)
   end
 
-  def get(metric, slug, from, to, interval, _aggregation)
+  def timeseries_data(metric, slug, from, to, interval, _aggregation)
       when metric in @social_dominance_metrics do
     [source, _] = String.split(metric, "_", parts: 2)
 
@@ -63,7 +64,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def get_aggregated(metric, slug, from, to, _aggregation)
+  def aggregated_data(metric, slug, from, to, _aggregation)
       when is_binary(slug) and metric in @social_volume_metrics do
     [source, _] = String.split(metric, "_", parts: 2)
 
@@ -84,7 +85,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     end
   end
 
-  def get_aggregated(metric, slug, from, to, _aggregation)
+  def aggregated_data(metric, slug, from, to, _aggregation)
       when metric in @social_dominance_metrics do
     [source, _] = String.split(metric, "_", parts: 2)
 

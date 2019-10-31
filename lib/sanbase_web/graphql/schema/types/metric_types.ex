@@ -67,7 +67,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
 
-      cache_resolve(&MetricResolver.get_timeseries_data/3)
+      cache_resolve(&MetricResolver.timeseries_data/3)
     end
 
     field :available_since, :datetime do

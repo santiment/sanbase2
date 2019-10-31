@@ -19,7 +19,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   def available_since(_root, %{slug: slug}, %{source: %{metric: metric}}),
     do: Metric.first_datetime(metric, slug)
 
-  def get_timeseries_data(
+  def timeseries_data(
         _root,
         %{slug: slug, from: from, to: to, interval: interval} = args,
         %{source: %{metric: metric}}
@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     with {:ok, from, to, interval} <-
            calibrate_interval(Metric, metric, slug, from, to, interval, 86_400, @datapoints),
          {:ok, result} <-
-           Metric.get(metric, slug, from, to, interval, args[:aggregation]) do
+           Metric.timeseries_data(metric, slug, from, to, interval, args[:aggregation]) do
       {:ok, result |> Enum.reject(&is_nil/1)}
     else
       {:error, error} ->

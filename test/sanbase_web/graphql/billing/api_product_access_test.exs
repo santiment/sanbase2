@@ -16,7 +16,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
      [active_deposits: fn _, _, _, _ -> daily_active_deposits_resp() end]},
     {Sanbase.Clickhouse.NetworkGrowth, [],
      [network_growth: fn _, _, _, _ -> network_growth_resp() end]},
-    {Metric, [:passthrough], [get: fn _, _, _, _, _, _ -> metric_resp() end]}
+    {Metric, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> metric_resp() end]}
   ]) do
     :ok
   end
@@ -37,7 +37,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = v2_free_metric()
       query = metric_query(metric, from, to)
       result = execute_query(context.conn, query, "getMetric")
-      assert_called(Metric.get(metric, :_, from, to, :_, :_))
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -47,8 +47,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       query = metric_query(metric, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
-      assert_called(Metric.get(metric, :_, :_, :_, :_, :_))
-      refute called(Metric.get(metric, :_, from, to, :_, :_))
+      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -129,7 +129,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = v2_free_metric()
       query = metric_query(metric, from, to)
       result = execute_query(context.conn, query, "getMetric")
-      assert called(Metric.get(metric, :_, from, to, :_, :_))
+      assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -139,7 +139,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       query = metric_query(metric, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
-      assert called(Metric.get(metric, :_, from, to, :_, :_))
+      assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -149,8 +149,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       query = metric_query(metric, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
-      assert_called(Metric.get(metric, :_, :_, :_, :_, :_))
-      refute called(Metric.get(metric, :_, from, to, :_, :_))
+      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -160,7 +160,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       query = metric_query(metric, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
-      assert called(Metric.get(metric, :_, from, to, :_, :_))
+      assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -220,7 +220,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = v2_free_metric()
       query = metric_query(metric, from, to)
       result = execute_query(context.conn, query, "getMetric")
-      assert called(Metric.get(metric, :_, from, to, :_, :_))
+      assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -230,7 +230,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       query = metric_query(metric, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
-      assert called(Metric.get(metric, :_, from, to, :_, :_))
+      assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -240,8 +240,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       query = metric_query(metric, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
-      assert_called(Metric.get(metric, :_, :_, :_, :_, :_))
-      refute called(Metric.get(metric, :_, from, to, :_, :_))
+      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -251,7 +251,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       query = metric_query(metric, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
-      assert called(Metric.get(metric, :_, from, to, :_, :_))
+      assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -312,7 +312,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = v2_free_metric()
       query = metric_query(metric, from, to)
       result = execute_query(context.conn, query, "getMetric")
-      assert_called(Metric.get(metric, :_, from, to, :_, :_))
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -321,7 +321,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       metric = v2_restricted_metric()
       query = metric_query(metric, from, to)
       result = execute_query(context.conn, query, "getMetric")
-      assert_called(Metric.get(metric, :_, from, to, :_, :_))
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 

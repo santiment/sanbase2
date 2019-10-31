@@ -21,7 +21,8 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   @restricted_metrics []
 
   @impl Sanbase.Metric.Behaviour
-  def get(metric, slug, from, to, interval, _aggregation) when metric in @metrics do
+  def timeseries_data(metric, slug, from, to, interval, _aggregation)
+      when metric in @metrics do
     case Project.github_organizations(slug) do
       {:ok, organizations} ->
         apply(
@@ -44,7 +45,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def get_aggregated(metric, organizations, from, to, _aggregation)
+  def aggregated_data(metric, organizations, from, to, _aggregation)
       when is_binary(organizations) or is_list(organizations) do
     apply(
       Github,

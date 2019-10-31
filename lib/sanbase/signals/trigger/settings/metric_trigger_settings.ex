@@ -82,7 +82,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
       |> :erlang.phash2()
 
     Cache.get_or_store(cache_key, fn ->
-      case Metric.get(metric, slug, from, to, interval) do
+      case Metric.timeseries_data(metric, slug, from, to, interval) do
         {:ok, [_ | _] = result} -> result
         _ -> nil
       end

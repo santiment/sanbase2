@@ -34,4 +34,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         {:error, handle_graphql_error(metric, slug, error)}
     end
   end
+
+  def histogram_data(
+        _root,
+        %{slug: slug, datetime: datetime},
+        %{source: %{metric: metric}}
+      ) do
+    {:ok, Metric.histogram_data(metric, slug, datetime)}
+  end
 end

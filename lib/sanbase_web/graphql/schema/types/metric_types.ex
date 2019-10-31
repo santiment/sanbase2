@@ -14,6 +14,11 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:value, non_null(:float))
   end
 
+  object :histogram_data do
+    field(:labels, non_null(list_of(:string)))
+    field(:values, non_null(list_of(:float)))
+  end
+
   object :metadata do
     @desc ~s"""
     List of slugs which can be provided to the `timeseriesData` field to fetch
@@ -68,6 +73,15 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       middleware(AccessControl)
 
       cache_resolve(&MetricResolver.timeseries_data/3)
+    end
+
+    field :histogram_data, :histogram_data do
+      arg(:slug, non_null(:string))
+      arg(:datetime, non_null(:datetime))
+
+      middleware(AccessControl)
+
+      cache_resolve(&MetricResolver.histogram_data/3)
     end
 
     field :available_since, :datetime do

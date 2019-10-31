@@ -84,7 +84,18 @@ defmodule Sanbase.Clickhouse.Metric do
 
       true ->
         aggregation = aggregation || Map.get(@aggregation_map, metric)
-        get_metric(metric, slug, from, to, interval, aggregation)
+        get_timeseries_data(metric, slug, from, to, interval, aggregation)
+    end
+  end
+
+  @impl Sanbase.Metric.Behaviour
+  def histogram_data(metric, slug, datetime) do
+    case metric in @metrics_mapset do
+      false ->
+        metric_not_available_error(metric)
+
+      true ->
+        get_histogram_data(metric, slug, datetime)
     end
   end
 
@@ -109,7 +120,7 @@ defmodule Sanbase.Clickhouse.Metric do
 
       true ->
         aggregation = aggregation || Map.get(@aggregation_map, metric)
-        aggregated_data_metric(metric, slugs, from, to, aggregation)
+        get_aggregated_data(metric, slugs, from, to, aggregation)
     end
   end
 
@@ -211,8 +222,8 @@ defmodule Sanbase.Clickhouse.Metric do
     ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
   end
 
-  defp get_metric(metric, slug, from, to, interval, aggregation) do
-    {query, args} = metric_query(metric, slug, from, to, interval, aggregation)
+  defp get_timeseries_data(metric, slug, from, to, interval, aggregation) do
+    {query, args} = timeseries_data_query(metric, slug, from, to, interval, aggregation)
 
     ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
       %{
@@ -222,11 +233,39 @@ defmodule Sanbase.Clickhouse.Metric do
     end)
   end
 
-  defp aggregated_data_metric(metric, slugs, from, to, aggregation)
+  defp get_histogram_data(metric, slug, datetime) do
+    {query, args} = histogram_data_query(metric, slug, datetime)
+
+    ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
+      %{
+        datetime: DateTime.from_unix!(unix),
+        value: value |> Sanbase.Math.to_float() |> Float.round(2)
+      }
+    end)
+
+    # |> case do
+    #   {:ok, result} ->
+    #     {result, _} =
+    #       result
+    #       |> Enum.reduce({[], 0}, fn elem, {acc, accumulated_value} ->
+    #         {
+    #           [%{elem | value: elem.value + accumulated_value} | acc],
+    #           elem.value + accumulated_value
+    #         }
+    #       end)
+
+    #     {:ok, result}
+
+    #   {:error, error} ->
+    #     {:error, error}
+    # end
+  end
+
+  defp get_aggregated_data(metric, slugs, from, to, aggregation)
        when is_list(slugs) and length(slugs) > 20 do
     result =
       Enum.chunk_every(slugs, 20)
-      |> Sanbase.Parallel.map(&aggregated_data_metric(metric, &1, from, to, aggregation),
+      |> Sanbase.Parallel.map(&get_aggregated_data(metric, &1, from, to, aggregation),
         timeout: 25_000,
         max_concurrency: 8,
         ordered: false
@@ -237,7 +276,7 @@ defmodule Sanbase.Clickhouse.Metric do
     {:ok, result}
   end
 
-  defp aggregated_data_metric(metric, slugs, from, to, aggregation) when is_list(slugs) do
+  defp get_aggregated_data(metric, slugs, from, to, aggregation) when is_list(slugs) do
     {:ok, asset_map} = slug_asset_id_map()
 
     case Map.take(asset_map, slugs) |> Map.values() do
@@ -247,7 +286,7 @@ defmodule Sanbase.Clickhouse.Metric do
       asset_ids ->
         {:ok, asset_id_map} = asset_id_slug_map()
 
-        {query, args} = aggregated_metric_query(metric, asset_ids, from, to, aggregation)
+        {query, args} = aggregated_data_query(metric, asset_ids, from, to, aggregation)
 
         ClickhouseRepo.query_transform(query, args, fn [asset_id, value] ->
           %{slug: Map.get(asset_id_map, asset_id), value: value}
@@ -259,7 +298,7 @@ defmodule Sanbase.Clickhouse.Metric do
   defp aggregation(:first, value_column, dt_column), do: "argMin(#{value_column}, #{dt_column})"
   defp aggregation(aggr, value_column, _dt_column), do: "#{aggr}(#{value_column})"
 
-  defp metric_query(metric, slug, from, to, interval, aggregation) do
+  defp timeseries_data_query(metric, slug, from, to, interval, aggregation) do
     query = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
@@ -302,7 +341,63 @@ defmodule Sanbase.Clickhouse.Metric do
     {query, args}
   end
 
-  defp aggregated_metric_query(metric, asset_ids, from, to, aggregation) do
+  # SELECT
+  # odt, sum(measure)
+  # FROM distribution_deltas_5min FINAL
+  # PREWHERE
+  # asset_id = ... AND
+  # metric_id = ... AND
+  # dt >= {start_date} AND
+  # dt <= {end_date}
+  # GROUP BY odt
+
+  defp histogram_data_query(metric, slug, datetime) do
+    # query = """
+    # SELECT
+    #   odt,
+    #   sum(measure)
+    # FROM distribution_deltas_5min FINAL
+    # PREWHERE
+    # asset_id = (
+    #   SELECT argMax(asset_id, computed_at)
+    #   FROM asset_metadata
+    #   PREWHERE name = ?q
+    # ) AND
+    # metric_id = (
+    #   SELECT
+    #     argMax(metric_id, computed_at) AS metric_id
+    #   FROM
+    #     metric_metadata
+    #   PREWHERE
+    #     name = ?2
+    # )
+    # dt = toDateTime(?3) AND
+    # GROUP BY odt
+    # """
+
+    query = """
+    SELECT
+      toUnixTimestamp(value),
+      sum(measure)
+    FROM distribution_deltas_5min FINAL
+    PREWHERE
+    asset_id = 329 AND
+    metric_id = 178 AND
+    dt <= toDateTime(?1)
+    GROUP BY value
+    ORDER BY value DESC
+    """
+
+    args = [
+      # metric,
+      # slug,
+      datetime
+    ]
+
+    {query, args}
+  end
+
+  defp aggregated_data_query(metric, asset_ids, from, to, aggregation) do
     query = """
     SELECT
       toUInt32(asset_id),

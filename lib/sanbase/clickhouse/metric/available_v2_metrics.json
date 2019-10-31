@@ -6,7 +6,8 @@
     "access": "free",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "daily_avg_price_usd",
@@ -15,7 +16,8 @@
     "access": "free",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "daily_closing_marketcap_usd",
@@ -24,7 +26,8 @@
     "access": "free",
     "aggregation": "last",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "daily_closing_price_usd",
@@ -33,7 +36,8 @@
     "access": "free",
     "aggregation": "last",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "daily_high_price_usd",
@@ -42,7 +46,8 @@
     "access": "free",
     "aggregation": "max",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "daily_low_price_usd",
@@ -51,7 +56,8 @@
     "access": "free",
     "aggregation": "min",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "daily_opening_price_usd",
@@ -60,7 +66,8 @@
     "access": "free",
     "aggregation": "first",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "daily_trading_volume_usd",
@@ -69,7 +76,8 @@
     "access": "free",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "daily_active_addresses",
@@ -78,7 +86,8 @@
     "access": "free",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mean_realized_price_usd_20y",
@@ -88,7 +97,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mean_realized_price_usd_10y",
@@ -97,7 +107,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mean_realized_price_usd_5y",
@@ -106,7 +117,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mean_realized_price_usd_3y",
@@ -115,7 +127,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mean_realized_price_usd_2y",
@@ -124,7 +137,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mean_realized_price_usd_365d",
@@ -133,7 +147,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mean_realized_price_usd_180d",
@@ -142,7 +157,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mean_realized_price_usd_90d",
@@ -151,7 +167,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mean_realized_price_usd_60d",
@@ -160,7 +177,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mean_realized_price_usd_30d",
@@ -169,7 +187,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mean_realized_price_usd_7d",
@@ -178,7 +197,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mean_realized_price_usd_1d",
@@ -187,7 +207,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
 
   {
@@ -198,7 +219,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
 
   {
@@ -209,7 +231,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mvrv_usd_10y",
@@ -218,7 +241,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mvrv_usd_5y",
@@ -227,7 +251,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mvrv_usd_3y",
@@ -236,7 +261,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mvrv_usd_2y",
@@ -245,7 +271,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mvrv_usd_365d",
@@ -254,7 +281,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mvrv_usd_180d",
@@ -263,7 +291,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mvrv_usd_90d",
@@ -272,7 +301,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mvrv_usd_60d",
@@ -281,7 +311,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mvrv_usd_30d",
@@ -290,7 +321,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mvrv_usd_7d",
@@ -299,7 +331,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "mvrv_usd_1d",
@@ -308,7 +341,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
 
   {
@@ -319,7 +353,8 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "stack_circulation_10y",
@@ -329,7 +364,8 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "stack_circulation_5y",
@@ -339,7 +375,8 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "stack_circulation_3y",
@@ -349,7 +386,8 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "stack_circulation_2y",
@@ -359,7 +397,8 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "stack_circulation_365d",
@@ -369,7 +408,8 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "stack_circulation_180d",
@@ -379,7 +419,8 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "stack_circulation_90d",
@@ -389,7 +430,8 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "stack_circulation_60d",
@@ -399,7 +441,8 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "stack_circulation_30d",
@@ -409,7 +452,8 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "stack_circulation_7d",
@@ -419,7 +463,8 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "stack_circulation_1d",
@@ -429,7 +474,8 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
 
   {
@@ -441,6 +487,7 @@
     "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
+    "data_type": "timeseries",
     "unit": "days"
   },
 
@@ -453,6 +500,7 @@
     "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
+    "data_type": "timeseries",
     "unit": "days"
   },
 
@@ -464,7 +512,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "stack_realized_cap_usd_10y",
@@ -474,7 +523,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
 
   {
@@ -485,7 +535,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "stack_realized_cap_usd_3y",
@@ -495,7 +546,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "stack_realized_cap_usd_2y",
@@ -505,7 +557,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "stack_realized_cap_usd_365d",
@@ -515,7 +568,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "stack_realized_cap_usd_180d",
@@ -525,7 +579,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "stack_realized_cap_usd_90d",
@@ -535,7 +590,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "stack_realized_cap_usd_60d",
@@ -545,7 +601,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "stack_realized_cap_usd_30d",
@@ -555,7 +612,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "stack_realized_cap_usd_7d",
@@ -565,7 +623,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
   {
     "metric": "stack_realized_cap_usd_1d",
@@ -575,7 +634,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
 
   {
@@ -586,7 +646,8 @@
     "access": "restricted",
     "aggregation": "last",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
 
   {
@@ -597,7 +658,8 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "5m",
-    "table": "intraday_metrics"
+    "table": "intraday_metrics",
+    "data_type": "timeseries"
   },
 
   {
@@ -607,7 +669,8 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "5m",
-    "table": "intraday_metrics"
+    "table": "intraday_metrics",
+    "data_type": "timeseries"
   },
   {
     "metric": "exchange_outflow",
@@ -616,7 +679,8 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "5m",
-    "table": "intraday_metrics"
+    "table": "intraday_metrics",
+    "data_type": "timeseries"
   },
   {
     "metric": "exchange_balance",
@@ -625,7 +689,8 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "5m",
-    "table": "intraday_metrics"
+    "table": "intraday_metrics",
+    "data_type": "timeseries"
   },
 
   {
@@ -636,7 +701,8 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "5m",
-    "table": "intraday_metrics"
+    "table": "intraday_metrics",
+    "data_type": "timeseries"
   },
 
   {
@@ -646,7 +712,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
 
   {
@@ -656,7 +723,8 @@
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
   },
 
   {
@@ -666,6 +734,16 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
-    "table": "daily_metrics_v2"
+    "table": "daily_metrics_v2",
+    "data_type": "timeseries"
+  },
+  {
+    "metric": "age_distribution",
+    "human_readable_name": "Age Distribution Histogram",
+    "access": "restricted",
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "distribution_deltas_5min",
+    "data_type": "histogram"
   }
 ]

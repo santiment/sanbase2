@@ -16,6 +16,7 @@ defmodule Sanbase.Metric.Behaviour do
         }
 
   @type timeseries_data_point :: %{datetime: Datetime.t(), value: float()}
+  @type histogram_data :: %{datetime: Datetime.t(), labels: [String.t()], values: list()}
   @type aggregation :: nil | :any | :sum | :avg | :min | :max | :last | :first | :median
 
   @callback timeseries_data(
@@ -27,6 +28,12 @@ defmodule Sanbase.Metric.Behaviour do
               opts :: Keyword.t()
             ) ::
               {:ok, list(timeseries_data_point)} | {:error, String.t()}
+
+  @callback histogram_data(
+              metric :: metric,
+              selector :: any(),
+              datetime :: DateTime.t()
+            ) :: {:ok, histogram_data} | {:error, String.t()}
 
   @callback aggregated_data(
               metric :: metric,
@@ -56,4 +63,6 @@ defmodule Sanbase.Metric.Behaviour do
   @callback restricted_metrics() :: list(metric)
 
   @callback access_map() :: map()
+
+  @optional_callbacks [histogram_data: 3]
 end

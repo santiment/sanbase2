@@ -190,7 +190,13 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
       |> Enum.map(& &1.slug)
       |> Enum.reject(&is_nil/1)
 
-    Metric.get_aggregated("daily_active_addresses", slugs, timeframe_from(), timeframe_to(), :avg)
+    Metric.aggregated_data(
+      "daily_active_addresses",
+      slugs,
+      timeframe_from(),
+      timeframe_to(),
+      :avg
+    )
     |> handle_result()
   end
 

@@ -25,7 +25,7 @@ defmodule Sanbase.Signal.TriggerMetricTest do
     {
       Metric,
       [:passthrough],
-      get: fn _, _, _, _, _ -> {:ok, []} end
+      timeseries_data: fn _, _, _, _, _ -> {:ok, []} end
     }
   ]) do
     # Clean children on exit, otherwise DB calls from async tasks can be attempted
@@ -70,7 +70,7 @@ defmodule Sanbase.Signal.TriggerMetricTest do
       Enum.zip(datetimes, [100, 100, 100, 100, 100, 100, 5000])
       |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
 
-    with_mock Metric, [:passthrough], get: fn _, _, _, _, _ -> {:ok, data} end do
+    with_mock Metric, [:passthrough], timeseries_data: fn _, _, _, _, _ -> {:ok, data} end do
       [triggered] =
         MetricTriggerSettings.type()
         |> UserTrigger.get_active_triggers_by_type()
@@ -103,7 +103,7 @@ defmodule Sanbase.Signal.TriggerMetricTest do
       Enum.zip(datetimes, [100, 100, 100, 100, 100, 100, 500])
       |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
 
-    with_mock Metric, [:passthrough], get: fn _, _, _, _, _ -> {:ok, data} end do
+    with_mock Metric, [:passthrough], timeseries_data: fn _, _, _, _, _ -> {:ok, data} end do
       [triggered] =
         MetricTriggerSettings.type()
         |> UserTrigger.get_active_triggers_by_type()

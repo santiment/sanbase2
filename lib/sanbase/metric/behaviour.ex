@@ -15,21 +15,21 @@ defmodule Sanbase.Metric.Behaviour do
           available_aggregations: list()
         }
 
-  @type metric_result :: %{datetime: Datetime.t(), value: float()}
+  @type timeseries_data_point :: %{datetime: Datetime.t(), value: float()}
   @type aggregation :: nil | :any | :sum | :avg | :min | :max | :last | :first | :median
 
-  @callback get(
-              metric,
+  @callback timeseries_data(
+              metric :: metric,
               selector :: any(),
               from :: DatetTime.t(),
               to :: DateTime.t(),
               interval :: interval,
               opts :: Keyword.t()
             ) ::
-              {:ok, list(metric_result)} | {:error, String.t()}
+              {:ok, list(timeseries_data_point)} | {:error, String.t()}
 
-  @callback get_aggregated(
-              metric,
+  @callback aggregated_data(
+              metric :: metric,
               selector :: any(),
               from :: DatetTime.t(),
               to :: DateTime.t(),

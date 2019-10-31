@@ -8,7 +8,7 @@ defmodule Sanbase.Signal.TriggerDailyActiveAddressesHistoryTest do
 
   setup_with_mocks([
     {Sanbase.Metric, [:passthrough],
-     [get: fn "daily_active_addresses", _, _, _, _, _ -> {:ok, daa_resp()} end]}
+     [timeseries_data: fn "daily_active_addresses", _, _, _, _, _ -> {:ok, daa_resp()} end]}
   ]) do
     :ok
   end

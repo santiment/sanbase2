@@ -75,9 +75,9 @@ defmodule Sanbase.Clickhouse.Metric do
   aggregations are #{inspect(@aggregations -- [nil])}
   """
   @impl Sanbase.Metric.Behaviour
-  def get(metric, slug, from, to, interval, aggregation \\ nil)
+  def timeseries_data(metric, slug, from, to, interval, aggregation \\ nil)
 
-  def get(metric, slug, from, to, interval, aggregation) do
+  def timeseries_data(metric, slug, from, to, interval, aggregation) do
     case metric in @metrics_mapset do
       false ->
         metric_not_available_error(metric)
@@ -89,17 +89,17 @@ defmodule Sanbase.Clickhouse.Metric do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def get_aggregated(metric, slug, from, to, aggregation \\ nil)
+  def aggregated_data(metric, slug, from, to, aggregation \\ nil)
 
-  def get_aggregated(_metric, nil, _from, _to, _aggregation), do: {:ok, []}
-  def get_aggregated(_metric, [], _from, _to, _aggregation), do: {:ok, []}
+  def aggregated_data(_metric, nil, _from, _to, _aggregation), do: {:ok, []}
+  def aggregated_data(_metric, [], _from, _to, _aggregation), do: {:ok, []}
 
-  def get_aggregated(_metric, _slug, _from, _to, aggregation)
+  def aggregated_data(_metric, _slug, _from, _to, aggregation)
       when aggregation not in @aggregations do
     {:error, "The aggregation '#{inspect(aggregation)}' is not supported"}
   end
 
-  def get_aggregated(metric, slug_or_slugs, from, to, aggregation)
+  def aggregated_data(metric, slug_or_slugs, from, to, aggregation)
       when is_binary(slug_or_slugs) or is_list(slug_or_slugs) do
     slugs = slug_or_slugs |> List.wrap()
 
@@ -109,7 +109,7 @@ defmodule Sanbase.Clickhouse.Metric do
 
       true ->
         aggregation = aggregation || Map.get(@aggregation_map, metric)
-        get_aggregated_metric(metric, slugs, from, to, aggregation)
+        aggregated_data_metric(metric, slugs, from, to, aggregation)
     end
   end
 
@@ -222,11 +222,11 @@ defmodule Sanbase.Clickhouse.Metric do
     end)
   end
 
-  defp get_aggregated_metric(metric, slugs, from, to, aggregation)
+  defp aggregated_data_metric(metric, slugs, from, to, aggregation)
        when is_list(slugs) and length(slugs) > 20 do
     result =
       Enum.chunk_every(slugs, 20)
-      |> Sanbase.Parallel.map(&get_aggregated_metric(metric, &1, from, to, aggregation),
+      |> Sanbase.Parallel.map(&aggregated_data_metric(metric, &1, from, to, aggregation),
         timeout: 25_000,
         max_concurrency: 8,
         ordered: false
@@ -237,7 +237,7 @@ defmodule Sanbase.Clickhouse.Metric do
     {:ok, result}
   end
 
-  defp get_aggregated_metric(metric, slugs, from, to, aggregation) when is_list(slugs) do
+  defp aggregated_data_metric(metric, slugs, from, to, aggregation) when is_list(slugs) do
     {:ok, asset_map} = slug_asset_id_map()
 
     case Map.take(asset_map, slugs) |> Map.values() do

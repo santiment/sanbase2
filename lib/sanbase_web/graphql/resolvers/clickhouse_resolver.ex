@@ -123,7 +123,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   end
 
   def mvrv_ratio(_root, %{slug: _, from: _, to: _, interval: _} = args, _resolution) do
-    SanbaseWeb.Graphql.Resolvers.MetricResolver.get_timeseries_data(
+    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
       %{},
       args,
       %{source: %{metric: "mvrv_usd"}}
@@ -136,7 +136,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         %{slug: _, from: _, to: _, interval: _} = args,
         _resolution
       ) do
-    SanbaseWeb.Graphql.Resolvers.MetricResolver.get_timeseries_data(
+    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
       %{},
       args,
       %{source: %{metric: "circulation_1d"}}
@@ -149,7 +149,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         %{slug: _, from: _, to: _, interval: _} = args,
         _resolution
       ) do
-    SanbaseWeb.Graphql.Resolvers.MetricResolver.get_timeseries_data(
+    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
       %{},
       args,
       %{source: %{metric: "velocity"}}
@@ -162,7 +162,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         %{slug: _, from: _, to: _, interval: _} = args,
         _resolution
       ) do
-    SanbaseWeb.Graphql.Resolvers.MetricResolver.get_timeseries_data(
+    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
       %{},
       args,
       %{source: %{metric: "daily_active_addresses"}}
@@ -264,13 +264,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         _resolution
       ) do
     with {:ok, nvt_circulation} <-
-           SanbaseWeb.Graphql.Resolvers.MetricResolver.get_timeseries_data(
+           SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
              %{},
              args,
              %{source: %{metric: "nvt"}}
            ),
          {:ok, nvt_transaction_volume} <-
-           SanbaseWeb.Graphql.Resolvers.MetricResolver.get_timeseries_data(
+           SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
              %{},
              args,
              %{source: %{metric: "nvt_transaction_volume"}}

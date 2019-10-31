@@ -30,7 +30,7 @@ defmodule Sanbase.Etherbi.AverageTokenAgeConsumedInDaysApiTest do
     with_mocks([
       {Sanbase.Metric, [:passthrough],
        [
-         get: fn
+         timeseries_data: fn
            "age_destroyed", _, _, _, _, _ ->
              {:ok,
               [

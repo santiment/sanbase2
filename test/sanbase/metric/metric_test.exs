@@ -17,9 +17,11 @@ defmodule Sanbase.MetricTest do
   setup_with_mocks([
     {Sanbase.TechIndicators, [:passthrough],
      social_volume_projects: fn -> {:ok, ["bitcoin", "santiment"]} end},
-    {Sanbase.Clickhouse.Metric, [], get: fn _, _, _, _, _, _ -> {:ok, @resp} end},
-    {Sanbase.Clickhouse.Github.MetricAdapter, [], get: fn _, _, _, _, _, _ -> {:ok, @resp} end},
-    {Sanbase.SocialData.MetricAdapter, [], get: fn _, _, _, _, _, _ -> {:ok, @resp} end}
+    {Sanbase.Clickhouse.Metric, [], timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
+    {Sanbase.Clickhouse.Github.MetricAdapter, [],
+     timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
+    {Sanbase.SocialData.MetricAdapter, [],
+     timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end}
   ]) do
     []
   end
@@ -29,7 +31,7 @@ defmodule Sanbase.MetricTest do
 
     results =
       for metric <- metrics do
-        Metric.get(metric, "santiment", @from, @to, "1d", :avg)
+        Metric.timeseries_data(metric, "santiment", @from, @to, "1d", :avg)
       end
 
     assert Enum.all?(results, &match?({:ok, _}, &1))
@@ -42,7 +44,7 @@ defmodule Sanbase.MetricTest do
 
     results =
       for metric <- rand_metrics do
-        Metric.get(metric, "santiment", @from, @to, "1d", :avg)
+        Metric.timeseries_data(metric, "santiment", @from, @to, "1d", :avg)
       end
 
     assert Enum.all?(results, &match?({:error, _}, &1))
@@ -54,7 +56,7 @@ defmodule Sanbase.MetricTest do
 
     results =
       for aggregation <- aggregations do
-        Metric.get(metric, "santiment", @from, @to, "1d", aggregation)
+        Metric.timeseries_data(metric, "santiment", @from, @to, "1d", aggregation)
       end
 
     assert Enum.all?(results, &match?({:ok, _}, &1))
@@ -69,7 +71,7 @@ defmodule Sanbase.MetricTest do
 
     results =
       for aggregation <- rand_aggregations do
-        Metric.get(metric, "santiment", @from, @to, "1d", aggregation)
+        Metric.timeseries_data(metric, "santiment", @from, @to, "1d", aggregation)
       end
 
     assert Enum.all?(results, &match?({:error, _}, &1))
@@ -78,7 +80,7 @@ defmodule Sanbase.MetricTest do
   test "fetch a single metric" do
     [metric | _] = Metric.available_metrics()
 
-    result = Metric.get(metric, "santiment", @from, @to, "1d", :avg)
+    result = Metric.timeseries_data(metric, "santiment", @from, @to, "1d", :avg)
 
     assert result == {:ok, @resp}
   end

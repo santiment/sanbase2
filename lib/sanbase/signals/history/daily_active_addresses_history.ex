@@ -55,7 +55,7 @@ defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
       to = Timex.now()
       shift = @historical_days_from + str_to_days(time_window) - 1
 
-      Sanbase.Metric.get(
+      Sanbase.Metric.timeseries_data(
         "daily_active_addresses",
         slug,
         Timex.shift(to, days: -shift),

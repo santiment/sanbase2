@@ -13,7 +13,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
   alias Sanbase.Signal.UserTrigger
-  alias Sanbase.Following.UserFollower
+  alias Sanbase.Auth.UserFollower
 
   alias __MODULE__
 
@@ -167,11 +167,11 @@ defmodule Sanbase.Timeline.TimelineEvent do
   end
 
   defp events_by_followed_users(query, user_id, limit) do
-    following = UserFollower.followed_by(user_id)
+    following_ids = UserFollower.followed_by(user_id) |> Enum.map(& &1.id)
 
     from(
       event in query,
-      where: event.user_id in ^following,
+      where: event.user_id in ^following_ids,
       order_by: [desc: event.inserted_at],
       limit: ^limit,
       preload: [:user_trigger, :post, :user_list, :user]

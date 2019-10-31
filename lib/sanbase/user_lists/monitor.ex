@@ -186,13 +186,13 @@ defmodule Sanbase.UserList.Monitor do
   end
 
   defp insights_by_followed_users_or_sanfamily(insights, user_id) do
-    followed_users = Sanbase.Following.UserFollower.followed_by(user_id)
+    followed_users_ids = Sanbase.Auth.UserFollower.followed_by(user_id) |> Enum.map(& &1.id)
     san_family_ids = san_family_ids()
 
     insights
     |> Enum.filter(fn %Post{user_id: author_id} ->
       author_id != user_id and
-        (author_id in san_family_ids or author_id in followed_users)
+        (author_id in san_family_ids or author_id in followed_users_ids)
     end)
   end
 

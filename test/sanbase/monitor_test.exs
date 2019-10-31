@@ -7,7 +7,7 @@ defmodule Sanbase.MonitorTest do
   alias Sanbase.UserList
   alias Sanbase.UserList.Monitor
   alias Sanbase.Insight.Post
-  alias Sanbase.Following.UserFollower
+  alias Sanbase.Auth.UserFollower
 
   setup_with_mocks([
     {Sanbase.Prices.Store, [:passthrough],

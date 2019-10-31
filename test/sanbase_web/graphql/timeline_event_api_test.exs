@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   alias Sanbase.Insight.{Poll, Post}
   alias Sanbase.UserList
   alias Sanbase.Timeline.TimelineEvent
-  alias Sanbase.Following.UserFollower
+  alias Sanbase.Auth.UserFollower
 
   setup do
     poll = Poll.find_or_insert_current_poll!()

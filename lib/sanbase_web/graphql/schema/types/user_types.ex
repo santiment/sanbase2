@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
   use Absinthe.Schema.Notation
   use Absinthe.Ecto, repo: Sanbase.Repo
 
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
   alias SanbaseWeb.Graphql.Resolvers.{
     ApikeyResolver,
@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     EthAccountResolver,
     UserSettingsResolver,
     UserTriggerResolver,
+    UserListResolver,
     PostResolver,
     BillingResolver
   }
@@ -26,14 +27,23 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:username, :string)
 
     field :triggers, list_of(:trigger) do
-      resolve(&UserTriggerResolver.public_triggers/3)
+      cache_resolve(&UserTriggerResolver.public_triggers/3, ttl: 60)
     end
 
-    field(:following, list_of(:user_follower), resolve: assoc(:following))
-    field(:followers, list_of(:user_follower), resolve: assoc(:followers))
+    field :following, :follower_data do
+      resolve(&UserResolver.following/3)
+    end
+
+    field :followers, :follower_data do
+      resolve(&UserResolver.followers/3)
+    end
 
     field :insights, list_of(:post) do
-      resolve(&PostResolver.public_insights/3)
+      cache_resolve(&PostResolver.public_insights/3, ttl: 60)
+    end
+
+    field :watchlists, list_of(:user_list) do
+      cache_resolve(&UserListResolver.public_watchlists/3, ttl: 60)
     end
   end
 
@@ -81,8 +91,13 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       resolve(&UserTriggerResolver.triggers/3)
     end
 
-    field(:following, list_of(:user_follower), resolve: assoc(:following))
-    field(:followers, list_of(:user_follower), resolve: assoc(:followers))
+    field :following, :follower_data do
+      cache_resolve(&UserResolver.following/3)
+    end
+
+    field :followers, :follower_data do
+      cache_resolve(&UserResolver.followers/3)
+    end
 
     field :insights, list_of(:post) do
       resolve(&PostResolver.insights/3)
@@ -146,6 +161,11 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:sanbase, non_null(:boolean))
     field(:spreadsheet, non_null(:boolean))
     field(:sangraphs, non_null(:boolean))
+  end
+
+  object :follower_data do
+    field(:count, non_null(:integer))
+    field(:users, non_null(list_of(:public_user)))
   end
 
   object :user_follower do

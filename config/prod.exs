@@ -9,7 +9,7 @@ config :sanbase, SanbaseWeb.Endpoint,
   version: Application.spec(:sanbase, :vsn),
   load_from_system_env: true,
   secret_key_base: "${SECRET_KEY_BASE}",
-  check_origin: false
+  check_origin: ["//*.santiment.net"]
 
 config :sanbase, ecto_repos: [Sanbase.Repo]
 

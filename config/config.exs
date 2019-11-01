@@ -29,6 +29,10 @@ config :sanbase, Sanbase.Kafka,
   consumer_group_basename: {:system, "KAFKA_CONSUMER_GROUP_BASENAME", "sanbase_kafka_consumer"}
 
 config :kaffe,
+  producer: [
+    endpoints: [{"blockchain-kafka-kafka", 9092}],
+    topics: ["sanbase_prices"]
+  ],
   consumer: [
     message_handler: Sanbase.Kafka.MessageProcessor,
     async_message_ack: false,

@@ -162,6 +162,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
     measurement_points |> Store.import()
 
+    messages =
+      price_list
+      |> Enum.flat_map(&PricePoint.convert_to_json(&1, "coinmarketcap", slug))
+
+    SanExporterEx.Producer.send_data_async("sanbase_prices", messages)
+
     update_last_cmc_history_datetime(
       Measurement.name_from(project),
       measurement_points,

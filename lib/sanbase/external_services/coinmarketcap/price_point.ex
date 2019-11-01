@@ -12,6 +12,21 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
     :price_btc
   ]
 
+  def convert_to_json(%__MODULE__{datetime: datetime} = point, source, slug) do
+    key = source <> slug <> to_string(DateTime.to_unix(datetime, :nanosecond))
+
+    value =
+      %{
+        timestamp: DateTime.to_unix(datetime, :nanosecond),
+        source: source,
+        slug: slug
+      }
+      |> Map.merge(price_point_fields(point))
+      |> Jason.encode!()
+
+    {key, value}
+  end
+
   def convert_to_measurement(%__MODULE__{datetime: datetime} = point, name) do
     %Measurement{
       timestamp: DateTime.to_unix(datetime, :nanosecond),

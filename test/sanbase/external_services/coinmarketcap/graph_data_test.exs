@@ -37,10 +37,31 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
     from_datetime = DateTime.from_unix!(1_507_991_665_000, :millisecond)
     to_datetime = DateTime.from_unix!(1_508_078_065_000, :millisecond)
 
-    GraphData.fetch_price_stream("santiment", from_datetime, to_datetime)
+    GraphData.fetch_price_stream("bitcoin", from_datetime, to_datetime)
     |> Enum.map(fn {stream, interval} -> {stream |> Enum.map(& &1), interval} end)
     |> Enum.take(1)
     |> Enum.map(fn {[%PricePoint{datetime: datetime, price_usd: price_usd} | _], _interval} ->
+      assert datetime == from_datetime
+      assert price_usd == 5704.29
+    end)
+  end
+
+  test "fetching and storing prices of a token" do
+    Tesla.Mock.mock(fn %{method: :get} ->
+      %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "data/btc_graph_data.json"))}
+    end)
+
+    from_datetime = DateTime.from_unix!(1_507_991_665_000, :millisecond)
+    to_datetime = DateTime.from_unix!(1_508_078_065_000, :millisecond)
+
+    GraphData.fetch_price_stream("bitcoin", from_datetime, to_datetime)
+    |> Enum.map(fn {stream, interval} -> {stream |> Enum.map(& &1), interval} end)
+    |> Enum.take(1)
+    |> Enum.map(fn {[%PricePoint{datetime: datetime, price_usd: price_usd} = price_point | _],
+                    _interval} ->
+      PricePoint.convert_to_json(price_point, "coinmarketcap", "bitcoin")
+      |> IO.inspect()
+
       assert datetime == from_datetime
       assert price_usd == 5704.29
     end)

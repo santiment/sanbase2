@@ -48,7 +48,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def aggregated_data(metric, organizations, from, to, _aggregation)
+  def aggregated_timeseries_data(metric, organizations, from, to, _aggregation)
       when is_binary(organizations) or is_list(organizations) do
     apply(
       Github,

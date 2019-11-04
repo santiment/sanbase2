@@ -35,7 +35,7 @@ defmodule Sanbase.Metric.Behaviour do
               datetime :: DateTime.t()
             ) :: {:ok, histogram_data} | {:error, String.t()}
 
-  @callback aggregated_data(
+  @callback aggregated_timeseries_data(
               metric :: metric,
               selector :: any(),
               from :: DatetTime.t(),

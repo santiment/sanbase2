@@ -67,7 +67,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def aggregated_data(metric, slug, from, to, _aggregation)
+  def aggregated_timeseries_data(metric, slug, from, to, _aggregation)
       when is_binary(slug) and metric in @social_volume_timeseries_metrics do
     [source, _] = String.split(metric, "_", parts: 2)
 
@@ -88,7 +88,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     end
   end
 
-  def aggregated_data(metric, slug, from, to, _aggregation)
+  def aggregated_timeseries_data(metric, slug, from, to, _aggregation)
       when metric in @social_dominance_timeseries_metrics do
     [source, _] = String.split(metric, "_", parts: 2)
 

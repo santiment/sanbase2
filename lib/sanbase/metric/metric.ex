@@ -33,7 +33,7 @@ defmodule Sanbase.Metric do
                                           )
 
     @histogram_metric_module_mapping_acc Enum.map(
-                                           module.available_timeseries_metrics(),
+                                           module.available_histogram_metrics(),
                                            fn metric -> %{metric: metric, module: module} end
                                          )
   end
@@ -41,11 +41,19 @@ defmodule Sanbase.Metric do
   @available_aggregations List.flatten(@available_aggregations_acc) |> Enum.uniq()
   @free_metrics List.flatten(@free_metrics_acc) |> Enum.uniq()
   @restricted_metrics List.flatten(@restricted_metrics_acc) |> Enum.uniq()
-  @metrics_module_mapping List.flatten(@metric_module_mapping_acc) |> Enum.uniq()
+  @timeseries_metric_module_mapping List.flatten(@timeseries_metric_module_mapping_acc)
+                                    |> Enum.uniq()
+
+  @histogram_metric_module_mapping List.flatten(@histogram_metric_module_mapping_acc)
+                                   |> Enum.uniq()
+
+  @metric_module_mapping (@histogram_metric_module_mapping ++ @timeseries_metric_module_mapping)
+                         |> Enum.uniq()
+
   @access_map Enum.reduce(@access_map_acc, %{}, fn map, acc -> Map.merge(map, acc) end)
   @aggregation_arg_supported [nil] ++ @available_aggregations
 
-  @metrics Enum.map(@metrics_module_mapping, & &1.metric)
+  @metrics Enum.map(@timeseries_metric_module_mapping, & &1.metric)
   @metrics_mapset MapSet.new(@metrics)
 
   @doc ~s"""
@@ -61,40 +69,7 @@ defmodule Sanbase.Metric do
     {:error, "The aggregation '#{inspect(aggregation)}' is not supported"}
   end
 
-  @doc ~s"""
-  Get the aggregated value for a metric, an identifier and time range.
-  The metric's aggregation function can be changed by the last optional parameter.
-  The available aggregations are #{inspect(@available_aggregations)}. If no aggregation is
-  provided, a default one (based on the metric) will be used.
-  """
-  def aggregated_data(metric, identifier, from, to, aggregation \\ nil)
-
-  @doc ~s"""
-  Get the human readable name representation of a given metric
-  """
-  def human_readable_name(metric)
-
-  @doc ~s"""
-  Get metadata for a given metric. This includes:
-  - The minimal interval for which the metric is available
-    (every 5 minutes, once a day, etc.)
-  - The default aggregation applied if none is provided
-  - The available aggregations for the metric
-  - The available slugs for the metric
-  """
-  def metadata(metric)
-
-  @doc ~s"""
-  Get the first datetime for which a given metric is available for a given slug
-  """
-  def first_datetime(metric, slug)
-
-  @doc ~s"""
-  Get all available slugs for a given metric
-  """
-  def available_slugs(metric)
-
-  for %{metric: metric, module: module} <- @metrics_module_mapping do
+  for %{metric: metric, module: module} <- @timeseries_metric_module_mapping do
     def timeseries_data(unquote(metric), identifier, from, to, interval, aggregation) do
       unquote(module).timeseries_data(
         unquote(metric),
@@ -105,9 +80,21 @@ defmodule Sanbase.Metric do
         aggregation
       )
     end
+  end
 
-    def aggregated_data(unquote(metric), identifier, from, to, aggregation) do
-      unquote(module).aggregated_data(
+  def timeseries_data(metric, _, _, _, _, _), do: metric_not_available_error(metric)
+
+  @doc ~s"""
+  Get the aggregated value for a metric, an identifier and time range.
+  The metric's aggregation function can be changed by the last optional parameter.
+  The available aggregations are #{inspect(@available_aggregations)}. If no aggregation is
+  provided, a default one (based on the metric) will be used.
+  """
+  def aggregated_timeseries_data(metric, identifier, from, to, aggregation \\ nil)
+
+  for %{metric: metric, module: module} <- @timeseries_metric_module_mapping do
+    def aggregated_timeseries_data(unquote(metric), identifier, from, to, aggregation) do
+      unquote(module).aggregated_timeseries_data(
         unquote(metric),
         identifier,
         from,
@@ -115,27 +102,73 @@ defmodule Sanbase.Metric do
         aggregation
       )
     end
+  end
 
+  @doc ~s"""
+  Get a histogram for a given metric
+  """
+  def histogram_data(metric, identifier, datetime)
+
+  for %{metric: metric, module: module} <- @histogram_metric_module_mapping do
+    def histogram_data(unquote(metric), identifier, datetime) do
+      unquote(module).histogram_data(
+        unquote(metric),
+        identifier,
+        datetime
+      )
+    end
+  end
+
+  def histogram_data(metric, _, _), do: metric_not_available_error(metric)
+
+  @doc ~s"""
+  Get the human readable name representation of a given metric
+  """
+  for %{metric: metric, module: module} <- @metric_module_mapping do
     def human_readable_name(unquote(metric)) do
       unquote(module).human_readable_name(unquote(metric))
     end
+  end
 
+  @doc ~s"""
+  Get metadata for a given metric. This includes:
+  - The minimal interval for which the metric is available
+    (every 5 minutes, once a day, etc.)
+  - The default aggregation applied if none is provided
+  - The available aggregations for the metric
+  - The available slugs for the metric
+  """
+
+  for %{metric: metric, module: module} <- @metric_module_mapping do
     def metadata(unquote(metric)) do
       unquote(module).metadata(unquote(metric))
     end
+  end
 
+  def metadata(metric), do: metric_not_available_error(metric)
+
+  @doc ~s"""
+  Get the first datetime for which a given metric is available for a given slug
+  """
+
+  for %{metric: metric, module: module} <- @metric_module_mapping do
     def first_datetime(unquote(metric), slug) do
       unquote(module).first_datetime(unquote(metric), slug)
     end
+  end
 
+  def first_datetime(metric, _), do: metric_not_available_error(metric)
+
+  @doc ~s"""
+  Get all available slugs for a given metric
+  """
+  for %{metric: metric, module: module} <- @metric_module_mapping do
     def available_slugs(unquote(metric)) do
       unquote(module).available_slugs(unquote(metric))
     end
   end
 
-  def timeseries_data(metric, _, _, _, _, _), do: metric_not_available_error(metric)
-  def metadata(metric), do: metric_not_available_error(metric)
-  def first_datetime(metric, _), do: metric_not_available_error(metric)
+  def available_slugs(metric), do: metric_not_available_error(metric)
 
   @doc ~s"""
   Get all available aggregations

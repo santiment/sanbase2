@@ -6,7 +6,7 @@ defmodule Sanbase.ExAdmin.Statistics.UsersWithMonitoredWatchlist do
 
     content do
       h2 do
-        div("Users with watchlist")
+        div("Users with monitored watchlist/watchlist weekly summary")
       end
 
       table do

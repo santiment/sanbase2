@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.Subscription do
-  @callback publish(String.t()) :: :ok
+  @callback publish(map()) :: :ok
 
   @kafka_topic_module_map %{
     "exchange_trades" => SanbaseWeb.Graphql.Subscriptions.ExchangeTrades,

@@ -144,6 +144,8 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Get the human readable name representation of a given metric
   """
+  def human_reanable_name(metric)
+
   for %{metric: metric, module: module} <- @metric_module_mapping do
     def human_readable_name(unquote(metric)) do
       unquote(module).human_readable_name(unquote(metric))
@@ -160,6 +162,7 @@ defmodule Sanbase.Metric do
   - The available aggregations for the metric
   - The available slugs for the metric
   """
+  def metadata(metric)
 
   for %{metric: metric, module: module} <- @metric_module_mapping do
     def metadata(unquote(metric)) do
@@ -172,6 +175,7 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Get the first datetime for which a given metric is available for a given slug
   """
+  def first_datetime(metric, slug)
 
   for %{metric: metric, module: module} <- @metric_module_mapping do
     def first_datetime(unquote(metric), slug) do
@@ -184,6 +188,8 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Get all available slugs for a given metric
   """
+  def available_slugs(metric)
+
   for %{metric: metric, module: module} <- @metric_module_mapping do
     def available_slugs(unquote(metric)) do
       unquote(module).available_slugs(unquote(metric))

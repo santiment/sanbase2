@@ -1,8 +1,9 @@
 [
   {
+    "human_readable_name": "Daily Average USD Marketcap",
+    "name": "daily_avg_marketcap_usd",
     "metric": "daily_avg_marketcap_usd",
     "version": "2019-01-01",
-    "human_readable_name": "Daily Average USD Marketcap",
     "access": "free",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -10,9 +11,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Daily Average USD Price",
+    "name": "daily_avg_price_usd",
     "metric": "daily_avg_price_usd",
     "version": "2019-01-01",
-    "human_readable_name": "Daily Average USD Price",
     "access": "free",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -20,9 +22,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Daily Closing USD Marketcap",
+    "name": "daily_closing_marketcap_usd",
     "metric": "daily_closing_marketcap_usd",
     "version": "2019-01-01",
-    "human_readable_name": "Daily Closing USD Marketcap",
     "access": "free",
     "aggregation": "last",
     "min_interval": "1d",
@@ -30,9 +33,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Daily Closing USD Price",
+    "name": "daily_closing_price_usd",
     "metric": "daily_closing_price_usd",
     "version": "2019-01-01",
-    "human_readable_name": "Daily Closing USD Price",
     "access": "free",
     "aggregation": "last",
     "min_interval": "1d",
@@ -40,9 +44,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Daily High USD Price",
+    "name": "daily_high_price_usd",
     "metric": "daily_high_price_usd",
     "version": "2019-01-01",
-    "human_readable_name": "Daily High USD Price",
     "access": "free",
     "aggregation": "max",
     "min_interval": "1d",
@@ -50,9 +55,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Daily Low USD Price",
+    "name": "daily_low_price_usd",
     "metric": "daily_low_price_usd",
     "version": "2019-01-01",
-    "human_readable_name": "Daily Low USD Price",
     "access": "free",
     "aggregation": "min",
     "min_interval": "1d",
@@ -60,9 +66,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Daily Opening USD Price",
+    "name": "daily_opening_price_usd",
     "metric": "daily_opening_price_usd",
     "version": "2019-01-01",
-    "human_readable_name": "Daily Opening USD Price",
     "access": "free",
     "aggregation": "first",
     "min_interval": "1d",
@@ -70,9 +77,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Daily Trading USD Volume",
+    "name": "daily_trading_volume_usd",
     "metric": "daily_trading_volume_usd",
     "version": "2019-01-01",
-    "human_readable_name": "Daily Trading USD Volume",
     "access": "free",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -80,9 +88,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Daily Active Addresses",
+    "name": "daily_active_addresses",
     "metric": "daily_active_addresses",
     "version": "2019-01-01",
-    "human_readable_name": "Daily Active Addresses",
     "access": "free",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -90,10 +99,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Mean Realized USD Price",
+    "name": "mean_realized_price_usd",
     "metric": "mean_realized_price_usd_20y",
     "version": "2019-01-01",
-    "human_readable_name": "Mean Realized USD Price",
-    "alias": "mean_realized_price_usd",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -101,9 +110,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 10 years",
+    "name": "mean_realized_price_usd_10y",
     "metric": "mean_realized_price_usd_10y",
     "version": "2019-01-01",
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 10 years",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -111,9 +121,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 5 years",
+    "name": "mean_realized_price_usd_5y",
     "metric": "mean_realized_price_usd_5y",
     "version": "2019-01-01",
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 5 years",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -121,9 +132,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 3 years",
+    "name": "mean_realized_price_usd_3y",
     "metric": "mean_realized_price_usd_3y",
     "version": "2019-01-01",
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 3 years",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -131,9 +143,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 2 years",
+    "name": "mean_realized_price_usd_2y",
     "metric": "mean_realized_price_usd_2y",
     "version": "2019-01-01",
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 2 years",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -141,9 +154,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 1 year",
+    "name": "mean_realized_price_usd_365d",
     "metric": "mean_realized_price_usd_365d",
     "version": "2019-01-01",
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 1 year",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -151,9 +165,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 180 days",
+    "name": "mean_realized_price_usd_180d",
     "metric": "mean_realized_price_usd_180d",
     "version": "2019-01-01",
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 180 days",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -161,9 +176,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 90 days",
+    "name": "mean_realized_price_usd_90d",
     "metric": "mean_realized_price_usd_90d",
     "version": "2019-01-01",
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 90 days",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -171,9 +187,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 60 days",
+    "name": "mean_realized_price_usd_60d",
     "metric": "mean_realized_price_usd_60d",
     "version": "2019-01-01",
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 60 days",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -181,9 +198,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 30 days",
+    "name": "mean_realized_price_usd_30d",
     "metric": "mean_realized_price_usd_30d",
     "version": "2019-01-01",
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 30 days",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -191,9 +209,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 7 days",
+    "name": "mean_realized_price_usd_7d",
     "metric": "mean_realized_price_usd_7d",
     "version": "2019-01-01",
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 7 days",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -201,9 +220,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 1 day",
+    "name": "mean_realized_price_usd_1d",
     "metric": "mean_realized_price_usd_1d",
     "version": "2019-01-01",
-    "human_readable_name": "Mean Realized USD Price for coins that moved in the past 1 day",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -212,10 +232,10 @@
   },
 
   {
+    "human_readable_name": "MVRV Long/Short Difference",
+    "name": "mvrv_usd_long_short_diff",
     "metric": "mvrv_usd_long_short_diff",
     "version": "2019-01-01",
-    "human_readable_name": "MVRV Long/Short Difference",
-    "alias": "mvrv_long_short_diff_usd",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -224,10 +244,10 @@
   },
 
   {
+    "human_readable_name": "MVRV",
+    "name": "mvrv_usd",
     "metric": "mvrv_usd_20y",
     "version": "2019-01-01",
-    "human_readable_name": "MVRV",
-    "alias": "mvrv_usd",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -235,9 +255,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "MVRV for coins that moved in the past 10 years",
+    "name": "mvrv_usd_10y",
     "metric": "mvrv_usd_10y",
     "version": "2019-01-01",
-    "human_readable_name": "MVRV for coins that moved in the past 10 years",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -245,9 +266,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "MVRV for coins that moved in the past 5 years",
+    "name": "mvrv_usd_5y",
     "metric": "mvrv_usd_5y",
     "version": "2019-01-01",
-    "human_readable_name": "MVRV for coins that moved in the past 5 years",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -255,9 +277,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "MVRV for coins that moved in the past 3 years",
+    "name": "mvrv_usd_3y",
     "metric": "mvrv_usd_3y",
     "version": "2019-01-01",
-    "human_readable_name": "MVRV for coins that moved in the past 3 years",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -265,9 +288,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "MVRV for coins that moved in the past 2 years",
+    "name": "mvrv_usd_2y",
     "metric": "mvrv_usd_2y",
     "version": "2019-01-01",
-    "human_readable_name": "MVRV for coins that moved in the past 2 years",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -275,9 +299,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "MVRV for coins that moved in the past 1 year",
+    "name": "mvrv_usd_365d",
     "metric": "mvrv_usd_365d",
     "version": "2019-01-01",
-    "human_readable_name": "MVRV for coins that moved in the past 1 year",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -285,9 +310,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "MVRV for coins that moved in the past 180 days",
+    "name": "mvrv_usd_180d",
     "metric": "mvrv_usd_180d",
     "version": "2019-01-01",
-    "human_readable_name": "MVRV for coins that moved in the past 180 days",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -295,9 +321,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "MVRV for coins that moved in the past 90 days",
+    "name": "mvrv_usd_90d",
     "metric": "mvrv_usd_90d",
     "version": "2019-01-01",
-    "human_readable_name": "MVRV for coins that moved in the past 90 days",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -305,9 +332,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "MVRV for coins that moved in the past 60 days",
+    "name": "mvrv_usd_60d",
     "metric": "mvrv_usd_60d",
     "version": "2019-01-01",
-    "human_readable_name": "MVRV for coins that moved in the past 60 days",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -315,9 +343,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "MVRV for coins that moved in the past 30 days",
+    "name": "mvrv_usd_30d",
     "metric": "mvrv_usd_30d",
     "version": "2019-01-01",
-    "human_readable_name": "MVRV for coins that moved in the past 30 days",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -325,9 +354,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "MVRV for coins that moved in the past 7 days",
+    "name": "mvrv_usd_7d",
     "metric": "mvrv_usd_7d",
     "version": "2019-01-01",
-    "human_readable_name": "MVRV for coins that moved in the past 7 days",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -335,9 +365,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "MVRV for coins that moved in the past 1 day",
+    "name": "mvrv_usd_1d",
     "metric": "mvrv_usd_1d",
     "version": "2019-01-01",
-    "human_readable_name": "MVRV for coins that moved in the past 1 day",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -346,10 +377,10 @@
   },
 
   {
+    "human_readable_name": "Circulation",
+    "name": "circulation",
     "metric": "stack_circulation_20y",
     "version": "2019-01-01",
-    "human_readable_name": "Circulation",
-    "alias": "circulation",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
@@ -357,10 +388,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Circulation for coins that moved in the past 10 years",
+    "name": "circulation_10y",
     "metric": "stack_circulation_10y",
     "version": "2019-01-01",
-    "human_readable_name": "Circulation for coins that moved in the past 10 years",
-    "alias": "circulation_10y",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
@@ -368,10 +399,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Circulation for coins that moved in the past 5 years",
+    "name": "circulation_5y",
     "metric": "stack_circulation_5y",
     "version": "2019-01-01",
-    "human_readable_name": "Circulation for coins that moved in the past 5 years",
-    "alias": "circulation_5y",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
@@ -379,10 +410,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Circulation for coins that moved in the past 3 years",
+    "name": "circulation_3y",
     "metric": "stack_circulation_3y",
     "version": "2019-01-01",
-    "human_readable_name": "Circulation for coins that moved in the past 3 years",
-    "alias": "circulation_3y",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
@@ -390,10 +421,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Circulation for coins that moved in the past 2 years",
+    "name": "circulation_2y",
     "metric": "stack_circulation_2y",
     "version": "2019-01-01",
-    "human_readable_name": "Circulation for coins that moved in the past 2 years",
-    "alias": "circulation_2y",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
@@ -401,10 +432,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Circulation for coins that moved in the past 1 year",
+    "name": "circulation_365d",
     "metric": "stack_circulation_365d",
     "version": "2019-01-01",
-    "human_readable_name": "Circulation for coins that moved in the past 1 year",
-    "alias": "circulation_365d",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
@@ -412,10 +443,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Circulation for coins that moved in the past 180 days",
+    "name": "circulation_180d",
     "metric": "stack_circulation_180d",
     "version": "2019-01-01",
-    "human_readable_name": "Circulation for coins that moved in the past 180 days",
-    "alias": "circulation_180d",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
@@ -423,10 +454,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Circulation for coins that moved in the past 90 days",
+    "name": "circulation_90d",
     "metric": "stack_circulation_90d",
     "version": "2019-01-01",
-    "human_readable_name": "Circulation for coins that moved in the past 90 days",
-    "alias": "circulation_90d",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
@@ -434,10 +465,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Circulation for coins that moved in the past 60 days",
+    "name": "circulation_60d",
     "metric": "stack_circulation_60d",
     "version": "2019-01-01",
-    "human_readable_name": "Circulation for coins that moved in the past 60 days",
-    "alias": "circulation_60d",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
@@ -445,10 +476,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Circulation for coins that moved in the past 30 days",
+    "name": "circulation_30d",
     "metric": "stack_circulation_30d",
     "version": "2019-01-01",
-    "human_readable_name": "Circulation for coins that moved in the past 30 days",
-    "alias": "circulation_30d",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
@@ -456,10 +487,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Circulation for coins that moved in the past 7 days",
+    "name": "circulation_7d",
     "metric": "stack_circulation_7d",
     "version": "2019-01-01",
-    "human_readable_name": "Circulation for coins that moved in the past 7 days",
-    "alias": "circulation_7d",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
@@ -467,10 +498,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Circulation for coins that moved in the past 1 day",
+    "name": "circulation_1d",
     "metric": "stack_circulation_1d",
     "version": "2019-01-01",
-    "human_readable_name": "Circulation for coins that moved in the past 1 day",
-    "alias": "circulation_1d",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
@@ -479,10 +510,10 @@
   },
 
   {
+    "human_readable_name": "Mean Age in days",
+    "name": "mean_age",
     "metric": "stack_mean_age_days",
     "version": "2019-01-01",
-    "human_readable_name": "Mean Age in days",
-    "alias": "mean_age",
     "access": "restricted",
     "aggregation": "last",
     "min_interval": "1d",
@@ -492,10 +523,10 @@
   },
 
   {
+    "human_readable_name": "Mean Dollar Invested Age in days for coins that moved",
+    "name": "mean_dollar_invested_age",
     "metric": "stack_mean_age_dollar_days",
     "version": "2019-01-01",
-    "human_readable_name": "Mean Dollar Invested Age in days for coins that moved",
-    "alias": "mean_dollar_invested_age",
     "access": "restricted",
     "aggregation": "last",
     "min_interval": "1d",
@@ -505,10 +536,10 @@
   },
 
   {
+    "human_readable_name": "Realized Value",
+    "name": "realized_value_usd",
     "metric": "stack_realized_cap_usd_20y",
     "version": "2019-01-01",
-    "human_readable_name": "Realized Value",
-    "alias": "realized_value_usd",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -516,10 +547,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Realized Value for coins that moved in the past 10 years",
+    "name": "realized_value_usd_10y",
     "metric": "stack_realized_cap_usd_10y",
     "version": "2019-01-01",
-    "human_readable_name": "Realized Value for coins that moved in the past 10 years",
-    "alias": "realized_value_usd_10y",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -528,10 +559,10 @@
   },
 
   {
+    "human_readable_name": "Realized Value for coins that moved in the past 5 years",
+    "name": "realized_value_usd_5y",
     "metric": "stack_realized_cap_usd_5y",
     "version": "2019-01-01",
-    "human_readable_name": "Realized Value for coins that moved in the past 5 years",
-    "alias": "realized_value_usd_5y",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -539,10 +570,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Realized Value for coins that moved in the past 3 years",
+    "name": "realized_value_usd_3y",
     "metric": "stack_realized_cap_usd_3y",
     "version": "2019-01-01",
-    "human_readable_name": "Realized Value for coins that moved in the past 3 years",
-    "alias": "realized_value_usd_3y",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -550,10 +581,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Realized Value for coins that moved in the past 2 years",
+    "name": "realized_value_usd_2y",
     "metric": "stack_realized_cap_usd_2y",
     "version": "2019-01-01",
-    "human_readable_name": "Realized Value for coins that moved in the past 2 years",
-    "alias": "realized_value_usd_2y",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -561,10 +592,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Realized Value for coins that moved in the past 1 year",
+    "name": "realized_value_usd_365d",
     "metric": "stack_realized_cap_usd_365d",
     "version": "2019-01-01",
-    "human_readable_name": "Realized Value for coins that moved in the past 1 year",
-    "alias": "realized_value_usd_365d",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -572,10 +603,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Realized Value for coins that moved in the past 180 days",
+    "name": "realized_value_usd_180d",
     "metric": "stack_realized_cap_usd_180d",
     "version": "2019-01-01",
-    "human_readable_name": "Realized Value for coins that moved in the past 180 days",
-    "alias": "realized_value_usd_180d",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -583,10 +614,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Realized Value for coins that moved in the past 90 days",
+    "name": "realized_value_usd_90d",
     "metric": "stack_realized_cap_usd_90d",
     "version": "2019-01-01",
-    "human_readable_name": "Realized Value for coins that moved in the past 90 days",
-    "alias": "realized_value_usd_90d",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -594,10 +625,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Realized Value for coins that moved in the past 60 days",
+    "name": "realized_value_usd_60d",
     "metric": "stack_realized_cap_usd_60d",
     "version": "2019-01-01",
-    "human_readable_name": "Realized Value for coins that moved in the past 60 days",
-    "alias": "realized_value_usd_60d",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -605,10 +636,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Realized Value for coins that moved in the past 30 days",
+    "name": "realized_value_usd_30d",
     "metric": "stack_realized_cap_usd_30d",
     "version": "2019-01-01",
-    "human_readable_name": "Realized Value for coins that moved in the past 30 days",
-    "alias": "realized_value_usd_30d",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -616,10 +647,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Realized Value for coins that moved in the past 7 days",
+    "name": "realized_value_usd_7d",
     "metric": "stack_realized_cap_usd_7d",
     "version": "2019-01-01",
-    "human_readable_name": "Realized Value for coins that moved in the past 7 days",
-    "alias": "realized_value_usd_7d",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -627,10 +658,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Realized Value for coins that moved in the past 1 day",
+    "name": "realized_value_usd_1d",
     "metric": "stack_realized_cap_usd_1d",
     "version": "2019-01-01",
-    "human_readable_name": "Realized Value for coins that moved in the past 1 day",
-    "alias": "realized_value_usd_1d",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -639,10 +670,10 @@
   },
 
   {
+    "human_readable_name": "Velocity",
+    "name": "velocity",
     "metric": "token_velocity",
     "version": "2019-01-01",
-    "human_readable_name": "Velocity",
-    "alias": "velocity",
     "access": "restricted",
     "aggregation": "last",
     "min_interval": "1d",
@@ -651,10 +682,10 @@
   },
 
   {
+    "human_readable_name": "On-Chain Transaction Volume",
+    "name": "transaction_volume",
     "metric": "transaction_volume_5min",
     "version": "2019-01-01",
-    "human_readable_name": "On-Chain Transaction Volume",
-    "alias": "transaction_volume",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "5m",
@@ -663,9 +694,10 @@
   },
 
   {
+    "human_readable_name": "Exchange Inflow",
+    "name": "exchange_inflow",
     "metric": "exchange_inflow",
     "version": "2019-01-01",
-    "human_readable_name": "Exchange Inflow",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "5m",
@@ -673,9 +705,10 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Exchange Inflow",
+    "name": "exchange_outflow",
     "metric": "exchange_outflow",
     "version": "2019-01-01",
-    "human_readable_name": "Exchange Inflow",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "5m",
@@ -683,9 +716,10 @@
     "data_type": "timeseries"
   },
   {
+    "name": "exchange_balance",
+    "human_readable_name": "Exchange Balance (Inflow - Outflow)",
     "metric": "exchange_balance",
     "version": "2019-01-01",
-    "human_readable_name": "Exchange Balance (Inflow - Outflow)",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "5m",
@@ -694,10 +728,10 @@
   },
 
   {
+    "human_readable_name": "Age Destroyed",
+    "name": "age_destroyed",
     "metric": "stack_age_consumed_5min",
     "version": "2019-01-01",
-    "human_readable_name": "Age Destroyed",
-    "alias": "age_destroyed",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "5m",
@@ -706,9 +740,10 @@
   },
 
   {
+    "human_readable_name": "NVT (Using Circulation)",
+    "name": "nvt",
     "metric": "nvt",
     "version": "2019-01-01",
-    "human_readable_name": "NVT (Using Circulation)",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -717,9 +752,10 @@
   },
 
   {
+    "human_readable_name": "NVT (Using Transaction Volume)",
+    "name": "nvt_transaction_volume",
     "metric": "nvt_transaction_volume",
     "version": "2019-01-01",
-    "human_readable_name": "NVT (Using Transaction Volume)",
     "access": "restricted",
     "aggregation": "avg",
     "min_interval": "1d",
@@ -728,9 +764,10 @@
   },
 
   {
+    "human_readable_name": "Network Growth",
+    "name": "network_growth",
     "metric": "network_growth",
     "version": "2019-01-01",
-    "human_readable_name": "Network Growth",
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "1d",
@@ -739,13 +776,13 @@
   },
   {
     "human_readable_name": "Age Distribution Histogram",
-    "alias": "age_distribution",
+    "name": "age_distribution",
     "metric": "age_distribution_5min_delta",
     "version": "2019-01-01",
-    "label": "The amount of tokens last moved between ${1} and ${2}",
     "access": "restricted",
     "aggregation": "last",
     "min_interval": "5m",
+    "label": "The amount of tokens last moved between ${1} and ${2}",
     "table": "distribution_deltas_5min",
     "data_type": "histogram"
   }

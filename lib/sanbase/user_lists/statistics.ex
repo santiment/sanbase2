@@ -31,6 +31,18 @@ defmodule Sanbase.UserLists.Statistics do
     |> Repo.all()
   end
 
+  def users_with_monitored_watchlist() do
+    from(
+      ul in UserList,
+      left_join: user in User,
+      on: ul.user_id == user.id,
+      where: ul.is_monitored == true,
+      select: {user, fragment("COUNT(?)", ul.id)},
+      group_by: user.id
+    )
+    |> Repo.all()
+  end
+
   def new_users_with_watchlist_count(from_datetime) do
     from(
       ul in UserList,

@@ -32,11 +32,15 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
                   %{"metric" => metric} -> [metric]
                 end)
 
-  @metrics_public_name_list @metrics_json
-                            |> Enum.map(fn
-                              %{"alias" => metric_alias} -> metric_alias
-                              %{"metric" => metric} -> metric
-                            end)
+  @metrics_public_name_data_type_map @metrics_json
+                                     |> Enum.map(fn
+                                       %{"alias" => metric_alias, "data_type" => data_type} ->
+                                         {metric_alias, data_type}
+
+                                       %{"metric" => metric, "data_type" => data_type} ->
+                                         {metric, data_type}
+                                     end)
+                                     |> Map.new()
 
   @metrics_mapset MapSet.new(@metrics_list)
   @name_to_column_map @metrics_json
@@ -132,7 +136,8 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   def access_map(), do: @access_map
   def table_map(), do: @table_map
   def metrics_mapset(), do: @metrics_mapset
-  def metrics_public_name_list(), do: @metrics_public_name_list
+  def timeseries_metrics_public_name_list(), do: @metrics_public_name_list
+  def histogram_metrics_public_name_list(), do: @metrics_public_name_list
   def aggregation_map(), do: @aggregation_map
   def min_interval_map(), do: @min_interval_map
   def name_to_column_map(), do: @name_to_column_map
@@ -142,7 +147,13 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
 
   def metrics_with_access(level) when level in [:free, :restricted] do
     @access_map
-    |> Enum.filter(fn {_m, a} -> a == level end)
+    |> Enum.filter(fn {_metric, access_level} -> access_level == level end)
+    |> Keyword.keys()
+  end
+
+  def metrics_with_data_type(type) do
+    @metrics_public_name_data_type_map
+    |> Enum.filter(fn {_metric, data_type} -> data_type == type end)
     |> Keyword.keys()
   end
 end

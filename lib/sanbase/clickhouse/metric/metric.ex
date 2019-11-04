@@ -24,8 +24,11 @@ defmodule Sanbase.Clickhouse.Metric do
   @metrics_file "available_v2_metrics.json"
   @external_resource Path.join(__DIR__, @metrics_file)
 
-  @metrics_mapset FileHandler.metrics_mapset()
-  @metrics_public_name_list FileHandler.metrics_public_name_list()
+  @timeseries_metrics_public_name_list FileHandler.metrics_with_data_type("timeseries")
+  @histogram_metrics_public_name_list FileHandler.metrics_with_data_type("histogram")
+  @metrics_public_name_list (@histogram_metrics_public_name_list ++
+                               @timeseries_metrics_public_name_list)
+                            |> Enum.uniq()
   @access_map FileHandler.access_map()
   @table_map FileHandler.table_map()
   @min_interval_map FileHandler.min_interval_map()
@@ -98,23 +101,6 @@ defmodule Sanbase.Clickhouse.Metric do
         value: value |> Sanbase.Math.to_float() |> Float.round(2)
       }
     end)
-
-    # |> case do
-    #   {:ok, result} ->
-    #     {result, _} =
-    #       result
-    #       |> Enum.reduce({[], 0}, fn elem, {acc, accumulated_value} ->
-    #         {
-    #           [%{elem | value: elem.value + accumulated_value} | acc],
-    #           elem.value + accumulated_value
-    #         }
-    #       end)
-
-    #     {:ok, result}
-
-    #   {:error, error} ->
-    #     {:error, error}
-    # end
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -162,10 +148,10 @@ defmodule Sanbase.Clickhouse.Metric do
   """
 
   @impl Sanbase.Metric.Behaviour
-  def available_histogram_metrics(), do: ["age_distribution"]
+  def available_histogram_metrics(), do: @histogram_metrics_public_name_list
 
   @impl Sanbase.Metric.Behaviour
-  def available_timeseries_metrics(), do: @metrics_public_name_list
+  def available_timeseries_metrics(), do: @timeseries_metrics_public_name_list
 
   @impl Sanbase.Metric.Behaviour
   def available_metrics(), do: @metrics_public_name_list

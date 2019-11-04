@@ -30,11 +30,19 @@ defmodule Sanbase.Clickhouse.Metric.Helper do
 
   def metric_name_id_map() do
     Sanbase.Cache.get_or_store({__MODULE__, __ENV__.function}, fn ->
-      query = "SELECT toUInt32(metric_id), name FROM metric_metadata"
+      metric_version_map = Sanbase.Clickhouse.Metric.FileHandler.metric_version_map()
+
+      query = "SELECT toUInt32(metric_id), name, version FROM metric_metadata"
       args = []
 
-      ClickhouseRepo.query_reduce(query, args, %{}, fn [metric_id, name], acc ->
-        Map.put(acc, name, metric_id)
+      ClickhouseRepo.query_reduce(query, args, %{}, fn [metric_id, name, version], acc ->
+        case Map.get(metric_version_map, name) do
+          ^version ->
+            Map.put(acc, name, metric_id)
+
+          _ ->
+            acc
+        end
       end)
     end)
   end

@@ -54,22 +54,29 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     }
     """
 
-    result = conn |> post("/graphql", query_skeleton(query, "currentUser"))
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "currentUser"))
+      |> json_response(200)
 
-    assert json_response(result, 200)["data"]["currentUser"] == %{
-             "insights" => [
-               %{
-                 "id" => "#{published.id}",
-                 "readyState" => "#{published.ready_state}",
-                 "text" => "#{published.text}"
-               },
-               %{
-                 "id" => "#{draft.id}",
-                 "readyState" => "#{draft.ready_state}",
-                 "text" => "#{draft.text}"
-               }
-             ]
-           }
+    expected_insights =
+      [
+        %{
+          "id" => "#{published.id}",
+          "readyState" => "#{published.ready_state}",
+          "text" => "#{published.text}"
+        },
+        %{
+          "id" => "#{draft.id}",
+          "readyState" => "#{draft.ready_state}",
+          "text" => "#{draft.text}"
+        }
+      ]
+      |> Enum.sort_by(& &1["id"])
+
+    insights = result["data"]["currentUser"]["insights"] |> Enum.sort_by(& &1["id"])
+
+    assert insights == expected_insights
   end
 
   test "get an insight by id", %{conn: conn, user: user, poll: poll} do

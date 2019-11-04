@@ -5,7 +5,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.Github
 
-  @metrics_function_mapping %{
+  @timeseries_metrics_function_mapping %{
     "dev_activity" => :dev_activity,
     "github_activity" => :github_activity
   }
@@ -15,7 +15,10 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
     "github_activity" => :total_github_activity
   }
 
-  @metrics Map.keys(@metrics_function_mapping)
+  @timeseries_metrics Map.keys(@timeseries_metrics_function_mapping)
+  @histogram_metrics []
+
+  @metrics @histogram_metrics ++ @timeseries_metrics
 
   @free_metrics @metrics
   @restricted_metrics []
@@ -27,7 +30,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
       {:ok, organizations} ->
         apply(
           Github,
-          Map.get(@metrics_function_mapping, metric),
+          Map.get(@timeseries_metrics_function_mapping, metric),
           [
             organizations,
             from,
@@ -84,6 +87,12 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_aggregations(), do: [:sum]
+
+  @impl Sanbase.Metric.Behaviour
+  def available_timeseries_metrics(), do: @timeseries_metrics
+
+  @impl Sanbase.Metric.Behaviour
+  def available_histogram_metrics(), do: @histogram_metrics
 
   @impl Sanbase.Metric.Behaviour
   def available_metrics(), do: @metrics

@@ -5,14 +5,14 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   @aggregations [:sum]
 
-  @social_volume_metrics [
+  @social_volume_timeseries_metrics [
     "telegram_social_volume",
     "twitter_social_volume",
     "reddit_social_volume",
     "discord_social_volume"
   ]
 
-  @social_dominance_metrics [
+  @social_dominance_timeseries_metrics [
     "telegram_social_dominance",
     "twitter_social_dominance",
     "reddit_social_dominance",
@@ -31,12 +31,15 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "discord" => :discord
   }
 
-  @metrics @social_dominance_metrics ++ @social_volume_metrics
+  @timeseries_metrics @social_dominance_timeseries_metrics ++ @social_volume_timeseries_metrics
+  @histogram_metrics []
+
+  @metrics @histogram_metrics ++ @timeseries_metrics
   @access_map Enum.reduce(@metrics, %{}, fn metric, acc -> Map.put(acc, metric, :restricted) end)
 
   @impl Sanbase.Metric.Behaviour
   def timeseries_data(metric, slug, from, to, interval, _aggregation)
-      when metric in @social_volume_metrics do
+      when metric in @social_volume_timeseries_metrics do
     [source, _] = String.split(metric, "_", parts: 2)
 
     Sanbase.TechIndicators.social_volume(
@@ -50,7 +53,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   def timeseries_data(metric, slug, from, to, interval, _aggregation)
-      when metric in @social_dominance_metrics do
+      when metric in @social_dominance_timeseries_metrics do
     [source, _] = String.split(metric, "_", parts: 2)
 
     Sanbase.SocialData.social_dominance(
@@ -65,7 +68,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def aggregated_data(metric, slug, from, to, _aggregation)
-      when is_binary(slug) and metric in @social_volume_metrics do
+      when is_binary(slug) and metric in @social_volume_timeseries_metrics do
     [source, _] = String.split(metric, "_", parts: 2)
 
     Sanbase.TechIndicators.social_volume(
@@ -86,7 +89,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   def aggregated_data(metric, slug, from, to, _aggregation)
-      when metric in @social_dominance_metrics do
+      when metric in @social_dominance_timeseries_metrics do
     [source, _] = String.split(metric, "_", parts: 2)
 
     Sanbase.SocialData.social_dominance(
@@ -131,6 +134,12 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_slugs(_metric), do: available_slugs()
+
+  @impl Sanbase.Metric.Behaviour
+  def available_timeseries_metrics(), do: @timeseries_metrics
+
+  @impl Sanbase.Metric.Behaviour
+  def available_histogram_metrics(), do: @histogram_metrics
 
   @impl Sanbase.Metric.Behaviour
   def available_metrics(), do: @metrics

@@ -19,17 +19,23 @@ defmodule Sanbase.Metric do
   Module.register_attribute(__MODULE__, :free_metrics_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :restricted_metrics_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :access_map_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :metric_module_mapping_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :timeseries_metric_module_mapping_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :histogram_metric_module_mapping_acc, accumulate: true)
 
   for module <- @metric_modules do
     @available_aggregations_acc module.available_aggregations()
     @free_metrics_acc module.free_metrics()
     @restricted_metrics_acc module.restricted_metrics()
     @access_map_acc module.access_map()
-    @metric_module_mapping_acc Enum.map(
-                                 module.available_metrics(),
-                                 fn metric -> %{metric: metric, module: module} end
-                               )
+    @timeseries_metric_module_mapping_acc Enum.map(
+                                            module.available_timeseries_metrics(),
+                                            fn metric -> %{metric: metric, module: module} end
+                                          )
+
+    @histogram_metric_module_mapping_acc Enum.map(
+                                           module.available_timeseries_metrics(),
+                                           fn metric -> %{metric: metric, module: module} end
+                                         )
   end
 
   @available_aggregations List.flatten(@available_aggregations_acc) |> Enum.uniq()

@@ -56,6 +56,10 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback available_slugs(metric) :: {:ok, list(slug)} | {:error, String.t()}
 
+  @callback available_timeseries_metrics() :: list(metric)
+
+  @callback available_histogram_metrics() :: list(metric)
+
   @callback available_metrics() :: list(metric)
 
   @callback free_metrics() :: list(metric)

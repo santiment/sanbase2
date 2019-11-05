@@ -14,9 +14,33 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:value, non_null(:float))
   end
 
+  object :string_list do
+    field(:data, list_of(:string))
+  end
+
+  object :integer_list do
+    field(:data, list_of(:integer))
+  end
+
+  object :float_list do
+    field(:data, list_of(:float))
+  end
+
+  union :value_list do
+    description("Type Parameterized Array")
+
+    types([:string_list, :float_list, :integer_list])
+
+    resolve_type(fn
+      %{data: [value | _]}, _ when is_binary(value) -> :string_list
+      %{data: [value | _]}, _ when is_integer(value) -> :integer_list
+      %{data: [value | _]}, _ when is_float(value) -> :float_list
+    end)
+  end
+
   object :histogram_data do
     field(:labels, non_null(list_of(:string)))
-    field(:values, non_null(list_of(:float)))
+    field(:values, :value_list)
   end
 
   object :metadata do

@@ -40,6 +40,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         %{slug: slug, datetime: datetime},
         %{source: %{metric: metric}}
       ) do
-    {:ok, Metric.histogram_data(metric, slug, datetime)}
+    case Metric.histogram_data(metric, slug, datetime) do
+      {:ok, %{labels: labels, values: values}} ->
+        {:ok,
+         %{
+           labels: labels,
+           values: %{data: values}
+         }}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 end

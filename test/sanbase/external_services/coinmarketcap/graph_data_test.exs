@@ -3,35 +3,37 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
 
   import Sanbase.Factory
   import Sanbase.InfluxdbHelpers
+  import Sanbase.TestHelpers
 
   alias Sanbase.ExternalServices.Coinmarketcap.{GraphData, PricePoint}
   alias Sanbase.Prices.Store
-  alias Sanbase.Model.Project
 
   @total_market_measurement "TOTAL_MARKET_total-market"
 
-  # setup do
-  #   setup_prices_influxdb()
-  #   :ok
-  # end
+  setup do
+    setup_prices_influxdb()
+    clear_kafka_state()
 
-  test "fetching the first price datetime of a token" do
+    project =
+      insert(:project, %{
+        slug: "bitcoin",
+        source_slug_mappings: [
+          build(:source_slug_mapping, %{source: "coinmarketcap", slug: "bitcoin"})
+        ]
+      })
+
+    {:ok, project: project}
+  end
+
+  test "fetching the first price datetime of a token", context do
     Tesla.Mock.mock(fn %{
                          method: :get,
-                         url: "https://graphs2.coinmarketcap.com/currencies/santiment/"
+                         url: "https://graphs2.coinmarketcap.com/currencies/bitcoin/"
                        } ->
       %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "data/btc_graph_data.json"))}
     end)
 
-    project =
-      insert(:project, %{
-        slug: "santiment",
-        source_slug_mappings: [
-          build(:source_slug_mapping, %{source: "coinmarketcap", slug: "santiment"})
-        ]
-      })
-
-    assert GraphData.fetch_first_datetime(project) ==
+    assert GraphData.fetch_first_datetime(context.project) ==
              DateTime.from_unix!(1_507_991_665_000, :millisecond)
   end
 
@@ -52,7 +54,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
     end)
   end
 
-  test "fetching and exporting prices into a kafka topic" do
+  test "fetching and exporting prices into a kafka topic", context do
     Tesla.Mock.mock(fn %{method: :get} ->
       %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "data/btc_graph_data.json"))}
     end)
@@ -60,12 +62,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
     from_datetime = DateTime.from_unix!(1_507_991_665_000, :millisecond)
     to_datetime = DateTime.from_unix!(1_508_078_065_000, :millisecond)
 
-    setup_prices_influxdb()
-    insert(:project, slug: "bitcoin")
-    result = GraphData.fetch_and_store_prices(Project.by_slug("bitcoin"), from_datetime)
+    result = GraphData.fetch_and_store_prices(context.project, from_datetime)
     Process.sleep(100)
     state = Sanbase.InMemoryKafka.Producer.get_state()
-    Sanbase.InMemoryKafka.Producer.clear_state()
 
     topic = Sanbase.Kafka.Exporter.Prices.topic()
 
@@ -128,11 +127,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
     from_datetime = DateTime.from_unix!(1_367_174_820_000, :millisecond)
     to_datetime = DateTime.from_unix!(1_386_355_620_000, :millisecond)
 
-    setup_prices_influxdb()
     GraphData.fetch_and_store_marketcap_total(from_datetime)
     Process.sleep(100)
     state = Sanbase.InMemoryKafka.Producer.get_state()
-    Sanbase.InMemoryKafka.Producer.clear_state()
 
     topic = Sanbase.Kafka.Exporter.Prices.topic()
 
@@ -148,8 +145,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
         body: File.read!(Path.join(__DIR__, "data/coinmarketcap_total_graph_data.json"))
       }
     end)
-
-    setup_prices_influxdb()
 
     # The HTTP GET request is mocked, this interval here does not play a role.
     # Put one day before now so we will have only one day range and won't make many HTTP queries

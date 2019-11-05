@@ -739,6 +739,7 @@
   },
   {
     "metric": "age_distribution",
+    "version": "2019-01-01",
     "human_readable_name": "Age Distribution Histogram",
     "access": "restricted",
     "aggregation": "last",

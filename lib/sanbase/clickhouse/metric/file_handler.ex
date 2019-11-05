@@ -40,7 +40,25 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
                                        %{"metric" => metric, "data_type" => data_type} ->
                                          {metric, data_type}
                                      end)
-                                     |> Map.new()
+                                     |> Map.new(fn {metric, data_type} ->
+                                       {metric, String.to_atom(data_type)}
+                                     end)
+
+  @metrics_data_type_map @metrics_json
+                         |> Enum.flat_map(fn
+                           %{
+                             "metric" => metric,
+                             "alias" => metric_alias,
+                             "data_type" => data_type
+                           } ->
+                             [{metric, data_type}, {metric_alias, data_type}]
+
+                           %{"metric" => metric, "data_type" => data_type} ->
+                             [{metric, data_type}]
+                         end)
+                         |> Map.new(fn {metric, data_type} ->
+                           {metric, String.to_existing_atom(data_type)}
+                         end)
 
   @metrics_mapset MapSet.new(@metrics_list)
   @name_to_column_map @metrics_json
@@ -142,6 +160,8 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   def human_readable_name_map(), do: @human_readable_name_map
 
   def metric_version_map(), do: @metric_version_map
+
+  def metrics_data_type_map(), do: @metrics_data_type_map
 
   def metrics_with_access(level) when level in [:free, :restricted] do
     @access_map

@@ -160,7 +160,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
        metric: metric,
        min_interval: "5m",
        default_aggregation: :sum,
-       available_aggregations: @aggregations
+       available_aggregations: @aggregations,
+       data_type: :histogram
      }}
   end
 

@@ -79,6 +79,8 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     aggregations see the documentation for `defaultAggregation`
     """
     field(:available_aggregations, list_of(:aggregation))
+
+    field(:data_type, :metric_data_type)
   end
 
   object :metric do
@@ -127,5 +129,10 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:min)
     value(:max)
     value(:median)
+  end
+
+  enum :metric_data_type do
+    value(:timeseries)
+    value(:histogram)
   end
 end

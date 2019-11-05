@@ -24,8 +24,8 @@ defmodule Sanbase.Clickhouse.Metric do
   @metrics_file "available_v2_metrics.json"
   @external_resource Path.join(__DIR__, @metrics_file)
 
-  @timeseries_metrics_public_name_list FileHandler.metrics_with_data_type("timeseries")
-  @histogram_metrics_public_name_list FileHandler.metrics_with_data_type("histogram")
+  @timeseries_metrics_public_name_list FileHandler.metrics_with_data_type(:timeseries)
+  @histogram_metrics_public_name_list FileHandler.metrics_with_data_type(:histogram)
   @access_map FileHandler.access_map()
   @table_map FileHandler.table_map()
   @min_interval_map FileHandler.min_interval_map()
@@ -34,6 +34,7 @@ defmodule Sanbase.Clickhouse.Metric do
   @aggregation_map FileHandler.aggregation_map()
   @name_to_column_map FileHandler.name_to_column_map()
   @human_readable_name_map FileHandler.human_readable_name_map()
+  @metrics_data_type_map FileHandler.metrics_data_type_map()
   @metrics_public_name_list (@histogram_metrics_public_name_list ++
                                @timeseries_metrics_public_name_list)
                             |> Enum.uniq()
@@ -129,7 +130,8 @@ defmodule Sanbase.Clickhouse.Metric do
        metric: metric,
        min_interval: min_interval,
        default_aggregation: default_aggregation,
-       available_aggregations: @plain_aggregations
+       available_aggregations: @plain_aggregations,
+       data_type: Map.get(@metrics_data_type_map, metric)
      }}
   end
 

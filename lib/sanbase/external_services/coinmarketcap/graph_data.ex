@@ -137,6 +137,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
       marketcap_total_list
       |> Enum.flat_map(&PricePoint.price_points_to_measurements(&1, measurement_name))
 
+    marketcap_total_list
+    |> Enum.map(&PricePoint.to_json(&1, "TOTAL_MARKET"))
+    |> Sanbase.Kafka.Exporter.Prices.persist_async()
+
     measurement_points |> Store.import()
 
     update_last_cmc_history_datetime(measurement_name, measurement_points, interval)
@@ -162,11 +166,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
     measurement_points |> Store.import()
 
-    messages =
-      price_list
-      |> Enum.flat_map(&PricePoint.convert_to_json(&1, "coinmarketcap", slug))
-
-    SanExporterEx.Producer.send_data_async("sanbase_prices", messages)
+    price_list
+    |> Enum.map(&PricePoint.to_json(&1, slug))
+    |> Sanbase.Kafka.Exporter.Prices.persist_async()
 
     update_last_cmc_history_datetime(
       Measurement.name_from(project),

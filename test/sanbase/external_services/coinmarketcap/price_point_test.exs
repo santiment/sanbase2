@@ -6,6 +6,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePointTest do
   alias Sanbase.Model.Project
 
   @total_market_measurement "TOTAL_MARKET_total-market"
+  @total_market_slug "TOTAL_MARKET"
+
   setup do
     ts =
       DateTime.from_naive!(~N[2018-05-13 21:45:00], "Etc/UTC")
@@ -14,6 +16,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePointTest do
     price_point = %PricePoint{
       price_btc: nil,
       price_usd: nil,
+      marketcap_usd: 400,
+      volume_usd: 500,
+      datetime: DateTime.from_unix!(ts, :nanosecond)
+    }
+
+    price_point_with_prices = %PricePoint{
+      price_btc: 3.136261180345569e-5,
+      price_usd: 0.292856,
       marketcap_usd: 400,
       volume_usd: 500,
       datetime: DateTime.from_unix!(ts, :nanosecond)
@@ -38,9 +48,29 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePointTest do
 
     %{
       price_point: price_point,
+      price_point_with_prices: price_point_with_prices,
       expectation: expectation,
       project: project
     }
+  end
+
+  describe "#to_json" do
+    test "convert price point with prices to tuple of json values", context do
+      {key, value} = PricePoint.to_json(context.price_point_with_prices, context.project.slug)
+
+      assert key == "coinmarketcap_santiment_1526247900000000000"
+
+      assert value =
+               "{\"marketcap_usd\":400,\"price_btc\":3.136261180345569e-5,\"price_usd\":0.292856,\"slug\":\"santiment\",\"source\":\"coinmarketcap\",\"timestamp\":1526247900000000000,\"volume_usd\":500}"
+    end
+
+    test "convert price point without prices to tuple of json values", context do
+      {key, value} = PricePoint.to_json(context.price_point, @total_market_slug)
+      assert key == "coinmarketcap_TOTAL_MARKET_1526247900000000000"
+
+      assert value ==
+               "{\"marketcap_usd\":400,\"price_btc\":null,\"price_usd\":null,\"slug\":\"TOTAL_MARKET\",\"source\":\"coinmarketcap\",\"timestamp\":1526247900000000000,\"volume_usd\":500}"
+    end
   end
 
   test "converting price point to measurement with BTC price", %{

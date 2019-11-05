@@ -2,6 +2,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Model.Project
 
+  @prices_source "coinmarketcap"
   defstruct [
     :ticker,
     :slug,
@@ -12,8 +13,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
     :price_btc
   ]
 
-  def convert_to_json(%__MODULE__{datetime: datetime} = point, source, slug) do
-    key = source <> slug <> to_string(DateTime.to_unix(datetime, :nanosecond))
+  def to_json(%__MODULE__{datetime: datetime} = point, slug, source \\ @prices_source) do
+    key = source <> "_" <> slug <> "_" <> to_string(DateTime.to_unix(datetime, :nanosecond))
 
     value =
       %{

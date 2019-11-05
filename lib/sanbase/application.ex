@@ -101,7 +101,18 @@ defmodule Sanbase.Application do
   @doc ~s"""
   Some services must be started before all others
   """
-  def prepended_children(container_type) when container_type in ["web", "scrapers", "all"] do
+  def prepended_children("scrapers") do
+    [
+      # Start the Kafka Exporter
+      {SanExporterEx,
+       [
+         kafka_producer_module: kafka_producer_supervisor_module(),
+         kafka_endpoint: kafka_endpoint()
+       ]}
+    ]
+  end
+
+  def prepended_children(container_type) when container_type in ["web", "all"] do
     [
       # Start the Kafka Exporter
       {SanExporterEx,

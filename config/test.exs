@@ -12,7 +12,7 @@ config :sanbase, SanbaseWeb.Endpoint,
 # Print only warnings and errors during test. Do not log JSON in tests.
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
-  level: :info
+  level: :warn
 
 # Test adapter that allows mocking
 config :tesla, adapter: Tesla.Mock
@@ -23,6 +23,8 @@ config :tesla, Tesla.Middleware.Logger, debug: false
 config :sanbase, Sanbase.ApiCallDataExporter,
   supervisor: Sanbase.InMemoryKafka.Supervisor,
   producer: Sanbase.InMemoryKafka.Producer
+
+config :sanbase, Sanbase.Kafka.Exporter.Prices, producer: Sanbase.InMemoryKafka.Producer
 
 config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
   implementation_module: Sanbase.ExternalServices.RateLimiting.TestServer

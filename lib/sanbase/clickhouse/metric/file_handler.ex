@@ -136,8 +136,6 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   def access_map(), do: @access_map
   def table_map(), do: @table_map
   def metrics_mapset(), do: @metrics_mapset
-  def timeseries_metrics_public_name_list(), do: @metrics_public_name_list
-  def histogram_metrics_public_name_list(), do: @metrics_public_name_list
   def aggregation_map(), do: @aggregation_map
   def min_interval_map(), do: @min_interval_map
   def name_to_column_map(), do: @name_to_column_map

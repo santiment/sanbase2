@@ -16,7 +16,11 @@ defmodule Sanbase.Metric.Behaviour do
         }
 
   @type timeseries_data_point :: %{datetime: Datetime.t(), value: float()}
-  @type histogram_data :: %{datetime: Datetime.t(), labels: [String.t()], values: list()}
+  @type histogram_data :: %{
+          datetime: Datetime.t(),
+          labels: [String.t()],
+          values: list(String.t() | float() | integer())
+        }
   @type aggregation :: nil | :any | :sum | :avg | :min | :max | :last | :first | :median
 
   @callback timeseries_data(

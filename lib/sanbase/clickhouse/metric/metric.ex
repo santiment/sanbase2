@@ -26,9 +26,6 @@ defmodule Sanbase.Clickhouse.Metric do
 
   @timeseries_metrics_public_name_list FileHandler.metrics_with_data_type("timeseries")
   @histogram_metrics_public_name_list FileHandler.metrics_with_data_type("histogram")
-  @metrics_public_name_list (@histogram_metrics_public_name_list ++
-                               @timeseries_metrics_public_name_list)
-                            |> Enum.uniq()
   @access_map FileHandler.access_map()
   @table_map FileHandler.table_map()
   @min_interval_map FileHandler.min_interval_map()
@@ -37,6 +34,9 @@ defmodule Sanbase.Clickhouse.Metric do
   @aggregation_map FileHandler.aggregation_map()
   @name_to_column_map FileHandler.name_to_column_map()
   @human_readable_name_map FileHandler.human_readable_name_map()
+  @metrics_public_name_list (@histogram_metrics_public_name_list ++
+                               @timeseries_metrics_public_name_list)
+                            |> Enum.uniq()
 
   case Enum.filter(@aggregation_map, fn {_, aggr} -> aggr not in @aggregations end) do
     [] ->

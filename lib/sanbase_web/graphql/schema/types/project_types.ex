@@ -9,6 +9,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   alias SanbaseWeb.Graphql.Resolvers.{
     ClickhouseResolver,
     ProjectResolver,
+    ProjectMetricsResolver,
     ProjectBalanceResolver,
     ProjectTransactionsResolver,
     IcoResolver,
@@ -50,7 +51,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     ```
     """
     field :available_metrics, list_of(:string) do
-      cache_resolve(&ProjectResolver.available_metrics/3, ttl: 1800)
+      cache_resolve(&ProjectMetricsResolver.available_metrics/3, ttl: 600)
+    end
+
+    field :available_timeseries_metrics, list_of(:string) do
+      cache_resolve(&ProjectMetricsResolver.available_timeseries_metrics/3, ttl: 600)
+    end
+
+    field :available_histogram_metrics, list_of(:string) do
+      cache_resolve(&ProjectMetricsResolver.available_histogram_metrics/3, ttl: 600)
     end
 
     @desc ~s"""

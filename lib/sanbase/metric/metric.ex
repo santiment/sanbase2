@@ -53,7 +53,9 @@ defmodule Sanbase.Metric do
   @access_map Enum.reduce(@access_map_acc, %{}, fn map, acc -> Map.merge(map, acc) end)
   @aggregation_arg_supported [nil] ++ @available_aggregations
 
-  @metrics Enum.map(@timeseries_metric_module_mapping, & &1.metric)
+  @metrics Enum.map(@metric_module_mapping, & &1.metric)
+  @timeseries_metrics Enum.map(@timeseries_metric_module_mapping, & &1.metric)
+  @histogram_metrics Enum.map(@histogram_metric_module_mapping, & &1.metric)
   @metrics_mapset MapSet.new(@metrics)
 
   @doc ~s"""
@@ -130,6 +132,8 @@ defmodule Sanbase.Metric do
     end
   end
 
+  def human_readable_name(metric), do: metric_not_available_error(metric)
+
   @doc ~s"""
   Get metadata for a given metric. This includes:
   - The minimal interval for which the metric is available
@@ -180,6 +184,10 @@ defmodule Sanbase.Metric do
   """
   def available_metrics(), do: @metrics
 
+  def available_timeseries_metrics(), do: @timeseries_metrics
+
+  def available_histogram_metrics(), do: @histogram_metrics
+
   @doc ~s"""
   Get all slugs for which at least one of the metrics is available
   """
@@ -197,7 +205,7 @@ defmodule Sanbase.Metric do
 
       case errors do
         [] -> {:ok, slugs |> Enum.uniq()}
-        _ -> {:error, "Cannot fetch all available slugs"}
+        _ -> {:error, "Cannot fetch all available slugs. Errors: #{inspect(errors)}"}
       end
     end)
   end

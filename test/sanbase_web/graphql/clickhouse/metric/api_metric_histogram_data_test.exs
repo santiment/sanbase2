@@ -3,7 +3,6 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricHistogramDataTest do
 
   import Mock
   import Sanbase.Factory
-  import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
@@ -24,7 +23,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricHistogramDataTest do
     %{conn: conn, slug: slug, datetime: datetime} = context
     [metric | _] = Metric.available_histogram_metrics()
 
-    with_mock Metric, [],
+    with_mock Metric, [:passthrough],
       histogram_data: fn _, _, _ ->
         {:ok,
          %{
@@ -50,7 +49,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricHistogramDataTest do
     %{conn: conn, slug: slug, datetime: datetime} = context
     metrics = Metric.available_histogram_metrics()
 
-    with_mock Metric, [],
+    with_mock Metric, [:passthrough],
       histogram_data: fn _, _, _ ->
         {:ok,
          %{
@@ -73,33 +72,21 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricHistogramDataTest do
     end
   end
 
-  test "logs warnings for unavailable metrics", context do
-    %{conn: conn, slug: slug, datetime: datetime} = context
-    rand_metrics = Enum.map(1..100, fn _ -> rand_str() end)
-    rand_metrics = rand_metrics -- Metric.available_histogram_metrics()
-
-    # Do not mock the `histogram_data` function because it's the one that rejects
-    for metric <- rand_metrics do
-      assert capture_log(fn ->
-               get_histogram_metric(conn, metric, slug, datetime)
-             end) =~ "Can't fetch #{metric} for project with slug: #{slug}"
-    end
-  end
-
-  @moduletag capture_log: true
   test "returns error for unavailable metrics", context do
     %{conn: conn, slug: slug, datetime: datetime} = context
     rand_metrics = Enum.map(1..100, fn _ -> rand_str() end)
     rand_metrics = rand_metrics -- Metric.available_histogram_metrics()
 
     # Do not mock the `histogram_data` function because it's the one that rejects
-    result =
-      for metric <- rand_metrics do
-        get_histogram_metric(conn, metric, slug, datetime)
-      end
+    for metric <- rand_metrics do
+      %{
+        "errors" => [
+          %{"message" => error_message}
+        ]
+      } = get_histogram_metric(conn, metric, slug, datetime)
 
-    # Assert that all results are lists where we have a map with values
-    assert Enum.all?(result, &match?(%{"errors" => _}, &1))
+      assert error_message == "The metric '#{metric}' is not supported or is mistyped."
+    end
   end
 
   # Private functions

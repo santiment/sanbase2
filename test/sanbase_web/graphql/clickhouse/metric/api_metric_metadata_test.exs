@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricMetadataTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import Sanbase.Factory, only: [rand_str: 0]
   import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Metric
@@ -13,7 +14,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricMetadataTest do
       aggregations |> Enum.map(fn aggr -> aggr |> Atom.to_string() |> String.upcase() end)
 
     for metric <- metrics do
-      %{"data" => %{"getMetric" => %{"metadata" => metadata}}} = fetch_metadata(conn, metric)
+      %{"data" => %{"getMetric" => %{"metadata" => metadata}}} = get_metric_metadata(conn, metric)
       assert metadata["metric"] == metric
 
       assert match?(
@@ -27,7 +28,23 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricMetadataTest do
     end
   end
 
-  defp fetch_metadata(conn, metric) do
+  test "returns error for unavailable metric", %{conn: conn} do
+    rand_metrics = Enum.map(1..100, fn _ -> rand_str() end)
+    rand_metrics = rand_metrics -- Metric.available_metrics()
+
+    # Do not mock the `histogram_data` function because it's the one that rejects
+    for metric <- rand_metrics do
+      %{
+        "errors" => [
+          %{"message" => error_message}
+        ]
+      } = get_metric_metadata(conn, metric)
+
+      assert error_message == "The metric '#{metric}' is not supported or is mistyped."
+    end
+  end
+
+  defp get_metric_metadata(conn, metric) do
     query = """
     {
       getMetric(metric: "#{metric}"){

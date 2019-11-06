@@ -3,7 +3,6 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricTimeseriesDataTest do
 
   import Mock
   import Sanbase.Factory
-  import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
@@ -27,7 +26,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricTimeseriesDataTest do
     aggregation = :avg
     [metric | _] = Metric.available_timeseries_metrics()
 
-    with_mock Metric, [],
+    with_mock Metric, [:passthrough],
       timeseries_data: fn _, _, _, _, _, _ ->
         {:ok,
          [
@@ -59,7 +58,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricTimeseriesDataTest do
     aggregation = :avg
     metrics = Metric.available_timeseries_metrics()
 
-    with_mock Metric, [],
+    with_mock Metric, [:passthrough],
       timeseries_data: fn _, _, _, _, _, _ ->
         {:ok,
          [
@@ -85,7 +84,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricTimeseriesDataTest do
     aggregations = aggregations -- [nil]
     [metric | _] = Metric.available_timeseries_metrics()
 
-    with_mock Metric, [],
+    with_mock Metric, [:passthrough],
       timeseries_data: fn _, _, _, _, _, _ ->
         {:ok,
          [
@@ -123,21 +122,6 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricTimeseriesDataTest do
     assert Enum.all?(result, &match?(%{"errors" => _}, &1))
   end
 
-  test "logs warnings for unavailable metrics", context do
-    %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
-    aggregation = :avg
-    rand_metrics = Enum.map(1..100, fn _ -> rand_str() end)
-    rand_metrics = rand_metrics -- Metric.available_timeseries_metrics()
-
-    # Do not mock the `timeseries_data` function because it's the one that rejects
-    for metric <- rand_metrics do
-      assert capture_log(fn ->
-               get_timeseries_metric(conn, metric, slug, from, to, interval, aggregation)
-             end) =~ "Can't fetch #{metric} for project with slug: #{slug}"
-    end
-  end
-
-  @moduletag capture_log: true
   test "returns error for unavailable metrics", context do
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
     aggregation = :avg
@@ -145,13 +129,12 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricTimeseriesDataTest do
     rand_metrics = rand_metrics -- Metric.available_timeseries_metrics()
 
     # Do not mock the `timeseries_data` function because it's the one that rejects
-    result =
-      for metric <- rand_metrics do
+    for metric <- rand_metrics do
+      %{"errors" => [%{"message" => error_message}]} =
         get_timeseries_metric(conn, metric, slug, from, to, interval, aggregation)
-      end
 
-    # Assert that all results are lists where we have a map with values
-    assert Enum.all?(result, &match?(%{"errors" => _}, &1))
+      assert error_message == "The metric '#{metric}' is not supported or is mistyped."
+    end
   end
 
   # Private functions

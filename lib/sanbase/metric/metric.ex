@@ -58,6 +58,13 @@ defmodule Sanbase.Metric do
   @histogram_metrics Enum.map(@histogram_metric_module_mapping, & &1.metric)
   @metrics_mapset MapSet.new(@metrics)
 
+  def has_metric?(metric) do
+    case metric in @metrics_mapset do
+      true -> true
+      false -> metric_not_available_error(metric)
+    end
+  end
+
   @doc ~s"""
   Get a given metric for an identifier and time range. The metric's aggregation
   function can be changed by the last optional parameter. The available
@@ -234,13 +241,17 @@ defmodule Sanbase.Metric do
 
   # Private functions
 
-  defp metric_not_available_error(metric) do
+  defp metric_not_available_error(metric) when is_binary(metric) do
     close = Enum.find(@metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.9 end)
-    error_msg = "The metric '#{inspect(metric)}' is not available."
+    error_msg = "The metric '#{metric}' is not supported or is mistyped."
 
     case close do
       nil -> {:error, error_msg}
       close -> {:error, error_msg <> " Did you mean '#{close}'?"}
     end
+  end
+
+  defp metric_not_available_error(metric) do
+    {:error, "The metric '#{inspect(metric)}' is not supported or is mistyped."}
   end
 end

@@ -2,19 +2,33 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   require Logger
 
   import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 8]
-  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
+  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3, handle_graphql_error: 4]
 
   alias Sanbase.Metric
 
   @datapoints 300
 
-  def get_metric(_root, %{metric: metric}, _resolution), do: {:ok, %{metric: metric}}
+  def get_metric(_root, %{metric: metric}, _resolution) do
+    case Metric.has_metric?(metric) do
+      true -> {:ok, %{metric: metric}}
+      {:error, error} -> {:error, error}
+    end
+  end
+
   def get_available_metrics(_root, _args, _resolution), do: {:ok, Metric.available_metrics()}
 
   def get_available_slugs(_root, _args, %{source: %{metric: metric}}),
     do: Metric.available_slugs(metric)
 
-  def get_metadata(%{}, _args, %{source: %{metric: metric}}), do: Metric.metadata(metric)
+  def get_metadata(%{}, _args, %{source: %{metric: metric}}) do
+    case Metric.metadata(metric) do
+      {:ok, metadata} ->
+        {:ok, metadata}
+
+      {:error, error} ->
+        {:error, handle_graphql_error("metadata", metric, error, description: "metric")}
+    end
+  end
 
   def available_since(_root, %{slug: slug}, %{source: %{metric: metric}}),
     do: Metric.first_datetime(metric, slug)

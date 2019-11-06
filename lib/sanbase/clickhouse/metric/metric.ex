@@ -99,9 +99,11 @@ defmodule Sanbase.Clickhouse.Metric do
     ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
       %{
         datetime: DateTime.from_unix!(unix),
-        value: value |> Sanbase.Math.to_float() |> Float.round(2)
+        value: value
       }
     end)
+
+    {:ok, %{labels: [], values: [], datetime: datetime}}
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -270,56 +272,33 @@ defmodule Sanbase.Clickhouse.Metric do
     {query, args}
   end
 
-  # SELECT
-  # odt, sum(measure)
-  # FROM distribution_deltas_5min FINAL
-  # PREWHERE
-  # asset_id = ... AND
-  # metric_id = ... AND
-  # dt >= {start_date} AND
-  # dt <= {end_date}
-  # GROUP BY odt
-
   defp histogram_data_query(metric, slug, datetime) do
-    # query = """
-    # SELECT
-    #   odt,
-    #   sum(measure)
-    # FROM distribution_deltas_5min FINAL
-    # PREWHERE
-    # asset_id = (
-    #   SELECT argMax(asset_id, computed_at)
-    #   FROM asset_metadata
-    #   PREWHERE name = ?q
-    # ) AND
-    # metric_id = (
-    #   SELECT
-    #     argMax(metric_id, computed_at) AS metric_id
-    #   FROM
-    #     metric_metadata
-    #   PREWHERE
-    #     name = ?2
-    # )
-    # dt = toDateTime(?3) AND
-    # GROUP BY odt
-    # """
-
     query = """
     SELECT
-      toUnixTimestamp(value),
+      odt,
       sum(measure)
     FROM distribution_deltas_5min FINAL
     PREWHERE
-    asset_id = 329 AND
-    metric_id = 178 AND
-    dt <= toDateTime(?1)
-    GROUP BY value
-    ORDER BY value DESC
+    asset_id = (
+      SELECT argMax(asset_id, computed_at)
+      FROM asset_metadata
+      PREWHERE name = ?q
+    ) AND
+    metric_id = (
+      SELECT
+        argMax(metric_id, computed_at) AS metric_id
+      FROM
+        metric_metadata
+      PREWHERE
+        name = ?2
+    )
+    dt = toDateTime(?3) AND
+    GROUP BY odt
     """
 
     args = [
-      # metric,
-      # slug,
+      metric,
+      slug,
       datetime
     ]
 

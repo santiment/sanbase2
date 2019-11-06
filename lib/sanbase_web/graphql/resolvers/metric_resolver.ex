@@ -49,7 +49,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          }}
 
       {:error, error} ->
-        {:error, error}
+        {:error, handle_graphql_error(metric, slug, error)}
     end
   end
 end

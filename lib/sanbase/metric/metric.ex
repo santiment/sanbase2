@@ -242,7 +242,7 @@ defmodule Sanbase.Metric do
   # Private functions
 
   defp metric_not_available_error(metric) when is_binary(metric) do
-    close = Enum.find(@metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.9 end)
+    close = Enum.find(@metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.8 end)
     error_msg = "The metric '#{metric}' is not supported or is mistyped."
 
     case close do

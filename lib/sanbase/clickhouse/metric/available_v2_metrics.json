@@ -597,7 +597,7 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "5m",
-    "table": "transaction_volume_metrics"
+    "table": "intraday_metrics"
   },
 
   {
@@ -607,7 +607,7 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "5m",
-    "table": "exchange_flow_metrics"
+    "table": "intraday_metrics"
   },
   {
     "metric": "exchange_outflow",
@@ -616,7 +616,7 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "5m",
-    "table": "exchange_flow_metrics"
+    "table": "intraday_metrics"
   },
   {
     "metric": "exchange_balance",
@@ -625,7 +625,7 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "5m",
-    "table": "exchange_flow_metrics"
+    "table": "intraday_metrics"
   },
 
   {
@@ -636,7 +636,7 @@
     "access": "restricted",
     "aggregation": "sum",
     "min_interval": "5m",
-    "table": "token_age_consumed_metrics"
+    "table": "intraday_metrics"
   },
 
   {

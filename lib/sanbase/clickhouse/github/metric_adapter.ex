@@ -24,21 +24,13 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   @restricted_metrics []
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data(metric, slug, from, to, interval, _aggregation)
-      when metric in @metrics do
+  def timeseries_data(metric, slug, from, to, interval, _aggregation) do
     case Project.github_organizations(slug) do
       {:ok, organizations} ->
         apply(
           Github,
           Map.get(@timeseries_metrics_function_mapping, metric),
-          [
-            organizations,
-            from,
-            to,
-            interval,
-            "None",
-            nil
-          ]
+          [organizations, from, to, interval, "None", nil]
         )
         |> transform_to_value_pairs(:activity)
 
@@ -62,12 +54,12 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime(metric, slug) when metric in @metrics do
+  def first_datetime(_metric, slug) do
     Github.first_datetime(slug)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def metadata(metric) when metric in @metrics do
+  def metadata(metric) do
     {:ok,
      %{
        metric: metric,
@@ -79,7 +71,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def human_readable_name(metric) when metric in @metrics do
+  def human_readable_name(metric) do
     case metric do
       "dev_activity" -> {:ok, "Development Activity"}
       "github_activity" -> {:ok, "Github Activity"}

@@ -70,14 +70,9 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def aggregated_timeseries_data(metric, slug, from, to, _aggregation)
       when is_binary(slug) and metric in @social_volume_timeseries_metrics do
     [source, _] = String.split(metric, "_", parts: 2)
+    source = Map.get(@social_volume_source_type, source)
 
-    Sanbase.TechIndicators.social_volume(
-      slug,
-      from,
-      to,
-      "1h",
-      Map.get(@social_volume_source_type, source)
-    )
+    Sanbase.TechIndicators.social_volume(slug, from, to, "1h", source)
     |> transform_to_value_pairs(:mentions_count)
     |> case do
       {:ok, result} ->
@@ -91,14 +86,9 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def aggregated_timeseries_data(metric, slug, from, to, _aggregation)
       when metric in @social_dominance_timeseries_metrics do
     [source, _] = String.split(metric, "_", parts: 2)
+    source = Map.get(@social_dominance_source_type, source)
 
-    Sanbase.SocialData.social_dominance(
-      slug,
-      from,
-      to,
-      "1h",
-      Map.get(@social_dominance_source_type, source)
-    )
+    Sanbase.SocialData.social_dominance(slug, from, to, "1h", source)
     |> transform_to_value_pairs(:dominance)
     |> case do
       {:ok, result} ->
@@ -154,7 +144,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def access_map(), do: @access_map
 
   @impl Sanbase.Metric.Behaviour
-  def metadata(metric) when metric in @metrics do
+  def metadata(metric) do
     {:ok,
      %{
        metric: metric,

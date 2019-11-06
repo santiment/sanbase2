@@ -14,9 +14,16 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricMetadataTest do
 
     for metric <- metrics do
       %{"data" => %{"getMetric" => %{"metadata" => metadata}}} = fetch_metadata(conn, metric)
-      assert match?(%{"defaultAggregation" => _, "minInterval" => _}, metadata)
+      assert metadata["metric"] == metric
+
+      assert match?(
+               %{"metric" => _, "defaultAggregation" => _, "minInterval" => _, "dataType" => _},
+               metadata
+             )
+
       assert metadata["defaultAggregation"] in aggregations
       assert metadata["minInterval"] in ["1m", "5m", "1d"]
+      assert metadata["dataType"] in ["TIMESERIES", "HISTOGRAM"]
     end
   end
 
@@ -27,6 +34,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricMetadataTest do
         metadata{
           minInterval
           defaultAggregation
+          dataType
+          metric
         }
       }
     }

@@ -45,6 +45,11 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
   object :metadata do
     @desc ~s"""
+    The name of the metric the metadata is about
+    """
+    field(:metric, non_null(:string))
+
+    @desc ~s"""
     List of slugs which can be provided to the `timeseriesData` field to fetch
     the metric.
     """

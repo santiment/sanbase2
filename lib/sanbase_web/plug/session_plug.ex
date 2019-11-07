@@ -12,13 +12,10 @@ defmodule SanbaseWeb.Plug.SessionPlug do
   def call(conn, opts) do
     runtime_opts =
       opts
-      |> Keyword.put(:domain, domain())
-      |> Keyword.put(:key, session_key())
+      |> Keyword.put(:domain, Config.get(:domain))
+      |> Keyword.put(:key, Config.get(:session_key))
       |> Plug.Session.init()
 
     Plug.Session.call(conn, runtime_opts)
   end
-
-  defp domain(), do: Config.get(:domain)
-  defp session_key(), do: Config.get(:session_key)
 end

@@ -154,7 +154,7 @@ config :libcluster,
 
 config :sanbase, SanbaseWeb.Plug.SessionPlug,
   domain: {:system, "SANTIMENT_ROOT_DOMAIN", "localhost"},
-  session_key: {:system, "SESSION_KEY", "sanbase_sid"}
+  session_key: {:system, "SESSION_KEY", "_sanbase_sid"}
 
 config :sanbase, SanbaseWeb.Plug.BotLoginPlug,
   bot_login_endpoint: {:system, "BOT_LOGIN_SECRET_ENDPOINT"}

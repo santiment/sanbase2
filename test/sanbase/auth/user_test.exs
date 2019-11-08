@@ -406,8 +406,8 @@ defmodule Sanbase.Auth.UserTest do
       "http://stage-sanbase-images.s3.amazonaws.com/uploads/_empowr-coinHY5QG72SCGKYWMN4AEJQ2BRDLXNWXECT.png"
 
     {:ok, user} =
-      insert(:user, avatar_url: avatar_url)
-      |> Sanbase.Auth.User.update_avatar_url()
+      insert(:user)
+      |> Sanbase.Auth.User.update_avatar_url(avatar_url)
 
     assert user.avatar_url == avatar_url
   end
@@ -415,10 +415,13 @@ defmodule Sanbase.Auth.UserTest do
   test "user with invalid avatar url returns proper error" do
     avatar_url = "something invalid"
 
-    {:error, msg} =
-      insert(:user, avatar_url: avatar_url)
-      |> Sanbase.Auth.User.update_avatar_url()
+    {:error, [message: msg, details: details]} =
+      insert(:user)
+      |> Sanbase.Auth.User.update_avatar_url(avatar_url)
 
-    assert msg == "`something invalid` is missing scheme"
+    assert msg == "Cannot change the avatar"
+
+    assert details ==
+             "`something invalid` is not a valid URL. Reason: it is missing scheme (e.g. missing https:// part)"
   end
 end

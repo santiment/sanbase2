@@ -156,6 +156,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     end
   end
 
+  def change_avatar(_root, %{avatar_url: avatar_url}, %{
+        context: %{auth: %{auth_method: :user_token, current_user: user}}
+      }) do
+    User.update_avatar_url(user, avatar_url)
+  end
+
   def add_user_eth_address(
         _root,
         %{signature: signature, address: address, message_hash: message_hash},

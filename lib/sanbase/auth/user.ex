@@ -426,15 +426,19 @@ defmodule Sanbase.Auth.User do
     String.replace(@sanbase_bot_email, "@", "#{idx}@")
   end
 
-  def update_avatar_url(%User{avatar_url: avatar_url} = user) do
-    case validate_url_change(user, avatar_url) do
-      [] ->
-        user
-        |> changeset(%{avatar_url: avatar_url})
-        |> Repo.update()
+  def update_avatar_url(%User{} = user, avatar_url) do
+    user
+    |> changeset(%{avatar_url: avatar_url})
+    |> Repo.update()
+    |> case do
+      {:ok, user} ->
+        {:ok, user}
 
-      [avatar_url: msg] ->
-        {:error, msg}
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error,
+         message: "Cannot change the avatar",
+         details:
+           Enum.at(Sanbase.Utils.ErrorHandling.changeset_errors_to_str(changeset).avatar_url, 0)}
     end
   end
 

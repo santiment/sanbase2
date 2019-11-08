@@ -17,6 +17,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         {:ok, body}
 
+      {:ok, %Tesla.Env{status: 429} = resp} ->
+        wait_rate_limit(resp)
+        fetch_project_page(coinmarketcap_id)
+
       {:ok, %Tesla.Env{status: status}} ->
         error_msg = "Failed fetching project page for #{coinmarketcap_id}. Status: #{status}."
 
@@ -97,5 +101,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
       nil -> nil
       list -> List.last(list)
     end
+  end
+
+  defp wait_rate_limit(%Tesla.Env{status: 429, headers: headers}) do
+    {_, wait_period} =
+      Enum.find(headers, fn {header, _} ->
+        header == "retry-after"
+      end)
+
+    wait_period = String.to_integer(wait_period)
+    wait_until = Timex.shift(Timex.now(), seconds: wait_period)
+    Sanbase.ExternalServices.RateLimiting.Server.wait_until(@rate_limiting_server, wait_until)
   end
 end

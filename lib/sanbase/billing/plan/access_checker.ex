@@ -41,7 +41,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   alias Sanbase.Billing.GraphqlSchema
 
   # Raise an error if there is any query without subscription plan
-  case GraphqlSchema.get_metrics_without_access_level() do
+  case GraphqlSchema.get_all_without_access_level() do
     [] ->
       :ok
 
@@ -56,14 +56,14 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
       """)
   end
 
-  @extension_metrics GraphqlSchema.get_metrics_with_access_level(:extension)
+  @extension_metrics GraphqlSchema.get_all_with_access_level(:extension)
   def extension_metrics(), do: @extension_metrics
 
-  @free_metrics GraphqlSchema.get_metrics_with_access_level(:free)
+  @free_metrics GraphqlSchema.get_all_with_access_level(:free)
   @free_metrics_mapset MapSet.new(@free_metrics)
   def free_metrics_mapset(), do: @free_metrics_mapset
 
-  @restricted_metrics GraphqlSchema.get_metrics_with_access_level(:restricted)
+  @restricted_metrics GraphqlSchema.get_all_with_access_level(:restricted)
   @restricted_metrics_mapset MapSet.new(@restricted_metrics)
   def restricted_metrics_mapset(), do: @restricted_metrics_mapset
 

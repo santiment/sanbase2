@@ -7,10 +7,7 @@ defmodule SanbaseWeb.Plug.SessionPlug do
 
   require Sanbase.Utils.Config, as: Config
 
-  def init(opts) do
-    IO.inspect(" I AM BEING CALLED")
-    opts
-  end
+  def init(opts), do: opts
 
   def call(conn, opts) do
     runtime_opts =

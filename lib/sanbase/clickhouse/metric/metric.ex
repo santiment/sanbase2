@@ -24,8 +24,8 @@ defmodule Sanbase.Clickhouse.Metric do
 
   @plain_aggregations FileHandler.aggregations()
   @aggregations [nil] ++ @plain_aggregations
-  @timeseries_metrics_public_name_list FileHandler.metrics_with_data_type(:timeseries)
-  @histogram_metrics_public_name_list FileHandler.metrics_with_data_type(:histogram)
+  @timeseries_metrics_name_list FileHandler.metrics_with_data_type(:timeseries)
+  @histogram_metrics_name_list FileHandler.metrics_with_data_type(:histogram)
   @access_map FileHandler.access_map()
   @min_interval_map FileHandler.min_interval_map()
   @free_metrics FileHandler.metrics_with_access(:free)
@@ -34,9 +34,9 @@ defmodule Sanbase.Clickhouse.Metric do
   @human_readable_name_map FileHandler.human_readable_name_map()
   @metrics_data_type_map FileHandler.metrics_data_type_map()
   @metrics_label_map FileHandler.metrics_label_map()
-  @metrics_public_name_list (@histogram_metrics_public_name_list ++
-                               @timeseries_metrics_public_name_list)
-                            |> Enum.uniq()
+  @metrics_name_list (@histogram_metrics_name_list ++
+                        @timeseries_metrics_name_list)
+                     |> Enum.uniq()
 
   @type slug :: String.t()
   @type metric :: String.t()
@@ -145,21 +145,16 @@ defmodule Sanbase.Clickhouse.Metric do
 
   @doc ~s"""
   Return a list of available metrics.
-
-  If a metric has an alias only the alias is added to the list. But when a metric
-  is queries, the alias **and** the original metric name is accepted. This is
-  done so we do not pollute the public API with too much metric names and we
-  expose only the user-friendly ones.
   """
 
   @impl Sanbase.Metric.Behaviour
-  def available_histogram_metrics(), do: @histogram_metrics_public_name_list
+  def available_histogram_metrics(), do: @histogram_metrics_name_list
 
   @impl Sanbase.Metric.Behaviour
-  def available_timeseries_metrics(), do: @timeseries_metrics_public_name_list
+  def available_timeseries_metrics(), do: @timeseries_metrics_name_list
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(), do: @metrics_public_name_list
+  def available_metrics(), do: @metrics_name_list
 
   @impl Sanbase.Metric.Behaviour
   def available_slugs(), do: get_available_slugs()

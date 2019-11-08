@@ -1,6 +1,17 @@
 defmodule Sanbase.Clickhouse.Metric.FileHandler do
   @moduledoc false
 
+  defmodule Helper do
+    def name_to_field_map(map, field, transform_fn \\ fn x -> x end) do
+      map
+      |> Enum.map(fn
+        %{"name" => name, ^field => value} ->
+          {name, transform_fn.(value)}
+      end)
+      |> Map.new()
+    end
+  end
+
   # Structure
   #  This JSON file contains a list of metrics available in ClickHouse.
   #  For every metric we have:
@@ -21,149 +32,22 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   #  smallest.
   #  `time-bound` means that the metric is calculated by taking into account
   #  only the coins/tokens that moved in the past N days/years
+
   @metrics_file "available_v2_metrics.json"
   @external_resource available_metrics_file = Path.join(__DIR__, @metrics_file)
-
   @metrics_json File.read!(available_metrics_file) |> Jason.decode!()
 
-  @metrics_list @metrics_json
-                |> Enum.flat_map(fn
-                  %{"alias" => metric_alias, "metric" => metric} -> [metric, metric_alias]
-                  %{"metric" => metric} -> [metric]
-                end)
-  @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median]
+  @metrics_data_type_map Helper.name_to_field_map(@metrics_json, "data_type", &String.to_atom/1)
+  @name_to_column_map Helper.name_to_field_map(@metrics_json, "metric")
+  @access_map Helper.name_to_field_map(@metrics_json, "access", &String.to_atom/1)
+  @table_map Helper.name_to_field_map(@metrics_json, "table")
+  @aggregation_map Helper.name_to_field_map(@metrics_json, "aggregation", &String.to_atom/1)
+  @min_interval_map Helper.name_to_field_map(@metrics_json, "min_interval")
+  @human_readable_name_map Helper.name_to_field_map(@metrics_json, "human_readable_name")
+  @metric_version_map Helper.name_to_field_map(@metrics_json, "version")
 
-  @metrics_label_map @metrics_json
-                     |> Enum.flat_map(fn
-                       %{"alias" => metric_alias, "metric" => metric, "label" => label} ->
-                         [{metric_alias, label}, {metric, label}]
-
-                       %{"metric" => metric, "label" => label} ->
-                         [{metric, label}]
-
-                       _ ->
-                         []
-                     end)
-                     |> Map.new()
-
-  @metrics_public_name_data_type_map @metrics_json
-                                     |> Enum.map(fn
-                                       %{"alias" => metric_alias, "data_type" => data_type} ->
-                                         {metric_alias, data_type}
-
-                                       %{"metric" => metric, "data_type" => data_type} ->
-                                         {metric, data_type}
-                                     end)
-                                     |> Map.new(fn {metric, data_type} ->
-                                       {metric, String.to_atom(data_type)}
-                                     end)
-
-  @metrics_data_type_map @metrics_json
-                         |> Enum.flat_map(fn
-                           %{
-                             "metric" => metric,
-                             "alias" => metric_alias,
-                             "data_type" => data_type
-                           } ->
-                             [{metric, data_type}, {metric_alias, data_type}]
-
-                           %{"metric" => metric, "data_type" => data_type} ->
-                             [{metric, data_type}]
-                         end)
-                         |> Map.new(fn {metric, data_type} ->
-                           {metric, String.to_existing_atom(data_type)}
-                         end)
-
+  @metrics_list @metrics_json |> Enum.map(fn %{"name" => name} -> name end)
   @metrics_mapset MapSet.new(@metrics_list)
-  @name_to_column_map @metrics_json
-                      |> Enum.flat_map(fn
-                        %{"alias" => metric_alias, "metric" => metric} ->
-                          [
-                            {metric_alias, metric},
-                            {metric, metric}
-                          ]
-
-                        %{"metric" => metric} ->
-                          [{metric, metric}]
-                      end)
-                      |> Map.new()
-
-  @access_map @metrics_json
-              |> Enum.flat_map(fn
-                %{"alias" => metric_alias, "metric" => metric, "access" => access} ->
-                  [{metric, String.to_atom(access)}, {metric_alias, String.to_atom(access)}]
-
-                %{"metric" => metric, "access" => access} ->
-                  [{metric, String.to_atom(access)}]
-              end)
-              |> Map.new()
-
-  @table_map @metrics_json
-             |> Enum.flat_map(fn
-               %{"alias" => metric_alias, "metric" => metric, "table" => table} ->
-                 [{metric, table}, {metric_alias, table}]
-
-               %{"metric" => metric, "table" => table} ->
-                 [{metric, table}]
-             end)
-             |> Map.new()
-
-  @aggregation_map @metrics_json
-                   |> Enum.flat_map(fn
-                     %{"alias" => metric_alias, "metric" => metric, "aggregation" => aggregation} ->
-                       [
-                         {metric, String.to_atom(aggregation)},
-                         {metric_alias, String.to_atom(aggregation)}
-                       ]
-
-                     %{"metric" => metric, "aggregation" => aggregation} ->
-                       [{metric, String.to_atom(aggregation)}]
-                   end)
-                   |> Map.new()
-
-  @min_interval_map @metrics_json
-                    |> Enum.flat_map(fn
-                      %{
-                        "alias" => metric_alias,
-                        "metric" => metric,
-                        "min_interval" => min_interval
-                      } ->
-                        [{metric, min_interval}, {metric_alias, min_interval}]
-
-                      %{"metric" => metric, "min_interval" => min_interval} ->
-                        [{metric, min_interval}]
-                    end)
-                    |> Map.new()
-
-  @human_readable_name_map @metrics_json
-                           |> Enum.flat_map(fn
-                             %{
-                               "alias" => metric_alias,
-                               "metric" => metric,
-                               "human_readable_name" => human_readable_name
-                             } ->
-                               [
-                                 {metric, human_readable_name},
-                                 {metric_alias, human_readable_name}
-                               ]
-
-                             %{"metric" => metric, "human_readable_name" => human_readable_name} ->
-                               [{metric, human_readable_name}]
-                           end)
-                           |> Map.new()
-
-  @metric_version_map @metrics_json
-                      |> Enum.flat_map(fn
-                        %{"alias" => metric_alias, "metric" => metric, "version" => version} ->
-                          [
-                            {metric_alias, version},
-                            {metric, version}
-                          ]
-
-                        %{"metric" => metric, "version" => version} ->
-                          [{metric, version}]
-                      end)
-                      |> Map.new()
 
   case Enum.filter(@aggregation_map, fn {_, aggr} -> aggr not in @aggregations end) do
     [] ->
@@ -186,9 +70,7 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   def min_interval_map(), do: @min_interval_map
   def name_to_column_map(), do: @name_to_column_map
   def human_readable_name_map(), do: @human_readable_name_map
-
   def metric_version_map(), do: @metric_version_map
-
   def metrics_data_type_map(), do: @metrics_data_type_map
 
   def metrics_label_map(), do: @metrics_label_map
@@ -200,8 +82,10 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   end
 
   def metrics_with_data_type(type) do
-    @metrics_public_name_data_type_map
+    @metrics_data_type_map
     |> Enum.filter(fn {_metric, data_type} -> data_type == type end)
     |> Keyword.keys()
   end
+
+  # Private functions
 end

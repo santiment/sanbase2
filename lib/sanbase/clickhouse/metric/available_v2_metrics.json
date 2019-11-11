@@ -738,7 +738,8 @@
     "data_type": "timeseries"
   },
   {
-    "metric": "age_distribution",
+    "metric": "age_distribution_5min_delta",
+    "alias": "age_distribution",
     "version": "2019-01-01",
     "human_readable_name": "Age Distribution Histogram",
     "access": "restricted",

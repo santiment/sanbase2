@@ -51,10 +51,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   def histogram_data(
         _root,
-        %{slug: slug, datetime: datetime},
+        %{slug: slug, from: from, to: to, interval: interval, limit: limit},
         %{source: %{metric: metric}}
       ) do
-    case Metric.histogram_data(metric, slug, datetime) do
+    case Metric.histogram_data(metric, slug, from, to, interval, limit) do
       {:ok, %{labels: labels, values: values}} ->
         {:ok,
          %{

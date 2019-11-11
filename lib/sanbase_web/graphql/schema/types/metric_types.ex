@@ -32,9 +32,9 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     types([:string_list, :float_list, :integer_list])
 
     resolve_type(fn
-      %{data: [value | _]}, _ when is_binary(value) -> :string_list
       %{data: [value | _]}, _ when is_integer(value) -> :integer_list
       %{data: [value | _]}, _ when is_float(value) -> :float_list
+      %{data: [value | _]}, _ when is_binary(value) -> :string_list
     end)
   end
 
@@ -108,8 +108,12 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
     field :histogram_data, :histogram_data do
       arg(:slug, non_null(:string))
-      arg(:datetime, non_null(:datetime))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :interval, default_value: "1d")
+      arg(:limit, :integer, default_value: 100)
 
+      complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
 
       cache_resolve(&MetricResolver.histogram_data/3)

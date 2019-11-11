@@ -30,19 +30,22 @@ defmodule Sanbase.Metric.Behaviour do
   @type timeseries_data_point :: %{datetime: Datetime.t(), value: float()}
 
   @callback timeseries_data(
-              metric :: metric,
+              metric :: metric(),
               selector :: any(),
               from :: DatetTime.t(),
               to :: DateTime.t(),
-              interval :: interval,
+              interval :: interval(),
               opts :: Keyword.t()
             ) ::
               {:ok, list(timeseries_data_point)} | {:error, String.t()}
 
   @callback histogram_data(
-              metric :: metric,
+              metric :: metric(),
               selector :: any(),
-              datetime :: DateTime.t()
+              from :: DateTime.t(),
+              to :: DateTime.t(),
+              interval :: interval(),
+              limit :: non_neg_integer()
             ) :: {:ok, histogram_data} | {:error, String.t()}
 
   @callback aggregated_timeseries_data(

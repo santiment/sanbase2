@@ -116,19 +116,22 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Get a histogram for a given metric
   """
-  def histogram_data(metric, identifier, datetime)
+  def histogram_data(metric, identifier, from, to, interval, limit \\ 100)
 
   for %{metric: metric, module: module} <- @histogram_metric_module_mapping do
-    def histogram_data(unquote(metric), identifier, datetime) do
+    def histogram_data(unquote(metric), identifier, from, to, interval, limit) do
       unquote(module).histogram_data(
         unquote(metric),
         identifier,
-        datetime
+        from,
+        to,
+        interval,
+        limit
       )
     end
   end
 
-  def histogram_data(metric, _, _), do: metric_not_available_error(metric)
+  def histogram_data(metric, _, _, _, _, _), do: metric_not_available_error(metric)
 
   @doc ~s"""
   Get the human readable name representation of a given metric

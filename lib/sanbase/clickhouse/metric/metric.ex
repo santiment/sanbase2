@@ -14,6 +14,8 @@ defmodule Sanbase.Clickhouse.Metric do
   import Sanbase.Clickhouse.Metric.Helper,
     only: [slug_asset_id_map: 0, asset_id_slug_map: 0, metric_name_id_map: 0]
 
+  import Sanbase.DateTimeUtils, only: [round_datetime: 2, str_to_sec: 1]
+
   alias __MODULE__.FileHandler
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
@@ -93,8 +95,8 @@ defmodule Sanbase.Clickhouse.Metric do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def histogram_data(metric, slug, datetime) do
-    {query, args} = histogram_data_query(metric, slug, datetime)
+  def histogram_data(metric, slug, from, to, interval) do
+    {query, args} = histogram_data_query(metric, slug, from, to, interval)
 
     ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
       %{
@@ -102,8 +104,6 @@ defmodule Sanbase.Clickhouse.Metric do
         value: value
       }
     end)
-
-    {:ok, %{labels: [], values: [], datetime: datetime}}
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -272,34 +272,36 @@ defmodule Sanbase.Clickhouse.Metric do
     {query, args}
   end
 
-  defp histogram_data_query(metric, slug, datetime) do
+  defp histogram_data_query(metric, slug, from, to, interval, limit \\ 100) do
     query = """
     SELECT
-      odt,
-      sum(measure)
-    FROM distribution_deltas_5min FINAL
+      toUnixTimestamp(intDiv(toUInt32(toDateTime(value)), ?5) * ?5) AS t,
+      -sum(measure)
+    FROM #{Map.get(@table_map, metric)} FINAL
     PREWHERE
-    asset_id = (
-      SELECT argMax(asset_id, computed_at)
-      FROM asset_metadata
-      PREWHERE name = ?q
-    ) AND
-    metric_id = (
-      SELECT
-        argMax(metric_id, computed_at) AS metric_id
-      FROM
-        metric_metadata
-      PREWHERE
-        name = ?2
-    )
-    dt = toDateTime(?3) AND
-    GROUP BY odt
+      metric_id = (
+        SELECT argMax(metric_id, computed_at)
+        FROM metric_metadata
+        PREWHERE name = ?1
+      ) AND
+      asset_id = (
+        SELECT argMax(asset_id, computed_at)
+        FROM asset_metadata
+        PREWHERE name = ?2
+      ) AND
+      dt > toDateTime(?3) AND dt < toDateTime(?4) AND dt != value
+    GROUP BY t
+    ORDER BY t DESC
+    LIMIT ?6
     """
 
     args = [
-      metric,
+      Map.get(@name_to_column_map, metric),
       slug,
-      datetime
+      from,
+      to,
+      interval |> str_to_sec(),
+      limit
     ]
 
     {query, args}

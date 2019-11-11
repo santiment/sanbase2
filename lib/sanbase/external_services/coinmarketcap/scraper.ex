@@ -5,7 +5,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
 
   alias Sanbase.ExternalServices.{RateLimiting, ProjectInfo, ErrorCatcher}
 
-  plug(RateLimiting.Middleware, name: :http_coinmarketcap_rate_limiter)
+  @rate_limiting_server :http_coinmarketcap_rate_limiter
+
+  plug(RateLimiting.Middleware, name: @rate_limiting_server)
   plug(ErrorCatcher.Middleware)
   plug(Tesla.Middleware.BaseUrl, "https://coinmarketcap.com/currencies")
   plug(Tesla.Middleware.FollowRedirects, max_redirects: 10)

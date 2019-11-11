@@ -14,6 +14,7 @@ defmodule Sanbase.Clickhouse.Metric do
   import Sanbase.Clickhouse.Metric.Helper, only: [slug_asset_id_map: 0, asset_id_slug_map: 0]
   import Sanbase.Clickhouse.Metric.Queries
 
+  alias Sanbase.Clickhouse.Metric.LabelTemplate
   alias __MODULE__.FileHandler
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
@@ -32,6 +33,7 @@ defmodule Sanbase.Clickhouse.Metric do
   @aggregation_map FileHandler.aggregation_map()
   @human_readable_name_map FileHandler.human_readable_name_map()
   @metrics_data_type_map FileHandler.metrics_data_type_map()
+  @metrics_label_map FileHandler.metrics_label_map()
   @metrics_public_name_list (@histogram_metrics_public_name_list ++
                                @timeseries_metrics_public_name_list)
                             |> Enum.uniq()
@@ -79,13 +81,22 @@ defmodule Sanbase.Clickhouse.Metric do
   @impl Sanbase.Metric.Behaviour
   def histogram_data(metric, slug, from, to, interval, limit) do
     {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
+    label_template = Map.get(@metrics_label_map, metric)
 
-    ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
-      %{
-        datetime: DateTime.from_unix!(unix),
-        value: value
-      }
-    end)
+    ClickhouseRepo.query_reduce(
+      query,
+      args,
+      %{labels: [], values: []},
+      fn [unix, value], %{labels: labels, values: values} ->
+        label =
+          unix
+          |> DateTime.from_unix!()
+          |> Timex.format!("%Y-%m-%d %H:%M %Z", :strftime)
+          |> LabelTemplate.get(label_template)
+
+        %{labels: [label | labels], values: [value | values]}
+      end
+    )
   end
 
   @impl Sanbase.Metric.Behaviour

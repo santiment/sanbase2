@@ -33,6 +33,19 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
                 end)
   @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median]
 
+  @metrics_label_map @metrics_json
+                     |> Enum.flat_map(fn
+                       %{"alias" => metric_alias, "metric" => metric, "label" => label} ->
+                         [{metric_alias, label}, {metric, label}]
+
+                       %{"metric" => metric, "label" => label} ->
+                         [{metric, label}]
+
+                       _ ->
+                         []
+                     end)
+                     |> Map.new()
+
   @metrics_public_name_data_type_map @metrics_json
                                      |> Enum.map(fn
                                        %{"alias" => metric_alias, "data_type" => data_type} ->
@@ -177,6 +190,8 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   def metric_version_map(), do: @metric_version_map
 
   def metrics_data_type_map(), do: @metrics_data_type_map
+
+  def metrics_label_map(), do: @metrics_label_map
 
   def metrics_with_access(level) when level in [:free, :restricted] do
     @access_map

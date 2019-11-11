@@ -57,11 +57,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
   defp save_image_meta_data(images) do
     images
     |> Enum.reject(&image_upload_error?/1)
-    |> Enum.map(fn image ->
-      %PostImage{}
-      |> PostImage.changeset(Map.put(image, :post_id, nil))
-      |> Sanbase.Repo.insert!()
-    end)
+    |> Enum.each(&PostImage.create!/1)
   end
 
   defp image_upload_error?(%{error: error}) when not is_nil(error), do: true

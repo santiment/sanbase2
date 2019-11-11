@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   alias Sanbase.Billing.{Subscription, Plan}
   alias Sanbase.Auth.User
-  alias Sanbase.Repo
 
   alias Sanbase.StripeApi
 
@@ -17,7 +16,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     card_token = Map.get(args, :card_token)
     coupon = Map.get(args, :coupon)
 
-    with {:plan?, %Plan{} = plan} <- {:plan?, Repo.get(Plan, plan_id)},
+    with {:plan?, %Plan{} = plan} <- {:plan?, Plan.by_id(plan_id)},
          {:ok, subscription} <-
            Subscription.subscribe(current_user, plan, card_token, coupon) do
       {:ok, subscription}
@@ -35,10 +34,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     user_id = current_user.id
 
     with {:subscription?, %Subscription{user_id: ^user_id} = subscription} <-
-           {:subscription?, Repo.get(Subscription, subscription_id) |> Repo.preload(:plan)},
+           {:subscription?, Subscription.by_id(subscription_id)},
          {:not_cancelled?, %Subscription{cancel_at_period_end: false}} <-
            {:not_cancelled?, subscription},
-         {:plan?, %Plan{} = new_plan} <- {:plan?, Repo.get(Plan, plan_id)},
+         {:plan?, %Plan{} = new_plan} <- {:plan?, Plan.by_id(plan_id)},
          {:ok, subscription} <- Subscription.update_subscription(subscription, new_plan) do
       {:ok, subscription}
     else
@@ -57,7 +56,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     user_id = current_user.id
 
     with {:subscription?, %Subscription{user_id: ^user_id} = subscription} <-
-           {:subscription?, Repo.get(Subscription, subscription_id)},
+           {:subscription?, Subscription.by_id(subscription_id)},
          {:not_cancelled?, %Subscription{cancel_at_period_end: false}} <-
            {:not_cancelled?, subscription},
          {:ok, cancel_subscription} <-
@@ -79,7 +78,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     user_id = current_user.id
 
     with {:subscription?, %Subscription{user_id: ^user_id} = subscription} <-
-           {:subscription?, Repo.get(Subscription, subscription_id) |> Repo.preload(:plan)},
+           {:subscription?, Subscription.by_id(subscription_id)},
          {:cancelled?, %Subscription{cancel_at_period_end: true}} <-
            {:cancelled?, subscription},
          {:ok, subscription} <- Subscription.renew_cancelled_subscription(subscription) do

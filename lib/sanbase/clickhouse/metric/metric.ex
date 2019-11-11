@@ -20,12 +20,11 @@ defmodule Sanbase.Clickhouse.Metric do
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
-  @plain_aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median]
-  @aggregations [nil] ++ @plain_aggregations
-
   @metrics_file "available_v2_metrics.json"
   @external_resource Path.join(__DIR__, @metrics_file)
 
+  @plain_aggregations FileHandler.aggregations()
+  @aggregations [nil] ++ @plain_aggregations
   @timeseries_metrics_public_name_list FileHandler.metrics_with_data_type(:timeseries)
   @histogram_metrics_public_name_list FileHandler.metrics_with_data_type(:histogram)
   @access_map FileHandler.access_map()
@@ -40,19 +39,6 @@ defmodule Sanbase.Clickhouse.Metric do
   @metrics_public_name_list (@histogram_metrics_public_name_list ++
                                @timeseries_metrics_public_name_list)
                             |> Enum.uniq()
-
-  case Enum.filter(@aggregation_map, fn {_, aggr} -> aggr not in @aggregations end) do
-    [] ->
-      :ok
-
-    metrics ->
-      require(Sanbase.Break, as: Break)
-
-      Break.break("""
-      There are metrics defined in the #{@metrics_file} that have not supported aggregation.
-      These metrics are: #{inspect(metrics)}
-      """)
-  end
 
   @type slug :: String.t()
   @type metric :: String.t()
@@ -78,7 +64,7 @@ defmodule Sanbase.Clickhouse.Metric do
   @doc ~s"""
   Get a given metric for a slug and time range. The metric's aggregation
   function can be changed by the last optional parameter. The available
-  aggregations are #{inspect(@aggregations -- [nil])}
+  aggregations are #{inspect(@plain_aggregations)}
   """
   @impl Sanbase.Metric.Behaviour
   def timeseries_data(metric, slug, from, to, interval, aggregation \\ nil)

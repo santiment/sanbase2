@@ -31,6 +31,7 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
                   %{"alias" => metric_alias, "metric" => metric} -> [metric, metric_alias]
                   %{"metric" => metric} -> [metric]
                 end)
+  @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median]
 
   @metrics_public_name_data_type_map @metrics_json
                                      |> Enum.map(fn
@@ -151,6 +152,20 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
                       end)
                       |> Map.new()
 
+  case Enum.filter(@aggregation_map, fn {_, aggr} -> aggr not in @aggregations end) do
+    [] ->
+      :ok
+
+    metrics ->
+      require(Sanbase.Break, as: Break)
+
+      Break.break("""
+      There are metrics defined in the #{@metrics_file} that have not supported aggregation.
+      These metrics are: #{inspect(metrics)}
+      """)
+  end
+
+  def aggregations(), do: @aggregations
   def access_map(), do: @access_map
   def table_map(), do: @table_map
   def metrics_mapset(), do: @metrics_mapset

@@ -60,10 +60,20 @@ defmodule Sanbase.Validation do
 
   def valid_url?(url) do
     case URI.parse(url) do
-      %URI{scheme: nil} -> {:error, "`#{url}` is missing scheme"}
-      %URI{host: nil} -> {:error, "`#{url}` is missing host"}
-      %URI{path: nil} -> {:error, "`#{url}` is missing path"}
-      _ -> :ok
+      %URI{scheme: nil} ->
+        {:error,
+         "`#{url}` is not a valid URL. Reason: it is missing scheme (e.g. missing https:// part)"}
+
+      %URI{host: nil} ->
+        {:error,
+         "`#{url}` is not a valid URL. Reason: it is missing host (e.g. missing the example.com part)"}
+
+      %URI{path: nil} ->
+        {:error,
+         "`#{url}` is not a valid URL. Reason: it is missing path (e.g. missing the /image.png part)"}
+
+      _ ->
+        :ok
     end
   end
 

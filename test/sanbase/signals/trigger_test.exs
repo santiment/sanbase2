@@ -89,7 +89,13 @@ defmodule Sanbase.Signal.TriggersTest do
         settings: trigger_settings
       })
 
-    assert error_details(changeset) == %{trigger: %{icon_url: ["`not_a_url` is missing scheme"]}}
+    assert error_details(changeset) == %{
+             trigger: %{
+               icon_url: [
+                 "`not_a_url` is not a valid URL. Reason: it is missing scheme (e.g. missing https:// part)"
+               ]
+             }
+           }
   end
 
   test "try creating user trigger with unknown channel" do

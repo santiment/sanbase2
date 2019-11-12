@@ -304,11 +304,10 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     Returns NVT (Network-Value-to-Transactions-Ratio
     Daily Market Cap / Daily Transaction Volume
     Since Daily Transaction Volume gets rather noisy and easy to manipulate
-    by transferring the same tokens through couple of addresses over and over again,
+    by transferring the same tokens through а couple of addresses repeatedly,
     it’s not an ideal measure of a network’s economic activity.
-    That’s why we calculate NVT using Daily Trx Volume,
-    but also by using Daily Token Circulation instead,
-    which filters out excess transactions and provides a cleaner overview of
+    That’s why we also offer another way to calculate NVT by using Daily Token Circulation.
+    This method filters out excess transactions and provides a cleaner overview of
     a blockchain’s daily transaction throughput.
     """
     field :nvt_ratio, list_of(:nvt_ratio) do

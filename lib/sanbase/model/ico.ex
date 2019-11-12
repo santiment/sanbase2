@@ -1,6 +1,7 @@
 defmodule Sanbase.Model.Ico do
   use Ecto.Schema
 
+  import Ecto.Query
   import Ecto.Changeset
 
   alias Sanbase.Repo
@@ -65,6 +66,17 @@ defmodule Sanbase.Model.Ico do
     ico
     |> changeset(attrs)
     |> cast_assoc(:ico_currencies, required: false, with: &IcoCurrency.changeset_ex_admin/2)
+  end
+
+  def funds_raised_by_icos(ico_ids) when is_list(ico_ids) do
+    from(
+      i in __MODULE__,
+      left_join: ic in assoc(i, :ico_currencies),
+      inner_join: c in assoc(ic, :currency),
+      where: i.id in ^ico_ids,
+      select: %{ico_id: i.id, currency_code: c.code, amount: ic.amount}
+    )
+    |> Repo.all()
   end
 
   def funds_raised_usd_ico_end_price(%Ico{end_date: end_date, project_id: project_id} = ico)

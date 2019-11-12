@@ -329,6 +329,12 @@ defmodule Sanbase.Auth.User do
     end
   end
 
+  def change_username(%__MODULE__{} = user, username) do
+    user
+    |> changeset(%{username: username})
+    |> Repo.update()
+  end
+
   def send_login_email(user, origin_url) do
     origin_url
     |> Sanbase.Email.Template.choose_login_template(first_login?: user.first_login)

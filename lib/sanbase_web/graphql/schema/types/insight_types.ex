@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
 
   import Absinthe.Resolution.Helpers
 
-  alias SanbaseWeb.Graphql.Resolvers.{InsightResolver, PostResolver}
+  alias SanbaseWeb.Graphql.Resolvers.InsightResolver
   alias SanbaseWeb.Graphql.SanbaseRepo
 
   object :vote do
@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:discourse_topic_url, :string)
 
     field :related_projects, list_of(:project) do
-      resolve(&PostResolver.related_projects/3)
+      resolve(&InsightResolver.related_projects/3)
     end
 
     field :published_at, :datetime do

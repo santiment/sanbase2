@@ -7,7 +7,6 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
   alias SanbaseWeb.Graphql.Resolvers.{
-    PostResolver,
     InsightResolver,
     FileResolver
   }
@@ -32,7 +31,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       deprecate("Use `insight` instead")
       arg(:id, non_null(:integer))
 
-      resolve(&PostResolver.post/3)
+      resolve(&InsightResolver.post/3)
     end
 
     @desc ~s"""
@@ -44,7 +43,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
 
       arg(:id, non_null(:integer))
 
-      resolve(&PostResolver.post/3)
+      resolve(&InsightResolver.post/3)
     end
 
     @desc """
@@ -59,7 +58,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:page_size, :integer, default_value: 20)
       arg(:tags, list_of(:string))
 
-      resolve(&PostResolver.all_insights/3)
+      resolve(&InsightResolver.all_insights/3)
     end
 
     @desc "Fetch a list of all posts for given user ID."
@@ -68,7 +67,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
 
       arg(:user_id, non_null(:integer))
 
-      resolve(&PostResolver.all_insights_for_user/3)
+      resolve(&InsightResolver.all_insights_for_user/3)
     end
 
     @desc "Fetch a list of all posts for which a user has voted."
@@ -77,7 +76,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
 
       arg(:user_id, non_null(:integer))
 
-      resolve(&PostResolver.all_insights_user_voted_for/3)
+      resolve(&InsightResolver.all_insights_user_voted_for/3)
     end
 
     @desc ~s"""
@@ -89,14 +88,14 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
 
       arg(:tag, non_null(:string))
 
-      resolve(&PostResolver.all_insights_by_tag/3)
+      resolve(&InsightResolver.all_insights_by_tag/3)
     end
 
     @desc "Fetch a list of all tags used for posts/insights. This query also returns tags that are not yet in use."
     field :all_tags, list_of(:tag) do
       meta(access: :free)
 
-      cache_resolve(&PostResolver.all_tags/3)
+      cache_resolve(&InsightResolver.all_tags/3)
     end
   end
 
@@ -116,7 +115,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:tags, list_of(:string))
 
       middleware(JWTAuth)
-      resolve(&PostResolver.create_post/3)
+      resolve(&InsightResolver.create_post/3)
     end
 
     @desc """
@@ -133,7 +132,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:tags, list_of(:string))
 
       middleware(JWTAuth)
-      resolve(&PostResolver.create_post/3)
+      resolve(&InsightResolver.create_post/3)
     end
 
     @desc """
@@ -151,7 +150,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:tags, list_of(:string))
 
       middleware(JWTAuth)
-      resolve(&PostResolver.update_post/3)
+      resolve(&InsightResolver.update_post/3)
     end
 
     @desc """
@@ -168,7 +167,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:tags, list_of(:string))
 
       middleware(JWTAuth)
-      resolve(&PostResolver.update_post/3)
+      resolve(&InsightResolver.update_post/3)
     end
 
     @desc "Delete a post. The post must be owned by the user currently logged in."
@@ -178,7 +177,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:id, non_null(:id))
 
       middleware(JWTAuth)
-      resolve(&PostResolver.delete_post/3)
+      resolve(&InsightResolver.delete_post/3)
     end
 
     @desc "Delete an insight. The insight must be owned by the user currently logged in."
@@ -186,7 +185,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:id, non_null(:id))
 
       middleware(JWTAuth)
-      resolve(&PostResolver.delete_post/3)
+      resolve(&InsightResolver.delete_post/3)
     end
 
     @desc "Upload a list of images and return their URLs."
@@ -205,7 +204,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:id, non_null(:id))
 
       middleware(JWTAuth)
-      resolve(&PostResolver.publish_insight/3)
+      resolve(&InsightResolver.publish_insight/3)
     end
 
     @desc """

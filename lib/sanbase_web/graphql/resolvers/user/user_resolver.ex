@@ -73,7 +73,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
         _resolution
       ) do
     with true <- Ethauth.verify_signature(signature, address, message_hash),
-         {:ok, user} <- fetch_user(args, Repo.get_by(EthAccount, address: address)),
+         {:ok, user} <- fetch_user(args, EthAccount.by_address(address)),
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}) do
       {:ok, %{user: user, token: token}}
     else
@@ -142,9 +142,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   def change_username(_root, %{username: new_username}, %{
         context: %{auth: %{auth_method: :user_token, current_user: user}}
       }) do
-    Repo.get!(User, user.id)
-    |> User.changeset(%{username: new_username})
-    |> Repo.update()
+    User.change_username(user, new_username)
     |> case do
       {:ok, user} ->
         {:ok, user}
@@ -200,7 +198,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
       |> Enum.reject(fn {_key, value} -> value == nil end)
       |> Enum.into(%{})
 
-    Repo.get!(User, user.id)
+    user
     |> User.changeset(args)
     |> Repo.update()
     |> case do
@@ -224,8 +222,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
          %{address: address, context: %{auth: %{auth_method: :user_token, current_user: user}}},
          nil
        ) do
-    %EthAccount{user_id: user.id, address: address}
-    |> Repo.insert!()
+    _ = EthAccount.create(%{user_id: user.id, address: address})
 
     {:ok, user}
   end
@@ -253,6 +250,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
 
   # Existing eth account, login as the user of the eth account
   defp fetch_user(_, %EthAccount{user_id: user_id}) do
-    {:ok, Repo.get!(User, user_id)}
+    User.by_id(user_id)
   end
 end

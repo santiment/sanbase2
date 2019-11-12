@@ -1,5 +1,6 @@
 defmodule Sanbase.Insight.Vote do
   use Ecto.Schema
+  use Timex.Ecto.Timestamps
 
   import Ecto.Changeset
 

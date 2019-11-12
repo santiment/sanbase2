@@ -11,16 +11,9 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:total_san_votes, non_null(:integer))
   end
 
-  object :poll do
-    field(:start_at, non_null(:datetime))
-    field(:end_at, non_null(:datetime))
-    field(:posts, list_of(:post))
-  end
-
   object :post do
     field(:id, non_null(:id))
     field(:user, non_null(:post_author), resolve: dataloader(SanbaseRepo))
-    field(:poll, non_null(:poll))
     field(:title, non_null(:string))
     field(:short_desc, :string)
     field(:link, :string)

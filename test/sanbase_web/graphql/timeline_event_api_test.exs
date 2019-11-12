@@ -4,26 +4,24 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.Insight.{Poll, Post}
+  alias Sanbase.Insight.Post
   alias Sanbase.UserList
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Auth.UserFollower
 
   setup do
-    poll = Poll.find_or_insert_current_poll!()
     user = insert(:user, email: "test@example.com")
     conn = setup_jwt_auth(build_conn(), user)
 
-    {:ok, conn: conn, user: user, poll: poll}
+    {:ok, conn: conn, user: user}
   end
 
-  test "fetching timeline events by followed users", %{conn: conn, user: user, poll: poll} do
+  test "fetching timeline events by followed users", %{conn: conn, user: user} do
     user_to_follow = insert(:user)
     UserFollower.follow(user_to_follow.id, user.id)
 
     post =
       insert(:post,
-        poll: poll,
         user: user_to_follow,
         state: Post.approved_state(),
         ready_state: Post.published()

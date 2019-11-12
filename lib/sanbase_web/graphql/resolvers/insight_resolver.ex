@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
 
   alias Sanbase.Tag
   alias Sanbase.Auth.User
-  alias Sanbase.Insight.{Poll, Post, Vote}
+  alias Sanbase.Insight.{Post, Vote}
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.Helpers.Utils
 
@@ -82,14 +82,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
 
   def all_tags(_root, _args, _context) do
     {:ok, Tag.all()}
-  end
-
-  def current_poll(_root, _args, _context) do
-    poll =
-      Poll.find_or_insert_current_poll!()
-      |> Repo.preload(posts: :user)
-
-    {:ok, poll}
   end
 
   @doc ~s"""

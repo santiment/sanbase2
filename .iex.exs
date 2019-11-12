@@ -28,7 +28,6 @@ alias Sanbase.Tag
 
 alias Sanbase.Insight.{
   Post,
-  Poll,
   Vote,
   PostImage
 }

@@ -4,19 +4,15 @@ defmodule Sanbase.Insight.PostTest do
   import Sanbase.Factory
   alias Sanbase.Repo
   alias Sanbase.Auth.User
-  alias Sanbase.Insight.{Poll, Post}
+  alias Sanbase.Insight.Post
 
   test "create_changeset creates the post in approved state" do
-    poll =
-      Poll.current_poll_changeset()
-      |> Repo.insert!()
-
     user =
       %User{salt: User.generate_salt(), privacy_policy_accepted: true}
       |> Repo.insert!()
 
     post =
-      %Post{user_id: user.id, poll_id: poll.id}
+      %Post{user_id: user.id}
       |> Post.create_changeset(%{
         text: "Some text",
         title: "Awesome article!"
@@ -27,10 +23,9 @@ defmodule Sanbase.Insight.PostTest do
   end
 
   test "changes the owner to the fallback user" do
-    poll = Poll.find_or_insert_current_poll!()
     insights_user = insert(:insights_fallback_user)
     user = insert(:user)
-    post = insert(:post_no_default_user, poll_id: poll.id, user_id: user.id)
+    post = insert(:post_no_default_user, user_id: user.id)
 
     Post.change_owner_to_anonymous(user.id)
 
@@ -40,14 +35,13 @@ defmodule Sanbase.Insight.PostTest do
   end
 
   test "create custom tags when creating post" do
-    poll = Poll.find_or_insert_current_poll!()
     insert(:tag, %{name: "SAN"})
     user = insert(:user)
 
     tags = ["SAN", "test1", "test2"]
 
     post =
-      %Post{user_id: user.id, poll_id: poll.id}
+      %Post{user_id: user.id}
       |> Post.create_changeset(%{title: "test title", tags: tags})
       |> Repo.insert!()
 

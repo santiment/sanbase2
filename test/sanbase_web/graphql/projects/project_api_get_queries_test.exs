@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGetQueriesTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.Insight.{Poll, Post}
+  alias Sanbase.Insight.Post
 
   setup do
     infr_eth = insert(:infrastructure, %{code: "ETH"})
@@ -113,11 +113,9 @@ defmodule SanbaseWeb.Graphql.ProjectApiGetQueriesTest do
     post_title = "Awesome post"
     tag = insert(:tag, %{name: context.project1.ticker})
     user = insert(:user)
-    poll = Poll.find_or_insert_current_poll!()
 
     insert(:post,
       title: post_title,
-      poll: poll,
       user: user,
       tags: [tag],
       state: Post.approved_state(),

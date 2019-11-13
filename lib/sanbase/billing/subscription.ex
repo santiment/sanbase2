@@ -57,6 +57,11 @@ defmodule Sanbase.Billing.Subscription do
     |> foreign_key_constraint(:plan_id, name: :subscriptions_plan_id_fkey)
   end
 
+  def by_id(plan_id) do
+    Repo.get(__MODULE__, plan_id)
+    |> Repo.preload(:plan)
+  end
+
   @spec free_subscription() :: %__MODULE__{}
   def free_subscription() do
     %__MODULE__{plan: Plan.free_plan()}

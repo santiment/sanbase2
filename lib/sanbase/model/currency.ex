@@ -2,7 +2,7 @@ defmodule Sanbase.Model.Currency do
   use Ecto.Schema
   import Ecto.Changeset
 
-  import Ecto.Query, warn: false
+  import Ecto.Query
   alias Sanbase.Repo
 
   alias Sanbase.Model.Currency
@@ -17,6 +17,11 @@ defmodule Sanbase.Model.Currency do
     |> cast(attrs, [:code])
     |> validate_required([:code])
     |> unique_constraint(:code)
+  end
+
+  def by_ids(ids) do
+    from(i in __MODULE__, where: i.id in ^ids)
+    |> Repo.all()
   end
 
   def get(currency_code) do

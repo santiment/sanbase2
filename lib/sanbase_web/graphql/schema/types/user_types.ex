@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     UserSettingsResolver,
     UserTriggerResolver,
     UserListResolver,
-    PostResolver,
+    InsightResolver,
     BillingResolver
   }
 
@@ -39,7 +39,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     end
 
     field :insights, list_of(:post) do
-      cache_resolve(&PostResolver.public_insights/3, ttl: 60)
+      cache_resolve(&InsightResolver.public_insights/3, ttl: 60)
     end
 
     field :watchlists, list_of(:user_list) do
@@ -100,7 +100,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     end
 
     field :insights, list_of(:post) do
-      resolve(&PostResolver.insights/3)
+      resolve(&InsightResolver.insights/3)
     end
 
     field :subscriptions, list_of(:subscription_plan) do

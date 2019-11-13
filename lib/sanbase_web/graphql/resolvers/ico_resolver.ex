@@ -7,8 +7,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.IcoResolver do
   alias Sanbase.Model.Ico
   alias Sanbase.Model.Currency
 
-  alias Sanbase.Repo
-
   def cap_currency(%Ico{cap_currency_id: nil}, _args, _resolution), do: {:ok, nil}
 
   def cap_currency(%Ico{cap_currency_id: cap_currency_id}, _args, _resolution) do
@@ -18,11 +16,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.IcoResolver do
   end
 
   def currencies_by_id(_, currency_ids) do
-    currencies =
-      from(i in Currency, where: i.id in ^currency_ids)
-      |> Repo.all()
-
-    Map.new(currencies, fn currency -> {currency.id, currency.code} end)
+    Currency.by_ids(currency_ids)
+    |> Map.new(fn currency -> {currency.id, currency.code} end)
   end
 
   def funds_raised(%Ico{id: id}, _args, _resolution) do
@@ -32,16 +27,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.IcoResolver do
   end
 
   def funds_raised_by_id(_, ico_ids) do
-    query =
-      from(
-        i in Ico,
-        left_join: ic in assoc(i, :ico_currencies),
-        inner_join: c in assoc(ic, :currency),
-        where: i.id in ^ico_ids,
-        select: %{ico_id: i.id, currency_code: c.code, amount: ic.amount}
-      )
-
-    Repo.all(query)
+    Ico.funds_raised_by_icos(ico_ids)
     |> Enum.group_by(& &1.ico_id, &%{currency_code: &1.currency_code, amount: &1.amount})
   end
 

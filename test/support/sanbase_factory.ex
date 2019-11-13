@@ -4,7 +4,7 @@ defmodule Sanbase.Factory do
   alias Sanbase.Tag
   alias Sanbase.UserList
   alias Sanbase.Auth.{User, UserSettings, Role, UserRole}
-  alias Sanbase.Insight.{Post, Poll}
+  alias Sanbase.Insight.Post
 
   alias Sanbase.Model.{
     Project,
@@ -51,17 +51,9 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def poll_factory() do
-    %Poll{
-      start_at: DateTime.from_naive!(~N[2017-05-13 00:00:00], "Etc/UTC"),
-      end_at: DateTime.from_naive!(~N[2030-05-13 00:00:00], "Etc/UTC")
-    }
-  end
-
   def post_factory() do
     %Post{
       user: build(:user),
-      poll: Sanbase.Repo.all(Sanbase.Insight.Poll) |> List.first() || build(:poll),
       title: "Awesome analysis",
       link: "http://example.com",
       text: "Text of the post",

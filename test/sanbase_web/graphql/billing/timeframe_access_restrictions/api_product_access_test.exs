@@ -23,7 +23,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
   setup do
     user = insert(:user)
-    project = insert(:random_project)
+    project = insert(:random_erc20_project)
 
     {:ok, apikey} = Apikey.generate_apikey(user)
     conn = setup_apikey_auth(build_conn(), apikey)
@@ -35,56 +35,64 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     test "can access FREE metrics for all time", context do
       {from, to} = from_to(2500, 0)
       metric = v2_free_metric()
-      query = metric_query(metric, from, to)
+      slug = context.project.slug
+      query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
-      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert_called(Metric.timeseries_data(metric, slug, from, to, :_, :_))
       assert result != nil
     end
 
     test "can access FREE queries for all time", context do
       {from, to} = from_to(2500, 0)
-      query = history_price_query(context.project, from, to)
+      slug = context.project.slug
+      query = history_price_query(slug, from, to)
       result = execute_query(context.conn, query, "historyPrice")
-
-      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(:_, from, to, :_))
+      ticker_slug = context.project.ticker <> "_" <> slug
+      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(ticker_slug, from, to, :_))
       assert result != nil
     end
 
     test "cannot access RESTRICTED metrics for over 3 months", context do
       {from, to} = from_to(91, 10)
       metric = v2_restricted_metric()
-      query = metric_query(metric, from, to)
+      slug = context.project.slug
+      query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
-      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
-      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert_called(Metric.timeseries_data(metric, slug, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, slug, from, to, :_, :_))
       assert result != nil
     end
 
     test "cannot access RESTRICTED queries for over 3 months", context do
       {from, to} = from_to(91, 10)
-      query = network_growth_query(from, to)
+      query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
+      contract = context.project.main_contract_address
 
-      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
+      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
       assert result != nil
     end
 
     test "cannot access RESTRICTED queries realtime", context do
       {from, to} = from_to(10, 0)
-      query = network_growth_query(from, to)
+      query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
+      contract = context.project.main_contract_address
 
-      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
+      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
       assert result != nil
     end
 
     test "cannot access RESTRICTED metrics realtime", context do
       {from, to} = from_to(10, 0)
-      query = daily_active_deposits_query(from, to)
+      query = daily_active_deposits_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "dailyActiveDeposits")
+      contract = context.project.main_contract_address
 
-      refute called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
+      refute called(
+               Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(contract, from, to, :_)
+             )
 
       assert result != nil
     end
@@ -92,19 +100,24 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     test "can access RESTRICTED metrics within 90 days and 1 day interval", context do
       {from, to} = from_to(89, 2)
       metric = v2_restricted_metric()
-      query = metric_query(metric, from, to)
+      slug = context.project.slug
+      query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
-      assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert called(Metric.timeseries_data(metric, slug, from, to, :_, :_))
       assert result != nil
     end
 
     test "can access RESTRICTED queries within 90 days and 1 day interval", context do
       {from, to} = from_to(89, 2)
-      query = daily_active_deposits_query(from, to)
+      query = daily_active_deposits_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "dailyActiveDeposits")
+      contract = context.project.main_contract_address
 
-      assert_called(Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(:_, from, to, :_))
+      assert_called(
+        Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(contract, from, to, :_)
+      )
+
       assert result != nil
     end
   end
@@ -118,57 +131,63 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     test "can access FREE metrics for all time", context do
       {from, to} = from_to(2500, 0)
       metric = v2_free_metric()
-      query = metric_query(metric, from, to)
+      slug = context.project.slug
+      query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
-      assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert called(Metric.timeseries_data(metric, slug, from, to, :_, :_))
       assert result != nil
     end
 
     test "can access FREE queries for all time", context do
       {from, to} = from_to(2500, 0)
-      query = history_price_query(context.project, from, to)
+      slug = context.project.slug
+      query = history_price_query(slug, from, to)
       result = execute_query(context.conn, query, "historyPrice")
-
-      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(:_, from, to, :_))
+      ticker_slug = context.project.ticker <> "_" <> slug
+      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(ticker_slug, from, to, :_))
       assert result != nil
     end
 
     test "can access RESTRICTED metrics for less than 3 years", context do
       {from, to} = from_to(3 * 365 - 1, 3 * 365 - 2)
       metric = v2_restricted_metric()
-      query = metric_query(metric, from, to)
+      slug = context.project.slug
+      query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
-      assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert called(Metric.timeseries_data(metric, slug, from, to, :_, :_))
       assert result != nil
     end
 
     test "can access RESTRICTED queries for less than 3 years", context do
       {from, to} = from_to(3 * 365 - 1, 3 * 365 - 2)
-      query = network_growth_query(from, to)
+      query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
+      contract = context.project.main_contract_address
 
-      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
+      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
       assert result != nil
     end
 
     test "cannot access RESTRICTED queries for more than 3 years", context do
       {from, to} = from_to(3 * 365 + 1, 3 * 365 - 1)
-      query = network_growth_query(from, to)
+      query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
+      contract = context.project.main_contract_address
 
-      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
+      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
       assert result != nil
     end
 
     test "cannot access RESTRICTED metrics for more than 3 years", context do
       {from, to} = from_to(3 * 365 + 1, 3 * 365 - 1)
       metric = v2_restricted_metric()
-      query = metric_query(metric, from, to)
+      slug = context.project.slug
+      query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
-      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
-      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert_called(Metric.timeseries_data(metric, slug, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, slug, from, to, :_, :_))
       assert result != nil
     end
 
@@ -176,29 +195,32 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
          context do
       {from, to} = from_to(3 * 365 - 10, 3 * 365 - 2)
       metric = v2_restricted_metric()
-      query = metric_query(metric, from, to)
+      slug = context.project.slug
+      query = metric_query(metric, slug, from, to)
       result = execute_query_with_error(context.conn, query, "getMetric")
 
-      refute called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, slug, :_, :_, :_, :_))
       assert result != nil
     end
 
     test "can access RESTRICTED metrics realtime", context do
       {from, to} = from_to(10, 0)
       metric = v2_restricted_metric()
-      query = metric_query(metric, from, to)
+      slug = context.project.slug
+      query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
-      assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert called(Metric.timeseries_data(metric, slug, from, to, :_, :_))
       assert result != nil
     end
 
     test "can access RESTRICTED queries realtime", context do
       {from, to} = from_to(10, 0)
-      query = network_growth_query(from, to)
+      query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
+      contract = context.project.main_contract_address
 
-      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
+      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
       assert result != nil
     end
   end
@@ -212,76 +234,84 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     test "can access FREE metrics for all time", context do
       {from, to} = from_to(2500, 0)
       metric = v2_free_metric()
-      query = metric_query(metric, from, to)
+      slug = context.project.slug
+      query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
-      assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert called(Metric.timeseries_data(metric, slug, from, to, :_, :_))
       assert result != nil
     end
 
     test "can access FREE queries for all time", context do
       {from, to} = from_to(2500, 0)
-      query = history_price_query(context.project, from, to)
+      slug = context.project.slug
+      query = history_price_query(slug, from, to)
       result = execute_query(context.conn, query, "historyPrice")
-
-      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(:_, from, to, :_))
+      ticker_slug = context.project.ticker <> "_" <> slug
+      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(ticker_slug, from, to, :_))
       assert result != nil
     end
 
     test "can access RESTRICTED metrics for less than 7 years", context do
       {from, to} = from_to(7 * 365 - 1, 7 * 365 - 2)
       metric = v2_restricted_metric()
-      query = metric_query(metric, from, to)
+      slug = context.project.slug
+      query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
-      assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert called(Metric.timeseries_data(metric, slug, from, to, :_, :_))
       assert result != nil
     end
 
     test "can access RESTRICTED queries for less than 7 years", context do
       {from, to} = from_to(7 * 365 - 1, 7 * 365 - 2)
-      query = network_growth_query(from, to)
+      query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
+      contract = context.project.main_contract_address
 
-      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
+      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
       assert result != nil
     end
 
     test "cannot access RESTRICTED metrics for over 7 years", context do
       {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)
       metric = v2_restricted_metric()
-      query = metric_query(metric, from, to)
+      slug = context.project.slug
+      query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
-      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
-      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert_called(Metric.timeseries_data(metric, slug, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, slug, from, to, :_, :_))
       assert result != nil
     end
 
     test "cannot access RESTRICTED queries for more than 7 years", context do
       {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)
-      query = network_growth_query(from, to)
+      query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
+      contract = context.project.main_contract_address
 
-      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
+      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
       assert result != nil
     end
 
     test "can access RESTRICTED metrics realtime", context do
       {from, to} = from_to(10, 0)
       metric = v2_restricted_metric()
-      query = metric_query(metric, from, to)
+      slug = context.project.slug
+      query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
-      assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert called(Metric.timeseries_data(metric, slug, from, to, :_, :_))
       assert result != nil
     end
 
     test "can access RESTRICTED queries realtime", context do
       {from, to} = from_to(10, 0)
-      query = network_growth_query(from, to)
+      query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
+      contract = context.project.main_contract_address
 
-      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
+      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
       assert result != nil
     end
   end
@@ -295,36 +325,40 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     test "can access FREE metrics for all time", context do
       {from, to} = from_to(2500, 0)
       metric = v2_free_metric()
-      query = metric_query(metric, from, to)
+      slug = context.project.slug
+      query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
-      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert_called(Metric.timeseries_data(metric, slug, from, to, :_, :_))
       assert result != nil
     end
 
     test "can access FREE queries for all time", context do
       {from, to} = from_to(2500, 0)
-      query = history_price_query(context.project, from, to)
+      slug = context.project.slug
+      query = history_price_query(slug, from, to)
       result = execute_query(context.conn, query, "historyPrice")
-
-      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(:_, from, to, :_))
+      ticker_slug = context.project.ticker <> "_" <> slug
+      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(ticker_slug, from, to, :_))
       assert result != nil
     end
 
     test "can access RESTRICTED metrics for all time & realtime", context do
       {from, to} = from_to(2500, 0)
       metric = v2_restricted_metric()
-      query = metric_query(metric, from, to)
+      slug = context.project.slug
+      query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
-      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert_called(Metric.timeseries_data(metric, slug, from, to, :_, :_))
       assert result != nil
     end
 
     test "can access RESTRICTED queries for all time & realtime", context do
       {from, to} = from_to(2500, 0)
-      query = network_growth_query(from, to)
+      query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
+      contract = context.project.main_contract_address
 
-      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(:_, from, to, :_))
+      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
       assert result != nil
     end
   end
@@ -340,11 +374,11 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     {from, to}
   end
 
-  defp metric_query(metric, from, to) do
+  defp metric_query(metric, slug, from, to) do
     """
       {
         getMetric(metric: "#{metric}") {
-          timeseriesData(slug: "ethereum", from: "#{from}", to: "#{to}", interval: "30d"){
+          timeseriesData(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "30d"){
             datetime
             value
           }
@@ -353,10 +387,10 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     """
   end
 
-  defp daily_active_deposits_query(from, to) do
+  defp daily_active_deposits_query(slug, from, to) do
     """
       {
-        dailyActiveDeposits(slug: "ethereum", from: "#{from}", to: "#{to}", interval: "1d"){
+        dailyActiveDeposits(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "1d"){
           datetime
           activeDeposits
         }
@@ -364,10 +398,10 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     """
   end
 
-  defp network_growth_query(from, to) do
+  defp network_growth_query(slug, from, to) do
     """
       {
-        networkGrowth(slug: "ethereum", from: "#{from}", to: "#{to}", interval: "1d"){
+        networkGrowth(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "1d"){
           datetime
           newAddresses
         }
@@ -375,7 +409,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     """
   end
 
-  defp history_price_query(%{slug: slug}, from, to) do
+  defp history_price_query(slug, from, to) do
     """
       {
         historyPrice(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "30d"){

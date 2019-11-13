@@ -8,7 +8,6 @@ defmodule SanbaseWeb.Graphql.InsightTagOrderTest do
   setup do
     clean_task_supervisor_children()
 
-    Sanbase.Insight.Poll.find_or_insert_current_poll!()
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
     conn = setup_jwt_auth(build_conn(), user)
 

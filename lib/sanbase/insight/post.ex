@@ -11,7 +11,7 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Repo
   alias Sanbase.Auth.User
   alias Sanbase.Model.Project
-  alias Sanbase.Insight.{Poll, Post, Vote, PostImage}
+  alias Sanbase.Insight.{Post, Vote, PostImage}
   alias Sanbase.Timeline.TimelineEvent
 
   require Logger
@@ -27,7 +27,6 @@ defmodule Sanbase.Insight.Post do
   @published "published"
 
   schema "posts" do
-    belongs_to(:poll, Poll)
     belongs_to(:user, User)
     has_many(:votes, Vote, on_delete: :delete_all)
 
@@ -63,12 +62,11 @@ defmodule Sanbase.Insight.Post do
 
   def create_changeset(%Post{} = post, attrs) do
     post
-    |> cast(attrs, [:title, :short_desc, :link, :text, :user_id, :poll_id])
+    |> cast(attrs, [:title, :short_desc, :link, :text, :user_id])
     |> Tag.put_tags(attrs)
     |> images_cast(attrs)
-    |> validate_required([:poll_id, :user_id, :title])
+    |> validate_required([:user_id, :title])
     |> validate_length(:title, max: 140)
-    |> unique_constraint(:poll_id, name: :posts_poll_id_title_index)
   end
 
   def update_changeset(%Post{} = post, attrs) do
@@ -77,7 +75,6 @@ defmodule Sanbase.Insight.Post do
     |> Tag.put_tags(attrs)
     |> images_cast(attrs)
     |> validate_length(:title, max: 140)
-    |> unique_constraint(:poll_id, name: :posts_poll_id_title_index)
   end
 
   def publish_changeset(%Post{} = post, attrs) do
@@ -103,7 +100,7 @@ defmodule Sanbase.Insight.Post do
   end
 
   def create(%User{id: user_id}, args) do
-    %__MODULE__{user_id: user_id, poll_id: Poll.find_or_insert_current_poll!().id}
+    %__MODULE__{user_id: user_id}
     |> create_changeset(args)
     |> Repo.insert()
     |> case do

@@ -1,4 +1,4 @@
-defmodule Sanbase.Kafka.ApiCalls do
+defmodule Sanbase.Kafka.ApiCall do
   @typedoc ~s"""
   A map that represents the API call data that will be persisted.
   """

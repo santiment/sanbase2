@@ -13,6 +13,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
 
   setup do
     setup_prices_influxdb()
+    clear_kafka_state()
 
     Sanbase.KafkaExporter.start_link(
       name: :prices_exporter,
@@ -69,7 +70,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
 
     from_datetime = DateTime.from_unix!(1_507_991_665_000, :millisecond)
 
-    Sanbase.InMemoryKafka.Producer.clear_state()
     GraphData.fetch_and_store_prices(context.project, from_datetime)
     Process.sleep(100)
     state = Sanbase.InMemoryKafka.Producer.get_state()
@@ -130,7 +130,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
 
     from_datetime = DateTime.from_unix!(1_367_174_820_000, :millisecond)
 
-    Sanbase.InMemoryKafka.Producer.clear_state()
     GraphData.fetch_and_store_marketcap_total(from_datetime)
     Process.sleep(100)
     state = Sanbase.InMemoryKafka.Producer.get_state()

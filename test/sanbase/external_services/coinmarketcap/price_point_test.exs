@@ -58,18 +58,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePointTest do
     test "convert price point with prices to tuple of json values", context do
       {key, value} = PricePoint.to_json(context.price_point_with_prices, context.project.slug)
 
-      assert key == "coinmarketcap_santiment_1526247900000000000"
+      assert key == "coinmarketcap_santiment_2018-05-13T21:45:00.000000Z"
 
-      assert value =
-               "{\"marketcap_usd\":400,\"price_btc\":3.136261180345569e-5,\"price_usd\":0.292856,\"slug\":\"santiment\",\"source\":\"coinmarketcap\",\"timestamp\":1526247900000000000,\"volume_usd\":500}"
+      assert value ==
+               "{\"marketcap_usd\":400,\"price_btc\":3.136261180345569e-5,\"price_usd\":0.292856,\"slug\":\"santiment\",\"source\":\"coinmarketcap\",\"timestamp\":1526247900,\"volume_usd\":500}"
     end
 
     test "convert price point without prices to tuple of json values", context do
       {key, value} = PricePoint.to_json(context.price_point, @total_market_slug)
-      assert key == "coinmarketcap_TOTAL_MARKET_1526247900000000000"
+      assert key == "coinmarketcap_TOTAL_MARKET_2018-05-13T21:45:00.000000Z"
 
       assert value ==
-               "{\"marketcap_usd\":400,\"price_btc\":null,\"price_usd\":null,\"slug\":\"TOTAL_MARKET\",\"source\":\"coinmarketcap\",\"timestamp\":1526247900000000000,\"volume_usd\":500}"
+               "{\"marketcap_usd\":400,\"price_btc\":null,\"price_usd\":null,\"slug\":\"TOTAL_MARKET\",\"source\":\"coinmarketcap\",\"timestamp\":1526247900,\"volume_usd\":500}"
     end
   end
 

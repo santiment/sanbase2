@@ -48,7 +48,7 @@ config :logger, :console, format: "[$time][$level][$metadata] $message\n"
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20
 
-config :sanbase, Sanbase.ApiCallDataExporter,
+config :sanbase, Sanbase.KafkaExporter,
   supervisor: Sanbase.InMemoryKafka.Supervisor,
   producer: Sanbase.InMemoryKafka.Producer
 

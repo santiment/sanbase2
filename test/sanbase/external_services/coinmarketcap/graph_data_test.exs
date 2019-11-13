@@ -9,10 +9,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
   alias Sanbase.Prices.Store
 
   @total_market_measurement "TOTAL_MARKET_total-market"
+  @topic "sanbase_prices"
 
   setup do
     setup_prices_influxdb()
-    clear_kafka_state()
+
+    Sanbase.KafkaExporter.start_link(
+      name: :prices_exporter,
+      buffering_max_messages: 5000,
+      kafka_flush_timeout: 50,
+      can_send_after_interval: 0,
+      topic: @topic
+    )
 
     project =
       insert(:project, %{
@@ -60,17 +68,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
     end)
 
     from_datetime = DateTime.from_unix!(1_507_991_665_000, :millisecond)
-    to_datetime = DateTime.from_unix!(1_508_078_065_000, :millisecond)
 
-    result = GraphData.fetch_and_store_prices(context.project, from_datetime)
+    Sanbase.InMemoryKafka.Producer.clear_state()
+    GraphData.fetch_and_store_prices(context.project, from_datetime)
     Process.sleep(100)
     state = Sanbase.InMemoryKafka.Producer.get_state()
 
-    topic = Sanbase.Kafka.Exporter.Prices.topic()
-
-    assert hd(state[topic]) ==
-             {"coinmarketcap_bitcoin_1507991665000000000",
-              "{\"marketcap_usd\":94819417917,\"price_btc\":1.0,\"price_usd\":5704.29,\"slug\":\"bitcoin\",\"source\":\"coinmarketcap\",\"timestamp\":1507991665000000000,\"volume_usd\":1946510000}"}
+    assert asset_price_kafka_tuple() in state[@topic]
   end
 
   test "fetching the first total market capitalization datetime" do
@@ -125,17 +129,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
     end)
 
     from_datetime = DateTime.from_unix!(1_367_174_820_000, :millisecond)
-    to_datetime = DateTime.from_unix!(1_386_355_620_000, :millisecond)
 
+    Sanbase.InMemoryKafka.Producer.clear_state()
     GraphData.fetch_and_store_marketcap_total(from_datetime)
     Process.sleep(100)
     state = Sanbase.InMemoryKafka.Producer.get_state()
 
-    topic = Sanbase.Kafka.Exporter.Prices.topic()
-
-    assert List.last(state[topic]) ==
-             {"coinmarketcap_TOTAL_MARKET_1522676820000000000",
-              "{\"marketcap_usd\":2.63492e11,\"price_btc\":null,\"price_usd\":null,\"slug\":\"TOTAL_MARKET\",\"source\":\"coinmarketcap\",\"timestamp\":1522676820000000000,\"volume_usd\":1.21335e10}"}
+    assert total_market_kafka_tuple() in state[@topic]
   end
 
   test "total marketcap correctly saved to influxdb" do
@@ -157,5 +157,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
       Store.fetch_average_volume(@total_market_measurement, from, to)
 
     assert mean_volume == 2_513_748_896.5741253
+  end
+
+  defp total_market_kafka_tuple() do
+    {"coinmarketcap_TOTAL_MARKET_2018-04-02T13:47:00.000Z",
+     "{\"marketcap_usd\":2.63492e11,\"price_btc\":null,\"price_usd\":null,\"slug\":\"TOTAL_MARKET\",\"source\":\"coinmarketcap\",\"timestamp\":1522676820,\"volume_usd\":1.21335e10}"}
+  end
+
+  defp asset_price_kafka_tuple() do
+    {"coinmarketcap_bitcoin_2017-10-14T14:34:25.000Z",
+     "{\"marketcap_usd\":94819417917,\"price_btc\":1.0,\"price_usd\":5704.29,\"slug\":\"bitcoin\",\"source\":\"coinmarketcap\",\"timestamp\":1507991665,\"volume_usd\":1946510000}"}
   end
 end

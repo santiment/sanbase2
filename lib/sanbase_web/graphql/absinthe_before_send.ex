@@ -140,7 +140,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         san_tokens: san_tokens
       }
     end)
-    |> Sanbase.ApiCallDataExporter.persist()
+    |> Sanbase.Kafka.ApiCalls.to_json()
+    |> Sanbase.KafkaExporter.persist(:api_call_exporter)
   end
 
   defp remote_ip(blueprint) do

@@ -1,5 +1,6 @@
 defmodule Sanbase.Application do
   use Application
+  import Sanbase.ApplicationUtils
   require Logger
   require Sanbase.Utils.Config, as: Config
 
@@ -108,7 +109,14 @@ defmodule Sanbase.Application do
        [
          kafka_producer_module: kafka_producer_supervisor_module(),
          kafka_endpoint: kafka_endpoint()
-       ]}
+       ]},
+      start_in(
+        Supervisor.child_spec(
+          {Sanbase.KafkaExporter, [name: :prices_exporter, topic: kafka_prices_data_topic()]},
+          id: :prices_exporter
+        ),
+        [:dev, :prod]
+      )
     ]
   end
 
@@ -124,7 +132,10 @@ defmodule Sanbase.Application do
       # Start the API Call Data Exporter. Must be started before the Endpoint
       # so it will be terminated after the Endpoint so no API Calls can come in
       # and not be persisted. When terminating it will flush its internal buffer
-      {Sanbase.ApiCallDataExporter, [topic: kafka_api_call_data_topic()]}
+      Supervisor.child_spec(
+        {Sanbase.KafkaExporter, [name: :api_call_exporter, topic: kafka_api_call_data_topic()]},
+        id: :api_call_exporter
+      )
     ]
   end
 
@@ -176,18 +187,21 @@ defmodule Sanbase.Application do
   end
 
   defp kafka_producer_supervisor_module() do
-    Config.module_get(Sanbase.ApiCallDataExporter, :supervisor, SanExporterEx.Producer.Supervisor)
+    Config.module_get(Sanbase.KafkaExporter, :supervisor, SanExporterEx.Producer.Supervisor)
   end
 
   defp kafka_api_call_data_topic() do
-    Config.module_get(Sanbase.ApiCallDataExporter, :kafka_topic, "sanbase_api_call_data")
+    Config.module_get(Sanbase.KafkaExporter, :api_call_topic, "sanbase_api_call_data")
+  end
+
+  defp kafka_prices_data_topic() do
+    Config.module_get(Sanbase.KafkaExporter, :prices_topic, "sanbase_prices")
   end
 
   defp kafka_endpoint() do
-    url = Config.module_get(Sanbase.ApiCallDataExporter, :kafka_url) |> to_charlist()
+    url = Config.module_get(Sanbase.KafkaExporter, :kafka_url) |> to_charlist()
 
-    port =
-      Config.module_get(Sanbase.ApiCallDataExporter, :kafka_port) |> Sanbase.Math.to_integer()
+    port = Config.module_get(Sanbase.KafkaExporter, :kafka_port) |> Sanbase.Math.to_integer()
 
     [{url, port}]
   end

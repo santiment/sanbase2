@@ -14,11 +14,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
   ]
 
   def to_json(%__MODULE__{datetime: datetime} = point, slug, source \\ @prices_source) do
-    key = source <> "_" <> slug <> "_" <> to_string(DateTime.to_unix(datetime, :nanosecond))
+    key = source <> "_" <> slug <> "_" <> DateTime.to_iso8601(datetime)
 
     value =
       %{
-        timestamp: DateTime.to_unix(datetime, :nanosecond),
+        timestamp: DateTime.to_unix(datetime),
         source: source,
         slug: slug
       }

@@ -68,7 +68,8 @@ defmodule SanbaseWeb.Endpoint.ErrorHandler do
           duration_ms: nil,
           san_tokens: nil
         }
-        |> Sanbase.ApiCallDataExporter.persist()
+        |> Sanbase.Kafka.ApiCalls.to_json()
+        |> Sanbase.KafkaExporter.persist(:api_call_exporter)
       end
     end
   end

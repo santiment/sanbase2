@@ -40,9 +40,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
     {:ok,
      %{
-       erc20_projects_count: Project.List.erc20_projects_count(min_volume),
-       currency_projects_count: Project.List.currency_projects_count(min_volume),
-       projects_count: Project.List.projects_count(min_volume)
+       erc20_projects_count: Project.List.erc20_projects_count(min_volume: min_volume),
+       currency_projects_count: Project.List.currency_projects_count(min_volume: min_volume),
+       projects_count: Project.List.projects_count(min_volume: min_volume)
      }}
   end
 
@@ -58,9 +58,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
     projects =
       if page_arguments_valid?(page, page_size) do
-        Project.List.projects_page(page, page_size, min_volume)
+        Project.List.projects_page(page, page_size, min_volume: min_volume)
       else
-        Project.List.projects(min_volume)
+        Project.List.projects(min_volume: min_volume)
       end
 
     {:ok, projects}
@@ -73,9 +73,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
     erc20_projects =
       if page_arguments_valid?(page, page_size) do
-        Project.List.erc20_projects_page(page, page_size, min_volume)
+        Project.List.erc20_projects_page(page, page_size, min_volume: min_volume)
       else
-        Project.List.erc20_projects(min_volume)
+        Project.List.erc20_projects(min_volume: min_volume)
       end
 
     {:ok, erc20_projects}
@@ -88,9 +88,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
     currency_projects =
       if page_arguments_valid?(page, page_size) do
-        Project.List.currency_projects_page(page, page_size, min_volume)
+        Project.List.currency_projects_page(page, page_size, min_volume: min_volume)
       else
-        Project.List.currency_projects(min_volume)
+        Project.List.currency_projects(min_volume: min_volume)
       end
 
     {:ok, currency_projects}

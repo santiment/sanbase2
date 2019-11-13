@@ -33,8 +33,8 @@ defmodule Sanbase.WatchlistFunction do
   end
 
   def evaluate(%__MODULE__{name: "min_volume", args: args}) do
-    volume = Map.get(args, "min_volume") || Map.fetch!(args, :min_volume)
-    Project.List.projects(volume)
+    min_volume = Map.get(args, "min_volume") || Map.fetch!(args, :min_volume)
+    Project.List.projects(min_volume: min_volume)
   end
 
   def evaluate(%__MODULE__{name: "slugs", args: args}) do

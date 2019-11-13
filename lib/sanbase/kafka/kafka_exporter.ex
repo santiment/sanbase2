@@ -17,7 +17,7 @@ defmodule Sanbase.KafkaExporter do
 
   @producer Config.get(:producer, SanExporterEx.Producer)
 
-  @type data :: String.t()
+  @type data :: {String.t(), String.t()}
 
   @typedoc ~s"""
   Options that describe to which kafka topic and how often to send the batches.

@@ -195,7 +195,7 @@ defmodule Sanbase.Application do
   end
 
   defp kafka_prices_data_topic() do
-    Config.module_get(Sanbase.KafkaExporter, :prices_topic, "sanbase_prices")
+    Config.module_get(Sanbase.KafkaExporter, :prices_topic, "asset_prices")
   end
 
   defp kafka_endpoint() do

@@ -9,7 +9,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
   alias Sanbase.Prices.Store
 
   @total_market_measurement "TOTAL_MARKET_total-market"
-  @topic "sanbase_prices"
+  @topic "asset_prices"
 
   setup do
     setup_prices_influxdb()

@@ -160,6 +160,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
         context: %{auth: %{auth_method: :user_token, current_user: user}}
       }) do
     User.update_avatar_url(user, avatar_url)
+    |> case do
+      {:ok, user} ->
+        {:ok, user}
+
+      {:error, changeset} ->
+        {
+          :error,
+          message: "Cannot change the avatar", details: Utils.error_details(changeset)
+        }
+    end
   end
 
   def add_user_eth_address(

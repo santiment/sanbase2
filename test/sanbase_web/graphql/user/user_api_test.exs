@@ -600,6 +600,10 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
     assert message == "Cannot change the avatar"
 
     assert details ==
-             "`something invalid` is not a valid URL. Reason: it is missing scheme (e.g. missing https:// part)"
+             %{
+               "avatar_url" => [
+                 "`something invalid` is not a valid URL. Reason: it is missing scheme (e.g. missing https:// part)"
+               ]
+             }
   end
 end

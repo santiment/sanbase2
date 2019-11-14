@@ -415,13 +415,13 @@ defmodule Sanbase.Auth.UserTest do
   test "user with invalid avatar url returns proper error" do
     avatar_url = "something invalid"
 
-    {:error, [message: msg, details: details]} =
+    {:error, changeset} =
       insert(:user)
       |> Sanbase.Auth.User.update_avatar_url(avatar_url)
 
-    assert msg == "Cannot change the avatar"
-
-    assert details ==
-             "`something invalid` is not a valid URL. Reason: it is missing scheme (e.g. missing https:// part)"
+    assert errors_on(changeset)[:avatar_url] ==
+             [
+               "`something invalid` is not a valid URL. Reason: it is missing scheme (e.g. missing https:// part)"
+             ]
   end
 end

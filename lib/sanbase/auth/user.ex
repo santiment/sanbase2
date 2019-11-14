@@ -430,16 +430,6 @@ defmodule Sanbase.Auth.User do
     user
     |> changeset(%{avatar_url: avatar_url})
     |> Repo.update()
-    |> case do
-      {:ok, user} ->
-        {:ok, user}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:error,
-         message: "Cannot change the avatar",
-         details:
-           Enum.at(Sanbase.Utils.ErrorHandling.changeset_errors_to_str(changeset).avatar_url, 0)}
-    end
   end
 
   defp can_remove_eth_account?(%User{id: user_id, email: email}, address) do

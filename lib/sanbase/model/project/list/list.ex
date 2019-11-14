@@ -484,7 +484,7 @@ defmodule Sanbase.Model.Project.List do
     case Keyword.get(opts, :include_hidden_projects?, false) do
       false ->
         query
-        |> where([p], p.is_hidden_from_lists == false)
+        |> where([p], p.is_hidden == false)
 
       true ->
         query

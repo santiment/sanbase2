@@ -46,7 +46,7 @@ defmodule Sanbase.Model.Project do
     field(:project_transparency, :boolean, default: false)
     field(:main_contract_address, :string)
     field(:project_transparency_description, :string)
-    field(:is_hidden_from_lists, :boolean, default: false)
+    field(:is_hidden, :boolean, default: false)
 
     has_one(:social_volume_query, Project.SocialVolumeQuery)
 

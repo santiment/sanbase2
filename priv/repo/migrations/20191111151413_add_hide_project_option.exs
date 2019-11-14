@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.AddHideProjectOption do
 
   def change do
     alter table(:project) do
-      add(:is_hidden_from_lists, :boolean, default: false)
+      add(:is_hidden, :boolean, default: false)
     end
   end
 end

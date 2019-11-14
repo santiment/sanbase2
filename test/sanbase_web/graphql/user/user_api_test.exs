@@ -552,4 +552,58 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
     assert json_response(result, 200)["data"]["logout"]["success"]
     assert result.private.plug_session_info == :drop
   end
+
+  test "change avatar of current user", %{conn: conn} do
+    new_avatar =
+      "http://stage-sanbase-images.s3.amazonaws.com/uploads/_empowr-coinHY5QG72SCGKYWMN4AEJQ2BRDLXNWXECT.png"
+
+    query = """
+    mutation {
+      changeAvatar(avatar_url: "#{new_avatar}") {
+        avatarUrl
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    assert json_response(result, 200)["data"]["changeAvatar"]["avatarUrl"] == new_avatar
+  end
+
+  test "invalid avatar url returns proper error message", %{conn: conn} do
+    invalid_avatar = "something invalid"
+
+    query = """
+    mutation {
+      changeAvatar(avatar_url: "#{invalid_avatar}") {
+        avatarUrl
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    %{
+      "data" => %{"changeAvatar" => nil},
+      "errors" => [
+        %{
+          "message" => message,
+          "details" => details
+        }
+      ]
+    } = json_response(result, 200)
+
+    assert message == "Cannot change the avatar"
+
+    assert details ==
+             %{
+               "avatar_url" => [
+                 "`something invalid` is not a valid URL. Reason: it is missing scheme (e.g. missing https:// part)"
+               ]
+             }
+  end
 end

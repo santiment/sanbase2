@@ -71,6 +71,7 @@ defmodule Sanbase.Auth.User do
     field(:test_san_balance, :decimal)
     field(:stripe_customer_id, :string)
     field(:first_login, :boolean, default: false, virtual: true)
+    field(:avatar_url, :string)
 
     # GDPR related fields
     field(:privacy_policy_accepted, :boolean, default: false)
@@ -115,13 +116,15 @@ defmodule Sanbase.Auth.User do
       :privacy_policy_accepted,
       :marketing_accepted,
       :stripe_customer_id,
-      :first_login
+      :first_login,
+      :avatar_url
     ])
     |> normalize_username(attrs)
     |> normalize_email(attrs[:email], :email)
     |> normalize_email(attrs[:email_candidate], :email_candidate)
     |> validate_change(:username, &validate_username_change/2)
     |> validate_change(:email_candidate, &validate_email_candidate_change/2)
+    |> validate_change(:avatar_url, &validate_url_change/2)
     |> unique_constraint(:email)
     |> unique_constraint(:username)
   end
@@ -164,6 +167,13 @@ defmodule Sanbase.Auth.User do
       [email: "Email has already been taken"]
     else
       []
+    end
+  end
+
+  defp validate_url_change(_, url) do
+    case Sanbase.Validation.valid_url?(url) do
+      :ok -> []
+      {:error, msg} -> [avatar_url: msg]
     end
   end
 
@@ -414,6 +424,12 @@ defmodule Sanbase.Auth.User do
 
   def sanbase_bot_email(idx) do
     String.replace(@sanbase_bot_email, "@", "#{idx}@")
+  end
+
+  def update_avatar_url(%User{} = user, avatar_url) do
+    user
+    |> changeset(%{avatar_url: avatar_url})
+    |> Repo.update()
   end
 
   defp can_remove_eth_account?(%User{id: user_id, email: email}, address) do

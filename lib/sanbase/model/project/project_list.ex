@@ -250,6 +250,15 @@ defmodule Sanbase.Model.Project.List do
     |> Map.new()
   end
 
+  def select_field(field) do
+    from(
+      p in Project,
+      where: not is_nil(field(p, ^field)),
+      select: field(p, ^field)
+    )
+    |> Repo.all()
+  end
+
   def slug_price_change_map() do
     from(p in Project,
       where: not is_nil(p.slug),

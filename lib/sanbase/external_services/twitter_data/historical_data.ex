@@ -14,10 +14,8 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
 
   require Logger
 
-  import Ecto.Query
   require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Repo
   alias Sanbase.Model.Project
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.ExternalServices.RateLimiting
@@ -43,16 +41,9 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
   end
 
   def handle_cast(:sync, %{update_interval_ms: update_interval_ms} = state) do
-    query =
-      from(
-        p in Project,
-        select: p.twitter_link,
-        where: not is_nil(p.twitter_link)
-      )
-
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
-      Repo.all(query),
+      Project.List.select_field(:twitter_link),
       &fetch_and_store/1,
       ordered: false,
       max_concurency: System.schedulers_online() * 2,

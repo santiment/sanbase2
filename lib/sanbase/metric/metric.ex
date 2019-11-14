@@ -48,9 +48,10 @@ defmodule Sanbase.Metric do
   aggregations are #{inspect(@available_aggregations)}. If no aggregation is provided,
   a default one (based on the metric) will be used.
   """
-  def get(metric, identifier, from, to, interval, aggregation \\ nil)
+  def timeseries_data(metric, identifier, from, to, interval, aggregation \\ nil)
 
-  def get(_, _, _, _, _, aggregation) when aggregation not in @aggregation_arg_supported do
+  def timeseries_data(_, _, _, _, _, aggregation)
+      when aggregation not in @aggregation_arg_supported do
     {:error, "The aggregation '#{inspect(aggregation)}' is not supported"}
   end
 
@@ -60,7 +61,7 @@ defmodule Sanbase.Metric do
   The available aggregations are #{inspect(@available_aggregations)}. If no aggregation is
   provided, a default one (based on the metric) will be used.
   """
-  def get_aggregated(metric, identifier, from, to, aggregation \\ nil)
+  def aggregated_data(metric, identifier, from, to, aggregation \\ nil)
 
   @doc ~s"""
   Get the human readable name representation of a given metric
@@ -88,8 +89,8 @@ defmodule Sanbase.Metric do
   def available_slugs(metric)
 
   for %{metric: metric, module: module} <- @metrics_module_mapping do
-    def get(unquote(metric), identifier, from, to, interval, aggregation) do
-      unquote(module).get(
+    def timeseries_data(unquote(metric), identifier, from, to, interval, aggregation) do
+      unquote(module).timeseries_data(
         unquote(metric),
         identifier,
         from,
@@ -99,8 +100,8 @@ defmodule Sanbase.Metric do
       )
     end
 
-    def get_aggregated(unquote(metric), identifier, from, to, aggregation) do
-      unquote(module).get_aggregated(
+    def aggregated_data(unquote(metric), identifier, from, to, aggregation) do
+      unquote(module).aggregated_data(
         unquote(metric),
         identifier,
         from,
@@ -126,7 +127,7 @@ defmodule Sanbase.Metric do
     end
   end
 
-  def get(metric, _, _, _, _, _), do: metric_not_available_error(metric)
+  def timeseries_data(metric, _, _, _, _, _), do: metric_not_available_error(metric)
   def metadata(metric), do: metric_not_available_error(metric)
   def first_datetime(metric, _), do: metric_not_available_error(metric)
 

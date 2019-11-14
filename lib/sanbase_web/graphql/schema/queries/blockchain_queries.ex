@@ -29,7 +29,9 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
 
     Grouping by interval works by summing all burn rate records in the interval.
     """
+
     field :burn_rate, list_of(:burn_rate_data) do
+      deprecate(~s/Use getMetric(metric: "age_destroyed") instead/)
       meta(access: :restricted)
 
       arg(:slug, non_null(:string))
@@ -43,6 +45,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     end
 
     field :token_age_consumed, list_of(:token_age_consumed_data) do
+      deprecate(~s/Use getMetric(metric: "age_destroyed") instead/)
       meta(access: :restricted)
 
       arg(:slug, non_null(:string))
@@ -64,6 +67,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     Grouping by interval works by summing all transaction volume records in the interval.
     """
     field :transaction_volume, list_of(:transaction_volume) do
+      deprecate(~s/Use getMetric(metric: "transaction_volume") instead/)
       meta(access: :restricted)
 
       arg(:slug, non_null(:string))
@@ -101,6 +105,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     Projects are referred to by a unique identifier (slug).
     """
     field :token_circulation, list_of(:token_circulation) do
+      deprecate(~s/Use getMetric(metric: "circulation_1d") instead/)
       meta(access: :restricted)
 
       arg(:slug, non_null(:string))
@@ -119,6 +124,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     Projects are referred to by a unique identifier (slug).
     """
     field :token_velocity, list_of(:token_velocity) do
+      deprecate(~s/Use getMetric(metric: "velocity") instead/)
       meta(access: :restricted)
 
       arg(:slug, non_null(:string))
@@ -144,6 +150,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     the exact number of unique addresses for each day.
     """
     field :daily_active_addresses, list_of(:active_addresses) do
+      deprecate(~s/Use getMetric(metric: "daily_active_addresses") instead/)
       meta(access: :free)
 
       arg(:slug, non_null(:string))
@@ -161,6 +168,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     This query returns the difference IN-OUT calculated for each interval.
     """
     field :exchange_funds_flow, list_of(:exchange_funds_flow) do
+      deprecate(~s/Use getMetric(metric: "exchange_balance") instead/)
       meta(access: :restricted)
 
       arg(:slug, non_null(:string))
@@ -190,6 +198,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
 
     @desc "Network growth returns the newly created addresses for a project in a given timeframe"
     field :network_growth, list_of(:network_growth) do
+      deprecate(~s/Use getMetric(metric: "network_growth") instead/)
       meta(access: :restricted)
 
       arg(:slug, non_null(:string))
@@ -263,6 +272,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     The realized value across the whole network is computed by summing the realized values
     of all wallets holding tokens at the moment."
     field :realized_value, list_of(:realized_value) do
+      deprecate(~s/Use getMetric(metric: "realized_value_usd") instead/)
       meta(access: :restricted)
 
       arg(:slug, non_null(:string))
@@ -277,6 +287,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
 
     @desc "Returns MVRV(Market-Value-to-Realized-Value)"
     field :mvrv_ratio, list_of(:mvrv_ratio) do
+      deprecate(~s/Use getMetric(metric: "mvrv_usd") instead/)
       meta(access: :restricted)
 
       arg(:slug, non_null(:string))
@@ -293,14 +304,17 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     Returns NVT (Network-Value-to-Transactions-Ratio
     Daily Market Cap / Daily Transaction Volume
     Since Daily Transaction Volume gets rather noisy and easy to manipulate
-    by transferring the same tokens through couple of addresses over and over again,
+    by transferring the same tokens through а couple of addresses repeatedly,
     it’s not an ideal measure of a network’s economic activity.
-    That’s why we calculate NVT using Daily Trx Volume,
-    but also by using Daily Token Circulation instead,
-    which filters out excess transactions and provides a cleaner overview of
+    That’s why we also offer another way to calculate NVT by using Daily Token Circulation.
+    This method filters out excess transactions and provides a cleaner overview of
     a blockchain’s daily transaction throughput.
     """
     field :nvt_ratio, list_of(:nvt_ratio) do
+      deprecate(
+        ~s/Use getMetric(metric: "nvt") and getMetric(metric: "nvt_transaction_volume") instead/
+      )
+
       meta(access: :restricted)
 
       arg(:slug, non_null(:string))

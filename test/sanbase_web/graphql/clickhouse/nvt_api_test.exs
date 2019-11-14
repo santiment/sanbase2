@@ -31,7 +31,7 @@ defmodule SanbaseWeb.Graphql.NVTApiTest do
       {Sanbase.Metric, [:passthrough],
        [
          first_datetime: fn _, _ -> {:ok, context.from} end,
-         get: fn
+         timeseries_data: fn
            "nvt_transaction_volume", _, _, _, _, _ ->
              {:ok,
               [
@@ -79,7 +79,7 @@ defmodule SanbaseWeb.Graphql.NVTApiTest do
       {Sanbase.Metric, [:passthrough],
        [
          first_datetime: fn _, _ -> {:ok, context.from} end,
-         get: fn _, _, _, _, _, _ -> {:ok, []} end
+         timeseries_data: fn _, _, _, _, _, _ -> {:ok, []} end
        ]}
     ]) do
       response = execute_query(context)
@@ -93,7 +93,7 @@ defmodule SanbaseWeb.Graphql.NVTApiTest do
     error = "Some error description here"
 
     with_mock Sanbase.Metric,
-      get: fn _, _, _, _, _, _ -> {:error, error} end do
+      timeseries_data: fn _, _, _, _, _, _ -> {:error, error} end do
       log =
         capture_log(fn ->
           response = execute_query(context)
@@ -107,7 +107,7 @@ defmodule SanbaseWeb.Graphql.NVTApiTest do
   end
 
   test "uses 1d as default interval", context do
-    with_mock Sanbase.Metric, get: fn _, _, _, _, _, _ -> {:ok, []} end do
+    with_mock Sanbase.Metric, timeseries_data: fn _, _, _, _, _, _ -> {:ok, []} end do
       query = """
         {
           nvtRatio(slug: "#{context.slug}", from: "#{context.from}", to: "#{context.to}"){
@@ -121,7 +121,7 @@ defmodule SanbaseWeb.Graphql.NVTApiTest do
       context.conn
       |> post("/graphql", query_skeleton(query, "nvtRatio"))
 
-      assert_called(Sanbase.Metric.get(:_, :_, context.from, context.to, "1d", :_))
+      assert_called(Sanbase.Metric.timeseries_data(:_, :_, context.from, context.to, "1d", :_))
     end
   end
 

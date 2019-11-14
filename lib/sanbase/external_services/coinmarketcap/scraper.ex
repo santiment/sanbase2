@@ -5,7 +5,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
 
   alias Sanbase.ExternalServices.{RateLimiting, ProjectInfo, ErrorCatcher}
 
-  plug(RateLimiting.Middleware, name: :http_coinmarketcap_rate_limiter)
+  @rate_limiting_server :http_coinmarketcap_rate_limiter
+
+  plug(RateLimiting.Middleware, name: @rate_limiting_server)
   plug(ErrorCatcher.Middleware)
   plug(Tesla.Middleware.BaseUrl, "https://coinmarketcap.com/currencies")
   plug(Tesla.Middleware.FollowRedirects, max_redirects: 10)
@@ -16,6 +18,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
     case get("/#{coinmarketcap_id}/") do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         {:ok, body}
+
+      {:ok, %Tesla.Env{status: 429} = resp} ->
+        wait_rate_limit(resp)
+        fetch_project_page(coinmarketcap_id)
 
       {:ok, %Tesla.Env{status: status}} ->
         error_msg = "Failed fetching project page for #{coinmarketcap_id}. Status: #{status}."
@@ -97,5 +103,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
       nil -> nil
       list -> List.last(list)
     end
+  end
+
+  defp wait_rate_limit(%Tesla.Env{status: 429, headers: headers}) do
+    {_, wait_period} =
+      Enum.find(headers, fn {header, _} ->
+        header == "retry-after"
+      end)
+
+    wait_period = String.to_integer(wait_period)
+    wait_until = Timex.shift(Timex.now(), seconds: wait_period)
+    Sanbase.ExternalServices.RateLimiting.Server.wait_until(@rate_limiting_server, wait_until)
   end
 end

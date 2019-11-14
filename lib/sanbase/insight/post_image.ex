@@ -21,4 +21,10 @@ defmodule Sanbase.Insight.PostImage do
     |> update_change(:image_url, &String.downcase/1)
     |> unique_constraint(:image_url, name: :image_url_index)
   end
+
+  def create!(image_args) do
+    %PostImage{}
+    |> PostImage.changeset(image_args)
+    |> Sanbase.Repo.insert!()
+  end
 end

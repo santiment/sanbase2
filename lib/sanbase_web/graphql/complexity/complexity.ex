@@ -18,9 +18,9 @@ defmodule SanbaseWeb.Graphql.Complexity do
     case Sanbase.Billing.Plan.plan_atom_name(subscription.plan) do
       :free -> complexity
       :basic -> div(complexity, 2)
-      :pro -> div(complexity, 5)
-      :premium -> div(complexity, 7)
-      :enterprise -> div(complexity, 7)
+      :pro -> div(complexity, 3)
+      :premium -> div(complexity, 5)
+      :enterprise -> div(complexity, 5)
     end
   end
 
@@ -55,6 +55,6 @@ defmodule SanbaseWeb.Graphql.Complexity do
   end
 
   defp years_difference_weighted(from, to) do
-    Timex.diff(from, to, :years) |> abs |> max(1)
+    Timex.diff(from, to, :years) |> abs |> max(2) |> div(2)
   end
 end

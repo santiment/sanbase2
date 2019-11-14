@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   import Sanbase.TestHelpers
 
   alias Sanbase.Tag
-  alias Sanbase.Insight.{Poll, Post, Vote}
+  alias Sanbase.Insight.{Post, Vote}
   alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias Sanbase.Timeline.TimelineEvent
@@ -16,19 +16,17 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   setup do
     clean_task_supervisor_children()
 
-    poll = Poll.find_or_insert_current_poll!()
     user = insert(:user)
     staked_user = insert(:staked_user)
 
     conn = setup_jwt_auth(build_conn(), user)
 
-    {:ok, conn: conn, user: user, staked_user: staked_user, poll: poll}
+    {:ok, conn: conn, user: user, staked_user: staked_user}
   end
 
-  test "getting all inisghts for currentUser", %{conn: conn, user: user, poll: poll} do
+  test "getting all inisghts for currentUser", %{conn: conn, user: user} do
     published =
       insert(:post,
-        poll: poll,
         user: user,
         state: Post.approved_state(),
         ready_state: Post.published()
@@ -36,7 +34,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     draft =
       insert(:post,
-        poll: poll,
         user: user,
         state: Post.approved_state(),
         ready_state: Post.draft()
@@ -54,26 +51,33 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     }
     """
 
-    result = conn |> post("/graphql", query_skeleton(query, "currentUser"))
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "currentUser"))
+      |> json_response(200)
 
-    assert json_response(result, 200)["data"]["currentUser"] == %{
-             "insights" => [
-               %{
-                 "id" => "#{published.id}",
-                 "readyState" => "#{published.ready_state}",
-                 "text" => "#{published.text}"
-               },
-               %{
-                 "id" => "#{draft.id}",
-                 "readyState" => "#{draft.ready_state}",
-                 "text" => "#{draft.text}"
-               }
-             ]
-           }
+    expected_insights =
+      [
+        %{
+          "id" => "#{published.id}",
+          "readyState" => "#{published.ready_state}",
+          "text" => "#{published.text}"
+        },
+        %{
+          "id" => "#{draft.id}",
+          "readyState" => "#{draft.ready_state}",
+          "text" => "#{draft.text}"
+        }
+      ]
+      |> Enum.sort_by(& &1["id"])
+
+    insights = result["data"]["currentUser"]["insights"] |> Enum.sort_by(& &1["id"])
+
+    assert insights == expected_insights
   end
 
-  test "get an insight by id", %{conn: conn, user: user, poll: poll} do
-    post = insert(:post, poll: poll, user: user, state: Post.approved_state())
+  test "get an insight by id", %{conn: conn, user: user} do
+    post = insert(:post, user: user, state: Post.approved_state())
 
     query = """
     {
@@ -88,8 +92,8 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     assert json_response(result, 200)["data"]["insight"] |> Map.get("text") == post.text
   end
 
-  test "getting an insight by id for anon user", %{user: user, poll: poll} do
-    post = insert(:post, poll: poll, user: user, state: Post.approved_state())
+  test "getting an insight by id for anon user", %{user: user} do
+    post = insert(:post, user: user, state: Post.approved_state())
 
     query = """
     {
@@ -137,10 +141,9 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
            )
   end
 
-  test "getting all posts as anon user", %{user: user, poll: poll} do
+  test "getting all posts as anon user", %{user: user} do
     post =
       insert(:post,
-        poll: poll,
         user: user,
         state: Post.approved_state(),
         ready_state: Post.published()
@@ -171,28 +174,24 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
   test "excluding draft and not approved insights from allInsights", %{
     conn: conn,
-    poll: poll,
     user: user,
     staked_user: staked_user
   } do
     insert(:post,
-      poll: poll,
       user: user,
       state: Post.approved_state(),
       ready_state: Post.published()
     )
 
     insert(:post,
-      poll: poll,
       user: user,
       state: Post.awaiting_approval_state(),
       ready_state: Post.published()
     )
 
-    insert(:post, poll: poll, user: user, state: Post.approved_state(), ready_state: Post.draft())
+    insert(:post, user: user, state: Post.approved_state(), ready_state: Post.draft())
 
     insert(:post,
-      poll: poll,
       user: staked_user,
       state: Post.approved_state(),
       ready_state: Post.published()
@@ -216,19 +215,17 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   test "getting all insight for given user", %{
     user: user,
     staked_user: staked_user,
-    conn: conn,
-    poll: poll
+    conn: conn
   } do
     post =
       insert(:post,
-        poll: poll,
         user: user,
         ready_state: Post.published(),
         state: Post.approved_state()
       )
 
-    insert(:post, poll: poll, user: user, ready_state: Post.draft())
-    insert(:post, poll: poll, user: staked_user, ready_state: Post.published())
+    insert(:post, user: user, ready_state: Post.draft())
+    insert(:post, user: staked_user, ready_state: Post.published())
 
     query = """
     {
@@ -252,12 +249,10 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   test "getting all insight user has voted for", %{
     user: user,
     staked_user: staked_user,
-    conn: conn,
-    poll: poll
+    conn: conn
   } do
     post =
       insert(:post,
-        poll: poll,
         user: user,
         ready_state: Post.published(),
         state: Post.approved_state()
@@ -265,7 +260,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     post2 =
       insert(:post,
-        poll: poll,
         user: staked_user,
         ready_state: Post.published(),
         state: Post.approved_state()
@@ -299,12 +293,10 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   test "getting all insights ordered", %{
     user: user,
     staked_user: staked_user,
-    conn: conn,
-    poll: poll
+    conn: conn
   } do
     post =
       insert(:post,
-        poll: poll,
         user: user,
         ready_state: Post.published(),
         state: Post.approved_state(),
@@ -317,7 +309,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     post2 =
       insert(:post,
-        poll: poll,
         user: staked_user,
         ready_state: Post.published(),
         state: Post.approved_state()
@@ -347,13 +338,12 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
              [%{"id" => "#{post2.id}"}, %{"id" => "#{post.id}"}]
   end
 
-  test "Search insights by tag", %{user: user, conn: conn, poll: poll} do
+  test "Search insights by tag", %{user: user, conn: conn} do
     tag1 = insert(:tag, name: "PRJ1")
     tag2 = insert(:tag, name: "PRJ2")
 
     post =
       insert(:post,
-        poll: poll,
         user: user,
         state: Post.approved_state(),
         ready_state: Post.published(),
@@ -365,13 +355,12 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     assert result == [%{"id" => "#{post.id}"}]
   end
 
-  test "Search insights by tag for anonymous user", %{user: user, poll: poll} do
+  test "Search insights by tag for anonymous user", %{user: user} do
     tag1 = insert(:tag, name: "PRJ1")
     tag2 = insert(:tag, name: "PRJ2")
 
     post =
       insert(:post,
-        poll: poll,
         user: user,
         state: Post.approved_state(),
         ready_state: Post.published(),
@@ -383,14 +372,13 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     assert result == [%{"id" => "#{post.id}"}]
   end
 
-  test "Get all insights by a list of tags", %{user: user, poll: poll} do
+  test "Get all insights by a list of tags", %{user: user} do
     tag1 = insert(:tag, name: "PRJ1")
     tag2 = insert(:tag, name: "PRJ2")
     tag3 = insert(:tag, name: "PRJ3")
 
     post =
       insert(:post,
-        poll: poll,
         user: user,
         state: Post.approved_state(),
         ready_state: Post.published(),
@@ -398,7 +386,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       )
 
     insert(:post,
-      poll: poll,
       user: user,
       state: Post.approved_state(),
       ready_state: Post.published(),
@@ -407,7 +394,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     post3 =
       insert(:post,
-        poll: poll,
         user: user,
         state: Post.approved_state(),
         ready_state: Post.published(),
@@ -421,7 +407,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   end
 
   describe "create insight" do
-    test "adding a new insight to the current poll", %{user: user, conn: conn} do
+    test "adding a new insight", %{user: user, conn: conn} do
       query = """
       mutation {
         createInsight(title: "Awesome post", text: "Example body") {
@@ -568,13 +554,11 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   describe "update post" do
     test "update post", %{conn: conn, user: user} do
       image_url = upload_image(conn)
-      poll = Poll.find_or_insert_current_poll!()
       tag1 = %Tag{name: "PRJ1"} |> Repo.insert!()
       tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
 
       post =
         insert(:post,
-          poll: poll,
           user: user,
           ready_state: Post.draft(),
           tags: [tag1]
@@ -607,14 +591,13 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       assert new_post["title"] == "Awesome post2"
     end
 
-    test "cannot update not owned insight", %{conn: conn, staked_user: staked_user, poll: poll} do
+    test "cannot update not owned insight", %{conn: conn, staked_user: staked_user} do
       image_url = upload_image(conn)
       tag1 = %Tag{name: "PRJ1"} |> Repo.insert!()
       tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
 
       post =
         insert(:post,
-          poll: poll,
           user: staked_user,
           ready_state: Post.draft(),
           tags: [tag1]
@@ -647,12 +630,11 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       assert String.contains?(error["message"], "Cannot update not owned insight")
     end
 
-    test "can update title and text of published insight", %{conn: conn, user: user, poll: poll} do
+    test "can update title and text of published insight", %{conn: conn, user: user} do
       upload_image(conn)
 
       post =
         insert(:post,
-          poll: poll,
           user: user,
           ready_state: Post.published(),
           updated_at: Timex.shift(Timex.now(), seconds: -1)
@@ -682,13 +664,12 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       assert DateTime.compare(updated_at, post.updated_at) == :gt
     end
 
-    test "can update tags for published insight", %{conn: conn, user: user, poll: poll} do
+    test "can update tags for published insight", %{conn: conn, user: user} do
       tag1 = insert(:tag, name: "PRJ1")
       tag2 = insert(:tag, name: "PRJ2")
 
       post =
         insert(:post,
-          poll: poll,
           user: user,
           ready_state: Post.published(),
           tags: [tag1]
@@ -716,8 +697,8 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   end
 
   describe "delete post" do
-    test "deleting a post", %{user: user, conn: conn, poll: poll} do
-      sanbase_post = insert(:post, poll: poll, user: user, state: Post.approved_state())
+    test "deleting a post", %{user: user, conn: conn} do
+      sanbase_post = insert(:post, user: user, state: Post.approved_state())
 
       %Vote{post_id: sanbase_post.id, user_id: user.id}
       |> Repo.insert!()
@@ -741,10 +722,9 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     test "deleting an insight which does not belong to the user - returns error", %{
       conn: conn,
-      staked_user: staked_user,
-      poll: poll
+      staked_user: staked_user
     } do
-      sanbase_post = insert(:post, poll: poll, user: staked_user, state: Post.approved_state())
+      sanbase_post = insert(:post, user: staked_user, state: Post.approved_state())
 
       query = """
       mutation {
@@ -769,8 +749,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     @discourse_response_file "#{File.cwd!()}/test/sanbase_web/graphql/assets/discourse_publish_response.json"
     test "successfully publishes in Discourse and Discord and creates timeline event", %{
       user: user,
-      conn: conn,
-      poll: poll
+      conn: conn
     } do
       with_mocks([
         {Sanbase.Discourse.Api, [],
@@ -779,7 +758,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       ]) do
         post =
           insert(:post,
-            poll: poll,
             user: user,
             state: Post.approved_state(),
             ready_state: Post.draft()
@@ -812,7 +790,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       assert String.contains?(result["message"], "Cannot publish insight with id 1000")
     end
 
-    test "returns error when discourse publish fails", %{user: user, conn: conn, poll: poll} do
+    test "returns error when discourse publish fails", %{user: user, conn: conn} do
       with_mocks([
         {Sanbase.Discourse.Api, [],
          [publish: fn _, _ -> {:error, "Cannot publish to discourse"} end]},
@@ -820,7 +798,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       ]) do
         post =
           insert(:post,
-            poll: poll,
             user: user,
             state: Post.approved_state(),
             ready_state: Post.draft()
@@ -838,7 +815,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     end
 
     @discourse_response_file "#{File.cwd!()}/test/sanbase_web/graphql/assets/discourse_publish_response.json"
-    test "still returns post when discord publish fails", %{user: user, conn: conn, poll: poll} do
+    test "still returns post when discord publish fails", %{user: user, conn: conn} do
       with_mocks([
         {Sanbase.Discourse.Api, [],
          [publish: fn _, _ -> @discourse_response_file |> File.read!() |> Jason.decode() end]},
@@ -847,7 +824,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       ]) do
         post =
           insert(:post,
-            poll: poll,
             user: user,
             state: Post.approved_state(),
             ready_state: Post.draft()
@@ -866,12 +842,10 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     test "returns error when user is not author", %{
       conn: conn,
-      poll: poll,
       staked_user: staked_user
     } do
       post =
         insert(:post,
-          poll: poll,
           user: staked_user,
           state: Post.approved_state(),
           ready_state: Post.draft()
@@ -887,12 +861,10 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     test "returns error when insight is already published", %{
       conn: conn,
-      poll: poll,
       user: user
     } do
       post =
         insert(:post,
-          poll: poll,
           user: user,
           state: Post.approved_state(),
           ready_state: Post.published()
@@ -928,11 +900,8 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   end
 
   test "voting for a post", %{conn: conn, user: user} do
-    poll = Poll.find_or_insert_current_poll!()
-
     sanbase_post =
       %Post{
-        poll_id: poll.id,
         user_id: user.id,
         title: "Awesome analysis",
         text: "Example MD text of the analysis",
@@ -963,11 +932,8 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   end
 
   test "unvoting an insight", %{conn: conn, user: user} do
-    poll = Poll.find_or_insert_current_poll!()
-
     sanbase_post =
       %Post{
-        poll_id: poll.id,
         user_id: user.id,
         title: "Awesome analysis",
         text: "Some text here",

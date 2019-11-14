@@ -19,13 +19,13 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
   @basic_plan_stats %{
     api_calls_minute: 60,
     api_calls_month: 10_000,
-    historical_data_in_days: 6 * 30
+    historical_data_in_days: 3 * 365
   }
 
   @pro_plan_stats %{
     api_calls_minute: 120,
     api_calls_month: 150_000,
-    historical_data_in_days: 18 * 30
+    historical_data_in_days: 7 * 365
   }
 
   @premium_plan_stats %{

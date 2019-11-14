@@ -28,7 +28,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricTimeseriesDataTest do
     [metric | _] = Metric.available_metrics()
 
     with_mock Metric, [],
-      get: fn _, _, _, _, _, _ ->
+      timeseries_data: fn _, _, _, _, _, _ ->
         {:ok,
          [
            %{value: 100.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
@@ -50,7 +50,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricTimeseriesDataTest do
                }
              ]
 
-      assert_called(Metric.get(metric, slug, from, to, interval, aggregation))
+      assert_called(Metric.timeseries_data(metric, slug, from, to, interval, aggregation))
     end
   end
 
@@ -60,7 +60,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricTimeseriesDataTest do
     metrics = Metric.available_metrics()
 
     with_mock Metric, [],
-      get: fn _, _, _, _, _, _ ->
+      timeseries_data: fn _, _, _, _, _, _ ->
         {:ok,
          [
            %{value: 100.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
@@ -86,7 +86,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricTimeseriesDataTest do
     [metric | _] = Metric.available_metrics()
 
     with_mock Metric, [],
-      get: fn _, _, _, _, _, _ ->
+      timeseries_data: fn _, _, _, _, _, _ ->
         {:ok,
          [
            %{value: 100.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},

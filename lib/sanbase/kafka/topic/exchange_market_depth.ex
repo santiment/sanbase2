@@ -1,5 +1,7 @@
 defmodule Sanbase.Kafka.Topic.ExchangeMarketDepth do
-  @topic "exchange_market_depth"
+  @compile :inline_list_funcs
+  @compile inline: [format_timestamp: 1]
+
   defstruct [
     :source,
     :symbol,
@@ -44,6 +46,7 @@ defmodule Sanbase.Kafka.Topic.ExchangeMarketDepth do
     :bids5_percent_volume
   ]
 
+  @spec format_message(map()) :: map()
   def format_message(message_map) do
     message_map
     |> Enum.map(fn {k, v} -> {Regex.replace(~r/_(\d+)/, k, "\\1"), v} end)

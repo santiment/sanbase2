@@ -4,7 +4,7 @@ defmodule Sanbase.Timeline.TimelineEventTest do
   import Sanbase.Factory
   import Sanbase.TestHelpers
 
-  alias Sanbase.Insight.{Post, Poll}
+  alias Sanbase.Insight.Post
   alias Sanbase.Signal.UserTrigger
   alias Sanbase.UserList
   alias Sanbase.Timeline.TimelineEvent
@@ -14,11 +14,10 @@ defmodule Sanbase.Timeline.TimelineEventTest do
     clean_task_supervisor_children()
 
     user = insert(:user)
-    poll = Poll.find_or_insert_current_poll!()
 
-    approved_post = insert(:post, poll: poll, state: Post.approved_state())
+    approved_post = insert(:post, state: Post.approved_state())
 
-    awaiting_approval_post = insert(:post, poll: poll, state: Post.awaiting_approval_state())
+    awaiting_approval_post = insert(:post, state: Post.awaiting_approval_state())
 
     {:ok, public_watchlist} =
       UserList.create_user_list(user, %{name: "My Public List", is_public: true})

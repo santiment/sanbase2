@@ -77,7 +77,8 @@ defmodule Sanbase.UserList do
   """
   def get_projects(%__MODULE__{function: fun} = user_list) do
     (WatchlistFunction.evaluate(fun) ++ ListItem.get_projects(user_list))
-    |> Enum.uniq_by(fn %{id: id} -> id end)
+    |> Enum.reject(&is_nil(&1.slug))
+    |> Enum.uniq_by(& &1.id)
   end
 
   def create_user_list(%User{id: user_id} = _user, params \\ %{}) do

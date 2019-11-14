@@ -45,7 +45,7 @@ defmodule Sanbase.FeaturedItem do
     )
     |> select([_fi, post], post)
     |> Repo.all()
-    |> Repo.preload([:user, :poll, :tags])
+    |> Repo.preload([:user, :tags])
   end
 
   def watchlists() do

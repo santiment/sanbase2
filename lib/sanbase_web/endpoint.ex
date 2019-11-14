@@ -39,11 +39,11 @@ defmodule SanbaseWeb.Endpoint do
   plug(Plug.MethodOverride)
   plug(Plug.Head)
 
+  # Some things are configured at runtime in SanbaseWeb.Plug.SessionPlug.call
   plug(SanbaseWeb.Plug.SessionPlug,
     store: :cookie,
     # 30 days
     max_age: 24 * 60 * 60 * 30,
-    key: "_sanbase_sid",
     # Doesn't need to be a secret. Session cookies are signed by both secret_key_base and signing_salt
     # For reference: https://github.com/phoenixframework/phoenix/issues/2146
     signing_salt: "grT-As16"

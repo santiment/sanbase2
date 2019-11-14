@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         %{slug: _slug, from: _from, to: _to, interval: _interval} = args,
         _resolution
       ) do
-    SanbaseWeb.Graphql.Resolvers.MetricResolver.get_timeseries_data(
+    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
       %{},
       args,
       %{source: %{metric: "age_destroyed"}}
@@ -49,7 +49,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         %{slug: _slug, from: _from, to: _to, interval: _interval} = args,
         _resolution
       ) do
-    SanbaseWeb.Graphql.Resolvers.MetricResolver.get_timeseries_data(
+    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
       %{},
       args,
       %{source: %{metric: "transaction_volume"}}
@@ -66,7 +66,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         %{slug: _slug, from: _from, to: _to, interval: _interval} = args,
         _resolution
       ) do
-    SanbaseWeb.Graphql.Resolvers.MetricResolver.get_timeseries_data(
+    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
       %{},
       args,
       %{source: %{metric: "exchange_balance"}}
@@ -79,7 +79,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         %{slug: _slug, from: _from, to: _to, interval: _interval} = args,
         _resolution
       ) do
-    SanbaseWeb.Graphql.Resolvers.MetricResolver.get_timeseries_data(
+    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
       %{},
       args,
       %{source: %{metric: "velocity"}}

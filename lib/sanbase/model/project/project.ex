@@ -109,7 +109,8 @@ defmodule Sanbase.Model.Project do
       :project_transparency_status_id,
       :project_transparency_description,
       :token_decimals,
-      :total_supply
+      :total_supply,
+      :is_hidden
     ])
     |> cast_assoc(:market_segments)
     |> validate_required([:name])

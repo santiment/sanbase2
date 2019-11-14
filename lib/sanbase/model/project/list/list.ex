@@ -9,9 +9,9 @@ defmodule Sanbase.Model.Project.List do
   ## Shared options
   Most of the functions accept a keyword options list as the last arguments.
   Currently two options are supported:
-    - `:preload` - Do or do not preload #{inspect(@preloads)}
-    - `:min_volume` - Filter out all projects with smaller trading volume
-    - `:show_hidden_projects?` - Include the projects that are explictly
+    - `:preload` (boolean) - Do or do not preload #{inspect(@preloads)}
+    - `:min_volume` (number) - Filter out all projects with smaller trading volume
+    - `:include_hidden_projects?` (boolean) - Include the projects that are explictly
     hidden from lists. There are cases where a project needs to be removed
     from the public lists. But still those projects need to be included
     when fetched in a scraper so we do not lose data for them.
@@ -416,7 +416,7 @@ defmodule Sanbase.Model.Project.List do
       where: not is_nil(p.slug) and not is_nil(p.ticker)
     )
     |> maybe_preload(opts)
-    |> maybe_show_hidden_projects?(opts)
+    |> maybe_include_hidden_projects?(opts)
     |> maybe_order_by_rank_above_volume(opts)
   end
 
@@ -480,8 +480,8 @@ defmodule Sanbase.Model.Project.List do
     end
   end
 
-  defp maybe_show_hidden_projects?(query, opts) do
-    case Keyword.get(opts, :show_hidden_projects?, true) do
+  defp maybe_include_hidden_projects?(query, opts) do
+    case Keyword.get(opts, :include_hidden_projects?, false) do
       false ->
         query
         |> where([p], p.is_hidden_from_lists == false)

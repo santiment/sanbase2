@@ -1,4 +1,6 @@
 defmodule Sanbase.Model.Project.List do
+  @preloads [:eth_addresses, :latest_coinmarketcap_data, :github_organizations]
+
   @moduledoc ~s"""
   Provide functions for fetching different subsets of projects.
 
@@ -7,6 +9,7 @@ defmodule Sanbase.Model.Project.List do
   ## Shared options
   Most of the functions accept a keyword options list as the last arguments.
   Currently two options are supported:
+    - `:preload` - Do or do not preload #{inspect(@preloads)}
     - `:min_volume` - Filter out all projects with smaller trading volume
     - `:show_hidden_projects?` - Include the projects that are explictly
     hidden from lists. There are cases where a project needs to be removed
@@ -19,8 +22,6 @@ defmodule Sanbase.Model.Project.List do
   alias Sanbase.Repo
 
   alias Sanbase.Model.Project
-
-  @preloads [:eth_addresses, :latest_coinmarketcap_data, :github_organizations]
 
   defguard is_valid_volume(volume) when is_number(volume) and volume >= 0
 
@@ -67,7 +68,10 @@ defmodule Sanbase.Model.Project.List do
   end
 
   @doc ~s"""
-  Returns `page_size` number of projects from the `page` pages ordered by rank
+  Returns `page_size` number of projects from the `page` pages ordered by rank.
+  Filtering out projects based on some conditions can be controled by the options.
+
+  See the "Shared options" section at the module documentation for more options.
   """
   def erc20_projects_page(page, page_size, opts \\ [])
 
@@ -77,8 +81,10 @@ defmodule Sanbase.Model.Project.List do
   end
 
   @doc ~s"""
-  Return all currency projects.
-  Classify as currency project everything except ERC20.
+  Returns all currency projects. Classify as currency project everything except ERC20.
+  Filtering out projects based on some conditions can be controled by the options.
+
+  See the "Shared options" section at the module documentation for more options.
   """
   def currency_projects(opts \\ [])
 
@@ -88,6 +94,12 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
   end
 
+  @doc ~s"""
+  Returns the count of the currency projects.
+  Filtering out projects based on some conditions can be controled by the options.
+
+  See the "Shared options" section at the module documentation for more options.
+  """
   def currency_projects_count(opts) do
     currency_projects_query(opts)
     |> select([p], fragment("count(*)"))
@@ -97,6 +109,9 @@ defmodule Sanbase.Model.Project.List do
   @doc ~s"""
   Returns `page_size` number of currency projects from the `page` pages.
   Classify as currency project everything except ERC20.
+  Filtering out projects based on some conditions can be controled by the options.
+
+  See the "Shared options" section at the module documentation for more options.
   """
   def currency_projects_page(page, page_size, opts \\ [])
 
@@ -107,9 +122,11 @@ defmodule Sanbase.Model.Project.List do
 
   @doc ~s"""
   Returns all projects with a given source in the source_slug_mappings table.
-
   For example using `coinmarketcap` source will return all projects that we
   have the coinamrketcap_id of.
+  Filtering out projects based on some conditions can be controled by the options.
+
+  See the "Shared options" section at the module documentation for more options.
   """
   def projects_with_source(source, opts \\ [])
 
@@ -127,7 +144,10 @@ defmodule Sanbase.Model.Project.List do
   end
 
   @doc ~s"""
-  Returns `page_size` number of all projects from the `page` pages
+  Returns `page_size` number of all projects from the `page` pages.
+  Filtering out projects based on some conditions can be controled by the options.
+
+  See the "Shared options" section at the module documentation for more options.
   """
   def projects_page(page, page_size, opts \\ [])
 
@@ -136,6 +156,12 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
   end
 
+  @doc ~s"""
+  Returns all projects where the project_transparency field is true
+  Filtering out projects based on some conditions can be controled by the options.
+
+  See the "Shared options" section at the module documentation for more options.
+  """
   def projects_transparency(opts \\ [])
 
   def projects_transparency(opts) do
@@ -145,6 +171,12 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
   end
 
+  @doc ~s"""
+  Returns all slugs of the projects that have one or more github organizations
+  Filtering out projects based on some conditions can be controled by the options.
+
+  See the "Shared options" section at the module documentation for more options.
+  """
   def project_slugs_with_organization(opts \\ [])
 
   def project_slugs_with_organization(opts) do
@@ -158,15 +190,31 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
   end
 
-  def slugs_by_field(values, field) do
-    from(
-      p in Project,
-      where: field(p, ^field) in ^values and not is_nil(p.slug),
-      select: p.slug
-    )
+  @doc ~s"""
+  Returns all slugs of projects whose `field` has any of the values
+  provided in `values`
+  Filtering out projects based on some conditions can be controled by the options.
+
+  See the "Shared options" section at the module documentation for more options.
+  """
+  def slugs_by_field(values, field, opts \\ [])
+
+  def slugs_by_field(values, field, opts) do
+    # explicitly remove preloads as they are not going to be used
+    opts = Keyword.put(opts, :preload, false)
+
+    projects_query(opts)
+    |> where([p], field(p, ^field) in ^values)
+    |> select([p], p.slug)
     |> Repo.all()
   end
 
+  @doc ~s"""
+  Returns a map where the `field` is the key and the slug is the value
+  Filtering out projects based on some conditions can be controled by the options.
+
+  See the "Shared options" section at the module documentation for more options.
+  """
   def field_slug_map(values, field, opts \\ [])
 
   def field_slug_map(values, field, opts) do
@@ -180,15 +228,31 @@ defmodule Sanbase.Model.Project.List do
     |> Map.new()
   end
 
-  def select_field(field) do
-    from(
-      p in Project,
-      where: not is_nil(field(p, ^field)),
-      select: field(p, ^field)
-    )
+  @doc ~s"""
+  Returns a list of all `field` values which are not nil
+  Filtering out projects based on some conditions can be controled by the options.
+
+  See the "Shared options" section at the module documentation for more options.
+  """
+  def select_field(field, opts \\ [])
+
+  def select_field(field, opts) do
+    # explicitly remove preloads as they are not going to be used
+    opts = Keyword.put(opts, :preload, false)
+
+    projects_query(opts)
+    |> where([p], not is_nil(field(p, ^field)))
+    |> select([p], field(p, ^field))
     |> Repo.all()
   end
 
+  @doc ~s"""
+  Returns a map where the slug is the key and the latest coinmarketcap data
+  map is the value.
+  Filtering out projects based on some conditions can be controled by the options.
+
+  See the "Shared options" section at the module documentation for more options.
+  """
   def slug_price_change_map(opts \\ [])
 
   def slug_price_change_map(opts) do
@@ -202,10 +266,18 @@ defmodule Sanbase.Model.Project.List do
     |> Map.new()
   end
 
-  def by_market_segment(segment, opts \\ [])
+  @doc ~s"""
+  Returns all projects for which at least one of their market segments is in
+  the list `segments`.
+  Filtering out projects based on some conditions can be controled by the options.
 
-  def by_market_segment(segment, opts) when is_binary(segment) or is_list(segment) do
-    segments = List.wrap(segment)
+  See the "Shared options" section at the module documentation for more options.
+  """
+  def by_market_segment_any_of(segments, opts \\ [])
+
+  def by_market_segment_any_of(segments, opts)
+      when is_binary(segments) or is_list(segments) do
+    segments = List.wrap(segments)
 
     projects_query(opts)
     |> join(:inner, [p], m in assoc(p, :market_segment))
@@ -216,10 +288,13 @@ defmodule Sanbase.Model.Project.List do
   @doc ~s"""
   Return a list of projects that have all of the provided market segments.
   Projects with only some of the segments are not returned.
-  """
-  def by_market_segments(segments, opts \\ [])
+  Filtering out projects based on some conditions can be controled by the options.
 
-  def by_market_segments(segments, opts) when is_list(segments) do
+  See the "Shared options" section at the module documentation for more options.
+  """
+  def by_market_segment_all_of(segments, opts \\ [])
+
+  def by_market_segment_all_of(segments, opts) when is_list(segments) do
     projects_query(opts)
     |> preload([:market_segments])
     |> join(:left, [p], ms in assoc(p, :market_segments))
@@ -238,6 +313,12 @@ defmodule Sanbase.Model.Project.List do
     end)
   end
 
+  @doc ~s"""
+  Return a list of projects that have a slug in the list of `slugs`
+  Filtering out projects based on some conditions can be controled by the options.
+
+  See the "Shared options" section at the module documentation for more options.
+  """
   def by_slugs(slugs, opts \\ [])
 
   def by_slugs(slugs, opts) when is_list(slugs) do
@@ -246,6 +327,12 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
   end
 
+  @doc ~s"""
+  Return a list of projects that a `field` value in the list of `values`.
+  Filtering out projects based on some conditions can be controled by the options.
+
+  See the "Shared options" section at the module documentation for more options.
+  """
   def by_field(values, field, opts \\ [])
 
   def by_field(values, field, opts) when is_list(values) do
@@ -254,20 +341,34 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
   end
 
+  @doc ~s"""
+  Return a list of projects have their ticker, name and/or slug in the list of
+  values. This function is used when deciding what is the list of trending
+  projects, as a project is defined as trending when its slug, ticker and/or slug
+  is in the list of trending words.
+  Filtering out projects based on some conditions can be controled by the options.
+
+  See the "Shared options" section at the module documentation for more options.
+  """
   def by_name_ticker_slug(values, opts \\ [])
 
   def by_name_ticker_slug(values, opts) do
     values = List.wrap(values)
 
-    from(p in projects_query(opts),
-      where:
-        fragment("lower(?)", p.name) in ^values or
-          fragment("lower(?)", p.ticker) in ^values or
-          fragment("lower(?)", p.slug) in ^values
-    )
+    projects_query(opts)
+    |> where([p], fragment("lower(?)", p.name) in ^values)
+    |> or_where([p], fragment("lower(?)", p.ticker) in ^values)
+    |> or_where([p], fragment("lower(?)", p.slug) in ^values)
     |> Repo.all()
   end
 
+  @doc ~s"""
+  Returns the list of currently trending project. A project is trending if
+  one or all of its name, ticker and slug are present int he trending words.
+  Filtering out projects based on some conditions can be controled by the options.
+
+  See the "Shared options" section at the module documentation for more options.
+  """
   def currently_trending_projects(opts \\ [])
 
   def currently_trending_projects(opts) do
@@ -278,6 +379,12 @@ defmodule Sanbase.Model.Project.List do
     |> by_name_ticker_slug(opts)
   end
 
+  @doc ~s"""
+  Returns a map where the key is the slug and the value is tuple {contract, decimals}
+  Filtering out projects based on some conditions can be controled by the options.
+
+  See the "Shared options" section at the module documentation for more options.
+  """
   def contract_info_map(opts \\ [])
 
   def contract_info_map(opts) do
@@ -289,16 +396,14 @@ defmodule Sanbase.Model.Project.List do
       |> select([p], {p.slug, p.main_contract_address, p.token_decimals})
       |> Repo.all()
 
-    {:ok, eth_contract, eth_decimals} = Project.contract_info_by_slug("ethereum")
-    {:ok, btc_contract, btc_decimals} = Project.contract_info_by_slug("bitcoin")
+    special_case_data =
+      Sanbase.Model.Project.ContractData.special_case_slugs()
+      |> Enum.map(fn slug ->
+        {:ok, contract, decimals} = Project.contract_info_by_slug(slug)
+        {slug, contract, decimals}
+      end)
 
-    data =
-      [
-        {"ethereum", eth_contract, eth_decimals},
-        {"bitcoin", btc_contract, btc_decimals}
-      ] ++ data
-
-    data
+    (special_case_data ++ data)
     |> Map.new(fn {slug, contract, decimals} -> {slug, {contract, decimals}} end)
   end
 
@@ -316,19 +421,17 @@ defmodule Sanbase.Model.Project.List do
   end
 
   defp erc20_projects_query(opts) do
-    from(
-      p in projects_query(opts),
-      join: infr in assoc(p, :infrastructure),
-      where: not is_nil(p.main_contract_address) and infr.code == "ETH"
-    )
-    |> maybe_order_by_rank_above_volume(opts)
+    projects_query(opts)
+    |> join(:inner, [p], infr in assoc(p, :infrastructure))
+    |> where([p, infr], not is_nil(p.main_contract_address) and infr.code == "ETH")
   end
 
   defp currency_projects_query(opts) do
-    from(
-      p in projects_query(opts),
-      join: infr in assoc(p, :infrastructure),
-      where: is_nil(p.main_contract_address) or infr.code != "ETH"
+    projects_query(opts)
+    |> join(:full, [p], infr in assoc(p, :infrastructure))
+    |> where(
+      [p, infr],
+      is_nil(p.main_contract_address) or is_nil(p.infrastructure_id) or infr.code != "ETH"
     )
   end
 
@@ -336,6 +439,7 @@ defmodule Sanbase.Model.Project.List do
 
   defp projects_page_query(page, page_size, opts) do
     projects_query(opts)
+    |> order_by_rank()
     |> page(page, page_size)
   end
 
@@ -358,11 +462,9 @@ defmodule Sanbase.Model.Project.List do
   end
 
   defp order_by_rank(query) do
-    from(
-      p in query,
-      join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
-      order_by: latest_cmc.rank
-    )
+    query
+    |> join(:inner, [p], latest_cmc in assoc(p, :latest_coinmarketcap_data))
+    |> order_by([_p, latest_cmc], latest_cmc.rank)
   end
 
   defp maybe_order_by_rank_above_volume(query, opts) do
@@ -371,12 +473,10 @@ defmodule Sanbase.Model.Project.List do
         query
 
       min_volume ->
-        from(
-          p in query,
-          join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
-          where: latest_cmc.volume_usd >= ^min_volume,
-          order_by: latest_cmc.rank
-        )
+        query
+        |> join(:inner, [p], latest_cmc in assoc(p, :latest_coinmarketcap_data))
+        |> where([_p, latest_cmc], latest_cmc.volume_usd >= ^min_volume)
+        |> order_by([_p, latest_cmc], latest_cmc.rank)
     end
   end
 

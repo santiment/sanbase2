@@ -79,7 +79,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
         },
         _resolution
       ) do
-    with projects when is_list(projects) <- Project.List.by_market_segments(market_segments),
+    with projects when is_list(projects) <-
+           Project.List.by_market_segment_all_of(market_segments),
          {:ok, organizations} <- github_organizations(projects),
          {:ok, result} <-
            Sanbase.Clickhouse.Github.dev_activity(

@@ -185,7 +185,7 @@ defmodule Sanbase.Model.Project.List do
 
     projects_query(opts)
     |> join(:inner, [p], gl in Project.GithubOrganization)
-    |> select([p, _gl], p.slug)
+    |> select([p], p.slug)
     |> distinct(true)
     |> Repo.all()
   end
@@ -259,9 +259,11 @@ defmodule Sanbase.Model.Project.List do
     # explicitly remove preloads as they are not going to be used
     opts = Keyword.put(opts, :preload, false)
 
-    projects_query(opts)
-    |> join(:inner, [p], latest_cmc in assoc(p, :latest_coinmarketcap_data))
-    |> select([p, latest_cmc], {p.slug, latest_cmc})
+    from(
+      p in projects_query(opts),
+      inner_join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
+      select: {p.slug, latest_cmc}
+    )
     |> Repo.all()
     |> Map.new()
   end
@@ -279,9 +281,11 @@ defmodule Sanbase.Model.Project.List do
       when is_binary(segments) or is_list(segments) do
     segments = List.wrap(segments)
 
-    projects_query(opts)
-    |> join(:inner, [p], m in assoc(p, :market_segment))
-    |> where([_, m], m.name in ^segments)
+    from(
+      p in projects_query(opts),
+      inner_join: m in assoc(p, :market_segment),
+      where: m.name in ^segments
+    )
     |> Repo.all()
   end
 
@@ -295,11 +299,12 @@ defmodule Sanbase.Model.Project.List do
   def by_market_segment_all_of(segments, opts \\ [])
 
   def by_market_segment_all_of(segments, opts) when is_list(segments) do
-    projects_query(opts)
-    |> preload([:market_segments])
-    |> join(:left, [p], ms in assoc(p, :market_segments))
-    |> where([_p, ms], ms.name in ^segments)
-    |> distinct(true)
+    from(p in projects_query(opts),
+      preload: [:market_segments],
+      left_join: ms in assoc(p, :market_segments),
+      where: ms.name in ^segments,
+      distinct: true
+    )
     |> Repo.all()
     |> Enum.filter(fn
       %{market_segments: []} ->
@@ -421,17 +426,18 @@ defmodule Sanbase.Model.Project.List do
   end
 
   defp erc20_projects_query(opts) do
-    projects_query(opts)
-    |> join(:inner, [p], infr in assoc(p, :infrastructure))
-    |> where([p, infr], not is_nil(p.main_contract_address) and infr.code == "ETH")
+    from(
+      p in projects_query(opts),
+      inner_join: infr in assoc(p, :infrastructure),
+      where: not is_nil(p.main_contract_address) and infr.code == "ETH"
+    )
   end
 
   defp currency_projects_query(opts) do
-    projects_query(opts)
-    |> join(:full, [p], infr in assoc(p, :infrastructure))
-    |> where(
-      [p, infr],
-      is_nil(p.main_contract_address) or is_nil(p.infrastructure_id) or infr.code != "ETH"
+    from(
+      p in projects_query(opts),
+      left_join: infr in assoc(p, :infrastructure),
+      where: is_nil(p.main_contract_address) or is_nil(p.infrastructure_id) or infr.code != "ETH"
     )
   end
 
@@ -462,9 +468,10 @@ defmodule Sanbase.Model.Project.List do
   end
 
   defp order_by_rank(query) do
-    query
-    |> join(:inner, [p], latest_cmc in assoc(p, :latest_coinmarketcap_data))
-    |> order_by([_p, latest_cmc], latest_cmc.rank)
+    from(p in query,
+      inner_join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
+      order_by: latest_cmc.rank
+    )
   end
 
   defp maybe_order_by_rank_above_volume(query, opts) do
@@ -473,10 +480,12 @@ defmodule Sanbase.Model.Project.List do
         query
 
       min_volume ->
-        query
-        |> join(:inner, [p], latest_cmc in assoc(p, :latest_coinmarketcap_data))
-        |> where([_p, latest_cmc], latest_cmc.volume_usd >= ^min_volume)
-        |> order_by([_p, latest_cmc], latest_cmc.rank)
+        from(
+          p in query,
+          inner_join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
+          where: latest_cmc.volume_usd >= ^min_volume,
+          order_by: latest_cmc.rank
+        )
     end
   end
 

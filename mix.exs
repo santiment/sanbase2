@@ -28,7 +28,7 @@ defmodule Sanbase.Mixfile do
     [
       mod: {Sanbase.Application, []},
       extra_applications: [:logger, :runtime_tools, :sasl, :clickhousex],
-      included_applications: [:oauther]
+      included_applications: [:oauther, :brod, :kaffe]
     ]
   end
 

@@ -43,7 +43,7 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
   def handle_cast(:sync, %{update_interval_ms: update_interval_ms} = state) do
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
-      Project.List.select_field(:twitter_link),
+      Project.List.select_field(:twitter_link, include_hidden_projects?: true),
       &fetch_and_store/1,
       ordered: false,
       max_concurency: System.schedulers_online() * 2,

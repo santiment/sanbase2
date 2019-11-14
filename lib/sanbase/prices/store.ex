@@ -55,7 +55,7 @@ defmodule Sanbase.Prices.Store do
 
   def fetch_prices_with_resolution("TOTAL_ERC20", from, to, resolution) do
     measurements =
-      Sanbase.Model.Project.List.erc20_projects()
+      Sanbase.Model.Project.List.erc20_projects(include_hidden_projects?: true)
       |> Enum.map(&Sanbase.Influxdb.Measurement.name_from/1)
 
     fetch_combined_mcap_volume(measurements, from, to, resolution)

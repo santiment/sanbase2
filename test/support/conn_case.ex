@@ -26,6 +26,20 @@ defmodule SanbaseWeb.ConnCase do
     end
   end
 
+  defp next_integer_fun() do
+    # Use the :counters module introduced in OTP 21.1.
+    # In the same suite all calls to this function will
+    # generate numbers increamented by 1
+    atomic_counter = :counters.new(1, [])
+    :counters.put(atomic_counter, 1, 1)
+
+    fn ->
+      value = :counters.get(atomic_counter, 1)
+      :counters.add(atomic_counter, 1, 1)
+      value
+    end
+  end
+
   setup tags do
     require Sanbase.CaseHelpers
 
@@ -34,11 +48,13 @@ defmodule SanbaseWeb.ConnCase do
     Sanbase.CaseHelpers.checkout_shared(tags)
 
     conn = Phoenix.ConnTest.build_conn()
+
     product_and_plans = Sanbase.Billing.TestSeed.seed_products_and_plans()
 
     {:ok,
      conn: conn,
      product: Map.get(product_and_plans, :product),
-     plans: Map.delete(product_and_plans, :product)}
+     plans: Map.delete(product_and_plans, :product),
+     next_integer: next_integer_fun()}
   end
 end

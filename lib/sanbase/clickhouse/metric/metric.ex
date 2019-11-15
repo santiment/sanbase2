@@ -90,8 +90,6 @@ defmodule Sanbase.Clickhouse.Metric do
       %{labels: [], values: []},
       fn
         [unix, value], %{labels: labels, values: values} ->
-          IO.inspect({unix, value})
-
           dt1 = unix |> DateTime.from_unix!()
 
           dt2 =
@@ -103,11 +101,7 @@ defmodule Sanbase.Clickhouse.Metric do
             |> Enum.map(&Timex.format!(&1, "%Y-%m-%d %H:%M %Z", :strftime))
             |> LabelTemplate.get(label_template)
 
-          # if value > 0 do
           %{labels: [label | labels], values: [value | values]}
-          # else
-          # acc
-          # end
       end
     )
   end

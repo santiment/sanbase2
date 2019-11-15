@@ -144,7 +144,7 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Get the human readable name representation of a given metric
   """
-  def human_reanable_name(metric)
+  def human_readable_name(metric)
 
   for %{metric: metric, module: module} <- @metric_module_mapping do
     def human_readable_name(unquote(metric)) do

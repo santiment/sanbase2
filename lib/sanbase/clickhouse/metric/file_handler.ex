@@ -7,7 +7,11 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
       |> Enum.map(fn
         %{"name" => name, ^field => value} ->
           {name, transform_fn.(value)}
+
+        _ ->
+          nil
       end)
+      |> Enum.reject(&is_nil/1)
       |> Map.new()
     end
   end
@@ -36,6 +40,7 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   @metrics_file "available_v2_metrics.json"
   @external_resource available_metrics_file = Path.join(__DIR__, @metrics_file)
   @metrics_json File.read!(available_metrics_file) |> Jason.decode!()
+  @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median]
 
   @metrics_data_type_map Helper.name_to_field_map(@metrics_json, "data_type", &String.to_atom/1)
   @name_to_column_map Helper.name_to_field_map(@metrics_json, "metric")
@@ -45,6 +50,7 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   @min_interval_map Helper.name_to_field_map(@metrics_json, "min_interval")
   @human_readable_name_map Helper.name_to_field_map(@metrics_json, "human_readable_name")
   @metric_version_map Helper.name_to_field_map(@metrics_json, "version")
+  @metrics_label_map Helper.name_to_field_map(@metrics_json, "label")
 
   @metrics_list @metrics_json |> Enum.map(fn %{"name" => name} -> name end)
   @metrics_mapset MapSet.new(@metrics_list)

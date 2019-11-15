@@ -742,7 +742,7 @@
     "alias": "age_distribution",
     "metric": "age_distribution_5min_delta",
     "version": "2019-01-01",
-    "label": "The amount of tokens last moved on ${1}",
+    "label": "The amount of tokens last moved between ${1} and ${2}",
     "access": "restricted",
     "aggregation": "last",
     "min_interval": "5m",

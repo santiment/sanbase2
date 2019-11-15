@@ -18,10 +18,6 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:data, list_of(:string))
   end
 
-  object :integer_list do
-    field(:data, list_of(:integer))
-  end
-
   object :float_list do
     field(:data, list_of(:float))
   end
@@ -29,12 +25,12 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   union :value_list do
     description("Type Parameterized Array")
 
-    types([:string_list, :float_list, :integer_list])
+    types([:string_list, :float_list])
 
     resolve_type(fn
-      %{data: [value | _]}, _ when is_integer(value) -> :integer_list
-      %{data: [value | _]}, _ when is_float(value) -> :float_list
+      %{data: [value | _]}, _ when is_number(value) -> :float_list
       %{data: [value | _]}, _ when is_binary(value) -> :string_list
+      %{data: []}, _ -> :float_list
     end)
   end
 
@@ -116,7 +112,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
 
-      cache_resolve(&MetricResolver.histogram_data/3)
+      resolve(&MetricResolver.histogram_data/3)
     end
 
     field :available_since, :datetime do

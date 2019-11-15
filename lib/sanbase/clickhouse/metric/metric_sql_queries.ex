@@ -1,4 +1,4 @@
-defmodule Sanbase.Clickhouse.Metric.Queries do
+defmodule Sanbase.Clickhouse.Metric.SqlQueries do
   @table "daily_metrics_v2"
 
   @moduledoc ~s"""
@@ -81,27 +81,21 @@ defmodule Sanbase.Clickhouse.Metric.Queries do
       -sum(measure)
     FROM #{Map.get(@table_map, metric)} FINAL
     PREWHERE
-      metric_id = (
-        SELECT argMax(metric_id, computed_at)
-        FROM metric_metadata
-        PREWHERE name = ?1
-      ) AND
-      asset_id = (
-        SELECT argMax(asset_id, computed_at)
-        FROM asset_metadata
-        PREWHERE name = ?2
-      ) AND
-      dt > toDateTime(?3) AND dt < toDateTime(?4) AND dt != value
+      metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = ?1 ) AND
+      asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?2 ) AND
+      dt != value AND dt >= toDateTime(?3) AND dt < toDateTime(?4)
     GROUP BY t
     ORDER BY t DESC
     LIMIT ?6
     """
 
+    # """
+
     args = [
       Map.get(@name_to_column_map, metric),
       slug,
-      from,
-      to,
+      from |> DateTime.to_unix(),
+      to |> DateTime.to_unix(),
       interval |> str_to_sec(),
       limit
     ]

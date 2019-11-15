@@ -12,7 +12,7 @@ defmodule Sanbase.Clickhouse.Metric do
   use Ecto.Schema
 
   import Sanbase.Clickhouse.Metric.Helper, only: [slug_asset_id_map: 0, asset_id_slug_map: 0]
-  import Sanbase.Clickhouse.Metric.Queries
+  import Sanbase.Clickhouse.Metric.SqlQueries
 
   alias Sanbase.Clickhouse.Metric.LabelTemplate
   alias __MODULE__.FileHandler
@@ -68,6 +68,7 @@ defmodule Sanbase.Clickhouse.Metric do
   def timeseries_data(metric, slug, from, to, interval, aggregation \\ nil)
 
   def timeseries_data(metric, slug, from, to, interval, aggregation) do
+    aggregation = aggregation || Map.get(@aggregation_map, metric)
     {query, args} = timeseries_data_query(metric, slug, from, to, interval, aggregation)
 
     ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
@@ -87,14 +88,26 @@ defmodule Sanbase.Clickhouse.Metric do
       query,
       args,
       %{labels: [], values: []},
-      fn [unix, value], %{labels: labels, values: values} ->
-        label =
-          unix
-          |> DateTime.from_unix!()
-          |> Timex.format!("%Y-%m-%d %H:%M %Z", :strftime)
-          |> LabelTemplate.get(label_template)
+      fn
+        [unix, value], %{labels: labels, values: values} ->
+          IO.inspect({unix, value})
 
-        %{labels: [label | labels], values: [value | values]}
+          dt1 = unix |> DateTime.from_unix!()
+
+          dt2 =
+            [dt1 |> Timex.shift(seconds: Sanbase.DateTimeUtils.str_to_sec(interval)), to]
+            |> Enum.min_by(&DateTime.to_unix/1)
+
+          label =
+            [dt1, dt2]
+            |> Enum.map(&Timex.format!(&1, "%Y-%m-%d %H:%M %Z", :strftime))
+            |> LabelTemplate.get(label_template)
+
+          # if value > 0 do
+          %{labels: [label | labels], values: [value | values]}
+          # else
+          # acc
+          # end
       end
     )
   end
@@ -112,6 +125,7 @@ defmodule Sanbase.Clickhouse.Metric do
 
   def aggregated_timeseries_data(metric, slug_or_slugs, from, to, aggregation)
       when is_binary(slug_or_slugs) or is_list(slug_or_slugs) do
+    aggregation = aggregation || Map.get(@aggregation_map, metric)
     get_aggregated_timeseries_data(metric, slug_or_slugs |> List.wrap(), from, to, aggregation)
   end
 

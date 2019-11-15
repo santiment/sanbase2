@@ -205,7 +205,8 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         "telegram_social_dominance",
         "telegram_social_volume",
         "twitter_social_dominance",
-        "twitter_social_volume"
+        "twitter_social_volume",
+        "age_distribution"
       ]
 
       queries = [
@@ -270,7 +271,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         "nvt_transaction_volume",
         "mvrv_usd_long_short_diff",
         "network_growth",
-        "age_distribution"
+        "age_distribution_5min_delta"
       ]
 
       expected_result = (aliases ++ queries) |> Enum.sort()

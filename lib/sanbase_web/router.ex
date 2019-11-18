@@ -99,6 +99,7 @@ defmodule SanbaseWeb.Router do
   end
 
   scope "/", SanbaseWeb do
+    get("/projects_data", ProjectDataController, :data)
     post("/stripe_webhook", StripeController, :webhook)
   end
 

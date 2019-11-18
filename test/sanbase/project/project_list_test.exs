@@ -4,6 +4,37 @@ defmodule Sanbase.Model.ProjectListTest do
   alias Sanbase.Model.Project
 
   import Sanbase.Factory
+  import ExUnit.CaptureLog
+
+  describe "ordering with and without min_volume" do
+    test "does not join twice when min_volume is provided" do
+      # This test only checks if the query has more than one join.
+      # It's done by capturing the debug output and searching it for strings.
+      # The test can be broken by adding a new join with a new table that does
+      # not break the things we're testing here.
+      # NOTE: This can be improved when Ecto is updated to 3.x with the named
+      # bindings
+      Logger.configure(level: :debug)
+      log = capture_log(fn -> Project.List.projects_page(1, 2, min_volume: 100) end)
+      parts = String.split(log, " JOIN ")
+      assert length(parts) == 2
+    end
+
+    test "equivalent results with and without min_volume when all projects have cmc data" do
+      insert(:random_project) |> update_latest_cmc_data(%{rank: 1, volume_usd: 500})
+      insert(:random_project) |> update_latest_cmc_data(%{rank: 2, volume_usd: 1100})
+      insert(:random_project) |> update_latest_cmc_data(%{rank: 3, volume_usd: 1200})
+      insert(:random_project) |> update_latest_cmc_data(%{rank: 4, volume_usd: 2000})
+      insert(:random_project) |> update_latest_cmc_data(%{rank: 5, volume_usd: 200})
+      insert(:random_project) |> update_latest_cmc_data(%{rank: 6, volume_usd: 10000})
+
+      assert Project.List.projects_page(1, 2) == Project.List.projects_page(1, 2, min_volume: 0)
+      assert Project.List.projects_page(2, 2) == Project.List.projects_page(2, 2, min_volume: 0)
+      assert Project.List.projects_page(3, 2) == Project.List.projects_page(3, 2, min_volume: 0)
+      assert length(Project.List.projects_page(1, 6, min_volume: 5000)) == 1
+      assert length(Project.List.projects_page(2, 1, min_volume: 5000)) == 0
+    end
+  end
 
   describe "no projects" do
     test "all projects" do
@@ -51,30 +82,29 @@ defmodule Sanbase.Model.ProjectListTest do
     setup do
       p1 =
         insert(:random_erc20_project)
-        |> update_latest_coinmarketcap_data(%{rank: 2, volume_usd: 500})
+        |> update_latest_cmc_data(%{rank: 2, volume_usd: 500})
 
       p2 =
         insert(:random_erc20_project)
-        |> update_latest_coinmarketcap_data(%{rank: 3, volume_usd: 1100})
+        |> update_latest_cmc_data(%{rank: 3, volume_usd: 1100})
 
       p3 =
         insert(:random_erc20_project)
-        |> update_latest_coinmarketcap_data(%{rank: 4, volume_usd: 2500})
+        |> update_latest_cmc_data(%{rank: 4, volume_usd: 2500})
 
       p4 = insert(:random_project, source_slug_mappings: [])
 
-      p5 =
-        insert(:random_project) |> update_latest_coinmarketcap_data(%{rank: 5, volume_usd: 100})
+      p5 = insert(:random_project) |> update_latest_cmc_data(%{rank: 5, volume_usd: 100})
 
-      p6 = insert(:random_project) |> update_latest_coinmarketcap_data(%{rank: 6})
+      p6 = insert(:random_project) |> update_latest_cmc_data(%{rank: 6})
 
       p7 =
         insert(:random_project, is_hidden: true)
-        |> update_latest_coinmarketcap_data(%{rank: 1, volume_usd: 5000})
+        |> update_latest_cmc_data(%{rank: 1, volume_usd: 5000})
 
       p8 =
         insert(:random_erc20_project, is_hidden: true)
-        |> update_latest_coinmarketcap_data(%{rank: 11, volume_usd: 5000})
+        |> update_latest_cmc_data(%{rank: 11, volume_usd: 5000})
 
       hidden_projects = [p7: p7, p8: p8]
       erc20_projects = [p1: p1, p2: p2, p3: p3]
@@ -153,7 +183,7 @@ defmodule Sanbase.Model.ProjectListTest do
     end
   end
 
-  defp update_latest_coinmarketcap_data(project, args) do
+  defp update_latest_cmc_data(project, args) do
     %Sanbase.Model.LatestCoinmarketcapData{}
     |> Sanbase.Model.LatestCoinmarketcapData.changeset(
       %{

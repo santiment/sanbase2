@@ -8,8 +8,11 @@ defmodule Sanbase.Model.Project.List do
 
   ## Shared options
   Most of the functions accept a keyword options list as the last arguments.
-  Currently two options are supported:
-    - `:preload` (boolean) - Do or do not preload #{inspect(@preloads)}
+  Currently following options are supported:
+    - `:preload?` (boolean) - Do or do not preload associations. Control the list
+       of associations to be preloaded with `:preload`
+    - `:preload` (list) - A list of preloads if `:preload?` is true.
+       Defaults to `#{inspect(@preloads)}
     - `:min_volume` (number) - Filter out all projects with smaller trading volume
     - `:include_hidden_projects?` (boolean) - Include the projects that are explictly
     hidden from lists. There are cases where a project needs to be removed
@@ -181,7 +184,7 @@ defmodule Sanbase.Model.Project.List do
 
   def project_slugs_with_organization(opts) do
     # explicitly remove preloads as they are not going to be used
-    opts = Keyword.put(opts, :preload, false)
+    opts = Keyword.put(opts, :preload?, false)
 
     projects_query(opts)
     |> join(:inner, [p], gl in Project.GithubOrganization)
@@ -201,7 +204,7 @@ defmodule Sanbase.Model.Project.List do
 
   def slugs_by_field(values, field, opts) do
     # explicitly remove preloads as they are not going to be used
-    opts = Keyword.put(opts, :preload, false)
+    opts = Keyword.put(opts, :preload?, false)
 
     projects_query(opts)
     |> where([p], field(p, ^field) in ^values)
@@ -219,7 +222,7 @@ defmodule Sanbase.Model.Project.List do
 
   def field_slug_map(values, field, opts) do
     # explicitly remove preloads as they are not going to be used
-    opts = Keyword.put(opts, :preload, false)
+    opts = Keyword.put(opts, :preload?, false)
 
     projects_query(opts)
     |> where([p], field(p, ^field) in ^values)
@@ -238,7 +241,7 @@ defmodule Sanbase.Model.Project.List do
 
   def select_field(field, opts) do
     # explicitly remove preloads as they are not going to be used
-    opts = Keyword.put(opts, :preload, false)
+    opts = Keyword.put(opts, :preload?, false)
 
     projects_query(opts)
     |> where([p], not is_nil(field(p, ^field)))
@@ -257,7 +260,7 @@ defmodule Sanbase.Model.Project.List do
 
   def slug_price_change_map(opts) do
     # explicitly remove preloads as they are not going to be used
-    opts = Keyword.put(opts, :preload, false)
+    opts = Keyword.put(opts, :preload?, false)
 
     from(
       p in projects_query(opts),
@@ -394,7 +397,7 @@ defmodule Sanbase.Model.Project.List do
 
   def contract_info_map(opts) do
     # explicitly remove preloads as they are not going to be used
-    opts = Keyword.put(opts, :preload, false)
+    opts = Keyword.put(opts, :preload?, false)
 
     data =
       projects_query(opts)
@@ -421,7 +424,7 @@ defmodule Sanbase.Model.Project.List do
       where: not is_nil(p.slug) and not is_nil(p.ticker)
     )
     |> maybe_preload(opts)
-    |> maybe_include_hidden_projects?(opts)
+    |> maybe_include_hidden_projects(opts)
     |> maybe_order_by_rank_above_volume(opts)
   end
 
@@ -445,19 +448,19 @@ defmodule Sanbase.Model.Project.List do
 
   defp projects_page_query(page, page_size, opts) do
     projects_query(opts)
-    |> order_by_rank()
+    |> order_by_rank(opts)
     |> page(page, page_size)
   end
 
   defp erc20_projects_page_query(page, page_size, opts) do
     erc20_projects_query(opts)
-    |> order_by_rank()
+    |> order_by_rank(opts)
     |> page(page, page_size)
   end
 
   defp currency_projects_page_query(page, page_size, opts) do
     currency_projects_query(opts)
-    |> order_by_rank()
+    |> order_by_rank(opts)
     |> page(page, page_size)
   end
 
@@ -467,11 +470,24 @@ defmodule Sanbase.Model.Project.List do
     |> limit(^page_size)
   end
 
-  defp order_by_rank(query) do
-    from(p in query,
-      inner_join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
-      order_by: latest_cmc.rank
-    )
+  defp order_by_rank(query, opts) do
+    case Keyword.get(opts, :min_volume) do
+      nil ->
+        from(p in query,
+          inner_join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
+          order_by: latest_cmc.rank
+        )
+
+      _ ->
+        # If there is min_volume that is not nil, then the
+        # `maybe_order_by_rank_above_volume` function has been executed which
+        # has done the ordering by rank. This extra check is done to avoid
+        # double joining of the tables.
+        #
+        # NOTE: This can be improved when Ecto is updated to 3.x where named
+        # bindings can be used
+        query
+    end
   end
 
   defp maybe_order_by_rank_above_volume(query, opts) do
@@ -489,7 +505,7 @@ defmodule Sanbase.Model.Project.List do
     end
   end
 
-  defp maybe_include_hidden_projects?(query, opts) do
+  defp maybe_include_hidden_projects(query, opts) do
     case Keyword.get(opts, :include_hidden_projects?, false) do
       false ->
         query
@@ -501,9 +517,13 @@ defmodule Sanbase.Model.Project.List do
   end
 
   defp maybe_preload(query, opts) do
-    case Keyword.get(opts, :preload, true) do
-      true -> query |> preload(^@preloads)
-      false -> query
+    case Keyword.get(opts, :preload?, true) do
+      true ->
+        preloads = Keyword.get(opts, :preload, @preloads)
+        query |> preload(^preloads)
+
+      false ->
+        query
     end
   end
 end

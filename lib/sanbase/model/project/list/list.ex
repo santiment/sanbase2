@@ -347,7 +347,7 @@ defmodule Sanbase.Model.Project.List do
   end
 
   @doc ~s"""
-  Return a list of projects have their ticker, name and/or slug in the list of
+  Returns a list of projects that have their ticker, name and/or slug in the list of
   values. This function is used when deciding what is the list of trending
   projects, as a project is defined as trending when its slug, ticker and/or slug
   is in the list of trending words.

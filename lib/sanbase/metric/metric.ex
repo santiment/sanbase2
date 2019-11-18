@@ -56,7 +56,10 @@ defmodule Sanbase.Metric do
   @metrics Enum.map(@metric_module_mapping, & &1.metric)
   @timeseries_metrics Enum.map(@timeseries_metric_module_mapping, & &1.metric)
   @histogram_metrics Enum.map(@histogram_metric_module_mapping, & &1.metric)
+
   @metrics_mapset MapSet.new(@metrics)
+  @timeseries_metrics_mapset MapSet.new(@timeseries_metrics)
+  @histogram_metrics_mapset MapSet.new(@histogram_metrics)
 
   def has_metric?(metric) do
     case metric in @metrics_mapset do
@@ -91,7 +94,8 @@ defmodule Sanbase.Metric do
     end
   end
 
-  def timeseries_data(metric, _, _, _, _, _), do: metric_not_available_error(metric)
+  def timeseries_data(metric, _, _, _, _, _),
+    do: metric_not_available_error(metric, type: :timeseries)
 
   @doc ~s"""
   Get the aggregated value for a metric, an identifier and time range.
@@ -113,6 +117,9 @@ defmodule Sanbase.Metric do
     end
   end
 
+  def aggregated_timeseries_data(metric, _, _, _, _),
+    do: metric_not_available_error(metric, type: :timeseries)
+
   @doc ~s"""
   Get a histogram for a given metric
   """
@@ -131,7 +138,8 @@ defmodule Sanbase.Metric do
     end
   end
 
-  def histogram_data(metric, _, _, _, _, _), do: metric_not_available_error(metric)
+  def histogram_data(metric, _, _, _, _, _),
+    do: metric_not_available_error(metric, type: :histogram)
 
   @doc ~s"""
   Get the human readable name representation of a given metric
@@ -244,9 +252,11 @@ defmodule Sanbase.Metric do
 
   # Private functions
 
-  defp metric_not_available_error(metric) when is_binary(metric) do
-    close = Enum.find(@metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.8 end)
-    error_msg = "The metric '#{metric}' is not supported or is mistyped."
+  defp metric_not_available_error(metric, opts \\ [])
+
+  defp metric_not_available_error(metric, opts) do
+    type = Keyword.get(opts, :type, :all)
+    %{close: close, error_msg: error_msg} = metric_not_available_error_details(metric, type)
 
     case close do
       nil -> {:error, error_msg}
@@ -254,7 +264,26 @@ defmodule Sanbase.Metric do
     end
   end
 
-  defp metric_not_available_error(metric) do
-    {:error, "The metric '#{inspect(metric)}' is not supported or is mistyped."}
+  defp metric_not_available_error_details(metric, :all) do
+    %{
+      close: Enum.find(@metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.8 end),
+      error_msg: "The metric '#{metric}' is not supported or is mistyped."
+    }
+  end
+
+  defp metric_not_available_error_details(metric, :timeseries) do
+    %{
+      close:
+        Enum.find(@timeseries_metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.8 end),
+      error_msg: "The timeseries metric '#{metric}' is not supported or is mistyped."
+    }
+  end
+
+  defp metric_not_available_error_details(metric, :histogram) do
+    %{
+      close:
+        Enum.find(@histogram_metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.8 end),
+      error_msg: "The histogram metric '#{metric}' is not supported or is mistyped."
+    }
   end
 end

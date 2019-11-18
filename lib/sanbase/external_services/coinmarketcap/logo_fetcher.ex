@@ -13,7 +13,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
   @size 64
 
   def run() do
-    projects = Project.List.projects_with_source("coinmarketcap")
+    projects = Project.List.projects_with_source("coinmarketcap", include_hidden_projects?: true)
 
     local_projects_map =
       projects

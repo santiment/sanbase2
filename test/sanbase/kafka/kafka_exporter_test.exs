@@ -117,7 +117,7 @@ defmodule KafkaExporterTest do
       duration_ms: :rand.uniform_real() * 1000,
       san_tokens: Enum.random(200..2000)
     }
-    |> Sanbase.Kafka.ApiCall.to_json()
+    |> Sanbase.Kafka.ApiCall.json_kv_tuple()
   end
 
   defp random_query() do

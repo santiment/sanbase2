@@ -19,12 +19,12 @@ defmodule Sanbase.Kafka.ApiCall do
 
   @type json_kv_tuple :: {String.t(), String.t()}
 
-  @spec to_json(api_call_data | [api_call_data]) :: [json_kv_tuple]
+  @spec json_kv_tuple(api_call_data | [api_call_data]) :: [json_kv_tuple]
   @doc ~s"""
   Returns a list of tuples of json encoded strings representing key and value to be
   saved in kafka. Key here is "" since it is required by Kaffe producer but we are not using it.
   """
-  def to_json(api_call_data) do
+  def json_kv_tuple(api_call_data) do
     api_call_data
     |> List.wrap()
     |> Enum.map(&{"", Jason.encode!(&1)})

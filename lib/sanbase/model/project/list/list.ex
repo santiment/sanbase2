@@ -174,6 +174,12 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
   end
 
+  def projects_by_ticker(ticker, opts \\ []) do
+    projects_query(opts)
+    |> where([p], p.ticker == ^ticker)
+    |> Repo.all()
+  end
+
   @doc ~s"""
   Returns all slugs of the projects that have one or more github organizations
   Filtering out projects based on some conditions can be controled by the options.

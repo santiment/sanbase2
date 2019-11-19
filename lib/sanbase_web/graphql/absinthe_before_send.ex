@@ -140,7 +140,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
         san_tokens: san_tokens
       }
     end)
-    |> Sanbase.Kafka.ApiCall.to_json()
+    |> Sanbase.Kafka.ApiCall.json_kv_tuple()
     |> Sanbase.KafkaExporter.persist(:api_call_exporter)
   end
 

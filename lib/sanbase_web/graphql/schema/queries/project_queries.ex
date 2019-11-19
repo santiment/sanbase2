@@ -61,6 +61,15 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       cache_resolve(&ProjectResolver.all_projects_by_function/3)
     end
 
+    field :all_projects_by_ticker, list_of(:project) do
+      meta(access: :free)
+
+      arg(:ticker, non_null(:string))
+
+      middleware(ProjectPermissions)
+      cache_resolve(&ProjectResolver.all_projects_by_ticker/3)
+    end
+
     @desc "Fetch all project transparency projects. This query requires basic authentication."
     field :all_projects_project_transparency, list_of(:project) do
       meta(access: :forbidden)

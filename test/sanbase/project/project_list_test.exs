@@ -49,6 +49,10 @@ defmodule Sanbase.Model.ProjectListTest do
       assert Project.List.currency_projects() == []
     end
 
+    test "all projects by ticker" do
+      assert Project.List.projects_by_ticker("BTC") == []
+    end
+
     test "projects with min_volume above 1000" do
       assert Project.List.projects(min_volume: 1000) == []
     end
@@ -81,11 +85,11 @@ defmodule Sanbase.Model.ProjectListTest do
   describe "with projects" do
     setup do
       p1 =
-        insert(:random_erc20_project)
+        insert(:random_erc20_project, ticker: "BTC")
         |> update_latest_cmc_data(%{rank: 2, volume_usd: 500})
 
       p2 =
-        insert(:random_erc20_project)
+        insert(:random_erc20_project, ticker: "BTC")
         |> update_latest_cmc_data(%{rank: 3, volume_usd: 1100})
 
       p3 =
@@ -129,6 +133,13 @@ defmodule Sanbase.Model.ProjectListTest do
 
     test "all currency projects", context do
       assert Project.List.currency_projects() |> length == context.total_currency_count
+    end
+
+    test "all projects by ticker", context do
+      projects = Project.List.projects_by_ticker("BTC")
+      assert length(projects) == 2
+      assert context.p1.id in Enum.map(projects, & &1.id)
+      assert context.p2.id in Enum.map(projects, & &1.id)
     end
 
     test "projects with min_volume above 1000", context do

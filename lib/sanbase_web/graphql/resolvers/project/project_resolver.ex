@@ -103,6 +103,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end
   end
 
+  def all_projects_by_ticker(_root, %{ticker: ticker}, _resolution) do
+    {:ok, Project.List.projects_by_ticker(ticker)}
+  end
+
   def project(_parent, %{id: id}, _resolution) do
     case Project.by_id(id) do
       nil ->

@@ -19,6 +19,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
   # Number of seconds in a day
   @seconds_in_day 24 * 60 * 60
+  @prices_exporter :prices_exporter
 
   def fetch_first_datetime("TOTAL_MARKET_total-market") do
     all_time_total_market_price_points()
@@ -139,7 +140,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
     marketcap_total_list
     |> Enum.map(&PricePoint.json_kv_tuple(&1, "TOTAL_MARKET"))
-    |> Sanbase.KafkaExporter.persist(:prices_exporter)
+    |> Sanbase.KafkaExporter.persist(@prices_exporter)
 
     measurement_points |> Store.import()
 
@@ -168,7 +169,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
     price_list
     |> Enum.map(&PricePoint.json_kv_tuple(&1, slug))
-    |> Sanbase.KafkaExporter.persist(:prices_exporter)
+    |> Sanbase.KafkaExporter.persist(@prices_exporter)
 
     update_last_cmc_history_datetime(
       Measurement.name_from(project),

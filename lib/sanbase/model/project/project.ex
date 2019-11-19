@@ -323,6 +323,11 @@ defmodule Sanbase.Model.Project do
     {:ok, project |> Project.GithubOrganization.organizations_of()}
   end
 
+  def infrastructure(%Project{} = project) do
+    %Project{infrastructure: infrastructure} = project |> Repo.preload(:infrastructure)
+    {:ok, infrastructure}
+  end
+
   def is_erc20?(%Project{} = project) do
     project
     |> Repo.preload(:infrastructure)

@@ -29,7 +29,7 @@ defmodule SanbaseWeb.ProjectDataController do
 
         {contract, decimals} =
           case Project.contract_info(project) do
-            {:ok, contrat, decimals} -> {contrat, decimals}
+            {:ok, contract, decimals} -> {contract, decimals}
             _ -> {nil, nil}
           end
 

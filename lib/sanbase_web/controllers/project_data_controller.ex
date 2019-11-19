@@ -1,30 +1,52 @@
 defmodule SanbaseWeb.ProjectDataController do
   use SanbaseWeb, :controller
 
+  alias Sanbase.Model.Project
   require Logger
 
-  # Used in production mode to serve the reactjs application
   def data(conn, _params) do
-    json_each_row = "haha"
+    {:ok, data} = Sanbase.Cache.get_or_store({__MODULE__, __ENV__.function}, &get_data/0)
 
     conn
     |> put_resp_header("content-type", "application/json; charset=utf-8")
-    |> Plug.Conn.send_resp(200, json_each_row)
+    |> Plug.Conn.send_resp(200, data)
   end
 
   defp get_data() do
-    projects =
-      Sanbase.Model.Project.List.projects()
+    data =
+      Project.List.projects(
+        preload?: true,
+        preload: [:infrastructure, :github_organizations]
+      )
       |> Enum.map(fn project ->
-        %{slug: slug, infrastructure: infr} = project
+        infr_code =
+          case project do
+            %{infrastructure: %{code: infr_code}} -> infr_code
+            _ -> nil
+          end
+
+        {:ok, github_organizations} = Project.github_organizations(project)
+
+        {contract, decimals} =
+          case Project.contract_info(project) do
+            {:ok, contrat, decimals} -> {contrat, decimals}
+            _ -> {nil, nil}
+          end
+
+        project_json =
+          %{
+            slug: project.slug,
+            ticker: project.ticker,
+            infrastructure: infr_code,
+            github_organizations: github_organizations,
+            contract: contract,
+            decimals: decimals
+          }
+          |> Jason.encode!()
+
+        [project_json, "\n"]
       end)
 
-    %{
-      slug: "",
-      github_repositories: [],
-      decimals: [],
-      contract: "",
-      infrastructure: ""
-    }
+    {:ok, data}
   end
 end

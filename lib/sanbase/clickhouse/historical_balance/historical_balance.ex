@@ -60,7 +60,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
           | {:error, String.t()}
         when balance_before: number(), balance_after: number(), balance_change: number()
   def eth_balance_change(addresses, from, to) do
-    EthBalance.balance_change(addresses, from, to)
+    EthBalance.balance_change(addresses, "ETH", 18, from, to)
   end
 
   @doc ~s"""
@@ -71,7 +71,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
           {:ok, list({address, %{datetime: DateTime.t(), balance_change: number()}})}
           | {:error, String.t()}
   def eth_balance_change(addresses, from, to, interval) do
-    EthBalance.balance_change(addresses, from, to, interval)
+    EthBalance.historical_balance_change(addresses, "ETH", 18, from, to, interval)
   end
 
   @doc ~s"""
@@ -85,13 +85,13 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
         when balance_before: number(), balance_after: number(), balance_change: number()
   def balance_change(address, slug, from, to) do
     case Project.contract_info_by_slug(slug) do
-      {:ok, contract, token_decimals} ->
+      {:ok, contract, decimals} ->
         case contract do
           "ETH" ->
-            EthBalance.balance_change(address, from, to)
+            EthBalance.balance_change(address, contract, decimals, from, to)
 
           _ ->
-            Erc20Balance.balance_change(address, contract, token_decimals, from, to)
+            Erc20Balance.balance_change(address, contract, decimals, from, to)
         end
 
       {:error, error} ->
@@ -107,13 +107,13 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
           historical_balance_return
   def historical_balance(address, slug, from, to, interval) do
     case Project.contract_info_by_slug(slug) do
-      {:ok, contract, token_decimals} ->
+      {:ok, contract, decimals} ->
         case contract do
           "ETH" ->
-            EthBalance.historical_balance(address, from, to, interval)
+            EthBalance.historical_balance(address, contract, decimals, from, to, interval)
 
           _ ->
-            Erc20Balance.historical_balance(address, contract, token_decimals, from, to, interval)
+            Erc20Balance.historical_balance(address, contract, decimals, from, to, interval)
         end
 
       {:error, error} ->

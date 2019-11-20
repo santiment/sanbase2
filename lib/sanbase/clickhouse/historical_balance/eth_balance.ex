@@ -11,6 +11,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
   as spent.
   """
 
+  @behaviour Sanbase.Clickhouse.HistoricalBalance.Behaviour
   use Ecto.Schema
 
   import Sanbase.Clickhouse.HistoricalBalance.Utils
@@ -18,24 +19,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
   @eth_decimals 1_000_000_000_000_000_000
-
-  @typedoc ~s"""
-  An interval represented as string. It has the format of number followed by one of:
-  ns, ms, s, m, h, d or w - each representing some time unit
-  """
-  @type interval :: String.t()
-
-  @type address :: String.t()
-
-  @type historical_balance :: %{
-          datetime: non_neg_integer(),
-          balance: float()
-        }
-
-  @type slug_balance_map :: %{
-          slug: String.t(),
-          balance: float()
-        }
 
   @table "eth_balances"
   schema @table do
@@ -48,16 +31,9 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
   @doc false
   @spec changeset(any(), any()) :: no_return()
   def changeset(_, _),
-    do: raise("Should not try to change eth daily active addresses")
+    do: raise("Should not try to change eth balances")
 
-  @doc ~s"""
-  Return a list of all assets that the address holds or has held in the past and
-  the latest balance.
-
-  This function can currently return either empty list or a list with item for the
-  "ethereum" slug
-  """
-  @spec assets_held_by_address(address) :: {:ok, list(slug_balance_map)} | {:error, String.t()}
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def assets_held_by_address(address) do
     {query, args} = current_ethereum_balance_query(address)
 
@@ -69,33 +45,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     end)
   end
 
-  defp current_ethereum_balance_query(address) do
-    query = """
-    SELECT value
-    FROM
-      #{@table}
-    PREWHERE
-      address = ?1 AND
-      sign = 1
-    ORDER BY dt DESC
-    LIMIT 1
-    """
-
-    args = [address |> String.downcase()]
-    {query, args}
-  end
-
-  @doc ~s"""
-  For a given address or list of addresses returns the combined ethereum
-  balance for each bucket of size `interval` in the from-to time period
-  """
-  @spec historical_balance(
-          address | list(address),
-          DateTime.t(),
-          DateTime.t(),
-          interval
-        ) :: {:ok, list(historical_balance)} | {:error, String.t()}
-  def historical_balance(addr, from, to, interval) when is_binary(addr) do
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
+  def historical_balance(addr, _currency, _decimals, from, to, interval) when is_binary(addr) do
     {query, args} = historical_balance_query(addr, from, to, interval)
 
     ClickhouseRepo.query_transform(query, args, fn [dt, value, has_changed] ->
@@ -119,11 +70,13 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     end
   end
 
-  def historical_balance(addr, from, to, interval) when is_list(addr) do
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
+  def historical_balance(addresses, currency, decimals, from, to, interval)
+      when is_list(addresses) do
     result =
-      addr
+      addresses
       |> Sanbase.Parallel.map(fn address ->
-        {:ok, balances} = historical_balance(address, from, to, interval)
+        {:ok, balances} = historical_balance(address, currency, decimals, from, to, interval)
         balances
       end)
       |> Enum.zip()
@@ -140,19 +93,13 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     {:ok, result}
   end
 
-  @doc ~s"""
-  For a given address or list of addresses returns the ethereum balance change for the
-  from-to period. The returned lists indicates the address, before balance, after balance
-  and the balance change
-  """
-  @spec balance_change(address | list(address), DateTime.t(), DateTime.t()) ::
-          {:ok, list({address, {balance_before, balance_after, balance_change}})}
-          | {:error, String.t()}
-        when balance_before: number(), balance_after: number(), balance_change: number()
-  def balance_change([], _, _), do: {:ok, []}
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
+  def balance_change([], _, _, _, _), do: {:ok, []}
 
-  def balance_change(addr, from, to) when is_binary(addr) or is_list(addr) do
-    {query, args} = balance_change_query(addr, from, to)
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
+  def balance_change(address_or_addresses, _currency, _decimals, from, to)
+      when is_binary(address_or_addresses) or is_list(address_or_addresses) do
+    {query, args} = balance_change_query(address_or_addresses, from, to)
 
     ClickhouseRepo.query_transform(query, args, fn [address, start_balance, end_balance, change] ->
       {address,
@@ -160,18 +107,12 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     end)
   end
 
-  @doc ~s"""
-  For a given address or list of addresses returns the ethereum  balance change for each bucket
-  of size `interval` in the from-to time period
-  """
-  @spec balance_change(address | list(address), DateTime.t(), DateTime.t(), interval) ::
-          {:ok, list({address, %{datetime: DateTime.t(), balance_change: number()}})}
-          | {:error, String.t()}
-  def balance_change([], _, _, _), do: {:ok, []}
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
+  def historical_balance_change([], _, _, _, _, _), do: {:ok, []}
 
-  def balance_change(addresses, from, to, interval)
-      when is_binary(addresses) or is_list(addresses) do
-    {query, args} = balance_change_query(addresses, from, to, interval)
+  def historical_balance_change(address_or_addresses, _currency, _decimals, from, to, interval)
+      when is_binary(address_or_addresses) or is_list(address_or_addresses) do
+    {query, args} = historical_balance_change_query(address_or_addresses, from, to, interval)
 
     ClickhouseRepo.query_transform(query, args, fn [dt, change] ->
       %{
@@ -194,64 +135,23 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
 
   # Private functions
 
-  defp balance_change_query(addresses, from, to) do
-    addresses = addresses |> List.wrap() |> List.flatten() |> Enum.map(&String.downcase/1)
-
+  defp current_ethereum_balance_query(address) do
     query = """
-    SELECT
-      address,
-      argMaxIf(value, dt, dt <= ?2 AND sign = 1) AS start_balance,
-      argMaxIf(value, dt, dt <= ?3 AND sign = 1) AS end_balance,
-      end_balance - start_balance AS diff
-    FROM #{@table}
+    SELECT value
+    FROM
+      #{@table}
     PREWHERE
-      address IN (?1)
-    GROUP BY address
+      address = ?1 AND
+      sign = 1
+    ORDER BY dt DESC
+    LIMIT 1
     """
 
-    args = [addresses, from, to]
-
+    args = [address |> String.downcase()]
     {query, args}
   end
 
-  defp balance_change_query(addresses, from, to, interval) do
-    addresses = Enum.map(addresses, &String.downcase/1)
-    interval = Sanbase.DateTimeUtils.str_to_sec(interval)
-    to_unix = DateTime.to_unix(to)
-    from_unix = DateTime.to_unix(from)
-    span = div(to_unix - from_unix, interval) |> max(1)
-
-    # The balances table is like a stack. For each balance change there is a record
-    # with sign = -1 that is the old balance and with sign = 1 which is the new balance
-    query = """
-    SELECT time, SUM(change)
-      FROM (
-        SELECT
-          toUnixTimestamp(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) AS time,
-          toFloat64(0) AS change
-        FROM numbers(?2)
-
-      UNION ALL
-
-      SELECT
-        toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
-        sign*value AS change
-      FROM #{@table}
-      PREWHERE
-        address in (?3) AND
-        dt >= toDateTime(?4) AND
-        dt <= toDateTime(?5)
-      GROUP BY address, value, dt, sign
-    )
-    GROUP BY time
-    ORDER BY time
-    """
-
-    args = [interval, span, addresses, from_unix, to_unix]
-    {query, args}
-  end
-
-  @first_datetime ~N[2015-07-29 00:00:00] |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
+  @first_datetime ~U[2015-07-29 00:00:00Z] |> DateTime.to_unix()
   defp historical_balance_query(address, _from, to, interval) when is_binary(address) do
     address = String.downcase(address)
     interval = Sanbase.DateTimeUtils.str_to_sec(interval)
@@ -287,6 +187,66 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     """
 
     args = [interval, span, address, @first_datetime, to_unix]
+    {query, args}
+  end
+
+  defp balance_change_query(address_or_addresses, from, to) do
+    addresses =
+      address_or_addresses |> List.wrap() |> List.flatten() |> Enum.map(&String.downcase/1)
+
+    query = """
+    SELECT
+      address,
+      argMaxIf(value, dt, dt <= ?2 AND sign = 1) AS start_balance,
+      argMaxIf(value, dt, dt <= ?3 AND sign = 1) AS end_balance,
+      end_balance - start_balance AS diff
+    FROM #{@table}
+    PREWHERE
+      address IN (?1)
+    GROUP BY address
+    """
+
+    args = [addresses, from, to]
+
+    {query, args}
+  end
+
+  defp historical_balance_change_query(address_or_addresses, from, to, interval) do
+    addresses =
+      address_or_addresses |> List.wrap() |> List.flatten() |> Enum.map(&String.downcase/1)
+
+    interval = Sanbase.DateTimeUtils.str_to_sec(interval)
+    to_unix = DateTime.to_unix(to)
+    from_unix = DateTime.to_unix(from)
+    span = div(to_unix - from_unix, interval) |> max(1)
+
+    # The balances table is like a stack. For each balance change there is a record
+    # with sign = -1 that is the old balance and with sign = 1 which is the new balance
+    query = """
+    SELECT time, SUM(change)
+      FROM (
+        SELECT
+          toUnixTimestamp(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) AS time,
+          toFloat64(0) AS change
+        FROM numbers(?2)
+
+      UNION ALL
+
+      SELECT
+        toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
+        sign*value AS change
+      FROM #{@table}
+      PREWHERE
+        address in (?3) AND
+        dt >= toDateTime(?4) AND
+        dt <= toDateTime(?5)
+      GROUP BY address, value, dt, sign
+    )
+    GROUP BY time
+    ORDER BY time
+    """
+
+    args = [interval, span, addresses, from_unix, to_unix]
     {query, args}
   end
 end

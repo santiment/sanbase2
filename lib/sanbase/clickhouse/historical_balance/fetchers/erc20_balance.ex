@@ -41,7 +41,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
 
   @spec changeset(any(), any()) :: no_return()
   def changeset(_, _),
-    do: raise("Should not try to change eth daily active addresses")
+    do: raise("Should not try to change erc20 balances")
 
   @doc ~s"""
   Return a list of all assets that the address holds or has held in the past and
@@ -168,9 +168,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
 
   # Private functions
 
-  @first_datetime ~N[2015-10-29 00:00:00]
-                  |> DateTime.from_naive!("Etc/UTC")
-                  |> DateTime.to_unix()
+  @first_datetime ~U[2015-10-29 00:00:00Z] |> DateTime.to_unix()
   defp historical_balance_query(address, contract, _from, to, interval) do
     interval = Sanbase.DateTimeUtils.str_to_sec(interval)
     to_unix = DateTime.to_unix(to)

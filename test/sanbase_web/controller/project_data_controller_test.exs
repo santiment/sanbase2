@@ -6,7 +6,15 @@ defmodule SanbaseWeb.ProjectDataControllerTest do
   import Sanbase.Factory
 
   setup do
-    p1 = insert(:random_erc20_project)
+    p1 =
+      insert(:random_erc20_project,
+        github_organizations: [
+          build(:github_organization),
+          build(:github_organization),
+          build(:github_organization)
+        ]
+      )
+
     p2 = insert(:random_erc20_project)
     p3 = insert(:random_erc20_project)
 
@@ -37,7 +45,7 @@ defmodule SanbaseWeb.ProjectDataControllerTest do
       "ticker" => project.ticker,
       "slug" => project.slug,
       "infrastructure" => infrastructure.code,
-      "github_organizations" => github_organizations
+      "github_organizations" => github_organizations |> Enum.join(",")
     }
   end
 end

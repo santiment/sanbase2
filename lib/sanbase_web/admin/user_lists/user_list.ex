@@ -42,6 +42,8 @@ defmodule Sanbase.ExAdmin.UserList do
         row(:color)
         row(:user, link: true)
         row(:function)
+        row(:inserted_at)
+        row(:updated_at)
       end
 
       panel "List items" do

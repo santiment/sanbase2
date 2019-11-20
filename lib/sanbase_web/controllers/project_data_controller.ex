@@ -21,8 +21,8 @@ defmodule SanbaseWeb.ProjectDataController do
       |> Enum.map(fn project ->
         infr_code =
           case project do
-            %{infrastructure: %{code: infr_code}} -> infr_code
-            _ -> nil
+            %{infrastructure: %{code: infr_code}} -> infr_code || ""
+            _ -> ""
           end
 
         {:ok, github_organizations} = Project.github_organizations(project)
@@ -30,7 +30,7 @@ defmodule SanbaseWeb.ProjectDataController do
         {contract, decimals} =
           case Project.contract_info(project) do
             {:ok, contract, decimals} -> {contract, decimals}
-            _ -> {nil, nil}
+            _ -> {"", 0}
           end
 
         project_json =
@@ -38,7 +38,7 @@ defmodule SanbaseWeb.ProjectDataController do
             slug: project.slug,
             ticker: project.ticker,
             infrastructure: infr_code,
-            github_organizations: github_organizations,
+            github_organizations: github_organizations |> Enum.join(","),
             contract: contract,
             decimals: decimals
           }

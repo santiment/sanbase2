@@ -42,7 +42,7 @@ defmodule Sanbase.ExAdmin.Billing.PromoTrial do
   end
 
   def create_promo_trials(conn, params, resource, :create) do
-    Sanbase.Billing.Subscription.PromoTrial.create_promo_trial(params.promo_trial)
+    {:ok, _} = Sanbase.Billing.Subscription.PromoTrial.create_promo_trial(params.promo_trial)
     {conn, params, resource}
   end
 end

@@ -103,7 +103,6 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
       items: [%{plan: plan.stripe_id}],
       trial_end: Timex.shift(Timex.now(), days: trial_days) |> DateTime.to_unix()
     }
-    |> IO.inspect()
   end
 
   defp handle_error(user, error) do

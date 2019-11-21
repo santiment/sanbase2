@@ -31,9 +31,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.MinersBalance do
 
   def historical_balance(_, _, _, _), do: {:error, "Currently only ethereum is supported!"}
 
-  def first_datetime(_) do
-    ~N[2015-07-30 00:00:00] |> DateTime.from_naive("Etc/UTC")
-  end
+  def first_datetime(_), do: ~U[2015-07-30 00:00:00Z]
 
   defp calculate_balances(from, to, interval_in_seconds) do
     {query, args} = balances_query(from, to, interval_in_seconds)

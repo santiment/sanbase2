@@ -13,7 +13,10 @@ defmodule Sanbase.Model.Project.ContractData do
   }
 
   @special_case_slugs @special_cases |> Map.keys()
+
   def special_case_slugs(), do: @special_case_slugs
+
+  def special_cases(), do: @special_cases
 
   for {slug, %{main_contract_address: contract, token_decimals: decimals}} <- @special_cases do
     def contract_info_by_slug(unquote(slug)), do: {:ok, unquote(contract), unquote(decimals)}

@@ -18,10 +18,9 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
-  @table "eth_balances"
+  @table "xrp_balances"
   schema @table do
     field(:datetime, :utc_datetime, source: :dt)
-    field(:address, :string, source: :to)
     field(:balance, :float)
     field(:old_balance, :float, source: :oldBalance)
     field(:address, :string)
@@ -37,37 +36,28 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
   def assets_held_by_address(address) do
     {query, args} = current_ethereum_balance_query(address)
 
-    ClickhouseRepo.query_transform(query, args, fn [value] ->
+    ClickhouseRepo.query_transform(query, args, fn [currency, value] ->
       %{
-        slug: "ethereum",
+        currency: currency,
         balance: value
       }
     end)
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
-  def historical_balance(addr, _currency, _decimals, from, to, interval) when is_binary(addr) do
-    {query, args} = historical_balance_query(addr, from, to, interval)
+  def historical_balance(address, currency, _decimals, from, to, interval)
+      when is_binary(address) do
+    {query, args} = historical_balance_query(address, currency, from, to, interval)
 
-    ClickhouseRepo.query_transform(query, args, fn [dt, value, has_changed] ->
+    ClickhouseRepo.query_transform(query, args, fn [dt, balance, has_changed] ->
       %{
         datetime: DateTime.from_unix!(dt),
-        balance: value,
+        balance: balance,
         has_changed: has_changed
       }
     end)
-    |> case do
-      {:ok, result} ->
-        result =
-          result
-          |> fill_gaps_last_seen_balance()
-          |> Enum.drop_while(fn %{datetime: dt} -> DateTime.compare(dt, from) == :lt end)
-
-        {:ok, result}
-
-      error ->
-        error
-    end
+    |> maybe_update_first_balance(fn -> last_balance_before(address, currency, 0, from) end)
+    |> maybe_fill_gaps_last_seen_balance()
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
@@ -134,6 +124,27 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
 
   # Private functions
 
+  def last_balance_before(address, currency, _decimals, datetime) do
+    query = """
+    SELECT balance
+    FROM #{@table}
+    PREWHERE
+      address = ?1 AND
+      currency = ?2 AND
+      dt <=toDateTime(?3)
+    ORDER BY dt DESC
+    LIMIT 1
+    """
+
+    args = [address, currency, DateTime.to_unix(datetime)]
+
+    case ClickhouseRepo.query_transform(query, args, & &1) do
+      {:ok, [[balance]]} -> {:ok, balance}
+      {:ok, []} -> {:ok, 0}
+      {:error, error} -> {:error, error}
+    end
+  end
+
   defp current_ethereum_balance_query(address) do
     query = """
     SELECT value
@@ -150,21 +161,20 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
     {query, args}
   end
 
-  @first_datetime ~U[2015-07-29 00:00:00Z] |> DateTime.to_unix()
-  defp historical_balance_query(address, _from, to, interval) when is_binary(address) do
-    address = String.downcase(address)
+  defp historical_balance_query(address, currency, from, to, interval) when is_binary(address) do
     interval = Sanbase.DateTimeUtils.str_to_sec(interval)
+    from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
-    span = div(to_unix - @first_datetime, interval) |> max(1)
+    span = div(to_unix - from_unix, interval) |> max(1)
 
     # The balances table is like a stack. For each balance change there is a record
     # with sign = -1 that is the old balance and with sign = 1 which is the new balance
     query = """
-    SELECT time, SUM(value), toUInt8(SUM(has_changed))
+    SELECT time, SUM(balance),toUInt8(SUM(has_changed))
       FROM (
         SELECT
           toUnixTimestamp(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) AS time,
-          toFloat64(0) AS value,
+          toFloat64(0) AS balance,
           toInt8(0) AS has_changed
         FROM numbers(?2)
 
@@ -172,20 +182,21 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
 
       SELECT
         toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
-        argMax(value, dt),
+        argMax(balance, dt) AS balance,
         toUInt8(1) AS has_changed
       FROM #{@table}
       PREWHERE
         address = ?3 AND
-        sign = 1 AND
-        dt <= toDateTime(?5)
+        dt >= toDateTime(?4) AND
+        dt <= toDateTime(?5) AND
+        currency = ?6
       GROUP BY time
     )
     GROUP BY time
     ORDER BY time
     """
 
-    args = [interval, span, address, @first_datetime, to_unix]
+    args = [interval, span, address, from_unix, to_unix, currency]
     {query, args}
   end
 

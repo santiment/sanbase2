@@ -9,7 +9,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   @async_with_timeout 29_000
 
   alias Sanbase.Model.Project
-  alias Sanbase.Clickhouse.HistoricalBalance.{EthBalance, Erc20Balance}
+  alias Sanbase.Clickhouse.HistoricalBalance.{EthBalance, Erc20Balance, XrpBalance}
 
   @type slug :: String.t()
 
@@ -111,6 +111,9 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
         case contract do
           "ETH" ->
             EthBalance.historical_balance(address, contract, decimals, from, to, interval)
+
+          "XRP" ->
+            XrpBalance.historical_balance(address, "XRP", 0, from, to, interval)
 
           _ ->
             Erc20Balance.historical_balance(address, contract, decimals, from, to, interval)

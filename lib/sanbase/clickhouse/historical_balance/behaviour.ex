@@ -11,9 +11,13 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Behaviour do
 
   @type address :: String.t()
   @type address_or_addresses :: address | list(address)
-  @type currency :: String.t()
   @type decimals :: non_neg_integer()
   @type datetime :: DateTime.t()
+
+  @type currency :: String.t()
+  @type contract :: String.t()
+
+  @type target :: contract | currency
 
   @type slug_balance_map :: %{
           slug: String.t(),
@@ -42,7 +46,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Behaviour do
   """
   @callback historical_balance(
               address_or_addresses,
-              currency,
+              target,
               decimals,
               from :: datetime,
               to :: datetime,
@@ -57,7 +61,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Behaviour do
   """
   @callback balance_change(
               address_or_addresses,
-              currency,
+              target,
               decimals,
               from :: datetime,
               to :: datetime
@@ -70,11 +74,20 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Behaviour do
   """
   @callback historical_balance_change(
               address_or_addresses,
-              currency,
+              target,
               decimals,
               from :: datetime,
               to :: datetime,
               interval
             ) ::
               {:ok, list(balance_change)} | {:error, String.t()}
+
+  @callback last_balance_before(
+              address,
+              target,
+              decimals,
+              before :: datetime
+            ) :: {:ok, float()} | {:error, String.t()}
+
+  @optional_callbacks historical_balance_change: 6
 end

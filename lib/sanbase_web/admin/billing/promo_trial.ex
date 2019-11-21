@@ -11,7 +11,9 @@ defmodule Sanbase.ExAdmin.Billing.PromoTrial do
 
     form promo_trial do
       inputs do
-        input(promo_trial, :user,
+        input(
+          promo_trial,
+          :user,
           collection: Repo.all(User),
           fields: [:email, :username]
         )
@@ -24,9 +26,7 @@ defmodule Sanbase.ExAdmin.Billing.PromoTrial do
           as: :check_boxes,
           collection:
             PromoTrial.promo_trial_plans()
-            |> Enum.map(fn id ->
-              Repo.get(Plan, id) |> Repo.preload(:product)
-            end)
+            |> Enum.map(&Plan.by_id/1)
             |> Enum.map(&Map.put(&1, :name, &1.product.name <> " / " <> &1.name))
         )
       end
@@ -42,7 +42,6 @@ defmodule Sanbase.ExAdmin.Billing.PromoTrial do
   end
 
   def create_promo_trials(conn, params, resource, :create) do
-    # promo_trial: %{plans: ["13", "43"], trial_days: "23", user_id: 30},
     Sanbase.Billing.Subscription.PromoTrial.create_promo_trial(params.promo_trial)
     {conn, params, resource}
   end

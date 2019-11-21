@@ -13,7 +13,7 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
 
   @plan_id_name_map %{
     "3" => "Neuro by Santiment / PRO",
-    "13" => "Sanabse by Santiment / PRO",
+    "13" => "Sanbase by Santiment / PRO",
     "43" => "Graphs by Santiment / PREMIUM"
   }
 
@@ -41,7 +41,7 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
   def promo_trial_plans, do: @promo_trial_plans
 
   def create_promo_trial(%{plans: plans, trial_days: trial_days, user_id: user_id}) do
-    user = Repo.get(User, user_id)
+    {:ok, user} = User.by_id(user_id)
     plans = plans |> Enum.map(&String.to_integer/1)
     trial_days = String.to_integer(trial_days)
 

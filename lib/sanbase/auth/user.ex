@@ -88,6 +88,7 @@ defmodule Sanbase.Auth.User do
     has_many(:following, UserFollower, foreign_key: :follower_id, on_delete: :delete_all)
     has_many(:subscriptions, Subscription, on_delete: :delete_all)
     has_many(:roles, {"user_roles", Sanbase.Auth.UserRole}, on_delete: :delete_all)
+    has_many(:promo_trials, Sanbase.Billing.Subscription.PromoTrial, on_delete: :delete_all)
 
     has_one(:user_settings, UserSettings, on_delete: :delete_all)
 

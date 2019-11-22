@@ -80,6 +80,9 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
+  def historical_balance([], _, _, _, _, _), do: {:ok, []}
+
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def historical_balance(addresses, contract, decimals, from, to, interval)
       when is_list(addresses) do
     combine_historical_balances(addresses, fn address ->

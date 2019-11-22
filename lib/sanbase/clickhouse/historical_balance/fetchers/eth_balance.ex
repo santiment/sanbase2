@@ -46,6 +46,17 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
+  def historical_balance([], _, _, _, _, _), do: {:ok, []}
+
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
+  def historical_balance(addresses, currency, decimals, from, to, interval)
+      when is_list(addresses) do
+    combine_historical_balances(addresses, fn address ->
+      historical_balance(address, currency, decimals, from, to, interval)
+    end)
+  end
+
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def historical_balance(address, _currency, _decimals, from, to, interval)
       when is_binary(address) do
     address = String.downcase(address)
@@ -60,14 +71,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     end)
     |> maybe_update_first_balance(fn -> last_balance_before(address, "ETH", 18, from) end)
     |> maybe_fill_gaps_last_seen_balance()
-  end
-
-  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
-  def historical_balance(addresses, currency, decimals, from, to, interval)
-      when is_list(addresses) do
-    combine_historical_balances(addresses, fn address ->
-      historical_balance(address, currency, decimals, from, to, interval)
-    end)
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour

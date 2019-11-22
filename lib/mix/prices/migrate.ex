@@ -19,7 +19,6 @@ defmodule Sanbase.Prices.Migrate do
     Logger.info("Migrating prices from influxdb for count: #{all_projects_count} projects")
 
     projects
-    |> Enum.take(10)
     |> Enum.map(&Sanbase.Influxdb.Measurement.name_from/1)
     |> Enum.chunk_every(50)
     |> Enum.flat_map(&first_datetimes/1)

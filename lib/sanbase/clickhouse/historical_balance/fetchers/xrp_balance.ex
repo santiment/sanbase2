@@ -95,7 +95,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
         balance_change: change
       }
     end)
-    |> maybe_drop_not_needed(from)
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour

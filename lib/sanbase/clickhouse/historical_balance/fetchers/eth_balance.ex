@@ -60,7 +60,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     end)
     |> maybe_update_first_balance(fn -> last_balance_before(address, "ETH", 18, from) end)
     |> maybe_fill_gaps_last_seen_balance()
-    |> maybe_drop_not_needed(from)
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
@@ -98,7 +97,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
         balance_change: change / @eth_decimals
       }
     end)
-    |> maybe_drop_not_needed(from)
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour

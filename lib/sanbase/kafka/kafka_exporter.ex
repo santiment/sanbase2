@@ -15,7 +15,7 @@ defmodule Sanbase.KafkaExporter do
   require Logger
   require Sanbase.Utils.Config, as: Config
 
-  @producer Config.get(:producer, SanExporterEx.Producer)
+  @producer Config.get(:producer)
 
   @type data :: {String.t(), String.t()}
 

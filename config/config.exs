@@ -19,8 +19,12 @@ config :ecto, json_library: Jason
 config :sanbase, Sanbase, environment: "#{Mix.env()}"
 
 config :sanbase, Sanbase.KafkaExporter,
+  supervisor: SanExporterEx.Producer.Supervisor,
+  producer: SanExporterEx.Producer,
   kafka_url: {:system, "KAFKA_URL", "blockchain-kafka-kafka"},
-  kafka_port: {:system, "KAFKA_PORT", "9092"}
+  kafka_port: {:system, "KAFKA_PORT", "9092"},
+  prices_topic: {:system, "KAFKA_PRICES_TOPIC", "asset_prices"},
+  api_call_data_topic: {:system, "KAFKA_API_CALL_DATA_TOPIC", "sanbase_api_call_data"}
 
 config :sanbase, Sanbase.Kafka,
   url: {:system, "KAFKA_URL", "blockchain-kafka-kafka"},

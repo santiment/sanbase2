@@ -34,7 +34,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def assets_held_by_address(address) do
-    {query, args} = current_ethereum_balance_query(address)
+    {query, args} = current_balances_query(address)
 
     ClickhouseRepo.query_transform(query, args, fn [currency, value] ->
       %{
@@ -63,24 +63,9 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def historical_balance(addresses, currency, decimals, from, to, interval)
       when is_list(addresses) do
-    result =
-      addresses
-      |> Sanbase.Parallel.map(fn address ->
-        {:ok, balances} = historical_balance(address, currency, decimals, from, to, interval)
-        balances
-      end)
-      |> Enum.zip()
-      |> Enum.map(&Tuple.to_list/1)
-      |> Enum.map(fn
-        [] ->
-          []
-
-        [%{datetime: datetime} | _] = list ->
-          balance = list |> Enum.map(& &1.balance) |> Enum.sum()
-          %{datetime: datetime, balance: balance}
-      end)
-
-    {:ok, result}
+    combine_historical_balances(addresses, fn address ->
+      historical_balance(address, currency, decimals, from, to, interval)
+    end)
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
@@ -110,17 +95,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
         balance_change: change
       }
     end)
-    |> case do
-      {:ok, result} ->
-        result =
-          result
-          |> Enum.drop_while(fn %{datetime: dt} -> DateTime.compare(dt, from) == :lt end)
-
-        {:ok, result}
-
-      error ->
-        error
-    end
+    |> maybe_drop_not_needed(from)
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
@@ -147,7 +122,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
 
   # Private functions
 
-  defp current_ethereum_balance_query(address) do
+  defp current_balances_query(address) do
     query = """
     SELECT value
     FROM

@@ -62,24 +62,9 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.BtcBalance do
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def historical_balance(addresses, currency, decimals, from, to, interval)
       when is_list(addresses) do
-    result =
-      addresses
-      |> Sanbase.Parallel.map(fn address ->
-        {:ok, balances} = historical_balance(address, currency, decimals, from, to, interval)
-        balances
-      end)
-      |> Enum.zip()
-      |> Enum.map(&Tuple.to_list/1)
-      |> Enum.map(fn
-        [] ->
-          []
-
-        [%{datetime: datetime} | _] = list ->
-          balance = list |> Enum.map(& &1.balance) |> Enum.sum()
-          %{datetime: datetime, balance: balance}
-      end)
-
-    {:ok, result}
+    combine_historical_balances(addresses, fn address ->
+      historical_balance(address, currency, decimals, from, to, interval)
+    end)
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour

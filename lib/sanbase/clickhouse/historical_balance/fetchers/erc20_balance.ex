@@ -80,6 +80,14 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
+  def historical_balance(addresses, contract, decimals, from, to, interval)
+      when is_list(addresses) do
+    combine_historical_balances(addresses, fn address ->
+      historical_balance(address, contract, decimals, from, to, interval)
+    end)
+  end
+
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def historical_balance(address, contract, decimals, from, to, interval) do
     pow_decimals = Sanbase.Math.ipow(10, decimals)
     address = String.downcase(address)

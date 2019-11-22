@@ -11,6 +11,33 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Utils do
         }
 
   @doc ~s"""
+  Take a list of addresses and 1-arity function that returns `{:ok, balances}` or
+  an error and sum all balances with the corresponding datetimes.
+  The combined balance of 2+ addresses is the sum of their balances for every
+  datetime
+  """
+  def combine_historical_balances(addresses, fun) when is_function(fun, 1) do
+    result =
+      addresses
+      |> Sanbase.Parallel.map(fn address ->
+        {:ok, balances} = fun.(address)
+        balances
+      end)
+      |> Enum.zip()
+      |> Enum.map(&Tuple.to_list/1)
+      |> Enum.map(fn
+        [] ->
+          []
+
+        [%{datetime: datetime} | _] = list ->
+          balance = list |> Enum.map(& &1.balance) |> Enum.sum()
+          %{datetime: datetime, balance: balance}
+      end)
+
+    {:ok, result}
+  end
+
+  @doc ~s"""
   Clickhouse fills empty buckets with 0 while we need it filled with the last
   seen value. As the balance changes happen only when a transfer occurs
   then we need to fetch the whole history of changes in order to find the balance

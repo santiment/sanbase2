@@ -25,11 +25,19 @@ defmodule Sanbase.Prices.Migrate do
     |> Enum.reduce(1, fn {measurement, first_datetime_iso}, current_project_count ->
       Logger.info("Start migrating #{measurement}")
 
-      {time_microsec, _} =
+      {time_microsec, result} =
         :timer.tc(fn -> get_prices_and_persist_in_kafka({measurement, first_datetime_iso}) end)
 
+      result_msg =
+        result
+        |> Enum.filter(fn {_measurement, _dates, result} -> result != :ok end)
+        |> case do
+          [] -> "ok"
+          errors -> "with errors: #{inspect(errors)}"
+        end
+
       Logger.info(
-        "Migrating #{measurement} finished in #{time_microsec / 1_000_000}s. Progress #{
+        "Migrating #{measurement} finished #{result_msg} in #{time_microsec / 1_000_000}s. Progress #{
           current_project_count
         } / #{all_projects_count}"
       )
@@ -44,10 +52,13 @@ defmodule Sanbase.Prices.Migrate do
     now = Timex.now()
 
     chunk_datetimes(first_datetime, now)
-    |> Enum.each(fn [from, to] ->
-      get_prices(measurement, from, to)
-      |> Enum.map(&PricePoint.to_json(&1, slug))
-      |> Sanbase.KafkaExporter.persist(:prices_exporter)
+    |> Enum.map(fn [from, to] ->
+      result =
+        get_prices(measurement, from, to)
+        |> Enum.map(&PricePoint.to_json(&1, slug))
+        |> Sanbase.KafkaExporter.persist(:prices_exporter)
+
+      {measurement, {first_datetime, now}, result}
     end)
   end
 

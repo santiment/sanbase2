@@ -112,7 +112,13 @@ defmodule Sanbase.Application do
        ]},
       start_in(
         Supervisor.child_spec(
-          {Sanbase.KafkaExporter, [name: :prices_exporter, topic: kafka_prices_data_topic()]},
+          {Sanbase.KafkaExporter,
+           [
+             name: :prices_exporter,
+             topic: kafka_prices_data_topic(),
+             buffering_max_messages: 10000,
+             can_send_after_interval: 200
+           ]},
           id: :prices_exporter
         ),
         [:dev, :prod]

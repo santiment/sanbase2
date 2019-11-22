@@ -2,6 +2,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Model.Project
 
+  @prices_source "coinmarketcap"
   defstruct [
     :ticker,
     :slug,
@@ -11,6 +12,21 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
     :price_usd,
     :price_btc
   ]
+
+  def json_kv_tuple(%__MODULE__{datetime: datetime} = point, slug, source \\ @prices_source) do
+    key = source <> "_" <> slug <> "_" <> DateTime.to_iso8601(datetime)
+
+    value =
+      %{
+        timestamp: DateTime.to_unix(datetime),
+        source: source,
+        slug: slug
+      }
+      |> Map.merge(price_point_fields(point))
+      |> Jason.encode!()
+
+    {key, value}
+  end
 
   def convert_to_measurement(%__MODULE__{datetime: datetime} = point, name) do
     %Measurement{

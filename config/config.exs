@@ -18,7 +18,7 @@ config :ecto, json_library: Jason
 
 config :sanbase, Sanbase, environment: "#{Mix.env()}"
 
-config :sanbase, Sanbase.ApiCallDataExporter,
+config :sanbase, Sanbase.KafkaExporter,
   kafka_url: {:system, "KAFKA_URL", "blockchain-kafka-kafka"},
   kafka_port: {:system, "KAFKA_PORT", "9092"}
 

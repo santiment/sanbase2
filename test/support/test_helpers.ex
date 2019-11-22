@@ -29,6 +29,14 @@ defmodule Sanbase.TestHelpers do
     end
   end
 
+  defmacro clear_kafka_state() do
+    quote do
+      on_exit(fn ->
+        Sanbase.InMemoryKafka.Producer.clear_state()
+      end)
+    end
+  end
+
   def error_details(%Ecto.Changeset{} = changeset) do
     changeset
     |> Ecto.Changeset.traverse_errors(&format_error/1)

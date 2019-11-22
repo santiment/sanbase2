@@ -1,4 +1,4 @@
-defmodule ApiCallDataExporterTest do
+defmodule KafkaExporterTest do
   use ExUnit.Case, async: true
 
   setup do
@@ -9,7 +9,7 @@ defmodule ApiCallDataExporterTest do
   # Setting buffering max messages to 0 sends to kafka on each `persist` call
   test "buffering max messages works", %{topic: topic} do
     {:ok, exporter_pid} =
-      Sanbase.ApiCallDataExporter.start_link(
+      Sanbase.KafkaExporter.start_link(
         name: rand_atom(),
         buffering_max_messages: 0,
         kafka_flush_timeout: 10_000,
@@ -18,16 +18,16 @@ defmodule ApiCallDataExporterTest do
       )
 
     data = api_call_data()
-    :ok = Sanbase.ApiCallDataExporter.persist(exporter_pid, data)
+    :ok = Sanbase.KafkaExporter.persist(data, exporter_pid)
     Process.sleep(100)
     state = Sanbase.InMemoryKafka.Producer.get_state()
-    assert Map.get(state, topic) |> Enum.map(&elem(&1, 1)) == [Jason.encode!(data)]
+    assert Map.get(state, topic) == data
   end
 
   # Setting kafka_flush_timeout to 100 flushes the buffer to kafka each 100ms
   test "kafka flush timeout works", %{topic: topic} do
     {:ok, exporter_pid} =
-      Sanbase.ApiCallDataExporter.start_link(
+      Sanbase.KafkaExporter.start_link(
         name: rand_atom(),
         buffering_max_messages: 5000,
         kafka_flush_timeout: 100,
@@ -36,15 +36,15 @@ defmodule ApiCallDataExporterTest do
       )
 
     data = api_call_data()
-    :ok = Sanbase.ApiCallDataExporter.persist(exporter_pid, data)
+    :ok = Sanbase.KafkaExporter.persist(data, exporter_pid)
     Process.sleep(200)
     state = Sanbase.InMemoryKafka.Producer.get_state()
-    assert Map.get(state, topic) |> Enum.map(&elem(&1, 1)) == [Jason.encode!(data)]
+    assert Map.get(state, topic) == data
   end
 
   test "batching api calls works after flush timeout time has passed", %{topic: topic} do
     {:ok, exporter_pid} =
-      Sanbase.ApiCallDataExporter.start_link(
+      Sanbase.KafkaExporter.start_link(
         name: rand_atom(),
         buffering_max_messages: 5000,
         kafka_flush_timeout: 200,
@@ -52,7 +52,7 @@ defmodule ApiCallDataExporterTest do
         topic: topic
       )
 
-    for _ <- 1..50, do: :ok = Sanbase.ApiCallDataExporter.persist(exporter_pid, api_call_data())
+    for _ <- 1..50, do: :ok = Sanbase.KafkaExporter.persist(api_call_data(), exporter_pid)
 
     # No data even after 50 api calls were persisted and some time has passed
     Process.sleep(100)
@@ -68,7 +68,7 @@ defmodule ApiCallDataExporterTest do
 
   test "batching api calls works after max messages number is reached", %{topic: topic} do
     {:ok, exporter_pid} =
-      Sanbase.ApiCallDataExporter.start_link(
+      Sanbase.KafkaExporter.start_link(
         name: rand_atom(),
         buffering_max_messages: 500,
         kafka_flush_timeout: 100_000,
@@ -76,7 +76,7 @@ defmodule ApiCallDataExporterTest do
         topic: topic
       )
 
-    for _ <- 1..600, do: :ok = Sanbase.ApiCallDataExporter.persist(exporter_pid, api_call_data())
+    for _ <- 1..600, do: :ok = Sanbase.KafkaExporter.persist(api_call_data(), exporter_pid)
 
     Process.sleep(100)
     state = Sanbase.InMemoryKafka.Producer.get_state()
@@ -88,7 +88,7 @@ defmodule ApiCallDataExporterTest do
 
   test "trigger multiple batch sends", %{topic: topic} do
     {:ok, exporter_pid} =
-      Sanbase.ApiCallDataExporter.start_link(
+      Sanbase.KafkaExporter.start_link(
         name: rand_atom(),
         buffering_max_messages: 100,
         kafka_flush_timeout: 5000,
@@ -97,7 +97,7 @@ defmodule ApiCallDataExporterTest do
       )
 
     for _ <- 1..10_000,
-        do: :ok = Sanbase.ApiCallDataExporter.persist(exporter_pid, api_call_data())
+        do: :ok = Sanbase.KafkaExporter.persist(api_call_data(), exporter_pid)
 
     Process.sleep(300)
     state = Sanbase.InMemoryKafka.Producer.get_state()
@@ -117,6 +117,7 @@ defmodule ApiCallDataExporterTest do
       duration_ms: :rand.uniform_real() * 1000,
       san_tokens: Enum.random(200..2000)
     }
+    |> Sanbase.Kafka.ApiCall.json_kv_tuple()
   end
 
   defp random_query() do

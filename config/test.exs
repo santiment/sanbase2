@@ -20,7 +20,7 @@ config :tesla, adapter: Tesla.Mock
 # The logger is causing issues with mocking otherwise. Not really sure why
 config :tesla, Tesla.Middleware.Logger, debug: false
 
-config :sanbase, Sanbase.ApiCallDataExporter,
+config :sanbase, Sanbase.KafkaExporter,
   supervisor: Sanbase.InMemoryKafka.Supervisor,
   producer: Sanbase.InMemoryKafka.Producer
 

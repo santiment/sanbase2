@@ -39,4 +39,8 @@ defmodule Sanbase.InMemoryKafka.Producer do
   def get_state(producer \\ @kafka_producer) do
     Agent.get(producer, & &1)
   end
+
+  def clear_state(producer \\ @kafka_producer) do
+    Agent.update(producer, fn _ -> %{} end)
+  end
 end

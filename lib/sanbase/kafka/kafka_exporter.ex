@@ -1,12 +1,12 @@
-defmodule Sanbase.ApiCallDataExporter do
+defmodule Sanbase.KafkaExporter do
   @moduledoc ~s"""
-  Module for persisting API calls data to Kafka.
+  Module for persisting any data to Kafka.
 
   The module exposes one function that should be used - `persist/1`.
   This functions adds the data to an internal buffer that is flushed
   every `kafka_flush_timeout` seconds or when the buffer is big enough.
 
-  The exporter cannot send data more than once every 1 second so the this
+  The exporter cannot send data more than once every 1 second so the
   GenServer cannot die too often and crash its supervisor
   """
 
@@ -17,23 +17,7 @@ defmodule Sanbase.ApiCallDataExporter do
 
   @producer Config.get(:producer, SanExporterEx.Producer)
 
-  @typedoc ~s"""
-  A map that represents the API call data that will be persisted.
-  """
-  @type api_call_data :: %{
-          timestamp: non_neg_integer() | nil,
-          id: String.t(),
-          query: String.t() | nil,
-          status_code: non_neg_integer(),
-          has_graphql_errors: boolean() | nil,
-          user_id: non_neg_integer() | nil,
-          auth_method: :atom | nil,
-          api_token: String.t() | nil,
-          remote_ip: String.t(),
-          user_agent: String.t(),
-          duration_ms: non_neg_integer() | nil,
-          san_tokens: float() | nil
-        }
+  @type data :: {String.t(), String.t()}
 
   @typedoc ~s"""
   Options that describe to which kafka topic and how often to send the batches.
@@ -73,45 +57,47 @@ defmodule Sanbase.ApiCallDataExporter do
   end
 
   @doc ~s"""
-  Asynchronously add the API call data to the buffer.
+  Asynchronously add data to be exported to the buffer.
 
   It will be sent no longer than `kafka_flush_timeout` seconds later. The data
   is pushed to an internal buffer that is then send at once to Kafka.
   """
-  @spec persist(api_call_data | [api_call_data]) :: :ok
-  @spec persist(pid() | atom(), api_call_data | [api_call_data]) :: :ok
-  def persist(exporter \\ __MODULE__, api_call_data) do
-    GenServer.cast(exporter, {:persist, api_call_data})
+
+  @spec persist(data | [data], pid() | atom()) :: :ok
+  def persist(data, exporter \\ __MODULE__) do
+    GenServer.cast(exporter, {:persist, data})
   end
 
   @doc ~s"""
   Send all available data in the buffers before shutting down.
 
-  The ApiCallRecorder should be started before the Endpoint in the supervison tree.
+  The data recorder should be started before the Endpoint in the supervison tree.
   This means that when shutting down it will be stopped after the Endpoint so
-  all API call data will be stored in Kafka and no more API calls are exepcted
+  all data will be stored in Kafka and no more data is expected.
   """
   def terminate(_reason, state) do
     Logger.info(
-      "Terminating the ApiCallExporter. Sending #{length(state.data)} API Call events to Kafka."
+      "Terminating the KafkaExporter. Sending #{length(state.data)} events to kafka topic: #{
+        state.topic
+      }"
     )
 
     send_data(state.data, state)
     :ok
   end
 
-  @spec handle_cast({:persist, api_call_data | [api_call_data]}, state) :: {:noreply, state}
+  @spec handle_cast({:persist, data | [data]}, state) :: {:noreply, state}
         when state: map()
   def handle_cast(
-        {:persist, api_call_data},
+        {:persist, data},
         state
       ) do
-    data = api_call_data |> List.wrap() |> Enum.map(&{"", Jason.encode!(&1)})
+    data = List.wrap(data)
     new_messages_length = length(data)
 
     case state.size + new_messages_length >= state.buffering_max_messages do
       true ->
-        :ok = send_data(data ++ state.data, state)
+        :ok = send_data(data ++ state.data, %{state | size: state.size + new_messages_length})
 
         {:noreply,
          %{
@@ -139,7 +125,7 @@ defmodule Sanbase.ApiCallDataExporter do
 
   defp send_data(data, %{topic: topic, can_send_after: can_send_after, size: size}) do
     Sanbase.DateTimeUtils.sleep_until(can_send_after)
-    Logger.info("Sending #{size} API Call events to Kafka.")
+    Logger.info("Sending #{size} events to Kafka topic: #{topic}")
     @producer.send_data(topic, data)
   end
 end

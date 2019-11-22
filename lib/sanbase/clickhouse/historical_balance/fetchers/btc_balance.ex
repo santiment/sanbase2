@@ -1,4 +1,4 @@
-defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
+defmodule Sanbase.Clickhouse.HistoricalBalance.BtcBalance do
   @doc ~s"""
   Module for working with historical ethereum balances.
 
@@ -35,7 +35,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def assets_held_by_address(address) do
-    {query, args} = current_balances_query(address)
+    {query, args} = current_balance_query(address)
 
     ClickhouseRepo.query_transform(query, args, fn [value] ->
       %{
@@ -46,18 +46,18 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
-  def historical_balance(address, _currency, _decimals, from, to, interval)
+  def historical_balance(address, currency, decimals, from, to, interval)
       when is_binary(address) do
     {query, args} = historical_balance_query(address, from, to, interval)
 
     ClickhouseRepo.query_transform(query, args, fn [dt, balance, has_changed] ->
       %{
         datetime: DateTime.from_unix!(dt),
-        balance: balance,
+        balance: balance / @btc_decimals,
         has_changed: has_changed
       }
     end)
-    |> maybe_update_first_balance(fn -> last_balance_before(address, "bitcoin", 8, from) end)
+    |> maybe_update_first_balance(fn -> last_balance_before(address, currency, decimals, from) end)
     |> maybe_fill_gaps_last_seen_balance()
   end
 
@@ -110,17 +110,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
         balance_change: change
       }
     end)
-    |> case do
-      {:ok, result} ->
-        result =
-          result
-          |> Enum.drop_while(fn %{datetime: dt} -> DateTime.compare(dt, from) == :lt end)
-
-        {:ok, result}
-
-      error ->
-        error
-    end
+    |> maybe_drop_not_needed(from)
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
@@ -146,7 +136,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
 
   # Private functions
 
-  defp current_balances_query(address) do
+  defp current_balance_query(address) do
     query = """
     SELECT balance
     FROM #{@table}
@@ -205,7 +195,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
       argMaxIf(balance, dt, dt <= ?3) AS start_balance,
       argMaxIf(balance, dt, dt <= ?4) AS end_balance,
       end_balance - start_balance AS diff
-    FROM #{@table}
+    FROM #{@table} FINAL
     PREWHERE
       address IN (?1)
     GROUP BY address

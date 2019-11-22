@@ -110,7 +110,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
       argMaxIf(value, dt, dt<=?3 AND sign = 1) AS start_balance,
       argMaxIf(value, dt, dt<=?4 AND sign = 1) AS end_balance,
       end_balance - start_balance AS diff
-    FROM #{@table}
+    FROM #{@table} FINAL
     PREWHERE
       address IN (?1) AND
       contract = ?2

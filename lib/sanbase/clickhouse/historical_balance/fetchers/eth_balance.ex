@@ -239,12 +239,12 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
       SELECT
         toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
         sign*value AS change
-      FROM #{@table}
+      FROM #{@table} FINAL
       PREWHERE
         address in (?3) AND
         dt >= toDateTime(?4) AND
         dt <= toDateTime(?5)
-      GROUP BY address, value, dt, sign
+      GROUP BY address, dt, value, sign
     )
     GROUP BY time
     ORDER BY time

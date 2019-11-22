@@ -128,6 +128,7 @@ defmodule Sanbase.Auth.User do
     |> validate_change(:avatar_url, &validate_url_change/2)
     |> unique_constraint(:email)
     |> unique_constraint(:username)
+    |> unique_constraint(:stripe_customer_id)
   end
 
   def ascii_username?(nil), do: true

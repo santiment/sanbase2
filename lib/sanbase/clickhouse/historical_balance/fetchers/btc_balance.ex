@@ -1,4 +1,4 @@
-defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
+defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
   @doc ~s"""
   Module for working with historical ethereum balances.
 
@@ -18,20 +18,20 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
-  @eth_decimals 1_000_000_000_000_000_000
+  @btc_decimals 100_000_000
 
-  @table "eth_balances"
+  @table "btc_balances"
   schema @table do
     field(:datetime, :utc_datetime, source: :dt)
-    field(:address, :string, source: :to)
-    field(:value, :float)
-    field(:sign, :integer)
+    field(:balance, :float)
+    field(:old_balance, :float, source: :oldBalance)
+    field(:address, :string)
   end
 
   @doc false
   @spec changeset(any(), any()) :: no_return()
   def changeset(_, _),
-    do: raise("Should not try to change eth balances")
+    do: raise("Should not try to change btc balances")
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def assets_held_by_address(address) do
@@ -39,8 +39,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
 
     ClickhouseRepo.query_transform(query, args, fn [value] ->
       %{
-        slug: "ethereum",
-        balance: value / @eth_decimals
+        slug: "bitcoin",
+        balance: value
       }
     end)
   end
@@ -48,19 +48,17 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def historical_balance(address, _currency, _decimals, from, to, interval)
       when is_binary(address) do
-    address = String.downcase(address)
     {query, args} = historical_balance_query(address, from, to, interval)
 
-    ClickhouseRepo.query_transform(query, args, fn [dt, value, has_changed] ->
+    ClickhouseRepo.query_transform(query, args, fn [dt, balance, has_changed] ->
       %{
         datetime: DateTime.from_unix!(dt),
-        balance: value / @eth_decimals,
+        balance: balance,
         has_changed: has_changed
       }
     end)
-    |> maybe_update_first_balance(fn -> last_balance_before(address, "ETH", 18, from) end)
+    |> maybe_update_first_balance(fn -> last_balance_before(address, "bitcoin", 8, from) end)
     |> maybe_fill_gaps_last_seen_balance()
-    |> maybe_drop_not_needed(from)
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
@@ -95,8 +93,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     {query, args} = balance_change_query(address_or_addresses, from, to)
 
     ClickhouseRepo.query_transform(query, args, fn [address, start_balance, end_balance, change] ->
-      {address,
-       {start_balance / @eth_decimals, end_balance / @eth_decimals, change / @eth_decimals}}
+      {address, {start_balance, end_balance, change}}
     end)
   end
 
@@ -110,29 +107,38 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     ClickhouseRepo.query_transform(query, args, fn [dt, change] ->
       %{
         datetime: DateTime.from_unix!(dt),
-        balance_change: change / @eth_decimals
+        balance_change: change
       }
     end)
-    |> maybe_drop_not_needed(from)
+    |> case do
+      {:ok, result} ->
+        result =
+          result
+          |> Enum.drop_while(fn %{datetime: dt} -> DateTime.compare(dt, from) == :lt end)
+
+        {:ok, result}
+
+      error ->
+        error
+    end
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def last_balance_before(address, _currency, _decimals, datetime) do
     query = """
-    SELECT value
+    SELECT balance
     FROM #{@table}
     PREWHERE
       address = ?1 AND
-      dt <=toDateTime(?2) AND
-      sign = 1
-    ORDER BY dt desc
+      dt <=toDateTime(?2)
+    ORDER BY dt DESC
     LIMIT 1
     """
 
     args = [address, DateTime.to_unix(datetime)]
 
     case ClickhouseRepo.query_transform(query, args, & &1) do
-      {:ok, [[balance]]} -> {:ok, balance / @eth_decimals}
+      {:ok, [[balance]]} -> {:ok, balance}
       {:ok, []} -> {:ok, 0}
       {:error, error} -> {:error, error}
     end
@@ -142,17 +148,15 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
 
   defp current_balances_query(address) do
     query = """
-    SELECT value
-    FROM
-      #{@table}
+    SELECT balance
+    FROM #{@table}
     PREWHERE
       address = ?1 AND
-      sign = 1
     ORDER BY dt DESC
     LIMIT 1
     """
 
-    args = [address |> String.downcase()]
+    args = [address]
     {query, args}
   end
 
@@ -162,14 +166,12 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     to_unix = DateTime.to_unix(to)
     span = div(to_unix - from_unix, interval) |> max(1)
 
-    # The balances table is like a stack. For each balance change there is a record
-    # with sign = -1 that is the old balance and with sign = 1 which is the new balance
     query = """
-    SELECT time, SUM(value), toUInt8(SUM(has_changed))
+    SELECT time, SUM(balance), toUInt8(SUM(has_changed))
       FROM (
         SELECT
           toUnixTimestamp(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) AS time,
-          toFloat64(0) AS value,
+          toFloat64(0) AS balance,
           toInt8(0) AS has_changed
         FROM numbers(?2)
 
@@ -177,12 +179,12 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
 
       SELECT
         toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
-        argMax(value, dt),
+        argMax(balance, dt) AS balance,
         toUInt8(1) AS has_changed
       FROM #{@table}
       PREWHERE
         address = ?3 AND
-        sign = 1 AND
+        dt >= toDateTime(?4) AND
         dt <= toDateTime(?5)
       GROUP BY time
     )
@@ -195,14 +197,13 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
   end
 
   defp balance_change_query(address_or_addresses, from, to) do
-    addresses =
-      address_or_addresses |> List.wrap() |> List.flatten() |> Enum.map(&String.downcase/1)
+    addresses = address_or_addresses |> List.wrap() |> List.flatten()
 
     query = """
     SELECT
       address,
-      argMaxIf(value, dt, dt <= ?2 AND sign = 1) AS start_balance,
-      argMaxIf(value, dt, dt <= ?3 AND sign = 1) AS end_balance,
+      argMaxIf(balance, dt, dt <= ?3) AS start_balance,
+      argMaxIf(balance, dt, dt <= ?4) AS end_balance,
       end_balance - start_balance AS diff
     FROM #{@table}
     PREWHERE
@@ -216,8 +217,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
   end
 
   defp historical_balance_change_query(address_or_addresses, from, to, interval) do
-    addresses =
-      address_or_addresses |> List.wrap() |> List.flatten() |> Enum.map(&String.downcase/1)
+    addresses = address_or_addresses |> List.wrap() |> List.flatten()
 
     interval = Sanbase.DateTimeUtils.str_to_sec(interval)
     to_unix = DateTime.to_unix(to)
@@ -238,13 +238,13 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
 
       SELECT
         toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
-        sign*value AS change
-      FROM #{@table}
+        balance - oldBalance AS change
+      FROM #{@table} FINAL
       PREWHERE
         address in (?3) AND
         dt >= toDateTime(?4) AND
         dt <= toDateTime(?5)
-      GROUP BY address, value, dt, sign
+      GROUP BY address
     )
     GROUP BY time
     ORDER BY time

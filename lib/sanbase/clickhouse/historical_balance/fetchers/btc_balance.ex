@@ -18,8 +18,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.BtcBalance do
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
-  @btc_decimals 100_000_000
-
   @table "btc_balances"
   schema @table do
     field(:datetime, :utc_datetime, source: :dt)
@@ -53,7 +51,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.BtcBalance do
     ClickhouseRepo.query_transform(query, args, fn [dt, balance, has_changed] ->
       %{
         datetime: DateTime.from_unix!(dt),
-        balance: balance / @btc_decimals,
+        balance: balance,
         has_changed: has_changed
       }
     end)

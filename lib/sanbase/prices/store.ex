@@ -25,7 +25,7 @@ defmodule Sanbase.Prices.Store do
   def first_datetime_multiple_measurements(measurements) when is_list(measurements) do
     measurements_str = measurements |> Enum.map(fn x -> ~s/"#{x}"/ end) |> Enum.join(", ")
 
-    ~s/SELECT time, price_usd FROM #{measurements_str} ORDER BY time ASC LIMIT 1/
+    ~s/SELECT first(price_usd) FROM #{measurements_str}/
     |> get()
     |> case do
       %{results: [%{series: series}]} ->

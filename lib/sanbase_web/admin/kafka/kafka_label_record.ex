@@ -4,7 +4,7 @@ defmodule Sanbase.Model.Kafka.KafkaLabelRecord do
 
   schema "kafka_label_records" do
     field(:topic, :string)
-    field(:sign, :integer, default: 1)
+    field(:sign, :integer)
     field(:address, :string)
     field(:blockchain, :string)
     field(:label, :string)
@@ -13,8 +13,10 @@ defmodule Sanbase.Model.Kafka.KafkaLabelRecord do
   end
 
   @fields [:topic, :sign, :address, :blockchain, :label, :metadata, :datetime]
+  @required_fields @fields -- [:metadata]
+
   def changeset(struct, attrs \\ %{}) do
-    struct |> cast(attrs, @fields) |> validate_required(@fields)
+    struct |> cast(attrs, @fields) |> validate_required(@required_fields)
   end
 end
 
@@ -41,9 +43,7 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
   end
 
   def send_to_kafka(conn, %{kafka_label_record: kafka_label_record} = params) do
-    {topic, data} =
-      Map.pop(kafka_label_record, :topic)
-      |> IO.inspect(label: "45", limit: :infinity)
+    {topic, data} = Map.pop(kafka_label_record, :topic)
 
     case String.contains?(topic, "label") do
       true ->

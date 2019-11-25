@@ -18,7 +18,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
-  @table "xrp_balances"
+  @table "xrp_balances_orderby_currency"
   schema @table do
     field(:datetime, :utc_datetime, source: :dt)
     field(:balance, :float)

@@ -9,7 +9,15 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   @async_with_timeout 29_000
 
   alias Sanbase.Model.Project
-  alias Sanbase.Clickhouse.HistoricalBalance.{EthBalance, Erc20Balance, XrpBalance, BtcBalance}
+
+  alias Sanbase.Clickhouse.HistoricalBalance.{
+    BchBalance,
+    BtcBalance,
+    EosBalance,
+    Erc20Balance,
+    EthBalance,
+    XrpBalance
+  }
 
   @type slug :: String.t()
 
@@ -69,13 +77,16 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
           "BTC" ->
             BtcBalance.balance_change(address, contract, decimals, from, to)
 
+          "BCH" ->
+            BchBalance.balance_change(address, contract, decimals, from, to)
+
+          "eosio.token/EOS" ->
+            EosBalance.balance_change(address, contract, decimals, from, to)
+
           "BNB" ->
             {:error, "Not implemented"}
 
-          "EOS" ->
-            {:error, "Not implemented"}
-
-          _ ->
+          <<"0x", _rest::binary>> = contract ->
             Erc20Balance.balance_change(address, contract, decimals, from, to)
         end
 
@@ -103,14 +114,17 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
           "BTC" ->
             BtcBalance.historical_balance(address, contract, decimals, from, to, interval)
 
+          "BCH" ->
+            BchBalance.historical_balance(address, contract, decimals, from, to, interval)
+
+          "eosio.token/EOS" ->
+            EosBalance.historical_balance(address, contract, decimals, from, to, interval)
+
           "BNB" ->
             {:error, "Not implemented"}
 
-          "EOS" ->
-            {:error, "Not implemented"}
-
-          _ ->
-            Erc20Balance.historical_balance(address, contract, decimals, from, to, interval)
+          <<"0x", _rest::binary>> = contract ->
+            Erc20Balance.balance_change(address, contract, decimals, from, to)
         end
 
       {:error, error} ->

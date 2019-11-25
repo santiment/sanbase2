@@ -1,14 +1,6 @@
 defmodule Sanbase.Clickhouse.HistoricalBalance.LtcBalance do
   @doc ~s"""
-  Module for working with historical ethereum balances.
-
-  Includes functions for calculating:
-  - Historical balances for an address or a list of addresses. For a list of addresses
-  the combined balance is returned
-  - Balance changes for an address or a list of addresses. This is used to calculate
-  ethereum spent over time. Summing the balance changes of all wallets of a project
-  allows to easily handle transactions between project wallets and not count them
-  as spent.
+  Module for working with historical Litecoin balances.
   """
 
   @behaviour Sanbase.Clickhouse.HistoricalBalance.Behaviour

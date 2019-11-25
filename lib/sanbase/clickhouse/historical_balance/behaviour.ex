@@ -1,6 +1,11 @@
 defmodule Sanbase.Clickhouse.HistoricalBalance.Behaviour do
   @moduledoc ~s"""
+  Behavior for defining the callback functions for a module implemening
+  historical balances for a given blockchain.
 
+  In order to add a new blockchain the following steps must be done:
+  - Implement the behaviour
+  - Add dispatch logic in the `HistoricalBalance` dispatch module.
   """
 
   @typedoc ~s"""

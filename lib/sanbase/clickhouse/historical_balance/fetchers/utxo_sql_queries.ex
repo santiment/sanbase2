@@ -1,4 +1,8 @@
 defmodule Sanbase.Clickhouse.HistoricalBalance.UtxoSqlQueries do
+  @moduledoc ~s"""
+  Common SQL queries for fetching historical balances and balance changes for
+  UTXO blockhains like Bitcoin, Litecoin, Bitcoin Cash, etc.
+  """
   def last_balance_before_query(table, address, datetime) do
     query = """
     SELECT balance

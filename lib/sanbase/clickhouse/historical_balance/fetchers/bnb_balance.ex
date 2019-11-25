@@ -1,10 +1,6 @@
 defmodule Sanbase.Clickhouse.HistoricalBalance.BnbBalance do
   @doc ~s"""
-  Module for working with historical ERC20 balances.
-
-  Includes functions for calculating:
-  - Historical balances for an address
-  - Balance changes for and address
+  Module for working with historical Binance balances.
   """
 
   @behaviour Sanbase.Clickhouse.HistoricalBalance.Behaviour
@@ -13,25 +9,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.BnbBalance do
   import Sanbase.Clickhouse.HistoricalBalance.Utils
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
-
-  @typedoc ~s"""
-  An interval represented as string. It has the format of number followed by one of:
-  ns, ms, s, m, h, d or w - each representing some time unit
-  """
-  @type interval :: String.t()
-  @type address :: String.t()
-  @type contract :: String.t()
-  @type token_decimals :: non_neg_integer()
-
-  @type historical_balance :: %{
-          datetime: non_neg_integer(),
-          balance: float
-        }
-
-  @type slug_balance_map :: %{
-          slug: String.t(),
-          balance: float()
-        }
 
   @table "bnb_balances"
   schema @table do
@@ -42,9 +19,10 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.BnbBalance do
     field(:sign, :integer)
   end
 
+  @doc false
   @spec changeset(any(), any()) :: no_return()
   def changeset(_, _),
-    do: raise("Should not try to change eos balances")
+    do: raise("Should not try to change bnb balances")
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def assets_held_by_address(address) do

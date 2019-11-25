@@ -1,7 +1,7 @@
 defmodule Sanbase.Clickhouse.HistoricalBalance do
   @moduledoc ~s"""
-  Module providing functions for historical balances, balance changes, ethereum/token
-  spent. This module dispatches to underlaying modules and serves as common interface
+  Module providing functions for historical balances and balance changes.
+  This module dispatches to underlaying modules and serves as common interface
   for many different database tables and schemas.
   """
 

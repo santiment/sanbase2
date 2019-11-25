@@ -1,14 +1,6 @@
 defmodule Sanbase.Clickhouse.HistoricalBalance.BchBalance do
   @doc ~s"""
-  Module for working with historical ethereum balances.
-
-  Includes functions for calculating:
-  - Historical balances for an address or a list of addresses. For a list of addresses
-  the combined balance is returned
-  - Balance changes for an address or a list of addresses. This is used to calculate
-  ethereum spent over time. Summing the balance changes of all wallets of a project
-  allows to easily handle transactions between project wallets and not count them
-  as spent.
+  Module for working with historical Bitcoin Cash balances.
   """
 
   @behaviour Sanbase.Clickhouse.HistoricalBalance.Behaviour
@@ -30,7 +22,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.BchBalance do
   @doc false
   @spec changeset(any(), any()) :: no_return()
   def changeset(_, _),
-    do: raise("Should not try to change btc balances")
+    do: raise("Should not try to change bch balances")
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def assets_held_by_address(address) do

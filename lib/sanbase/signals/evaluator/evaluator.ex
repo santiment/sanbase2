@@ -29,8 +29,8 @@ defmodule Sanbase.Signal.Evaluator do
     |> Sanbase.Parallel.map(
       &evaluate/1,
       ordered: false,
-      max_concurrency: 100,
-      timeout: 30_000
+      max_concurrency: 10,
+      timeout: 60_000
     )
     |> Enum.filter(&triggered?/1)
   end
@@ -48,17 +48,15 @@ defmodule Sanbase.Signal.Evaluator do
       )
 
     # Take only `payload` and `triggered?` from the cache
-    %UserTrigger{
-      user_trigger
-      | trigger: %{
-          trigger
-          | settings: %{
-              trigger.settings
-              | payload: evaluated_trigger.settings.payload,
-                triggered?: evaluated_trigger.settings.triggered?
-            }
-        }
-    }
+    user_trigger
+    |> put_in(
+      [Access.key!(:trigger), Access.key!(:settings), Access.key!(:payload)],
+      evaluated_trigger.settings.payload
+    )
+    |> put_in(
+      [Access.key!(:trigger), Access.key!(:settings), Access.key!(:triggered?)],
+      evaluated_trigger.settings.triggered?
+    )
   end
 
   defp triggered?(%UserTrigger{trigger: trigger}) do

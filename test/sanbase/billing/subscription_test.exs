@@ -11,13 +11,13 @@ defmodule Sanbase.Billing.SubscriptionTest do
 
   describe "#is_restricted?" do
     test "network_growth and daily_active_deposits are restricted" do
-      assert Subscription.is_restricted?(:network_growth)
-      assert Subscription.is_restricted?(:daily_active_deposits)
+      assert Subscription.is_restricted?({:query, :network_growth})
+      assert Subscription.is_restricted?({:query, :daily_active_deposits})
     end
 
     test "all_projects and history_price are not restricted" do
-      refute Subscription.is_restricted?(:all_projects)
-      refute Subscription.is_restricted?(:history_price)
+      refute Subscription.is_restricted?({:query, :all_projects})
+      refute Subscription.is_restricted?({:query, :history_price})
     end
   end
 

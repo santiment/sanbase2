@@ -6,10 +6,8 @@ defmodule Sanbase.Billing.GraphqlSchema do
 
   alias Sanbase.Billing.Product
   alias Sanbase.Metric
-  require SanbaseWeb.Graphql.Schema
 
-  @mutation_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :mutation)
-  @mutations_mapset MapSet.new(@mutation_type.fields |> Map.keys())
+  require SanbaseWeb.Graphql.Schema
 
   @query_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :query)
   @fields @query_type.fields |> Map.keys()
@@ -23,19 +21,19 @@ defmodule Sanbase.Billing.GraphqlSchema do
   @spec extension_metric_product_map :: %{required(atom()) => Product.product_id()}
   def extension_metric_product_map() do
     @fields
-    |> Enum.filter(fn f ->
-      Map.get(@query_type.fields, f) |> Absinthe.Type.meta(:access) == :extension
+    |> Enum.filter(fn field ->
+      Map.get(@query_type.fields, field) |> Absinthe.Type.meta(:access) == :extension
     end)
-    |> Enum.map(fn f ->
+    |> Enum.map(fn field ->
       # The `product` key value is something like `Product.exchange_wallets_product`
       # so the value is its AST instead of the actual value because of how
       # the graphql schema is being built compile time. It is preferable to have
       # more complicated code here instead of having to make the call at compile
       # time, save it into module attribute and use that instead
-      product_ast = Map.get(@query_type.fields, f) |> Absinthe.Type.meta(:product)
+      product_ast = Map.get(@query_type.fields, field) |> Absinthe.Type.meta(:product)
       {{_, _, [module, func]}, _, _} = product_ast
       product_id = apply(module, func, [])
-      {f, product_id}
+      {{:query, field}, product_id}
     end)
     |> Map.new()
   end
@@ -56,21 +54,23 @@ defmodule Sanbase.Billing.GraphqlSchema do
     end)
   end
 
-  def get_metrics_with_access_level(level) do
-    from_schema = get_field_value_matches([:access], [level])
-
-    metrics_access =
-      Enum.filter(Metric.access_map(), fn {_metric, metric_level} ->
-        level == metric_level
-      end)
-      |> Enum.map(fn {metric, _access} -> {:metric, metric} end)
-
-    from_schema ++ metrics_access
+  def get_all_with_access_level(level) do
+    Enum.map(get_queries_with_access_level(level), &{:query, &1}) ++
+      Enum.map(get_metrics_with_access_level(level), &{:metric, &1})
   end
 
-  def get_metrics_without_access_level() do
+  def get_metrics_with_access_level(level) do
+    Enum.filter(Metric.access_map(), fn {_metric, metric_level} ->
+      level == metric_level
+    end)
+    |> Enum.map(fn {metric, _access} -> metric end)
+  end
+
+  def get_queries_with_access_level(level) do
+    get_field_value_matches([:access], [level])
+  end
+
+  def get_all_without_access_level() do
     get_metrics_with_access_level(nil) -- [:__typename, :__type, :__schema]
   end
-
-  def mutations_mapset(), do: @mutations_mapset
 end

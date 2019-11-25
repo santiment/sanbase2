@@ -22,6 +22,24 @@ defmodule Sanbase.Prices.Store do
     @last_history_price_cmc_measurement
   end
 
+  def first_datetime_multiple_measurements(measurements) when is_list(measurements) do
+    measurements_str = measurements |> Enum.map(fn x -> ~s/"#{x}"/ end) |> Enum.join(", ")
+
+    ~s/SELECT first(price_usd) FROM #{measurements_str}/
+    |> get()
+    |> case do
+      %{results: [%{series: series}]} ->
+        result =
+          series
+          |> Enum.map(fn %{name: name, values: [[value, _]]} -> {name, value} end)
+
+        {:ok, result}
+
+      error ->
+        {:error, error}
+    end
+  end
+
   @doc ~s"""
     Fetch all price points in the given `from-to` time interval from `measurement`.
   """

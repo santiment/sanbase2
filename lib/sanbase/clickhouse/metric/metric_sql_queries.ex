@@ -16,6 +16,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQueries do
 
   alias Sanbase.Clickhouse.Metric.FileHandler
 
+  @min_interval_map FileHandler.min_interval_map()
   @name_to_column_map FileHandler.name_to_column_map()
   @table_map FileHandler.table_map()
 
@@ -42,8 +43,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQueries do
         argMax(value, computed_at) AS value
       FROM #{Map.get(@table_map, metric)}
       PREWHERE
-        dt >= toDateTime(?3) AND
-        dt < toDateTime(?4) AND
+        dt >= #{maybe_convert_to_date(metric, "toDateTime(?3)")} AND
+        dt < #{maybe_convert_to_date(metric, "toDateTime(?4)")} AND
         asset_id = (
           SELECT argMax(asset_id, computed_at)
           FROM asset_metadata
@@ -83,7 +84,9 @@ defmodule Sanbase.Clickhouse.Metric.SqlQueries do
     PREWHERE
       metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = ?1 ) AND
       asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?2 ) AND
-      dt != value AND dt >= toDateTime(?3) AND dt < toDateTime(?4)
+      dt != value AND
+      dt >= #{maybe_convert_to_date(metric, "toDateTime(?3)")} AND
+      dt < #{maybe_convert_to_date(metric, "toDateTime(?4)")}
     GROUP BY t
     ORDER BY t DESC
     LIMIT ?6
@@ -115,8 +118,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQueries do
         argMax(value, computed_at) AS value
       FROM #{Map.get(@table_map, metric)}
       PREWHERE
-        dt >= toDateTime(?3) AND
-        dt < toDateTime(?4) AND
+        dt >= #{maybe_convert_to_date(metric, "toDateTime(?3)")} AND
+        dt < #{maybe_convert_to_date(metric, "toDateTime(?4)")} AND
         asset_id IN (?1) AND
         metric_id = ?2
       GROUP BY dt, asset_id
@@ -190,5 +193,12 @@ defmodule Sanbase.Clickhouse.Metric.SqlQueries do
     args = [slug, Map.get(@name_to_column_map, metric)]
 
     {query, args}
+  end
+
+  defp maybe_convert_to_date(metric, code) do
+    case Map.get(@min_interval_map, metric) do
+      "5m" -> code
+      _ -> "toDate(#{code})"
+    end
   end
 end

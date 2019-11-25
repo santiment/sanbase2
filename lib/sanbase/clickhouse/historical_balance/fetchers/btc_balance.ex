@@ -218,7 +218,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.BtcBalance do
       PREWHERE
         address in (?3) AND
         dt >= toDateTime(?4) AND
-        dt <= toDateTime(?5)
+        dt < toDateTime(?5)
       GROUP BY address
     )
     GROUP BY time

@@ -169,7 +169,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
       PREWHERE
         address = ?3 AND
         sign = 1 AND
-        dt <= toDateTime(?5)
+        dt >= toDateTime(?4) AND
+        dt < toDateTime(?5)
       GROUP BY time
     )
     GROUP BY time

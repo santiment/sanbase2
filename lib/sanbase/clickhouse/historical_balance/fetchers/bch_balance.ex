@@ -160,7 +160,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.BchBalance do
       PREWHERE
         address = ?3 AND
         dt >= toDateTime(?4) AND
-        dt <= toDateTime(?5)
+        dt < toDateTime(?5)
       GROUP BY time
     )
     GROUP BY time

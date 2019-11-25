@@ -145,7 +145,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     PREWHERE
       address = ?1 AND
       contract = ?2 AND
-      dt <=toDateTime(?3) AND
+      dt <= toDateTime(?3) AND
       sign = 1
     ORDER BY dt DESC
     LIMIT 1
@@ -187,7 +187,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
         address = ?3 AND
         contract = ?4 AND
         sign = 1 AND
-        dt <= toDateTime(?6)
+        dt >= toDateTime(?5) AND
+        dt < toDateTime(?6)
       GROUP BY time
     )
     GROUP BY time

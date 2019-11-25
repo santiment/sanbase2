@@ -167,7 +167,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
       PREWHERE
         address = ?3 AND
         dt >= toDateTime(?4) AND
-        dt <= toDateTime(?5) AND
+        dt < toDateTime(?5) AND
         currency = ?6
       GROUP BY time
     )

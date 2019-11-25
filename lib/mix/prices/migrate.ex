@@ -7,10 +7,26 @@ defmodule Sanbase.Prices.Migrate do
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
 
   @chunk_days 20
+  @migration_exporter :migrate_influxdb_prices
+  @topic "asset_prices"
 
   def run() do
+    setup()
+
     {time_microsec, _} = :timer.tc(fn -> do_work() end)
-    Logger.info("Migrating all projects finished in #{time_microsec / 1_000_000}s")
+
+    progress = "Migrating all projects finished in #{time_microsec / 1_000_000}s"
+    Logger.info(progress)
+  end
+
+  defp setup() do
+    Sanbase.KafkaExporter.start_link(
+      name: @migration_exporter,
+      buffering_max_messages: 0,
+      kafka_flush_timeout: 10_000,
+      can_send_after_interval: 100,
+      topic: @topic
+    )
   end
 
   def do_work() do
@@ -36,11 +52,12 @@ defmodule Sanbase.Prices.Migrate do
           errors -> "with errors: #{inspect(errors)}"
         end
 
-      Logger.info(
+      progress =
         "Migrating #{measurement} finished #{result_msg} in #{time_microsec / 1_000_000}s. Progress #{
           current_project_count
         } / #{all_projects_count}"
-      )
+
+      Logger.info(progress)
 
       current_project_count + 1
     end)
@@ -56,7 +73,7 @@ defmodule Sanbase.Prices.Migrate do
       result =
         get_prices(measurement, from, to)
         |> Enum.map(&PricePoint.to_json(&1, slug))
-        |> Sanbase.KafkaExporter.persist(:prices_exporter)
+        |> Sanbase.KafkaExporter.persist_sync(@migration_exporter)
 
       {measurement, {first_datetime, now}, result}
     end)

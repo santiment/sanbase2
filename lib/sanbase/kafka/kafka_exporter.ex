@@ -18,6 +18,7 @@ defmodule Sanbase.KafkaExporter do
   @producer Config.get(:producer, SanExporterEx.Producer)
 
   @type data :: {String.t(), String.t()}
+  @type result :: :ok | {:error, String.t()}
 
   @typedoc ~s"""
   Options that describe to which kafka topic and how often to send the batches.
@@ -68,6 +69,11 @@ defmodule Sanbase.KafkaExporter do
     GenServer.cast(exporter, {:persist, data})
   end
 
+  @spec persist_sync(data | [data], pid() | atom()) :: result
+  def persist_sync(data, exporter \\ __MODULE__) do
+    GenServer.call(exporter, {:persist, data})
+  end
+
   @doc ~s"""
   Send all available data in the buffers before shutting down.
 
@@ -84,6 +90,31 @@ defmodule Sanbase.KafkaExporter do
 
     send_data(state.data, state)
     :ok
+  end
+
+  @spec handle_call({:persist, data | [data]}, any(), state) :: {:reply, result, state}
+        when state: map()
+  def handle_call({:persist, data}, _from, state) do
+    data = List.wrap(data)
+    new_messages_length = length(data)
+
+    case state.size + new_messages_length >= state.buffering_max_messages do
+      true ->
+        {
+          :reply,
+          send_data(data ++ state.data, %{state | size: state.size + new_messages_length}),
+          %{
+            state
+            | data: [],
+              size: 0,
+              can_send_after:
+                DateTime.utc_now() |> DateTime.add(state.can_send_after_interval, :millisecond)
+          }
+        }
+
+      false ->
+        {:reply, :ok, %{state | data: data ++ state.data, size: state.size + new_messages_length}}
+    end
   end
 
   @spec handle_cast({:persist, data | [data]}, state) :: {:noreply, state}
@@ -114,7 +145,7 @@ defmodule Sanbase.KafkaExporter do
   end
 
   def handle_info(:flush, state) do
-    :ok = send_data(state.data, state)
+    send_data(state.data, state)
 
     Process.send_after(self(), :flush, state.kafka_flush_timeout)
     {:noreply, %{state | data: [], size: 0}}

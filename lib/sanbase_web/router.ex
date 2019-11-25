@@ -36,6 +36,16 @@ defmodule SanbaseWeb.Router do
     admin_routes()
   end
 
+  scope "/admin2", SanbaseWeb do
+    pipe_through([:browser, :basic_auth])
+
+    get(
+      "/migrate_prices",
+      MigratePricesController,
+      :migrate
+    )
+  end
+
   scope "/" do
     pipe_through(:api)
 

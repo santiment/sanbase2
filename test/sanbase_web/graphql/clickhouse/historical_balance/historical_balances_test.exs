@@ -207,8 +207,9 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       result =
         context.conn
         |> post("/graphql", query_skeleton(query, "historicalBalance"))
+        |> json_response(200)
 
-      historical_balance = json_response(result, 200)["data"]["historicalBalance"]
+      historical_balance = result["data"]["historicalBalance"]
 
       assert historical_balance == [
                %{"balance" => 0.0, "datetime" => "2017-05-11T00:00:00Z"},

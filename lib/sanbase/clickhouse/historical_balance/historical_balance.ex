@@ -132,7 +132,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
             BnbBalance.historical_balance(address, contract, decimals, from, to, interval)
 
           <<"0x", _rest::binary>> = contract ->
-            Erc20Balance.balance_change(address, contract, decimals, from, to)
+            Erc20Balance.historical_balance(address, contract, decimals, from, to, interval)
         end
 
       {:error, error} ->

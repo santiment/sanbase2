@@ -135,7 +135,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
            ]}
         end do
         result =
-          dev_activity_by_market_segments(
+          dev_activity_by_market_segment_all_of(
             context.conn,
             [context.market_segment.name],
             context.dt1,
@@ -161,7 +161,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
       with_mock Github,
         dev_activity: fn _, _, _, _, _, _ -> {:ok, []} end do
         result =
-          dev_activity_by_market_segments(
+          dev_activity_by_market_segment_all_of(
             context.conn,
             [context.market_segment.name, context.market_segment_without_projects.name],
             context.dt1,
@@ -202,7 +202,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
     |> json_response(200)
   end
 
-  def dev_activity_by_market_segments(conn, market_segments, from, to, interval) do
+  def dev_activity_by_market_segment_all_of(conn, market_segments, from, to, interval) do
     query = """
     {
       devActivity(

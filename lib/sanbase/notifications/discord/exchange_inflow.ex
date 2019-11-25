@@ -29,7 +29,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
     slugs = Enum.map(projects, & &1.slug) |> Enum.reject(&is_nil/1)
 
-    Metric.aggregated_data("exchange_inflow", slugs, from, to, :sum)
+    Metric.aggregated_timeseries_data("exchange_inflow", slugs, from, to, :sum)
     |> case do
       {:ok, list} ->
         notification_type = Type.get_or_create("exchange_inflow")
@@ -115,7 +115,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   defp build_payload(%Project{} = project, from, inflow) do
     %Project{slug: slug} = project
 
-    case Metric.aggregated_data("exchange_inflow", slug, from, Timex.now(), :sum) do
+    case Metric.aggregated_timeseries_data("exchange_inflow", slug, from, Timex.now(), :sum) do
       {:ok, [%{slug: ^slug, value: new_inflow}]} ->
         new_percent_of_total_supply = percent_of_total_supply(project, new_inflow)
 

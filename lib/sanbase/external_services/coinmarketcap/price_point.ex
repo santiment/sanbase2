@@ -13,7 +13,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
     :price_btc
   ]
 
-  def to_json(%__MODULE__{datetime: datetime} = point, slug, source \\ @prices_source) do
+  def json_kv_tuple(%__MODULE__{datetime: datetime} = point, slug, source \\ @prices_source) do
     key = source <> "_" <> slug <> "_" <> DateTime.to_iso8601(datetime)
 
     value =

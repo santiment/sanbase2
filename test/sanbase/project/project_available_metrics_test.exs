@@ -8,7 +8,11 @@ defmodule Sanbase.Project.AvailableMetricsTest do
   test "get project's available metrics" do
     project = insert(:random_erc20_project)
 
-    with_mock(Sanbase.Metric, [:passthrough], available_slugs: fn -> {:ok, [project.slug]} end) do
+    with_mocks([
+      {Sanbase.Metric, [:passthrough],
+       available_slugs_mapset: fn -> {:ok, [project.slug] |> MapSet.new()} end},
+      {Sanbase.TechIndicators, [], social_volume_projects: fn -> {:ok, [project]} end}
+    ]) do
       result = get_available_metrics(project)
       %{"data" => %{"projectBySlug" => %{"availableMetrics" => available_metrics}}} = result
 

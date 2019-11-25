@@ -25,6 +25,8 @@ defmodule Sanbase.ExAdmin.Signal.UserTrigger do
         row(:user, link: true)
         row(:trigger)
         row(:is_featured, &is_featured(&1))
+        row(:inserted_at)
+        row(:updated_at)
       end
     end
 

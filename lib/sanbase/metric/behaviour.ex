@@ -7,28 +7,48 @@ defmodule Sanbase.Metric.Behaviour do
   @type metric :: String.t()
   @type slug :: String.t()
   @type options :: Keyword.t()
+  @type available_data_types :: :timeseries | :histogram
 
   @type metadata :: %{
           metric: metric,
           min_interval: interval(),
           default_aggregation: atom(),
-          available_aggregations: list()
+          available_aggregations: list(),
+          data_type: available_data_types()
         }
 
-  @type timeseries_data_point :: %{datetime: Datetime.t(), value: float()}
+  @type histogram_value :: String.t() | float() | integer()
+  @type histogram_label :: String.t()
+
+  @type histogram_data :: %{
+          datetime: DateTime.t(),
+          labels: [histogram_label()],
+          values: list(histogram_value())
+        }
+
   @type aggregation :: nil | :any | :sum | :avg | :min | :max | :last | :first | :median
+  @type timeseries_data_point :: %{datetime: Datetime.t(), value: float()}
 
   @callback timeseries_data(
-              metric :: metric,
+              metric :: metric(),
               selector :: any(),
               from :: DatetTime.t(),
               to :: DateTime.t(),
-              interval :: interval,
+              interval :: interval(),
               opts :: Keyword.t()
             ) ::
               {:ok, list(timeseries_data_point)} | {:error, String.t()}
 
-  @callback aggregated_data(
+  @callback histogram_data(
+              metric :: metric(),
+              selector :: any(),
+              from :: DateTime.t(),
+              to :: DateTime.t(),
+              interval :: interval(),
+              limit :: non_neg_integer()
+            ) :: {:ok, histogram_data} | {:error, String.t()}
+
+  @callback aggregated_timeseries_data(
               metric :: metric,
               selector :: any(),
               from :: DatetTime.t(),
@@ -49,6 +69,10 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback available_slugs(metric) :: {:ok, list(slug)} | {:error, String.t()}
 
+  @callback available_timeseries_metrics() :: list(metric)
+
+  @callback available_histogram_metrics() :: list(metric)
+
   @callback available_metrics() :: list(metric)
 
   @callback free_metrics() :: list(metric)
@@ -56,4 +80,6 @@ defmodule Sanbase.Metric.Behaviour do
   @callback restricted_metrics() :: list(metric)
 
   @callback access_map() :: map()
+
+  @optional_callbacks [histogram_data: 6]
 end

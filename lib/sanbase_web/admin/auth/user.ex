@@ -12,7 +12,7 @@ defmodule Sanbase.ExAdmin.Auth.User do
     end
 
     show user do
-      attributes_table()
+      attributes_table(all: true)
 
       panel "Eth accounts" do
         table_for user.eth_accounts do

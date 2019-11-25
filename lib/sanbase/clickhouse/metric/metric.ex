@@ -11,42 +11,32 @@ defmodule Sanbase.Clickhouse.Metric do
 
   use Ecto.Schema
 
-  import Sanbase.Clickhouse.Metric.Helper,
-    only: [slug_asset_id_map: 0, asset_id_slug_map: 0, metric_name_id_map: 0]
+  import Sanbase.Clickhouse.Metric.Helper, only: [slug_asset_id_map: 0, asset_id_slug_map: 0]
+  import Sanbase.Clickhouse.Metric.SqlQueries
 
+  alias Sanbase.Clickhouse.Metric.LabelTemplate
   alias __MODULE__.FileHandler
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
-  @plain_aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median]
-  @aggregations [nil] ++ @plain_aggregations
-
   @metrics_file "available_v2_metrics.json"
   @external_resource Path.join(__DIR__, @metrics_file)
 
-  @metrics_mapset FileHandler.metrics_mapset()
-  @metrics_public_name_list FileHandler.metrics_public_name_list()
+  @plain_aggregations FileHandler.aggregations()
+  @aggregations [nil] ++ @plain_aggregations
+  @timeseries_metrics_public_name_list FileHandler.metrics_with_data_type(:timeseries)
+  @histogram_metrics_public_name_list FileHandler.metrics_with_data_type(:histogram)
   @access_map FileHandler.access_map()
-  @table_map FileHandler.table_map()
   @min_interval_map FileHandler.min_interval_map()
   @free_metrics FileHandler.metrics_with_access(:free)
   @restricted_metrics FileHandler.metrics_with_access(:restricted)
   @aggregation_map FileHandler.aggregation_map()
-  @name_to_column_map FileHandler.name_to_column_map()
   @human_readable_name_map FileHandler.human_readable_name_map()
-
-  case Enum.filter(@aggregation_map, fn {_, aggr} -> aggr not in @aggregations end) do
-    [] ->
-      :ok
-
-    metrics ->
-      require(Sanbase.Break, as: Break)
-
-      Break.break("""
-      There are metrics defined in the #{@metrics_file} that have not supported aggregation.
-      These metrics are: #{inspect(metrics)}
-      """)
-  end
+  @metrics_data_type_map FileHandler.metrics_data_type_map()
+  @metrics_label_map FileHandler.metrics_label_map()
+  @metrics_public_name_list (@histogram_metrics_public_name_list ++
+                               @timeseries_metrics_public_name_list)
+                            |> Enum.uniq()
 
   @type slug :: String.t()
   @type metric :: String.t()
@@ -72,67 +62,85 @@ defmodule Sanbase.Clickhouse.Metric do
   @doc ~s"""
   Get a given metric for a slug and time range. The metric's aggregation
   function can be changed by the last optional parameter. The available
-  aggregations are #{inspect(@aggregations -- [nil])}
+  aggregations are #{inspect(@plain_aggregations)}
   """
   @impl Sanbase.Metric.Behaviour
   def timeseries_data(metric, slug, from, to, interval, aggregation \\ nil)
 
   def timeseries_data(metric, slug, from, to, interval, aggregation) do
-    case metric in @metrics_mapset do
-      false ->
-        metric_not_available_error(metric)
+    aggregation = aggregation || Map.get(@aggregation_map, metric)
+    {query, args} = timeseries_data_query(metric, slug, from, to, interval, aggregation)
 
-      true ->
-        aggregation = aggregation || Map.get(@aggregation_map, metric)
-        get_metric(metric, slug, from, to, interval, aggregation)
-    end
+    ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
+      %{
+        datetime: DateTime.from_unix!(unix),
+        value: value
+      }
+    end)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def aggregated_data(metric, slug, from, to, aggregation \\ nil)
+  def histogram_data(metric, slug, from, to, interval, limit) do
+    {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
+    label_template = Map.get(@metrics_label_map, metric)
 
-  def aggregated_data(_metric, nil, _from, _to, _aggregation), do: {:ok, []}
-  def aggregated_data(_metric, [], _from, _to, _aggregation), do: {:ok, []}
+    ClickhouseRepo.query_reduce(
+      query,
+      args,
+      %{labels: [], values: []},
+      fn
+        [unix, value], %{labels: labels, values: values} ->
+          dt1 = unix |> DateTime.from_unix!()
 
-  def aggregated_data(_metric, _slug, _from, _to, aggregation)
+          dt2 =
+            [dt1 |> Timex.shift(seconds: Sanbase.DateTimeUtils.str_to_sec(interval)), to]
+            |> Enum.min_by(&DateTime.to_unix/1)
+
+          label =
+            [dt1, dt2]
+            |> Enum.map(&Timex.format!(&1, "%Y-%m-%d %H:%M %Z", :strftime))
+            |> LabelTemplate.get(label_template)
+
+          %{labels: [label | labels], values: [value | values]}
+      end
+    )
+  end
+
+  @impl Sanbase.Metric.Behaviour
+  def aggregated_timeseries_data(metric, slug, from, to, aggregation \\ nil)
+
+  def aggregated_timeseries_data(_metric, nil, _from, _to, _aggregation), do: {:ok, []}
+  def aggregated_timeseries_data(_metric, [], _from, _to, _aggregation), do: {:ok, []}
+
+  def aggregated_timeseries_data(_metric, _slug, _from, _to, aggregation)
       when aggregation not in @aggregations do
     {:error, "The aggregation '#{inspect(aggregation)}' is not supported"}
   end
 
-  def aggregated_data(metric, slug_or_slugs, from, to, aggregation)
+  def aggregated_timeseries_data(metric, slug_or_slugs, from, to, aggregation)
       when is_binary(slug_or_slugs) or is_list(slug_or_slugs) do
-    slugs = slug_or_slugs |> List.wrap()
-
-    case metric in @metrics_mapset do
-      false ->
-        metric_not_available_error(metric)
-
-      true ->
-        aggregation = aggregation || Map.get(@aggregation_map, metric)
-        aggregated_data_metric(metric, slugs, from, to, aggregation)
-    end
+    aggregation = aggregation || Map.get(@aggregation_map, metric)
+    get_aggregated_timeseries_data(metric, slug_or_slugs |> List.wrap(), from, to, aggregation)
   end
 
   @impl Sanbase.Metric.Behaviour
   def metadata(metric) do
-    case metric in @metrics_mapset do
-      false ->
-        metric_not_available_error(metric)
+    min_interval = min_interval(metric)
+    default_aggregation = Map.get(@aggregation_map, metric)
 
-      true ->
-        get_metadata(metric)
-    end
+    {:ok,
+     %{
+       metric: metric,
+       min_interval: min_interval,
+       default_aggregation: default_aggregation,
+       available_aggregations: @plain_aggregations,
+       data_type: Map.get(@metrics_data_type_map, metric)
+     }}
   end
 
   @impl Sanbase.Metric.Behaviour
   def human_readable_name(metric) do
-    case metric in @metrics_mapset do
-      false ->
-        metric_not_available_error(metric)
-
-      true ->
-        {:ok, Map.get(@human_readable_name_map, metric)}
-    end
+    {:ok, Map.get(@human_readable_name_map, metric)}
   end
 
   @doc ~s"""
@@ -143,6 +151,13 @@ defmodule Sanbase.Clickhouse.Metric do
   done so we do not pollute the public API with too much metric names and we
   expose only the user-friendly ones.
   """
+
+  @impl Sanbase.Metric.Behaviour
+  def available_histogram_metrics(), do: @histogram_metrics_public_name_list
+
+  @impl Sanbase.Metric.Behaviour
+  def available_timeseries_metrics(), do: @timeseries_metrics_public_name_list
+
   @impl Sanbase.Metric.Behaviour
   def available_metrics(), do: @metrics_public_name_list
 
@@ -157,18 +172,6 @@ defmodule Sanbase.Clickhouse.Metric do
 
   @impl Sanbase.Metric.Behaviour
   def first_datetime(metric, slug) do
-    case metric in @metrics_mapset do
-      false ->
-        metric_not_available_error(metric)
-
-      true ->
-        get_first_datetime(metric, slug)
-    end
-  end
-
-  # Private functions
-
-  defp get_first_datetime(metric, slug) do
     {query, args} = first_datetime_query(metric, slug)
 
     ClickhouseRepo.query_transform(query, args, fn [datetime] ->
@@ -180,28 +183,7 @@ defmodule Sanbase.Clickhouse.Metric do
     end
   end
 
-  defp metric_not_available_error(metric) do
-    close = Enum.find(@metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.9 end)
-    error_msg = "The metric '#{inspect(metric)}' is not available."
-
-    case close do
-      nil -> {:error, error_msg}
-      close -> {:error, error_msg <> " Did you mean '#{close}'?"}
-    end
-  end
-
-  defp get_metadata(metric) do
-    min_interval = min_interval(metric)
-    default_aggregation = Map.get(@aggregation_map, metric)
-
-    {:ok,
-     %{
-       metric: metric,
-       min_interval: min_interval,
-       default_aggregation: default_aggregation,
-       available_aggregations: @plain_aggregations
-     }}
-  end
+  # Private functions
 
   defp min_interval(metric), do: Map.get(@min_interval_map, metric)
 
@@ -211,22 +193,11 @@ defmodule Sanbase.Clickhouse.Metric do
     ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
   end
 
-  defp get_metric(metric, slug, from, to, interval, aggregation) do
-    {query, args} = metric_query(metric, slug, from, to, interval, aggregation)
-
-    ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
-      %{
-        datetime: DateTime.from_unix!(unix),
-        value: value
-      }
-    end)
-  end
-
-  defp aggregated_data_metric(metric, slugs, from, to, aggregation)
+  defp get_aggregated_timeseries_data(metric, slugs, from, to, aggregation)
        when is_list(slugs) and length(slugs) > 20 do
     result =
       Enum.chunk_every(slugs, 20)
-      |> Sanbase.Parallel.map(&aggregated_data_metric(metric, &1, from, to, aggregation),
+      |> Sanbase.Parallel.map(&get_aggregated_timeseries_data(metric, &1, from, to, aggregation),
         timeout: 25_000,
         max_concurrency: 8,
         ordered: false
@@ -237,7 +208,7 @@ defmodule Sanbase.Clickhouse.Metric do
     {:ok, result}
   end
 
-  defp aggregated_data_metric(metric, slugs, from, to, aggregation) when is_list(slugs) do
+  defp get_aggregated_timeseries_data(metric, slugs, from, to, aggregation) when is_list(slugs) do
     {:ok, asset_map} = slug_asset_id_map()
 
     case Map.take(asset_map, slugs) |> Map.values() do
@@ -247,147 +218,11 @@ defmodule Sanbase.Clickhouse.Metric do
       asset_ids ->
         {:ok, asset_id_map} = asset_id_slug_map()
 
-        {query, args} = aggregated_metric_query(metric, asset_ids, from, to, aggregation)
+        {query, args} = aggregated_timeseries_data_query(metric, asset_ids, from, to, aggregation)
 
         ClickhouseRepo.query_transform(query, args, fn [asset_id, value] ->
           %{slug: Map.get(asset_id_map, asset_id), value: value}
         end)
     end
-  end
-
-  defp aggregation(:last, value_column, dt_column), do: "argMax(#{value_column}, #{dt_column})"
-  defp aggregation(:first, value_column, dt_column), do: "argMin(#{value_column}, #{dt_column})"
-  defp aggregation(aggr, value_column, _dt_column), do: "#{aggr}(#{value_column})"
-
-  defp metric_query(metric, slug, from, to, interval, aggregation) do
-    query = """
-    SELECT
-      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
-      #{aggregation(aggregation, "value", "t")}
-    FROM(
-      SELECT
-        dt,
-        argMax(value, computed_at) AS value
-      FROM #{Map.get(@table_map, metric)}
-      PREWHERE
-        dt >= toDateTime(?3) AND
-        dt < toDateTime(?4) AND
-        asset_id = (
-          SELECT argMax(asset_id, computed_at)
-          FROM asset_metadata
-          PREWHERE name = ?5
-        ) AND
-        metric_id = (
-          SELECT
-            argMax(metric_id, computed_at) AS metric_id
-          FROM
-            metric_metadata
-          PREWHERE
-            name = ?2
-        )
-      GROUP BY dt
-    )
-    GROUP BY t
-    ORDER BY t
-    """
-
-    args = [
-      Sanbase.DateTimeUtils.str_to_sec(interval),
-      Map.get(@name_to_column_map, metric),
-      from,
-      to,
-      slug
-    ]
-
-    {query, args}
-  end
-
-  defp aggregated_metric_query(metric, asset_ids, from, to, aggregation) do
-    query = """
-    SELECT
-      toUInt32(asset_id),
-      #{aggregation(aggregation, "value", "t")}
-    FROM(
-      SELECT
-        dt,
-        asset_id,
-        argMax(value, computed_at) AS value
-      FROM #{Map.get(@table_map, metric)}
-      PREWHERE
-        dt >= toDateTime(?3) AND
-        dt < toDateTime(?4) AND
-        asset_id IN (?1) AND
-        metric_id = ?2
-      GROUP BY dt, asset_id
-    )
-    GROUP BY asset_id
-    """
-
-    {:ok, metric_map} = metric_name_id_map()
-
-    args = [
-      asset_ids,
-      Map.get(metric_map, Map.get(@name_to_column_map, metric)),
-      from,
-      to
-    ]
-
-    {query, args}
-  end
-
-  defp available_slugs_query() do
-    query = """
-    SELECT DISTINCT(name) FROM asset_metadata
-    """
-
-    args = []
-
-    {query, args}
-  end
-
-  defp first_datetime_query(metric, nil) do
-    query = """
-    SELECT
-      toUnixTimestamp(toDateTime(min(dt)))
-    FROM #{@table}
-    PREWHERE
-      metric_id = (
-        SELECT
-          argMax(metric_id, computed_at) AS metric_id
-        FROM
-          metric_metadata
-        PREWHERE
-          name = ?1 ) AND
-      value > 0
-    """
-
-    args = [Map.get(@name_to_column_map, metric)]
-
-    {query, args}
-  end
-
-  defp first_datetime_query(metric, slug) do
-    query = """
-    SELECT
-      toUnixTimestamp(toDateTime(min(dt)))
-    FROM #{@table}
-    PREWHERE
-      asset_id = (
-        SELECT argMax(asset_id, computed_at)
-        FROM asset_metadata
-        PREWHERE name = ?1
-      ) AND metric_id = (
-        SELECT
-          argMax(metric_id, computed_at) AS metric_id
-        FROM
-          metric_metadata
-        PREWHERE
-          name = ?2 ) AND
-      value > 0
-    """
-
-    args = [slug, Map.get(@name_to_column_map, metric)]
-
-    {query, args}
   end
 end

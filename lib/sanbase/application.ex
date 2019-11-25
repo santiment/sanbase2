@@ -1,6 +1,8 @@
 defmodule Sanbase.Application do
   use Application
+
   import Sanbase.ApplicationUtils
+
   require Logger
   require Sanbase.Utils.Config, as: Config
 
@@ -193,15 +195,15 @@ defmodule Sanbase.Application do
   end
 
   defp kafka_producer_supervisor_module() do
-    Config.module_get(Sanbase.KafkaExporter, :supervisor, SanExporterEx.Producer.Supervisor)
+    Config.module_get(Sanbase.KafkaExporter, :supervisor)
   end
 
   defp kafka_api_call_data_topic() do
-    Config.module_get(Sanbase.KafkaExporter, :api_call_topic, "sanbase_api_call_data")
+    Config.module_get(Sanbase.KafkaExporter, :api_call_data_topic)
   end
 
   defp kafka_prices_data_topic() do
-    Config.module_get(Sanbase.KafkaExporter, :prices_topic, "asset_prices")
+    Config.module_get(Sanbase.KafkaExporter, :prices_topic)
   end
 
   defp kafka_endpoint() do

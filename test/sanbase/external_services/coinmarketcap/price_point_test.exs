@@ -54,9 +54,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePointTest do
     }
   end
 
-  describe "#to_json" do
+  describe "#json_kv_tuple" do
     test "convert price point with prices to tuple of json values", context do
-      {key, value} = PricePoint.to_json(context.price_point_with_prices, context.project.slug)
+      {key, value} =
+        PricePoint.json_kv_tuple(context.price_point_with_prices, context.project.slug)
 
       assert key == "coinmarketcap_santiment_2018-05-13T21:45:00.000000Z"
 
@@ -65,7 +66,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePointTest do
     end
 
     test "convert price point without prices to tuple of json values", context do
-      {key, value} = PricePoint.to_json(context.price_point, @total_market_slug)
+      {key, value} = PricePoint.json_kv_tuple(context.price_point, @total_market_slug)
       assert key == "coinmarketcap_TOTAL_MARKET_2018-05-13T21:45:00.000000Z"
 
       assert value ==

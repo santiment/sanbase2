@@ -400,4 +400,28 @@ defmodule Sanbase.Auth.UserTest do
       assert length(User.users_with_monitored_watchlist_and_email()) == 0
     end
   end
+
+  test "user with avatar url is okay" do
+    avatar_url =
+      "http://stage-sanbase-images.s3.amazonaws.com/uploads/_empowr-coinHY5QG72SCGKYWMN4AEJQ2BRDLXNWXECT.png"
+
+    {:ok, user} =
+      insert(:user)
+      |> Sanbase.Auth.User.update_avatar_url(avatar_url)
+
+    assert user.avatar_url == avatar_url
+  end
+
+  test "user with invalid avatar url returns proper error" do
+    avatar_url = "something invalid"
+
+    {:error, changeset} =
+      insert(:user)
+      |> Sanbase.Auth.User.update_avatar_url(avatar_url)
+
+    assert errors_on(changeset)[:avatar_url] ==
+             [
+               "`something invalid` is not a valid URL. Reason: it is missing scheme (e.g. missing https:// part)"
+             ]
+  end
 end

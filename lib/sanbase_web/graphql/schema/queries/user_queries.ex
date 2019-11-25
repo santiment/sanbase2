@@ -226,5 +226,13 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       middleware(JWTAuth)
       resolve(&UserSettingsResolver.update_user_settings/3)
     end
+
+    @desc "Change the user's avatar."
+    field :change_avatar, :user do
+      arg(:avatar_url, non_null(:string))
+
+      middleware(JWTAuth)
+      resolve(&UserResolver.change_avatar/3)
+    end
   end
 end

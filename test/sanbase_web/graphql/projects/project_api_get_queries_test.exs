@@ -15,7 +15,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGetQueriesTest do
       insert(:project, %{
         name: rand_str(),
         slug: rand_str(),
-        ticker: rand_str(4),
+        ticker: "BTC",
         main_contract_address: "0x123123",
         infrastructure_id: infr_eth.id
       })
@@ -26,7 +26,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGetQueriesTest do
       insert(:project, %{
         name: rand_str(),
         slug: rand_str(),
-        ticker: rand_str(4),
+        ticker: "BTC",
         infrastructure_id: infr_eth.id
       })
 
@@ -107,6 +107,26 @@ defmodule SanbaseWeb.Graphql.ProjectApiGetQueriesTest do
     assert %{"name" => context.project1.name} not in projects
     assert %{"name" => context.project2.name} in projects
     assert %{"name" => context.project3.name} in projects
+  end
+
+  test "fetch all projects by ticker", context do
+    query = """
+    {
+      allProjectsByTicker(ticker: "BTC") {
+        name
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "allProjectsByTicker"))
+      |> json_response(200)
+
+    projects = result["data"]["allProjectsByTicker"]
+
+    assert %{"name" => context.project1.name} in projects
+    assert %{"name" => context.project2.name} in projects
   end
 
   test "fetch all projects with their insights", context do

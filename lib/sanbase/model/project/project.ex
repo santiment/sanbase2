@@ -46,6 +46,7 @@ defmodule Sanbase.Model.Project do
     field(:project_transparency, :boolean, default: false)
     field(:main_contract_address, :string)
     field(:project_transparency_description, :string)
+    field(:is_hidden, :boolean, default: false)
 
     has_one(:social_volume_query, Project.SocialVolumeQuery)
 
@@ -108,7 +109,8 @@ defmodule Sanbase.Model.Project do
       :project_transparency_status_id,
       :project_transparency_description,
       :token_decimals,
-      :total_supply
+      :total_supply,
+      :is_hidden
     ])
     |> cast_assoc(:market_segments)
     |> validate_required([:name])
@@ -319,6 +321,11 @@ defmodule Sanbase.Model.Project do
 
   def github_organizations(%Project{} = project) do
     {:ok, project |> Project.GithubOrganization.organizations_of()}
+  end
+
+  def infrastructure(%Project{} = project) do
+    %Project{infrastructure: infrastructure} = project |> Repo.preload(:infrastructure)
+    {:ok, infrastructure}
   end
 
   def is_erc20?(%Project{} = project) do

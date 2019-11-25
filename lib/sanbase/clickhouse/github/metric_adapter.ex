@@ -5,7 +5,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.Github
 
-  @metrics_function_mapping %{
+  @timeseries_metrics_function_mapping %{
     "dev_activity" => :dev_activity,
     "github_activity" => :github_activity
   }
@@ -15,27 +15,22 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
     "github_activity" => :total_github_activity
   }
 
-  @metrics Map.keys(@metrics_function_mapping)
+  @timeseries_metrics Map.keys(@timeseries_metrics_function_mapping)
+  @histogram_metrics []
+
+  @metrics @histogram_metrics ++ @timeseries_metrics
 
   @free_metrics @metrics
   @restricted_metrics []
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data(metric, slug, from, to, interval, _aggregation)
-      when metric in @metrics do
+  def timeseries_data(metric, slug, from, to, interval, _aggregation) do
     case Project.github_organizations(slug) do
       {:ok, organizations} ->
         apply(
           Github,
-          Map.get(@metrics_function_mapping, metric),
-          [
-            organizations,
-            from,
-            to,
-            interval,
-            "None",
-            nil
-          ]
+          Map.get(@timeseries_metrics_function_mapping, metric),
+          [organizations, from, to, interval, "None", nil]
         )
         |> transform_to_value_pairs(:activity)
 
@@ -45,7 +40,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def aggregated_data(metric, organizations, from, to, _aggregation)
+  def aggregated_timeseries_data(metric, organizations, from, to, _aggregation)
       when is_binary(organizations) or is_list(organizations) do
     apply(
       Github,
@@ -59,23 +54,24 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime(metric, slug) when metric in @metrics do
+  def first_datetime(_metric, slug) do
     Github.first_datetime(slug)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def metadata(metric) when metric in @metrics do
+  def metadata(metric) do
     {:ok,
      %{
        metric: metric,
        min_interval: "1m",
        default_aggregation: :sum,
-       available_aggregations: [:sum]
+       available_aggregations: [:sum],
+       data_type: :timeseries
      }}
   end
 
   @impl Sanbase.Metric.Behaviour
-  def human_readable_name(metric) when metric in @metrics do
+  def human_readable_name(metric) do
     case metric do
       "dev_activity" -> {:ok, "Development Activity"}
       "github_activity" -> {:ok, "Github Activity"}
@@ -84,6 +80,12 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_aggregations(), do: [:sum]
+
+  @impl Sanbase.Metric.Behaviour
+  def available_timeseries_metrics(), do: @timeseries_metrics
+
+  @impl Sanbase.Metric.Behaviour
+  def available_histogram_metrics(), do: @histogram_metrics
 
   @impl Sanbase.Metric.Behaviour
   def available_metrics(), do: @metrics

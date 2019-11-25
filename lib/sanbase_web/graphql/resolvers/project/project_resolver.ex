@@ -10,26 +10,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     LatestCoinmarketcapData
   }
 
-  alias Sanbase.Metric
   alias Sanbase.Insight.Post
   alias Sanbase.Prices
   alias Sanbase.Influxdb.Measurement
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
   alias SanbaseWeb.Graphql.SanbaseDataloader
-
-  def available_metrics(%Project{slug: slug}, _args, _resolution) do
-    case Sanbase.Cache.get_or_store(
-           {:metric_available_slugs_mapset, 600},
-           fn -> Metric.available_slugs_mapset() end
-         ) do
-      {:ok, list} ->
-        if slug in list, do: {:ok, Metric.available_metrics()}, else: {:ok, []}
-
-      {:error, error} ->
-        {:error, error}
-    end
-  end
 
   def available_queries(%Project{} = project, _args, _resolution) do
     {:ok, Project.AvailableQueries.get(project)}
@@ -40,9 +26,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
     {:ok,
      %{
-       erc20_projects_count: Project.List.erc20_projects_count(min_volume),
-       currency_projects_count: Project.List.currency_projects_count(min_volume),
-       projects_count: Project.List.projects_count(min_volume)
+       erc20_projects_count: Project.List.erc20_projects_count(min_volume: min_volume),
+       currency_projects_count: Project.List.currency_projects_count(min_volume: min_volume),
+       projects_count: Project.List.projects_count(min_volume: min_volume)
      }}
   end
 
@@ -58,9 +44,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
     projects =
       if page_arguments_valid?(page, page_size) do
-        Project.List.projects_page(page, page_size, min_volume)
+        Project.List.projects_page(page, page_size, min_volume: min_volume)
       else
-        Project.List.projects(min_volume)
+        Project.List.projects(min_volume: min_volume)
       end
 
     {:ok, projects}
@@ -73,9 +59,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
     erc20_projects =
       if page_arguments_valid?(page, page_size) do
-        Project.List.erc20_projects_page(page, page_size, min_volume)
+        Project.List.erc20_projects_page(page, page_size, min_volume: min_volume)
       else
-        Project.List.erc20_projects(min_volume)
+        Project.List.erc20_projects(min_volume: min_volume)
       end
 
     {:ok, erc20_projects}
@@ -88,9 +74,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
     currency_projects =
       if page_arguments_valid?(page, page_size) do
-        Project.List.currency_projects_page(page, page_size, min_volume)
+        Project.List.currency_projects_page(page, page_size, min_volume: min_volume)
       else
-        Project.List.currency_projects(min_volume)
+        Project.List.currency_projects(min_volume: min_volume)
       end
 
     {:ok, currency_projects}
@@ -101,6 +87,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
          projects when is_list(projects) <- Sanbase.WatchlistFunction.evaluate(function) do
       {:ok, projects}
     end
+  end
+
+  def all_projects_by_ticker(_root, %{ticker: ticker}, _resolution) do
+    {:ok, Project.List.projects_by_ticker(ticker)}
   end
 
   def project(_parent, %{id: id}, _resolution) do

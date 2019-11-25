@@ -25,6 +25,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:id, non_null(:id))
     field(:email, :string)
     field(:username, :string)
+    field(:avatar_url, :string)
 
     field :triggers, list_of(:trigger) do
       cache_resolve(&UserTriggerResolver.public_triggers/3, ttl: 60)
@@ -55,6 +56,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:privacy_policy_accepted, :boolean)
     field(:marketing_accepted, :boolean)
     field(:first_login, :boolean, default_value: false)
+    field(:avatar_url, :string)
 
     field :permissions, :access_level do
       resolve(&UserResolver.permissions/3)

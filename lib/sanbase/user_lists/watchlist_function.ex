@@ -10,12 +10,12 @@ defmodule Sanbase.WatchlistFunction do
 
   def evaluate(%__MODULE__{name: "market_segment", args: args}) do
     market_segment = Map.get(args, "market_segment") || Map.get(args, :market_segment)
-    Project.List.by_market_segment(market_segment)
+    Project.List.by_market_segment_any_of(market_segment)
   end
 
   def evaluate(%__MODULE__{name: "market_segments", args: args}) do
     market_segments = Map.get(args, "market_segments") || Map.get(args, :market_segments)
-    Project.List.by_market_segments(market_segments)
+    Project.List.by_market_segment_all_of(market_segments)
   end
 
   def evaluate(%__MODULE__{name: "top_erc20_projects", args: args}) do
@@ -33,8 +33,8 @@ defmodule Sanbase.WatchlistFunction do
   end
 
   def evaluate(%__MODULE__{name: "min_volume", args: args}) do
-    volume = Map.get(args, "min_volume") || Map.fetch!(args, :min_volume)
-    Project.List.projects(volume)
+    min_volume = Map.get(args, "min_volume") || Map.fetch!(args, :min_volume)
+    Project.List.projects(min_volume: min_volume)
   end
 
   def evaluate(%__MODULE__{name: "slugs", args: args}) do

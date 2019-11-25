@@ -24,8 +24,6 @@ config :sanbase, Sanbase.KafkaExporter,
   supervisor: Sanbase.InMemoryKafka.Supervisor,
   producer: Sanbase.InMemoryKafka.Producer
 
-config :sanbase, Sanbase.Kafka.Exporter.Prices, producer: Sanbase.InMemoryKafka.Producer
-
 config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
   implementation_module: Sanbase.ExternalServices.RateLimiting.TestServer
 

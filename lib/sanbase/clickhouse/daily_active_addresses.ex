@@ -86,7 +86,7 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
   defp do_btc_average_active_addresses([], _, _), do: {:ok, []}
 
   defp do_btc_average_active_addresses([_ | _], from, to) do
-    case Metric.aggregated_data("daily_active_addresses", "bitcoin", from, to) do
+    case Metric.aggregated_timeseries_data("daily_active_addresses", "bitcoin", from, to) do
       {:ok, result} -> {:ok, [{"BTC", result}]}
       {:error, error} -> handle_error("Bitcoin", error)
     end

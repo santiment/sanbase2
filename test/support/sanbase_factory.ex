@@ -84,6 +84,7 @@ defmodule Sanbase.Factory do
       name: rand_str(),
       ticker: rand_str(4),
       slug: slug,
+      is_hidden: false,
       source_slug_mappings: [
         build(:source_slug_mapping, %{source: "coinmarketcap", slug: slug})
       ],
@@ -106,6 +107,7 @@ defmodule Sanbase.Factory do
       name: "Santiment",
       ticker: "SAN",
       slug: slug,
+      is_hidden: false,
       source_slug_mappings: [
         build(:source_slug_mapping, %{source: "coinmarketcap", slug: slug})
       ],
@@ -126,6 +128,7 @@ defmodule Sanbase.Factory do
       name: rand_str(),
       ticker: rand_hex_str() |> String.upcase(),
       slug: slug,
+      is_hidden: false,
       source_slug_mappings: [
         build(:source_slug_mapping, %{source: "coinmarketcap", slug: slug})
       ],

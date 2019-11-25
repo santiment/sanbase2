@@ -18,7 +18,8 @@ defmodule Sanbase.ExAdmin.Model.Project do
       :website_link,
       :token_decimals,
       :main_contract_address,
-      :infrastructure
+      :infrastructure,
+      :is_hidden
     ])
 
     index do
@@ -30,6 +31,7 @@ defmodule Sanbase.ExAdmin.Model.Project do
       column(:infrastructure)
       column(:token_decimals)
       column(:main_contract_address)
+      column(:is_hidden)
     end
 
     show project do
@@ -134,6 +136,7 @@ defmodule Sanbase.ExAdmin.Model.Project do
           collection: from(i in Infrastructure, order_by: i.code) |> Sanbase.Repo.all()
         )
 
+        input(project, :is_hidden)
         input(project, :logo_url)
         input(project, :website_link)
         input(project, :btt_link)

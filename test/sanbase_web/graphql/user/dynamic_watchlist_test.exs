@@ -72,10 +72,8 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
     assert user_list["isPublic"] == false
     assert user_list["user"]["id"] == user.id |> to_string()
 
-    assert user_list["listItems"] == [
-             %{"project" => %{"slug" => "dai"}},
-             %{"project" => %{"slug" => "tether"}}
-           ]
+    assert %{"project" => %{"slug" => "dai"}} in user_list["listItems"]
+    assert %{"project" => %{"slug" => "tether"}} in user_list["listItems"]
   end
 
   test "dynamic watchlist for top erc20 projects", %{conn: conn} do

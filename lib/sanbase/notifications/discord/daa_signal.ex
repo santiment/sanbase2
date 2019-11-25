@@ -18,7 +18,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
 
   alias Sanbase.Notifications.{Discord, Notification, Type}
 
-  @cache_id :signals_cache
+  @cache_id :long_ttl_cache
 
   @impl true
   def run() do

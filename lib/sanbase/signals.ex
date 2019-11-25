@@ -20,7 +20,7 @@ defmodule Sanbase.Application.Signals do
            name: :signals_evaluator_cache,
            ttl_check_interval: :timer.minutes(1),
            global_ttl: :timer.minutes(3),
-           acquire_lock_timeout: 30_000
+           acquire_lock_timeout: 60_000
          ]},
         id: :signals_evaluator_cache
       ),
@@ -29,11 +29,11 @@ defmodule Sanbase.Application.Signals do
       Supervisor.child_spec(
         {ConCache,
          [
-           name: :signals_cache,
+           name: :long_ttl_cache,
            ttl_check_interval: :timer.minutes(10),
            global_ttl: :timer.hours(1)
          ]},
-        id: :signals_cache
+        id: :long_ttl_cache
       ),
 
       # Quantum Scheduler

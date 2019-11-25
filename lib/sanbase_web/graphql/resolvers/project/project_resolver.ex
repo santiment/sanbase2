@@ -10,26 +10,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     LatestCoinmarketcapData
   }
 
-  alias Sanbase.Metric
   alias Sanbase.Insight.Post
   alias Sanbase.Prices
   alias Sanbase.Influxdb.Measurement
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
   alias SanbaseWeb.Graphql.SanbaseDataloader
-
-  def available_metrics(%Project{slug: slug}, _args, _resolution) do
-    case Sanbase.Cache.get_or_store(
-           {:metric_available_slugs_mapset, 600},
-           fn -> Metric.available_slugs_mapset() end
-         ) do
-      {:ok, list} ->
-        if slug in list, do: {:ok, Metric.available_metrics()}, else: {:ok, []}
-
-      {:error, error} ->
-        {:error, error}
-    end
-  end
 
   def available_queries(%Project{} = project, _args, _resolution) do
     {:ok, Project.AvailableQueries.get(project)}

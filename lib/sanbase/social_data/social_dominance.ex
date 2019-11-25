@@ -11,9 +11,7 @@ defmodule Sanbase.SocialData.SocialDominance do
   require SanbaseWeb.Graphql.Schema
 
   @recv_timeout 15_000
-  @sources Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :social_dominance_sources).values
-           |> Map.keys()
-           |> List.delete(:all)
+  @sources [:telegram, :professional_traders_chat, :reddit, :discord]
 
   def social_dominance(
         slug,

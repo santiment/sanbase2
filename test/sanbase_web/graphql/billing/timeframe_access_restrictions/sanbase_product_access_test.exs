@@ -3,7 +3,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
 
   import Mock
   import Sanbase.Factory
-  import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
@@ -13,7 +12,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
 
   @triggers_limit_count 10
 
-  setup_all_with_mocks([
+  setup_with_mocks([
     {Sanbase.Prices.Store, [], [fetch_prices_with_resolution: fn _, _, _, _ -> price_resp() end]},
     {Sanbase.Clickhouse.DailyActiveDeposits, [],
      [active_deposits: fn _, _, _, _ -> daily_active_deposits_resp() end]},
@@ -38,11 +37,11 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "can access FREE metrics for all time", context do
       {from, to} = from_to(2500, 0)
       slug = context.project.slug
-      metric = v2_free_metric()
+      metric = v2_free_metric(context.next_integer.())
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
-      assert_called(Metric.timeseries_data(metric, slug, from, to, :_, :_))
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -58,12 +57,12 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "cannot access RESTRICTED metrics for over 2 years", context do
       {from, to} = from_to(2 * 365 + 1, 31)
       slug = context.project.slug
-      metric = v2_restricted_metric()
+      metric = v2_restricted_metric(context.next_integer.())
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
-      assert_called(Metric.timeseries_data(metric, slug, :_, :_, :_, :_))
-      refute called(Metric.timeseries_data(metric, slug, from, to, :_, :_))
+      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -82,11 +81,11 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "cannot access RESTRICTED metrics for the past 30 days", context do
       {from, to} = from_to(32, 28)
       slug = context.project.slug
-      metric = v2_restricted_metric()
+      metric = v2_restricted_metric(context.next_integer.())
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
-      refute called(Metric.timeseries_data(metric, slug, from, to, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -94,11 +93,11 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
          context do
       {from, to} = from_to(20, 10)
       slug = context.project.slug
-      metric = v2_restricted_metric()
+      metric = v2_restricted_metric(context.next_integer.())
       query = metric_query(metric, slug, from, to)
       result = execute_query_with_error(context.conn, query, "getMetric")
 
-      refute called(Metric.timeseries_data(metric, slug, :_, :_, :_, :_))
+      refute called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
       assert result != nil
     end
 
@@ -139,11 +138,11 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "can access RESTRICTED metrics within 2 years and 30 day ago interval", context do
       {from, to} = from_to(2 * 365 - 1, 31)
       slug = context.project.slug
-      metric = v2_restricted_metric()
+      metric = v2_restricted_metric(context.next_integer.())
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
-      assert_called(Metric.timeseries_data(metric, slug, from, to, :_, :_))
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -189,11 +188,11 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "can access FREE metrics for all time", context do
       {from, to} = from_to(2500, 0)
       slug = context.project.slug
-      metric = v2_free_metric()
+      metric = v2_free_metric(context.next_integer.())
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
-      assert_called(Metric.timeseries_data(metric, slug, from, to, :_, :_))
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -209,10 +208,10 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "can access RESTRICTED v2 clickhouse metrics for 1 year", context do
       {from, to} = from_to(12 * 30, 0)
       slug = context.project.slug
-      metric = v2_restricted_metric()
+      metric = v2_restricted_metric(context.next_integer.())
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
-      assert_called(Metric.timeseries_data(metric, slug, from, to, :_, :_))
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -347,8 +346,10 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     execute_mutation_with_error(context.conn, query)
   end
 
-  defp v2_free_metric(), do: Metric.free_metrics() |> Enum.random()
-  defp v2_restricted_metric(), do: Metric.restricted_metrics() |> Enum.random()
+  defp v2_free_metric(position), do: Metric.free_metrics() |> Stream.cycle() |> Enum.at(position)
+
+  defp v2_restricted_metric(position),
+    do: Metric.restricted_metrics() |> Stream.cycle() |> Enum.at(position)
 
   defp from_to(from_days_shift, to_days_shift) do
     from = Timex.shift(Timex.now(), days: -from_days_shift)

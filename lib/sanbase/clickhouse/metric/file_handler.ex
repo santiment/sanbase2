@@ -31,12 +31,48 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
                   %{"alias" => metric_alias, "metric" => metric} -> [metric, metric_alias]
                   %{"metric" => metric} -> [metric]
                 end)
+  @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median]
 
-  @metrics_public_name_list @metrics_json
-                            |> Enum.map(fn
-                              %{"alias" => metric_alias} -> metric_alias
-                              %{"metric" => metric} -> metric
-                            end)
+  @metrics_label_map @metrics_json
+                     |> Enum.flat_map(fn
+                       %{"alias" => metric_alias, "metric" => metric, "label" => label} ->
+                         [{metric_alias, label}, {metric, label}]
+
+                       %{"metric" => metric, "label" => label} ->
+                         [{metric, label}]
+
+                       _ ->
+                         []
+                     end)
+                     |> Map.new()
+
+  @metrics_public_name_data_type_map @metrics_json
+                                     |> Enum.map(fn
+                                       %{"alias" => metric_alias, "data_type" => data_type} ->
+                                         {metric_alias, data_type}
+
+                                       %{"metric" => metric, "data_type" => data_type} ->
+                                         {metric, data_type}
+                                     end)
+                                     |> Map.new(fn {metric, data_type} ->
+                                       {metric, String.to_atom(data_type)}
+                                     end)
+
+  @metrics_data_type_map @metrics_json
+                         |> Enum.flat_map(fn
+                           %{
+                             "metric" => metric,
+                             "alias" => metric_alias,
+                             "data_type" => data_type
+                           } ->
+                             [{metric, data_type}, {metric_alias, data_type}]
+
+                           %{"metric" => metric, "data_type" => data_type} ->
+                             [{metric, data_type}]
+                         end)
+                         |> Map.new(fn {metric, data_type} ->
+                           {metric, String.to_existing_atom(data_type)}
+                         end)
 
   @metrics_mapset MapSet.new(@metrics_list)
   @name_to_column_map @metrics_json
@@ -129,10 +165,23 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
                       end)
                       |> Map.new()
 
+  case Enum.filter(@aggregation_map, fn {_, aggr} -> aggr not in @aggregations end) do
+    [] ->
+      :ok
+
+    metrics ->
+      require(Sanbase.Break, as: Break)
+
+      Break.break("""
+      There are metrics defined in the #{@metrics_file} that have not supported aggregation.
+      These metrics are: #{inspect(metrics)}
+      """)
+  end
+
+  def aggregations(), do: @aggregations
   def access_map(), do: @access_map
   def table_map(), do: @table_map
   def metrics_mapset(), do: @metrics_mapset
-  def metrics_public_name_list(), do: @metrics_public_name_list
   def aggregation_map(), do: @aggregation_map
   def min_interval_map(), do: @min_interval_map
   def name_to_column_map(), do: @name_to_column_map
@@ -140,9 +189,19 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
 
   def metric_version_map(), do: @metric_version_map
 
+  def metrics_data_type_map(), do: @metrics_data_type_map
+
+  def metrics_label_map(), do: @metrics_label_map
+
   def metrics_with_access(level) when level in [:free, :restricted] do
     @access_map
-    |> Enum.filter(fn {_m, a} -> a == level end)
+    |> Enum.filter(fn {_metric, access_level} -> access_level == level end)
+    |> Keyword.keys()
+  end
+
+  def metrics_with_data_type(type) do
+    @metrics_public_name_data_type_map
+    |> Enum.filter(fn {_metric, data_type} -> data_type == type end)
     |> Keyword.keys()
   end
 end

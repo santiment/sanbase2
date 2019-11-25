@@ -14,7 +14,37 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:value, non_null(:float))
   end
 
+  object :string_list do
+    field(:data, list_of(:string))
+  end
+
+  object :float_list do
+    field(:data, list_of(:float))
+  end
+
+  union :value_list do
+    description("Type Parameterized Array")
+
+    types([:string_list, :float_list])
+
+    resolve_type(fn
+      %{data: [value | _]}, _ when is_number(value) -> :float_list
+      %{data: [value | _]}, _ when is_binary(value) -> :string_list
+      %{data: []}, _ -> :float_list
+    end)
+  end
+
+  object :histogram_data do
+    field(:labels, non_null(list_of(:string)))
+    field(:values, :value_list)
+  end
+
   object :metadata do
+    @desc ~s"""
+    The name of the metric the metadata is about
+    """
+    field(:metric, non_null(:string))
+
     @desc ~s"""
     List of slugs which can be provided to the `timeseriesData` field to fetch
     the metric.
@@ -50,6 +80,8 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     aggregations see the documentation for `defaultAggregation`
     """
     field(:available_aggregations, list_of(:aggregation))
+
+    field(:data_type, :metric_data_type)
   end
 
   object :metric do
@@ -68,6 +100,19 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       middleware(AccessControl)
 
       cache_resolve(&MetricResolver.timeseries_data/3)
+    end
+
+    field :histogram_data, :histogram_data do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :interval, default_value: "1d")
+      arg(:limit, :integer, default_value: 100)
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(AccessControl)
+
+      resolve(&MetricResolver.histogram_data/3)
     end
 
     field :available_since, :datetime do
@@ -89,5 +134,10 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:min)
     value(:max)
     value(:median)
+  end
+
+  enum :metric_data_type do
+    value(:timeseries)
+    value(:histogram)
   end
 end

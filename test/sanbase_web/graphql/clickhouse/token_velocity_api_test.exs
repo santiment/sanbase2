@@ -5,7 +5,6 @@ defmodule Sanbase.Clickhouse.TokenVelocityApiTest do
   import Sanbase.Factory
   import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
-  import ExUnit.CaptureLog
 
   setup do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))

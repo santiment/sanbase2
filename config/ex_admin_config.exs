@@ -52,7 +52,8 @@ config :ex_admin,
     Sanbase.ExAdmin.Auth.UserRole,
     Sanbase.ExAdmin.UserList,
     Sanbase.ExAdmin.Auth.UserSettings,
-    Sanbase.ExAdmin.Signal.UserTrigger
+    Sanbase.ExAdmin.Signal.UserTrigger,
+    Sanbase.ExAdmin.PriceMigrationTmp
   ],
   basic_auth: [
     username: {:system, "ADMIN_BASIC_AUTH_USERNAME"},

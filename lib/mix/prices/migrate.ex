@@ -1,10 +1,55 @@
+defmodule Sanbase.PriceMigrationTmp do
+  use Ecto.Schema
+
+  import Ecto.Changeset
+  import Ecto.Query
+
+  alias Sanbase.Repo
+
+  schema "price_migration_tmp" do
+    field(:slug, :string)
+    field(:is_migrated, :boolean)
+    field(:progress, :string)
+
+    timestamps()
+  end
+
+  def changeset(%__MODULE__{} = price_migration_tmp, attrs \\ %{}) do
+    price_migration_tmp
+    |> cast(attrs, [
+      :slug,
+      :is_migrated,
+      :progress
+    ])
+  end
+
+  def create!(params) do
+    %__MODULE__{}
+    |> changeset(params)
+    |> Repo.insert!()
+  end
+
+  def all_migrated do
+    from(
+      pmt in __MODULE__,
+      where: not is_nil(pmt.slug) and pmt.is_migrated,
+      select: pmt.slug
+    )
+    |> Repo.all()
+  end
+end
+
 defmodule Sanbase.Prices.Migrate do
+  import Ecto.Query
+
   require Integer
   require Logger
 
   alias Sanbase.Model.Project
   alias Sanbase.Prices.Store, as: PricesStore
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
+  alias Sanbase.Repo
+  alias Sanbase.PriceMigrationTmp
 
   @chunk_days 20
   @migration_exporter :migrate_influxdb_prices
@@ -29,8 +74,24 @@ defmodule Sanbase.Prices.Migrate do
     )
   end
 
-  def do_work() do
-    projects = Project.List.projects()
+  defp projects do
+    from(
+      p in Project,
+      where: not is_nil(p.slug) and not is_nil(p.ticker)
+    )
+    |> order_by([p], p.slug)
+    |> Repo.all()
+  end
+
+  def not_migrated_projects do
+    migrated_projects = PriceMigrationTmp.all_migrated()
+
+    projects()
+    |> Enum.reject(&(&1.slug in migrated_projects))
+  end
+
+  defp do_work() do
+    projects = not_migrated_projects()
     all_projects_count = length(projects)
     Logger.info("Migrating prices from influxdb for count: #{all_projects_count} projects")
 
@@ -44,12 +105,12 @@ defmodule Sanbase.Prices.Migrate do
       {time_microsec, result} =
         :timer.tc(fn -> get_prices_and_persist_in_kafka({measurement, first_datetime_iso}) end)
 
-      result_msg =
+      {is_migrated, result_msg} =
         result
         |> Enum.filter(fn {_measurement, _dates, result} -> result != :ok end)
         |> case do
-          [] -> "ok"
-          errors -> "with errors: #{inspect(errors)}"
+          [] -> {true, "ok"}
+          errors -> {false, "with errors: #{inspect(errors)}"}
         end
 
       progress =
@@ -59,12 +120,18 @@ defmodule Sanbase.Prices.Migrate do
 
       Logger.info(progress)
 
+      PriceMigrationTmp.create!(%{
+        slug: slug_from_measurement(measurement),
+        is_migrated: is_migrated,
+        progress: progress
+      })
+
       current_project_count + 1
     end)
   end
 
   defp get_prices_and_persist_in_kafka({measurement, first_datetime_iso}) do
-    slug = String.split(measurement, "_", parts: 2) |> List.last()
+    slug = slug_from_measurement(measurement)
     {:ok, first_datetime, _} = DateTime.from_iso8601(first_datetime_iso)
     now = Timex.now()
 
@@ -72,7 +139,7 @@ defmodule Sanbase.Prices.Migrate do
     |> Enum.map(fn [from, to] ->
       result =
         get_prices(measurement, from, to)
-        |> Enum.map(&PricePoint.to_json(&1, slug))
+        |> Enum.map(&PricePoint.json_kv_tuple(&1, slug))
         |> Sanbase.KafkaExporter.persist_sync(@migration_exporter)
 
       {measurement, {first_datetime, now}, result}
@@ -131,5 +198,10 @@ defmodule Sanbase.Prices.Migrate do
 
         []
     end
+  end
+
+  defp slug_from_measurement(measurement) do
+    String.split(measurement, "_", parts: 2)
+    |> List.last()
   end
 end

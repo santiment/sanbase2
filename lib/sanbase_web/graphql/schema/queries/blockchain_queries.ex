@@ -403,7 +403,8 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     field :historical_balance, list_of(:historical_balance) do
       meta(access: :free)
 
-      arg(:slug, non_null(:string))
+      arg(:slug, :string)
+      arg(:selector, :historical_balance_selector)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:address, non_null(:string))

@@ -1,4 +1,4 @@
-defmodule Sanbase.Clickhouse.HistoricalBalance.EosBalance do
+defmodule Sanbase.Clickhouse.HistoricalBalance.BnbBalance do
   @doc ~s"""
   Module for working with historical ERC20 balances.
 
@@ -33,7 +33,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EosBalance do
           balance: float()
         }
 
-  @table "eos_balances"
+  @table "bnb_balances"
   schema @table do
     field(:datetime, :utc_datetime, source: :dt)
     field(:currency, :string)

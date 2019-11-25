@@ -12,10 +12,12 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
   alias Sanbase.Clickhouse.HistoricalBalance.{
     BchBalance,
+    BnbBalance,
     BtcBalance,
     EosBalance,
     Erc20Balance,
     EthBalance,
+    LtcBalance,
     XrpBalance
   }
 
@@ -80,11 +82,14 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
           "BCH" ->
             BchBalance.balance_change(address, contract, decimals, from, to)
 
+          "LTC" ->
+            LtcBalance.balance_change(address, contract, decimals, from, to)
+
           "eosio.token/EOS" ->
             EosBalance.balance_change(address, contract, decimals, from, to)
 
           "BNB" ->
-            {:error, "Not implemented"}
+            BnbBalance.balance_change(address, contract, decimals, from, to)
 
           <<"0x", _rest::binary>> = contract ->
             Erc20Balance.balance_change(address, contract, decimals, from, to)
@@ -117,11 +122,14 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
           "BCH" ->
             BchBalance.historical_balance(address, contract, decimals, from, to, interval)
 
+          "LTC" ->
+            LtcBalance.historical_balance(address, contract, decimals, from, to, interval)
+
           "eosio.token/EOS" ->
             EosBalance.historical_balance(address, contract, decimals, from, to, interval)
 
           "BNB" ->
-            {:error, "Not implemented"}
+            BnbBalance.historical_balance(address, contract, decimals, from, to, interval)
 
           <<"0x", _rest::binary>> = contract ->
             Erc20Balance.balance_change(address, contract, decimals, from, to)

@@ -8,6 +8,7 @@ defmodule Sanbase.Model.Project.ContractData do
     "ethereum" => %{main_contract_address: "ETH", token_decimals: 18},
     "bitcoin" => %{main_contract_address: "BTC", token_decimals: 8},
     "bitcoin-cash" => %{main_contract_address: "BCH", token_decimals: 8},
+    "litecoin" => %{main_contract_address: "BNB", token_decimals: 8},
     "eos" => %{main_contract_address: "eosio.token/EOS", token_decimals: 0},
     "ripple" => %{main_contract_address: "XRP", token_decimals: 0},
     "binance-coin" => %{main_contract_address: "BNB", token_decimals: 0}

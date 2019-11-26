@@ -46,7 +46,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
         {:ok, result}
 
       {:error, error} ->
-        {:error, handle_graphql_error("Historical Balances", selector, error)}
+        {:error,
+         handle_graphql_error("Historical Balances", inspect(selector), error,
+           description: "selector"
+         )}
     end
   end
 

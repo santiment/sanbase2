@@ -64,9 +64,11 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
            ]
          }}
       end do
+      selector = %{infrastructure: "ETH", slug: "ethereum"}
+
       query =
         historical_balances_query(
-          "ethereum",
+          selector,
           context.address,
           context.from,
           context.to,
@@ -112,7 +114,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       end do
       from = from_iso8601!("2017-05-13T00:00:00Z")
       to = from_iso8601!("2017-05-18T00:00:00Z")
-      query = historical_balances_query("ethereum", context.address, from, to, "2d")
+      selector = %{infrastructure: "ETH", slug: "ethereum"}
+      query = historical_balances_query(selector, context.address, from, to, "2d")
 
       result =
         context.conn
@@ -134,33 +137,42 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
 
     with_mock Sanbase.ClickhouseRepo,
       query: fn _, _ -> {:error, error} end do
+      selector = %{infrastructure: "ETH", slug: "ethereum"}
+
       query =
         historical_balances_query(
-          "ethereum",
+          selector,
           context.address,
           context.from,
           context.to,
           context.interval
         )
 
-      assert capture_log(fn ->
-               result =
-                 context.conn
-                 |> post("/graphql", query_skeleton(query, "historicalBalance"))
-                 |> json_response(200)
+      log =
+        capture_log(fn ->
+          result =
+            context.conn
+            |> post("/graphql", query_skeleton(query, "historicalBalance"))
+            |> json_response(200)
 
-               historical_balance = result["data"]["historicalBalance"]
-               assert historical_balance == nil
-             end) =~
-               graphql_error_msg("Historical Balances", "ethereum", error)
+          historical_balance = result["data"]["historicalBalance"]
+          assert historical_balance == nil
+        end)
+
+      assert log =~
+               "Can't fetch Historical Balances for selector: #{inspect(selector)}, Reason: #{
+                 inspect(error)
+               }"
     end
   end
 
   test "historical balances when query returns no rows", context do
     with_mock Sanbase.ClickhouseRepo, query: fn _, _ -> {:ok, %{rows: []}} end do
+      selector = %{infrastructure: "ETH", slug: "ethereum"}
+
       query =
         historical_balances_query(
-          "ethereum",
+          selector,
           context.address,
           context.from,
           context.to,
@@ -195,9 +207,11 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
            ]
          }}
       end do
+      selector = %{infrastructure: "ETH", slug: context.project_with_contract.slug}
+
       query =
         historical_balances_query(
-          context.project_with_contract.slug,
+          selector,
           context.address,
           context.from,
           context.to,
@@ -227,9 +241,11 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
   end
 
   test "historical balances with project without contract", context do
+    selector = %{infrastructure: "ETH", slug: context.project_without_contract.slug}
+
     query =
       historical_balances_query(
-        context.project_without_contract.slug,
+        selector,
         context.address,
         context.from,
         context.to,
@@ -248,7 +264,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
              error = result["errors"] |> List.first()
 
              assert error["message"] =~
-                      "Can't fetch Historical Balances for project with slug: someid1"
+                      "Can't fetch Historical Balances for selector: #{inspect(selector)}"
            end) =~
              "Can't find contract address of project with slug: someid1"
   end
@@ -260,35 +276,48 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       query: fn _, _ ->
         {:error, error}
       end do
+      selector = %{infrastructure: "ETH", slug: context.project_with_contract.slug}
+
       query =
         historical_balances_query(
-          context.project_with_contract.slug,
+          selector,
           context.address,
           context.from,
           context.to,
           context.interval
         )
 
-      assert capture_log(fn ->
-               context.conn
-               |> post("/graphql", query_skeleton(query, "historicalBalance"))
-               |> json_response(200)
-             end) =~
-               graphql_error_msg("Historical Balances", "someid2", error)
+      log =
+        capture_log(fn ->
+          result =
+            context.conn
+            |> post("/graphql", query_skeleton(query, "historicalBalance"))
+            |> json_response(200)
+
+          error = result["errors"] |> List.first()
+
+          assert error["message"] =~
+                   "Can't fetch Historical Balances for selector: #{inspect(selector)}"
+        end)
+
+      assert log =~ "Can't fetch Historical Balances for selector"
     end
   end
 
-  defp historical_balances_query(slug, address, from, to, interval) do
+  defp historical_balances_query(selector, address, from, to, interval) do
+    selector_json = Enum.map(selector, fn {k, v} -> ~s/#{k}: "#{v}"/ end) |> Enum.join(", ")
+    selector_json = "{" <> selector_json <> "}"
+
     """
       {
         historicalBalance(
-            slug: "#{slug}"
-            address: "#{address}",
-            from: "#{from}",
-            to: "#{to}",
+            selector: #{selector_json}
+            address: "#{address}"
+            from: "#{from}"
+            to: "#{to}"
             interval: "#{interval}"
         ){
-            datetime,
+            datetime
             balance
         }
       }

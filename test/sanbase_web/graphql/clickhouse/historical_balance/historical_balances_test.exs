@@ -250,7 +250,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
              assert error["message"] =~
                       "Can't fetch Historical Balances for project with slug: someid1"
            end) =~
-             "{:missing_contract, \\\"Can't find contract address of project with slug: someid1\\\"}"
+             "Can't find contract address of project with slug: someid1"
   end
 
   test "historical balances when clickhouse returns error", context do

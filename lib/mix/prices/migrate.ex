@@ -40,15 +40,12 @@ defmodule Sanbase.PriceMigrationTmp do
 end
 
 defmodule Sanbase.Prices.Migrate do
-  import Ecto.Query
-
   require Integer
   require Logger
 
   alias Sanbase.Model.Project
   alias Sanbase.Prices.Store, as: PricesStore
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
-  alias Sanbase.Repo
   alias Sanbase.PriceMigrationTmp
 
   @chunk_days 20

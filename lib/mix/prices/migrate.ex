@@ -40,15 +40,12 @@ defmodule Sanbase.PriceMigrationTmp do
 end
 
 defmodule Sanbase.Prices.Migrate do
-  import Ecto.Query
-
   require Integer
   require Logger
 
   alias Sanbase.Model.Project
   alias Sanbase.Prices.Store, as: PricesStore
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
-  alias Sanbase.Repo
   alias Sanbase.PriceMigrationTmp
 
   @chunk_days 20
@@ -74,19 +71,11 @@ defmodule Sanbase.Prices.Migrate do
     )
   end
 
-  defp projects do
-    from(
-      p in Project,
-      where: not is_nil(p.slug) and not is_nil(p.ticker)
-    )
-    |> order_by([p], p.slug)
-    |> Repo.all()
-  end
-
   def not_migrated_projects do
     migrated_projects = PriceMigrationTmp.all_migrated()
 
-    projects()
+    Project.List.projects_with_source("coinmarketcap", include_hidden_projects?: true)
+    |> Enum.sort_by(& &1.slug)
     |> Enum.reject(&(&1.slug in migrated_projects))
   end
 

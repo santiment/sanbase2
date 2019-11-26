@@ -73,11 +73,11 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
              do: EthBalance.balance_change(address, contract, decimals, from, to)
 
       {"ETH", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug),
+        with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug || "ethereum"),
              do: Erc20Balance.balance_change(address, contract, decimals, from, to)
 
       {"XRP", _} ->
-        currency = Map.fetch!(selector, :currency)
+        currency = Map.get(selector, :currency, "XRP")
         XrpBalance.balance_change(address, currency, 0, from, to)
 
       {"BTC", _} ->
@@ -93,11 +93,11 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
              do: LtcBalance.balance_change(address, contract, decimals, from, to)
 
       {"EOS", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug),
+        with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug || "eos"),
              do: EosBalance.balance_change(address, contract, decimals, from, to)
 
       {"BNB", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug),
+        with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug || "binance-coin"),
              do: BnbBalance.balance_change(address, contract, decimals, from, to)
     end
   end
@@ -117,11 +117,11 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
              do: EthBalance.historical_balance(address, contract, decimals, from, to, interval)
 
       {"ETH", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug),
+        with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug || "ethereum"),
              do: Erc20Balance.historical_balance(address, contract, decimals, from, to, interval)
 
       {"XRP", _} ->
-        currency = Map.fetch!(selector, :currency)
+        currency = Map.get(selector, :currency, "XRP")
         XrpBalance.historical_balance(address, currency, 0, from, to, interval)
 
       {"BTC", _} ->
@@ -137,11 +137,11 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
              do: LtcBalance.historical_balance(address, contract, decimals, from, to, interval)
 
       {"EOS", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug),
+        with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug || "eos"),
              do: EosBalance.historical_balance(address, contract, decimals, from, to, interval)
 
       {"BNB", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug),
+        with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug || "binance-coin"),
              do: BnbBalance.historical_balance(address, contract, decimals, from, to, interval)
     end
   end

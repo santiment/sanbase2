@@ -192,7 +192,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     with {:eth_addresses, {:ok, eth_addresses}} when eth_addresses != [] <-
            {:eth_addresses, Project.eth_addresses(project)},
          {:ok, eth_spent} <-
-           Clickhouse.HistoricalBalance.eth_spent(
+           Clickhouse.HistoricalBalance.EthSpent.eth_spent(
              eth_addresses,
              from_datetime,
              to_datetime
@@ -228,7 +228,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     with {:eth_addresses, {:ok, eth_addresses}} when eth_addresses != [] <-
            {:eth_addresses, Project.eth_addresses(project)},
          {:ok, eth_spent_over_time} <-
-           Clickhouse.HistoricalBalance.eth_spent_over_time(eth_addresses, from, to, interval) do
+           Clickhouse.HistoricalBalance.EthSpent.eth_spent_over_time(
+             eth_addresses,
+             from,
+             to,
+             interval
+           ) do
       {:ok, eth_spent_over_time}
     else
       {:eth_addresses, _} ->

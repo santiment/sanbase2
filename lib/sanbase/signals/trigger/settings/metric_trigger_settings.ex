@@ -70,7 +70,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
     time_window_in_days = Enum.max([str_to_days(time_window), 1])
     to = Timex.now()
     # Ensure there are enough data points in the interval. The not needed
-    # ones are ignored    from = Timex.shift(to, days: -(3 * time_window_in_days))
+    # ones are ignored
     from = Timex.shift(to, days: -(3 * time_window_in_days))
 
     {from, to, time_window}
@@ -83,7 +83,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
 
     Cache.get_or_store(cache_key, fn ->
       case Metric.timeseries_data(metric, slug, from, to, interval) do
-        {:ok, [_ | _] = result} -> result
+        {:ok, [_ | _] = result} -> result |> Enum.take(-2)
         _ -> nil
       end
     end)

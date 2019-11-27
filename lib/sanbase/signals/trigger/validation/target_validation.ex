@@ -26,15 +26,8 @@ defmodule Sanbase.Signal.Validation.Target do
   def valid_target?(target),
     do: {:error, "#{inspect(target)} is not a valid target"}
 
-  def valid_eth_wallet_target?(%{eth_address: address})
-      when is_binary(address) or is_list(address) do
-    address
-    |> List.wrap()
-    |> Enum.find(fn elem -> not is_binary(elem) end)
-    |> case do
-      nil -> :ok
-      _ -> {:error, "The target list of ethereum addresses contains elements that are not string"}
-    end
+  def valid_eth_wallet_target?(%{eth_address: address_or_addresses}) do
+    valid_crypto_address?(address_or_addresses)
   end
 
   def valid_eth_wallet_target?(%{user_list: _}) do
@@ -46,4 +39,40 @@ defmodule Sanbase.Signal.Validation.Target do
   end
 
   def valid_eth_wallet_target?(target), do: valid_target?(target)
+
+  def valid_crypto_address?(%{slug: slug}), do: valid_target?(%{slug: slug})
+
+  def valid_crypto_address?(%{address: address_or_addresses}) do
+    valid_crypto_address?(address_or_addresses)
+  end
+
+  def valid_crypto_address?(address_or_addresses)
+      when is_binary(address_or_addresses) or is_list(address_or_addresses) do
+    address_or_addresses
+    |> List.wrap()
+    |> Enum.find(fn elem -> not is_binary(elem) end)
+    |> case do
+      nil ->
+        :ok
+
+      _ ->
+        {:error,
+         "#{inspect(address_or_addresses)} is not a valid crypto address. The list contains elements that are not string"}
+    end
+  end
+
+  def valid_crypto_address?(data), do: {:error, "#{inspect(data)} is not a valid crypto address"}
+
+  def valid_historical_balance_selector?(selector) when is_map(selector) do
+    keys = Map.keys(selector)
+
+    case Enum.all?(keys, fn key -> key in [:infrastructure, :currency, :slug] end) do
+      true -> :ok
+      false -> {:error, "#{inspect(selector)} is not a valid selector - it has unsupported keys"}
+    end
+  end
+
+  def valid_historical_balance_selector?(selector) do
+    {:error, "#{inspect(selector)} is not a valid selector - it has to be a map"}
+  end
 end

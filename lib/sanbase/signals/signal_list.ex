@@ -10,6 +10,7 @@ defmodule Sanbase.Signal.List do
       Trigger.PriceVolumeDifferenceTriggerSettings,
       Trigger.TrendingWordsTriggerSettings,
       Trigger.EthWalletTriggerSettings,
+      Trigger.WalletTriggerSettings,
       Trigger.MetricTriggerSettings
     ]
   end

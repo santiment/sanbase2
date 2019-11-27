@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
   object :metric_data do
     field(:datetime, non_null(:datetime))
-    field(:value, non_null(:float))
+    field(:value, :float)
   end
 
   object :string_list do

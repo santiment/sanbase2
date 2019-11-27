@@ -134,27 +134,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     {:ok, Subscription.user_subscriptions(user)}
   end
 
-  def send_promo_coupon(_root, args, %{
-        context: %{origin_url: origin_url}
-      }) do
-    args = Map.put(args, :origin_url, origin_url)
-
-    case Subscription.PromoCoupon.send_coupon(args) do
-      {:ok, _} ->
-        {:ok, %{success: true}}
-
-      {:error, reason} ->
-        Logger.error("Error sending coupon code: #{inspect(reason)}")
-        {:ok, %{success: false}}
-    end
-  end
-
-  def create_promo_subscription(_root, %{coupon_code: coupon_code}, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
-    Subscription.PromoFreeTrial.create_promo_subscription(current_user, coupon_code)
-  end
-
   # private functions
   defp transform_payments(%Stripe.List{data: payments}) do
     payments

@@ -17,7 +17,7 @@ defmodule Sanbase.ExAdmin.Billing.Subscription do
       column(:current_period_end)
       column(:trial_end)
       column(:cancel_at_period_end)
-      column(:user, link: true)
+      column(:user, fields: [:email, :username], link: true)
       column(:plan, link: true)
 
       column("Product", fn subscription ->
@@ -36,7 +36,7 @@ defmodule Sanbase.ExAdmin.Billing.Subscription do
         row(:current_period_end)
         row(:trial_end)
         row(:cancel_at_period_end)
-        row(:user, link: true)
+        row(:user, fields: [:email, :username], link: true)
         row(:plan, link: true)
 
         row("Product", fn subscription ->

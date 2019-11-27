@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
   import Sanbase.Utils.ErrorHandling,
-    only: [handle_graphql_error: 3, handle_graphql_error: 4]
+    only: [maybe_handle_graphql_error: 2, handle_graphql_error: 3, handle_graphql_error: 4]
 
   import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 7]
 
@@ -35,22 +35,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
         %{selector: selector, from: from, to: to, interval: interval, address: address},
         _resolution
       ) do
-    case HistoricalBalance.historical_balance(
-           selector,
-           address,
-           from,
-           to,
-           interval
-         ) do
-      {:ok, result} ->
-        {:ok, result}
-
-      {:error, error} ->
-        {:error,
-         handle_graphql_error("Historical Balances", inspect(selector), error,
-           description: "selector"
-         )}
-    end
+    HistoricalBalance.historical_balance(
+      selector,
+      address,
+      from,
+      to,
+      interval
+    )
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(
+        "Historical Balances",
+        inspect(selector),
+        error,
+        description: "selector"
+      )
+    end)
   end
 
   def historical_balance(
@@ -58,19 +57,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
         %{slug: slug, from: from, to: to, interval: interval, address: address},
         _resolution
       ) do
-    case HistoricalBalance.historical_balance(
-           %{infrastructure: "ETH", slug: slug},
-           address,
-           from,
-           to,
-           interval
-         ) do
-      {:ok, result} ->
-        {:ok, result}
-
-      {:error, error} ->
-        {:error, handle_graphql_error("Historical Balances", slug, error)}
-    end
+    HistoricalBalance.historical_balance(
+      %{infrastructure: "ETH", slug: slug},
+      address,
+      from,
+      to,
+      interval
+    )
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error("Historical Balances", slug, error)
+    end)
   end
 
   def miners_balance(

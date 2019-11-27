@@ -54,13 +54,12 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     address = String.downcase(address)
     {query, args} = historical_balance_query(address, from, to, interval)
 
-    ClickhouseRepo.query_transform(query, args, fn
-      [dt, value, has_changed] ->
-        %{
-          datetime: DateTime.from_unix!(dt),
-          balance: value / @eth_decimals,
-          has_changed: has_changed
-        }
+    ClickhouseRepo.query_transform(query, args, fn [dt, value, has_changed] ->
+      %{
+        datetime: DateTime.from_unix!(dt),
+        balance: value / @eth_decimals,
+        has_changed: has_changed
+      }
     end)
     |> maybe_update_first_balance(fn -> last_balance_before(address, "ETH", 18, from) end)
     |> maybe_fill_gaps_last_seen_balance()

@@ -64,7 +64,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   """
   def balance_change(selector, address, from, to) do
     infrastructure = Map.fetch!(selector, :infrastructure)
-
     slug = Map.get(selector, :slug)
 
     case {infrastructure, slug} do

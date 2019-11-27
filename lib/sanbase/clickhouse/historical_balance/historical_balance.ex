@@ -21,6 +21,14 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
     XrpBalance
   }
 
+  @typedoc ~s"""
+  """
+  @type selector :: %{
+          required(:infrastructure) => String.t(),
+          optional(:currency) => String.t(),
+          optional(:slug) => String.t()
+        }
+
   @type slug :: String.t()
 
   @type address :: String.t()
@@ -62,6 +70,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   from-to period. The returned lists indicates the address, before balance, after balance
   and the balance change
   """
+  @spec balance_change(selector, address, from :: DateTime.t(), to :: DateTime.t()) ::
+          __MODULE__.Behaviour.balance_change_result()
   def balance_change(selector, address, from, to) do
     infrastructure = Map.fetch!(selector, :infrastructure)
     slug = Map.get(selector, :slug)
@@ -105,7 +115,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   For a given address or list of addresses returns the combined `slug` balance for each bucket
   of size `interval` in the from-to time period
   """
-
+  @spec historical_balance(selector, address, from :: DateTime.t(), to :: DateTime.t(), interval) ::
+          __MODULE__.Behaviour.historical_balance_result()
   def historical_balance(selector, address, from, to, interval) do
     infrastructure = Map.fetch!(selector, :infrastructure)
     slug = Map.get(selector, :slug)

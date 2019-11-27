@@ -1,4 +1,8 @@
 defmodule Sanbase.Clickhouse.HistoricalBalance.Utils do
+  @moduledoc ~s"""
+  Helper functions used when working with the historical balances
+  """
+
   @type in_type :: %{
           sign: non_neg_integer(),
           balance: float(),

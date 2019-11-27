@@ -112,11 +112,11 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
     slug = Map.get(selector, :slug)
 
     case {infrastructure, slug} do
-      {"ETH", ethereum} when ethereum in [nil, ethereum] ->
+      {"ETH", ethereum} when ethereum in [nil, "ethereum"] ->
         with {:ok, contract, decimals} <- Project.contract_info_by_slug("ethereum"),
              do: EthBalance.historical_balance(address, contract, decimals, from, to, interval)
 
-      {"ETH", <<"0x", _rest::binary>>} ->
+      {"ETH", _} ->
         with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug),
              do: Erc20Balance.historical_balance(address, contract, decimals, from, to, interval)
 

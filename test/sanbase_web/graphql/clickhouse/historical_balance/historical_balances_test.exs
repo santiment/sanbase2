@@ -34,6 +34,61 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
     ]
   end
 
+  test "all infrastructures are supported", context do
+    selectors = [
+      %{infrastructure: "ETH"},
+      %{infrastructure: "ETH", slug: "ethereum"},
+      %{infrastructure: "ETH", slug: context.project_with_contract.slug},
+      %{infrastructure: "BTC"},
+      %{infrastructure: "LTC"},
+      %{infrastructure: "BCH"},
+      %{infrastructure: "BNB"},
+      %{infrastructure: "BNB", slug: "binance-coin"},
+      %{infrastructure: "XRP"},
+      %{infrastructure: "XRP", currency: "BTC"},
+      %{infrastructure: "EOS"},
+      %{infrastructure: "EOS", slug: "eos"}
+    ]
+
+    dt1 = ~U[2019-01-01 00:00:00Z]
+    dt2 = ~U[2019-01-02 00:00:00Z]
+    dt3 = ~U[2019-01-03 00:00:00Z]
+    dt4 = ~U[2019-01-04 00:00:00Z]
+
+    with_mock(Sanbase.ClickhouseRepo,
+      query: fn _, _ ->
+        {:ok,
+         %{
+           rows: [
+             [dt1 |> DateTime.to_unix(), :math.pow(10, 18) * 2000, 1],
+             [dt2 |> DateTime.to_unix(), 0, 0],
+             [dt3 |> DateTime.to_unix(), 0, 0],
+             [dt4 |> DateTime.to_unix(), :math.pow(10, 18) * 1800, 1]
+           ]
+         }}
+      end
+    ) do
+      from = dt1
+      to = dt4
+      selector = %{infrastructure: "ETH", slug: "ethereum"}
+
+      for selector <- selectors do
+        query = historical_balances_query(selector, context.address, from, to, "1d")
+
+        result =
+          context.conn
+          |> post("/graphql", query_skeleton(query, "historicalBalance"))
+          |> json_response(200)
+
+        refute Map.has_key?(result, "errors")
+        assert Map.has_key?(result, "data")
+
+        historical_balance = result["data"]["historicalBalance"]
+        assert length(historical_balance) == 4
+      end
+    end
+  end
+
   test "historical balances when interval is bigger than balances values interval", context do
     dt1 = DateTimeUtils.from_iso8601!("2017-05-11T00:00:00Z") |> DateTime.to_unix()
     dt2 = DateTimeUtils.from_iso8601!("2017-05-12T00:00:00Z") |> DateTime.to_unix()
@@ -194,16 +249,16 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
         {:ok,
          %{
            rows: [
-             [{{2017, 05, 11}, {0, 0, 0}}, 0, 1],
-             [{{2017, 05, 12}, {0, 0, 0}}, 0, 1],
-             [{{2017, 05, 13}, {0, 0, 0}}, :math.pow(10, 18) * 2000, 1],
-             [{{2017, 05, 14}, {0, 0, 0}}, :math.pow(10, 18) * 1800, 1],
-             [{{2017, 05, 15}, {0, 0, 0}}, 0, 0],
-             [{{2017, 05, 16}, {0, 0, 0}}, :math.pow(10, 18) * 1500, 1],
-             [{{2017, 05, 17}, {0, 0, 0}}, :math.pow(10, 18) * 1900, 1],
-             [{{2017, 05, 18}, {0, 0, 0}}, :math.pow(10, 18) * 1000, 1],
-             [{{2017, 05, 19}, {0, 0, 0}}, 0, 0],
-             [{{2017, 05, 20}, {0, 0, 0}}, 0, 0]
+             [~U[2017-05-11 00:00:00Z] |> DateTime.to_unix(), 0, 1],
+             [~U[2017-05-12 00:00:00Z] |> DateTime.to_unix(), 0, 1],
+             [~U[2017-05-13 00:00:00Z] |> DateTime.to_unix(), :math.pow(10, 18) * 2000, 1],
+             [~U[2017-05-14 00:00:00Z] |> DateTime.to_unix(), :math.pow(10, 18) * 1800, 1],
+             [~U[2017-05-15 00:00:00Z] |> DateTime.to_unix(), 0, 0],
+             [~U[2017-05-16 00:00:00Z] |> DateTime.to_unix(), :math.pow(10, 18) * 1500, 1],
+             [~U[2017-05-17 00:00:00Z] |> DateTime.to_unix(), :math.pow(10, 18) * 1900, 1],
+             [~U[2017-05-18 00:00:00Z] |> DateTime.to_unix(), :math.pow(10, 18) * 1000, 1],
+             [~U[2017-05-19 00:00:00Z] |> DateTime.to_unix(), 0, 0],
+             [~U[2017-05-20 00:00:00Z] |> DateTime.to_unix(), 0, 0]
            ]
          }}
       end do
@@ -252,21 +307,23 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
         context.interval
       )
 
-    assert capture_log(fn ->
-             result =
-               context.conn
-               |> post("/graphql", query_skeleton(query, "historicalBalance"))
-               |> json_response(200)
+    log =
+      capture_log(fn ->
+        result =
+          context.conn
+          |> post("/graphql", query_skeleton(query, "historicalBalance"))
+          |> json_response(200)
 
-             historical_balance = result["data"]["historicalBalance"]
-             assert historical_balance == nil
+        historical_balance = result["data"]["historicalBalance"]
+        assert historical_balance == nil
 
-             error = result["errors"] |> List.first()
+        error = result["errors"] |> List.first()
 
-             assert error["message"] =~
-                      "Can't fetch Historical Balances for selector: #{inspect(selector)}"
-           end) =~
-             "Can't find contract address of project with slug: someid1"
+        assert error["message"] =~
+                 "Can't fetch Historical Balances for selector: #{inspect(selector)}"
+      end)
+
+    assert log =~ "Can't find contract address of project with slug: someid1"
   end
 
   test "historical balances when clickhouse returns error", context do

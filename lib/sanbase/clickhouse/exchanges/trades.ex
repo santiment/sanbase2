@@ -42,14 +42,15 @@ defmodule Sanbase.Clickhouse.Exchanges.Trades do
     {query, args} = exchange_trades_aggregated_query(exchange, ticker_pair, from, to, interval)
 
     ClickhouseRepo.query_transform(query, args, fn
-      [source, symbol, timestamp, amount, cost, price] ->
+      [timestamp, total_amount, total_cost, avg_price, side] ->
         %{
-          source: source,
-          symbol: symbol,
-          timestamp: timestamp |> Sanbase.DateTimeUtils.from_erl!(),
-          amount: amount,
-          cost: cost,
-          price: price
+          source: exchange,
+          symbol: ticker_pair,
+          timestamp: timestamp |> DateTime.from_unix!(),
+          total_amount: total_amount,
+          total_cost: total_cost,
+          avg_price: avg_price,
+          side: side
         }
     end)
   end
@@ -83,43 +84,58 @@ defmodule Sanbase.Clickhouse.Exchanges.Trades do
     span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)
 
     query = """
-    SELECT time, any(total_amount), any(total_cost), any(avg_price)
+    SELECT time, sum(total_amount), sum(total_cost), sum(avg_price), side2
     FROM (
       SELECT
-        toDateTime(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) as time,
-        0 AS total_amount,
-        0 AS total_cost,
-        0 AS avg_price
+        toUnixTimestamp(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) as time,
+        toFloat64(0) AS total_amount,
+        toFloat64(0) AS total_cost,
+        toFloat64(0) AS avg_price,
+        toLowCardinality('sell') as side2
       FROM numbers(?2)
 
       UNION ALL
 
-      SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time,
-        any(total_amount),
-        any(total_cost),
-        any(avg_price)
-        FROM (
-          SELECT
-            source, symbol, dt,
-            sum(amount) as total_amount,
-            sum(cost) as total_cost,
-            avg(price) as avg_price
-          FROM exchange_trades
-          PREWHERE
-            source == ?3 AND symbol == ?4 AND
-            dt >= toDateTime(?5) AND
-            dt <= toDateTime(?6)
-          GROUP BY source, symbol, dt
-        )
-        GROUP BY time
+      SELECT
+        toUnixTimestamp(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) as time,
+        toFloat64(0) AS total_amount,
+        toFloat64(0) AS total_cost,
+        toFloat64(0) AS avg_price,
+        toLowCardinality('buy') as side2
+      FROM numbers(?2)
+
+      UNION ALL
+
+      SELECT
+        toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) as time,
+        sum(total_amount) AS total_amount,
+        sum(total_cost) AS total_cost,
+        avg(avg_price) as avg_price,
+        side as side2
+      FROM (
+        SELECT
+          any(source), any(symbol), dt,
+          sum(amount) as total_amount,
+          sum(cost) as total_cost,
+          avg(price) as avg_price,
+          side
+        FROM #{@table}
+        PREWHERE
+          source == ?3 AND symbol == ?4 AND
+          dt >= toDateTime(?5) AND
+          dt < toDateTime(?6)
+      GROUP BY dt, side
+      )
+      GROUP BY time, side
+      ORDER BY time, side
     )
-    GROUP BY time
-    ORDER BY time
+    GROUP BY time, side2
+    ORDER BY time, side2
     """
 
     args = [
       interval,
-      span,
+      span + 1,
       exchange,
       ticker_pair,
       from_datetime_unix,

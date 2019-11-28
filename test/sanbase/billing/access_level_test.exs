@@ -173,7 +173,7 @@ defmodule Sanbase.Billing.AccessLevelTest do
       "mean_realized_price_usd_30d",
       "mean_realized_price_usd_7d",
       "mean_realized_price_usd_1d",
-      "mvrv_usd_long_short_diff",
+      "mvrv_long_short_diff_usd",
       "mvrv_usd",
       "mvrv_usd_10y",
       "mvrv_usd_5y",

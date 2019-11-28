@@ -233,7 +233,7 @@
 
   {
     "human_readable_name": "MVRV Long/Short Difference",
-    "name": "mvrv_usd_long_short_diff",
+    "name": "mvrv_long_short_diff_usd",
     "metric": "mvrv_usd_long_short_diff",
     "version": "2019-01-01",
     "access": "restricted",

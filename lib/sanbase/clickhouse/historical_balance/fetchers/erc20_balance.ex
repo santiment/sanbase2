@@ -1,34 +1,14 @@
 defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
   @doc ~s"""
   Module for working with historical ERC20 balances.
-
-  Includes functions for calculating:
-  - Historical balances for an address
-  - Balance changes for and address
   """
+
+  @behaviour Sanbase.Clickhouse.HistoricalBalance.Behaviour
   use Ecto.Schema
 
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
   import Sanbase.Clickhouse.HistoricalBalance.Utils
 
-  @typedoc ~s"""
-  An interval represented as string. It has the format of number followed by one of:
-  ns, ms, s, m, h, d or w - each representing some time unit
-  """
-  @type interval :: String.t()
-  @type address :: String.t()
-  @type contract :: String.t()
-  @type token_decimals :: non_neg_integer()
-
-  @type historical_balance :: %{
-          datetime: non_neg_integer(),
-          balance: float
-        }
-
-  @type slug_balance_map :: %{
-          slug: String.t(),
-          balance: float()
-        }
+  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
   @table "erc20_balances"
   schema @table do
@@ -39,15 +19,12 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     field(:sign, :integer)
   end
 
+  @doc false
   @spec changeset(any(), any()) :: no_return()
   def changeset(_, _),
-    do: raise("Should not try to change eth daily active addresses")
+    do: raise("Should not try to change erc20 balances")
 
-  @doc ~s"""
-  Return a list of all assets that the address holds or has held in the past and
-  the latest balance
-  """
-  @spec assets_held_by_address(address) :: {:ok, list(slug_balance_map)} | {:error, String.t()}
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def assets_held_by_address(address) do
     {query, args} = assets_held_by_address_query(address)
 
@@ -80,20 +57,20 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     end
   end
 
-  @doc ~s"""
-  For a given address or addresses returns the combined balance of tokens
-  identified by `contract` for each bucket of size `interval` in the from-to time period
-  """
-  @spec historical_balance(
-          address,
-          contract,
-          token_decimals,
-          DateTime.t(),
-          DateTime.t(),
-          interval
-        ) :: {:ok, list(historical_balance)} | {:error, String.t()}
-  def historical_balance(address, contract, token_decimals, from, to, interval) do
-    token_decimals = Sanbase.Math.ipow(10, token_decimals)
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
+  def historical_balance([], _, _, _, _, _), do: {:ok, []}
+
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
+  def historical_balance(addresses, contract, decimals, from, to, interval)
+      when is_list(addresses) do
+    combine_historical_balances(addresses, fn address ->
+      historical_balance(address, contract, decimals, from, to, interval)
+    end)
+  end
+
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
+  def historical_balance(address, contract, decimals, from, to, interval) do
+    pow_decimals = Sanbase.Math.ipow(10, decimals)
     address = String.downcase(address)
     contract = String.downcase(contract)
 
@@ -102,43 +79,15 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     ClickhouseRepo.query_transform(query, args, fn [dt, value, has_changed] ->
       %{
         datetime: Sanbase.DateTimeUtils.from_erl!(dt),
-        balance: value / token_decimals,
+        balance: value / pow_decimals,
         has_changed: has_changed
       }
     end)
-    |> case do
-      {:ok, result} ->
-        # Clickhouse fills empty buckets with 0 while we need it filled with the last
-        # seen value. As the balance changes happen only when a transfer occurs
-        # then we need to fetch the whole history of changes in order to find the balance
-        result =
-          result
-          |> fill_gaps_last_seen_balance()
-          |> Enum.drop_while(fn %{datetime: dt} -> DateTime.compare(dt, from) == :lt end)
-
-        {:ok, result}
-
-      {:error, error} ->
-        {:error, error}
-    end
+    |> maybe_update_first_balance(fn -> last_balance_before(address, contract, decimals, from) end)
+    |> maybe_fill_gaps_last_seen_balance()
   end
 
-  @doc ~s"""
-  For a given address returns the balance change in tokens, identified by `contract`
-
-  The change is for the from-to period. The returned lists indicates the address,
-  before balance, after balance and the balance change
-  """
-  @spec balance_change(
-          address | list(address),
-          contract,
-          token_decimals,
-          DateTime.t(),
-          DateTime.t()
-        ) ::
-          {:ok, list({address, {balance_before, balance_after, balance_change}})}
-          | {:error, String.t()}
-        when balance_before: number(), balance_after: number(), balance_change: number()
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def balance_change([], _, _, _, _), do: {:ok, []}
 
   def balance_change(addr, contract, token_decimals, from, to) do
@@ -150,7 +99,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
       argMaxIf(value, dt, dt<=?3 AND sign = 1) AS start_balance,
       argMaxIf(value, dt, dt<=?4 AND sign = 1) AS end_balance,
       end_balance - start_balance AS diff
-    FROM #{@table}
+    FROM #{@table} FINAL
     PREWHERE
       address IN (?1) AND
       contract = ?2
@@ -166,15 +115,36 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     end)
   end
 
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
+  def last_balance_before(address, contract, decimals, datetime) do
+    query = """
+    SELECT value
+    FROM #{@table}
+    PREWHERE
+      address = ?1 AND
+      contract = ?2 AND
+      dt <= toDateTime(?3) AND
+      sign = 1
+    ORDER BY dt DESC
+    LIMIT 1
+    """
+
+    args = [address, contract, DateTime.to_unix(datetime)]
+
+    case ClickhouseRepo.query_transform(query, args, & &1) do
+      {:ok, [[balance]]} -> {:ok, balance / Sanbase.Math.ipow(10, decimals)}
+      {:ok, []} -> {:ok, 0}
+      {:error, error} -> {:error, error}
+    end
+  end
+
   # Private functions
 
-  @first_datetime ~N[2015-10-29 00:00:00]
-                  |> DateTime.from_naive!("Etc/UTC")
-                  |> DateTime.to_unix()
-  defp historical_balance_query(address, contract, _from, to, interval) do
+  defp historical_balance_query(address, contract, from, to, interval) do
     interval = Sanbase.DateTimeUtils.str_to_sec(interval)
+    from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
-    span = div(to_unix - @first_datetime, interval) |> max(1)
+    span = div(to_unix - from_unix, interval) |> max(1)
 
     # The balances table is like a stack. For each balance change there is a record
     # with sign = -1 that is the old balance and with sign = 1 which is the new balance
@@ -195,14 +165,15 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
         address = ?3 AND
         contract = ?4 AND
         sign = 1 AND
-        dt <= toDateTime(?6)
+        dt >= toDateTime(?5) AND
+        dt < toDateTime(?6)
       GROUP BY time
     )
     GROUP BY time
     ORDER BY time
     """
 
-    args = [interval, span, address, contract, @first_datetime, to_unix]
+    args = [interval, span, address, contract, from_unix, to_unix]
 
     {query, args}
   end
@@ -213,7 +184,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
       contract,
       argMax(value, blockNumber)
     FROM
-      erc20_balances
+      #{@table}
     PREWHERE
       address = ?1 AND
       sign = 1

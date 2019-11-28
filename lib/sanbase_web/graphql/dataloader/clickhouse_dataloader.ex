@@ -128,7 +128,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   defp eth_spent(eth_addresses, args) do
     [%{from: from, to: to} | _] = args
 
-    case Clickhouse.HistoricalBalance.eth_balance_change(eth_addresses, from, to) do
+    case Clickhouse.HistoricalBalance.EthSpent.eth_balance_change(eth_addresses, from, to) do
       {:ok, balance_changes} ->
         balance_changes
         |> Enum.map(fn {addr, {_, _, change}} -> {addr, {:ok, change}} end)

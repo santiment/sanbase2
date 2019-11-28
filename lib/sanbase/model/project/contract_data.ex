@@ -7,13 +7,18 @@ defmodule Sanbase.Model.Project.ContractData do
   @special_cases %{
     "ethereum" => %{main_contract_address: "ETH", token_decimals: 18},
     "bitcoin" => %{main_contract_address: "BTC", token_decimals: 8},
+    "bitcoin-cash" => %{main_contract_address: "BCH", token_decimals: 8},
+    "litecoin" => %{main_contract_address: "BNB", token_decimals: 8},
     "eos" => %{main_contract_address: "eosio.token/EOS", token_decimals: 0},
     "ripple" => %{main_contract_address: "XRP", token_decimals: 0},
     "binance-coin" => %{main_contract_address: "BNB", token_decimals: 0}
   }
 
   @special_case_slugs @special_cases |> Map.keys()
+
   def special_case_slugs(), do: @special_case_slugs
+
+  def special_cases(), do: @special_cases
 
   for {slug, %{main_contract_address: contract, token_decimals: decimals}} <- @special_cases do
     def contract_info_by_slug(unquote(slug)), do: {:ok, unquote(contract), unquote(decimals)}

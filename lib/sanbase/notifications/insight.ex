@@ -45,7 +45,8 @@ defmodule Sanbase.Notifications.Insight do
     Config.get(:insights_discord_publish_user)
   end
 
-  defp posts_url(id), do: "#{sanbase_url()}/insights/read/#{id}"
+  defp posts_url(id), do: "#{insights_url()}/read/#{id}"
   defp sanbase_url(), do: Config.module_get(SanbaseWeb.Endpoint, :frontend_url)
+  defp insights_url(), do: Config.module_get(SanbaseWeb.Endpoint, :insights_url)
   defp http_client(), do: Mockery.Macro.mockable(HTTPoison)
 end

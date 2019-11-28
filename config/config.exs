@@ -65,6 +65,7 @@ config :sanbase, SanbaseWeb.Endpoint,
   website_url: {:system, "WEBSITE_URL", "http://localhost:4000"},
   backend_url: {:system, "BACKEND_URL", "http://localhost:4000"},
   frontend_url: {:system, "FRONTEND_URL", "http://localhost:4000"},
+  insights_url: {:system, "INSIGHTS_URL", "https://insights.santiment.net"},
   pubsub: [name: Sanbase.PubSub, adapter: Phoenix.PubSub.PG2]
 
 # Do not log SASL crash reports

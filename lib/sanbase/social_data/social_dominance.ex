@@ -110,6 +110,8 @@ defmodule Sanbase.SocialData.SocialDominance do
         ]
       ]
 
+      IO.inspect({url, options}, label: "==================================")
+
       http_client().get(url, [], options)
     end)
   end

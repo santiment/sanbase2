@@ -31,8 +31,15 @@ defmodule Sanbase.Signal.History.EthWalletTriggerHistory do
       addresses ->
         result =
           addresses
-          |> Enum.map(fn addr ->
-            {:ok, result} = HistoricalBalance.historical_balance(addr, asset, from, to, interval)
+          |> Enum.map(fn address ->
+            {:ok, result} =
+              HistoricalBalance.historical_balance(
+                %{infrastructure: "ETH", slug: asset},
+                address,
+                from,
+                to,
+                interval
+              )
 
             result
           end)

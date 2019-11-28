@@ -31,6 +31,13 @@ defmodule Sanbase.Utils.ErrorHandling do
     end
   end
 
+  def maybe_handle_graphql_error({:ok, result}, _), do: {:ok, result}
+
+  def maybe_handle_graphql_error({:error, error}, error_handler)
+      when is_function(error_handler, 1) do
+    {:error, error_handler.(error)}
+  end
+
   # Private functions
   defp format_error({msg, opts}) do
     Enum.reduce(opts, msg, fn {key, value}, acc ->

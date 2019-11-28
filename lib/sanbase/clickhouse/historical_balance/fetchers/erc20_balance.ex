@@ -78,7 +78,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
 
     ClickhouseRepo.query_transform(query, args, fn [dt, value, has_changed] ->
       %{
-        datetime: Sanbase.DateTimeUtils.from_erl!(dt),
+        datetime: DateTime.from_unix!(dt),
         balance: value / pow_decimals,
         has_changed: has_changed
       }
@@ -152,14 +152,14 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     SELECT time, SUM(value), toUInt8(SUM(has_changed))
       FROM (
         SELECT
-          toDateTime(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) AS time,
+          toUnixTimetamp(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) AS time,
           toFloat64(0) AS value,
           toUInt8(0) AS has_changed
         FROM numbers(?2)
 
     UNION ALL
 
-    SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) AS time, argMax(value, dt), toUInt8(1) AS has_changed
+    SELECT toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time, argMax(value, dt), toUInt8(1) AS has_changed
       FROM #{@table}
       PREWHERE
         address = ?3 AND

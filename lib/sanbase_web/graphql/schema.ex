@@ -22,6 +22,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   alias SanbaseWeb.Graphql.{SanbaseRepo, SanbaseDataloader}
   alias SanbaseWeb.Graphql.Middlewares.ApiUsage
 
+  # Types
   import_types(Graphql.CustomTypes.Decimal)
   import_types(Graphql.CustomTypes.DateTime)
   import_types(Graphql.CustomTypes.JSON)
@@ -41,7 +42,9 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.InsightTypes)
   import_types(Graphql.TwitterTypes)
   import_types(Graphql.MetricTypes)
+  import_types(Graphql.HistoricalBalanceTypes)
 
+  # Queries and mutations
   import_types(Graphql.Schema.MetricQueries)
   import_types(Graphql.Schema.SocialDataQueries)
   import_types(Graphql.Schema.WatchlistQueries)
@@ -57,6 +60,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.TimelineQueries)
   import_types(Graphql.Schema.BillingQueries)
   import_types(Graphql.Schema.Subscriptions.KafkaSubscriptions)
+  import_types(Graphql.Schema.HistoricalBalanceQueries)
 
   def dataloader() do
     Dataloader.new(timeout: :timer.seconds(20))
@@ -108,6 +112,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:user_queries)
     import_fields(:timeline_queries)
     import_fields(:billing_queries)
+    import_fields(:historical_balance_queries)
   end
 
   mutation do

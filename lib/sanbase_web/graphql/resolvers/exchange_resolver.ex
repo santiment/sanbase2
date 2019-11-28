@@ -31,6 +31,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
     end
   end
 
+  def last_exchange_market_depth(
+        _root,
+        %{exchange: exchange, ticker_pair: ticker_pair, limit: limit},
+        _resolution
+      ) do
+    Sanbase.Clickhouse.Exchanges.MarketDepth.last_exchange_market_depth(
+      exchange,
+      ticker_pair,
+      limit
+    )
+  end
+
   def last_exchange_trades(
         _root,
         %{exchange: exchange, ticker_pair: ticker_pair, limit: limit},

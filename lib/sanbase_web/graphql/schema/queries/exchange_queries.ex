@@ -4,6 +4,14 @@ defmodule SanbaseWeb.Graphql.Schema.ExchangeQueries do
   alias SanbaseWeb.Graphql.Resolvers.ExchangeResolver
 
   object :exchange_queries do
+    field :last_exchange_market_depth, list_of(:exchange_market_depth) do
+      arg(:exchange, non_null(:string))
+      arg(:ticker_pair, non_null(:string))
+      arg(:limit, non_null(:integer), default_value: 100)
+
+      resolve(&ExchangeResolver.last_exchange_market_depth/3)
+    end
+
     field :last_exchange_trades, list_of(:exchange_trade) do
       arg(:exchange, non_null(:string))
       arg(:ticker_pair, non_null(:string))

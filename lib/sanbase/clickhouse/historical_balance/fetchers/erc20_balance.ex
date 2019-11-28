@@ -152,7 +152,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     SELECT time, SUM(value), toUInt8(SUM(has_changed))
       FROM (
         SELECT
-          toUnixTimetamp(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) AS time,
+          toUnixTimestamp(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) AS time,
           toFloat64(0) AS value,
           toUInt8(0) AS has_changed
         FROM numbers(?2)

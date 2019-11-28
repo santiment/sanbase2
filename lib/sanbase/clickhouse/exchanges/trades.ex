@@ -29,9 +29,9 @@ defmodule Sanbase.Clickhouse.Exchanges.Trades do
         %{
           source: source,
           symbol: symbol,
-          timestamp: timestamp |> Sanbase.DateTimeUtils.from_erl!(),
+          timestamp: timestamp |> DateTime.from_unix!(),
           amount: amount,
-          side: side,
+          side: String.to_existing_atom(side),
           price: price,
           cost: cost
         }
@@ -50,7 +50,7 @@ defmodule Sanbase.Clickhouse.Exchanges.Trades do
           total_amount: total_amount,
           total_cost: total_cost,
           avg_price: avg_price,
-          side: side
+          side: String.to_existing_atom(side)
         }
     end)
   end

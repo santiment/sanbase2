@@ -53,6 +53,10 @@ defmodule Sanbase.Kafka.Topic.ExchangeMarketDepth do
     |> Enum.map(fn {k, v} -> {String.to_existing_atom(k), v} end)
     |> Enum.into(%{})
     |> format_timestamp()
+    |> Sanbase.Utils.Transform.rename_map_keys!(
+      old_keys: [:timestamp, :source, :symbol],
+      new_keys: [:datetime, :exchange, :ticker_pair]
+    )
   end
 
   defp format_timestamp(%{timestamp: timestamp} = exchange_market_depth) do

@@ -68,6 +68,14 @@ defmodule Sanbase.Utils.Transform do
     {:error, error}
   end
 
+  def rename_map_keys!(map, old_keys: old_keys, new_keys: new_keys) do
+    old_new_keys_map = Enum.zip(old_keys, new_keys) |> Enum.into(%{})
+
+    map
+    |> Enum.map(fn {k, v} -> {old_new_keys_map[k] || k, v} end)
+    |> Enum.into(%{})
+  end
+
   def unpack_value({:ok, [value]}), do: {:ok, value}
   def unpack_value({:error, error}), do: {:error, error}
 end

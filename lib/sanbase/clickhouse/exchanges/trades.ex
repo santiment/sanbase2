@@ -27,9 +27,9 @@ defmodule Sanbase.Clickhouse.Exchanges.Trades do
     ClickhouseRepo.query_transform(query, args, fn
       [source, symbol, timestamp, side, amount, price, cost] ->
         %{
-          source: source,
-          symbol: symbol,
-          timestamp: timestamp |> DateTime.from_unix!(),
+          exchange: source,
+          ticker_pair: symbol,
+          datetime: timestamp |> DateTime.from_unix!(),
           amount: amount,
           side: String.to_existing_atom(side),
           price: price,
@@ -44,9 +44,9 @@ defmodule Sanbase.Clickhouse.Exchanges.Trades do
     ClickhouseRepo.query_transform(query, args, fn
       [source, symbol, timestamp, side, amount, price, cost] ->
         %{
-          source: source,
-          symbol: symbol,
-          timestamp: timestamp |> DateTime.from_unix!(),
+          exchange: source,
+          ticker_pair: symbol,
+          datetime: timestamp |> DateTime.from_unix!(),
           amount: amount,
           side: String.to_existing_atom(side),
           price: price,
@@ -61,9 +61,9 @@ defmodule Sanbase.Clickhouse.Exchanges.Trades do
     ClickhouseRepo.query_transform(query, args, fn
       [timestamp, total_amount, total_cost, avg_price, side] ->
         %{
-          source: exchange,
-          symbol: ticker_pair,
-          timestamp: timestamp |> DateTime.from_unix!(),
+          exchange: exchange,
+          ticker_pair: ticker_pair,
+          datetime: timestamp |> DateTime.from_unix!(),
           amount: total_amount,
           cost: total_cost,
           price: avg_price,

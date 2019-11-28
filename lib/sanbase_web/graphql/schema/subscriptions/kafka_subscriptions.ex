@@ -3,28 +3,28 @@ defmodule SanbaseWeb.Graphql.Schema.Subscriptions.KafkaSubscriptions do
 
   object :kafka_subscriptions do
     field :exchange_market_depth, :exchange_market_depth do
-      arg(:source, non_null(:string))
-      arg(:symbol, :string)
+      arg(:exchange, non_null(:string))
+      arg(:ticker_pair, :string)
 
       config(fn
-        %{source: source, symbol: symbol}, _ when not is_nil(symbol) ->
-          {:ok, topic: source <> symbol}
+        %{exchange: exchange, ticker_pair: ticker_pair}, _ when not is_nil(ticker_pair) ->
+          {:ok, topic: exchange <> ticker_pair}
 
-        %{source: source}, _ ->
-          {:ok, topic: source}
+        %{exchange: exchange}, _ ->
+          {:ok, topic: exchange}
       end)
     end
 
     field :exchange_trades, :exchange_trade do
-      arg(:source, :string)
-      arg(:symbol, :string)
+      arg(:exchange, :string)
+      arg(:ticker_pair, :string)
 
       config(fn
-        %{source: source, symbol: symbol}, _ when not is_nil(symbol) ->
-          {:ok, topic: source <> symbol}
+        %{exchange: exchange, ticker_pair: ticker_pair}, _ when not is_nil(ticker_pair) ->
+          {:ok, topic: exchange <> ticker_pair}
 
-        %{source: source}, _ when not is_nil(source) ->
-          {:ok, topic: source}
+        %{exchange: exchange}, _ when not is_nil(exchange) ->
+          {:ok, topic: exchange}
       end)
     end
   end

@@ -4,9 +4,9 @@ defmodule SanbaseWeb.Graphql.Schema.KafkaTypes do
   enum(:side_enum, values: [:buy, :sell])
 
   object :exchange_market_depth do
-    field(:source, :string)
-    field(:symbol, :string)
-    field(:timestamp, :datetime)
+    field(:exchange, :string)
+    field(:ticker_pair, :string)
+    field(:datetime, :datetime)
     field(:ask, :float)
     field(:asks025_percent_depth, :float)
     field(:asks025_percent_volume, :float)
@@ -48,9 +48,9 @@ defmodule SanbaseWeb.Graphql.Schema.KafkaTypes do
   end
 
   object :exchange_trade do
-    field(:source, :string)
-    field(:symbol, :string)
-    field(:timestamp, :datetime)
+    field(:exchange, :string)
+    field(:ticker_pair, :string)
+    field(:datetime, :datetime)
     field(:side, :side_enum)
     field(:amount, :float)
     field(:price, :float)

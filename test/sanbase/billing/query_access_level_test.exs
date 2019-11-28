@@ -165,7 +165,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         "discord_social_dominance",
         "discord_social_volume",
         "reddit_social_dominance",
-        "reddit_social_volume",
         "telegram_social_dominance",
         "telegram_social_volume",
         "twitter_social_dominance",

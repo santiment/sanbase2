@@ -8,7 +8,6 @@ defmodule Sanbase.SocialData.MetricAdapter do
   @social_volume_timeseries_metrics [
     "telegram_social_volume",
     "twitter_social_volume",
-    "reddit_social_volume",
     "discord_social_volume"
   ]
 
@@ -28,7 +27,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
   @social_dominance_source_type %{
     "professional_traders_chat" => :professional_traders_chat,
     "telegram" => :telegram,
-    "discord" => :discord
+    "discord" => :discord,
+    "reddit" => :reddit
   }
 
   @timeseries_metrics @social_dominance_timeseries_metrics ++ @social_volume_timeseries_metrics
@@ -54,7 +54,9 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   def timeseries_data(metric, slug, from, to, interval, _aggregation)
       when metric in @social_dominance_timeseries_metrics do
-    [source, _] = String.split(metric, "_", parts: 2)
+    [source, _] =
+      String.split(metric, "_", parts: 2)
+      |> IO.inspect(label: "SPLITTING 58", limit: :infinity)
 
     Sanbase.SocialData.social_dominance(
       slug,

@@ -105,7 +105,12 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
     Cache.get_or_store(
       cache_key,
       fn ->
-        HistoricalBalance.balance_change(addresses, slug, from, to)
+        HistoricalBalance.balance_change(
+          %{infrastructure: "ETH", slug: slug},
+          addresses,
+          from,
+          to
+        )
         |> case do
           {:ok, result} -> result
           _ -> []

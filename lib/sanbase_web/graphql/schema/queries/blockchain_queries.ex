@@ -3,11 +3,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
-  alias SanbaseWeb.Graphql.Resolvers.{
-    EtherbiResolver,
-    ClickhouseResolver,
-    ExchangeResolver
-  }
+  alias SanbaseWeb.Graphql.Resolvers.{EtherbiResolver, ClickhouseResolver, ExchangeResolver}
 
   alias SanbaseWeb.Graphql.Complexity
   alias Sanbase.Billing.Product
@@ -385,35 +381,6 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       cache_resolve(&EtherbiResolver.exchange_wallets/3)
     end
 
-    @desc ~s"""
-    Return a list of assets that a wallet currently holds.
-    """
-    field :assets_held_by_address, list_of(:slug_balance) do
-      meta(access: :free)
-
-      arg(:address, non_null(:string))
-
-      cache_resolve(&ClickhouseResolver.assets_held_by_address/3)
-    end
-
-    @desc ~s"""
-    Historical balance for erc20 token or eth address.
-    Returns the historical balance for a given address in the given interval.
-    """
-    field :historical_balance, list_of(:historical_balance) do
-      meta(access: :free)
-
-      arg(:slug, non_null(:string))
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-      arg(:address, non_null(:string))
-      arg(:interval, non_null(:interval), default_value: "1d")
-
-      complexity(&Complexity.from_to_interval/3)
-      middleware(AccessControl)
-      cache_resolve(&ClickhouseResolver.historical_balance/3)
-    end
-
     @desc "List all exchanges"
     field :all_exchanges, list_of(:string) do
       meta(access: :free)
@@ -439,23 +406,6 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
       cache_resolve(&ClickhouseResolver.mining_pools_distribution/3)
-    end
-
-    @desc """
-    Returns miner balances over time.
-    Currently only ETH is supported.
-    """
-    field :miners_balance, list_of(:miners_balance) do
-      meta(access: :restricted)
-
-      arg(:slug, :string, default_value: "ethereum")
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-      arg(:interval, :interval, default_value: "1d")
-
-      complexity(&Complexity.from_to_interval/3)
-      middleware(AccessControl)
-      cache_resolve(&ClickhouseResolver.miners_balance/3)
     end
   end
 end

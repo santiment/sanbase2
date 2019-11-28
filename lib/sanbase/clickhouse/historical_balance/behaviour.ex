@@ -30,13 +30,24 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Behaviour do
         }
 
   @type historical_balance :: %{
-          datetime: non_neg_integer(),
+          datetime: datetime(),
           balance: float()
         }
 
+  @type historical_balance_result :: {:ok, list(historical_balance)} | {:error, String.t()}
+
   @type balance_change ::
           {address, {balance_before :: number, balance_after :: number, balance_change :: number}}
-          | {:error, String.t()}
+
+  @type balance_change_result :: {:ok, list(balance_change)} | {:error, String.t()}
+
+  @type historical_balance_change :: %{
+          datetime: datetime(),
+          balance_change: number()
+        }
+
+  @type historical_balance_change_result ::
+          {:ok, list(historical_balance_change)} | {:error, String.t()}
 
   @doc ~s"""
   Return a list of all assets that the address holds or has held in the past and
@@ -56,8 +67,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Behaviour do
               from :: datetime,
               to :: datetime,
               interval
-            ) ::
-              {:ok, list(historical_balance)} | {:error, String.t()}
+            ) :: historical_balance_result()
 
   @doc ~s"""
   For a given address or list of addresses returns the balance change for the
@@ -70,8 +80,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Behaviour do
               decimals,
               from :: datetime,
               to :: datetime
-            ) ::
-              {:ok, list(balance_change)} | {:error, String.t()}
+            ) :: balance_change_result()
 
   @doc ~s"""
   For a given address or list of addresses returns the balance change for each bucket
@@ -84,8 +93,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Behaviour do
               from :: datetime,
               to :: datetime,
               interval
-            ) ::
-              {:ok, list(balance_change)} | {:error, String.t()}
+            ) :: historical_balance_change_result()
 
   @callback last_balance_before(
               address,

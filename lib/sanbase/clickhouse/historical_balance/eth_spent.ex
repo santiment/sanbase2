@@ -1,6 +1,6 @@
 defmodule Sanbase.Clickhouse.HistoricalBalance.EthSpent do
   @moduledoc ~s"""
-  Module providing functions for fetching etheruem spent
+  Module providing functions for fetching ethereum spent
   """
 
   alias Sanbase.Clickhouse.HistoricalBalance

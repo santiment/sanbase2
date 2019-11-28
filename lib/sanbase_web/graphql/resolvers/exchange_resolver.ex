@@ -30,4 +30,28 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
         {:error, "Error getting exchange volume for: #{exchange}"}
     end
   end
+
+  def last_exchange_trades(
+        _root,
+        %{exchange: exchange, ticker_pair: ticker_pair, limit: limit},
+        _resolution
+      ) do
+    Sanbase.Clickhouse.Exchanges.Trades.last_exchange_trades(exchange, ticker_pair, limit)
+  end
+
+  def exchange_trades(
+        _root,
+        %{exchange: exchange, ticker_pair: ticker_pair, from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    Sanbase.Clickhouse.Exchanges.Trades.exchange_trades(exchange, ticker_pair, from, to, interval)
+  end
+
+  def exchange_trades(
+        _root,
+        %{exchange: exchange, ticker_pair: ticker_pair, from: from, to: to},
+        _resolution
+      ) do
+    Sanbase.Clickhouse.Exchanges.Trades.exchange_trades(exchange, ticker_pair, from, to)
+  end
 end

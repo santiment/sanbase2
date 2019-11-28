@@ -1,8 +1,6 @@
 defmodule SanbaseWeb.Graphql.Schema.Subscriptions.KafkaSubscriptions do
   use Absinthe.Schema.Notation
 
-  import_types(SanbaseWeb.Graphql.Schema.KafkaTypes)
-
   object :kafka_subscriptions do
     field :exchange_market_depth, :exchange_market_depth do
       arg(:source, non_null(:string))

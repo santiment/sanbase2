@@ -43,6 +43,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.TwitterTypes)
   import_types(Graphql.MetricTypes)
   import_types(Graphql.HistoricalBalanceTypes)
+  import_types(Graphql.Schema.KafkaTypes)
 
   # Queries and mutations
   import_types(Graphql.Schema.MetricQueries)
@@ -61,6 +62,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.BillingQueries)
   import_types(Graphql.Schema.Subscriptions.KafkaSubscriptions)
   import_types(Graphql.Schema.HistoricalBalanceQueries)
+  import_types(Graphql.Schema.ExchangeQueries)
 
   def dataloader() do
     Dataloader.new(timeout: :timer.seconds(20))
@@ -113,6 +115,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:timeline_queries)
     import_fields(:billing_queries)
     import_fields(:historical_balance_queries)
+    import_fields(:exchange_queries)
   end
 
   mutation do

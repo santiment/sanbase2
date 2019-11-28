@@ -21,6 +21,23 @@ defmodule Sanbase.Clickhouse.Exchanges.Trades do
   def changeset(_, _),
     do: raise("Should not try to change exchange trades")
 
+  def last_exchange_trades(exchange, ticker_pair, limit) when exchange in @exchanges do
+    {query, args} = last_exchange_trades_query(exchange, ticker_pair, limit)
+
+    ClickhouseRepo.query_transform(query, args, fn
+      [source, symbol, timestamp, side, amount, price, cost] ->
+        %{
+          source: source,
+          symbol: symbol,
+          timestamp: timestamp |> DateTime.from_unix!(),
+          amount: amount,
+          side: String.to_existing_atom(side),
+          price: price,
+          cost: cost
+        }
+    end)
+  end
+
   def exchange_trades(exchange, ticker_pair, from, to) when exchange in @exchanges do
     {query, args} = exchange_trades_query(exchange, ticker_pair, from, to)
 
@@ -47,18 +64,38 @@ defmodule Sanbase.Clickhouse.Exchanges.Trades do
           source: exchange,
           symbol: ticker_pair,
           timestamp: timestamp |> DateTime.from_unix!(),
-          total_amount: total_amount,
-          total_cost: total_cost,
-          avg_price: avg_price,
+          amount: total_amount,
+          cost: total_cost,
+          price: avg_price,
           side: String.to_existing_atom(side)
         }
     end)
   end
 
+  defp last_exchange_trades_query(exchange, ticker_pair, limit) do
+    query = """
+    SELECT
+      source, symbol, toUnixTimestamp(dt), side, amount, price, cost
+    FROM #{@table}
+    PREWHERE
+      source == ?1 AND symbol == ?2
+    ORDER BY dt DESC
+    LIMIT ?3
+    """
+
+    args = [
+      exchange,
+      ticker_pair,
+      limit
+    ]
+
+    {query, args}
+  end
+
   defp exchange_trades_query(exchange, ticker_pair, from, to) do
     query = """
     SELECT
-      source, symbol, dt, side, amount, price, cost
+      source, symbol, toUnixTimestamp(dt), side, amount, price, cost
     FROM #{@table}
     PREWHERE
       source == ?1 AND symbol == ?2 AND

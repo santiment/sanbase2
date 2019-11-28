@@ -54,9 +54,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   def timeseries_data(metric, slug, from, to, interval, _aggregation)
       when metric in @social_dominance_timeseries_metrics do
-    [source, _] =
-      String.split(metric, "_", parts: 2)
-      |> IO.inspect(label: "SPLITTING 58", limit: :infinity)
+    [source, _] = String.split(metric, "_", parts: 2)
 
     Sanbase.SocialData.social_dominance(
       slug,

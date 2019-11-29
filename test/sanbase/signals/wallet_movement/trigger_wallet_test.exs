@@ -106,7 +106,9 @@ defmodule Sanbase.Signal.WalletTriggerTest do
       assert_receive({:telegram_to_self, message})
 
       assert message =~
-               "The ethereum balance of #{context.project.name} wallets has increased by 50"
+               "The ethereum balance on the Ethereum blockchain of the project **#{
+                 context.project.name
+               }** has increased by 50"
     end
   end
 
@@ -134,10 +136,12 @@ defmodule Sanbase.Signal.WalletTriggerTest do
       sorted_messages = Enum.sort_by([message1, message2], &String.contains?(&1, "address"))
 
       assert Enum.at(sorted_messages, 0) =~
-               "The ethereum balance of #{context.project.name} wallets has increased by 280"
+               "The ethereum balance on the Ethereum blockchain of the project **#{
+                 context.project.name
+               }** has increased by 280"
 
       assert Enum.at(sorted_messages, 1) =~
-               "The ethereum balance of the address #{context.address} has increased by 280"
+               " ethereum balance on the Ethereum blockchain of the address #{context.address} has increased by 28"
     end
   end
 
@@ -160,7 +164,7 @@ defmodule Sanbase.Signal.WalletTriggerTest do
       assert_receive({:telegram_to_self, message})
 
       assert message =~
-               "The ethereum balance of the address #{context.address} has decreased by 100"
+               "The ethereum balance on the Ethereum blockchain of the address #{context.address} has decreased by 100"
     end
   end
 

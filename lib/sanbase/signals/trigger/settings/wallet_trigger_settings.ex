@@ -179,21 +179,57 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
 
     def payload(values, %{filtered_target: %{type: :address}} = settings) do
       """
-      TODO address
+      The #{selector_to_name(settings.selector)} of the address #{values.slug} has #{
+        OperationText.to_text(values, settings.operation)
+      }
+
+      More information about the project can be found here:
       """
     end
 
     def payload(values, %{filtered_target: %{type: :slug}} = settings) do
+      %{slug: slug} = values
+      project = Project.by_slug(slug)
+
       """
-      TODO slug
+      The #{selector_to_name(settings.selector)} of the project **#{project.name}** has #{
+        OperationText.to_text(values, settings.operation)
+      }
+
+      More information about the project can be found here:
       """
     end
 
-    defp selector_to_name(%{infrastructure: "ETH"}), do: "1"
-    defp selector_to_name(%{infrastructure: "BTC"}), do: "1"
-    defp selector_to_name(%{infrastructure: "XRP"}), do: "1"
-    defp selector_to_name(%{infrastructure: "BCH"}), do: "1"
-    defp selector_to_name(%{infrastructure: "LTC"}), do: "1"
-    defp selector_to_name(%{infrastructure: "EOS"}), do: "1"
+    defp selector_to_name(%{infrastructure: "ETH"} = selector) do
+      slug = Map.get(selector, :slug, "ethereum")
+      "#{slug} balance on the Ethereum blockchain"
+    end
+
+    defp selector_to_name(%{infrastructure: "EOS"} = selector) do
+      slug = Map.get(selector, :slug, "eos")
+      "#{slug} balance on the EOS blockchain"
+    end
+
+    defp selector_to_name(%{infrastructure: "BNB"} = selector) do
+      slug = Map.get(selector, :slug, "binance-coin")
+      "#{slug} balance on the Binance blockchain"
+    end
+
+    defp selector_to_name(%{infrastructure: "XRP"} = selector) do
+      currency = Map.get(selector, :currency, "XRP")
+      "#{currency} balance on the Ripple blockchain"
+    end
+
+    defp selector_to_name(%{infrastructure: "BTC"}) do
+      "bitcoin balance on the Bitcoin blockchain"
+    end
+
+    defp selector_to_name(%{infrastructure: "BCH"}) do
+      "bitcoin-cash balance on the Bitcoin Cash blockchain"
+    end
+
+    defp selector_to_name(%{infrastructure: "LTC"}) do
+      "litecoin balance on the Litecoin blockchain"
+    end
   end
 end

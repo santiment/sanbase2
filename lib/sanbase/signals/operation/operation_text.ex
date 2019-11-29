@@ -56,7 +56,7 @@ defmodule Sanbase.Signal.OperationText do
     do: to_text(value, op, opts)
 
   def to_text(percent_change, %{percent_down: _percent}, _opts) do
-    "decreased by #{percent_change}%"
+    "decreased by #{abs(percent_change)}%"
   end
 
   # Amount up
@@ -71,7 +71,7 @@ defmodule Sanbase.Signal.OperationText do
     do: to_text(value, op, opts)
 
   def to_text(amount_changed, %{amount_down: _amount}, _opts) do
-    "decreased by #{amount_changed}"
+    "decreased by #{abs(amount_changed)}"
   end
 
   def to_text(_, %{all_of: operations}, _opts) when is_list(operations) do

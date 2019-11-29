@@ -31,7 +31,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
   @type slug :: String.t()
 
-  @type address :: String.t()
+  @type address :: String.t() | list(String.t())
 
   @typedoc ~s"""
   An interval represented as string. It has the format of number followed by one of:

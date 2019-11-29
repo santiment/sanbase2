@@ -28,7 +28,7 @@ defmodule Sanbase.Signal.WalletTriggerTest do
 
     project = Sanbase.Factory.insert(:random_erc20_project)
 
-    {:ok, [eth_address]} = Project.eth_addresses(project)
+    {:ok, [address]} = Project.eth_addresses(project)
 
     trigger_settings1 = %{
       type: "wallet_movement",
@@ -41,8 +41,8 @@ defmodule Sanbase.Signal.WalletTriggerTest do
 
     trigger_settings2 = %{
       type: "wallet_movement",
-      selector: %{infrastructure: "ETH", slug: "ethereum"},
-      target: %{address: eth_address},
+      selector: %{infrastructure: "EOS", slug: "some-weird-token"},
+      target: %{address: address},
       channel: "telegram",
       time_window: "1d",
       operation: %{amount_up: 200.0}
@@ -50,8 +50,8 @@ defmodule Sanbase.Signal.WalletTriggerTest do
 
     trigger_settings3 = %{
       type: "wallet_movement",
-      selector: %{infrastructure: "ETH", slug: "ethereum"},
-      target: %{address: eth_address},
+      selector: %{infrastructure: "XRP", currency: "BTC"},
+      target: %{address: address},
       channel: "telegram",
       time_window: "1d",
       operation: %{amount_down: 50.0}
@@ -83,7 +83,7 @@ defmodule Sanbase.Signal.WalletTriggerTest do
 
     [
       project: project,
-      address: eth_address
+      address: address
     ]
   end
 
@@ -141,7 +141,9 @@ defmodule Sanbase.Signal.WalletTriggerTest do
                }** has increased by 280"
 
       assert Enum.at(sorted_messages, 1) =~
-               " ethereum balance on the Ethereum blockchain of the address #{context.address} has increased by 28"
+               "The some-weird-token balance on the EOS blockchain of the address #{
+                 context.address
+               } has increased by 280"
     end
   end
 
@@ -164,7 +166,7 @@ defmodule Sanbase.Signal.WalletTriggerTest do
       assert_receive({:telegram_to_self, message})
 
       assert message =~
-               "The ethereum balance on the Ethereum blockchain of the address #{context.address} has decreased by 100"
+               "The BTC balance on the Ripple blockchain of the address #{context.address} has decreased by 100"
     end
   end
 

@@ -37,8 +37,8 @@ defmodule Sanbase.Factory do
   def insights_fallback_user_factory() do
     %User{
       salt: User.generate_salt(),
-      username: User.insights_fallback_username(),
-      email: User.insights_fallback_email()
+      username: User.anonymous_user_username(),
+      email: User.anonymous_user_email()
     }
   end
 

@@ -36,6 +36,8 @@ RUN mix distillery.release
 # Release image
 FROM elixir:1.9.2-alpine
 
+ENV MIX_ENV prod
+
 RUN apk add --no-cache bash \
   imagemagick
 

@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
 
   alias Sanbase.Tag
   alias Sanbase.Auth.User
-  alias Sanbase.Insight.{Post, Vote}
+  alias Sanbase.Insight.{Post, Vote, Comment, PostComment}
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.Helpers.Utils
 
@@ -154,5 +154,41 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
       _error ->
         {:error, "Can't remove vote for post with id #{insight_id}"}
     end
+  end
+
+  def comment(
+        _root,
+        %{insight_id: post_id, content: content} = args,
+        %{context: %{auth: %{current_user: user}}}
+      ) do
+    PostComment.create_and_link(post_id, user.id, Map.get(args, :parent_id), content)
+  end
+
+  def update_comment(
+        _root,
+        %{comment_id: comment_id, content: content},
+        %{context: %{auth: %{current_user: user}}}
+      ) do
+    Comment.update(comment_id, user.id, content)
+  end
+
+  def delete_comment(
+        _root,
+        %{comment_id: comment_id},
+        %{context: %{auth: %{current_user: user}}}
+      ) do
+    Comment.delete(comment_id, user.id)
+  end
+
+  def insight_comments(
+        _root,
+        %{insight_id: post_id} = args,
+        _resolution
+      ) do
+    comments =
+      PostComment.get_comments(post_id, args)
+      |> Enum.map(& &1.comment)
+
+    {:ok, comments}
   end
 end

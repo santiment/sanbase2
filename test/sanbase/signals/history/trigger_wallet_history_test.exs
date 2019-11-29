@@ -139,7 +139,6 @@ defmodule Sanbase.Signal.WalletTriggerHistoryTest do
           cooldown: "30m",
           settings: context.trigger_settings_up
         })
-        |> IO.inspect(label: "142", limit: :infinity)
 
       assert Enum.filter(points, & &1.triggered?) |> length() == 3
       assert Enum.filter(points, &(not &1.triggered?)) |> length() == 5

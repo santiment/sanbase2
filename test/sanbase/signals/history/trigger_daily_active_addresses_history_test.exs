@@ -163,8 +163,8 @@ defmodule Sanbase.Signal.TriggerDailyActiveAddressesHistoryTest do
 
     {:ok, points} = UserTrigger.historical_trigger_points(trigger)
 
-    assert Enum.filter(points, & &1.triggered?) |> length() == 2
-    assert Enum.filter(points, &(!&1.triggered?)) |> length() == 8
+    assert Enum.filter(points, & &1.triggered?) |> length() == 3
+    assert Enum.filter(points, &(!&1.triggered?)) |> length() == 7
     assert length(points) == 10
 
     assert points
@@ -176,6 +176,12 @@ defmodule Sanbase.Signal.TriggerDailyActiveAddressesHistoryTest do
     assert points
            |> Enum.find(fn %{datetime: dt} ->
              DateTime.to_iso8601(dt) == "2018-11-20T00:00:00Z"
+           end)
+           |> Map.get(:triggered?) == true
+
+    assert points
+           |> Enum.find(fn %{datetime: dt} ->
+             DateTime.to_iso8601(dt) == "2018-11-21T00:00:00Z"
            end)
            |> Map.get(:triggered?) == true
   end

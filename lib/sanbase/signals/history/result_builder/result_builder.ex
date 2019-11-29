@@ -39,6 +39,6 @@ defmodule Sanbase.Signal.History.ResultBuilder do
     DateTime.compare(
       datetime,
       Timex.shift(last_triggered_dt, seconds: cooldown_sec)
-    ) != :gt
+    ) == :lt
   end
 end

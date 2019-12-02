@@ -111,7 +111,7 @@
   "snappyer": {:git, "https://github.com/zmstone/snappyer", "cd9001a9a881c50d2f116c2adbb1e620f4f8f4b6", [tag: "1.2.4"]},
   "ssl_verify_fun": {:git, "https://github.com/deadtrickster/ssl_verify_fun.erl", "c5718226b0b9f3d1a38ef6ca3c3b4c75f53dda92", [tag: "1.1.4"]},
   "stream_data": {:hex, :stream_data, "0.4.3", "62aafd870caff0849a5057a7ec270fad0eb86889f4d433b937d996de99e3db25", [:mix], [], "hexpm"},
-  "stripity_stripe": {:git, "https://github.com/code-corps/stripity_stripe", "58d4c948fa36cc3b073122c8e52b65909afe8ab4", []},
+  "stripity_stripe": {:git, "https://github.com/code-corps/stripity_stripe", "d0743abfd8bcbc48e65613ea5263738e387eb1c0", []},
   "supervisor3": {:hex, :supervisor3, "1.1.8", "5cf95c95342b589ec8d74689eea0646c0a3eb92820241e0c2d0ca4c104df92bc", [:make, :rebar, :rebar3], [], "hexpm"},
   "swarm": {:hex, :swarm, "3.4.0", "64f8b30055d74640d2186c66354b33b999438692a91be275bb89cdc7e401f448", [:mix], [{:gen_state_machine, "~> 2.0", [hex: :gen_state_machine, repo: "hexpm", optional: false]}, {:libring, "~> 1.0", [hex: :libring, repo: "hexpm", optional: false]}], "hexpm"},
   "sweet_xml": {:hex, :sweet_xml, "0.6.6", "fc3e91ec5dd7c787b6195757fbcf0abc670cee1e4172687b45183032221b66b8", [:mix], [], "hexpm"},

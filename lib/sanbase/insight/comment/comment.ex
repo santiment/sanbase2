@@ -31,7 +31,7 @@ defmodule Sanbase.Insight.Comment do
 
   def changeset(%__MODULE__{} = comment, attrs \\ %{}) do
     comment
-    |> cast(attrs, [:user_id, :content, :parent_id, :root_parent_id])
+    |> cast(attrs, [:user_id, :content, :parent_id, :root_parent_id, :edited_at])
     |> validate_length(:content, min: 2, max: @max_comment_length)
     |> foreign_key_constraint(:parent_id)
     |> foreign_key_constraint(:root_parent_id)
@@ -72,7 +72,7 @@ defmodule Sanbase.Insight.Comment do
     |> multi_run(:update_parent_subcomments_count, args)
     |> Repo.transaction()
     |> case do
-      {:ok, %{create_new: comment}} ->
+      {:ok, %{create_new_comment: comment}} ->
         {:ok, comment}
 
       {:error, _name, error, _} ->
@@ -84,7 +84,7 @@ defmodule Sanbase.Insight.Comment do
     case select_comment(comment_id, user_id) do
       {:ok, comment} ->
         comment
-        |> changeset(%{content: content})
+        |> changeset(%{content: content, edited_at: NaiveDateTime.utc_now()})
         |> Repo.update()
 
       {:error, error} ->

@@ -61,7 +61,7 @@ defmodule Sanbase.Insight.PostComment do
     |> Repo.all()
   end
 
-  def get_sub_comments(post_id, %{cursor: cursor, limit: limit}) do
+  def get_subcomments(post_id, %{cursor: cursor, limit: limit}) do
     post_comments_query(post_id)
     |> apply_cursor(cursor)
     |> order_by([c], c.inserted_at)

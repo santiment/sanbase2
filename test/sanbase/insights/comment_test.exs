@@ -27,9 +27,44 @@ defmodule Sanbase.Insight.CommentTest do
 
   test "update a comment" do
     post = insert(:post)
+
+    content = "some comment"
+    updated_content = "updated content"
+
+    {:ok, comment} = PostComment.create_and_link(post.id, post.user_id, nil, content)
+
+    naive_dt_before_update = NaiveDateTime.utc_now()
+
+    {:ok, updated_comment} =
+      PostComment.update_comment(comment.id, comment.user_id, updated_content)
+
+    naive_dt_after_update = NaiveDateTime.utc_now()
+
+    assert comment.edited_at == nil
+    assert comment.content == content
+
+    assert updated_comment.edited_at != nil
+    assert NaiveDateTime.compare(updated_comment.edited_at, naive_dt_before_update) == :gt
+    assert NaiveDateTime.compare(naive_dt_after_update, updated_comment.edited_at) == :gt
+    assert updated_comment.content == updated_content
   end
 
-  test "root_parent_id is properly iherited" do
+  test "delete a comment" do
+    post = insert(:post)
+    fallback_user = insert(:insights_fallback_user)
+
+    {:ok, comment} = PostComment.create_and_link(post.id, post.user_id, nil, "some comment")
+
+    {:ok, deleted} = PostComment.delete_comment(comment.id, comment.user_id)
+
+    # The `delete` actually anonymizes instead of deleting. This is done so the
+    # tree structure and links can be kept
+    assert deleted.user_id == fallback_user.id
+    assert deleted.content != comment.content
+    assert deleted.content =~ "deleted"
+  end
+
+  test "root_parent_id is properly inherited" do
     post = insert(:post)
     user = insert(:user)
     {:ok, comment1} = PostComment.create_and_link(post.id, user.id, nil, "some comment")

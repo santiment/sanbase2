@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.Schema.ExchangeQueries do
   use Absinthe.Schema.Notation
 
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
+
   alias SanbaseWeb.Graphql.Resolvers.ExchangeResolver
 
   object :exchange_queries do
@@ -9,7 +11,7 @@ defmodule SanbaseWeb.Graphql.Schema.ExchangeQueries do
       arg(:ticker_pair, non_null(:string))
       arg(:limit, non_null(:integer), default_value: 100)
 
-      resolve(&ExchangeResolver.last_exchange_market_depth/3)
+      cache_resolve(&ExchangeResolver.last_exchange_market_depth/3)
     end
 
     field :last_exchange_trades, list_of(:exchange_trade) do
@@ -17,7 +19,7 @@ defmodule SanbaseWeb.Graphql.Schema.ExchangeQueries do
       arg(:ticker_pair, non_null(:string))
       arg(:limit, non_null(:integer), default_value: 100)
 
-      resolve(&ExchangeResolver.last_exchange_trades/3)
+      cache_resolve(&ExchangeResolver.last_exchange_trades/3)
     end
 
     field :exchange_trades, list_of(:exchange_trade) do
@@ -27,7 +29,7 @@ defmodule SanbaseWeb.Graphql.Schema.ExchangeQueries do
       arg(:to, non_null(:datetime))
       arg(:interval, :string)
 
-      resolve(&ExchangeResolver.exchange_trades/3)
+      cache_resolve(&ExchangeResolver.exchange_trades/3)
     end
   end
 end

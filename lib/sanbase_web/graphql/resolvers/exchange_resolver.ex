@@ -44,6 +44,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
       ticker_pair,
       limit
     )
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(
+        "Last exchange market depth",
+        inspect(exchange) <> " and " <> inspect(ticker_pair),
+        error,
+        description: "exchange and ticker_pair"
+      )
+    end)
   end
 
   def last_exchange_trades(

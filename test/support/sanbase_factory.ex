@@ -4,7 +4,7 @@ defmodule Sanbase.Factory do
   alias Sanbase.Tag
   alias Sanbase.UserList
   alias Sanbase.Auth.{User, UserSettings, Role, UserRole}
-  alias Sanbase.Insight.Post
+  alias Sanbase.Insight.{Post, Comment}
 
   alias Sanbase.Model.{
     Project,
@@ -57,8 +57,13 @@ defmodule Sanbase.Factory do
       title: "Awesome analysis",
       link: "http://example.com",
       text: "Text of the post",
-      state: Post.awaiting_approval_state(),
       tags: [build(:tag), build(:tag)]
+    }
+  end
+
+  def comment_factory() do
+    %Comment{
+      content: "some default comment"
     }
   end
 

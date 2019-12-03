@@ -30,10 +30,10 @@ defmodule Sanbase.Clickhouse.Exchanges.Trades do
           exchange: source,
           ticker_pair: symbol,
           datetime: timestamp |> DateTime.from_unix!(),
-          amount: amount,
           side: String.to_existing_atom(side),
-          price: price,
-          cost: cost
+          amount: amount,
+          cost: cost,
+          price: price
         }
     end)
   end
@@ -47,10 +47,10 @@ defmodule Sanbase.Clickhouse.Exchanges.Trades do
           exchange: source,
           ticker_pair: symbol,
           datetime: timestamp |> DateTime.from_unix!(),
-          amount: amount,
           side: String.to_existing_atom(side),
-          price: price,
-          cost: cost
+          amount: amount,
+          cost: cost,
+          price: price
         }
     end)
   end
@@ -59,15 +59,15 @@ defmodule Sanbase.Clickhouse.Exchanges.Trades do
     {query, args} = exchange_trades_aggregated_query(exchange, ticker_pair, from, to, interval)
 
     ClickhouseRepo.query_transform(query, args, fn
-      [timestamp, total_amount, total_cost, avg_price, side] ->
+      [timestamp, total_amount, avg_price, total_cost, side] ->
         %{
           exchange: exchange,
           ticker_pair: ticker_pair,
           datetime: timestamp |> DateTime.from_unix!(),
+          side: String.to_existing_atom(side),
           amount: total_amount,
           cost: total_cost,
-          price: avg_price,
-          side: String.to_existing_atom(side)
+          price: avg_price
         }
     end)
   end
@@ -121,7 +121,7 @@ defmodule Sanbase.Clickhouse.Exchanges.Trades do
     span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)
 
     query = """
-    SELECT time, sum(total_amount), sum(total_cost), sum(avg_price), side2
+    SELECT time, side2, sum(total_amount), sum(avg_price), sum(total_cost)
     FROM (
       SELECT
         toUnixTimestamp(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) as time,

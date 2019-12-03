@@ -1,6 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
   require Logger
 
+  import Sanbase.Utils.ErrorHandling,
+    only: [maybe_handle_graphql_error: 2, handle_graphql_error: 4]
+
   alias Sanbase.Model.{ExchangeAddress, Infrastructure}
   alias Sanbase.Clickhouse.EthTransfers
 
@@ -49,6 +52,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
         _resolution
       ) do
     Sanbase.Clickhouse.Exchanges.Trades.last_exchange_trades(exchange, ticker_pair, limit)
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(
+        "Last exchange trades",
+        inspect(exchange) <> " and " <> inspect(ticker_pair),
+        error,
+        description: "exchange and ticker_pair"
+      )
+    end)
   end
 
   def exchange_trades(
@@ -57,6 +68,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
         _resolution
       ) do
     Sanbase.Clickhouse.Exchanges.Trades.exchange_trades(exchange, ticker_pair, from, to, interval)
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(
+        "Aggregated exchange trades",
+        inspect(exchange) <> " and " <> inspect(ticker_pair),
+        error,
+        description: "exchange and ticker_pair"
+      )
+    end)
   end
 
   def exchange_trades(
@@ -65,5 +84,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
         _resolution
       ) do
     Sanbase.Clickhouse.Exchanges.Trades.exchange_trades(exchange, ticker_pair, from, to)
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(
+        "Exchange trades",
+        inspect(exchange) <> " and " <> inspect(ticker_pair),
+        error,
+        description: "exchange and ticker_pair"
+      )
+    end)
   end
 end

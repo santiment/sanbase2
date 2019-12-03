@@ -3,8 +3,7 @@ defmodule SanbaseWeb.Graphql.Exchanges.TradesTest do
 
   import Mock
   import SanbaseWeb.Graphql.TestHelpers
-
-  alias Sanbase.Clickhouse.Exchanges.Trades
+  import ExUnit.CaptureLog
 
   test "#last_exchange_trades", context do
     with_mock(Sanbase.ClickhouseRepo,
@@ -17,10 +16,112 @@ defmodule SanbaseWeb.Graphql.Exchanges.TradesTest do
          }}
       end
     ) do
-      query = trades_query()
+      query = last_trades_query()
       result = execute_query(context.conn, query, "lastExchangeTrades")
 
       assert hd(result) == expected_exchange_trade()
+    end
+  end
+
+  test "#last_exchange_trades with error from clickhouse", context do
+    error = "error description"
+
+    with_mock(Sanbase.ClickhouseRepo,
+      query: fn _, _ ->
+        {:error, error}
+      end
+    ) do
+      query = last_trades_query()
+
+      log =
+        capture_log(fn ->
+          execute_query_with_error(context.conn, query, "lastExchangeTrades")
+        end)
+
+      assert log =~
+               ~s(Can't fetch Last exchange trades for exchange and ticker_pair: "Kraken" and "ETH/EUR", Reason: #{
+                 inspect(error)
+               })
+    end
+  end
+
+  test "#exchange_trades", context do
+    with_mock(Sanbase.ClickhouseRepo,
+      query: fn _, _ ->
+        {:ok,
+         %{
+           rows: [
+             ["Kraken", "ETH/EUR", 1_569_704_025, "buy", 2.11604737, 159.63, 337.7846416731]
+           ]
+         }}
+      end
+    ) do
+      query = trades_query()
+      result = execute_query(context.conn, query, "exchangeTrades")
+
+      assert hd(result) == expected_exchange_trade()
+    end
+  end
+
+  test "#exchange_trades with error from clickhouse", context do
+    error = "error description"
+
+    with_mock(Sanbase.ClickhouseRepo,
+      query: fn _, _ ->
+        {:error, error}
+      end
+    ) do
+      query = trades_query()
+
+      log =
+        capture_log(fn ->
+          execute_query_with_error(context.conn, query, "exchangeTrades")
+        end)
+
+      assert log =~
+               ~s(Can't fetch Exchange trades for exchange and ticker_pair: "Kraken" and "ETH/EUR", Reason: #{
+                 inspect(error)
+               })
+    end
+  end
+
+  test "#aggregated exchange_trades", context do
+    with_mock(Sanbase.ClickhouseRepo,
+      query: fn _, _ ->
+        {:ok,
+         %{
+           rows: [
+             [1_569_704_025, 2.11604737, 159.63, 337.7846416731, "buy"]
+           ]
+         }}
+      end
+    ) do
+      query = aggregated_trades_query()
+      result = execute_query(context.conn, query, "exchangeTrades")
+
+      assert hd(result) == expected_exchange_trade()
+    end
+  end
+
+  test "#aggregated exchange_trades with error from clickhouse", context do
+    error = "error description"
+
+    with_mock(Sanbase.ClickhouseRepo,
+      query: fn _, _ ->
+        {:error, error}
+      end
+    ) do
+      query = aggregated_trades_query()
+
+      log =
+        capture_log(fn ->
+          execute_query_with_error(context.conn, query, "exchangeTrades")
+        end)
+
+      assert log =~
+               ~s(Can't fetch Aggregated exchange trades for exchange and ticker_pair: "Kraken" and "ETH/EUR", Reason: #{
+                 inspect(error)
+               })
     end
   end
 
@@ -35,10 +136,40 @@ defmodule SanbaseWeb.Graphql.Exchanges.TradesTest do
     }
   end
 
-  defp trades_query() do
+  defp last_trades_query() do
     """
     {
       lastExchangeTrades(exchange: "Kraken", tickerPair: "ETH/EUR") {
+        exchange
+        tickerPair
+        datetime
+        amount
+        price
+        cost
+      }
+    }
+    """
+  end
+
+  defp trades_query() do
+    """
+    {
+      exchangeTrades(exchange: "Kraken", tickerPair: "ETH/EUR", from: "2019-10-20T00:00:00Z",  to: "2019-10-21T00:00:00Z") {
+        exchange
+        tickerPair
+        datetime
+        amount
+        price
+        cost
+      }
+    }
+    """
+  end
+
+  defp aggregated_trades_query() do
+    """
+    {
+      exchangeTrades(exchange: "Kraken", tickerPair: "ETH/EUR", from: "2019-10-20T00:00:00Z",  to: "2019-10-21T00:00:00Z", interval: "1d") {
         exchange
         tickerPair
         datetime

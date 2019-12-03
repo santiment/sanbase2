@@ -2,7 +2,7 @@ defmodule Sanbase.Insight.CommentTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
-  alias Sanbase.Insight.{Comment, PostComment}
+  alias Sanbase.Insight.PostComment
 
   test "add a comment to a post" do
     post = insert(:post)
@@ -23,6 +23,10 @@ defmodule Sanbase.Insight.CommentTest do
 
     assert comment2.parent_id == comment1.id
     assert comment2.root_parent_id == comment1.id
+  end
+
+  test "update a comment" do
+    post = insert(:post)
   end
 
   test "root_parent_id is properly iherited" do

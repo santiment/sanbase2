@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
 
   alias Sanbase.Tag
   alias Sanbase.Auth.User
-  alias Sanbase.Insight.{Post, Vote, Comment, PostComment}
+  alias Sanbase.Insight.{Post, Vote, PostComment}
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.Helpers.Utils
 
@@ -169,7 +169,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
         %{comment_id: comment_id, content: content},
         %{context: %{auth: %{current_user: user}}}
       ) do
-    Comment.update(comment_id, user.id, content)
+    PostComment.update_comment(comment_id, user.id, content)
   end
 
   def delete_comment(
@@ -177,7 +177,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
         %{comment_id: comment_id},
         %{context: %{auth: %{current_user: user}}}
       ) do
-    Comment.delete(comment_id, user.id)
+    PostComment.delete_comment(comment_id, user.id)
   end
 
   def insight_comments(

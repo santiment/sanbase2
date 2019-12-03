@@ -39,6 +39,14 @@ defmodule Sanbase.Insight.PostComment do
     end
   end
 
+  def update_comment(comment_id, user_id, content) do
+    Comment.update(comment_id, user_id, content)
+  end
+
+  def delete_comment(comment_id, user_id) do
+    Comment.delete(comment_id, user_id)
+  end
+
   def link(comment_id, post_id) do
     %__MODULE__{}
     |> changeset(%{comment_id: comment_id, post_id: post_id})

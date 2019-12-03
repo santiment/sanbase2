@@ -421,7 +421,7 @@ these are the tickers of the projects. Supported currencies are: `XRP`, `BTC`, `
 ```json
 // The combined balance of all santiment's ethereum addresses decreased by 100
 {
-  "type": "eth_wallet",
+  "type": "wallet_movement",
   "channel": "telegram",
   "target": { "slug": "santiment" },
   "selector": { "infrastructure": "ETH", "currency": "ethereum" },
@@ -432,7 +432,7 @@ these are the tickers of the projects. Supported currencies are: `XRP`, `BTC`, `
 ```json
 // The combined balance of all santiment's ethereum addresses increased by 100
 {
-  "type": "eth_wallet",
+  "type": "wallet_movement",
   "channel": "telegram",
   "target": { "slug": "santiment" },
   "selector": { "infrastructure": "ETH", "currency": "ethereum" },
@@ -443,7 +443,7 @@ these are the tickers of the projects. Supported currencies are: `XRP`, `BTC`, `
 ```json
 // The bitcoin balance of the address px1234 is above 1000
 {
-  "type": "eth_wallet",
+  "type": "wallet_movement",
   "channel": "telegram",
   "target": { "address": "px1234" },
   "selector": { "infrastructure": "BTC" },
@@ -454,7 +454,7 @@ these are the tickers of the projects. Supported currencies are: `XRP`, `BTC`, `
 ```json
 // The bitcoin cash balance of the address px1234 is below 500
 {
-  "type": "eth_wallet",
+  "type": "wallet_movement",
   "channel": "telegram",
   "target": { "address": "px1234" },
   "selector": { "infrastructure": "BCH" },
@@ -465,7 +465,7 @@ these are the tickers of the projects. Supported currencies are: `XRP`, `BTC`, `
 ```json
 // The Litecoin balance of the address px1234 has increased by 10% compared to 1 day ago
 {
-  "type": "eth_wallet",
+  "type": "wallet_movement",
   "channel": "telegram",
   "target": { "address": "px1234" },
   "selector": { "infrastructure": "LTC" },
@@ -477,7 +477,7 @@ these are the tickers of the projects. Supported currencies are: `XRP`, `BTC`, `
 ```json
 // The EOS balance of the address px1234 has decreased by 50% compared to 1 day ago
 {
-  "type": "eth_wallet",
+  "type": "wallet_movement",
   "channel": "telegram",
   "target": { "address": "px1234" },
   "selector": { "infrastructure": "EOS", "slug": "eos" },
@@ -490,7 +490,7 @@ these are the tickers of the projects. Supported currencies are: `XRP`, `BTC`, `
 // The BTC currency balance on the ripple chain of the address px1234
 // has increased by 50% compared to 1 day ago and is above 1000
 {
-  "type": "eth_wallet",
+  "type": "wallet_movement",
   "channel": "telegram",
   "target": { "address": "px1234" },
   "selector": { "infrastructure": "XRP", "currency": "BTC" },
@@ -503,7 +503,7 @@ these are the tickers of the projects. Supported currencies are: `XRP`, `BTC`, `
 // The BNB balance chain of the address px1234
 // decreased by at least 100 compared to 1 day ago and is below 500
 {
-  "type": "eth_wallet",
+  "type": "wallet_movement",
   "channel": "telegram",
   "target": { "address": "px1234" },
   "selector": { "infrastructure": "BNB", "slug": "binance-coin" },

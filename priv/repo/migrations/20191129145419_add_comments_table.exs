@@ -7,6 +7,7 @@ defmodule Sanbase.Repo.Migrations.AddCommentsTable do
       add(:subcomments_count, :integer, default: 0, null: false)
       add(:user_id, references(:users, on_delete: :delete_all), null: false)
       add(:parent_id, references(:comments, on_delete: :nothing))
+      add(:root_parent_id, references(:comments, on_delete: :nothing))
 
       timestamps()
     end

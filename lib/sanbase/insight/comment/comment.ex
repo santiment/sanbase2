@@ -17,6 +17,7 @@ defmodule Sanbase.Insight.Comment do
 
     belongs_to(:user, User)
     belongs_to(:parent, __MODULE__)
+    belongs_to(:root_parent, __MODULE__)
 
     has_many(:sub_comments, __MODULE__)
     field(:subcomments_count, :integer, default: 0)
@@ -30,9 +31,10 @@ defmodule Sanbase.Insight.Comment do
 
   def changeset(%__MODULE__{} = comment, attrs \\ %{}) do
     comment
-    |> cast(attrs, [:user_id, :content, :parent_id])
+    |> cast(attrs, [:user_id, :content, :parent_id, :root_parent_id])
     |> validate_length(:content, min: 2, max: @max_comment_length)
     |> foreign_key_constraint(:parent_id)
+    |> foreign_key_constraint(:root_parent_id)
   end
 
   def create_changeset(user_id, content, parent_id \\ nil) do
@@ -47,10 +49,27 @@ defmodule Sanbase.Insight.Comment do
 
   def create(user_id, content, parent_id) do
     Ecto.Multi.new()
-    |> Ecto.Multi.insert(
+    |> Ecto.Multi.run(:select_parents, fn _ ->
+      parent_ids =
+        from(c in __MODULE__, where: c.id == ^parent_id, select: {c.parent_id, c.root_parent_id})
+        |> Repo.one()
+
+      {:ok, parent_ids}
+    end)
+    |> Ecto.Multi.run(
       :create_new,
-      %__MODULE__{}
-      |> changeset(%{user_id: user_id, content: content, parent_id: parent_id})
+      fn %{select_parents: {parent_parent_id, parent_root_parent_id}} ->
+        root_parent_id = parent_root_parent_id || parent_parent_id
+
+        %__MODULE__{}
+        |> changeset(%{
+          user_id: user_id,
+          content: content,
+          parent_id: parent_id,
+          root_parent_id: root_parent_id
+        })
+        |> Repo.insert()
+      end
     )
     |> Ecto.Multi.run(
       :update_subcomments_count,

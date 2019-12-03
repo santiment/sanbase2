@@ -85,6 +85,7 @@ CREATE TABLE public.comments (
     subcomments_count integer DEFAULT 0 NOT NULL,
     user_id bigint NOT NULL,
     parent_id bigint,
+    root_parent_id bigint,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
@@ -2941,6 +2942,14 @@ CREATE UNIQUE INDEX votes_post_id_user_id_index ON public.votes USING btree (pos
 
 ALTER TABLE ONLY public.comments
     ADD CONSTRAINT comments_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.comments(id);
+
+
+--
+-- Name: comments comments_root_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.comments
+    ADD CONSTRAINT comments_root_parent_id_fkey FOREIGN KEY (root_parent_id) REFERENCES public.comments(id);
 
 
 --

@@ -12,25 +12,33 @@ defmodule Sanbase.Signal.History.ResultBuilder do
       )
       when trigger_module in @trigger_modules do
     %{operation: operation, time_window: time_window} = settings
-    cooldown = Sanbase.DateTimeUtils.str_to_days(cooldown)
+    cooldown_sec = Sanbase.DateTimeUtils.str_to_sec(cooldown)
 
     {result, _} =
       data
       |> transform(time_window, Keyword.get(opts, :value_key, :value))
-      |> Enum.reduce({[], 0}, fn
-        values, {acc, 0} ->
-          case operation_triggered?(values, operation) do
-            true ->
-              {[Map.put(values, :triggered?, true) | acc], cooldown}
-
-            false ->
-              {[Map.put(values, :triggered?, false) | acc], 0}
+      |> Enum.reduce({[], nil}, fn
+        values, {acc, last_triggered_dt} ->
+          with false <- in_cooldown(last_triggered_dt, values, cooldown_sec),
+               true <- operation_triggered?(values, operation) do
+            {[Map.put(values, :triggered?, true) | acc], values.datetime}
+          else
+            _ ->
+              {[Map.put(values, :triggered?, false) | acc], last_triggered_dt}
           end
-
-        values, {acc, cooldown_left} ->
-          {[Map.put(values, :triggered?, false) | acc], cooldown_left - 1}
       end)
 
     {:ok, result |> Enum.reverse()}
+  end
+
+  # Nothing has been triggered, so no cooldown
+  defp in_cooldown(nil, _, _), do: false
+
+  # If datetime is equal or later than last_triggered_dt + cooldown
+  defp in_cooldown(last_triggered_dt, %{datetime: datetime}, cooldown_sec) do
+    DateTime.compare(
+      datetime,
+      Timex.shift(last_triggered_dt, seconds: cooldown_sec)
+    ) == :lt
   end
 end

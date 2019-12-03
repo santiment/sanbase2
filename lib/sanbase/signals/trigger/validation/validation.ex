@@ -5,7 +5,9 @@ defmodule Sanbase.Signal.Validation do
   defdelegate valid_notification_channel?(channel), to: NotificationChannel
 
   defdelegate valid_target?(target), to: Target
+  defdelegate valid_crypto_address?(target), to: Target
   defdelegate valid_eth_wallet_target?(target), to: Target
+  defdelegate valid_historical_balance_selector?(target), to: Target
 
   defdelegate valid_operation?(operation), to: Operation
   defdelegate valid_percent_change_operation?(operation), to: Operation

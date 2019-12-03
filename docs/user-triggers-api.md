@@ -10,6 +10,7 @@
     - [Example settings structure for `trending_words`](#example-settings-structure-for-trending_words)
     - [Example settings structure for `price_volume_difference`](#example-settings-structure-for-price_volume_difference)
     - [Example settings structure for `eth_wallet`](#example-settings-structure-for-eth_wallet)
+    - [Example settings structure for `wallet_movement`](#example-settings-structure-for-wallet_movement)
     - [Example settings structure for `metric_signal`](#example-settings-structure-for-metric_signal)
   - [Create trigger](#create-trigger)
   - [Get all triggers for current user](#get-all-triggers-for-current-user)
@@ -357,6 +358,8 @@ These are the fields describing a trigger.
 
 #### Example settings structure for `eth_wallet`
 
+Deprecated in favour of `wallet_movement`
+
 ```json
 // The combined balance of all santiment's ethereum addresses decreased by 100
 {
@@ -387,6 +390,125 @@ These are the fields describing a trigger.
   "target": { "eth_address": "0x123" },
   "asset": { "slug": "santiment" },
   "operation": { "amount_up": 1000 }
+}
+```
+
+#### Example settings structure for `wallet_movement`
+
+This signal is the successor of `eth_wallet`. It allows for a wider variety
+of blockchains and operations.
+
+The following blockchains are supported, identifier by `infrastructure`:
+
+- (ETH) Ethereum
+- (BTC) Bitcoin
+- (BCH) Bitcoin Cash
+- (LTC) Litecoin
+- (EOS) EOS
+- (XRP) Ripple
+- (BNB) Binance Chain
+
+When working with `infrastructure` BTC, BCH or LTC no additional parameter is needed
+as there are no tokens on these blockchains.
+When working with `infrastructure` ETH, EOS or BNB an additional parameter `slug` is needed to specify
+the token.
+When working with `infrastructure` XRP an additional `currency` parameter is needed.
+
+Valid `slug`s are the slugs of the projects on sanbase.
+Valid `currency`s are the specific names given on the ripple chain. In most of the cases
+these are the tickers of the projects. Supported currencies are: `XRP`, `BTC`, `ETH`, etc.
+
+```json
+// The combined balance of all santiment's ethereum addresses decreased by 100
+{
+  "type": "eth_wallet",
+  "channel": "telegram",
+  "target": { "slug": "santiment" },
+  "selector": { "infrastructure": "ETH", "currency": "ethereum" },
+  "operation": { "amount_down": 100 }
+}
+```
+
+```json
+// The combined balance of all santiment's ethereum addresses increased by 100
+{
+  "type": "eth_wallet",
+  "channel": "telegram",
+  "target": { "slug": "santiment" },
+  "selector": { "infrastructure": "ETH", "currency": "ethereum" },
+  "operation": { "amount_up": 100 }
+}
+```
+
+```json
+// The bitcoin balance of the address px1234 is above 1000
+{
+  "type": "eth_wallet",
+  "channel": "telegram",
+  "target": { "address": "px1234" },
+  "selector": { "infrastructure": "BTC" },
+  "operation": { "above": 1000 }
+}
+```
+
+```json
+// The bitcoin cash balance of the address px1234 is below 500
+{
+  "type": "eth_wallet",
+  "channel": "telegram",
+  "target": { "address": "px1234" },
+  "selector": { "infrastructure": "BCH" },
+  "operation": { "below": 1000 }
+}
+```
+
+```json
+// The Litecoin balance of the address px1234 has increased by 10% compared to 1 day ago
+{
+  "type": "eth_wallet",
+  "channel": "telegram",
+  "target": { "address": "px1234" },
+  "selector": { "infrastructure": "LTC" },
+  "time_window": "1d",
+  "operation": { "percent_up": 10 }
+}
+```
+
+```json
+// The EOS balance of the address px1234 has decreased by 50% compared to 1 day ago
+{
+  "type": "eth_wallet",
+  "channel": "telegram",
+  "target": { "address": "px1234" },
+  "selector": { "infrastructure": "EOS", "slug": "eos" },
+  "time_window": "1d",
+  "operation": { "percent_down": 50 }
+}
+```
+
+```json
+// The BTC currency balance on the ripple chain of the address px1234
+// has increased by 50% compared to 1 day ago and is above 1000
+{
+  "type": "eth_wallet",
+  "channel": "telegram",
+  "target": { "address": "px1234" },
+  "selector": { "infrastructure": "XRP", "currency": "BTC" },
+  "time_window": "1d",
+  "operation": { "all_of": [{ "percent_up": 50 }, { "above": 1000 }] }
+}
+```
+
+```json
+// The BNB balance chain of the address px1234
+// decreased by at least 100 compared to 1 day ago and is below 500
+{
+  "type": "eth_wallet",
+  "channel": "telegram",
+  "target": { "address": "px1234" },
+  "selector": { "infrastructure": "BNB", "slug": "binance-coin" },
+  "time_window": "1d",
+  "operation": { "all_of": [{ "amount_down": 100 }, { "below": 500 }] }
 }
 ```
 

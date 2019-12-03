@@ -189,6 +189,13 @@ defmodule Sanbase.Signal.Trigger do
     |> remove_targets_on_cooldown(trigger, :eth_address)
   end
 
+  defp remove_targets_on_cooldown(%{address: address}, trigger)
+       when is_binary(address) or is_list(address) do
+    address
+    |> List.wrap()
+    |> remove_targets_on_cooldown(trigger, :address)
+  end
+
   defp remove_targets_on_cooldown(target, trigger) do
     target
     |> List.wrap()

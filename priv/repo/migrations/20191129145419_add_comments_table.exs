@@ -3,8 +3,9 @@ defmodule Sanbase.Repo.Migrations.AddCommentsTable do
 
   def change do
     create table(:comments) do
-      add(:content, :text)
-      add(:user_id, references(:users, on_delete: :delete_all))
+      add(:content, :text, null: false)
+      add(:subcomments_count, :integer, default: 0, null: false)
+      add(:user_id, references(:users, on_delete: :delete_all), null: false)
       add(:parent_id, references(:comments, on_delete: :nothing))
 
       timestamps()

@@ -4,7 +4,7 @@ defmodule Sanbase.Insight.Comment do
   """
   use Ecto.Schema
 
-  import Ecto.Changeset
+  import Ecto.{Query, Changeset}
 
   alias Sanbase.Repo
   alias Sanbase.Auth.User
@@ -13,11 +13,13 @@ defmodule Sanbase.Insight.Comment do
 
   schema "comments" do
     field(:content, :string)
+    field(:edited_at, :naive_datetime, default: nil)
 
     belongs_to(:user, User)
     belongs_to(:parent, __MODULE__)
 
     has_many(:sub_comments, __MODULE__)
+    field(:subcomments_count, :integer, default: 0)
 
     timestamps()
   end
@@ -37,10 +39,38 @@ defmodule Sanbase.Insight.Comment do
     changeset(%__MODULE__{}, %{user_id: user_id, content: content, parent_id: parent_id})
   end
 
-  def create(user_id, content, parent_id \\ nil) do
+  def create(user_id, content, nil) do
     %__MODULE__{}
-    |> changeset(%{user_id: user_id, content: content, parent_id: parent_id})
+    |> changeset(%{user_id: user_id, content: content})
     |> Repo.insert()
+  end
+
+  def create(user_id, content, parent_id) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(
+      :create_new,
+      %__MODULE__{}
+      |> changeset(%{user_id: user_id, content: content, parent_id: parent_id})
+    )
+    |> Ecto.Multi.run(
+      :update_subcomments_count,
+      fn _ ->
+        from(c in __MODULE__, update: [inc: [subcomments_count: 1]], where: c.id == ^parent_id)
+        |> Repo.update_all([])
+        |> case do
+          {1, _} -> {:ok, "updated the subcomments count of comment #{parent_id}"}
+          {:error, error} -> {:error, error}
+        end
+      end
+    )
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{create_new: comment}} ->
+        {:ok, comment}
+
+      {:error, _name, error, _} ->
+        {:error, error}
+    end
   end
 
   def update(comment_id, user_id, content) do

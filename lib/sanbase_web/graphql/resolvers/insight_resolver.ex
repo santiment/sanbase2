@@ -191,4 +191,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
 
     {:ok, comments}
   end
+
+  def subcomments(
+        _root,
+        %{comment_id: comment_id},
+        _resolution
+      ) do
+    comments =
+      PostComment.get_subcomments(comment_id)
+      |> Enum.map(& &1.comment)
+
+    {:ok, comments}
+  end
 end

@@ -81,8 +81,9 @@ SET default_with_oids = false;
 
 CREATE TABLE public.comments (
     id bigint NOT NULL,
-    content text,
-    user_id bigint,
+    content text NOT NULL,
+    subcomments_count integer DEFAULT 0 NOT NULL,
+    user_id bigint NOT NULL,
     parent_id bigint,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL

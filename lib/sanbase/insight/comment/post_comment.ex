@@ -5,6 +5,7 @@ defmodule Sanbase.Insight.PostComment do
 
   import Ecto.{Query, Changeset}
 
+  alias Sanbase.Repo
   alias Sanbase.Insight.{Post, Comment}
 
   schema "post_comments_mapping" do
@@ -31,13 +32,17 @@ defmodule Sanbase.Insight.PostComment do
       %{create_comment: comment} ->
         link(comment.id, post_id)
     end)
-    |> Sanbase.Repo.transaction()
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{create_comment: comment}} -> {:ok, comment}
+      {:error, _name, error, _} -> {:error, error}
+    end
   end
 
   def link(comment_id, post_id) do
     %__MODULE__{}
     |> changeset(%{comment_id: comment_id, post_id: post_id})
-    |> Sanbase.Repo.insert()
+    |> Repo.insert()
   end
 
   def get_comments(post_id, %{cursor: cursor, limit: limit}) do
@@ -45,7 +50,15 @@ defmodule Sanbase.Insight.PostComment do
     |> apply_cursor(cursor)
     |> order_by([c], c.inserted_at)
     |> limit(^limit)
-    |> Sanbase.Repo.all()
+    |> Repo.all()
+  end
+
+  def get_sub_comments(post_id, %{cursor: cursor, limit: limit}) do
+    post_comments_query(post_id)
+    |> apply_cursor(cursor)
+    |> order_by([c], c.inserted_at)
+    |> limit(^limit)
+    |> Repo.all()
   end
 
   defp post_comments_query(post_id) do
@@ -56,16 +69,12 @@ defmodule Sanbase.Insight.PostComment do
   end
 
   defp apply_cursor(query, %{type: :before, before: datetime}) do
-    from(
-      c in query,
-      where: c.inserted_at < ^datetime
-    )
+    from(c in query, where: c.inserted_at < ^datetime)
   end
 
   defp apply_cursor(query, %{type: :after, after: datetime}) do
-    from(
-      c in query,
-      where: c.inserted_at >= ^datetime
-    )
+    from(c in query, where: c.inserted_at >= ^datetime)
   end
+
+  defp apply_cursor(query, nil), do: query
 end

@@ -97,6 +97,12 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
 
       resolve(&InsightResolver.insight_comments/3)
     end
+
+    field :subcomments, list_of(:comment) do
+      arg(:comment_id, non_null(:id))
+
+      resolve(&InsightResolver.subcomments/3)
+    end
   end
 
   object :insight_mutations do

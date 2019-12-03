@@ -276,7 +276,7 @@ defmodule Sanbase.Insight.Post do
   @doc """
   Change insights owner to be the fallback user
   """
-  def change_owner_to_anonymous(user_id) do
+  def assign_all_user_insights_to_anonymous(user_id) do
     anon_user_id = User.anonymous_user_id()
 
     from(p in Post, where: p.user_id == ^user_id)

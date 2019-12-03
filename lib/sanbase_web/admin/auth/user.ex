@@ -8,7 +8,7 @@ defmodule Sanbase.ExAdmin.Auth.User do
 
   register_resource Sanbase.Auth.User do
     controller do
-      before_filter(:assign_insights_anonymous, only: [:destroy])
+      before_filter(:assign_all_user_insights_to_anonymous, only: [:destroy])
     end
 
     show user do
@@ -40,8 +40,8 @@ defmodule Sanbase.ExAdmin.Auth.User do
     end
   end
 
-  def assign_insights_anonymous(conn, params) do
-    Post.change_owner_to_anonymous(params[:id])
+  def assign_all_user_insights_to_anonymous(conn, params) do
+    Post.assign_all_user_insights_to_anonymous(params[:id])
 
     {conn, params}
   end

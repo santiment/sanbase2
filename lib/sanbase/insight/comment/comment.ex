@@ -41,47 +41,35 @@ defmodule Sanbase.Insight.Comment do
     changeset(%__MODULE__{}, %{user_id: user_id, content: content, parent_id: parent_id})
   end
 
+  @doc ~s"""
+  Createa a (top-level) comment. When the parent id is nil there is no need to set
+  the parent_id and the root_parent_id - they both should be nil.
+  """
+  @spec create(
+          user_id :: non_neg_integer(),
+          content :: String.t(),
+          parent_id :: nil | non_neg_integer()
+        ) ::
+          {:ok, %__MODULE__{}} | {:error, String.t()}
   def create(user_id, content, nil) do
     %__MODULE__{}
     |> changeset(%{user_id: user_id, content: content})
     |> Repo.insert()
   end
 
+  @doc ~s"""
+  Create a subcomment. A subcomment is created by a transaction with 3 steps:
+    1. In order to properly set the root_parent_id it must be inherited from the parent
+    2. Create the new comment
+    3. Update the parent's `subcomments_count` field
+  """
   def create(user_id, content, parent_id) do
+    args = %{user_id: user_id, content: content, parent_id: parent_id}
+
     Ecto.Multi.new()
-    |> Ecto.Multi.run(:select_parents, fn _ ->
-      parent_ids =
-        from(c in __MODULE__, where: c.id == ^parent_id, select: {c.parent_id, c.root_parent_id})
-        |> Repo.one()
-
-      {:ok, parent_ids}
-    end)
-    |> Ecto.Multi.run(
-      :create_new,
-      fn %{select_parents: {parent_parent_id, parent_root_parent_id}} ->
-        root_parent_id = parent_root_parent_id || parent_parent_id
-
-        %__MODULE__{}
-        |> changeset(%{
-          user_id: user_id,
-          content: content,
-          parent_id: parent_id,
-          root_parent_id: root_parent_id
-        })
-        |> Repo.insert()
-      end
-    )
-    |> Ecto.Multi.run(
-      :update_subcomments_count,
-      fn _ ->
-        from(c in __MODULE__, update: [inc: [subcomments_count: 1]], where: c.id == ^parent_id)
-        |> Repo.update_all([])
-        |> case do
-          {1, _} -> {:ok, "updated the subcomments count of comment #{parent_id}"}
-          {:error, error} -> {:error, error}
-        end
-      end
-    )
+    |> multi_run(:select_root_parent_id, args)
+    |> multi_run(:create_new_comment, args)
+    |> multi_run(:update_parent_subcomments_count, args)
     |> Repo.transaction()
     |> case do
       {:ok, %{create_new: comment}} ->
@@ -116,6 +104,58 @@ defmodule Sanbase.Insight.Comment do
       {:error, error} ->
         {:error, error}
     end
+  end
+
+  defp multi_run(multi, :select_root_parent_id, %{parent_id: parent_id}) do
+    multi
+    |> Ecto.Multi.run(:select_root_parent_id, fn _ ->
+      parent_ids =
+        from(c in __MODULE__, where: c.id == ^parent_id, select: c.root_parent_id)
+        |> Repo.one()
+
+      {:ok, parent_ids}
+    end)
+  end
+
+  # Private functions
+
+  defp multi_run(multi, :create_new_comment, args) do
+    %{user_id: user_id, content: content, parent_id: parent_id} = args
+
+    multi
+    |> Ecto.Multi.run(
+      :create_new_comment,
+      fn %{select_root_parent_id: parent_root_parent_id} ->
+        # Handle all case: If the parent has a parent_root_id - inherit it
+        # If the parent does not have it - then the parent is a top level comment
+        # and the current parent_root_id should be se to parent_id
+        root_parent_id = parent_root_parent_id || parent_id
+
+        %__MODULE__{}
+        |> changeset(%{
+          user_id: user_id,
+          content: content,
+          parent_id: parent_id,
+          root_parent_id: root_parent_id
+        })
+        |> Repo.insert()
+      end
+    )
+  end
+
+  defp multi_run(multi, :update_parent_subcomments_count, %{parent_id: parent_id}) do
+    multi
+    |> Ecto.Multi.run(
+      :update_subcomments_count,
+      fn _ ->
+        from(c in __MODULE__, update: [inc: [subcomments_count: 1]], where: c.id == ^parent_id)
+        |> Repo.update_all([])
+        |> case do
+          {1, _} -> {:ok, "updated the subcomments count of comment #{parent_id}"}
+          {:error, error} -> {:error, error}
+        end
+      end
+    )
   end
 
   defp anonymize(%__MODULE__{} = comment) do

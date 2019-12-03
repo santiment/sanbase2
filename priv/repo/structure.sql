@@ -86,6 +86,7 @@ CREATE TABLE public.comments (
     user_id bigint NOT NULL,
     parent_id bigint,
     root_parent_id bigint,
+    edited_at timestamp without time zone,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );

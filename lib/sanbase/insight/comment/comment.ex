@@ -1,6 +1,20 @@
 defmodule Sanbase.Insight.Comment do
   @moduledoc ~s"""
+  Comment definition module.
 
+  A comment is represented by its:
+  - author
+  - content
+  - subcomments & subcomments_count
+  - parent_id - The id of the comment to which this comment is a direct subcomment.
+    The parent of the subcomment in the tree this comment is part of (if not nil)
+  - root_parent_id - The top-level comment id in the chain of subcomments.
+    The root of the tree this comment is part of (if not nil)
+  - timestamp fields
+
+
+  The PostComment module is used to interact with comments and this module is
+  invisible to the outside world
   """
   use Ecto.Schema
 

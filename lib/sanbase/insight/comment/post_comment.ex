@@ -1,5 +1,8 @@
 defmodule Sanbase.Insight.PostComment do
   @moduledoc ~s"""
+  A mapping table connecting comments and posts.
+
+  This module is used to create, update, delete and fetch insight comments.
   """
   use Ecto.Schema
 
@@ -22,6 +25,10 @@ defmodule Sanbase.Insight.PostComment do
     |> unique_constraint(:comment_id)
   end
 
+  @doc ~s"""
+  Create a new comment and link it to an insight.
+  The operation is done in a transaction.
+  """
   def create_and_link(post_id, user_id, parent_id, content) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(

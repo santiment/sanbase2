@@ -93,7 +93,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
 
     field :insight_comments, list_of(:comment) do
       arg(:insight_id, non_null(:id))
-      arg(:cursor, :cursor_input)
+      arg(:cursor, :cursor_input, default_value: nil)
+      arg(:limit, :integer, default_value: 50)
 
       resolve(&InsightResolver.insight_comments/3)
     end
@@ -233,14 +234,14 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       resolve(&InsightResolver.unvote/3)
     end
 
-    field :comment, :comment do
+    field :create_comment, :comment do
       arg(:insight_id, non_null(:integer))
       arg(:content, non_null(:string))
       arg(:parent_id, :integer)
 
       middleware(JWTAuth)
 
-      resolve(&InsightResolver.comment/3)
+      resolve(&InsightResolver.create_comment/3)
     end
 
     field :update_comment, :comment do

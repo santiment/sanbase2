@@ -14,7 +14,16 @@ defmodule SanbaseWeb.Graphql.CustomTypes.DateTime do
     be converted to UTC and any UTC offset other than 0 will be rejected.
     """)
 
-    serialize(fn dt -> DateTime.truncate(dt, :second) |> DateTime.to_iso8601() end)
+    serialize(fn
+      %NaiveDateTime{} = ndt ->
+        DateTime.from_naive!(ndt, "Etc/UTC")
+        |> DateTime.truncate(:second)
+        |> DateTime.to_iso8601()
+
+      %DateTime{} = dt ->
+        DateTime.truncate(dt, :second) |> DateTime.to_iso8601()
+    end)
+
     parse(&parse_datetime/1)
   end
 

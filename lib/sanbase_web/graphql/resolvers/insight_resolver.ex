@@ -156,7 +156,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     end
   end
 
-  def comment(
+  def create_comment(
         _root,
         %{insight_id: post_id, content: content} = args,
         %{context: %{auth: %{current_user: user}}}
@@ -164,6 +164,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     PostComment.create_and_link(post_id, user.id, Map.get(args, :parent_id), content)
   end
 
+  @spec update_comment(any, %{comment_id: any, content: any}, %{
+          context: %{auth: %{current_user: atom | map}}
+        }) :: any
   def update_comment(
         _root,
         %{comment_id: comment_id, content: content},

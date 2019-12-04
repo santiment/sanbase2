@@ -16,8 +16,7 @@ defmodule Sanbase.TestUtils do
     Return `true` if two dates `a` and `b` are closer than `distance` measured in `granularity`.
     Return `false` otherwise.
   """
-  @spec date_close_to(%DateTime{}, %DateTime{}, number(), atom()) :: boolean()
-  def date_close_to(a, b, distance, granularity \\ :seconds) do
+  def datetime_close_to(a, b, distance, granularity \\ :seconds) do
     diff = abs(Timex.diff(a, b, granularity))
 
     if diff <= distance do

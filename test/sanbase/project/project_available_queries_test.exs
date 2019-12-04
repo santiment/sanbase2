@@ -112,7 +112,7 @@ defmodule Sanbase.Project.AvailableQueriesTest do
 
     # some github metrics
     assert Enum.all?(
-             ["githubActivity", "aveargeDevActivity", "averageGithubActivity"],
+             ["githubActivity", "averageDevActivity", "averageGithubActivity"],
              &Enum.member?(available_metrics, &1)
            )
 

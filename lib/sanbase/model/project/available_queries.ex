@@ -116,7 +116,7 @@ defmodule Sanbase.Model.Project.AvailableQueries do
         [
           "devActivity",
           "githubActivity",
-          "aveargeDevActivity",
+          "averageDevActivity",
           "averageGithubActivity"
         ]
 

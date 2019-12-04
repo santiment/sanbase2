@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
     assert result == %{
              "data" => %{
                "getUser" => %{
-                 "email" => "<hidden>",
+                 "email" => "<email hidden>",
                  "followers" => %{"count" => 0, "users" => []},
                  "following" => %{"count" => 0, "users" => []},
                  "id" => "#{user.id}",
@@ -49,7 +49,7 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
     assert result == %{
              "data" => %{
                "getUser" => %{
-                 "email" => "<hidden>",
+                 "email" => "<email hidden>",
                  "followers" => %{"count" => 0, "users" => []},
                  "following" => %{"count" => 0, "users" => []},
                  "id" => "#{user.id}",
@@ -78,7 +78,7 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
     assert result == %{
              "data" => %{
                "getUser" => %{
-                 "email" => "<hidden>",
+                 "email" => "<email hidden>",
                  "followers" => %{"count" => 0, "users" => []},
                  "following" => %{"count" => 0, "users" => []},
                  "id" => "#{user.id}",
@@ -99,7 +99,7 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
     assert result == %{
              "data" => %{
                "getUser" => %{
-                 "email" => "<hidden>",
+                 "email" => "<email hidden>",
                  "followers" => %{"count" => 0, "users" => []},
                  "following" => %{"count" => 0, "users" => []},
                  "id" => "#{user.id}",

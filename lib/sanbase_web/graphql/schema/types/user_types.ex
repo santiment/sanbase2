@@ -141,6 +141,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
 
   object :post_author do
     field(:id, non_null(:id))
+    field(:avatar_url, :string)
     field(:username, :string)
   end
 

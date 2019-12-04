@@ -11,7 +11,7 @@ defmodule Sanbase.Auth.User.Public do
 
       _ ->
         Enum.reduce(@sensitive_fields, user, fn field, user_acc ->
-          Map.put(user_acc, field, "<hidden>")
+          Map.put(user_acc, field, "<email hidden>")
         end)
     end
   end

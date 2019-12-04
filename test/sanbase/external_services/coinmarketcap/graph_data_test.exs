@@ -159,8 +159,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
   end
 
   defp total_market_kafka_tuple() do
-    {"coinmarketcap_TOTAL_MARKET_2018-04-02T13:47:00.000Z",
-     "{\"marketcap_usd\":2.63492e11,\"price_btc\":null,\"price_usd\":null,\"slug\":\"TOTAL_MARKET\",\"source\":\"coinmarketcap\",\"timestamp\":1522676820,\"volume_usd\":1.21335e10}"}
+    {"coinmarketcap_total-market_2018-04-02T13:47:00.000Z",
+     "{\"marketcap_usd\":2.63492e11,\"price_btc\":null,\"price_usd\":null,\"slug\":\"total-market\",\"source\":\"coinmarketcap\",\"timestamp\":1522676820,\"volume_usd\":1.21335e10}"}
   end
 
   defp asset_price_kafka_tuple() do

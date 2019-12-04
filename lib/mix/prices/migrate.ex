@@ -5,6 +5,7 @@ defmodule Sanbase.PriceMigrationTmp do
   import Ecto.Query
 
   alias Sanbase.Repo
+  alias Sabase.Model.Project
 
   schema "price_migration_tmp" do
     field(:slug, :string)
@@ -72,11 +73,7 @@ defmodule Sanbase.Prices.Migrate do
   end
 
   def not_migrated_projects do
-    migrated_projects = PriceMigrationTmp.all_migrated()
-
-    Project.List.projects_with_source("coinmarketcap", include_hidden_projects?: true)
-    |> Enum.sort_by(& &1.slug)
-    |> Enum.reject(&(&1.slug in migrated_projects))
+    [%Project{ticker: "TOTAL_MARKET", slug: "total-market"}]
   end
 
   defp do_work() do
@@ -136,7 +133,7 @@ defmodule Sanbase.Prices.Migrate do
   end
 
   defp first_datetimes(measurements) do
-    PricesStore.first_datetime_multiple_measurements(measurements)
+    PricesStore.first_datetime_total_market(measurements)
     |> case do
       {:ok, datetimes} ->
         datetimes

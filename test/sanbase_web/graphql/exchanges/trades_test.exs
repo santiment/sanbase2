@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.Exchanges.TradesTest do
         {:ok,
          %{
            rows: [
-             ["Kraken", "ETH/EUR", 1_569_704_025, "buy", 2.11604737, 159.63, 337.7846416731]
+             [1_569_704_025, "Kraken", "ETH/EUR", "buy", 2.11604737, 159.63, 337.7846416731]
            ]
          }}
       end
@@ -51,7 +51,7 @@ defmodule SanbaseWeb.Graphql.Exchanges.TradesTest do
         {:ok,
          %{
            rows: [
-             ["Kraken", "ETH/EUR", 1_569_704_025, "buy", 2.11604737, 159.63, 337.7846416731]
+             [1_569_704_025, "Kraken", "ETH/EUR", "buy", 2.11604737, 159.63, 337.7846416731]
            ]
          }}
       end

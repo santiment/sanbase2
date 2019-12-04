@@ -7,9 +7,9 @@ defmodule Sanbase.Clickhouse.Exchanges.Trades do
 
   @table "exchange_trades"
   schema @table do
+    field(:timestamp, :utc_datetime)
     field(:source, :string)
     field(:symbol, :string)
-    field(:timestamp, :utc_datetime)
     field(:side, :string)
     field(:amount, :float)
     field(:price, :float)
@@ -25,7 +25,7 @@ defmodule Sanbase.Clickhouse.Exchanges.Trades do
     {query, args} = last_exchange_trades_query(exchange, ticker_pair, limit)
 
     ClickhouseRepo.query_transform(query, args, fn
-      [source, symbol, timestamp, side, amount, price, cost] ->
+      [timestamp, source, symbol, side, amount, price, cost] ->
         %{
           exchange: source,
           ticker_pair: symbol,
@@ -42,7 +42,7 @@ defmodule Sanbase.Clickhouse.Exchanges.Trades do
     {query, args} = exchange_trades_query(exchange, ticker_pair, from, to)
 
     ClickhouseRepo.query_transform(query, args, fn
-      [source, symbol, timestamp, side, amount, price, cost] ->
+      [timestamp, source, symbol, side, amount, price, cost] ->
         %{
           exchange: source,
           ticker_pair: symbol,
@@ -75,10 +75,10 @@ defmodule Sanbase.Clickhouse.Exchanges.Trades do
   defp last_exchange_trades_query(exchange, ticker_pair, limit) do
     query = """
     SELECT
-      source, symbol, toUnixTimestamp(dt), side, amount, price, cost
+      toUnixTimestamp(dt), source, symbol, side, amount, price, cost
     FROM #{@table}
     PREWHERE
-      source == ?1 AND symbol == ?2
+      source = ?1 AND symbol = ?2
     ORDER BY dt DESC
     LIMIT ?3
     """
@@ -95,10 +95,10 @@ defmodule Sanbase.Clickhouse.Exchanges.Trades do
   defp exchange_trades_query(exchange, ticker_pair, from, to) do
     query = """
     SELECT
-      source, symbol, toUnixTimestamp(dt), side, amount, price, cost
+      toUnixTimestamp(dt), source, symbol, side, amount, price, cost
     FROM #{@table}
     PREWHERE
-      source == ?1 AND symbol == ?2 AND
+      source = ?1 AND symbol = ?2 AND
       dt >= toDateTime(?3) AND
       dt <= toDateTime(?4)
     ORDER BY dt
@@ -158,7 +158,7 @@ defmodule Sanbase.Clickhouse.Exchanges.Trades do
           side
         FROM #{@table}
         PREWHERE
-          source == ?3 AND symbol == ?4 AND
+          source = ?3 AND symbol = ?4 AND
           dt >= toDateTime(?5) AND
           dt < toDateTime(?6)
       GROUP BY dt, side

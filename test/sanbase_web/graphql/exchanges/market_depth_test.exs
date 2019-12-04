@@ -77,9 +77,9 @@ defmodule SanbaseWeb.Graphql.Exchanges.MarketDepthTest do
 
   defp result_row() do
     [
+      1_571_417_428,
       "Kraken",
       "ZEC/BTC",
-      1_571_417_428,
       0.00455979,
       0.0012996121796948,
       0.28495291,

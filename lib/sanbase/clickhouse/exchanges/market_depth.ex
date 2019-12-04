@@ -7,9 +7,9 @@ defmodule Sanbase.Clickhouse.Exchanges.MarketDepth do
 
   @table "exchange_market_depth"
   schema @table do
+    field(:timestamp, :utc_datetime)
     field(:source, :string)
     field(:symbol, :string)
-    field(:timestamp, :utc_datetime)
     field(:ask, :float)
     field(:asks_0_25_percent_depth, :float)
     field(:asks_0_25_percent_volume, :float)
@@ -60,9 +60,9 @@ defmodule Sanbase.Clickhouse.Exchanges.MarketDepth do
 
     ClickhouseRepo.query_transform(query, args, fn
       [
+        timestamp,
         source,
         symbol,
-        timestamp,
         ask,
         asks025_percent_depth,
         asks025_percent_volume,
@@ -103,9 +103,9 @@ defmodule Sanbase.Clickhouse.Exchanges.MarketDepth do
         bids5_percent_volume
       ] ->
         %{
+          datetime: timestamp |> DateTime.from_unix!(),
           exchange: source,
           ticker_pair: symbol,
-          datetime: timestamp |> DateTime.from_unix!(),
           ask: ask,
           asks025_percent_depth: asks025_percent_depth,
           asks025_percent_volume: asks025_percent_volume,
@@ -151,9 +151,9 @@ defmodule Sanbase.Clickhouse.Exchanges.MarketDepth do
   defp last_exchange_market_depth_query(exchange, ticker_pair, limit) do
     query = """
     SELECT
+      toUnixTimestamp(dt),
       source,
       symbol,
-      toUnixTimestamp(dt),
       ask,
       asks_0_25_percent_depth,
       asks_0_25_percent_volume,
@@ -194,7 +194,7 @@ defmodule Sanbase.Clickhouse.Exchanges.MarketDepth do
       bids_5_percent_volume
     FROM #{@table}
     PREWHERE
-      source == ?1 AND symbol == ?2
+      source = ?1 AND symbol = ?2
     ORDER BY dt DESC
     LIMIT ?3
     """

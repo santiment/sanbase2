@@ -5,9 +5,9 @@ defmodule SanbaseWeb.Graphql.Subscriptions.ExchangeTrades do
     Absinthe.Subscription.publish(
       SanbaseWeb.Endpoint,
       message,
-      exchange_trades: message.source <> message.symbol
+      exchange_trades: message.exchange <> message.ticker_pair
     )
 
-    Absinthe.Subscription.publish(SanbaseWeb.Endpoint, message, exchange_trades: message.source)
+    Absinthe.Subscription.publish(SanbaseWeb.Endpoint, message, exchange_trades: message.exchange)
   end
 end

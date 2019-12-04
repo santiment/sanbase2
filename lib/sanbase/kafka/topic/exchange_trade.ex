@@ -12,6 +12,10 @@ defmodule Sanbase.Kafka.Topic.ExchangeTrade do
     |> Enum.into(%{})
     |> format_timestamp()
     |> format_side()
+    |> Sanbase.Utils.Transform.rename_map_keys!(
+      old_keys: [:timestamp, :source, :symbol],
+      new_keys: [:datetime, :exchange, :ticker_pair]
+    )
   end
 
   defp format_timestamp(%{timestamp: timestamp} = exchange_trade) do

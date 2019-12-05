@@ -187,7 +187,7 @@ defmodule Sanbase.Prices.Migrate do
   end
 
   defp slug_from_measurement(measurement) do
-    String.split(measurement, "_", parts: 2)
+    String.split(measurement, "_")
     |> List.last()
   end
 end

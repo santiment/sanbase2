@@ -42,6 +42,13 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
   end
 
+  def projects_slugs(opts) do
+    projects_query(opts)
+    |> order_by([p], p.name)
+    |> select([p], p.slug)
+    |> Repo.all()
+  end
+
   @doc ~s"""
   Return all erc20 projects ordered by name.
   Filtering out projects based on some conditions can be controled by the options.
@@ -53,6 +60,14 @@ defmodule Sanbase.Model.Project.List do
   def erc20_projects(opts) do
     erc20_projects_query(opts)
     |> order_by([p], p.name)
+    |> Repo.all()
+  end
+
+  def erc20_projects_slugs(opts \\ [])
+
+  def erc20_projects_slugs(opts) do
+    erc20_projects_query(opts)
+    |> select([p], p.slug)
     |> Repo.all()
   end
 
@@ -94,6 +109,13 @@ defmodule Sanbase.Model.Project.List do
   def currency_projects(opts) do
     currency_projects_query(opts)
     |> order_by([p], p.name)
+    |> Repo.all()
+  end
+
+  def currency_projects_slugs(opts) do
+    currency_projects_query(opts)
+    |> order_by([p], p.name)
+    |> select([p], p.slug)
     |> Repo.all()
   end
 

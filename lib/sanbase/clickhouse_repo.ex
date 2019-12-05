@@ -67,6 +67,12 @@ defmodule Sanbase.ClickhouseRepo do
         end
       rescue
         e ->
+          IO.warn("""
+          Clickhouse query execution failed:
+
+          #{inspect(e)}
+          """)
+
           {:error, "Cannot execute ClickHouse query. Reason: #{Exception.message(e)}"}
       end
     end

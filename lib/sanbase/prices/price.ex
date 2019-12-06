@@ -8,12 +8,27 @@ defmodule Sanbase.Price do
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
   @metrics [:price_usd, :price_btc, :marketcap_usd, :volume_usd]
+  @aggregations aggregations()
   @type metric :: :price_usd | :price_btc | :marketcap_usd | :volume_usd
 
+  @type error :: String.t()
   @type slug :: String.t()
   @type slugs :: list(slug)
   @type interval :: String.t()
   @type opts :: Keyword.t()
+
+  @type timeseries_data_map :: %{
+          datetime: DateTime.t(),
+          slug: slug,
+          price_usd: float() | nil,
+          price_btc: float() | nil,
+          marketcap: float(),
+          marketcap_usd: float() | nil,
+          volume: float() | nil,
+          volume_usd: float() | nil
+        }
+
+  @type timeseries_data_result :: {:ok, list(timeseries_data_map())} | {:error, error()}
 
   @type aggregated_metric_timeseries_data_map :: %{
           :slug => String.t(),
@@ -21,7 +36,39 @@ defmodule Sanbase.Price do
         }
 
   @type aggregated_metric_timeseries_data_result ::
-          {:ok, aggregated_metric_timeseries_data_map()} | {:error, String.t()}
+          {:ok, aggregated_metric_timeseries_data_map()} | {:error, error()}
+
+  @type aggregated_marketcap_and_volume_map :: %{
+          slug: slug,
+          marketcap: float() | nil,
+          marketcap_usd: float() | nil,
+          volume: float() | nil,
+          volume_usd: float() | nil
+        }
+
+  @type aggregated_marketcap_and_volume_result ::
+          {:ok, aggregated_marketcap_and_volume_map()} | {:error, error()}
+
+  @type ohlc_map :: %{
+          datetime: DateTime.t(),
+          open_price_usd: float() | nil,
+          high_price_usd: float() | nil,
+          close_price_usd: float() | nil,
+          low_price_usd: float() | nil
+        }
+
+  @type ohlc_result :: {:ok, list(ohlc_map())} | {:error, error()}
+
+  @type combined_marketcap_and_volume_map :: %{
+          datetime: DateTime.t(),
+          marketcap_usd: float() | nil,
+          marketcap: float() | nil,
+          volume_usd: float() | nil,
+          volume: float() | nil
+        }
+
+  @type combined_marketcap_and_volume_result ::
+          {:ok, combined_marketcap_and_volume_map()} | {:error, error()}
 
   @table "asset_prices"
   schema @table do
@@ -34,10 +81,15 @@ defmodule Sanbase.Price do
     field(:volume_usd, :float)
   end
 
+  @spec changeest(any(), any()) :: no_return()
   def changeest(_, _), do: raise("Cannot change the asset_prices table")
 
+  @doc ~s"""
+  Return timeseries data for the given time period where every point consists
+  of price in USD, price in BTC, marketcap in USD and volume in USD
+  """
   @spec timeseries_data(slug, DateTime.t(), DateTime.t(), interval, opts) ::
-          {:ok, any()} | {:error, String.t()}
+          timeseries_data_result
   def timeseries_data(slug, from, to, interval, opts \\ [])
 
   def timeseries_data("TOTAL_ERC20", from, to, interval, opts) do
@@ -68,6 +120,17 @@ defmodule Sanbase.Price do
     |> maybe_nullify_values()
   end
 
+  @doc ~s"""
+  Returns aggregated price in USD, price in BTC, marketcap in USD and
+  volume in USD for the given slugs and time period.
+
+  The aggregation can be changed by providing the following keyword parameters:
+  - :price_aggregation (:avg by default) - control price in USD and BTC aggregation
+  - :volume_aggregation (:avg by default) - control the volume aggregation
+  - :marketcap_aggregation (:avg by default) - control the marketcap aggregation
+
+  The available aggregations are #{inspect(@aggregations)}
+  """
   @spec aggregated_timeseries_data(slug | slugs, DateTime.t(), DateTime.t(), opts) ::
           {:ok, list(map())} | {:error, String.t()}
   def aggregated_timeseries_data(slug_or_slugs, from, to, opts \\ [])
@@ -101,19 +164,14 @@ defmodule Sanbase.Price do
   Return the aggregated data for all slugs for the provided metric in
   the given interval
   The default aggregation can be overriden by passing the :aggregation
-  key with as part of the keyword options list. The supported aggregations are:
-  :any, :sum, :avg, :min, :max, :last, :first, :median
+  key with as part of the keyword options list.
+  The supported aggregations are: #{inspect(@aggregations)}
 
   In the success case the result is a map where the slug is the key and the value
   is the aggregated metric's value
   """
-  @spec aggregated_metric_timeseries_data(
-          slug | slugs,
-          metric,
-          DateTime.t(),
-          DateTime.t(),
-          Keyword.t()
-        ) :: aggregated_metric_timeseries_data_result()
+  @spec aggregated_metric_timeseries_data(slug | slugs, metric, DateTime.t(), DateTime.t(), opts) ::
+          aggregated_metric_timeseries_data_result()
   def aggregated_metric_timeseries_data(slug_or_slugs, metric, from, to, opts \\ [])
 
   def aggregated_metric_timeseries_data([], _, _, _, _), do: {:ok, %{}}
@@ -123,7 +181,7 @@ defmodule Sanbase.Price do
     source = Keyword.get(opts, :source, "coinmarketcap")
     slugs = List.wrap(slug_or_slugs)
 
-    {query, args} = aggregated_metric_timeseries_data_query(slugs, metric, from, to, source)
+    {query, args} = aggregated_metric_timeseries_data_query(slugs, metric, from, to, source, opts)
 
     ClickhouseRepo.query_reduce(query, args, %{}, fn
       [slug, value, has_changed], acc ->
@@ -132,6 +190,48 @@ defmodule Sanbase.Price do
     end)
   end
 
+  @doc ~s"""
+  Return the aggregated marketcap in USD and volume in USD for all slugs in the
+  given interval.
+
+  The default aggregation can be overriden by passing the :volume_aggregation
+  and/or :marketcap_aggregation keys in the keyword options list
+  The supported aggregations are: #{inspect(@aggregations)}
+  """
+  @spec aggregated_marketcap_and_volume(slug | slugs, DateTime.t(), DateTime.t(), opts) ::
+          aggregated_marketcap_and_volume_result()
+  def aggregated_marketcap_and_volume(slug_or_slugs, from, to, opts \\ [])
+
+  def aggregated_marketcap_and_volume([], _, _, _), do: {:ok, %{}}
+
+  def aggregated_marketcap_and_volume(slug_or_slugs, from, to, opts)
+      when is_binary(slug_or_slugs) or is_list(slug_or_slugs) do
+    source = Keyword.get(opts, :source, "coinmarketcap")
+    slugs = List.wrap(slug_or_slugs)
+
+    {query, args} = aggregated_marketcap_and_volume_query(slugs, from, to, source, opts)
+
+    ClickhouseRepo.query_transform(query, args, fn
+      [slug, marketcap_usd, volume_usd, has_changed] ->
+        %{
+          slug: slug,
+          marketcap_usd: marketcap_usd,
+          marketcap: marketcap_usd,
+          volume_usd: volume_usd,
+          volume: volume_usd,
+          has_changed: has_changed
+        }
+    end)
+    |> maybe_add_percent_of_total_marketcap()
+    |> maybe_nullify_values()
+  end
+
+  @doc ~s"""
+  Return the last value of the `metric` before the given `datetime`.
+  Supported metrics are #{inspect(@metrics)}
+  """
+  @spec last_metric_value_before_query(slug, metric, DateTime.t(), opts) ::
+          {:ok, float()} | {:error, error}
   def last_metric_value_before(slug, metric, datetime, opts \\ [])
 
   def last_metric_value_before(slug, metric, datetime, opts) when metric in @metrics do
@@ -142,6 +242,11 @@ defmodule Sanbase.Price do
     |> maybe_unwrap_ok_value()
   end
 
+  @doc ~s"""
+  Return open-high-close-low price data in USD for the provided slug
+  in the given interval.
+  """
+  @spec ohlc(slug, DateTime.t(), DateTime.t(), interval, opts) :: ohlc_result()
   def ohlc(slug, from, to, interval, opts \\ []) do
     source = Keyword.get(opts, :source, "coinmarketcap")
     {query, args} = ohlc_query(slug, from, to, interval, source)
@@ -164,6 +269,11 @@ defmodule Sanbase.Price do
     |> maybe_nullify_values()
   end
 
+  @doc ~s"""
+  Return the sum of all marketcaps and volums of the slugs in the given interval
+  """
+  @spec combined_marketcap_and_volume(slugs, DateTime.t(), DateTime.t(), interval, opts) ::
+          combined_marketcap_and_volume_result()
   def combined_marketcap_and_volume(slugs, from, to, interval, opts \\ [])
   def combined_marketcap_and_volume([], _, _, _, _), do: {:ok, []}
 
@@ -180,7 +290,9 @@ defmodule Sanbase.Price do
           %{
             datetime: DateTime.from_unix!(timestamp),
             marketcap_usd: marketcap_usd,
+            marketcap: marketcap_usd,
             volume_usd: volume_usd,
+            volume: volume_usd,
             has_changed: has_changed
           }
       end
@@ -189,6 +301,10 @@ defmodule Sanbase.Price do
     |> maybe_nullify_values()
   end
 
+  @doc ~s"""
+  Return the first datetime for which `slug` has data
+  """
+  @spec first_datetime_query(slug, opts) :: {:ok, DateTime.t()} | {:error, error}
   def first_datetime(slug, opts \\ [])
 
   def first_datetime("TOTAL_ERC20", _), do: ~U[2015-07-30 00:00:00Z]

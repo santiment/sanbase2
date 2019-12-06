@@ -109,7 +109,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
-      cache_resolve(&PriceResolver.multiple_projects_stats/3)
+      cache_resolve(&PriceResolver.projects_list_stats/3)
     end
 
     @desc "Returns the number of erc20 projects, currency projects and all projects"

@@ -7,6 +7,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   alias Sanbase.Model.Project
 
   @total_market "TOTAL_MARKET"
+  @total_market_slug "total-market"
   @total_erc20 "TOTAL_ERC20"
 
   @doc """
@@ -17,9 +18,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     %{from: from, to: to, interval: interval} = args
 
     with {:ok, from, to, interval} <-
-           calibrate_interval(Price, @total_market, from, to, interval, 300),
-         {:ok, result} <-
-           Price.timeseries_data(@total_market, from, to, interval) do
+           calibrate_interval(Price, @total_market_slug, from, to, interval, 300),
+         {:ok, result} <- Price.timeseries_data(@total_market_slug, from, to, interval) do
       {:ok, result}
     end
   end
@@ -38,8 +38,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
 
     with {:ok, from, to, interval} <-
            calibrate_interval(Price, @total_erc20, from, to, interval, 300),
-         {:ok, result} <-
-           Price.timeseries_data(@total_erc20, from, to, interval) do
+         {:ok, result} <- Price.timeseries_data(@total_erc20, from, to, interval) do
       {:ok, result}
     end
   end
@@ -57,8 +56,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     %{from: from, to: to, interval: interval} = args
 
     with {:get_slug, slug} when not is_nil(slug) <- {:get_slug, Project.slug_by_ticker(ticker)},
-         {:ok, from, to, interval} <-
-           calibrate_interval(Price, slug, from, to, interval, 300),
+         {:ok, from, to, interval} <- calibrate_interval(Price, slug, from, to, interval, 300),
          {:ok, result} <- Price.timeseries_data(slug, from, to, interval) do
       {:ok, result}
     else
@@ -74,10 +72,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   def history_price(_root, %{slug: slug} = args, _resolution) do
     %{from: from, to: to, interval: interval} = args
 
-    with {:ok, from, to, interval} <-
-           calibrate_interval(Price, slug, from, to, interval, 300),
-         {:ok, result} <-
-           Price.timeseries_data(slug, from, to, interval) do
+    with {:ok, from, to, interval} <- calibrate_interval(Price, slug, from, to, interval, 300),
+         {:ok, result} <- Price.timeseries_data(slug, from, to, interval) do
       {:ok, result}
     else
       {:get_ticker, nil} ->
@@ -98,8 +94,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     end
   end
 
-  def multiple_projects_stats(_root, %{slugs: slugs, from: from, to: to}, _resolution) do
-    case Price.combined_marketcap_and_volume(slugs, from, to) do
+  def projects_list_stats(_root, %{slugs: slugs, from: from, to: to}, _resolution) do
+    case Price.aggregated_marketcap_and_volume(slugs, from, to) do
       {:ok, values} ->
         {:ok, values}
 

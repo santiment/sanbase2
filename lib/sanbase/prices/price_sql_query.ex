@@ -1,5 +1,8 @@
 defmodule Sanbase.Price.SqlQuery do
   @table "asset_prices"
+  @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median]
+
+  def aggregations(), do: @aggregations
 
   def timeseries_data_query(slug, from, to, interval, source) do
     {from, to, interval, span} = timerange_parameters(from, to, interval)
@@ -90,7 +93,47 @@ defmodule Sanbase.Price.SqlQuery do
      ]}
   end
 
-  def aggregated_metric_timeseries_data_query(slugs, metric, from, to, source, opts \\ []) do
+  def aggregated_marketcap_and_volume_query(slugs, from, to, source, opts) do
+    marketcap_aggr = Keyword.get(opts, :marketcap_aggregation, :avg)
+    volume_aggr = Keyword.get(opts, :volume_aggregation, :avg)
+
+    query = """
+    SELECT slug, SUM(marketcap_usd), SUM(volume_usd), toUInt32(SUM(has_changed))
+    FROM (
+      SELECT
+        arrayJoin([?1]) AS slug,
+        toFloat64(0) AS marketcap_usd,
+        toFloat64(0) AS volume_usd,
+        toUInt32(0) AS has_changed
+
+      UNION ALL
+
+      SELECT
+        cast(slug, 'String') AS slug,
+        #{aggregation(marketcap_aggr, "marketcap_usd", "dt")} AS marketcap_usd,
+        #{aggregation(volume_aggr, "volume_usd", "dt")} AS volume_usd,
+        toUInt32(1) AS has_changed
+      FROM #{@table}
+      PREWHERE
+        slug IN (?1) AND
+        dt >= toDateTime(?2) AND
+        dt < toDateTime(?3) AND
+        source = cast(?4, 'LowCardinality(String)')
+      GROUP BY slug
+    )
+    GROUP BY slug
+    """
+
+    {query,
+     [
+       slugs,
+       from |> DateTime.to_unix(),
+       to |> DateTime.to_unix(),
+       source
+     ]}
+  end
+
+  def aggregated_metric_timeseries_data_query(slugs, metric, from, to, source, opts) do
     aggr = Keyword.get(opts, :aggregation, :avg)
 
     query = """

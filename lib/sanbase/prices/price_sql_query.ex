@@ -166,6 +166,76 @@ defmodule Sanbase.Price.SqlQuery do
     {query, args}
   end
 
+  def combined_marketcap_and_volume_query(slugs, from, to, interval, source) do
+    {from, to, interval, span} = timerange_parameters(from, to, interval)
+
+    query = """
+    SELECT time,SUM(marketcap_usd), SUM(volume_usd), toUInt32(SUM(has_changed))
+    FROM (
+      SELECT
+        toUnixTimestamp(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) AS time,
+        toFloat64(0) AS marketcap_usd,
+        toFloat64(0) AS volume_usd,
+        toUInt32(0) AS has_changed
+      FROM numbers(?2)
+
+      UNION ALL
+
+      SELECT
+        toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS time,
+        argMax(marketcap_usd, dt) AS marketcap_usd,
+        argMax(volume_usd, dt) AS volume_usd,
+        toUInt32(1) AS has_changed
+      FROM #{@table}
+      PREWHERE
+        slug IN (?3) AND
+        dt >= toDateTime(?4) AND
+        dt < toDateTime(?5) AND
+        source = ?6
+      GROUP BY time, slug
+    )
+    GROUP BY time
+    ORDER BY time
+    """
+
+    args = [interval, span, slugs, from, to, source]
+
+    {query, args}
+  end
+
+  def last_metric_value_before_query(slug, metric, datetime, source) do
+    query = """
+    SELECT
+      #{metric}
+    FROM #{@table}
+    PREWHERE
+      slug = cast(?1, 'LowCardinality(String)') AND
+      source = cast(?2, 'LowCardinality(String)') AND
+      dt <= toDateTime(?3)
+    ORDER BY dt DESC
+    LIMIT 1
+    """
+
+    args = [slug, source, datetime |> DateTime.to_unix()]
+    {query, args}
+  end
+
+  def first_datetime_query(slug, source) do
+    query = """
+    SELECT
+      toUnixTimestamp(dt)
+    FROM #{@table}
+    PREWHERE
+      slug = cast(?1, 'LowCardinality(String)') AND
+      source = cast(?2, 'LowCardinality(String)')
+    ORDER BY dt ASC
+    LIMIT 1
+    """
+
+    args = [slug, source]
+    {query, args}
+  end
+
   # Private functions
 
   defp timerange_parameters(from, to, interval) do

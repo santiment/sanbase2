@@ -4,10 +4,12 @@ defmodule SanbaseWeb.Graphql.PriceTypes do
   object :price_point do
     field(:datetime, non_null(:datetime))
     field(:marketcap, :float)
+    field(:marketcap_usd, :float)
     field(:price_usd, :float)
     field(:price_btc, :float)
     field(:volume, :float)
-    field(:ticker, :string)
+    field(:volume_usd, :float)
+    field(:ticker, :string, deprecate: "No longer supported")
   end
 
   object :ohlc do
@@ -28,6 +30,8 @@ defmodule SanbaseWeb.Graphql.PriceTypes do
   object :combined_projects_stats do
     field(:datetime, non_null(:datetime))
     field(:volume, :float)
+    field(:volume_usd, :float)
     field(:marketcap, :float)
+    field(:marketcap_usd, :float)
   end
 end

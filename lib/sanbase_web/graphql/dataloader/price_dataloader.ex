@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.PriceDataloader do
-  alias Sanbase.{Prices, Price}
+  alias Sanbase.Price
   alias SanbaseWeb.Graphql.Cache
-  alias SanbaseWeb.Graphql.Helpers.Utils
 
   require Logger
 
@@ -31,12 +30,12 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
     |> Map.new()
   end
 
-  def query({:price, measurement}, ids) do
+  def query({:price, slug}, ids) do
     ids
     |> Enum.uniq()
     |> Sanbase.Parallel.map(
       fn id ->
-        {id, fetch_price(measurement, id)}
+        {id, fetch_price(slug, id)}
       end,
       max_concurrency: @max_concurrency,
       ordered: false
@@ -76,35 +75,22 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
     end)
   end
 
-  # TODO: not covered in tests
-  defp fetch_price(measurement, :last) do
-    Cache.wrap(
-      fn -> fetch_last_price_record(measurement) end,
-      :fetch_price_last_record,
-      %{measurement: measurement}
-    ).()
-  end
-
-  defp fetch_price(measurement, %{from: from, to: to, interval: interval} = args) do
-    {:ok, from, to, interval} =
-      Utils.calibrate_interval(Prices.Store, measurement, from, to, interval, 60)
-
+  defp fetch_price(slug, :last) do
     Cache.wrap(
       fn ->
-        Prices.Store.fetch_prices_with_resolution(measurement, from, to, interval)
+        now = Timex.now()
+        yesterday = Timex.shift(now, days: -1)
+
+        case Sanbase.Price.aggregated_timeseries_data(slug, yesterday, now) do
+          {:ok, [%{slug: ^slug, price_usd: price_usd, price_btc: price_btc}]} ->
+            {price_usd, price_btc}
+
+          _error ->
+            {nil, nil}
+        end
       end,
-      :fetch_prices_with_resolution,
-      Map.merge(%{measurement: measurement}, args)
+      :fetch_price_last_record,
+      %{slug: slug}
     ).()
-  end
-
-  defp fetch_last_price_record(measurement) do
-    case Prices.Store.last_record(measurement) do
-      {:ok, [[_dt, _mcap, price_btc, price_usd, _volume]]} ->
-        {price_usd, price_btc}
-
-      _error ->
-        {nil, nil}
-    end
   end
 end

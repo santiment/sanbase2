@@ -31,6 +31,12 @@ defmodule Sanbase.Repo.Migrations.FillExchangeMarketPairsFromCsv do
     Sanbase.Repo.insert_all(MarketPairMapping, data)
   end
 
+  def down do
+    setup()
+
+    Sanbase.Repo.delete_all(MarketPairMapping)
+  end
+
   defp setup do
     Application.ensure_all_started(:tzdata)
     Application.ensure_all_started(:prometheus_ecto)

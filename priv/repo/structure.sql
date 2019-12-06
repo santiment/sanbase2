@@ -2513,6 +2513,13 @@ CREATE UNIQUE INDEX exchange_addresses_address_idx ON public.exchange_addresses 
 
 
 --
+-- Name: exchange_market_pair_mappings_exchange_source_market_pair_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX exchange_market_pair_mappings_exchange_source_market_pair_index ON public.exchange_market_pair_mappings USING btree (exchange, source, market_pair);
+
+
+--
 -- Name: featured_items_post_id_index; Type: INDEX; Schema: public; Owner: -
 --
 

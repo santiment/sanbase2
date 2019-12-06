@@ -208,7 +208,6 @@ binance,RCN/BTC,ripio-credit-network,bitcoin,RCN,BTC
 binance,TRX/XRP,tron,xrp,TRX,XRP
 binance,STORM/BTC,storm,bitcoin,STORM,BTC
 binance,RVN/BNB,ravencoin,binance-coin,RVN,BNB
-binance,RVN/BNB,ravencoin,binance-coin,RVN,BNB
 binance,AST/BTC,airswap,bitcoin,AST,BTC
 binance,AE/BTC,aeternity,bitcoin,AE,BTC
 binance,ADA/ETH,cardano,ethereum,ADA,ETH
@@ -775,7 +774,6 @@ bitfinex,VEE/ETH,blockv,ethereum,VEE,ETH
 bitfinex,SAN/ETH,santiment,ethereum,SAN,ETH
 bitfinex,MTN/BTC,medical-chain,bitcoin,MTN,BTC
 bitfinex,WAXP/USD,wax,usd,WAX,USD
-bitfinex,BNT/USD,bancor,usd,BNT,USD
 bitfinex,BNT/USD,bancor,usd,BNT,USD
 bitfinex,BNT/ETH,bancor,ethereum,BNT,ETH
 bitfinex,VLD/USD,vetri,usd,VLD,USD

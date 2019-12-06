@@ -13,5 +13,7 @@ defmodule Sanbase.Repo.Migrations.CreateExchangeMarketPairMappings do
 
       timestamps()
     end
+
+    create(unique_index(:exchange_market_pair_mappings, [:exchange, :source, :market_pair]))
   end
 end

@@ -19,7 +19,7 @@ defmodule Sanbase.Price.SqlQuery do
       UNION ALL
 
       SELECT
-        toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
+        toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS time,
         argMax(price_usd, dt) AS price_usd,
         argMax(price_btc, dt) AS price_btc,
         argMax(marketcap_usd, dt) AS marketcap_usd,
@@ -108,7 +108,8 @@ defmodule Sanbase.Price.SqlQuery do
         #{aggregation(aggr, "#{metric}", "dt")} AS value,
         toUInt32(1) AS has_changed
       FROM #{@table}
-        PREWHERE slug IN (?1) AND
+      PREWHERE
+        slug IN (?1) AND
         dt >= toDateTime(?2) AND
         dt < toDateTime(?3) AND
         source = cast(?4, 'LowCardinality(String)')
@@ -173,6 +174,6 @@ defmodule Sanbase.Price.SqlQuery do
     interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
     span = div(to_unix - from_unix, interval_sec) |> max(1)
 
-    {from_unix, to_unix, span, interval_sec}
+    {from_unix, to_unix, interval_sec, span}
   end
 end

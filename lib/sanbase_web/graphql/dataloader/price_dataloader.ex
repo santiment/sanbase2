@@ -1,5 +1,5 @@
-defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
-  alias Sanbase.Prices
+defmodule SanbaseWeb.Graphql.PriceDataloader do
+  alias Sanbase.{Prices, Price}
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.Helpers.Utils
 
@@ -12,41 +12,21 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
   end
 
   def query(:volume_change_24h, args) do
-    measurements =
-      args |> Enum.map(&Sanbase.Influxdb.Measurement.name_from/1) |> Enum.reject(&is_nil/1)
+    slugs = args |> Enum.map(& &1.slug)
 
     now = Timex.now()
-    yesterday = Timex.shift(now, days: -1)
+    day_ago = Timex.shift(now, days: -1)
     two_days_ago = Timex.shift(now, days: -2)
 
-    measurements
-    |> Enum.chunk_every(50)
-    |> Sanbase.Parallel.map(
+    slugs
+    |> Enum.chunk_every(100)
+    |> Sanbase.Parallel.flat_map(
       fn
-        [_ | _] = measurements ->
-          with {:ok, volumes_last_24h} <-
-                 Prices.Store.fetch_average_volume(measurements, yesterday, now),
-               {:ok, volumes_previous_24h} <-
-                 Prices.Store.fetch_average_volume(measurements, two_days_ago, yesterday) do
-            calculate_volume_percent_change_24h(volumes_previous_24h, volumes_last_24h)
-          else
-            error ->
-              Logger.warn(
-                "Cannot fetch average volume for a list of projects #{inspect(measurements)}. Reason: #{
-                  inspect(error)
-                }"
-              )
-
-              []
-          end
-          |> Enum.reject(&is_nil/1)
-
-        [] ->
-          []
+        [_ | _] = chunk -> do_volume_change(chunk, now, day_ago, two_days_ago)
+        [] -> []
       end,
       max_concurrency: 8,
-      ordered: false,
-      map_type: :flat_map
+      ordered: false
     )
     |> Map.new()
   end
@@ -66,15 +46,32 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
 
   # Helper functions
 
-  defp calculate_volume_percent_change_24h(volumes_previous_24h, volumes_last_24h) do
-    volumes_previous_24h_map = volumes_previous_24h |> Map.new()
+  defp do_volume_change(slugs, latest_dt, middle_dt, earliest_dt) do
+    with {:ok, volumes_last_24h_map} <-
+           Price.aggregated_metric_timeseries_data(slugs, :volume_usd, middle_dt, latest_dt),
+         {:ok, volumes_previous_24h_map} <-
+           Price.aggregated_metric_timeseries_data(
+             slugs,
+             :volume_usd,
+             earliest_dt,
+             middle_dt
+           ) do
+      calculate_volume_percent_change(volumes_previous_24h_map, volumes_last_24h_map)
+    else
+      _ ->
+        []
+    end
+  end
 
-    volumes_last_24h
-    |> Enum.map(fn {name, today_vol} ->
-      yesterday_vol = Map.get(volumes_previous_24h_map, name, 0)
+  defp calculate_volume_percent_change(previous_map, current_map) do
+    current_map
+    |> Enum.map(fn {slug, volume} ->
+      previous_volume = Map.get(previous_map, slug, 0)
 
-      if yesterday_vol > 1 do
-        {name, Sanbase.Math.percent_change(yesterday_vol, today_vol)}
+      if previous_volume > 1 do
+        {slug, Sanbase.Math.percent_change(previous_volume, volume)}
+      else
+        {slug, nil}
       end
     end)
   end

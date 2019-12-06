@@ -249,7 +249,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   defp volume_change_24h_from_loader(loader, project) do
     volume_change_24h =
       loader
-      |> Dataloader.get(SanbaseDataloader, :volume_change_24h, Measurement.name_from(project))
+      |> Dataloader.get(SanbaseDataloader, :volume_change_24h, project.slug)
 
     {:ok, volume_change_24h}
   end

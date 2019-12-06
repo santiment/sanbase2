@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.SanbaseDataloader do
   alias SanbaseWeb.Graphql.ClickhouseDataloader
-  alias SanbaseWeb.Graphql.InfluxdbDataloader
+  alias SanbaseWeb.Graphql.PriceDataloader
   alias SanbaseWeb.Graphql.ParityDataloader
   alias SanbaseWeb.Graphql.PostgresDataloader
 
@@ -28,10 +28,10 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
         ClickhouseDataloader.query(queryable, args)
 
       :volume_change_24h ->
-        InfluxdbDataloader.query(queryable, args)
+        PriceDataloader.query(queryable, args)
 
       {:price, _} ->
-        InfluxdbDataloader.query(queryable, args)
+        PriceDataloader.query(queryable, args)
 
       :eth_balance ->
         ParityDataloader.query(queryable, args)

@@ -49,7 +49,7 @@ defmodule Sanbase.Prices.Migrate do
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
   alias Sanbase.PriceMigrationTmp
 
-  @chunk_days 20
+  @chunk_days 10
   @migration_exporter :migrate_influxdb_prices
   @topic "asset_prices"
 
@@ -142,8 +142,33 @@ defmodule Sanbase.Prices.Migrate do
     end)
   end
 
-  defp first_datetimes(measurements) do
-    PricesStore.first_datetime_total_market(measurements)
+  def first_datetimes(measurements) do
+    {measurements, total_market_datetimes} =
+      if "TOTAL_MARKET_total-market" in measurements do
+        {Enum.reject(measurements, &(&1 == "TOTAL_MARKET_total-market")),
+         first_datetimes_total_market()}
+      else
+        {measurements, []}
+      end
+
+    PricesStore.first_datetime_multiple_measurements(measurements)
+    |> case do
+      {:ok, datetimes} ->
+        datetimes ++ total_market_datetimes
+
+      error ->
+        Logger.error(
+          "PricesStore.first_datetime_multiple_measurements error on projects #{
+            inspect(measurements)
+          }, #{inspect(error)}"
+        )
+
+        []
+    end
+  end
+
+  defp first_datetimes_total_market() do
+    PricesStore.first_datetime_total_market(["TOTAL_MARKET_total-market"])
     |> case do
       {:ok, datetimes} ->
         datetimes
@@ -151,7 +176,7 @@ defmodule Sanbase.Prices.Migrate do
       error ->
         Logger.error(
           "PricesStore.first_datetime_multiple_measurements error on projects #{
-            inspect(measurements)
+            inspect("TOTAL_MARKET_total-market")
           }, #{inspect(error)}"
         )
 

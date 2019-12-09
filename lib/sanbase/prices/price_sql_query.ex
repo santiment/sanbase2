@@ -170,14 +170,54 @@ defmodule Sanbase.Price.SqlQuery do
      ]}
   end
 
-  def ohlc_query(slug, from, to, interval, source) do
+  def ohlc_query(slug, from, to, source) do
+    {from, to} = timerange_parameters(from, to)
+
+    query = """
+    SELECT
+      SUM(open_price), SUM(high_price), SUM(close_price), SUM(low_price), toUInt32(SUM(has_changed))
+    FROM (
+      SELECT
+        arrayJoin([(?1)]) AS slug,
+        toFloat64(0) AS open_price,
+        toFloat64(0) AS high_price,
+        toFloat64(0) AS close_price,
+        toFloat64(0) AS low_price,
+        toUInt32(0) AS has_changed
+
+      UNION ALL
+
+      SELECT
+        cast(slug, 'String') AS slug,
+        argMin(price_usd, dt) AS open_price,
+        max(price_usd) AS high_price,
+        min(price_usd) AS low_price,
+        argMax(price_usd, dt) AS close_price,
+        toUInt32(1) AS has_changed
+      FROM #{@table}
+      PREWHERE
+        slug = cast(?1, 'LowCardinality(String)') AND
+        source = cast(?2, 'LowCardinality(String)') AND
+        dt >= toDateTime(?3) AND
+        dt < toDateTime(?4)
+      GROUP BY slug
+    )
+    GROUP BY slug
+    """
+
+    args = [slug, source, from, to]
+    {query, args}
+  end
+
+  def timeseries_ohlc_data_query(slug, from, to, interval, source) do
     {from, to, interval, span} = timerange_parameters(from, to, interval)
 
     query = """
-    SELECT time, SUM(price_usd), SUM(price_btcj), SUM(marketcap_usd), SUM(volume_usd), SUM(has_changed)
+    SELECT
+      time, SUM(open_price), SUM(high_price), SUM(close_price), SUM(low_price), toUInt32(SUM(has_changed))
     FROM (
       SELECT
-        toUnixTimestamp(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) AS time,
+        toUnixTimestamp(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) AS time,
         toFloat64(0) AS open_price,
         toFloat64(0) AS high_price,
         toFloat64(0) AS close_price,
@@ -195,8 +235,9 @@ defmodule Sanbase.Price.SqlQuery do
         argMax(price_usd, dt) AS close_price,
         toUInt32(1) AS has_changed
       FROM #{@table}
-        PREWHERE slug = ?3 AND
-        source == ?4 AND
+      PREWHERE
+        slug = cast(?3, 'LowCardinality(String)') AND
+        source = cast(?4, 'LowCardinality(String)') AND
         dt >= toDateTime(?5) AND
         dt < toDateTime(?6)
         GROUP BY time
@@ -280,6 +321,15 @@ defmodule Sanbase.Price.SqlQuery do
   end
 
   # Private functions
+
+  defp timerange_parameters(from, to, interval \\ nil)
+
+  defp timerange_parameters(from, to, nil) do
+    from_unix = DateTime.to_unix(from)
+    to_unix = DateTime.to_unix(to)
+
+    {from_unix, to_unix}
+  end
 
   defp timerange_parameters(from, to, interval) do
     from_unix = DateTime.to_unix(from)

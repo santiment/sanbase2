@@ -31,8 +31,7 @@ defmodule Sanbase.Price do
   @type timeseries_data_result :: {:ok, list(timeseries_data_map())} | {:error, error()}
 
   @type aggregated_metric_timeseries_data_map :: %{
-          :slug => String.t(),
-          :value => float()
+          String.t() => float()
         }
 
   @type aggregated_metric_timeseries_data_result ::
@@ -93,7 +92,8 @@ defmodule Sanbase.Price do
   def timeseries_data(slug, from, to, interval, opts \\ [])
 
   def timeseries_data("TOTAL_ERC20", from, to, interval, opts) do
-    erc20_project_slugs = Project.List.erc20_projects_slugs()
+    Project.List.erc20_projects_slugs()
+    |> combined_marketcap_and_volume(from, to, interval, opts)
   end
 
   def timeseries_data(slug, from, to, interval, opts) when is_binary(slug) do
@@ -230,7 +230,7 @@ defmodule Sanbase.Price do
   Return the last value of the `metric` before the given `datetime`.
   Supported metrics are #{inspect(@metrics)}
   """
-  @spec last_metric_value_before_query(slug, metric, DateTime.t(), opts) ::
+  @spec last_metric_value_before(slug, metric, DateTime.t(), opts) ::
           {:ok, float()} | {:error, error}
   def last_metric_value_before(slug, metric, datetime, opts \\ [])
 
@@ -246,10 +246,37 @@ defmodule Sanbase.Price do
   Return open-high-close-low price data in USD for the provided slug
   in the given interval.
   """
-  @spec ohlc(slug, DateTime.t(), DateTime.t(), interval, opts) :: ohlc_result()
-  def ohlc(slug, from, to, interval, opts \\ []) do
+  @spec ohlc(slug, DateTime.t(), DateTime.t(), opts) :: ohlc_result()
+  def ohlc(slug, from, to, opts \\ []) do
     source = Keyword.get(opts, :source, "coinmarketcap")
-    {query, args} = ohlc_query(slug, from, to, interval, source)
+    {query, args} = ohlc_query(slug, from, to, source)
+
+    ClickhouseRepo.query_transform(
+      query,
+      args,
+      fn
+        [open, high, low, close, has_changed] ->
+          %{
+            open_price_usd: open,
+            high_price_usd: high,
+            close_price_usd: close,
+            low_price_usd: low,
+            has_changed: has_changed
+          }
+      end
+    )
+    |> maybe_nullify_values()
+    |> maybe_unwrap_ok_value()
+  end
+
+  @doc ~s"""
+  Return open-high-close-low price data in USD for the provided slug
+  in the given interval.
+  """
+  @spec timeseries_ohlc_data(slug, DateTime.t(), DateTime.t(), interval, opts) :: ohlc_result()
+  def timeseries_ohlc_data(slug, from, to, interval, opts \\ []) do
+    source = Keyword.get(opts, :source, "coinmarketcap")
+    {query, args} = timeseries_ohlc_data_query(slug, from, to, interval, source)
 
     ClickhouseRepo.query_transform(
       query,
@@ -277,6 +304,23 @@ defmodule Sanbase.Price do
   def combined_marketcap_and_volume(slugs, from, to, interval, opts \\ [])
   def combined_marketcap_and_volume([], _, _, _, _), do: {:ok, []}
 
+  def combined_marketcap_and_volume(slugs, from, to, interval, opts) when length(slugs) > 30 do
+    slugs
+    |> Enum.chunk_every(30)
+    |> Sanbase.Parallel.map(
+      fn slugs_chunk ->
+        cache_key = Enum.sort(slugs_chunk) |> :erlang.phash2()
+
+        Sanbase.Cache.get_or_store({__MODULE__, __ENV__.function, cache_key}, fn ->
+          combined_marketcap_and_volume(slugs_chunk, from, to, interval, opts)
+        end)
+      end,
+      max_concurrency: 8
+    )
+    |> Enum.reject(&match?({:error, _}, &1))
+    |> combine_marketcap_and_volume_results()
+  end
+
   def combined_marketcap_and_volume(slugs, from, to, interval, opts) when is_list(slugs) do
     source = Keyword.get(opts, :source, "coinmarketcap")
 
@@ -301,10 +345,35 @@ defmodule Sanbase.Price do
     |> maybe_nullify_values()
   end
 
+  defp combine_marketcap_and_volume_results(results) do
+    results
+    |> Enum.map(fn {:ok, data} -> data end)
+    |> Enum.zip()
+    |> Enum.map(&Tuple.to_list/1)
+    |> Enum.map(fn [%{datetime: datetime} | _] = list ->
+      data =
+        Enum.reduce(
+          list,
+          %{volume: 0, volume_usd: 0, marketcap: 0, marketcap_usd: 0},
+          fn elem, acc ->
+            %{
+              marketcap: acc.marketcap + elem.marketcap,
+              marketcap_usd: acc.marketcap_usd + elem.marketcap_usd,
+              volume: acc.volume + elem.volume,
+              volume_usd: acc.volume_usd + elem.volume_usd
+            }
+          end
+        )
+
+      Map.put(data, :datetime, datetime)
+    end)
+    |> (&{:ok, &1}).()
+  end
+
   @doc ~s"""
   Return the first datetime for which `slug` has data
   """
-  @spec first_datetime_query(slug, opts) :: {:ok, DateTime.t()} | {:error, error}
+  @spec first_datetime(slug, opts) :: {:ok, DateTime.t()} | {:error, error}
   def first_datetime(slug, opts \\ [])
 
   def first_datetime("TOTAL_ERC20", _), do: ~U[2015-07-30 00:00:00Z]

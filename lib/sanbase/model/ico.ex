@@ -115,7 +115,7 @@ defmodule Sanbase.Model.Ico do
 
     Repo.preload(ico, ico_currencies: [:currency]).ico_currencies
     |> Enum.map(fn ic ->
-      Sanbase.Prices.Utils.convert_amount(
+      Sanbase.Price.Utils.fetch_last_price_before(
         ic.amount,
         ic.currency.code,
         target_currency,

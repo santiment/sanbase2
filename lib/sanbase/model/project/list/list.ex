@@ -66,6 +66,8 @@ defmodule Sanbase.Model.Project.List do
   def erc20_projects_slugs(opts \\ [])
 
   def erc20_projects_slugs(opts) do
+    opts = Keyword.put(opts, :preload?, false)
+
     erc20_projects_query(opts)
     |> select([p], p.slug)
     |> Repo.all()

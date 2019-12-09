@@ -67,16 +67,11 @@ defmodule Sanbase.Signal.Trigger.PriceSettings do
     Cache.get_or_store(
       cache_key,
       fn ->
-        Sanbase.Prices.Store.first_last_price(
-          Sanbase.Influxdb.Measurement.name_from(project),
-          from,
-          to
-        )
-        |> case do
-          {:ok, [[_dt, first_usd_price, last_usd_price]]} ->
+        case Sanbase.Price.ohlc(project.slug, from, to) do
+          {:ok, %{open_price_usd: open, close_price_usd: close}} ->
             data = [
-              %{datetime: from, value: first_usd_price},
-              %{datetime: to, value: last_usd_price}
+              %{datetime: from, value: open},
+              %{datetime: to, value: close}
             ]
 
             {project.slug, data}

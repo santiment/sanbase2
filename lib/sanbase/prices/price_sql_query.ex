@@ -287,10 +287,10 @@ defmodule Sanbase.Price.SqlQuery do
     {query, args}
   end
 
-  def last_metric_value_before_query(slug, metric, datetime, source) do
+  def last_record_before_query(slug, datetime, source) do
     query = """
     SELECT
-      #{metric}
+      price_usd, price_btc, marketcap_usd, volume_usd
     FROM #{@table}
     PREWHERE
       slug = cast(?1, 'LowCardinality(String)') AND
@@ -317,6 +317,24 @@ defmodule Sanbase.Price.SqlQuery do
     """
 
     args = [slug, source]
+    {query, args}
+  end
+
+  def slugs_with_volume_over_query(volume, source) do
+    datetime = Timex.shift(Timex.now(), days: -1)
+
+    query = """
+    SELECT
+      distinct(slug)
+    FROM #{@table}
+    PREWHERE
+      dt >= toDateTime(?1) AND
+      source = cast(?2, 'LowCardinality(String)') AND
+      volume_usd >= ?3
+    """
+
+    args = [datetime |> DateTime.to_unix(), source, volume]
+
     {query, args}
   end
 

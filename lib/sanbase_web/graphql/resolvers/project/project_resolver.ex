@@ -458,7 +458,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     |> on_load(fn loader ->
       with {:ok, usd_balance} <- ProjectBalanceResolver.usd_balance_from_loader(loader, project),
            {:ok, market_cap} <- marketcap_usd(project, nil, nil),
-           false <- is_nil(usd_balance) || is_nil(market_cap),
+           false <- is_nil(market_cap),
+           false <- is_nil(usd_balance),
            false <- usd_balance <= 0.001 do
         {:ok, market_cap / usd_balance}
       else

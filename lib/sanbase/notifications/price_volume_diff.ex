@@ -2,7 +2,6 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   require Sanbase.Utils.Config, as: Config
   require Mockery.Macro
 
-  alias Sanbase.Prices
   alias Sanbase.Model.Project
   alias Sanbase.TechIndicators
   alias Sanbase.Notifications.{Notification, Type}
@@ -38,15 +37,13 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   # Calculate the notification only if the 24h volume is over some threshold ($100,000 by default)
   defp volume_over_threshold?(
-         %Project{} = project,
+         %Project{slug: slug},
          _currency,
-         from_datetime,
-         to_datetime
+         from,
+         to
        ) do
-    measurement = Sanbase.Influxdb.Measurement.name_from(project)
-
-    case Prices.Store.fetch_average_volume(measurement, from_datetime, to_datetime) do
-      {:ok, [[_dt, volume]]} ->
+    case Sanbase.Price.aggregated_metric_timeseries_data(slug, :volume_usd, from, to) do
+      {:ok, %{^slug => volume}} ->
         volume >= notification_volume_threshold()
 
       _ ->

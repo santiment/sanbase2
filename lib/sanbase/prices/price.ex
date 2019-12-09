@@ -46,9 +46,18 @@ defmodule Sanbase.Price do
         }
 
   @type aggregated_marketcap_and_volume_result ::
-          {:ok, aggregated_marketcap_and_volume_map()} | {:error, error()}
+          {:ok, list(aggregated_marketcap_and_volume_map())} | {:error, error()}
 
   @type ohlc_map :: %{
+          open_price_usd: float() | nil,
+          high_price_usd: float() | nil,
+          close_price_usd: float() | nil,
+          low_price_usd: float() | nil
+        }
+
+  @type ohlc_result :: {:ok, ohlc_map()} | {:error, error()}
+
+  @type timeseries_ohlc_data_map :: %{
           datetime: DateTime.t(),
           open_price_usd: float() | nil,
           high_price_usd: float() | nil,
@@ -56,7 +65,18 @@ defmodule Sanbase.Price do
           low_price_usd: float() | nil
         }
 
-  @type ohlc_result :: {:ok, list(ohlc_map())} | {:error, error()}
+  @type timeseries_ohlc_data_result :: {:ok, list(timeseries_ohlc_data_map())} | {:error, error()}
+
+  @type last_record_before_map :: %{
+          price_usd: float() | nil,
+          price_btc: float() | nil,
+          marketcap: float(),
+          marketcap_usd: float() | nil,
+          volume: float() | nil,
+          volume_usd: float() | nil
+        }
+
+  @type last_record_before_result :: {:ok, last_record_before_map()} | {:error, error()}
 
   @type combined_marketcap_and_volume_map :: %{
           datetime: DateTime.t(),
@@ -227,19 +247,30 @@ defmodule Sanbase.Price do
   end
 
   @doc ~s"""
-  Return the last value of the `metric` before the given `datetime`.
-  Supported metrics are #{inspect(@metrics)}
+  Return the last record  before the given `datetime`
   """
-  @spec last_metric_value_before(slug, metric, DateTime.t(), opts) ::
-          {:ok, float()} | {:error, error}
-  def last_metric_value_before(slug, metric, datetime, opts \\ [])
+  @spec last_record_before(slug, DateTime.t(), opts) ::
+          last_record_before_result()
+  def last_record_before(slug, datetime, opts \\ [])
 
-  def last_metric_value_before(slug, metric, datetime, opts) when metric in @metrics do
+  def last_record_before(slug, datetime, opts) do
     source = Keyword.get(opts, :source, "coinmarketcap")
-    {query, args} = last_metric_value_before_query(slug, metric, datetime, source)
+    {query, args} = last_record_before_query(slug, datetime, source)
 
-    ClickhouseRepo.query_transform(query, args, & &1)
-    |> maybe_unwrap_ok_value()
+    ClickhouseRepo.query_transform(
+      query,
+      args,
+      fn [price_usd, price_btc, marketcap_usd, volume_usd] ->
+        %{
+          price_usd: price_usd,
+          price_btc: price_btc,
+          marketcap_usd: marketcap_usd,
+          marketcap: marketcap_usd,
+          volume_usd: volume_usd,
+          volume: volume_usd
+        }
+      end
+    )
   end
 
   @doc ~s"""
@@ -273,7 +304,8 @@ defmodule Sanbase.Price do
   Return open-high-close-low price data in USD for the provided slug
   in the given interval.
   """
-  @spec timeseries_ohlc_data(slug, DateTime.t(), DateTime.t(), interval, opts) :: ohlc_result()
+  @spec timeseries_ohlc_data(slug, DateTime.t(), DateTime.t(), interval, opts) ::
+          timeseries_ohlc_data_result()
   def timeseries_ohlc_data(slug, from, to, interval, opts \\ []) do
     source = Keyword.get(opts, :source, "coinmarketcap")
     {query, args} = timeseries_ohlc_data_query(slug, from, to, interval, source)
@@ -321,7 +353,8 @@ defmodule Sanbase.Price do
     |> combine_marketcap_and_volume_results()
   end
 
-  def combined_marketcap_and_volume(slugs, from, to, interval, opts) when is_list(slugs) do
+  def combined_marketcap_and_volume(slug_or_slugs, from, to, interval, opts) do
+    slugs = List.wrap(slug_or_slugs)
     source = Keyword.get(opts, :source, "coinmarketcap")
 
     {query, args} = combined_marketcap_and_volume_query(slugs, from, to, interval, source)
@@ -345,12 +378,24 @@ defmodule Sanbase.Price do
     |> maybe_nullify_values()
   end
 
+  def slugs_with_volume_over(volume, opts \\ [])
+
+  def slugs_with_volume_over(volume, opts) when is_number(volume) do
+    source = Keyword.get(opts, :source, "coinmarketcap")
+    {query, args} = slugs_with_volume_over_query(volume, source)
+
+    ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
+  end
+
+  # Get a
   defp combine_marketcap_and_volume_results(results) do
     results
     |> Enum.map(fn {:ok, data} -> data end)
     |> Enum.zip()
     |> Enum.map(&Tuple.to_list/1)
-    |> Enum.map(fn [%{datetime: datetime} | _] = list ->
+    |> Enum.map(fn list ->
+      %{datetime: datetime} = List.last(list)
+
       data =
         Enum.reduce(
           list,

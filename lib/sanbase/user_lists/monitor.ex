@@ -124,23 +124,19 @@ defmodule Sanbase.UserList.Monitor do
       list_items
       |> Enum.map(& &1.project.slug)
 
-    with {:ok, measurement_slugs_map} <- Sanbase.Influxdb.Measurement.names_from_slugs(slugs),
-         {:ok, result} <-
-           Sanbase.Prices.Store.fetch_volume_mcap_multiple_measurements_no_cache(
-             measurement_slugs_map,
-             week_ago,
-             now
-           ) do
-      combined_mcap = result |> Enum.reduce(0, fn {_, _, mcap, _}, acc -> acc + mcap end)
-      name_query = URI.encode_query(%{"name" => name})
+    case Sanbase.Price.aggregated_marketcap_and_volume(slugs, week_ago, now) do
+      {:ok, result} ->
+        combined_mcap = result |> Enum.reduce(0, fn elem, acc -> acc + elem.marketcap_usd end)
 
-      %{
-        "watchlist-title" => name,
-        "watchlist-marketcap" => "$ #{format_number(combined_mcap)}",
-        "watchlist-link" => "https://app.santiment.net/assets/list?#{name_query}@#{id}"
-      }
-    else
-      error ->
+        name_query = URI.encode_query(%{"name" => name})
+
+        %{
+          "watchlist-title" => name,
+          "watchlist-marketcap" => "$ #{format_number(combined_mcap)}",
+          "watchlist-link" => "https://app.santiment.net/assets/list?#{name_query}@#{id}"
+        }
+
+      {:error, error} ->
         Logger.error(
           "error computing combined marketcap for slugs: #{inspect(slugs)}. Reason: #{
             inspect(error)

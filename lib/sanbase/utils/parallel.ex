@@ -5,6 +5,8 @@ defmodule Sanbase.Parallel do
 
   @default_timeout 15_000
 
+  def flat_map(collection, func, opts \\ [])
+
   def flat_map(collection, func, opts) do
     map(collection, func, Keyword.put(opts, :map_type, :flat_map))
   end

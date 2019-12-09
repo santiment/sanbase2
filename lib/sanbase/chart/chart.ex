@@ -3,8 +3,6 @@ defmodule Sanbase.Chart do
   Builds an image and stores it in S3
   """
 
-  alias Sanbase.Prices.Store, as: PricesStore
-  alias Sanbase.Influxdb.Measurement
   alias Sanbase.Model.Project
   alias Sanbase.FileStore
   alias Sanbase.Math
@@ -33,14 +31,13 @@ defmodule Sanbase.Chart do
   # value from `opts` and add an overlaying chart that represents a specific metric.
   # Currently supported such metrics are `:daily_active_addresses` and `:exchange_inflow`
   defp build_candlestick_image_url(
-         %Project{} = project,
+         %Project{slug: slug} = project,
          from,
          to,
          opts
        ) do
-    with measurement when not is_nil(measurement) <- Measurement.name_from(project),
-         {:ok, ohlc} when is_list(ohlc) <- PricesStore.fetch_ohlc(measurement, from, to, "1d"),
-         number when number != 0 <- length(ohlc),
+    with {:ok, ohlc} when is_list(ohlc) and ohlc != [] <-
+           Sanbase.Price.timeseries_ohlc_data(slug, from, to, "1d"),
          {:ok, prices} <- candlestick_prices(ohlc),
          {:ok, image} <- generate_image_url(project, prices, from, to, opts) do
       {:ok, image}
@@ -88,6 +85,18 @@ defmodule Sanbase.Chart do
   end
 
   defp candlestick_prices(ohlc) do
+    Enum.map(
+      ohlc,
+      fn %{open_price_usd: open, close_price_usd: close, high_price_usd: high, low_price_usd: low} ->
+        [
+          open |> Math.to_float(0.0) |> Float.round(6),
+          high |> Math.to_float(0.0) |> Float.round(6),
+          close |> Math.to_float(0.0) |> Float.round(6),
+          low |> Math.to_float(0.0) |> Float.round(6)
+        ]
+      end
+    )
+
     [_ | prices] =
       ohlc
       |> Enum.zip()
@@ -121,9 +130,8 @@ defmodule Sanbase.Chart do
   defp chart_values(:volume, %Project{} = project, _from, to, size) do
     from = Timex.shift(to, days: -size + 1)
 
-    with measurement when not is_nil(measurement) <- Measurement.name_from(project),
-         {:ok, data} <- PricesStore.fetch_volume_with_resolution(measurement, from, to, "1d"),
-         [_ | _] = volumes <- data |> Enum.map(fn [_dt, volume] -> volume end),
+    with {:ok, data} <- Sanbase.Price.timeseries_data(project.slug, from, to, "1d"),
+         [_ | _] = volumes <- data |> Enum.map(& &1.volume_usd),
          {min, max} <- Math.min_max(volumes) do
       volumes_str = volumes |> Enum.join(",")
 

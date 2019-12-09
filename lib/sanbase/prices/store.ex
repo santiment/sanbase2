@@ -40,6 +40,8 @@ defmodule Sanbase.Prices.Store do
     end
   end
 
+  def first_datetime_multiple_measurements([]), do: []
+
   def first_datetime_multiple_measurements(measurements) when is_list(measurements) do
     measurements_str = measurements |> Enum.map(fn x -> ~s/"#{x}"/ end) |> Enum.join(", ")
 

@@ -73,7 +73,17 @@ defmodule Sanbase.Prices.Migrate do
   end
 
   def not_migrated_projects do
-    [%Project{ticker: "TOTAL_MARKET", slug: "total-market"}]
+    migrated_projects = PriceMigrationTmp.all_migrated()
+
+    all_projects =
+      Project.List.projects_with_source("coinmarketcap", include_hidden_projects?: true)
+
+    all_projects = [%Project{ticker: "TOTAL_MARKET", slug: "total-market"} | all_projects]
+
+    all_projects
+    |> Enum.sort_by(& &1.slug)
+    |> Enum.reject(&(&1.slug == "total-market" and "TOTAL_MARKET" in migrated_projects))
+    |> Enum.reject(&(&1.slug in migrated_projects))
   end
 
   defp do_work() do
@@ -184,6 +194,10 @@ defmodule Sanbase.Prices.Migrate do
 
         []
     end
+  end
+
+  defp slug_from_measurement("TOTAL_MARKET_total-market") do
+    "TOTAL_MARKET"
   end
 
   defp slug_from_measurement(measurement) do

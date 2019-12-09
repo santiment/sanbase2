@@ -139,7 +139,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
       |> Enum.flat_map(&PricePoint.price_points_to_measurements(&1, measurement_name))
 
     marketcap_total_list
-    |> Enum.map(&PricePoint.json_kv_tuple(&1, "total-market"))
+    |> Enum.map(&PricePoint.json_kv_tuple(&1, "TOTAL_MARKET"))
     |> Sanbase.KafkaExporter.persist(@prices_exporter)
 
     measurement_points |> Store.import()

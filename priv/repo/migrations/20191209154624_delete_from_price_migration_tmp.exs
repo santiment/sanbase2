@@ -1,9 +1,13 @@
 defmodule Sanbase.Repo.Migrations.DeleteFromPriceMigrationTmp do
   use Ecto.Migration
 
-  def change do
+  def up do
     setup()
     Sanbase.Repo.delete_all(Sanbase.PriceMigrationTmp)
+  end
+
+  def down do
+    :ok
   end
 
   defp setup do

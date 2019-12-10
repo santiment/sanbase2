@@ -246,7 +246,9 @@ defmodule Sanbase.Billing.StripeEvent do
     end
   end
 
-  defp payload_for_subscription(_, _), do: []
+  defp payload_for_subscription(_, total) do
+    ["New payment for $#{total / 100} received."]
+  end
 
   defp mask_user(%User{email: email}) when is_binary(email) do
     Regex.replace(~r/(.*@)/, email, "***@")

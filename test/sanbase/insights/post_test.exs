@@ -3,35 +3,22 @@ defmodule Sanbase.Insight.PostTest do
 
   import Sanbase.Factory
   alias Sanbase.Repo
-  alias Sanbase.Auth.User
   alias Sanbase.Insight.Post
 
   test "create_changeset creates the post in approved state" do
-    user =
-      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
-      |> Repo.insert!()
-
-    post =
-      %Post{user_id: user.id}
-      |> Post.create_changeset(%{
-        text: "Some text",
-        title: "Awesome article!"
-      })
-      |> Repo.insert!()
+    post = insert(:post)
 
     assert post.state == Post.approved_state()
   end
 
   test "changes the owner to the fallback user" do
-    insights_user = insert(:insights_fallback_user)
-    user = insert(:user)
-    post = insert(:post_no_default_user, user_id: user.id)
+    fallback_user = insert(:insights_fallback_user)
+    post = insert(:post)
 
-    Post.change_owner_to_anonymous(user.id)
-
+    Post.assign_all_user_insights_to_anonymous(post.user_id)
     updated_post = Post |> Repo.get(post.id)
 
-    assert updated_post.user_id == insights_user.id
+    assert updated_post.user_id == fallback_user.id
   end
 
   test "create custom tags when creating post" do

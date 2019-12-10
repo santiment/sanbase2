@@ -9,8 +9,8 @@ defmodule Sanbase.Repo.Migrations.CreateAnonymousUserInsights do
 
     %User{
       salt: User.generate_salt(),
-      username: User.insights_fallback_username(),
-      email: User.insights_fallback_email()
+      username: User.anonymous_user_username(),
+      email: User.anonymous_user_email()
     }
     |> Repo.insert()
   end
@@ -19,7 +19,7 @@ defmodule Sanbase.Repo.Migrations.CreateAnonymousUserInsights do
     Application.ensure_all_started(:tzdata)
 
     User
-    |> Repo.get_by(username: User.insights_fallback_username())
+    |> Repo.get_by(username: User.anonymous_user_username())
     |> Repo.delete()
   end
 end

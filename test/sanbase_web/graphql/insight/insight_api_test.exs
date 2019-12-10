@@ -124,7 +124,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     {:ok, created_at, 0} = DateTime.from_iso8601(fetched_insight["createdAt"])
 
-    assert Sanbase.TestUtils.date_close_to(
+    assert Sanbase.TestUtils.datetime_close_to(
              Timex.now(),
              created_at,
              2,
@@ -133,7 +133,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     {:ok, updated_at, 0} = DateTime.from_iso8601(fetched_insight["updatedAt"])
 
-    assert Sanbase.TestUtils.date_close_to(
+    assert Sanbase.TestUtils.datetime_close_to(
              Timex.now(),
              updated_at,
              2,
@@ -443,7 +443,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       created_at = Timex.parse!(insight["createdAt"], "{ISO:Extended}")
 
       # Assert that now() and created_at do not differ by more than 2 seconds.
-      assert Sanbase.TestUtils.date_close_to(Timex.now(), created_at, 2, :seconds)
+      assert Sanbase.TestUtils.datetime_close_to(Timex.now(), created_at, 2, :seconds)
     end
 
     test "adding a new insight with a very long title", %{conn: conn} do

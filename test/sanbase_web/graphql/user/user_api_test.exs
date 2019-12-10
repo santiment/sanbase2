@@ -214,7 +214,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
     assert user.email_candidate == nil
 
     # Assert that now() and validated_at do not differ by more than 2 seconds
-    assert Sanbase.TestUtils.date_close_to(
+    assert Sanbase.TestUtils.datetime_close_to(
              Timex.now(),
              user.email_candidate_token_validated_at,
              2,
@@ -392,7 +392,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
 
     assert login_data["token"] == result.private.plug_session["auth_token"]
     # Assert that now() and validated_at do not differ by more than 2 seconds
-    assert Sanbase.TestUtils.date_close_to(
+    assert Sanbase.TestUtils.datetime_close_to(
              Timex.now(),
              user.email_token_validated_at,
              2,

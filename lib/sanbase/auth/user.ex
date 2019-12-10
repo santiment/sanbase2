@@ -33,8 +33,8 @@ defmodule Sanbase.Auth.User do
   @san_balance_cache_seconds 60 * 5
 
   # Fallback username and email for Insights owned by deleted user accounts
-  @insights_fallback_username "anonymous"
-  @insights_fallback_email "anonymous@santiment.net"
+  @anonymous_user_username "anonymous"
+  @anonymous_user_email "anonymous@santiment.net"
 
   # User with free subscription that is used for external integration testing
   @sanbase_bot_email "sanbase.bot@santiment.net"
@@ -420,8 +420,14 @@ defmodule Sanbase.Auth.User do
     end
   end
 
-  def insights_fallback_username, do: @insights_fallback_username
-  def insights_fallback_email, do: @insights_fallback_email
+  def anonymous_user_username, do: @anonymous_user_username
+  def anonymous_user_email, do: @anonymous_user_email
+
+  def anonymous_user_id() do
+    Repo.get_by(__MODULE__, email: @anonymous_user_email, username: @anonymous_user_username)
+    |> Map.get(:id)
+  end
+
   def sanbase_bot_email, do: @sanbase_bot_email
 
   def sanbase_bot_email(idx) do

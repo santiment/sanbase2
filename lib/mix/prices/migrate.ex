@@ -93,7 +93,7 @@ defmodule Sanbase.Prices.Migrate do
 
     projects
     |> Enum.map(&Sanbase.Influxdb.Measurement.name_from/1)
-    |> Enum.chunk_every(50)
+    |> Enum.chunk_every(20)
     |> Enum.flat_map(&first_datetimes/1)
     |> Enum.reduce(1, fn {measurement, first_datetime_iso}, current_project_count ->
       Logger.info("Start migrating #{measurement}")

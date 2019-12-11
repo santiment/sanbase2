@@ -90,6 +90,20 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
 
       cache_resolve(&InsightResolver.all_tags/3)
     end
+
+    field :insight_comments, list_of(:comment) do
+      arg(:insight_id, non_null(:id))
+      arg(:cursor, :cursor_input, default_value: nil)
+      arg(:limit, :integer, default_value: 50)
+
+      resolve(&InsightResolver.insight_comments/3)
+    end
+
+    field :subcomments, list_of(:comment) do
+      arg(:comment_id, non_null(:id))
+
+      resolve(&InsightResolver.subcomments/3)
+    end
   end
 
   object :insight_mutations do
@@ -218,6 +232,33 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:insight_id, :integer)
       middleware(JWTAuth)
       resolve(&InsightResolver.unvote/3)
+    end
+
+    field :create_comment, :comment do
+      arg(:insight_id, non_null(:integer))
+      arg(:content, non_null(:string))
+      arg(:parent_id, :integer)
+
+      middleware(JWTAuth)
+
+      resolve(&InsightResolver.create_comment/3)
+    end
+
+    field :update_comment, :comment do
+      arg(:comment_id, non_null(:integer))
+      arg(:content, non_null(:string))
+
+      middleware(JWTAuth)
+
+      resolve(&InsightResolver.update_comment/3)
+    end
+
+    field :delete_comment, :comment do
+      arg(:comment_id, non_null(:integer))
+
+      middleware(JWTAuth)
+
+      resolve(&InsightResolver.delete_comment/3)
     end
   end
 end

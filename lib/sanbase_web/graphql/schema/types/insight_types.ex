@@ -11,6 +11,19 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:total_san_votes, non_null(:integer))
   end
 
+  object :comment do
+    field(:id, non_null(:id))
+    field(:insight_id, non_null(:id))
+    field(:content, non_null(:string))
+    field(:user, non_null(:public_user), resolve: dataloader(SanbaseRepo))
+    field(:parent_id, :id)
+    field(:root_parent_id, :id)
+    field(:subcomments_count, :integer)
+    field(:created_at, non_null(:datetime))
+    field(:inserted_at, non_null(:datetime))
+    field(:edited_at, :datetime)
+  end
+
   object :post do
     field(:id, non_null(:id))
     field(:user, non_null(:post_author), resolve: dataloader(SanbaseRepo))

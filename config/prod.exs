@@ -1,7 +1,14 @@
 import Config
 
 config :sanbase, SanbaseWeb.Endpoint,
-  http: [port: {:system, "PORT"}],
+  http: [
+    port: {:system, "PORT"},
+    protocol_options: [
+      max_header_name_length: 64,
+      max_header_value_length: 8192,
+      max_headers: 100
+    ]
+  ],
   url: [host: "localhost", port: {:system, "PORT"}],
   server: true,
   cache_static_manifest: "priv/static/cache_manifest.json",

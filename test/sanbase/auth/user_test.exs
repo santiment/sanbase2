@@ -48,7 +48,7 @@ defmodule Sanbase.Auth.UserTest do
 
     assert changeset.changes[:san_balance] == Decimal.new(5)
     #
-    assert Sanbase.TestUtils.date_close_to(
+    assert Sanbase.TestUtils.datetime_close_to(
              Timex.now(),
              changeset.changes[:san_balance_updated_at],
              2,
@@ -102,7 +102,12 @@ defmodule Sanbase.Auth.UserTest do
 
     user = Repo.get(User, user.id)
 
-    assert Sanbase.TestUtils.date_close_to(Timex.now(), user.san_balance_updated_at, 2, :seconds)
+    assert Sanbase.TestUtils.datetime_close_to(
+             Timex.now(),
+             user.san_balance_updated_at,
+             2,
+             :seconds
+           )
   end
 
   test "san_balance! returns test_san_balance if present" do
@@ -157,7 +162,7 @@ defmodule Sanbase.Auth.UserTest do
 
     assert user.email_token != nil
 
-    assert Sanbase.TestUtils.date_close_to(
+    assert Sanbase.TestUtils.datetime_close_to(
              Timex.now(),
              user.email_token_generated_at,
              2,
@@ -170,7 +175,7 @@ defmodule Sanbase.Auth.UserTest do
       insert(:user)
       |> User.mark_email_token_as_validated()
 
-    assert Sanbase.TestUtils.date_close_to(
+    assert Sanbase.TestUtils.datetime_close_to(
              Timex.now(),
              user.email_token_validated_at,
              2,
@@ -266,7 +271,7 @@ defmodule Sanbase.Auth.UserTest do
     assert user.email_candidate_token != nil
     assert user.email_candidate_token_validated_at == nil
 
-    assert Sanbase.TestUtils.date_close_to(
+    assert Sanbase.TestUtils.datetime_close_to(
              Timex.now(),
              user.email_candidate_token_generated_at,
              2,
@@ -289,7 +294,7 @@ defmodule Sanbase.Auth.UserTest do
     assert user.email == email_candidate
     assert user.email_candidate == nil
 
-    assert Sanbase.TestUtils.date_close_to(
+    assert Sanbase.TestUtils.datetime_close_to(
              Timex.now(),
              user.email_candidate_token_validated_at,
              2,

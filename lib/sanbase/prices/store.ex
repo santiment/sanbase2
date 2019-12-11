@@ -22,6 +22,26 @@ defmodule Sanbase.Prices.Store do
     @last_history_price_cmc_measurement
   end
 
+  def first_datetime_total_market(measurements) when is_list(measurements) do
+    measurements_str = measurements |> Enum.map(fn x -> ~s/"#{x}"/ end) |> Enum.join(", ")
+
+    ~s/SELECT first(marketcap_usd) FROM #{measurements_str}/
+    |> get()
+    |> case do
+      %{results: [%{series: series}]} ->
+        result =
+          series
+          |> Enum.map(fn %{name: name, values: [[value, _]]} -> {name, value} end)
+
+        {:ok, result}
+
+      error ->
+        {:error, error}
+    end
+  end
+
+  def first_datetime_multiple_measurements([]), do: []
+
   def first_datetime_multiple_measurements(measurements) when is_list(measurements) do
     measurements_str = measurements |> Enum.map(fn x -> ~s/"#{x}"/ end) |> Enum.join(", ")
 
@@ -73,7 +93,7 @@ defmodule Sanbase.Prices.Store do
 
   def fetch_prices_with_resolution("TOTAL_ERC20", from, to, resolution) do
     measurements =
-      Sanbase.Model.Project.List.erc20_projects(include_hidden_projects?: true)
+      Sanbase.Model.Project.List.erc20_projects()
       |> Enum.map(&Sanbase.Influxdb.Measurement.name_from/1)
 
     fetch_combined_mcap_volume(measurements, from, to, resolution)

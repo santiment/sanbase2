@@ -67,5 +67,9 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     send_weekly_monitor_watchlist_digest: [
       schedule: "@weekly",
       task: {Sanbase.UserList.Monitor, :run, []}
+    ],
+    migrate_prices: [
+      schedule: "@reboot",
+      task: {Sanbase.Prices.Migrate, :run, []}
     ]
   ]

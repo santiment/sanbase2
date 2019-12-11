@@ -5,6 +5,7 @@ defmodule Sanbase.PriceMigrationTmp do
   import Ecto.Query
 
   alias Sanbase.Repo
+  alias Sabase.Model.Project
 
   schema "price_migration_tmp" do
     field(:slug, :string)
@@ -48,7 +49,7 @@ defmodule Sanbase.Prices.Migrate do
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
   alias Sanbase.PriceMigrationTmp
 
-  @chunk_days 20
+  @chunk_days 10
   @migration_exporter :migrate_influxdb_prices
   @topic "asset_prices"
 
@@ -74,8 +75,14 @@ defmodule Sanbase.Prices.Migrate do
   def not_migrated_projects do
     migrated_projects = PriceMigrationTmp.all_migrated()
 
-    Project.List.projects_with_source("coinmarketcap", include_hidden_projects?: true)
+    all_projects =
+      Project.List.projects_with_source("coinmarketcap", include_hidden_projects?: true)
+
+    all_projects = [%Project{ticker: "TOTAL_MARKET", slug: "total-market"} | all_projects]
+
+    all_projects
     |> Enum.sort_by(& &1.slug)
+    |> Enum.reject(&(&1.slug == "total-market" and "TOTAL_MARKET" in migrated_projects))
     |> Enum.reject(&(&1.slug in migrated_projects))
   end
 
@@ -86,7 +93,7 @@ defmodule Sanbase.Prices.Migrate do
 
     projects
     |> Enum.map(&Sanbase.Influxdb.Measurement.name_from/1)
-    |> Enum.chunk_every(50)
+    |> Enum.chunk_every(20)
     |> Enum.flat_map(&first_datetimes/1)
     |> Enum.reduce(1, fn {measurement, first_datetime_iso}, current_project_count ->
       Logger.info("Start migrating #{measurement}")
@@ -135,8 +142,33 @@ defmodule Sanbase.Prices.Migrate do
     end)
   end
 
-  defp first_datetimes(measurements) do
+  def first_datetimes(measurements) do
+    {measurements, total_market_datetimes} =
+      if "TOTAL_MARKET_total-market" in measurements do
+        {Enum.reject(measurements, &(&1 == "TOTAL_MARKET_total-market")),
+         first_datetimes_total_market()}
+      else
+        {measurements, []}
+      end
+
     PricesStore.first_datetime_multiple_measurements(measurements)
+    |> case do
+      {:ok, datetimes} ->
+        datetimes ++ total_market_datetimes
+
+      error ->
+        Logger.error(
+          "PricesStore.first_datetime_multiple_measurements error on projects #{
+            inspect(measurements)
+          }, #{inspect(error)}"
+        )
+
+        []
+    end
+  end
+
+  defp first_datetimes_total_market() do
+    PricesStore.first_datetime_total_market(["TOTAL_MARKET_total-market"])
     |> case do
       {:ok, datetimes} ->
         datetimes
@@ -144,7 +176,7 @@ defmodule Sanbase.Prices.Migrate do
       error ->
         Logger.error(
           "PricesStore.first_datetime_multiple_measurements error on projects #{
-            inspect(measurements)
+            inspect("TOTAL_MARKET_total-market")
           }, #{inspect(error)}"
         )
 
@@ -189,8 +221,12 @@ defmodule Sanbase.Prices.Migrate do
     end
   end
 
+  defp slug_from_measurement("TOTAL_MARKET_total-market") do
+    "TOTAL_MARKET"
+  end
+
   defp slug_from_measurement(measurement) do
-    String.split(measurement, "_", parts: 2)
+    String.split(measurement, "_")
     |> List.last()
   end
 end

@@ -37,7 +37,9 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
 
         result =
           Enum.map(contract_value_pairs, fn [contract, value] ->
-            case Enum.find(projects, &match?(%_{main_contract_address: ^contract}, &1)) do
+            case Enum.find(projects, fn %{main_contract_address: project_contract} ->
+                   String.downcase(project_contract) == contract
+                 end) do
               nil ->
                 nil
 

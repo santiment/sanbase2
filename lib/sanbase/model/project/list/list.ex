@@ -349,6 +349,17 @@ defmodule Sanbase.Model.Project.List do
   """
   def by_field(values, field, opts \\ [])
 
+  # NOTE: This should be handled in more places. Ultimate solution would be to use
+  # the citext type for such fields
+  @case_insensitive_fields [:main_contract_address]
+  def by_field(values, field, opts) when is_list(values) and field in @case_insensitive_fields do
+    values = Enum.map(values, &String.downcase/1)
+
+    projects_query(opts)
+    |> where([p], fragment("LOWER(?)", field(p, ^field)) in ^values)
+    |> Repo.all()
+  end
+
   def by_field(values, field, opts) when is_list(values) do
     projects_query(opts)
     |> where([p], field(p, ^field) in ^values)

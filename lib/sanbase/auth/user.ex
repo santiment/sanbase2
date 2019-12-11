@@ -425,9 +425,10 @@ defmodule Sanbase.Auth.User do
     from(
       r in resource,
       group_by: r.user_id,
-      select: %{r.user_id => count(r.user_id)}
+      select: {r.user_id, count(r.user_id)}
     )
     |> Repo.all()
+    |> Enum.into(%{})
   end
 
   def anonymous_user_username, do: @anonymous_user_username

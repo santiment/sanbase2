@@ -9,8 +9,7 @@ defmodule Sanbase.Repo.Migrations.FillExchangeMarketPairsFromCsv do
 
     data =
       Path.expand("exchange_market_pairs_final.csv", __DIR__)
-      |> File.read!()
-      |> String.split("\n", trim: true)
+      |> File.stream!([], :line)
       |> Enum.map(fn line ->
         [exchange, market_pair, from_slug, to_slug, from_ticker, to_ticker] =
           String.split(line, ",", trim: true)
@@ -28,13 +27,11 @@ defmodule Sanbase.Repo.Migrations.FillExchangeMarketPairsFromCsv do
         }
       end)
 
-    Sanbase.Repo.insert_all(MarketPairMapping, data)
+    Sanbase.Repo.insert_all(MarketPairMapping, data, on_conflict: :nothing)
   end
 
   def down do
-    setup()
-
-    Sanbase.Repo.delete_all(MarketPairMapping)
+    :ok
   end
 
   defp setup do

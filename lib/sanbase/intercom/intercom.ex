@@ -13,7 +13,6 @@ defmodule Sanbase.Intercom do
   alias Sanbase.Signal.UserTrigger
 
   @intercom_url "https://api.intercom.io/users"
-  @intercom_api_token Config.get(:api_key)
 
   def sync_users do
     triggers_map = User.resource_user_count_map(Sanbase.Signal.UserTrigger)
@@ -125,7 +124,7 @@ defmodule Sanbase.Intercom do
     headers = [
       {"Content-Type", "application/json"},
       {"Accept", "application/json"},
-      {"Authorization", "Bearer #{@intercom_api_token}"}
+      {"Authorization", "Bearer #{Config.get(:api_key)}"}
     ]
 
     HTTPoison.post(@intercom_url, stats_json, headers)

@@ -366,6 +366,11 @@ defmodule Sanbase.Auth.User do
     )
   end
 
+  def all() do
+    from(u in User, order_by: u.id)
+    |> Sanbase.Repo.all()
+  end
+
   def by_id(user_id) when is_integer(user_id) do
     case Sanbase.Repo.get_by(User, id: user_id) do
       nil ->
@@ -418,6 +423,17 @@ defmodule Sanbase.Auth.User do
       {:error,
        "Cannot remove ethereum address #{address}. There must be an email or other ethereum address set."}
     end
+  end
+
+  # Resource coud be watchlist, insight, user_trigger struct or any other struct which belongs to User
+  def resource_user_count_map(resource) do
+    from(
+      r in resource,
+      group_by: r.user_id,
+      select: {r.user_id, count(r.user_id)}
+    )
+    |> Repo.all()
+    |> Enum.into(%{})
   end
 
   def anonymous_user_username, do: @anonymous_user_username

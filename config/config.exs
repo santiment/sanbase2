@@ -169,6 +169,8 @@ config :sanbase, Sanbase.GrafanaApi,
   grafana_user: {:system, "GRAFANA_USER"},
   grafana_pass: {:system, "GRAFANA_PASS"}
 
+config :sanbase, Sanbase.Intercom, api_key: {:system, "INTERCOM_API_KEY"}
+
 # Import configs
 import_config "ex_admin_config.exs"
 import_config "influxdb_config.exs"

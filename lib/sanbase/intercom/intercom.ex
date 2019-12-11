@@ -20,7 +20,7 @@ defmodule Sanbase.Intercom do
     insights_map = User.resource_user_count_map(Sanbase.Insight.Post)
     watchlists_map = User.resource_user_count_map(Sanbase.UserList)
 
-    fetch_users()
+    User.all()
     |> Stream.map(fn user ->
       fetch_stats_for_user(user, %{
         triggers_map: triggers_map,
@@ -44,11 +44,6 @@ defmodule Sanbase.Intercom do
       watchlists_map: watchlists_map
     })
     |> Jason.encode!()
-  end
-
-  def fetch_users() do
-    from(u in User, order_by: u.id)
-    |> Repo.all()
   end
 
   defp fetch_stats_for_user(
@@ -104,7 +99,7 @@ defmodule Sanbase.Intercom do
   end
 
   defp fetch_sanbase_subscription_data(stripe_customer_id) do
-    sanbase_product_stripe_id = Repo.get(Product, Product.product_sanbase()).stripe_id
+    sanbase_product_stripe_id = Product.by_id(Product.product_sanbase()).stripe_id
 
     Stripe.Customer.retrieve(stripe_customer_id)
     |> case do

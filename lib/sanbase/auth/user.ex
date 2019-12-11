@@ -420,6 +420,16 @@ defmodule Sanbase.Auth.User do
     end
   end
 
+  # Resource coud be watchlist, insight, user_trigger struct or any other struct which belongs to User
+  def resource_user_count_map(resource) do
+    from(
+      r in resource,
+      group_by: r.user_id,
+      select: %{r.user_id => count(r.user_id)}
+    )
+    |> Repo.all()
+  end
+
   def anonymous_user_username, do: @anonymous_user_username
   def anonymous_user_email, do: @anonymous_user_email
 

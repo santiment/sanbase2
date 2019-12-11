@@ -16,9 +16,9 @@ defmodule Sanbase.Intercom do
   @intercom_api_token Config.get(:api_key)
 
   def sync_users do
-    triggers_map = resource_user_count_map(Sanbase.Signal.UserTrigger)
-    insights_map = resource_user_count_map(Sanbase.Insight.Post)
-    watchlists_map = resource_user_count_map(Sanbase.UserList)
+    triggers_map = User.resource_user_count_map(Sanbase.Signal.UserTrigger)
+    insights_map = User.resource_user_count_map(Sanbase.Insight.Post)
+    watchlists_map = User.resource_user_count_map(Sanbase.UserList)
 
     fetch_users()
     |> Stream.map(fn user ->
@@ -33,9 +33,9 @@ defmodule Sanbase.Intercom do
   end
 
   def get_data_for_user(user_id) do
-    triggers_map = resource_user_count_map(Sanbase.Signal.UserTrigger)
-    insights_map = resource_user_count_map(Sanbase.Insight.Post)
-    watchlists_map = resource_user_count_map(Sanbase.UserList)
+    triggers_map = User.resource_user_count_map(Sanbase.Signal.UserTrigger)
+    insights_map = User.resource_user_count_map(Sanbase.Insight.Post)
+    watchlists_map = User.resource_user_count_map(Sanbase.UserList)
 
     Repo.get(User, user_id)
     |> fetch_stats_for_user(%{
@@ -96,16 +96,6 @@ defmodule Sanbase.Intercom do
     |> UserTrigger.triggers_for()
     |> Enum.group_by(fn ut -> ut.trigger.settings.type end)
     |> Enum.map(fn {type, list} -> {"trigger_" <> type, length(list)} end)
-    |> Enum.into(%{})
-  end
-
-  defp resource_user_count_map(resource) do
-    from(
-      r in resource,
-      group_by: r.user_id,
-      select: {r.user_id, count(r.user_id)}
-    )
-    |> Repo.all()
     |> Enum.into(%{})
   end
 

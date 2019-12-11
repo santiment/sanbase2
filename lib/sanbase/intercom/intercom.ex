@@ -16,15 +16,33 @@ defmodule Sanbase.Intercom do
   @intercom_api_token Config.get(:api_key)
 
   def sync_users do
+    triggers_map = resource_user_count_map(Sanbase.Signal.UserTrigger)
+    insights_map = resource_user_count_map(Sanbase.Insight.Post)
+    watchlists_map = resource_user_count_map(Sanbase.UserList)
+
     fetch_users()
-    |> Stream.map(&fetch_stats_for_user/1)
+    |> Stream.map(fn user ->
+      fetch_stats_for_user(user, %{
+        triggers_map: triggers_map,
+        insights_map: insights_map,
+        watchlists_map: watchlists_map
+      })
+    end)
     |> Stream.map(&Jason.encode!/1)
     |> Enum.each(&send_user_stats_to_intercom/1)
   end
 
   def get_data_for_user(user_id) do
+    triggers_map = resource_user_count_map(Sanbase.Signal.UserTrigger)
+    insights_map = resource_user_count_map(Sanbase.Insight.Post)
+    watchlists_map = resource_user_count_map(Sanbase.UserList)
+
     Repo.get(User, user_id)
-    |> fetch_stats_for_user()
+    |> fetch_stats_for_user(%{
+      triggers_map: triggers_map,
+      insights_map: insights_map,
+      watchlists_map: watchlists_map
+    })
     |> Jason.encode!()
   end
 
@@ -40,7 +58,12 @@ defmodule Sanbase.Intercom do
            username: username,
            san_balance: san_balance,
            stripe_customer_id: stripe_customer_id
-         } = user
+         } = user,
+         %{
+           triggers_map: triggers_map,
+           insights_map: insights_map,
+           watchlists_map: watchlists_map
+         }
        ) do
     {sanbase_subscription_current_status, sanbase_trial_created_at} =
       fetch_sanbase_subscription_data(stripe_customer_id)
@@ -54,9 +77,9 @@ defmodule Sanbase.Intercom do
       name: username,
       custom_attributes:
         %{
-          all_watchlists_count: all_watchlists_count(user),
-          all_triggers_count: all_triggers_count(user),
-          all_insights_count: all_insights_count(user),
+          all_watchlists_count: Map.get(watchlists_map, id, 0),
+          all_triggers_count: Map.get(triggers_map, id, 0),
+          all_insights_count: Map.get(insights_map, id, 0),
           staked_san_tokens: format_balance(san_balance),
           sanbase_subscription_current_status: sanbase_subscription_current_status,
           sanbase_trial_created_at: sanbase_trial_created_at,
@@ -76,31 +99,14 @@ defmodule Sanbase.Intercom do
     |> Enum.into(%{})
   end
 
-  defp all_watchlists_count(%User{id: user_id}) do
+  defp resource_user_count_map(resource) do
     from(
-      ul in Sanbase.UserList,
-      where: ul.user_id == ^user_id,
-      select: count(ul.user_id)
+      r in resource,
+      group_by: r.user_id,
+      select: {r.user_id, count(r.user_id)}
     )
-    |> Repo.one()
-  end
-
-  defp all_triggers_count(%User{id: user_id}) do
-    from(
-      ut in Sanbase.Signal.UserTrigger,
-      where: ut.user_id == ^user_id,
-      select: count(ut.user_id)
-    )
-    |> Repo.one()
-  end
-
-  defp all_insights_count(%User{id: user_id}) do
-    from(
-      i in Sanbase.Insight.Post,
-      where: i.user_id == ^user_id,
-      select: count(i.user_id)
-    )
-    |> Repo.one()
+    |> Repo.all()
+    |> Enum.into(%{})
   end
 
   defp fetch_sanbase_subscription_data(nil) do

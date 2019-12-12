@@ -13,6 +13,7 @@ defmodule Sanbase.Model.Project.Roi do
          false <- is_nil(project.latest_coinmarketcap_data),
          false <- is_nil(project.latest_coinmarketcap_data.price_usd),
          false <- is_nil(project.latest_coinmarketcap_data.available_supply) do
+      "CALC ROI" |> IO.inspect(label: "16", limit: :infinity)
       zero = Decimal.new(0)
 
       tokens_and_initial_prices =
@@ -116,7 +117,7 @@ defmodule Sanbase.Model.Project.Roi do
          datetime <- Sanbase.DateTimeUtils.ecto_date_to_datetime(ico_start_date),
          price_usd when not is_nil(price_usd) <-
            Sanbase.Price.Utils.fetch_last_price_before(currency_from, "USD", datetime) do
-      Decimal.mult(price_from, Decimal.new(price_usd))
+      Decimal.mult(price_from, price_usd)
     else
       _ -> nil
     end

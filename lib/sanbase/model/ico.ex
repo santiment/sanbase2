@@ -115,12 +115,14 @@ defmodule Sanbase.Model.Ico do
 
     Repo.preload(ico, ico_currencies: [:currency]).ico_currencies
     |> Enum.map(fn ic ->
-      Sanbase.Price.Utils.fetch_last_price_before(
-        ic.amount,
-        ic.currency.code,
-        target_currency,
-        timestamp
-      )
+      price =
+        Sanbase.Price.Utils.fetch_last_price_before(
+          ic.currency.code,
+          target_currency,
+          timestamp
+        )
+
+      price * Decimal.to_float(ic.amount)
     end)
     |> Enum.reject(&is_nil/1)
     |> case do

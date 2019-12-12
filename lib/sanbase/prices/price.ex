@@ -87,7 +87,7 @@ defmodule Sanbase.Price do
         }
 
   @type combined_marketcap_and_volume_result ::
-          {:ok, combined_marketcap_and_volume_map()} | {:error, error()}
+          {:ok, list(combined_marketcap_and_volume_map())} | {:error, error()}
 
   @table "asset_prices"
   schema @table do
@@ -271,6 +271,7 @@ defmodule Sanbase.Price do
         }
       end
     )
+    |> maybe_unwrap_ok_value()
   end
 
   @doc ~s"""

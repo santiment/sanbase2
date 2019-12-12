@@ -1,11 +1,9 @@
 defmodule Sanbase.Price.Utils do
-  alias Sanbase.Model.{Project, Currency}
-
   defguard is_zero(price)
            when is_number(price) and price >= -1.0e-7 and price <= 1.0e-7
 
   @spec fetch_last_prices_before(String.t(), DateTime.t()) ::
-          {number(), number()} | {nil, nil} | {number(), nil} | {nil, number()}
+          {number() | nil, number() | nil}
   def fetch_last_prices_before(slug, datetime) do
     case Sanbase.Price.last_record_before(slug, datetime) do
       {:ok, %{price_usd: price_usd, price_btc: price_btc}} ->
@@ -98,8 +96,7 @@ defmodule Sanbase.Price.Utils do
   defp fetch_last_price_usd_before_convert_via_btc(slug, timestamp) do
     with {_price_usd, price_btc} <- fetch_last_prices_before(slug, timestamp),
          false <- is_nil(price_btc),
-         {price_btc_usd, _price_btc_btc} <-
-           fetch_last_prices_before("bitcoin", timestamp),
+         {price_btc_usd, _price_btc_btc} <- fetch_last_prices_before("bitcoin", timestamp),
          false <- is_nil(price_btc_usd) do
       price_btc * price_btc_usd
     else

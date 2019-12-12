@@ -82,6 +82,9 @@ defmodule Sanbase.Intercom do
         |> Map.merge(triggers_type_count(user))
     }
 
+    # email must be dropped if nil so user still can be created in Intercom if doesn't exist
+    stats = unless email, do: Map.delete(stats, :email)
+
     stats
   end
 

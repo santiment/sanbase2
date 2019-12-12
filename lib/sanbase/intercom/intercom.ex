@@ -2,7 +2,6 @@ defmodule Sanbase.Intercom do
   @moduledoc """
   Sync all users and user stats into intercom
   """
-  import Ecto.Query
 
   require Sanbase.Utils.Config, as: Config
   require Logger
@@ -77,13 +76,20 @@ defmodule Sanbase.Intercom do
           staked_san_tokens: format_balance(san_balance),
           sanbase_subscription_current_status: sanbase_subscription_current_status,
           sanbase_trial_created_at: sanbase_trial_created_at,
-          user_paid_after_trial: user_paid_after_trial
+          user_paid_after_trial: user_paid_after_trial,
+          weekly_digest:
+            Sanbase.Auth.UserSettings.settings_for(user).newsletter_subscription |> to_string()
         }
         |> Map.merge(triggers_type_count(user))
     }
 
     # email must be dropped if nil so user still can be created in Intercom if doesn't exist
-    stats = unless email, do: Map.delete(stats, :email)
+    stats =
+      unless email do
+        Map.delete(stats, :email)
+      else
+        stats
+      end
 
     stats
   end
@@ -106,7 +112,7 @@ defmodule Sanbase.Intercom do
     Stripe.Customer.retrieve(stripe_customer_id)
     |> case do
       {:ok, customer} ->
-        if customer.subscriptions.object == "list" do
+        if not is_nil(customer.subscriptions) and customer.subscriptions.object == "list" do
           customer.subscriptions.data
           |> Enum.filter(&(&1.plan.product == sanbase_product_stripe_id))
           |> Enum.max_by(& &1.created, fn -> nil end)

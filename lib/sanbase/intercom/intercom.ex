@@ -76,7 +76,9 @@ defmodule Sanbase.Intercom do
           staked_san_tokens: format_balance(san_balance),
           sanbase_subscription_current_status: sanbase_subscription_current_status,
           sanbase_trial_created_at: sanbase_trial_created_at,
-          user_paid_after_trial: user_paid_after_trial
+          user_paid_after_trial: user_paid_after_trial,
+          weekly_digest:
+            Sanbase.Auth.UserSettings.settings_for(user).newsletter_subscription |> to_string()
         }
         |> Map.merge(triggers_type_count(user))
     }
@@ -110,7 +112,7 @@ defmodule Sanbase.Intercom do
     Stripe.Customer.retrieve(stripe_customer_id)
     |> case do
       {:ok, customer} ->
-        if customer.subscriptions.object == "list" do
+        if not is_nil(customer.subscriptions) and customer.subscriptions.object == "list" do
           customer.subscriptions.data
           |> Enum.filter(&(&1.plan.product == sanbase_product_stripe_id))
           |> Enum.max_by(& &1.created, fn -> nil end)

@@ -2,7 +2,6 @@ defmodule Sanbase.Intercom do
   @moduledoc """
   Sync all users and user stats into intercom
   """
-  import Ecto.Query
 
   require Sanbase.Utils.Config, as: Config
   require Logger
@@ -83,7 +82,12 @@ defmodule Sanbase.Intercom do
     }
 
     # email must be dropped if nil so user still can be created in Intercom if doesn't exist
-    stats = unless email, do: Map.delete(stats, :email)
+    stats =
+      unless email do
+        Map.delete(stats, :email)
+      else
+        stats
+      end
 
     stats
   end

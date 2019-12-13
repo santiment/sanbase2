@@ -6,4 +6,9 @@ defmodule SanbaseWeb.Graphql.ExchangeTypes do
     field(:exchange_inflow, :float)
     field(:exchange_outflow, :float)
   end
+
+  object :slug_pair do
+    field(:from_slug, :string)
+    field(:to_slug, :string)
+  end
 end

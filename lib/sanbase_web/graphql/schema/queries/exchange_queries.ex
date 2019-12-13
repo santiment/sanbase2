@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Schema.ExchangeQueries do
   use Absinthe.Schema.Notation
 
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
   alias SanbaseWeb.Graphql.Resolvers.ExchangeResolver
 
@@ -35,11 +35,24 @@ defmodule SanbaseWeb.Graphql.Schema.ExchangeQueries do
     field :exchange_trades, list_of(:exchange_trade) do
       arg(:exchange, non_null(:string))
       arg(:ticker_pair, non_null(:string))
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
+      arg(:from_slug, non_null(:datetime))
+      arg(:to_slug, non_null(:datetime))
       arg(:interval, :string)
 
       cache_resolve(&ExchangeResolver.exchange_trades/3)
+    end
+
+    @desc ~s"""
+    Returns the mapping between exchange market pair and asset slugs.
+    """
+    field :exchange_market_pair_slug_mapping, :slug_pair do
+      arg(:exchange, non_null(:string))
+      arg(:ticker_pair, non_null(:string))
+
+      cache_resolve(&ExchangeResolver.exchange_market_pair_slug_mapping/3,
+        ttl: 3600,
+        max_ttl_offset: 3600
+      )
     end
   end
 end

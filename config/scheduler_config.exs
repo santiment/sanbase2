@@ -71,5 +71,9 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     migrate_prices: [
       schedule: "@reboot",
       task: {Sanbase.Prices.Migrate, :run, []}
+    ],
+    sync_users_to_intercom: [
+      schedule: "@daily",
+      task: {Sanbase.Intercom, :sync_users, []}
     ]
   ]

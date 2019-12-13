@@ -14,20 +14,25 @@ defmodule Sanbase.Intercom do
   @intercom_url "https://api.intercom.io/users"
 
   def sync_users do
-    triggers_map = User.resource_user_count_map(Sanbase.Signal.UserTrigger)
-    insights_map = User.resource_user_count_map(Sanbase.Insight.Post)
-    watchlists_map = User.resource_user_count_map(Sanbase.UserList)
+    # Skip if api key not present in env. (Run only on production)
+    if intercom_api_key() do
+      triggers_map = User.resource_user_count_map(Sanbase.Signal.UserTrigger)
+      insights_map = User.resource_user_count_map(Sanbase.Insight.Post)
+      watchlists_map = User.resource_user_count_map(Sanbase.UserList)
 
-    User.all()
-    |> Stream.map(fn user ->
-      fetch_stats_for_user(user, %{
-        triggers_map: triggers_map,
-        insights_map: insights_map,
-        watchlists_map: watchlists_map
-      })
-    end)
-    |> Stream.map(&Jason.encode!/1)
-    |> Enum.each(&send_user_stats_to_intercom/1)
+      User.all()
+      |> Stream.map(fn user ->
+        fetch_stats_for_user(user, %{
+          triggers_map: triggers_map,
+          insights_map: insights_map,
+          watchlists_map: watchlists_map
+        })
+      end)
+      |> Stream.map(&Jason.encode!/1)
+      |> Enum.each(&send_user_stats_to_intercom/1)
+    else
+      :ok
+    end
   end
 
   def get_data_for_user(user_id) do
@@ -133,7 +138,7 @@ defmodule Sanbase.Intercom do
     headers = [
       {"Content-Type", "application/json"},
       {"Accept", "application/json"},
-      {"Authorization", "Bearer #{Config.get(:api_key)}"}
+      {"Authorization", "Bearer #{intercom_api_key()}"}
     ]
 
     HTTPoison.post(@intercom_url, stats_json, headers)
@@ -166,5 +171,9 @@ defmodule Sanbase.Intercom do
   defp format_dt(unix_dt) do
     DateTime.from_unix!(unix_dt)
     |> DateTime.to_iso8601()
+  end
+
+  defp intercom_api_key() do
+    Config.get(:api_key)
   end
 end

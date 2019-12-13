@@ -51,13 +51,29 @@ defmodule SanbaseWeb.Graphql.Schema.ExchangeQueries do
     @desc ~s"""
     Returns the mapping between exchange market pair and asset slugs.
     """
-    field :exchange_market_pair_slug_mapping, :slug_pair do
+    field :exchange_market_pair_to_slugs, :slug_pair do
       meta(access: :free)
 
       arg(:exchange, non_null(:string))
       arg(:ticker_pair, non_null(:string))
 
-      cache_resolve(&ExchangeResolver.exchange_market_pair_slug_mapping/3,
+      cache_resolve(&ExchangeResolver.exchange_market_pair_to_slugs/3,
+        ttl: 3600,
+        max_ttl_offset: 3600
+      )
+    end
+
+    @desc ~s"""
+    Returns the mapping between asset slugs and exchange market pair.
+    """
+    field :slugs_to_exchange_market_pair, :market_pair do
+      meta(access: :free)
+
+      arg(:exchange, non_null(:string))
+      arg(:from_slug, non_null(:string))
+      arg(:to_slug, non_null(:string))
+
+      cache_resolve(&ExchangeResolver.slugs_to_exchange_market_pair/3,
         ttl: 3600,
         max_ttl_offset: 3600
       )

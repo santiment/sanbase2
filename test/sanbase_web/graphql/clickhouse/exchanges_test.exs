@@ -16,6 +16,16 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
     insert(:exchange_address, %{address: "0x567", name: "Bitfinex", infrastructure_id: infr.id})
     insert(:exchange_address, %{address: "0x789", name: "Binance", infrastructure_id: infr.id})
 
+    insert(:exchange_market_pair_mappings, %{
+      exchange: "Bitfinex",
+      market_pair: "SAN/USD",
+      from_slug: "santiment",
+      to_slug: "usd",
+      source: "coinmarketcap",
+      from_ticker: "SAN",
+      to_ticker: "USD"
+    })
+
     [
       exchange: "Binance",
       conn: conn,
@@ -81,27 +91,36 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
     end
   end
 
-  describe "#exchangeMarketPairSlugMapping" do
+  describe "#exchangeMarketPairToSlugs" do
     test "returns the proper slugs" do
-      insert(:exchange_market_pair_mappings, %{
-        exchange: "Bitfinex",
-        market_pair: "SAN/USD",
-        from_slug: "santiment",
-        to_slug: "usd",
-        source: "coinmarketcap",
-        from_ticker: "SAN",
-        to_ticker: "USD"
-      })
-
-      query = exchange_market_cap_slugs_map_query("Bitfinex", "SAN/USD")
-      result = execute_query(conn, query, "exchangeMarketPairSlugMapping")
+      query = exchange_market_pair_to_slugs("Bitfinex", "SAN/USD")
+      result = execute_query(build_conn(), query, "exchangeMarketPairToSlugs")
       assert result == %{"fromSlug" => "santiment", "toSlug" => "usd"}
     end
 
     test "returns nulls" do
-      query = exchange_market_cap_slugs_map_query("Non-existing", "SAN/USD")
-      result = execute_query(conn, query, "exchangeMarketPairSlugMapping")
+      query = exchange_market_pair_to_slugs("Non-existing", "SAN/USD")
+      result = execute_query(build_conn(), query, "exchangeMarketPairToSlugs")
       assert result == %{"fromSlug" => nil, "toSlug" => nil}
+    end
+  end
+
+  describe "#slugsToExchangeMarketPair" do
+    test "returns the proper slugs" do
+      query = slugs_to_exchange_market_pair_query("Bitfinex", "santiment", "usd")
+      result = execute_query(build_conn(), query, "slugsToExchangeMarketPair")
+
+      assert result == %{
+               "marketPair" => "SAN/USD",
+               "fromTicker" => "SAN",
+               "toTicker" => "USD"
+             }
+    end
+
+    test "returns nulls" do
+      query = slugs_to_exchange_market_pair_query("Non-existing", "santiment", "usd")
+      result = execute_query(build_conn(), query, "slugsToExchangeMarketPair")
+      assert result == %{"fromTicker" => nil, "marketPair" => nil, "toTicker" => nil}
     end
   end
 
@@ -121,12 +140,26 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
     """
   end
 
-  defp exchange_market_cap_slugs_map_query(exchange, ticker_pair) do
+  defp exchange_market_pair_to_slugs(exchange, ticker_pair) do
     """
     {
-      exchangeMarketPairSlugMapping(exchange:"#{exchange}", tickerPair:"#{ticker_pair}") {
+      exchangeMarketPairToSlugs(exchange:"#{exchange}", tickerPair:"#{ticker_pair}") {
         fromSlug
         toSlug
+      }
+    }
+    """
+  end
+
+  defp slugs_to_exchange_market_pair_query(exchange, from_slug, to_slug) do
+    """
+    {
+      slugsToExchangeMarketPair(exchange:"#{exchange}", fromSlug:"#{from_slug}", toSlug:"#{
+      to_slug
+    }") {
+        marketPair
+        fromTicker
+        toTicker
       }
     }
     """

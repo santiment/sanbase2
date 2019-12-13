@@ -45,12 +45,25 @@ defmodule Sanbase.Exchanges.MarketPairMapping do
       emp in __MODULE__,
       where:
         emp.exchange == ^exchange and emp.market_pair == ^market_pair and emp.source == ^source,
-      select: {emp.from_slug, emp.to_slug}
+      select: %{from_slug: emp.from_slug, to_slug: emp.to_slug}
     )
     |> Sanbase.Repo.one()
-    |> case do
-      nil -> {nil, nil}
-      {from_sulg, to_slug} -> {from_sulg, to_slug}
-    end
+  end
+
+  def slugs_to_exchange_market_pair(exchange, from_slug, to_slug, source \\ @default_source) do
+    from(
+      emp in __MODULE__,
+      where:
+        emp.exchange == ^exchange and
+          emp.from_slug == ^from_slug and
+          emp.to_slug == ^to_slug and
+          emp.source == ^source,
+      select: %{
+        market_pair: emp.market_pair,
+        from_ticker: emp.from_ticker,
+        to_ticker: emp.to_ticker
+      }
+    )
+    |> Sanbase.Repo.one()
   end
 end

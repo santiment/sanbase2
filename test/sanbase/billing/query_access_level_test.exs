@@ -85,7 +85,8 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :last_exchange_market_depth,
           :last_exchange_trades,
           :exchange_trades,
-          :exchange_market_pair_slug_mapping
+          :exchange_market_pair_to_slug,
+          :slugs_to_exchange_market_pair
         ]
         |> Enum.sort()
 

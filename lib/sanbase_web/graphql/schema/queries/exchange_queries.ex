@@ -41,8 +41,8 @@ defmodule SanbaseWeb.Graphql.Schema.ExchangeQueries do
 
       arg(:exchange, non_null(:string))
       arg(:ticker_pair, non_null(:string))
-      arg(:from_slug, non_null(:datetime))
-      arg(:to_slug, non_null(:datetime))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
       arg(:interval, :string)
 
       cache_resolve(&ExchangeResolver.exchange_trades/3)

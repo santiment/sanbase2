@@ -81,6 +81,30 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
     end
   end
 
+  describe "#exchangeMarketPairSlugMapping" do
+    test "returns the proper slugs" do
+      insert(:exchange_market_pair_mappings, %{
+        exchange: "Bitfinex",
+        market_pair: "SAN/USD",
+        from_slug: "santiment",
+        to_slug: "usd",
+        source: "coinmarketcap",
+        from_ticker: "SAN",
+        to_ticker: "USD"
+      })
+
+      query = exchange_market_cap_slugs_map_query("Bitfinex", "SAN/USD")
+      result = execute_query(conn, query, "exchangeMarketPairSlugMapping")
+      assert result == %{"fromSlug" => "santiment", "toSlug" => "usd"}
+    end
+
+    test "returns nulls" do
+      query = exchange_market_cap_slugs_map_query("Non-existing", "SAN/USD")
+      result = execute_query(conn, query, "exchangeMarketPairSlugMapping")
+      assert result == %{"fromSlug" => nil, "toSlug" => nil}
+    end
+  end
+
   defp exchange_volume_query(exchange, from, to) do
     """
       {
@@ -94,6 +118,17 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
             exchange_outflow
         }
       }
+    """
+  end
+
+  defp exchange_market_cap_slugs_map_query(exchange, ticker_pair) do
+    """
+    {
+      exchangeMarketPairSlugMapping(exchange:"#{exchange}", tickerPair:"#{ticker_pair}") {
+        fromSlug
+        toSlug
+      }
+    }
     """
   end
 end

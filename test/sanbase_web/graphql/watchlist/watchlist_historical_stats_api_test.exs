@@ -4,16 +4,11 @@ defmodule SanbaseWeb.Graphql.WatchlistHistoricalStatsApiTest do
   import Sanbase.TestHelpers
 
   alias Sanbase.UserList
-  alias Sanbase.Influxdb.Measurement
-  alias Sanbase.Prices.Store
 
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.InfluxdbHelpers
   import Sanbase.Factory
 
   setup do
-    setup_prices_influxdb()
-
     clean_task_supervisor_children()
 
     user = insert(:user)
@@ -22,7 +17,17 @@ defmodule SanbaseWeb.Graphql.WatchlistHistoricalStatsApiTest do
     p1 = insert(:random_erc20_project)
     p2 = insert(:random_erc20_project)
 
-    %{from: from, to: to} = setup_db(p1, p2)
+    datetime1 = ~U[2017-05-13 00:00:00Z]
+    datetime2 = ~U[2017-05-14 00:00:00Z]
+    datetime3 = ~U[2017-05-15 00:00:00Z]
+    datetime4 = ~U[2017-05-16 00:00:00Z]
+
+    data = [
+      [datetime1 |> DateTime.to_unix(), 545, 220, 1],
+      [datetime2 |> DateTime.to_unix(), 2000, 1400, 1],
+      [datetime3 |> DateTime.to_unix(), 2600, 1600, 1],
+      [datetime4 |> DateTime.to_unix(), 1800, 1300, 1]
+    ]
 
     {:ok, watchlist} = UserList.create_user_list(user, %{name: "test watchlist"})
     {:ok, watchlist2} = UserList.create_user_list(user, %{name: "test watchlist2"})
@@ -33,27 +38,19 @@ defmodule SanbaseWeb.Graphql.WatchlistHistoricalStatsApiTest do
         list_items: [%{project_id: p1.id}, %{project_id: p2.id}]
       })
 
-    {:ok,
-     conn: conn, user: user, watchlist: watchlist, from: from, to: to, empty_watchlist: watchlist2}
+    %{
+      conn: conn,
+      user: user,
+      watchlist: watchlist,
+      from: datetime1,
+      to: datetime2,
+      empty_watchlist: watchlist2,
+      data: data
+    }
   end
 
   test "historical data for watchlists", context do
-    query = """
-    {
-      watchlist(id: #{context.watchlist.id}){
-        historicalStats(from: "#{context.from}", to: "#{context.to}", interval: "1d") {
-          datetime
-          marketcap
-          volume
-        }
-      }
-    }
-    """
-
-    result =
-      context.conn
-      |> post("/graphql", query_skeleton(query, "watchlist"))
-      |> json_response(200)
+    %{conn: conn, from: from, to: to, watchlist: watchlist, data: data} = context
 
     expected_result = %{
       "data" => %{
@@ -84,14 +81,37 @@ defmodule SanbaseWeb.Graphql.WatchlistHistoricalStatsApiTest do
       }
     }
 
+    fn ->
+      result = get_watchlist_historical_stats(conn, from, to, watchlist)
+      assert result == expected_result
+    end
+    |> Sanbase.Mock.with_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: data}})
+  end
+
+  test "empty watchlist", context do
+    %{conn: conn, from: from, to: to, empty_watchlist: watchlist} = context
+
+    result = get_watchlist_historical_stats(conn, from, to, watchlist)
+
+    expected_result = %{"data" => %{"watchlist" => %{"historicalStats" => []}}}
     assert result == expected_result
   end
 
-  test "historical data for watchlists with no  projects", context do
+  test "the database returns an errors", context do
+    %{conn: conn, from: from, to: to, watchlist: watchlist} = context
+
+    fn ->
+      %{"errors" => [error]} = get_watchlist_historical_stats(conn, from, to, watchlist)
+      assert error["message"] =~ "Can't fetch historical stats for a watchlist."
+    end
+    |> Sanbase.Mock.with_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "Clickhouse error"})
+  end
+
+  defp get_watchlist_historical_stats(conn, from, to, watchlist) do
     query = """
-    {
-      watchlist(id: #{context.empty_watchlist.id}){
-        historicalStats(from: "#{context.from}", to: "#{context.to}", interval: "1d") {
+      {
+      watchlist(id: #{watchlist.id}){
+        historicalStats(from: "#{from}", to: "#{to}", interval: "1d") {
           datetime
           marketcap
           volume
@@ -100,70 +120,8 @@ defmodule SanbaseWeb.Graphql.WatchlistHistoricalStatsApiTest do
     }
     """
 
-    result =
-      context.conn
-      |> post("/graphql", query_skeleton(query, "watchlist"))
-      |> json_response(200)
-
-    expected_result = %{
-      "data" => %{
-        "watchlist" => %{
-          "historicalStats" => []
-        }
-      }
-    }
-
-    assert result == expected_result
-  end
-
-  def setup_db(p1, p2) do
-    measurement1 = Measurement.name_from(p1)
-    measurement2 = Measurement.name_from(p2)
-
-    datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
-    datetime2 = DateTime.from_naive!(~N[2017-05-14 21:45:00], "Etc/UTC")
-    datetime3 = DateTime.from_naive!(~N[2017-05-15 21:45:00], "Etc/UTC")
-    datetime4 = DateTime.from_naive!(~N[2017-05-16 21:45:00], "Etc/UTC")
-    datetime5 = DateTime.from_naive!(~N[2017-05-16 23:59:59], "Etc/UTC")
-
-    Store.import([
-      %Measurement{
-        timestamp: datetime1 |> DateTime.to_unix(:nanosecond),
-        fields: %{price_usd: 25, price_btc: 1, volume_usd: 220, marketcap_usd: 545},
-        name: measurement1
-      },
-      %Measurement{
-        timestamp: datetime2 |> DateTime.to_unix(:nanosecond),
-        fields: %{price_usd: 20, price_btc: 1000, volume_usd: 200, marketcap_usd: 500},
-        name: measurement1
-      },
-      %Measurement{
-        timestamp: datetime3 |> DateTime.to_unix(:nanosecond),
-        fields: %{price_usd: 22, price_btc: 1200, volume_usd: 300, marketcap_usd: 800},
-        name: measurement1
-      },
-      %Measurement{
-        timestamp: datetime3 |> DateTime.to_unix(:nanosecond),
-        fields: %{price_usd: 20, price_btc: 1, volume_usd: 5, marketcap_usd: 500},
-        name: measurement2
-      },
-      %Measurement{
-        timestamp: datetime2 |> DateTime.to_unix(:nanosecond),
-        fields: %{volume_usd: 1200, marketcap_usd: 1500},
-        name: measurement2
-      },
-      %Measurement{
-        timestamp: datetime3 |> DateTime.to_unix(:nanosecond),
-        fields: %{volume_usd: 1300, marketcap_usd: 1800},
-        name: measurement2
-      },
-      %Measurement{
-        timestamp: datetime4 |> DateTime.to_unix(:nanosecond),
-        fields: %{volume_usd: 1300, marketcap_usd: 1800},
-        name: measurement2
-      }
-    ])
-
-    %{from: datetime1, to: datetime5}
+    conn
+    |> post("/graphql", query_skeleton(query, "watchlist"))
+    |> json_response(200)
   end
 end

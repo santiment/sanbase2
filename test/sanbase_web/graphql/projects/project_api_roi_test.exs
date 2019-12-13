@@ -3,9 +3,10 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
 
   alias Sanbase.Model.Ico
 
-  import Mock
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
+
+  require Sanbase.Mock
 
   setup do
     insert(:project, %{slug: "ethereum", ticker: "ETH"})
@@ -37,23 +38,18 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
     })
     |> Sanbase.Repo.insert!()
 
-    %{project: project, datetime1: dt1, datetime2: dt2}
+    %{project: project, datetime: dt1}
   end
 
   test "fetch project ROI", context do
-    with_mock Sanbase.Price,
-      last_record_before: fn _, _ ->
-        {:ok,
-         %{
-           datetime: context.datetime1,
-           price_usd: 5,
-           price_btc: 0.1,
-           marketcap_usd: 500,
-           volume_usd: 200
-         }}
-      end do
-      assert get_roi(context.conn, context.project) == %{"roiUsd" => "2.5"}
-    end
+    response = last_record_before_fixture(context)
+
+    fn -> assert get_roi(context.conn, context.project) == %{"roiUsd" => "2.5"} end
+    |> Sanbase.Mock.with_mock2(&Sanbase.Price.last_record_before/2, response)
+  end
+
+  defp last_record_before_fixture(%{datetime: dt}) do
+    {:ok, %{datetime: dt, price_usd: 5, price_btc: 0.1, marketcap_usd: 500, volume_usd: 200}}
   end
 
   def get_roi(conn, project) do

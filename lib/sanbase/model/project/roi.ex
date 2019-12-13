@@ -13,7 +13,6 @@ defmodule Sanbase.Model.Project.Roi do
          false <- is_nil(project.latest_coinmarketcap_data),
          false <- is_nil(project.latest_coinmarketcap_data.price_usd),
          false <- is_nil(project.latest_coinmarketcap_data.available_supply) do
-      "CALC ROI" |> IO.inspect(label: "16", limit: :infinity)
       zero = Decimal.new(0)
 
       tokens_and_initial_prices =

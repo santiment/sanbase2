@@ -4,7 +4,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Sanbase.Signal.UserTrigger
   alias Sanbase.Billing.Plan.SanbaseAccessChecker
@@ -418,8 +417,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
        %{active_deposits: 0.2, datetime: ~U[2019-01-02 00:00:00Z]}
      ]}
   end
-
-  defp pr
 
   defp price_resp() do
     {:ok,

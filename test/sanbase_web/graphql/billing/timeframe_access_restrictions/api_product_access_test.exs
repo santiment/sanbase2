@@ -4,7 +4,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
   import Mock
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Sanbase.Auth.Apikey
   alias Sanbase.Metric

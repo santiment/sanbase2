@@ -1,11 +1,18 @@
 defmodule Sanbase.Price.Utils do
+  import Sanbase.DateTimeUtils, only: [round_datetime: 1]
+
   defguard is_zero(price)
            when is_number(price) and price >= -1.0e-7 and price <= 1.0e-7
 
   @spec fetch_last_prices_before(String.t(), DateTime.t()) ::
           {number() | nil, number() | nil}
   def fetch_last_prices_before(slug, datetime) do
-    case Sanbase.Price.last_record_before(slug, datetime) do
+    last_record =
+      Sanbase.Cache.get_or_store({:last_record_before, slug, round_datetime(datetime)}, fn ->
+        Sanbase.Price.last_record_before(slug, datetime)
+      end)
+
+    case last_record do
       {:ok, %{price_usd: price_usd, price_btc: price_btc}} ->
         {price_usd, price_btc}
 
@@ -30,6 +37,12 @@ defmodule Sanbase.Price.Utils do
       when currency in ["ETH", "ethereum"] do
     {price_usd, _price_btc} = fetch_last_prices_before("ethereum", timestamp)
     price_usd
+  end
+
+  def fetch_last_price_before(currency, "BTC", timestamp)
+      when currency in ["ETH", "ethereum"] do
+    {_price_usd, price_btc} = fetch_last_prices_before("ethereum", timestamp)
+    price_btc
   end
 
   def fetch_last_price_before("USD", "BTC", timestamp) do

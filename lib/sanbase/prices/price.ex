@@ -465,7 +465,7 @@ defmodule Sanbase.Price do
   defp maybe_nullify_values({:error, error}), do: {:error, error}
 
   defp maybe_unwrap_ok_value({:ok, [value]}), do: {:ok, value}
-  defp maybe_unwrap_ok_value({:error, error}), do: {:error, error}
+  defp maybe_unwrap_ok_value(data), do: data
 
   defp maybe_add_percent_of_total_marketcap({:ok, data}) do
     total_marketcap_usd = Enum.map(data, & &1.marketcap_usd) |> Enum.sum()

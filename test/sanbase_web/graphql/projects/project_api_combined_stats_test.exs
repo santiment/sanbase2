@@ -61,12 +61,11 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
   test "the database returns an error", context do
     %{conn: conn, from: from, to: to, slugs: slugs} = context
 
-    query =
-      fn ->
-        %{"errors" => [error]} = get_history_stats(conn, from, to, slugs)
-        assert error["message"] =~ "Cannot get combined history stats for a list of slugs."
-      end
-      |> Sanbase.Mock.with_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "Database error"})
+    fn ->
+      %{"errors" => [error]} = get_history_stats(conn, from, to, slugs)
+      assert error["message"] =~ "Cannot get combined history stats for a list of slugs."
+    end
+    |> Sanbase.Mock.with_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "Database error"})
   end
 
   defp get_history_stats(conn, from, to, slugs) do

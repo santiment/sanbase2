@@ -82,6 +82,7 @@ defmodule Sanbase.Model.Ico do
   def funds_raised_usd_ico_end_price(%Ico{end_date: end_date, project_id: project_id} = ico)
       when not is_nil(end_date) do
     project = Project.by_id(project_id)
+
     funds_raised_ico_end_price_from_currencies(project, ico, "USD", end_date)
   end
 
@@ -111,18 +112,21 @@ defmodule Sanbase.Model.Ico do
          target_currency,
          date
        ) do
-    timestamp = Sanbase.DateTimeUtils.ecto_date_to_datetime(date)
+    datetime = Sanbase.DateTimeUtils.ecto_date_to_datetime(date)
 
     Repo.preload(ico, ico_currencies: [:currency]).ico_currencies
     |> Enum.map(fn ic ->
-      price =
-        Sanbase.Price.Utils.fetch_last_price_before(
-          ic.currency.code,
-          target_currency,
-          timestamp
-        )
+      %Project{slug: slug} = Project.by_currency(ic.currency)
 
-      price * Decimal.to_float(ic.amount)
+      Sanbase.Price.Utils.fetch_last_price_before(
+        slug,
+        target_currency,
+        datetime
+      )
+      |> case do
+        nil -> nil
+        price -> price * Decimal.to_float(ic.amount)
+      end
     end)
     |> Enum.reject(&is_nil/1)
     |> case do

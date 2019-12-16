@@ -13,8 +13,6 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     datetime1 = ~U[2017-08-19 00:00:00Z]
     datetime2 = ~U[2017-10-17 00:00:00Z]
 
-    data = [[5, 0.105, 1000, 400]]
-
     # Add the 3 currencies
     currency_eth = insert(:currency, %{code: "ETH"})
     currency_btc = insert(:currency, %{code: "BTC"})
@@ -33,42 +31,58 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     project_no_ico = insert(:random_project)
 
     [
+      datetime: datetime2,
       project: project,
-      project_no_ico: project_no_ico,
-      data: data
+      project_no_ico: project_no_ico
     ]
   end
 
   test "fetch project funds raised", context do
-    %{conn: conn, project: project, data: data} = context
+    %{conn: conn, project: project} = context
 
     expected_result = %{
       "name" => project.name,
-      "fundsRaisedUsdIcoEndPrice" => 1200.0,
-      "fundsRaisedEthIcoEndPrice" => 250.0,
-      "fundsRaisedBtcIcoEndPrice" => 300.0,
+      "fundsRaisedBtcIcoEndPrice" => 72.5,
+      "fundsRaisedEthIcoEndPrice" => 290.0,
+      "fundsRaisedUsdIcoEndPrice" => 1950.0,
       "icos" => [
         %{
           "endDate" => "2017-08-19",
-          "fundsRaisedUsdIcoEndPrice" => 200.0,
-          "fundsRaisedEthIcoEndPrice" => 150.0,
-          "fundsRaisedBtcIcoEndPrice" => 100.0
+          "fundsRaisedBtcIcoEndPrice" => 32.5,
+          "fundsRaisedEthIcoEndPrice" => 190.0,
+          "fundsRaisedUsdIcoEndPrice" => 950.0
         },
         %{
           "endDate" => "2017-10-17",
-          "fundsRaisedUsdIcoEndPrice" => 1000.0,
           "fundsRaisedEthIcoEndPrice" => 100.0,
-          "fundsRaisedBtcIcoEndPrice" => 200.0
+          "fundsRaisedUsdIcoEndPrice" => 1.0e3,
+          "fundsRaisedBtcIcoEndPrice" => 40.0
         }
       ]
     }
 
     fn ->
       result = get_funds_raised(conn, project) |> get_in(["data", "projectBySlug"])
-
       assert result == expected_result
     end
-    |> Sanbase.Mock.with_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: data}})
+    |> Sanbase.Mock.with_mock2(
+      {Sanbase.Price, :last_record_before,
+       fn slug, datetime ->
+         if DateTime.compare(datetime, context.datetime) == :lt do
+           case slug do
+             "bitcoin" -> {:ok, %{price_usd: 2, price_btc: 0.1, marketcap: 100, volume: 100}}
+             "test" -> {:ok, %{price_usd: 4, price_btc: 0.05, marketcap: 100, volume: 100}}
+             "ethereum" -> {:ok, %{price_usd: 5, price_btc: 0.2, marketcap: nil, volume: nil}}
+           end
+         else
+           case slug do
+             "bitcoin" -> {:ok, %{price_usd: 5, price_btc: 0.2, marketcap: 100, volume: 100}}
+             "test" -> {:ok, %{price_usd: 4, price_btc: 0.03, marketcap: 100, volume: 100}}
+             "ethereum" -> {:ok, %{price_usd: 10, price_btc: 0.8, marketcap: 100, volume: 100}}
+           end
+         end
+       end}
+    )
   end
 
   test "no ico does not break query", context do

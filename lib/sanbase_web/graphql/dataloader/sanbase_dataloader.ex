@@ -18,6 +18,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
           | {:price, any()}
           | :market_segment
           | :infrastructure
+          | :comment_insight_id
           | :project_transparency_status,
           any()
         ) :: {:error, String.t()} | {:ok, float()} | map()
@@ -35,7 +36,13 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
       :eth_balance ->
         ParityDataloader.query(queryable, args)
 
-      x when x in [:infrastructure, :market_segment, :project_transparency_status] ->
+      x
+      when x in [
+             :comment_insight_id,
+             :infrastructure,
+             :market_segment,
+             :project_transparency_status
+           ] ->
         PostgresDataloader.query(queryable, args)
     end
   end

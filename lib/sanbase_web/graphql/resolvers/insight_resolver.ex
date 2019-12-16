@@ -1,7 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   require Logger
 
-  alias Sanbase.Tag
+  import Absinthe.Resolution.Helpers, except: [async: 1]
+
+  alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Auth.User
   alias Sanbase.Insight.{Post, Vote, PostComment}
   alias Sanbase.Repo
@@ -81,7 +83,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   end
 
   def all_tags(_root, _args, _context) do
-    {:ok, Tag.all()}
+    {:ok, Sanbase.Tag.all()}
   end
 
   @doc ~s"""
@@ -205,5 +207,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
       |> Enum.map(& &1.comment)
 
     {:ok, comments}
+  end
+
+  def insight_id(%{id: id}, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :comment_insight_id, id)
+    |> on_load(fn loader ->
+      {:ok, Dataloader.get(loader, SanbaseDataloader, :comment_insight_id, id)}
+    end)
   end
 end

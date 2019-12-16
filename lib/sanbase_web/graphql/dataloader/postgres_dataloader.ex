@@ -37,4 +37,15 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     |> Enum.map(fn %ProjectTransparencyStatus{id: id, name: name} -> {id, name} end)
     |> Map.new()
   end
+
+  def query(:comment_insight_id, comment_ids) do
+    ids = Enum.to_list(comment_ids)
+
+    from(mapping in Sanbase.Insight.PostComment,
+      where: mapping.comment_id in ^ids,
+      select: {mapping.comment_id, mapping.post_id}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
 end

@@ -87,11 +87,11 @@ defmodule Sanbase.Insight.PostComment do
     )
   end
 
-  defp apply_cursor(query, %{type: :before, before: datetime}) do
+  defp apply_cursor(query, %{type: :before, datetime: datetime}) do
     from(c in query, where: c.inserted_at < ^datetime)
   end
 
-  defp apply_cursor(query, %{type: :after, after: datetime}) do
+  defp apply_cursor(query, %{type: :after, datetime: datetime}) do
     from(c in query, where: c.inserted_at >= ^datetime)
   end
 

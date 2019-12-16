@@ -23,8 +23,10 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
 
     comments = insight_comments(conn, post.id)
 
-    assert comment["editedAt"] == nil
+    assert comment["insightId"] |> Sanbase.Math.to_integer() == post.id
     assert comment["content"] == content
+    assert comment["insertedAt"] != nil
+    assert comment["editedAt"] == nil
     assert length(comments) == 1
     assert comments |> List.first() |> Map.get("id") == comment["id"]
   end
@@ -103,6 +105,7 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
         content: "#{content}") {
           id
           content
+          insightId
           user{ id username email }
           subcommentsCount
           insertedAt
@@ -125,6 +128,7 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
         content: "#{content}") {
           id
           content
+          insightId
           user{ id username email }
           subcommentsCount
           insertedAt
@@ -145,6 +149,7 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
       deleteComment(commentId: #{comment_id}) {
         id
         content
+        insightId
         user{ id username email }
         subcommentsCount
         insertedAt
@@ -163,9 +168,11 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
     query = """
     {
       insightComments(
-        insightId: #{post_id}) {
+        insightId: #{post_id},
+        cursor: {type: BEFORE, datetime: "#{Timex.now()}"}) {
           id
           content
+          insightId
           parentId
           rootParentId
           user{ id username email }

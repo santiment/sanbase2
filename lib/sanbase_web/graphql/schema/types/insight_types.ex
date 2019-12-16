@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
   use Absinthe.Schema.Notation
 
   import Absinthe.Resolution.Helpers
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
   alias SanbaseWeb.Graphql.Resolvers.InsightResolver
   alias SanbaseWeb.Graphql.SanbaseRepo
@@ -14,7 +15,9 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
   object :comment do
     field(:id, non_null(:id))
 
-    field(:insight_id, non_null(:id))
+    field :insight_id, non_null(:id) do
+      cache_resolve(&InsightResolver.insight_id/3)
+    end
 
     field(:content, non_null(:string))
     field(:user, non_null(:public_user), resolve: dataloader(SanbaseRepo))

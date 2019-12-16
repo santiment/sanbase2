@@ -251,7 +251,11 @@ defmodule Sanbase.Billing.StripeEvent do
   end
 
   defp mask_user(%User{email: email}) when is_binary(email) do
-    Regex.replace(~r/(.*@)/, email, "***@")
+    [username, domain] = email |> String.split("@")
+
+    masked_username = Regex.replace(~r|(.{1}).{3}(.*)|, username, "\\1***\\2")
+
+    "#{masked_username}@#{domain}"
   end
 
   defp mask_user(_) do

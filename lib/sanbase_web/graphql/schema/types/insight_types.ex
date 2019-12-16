@@ -13,13 +13,14 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
 
   object :comment do
     field(:id, non_null(:id))
+
     field(:insight_id, non_null(:id))
+
     field(:content, non_null(:string))
     field(:user, non_null(:public_user), resolve: dataloader(SanbaseRepo))
     field(:parent_id, :id)
     field(:root_parent_id, :id)
     field(:subcomments_count, :integer)
-    field(:created_at, non_null(:datetime))
     field(:inserted_at, non_null(:datetime))
     field(:edited_at, :datetime)
   end

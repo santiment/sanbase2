@@ -43,7 +43,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     expected_result = %{
       "name" => project.name,
       "fundsRaisedBtcIcoEndPrice" => 72.5,
-      "fundsRaisedEthIcoEndPrice" => 290.0,
+      "fundsRaisedEthIcoEndPrice" => 390.0,
       "fundsRaisedUsdIcoEndPrice" => 1950.0,
       "icos" => [
         %{
@@ -54,7 +54,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
         },
         %{
           "endDate" => "2017-10-17",
-          "fundsRaisedEthIcoEndPrice" => 100.0,
+          "fundsRaisedEthIcoEndPrice" => 200.0,
           "fundsRaisedUsdIcoEndPrice" => 1.0e3,
           "fundsRaisedBtcIcoEndPrice" => 40.0
         }

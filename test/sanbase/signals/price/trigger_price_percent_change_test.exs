@@ -1,57 +1,41 @@
 defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
   use Sanbase.DataCase, async: false
 
-  import Mock
   import Sanbase.Factory
-  import Sanbase.InfluxdbHelpers
 
-  alias Sanbase.Prices.Store
-  alias Sanbase.Influxdb.Measurement
   alias Sanbase.Signal.{Trigger, UserTrigger, Evaluator}
   alias Sanbase.Signal.Trigger.PricePercentChangeSettings
 
-  @ticker "SAN"
-  @cmc_id "santiment"
-  setup_with_mocks([
-    {Sanbase.Chart, [],
-     [
-       build_embedded_chart: fn _, _, _, _ -> [%{image: %{url: "somelink"}}] end,
-       build_embedded_chart: fn _, _, _ -> [%{image: %{url: "somelink"}}] end
-     ]}
-  ]) do
+  setup do
     Sanbase.Signal.Evaluator.Cache.clear()
 
-    Tesla.Mock.mock(fn
-      %{method: :post} ->
-        %Tesla.Env{status: 200, body: "ok"}
-    end)
+    Tesla.Mock.mock(fn %{method: :post} -> %Tesla.Env{status: 200, body: "ok"} end)
 
     user = insert(:user)
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
-    Sanbase.Factory.insert(:project, %{
-      name: "Santiment",
-      ticker: @ticker,
-      slug: @cmc_id,
-      main_contract_address: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
-    })
+    project = insert(:random_erc20_project)
 
-    populate_influxdb()
-
-    [
-      user: user
-    ]
+    [project: project, user: user]
   end
 
-  describe "price percent change" do
-    test "moving up - only some triggered", context do
-      trigger_settings1 = price_percent_change_settings(%{operation: %{percent_up: 18.0}})
-      # should trigger signal
-      trigger_settings2 = price_percent_change_settings(%{operation: %{percent_up: 15.0}})
+  test "moving up - only some triggered", context do
+    %{user: user, project: project} = context
 
-      {:ok, _} = create_trigger(context.user, trigger_settings1)
-      {:ok, trigger2} = create_trigger(context.user, trigger_settings2)
+    trigger_settings1 = price_percent_change_settings(project, %{operation: %{percent_up: 18.0}})
 
+    trigger_settings2 = price_percent_change_settings(project, %{operation: %{percent_up: 15.0}})
+
+    {:ok, _} = create_trigger(user, trigger_settings1)
+    {:ok, trigger2} = create_trigger(user, trigger_settings2)
+
+    ohlc = %{open_price_usd: 53, close_price_usd: 62, high_price_usd: 70, low_price_usd: 40}
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Price.ohlc/3, {:ok, ohlc})
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.Chart.build_embedded_chart/4, [
+      %{image: %{url: "url"}}
+    ])
+    |> Sanbase.Mock.run_with_mocks(fn ->
       [triggered | rest] =
         PricePercentChangeSettings.type()
         |> UserTrigger.get_active_triggers_by_type()
@@ -60,26 +44,28 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
       assert rest == []
       assert trigger2.id == triggered.id
       assert Trigger.triggered?(triggered.trigger) == true
-    end
+    end)
+  end
 
-    test "moving down - only some triggered", context do
-      ticker_cmc_id = "#{@ticker}_#{@cmc_id}"
+  test "moving down - only some triggered", context do
+    %{user: user, project: project} = context
 
-      Store.import([
-        %Measurement{
-          timestamp: Timex.now() |> DateTime.to_unix(:nanosecond),
-          fields: %{price_usd: 40, price_btc: 1, volume_usd: 5, marketcap_usd: 500},
-          name: ticker_cmc_id
-        }
-      ])
+    # should trigger signal
+    trigger_settings1 =
+      price_percent_change_settings(project, %{operation: %{percent_down: 20.0}})
 
-      # should trigger signal
-      trigger_settings1 = price_percent_change_settings(%{operation: %{percent_down: 20.0}})
-      trigger_settings2 = price_percent_change_settings(%{operation: %{percent_up: 40.0}})
+    trigger_settings2 = price_percent_change_settings(project, %{operation: %{percent_up: 40.0}})
 
-      {:ok, trigger1} = create_trigger(context.user, trigger_settings1)
-      {:ok, _} = create_trigger(context.user, trigger_settings2)
+    {:ok, trigger1} = create_trigger(user, trigger_settings1)
+    {:ok, _} = create_trigger(user, trigger_settings2)
 
+    ohlc = %{open_price_usd: 53, close_price_usd: 40, high_price_usd: 70, low_price_usd: 40}
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Price.ohlc/3, {:ok, ohlc})
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.Chart.build_embedded_chart/4, [
+      %{image: %{url: "url"}}
+    ])
+    |> Sanbase.Mock.run_with_mocks(fn ->
       [triggered | rest] =
         PricePercentChangeSettings.type()
         |> UserTrigger.get_active_triggers_by_type()
@@ -88,16 +74,26 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
       assert rest == []
       assert trigger1.id == triggered.id
       assert Trigger.triggered?(triggered.trigger) == true
-    end
+    end)
+  end
 
-    test "moving up or move down - percent_up triggered", context do
-      trigger_settings =
-        price_percent_change_settings(%{
-          operation: %{some_of: [%{percent_up: 15}, %{percent_down: 100}]}
-        })
+  test "moving up or move down - percent_up triggered", context do
+    %{user: user, project: project} = context
 
-      {:ok, trigger} = create_trigger(context.user, trigger_settings)
+    trigger_settings =
+      price_percent_change_settings(project, %{
+        operation: %{some_of: [%{percent_up: 15}, %{percent_down: 100}]}
+      })
 
+    {:ok, trigger} = create_trigger(user, trigger_settings)
+
+    ohlc = %{open_price_usd: 53, close_price_usd: 62, high_price_usd: 70, low_price_usd: 0.1}
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Price.ohlc/3, {:ok, ohlc})
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.Chart.build_embedded_chart/4, [
+      %{image: %{url: "url"}}
+    ])
+    |> Sanbase.Mock.run_with_mocks(fn ->
       [triggered | rest] =
         PricePercentChangeSettings.type()
         |> UserTrigger.get_active_triggers_by_type()
@@ -106,24 +102,26 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
       assert rest == []
       assert Trigger.triggered?(triggered.trigger) == true
       assert triggered.id == trigger.id
-    end
+    end)
+  end
 
-    test "moving up or move down - percent_down triggered", context do
-      Store.import([
-        %Measurement{
-          timestamp: Timex.now() |> DateTime.to_unix(:nanosecond),
-          fields: %{price_usd: 1, price_btc: 1, volume_usd: 5, marketcap_usd: 500},
-          name: "#{@ticker}_#{@cmc_id}"
-        }
-      ])
+  test "moving up or move down - percent_down triggered", context do
+    %{user: user, project: project} = context
 
-      trigger_settings =
-        price_percent_change_settings(%{
-          operation: %{some_of: [%{percent_up: 1500}, %{percent_down: 20}]}
-        })
+    trigger_settings =
+      price_percent_change_settings(project, %{
+        operation: %{some_of: [%{percent_up: 1500}, %{percent_down: 20}]}
+      })
 
-      {:ok, trigger} = create_trigger(context.user, trigger_settings)
+    {:ok, trigger} = create_trigger(user, trigger_settings)
 
+    ohlc = %{open_price_usd: 53, close_price_usd: 1, high_price_usd: 70, low_price_usd: 0.1}
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Price.ohlc/3, {:ok, ohlc})
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.Chart.build_embedded_chart/4, [
+      %{image: %{url: "url"}}
+    ])
+    |> Sanbase.Mock.run_with_mocks(fn ->
       [triggered | rest] =
         PricePercentChangeSettings.type()
         |> UserTrigger.get_active_triggers_by_type()
@@ -132,103 +130,59 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
       assert rest == []
       assert Trigger.triggered?(triggered.trigger) == true
       assert triggered.id == trigger.id
-    end
+    end)
+  end
 
-    test "move up and move down - nothing triggered", context do
-      trigger_settings =
-        price_percent_change_settings(%{
-          operation: %{none_of: [%{percent_up: 0.001}, %{percent_down: 0.00001}]}
-        })
+  test "move up and move down - nothing triggered", context do
+    %{user: user, project: project} = context
 
-      create_trigger(context.user, trigger_settings)
+    trigger_settings =
+      price_percent_change_settings(project, %{
+        operation: %{none_of: [%{percent_up: 0.001}, %{percent_down: 0.00001}]}
+      })
 
+    create_trigger(user, trigger_settings)
+
+    ohlc = %{open_price_usd: 53, close_price_usd: 62, high_price_usd: 70, low_price_usd: 0.1}
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Price.ohlc/3, {:ok, ohlc})
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.Chart.build_embedded_chart/4, [
+      %{image: %{url: "url"}}
+    ])
+    |> Sanbase.Mock.run_with_mocks(fn ->
       assert [] ==
                PricePercentChangeSettings.type()
                |> UserTrigger.get_active_triggers_by_type()
                |> Evaluator.run()
-    end
+    end)
   end
 
   test "move up and move down - triggered", context do
+    %{user: user, project: project} = context
+
     trigger_settings =
-      price_percent_change_settings(%{
+      price_percent_change_settings(project, %{
         operation: %{all_of: [%{percent_up: 15}, %{percent_up: 10}]}
       })
 
-    {:ok, trigger} = create_trigger(context.user, trigger_settings)
+    {:ok, trigger} = create_trigger(user, trigger_settings)
 
-    [triggered | rest] =
-      PricePercentChangeSettings.type()
-      |> UserTrigger.get_active_triggers_by_type()
-      |> Evaluator.run()
+    ohlc = %{open_price_usd: 53, close_price_usd: 62, high_price_usd: 70, low_price_usd: 0.1}
 
-    assert rest == []
-    assert Trigger.triggered?(triggered.trigger) == true
-    assert triggered.id == trigger.id
-  end
-
-  defp populate_influxdb() do
-    setup_prices_influxdb()
-
-    ticker_cmc_id = "#{@ticker}_#{@cmc_id}"
-
-    datetime1 = Timex.shift(Timex.now(), hours: -9)
-    datetime2 = Timex.shift(Timex.now(), hours: -8)
-    datetime3 = Timex.shift(Timex.now(), hours: -7)
-    datetime4 = Timex.shift(Timex.now(), hours: -6)
-    datetime5 = Timex.shift(Timex.now(), hours: -5)
-    datetime6 = Timex.shift(Timex.now(), hours: -4)
-    datetime7 = Timex.shift(Timex.now(), hours: -3)
-    datetime8 = Timex.shift(Timex.now(), hours: -2)
-    datetime9 = Timex.now()
-
-    Store.import([
-      %Measurement{
-        timestamp: datetime1 |> DateTime.to_unix(:nanosecond),
-        fields: %{price_usd: 20, price_btc: 1000, volume_usd: 200, marketcap_usd: 500},
-        name: ticker_cmc_id
-      },
-      %Measurement{
-        timestamp: datetime2 |> DateTime.to_unix(:nanosecond),
-        fields: %{price_usd: 22, price_btc: 1200, volume_usd: 300, marketcap_usd: 800},
-        name: ticker_cmc_id
-      },
-      %Measurement{
-        timestamp: datetime3 |> DateTime.to_unix(:nanosecond),
-        fields: %{price_usd: 50, price_btc: 1, volume_usd: 5, marketcap_usd: 500},
-        name: ticker_cmc_id
-      },
-      %Measurement{
-        timestamp: datetime4 |> DateTime.to_unix(:nanosecond),
-        fields: %{price_usd: 55, price_btc: 1, volume_usd: 5, marketcap_usd: 500},
-        name: ticker_cmc_id
-      },
-      %Measurement{
-        timestamp: datetime5 |> DateTime.to_unix(:nanosecond),
-        fields: %{price_usd: 53, price_btc: 1, volume_usd: 5, marketcap_usd: 500},
-        name: ticker_cmc_id
-      },
-      %Measurement{
-        timestamp: datetime6 |> DateTime.to_unix(:nanosecond),
-        fields: %{price_usd: 58, price_btc: 1, volume_usd: 5, marketcap_usd: 500},
-        name: ticker_cmc_id
-      },
-      %Measurement{
-        timestamp: datetime7 |> DateTime.to_unix(:nanosecond),
-        fields: %{price_usd: 60, price_btc: 1, volume_usd: 5, marketcap_usd: 500},
-        name: ticker_cmc_id
-      },
-      %Measurement{
-        timestamp: datetime8 |> DateTime.to_unix(:nanosecond),
-        fields: %{price_usd: 59, price_btc: 1, volume_usd: 5, marketcap_usd: 500},
-        name: ticker_cmc_id
-      },
-      %Measurement{
-        timestamp: datetime9 |> DateTime.to_unix(:nanosecond),
-        fields: %{price_usd: 62, price_btc: 1, volume_usd: 5, marketcap_usd: 500},
-        name: ticker_cmc_id
-      }
+    Sanbase.Mock.prepare_mock2(&Sanbase.Price.ohlc/3, {:ok, ohlc})
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.Chart.build_embedded_chart/4, [
+      %{image: %{url: "url"}}
     ])
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      [triggered | rest] =
+        PricePercentChangeSettings.type()
+        |> UserTrigger.get_active_triggers_by_type()
+        |> Evaluator.run()
+
+      assert rest == []
+      assert Trigger.triggered?(triggered.trigger) == true
+      assert triggered.id == trigger.id
+    end)
   end
 
   defp create_trigger(user, settings) do
@@ -240,11 +194,11 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
     })
   end
 
-  defp price_percent_change_settings(price_opts) do
+  defp price_percent_change_settings(project, price_opts) do
     Map.merge(
       %{
         type: "price_percent_change",
-        target: %{slug: "santiment"},
+        target: %{slug: project.slug},
         channel: "telegram",
         time_window: "6h"
       },

@@ -202,11 +202,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
         %{comment_id: comment_id} = args,
         _resolution
       ) do
-    comments =
-      PostComment.get_subcomments(comment_id, args)
-      |> Enum.map(& &1.comment)
-
-    {:ok, comments}
+    {:ok, PostComment.get_subcomments(comment_id, args)}
   end
 
   def insight_id(%{id: id}, _args, %{context: %{loader: loader}}) do

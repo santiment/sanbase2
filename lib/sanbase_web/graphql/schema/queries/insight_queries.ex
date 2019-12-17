@@ -101,6 +101,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
 
     field :subcomments, list_of(:comment) do
       arg(:comment_id, non_null(:id))
+      arg(:limit, :integer, default_value: 100)
 
       resolve(&InsightResolver.subcomments/3)
     end

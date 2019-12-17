@@ -51,6 +51,22 @@ defmodule Sanbase.Insight.Comment do
     |> foreign_key_constraint(:root_parent_id)
   end
 
+  def get_subcomments(comment_id, limit) do
+    subcomments_tree_query(comment_id)
+    |> order_by([c], c.inserted_at)
+    |> limit(^limit)
+    |> Repo.all()
+  end
+
+  defp subcomments_tree_query(comment_id) do
+    from(
+      p in __MODULE__,
+      where:
+        p.parent_id == ^comment_id or
+          p.root_parent_id == ^comment_id
+    )
+  end
+
   def create_changeset(user_id, content, parent_id \\ nil) do
     changeset(%__MODULE__{}, %{user_id: user_id, content: content, parent_id: parent_id})
   end

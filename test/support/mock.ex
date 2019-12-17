@@ -23,18 +23,20 @@ defmodule Sanbase.Mock do
 
   def init(), do: MapSet.new()
 
-  def prepare_mock(state \\ MapSet.new(), function_description, opts \\ [])
+  def prepare_mock(state \\ MapSet.new(), module, fun_name, fun_body, opts \\ [])
 
-  def prepare_mock(state, {module, fun_name, fun_body}, opts)
+  def prepare_mock(state, module, fun_name, fun_body, opts)
       when is_atom(module) and is_atom(fun_name) and is_function(fun_body) do
     passthrough = if Keyword.get(opts, :passthrough, true), do: [:passthrough], else: []
     MapSet.put(state, {module, passthrough, [{fun_name, fun_body}]})
   end
 
+  def prepare_mock2(state \\ MapSet.new(), captured_fun, data, opts \\ [])
+
   for arity <- 0..16 do
     @arity arity
 
-    def prepare_mock(state, {captured_fun, data}, opts)
+    def prepare_mock2(state, captured_fun, data, opts)
         when is_function(captured_fun, unquote(arity)) do
       {:name, name} = Function.info(captured_fun, :name)
       {:module, module} = Function.info(captured_fun, :module)

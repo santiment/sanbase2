@@ -44,7 +44,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
   test "fetch project ROI", context do
     response = last_record_before_fixture(context)
 
-    Sanbase.Mock.prepare_mock({&Sanbase.Price.last_record_before/2, response})
+    Sanbase.Mock.prepare_mock2(&Sanbase.Price.last_record_before/2, response)
     |> Sanbase.Mock.run_with_mocks(fn ->
       assert get_roi(context.conn, context.project) == %{"roiUsd" => "2.5"}
     end)
@@ -53,7 +53,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
   test "fetch project ROI2", context do
     response = last_record_before_fixture(context)
 
-    Sanbase.Mock.prepare_mock({&Sanbase.Price.last_record_before/2, response})
+    Sanbase.Mock.prepare_mock2(&Sanbase.Price.last_record_before/2, response)
     |> Sanbase.Mock.run_with_mocks(fn ->
       assert get_roi(context.conn, context.project) == %{"roiUsd" => "2.5"}
     end)

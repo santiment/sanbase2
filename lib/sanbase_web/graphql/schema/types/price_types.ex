@@ -23,7 +23,9 @@ defmodule SanbaseWeb.Graphql.PriceTypes do
   object :project_stats do
     field(:slug, :string)
     field(:volume, :float)
+    field(:volume_usd, :float)
     field(:marketcap, :float)
+    field(:marketcap_usd, :float)
     field(:marketcap_percent, :float)
   end
 

@@ -102,6 +102,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
     data
     |> Enum.map(fn project_data ->
       %{
+        "id" => id,
         "name" => name,
         "symbol" => symbol,
         "slug" => slug,
@@ -131,7 +132,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
       } = project_data
 
       %__MODULE__{
-        id: slug,
+        id: id,
+        slug: slug,
         name: name,
         symbol: symbol,
         price_usd: price_usd,
@@ -154,13 +156,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
   def convert_for_importing(%__MODULE__{} = ticker, cmc_id_to_slugs_mapping) do
     price_point = to_price_point(ticker)
 
-    case Map.get(cmc_id_to_slugs_mapping, ticker.id, []) |> List.wrap() do
+    case Map.get(cmc_id_to_slugs_mapping, ticker.slug, []) |> List.wrap() do
       [] ->
         []
 
       slugs ->
         Enum.map(slugs, fn slug ->
-          symbol = if ticker.id == slug, do: ticker.symbol, else: Project.ticker_by_slug(slug)
+          symbol = if ticker.slug == slug, do: ticker.symbol, else: Project.ticker_by_slug(slug)
           measurement = Measurement.name_from(%{ticker | id: slug, symbol: symbol})
 
           PricePoint.convert_to_measurement(price_point, measurement)

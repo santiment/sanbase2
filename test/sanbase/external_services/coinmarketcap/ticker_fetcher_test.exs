@@ -33,6 +33,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
     :ok
   end
 
+  test "ticker fetcher inserts the proper latest coinmarketcap data" do
+    TickerFetcher.work()
+    ethereum_latest_cmc = Sanbase.Model.LatestCoinmarketcapData.by_coinmarketcap_id("ethereum")
+    assert ethereum_latest_cmc.coinmarketcap_integer_id == 1027
+
+    bitcoin_latest_cmc = Sanbase.Model.LatestCoinmarketcapData.by_coinmarketcap_id("bitcoin")
+    assert bitcoin_latest_cmc.coinmarketcap_integer_id == 1
+  end
+
   test "ticker fetcher inserts new projects" do
     assert Project.List.projects() == []
     assert Project.List.projects_with_source("coinmarketcap") == []

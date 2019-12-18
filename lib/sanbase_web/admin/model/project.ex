@@ -138,6 +138,7 @@ defmodule Sanbase.ExAdmin.Model.Project do
 
         input(project, :is_hidden)
         input(project, :logo_url)
+        input(project, :dark_logo_url)
         input(project, :website_link)
         input(project, :btt_link)
         input(project, :facebook_link)

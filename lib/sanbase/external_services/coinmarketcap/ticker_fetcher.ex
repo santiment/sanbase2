@@ -82,13 +82,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   defp export_to_kafka(tickers, cmc_id_to_slugs_mapping) do
     tickers
     |> Enum.flat_map(fn %Ticker{} = ticker ->
-      case Map.get(cmc_id_to_slugs_mapping, ticker.slug) do
-        [] ->
-          []
-
-        slugs ->
+      case Map.get(cmc_id_to_slugs_mapping, ticker.slug, []) |> List.wrap() do
+        [_ | _] = slugs ->
           price_point = Ticker.to_price_point(ticker)
           Enum.map(slugs, fn slug -> PricePoint.json_kv_tuple(price_point, slug) end)
+
+        _ ->
+          []
       end
     end)
     |> Sanbase.KafkaExporter.persist_sync(@prices_exporter)

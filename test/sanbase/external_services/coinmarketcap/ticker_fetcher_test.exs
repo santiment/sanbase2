@@ -7,7 +7,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
 
   import Sanbase.Factory
   import Sanbase.InfluxdbHelpers
-  import Sanbase.TestHelpers
 
   @btc_measurement "BTC_bitcoin"
   @eth_measurement "ETH_ethereum"
@@ -16,7 +15,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
 
   setup do
     setup_prices_influxdb()
-    clear_kafka_state()
 
     Sanbase.KafkaExporter.start_link(
       name: :prices_exporter,
@@ -91,22 +89,25 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
   end
 
   test "ticker fetcher stores prices in kafka" do
-    state = Sanbase.InMemoryKafka.Producer.get_state()
-    assert state == %{}
-
     TickerFetcher.work()
     Process.sleep(200)
 
     state = Sanbase.InMemoryKafka.Producer.get_state()
     %{"asset_prices" => prices} = state
 
-    assert length(prices) == 2
-
     keys = prices |> Enum.map(&elem(&1, 0))
 
-    assert "coinmarketcap_bitcoin_2018-08-17T08:55:37.000Z" in keys
-    assert "coinmarketcap_ethereum_2018-08-17T08:54:55.000Z" in keys
-    assert state["asset_prices"] == prices_json_in_kafka()
+    expected_record1 =
+      {"coinmarketcap_bitcoin_2018-08-17T08:55:37.000Z",
+       "{\"marketcap_usd\":111774707274,\"price_btc\":1.0,\"price_usd\":6493.02288075,\"slug\":\"bitcoin\",\"source\":\"coinmarketcap\",\"timestamp\":1534496137,\"volume_usd\":4858871494}"}
+
+    expected_record2 =
+      {"coinmarketcap_ethereum_2018-08-17T08:54:55.000Z",
+       "{\"marketcap_usd\":30511368440,\"price_btc\":0.04633099381624731,\"price_usd\":300.96820061,\"slug\":\"ethereum\",\"source\":\"coinmarketcap\",\"timestamp\":1534496095,\"volume_usd\":1689698769}"}
+
+    assert expected_record1 in prices
+
+    assert expected_record2 in prices
   end
 
   test "ticker fetcher fetches stores in multiple measurements" do
@@ -154,14 +155,5 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
                1_689_698_769
              ]
            ]
-  end
-
-  defp prices_json_in_kafka do
-    [
-      {"coinmarketcap_bitcoin_2018-08-17T08:55:37.000Z",
-       "{\"marketcap_usd\":111774707274,\"price_btc\":1.0,\"price_usd\":6493.02288075,\"slug\":\"bitcoin\",\"source\":\"coinmarketcap\",\"timestamp\":1534496137,\"volume_usd\":4858871494}"},
-      {"coinmarketcap_ethereum_2018-08-17T08:54:55.000Z",
-       "{\"marketcap_usd\":30511368440,\"price_btc\":0.04633099381624731,\"price_usd\":300.96820061,\"slug\":\"ethereum\",\"source\":\"coinmarketcap\",\"timestamp\":1534496095,\"volume_usd\":1689698769}"}
-    ]
   end
 end

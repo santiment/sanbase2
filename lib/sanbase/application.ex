@@ -1,8 +1,6 @@
 defmodule Sanbase.Application do
   use Application
 
-  import Sanbase.ApplicationUtils
-
   require Logger
   require Sanbase.Utils.Config, as: Config
 
@@ -104,7 +102,7 @@ defmodule Sanbase.Application do
   @doc ~s"""
   Some services must be started before all others
   """
-  def prepended_children("scrapers") do
+  def prepended_children(container_type) when container_type in ["all", "scrapers"] do
     [
       # Start the Kafka Exporter
       {SanExporterEx,
@@ -112,18 +110,15 @@ defmodule Sanbase.Application do
          kafka_producer_module: kafka_producer_supervisor_module(),
          kafka_endpoint: kafka_endpoint()
        ]},
-      start_in(
-        Supervisor.child_spec(
-          {Sanbase.KafkaExporter,
-           [
-             name: :prices_exporter,
-             topic: kafka_prices_data_topic(),
-             buffering_max_messages: 10000,
-             can_send_after_interval: 200
-           ]},
-          id: :prices_exporter
-        ),
-        [:dev, :prod]
+      Supervisor.child_spec(
+        {Sanbase.KafkaExporter,
+         [
+           name: :prices_exporter,
+           topic: kafka_prices_data_topic(),
+           buffering_max_messages: 10000,
+           can_send_after_interval: 200
+         ]},
+        id: :prices_exporter
       )
     ]
   end

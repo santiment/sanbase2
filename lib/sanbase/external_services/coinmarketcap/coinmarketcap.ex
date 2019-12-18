@@ -10,15 +10,17 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   require Logger
 
   alias Sanbase.Model.Project
-  alias Sanbase.Prices.Store
-  alias Sanbase.ExternalServices.Coinmarketcap.GraphData
-  alias Sanbase.Influxdb.Measurement
-  alias Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice
+
+  alias Sanbase.ExternalServices.Coinmarketcap.{
+    WebApi,
+    ScheduleRescrapePrice,
+    PriceScrapingProgress
+  }
+
   alias Sanbase.ExternalServices.ProjectInfo
 
-  # 5 minutes
-  @default_update_interval 1000 * 60 * 5
   @request_timeout 600_000
+  @source "coinmarketcap"
 
   @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
   def start_link(_state) do
@@ -27,17 +29,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
   def init(_arg) do
     if Config.get(:sync_enabled, false) do
-      # Create an influxdb if it does not exists, no-op if it exists
-      Store.create_db()
-
       Process.send(self(), :rescrape_prices, [])
 
       # Give `:rescrape_prices` some time to schedule different `last_updated` times
-      Process.send_after(self(), :fetch_prices, 15_000)
       Process.send_after(self(), :fetch_total_market, 15_000)
-      Process.send_after(self(), :fetch_missing_info, 15_000)
+      Process.send_after(self(), :fetch_prices, 20_000)
+      Process.send_after(self(), :fetch_missing_info, 25_000)
 
-      update_interval = Config.get(:update_interval, @default_update_interval)
+      update_interval = Config.get(:update_interval)
 
       # Scrape total market and prices often. Scrape the missing info rarely.
       # There are many projects for which the missing info is not available. The
@@ -46,8 +45,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       {:ok,
        %{
          missing_info_update_interval: update_interval * 10,
-         total_market_update_interval: div(update_interval, 5),
-         prices_update_interval: div(update_interval, 5),
+         total_market_update_interval: update_interval,
+         prices_update_interval: update_interval,
          rescrape_prices: update_interval,
          total_market_task_pid: nil
        }}
@@ -92,7 +91,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       {:ok, pid} =
         Task.Supervisor.start_child(
           Sanbase.TaskSupervisor,
-          &fetch_and_process_marketcap_total_data/0
+          &fetch_total_market_data/0
         )
 
       Process.send_after(self(), :fetch_total_market, update_interval)
@@ -108,7 +107,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
       Project.List.projects(include_hidden_projects?: true),
-      &fetch_and_process_price_data/1,
+      &fetch_prices/1,
       ordered: false,
       max_concurrency: 2,
       timeout: @request_timeout
@@ -145,19 +144,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     end
 
     for %ScheduleRescrapePrice{project: project, from: from} = srp <- rescrapes do
-      measurement = project |> Measurement.name_from()
-
-      {:ok, original_last_updated} = measurement |> Store.last_history_datetime_cmc()
-
-      original_last_updated = original_last_updated || GraphData.fetch_first_datetime(project)
+      {:ok, original_last_updated} =
+        case PriceScrapingProgress.last_scraped(project.slug, @source) do
+          nil -> WebApi.first_datetime(project)
+          %DateTime{} = dt -> {:ok, dt}
+        end
 
       kill_scheduled_scraping(project)
 
-      :ok =
-        Store.update_last_history_datetime_cmc(
-          measurement,
-          DateTime.from_naive!(from, "Etc/UTC")
-        )
+      {:ok, _} = PriceScrapingProgress.store_progress(project.slug, @source, from)
 
       srp
       |> ScheduleRescrapePrice.changeset(%{
@@ -177,17 +172,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     rescrapes = ScheduleRescrapePrice.all_in_progress()
 
     for %ScheduleRescrapePrice{project: project, to: to} = srp <- rescrapes do
-      measurement = project |> Measurement.name_from()
-
-      {:ok, to} = DateTime.from_naive(to, "Etc/UTC")
-      {:ok, last_updated} = measurement |> Store.last_history_datetime_cmc()
+      to = DateTime.from_naive!(to, "Etc/UTC")
+      last_updated = PriceScrapingProgress.last_scraped(project.slug, @source)
 
       if last_updated && DateTime.compare(last_updated, to) == :gt do
         kill_scheduled_scraping(project)
 
         {:ok, original_last_update} = srp.original_last_updated |> DateTime.from_naive("Etc/UTC")
 
-        Store.update_last_history_datetime_cmc(measurement, original_last_update)
+        PriceScrapingProgress.store_progress(project.slug, @source, original_last_update)
 
         srp
         |> ScheduleRescrapePrice.changeset(%{finished: true, in_progres: false})
@@ -213,56 +206,52 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     end
   end
 
-  defp fetching_price_registry_key(project) do
-    measurement = Measurement.name_from(project)
-    {:cmc_fetch_price, measurement}
-  end
-
   # Fetch history
-  defp fetch_and_process_price_data(%Project{} = project) do
+  defp fetch_prices(%Project{} = project) do
     cmc_id = Project.coinmarketcap_id(project)
     %Project{slug: slug, ticker: ticker} = project
 
     if cmc_id != nil and slug != nil and ticker != nil do
-      do_fetch_and_process_price_data(project)
+      do_fetch_prices(project)
     else
       :ok
     end
   end
 
-  defp do_fetch_and_process_price_data(project) do
-    measurement = Measurement.name_from(project)
-    key = fetching_price_registry_key(project)
+  defp do_fetch_prices(project) do
+    key = price_scraping_registry_key(project)
 
     if Registry.lookup(Sanbase.Registry, key) == [] do
       Registry.register(Sanbase.Registry, key, :running)
-      Logger.info("Fetch and process prices for #{measurement}")
+      Logger.info("Fetch and process prices for #{project.slug}")
 
       case last_price_datetime(project) do
-        nil ->
-          err_msg =
-            "[CMC] Cannot fetch the last price datetime for project with slug #{project.slug}"
-
-          Logger.warn(err_msg)
-          {:error, err_msg}
-
-        last_price_datetime ->
+        {:ok, datetime} ->
           Logger.info(
-            "[CMC] Latest price datetime for project with slug #{project.slug} - " <>
-              inspect(last_price_datetime)
+            "[CMC] Latest price datetime for #{Project.describe(project)} - #{datetime}"
           )
 
-          GraphData.fetch_and_store_prices(project, last_price_datetime)
+          WebApi.fetch_and_store_prices(project, datetime)
 
           process_notifications(project)
           Registry.unregister(Sanbase.Registry, key)
           :ok
+
+        _ ->
+          err_msg = "[CMC] Cannot fetch the last price datetime for project #{project.slug}"
+
+          Logger.warn(err_msg)
+          {:error, err_msg}
       end
     else
       Logger.info(
-        "[CMC] Fetch and process job for project with slug #{project.slug} is already running. Won't start it again"
+        "[CMC] Fetch and process job for project #{project.slug} is already running. Won't start it again"
       )
     end
+  end
+
+  defp price_scraping_registry_key(project) do
+    {:cmc_fetch_history_price, project.id}
   end
 
   defp process_notifications(%Project{} = project) do
@@ -270,57 +259,50 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   end
 
   defp last_price_datetime(%Project{} = project) do
-    measurement = Measurement.name_from(project)
-
-    case Store.last_history_datetime_cmc!(measurement) do
+    case PriceScrapingProgress.last_scraped(project.slug, @source) do
       nil ->
         Logger.info(
           "[CMC] Last CMC history datetime scraped for project with slug #{project.slug} not found in the database."
         )
 
-        GraphData.fetch_first_datetime(project)
+        WebApi.first_datetime(project)
 
-      datetime ->
-        datetime
+      %DateTime{} = datetime ->
+        {:ok, datetime}
     end
   end
 
-  defp last_marketcap_total_datetime() do
-    measurement = "TOTAL_MARKET_total-market"
-
-    case Store.last_history_datetime_cmc!(measurement) do
+  defp last_price_datetime("TOTAL_MARKET") do
+    case PriceScrapingProgress.last_scraped("TOTAL_MARKET", @source) do
       nil ->
         Logger.info(
-          "[CMC] Last CMC history datetime scraped for #{measurement} not found in the database."
+          "[CMC] Last CMC history datetime scraped for TOTAL_MARKET not found in the database."
         )
 
-        GraphData.fetch_first_datetime(measurement)
+        WebApi.first_datetime("TOTAL_MARKET")
 
-      datetime ->
-        datetime
+      %DateTime{} = datetime ->
+        {:ok, datetime}
     end
   end
 
-  defp fetch_and_process_marketcap_total_data() do
-    case last_marketcap_total_datetime() do
-      nil ->
+  defp fetch_total_market_data() do
+    case last_price_datetime("TOTAL_MARKET") do
+      {:ok, %DateTime{} = datetime} ->
+        WebApi.fetch_and_store_prices("TOTAL_MARKET", datetime)
+        :ok
+
+      _ ->
         err_msg = "[CMC] Cannot fetch the last price datetime for TOTAL_MARKET"
         Logger.warn(err_msg)
         {:error, err_msg}
-
-      last_price_datetime ->
-        GraphData.fetch_and_store_marketcap_total(last_price_datetime)
-        :ok
     end
   end
 
   defp kill_scheduled_scraping(project) do
-    case Registry.lookup(Sanbase.Registry, fetching_price_registry_key(project)) do
-      [{pid, :running}] ->
-        Process.exit(pid, :kill)
-
-      _ ->
-        :ok
+    case Registry.lookup(Sanbase.Registry, price_scraping_registry_key(project)) do
+      [{pid, :running}] -> Process.exit(pid, :kill)
+      _ -> :ok
     end
   end
 end

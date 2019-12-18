@@ -164,6 +164,7 @@ defmodule Sanbase.Factory do
   def latest_cmc_data_factory() do
     %LatestCoinmarketcapData{
       coinmarketcap_id: "santiment",
+      coinmarketcap_integer_id: 1807,
       rank: 100,
       price_usd: 2,
       price_btc: 0.0001 |> Decimal.from_float(),

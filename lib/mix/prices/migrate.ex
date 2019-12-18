@@ -62,49 +62,6 @@ defmodule Sanbase.Prices.Migrate do
     Logger.info(progress)
   end
 
-  def migrate(from_iso) do
-    setup()
-    PriceMigrationTmp |> Sanbase.Repo.delete_all()
-
-    projects = not_migrated_projects()
-    all_projects_count = length(projects)
-    Logger.info("Migrating prices from influxdb for count: #{all_projects_count} projects")
-
-    projects
-    |> Enum.map(&Sanbase.Influxdb.Measurement.name_from/1)
-    |> Enum.chunk_every(20)
-    |> Enum.flat_map(fn list -> list |> Enum.map(&{&1, from_iso}) end)
-    |> Enum.reduce(1, fn {measurement, from_iso}, current_project_count ->
-      Logger.info("Start migrating #{measurement} from #{from_iso}")
-
-      {time_microsec, result} =
-        :timer.tc(fn -> get_prices_and_persist_in_kafka({measurement, from_iso}) end)
-
-      {is_migrated, result_msg} =
-        result
-        |> Enum.filter(fn {_measurement, _dates, result} -> result != :ok end)
-        |> case do
-          [] -> {true, "ok"}
-          errors -> {false, "with errors: #{inspect(errors)}"}
-        end
-
-      progress =
-        "Migrating #{measurement} finished #{result_msg} in #{time_microsec / 1_000_000}s. Progress #{
-          current_project_count
-        } / #{all_projects_count}"
-
-      Logger.info(progress)
-
-      PriceMigrationTmp.create!(%{
-        slug: slug_from_measurement(measurement),
-        is_migrated: is_migrated,
-        progress: progress
-      })
-
-      current_project_count + 1
-    end)
-  end
-
   defp setup() do
     Sanbase.KafkaExporter.start_link(
       name: @migration_exporter,

@@ -17,6 +17,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   alias Sanbase.ExternalServices.Coinmarketcap.Ticker
   alias Sanbase.Prices.Store
 
+  @prices_exporter :prices_exporter
+
   def start_link(_state) do
     GenServer.start_link(__MODULE__, :ok)
   end
@@ -67,6 +69,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     tickers
     |> Enum.flat_map(&Ticker.convert_for_importing(&1, cmc_id_to_slugs_mapping))
     |> Store.import()
+
+    # Store in Kafka
+    tickers
+    |> Enum.flat_map(&Ticker.convert_for_importing_to_kafka(&1, cmc_id_to_slugs_mapping))
+    |> Sanbase.KafkaExporter.persist(@prices_exporter)
 
     Logger.info(
       "[CMC] Fetching realtime data from coinmarketcap done. The data is imported in the database."

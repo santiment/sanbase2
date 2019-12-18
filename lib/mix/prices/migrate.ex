@@ -53,10 +53,10 @@ defmodule Sanbase.Prices.Migrate do
   @migration_exporter :migrate_influxdb_prices
   @topic "asset_prices"
 
-  def run() do
+  def run(from_iso) do
     setup()
 
-    {time_microsec, _} = :timer.tc(fn -> do_work() end)
+    {time_microsec, _} = :timer.tc(fn -> do_work(from_iso) end)
 
     progress = "Migrating all projects finished in #{time_microsec / 1_000_000}s"
     Logger.info(progress)
@@ -86,17 +86,15 @@ defmodule Sanbase.Prices.Migrate do
     |> Enum.reject(&(&1.slug in migrated_projects))
   end
 
-  defp do_work() do
+  defp do_work(from_iso) do
     projects = not_migrated_projects()
     all_projects_count = length(projects)
     Logger.info("Migrating prices from influxdb for count: #{all_projects_count} projects")
 
     projects
-    |> Enum.map(&Sanbase.Influxdb.Measurement.name_from/1)
-    |> Enum.chunk_every(20)
-    |> Enum.flat_map(&first_datetimes/1)
+    |> Enum.map(&{Sanbase.Influxdb.Measurement.name_from(&1), from_iso})
     |> Enum.reduce(1, fn {measurement, first_datetime_iso}, current_project_count ->
-      Logger.info("Start migrating #{measurement}")
+      Logger.info("Start migrating #{measurement} from #{from_iso}")
 
       {time_microsec, result} =
         :timer.tc(fn -> get_prices_and_persist_in_kafka({measurement, first_datetime_iso}) end)

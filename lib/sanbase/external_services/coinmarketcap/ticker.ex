@@ -151,16 +151,34 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
   end
 
   @spec convert_for_importing(%__MODULE__{}, %{}) :: [%Measurement{}]
-  def convert_for_importing(
-        %__MODULE__{
-          last_updated: last_updated,
-          price_btc: price_btc,
-          price_usd: price_usd,
-          "24h_volume_usd": volume_usd,
-          market_cap_usd: marketcap_usd
-        } = ticker,
-        cmc_id_to_slugs_mapping
-      ) do
+  def convert_for_importing(%__MODULE__{} = ticker, cmc_id_to_slugs_mapping) do
+    do_convert(ticker, cmc_id_to_slugs_mapping)
+    |> Enum.map(fn %{slug: slug, symbol: symbol, price_point: price_point} ->
+      PricePoint.convert_to_measurement(
+        price_point,
+        Measurement.name_from(%{ticker | id: slug, symbol: symbol})
+      )
+    end)
+  end
+
+  @spec convert_for_importing_to_kafka(%__MODULE__{}, %{}) :: [String.t()]
+  def convert_for_importing_to_kafka(%__MODULE__{} = ticker, cmc_id_to_slugs_mapping) do
+    do_convert(ticker, cmc_id_to_slugs_mapping)
+    |> Enum.map(fn %{slug: slug, price_point: price_point} ->
+      PricePoint.json_kv_tuple(price_point, slug)
+    end)
+  end
+
+  defp do_convert(
+         %__MODULE__{
+           last_updated: last_updated,
+           price_btc: price_btc,
+           price_usd: price_usd,
+           "24h_volume_usd": volume_usd,
+           market_cap_usd: marketcap_usd
+         } = ticker,
+         cmc_id_to_slugs_mapping
+       ) do
     case Map.get(cmc_id_to_slugs_mapping, ticker.id, []) |> List.wrap() do
       [] ->
         []
@@ -177,10 +195,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
 
           symbol = if ticker.id == slug, do: ticker.symbol, else: Project.ticker_by_slug(slug)
 
-          PricePoint.convert_to_measurement(
-            price_point,
-            Measurement.name_from(%{ticker | id: slug, symbol: symbol})
-          )
+          %{slug: slug, symbol: symbol, price_point: price_point}
         end)
     end
   end

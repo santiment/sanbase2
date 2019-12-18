@@ -7,12 +7,24 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
 
   import Sanbase.Factory
   import Sanbase.InfluxdbHelpers
+  import Sanbase.TestHelpers
 
   @btc_measurement "BTC_bitcoin"
   @eth_measurement "ETH_ethereum"
 
+  @topic "asset_prices"
+
   setup do
     setup_prices_influxdb()
+    clear_kafka_state()
+
+    Sanbase.KafkaExporter.start_link(
+      name: :prices_exporter,
+      buffering_max_messages: 5000,
+      kafka_flush_timeout: 50,
+      can_send_after_interval: 0,
+      topic: @topic
+    )
 
     Tesla.Mock.mock(fn %{method: :get} ->
       %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "data/pro_cmc_api_2.json"))}
@@ -43,8 +55,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
   test "ticker fetcher fetches prices" do
     TickerFetcher.work()
 
+    Process.sleep(100)
+
     from = DateTime.from_naive!(~N[2018-08-17 08:35:00], "Etc/UTC")
     to = DateTime.from_naive!(~N[2018-08-17 10:40:00], "Etc/UTC")
+
+    state = Sanbase.InMemoryKafka.Producer.get_state()
+    assert prices_json_in_kafka() == state[@topic]
 
     # Test bitcoin is in influx
     assert Store.fetch_price_points!(@btc_measurement, from, to) == [
@@ -114,5 +131,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
                1_689_698_769
              ]
            ]
+  end
+
+  defp prices_json_in_kafka do
+    [
+      {"coinmarketcap_bitcoin_2018-08-17T08:55:37.000Z",
+       "{\"marketcap_usd\":111774707274,\"price_btc\":1.0,\"price_usd\":6493.02288075,\"slug\":\"bitcoin\",\"source\":\"coinmarketcap\",\"timestamp\":1534496137,\"volume_usd\":4858871494}"},
+      {"coinmarketcap_ethereum_2018-08-17T08:54:55.000Z",
+       "{\"marketcap_usd\":30511368440,\"price_btc\":0.04633099381624731,\"price_usd\":300.96820061,\"slug\":\"ethereum\",\"source\":\"coinmarketcap\",\"timestamp\":1534496095,\"volume_usd\":1689698769}"}
+    ]
   end
 end

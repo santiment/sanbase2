@@ -74,6 +74,10 @@ defmodule Sanbase.KafkaExporter do
     GenServer.call(exporter, {:persist, data})
   end
 
+  def flush(exporter \\ __MODULE__) do
+    GenServer.call(exporter, :flush)
+  end
+
   @doc ~s"""
   Send all available data in the buffers before shutting down.
 
@@ -142,6 +146,11 @@ defmodule Sanbase.KafkaExporter do
       false ->
         {:noreply, %{state | data: data ++ state.data, size: state.size + new_messages_length}}
     end
+  end
+
+  def handle_call(:flush, state) do
+    send_data(state.data, state)
+    {:reply, %{state | data: [], size: 0}}
   end
 
   def handle_info(:flush, state) do

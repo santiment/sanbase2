@@ -80,7 +80,12 @@ defmodule Sanbase.Billing.AccessLevelTest do
         :get_available_slugs,
         :get_metric,
         :get_user,
-        :all_projects_by_ticker
+        :all_projects_by_ticker,
+        :last_exchange_market_depth,
+        :last_exchange_trades,
+        :exchange_trades,
+        :exchange_market_pair_to_slugs,
+        :slugs_to_exchange_market_pair
       ]
       |> Enum.sort()
 

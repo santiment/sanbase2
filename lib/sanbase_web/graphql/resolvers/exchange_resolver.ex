@@ -101,4 +101,29 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
       )
     end)
   end
+
+  def exchange_market_pair_to_slugs(
+        _root,
+        %{exchange: exchange, ticker_pair: ticker_pair},
+        _resolution
+      ) do
+    result = Sanbase.Exchanges.MarketPairMapping.get_slugs_pair_by(exchange, ticker_pair) || %{}
+
+    {:ok, result}
+  end
+
+  def slugs_to_exchange_market_pair(
+        _root,
+        %{exchange: exchange, from_slug: from_slug, to_slug: to_slug},
+        _resolution
+      ) do
+    result =
+      Sanbase.Exchanges.MarketPairMapping.slugs_to_exchange_market_pair(
+        exchange,
+        from_slug,
+        to_slug
+      ) || %{}
+
+    {:ok, result}
+  end
 end

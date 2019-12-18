@@ -541,6 +541,10 @@ defmodule Sanbase.Factory do
     %UserRole{}
   end
 
+  def exchange_market_pair_mappings_factory do
+    %Sanbase.Exchanges.MarketPairMapping{}
+  end
+
   def rand_str(length \\ 10) do
     :crypto.strong_rand_bytes(length) |> Base.encode64() |> binary_part(0, length)
   end

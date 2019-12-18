@@ -3,9 +3,9 @@ defmodule SanbaseWeb.MigratePricesController do
 
   require Logger
 
-  def migrate(conn, _params) do
+  def migrate(conn, %{"from" => from}) do
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-      Sanbase.Prices.Migrate.run()
+      Sanbase.Prices.Migrate.run(from)
     end)
 
     send_response("OK", conn)

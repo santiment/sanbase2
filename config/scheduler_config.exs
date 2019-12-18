@@ -68,10 +68,6 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "@weekly",
       task: {Sanbase.UserList.Monitor, :run, []}
     ],
-    migrate_prices: [
-      schedule: "@reboot",
-      task: {Sanbase.Prices.Migrate, :run, []}
-    ],
     sync_users_to_intercom: [
       schedule: "@daily",
       task: {Sanbase.Intercom, :sync_users, []}

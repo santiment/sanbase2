@@ -70,14 +70,8 @@ defmodule Sanbase.Insight.PostComment do
     |> Repo.all()
   end
 
-  def get_subcomments(post_id, %{limit: limit} = args) do
-    cursor = Map.get(args, :cursor)
-
-    post_comments_query(post_id)
-    |> apply_cursor(cursor)
-    |> order_by([c], c.inserted_at)
-    |> limit(^limit)
-    |> Repo.all()
+  def get_subcomments(comment_id, %{limit: limit}) do
+    Comment.get_subcomments(comment_id, limit)
   end
 
   defp post_comments_query(post_id) do
@@ -87,11 +81,11 @@ defmodule Sanbase.Insight.PostComment do
     )
   end
 
-  defp apply_cursor(query, %{type: :before, before: datetime}) do
+  defp apply_cursor(query, %{type: :before, datetime: datetime}) do
     from(c in query, where: c.inserted_at < ^datetime)
   end
 
-  defp apply_cursor(query, %{type: :after, after: datetime}) do
+  defp apply_cursor(query, %{type: :after, datetime: datetime}) do
     from(c in query, where: c.inserted_at >= ^datetime)
   end
 

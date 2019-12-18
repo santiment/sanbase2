@@ -14,7 +14,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   alias Sanbase.Repo
   alias Sanbase.DateTimeUtils
   alias Sanbase.Model.{LatestCoinmarketcapData, Project}
-  alias Sanbase.ExternalServices.Coinmarketcap.Ticker
+  alias Sanbase.ExternalServices.Coinmarketcap.{Ticker, PricePoint}
   alias Sanbase.Prices.Store
 
   @prices_exporter :prices_exporter
@@ -70,14 +70,27 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     |> Enum.flat_map(&Ticker.convert_for_importing(&1, cmc_id_to_slugs_mapping))
     |> Store.import()
 
-    # Store in Kafka
     tickers
-    |> Enum.flat_map(&Ticker.convert_for_importing_to_kafka(&1, cmc_id_to_slugs_mapping))
-    |> Sanbase.KafkaExporter.persist(@prices_exporter)
+    |> export_to_kafka(cmc_id_to_slugs_mapping)
 
     Logger.info(
       "[CMC] Fetching realtime data from coinmarketcap done. The data is imported in the database."
     )
+  end
+
+  defp export_to_kafka(tickers, cmc_id_to_slugs_mapping) do
+    tickers
+    |> Enum.flat_map(fn %Ticker{} = ticker ->
+      case Map.get(cmc_id_to_slugs_mapping, ticker.id) do
+        [] ->
+          []
+
+        slugs ->
+          price_point = Ticker.to_price_point(ticker)
+          Enum.map(slugs, fn slug -> PricePoint.json_kv_tuple(price_point, slug) end)
+      end
+    end)
+    |> Sanbase.KafkaExporter.persist_sync(@prices_exporter)
   end
 
   # Helper functions
@@ -107,7 +120,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
             price_usd: ticker.price_usd,
             price_btc: ticker.price_btc,
             rank: ticker.rank,
-            volume_usd: ticker."24h_volume_usd",
+            volume_usd: ticker.volume_usd,
             available_supply: ticker.available_supply,
             total_supply: ticker.total_supply,
             symbol: ticker.symbol,

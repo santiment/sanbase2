@@ -18,7 +18,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
     :price_usd,
     :price_btc,
     :rank,
-    :"24h_volume_usd",
+    :volume_usd,
     :market_cap_usd,
     :last_updated,
     :available_supply,
@@ -137,7 +137,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
         price_usd: price_usd,
         price_btc: price_btc,
         rank: rank,
-        "24h_volume_usd": volume_24h_usd,
+        volume_usd: volume_24h_usd,
         market_cap_usd: mcap_usd,
         last_updated: last_updated,
         available_supply: circulating_supply,
@@ -152,51 +152,38 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
 
   @spec convert_for_importing(%__MODULE__{}, %{}) :: [%Measurement{}]
   def convert_for_importing(%__MODULE__{} = ticker, cmc_id_to_slugs_mapping) do
-    do_convert(ticker, cmc_id_to_slugs_mapping)
-    |> Enum.map(fn %{slug: slug, symbol: symbol, price_point: price_point} ->
-      PricePoint.convert_to_measurement(
-        price_point,
-        Measurement.name_from(%{ticker | id: slug, symbol: symbol})
-      )
-    end)
-  end
+    price_point = to_price_point(ticker)
 
-  @spec convert_for_importing_to_kafka(%__MODULE__{}, %{}) :: [String.t()]
-  def convert_for_importing_to_kafka(%__MODULE__{} = ticker, cmc_id_to_slugs_mapping) do
-    do_convert(ticker, cmc_id_to_slugs_mapping)
-    |> Enum.map(fn %{slug: slug, price_point: price_point} ->
-      PricePoint.json_kv_tuple(price_point, slug)
-    end)
-  end
-
-  defp do_convert(
-         %__MODULE__{
-           last_updated: last_updated,
-           price_btc: price_btc,
-           price_usd: price_usd,
-           "24h_volume_usd": volume_usd,
-           market_cap_usd: marketcap_usd
-         } = ticker,
-         cmc_id_to_slugs_mapping
-       ) do
     case Map.get(cmc_id_to_slugs_mapping, ticker.id, []) |> List.wrap() do
       [] ->
         []
 
       slugs ->
         Enum.map(slugs, fn slug ->
-          price_point = %PricePoint{
-            marketcap_usd: (marketcap_usd || 0) |> to_integer(),
-            volume_usd: (volume_usd || 0) |> to_integer(),
-            price_btc: (price_btc || 0) |> to_float(),
-            price_usd: (price_usd || 0) |> to_float(),
-            datetime: DateTimeUtils.from_iso8601!(last_updated)
-          }
-
           symbol = if ticker.id == slug, do: ticker.symbol, else: Project.ticker_by_slug(slug)
+          measurement = Measurement.name_from(%{ticker | id: slug, symbol: symbol})
 
-          %{slug: slug, symbol: symbol, price_point: price_point}
+          PricePoint.convert_to_measurement(price_point, measurement)
         end)
     end
+  end
+
+  # Convert a Ticker to a PricePoint
+  def to_price_point(%__MODULE__{} = ticker) do
+    %__MODULE__{
+      last_updated: last_updated,
+      price_usd: price_usd,
+      price_btc: price_btc,
+      market_cap_usd: marketcap_usd,
+      volume_usd: volume_usd
+    } = ticker
+
+    %PricePoint{
+      datetime: DateTimeUtils.from_iso8601!(last_updated),
+      price_usd: (price_usd || 0) |> to_float(),
+      price_btc: (price_btc || 0) |> to_float(),
+      marketcap_usd: (marketcap_usd || 0) |> to_integer(),
+      volume_usd: (volume_usd || 0) |> to_integer()
+    }
   end
 end

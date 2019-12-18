@@ -21,7 +21,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
     Sanbase.KafkaExporter.start_link(
       name: :prices_exporter,
       buffering_max_messages: 5000,
-      kafka_flush_timeout: 50,
+      kafka_flush_timeout: 0,
       can_send_after_interval: 0,
       topic: @topic
     )
@@ -52,16 +52,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
     end
   end
 
-  test "ticker fetcher fetches prices" do
+  test "ticker fetcher stores prices in influxdb" do
     TickerFetcher.work()
-
-    Process.sleep(100)
 
     from = DateTime.from_naive!(~N[2018-08-17 08:35:00], "Etc/UTC")
     to = DateTime.from_naive!(~N[2018-08-17 10:40:00], "Etc/UTC")
-
-    state = Sanbase.InMemoryKafka.Producer.get_state()
-    assert prices_json_in_kafka() == state[@topic]
 
     # Test bitcoin is in influx
     assert Store.fetch_price_points!(@btc_measurement, from, to) == [
@@ -84,6 +79,25 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
                1_689_698_769
              ]
            ]
+  end
+
+  test "ticker fetcher stores prices in kafka" do
+    state = Sanbase.InMemoryKafka.Producer.get_state()
+    assert state == %{}
+
+    TickerFetcher.work()
+    Process.sleep(200)
+
+    state = Sanbase.InMemoryKafka.Producer.get_state()
+    %{"asset_prices" => prices} = state
+
+    assert length(prices) == 2
+
+    keys = prices |> Enum.map(&elem(&1, 0))
+
+    assert "coinmarketcap_bitcoin_2018-08-17T08:55:37.000Z" in keys
+    assert "coinmarketcap_ethereum_2018-08-17T08:54:55.000Z" in keys
+    assert state["asset_prices"] == prices_json_in_kafka()
   end
 
   test "ticker fetcher fetches stores in multiple measurements" do

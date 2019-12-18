@@ -2,6 +2,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   @moduledoc ~s"""
   Get data about the API Calls that were made by users
   """
+
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
   @doc ~s"""
@@ -28,6 +29,38 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     |> case do
       {:ok, [result]} -> result
       {:error, error} -> error
+    end
+  end
+
+  def users_used_api() do
+    {query, args} = users_used_api_query()
+
+    ClickhouseRepo.query_transform(query, args, fn value -> value end)
+    |> case do
+      {:ok, result} -> List.flatten(result)
+      {:error, _error} -> []
+    end
+  end
+
+  def users_used_sansheets() do
+    {query, args} = users_used_sansheets_query()
+
+    ClickhouseRepo.query_transform(query, args, fn value -> value end)
+    |> case do
+      {:ok, result} -> List.flatten(result)
+      {:error, _error} -> []
+    end
+  end
+
+  def api_calls_count_per_user() do
+    {query, args} = api_calls_count_per_user_query()
+
+    ClickhouseRepo.query_transform(query, args, fn [user_id, count] ->
+      {user_id, String.to_integer(count)}
+    end)
+    |> case do
+      {:ok, result} -> result |> Enum.into(%{})
+      {:error, _error} -> %{}
     end
   end
 
@@ -75,5 +108,47 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     ]
 
     {query, args}
+  end
+
+  defp users_used_api_query() do
+    query = """
+    SELECT
+      distinct(user_id)
+    FROM
+      sanbase_api_call_data
+    PREWHERE
+      auth_method = 'apikey' AND
+      user_id != 0
+    """
+
+    {query, []}
+  end
+
+  defp users_used_sansheets_query() do
+    query = """
+    SELECT
+      distinct(user_id)
+    FROM
+      sanbase_api_call_data
+    PREWHERE
+      user_agent LIKE '%Google-Apps-Script%' AND
+      user_id != 0
+    """
+
+    {query, []}
+  end
+
+  defp api_calls_count_per_user_query() do
+    query = """
+    SELECT
+      user_id, count(*) as count
+    FROM
+      sanbase_api_call_data
+    PREWHERE auth_method = 'apikey' AND user_id != 0
+    GROUP BY user_id
+    ORDER BY count desc
+    """
+
+    {query, []}
   end
 end

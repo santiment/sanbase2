@@ -10,23 +10,31 @@ defmodule Sanbase.Intercom do
   alias Sanbase.Repo
   alias Sanbase.Billing.Product
   alias Sanbase.Signal.UserTrigger
+  alias Sanbase.Clickhouse.ApiCallData
 
   @intercom_url "https://api.intercom.io/users"
+
+  def all_users_stats do
+    %{
+      triggers_map: User.resource_user_count_map(Sanbase.Signal.UserTrigger),
+      insights_map: User.resource_user_count_map(Sanbase.Insight.Post),
+      watchlists_map: User.resource_user_count_map(Sanbase.UserList),
+      users_used_api_list: ApiCallData.users_used_api(),
+      users_user_sansheets_list: ApiCallData.users_used_sansheets(),
+      api_calls_per_user_count: ApiCallData.api_calls_count_per_user(),
+      users_with_monitored_watchlist:
+        Sanbase.UserLists.Statistics.users_with_monitored_watchlist()
+        |> Enum.map(fn {%{id: user_id}, count} -> {user_id, count} end)
+        |> Enum.into(%{})
+    }
+  end
 
   def sync_users do
     # Skip if api key not present in env. (Run only on production)
     if intercom_api_key() do
-      triggers_map = User.resource_user_count_map(Sanbase.Signal.UserTrigger)
-      insights_map = User.resource_user_count_map(Sanbase.Insight.Post)
-      watchlists_map = User.resource_user_count_map(Sanbase.UserList)
-
       User.all()
       |> Stream.map(fn user ->
-        fetch_stats_for_user(user, %{
-          triggers_map: triggers_map,
-          insights_map: insights_map,
-          watchlists_map: watchlists_map
-        })
+        fetch_stats_for_user(user, all_users_stats())
       end)
       |> Stream.map(&Jason.encode!/1)
       |> Enum.each(&send_user_stats_to_intercom/1)
@@ -36,16 +44,8 @@ defmodule Sanbase.Intercom do
   end
 
   def get_data_for_user(user_id) do
-    triggers_map = User.resource_user_count_map(Sanbase.Signal.UserTrigger)
-    insights_map = User.resource_user_count_map(Sanbase.Insight.Post)
-    watchlists_map = User.resource_user_count_map(Sanbase.UserList)
-
     Repo.get(User, user_id)
-    |> fetch_stats_for_user(%{
-      triggers_map: triggers_map,
-      insights_map: insights_map,
-      watchlists_map: watchlists_map
-    })
+    |> fetch_stats_for_user(all_users_stats())
     |> Jason.encode!()
   end
 
@@ -60,7 +60,11 @@ defmodule Sanbase.Intercom do
          %{
            triggers_map: triggers_map,
            insights_map: insights_map,
-           watchlists_map: watchlists_map
+           watchlists_map: watchlists_map,
+           users_used_api_list: users_used_api_list,
+           users_user_sansheets_list: users_user_sansheets_list,
+           api_calls_per_user_count: api_calls_per_user_count,
+           users_with_monitored_watchlist: users_with_monitored_watchlist
          }
        ) do
     {sanbase_subscription_current_status, sanbase_trial_created_at} =
@@ -83,7 +87,11 @@ defmodule Sanbase.Intercom do
           sanbase_trial_created_at: sanbase_trial_created_at,
           user_paid_after_trial: user_paid_after_trial,
           weekly_digest:
-            Sanbase.Auth.UserSettings.settings_for(user).newsletter_subscription |> to_string()
+            Sanbase.Auth.UserSettings.settings_for(user).newsletter_subscription |> to_string(),
+          used_sanapi: id in users_used_api_list,
+          used_sansheets: id in users_user_sansheets_list,
+          api_calls_count: Map.get(api_calls_per_user_count, id, 0),
+          weekly_report_watchlist_count: Map.get(users_with_monitored_watchlist, id, 0)
         }
         |> Map.merge(triggers_type_count(user))
     }

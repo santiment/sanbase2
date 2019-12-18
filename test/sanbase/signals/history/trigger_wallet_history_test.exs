@@ -2,7 +2,6 @@ defmodule Sanbase.Signal.WalletTriggerHistoryTest do
   use Sanbase.DataCase, async: false
 
   import Mock
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Sanbase.Signal.UserTrigger
 

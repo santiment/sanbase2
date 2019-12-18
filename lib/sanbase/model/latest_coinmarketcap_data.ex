@@ -6,6 +6,7 @@ defmodule Sanbase.Model.LatestCoinmarketcapData do
 
   schema "latest_coinmarketcap_data" do
     field(:coinmarketcap_id, :string)
+    field(:coinmarketcap_integer_id, :integer)
     field(:name, :string)
     field(:symbol, :string)
     field(:rank, :integer)
@@ -27,6 +28,7 @@ defmodule Sanbase.Model.LatestCoinmarketcapData do
   def changeset(%LatestCoinmarketcapData{} = latest_coinmarketcap_data, attrs \\ %{}) do
     latest_coinmarketcap_data
     |> cast(attrs, [
+      :coinmarketcap_integer_id,
       :coinmarketcap_id,
       :name,
       :symbol,

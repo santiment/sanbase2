@@ -62,6 +62,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
       end)
 
     # Store the data in LatestCoinmarketcapData in postgres
+
     tickers
     |> Enum.each(&store_latest_coinmarketcap_data!(&1, cmc_id_to_slugs_mapping))
 
@@ -81,7 +82,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   defp export_to_kafka(tickers, cmc_id_to_slugs_mapping) do
     tickers
     |> Enum.flat_map(fn %Ticker{} = ticker ->
-      case Map.get(cmc_id_to_slugs_mapping, ticker.id) do
+      case Map.get(cmc_id_to_slugs_mapping, ticker.slug) do
         [] ->
           []
 
@@ -103,7 +104,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   end
 
   defp store_latest_coinmarketcap_data!(
-         %Ticker{id: coinmarketcap_id} = ticker,
+         %Ticker{slug: coinmarketcap_id} = ticker,
          cmc_id_to_slugs_mapping
        ) do
     case Map.get(cmc_id_to_slugs_mapping, coinmarketcap_id, []) do
@@ -115,6 +116,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
           slug
           |> LatestCoinmarketcapData.get_or_build()
           |> LatestCoinmarketcapData.changeset(%{
+            coinmarketcap_integer_id: ticker.id,
             market_cap_usd: ticker.market_cap_usd,
             name: ticker.name,
             price_usd: ticker.price_usd,
@@ -134,7 +136,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     end
   end
 
-  defp insert_or_update_project(%Ticker{id: slug, name: name, symbol: ticker}) do
+  defp insert_or_update_project(%Ticker{slug: slug, name: name, symbol: ticker}) do
     case find_or_init_project(%Project{name: name, slug: slug, ticker: ticker}) do
       {:not_existing_project, changeset} ->
         # If there is not id then the project was not returned from the DB

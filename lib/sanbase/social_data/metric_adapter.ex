@@ -7,13 +7,11 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   @social_volume_timeseries_metrics [
     "telegram_social_volume",
-    "twitter_social_volume",
     "discord_social_volume"
   ]
 
   @social_dominance_timeseries_metrics [
     "telegram_social_dominance",
-    "twitter_social_dominance",
     "reddit_social_dominance",
     "discord_social_dominance"
   ]

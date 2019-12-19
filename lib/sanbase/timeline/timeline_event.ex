@@ -13,7 +13,6 @@ defmodule Sanbase.Timeline.TimelineEvent do
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
   alias Sanbase.Signal.UserTrigger
-  alias Sanbase.Auth.UserFollower
 
   alias __MODULE__
 
@@ -75,7 +74,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   end
 
   @doc """
-  Returns the generated eventsb by the activity of followed users.
+  Returns the generated events by the activity of followed users.
   The events can be paginated with time-based cursor pagination.
   """
   @spec events(%User{}, cursor_with_limit) :: {:ok, events_with_cursor} | {:error, String.t()}
@@ -84,7 +83,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
         %{limit: limit, cursor: %{type: cursor_type, datetime: cursor_datetime}}
       ) do
     TimelineEvent
-    |> events_by_followed_users(user_id, min(limit, @max_events_returned))
+    |> events_by_followed_users_or_sanclan(user_id, min(limit, @max_events_returned))
     |> by_cursor(cursor_type, cursor_datetime)
     |> Repo.all()
     |> events_with_cursor()
@@ -92,7 +91,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   def events(%User{id: user_id}, %{limit: limit}) do
     TimelineEvent
-    |> events_by_followed_users(user_id, min(limit, @max_events_returned))
+    |> events_by_followed_users_or_sanclan(user_id, min(limit, @max_events_returned))
     |> Repo.all()
     |> events_with_cursor()
   end
@@ -166,16 +165,31 @@ defmodule Sanbase.Timeline.TimelineEvent do
     %__MODULE__{} |> create_changeset(Map.put(params, type, id)) |> Repo.insert()
   end
 
-  defp events_by_followed_users(query, user_id, limit) do
-    following_ids = UserFollower.followed_by(user_id) |> Enum.map(& &1.id)
+  defp events_by_followed_users_or_sanclan(query, user_id, limit) do
+    followed_or_sanclan_ids = followed_or_sanclan_ids(user_id)
 
     from(
       event in query,
-      where: event.user_id in ^following_ids,
+      where: event.user_id in ^followed_or_sanclan_ids,
       order_by: [desc: event.inserted_at],
       limit: ^limit,
-      preload: [:user_trigger, :post, :user_list, :user]
+      preload: [:user_trigger, [post: :tags], :user_list, :user]
     )
+  end
+
+  defp followed_or_sanclan_ids(user_id) do
+    Sanbase.Auth.UserFollower.followed_by(user_id)
+    |> Enum.map(& &1.id)
+    |> Enum.concat(san_family_ids())
+    |> Enum.uniq()
+  end
+
+  defp san_family_ids() do
+    from(ur in Sanbase.Auth.UserRole,
+      where: ur.role_id == ^Sanbase.Auth.Role.san_family_role_id(),
+      select: ur.user_id
+    )
+    |> Repo.all()
   end
 
   defp by_cursor(query, :before, datetime) do

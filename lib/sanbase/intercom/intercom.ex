@@ -20,7 +20,7 @@ defmodule Sanbase.Intercom do
       insights_map: User.resource_user_count_map(Sanbase.Insight.Post),
       watchlists_map: User.resource_user_count_map(Sanbase.UserList),
       users_used_api_list: ApiCallData.users_used_api(),
-      users_user_sansheets_list: ApiCallData.users_used_sansheets(),
+      users_used_sansheets_list: ApiCallData.users_used_sansheets(),
       api_calls_per_user_count: ApiCallData.api_calls_count_per_user(),
       users_with_monitored_watchlist:
         Sanbase.UserLists.Statistics.users_with_monitored_watchlist()
@@ -62,7 +62,7 @@ defmodule Sanbase.Intercom do
            insights_map: insights_map,
            watchlists_map: watchlists_map,
            users_used_api_list: users_used_api_list,
-           users_user_sansheets_list: users_user_sansheets_list,
+           users_used_sansheets_list: users_used_sansheets_list,
            api_calls_per_user_count: api_calls_per_user_count,
            users_with_monitored_watchlist: users_with_monitored_watchlist
          }
@@ -89,7 +89,7 @@ defmodule Sanbase.Intercom do
           weekly_digest:
             Sanbase.Auth.UserSettings.settings_for(user).newsletter_subscription |> to_string(),
           used_sanapi: id in users_used_api_list,
-          used_sansheets: id in users_user_sansheets_list,
+          used_sansheets: id in users_used_sansheets_list,
           api_calls_count: Map.get(api_calls_per_user_count, id, 0),
           weekly_report_watchlist_count: Map.get(users_with_monitored_watchlist, id, 0)
         }

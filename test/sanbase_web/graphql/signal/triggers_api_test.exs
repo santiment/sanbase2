@@ -405,6 +405,56 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     assert created_trigger["tags"] == []
   end
 
+  test "signals historical activity from sanclan user", %{user: user, conn: conn} do
+    san_clan_user = insert(:user)
+    role_san_clan = insert(:role_san_clan)
+    insert(:user_role, user: san_clan_user, role: role_san_clan)
+
+    trigger_settings = default_trigger_settings_string_keys()
+
+    user_trigger1 =
+      insert(:user_trigger,
+        user: san_clan_user,
+        trigger: %{
+          is_public: true,
+          settings: trigger_settings,
+          title: "alabala",
+          description: "portokala"
+        }
+      )
+
+    user_trigger2 =
+      insert(:user_trigger,
+        user: san_clan_user,
+        trigger: %{
+          is_public: false,
+          settings: trigger_settings,
+          title: "alabala",
+          description: "portokala"
+        }
+      )
+
+    first_activity =
+      insert(:signals_historical_activity,
+        user: san_clan_user,
+        user_trigger: user_trigger1,
+        payload: %{"all" => "first"},
+        triggered_at: NaiveDateTime.from_iso8601!("2019-01-21T00:00:00")
+      )
+
+    insert(:signals_historical_activity,
+      user: san_clan_user,
+      user_trigger: user_trigger2,
+      payload: %{"all" => "second"},
+      triggered_at: NaiveDateTime.from_iso8601!("2019-01-21T00:00:00")
+    )
+
+    latest_two = current_user_signals_activity(conn, "limit: 2")
+
+    assert latest_two["activity"]
+           |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "first"}]
+  end
+
   test "fetches signals historical activity for current user", %{user: user, conn: conn} do
     trigger_settings = default_trigger_settings_string_keys()
 

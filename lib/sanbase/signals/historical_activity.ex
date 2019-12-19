@@ -58,9 +58,15 @@ defmodule Sanbase.Signal.HistoricalActivity do
   # private functions
 
   defp user_historical_activity(query, user_id, limit) do
+    san_family_ids = Sanbase.Auth.Role.san_family_ids()
+
     from(
       ha in query,
-      where: ha.user_id == ^user_id,
+      join: ut in UserTrigger,
+      on: ha.user_trigger_id == ut.id,
+      where:
+        ha.user_id == ^user_id or
+          (ha.user_id in ^san_family_ids and fragment("trigger->>'is_public' = 'true'")),
       order_by: [desc: ha.triggered_at],
       limit: ^limit,
       preload: :user_trigger

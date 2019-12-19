@@ -35,9 +35,9 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   def users_used_api() do
     {query, args} = users_used_api_query()
 
-    ClickhouseRepo.query_transform(query, args, fn value -> value end)
+    ClickhouseRepo.query_transform(query, args, fn [value] -> value end)
     |> case do
-      {:ok, result} -> List.flatten(result)
+      {:ok, result} -> result
       {:error, _error} -> []
     end
   end
@@ -45,9 +45,9 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   def users_used_sansheets() do
     {query, args} = users_used_sansheets_query()
 
-    ClickhouseRepo.query_transform(query, args, fn value -> value end)
+    ClickhouseRepo.query_transform(query, args, fn [value] -> value end)
     |> case do
-      {:ok, result} -> List.flatten(result)
+      {:ok, result} -> result
       {:error, _error} -> []
     end
   end
@@ -55,11 +55,11 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   def api_calls_count_per_user() do
     {query, args} = api_calls_count_per_user_query()
 
-    ClickhouseRepo.query_transform(query, args, fn [user_id, count] ->
-      {user_id, String.to_integer(count)}
+    ClickhouseRepo.query_reduce(query, args, %{}, fn [user_id, count], acc ->
+      Map.put(acc, user_id, String.to_integer(count))
     end)
     |> case do
-      {:ok, result} -> result |> Enum.into(%{})
+      {:ok, result} -> result
       {:error, _error} -> %{}
     end
   end

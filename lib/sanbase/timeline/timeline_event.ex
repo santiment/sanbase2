@@ -180,16 +180,8 @@ defmodule Sanbase.Timeline.TimelineEvent do
   defp followed_or_sanclan_ids(user_id) do
     Sanbase.Auth.UserFollower.followed_by(user_id)
     |> Enum.map(& &1.id)
-    |> Enum.concat(san_family_ids())
+    |> Enum.concat(Sanbase.Auth.Role.san_family_ids())
     |> Enum.uniq()
-  end
-
-  defp san_family_ids() do
-    from(ur in Sanbase.Auth.UserRole,
-      where: ur.role_id == ^Sanbase.Auth.Role.san_family_role_id(),
-      select: ur.user_id
-    )
-    |> Repo.all()
   end
 
   defp by_cursor(query, :before, datetime) do

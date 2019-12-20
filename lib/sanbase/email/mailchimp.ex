@@ -2,6 +2,8 @@ defmodule Sanbase.Email.Mailchimp do
   require Sanbase.Utils.Config, as: Config
   require Logger
 
+  alias Sanbase.Auth.{User, UserSettings, Settings, Statistics}
+
   @base_url "https://us14.api.mailchimp.com/3.0"
   @weekly_digest_list_id "41325871aa"
 
@@ -36,11 +38,11 @@ defmodule Sanbase.Email.Mailchimp do
 
   def update_unsubscribed_locally(unsubscribed) do
     unsubscribed
-    |> Enum.map(&Sanbase.Repo.get_by(Sanbase.Auth.User, email: &1))
+    |> Enum.map(&User.by_email(&1))
     |> Enum.reject(&is_nil/1)
-    |> Enum.reject(&(Sanbase.Auth.UserSettings.settings_for(&1).newsletter_subscription == :off))
+    |> Enum.reject(&(UserSettings.settings_for(&1).newsletter_subscription == :off))
     |> Enum.each(
-      &Sanbase.Auth.UserSettings.change_newsletter_subscription(&1, %{
+      &UserSettings.change_newsletter_subscription(&1, %{
         newsletter_subscription: :off
       })
     )
@@ -62,12 +64,12 @@ defmodule Sanbase.Email.Mailchimp do
 
   def subscribed_in_sanbase() do
     daily =
-      Sanbase.Auth.Settings.daily_subscription_type()
-      |> Sanbase.Auth.Statistics.newsletter_subscribed_users()
+      Settings.daily_subscription_type()
+      |> Statistics.newsletter_subscribed_users()
 
     weekly =
-      Sanbase.Auth.Settings.weekly_subscription_type()
-      |> Sanbase.Auth.Statistics.newsletter_subscribed_users()
+      Settings.weekly_subscription_type()
+      |> Statistics.newsletter_subscribed_users()
 
     Enum.concat(daily, weekly)
     |> Enum.map(& &1.email)

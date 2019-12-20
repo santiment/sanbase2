@@ -71,5 +71,9 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     sync_users_to_intercom: [
       schedule: "@daily",
       task: {Sanbase.Intercom, :sync_users, []}
+    ],
+    sync_newsletter_subscribers_to_mailchimp: [
+      schedule: "@daily",
+      task: {Sanbase.Email.Mailchimp, :run, []}
     ]
   ]

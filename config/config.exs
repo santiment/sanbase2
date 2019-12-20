@@ -170,6 +170,7 @@ config :sanbase, Sanbase.GrafanaApi,
   grafana_pass: {:system, "GRAFANA_PASS"}
 
 config :sanbase, Sanbase.Intercom, api_key: {:system, "INTERCOM_API_KEY"}
+config :sanbase, Sanbase.Email.Mailchimp, api_key: {:system, "MAILCHIMP_API_KEY"}
 
 # Import configs
 import_config "ex_admin_config.exs"

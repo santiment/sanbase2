@@ -33,7 +33,7 @@ config :sanbase, Sanbase.ClickhouseRepo,
   pool_timeout: 60_000,
   timeout: 60_000,
   pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "30"},
-  max_overflow: 5
+  pool_overflow: 5
 
 # Do not print debug messages in production
 config :logger, level: :info

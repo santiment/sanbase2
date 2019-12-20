@@ -28,7 +28,7 @@ defmodule Sanbase.Email.Mailchimp do
       |> Enum.map(&Map.get(&1, "email_address"))
 
     unsubscribed =
-      Enum.filter(all_members, &(Map.get(&1, "status") == "unsubscribed"))
+      Enum.filter(all_members, &(Map.get(&1, "status") != "subscribed"))
       |> Enum.map(&Map.get(&1, "email_address"))
 
     {subscribed, unsubscribed}
@@ -54,7 +54,7 @@ defmodule Sanbase.Email.Mailchimp do
   def add_email_to_mailchimp(email) do
     %{
       email_address: email,
-      status: "unsubscribed"
+      status: "subscribed"
     }
     |> Jason.encode!()
     |> subscribe_to_digest()

@@ -47,6 +47,7 @@ defmodule SanbaseWeb.Router do
 
     get("/intercom/:user_id", IntercomController, :get_user_data)
     get("/intercom_sync/", IntercomController, :sync_users)
+    get("/mailchimp_sync", MailchimpController, :sync_users)
   end
 
   scope "/" do

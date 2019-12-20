@@ -56,6 +56,14 @@ defmodule Sanbase.Auth.UserSettings do
         Sanbase.Email.Mailchimp.unsubscribe_email(email)
         response
 
+      {:ok, %{settings: %{newsletter_subscription: :weekly}}} = response ->
+        Sanbase.Email.Mailchimp.subscribe_email(email)
+        response
+
+      {:ok, %{settings: %{newsletter_subscription: :daily}}} = response ->
+        Sanbase.Email.Mailchimp.subscribe_email(email)
+        response
+
       response ->
         response
     end

@@ -5,7 +5,10 @@ defmodule Sanbase.StatisticsTest do
   import Sanbase.Factory
   import Mock
 
-  setup do
+  setup_with_mocks([
+    {Sanbase.Email.Mailchimp, [:passthrough], [unsubscribe_email: fn _ -> :ok end]},
+    {Sanbase.Email.Mailchimp, [:passthrough], [subscribe_email: fn _ -> :ok end]}
+  ]) do
     user1 = insert(:user, inserted_at: Timex.shift(Timex.now(), days: -600))
     _user2 = insert(:user, inserted_at: Timex.shift(Timex.now(), days: -20))
     user3 = insert(:user, inserted_at: Timex.shift(Timex.now(), days: -2))

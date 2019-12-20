@@ -78,6 +78,44 @@ defmodule Sanbase.Email.Mailchimp do
     |> Enum.uniq()
   end
 
+  def unsubscribe_email(email) do
+    if mailchimp_api_key() do
+      subscriber_hash = :crypto.hash(:md5, String.downcase(email)) |> Base.encode16(case: :lower)
+
+      body_json =
+        %{
+          email_address: email,
+          status: "unsubscribed"
+        }
+        |> Jason.encode!()
+
+      HTTPoison.patch(
+        "#{@base_url}/lists/#{@weekly_digest_list_id}/members/#{subscriber_hash}",
+        body_json,
+        headers()
+      )
+      |> case do
+        {:ok, %HTTPoison.Response{status_code: 200}} ->
+          Logger.info("Email unsibscribed from Mailchimp: #{body_json}")
+          :ok
+
+        {:ok, %HTTPoison.Response{} = response} ->
+          Logger.error(
+            "Error unsibscribing email from Mailchimp: #{inspect(body_json)}}. Response: #{
+              inspect(response)
+            }"
+          )
+
+        {:error, reason} ->
+          Logger.error(
+            "Error unsibscribing email from Mailchimp : #{body_json}}. Reason: #{inspect(reason)}"
+          )
+      end
+    else
+      :ok
+    end
+  end
+
   def subscribe_to_digest(body_json) do
     HTTPoison.post(weekly_digest_members_url(), body_json, headers())
     |> case do

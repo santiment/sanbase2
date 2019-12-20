@@ -49,8 +49,16 @@ defmodule Sanbase.Auth.UserSettings do
     settings_update(user_id, %{telegram_chat_id: chat_id})
   end
 
-  def change_newsletter_subscription(%User{id: user_id}, params) do
+  def change_newsletter_subscription(%User{id: user_id, email: email}, params) do
     settings_update(user_id, params)
+    |> case do
+      {:ok, %{settings: %{newsletter_subscription: :off}}} = response ->
+        Sanbase.Email.Mailchimp.unsubscribe_email(email)
+        response
+
+      response ->
+        response
+    end
   end
 
   defp settings_update(user_id, params) do

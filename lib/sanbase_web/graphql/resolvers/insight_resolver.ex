@@ -212,4 +212,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
       {:ok, Dataloader.get(loader, SanbaseDataloader, :comment_insight_id, id)}
     end)
   end
+
+  def comments_count(%Post{id: id}, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :comments_count, id)
+    |> on_load(fn loader ->
+      {:ok, Dataloader.get(loader, SanbaseDataloader, :comments_count, id) || 0}
+    end)
+  end
 end

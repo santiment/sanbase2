@@ -42,6 +42,10 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:tags, list_of(:tag))
     field(:discourse_topic_url, :string)
 
+    field :comments_count, :integer do
+      resolve(&InsightResolver.comments_count/3)
+    end
+
     field :related_projects, list_of(:project) do
       resolve(&InsightResolver.related_projects/3)
     end

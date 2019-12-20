@@ -41,7 +41,8 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
              :comment_insight_id,
              :infrastructure,
              :market_segment,
-             :project_transparency_status
+             :project_transparency_status,
+             :comments_count
            ] ->
         PostgresDataloader.query(queryable, args)
     end

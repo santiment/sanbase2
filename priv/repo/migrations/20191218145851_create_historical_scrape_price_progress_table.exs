@@ -7,6 +7,8 @@ defmodule Sanbase.Repo.Migrations.CreateHistoricalScrapePriceProgressTable do
       add(:identifier, :string, null: false)
       add(:datetime, :naive_datetime, null: false)
       add(:source, :string, null: false)
+
+      timestamps()
     end
 
     create(unique_index(@table, [:identifier, :source]))

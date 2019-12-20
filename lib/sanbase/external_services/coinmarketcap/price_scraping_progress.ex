@@ -9,6 +9,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PriceScrapingProgress do
     field(:identifier, :string)
     field(:datetime, :naive_datetime)
     field(:source, :string)
+
+    timestamps()
   end
 
   def changeset(%__MODULE__{} = progress, attrs \\ %{}) do

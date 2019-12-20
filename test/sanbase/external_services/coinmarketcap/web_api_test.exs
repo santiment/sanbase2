@@ -7,6 +7,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApiTest do
   alias Sanbase.ExternalServices.Coinmarketcap.WebApi
   alias Sanbase.Prices.Store
 
+  @moduletag capture_log: true
   @total_market_measurement "TOTAL_MARKET_total-market"
 
   setup do
@@ -25,7 +26,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApiTest do
     [project: project]
   end
 
-  @moduletag capture_log: true
   test "fetching the first price datetime of a token", context do
     Tesla.Mock.mock(fn %{method: :get} ->
       %Tesla.Env{status: 400, body: File.read!(Path.join(__DIR__, "data/btc_web_api_error.json"))}

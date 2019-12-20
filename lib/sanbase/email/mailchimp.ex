@@ -41,11 +41,13 @@ defmodule Sanbase.Email.Mailchimp do
     |> Enum.map(&User.by_email(&1))
     |> Enum.reject(&is_nil/1)
     |> Enum.reject(&(UserSettings.settings_for(&1).newsletter_subscription == :off))
-    |> Enum.each(
-      &UserSettings.change_newsletter_subscription(&1, %{
+    |> Enum.each(fn user ->
+      Logger.info("Email unsubscribed in Mailchimp #{user.email}. Updating in Sanbase.")
+
+      UserSettings.change_newsletter_subscription(user, %{
         newsletter_subscription: :off
       })
-    )
+    end)
   end
 
   def add_newly_subscribed_in_mailchimp(newly_subscribed) do
@@ -77,7 +79,22 @@ defmodule Sanbase.Email.Mailchimp do
   end
 
   def subscribe_to_digest(body_json) do
-    HTTPoison.post!(weekly_digest_members_url(), body_json, headers())
+    HTTPoison.post(weekly_digest_members_url(), body_json, headers())
+    |> case do
+      {:ok, %HTTPoison.Response{status_code: 200}} ->
+        Logger.info("Email added to Mailchimp: #{body_json}")
+        :ok
+
+      {:ok, %HTTPoison.Response{} = response} ->
+        Logger.error(
+          "Error adding email to Mailchimp: #{inspect(body_json)}}. Response: #{inspect(response)}"
+        )
+
+      {:error, reason} ->
+        Logger.error(
+          "Error adding email to Mailchimp : #{body_json}}. Reason: #{inspect(reason)}"
+        )
+    end
   end
 
   defp mailchimp_api_key() do

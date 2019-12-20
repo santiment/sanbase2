@@ -15,6 +15,23 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
     %{conn: conn, user: user, post: post}
   end
 
+  test "commentsCount on insights", context do
+    %{conn: conn, post: post} = context
+
+    assert comments_count(conn, post.id) == 0
+
+    create_comment(conn, post.id, nil, "some content")
+    assert comments_count(conn, post.id) == 1
+
+    create_comment(conn, post.id, nil, "some content")
+    create_comment(conn, post.id, nil, "some content")
+    create_comment(conn, post.id, nil, "some content")
+    assert comments_count(conn, post.id) == 4
+
+    create_comment(conn, post.id, nil, "some content")
+    assert comments_count(conn, post.id) == 5
+  end
+
   test "comment an insight", context do
     %{conn: conn, post: post} = context
 
@@ -185,5 +202,20 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
     |> post("/graphql", query_skeleton(query))
     |> json_response(200)
     |> get_in(["data", "insightComments"])
+  end
+
+  defp comments_count(conn, post_id) do
+    query = """
+    {
+      insight(id: #{post_id}) {
+        commentsCount
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+    |> get_in(["data", "insight", "commentsCount"])
   end
 end

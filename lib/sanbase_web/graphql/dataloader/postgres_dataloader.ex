@@ -48,4 +48,16 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     |> Repo.all()
     |> Map.new()
   end
+
+  def query(:comments_count, post_ids) do
+    ids = Enum.to_list(post_ids)
+
+    from(mapping in Sanbase.Insight.PostComment,
+      where: mapping.post_id in ^ids,
+      group_by: mapping.post_id,
+      select: {mapping.post_id, fragment("COUNT(*)")}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
 end

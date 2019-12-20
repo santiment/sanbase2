@@ -12,17 +12,32 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   setup do
     user = insert(:user, email: "test@example.com")
     conn = setup_jwt_auth(build_conn(), user)
+    role_san_clan = insert(:role_san_clan)
 
-    {:ok, conn: conn, user: user}
+    {:ok, conn: conn, user: user, role_san_clan: role_san_clan}
   end
 
-  test "fetching timeline events by followed users", %{conn: conn, user: user} do
+  test "fetching timeline events by followed users", %{
+    conn: conn,
+    user: user,
+    role_san_clan: role_san_clan
+  } do
     user_to_follow = insert(:user)
     UserFollower.follow(user_to_follow.id, user.id)
+
+    san_author = insert(:user)
+    insert(:user_role, user: san_author, role: role_san_clan)
 
     post =
       insert(:post,
         user: user_to_follow,
+        state: Post.approved_state(),
+        ready_state: Post.published()
+      )
+
+    post2 =
+      insert(:post,
+        user: san_author,
         state: Post.approved_state(),
         ready_state: Post.published()
       )
@@ -33,6 +48,12 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
         user: user_to_follow,
         event_type: TimelineEvent.publish_insight_type()
       )
+
+    insert(:timeline_event,
+      post: post2,
+      user: san_author,
+      event_type: TimelineEvent.publish_insight_type()
+    )
 
     {:ok, user_list} =
       UserList.create_user_list(user_to_follow, %{name: "My Test List", is_public: true})
@@ -61,9 +82,9 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
         event_type: TimelineEvent.create_public_trigger_type()
       )
 
-    result = timeline_events_query(conn, "limit: 3")
+    result = timeline_events_query(conn, "limit: 5")
 
-    assert result |> hd() |> Map.get("events") |> length() == 3
+    assert result |> hd() |> Map.get("events") |> length() == 4
 
     assert result |> hd() |> Map.get("cursor") == %{
              "after" => DateTime.to_iso8601(DateTime.truncate(event3.inserted_at, :second)),
@@ -92,6 +113,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
           }
           post {
             id
+            tags { name }
           }
           trigger {
             id

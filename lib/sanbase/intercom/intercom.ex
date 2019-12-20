@@ -31,10 +31,12 @@ defmodule Sanbase.Intercom do
 
   def sync_users do
     # Skip if api key not present in env. (Run only on production)
+    all_users_stats = all_users_stats()
+
     if intercom_api_key() do
       User.all()
       |> Stream.map(fn user ->
-        fetch_stats_for_user(user, all_users_stats())
+        fetch_stats_for_user(user, all_users_stats)
       end)
       |> Stream.map(&Jason.encode!/1)
       |> Enum.each(&send_user_stats_to_intercom/1)

@@ -69,7 +69,7 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       task: {Sanbase.UserList.Monitor, :run, []}
     ],
     sync_users_to_intercom: [
-      schedule: "30 14 * * *",
+      schedule: "00 15 * * *",
       task: {Sanbase.Intercom, :sync_users, []}
     ],
     sync_newsletter_subscribers_to_mailchimp: [

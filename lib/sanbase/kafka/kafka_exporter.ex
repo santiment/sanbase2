@@ -100,19 +100,12 @@ defmodule Sanbase.KafkaExporter do
         when state: map()
   def handle_call({:persist, data}, _from, state) do
     data = data = List.wrap(data)
-    can_send_after = Timex.shift(Timex.now(), milliseconds: state.can_send_after_interval)
 
     send_data_result =
       (data ++ state.data)
-      |> send_data(%{state | size: state.size + length(data)})
+      |> send_data_immediately(%{state | size: state.size + length(data)})
 
-    {:reply, send_data_result,
-     %{
-       state
-       | data: [],
-         size: 0,
-         can_send_after: can_send_after
-     }}
+    {:reply, send_data_result, %{state | data: [], size: 0}}
   end
 
   def handle_call(:flush, _from, state) do
@@ -156,6 +149,14 @@ defmodule Sanbase.KafkaExporter do
 
   defp send_data(data, %{topic: topic, can_send_after: can_send_after, size: size}) do
     Sanbase.DateTimeUtils.sleep_until(can_send_after)
+    Logger.info("Sending #{size} events to Kafka topic: #{topic}")
+    @producer.send_data(topic, data)
+  end
+
+  defp send_data_immediately([], _), do: :ok
+  defp send_data_immediately(nil, _), do: :ok
+
+  defp send_data_immediately(data, %{topic: topic, size: size}) do
     Logger.info("Sending #{size} events to Kafka topic: #{topic}")
     @producer.send_data(topic, data)
   end

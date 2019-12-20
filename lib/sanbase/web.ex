@@ -21,9 +21,6 @@ defmodule Sanbase.Application.Web do
     children = [
       {Absinthe.Subscription, SanbaseWeb.Endpoint},
 
-      # Start the Clickhouse Repo
-      start_in({Sanbase.ClickhouseRepo, []}, [:dev, :prod]),
-
       # Start the Elasticsearch Cluster connection
       Sanbase.Elasticsearch.Cluster,
 

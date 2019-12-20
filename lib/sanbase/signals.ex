@@ -10,9 +10,6 @@ defmodule Sanbase.Application.Signals do
   """
   def children() do
     children = [
-      # Start the Clickhouse Repo
-      start_in({Sanbase.ClickhouseRepo, []}, [:prod]),
-
       # Start the signal evaluator cache
       Supervisor.child_spec(
         {ConCache,

@@ -161,6 +161,9 @@ defmodule Sanbase.Application do
       # Start the Postgres Ecto repository
       Sanbase.Repo,
 
+      # Start the Clickhouse Repo
+      start_in({Sanbase.ClickhouseRepo, []}, [:dev, :prod]),
+
       # Time series Prices DB connection
       Sanbase.Prices.Store.child_spec(),
 

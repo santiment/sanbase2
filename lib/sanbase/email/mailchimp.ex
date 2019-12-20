@@ -79,36 +79,40 @@ defmodule Sanbase.Email.Mailchimp do
   end
 
   def unsubscribe_email(email) do
-    subscriber_hash = :crypto.hash(:md5, String.downcase(email)) |> Base.encode16(case: :lower)
+    if mailchimp_api_key() do
+      subscriber_hash = :crypto.hash(:md5, String.downcase(email)) |> Base.encode16(case: :lower)
 
-    body_json =
-      %{
-        email_address: email,
-        status: "unsubscribed"
-      }
-      |> Jason.encode!()
+      body_json =
+        %{
+          email_address: email,
+          status: "unsubscribed"
+        }
+        |> Jason.encode!()
 
-    HTTPoison.patch(
-      "#{@base_url}/lists/#{@weekly_digest_list_id}/members/#{subscriber_hash}",
-      body_json,
-      headers()
-    )
-    |> case do
-      {:ok, %HTTPoison.Response{status_code: 200}} ->
-        Logger.info("Email unsibscribed from Mailchimp: #{body_json}")
-        :ok
+      HTTPoison.patch(
+        "#{@base_url}/lists/#{@weekly_digest_list_id}/members/#{subscriber_hash}",
+        body_json,
+        headers()
+      )
+      |> case do
+        {:ok, %HTTPoison.Response{status_code: 200}} ->
+          Logger.info("Email unsibscribed from Mailchimp: #{body_json}")
+          :ok
 
-      {:ok, %HTTPoison.Response{} = response} ->
-        Logger.error(
-          "Error unsibscribing email from Mailchimp: #{inspect(body_json)}}. Response: #{
-            inspect(response)
-          }"
-        )
+        {:ok, %HTTPoison.Response{} = response} ->
+          Logger.error(
+            "Error unsibscribing email from Mailchimp: #{inspect(body_json)}}. Response: #{
+              inspect(response)
+            }"
+          )
 
-      {:error, reason} ->
-        Logger.error(
-          "Error unsibscribing email from Mailchimp : #{body_json}}. Reason: #{inspect(reason)}"
-        )
+        {:error, reason} ->
+          Logger.error(
+            "Error unsibscribing email from Mailchimp : #{body_json}}. Reason: #{inspect(reason)}"
+          )
+      end
+    else
+      :ok
     end
   end
 

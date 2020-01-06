@@ -49,6 +49,10 @@ defmodule Sanbase.Auth.UserSettings do
     settings_update(user_id, %{telegram_chat_id: chat_id})
   end
 
+  def change_newsletter_subscription(%User{id: user_id, email: nil}, params) do
+    settings_update(user_id, params)
+  end
+
   def change_newsletter_subscription(%User{id: user_id, email: email}, params) do
     settings_update(user_id, params)
     |> case do

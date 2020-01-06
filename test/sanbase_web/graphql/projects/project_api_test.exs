@@ -97,9 +97,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTest do
     project =
       insert(
         :random_project,
-        %{
-          logo_url: "logo_url.png"
-        }
+        %{logo_url: "logo_url.png"}
       )
 
     query = """
@@ -116,6 +114,29 @@ defmodule SanbaseWeb.Graphql.ProjectApiTest do
       |> json_response(200)
 
     assert result["data"]["projectBySlug"]["logoUrl"] == "logo_url.png"
+  end
+
+  test "fetch project dark logos", context do
+    project =
+      insert(
+        :random_project,
+        %{dark_logo_url: "dark_logo_url.png"}
+      )
+
+    query = """
+    {
+      projectBySlug(slug: "#{project.slug}") {
+        darkLogoUrl
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "projectBySlug"))
+      |> json_response(200)
+
+    assert result["data"]["projectBySlug"]["darkLogoUrl"] == "dark_logo_url.png"
   end
 
   test "Fetch project's github links", context do

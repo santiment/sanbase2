@@ -218,8 +218,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
             {datetime_iso8601,
              %{"BTC" => [price_btc], "USD" => [price_usd, volume_usd, marketcap_usd]}} ->
               %PricePoint{
-                price_usd: price_usd,
-                price_btc: price_btc,
+                price_usd: price_usd |> Sanbase.Math.to_float(),
+                price_btc: price_btc |> Sanbase.Math.to_float(),
                 marketcap_usd: marketcap_usd |> Sanbase.Math.to_integer(),
                 volume_usd: volume_usd |> Sanbase.Math.to_integer(),
                 datetime: Sanbase.DateTimeUtils.from_iso8601!(datetime_iso8601)

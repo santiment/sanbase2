@@ -53,7 +53,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApiTest do
 
     record =
       {"coinmarketcap_bitcoin_2018-01-01T23:59:20.000Z",
-       "{\"marketcap_usd\":229119666553,\"price_btc\":1,\"price_usd\":13657.23046875,\"slug\":\"bitcoin\",\"source\":\"coinmarketcap\",\"timestamp\":1514851160,\"volume_usd\":10291150848}"}
+       "{\"marketcap_usd\":229119666553,\"price_btc\":1.0,\"price_usd\":13657.23046875,\"slug\":\"bitcoin\",\"source\":\"coinmarketcap\",\"timestamp\":1514851160,\"volume_usd\":10291150848}"}
 
     assert record in prices
   end

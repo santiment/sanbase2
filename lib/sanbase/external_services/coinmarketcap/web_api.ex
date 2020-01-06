@@ -77,19 +77,25 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
       |> Sanbase.Model.LatestCoinmarketcapData.by_coinmarketcap_id()
       |> Map.get(:coinmarketcap_integer_id)
 
-    # Consume 10 price point intervals. Break early in case of errors.
-    # Errors should not be ignored as this can cause a gap in the prices
-    # in case the next fetch succeeds and we store a later progress datetime
-    price_stream(coinmarketcap_integer_id, last_fetched_datetime, DateTime.utc_now())
-    |> Stream.take(10)
-    |> Enum.reduce_while(%{}, fn
-      {:ok, result, interval}, acc ->
-        store_price_points(project, result, interval)
-        {:cont, acc}
+    case coinmarketcap_integer_id do
+      nil ->
+        :ok
 
-      _, acc ->
-        {:halt, acc}
-    end)
+      _ ->
+        # Consume 10 price point intervals. Break early in case of errors.
+        # Errors should not be ignored as this can cause a gap in the prices
+        # in case the next fetch succeeds and we store a later progress datetime
+        price_stream(coinmarketcap_integer_id, last_fetched_datetime, DateTime.utc_now())
+        |> Stream.take(10)
+        |> Enum.reduce_while(%{}, fn
+          {:ok, result, interval}, acc ->
+            store_price_points(project, result, interval)
+            {:cont, acc}
+
+          _, acc ->
+            {:halt, acc}
+        end)
+    end
   end
 
   def fetch_and_store_prices("TOTAL_MARKET", last_fetched_datetime) do

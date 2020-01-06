@@ -10,6 +10,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
 
   alias Sanbase.Signal.Trigger.TrendingWordsTriggerSettings
 
+  @moduletag capture_log: true
   setup_with_mocks([
     {Sanbase.Chart, [],
      [
@@ -39,6 +40,22 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
       user: user,
       trigger_trending_words: trigger_trending_words
     ]
+  end
+
+  test "validate trigger_time", context do
+    trending_words_settings = %{
+      type: TrendingWordsTriggerSettings.type(),
+      channel: "telegram",
+      operation: %{send_at_predefined_time: true, trigger_time: "8:00:00"}
+    }
+
+    assert UserTrigger.create_user_trigger(context.user, %{
+             title: "Generic title",
+             is_public: false,
+             settings: trending_words_settings
+           }) ==
+             {:error,
+              "Trigger structure is invalid. Key `settings` is not valid. Reason: [\"8:00:00 is not a valid ISO8601 time\"]"}
   end
 
   test "evaluate trending words triggers", context do

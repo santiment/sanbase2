@@ -373,7 +373,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     trigger_settings = %{
       "type" => "trending_words",
       "channel" => "telegram",
-      "trigger_time" => "12:00:00"
+      "operation" => %{"send_at_predefined_time" => true, "trigger_time" => "12:00:00"}
     }
 
     result =
@@ -394,7 +394,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     trigger_settings = %{
       "type" => "trending_words",
       "channel" => "telegram",
-      "trigger_time" => "12:00:00"
+      "operation" => %{"send_at_predefined_time" => true, "trigger_time" => "12:00:00"}
     }
 
     result = create_trigger(conn, title: "Some title", settings: trigger_settings, tags: [])
@@ -405,7 +405,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     assert created_trigger["tags"] == []
   end
 
-  test "signals historical activity from sanclan user", %{user: user, conn: conn} do
+  test "signals historical activity from sanclan user", %{conn: conn} do
     san_clan_user = insert(:user)
     role_san_clan = insert(:role_san_clan)
     insert(:user_role, user: san_clan_user, role: role_san_clan)
@@ -434,13 +434,12 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         }
       )
 
-    first_activity =
-      insert(:signals_historical_activity,
-        user: san_clan_user,
-        user_trigger: user_trigger1,
-        payload: %{"all" => "first"},
-        triggered_at: NaiveDateTime.from_iso8601!("2019-01-21T00:00:00")
-      )
+    insert(:signals_historical_activity,
+      user: san_clan_user,
+      user_trigger: user_trigger1,
+      payload: %{"all" => "first"},
+      triggered_at: NaiveDateTime.from_iso8601!("2019-01-21T00:00:00")
+    )
 
     insert(:signals_historical_activity,
       user: san_clan_user,

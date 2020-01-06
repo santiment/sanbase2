@@ -46,17 +46,17 @@ defmodule Sanbase.Validation do
     end
   end
 
-  def valid_iso8601_datetime_string?(time) when is_binary(time) do
+  def valid_iso8601_time_string?(time) when is_binary(time) do
     case Time.from_iso8601(time) do
       {:ok, _time} ->
         :ok
 
       _ ->
-        {:error, "#{time} isn't a valid ISO8601 time"}
+        {:error, "#{time} is not a valid ISO8601 time"}
     end
   end
 
-  def valid_iso8601_datetime_string?(_), do: {:error, "Not valid ISO8601 time"}
+  def valid_iso8601_time_string?(str), do: {:error, "#{inspect(str)} is not a valid ISO8601 time"}
 
   def valid_url?(url) do
     case URI.parse(url) do

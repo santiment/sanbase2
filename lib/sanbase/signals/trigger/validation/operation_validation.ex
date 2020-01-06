@@ -66,32 +66,40 @@ defmodule Sanbase.Signal.Validation.Operation do
     end
   end
 
-  def valid_operation?(%{some_of: list}) when is_list(list) do
-    valid_combinator_operation?(list)
-  end
+  # Validate combinators
+  def valid_operation?(%{some_of: list}) when is_list(list), do: valid_combinator_operation?(list)
+  def valid_operation?(%{all_of: list}) when is_list(list), do: valid_combinator_operation?(list)
+  def valid_operation?(%{none_of: list}) when is_list(list), do: valid_combinator_operation?(list)
 
-  def valid_operation?(%{all_of: list}) when is_list(list) do
-    valid_combinator_operation?(list)
-  end
-
-  def valid_operation?(%{none_of: list}) when is_list(list) do
-    valid_combinator_operation?(list)
-  end
-
+  # Validate percent changes
   def valid_operation?(%{percent_up: percent}) when is_valid_percent_change(percent), do: :ok
   def valid_operation?(%{percent_down: percent}) when is_valid_percent_change(percent), do: :ok
+
+  # Validate absolute values
   def valid_operation?(%{above: above}) when is_valid_price(above), do: :ok
   def valid_operation?(%{below: below}) when is_valid_price(below), do: :ok
 
+  # Validate channels
   def valid_operation?(%{inside_channel: [min, max]}),
     do: valid_channel_operation?(:inside_channel, [min, max])
 
   def valid_operation?(%{outside_channel: [min, max]}),
     do: valid_channel_operation?(:outside_channel, [min, max])
 
+  # Validate absolute value changes
   def valid_operation?(%{amount_up: value}) when is_number(value), do: :ok
   def valid_operation?(%{amount_down: value}) when is_number(value), do: :ok
+
+  # All else is invalid operation
   def valid_operation?(op), do: {:error, "#{inspect(op)} is not a valid operation"}
+
+  # Validate trending words operations
+  def valid_trending_words_operation?(%{trending_word: true}), do: :ok
+  def valid_trending_words_operation?(%{trending_project: true}), do: :ok
+
+  def valid_trending_words_operation?(%{send_at_predefined_time: true, trigger_time: time_str}) do
+    valid_iso8601_time_string?(time_str)
+  end
 
   # Private functions
   defp all_operations_have_same_type?(list, operation_type) do

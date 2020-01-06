@@ -44,6 +44,7 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
         }
 
   # Validations
+  validates(:operation, &valid_trending_words_operation?/1)
   validates(:channel, &valid_notification_channel?/1)
   validates(:target, &valid_target?/1)
 

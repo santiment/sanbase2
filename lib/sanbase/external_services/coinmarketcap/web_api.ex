@@ -122,28 +122,43 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   # because in case of gaps the scraper can get stuck and rescrape the same
   # interval over and over again.
   defp store_price_points(%Project{slug: slug}, [], {_, to}) do
+    to = Enum.max_by([to, DateTime.utc_now()], &DateTime.to_unix/1)
     PriceScrapingProgress.store_progress(slug, @source, DateTime.from_unix!(to))
   end
 
   defp store_price_points("TOTAL_MARKET", [], {_, to}) do
+    to = Enum.max_by([to, DateTime.utc_now()], &DateTime.to_unix/1)
     PriceScrapingProgress.store_progress("TOTAL_MARKET", @source, DateTime.from_unix!(to))
   end
 
   defp store_price_points(%Project{slug: slug} = project, price_points, _) do
-    %{datetime: latest_datetime} = Enum.max_by(price_points, & &1.datetime)
+    %{datetime: latest_datetime} = Enum.max_by(price_points, &DateTime.to_unix(&1.datetime))
 
     :ok = export_prices_to_kafka(project, price_points)
-
     :ok = export_prices_to_influxdb(Measurement.name_from(project), price_points)
 
     PriceScrapingProgress.store_progress(slug, @source, latest_datetime)
   end
 
   defp store_price_points("TOTAL_MARKET", price_points, _) do
-    %{datetime: latest_datetime} = Enum.max_by(price_points, & &1.datetime)
+    %{datetime: latest_datetime} = Enum.max_by(price_points, &DateTime.to_unix(&1.datetime))
+
+    :ok = export_prices_to_kafka("TOTAL_MARKET", price_points)
+
+    # The influxdb TOTAL_MARKET measurement has float types
+    price_points =
+      Enum.map(
+        price_points,
+        fn %PricePoint{marketcap_usd: marketcap_usd, volume_usd: volume_usd} = point ->
+          %PricePoint{
+            point
+            | marketcap_usd: marketcap_usd |> Sanbase.Math.to_float(),
+              volume_usd: volume_usd |> Sanbase.Math.to_float()
+          }
+        end
+      )
 
     :ok = export_prices_to_influxdb(@total_market_measurement, price_points)
-    :ok = export_prices_to_kafka("TOTAL_MARKET", price_points)
 
     PriceScrapingProgress.store_progress("TOTAL_MARKET", @source, latest_datetime)
   end
@@ -223,8 +238,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
          {from_unix, to_unix} = interval
        ) do
     Logger.info("""
-      [CMC] Extracting price points for TOTAL_MARKET and interval
-      #{DateTime.from_unix!(from_unix)} - #{DateTime.from_unix!(to_unix)}
+      [CMC] Extracting price points for TOTAL_MARKET and interval [#{
+      DateTime.from_unix!(from_unix)
+    } - #{DateTime.from_unix!(to_unix)}]
     """)
 
     "/v1/global-metrics/quotes/historical?format=chart&interval=5m&time_start=#{from_unix}&time_end=#{
@@ -254,8 +270,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   defp extract_price_points_for_interval(id, {from_unix, to_unix} = interval)
        when is_integer(id) do
     Logger.info("""
-      [CMC] Extracting price points for coinmarketcap integer id #{id} and interval
-      #{DateTime.from_unix!(from_unix)} - #{DateTime.from_unix!(to_unix)}
+      [CMC] Extracting price points for coinmarketcap integer id #{id} and interval [#{
+      DateTime.from_unix!(from_unix)
+    } - #{DateTime.from_unix!(to_unix)}]
     """)
 
     "/v1/cryptocurrency/quotes/historical?convert=USD,BTC&format=chart_crypto_details&id=#{id}&time_start=#{

@@ -11,7 +11,7 @@ defmodule Sanbase.Price.SqlQuery do
     SELECT time, SUM(price_usd), SUM(price_btc), SUM(marketcap_usd), SUM(volume_usd), toUInt32(SUM(has_changed))
     FROM (
       SELECT
-        toUnixTimestamp(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) AS time,
+        toUnixTimestamp(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) AS time,
         toFloat64(0) AS price_usd,
         toFloat64(0) AS price_btc,
         toFloat64(0) AS marketcap_usd,
@@ -30,17 +30,17 @@ defmodule Sanbase.Price.SqlQuery do
         toUInt32(1) AS has_changed
       FROM #{@table}
       PREWHERE
-        slug = ?3 AND
-        dt >= toDateTime(?4) AND
-        dt < toDateTime(?5) AND
-        source = ?6
+        slug = cast(?3, 'LowCardinality(String)') AND
+        source = cast(?4, 'LowCardinality(String)') AND
+        dt >= toDateTime(?5) AND
+        dt < toDateTime(?6)
       GROUP BY time
     )
     GROUP BY time
     ORDER BY time
     """
 
-    args = [interval, span, slug, from, to, source]
+    args = [interval, span, slug, source, from, to]
 
     {query, args}
   end
@@ -153,21 +153,17 @@ defmodule Sanbase.Price.SqlQuery do
       FROM #{@table}
       PREWHERE
         slug IN (?1) AND
-        dt >= toDateTime(?2) AND
-        dt < toDateTime(?3) AND
-        source = cast(?4, 'LowCardinality(String)')
+        source = cast(?2, 'LowCardinality(String)') AND
+        dt >= toDateTime(?3) AND
+        dt < toDateTime(?4)
       GROUP BY slug
     )
     GROUP BY slug
     """
 
-    {query,
-     [
-       slugs,
-       from |> DateTime.to_unix(),
-       to |> DateTime.to_unix(),
-       source
-     ]}
+    args = [slugs, source, from |> DateTime.to_unix(), to |> DateTime.to_unix()]
+
+    {query, args}
   end
 
   def ohlc_query(slug, from, to, source) do
@@ -206,6 +202,7 @@ defmodule Sanbase.Price.SqlQuery do
     """
 
     args = [slug, source, from, to]
+
     {query, args}
   end
 
@@ -247,6 +244,7 @@ defmodule Sanbase.Price.SqlQuery do
     """
 
     args = [interval, span, slug, source, from, to]
+
     {query, args}
   end
 
@@ -257,7 +255,7 @@ defmodule Sanbase.Price.SqlQuery do
     SELECT time,SUM(marketcap_usd), SUM(volume_usd), toUInt32(SUM(has_changed))
     FROM (
       SELECT
-        toUnixTimestamp(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) AS time,
+        toUnixTimestamp(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) AS time,
         toFloat64(0) AS marketcap_usd,
         toFloat64(0) AS volume_usd,
         toUInt32(0) AS has_changed
@@ -273,16 +271,16 @@ defmodule Sanbase.Price.SqlQuery do
       FROM #{@table}
       PREWHERE
         slug IN (?3) AND
-        dt >= toDateTime(?4) AND
-        dt < toDateTime(?5) AND
-        source = ?6
+        source = ?4 AND
+        dt >= toDateTime(?5) AND
+        dt < toDateTime(?6)
       GROUP BY time, slug
     )
     GROUP BY time
     ORDER BY time
     """
 
-    args = [interval, span, slugs, from, to, source]
+    args = [interval, span, slugs, source, from, to]
 
     {query, args}
   end
@@ -295,12 +293,17 @@ defmodule Sanbase.Price.SqlQuery do
     PREWHERE
       slug = cast(?1, 'LowCardinality(String)') AND
       source = cast(?2, 'LowCardinality(String)') AND
-      dt <= toDateTime(?3)
+      dt >= toDateTime(?3) AND
+      dt <= toDateTime(?4)
     ORDER BY dt DESC
     LIMIT 1
     """
 
-    args = [slug, source, datetime |> DateTime.to_unix()]
+    # Put an artificial lower boundary otherwise the query is too slow
+    from = Timex.shift(datetime, days: -180) |> DateTime.to_unix()
+    to = datetime |> DateTime.to_unix()
+    args = [slug, source, from, to]
+
     {query, args}
   end
 
@@ -317,6 +320,7 @@ defmodule Sanbase.Price.SqlQuery do
     """
 
     args = [slug, source]
+
     {query, args}
   end
 

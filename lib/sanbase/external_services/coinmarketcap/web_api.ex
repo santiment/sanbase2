@@ -227,7 +227,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
       #{DateTime.from_unix!(from_unix)} - #{DateTime.from_unix!(to_unix)}
     """)
 
-    "/v1/global-metrics/quotes/historical?format=chart&interval=5m&time_start=#{from_unix}&time_start=#{
+    "/v1/global-metrics/quotes/historical?format=chart&interval=5m&time_start=#{from_unix}&time_end=#{
       to_unix
     }"
     |> get()

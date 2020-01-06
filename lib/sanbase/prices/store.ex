@@ -166,6 +166,29 @@ defmodule Sanbase.Prices.Store do
     |> Store.import()
   end
 
+  def all_last_history_datetimes_cmc() do
+    ~s/SELECT * FROM "#{@last_history_price_cmc_measurement}"/
+    |> get()
+    |> parse_time_series()
+    |> case do
+      {:ok, result} ->
+        Enum.map(
+          result,
+          fn
+            [_, _, _, nil] ->
+              nil
+
+            [_, timestamp_nanoseconds, _, ticker_slug] ->
+              case String.split(ticker_slug, "_") do
+                [_ticker, slug] -> {slug, DateTime.from_unix!(timestamp_nanoseconds, :nanosecond)}
+                _ -> nil
+              end
+          end
+        )
+        |> Enum.reject(&is_nil/1)
+    end
+  end
+
   def last_history_datetime_cmc(ticker_cmc_id) do
     last_history_datetime_cmc_query(ticker_cmc_id)
     |> get()

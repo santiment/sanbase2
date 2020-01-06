@@ -1,0 +1,10 @@
+{
+  "status": {
+    "timestamp": "2019-12-19T15:47:22.752Z",
+    "error_code": 400,
+    "error_message": "Search query is out of range. Please select dates between 2013-04-28T18:47:21.000Z and 2019-12-19T15:44:00.000Z",
+    "elapsed": 0,
+    "credit_count": 0,
+    "notice": null
+  }
+}

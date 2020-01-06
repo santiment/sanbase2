@@ -99,34 +99,23 @@ defmodule Sanbase.KafkaExporter do
   @spec handle_call({:persist, data | [data]}, any(), state) :: {:reply, result, state}
         when state: map()
   def handle_call({:persist, data}, _from, state) do
-    data = List.wrap(data)
-    new_messages_length = length(data)
+    data = data = List.wrap(data)
 
-    case state.size + new_messages_length >= state.buffering_max_messages do
-      true ->
-        {
-          :reply,
-          send_data(data ++ state.data, %{state | size: state.size + new_messages_length}),
-          %{
-            state
-            | data: [],
-              size: 0,
-              can_send_after:
-                DateTime.utc_now() |> DateTime.add(state.can_send_after_interval, :millisecond)
-          }
-        }
+    send_data_result =
+      (data ++ state.data)
+      |> send_data_immediately(%{state | size: state.size + length(data)})
 
-      false ->
-        {:reply, :ok, %{state | data: data ++ state.data, size: state.size + new_messages_length}}
-    end
+    {:reply, send_data_result, %{state | data: [], size: 0}}
+  end
+
+  def handle_call(:flush, _from, state) do
+    send_data(state.data, state)
+    {:reply, %{state | data: [], size: 0}}
   end
 
   @spec handle_cast({:persist, data | [data]}, state) :: {:noreply, state}
         when state: map()
-  def handle_cast(
-        {:persist, data},
-        state
-      ) do
+  def handle_cast({:persist, data}, state) do
     data = List.wrap(data)
     new_messages_length = length(data)
 
@@ -148,11 +137,6 @@ defmodule Sanbase.KafkaExporter do
     end
   end
 
-  def handle_call(:flush, state) do
-    send_data(state.data, state)
-    {:reply, %{state | data: [], size: 0}}
-  end
-
   def handle_info(:flush, state) do
     send_data(state.data, state)
 
@@ -165,6 +149,14 @@ defmodule Sanbase.KafkaExporter do
 
   defp send_data(data, %{topic: topic, can_send_after: can_send_after, size: size}) do
     Sanbase.DateTimeUtils.sleep_until(can_send_after)
+    Logger.info("Sending #{size} events to Kafka topic: #{topic}")
+    @producer.send_data(topic, data)
+  end
+
+  defp send_data_immediately([], _), do: :ok
+  defp send_data_immediately(nil, _), do: :ok
+
+  defp send_data_immediately(data, %{topic: topic, size: size}) do
     Logger.info("Sending #{size} events to Kafka topic: #{topic}")
     @producer.send_data(topic, data)
   end

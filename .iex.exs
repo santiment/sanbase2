@@ -60,7 +60,7 @@ alias Sanbase.InternalServices.{
 }
 
 alias Sanbase.ExternalServices.Coinmarketcap.{
-  GraphData,
+  WebApi,
   PricePoint,
   Scraper,
   TickerFetcher,

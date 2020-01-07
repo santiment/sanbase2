@@ -441,30 +441,34 @@ defmodule Sanbase.Prices.Store do
   end
 
   defp combine_results_mcap_volume(results) do
-    result = combine_results(results)
+    %{series: series, errors: errors} = combine_results(results)
 
-    case result do
-      %{errors: [], series: series} ->
-        data =
-          series
-          |> Enum.map(fn %{values: values} -> values end)
-          |> Enum.zip()
-          |> Stream.map(&Tuple.to_list/1)
-          |> Enum.map(fn [[iso8601_datetime, _, _] | _] = projects_data ->
-            {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+    case errors do
+      [] ->
+        :ok
 
-            {combined_volume, combined_mcap} =
-              projects_data
-              |> Enum.reduce({0, 0}, fn [_, volume, mcap], {v, m} -> {v + volume, m + mcap} end)
-
-            %{datetime: datetime, volume: combined_volume, marketcap: combined_mcap}
-          end)
-
-        {:ok, data}
-
-      %{errors: errors} ->
-        {:error, errors}
+      _ ->
+        Logger.warn(
+          "Encountered errors while fetching combined marketcap and volume: #{inspect(errors)}"
+        )
     end
+
+    data =
+      series
+      |> Enum.map(fn %{values: values} -> values end)
+      |> Enum.zip()
+      |> Stream.map(&Tuple.to_list/1)
+      |> Enum.map(fn [[iso8601_datetime, _, _] | _] = projects_data ->
+        {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+
+        {combined_volume, combined_mcap} =
+          projects_data
+          |> Enum.reduce({0, 0}, fn [_, volume, mcap], {v, m} -> {v + volume, m + mcap} end)
+
+        %{datetime: datetime, volume: combined_volume, marketcap: combined_mcap}
+      end)
+
+    {:ok, data}
   end
 
   defp combine_results(results) when is_list(results) do

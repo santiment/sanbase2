@@ -7,7 +7,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   alias Sanbase.Model.Project
 
   @total_market "TOTAL_MARKET"
-  @total_market_slug "total-market"
   @total_erc20 "TOTAL_ERC20"
 
   @doc """
@@ -18,8 +17,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     %{from: from, to: to, interval: interval} = args
 
     with {:ok, from, to, interval} <-
-           calibrate_interval(Price, @total_market_slug, from, to, interval, 300),
-         {:ok, result} <- Price.timeseries_data(@total_market_slug, from, to, interval) do
+           calibrate_interval(Price, @total_market, from, to, interval, 300),
+         {:ok, result} <- Price.timeseries_data(@total_market, from, to, interval) do
       {:ok, result}
     end
   end

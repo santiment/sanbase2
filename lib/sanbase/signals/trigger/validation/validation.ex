@@ -13,6 +13,7 @@ defmodule Sanbase.Signal.Validation do
   defdelegate valid_percent_change_operation?(operation), to: Operation
   defdelegate valid_absolute_change_operation?(operation), to: Operation
   defdelegate valid_absolute_value_operation?(operation), to: Operation
+  defdelegate valid_trending_words_operation?(operation), to: Operation
 
   defdelegate valid_slug?(slug), to: Slug
 end

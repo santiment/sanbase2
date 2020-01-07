@@ -14,7 +14,7 @@ defmodule Sanbase.Clickhouse.Metric.HelperTest do
            ]
          }}
       end do
-      {:ok, version_map} = Sanbase.Clickhouse.Metric.Helper.metric_name_id_map()
+      {:ok, version_map} = Sanbase.Clickhouse.Metric.Helper.metric_name_to_metric_id_map()
       assert {"daily_active_addresses", 1} in version_map
       refute {"daily_active_addresses", 2} in version_map
     end

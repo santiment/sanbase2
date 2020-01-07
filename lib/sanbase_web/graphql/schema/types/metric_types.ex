@@ -39,7 +39,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:values, :value_list)
   end
 
-  object :metadata do
+  object :metric_metadata do
     @desc ~s"""
     The name of the metric the metadata is about
     """
@@ -139,20 +139,9 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       cache_resolve(&MetricResolver.available_since/3)
     end
 
-    field :metadata, :metadata do
+    field :metadata, :metric_metadata do
       cache_resolve(&MetricResolver.get_metadata/3)
     end
-  end
-
-  enum :aggregation do
-    value(:any)
-    value(:last)
-    value(:first)
-    value(:avg)
-    value(:sum)
-    value(:min)
-    value(:max)
-    value(:median)
   end
 
   enum :metric_data_type do

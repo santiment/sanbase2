@@ -9,10 +9,8 @@ defmodule Sanbase.Clickhouse.Metric do
   """
   @behaviour Sanbase.Metric.Behaviour
 
-  use Ecto.Schema
-
-  import Sanbase.Clickhouse.Metric.Helper, only: [slug_asset_id_map: 0, asset_id_slug_map: 0]
-  import Sanbase.Clickhouse.Metric.SqlQueries
+  import Sanbase.Clickhouse.MetadataHelper
+  import Sanbase.Clickhouse.Metric.SqlQuery
 
   alias Sanbase.Clickhouse.Metric.LabelTemplate
   alias __MODULE__.FileHandler
@@ -34,22 +32,13 @@ defmodule Sanbase.Clickhouse.Metric do
   @human_readable_name_map FileHandler.human_readable_name_map()
   @metrics_data_type_map FileHandler.metrics_data_type_map()
   @metrics_label_map FileHandler.metrics_label_map()
-  @metrics_name_list (@histogram_metrics_name_list ++
-                        @timeseries_metrics_name_list)
+  @metrics_name_list (@histogram_metrics_name_list ++ @timeseries_metrics_name_list)
                      |> Enum.uniq()
   @incomplete_data_map FileHandler.incomplete_data_map()
 
   @type slug :: String.t()
   @type metric :: String.t()
   @type interval :: String.t()
-
-  schema @table do
-    field(:datetime, :utc_datetime, source: :dt)
-    field(:asset_id, :integer)
-    field(:metric_id, :integer)
-    field(:value, :float)
-    field(:computed_at, :utc_datetime)
-  end
 
   @impl Sanbase.Metric.Behaviour
   def free_metrics(), do: @free_metrics
@@ -211,14 +200,14 @@ defmodule Sanbase.Clickhouse.Metric do
   end
 
   defp get_aggregated_timeseries_data(metric, slugs, from, to, aggregation) when is_list(slugs) do
-    {:ok, asset_map} = slug_asset_id_map()
+    {:ok, asset_map} = slug_to_asset_id_map()
 
     case Map.take(asset_map, slugs) |> Map.values() do
       [] ->
         {:ok, []}
 
       asset_ids ->
-        {:ok, asset_id_map} = asset_id_slug_map()
+        {:ok, asset_id_map} = asset_id_to_slug_map()
 
         {query, args} = aggregated_timeseries_data_query(metric, asset_ids, from, to, aggregation)
 

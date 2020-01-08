@@ -88,7 +88,6 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
                Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
              end) =~ "In total 1/1 trending_words signals were sent successfully"
 
-      alias Sanbase.Signal.HistoricalActivity
       user_signal = HistoricalActivity |> Sanbase.Repo.all() |> List.first()
       assert user_signal.user_id == context.user.id
 
@@ -103,7 +102,8 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
     end
   end
 
-  test "successfull signal is written in signals_historical_activity table", context do
+  test "successfull signal is written in signals_historical_activity table and timeline event is created",
+       context do
     Tesla.Mock.mock_global(fn
       %{method: :post} ->
         %Tesla.Env{status: 200, body: "ok"}
@@ -118,9 +118,17 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
              end) =~ "In total 1/1 trending_words signals were sent successfully"
 
       user_signal = HistoricalActivity |> Sanbase.Repo.all() |> List.first()
+
       assert user_signal.user_id == context.user.id
-      payload = user_signal.payload |> Map.values() |> List.first()
-      assert String.contains?(payload, "coinbase")
+      assert String.contains?(user_signal.payload |> Map.values() |> List.first(), "coinbase")
+
+      timeline_event = Sanbase.Timeline.TimelineEvent |> Sanbase.Repo.all() |> List.first()
+
+      assert timeline_event.id != nil
+      assert timeline_event.event_type == "trigger_fired"
+      assert timeline_event.user_id == context.user.id
+      assert timeline_event.user_trigger_id == context.trigger_trending_words.id
+      assert String.contains?(timeline_event.payload |> Map.values() |> List.first(), "coinbase")
     end
   end
 

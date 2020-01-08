@@ -25,6 +25,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   @publish_insight_type "publish_insight"
   @update_watchlist_type "update_watchlist"
   @create_public_trigger_type "create_public_trigger"
+  @trigger_fired "trigger_fired"
 
   @max_events_returned 100
 
@@ -36,6 +37,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     belongs_to(:post, Post)
     belongs_to(:user_list, UserList)
     belongs_to(:user_trigger, UserTrigger)
+    field(:payload, :map)
 
     timestamps()
   end
@@ -59,6 +61,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   def publish_insight_type(), do: @publish_insight_type
   def update_watchlist_type(), do: @update_watchlist_type
   def create_public_trigger_type(), do: @create_public_trigger_type
+  def trigger_fired(), do: @trigger_fired
 
   def create_changeset(%__MODULE__{} = timeline_events, attrs \\ %{}) do
     timeline_events
@@ -68,6 +71,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
       :post_id,
       :user_list_id,
       :user_trigger_id,
+      :payload,
       :inserted_at
     ])
     |> validate_required([:event_type, :user_id])
@@ -83,7 +87,8 @@ defmodule Sanbase.Timeline.TimelineEvent do
         %{limit: limit, cursor: %{type: cursor_type, datetime: cursor_datetime}}
       ) do
     TimelineEvent
-    |> events_by_followed_users_or_sanclan(user_id, min(limit, @max_events_returned))
+    |> events_by_followed_users_or_sanclan_query(user_id, min(limit, @max_events_returned))
+    |> user_fired_signals_query(user_id)
     |> by_cursor(cursor_type, cursor_datetime)
     |> Repo.all()
     |> events_with_cursor()
@@ -91,7 +96,8 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   def events(%User{id: user_id}, %{limit: limit}) do
     TimelineEvent
-    |> events_by_followed_users_or_sanclan(user_id, min(limit, @max_events_returned))
+    |> events_by_followed_users_or_sanclan_query(user_id, min(limit, @max_events_returned))
+    |> user_fired_signals_query(user_id)
     |> Repo.all()
     |> events_with_cursor()
   end
@@ -111,11 +117,30 @@ defmodule Sanbase.Timeline.TimelineEvent do
           %Post{} | %UserList{} | %UserTrigger{},
           Ecto.Changeset.t()
         ) :: Task.t()
-  def maybe_create_event_async(event_type, resource, changeset) do
+  def maybe_create_event_async(
+        event_type,
+        resource,
+        %Ecto.Changeset{} = changeset
+      ) do
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
       maybe_create_event(resource, changeset.changes, %{
         event_type: event_type,
         user_id: resource.user_id
+      })
+    end)
+  end
+
+  def create_trigger_fired_events(fired_triggers) do
+    fired_triggers
+    |> Enum.each(fn %{
+                      user_trigger_id: user_trigger_id,
+                      user_id: user_id,
+                      payload: payload
+                    } ->
+      create_event(:user_trigger_id, user_trigger_id, %{
+        event_type: @trigger_fired,
+        user_id: user_id,
+        payload: payload
       })
     end)
   end
@@ -165,7 +190,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     %__MODULE__{} |> create_changeset(Map.put(params, type, id)) |> Repo.insert()
   end
 
-  defp events_by_followed_users_or_sanclan(query, user_id, limit) do
+  defp events_by_followed_users_or_sanclan_query(query, user_id, limit) do
     followed_or_sanclan_ids = followed_or_sanclan_ids(user_id)
 
     from(
@@ -174,6 +199,13 @@ defmodule Sanbase.Timeline.TimelineEvent do
       order_by: [desc: event.inserted_at],
       limit: ^limit,
       preload: [:user_trigger, [post: :tags], :user_list, :user]
+    )
+  end
+
+  def user_fired_signals_query(query, user_id) do
+    from(
+      event in query,
+      or_where: event.event_type == ^@trigger_fired and event.user_id == ^user_id
     )
   end
 

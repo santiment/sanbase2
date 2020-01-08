@@ -15,94 +15,73 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     {:ok, conn: conn, user: user}
   end
 
-  test "create trigger", %{conn: conn} do
-    with_mock Sanbase.Telegram,
-      send_message: fn _user, text ->
-        send(self(), {:telegram_to_self, text})
-        :ok
-      end do
-      trigger_settings = default_trigger_settings_string_keys()
-      trigger_settings_json = trigger_settings |> Jason.encode!()
+  describe "Create trigger" do
+    test "with proper args - creates it successfully", %{conn: conn} do
+      with_mock Sanbase.Telegram,
+        send_message: fn _user, text ->
+          send(self(), {:telegram_to_self, text})
+          :ok
+        end do
+        trigger_settings = default_trigger_settings_string_keys()
 
-      query =
-        ~s|
-    mutation {
-      createTrigger(
-        settings: '#{trigger_settings_json}'
-        title: 'Generic title'
-        cooldown: '23h'
-      ) {
-        trigger{
-          id
-          cooldown
-          settings
-          tags {name}
-        }
+        result = create_trigger(conn, settings: trigger_settings, cooldown: "23h")
+        created_trigger = result["data"]["createTrigger"]["trigger"]
+
+        # Telegram notification is sent when creation sucessful
+        assert_receive(
+          {:telegram_to_self, "Successfully created a new signal of type: Daily Active Addresses"}
+        )
+
+        assert created_trigger["settings"] == trigger_settings
+        assert created_trigger["id"] != nil
+        assert created_trigger["cooldown"] == "23h"
+        assert created_trigger["tags"] == []
+      end
+    end
+
+    test "with unknown type - returns proper error", %{conn: conn} do
+      trigger_settings = %{
+        "type" => "unknown",
+        "target" => "santiment",
+        "channel" => "telegram",
+        "time_window" => "1d",
+        "payload" => nil,
+        "triggered?" => false
       }
-    }
-    |
-        |> format_interpolated_json()
 
-      result =
-        conn
-        |> post("/graphql", %{"query" => query})
-
-      # Telegram notification is sent when creation sucessful
-      assert_receive(
+      # Telegram notification is not sent when creation is unsucessful
+      refute_receive(
         {:telegram_to_self, "Successfully created a new signal of type: Daily Active Addresses"}
       )
 
-      created_trigger = json_response(result, 200)["data"]["createTrigger"]["trigger"]
+      assert capture_log(fn ->
+               result = create_trigger(conn, title: "Some title", settings: trigger_settings)
 
-      assert created_trigger["settings"] == trigger_settings
-      assert created_trigger["id"] != nil
-      assert created_trigger["cooldown"] == "23h"
-      assert created_trigger["tags"] == []
+               error = result["errors"] |> List.first()
+
+               assert error["message"] ==
+                        "Trigger structure is invalid. Key `settings` is not valid. Reason: \"The trigger settings type 'unknown' is not a valid type.\""
+             end) =~
+               "UserTrigger struct is not valid. Reason: \"The trigger settings type 'unknown' is not a valid type"
     end
-  end
 
-  test "create trigger with unknown type", %{conn: conn} do
-    trigger_settings = %{
-      "type" => "unknown",
-      "target" => "santiment",
-      "channel" => "telegram",
-      "time_window" => "1d",
-      "payload" => nil,
-      "triggered?" => false
-    }
+    test "with mistyped field in settings - returns proper error", %{conn: conn} do
+      trigger_settings = %{
+        "type" => "daily_active_addresses",
+        "target" => %{"slug" => "santiment"},
+        "channel" => "telegram",
+        "time_window" => "1d",
+        "operation" => %{"random_field_not_present" => 300}
+      }
 
-    # Telegram notification is not sent when creation is unsucessful
-    refute_receive(
-      {:telegram_to_self, "Successfully created a new signal of type: Daily Active Addresses"}
-    )
+      capture_log(fn ->
+        %{"errors" => [%{"message" => error_message}]} =
+          create_trigger(conn, title: "Some title", settings: trigger_settings)
 
-    assert capture_log(fn ->
-             result = create_trigger(conn, title: "Some title", settings: trigger_settings)
-
-             error = result["errors"] |> List.first()
-
-             assert error["message"] ==
-                      "Trigger structure is invalid. Key `settings` is not valid. Reason: \"The trigger settings type 'unknown' is not a valid type.\""
-           end) =~
-             "UserTrigger struct is not valid. Reason: \"The trigger settings type 'unknown' is not a valid type"
-  end
-
-  test "create trigger with mistyped field in settings", %{conn: conn} do
-    trigger_settings = %{
-      "type" => "daily_active_addresses",
-      "target" => %{"slug" => "santiment"},
-      "channel" => "telegram",
-      "time_window" => "1d",
-      "operation" => %{"random_field_not_present" => 300}
-    }
-
-    capture_log(fn ->
-      %{"errors" => [%{"message" => error_message}]} =
-        create_trigger(conn, title: "Some title", settings: trigger_settings)
-
-      assert error_message =~ "Trigger structure is invalid. Key `settings` is not valid."
-    end) =~
-      "Trigger structure is invalid."
+        assert error_message =~ "Trigger structure is invalid. Key `settings` is not valid."
+      end) =~
+        "Trigger structure is invalid."
+    end
   end
 
   test "load trigger with mistyped settings", %{conn: conn} do
@@ -254,7 +233,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     assert result["data"]["getTriggerById"]["trigger"]["id"] == ut.id
   end
 
-  test "cannot get other user prive trigger", %{conn: conn} do
+  test "cannot get other user private trigger", %{conn: conn} do
     ut =
       insert(:user_trigger,
         user: insert(:user),
@@ -659,10 +638,12 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         settings: '#{settings_json}'
         title: '#{Keyword.get(opts, :title, "Generic title")}'
         tags: [#{Keyword.get(opts, :tags, []) |> Enum.map(&"'#{&1}'") |> Enum.join(",")}]
+        cooldown: '#{Keyword.get(opts, :cooldown, "24h")}'
       ) {
         trigger{
           id
           settings
+          cooldown
           tags{ name }
         }
       }

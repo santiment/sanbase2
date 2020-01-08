@@ -183,7 +183,10 @@ defmodule Sanbase.Clickhouse.Metric do
   defp min_interval(metric), do: Map.get(@min_interval_map, metric)
 
   defp get_available_slugs() do
-    {query, args} = available_slugs_query()
+    # NOTE: Fetch the metrics from the daily_metrics_v2 only for performance reasons
+    # currently searching in the intraday and distributions tables does not
+    # add slugs that are not present in the daily metrics
+    {query, args} = available_slugs_query("daily_metrics_v2")
 
     ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
   end

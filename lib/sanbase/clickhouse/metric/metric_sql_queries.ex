@@ -139,9 +139,13 @@ defmodule Sanbase.Clickhouse.Metric.SqlQueries do
     {query, args}
   end
 
-  def available_slugs_query() do
+  def available_slugs_query(table) do
     query = """
-    SELECT DISTINCT(name) FROM asset_metadata
+    SELECT name
+    FROM asset_metadata
+    PREWHERE asset_id GLOBAL IN (
+      SELECT DISTINCT(asset_id) FROM #{table}
+    )
     """
 
     args = []

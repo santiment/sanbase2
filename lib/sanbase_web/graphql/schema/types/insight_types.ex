@@ -40,7 +40,6 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:ready_state, :string)
     field(:images, list_of(:image_data), resolve: dataloader(SanbaseRepo))
     field(:tags, list_of(:tag))
-    field(:discourse_topic_url, :string)
 
     field :comments_count, :integer do
       resolve(&InsightResolver.comments_count/3)

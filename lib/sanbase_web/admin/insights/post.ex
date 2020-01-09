@@ -29,7 +29,6 @@ defmodule Sanbase.ExAdmin.Insight.Post do
         row(:ready_state)
         row(:moderation_comment)
         row(:link)
-        row(:discourse_topic_url)
         row(:user, link: true)
       end
     end

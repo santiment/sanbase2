@@ -37,7 +37,6 @@ defmodule Sanbase.Insight.Post do
     field(:state, :string, default: @approved)
     field(:moderation_comment, :string)
     field(:ready_state, :string, default: @draft)
-    field(:discourse_topic_url, :string)
 
     has_many(:images, PostImage, on_delete: :delete_all)
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
@@ -79,7 +78,7 @@ defmodule Sanbase.Insight.Post do
 
   def publish_changeset(%Post{} = post, attrs) do
     post
-    |> cast(attrs, [:ready_state, :discourse_topic_url, :published_at])
+    |> cast(attrs, [:ready_state, :published_at])
     |> change(published_at: NaiveDateTime.utc_now())
   end
 
@@ -288,21 +287,24 @@ defmodule Sanbase.Insight.Post do
   defp publish_post(post) do
     publish_changeset = publish_changeset(post, %{ready_state: Post.published()})
 
-    with {:ok, post} <- publish_changeset |> Repo.update(),
-         {:ok, discourse_topic_url} <- Sanbase.Discourse.Insight.create_discourse_topic(post),
-         {:ok, post} <-
-           publish_changeset(post, %{discourse_topic_url: discourse_topic_url}) |> Repo.update() do
-      Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-        Sanbase.Notifications.Insight.publish_in_discord(post)
-      end)
+    publish_changeset
+    |> Repo.update()
+    |> case do
+      {:ok, post} ->
+        Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+          Sanbase.Notifications.Insight.publish_in_discord(post)
+        end)
 
-      TimelineEvent.maybe_create_event_async(
-        TimelineEvent.publish_insight_type(),
-        post,
-        publish_changeset
-      )
+        TimelineEvent.maybe_create_event_async(
+          TimelineEvent.publish_insight_type(),
+          post,
+          publish_changeset
+        )
 
-      {:ok, post}
+        {:ok, post}
+
+      error ->
+        error
     end
   end
 

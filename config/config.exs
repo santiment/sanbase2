@@ -139,11 +139,6 @@ config :sanbase, SanbaseWeb.Graphql.Middlewares.AccessControl,
   restrict_to_in_days: {:system, "RESTRICT_TO_IN_DAYS", "1"},
   restrict_from_in_days: {:system, "RESTRICT_FROM_IN_MONTHS", "90"}
 
-config :sanbase, Sanbase.Discourse,
-  url: {:system, "DISCOURSE_URL", "https://discourse.stage.internal.santiment.net/"},
-  api_key: {:system, "DISCOURSE_API_KEY"},
-  insights_category: {:system, "DISCOURSE_INSIGHTS_CATEGORY", "Sanbase Insights"}
-
 config :libcluster,
   topologies: [
     k8s: [

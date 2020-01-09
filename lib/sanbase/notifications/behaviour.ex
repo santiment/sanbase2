@@ -1,7 +1,7 @@
 defmodule Sanbase.Notifications.Behaviour do
   @typedoc ~s"""
   String describing the place where the notification is published.
-  Currently we have implementations for "discord" and "discourse"
+  Currently we have implementation for "discord"
   """
   @type publish_place :: String.t()
 

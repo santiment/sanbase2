@@ -746,14 +746,11 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   end
 
   describe "publish post" do
-    @discourse_response_file "#{File.cwd!()}/test/sanbase_web/graphql/assets/discourse_publish_response.json"
-    test "successfully publishes in Discourse and Discord and creates timeline event", %{
+    test "successfully publishes in Discord and creates timeline event", %{
       user: user,
       conn: conn
     } do
       with_mocks([
-        {Sanbase.Discourse.Api, [],
-         [publish: fn _, _ -> @discourse_response_file |> File.read!() |> Jason.decode() end]},
         {Sanbase.Notifications.Insight, [], [publish_in_discord: fn _ -> :ok end]}
       ]) do
         post =
@@ -772,9 +769,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
         assert result["readyState"] == Post.published()
 
-        assert result["discourseTopicUrl"] ==
-                 "https://discourse.stage.internal.santiment.net/t/first-test-from-api2/234"
-
         assert result["publishedAt"] != nil
 
         assert Sanbase.Timeline.TimelineEvent |> Repo.all() |> length() == 1
@@ -790,35 +784,8 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       assert String.contains?(result["message"], "Cannot publish insight with id 1000")
     end
 
-    test "returns error when discourse publish fails", %{user: user, conn: conn} do
-      with_mocks([
-        {Sanbase.Discourse.Api, [],
-         [publish: fn _, _ -> {:error, "Cannot publish to discourse"} end]},
-        {Sanbase.Notifications.Insight, [], [publish_in_discord: fn _ -> :ok end]}
-      ]) do
-        post =
-          insert(:post,
-            user: user,
-            state: Post.approved_state(),
-            ready_state: Post.draft()
-          )
-
-        capture_log(fn ->
-          result =
-            post
-            |> publish_insight_mutation()
-            |> execute_mutation_with_errors(conn)
-
-          assert String.contains?(result["message"], "Cannot publish insight")
-        end)
-      end
-    end
-
-    @discourse_response_file "#{File.cwd!()}/test/sanbase_web/graphql/assets/discourse_publish_response.json"
     test "still returns post when discord publish fails", %{user: user, conn: conn} do
       with_mocks([
-        {Sanbase.Discourse.Api, [],
-         [publish: fn _, _ -> @discourse_response_file |> File.read!() |> Jason.decode() end]},
         {Sanbase.Notifications.Insight, [],
          [publish_in_discord: fn _ -> {:error, "Error publishing in discord"} end]}
       ]) do
@@ -973,7 +940,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       publishInsight(id: #{post.id}) {
         id
         readyState
-        discourseTopicUrl
         publishedAt
       }
     }

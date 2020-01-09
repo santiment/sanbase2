@@ -23,11 +23,17 @@ defmodule Sanbase.Notifications.Insight do
     end
   end
 
-  defp create_discord_payload(%Post{id: id, title: title} = _post) do
+  defp create_discord_payload(
+         %Post{id: id, title: title, user: user, published_at: published_at} = _post
+       ) do
     link = posts_url(id)
 
     content = ~s"""
-    New insight published: #{title} [#{link}]
+    New insight posted:
+    Title: #{title}
+    Author: #{user.username || "anonymous"}
+    Link: #{link}
+    Published at: #{Timex.format!(published_at, "%F %T%:z", :strftime)}
     """
 
     Jason.encode!(%{content: content, username: insights_discord_publish_user()})

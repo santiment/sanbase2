@@ -292,6 +292,7 @@ defmodule Sanbase.Insight.Post do
     |> case do
       {:ok, post} ->
         Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+          post = Sanbase.Repo.preload(post, :user)
           Sanbase.Notifications.Insight.publish_in_discord(post)
         end)
 

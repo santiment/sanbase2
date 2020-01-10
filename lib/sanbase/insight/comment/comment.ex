@@ -30,10 +30,19 @@ defmodule Sanbase.Insight.Comment do
     field(:edited_at, :naive_datetime, default: nil)
 
     belongs_to(:user, User)
-    belongs_to(:parent, __MODULE__)
-    belongs_to(:root_parent, __MODULE__)
 
-    has_many(:sub_comments, __MODULE__)
+    field(:parent_id, :integer)
+    belongs_to(:parent, __MODULE__, foreign_key: :id, references: :parent_id, define_field: false)
+
+    field(:root_parent_id, :integer)
+
+    belongs_to(:root_parent, __MODULE__,
+      foreign_key: :id,
+      references: :root_parent_id,
+      define_field: false
+    )
+
+    has_many(:sub_comments, __MODULE__, foreign_key: :parent_id, references: :id)
     field(:subcomments_count, :integer, default: 0)
 
     timestamps()
@@ -45,7 +54,8 @@ defmodule Sanbase.Insight.Comment do
 
   def changeset(%__MODULE__{} = comment, attrs \\ %{}) do
     comment
-    |> cast(attrs, [:user_id, :content, :parent_id, :root_parent_id, :edited_at])
+    |> cast(attrs, [:user_id, :parent_id, :root_parent_id, :content, :edited_at])
+    |> validate_required([:user_id, :content])
     |> validate_length(:content, min: 2, max: @max_comment_length)
     |> foreign_key_constraint(:parent_id)
     |> foreign_key_constraint(:root_parent_id)

@@ -19,12 +19,7 @@ defmodule SanbaseWeb.RootController do
     |> send_resp(200, "")
   end
 
-  def consent(
-        conn,
-        %{
-          "consent" => consent
-        } = params
-      ) do
+  def consent(conn, %{"consent" => consent} = params) do
     token = Map.get(params, "token")
 
     token =

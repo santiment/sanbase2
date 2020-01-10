@@ -60,6 +60,7 @@ defmodule Sanbase.Prices.Store do
     end
   end
 
+  # NOTE: Will be replaced by timeseries_data with 5 min interval
   @doc ~s"""
     Fetch all price points in the given `from-to` time interval from `measurement`.
   """
@@ -69,6 +70,7 @@ defmodule Sanbase.Prices.Store do
     |> parse_time_series()
   end
 
+  # NOTE: Will be replaced by ohlc
   @doc ~s"""
     Fetch open, close, high, low price values for every interval between from-to
   """
@@ -77,6 +79,8 @@ defmodule Sanbase.Prices.Store do
     |> get()
     |> parse_time_series()
   end
+
+  # NOTE: Will be replaced by timeseries_data!
 
   @doc ~s"""
     Fetch all price points in the given `from-to` time interval from `measurement`.
@@ -91,6 +95,8 @@ defmodule Sanbase.Prices.Store do
     end
   end
 
+  # NOTE: Will be replaced by timeseries_data
+
   def fetch_prices_with_resolution("TOTAL_ERC20", from, to, resolution) do
     measurements =
       Sanbase.Model.Project.List.erc20_projects()
@@ -99,12 +105,14 @@ defmodule Sanbase.Prices.Store do
     fetch_combined_mcap_volume(measurements, from, to, resolution)
   end
 
+  # NOTE: Will be replaced by timeseries_data
   def fetch_prices_with_resolution(measurement, from, to, resolution) do
     fetch_prices_with_resolution_query(measurement, from, to, resolution)
     |> get()
     |> parse_time_series()
   end
 
+  # NOTE: Will be replaced by timeseries_data!
   def fetch_prices_with_resolution!(pair, from, to, resolution) do
     case fetch_prices_with_resolution(pair, from, to, resolution) do
       {:ok, result} ->
@@ -115,12 +123,15 @@ defmodule Sanbase.Prices.Store do
     end
   end
 
+  # NOTE: Will be replaced by timeseries_data + filter
   def fetch_volume_with_resolution(measurement, from, to, resolution) do
     fetch_volume_with_resolution_query(measurement, from, to, resolution)
     |> get()
     |> parse_time_series()
   end
 
+  # NOTE: support multiple slugs
+  # NOTE: Will be replaced by aggregated_timeseries_data + filter
   def fetch_average_volume(measurements, from, to) when is_list(measurements) do
     fetch_average_volume_query(measurements, from, to)
     |> get()
@@ -137,6 +148,7 @@ defmodule Sanbase.Prices.Store do
     end
   end
 
+  # NOTE: Will be replaced by aggregated_timeseries_data + filter
   def fetch_average_volume(measurement, from, to) do
     fetch_average_volume_query(measurement, from, to)
     |> get()
@@ -156,6 +168,7 @@ defmodule Sanbase.Prices.Store do
     end
   end
 
+  # Rework scraping to store data in postgres
   def update_last_history_datetime_cmc(slug, last_updated_datetime) do
     %Measurement{
       timestamp: 0,
@@ -189,6 +202,7 @@ defmodule Sanbase.Prices.Store do
     end
   end
 
+  # Rework scraping to store data in postgres
   def last_history_datetime_cmc(ticker_cmc_id) do
     last_history_datetime_cmc_query(ticker_cmc_id)
     |> get()
@@ -206,6 +220,7 @@ defmodule Sanbase.Prices.Store do
     end
   end
 
+  # Rework scraping to store data in postgres
   def last_history_datetime_cmc!(ticker) do
     case last_history_datetime_cmc(ticker) do
       {:ok, datetime} -> datetime
@@ -213,12 +228,14 @@ defmodule Sanbase.Prices.Store do
     end
   end
 
+  # NOTE: Will be replaced by last_data_before
   def fetch_last_price_point_before(measurement, timestamp) do
     fetch_last_price_point_before_query(measurement, timestamp)
     |> get()
     |> parse_time_series()
   end
 
+  # NOTE: Will be replaced by `combined_timeseries_data`
   def fetch_combined_mcap_volume(measurement_slugs, from, to, resolution) do
     measurement_slugs
     |> Enum.chunk_every(10)
@@ -245,6 +262,7 @@ defmodule Sanbase.Prices.Store do
     |> combine_results_mcap_volume()
   end
 
+  # NOTE: rewrire
   def fetch_volume_mcap_multiple_measurements(measurement_slug_map, from, to) do
     measurement_slug_map
     |> Map.keys()
@@ -272,6 +290,7 @@ defmodule Sanbase.Prices.Store do
     |> volume_mcap_multiple_measurements_reducer(measurement_slug_map)
   end
 
+  # NOTE: was needed because the cache was not running in scrapers
   def fetch_volume_mcap_multiple_measurements_no_cache(measurement_slug_map, from, to) do
     measurement_slug_map
     |> Map.keys()
@@ -290,6 +309,7 @@ defmodule Sanbase.Prices.Store do
     |> volume_mcap_multiple_measurements_reducer(measurement_slug_map)
   end
 
+  # rewrite
   def volume_over_threshold(measurements, from, to, threshold) do
     average_volume_for_period_query(measurements, from, to)
     |> get()

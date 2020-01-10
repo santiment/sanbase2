@@ -52,13 +52,18 @@ defmodule Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings do
 
   defp get_data_by_slug(slug) when is_binary(slug) do
     Cache.get_or_store(
-      "#{slug}_last_price",
+      {:last_usd_price, slug},
       fn ->
-        Project.by_slug(slug)
-        |> Sanbase.Influxdb.Measurement.name_from()
-        |> Sanbase.Prices.Store.last_record()
+        now = Timex.now()
+        yesterday = Timex.shift(now, hours: -3)
+
+        # In case the last price is older than a few hours the result will be nil
+        # and the signal won't be triggered.
+        Sanbase.Price.aggregated_metric_timeseries_data(slug, :price_usd, yesterday, now,
+          aggregation: :last
+        )
         |> case do
-          {:ok, [[_dt, _mcap, _price_btc, price_usd, _vol]]} -> {:ok, price_usd}
+          {:ok, %{^slug => price}} -> {:ok, price}
           error -> {:error, error}
         end
       end

@@ -1,106 +1,80 @@
 defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Model.{Project, LatestCoinmarketcapData, Ico}
-  alias Sanbase.Repo
-  alias Sanbase.Prices.Store
-  alias Sanbase.Influxdb.Measurement
+  alias Sanbase.Model.Ico
 
-  import Plug.Conn
+  import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.InfluxdbHelpers
 
-  defp setup do
-    setup_prices_influxdb()
+  require Sanbase.Mock
 
-    %Project{}
-    |> Project.changeset(%{name: "Ethereum", ticker: "ETH", slug: "ethereum"})
-    |> Repo.insert!()
+  setup do
+    insert(:project, %{slug: "ethereum", ticker: "ETH"})
 
-    date1 = "2017-08-19"
-    date1_unix = 1_503_100_800_000_000_000
+    dt1 = ~U[2017-08-19 00:00:00Z]
+    dt2 = ~U[2017-10-17 00:00:00Z]
 
-    date2 = "2017-10-17"
-    date2_unix = 1_508_198_400_000_000_000
+    project = insert(:random_project)
 
-    Store.import([
-      %Measurement{
-        timestamp: date1_unix,
-        fields: %{price_usd: 5, volume_usd: 200, marketcap_usd: 500},
-        name: "ETH_ethereum"
-      },
-      %Measurement{
-        timestamp: date2_unix,
-        fields: %{price_usd: 5, volume_usd: 200, marketcap_usd: 500},
-        name: "ETH_ethereum"
-      }
-    ])
-
-    slug = "TEST_ID"
-
-    project =
-      %Project{}
-      |> Project.changeset(%{name: "Project", ticker: "TEST", slug: slug})
-      |> Repo.insert!()
-
-    %LatestCoinmarketcapData{}
-    |> LatestCoinmarketcapData.changeset(%{
-      coinmarketcap_id: slug,
+    insert(:latest_cmc_data, %{
+      coinmarketcap_id: project.slug,
       price_usd: 50,
-      available_supply: 500,
-      update_time: Timex.now()
+      available_supply: 500
     })
-    |> Repo.insert!()
 
     %Ico{}
     |> Ico.changeset(%{project_id: project.id, token_usd_ico_price: 10, tokens_sold_at_ico: 100})
-    |> Repo.insert!()
+    |> Sanbase.Repo.insert!()
 
     %Ico{}
-    |> Ico.changeset(%{project_id: project.id, start_date: date1})
-    |> Repo.insert!()
+    |> Ico.changeset(%{project_id: project.id, start_date: dt1 |> DateTime.to_date()})
+    |> Sanbase.Repo.insert!()
 
     %Ico{}
-    |> Ico.changeset(%{project_id: project.id, start_date: date2, token_eth_ico_price: 5})
-    |> Repo.insert!()
+    |> Ico.changeset(%{
+      project_id: project.id,
+      start_date: dt2 |> DateTime.to_date(),
+      token_eth_ico_price: 5
+    })
+    |> Sanbase.Repo.insert!()
 
-    project.id
+    %{project: project, datetime: dt1}
   end
 
   test "fetch project ROI", context do
-    project_id = setup()
+    response = last_record_before_fixture(context)
 
+    Sanbase.Mock.prepare_mock2(&Sanbase.Price.last_record_before/2, response)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      assert get_roi(context.conn, context.project) == %{"roiUsd" => "2.5"}
+    end)
+  end
+
+  test "fetch project ROI2", context do
+    response = last_record_before_fixture(context)
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Price.last_record_before/2, response)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      assert get_roi(context.conn, context.project) == %{"roiUsd" => "2.5"}
+    end)
+  end
+
+  defp last_record_before_fixture(%{datetime: dt}) do
+    {:ok, %{datetime: dt, price_usd: 5, price_btc: 0.1, marketcap_usd: 500, volume_usd: 200}}
+  end
+
+  def get_roi(conn, project) do
     query = """
     {
-      project(id: $id) {
-        name,
+      projectBySlug(slug: "#{project.slug}") {
         roiUsd
       }
     }
     """
 
-    result =
-      context.conn
-      |> put_req_header("authorization", get_authorization_header())
-      |> post(
-        "/graphql",
-        query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project_id}}")
-      )
-
-    assert json_response(result, 200)["data"]["project"] ==
-             %{"name" => "Project", "roiUsd" => "2.5"}
-  end
-
-  defp get_authorization_header do
-    username = context_config(:basic_auth_username)
-    password = context_config(:basic_auth_password)
-
-    "Basic " <> Base.encode64(username <> ":" <> password)
-  end
-
-  defp context_config(key) do
-    require Sanbase.Utils.Config, as: Config
-
-    Config.module_get(SanbaseWeb.Graphql.ContextPlug, key)
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+    |> get_in(["data", "projectBySlug"])
   end
 end

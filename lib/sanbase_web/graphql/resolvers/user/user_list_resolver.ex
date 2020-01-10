@@ -96,10 +96,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
         %{from: from, to: to, interval: interval},
         _resolution
       ) do
-    with measurements when is_list(measurements) <-
-           UserList.get_projects(user_list) |> Enum.map(&Sanbase.Influxdb.Measurement.name_from/1),
-         {:ok, result} <-
-           Sanbase.Prices.Store.fetch_combined_mcap_volume(measurements, from, to, interval) do
+    with projects when is_list(projects) <- UserList.get_projects(user_list),
+         slugs when is_list(slugs) <- Enum.map(projects, & &1.slug),
+         {:ok, result} <- Sanbase.Price.combined_marketcap_and_volume(slugs, from, to, interval) do
       {:ok, result}
     else
       {:error, error} ->

@@ -4,13 +4,12 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
   import Mock
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Sanbase.Auth.Apikey
   alias Sanbase.Metric
 
   setup_with_mocks([
-    {Sanbase.Prices.Store, [], [fetch_prices_with_resolution: fn _, _, _, _ -> price_resp() end]},
+    {Sanbase.Price, [], [timeseries_data: fn _, _, _, _ -> price_resp() end]},
     {Sanbase.Clickhouse.DailyActiveDeposits, [],
      [active_deposits: fn _, _, _, _ -> daily_active_deposits_resp() end]},
     {Sanbase.Clickhouse.NetworkGrowth, [],
@@ -42,8 +41,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       slug = context.project.slug
       query = history_price_query(slug, from, to)
       result = execute_query(context.conn, query, "historyPrice")
-      ticker_slug = context.project.ticker <> "_" <> slug
-      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(ticker_slug, from, to, :_))
+      assert_called(Sanbase.Price.timeseries_data(slug, from, to, :_))
       assert result != nil
     end
 
@@ -138,8 +136,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       slug = context.project.slug
       query = history_price_query(slug, from, to)
       result = execute_query(context.conn, query, "historyPrice")
-      ticker_slug = context.project.ticker <> "_" <> slug
-      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(ticker_slug, from, to, :_))
+      assert_called(Sanbase.Price.timeseries_data(slug, from, to, :_))
       assert result != nil
     end
 
@@ -241,8 +238,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       slug = context.project.slug
       query = history_price_query(slug, from, to)
       result = execute_query(context.conn, query, "historyPrice")
-      ticker_slug = context.project.ticker <> "_" <> slug
-      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(ticker_slug, from, to, :_))
+      assert_called(Sanbase.Price.timeseries_data(slug, from, to, :_))
       assert result != nil
     end
 
@@ -332,8 +328,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       slug = context.project.slug
       query = history_price_query(slug, from, to)
       result = execute_query(context.conn, query, "historyPrice")
-      ticker_slug = context.project.ticker <> "_" <> slug
-      assert_called(Sanbase.Prices.Store.fetch_prices_with_resolution(ticker_slug, from, to, :_))
+      assert_called(Sanbase.Price.timeseries_data(slug, from, to, :_))
       assert result != nil
     end
 
@@ -422,32 +417,48 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
   defp metric_resp() do
     {:ok,
      [
-       %{value: 10.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
-       %{value: 20.0, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
+       %{value: 10.0, datetime: ~U[2019-01-01 00:00:00Z]},
+       %{value: 20.0, datetime: ~U[2019-01-02 00:00:00Z]}
      ]}
   end
 
   defp daily_active_deposits_resp() do
     {:ok,
      [
-       %{active_deposits: 0.1, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
-       %{active_deposits: 0.2, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
+       %{active_deposits: 0.1, datetime: ~U[2019-01-01 00:00:00Z]},
+       %{active_deposits: 0.2, datetime: ~U[2019-01-02 00:00:00Z]}
      ]}
   end
 
   defp price_resp() do
     {:ok,
      [
-       [from_iso8601!("2019-01-01T00:00:00Z"), 10, 0.1, 10_000, 500],
-       [from_iso8601!("2019-01-01T00:00:00Z"), 20, 0.2, 20_000, 2500]
+       %{
+         datetime: ~U[2019-01-01 00:00:00Z],
+         price_usd: 10,
+         price_btc: 0.1,
+         marketcap: 10_000,
+         marketcap_usd: 10_000,
+         volume: 500,
+         volume_usd: 500
+       },
+       %{
+         datetime: ~U[2019-01-02 00:00:00Z],
+         price_usd: 20,
+         price_btc: 0.2,
+         marketcap: 20_000,
+         marketcap_usd: 20000,
+         volume: 2500,
+         volume_usd: 2500
+       }
      ]}
   end
 
   defp network_growth_resp() do
     {:ok,
      [
-       %{new_addresses: 10, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
-       %{new_addresses: 20, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
+       %{new_addresses: 10, datetime: ~U[2019-01-01 00:00:00Z]},
+       %{new_addresses: 20, datetime: ~U[2019-01-02 00:00:00Z]}
      ]}
   end
 end

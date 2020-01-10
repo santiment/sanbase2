@@ -39,6 +39,9 @@ defmodule SanbaseWeb.Router do
   scope "/admin2", SanbaseWeb do
     pipe_through([:browser, :basic_auth])
 
+    get("/anonymize_comment/:id", CommentModerationController, :anonymize_comment)
+    get("/delete_subcomment_tree/:id", CommentModerationController, :delete_subcomment_tree)
+
     get(
       "/migrate_prices",
       MigratePricesController,

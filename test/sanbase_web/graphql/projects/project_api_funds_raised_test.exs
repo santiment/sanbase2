@@ -1,17 +1,59 @@
 defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import Sanbase.Utils.Config, only: [parse_config_value: 1]
   import Sanbase.Factory
+  import Sanbase.InfluxdbHelpers
+
+  alias Sanbase.Prices.Store
+  alias Sanbase.Influxdb.Measurement
+
+  import Plug.Conn
   import SanbaseWeb.Graphql.TestHelpers
 
   setup do
+    setup_prices_influxdb()
+
     # Add the Projects to the Postgres
     insert(:project, %{name: "Test project", slug: "test", ticker: "TEST"})
     insert(:project, %{name: "Bitcoin", slug: "bitcoin", ticker: "BTC"})
     insert(:project, %{name: "Ethereum", slug: "ethereum", ticker: "ETH"})
 
-    datetime1 = ~U[2017-08-19 00:00:00Z]
-    datetime2 = ~U[2017-10-17 00:00:00Z]
+    # Initialize the Influxdb state
+    test_ticker_cmc_id = "TEST_test"
+    btc_ticker_cmc_id = "BTC_bitcoin"
+    eth_ticker_cmc_id = "ETH_ethereum"
+
+    date1 = "2017-08-19"
+    {:ok, dt1} = Timex.parse!(date1, "{YYYY}-{0M}-{D}") |> DateTime.from_naive("Etc/UTC")
+    date1_unix = dt1 |> DateTime.to_unix(:nanosecond)
+
+    date2 = "2017-10-17"
+    {:ok, dt2} = Timex.parse!(date2, "{YYYY}-{0M}-{D}") |> DateTime.from_naive("Etc/UTC")
+    date2_unix = dt2 |> DateTime.to_unix(:nanosecond)
+
+    Store.import([
+      %Measurement{
+        timestamp: date1_unix,
+        fields: %{price_usd: 2, volume_usd: 200, marketcap_usd: 500},
+        name: btc_ticker_cmc_id
+      },
+      %Measurement{
+        timestamp: date1_unix,
+        fields: %{price_usd: 4, volume_usd: 200, marketcap_usd: 500},
+        name: test_ticker_cmc_id
+      },
+      %Measurement{
+        timestamp: date2_unix,
+        fields: %{price_usd: 5, volume_usd: 200, marketcap_usd: 500},
+        name: btc_ticker_cmc_id
+      },
+      %Measurement{
+        timestamp: date2_unix,
+        fields: %{price_usd: 10, volume_usd: 200, marketcap_usd: 500},
+        name: eth_ticker_cmc_id
+      }
+    ])
 
     # Add the 3 currencies
     currency_eth = insert(:currency, %{code: "ETH"})
@@ -19,112 +61,154 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     currency = insert(:currency, %{code: "TEST"})
 
     # Add a random project and its ICOs
-    project = insert(:random_project)
+    project = insert(:project, %{name: rand_str(), slug: rand_str(), ticker: rand_str(4)})
 
-    ico1 = insert(:ico, %{project_id: project.id, end_date: DateTime.to_date(datetime1)})
+    ico1 = insert(:ico, %{project_id: project.id, end_date: date1})
     insert(:ico_currency, %{ico_id: ico1.id, currency_id: currency_eth.id, amount: 150})
     insert(:ico_currency, %{ico_id: ico1.id, currency_id: currency.id, amount: 50})
 
-    ico2 = insert(:ico, %{project_id: project.id, end_date: DateTime.to_date(datetime2)})
+    ico2 = insert(:ico, %{project_id: project.id, end_date: date2})
     insert(:ico_currency, %{ico_id: ico2.id, currency_id: currency_btc.id, amount: 200})
 
-    project_no_ico = insert(:random_project)
+    project_no_ico = insert(:project, %{name: rand_str(), slug: rand_str(), ticker: rand_str(4)})
 
     [
-      datetime: datetime2,
       project: project,
       project_no_ico: project_no_ico
     ]
   end
 
-  test "fetch project funds raised", context do
-    %{conn: conn, project: project} = context
+  test "fetch project public funds raised", context do
+    project = context.project
 
-    expected_result = %{
-      "name" => project.name,
-      "fundsRaisedBtcIcoEndPrice" => 72.5,
-      "fundsRaisedEthIcoEndPrice" => 390.0,
-      "fundsRaisedUsdIcoEndPrice" => 1950.0,
-      "icos" => [
-        %{
-          "endDate" => "2017-08-19",
-          "fundsRaisedBtcIcoEndPrice" => 32.5,
-          "fundsRaisedEthIcoEndPrice" => 190.0,
-          "fundsRaisedUsdIcoEndPrice" => 950.0
-        },
-        %{
-          "endDate" => "2017-10-17",
-          "fundsRaisedEthIcoEndPrice" => 200.0,
-          "fundsRaisedUsdIcoEndPrice" => 1.0e3,
-          "fundsRaisedBtcIcoEndPrice" => 40.0
-        }
-      ]
-    }
-
-    fn ->
-      result = get_funds_raised(conn, project) |> get_in(["data", "projectBySlug"])
-      assert result == expected_result
-    end
-    |> Sanbase.Mock.with_mock2(
-      {Sanbase.Price, :last_record_before,
-       fn slug, datetime ->
-         if DateTime.compare(datetime, context.datetime) == :lt do
-           case slug do
-             "bitcoin" -> {:ok, %{price_usd: 2, price_btc: 0.1, marketcap: 100, volume: 100}}
-             "test" -> {:ok, %{price_usd: 4, price_btc: 0.05, marketcap: 100, volume: 100}}
-             "ethereum" -> {:ok, %{price_usd: 5, price_btc: 0.2, marketcap: nil, volume: nil}}
-           end
-         else
-           case slug do
-             "bitcoin" -> {:ok, %{price_usd: 5, price_btc: 0.2, marketcap: 100, volume: 100}}
-             "test" -> {:ok, %{price_usd: 4, price_btc: 0.03, marketcap: 100, volume: 100}}
-             "ethereum" -> {:ok, %{price_usd: 10, price_btc: 0.8, marketcap: 100, volume: 100}}
-           end
-         end
-       end}
-    )
-  end
-
-  test "no ico does not break query", context do
-    %{conn: conn, project_no_ico: project} = context
-
-    result =
-      get_funds_raised(conn, project)
-      |> get_in(["data", "projectBySlug"])
-
-    expected_result = %{
-      "name" => project.name,
-      "fundsRaisedUsdIcoEndPrice" => nil,
-      "fundsRaisedEthIcoEndPrice" => nil,
-      "fundsRaisedBtcIcoEndPrice" => nil,
-      "icos" => []
-    }
-
-    assert result == expected_result
-  end
-
-  # Private functions
-
-  defp get_funds_raised(conn, project) do
     query = """
     {
-      projectBySlug(slug: "#{project.slug}") {
-        name
-        fundsRaisedUsdIcoEndPrice
-        fundsRaisedEthIcoEndPrice
+      project(id: $id) {
+        name,
+        fundsRaisedUsdIcoEndPrice,
+        fundsRaisedEthIcoEndPrice,
         fundsRaisedBtcIcoEndPrice
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post(
+        "/graphql",
+        query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project.id}}")
+      )
+
+    assert json_response(result, 200)["data"]["project"] ==
+             %{
+               "name" => project.name,
+               "fundsRaisedUsdIcoEndPrice" => 1200.0,
+               "fundsRaisedEthIcoEndPrice" => 250.0,
+               "fundsRaisedBtcIcoEndPrice" => 300.0
+             }
+  end
+
+  test "fetch project funds raised", context do
+    project = context.project
+
+    query = """
+    {
+      project(id: $id) {
+        name,
+        fundsRaisedUsdIcoEndPrice,
+        fundsRaisedEthIcoEndPrice,
+        fundsRaisedBtcIcoEndPrice,
         icos {
-          endDate
-          fundsRaisedUsdIcoEndPrice
-          fundsRaisedEthIcoEndPrice
+          endDate,
+          fundsRaisedUsdIcoEndPrice,
+          fundsRaisedEthIcoEndPrice,
           fundsRaisedBtcIcoEndPrice
         }
       }
     }
     """
 
-    conn
-    |> post("/graphql", query_skeleton(query, "projectBySlug"))
-    |> json_response(200)
+    result =
+      context.conn
+      |> put_req_header("authorization", get_authorization_header())
+      |> post(
+        "/graphql",
+        query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project.id}}")
+      )
+
+    assert json_response(result, 200)["data"]["project"] ==
+             %{
+               "name" => project.name,
+               "fundsRaisedUsdIcoEndPrice" => 1200.0,
+               "fundsRaisedEthIcoEndPrice" => 250.0,
+               "fundsRaisedBtcIcoEndPrice" => 300.0,
+               "icos" => [
+                 %{
+                   "endDate" => "2017-08-19",
+                   "fundsRaisedUsdIcoEndPrice" => 200.0,
+                   "fundsRaisedEthIcoEndPrice" => 150.0,
+                   "fundsRaisedBtcIcoEndPrice" => 100.0
+                 },
+                 %{
+                   "endDate" => "2017-10-17",
+                   "fundsRaisedUsdIcoEndPrice" => 1000.0,
+                   "fundsRaisedEthIcoEndPrice" => 100.0,
+                   "fundsRaisedBtcIcoEndPrice" => 200.0
+                 }
+               ]
+             }
+  end
+
+  test "no ico does not break query", context do
+    project = context.project_no_ico
+
+    query = """
+    {
+      project(id: $id) {
+        name,
+        fundsRaisedUsdIcoEndPrice,
+        fundsRaisedEthIcoEndPrice,
+        fundsRaisedBtcIcoEndPrice,
+        icos {
+          endDate,
+          fundsRaisedUsdIcoEndPrice,
+          fundsRaisedEthIcoEndPrice,
+          fundsRaisedBtcIcoEndPrice
+        }
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> put_req_header("authorization", get_authorization_header())
+      |> post(
+        "/graphql",
+        query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project.id}}")
+      )
+
+    assert json_response(result, 200)["data"]["project"] ==
+             %{
+               "name" => project.name,
+               "fundsRaisedUsdIcoEndPrice" => nil,
+               "fundsRaisedEthIcoEndPrice" => nil,
+               "fundsRaisedBtcIcoEndPrice" => nil,
+               "icos" => []
+             }
+  end
+
+  # Private functions
+
+  defp get_authorization_header do
+    username = context_config(:basic_auth_username)
+    password = context_config(:basic_auth_password)
+
+    "Basic " <> Base.encode64(username <> ":" <> password)
+  end
+
+  defp context_config(key) do
+    Application.get_env(:sanbase, SanbaseWeb.Graphql.ContextPlug)
+    |> Keyword.get(key)
+    |> parse_config_value()
   end
 end

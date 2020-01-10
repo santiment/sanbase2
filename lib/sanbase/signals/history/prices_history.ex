@@ -13,6 +13,9 @@ defmodule Sanbase.Signal.History.PricesHistory do
     PricePercentChangeSettings
   }
 
+  alias Sanbase.Influxdb.Measurement
+  alias Sanbase.Prices.Store, as: PricesStore
+
   require Logger
 
   @historical_days_from 90
@@ -25,11 +28,12 @@ defmodule Sanbase.Signal.History.PricesHistory do
         }
 
   def get_prices(%{target: %{slug: slug}}) when is_binary(slug) do
-    with {from, to, interval} <- get_timeseries_params(),
-         {:ok, data} when is_list(data) and data != [] <-
-           Sanbase.Price.timeseries_data(slug, from, to, interval) do
-      prices = Enum.map(data, & &1.price_usd)
-      datetimes = Enum.map(data, & &1.datetime)
+    with measurement when not is_nil(measurement) <- Measurement.name_from_slug(slug),
+         {from, to, interval} <- get_timeseries_params(),
+         {:ok, price_list} when is_list(price_list) and price_list != [] <-
+           PricesStore.fetch_prices_with_resolution(measurement, from, to, interval) do
+      prices = Enum.map(price_list, fn [_, price | _rest] -> price end)
+      datetimes = Enum.map(price_list, fn [dt, _ | _rest] -> dt end)
       {:ok, prices, datetimes}
     else
       error -> {:error, error}

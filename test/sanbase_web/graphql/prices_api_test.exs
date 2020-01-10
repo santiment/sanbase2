@@ -2,246 +2,314 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Plug.Conn
-  import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.InfluxdbHelpers
+  import Sanbase.Factory
+
+  alias Sanbase.Prices.Store
+  alias Sanbase.Influxdb.Measurement
 
   setup do
-    project1 = insert(:random_erc20_project)
-    project2 = insert(:random_erc20_project)
+    setup_prices_influxdb()
+
+    slug1 = "test122"
+    ticker1 = "TEST"
+    slug2 = "xyz122"
+    ticker2 = "XYZ"
+    total_market_ticker_cmc_id = "TOTAL_MARKET_total-market"
+
+    ticker_cmc_id1 = ticker1 <> "_" <> slug1
+    ticker_cmc_id2 = ticker2 <> "_" <> slug2
+
+    infr_eth = insert(:infrastructure, %{code: "ETH"})
+
+    insert(:project,
+      name: "Test project",
+      slug: slug1,
+      ticker: ticker1,
+      infrastructure: infr_eth,
+      main_contract_address: "0x123"
+    )
+
+    insert(:project,
+      name: "XYZ project",
+      slug: slug2,
+      ticker: ticker2,
+      infrastructure: infr_eth,
+      main_contract_address: "0x234"
+    )
+
+    datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
+    datetime2 = DateTime.from_naive!(~N[2017-05-14 21:45:00], "Etc/UTC")
+    datetime3 = DateTime.from_naive!(~N[2017-05-15 21:45:00], "Etc/UTC")
+    years_ago = DateTime.from_naive!(~N[2007-01-01 21:45:00], "Etc/UTC")
+
+    Store.import([
+      %Measurement{
+        timestamp: datetime2 |> DateTime.to_unix(:nanosecond),
+        fields: %{price_usd: 20, price_btc: 1000, volume_usd: 200, marketcap_usd: 500},
+        name: ticker_cmc_id1
+      },
+      %Measurement{
+        timestamp: datetime3 |> DateTime.to_unix(:nanosecond),
+        fields: %{price_usd: 22, price_btc: 1200, volume_usd: 300, marketcap_usd: 800},
+        name: ticker_cmc_id1
+      },
+      %Measurement{
+        timestamp: datetime3 |> DateTime.to_unix(:nanosecond),
+        fields: %{price_usd: 20, price_btc: 1, volume_usd: 5, marketcap_usd: 500},
+        name: ticker_cmc_id2
+      },
+      %Measurement{
+        timestamp: datetime2 |> DateTime.to_unix(:nanosecond),
+        fields: %{volume_usd: 1200, marketcap_usd: 1500},
+        name: total_market_ticker_cmc_id
+      },
+      %Measurement{
+        timestamp: datetime3 |> DateTime.to_unix(:nanosecond),
+        fields: %{volume_usd: 1300, marketcap_usd: 1800},
+        name: total_market_ticker_cmc_id
+      }
+    ])
 
     [
-      datetime1: ~U[2017-05-13 21:45:00Z],
-      datetime2: ~U[2017-05-14 21:45:00Z],
-      datetime3: ~U[2017-05-15 21:45:00Z],
-      years_ago: ~U[2010-01-01 21:45:00Z],
-      before_existing: ~U[2007-01-01 21:45:00Z],
-      slug1: project1.slug,
-      slug2: project2.slug
+      datetime1: datetime1,
+      datetime2: datetime2,
+      datetime3: datetime3,
+      years_ago: years_ago,
+      slug1: slug1,
+      slug2: slug2,
+      total_market_slug: "TOTAL_MARKET",
+      total_market_measurement: total_market_ticker_cmc_id
     ]
+  end
+
+  test "no information is available for a non existing slug", context do
+    Store.drop_measurement("SAN_USD")
+
+    query =
+      history_price_query("non_existing 1237819", context.datetime1, context.datetime2, "1h")
+
+    result = context.conn |> execute_query(query, "historyPrice")
+
+    assert result == nil
   end
 
   test "data aggregation for automatically calculated intervals", context do
-    %{conn: conn, slug1: slug, datetime1: from, datetime3: to} = context
+    query = """
+    {
+      historyPrice(
+        slug: "#{context.slug1}",
+        from: "#{context.datetime1}",
+        to: "#{context.datetime3}") {
+          datetime
+          priceUsd
+          priceBtc
+          marketcap
+          volume
+      }
+    }
+    """
 
-    data = [
-      %{datetime: from, price_usd: 22, price_btc: 0.2, marketcap_usd: 800, volume_usd: 300},
-      %{datetime: to, price_usd: 25, price_btc: 0.4, marketcap_usd: 500, volume_usd: 100}
-    ]
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "historyPrice"))
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Price.timeseries_data/4, {:ok, data})
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.Price.first_datetime/1, {:ok, from})
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      history_price =
-        get_history_price(conn, slug, from, to, nil) |> get_in(["data", "historyPrice"])
+    history_price = json_response(result, 200)["data"]["historyPrice"]
+    assert Enum.count(history_price) == 2
 
-      expected_history_price = [
-        %{
-          "datetime" => "#{from |> DateTime.to_iso8601()}",
-          "priceUsd" => 22,
-          "priceBtc" => 0.2,
-          "marketcapUsd" => 800,
-          "volumeUsd" => 300
-        },
-        %{
-          "datetime" => "#{to |> DateTime.to_iso8601()}",
-          "priceUsd" => 25,
-          "priceBtc" => 0.4,
-          "marketcapUsd" => 500,
-          "volumeUsd" => 100
-        }
-      ]
-
-      assert history_price == expected_history_price
-    end)
+    [history_price | _] = history_price
+    assert history_price["priceUsd"] == 20
+    assert history_price["priceBtc"] == 1000
+    assert history_price["volume"] == 200
+    assert history_price["marketcap"] == 500
   end
 
-  test "data aggregation with provided interval", context do
-    %{conn: conn, slug1: slug, datetime1: from, datetime3: to} = context
+  test "data aggregation for larger intervals", context do
+    query = """
+    {
+      historyPrice(
+        slug: "#{context.slug1}",
+        from: "#{context.datetime1}",
+        to: "#{context.datetime3}",
+        interval: "2d") {
+          datetime
+          priceUsd
+          priceBtc
+          marketcap
+          volume
+      }
+    }
+    """
 
-    data = [
-      %{datetime: from, price_usd: 22, price_btc: 0.2, marketcap_usd: 800, volume_usd: 300},
-      %{datetime: to, price_usd: 25, price_btc: 0.4, marketcap_usd: 500, volume_usd: 100}
-    ]
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "historyPrice"))
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Price.timeseries_data/4, {:ok, data})
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.Price.first_datetime/1, {:ok, from})
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      history_price =
-        get_history_price(conn, slug, from, to, "2d")
-        |> get_in(["data", "historyPrice"])
+    history_price = json_response(result, 200)["data"]["historyPrice"]
+    assert Enum.count(history_price) == 1
 
-      expected_history_price = [
-        %{
-          "datetime" => "#{from |> DateTime.to_iso8601()}",
-          "priceUsd" => 22,
-          "priceBtc" => 0.2,
-          "marketcapUsd" => 800,
-          "volumeUsd" => 300
-        },
-        %{
-          "datetime" => "#{to |> DateTime.to_iso8601()}",
-          "priceUsd" => 25,
-          "priceBtc" => 0.4,
-          "marketcapUsd" => 500,
-          "volumeUsd" => 100
-        }
-      ]
-
-      assert history_price == expected_history_price
-    end)
-  end
-
-  test "error if from is before 2009-01-01", context do
-    %{conn: conn, slug1: slug, before_existing: from, datetime3: to} = context
-
-    result = get_history_price(conn, slug, from, to, "1000d")
-
-    assert result["errors"] != nil
-    error = result["errors"] |> List.first()
-    assert error["message"] =~ "Cryptocurrencies didn't exist before 2009-01-01 00:00:00Z"
+    [history_price | _] = history_price
+    assert history_price["priceUsd"] == 22
+    assert history_price["priceBtc"] == 1200
+    assert history_price["volume"] == 300
+    assert history_price["marketcap"] == 800
   end
 
   test "too complex queries are denied", context do
-    %{conn: conn, slug1: slug, years_ago: from, datetime3: to} = context
+    query = """
+    {
+      historyPrice(
+        slug: "#{context.slug1}",
+        from: "#{context.years_ago}",
+        to: "#{context.datetime1}",
+        interval: "5m"){
+          priceUsd
+          priceBtc
+          datetime
+          volume
+      }
+    }
+    """
 
-    result = get_history_price(conn, slug, from, to, "5m")
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "historyPrice"))
+      |> json_response(200)
+
     error = result["errors"] |> List.first()
     assert String.contains?(error["message"], "too complex")
   end
 
-  test "too complex queries pass with basic authentication", context do
-    %{conn: conn, slug1: slug, years_ago: from, datetime3: to} = context
+  test "complexity is 0 with basic authentication", context do
+    query = history_price_query(context.slug1, context.years_ago, context.datetime1, "5m")
 
-    data = [
-      %{datetime: from, price_usd: 22, price_btc: 0.2, marketcap_usd: 800, volume_usd: 300},
-      %{datetime: to, price_usd: 25, price_btc: 0.4, marketcap_usd: 500, volume_usd: 100}
-    ]
+    result =
+      context.conn
+      |> put_req_header("authorization", "Basic " <> basic_auth())
+      |> post("/graphql", query_skeleton(query, "historyPrice"))
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Price.timeseries_data/4, {:ok, data})
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.Price.first_datetime/1, {:ok, from})
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      query = history_price_query(slug, from, to, "5m")
+    assert json_response(result, 200)["data"] != nil
+  end
 
-      result =
-        conn
-        |> put_req_header("authorization", "Basic " <> basic_auth())
-        |> post("/graphql", query_skeleton(query, "historyPrice"))
-        |> json_response(200)
+  test "no information is available for total marketcap", context do
+    Store.drop_measurement(context.total_market_measurement)
 
-      assert result["data"] != nil
-      assert result["errors"] == nil
-    end)
+    query =
+      history_price_query(context.total_market_slug, context.datetime1, context.datetime2, "1h")
+
+    result = context.conn |> execute_query(query, "historyPrice")
+
+    assert result == []
   end
 
   test "historyPrice with TOTAL_ERC20 slug", context do
-    %{conn: conn, datetime1: from, datetime3: to} = context
+    query = history_price_query("TOTAL_ERC20", context.datetime2, context.datetime3, "1d")
 
-    data = [
-      %{datetime: from, marketcap_usd: 800, volume_usd: 300},
-      %{datetime: to, marketcap_usd: 500, volume_usd: 100}
-    ]
+    result = context.conn |> execute_query(query, "historyPrice")
 
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Price.timeseries_data/4,
-      {:ok, data}
-    )
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      result =
-        get_history_price(conn, "TOTAL_ERC20", from, to, "1d")
-        |> get_in(["data", "historyPrice"])
+    assert result == [
+             %{
+               "datetime" => "2017-05-14T00:00:00Z",
+               "marketcap" => 500,
+               "priceBtc" => nil,
+               "priceUsd" => nil,
+               "volume" => 200
+             },
+             %{
+               "datetime" => "2017-05-15T00:00:00Z",
+               "marketcap" => 1300,
+               "priceBtc" => nil,
+               "priceUsd" => nil,
+               "volume" => 305
+             }
+           ]
+  end
 
-      expected_result = [
-        %{
-          "datetime" => "#{from |> DateTime.to_iso8601()}",
-          "marketcapUsd" => 800,
-          "priceBtc" => nil,
-          "priceUsd" => nil,
-          "volumeUsd" => 300
-        },
-        %{
-          "datetime" => "#{to |> DateTime.to_iso8601()}",
-          "marketcapUsd" => 500,
-          "priceBtc" => nil,
-          "priceUsd" => nil,
-          "volumeUsd" => 100
-        }
-      ]
+  test "the whole response is as it's expected to be", context do
+    query = history_price_query(context.slug1, context.datetime1, context.datetime3, "6h")
 
-      assert result == expected_result
-    end)
+    result = context.conn |> execute_query(query, "historyPrice")
+
+    assert result == [
+             %{
+               "datetime" => "2017-05-14T18:00:00Z",
+               "marketcap" => 500,
+               "priceBtc" => 1000,
+               "priceUsd" => 20,
+               "volume" => 200
+             },
+             %{
+               "datetime" => "2017-05-15T18:00:00Z",
+               "marketcap" => 800,
+               "priceBtc" => 1200,
+               "priceUsd" => 22,
+               "volume" => 300
+             }
+           ]
   end
 
   test "project group stats with existing slugs returns correct stats", context do
-    %{conn: conn, slug1: slug1, slug2: slug2, datetime1: from, datetime3: to} = context
+    slugs = [context.slug1, context.slug2]
+    query = project_group_stats_query(slugs, context.datetime1, context.datetime3)
+    result = execute_query(context.conn, query, "projectsListStats")
 
-    data = [
-      %{slug: slug1, marketcap_usd: 800, volume_usd: 300, marketcap_percent: 0.8},
-      %{slug: slug2, marketcap_usd: 200, volume_usd: 700, marketcap_percent: 0.2}
-    ]
-
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.Price.aggregated_marketcap_and_volume/3,
-      {:ok, data}
-    )
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      result =
-        get_project_group_stats(conn, [slug1, slug2], from, to)
-        |> get_in(["data", "projectsListStats"])
-
-      expected_result = [
-        %{
-          "volumeUsd" => 300,
-          "marketcapUsd" => 800,
-          "marketcapPercent" => Float.round(800 / 1000, 5),
-          "slug" => slug1
-        },
-        %{
-          "volumeUsd" => 700,
-          "marketcapUsd" => 200,
-          "marketcapPercent" => Float.round(200 / 1000, 5),
-          "slug" => slug2
-        }
-      ]
-
-      assert result == expected_result
-    end)
+    assert [
+             %{
+               "volume" => 300,
+               "marketcap" => 800,
+               "marketcapPercent" => Float.round(800 / 1300, 5),
+               "slug" => context.slug1
+             },
+             %{
+               "volume" => 5,
+               "marketcap" => 500,
+               "marketcapPercent" => Float.round(500 / 1300, 5),
+               "slug" => context.slug2
+             }
+           ] == result
   end
 
-  defp get_project_group_stats(conn, slugs, from, to) do
+  test "project group stats with non existing slugs return no data", context do
+    query = project_group_stats_query(["non-existing"], context.datetime1, context.datetime3)
+    result = execute_query(context.conn, query, "projectsListStats")
+    assert result == []
+  end
+
+  test "project group stats with existing and non existing slugs ignores latter", context do
+    query =
+      project_group_stats_query(
+        [context.slug1, "non-existing"],
+        context.datetime1,
+        context.datetime3
+      )
+
+    result = execute_query(context.conn, query, "projectsListStats")
+
+    assert [
+             %{
+               "volume" => 300,
+               "marketcap" => 800,
+               "marketcapPercent" => 1.0000,
+               "slug" => context.slug1
+             }
+           ] == result
+  end
+
+  defp project_group_stats_query(slugs, from, to) do
     slugs_str = slugs |> Enum.map(fn slug -> ~s|"#{slug}"| end) |> Enum.join(",")
 
-    query = """
+    """
     {
       projectsListStats(
         slugs: [#{slugs_str}],
         from: "#{from}",
         to: "#{to}"
       ) {
-        slug
-        volumeUsd
-        marketcapUsd
+        volume,
+        marketcap,
+        slug,
         marketcapPercent
-      }
-    }
-    """
-
-    conn
-    |> post("/graphql", query_skeleton(query, "projectsListStats"))
-    |> json_response(200)
-  end
-
-  defp history_price_query(slug, from, to, nil) do
-    """
-    {
-      historyPrice(
-        slug: "#{slug}"
-        from: "#{from}"
-        to: "#{to}") {
-          datetime
-          priceUsd
-          priceBtc
-          marketcapUsd
-          volumeUsd
       }
     }
     """
@@ -251,26 +319,18 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     """
     {
       historyPrice(
-        slug: "#{slug}"
-        from: "#{from}"
+        slug: "#{slug}",
+        from: "#{from}",
         to: "#{to}"
         interval: "#{interval}"){
           datetime
-          priceBtc
+          volume
+          marketcap
           priceUsd
-          marketcapUsd
-          volumeUsd
+          priceBtc
       }
     }
     """
-  end
-
-  defp get_history_price(conn, slug, from, to, interval) do
-    query = history_price_query(slug, from, to, interval)
-
-    conn
-    |> post("/graphql", query_skeleton(query, "historyPrice"))
-    |> json_response(200)
   end
 
   defp basic_auth() do

@@ -11,6 +11,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   }
 
   alias Sanbase.Insight.Post
+  alias Sanbase.Prices
+  alias Sanbase.Influxdb.Measurement
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
   alias SanbaseWeb.Graphql.SanbaseDataloader
@@ -247,7 +249,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   defp volume_change_24h_from_loader(loader, project) do
     volume_change_24h =
       loader
-      |> Dataloader.get(SanbaseDataloader, :volume_change_24h, project.slug)
+      |> Dataloader.get(SanbaseDataloader, :volume_change_24h, Measurement.name_from(project))
 
     {:ok, volume_change_24h}
   end
@@ -456,10 +458,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     loader
     |> ProjectBalanceResolver.usd_balance_loader(project)
     |> on_load(fn loader ->
-      with {:ok, usd_balance} when not is_nil(usd_balance) <-
-             ProjectBalanceResolver.usd_balance_from_loader(loader, project),
-           false <- usd_balance <= 0.001,
-           {:ok, market_cap} when not is_nil(market_cap) <- marketcap_usd(project, nil, nil) do
+      with {:ok, usd_balance} <- ProjectBalanceResolver.usd_balance_from_loader(loader, project),
+           {:ok, market_cap} <- marketcap_usd(project, nil, nil),
+           false <- is_nil(usd_balance) || is_nil(market_cap),
+           false <- usd_balance <= 0.001 do
         {:ok, market_cap / usd_balance}
       else
         _ ->
@@ -478,10 +480,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         %{slugs: slugs, from: from, to: to, interval: interval},
         _resolution
       ) do
-    case Sanbase.Price.combined_marketcap_and_volume(slugs, from, to, interval) do
-      {:ok, result} ->
-        {:ok, result}
-
+    with {:ok, measurement_names_map} <- Measurement.names_from_slugs(slugs),
+         measurement_names <- measurement_names_map |> Enum.map(fn {k, _v} -> k end),
+         {:ok, result} <-
+           Prices.Store.fetch_combined_mcap_volume(measurement_names, from, to, interval) do
+      {:ok, result}
+    else
       error ->
         error_msg = "Cannot get combined history stats for a list of slugs."
         Logger.error(error_msg <> " Reason: #{inspect(error)}")
@@ -489,7 +493,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end
   end
 
-  @spec related_posts(Sanbase.Model.Project.t(), any, any) :: any
   def related_posts(%Project{ticker: ticker} = _project, _args, _resolution) when is_nil(ticker),
     do: {:ok, []}
 
@@ -509,7 +512,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   defp float_or_nil(num), do: Decimal.to_float(num)
 
   defp page_arguments_valid?(page, page_size) when is_integer(page) and is_integer(page_size) do
-    page > 0 and page_size > 0
+    if page > 0 and page_size > 0 do
+      true
+    else
+      false
+    end
   end
 
   defp page_arguments_valid?(_, _), do: false

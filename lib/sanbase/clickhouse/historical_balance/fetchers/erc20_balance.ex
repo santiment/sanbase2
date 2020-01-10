@@ -161,17 +161,14 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
 
     UNION ALL
 
-    SELECT
-      toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
-      argMax(value, dt),
-      toUInt8(1) AS has_changed
-    FROM #{@table}
-    PREWHERE
-      address = ?3 AND
-      contract = ?4 AND
-      sign = 1 AND
-      dt >= toDateTime(?5) AND
-      dt < toDateTime(?6)
+    SELECT toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time, argMax(value, dt), toUInt8(1) AS has_changed
+      FROM #{@table}
+      PREWHERE
+        address = ?3 AND
+        contract = ?4 AND
+        sign = 1 AND
+        dt >= toDateTime(?5) AND
+        dt < toDateTime(?6)
       GROUP BY time
     )
     GROUP BY time

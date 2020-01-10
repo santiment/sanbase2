@@ -185,7 +185,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     else
       {:error,
        """
-       Cryptocurrencies didn't exist before #{@minimal_datetime_param}.
+       Cryptocurrencies didn't existed before #{@minimal_datetime_param}.
        Please check `from` and/or `to` param values.
        """}
     end

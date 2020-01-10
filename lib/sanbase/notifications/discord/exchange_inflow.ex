@@ -139,13 +139,11 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   end
 
   defp notification_message(project, timespan, timespan_format, inflow) do
-    to = Timex.now()
-    from = Timex.shift(to, days: -interval_days())
-    slug = project.slug
-
-    {:ok, %{^slug => avg_price_usd}} =
-      Sanbase.Price.aggregated_metric_timeseries_data(slug, :price_usd, from, to,
-        aggregation: :avg
+    {:ok, {avg_price_usd, _avg_price_btc}} =
+      Sanbase.Prices.Store.fetch_average_price(
+        Sanbase.Influxdb.Measurement.name_from(project),
+        Timex.shift(Timex.now(), days: -interval_days()),
+        Timex.now()
       )
 
     """
@@ -162,13 +160,11 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   end
 
   defp notification_message(project, timespan, timespan_format, inflow, cooldown_inflow) do
-    to = Timex.now()
-    from = Timex.shift(to, days: -interval_days())
-    slug = project.slug
-
-    {:ok, %{^slug => avg_price_usd}} =
-      Sanbase.Price.aggregated_metric_timeseries_data(slug, :price_usd, from, to,
-        aggregation: :avg
+    {:ok, {avg_price_usd, _avg_price_btc}} =
+      Sanbase.Prices.Store.fetch_average_price(
+        Sanbase.Influxdb.Measurement.name_from(project),
+        Timex.shift(Timex.now(), days: -interval_days()),
+        Timex.now()
       )
 
     """

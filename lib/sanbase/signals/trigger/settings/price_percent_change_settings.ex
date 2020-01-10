@@ -67,11 +67,18 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
     Cache.get_or_store(
       cache_key,
       fn ->
-        case Sanbase.Price.ohlc(project.slug, from, to) do
-          {:ok, %{open_price_usd: open, close_price_usd: close}} ->
-            {project.slug, {:ok, {percent_change(open, close), open, close}}}
+        Sanbase.Prices.Store.first_last_price(
+          Sanbase.Influxdb.Measurement.name_from(project),
+          from,
+          to
+        )
+        |> case do
+          {:ok, [[_dt, first_usd_price, last_usd_price]]} ->
+            {project.slug,
+             {:ok,
+              {percent_change(first_usd_price, last_usd_price), first_usd_price, last_usd_price}}}
 
-          {:error, error} ->
+          error ->
             {project.slug, {:error, error}}
         end
       end

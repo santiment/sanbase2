@@ -149,16 +149,15 @@ defmodule Sanbase.Math do
       iex> Sanbase.Math.to_float(500)
       500.0
   """
-  def to_float(data, default_when_nil \\ nil)
-  def to_float(nil, default_when_nil), do: default_when_nil
-  def to_float(fl, _) when is_float(fl), do: fl
-  def to_float(int, _) when is_integer(int), do: int * 1.0
+  def to_float(nil), do: nil
+  def to_float(fl) when is_float(fl), do: fl
+  def to_float(int) when is_integer(int), do: int * 1.0
 
-  def to_float(%Decimal{} = d, _) do
+  def to_float(%Decimal{} = d) do
     d |> Decimal.to_float()
   end
 
-  def to_float(str, _) when is_binary(str) do
+  def to_float(str) when is_binary(str) do
     {num, _} = str |> Float.parse()
     num
   end

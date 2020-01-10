@@ -5,12 +5,6 @@ defmodule Sanbase.Parallel do
 
   @default_timeout 15_000
 
-  def flat_map(collection, func, opts \\ [])
-
-  def flat_map(collection, func, opts) do
-    map(collection, func, Keyword.put(opts, :map_type, :flat_map))
-  end
-
   def map(collection, func, opts \\ []) when is_function(func, 1) do
     max_concurrency = Keyword.get(opts, :max_concurrency) || 2 * System.schedulers_online()
     ordered = Keyword.get(opts, :ordered) || true

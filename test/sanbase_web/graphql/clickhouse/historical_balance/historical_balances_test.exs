@@ -70,6 +70,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
     ) do
       from = dt1
       to = dt4
+      selector = %{infrastructure: "ETH", slug: "ethereum"}
 
       for selector <- selectors do
         query = historical_balances_query(selector, context.address, from, to, "1d")

@@ -66,7 +66,8 @@ defmodule Sanbase.ClickhouseRepo do
             {:error, error}
         end
       rescue
-        e -> {:error, "Cannot execute ClickHouse query. Reason: #{Exception.message(e)}"}
+        e ->
+          {:error, "Cannot execute ClickHouse query. Reason: #{Exception.message(e)}"}
       end
     end
   end

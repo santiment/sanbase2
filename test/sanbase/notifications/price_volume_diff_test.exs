@@ -3,13 +3,57 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
   use Mockery
 
   alias Sanbase.Notifications.PriceVolumeDiff
+  alias Sanbase.Model.Project
+  alias Sanbase.Prices.Store
+  alias Sanbase.Influxdb.Measurement
 
-  import Sanbase.Factory
+  import Sanbase.InfluxdbHelpers
 
   @moduletag capture_log: true
 
   setup do
-    [project1: insert(:random_project), project2: insert(:random_project)]
+    setup_prices_influxdb()
+
+    # TODO: Make projects with cmc_id and import correctly!!!
+
+    ticker1 = "TEST"
+    slug1 = "test"
+
+    project1 =
+      %Project{}
+      |> Project.changeset(%{name: "Test project", slug: slug1, ticker: ticker1})
+      |> Sanbase.Repo.insert!()
+
+    ticker2 = "TESTNOVOLUME"
+    slug2 = "novol"
+
+    project2 =
+      %Project{}
+      |> Project.changeset(%{
+        name: "Test no volume project",
+        slug: slug2,
+        ticker: ticker2
+      })
+      |> Sanbase.Repo.insert!()
+
+    ticker_cmc_id1 = ticker1 <> "_" <> slug1
+
+    datetime =
+      DateTime.utc_now()
+      |> DateTime.to_unix(:nanosecond)
+
+    Store.import([
+      %Measurement{
+        timestamp: datetime,
+        fields: %{volume_usd: notification_volume_threshold()},
+        name: ticker_cmc_id1
+      }
+    ])
+
+    [
+      project1: project1,
+      project2: project2
+    ]
   end
 
   test "price & volume not diverging", context do
@@ -24,16 +68,15 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
        }}
     )
 
-    mock(HTTPoison, :post, {:ok, %HTTPoison.Response{status_code: 204}})
+    mock(
+      HTTPoison,
+      :post,
+      {:ok, %HTTPoison.Response{status_code: 204}}
+    )
 
-    Sanbase.Mock.prepare_mock(Sanbase.Price, :aggregated_metric_timeseries_data, fn
-      slug, :volume_usd, _, _ -> {:ok, %{slug => notification_volume_threshold()}}
-    end)
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      PriceVolumeDiff.exec(context.project1, "USD")
+    PriceVolumeDiff.exec(context.project1, "USD")
 
-      refute_called(HTTPoison, :post)
-    end)
+    refute_called(HTTPoison, :post)
   end
 
   test "price & volume diverging", context do
@@ -54,19 +97,15 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
        }}
     )
 
-    mock(HTTPoison, :post, {:ok, %HTTPoison.Response{status_code: 204}})
+    mock(
+      HTTPoison,
+      :post,
+      {:ok, %HTTPoison.Response{status_code: 204}}
+    )
 
     PriceVolumeDiff.exec(context.project1, "USD")
 
-    Sanbase.Mock.prepare_mock(Sanbase.Price, :aggregated_metric_timeseries_data, fn
-      slug, :volume_usd, _, _ -> {:ok, %{slug => notification_volume_threshold()}}
-    end)
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.Chart.build_embedded_chart/4, [%{image: %{url: "url"}}])
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      PriceVolumeDiff.exec(context.project1, "USD")
-
-      assert_called(HTTPoison, :post)
-    end)
+    assert_called(HTTPoison, post: 3)
   end
 
   test "volume threshold not met", context do
@@ -81,7 +120,11 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
        }}
     )
 
-    mock(HTTPoison, :post, {:ok, %HTTPoison.Response{status_code: 204}})
+    mock(
+      HTTPoison,
+      :post,
+      {:ok, %HTTPoison.Response{status_code: 204}}
+    )
 
     PriceVolumeDiff.exec(context.project2, "USD")
 

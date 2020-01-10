@@ -19,6 +19,7 @@ defmodule Sanbase.Insight.CommentTest do
     post = insert(:post)
     user = insert(:user)
     {:ok, comment1} = PostComment.create_and_link(post.id, user.id, nil, "some comment")
+
     {:ok, comment2} = PostComment.create_and_link(post.id, user.id, comment1.id, "some comment")
 
     assert comment2.parent_id == comment1.id

@@ -109,7 +109,7 @@ defmodule Sanbase.Insight.Comment do
     Ecto.Multi.new()
     |> multi_run(:select_root_parent_id, args)
     |> multi_run(:create_new_comment, args)
-    |> multi_run(:update_parent_subcomments_count, args)
+    |> multi_run(:update_subcomments_counts, args)
     |> Repo.transaction()
     |> case do
       {:ok, %{create_new_comment: comment}} ->
@@ -154,16 +154,15 @@ defmodule Sanbase.Insight.Comment do
   above it are updated
   """
   def delete_subcomment_tree(comment_id, user_id) do
-    case select_comment(comment_id, user_id) do
-      {:ok, comment} ->
-        # Because of the `on_delete: :delete_all` on the `references` this will
-        # delete the whole subtree
-        Repo.delete(comment)
-
-        # Starting from the root of the whole subcomments tree update every
-        # comment's subcomments_count field in that tree
-        update_subcomments_counts(comment.root_parent_id)
-
+    # Because of the `on_delete: :delete_all` on the `references` this will
+    # delete the whole subtree
+    # Starting from the root of the whole subcomments tree update every
+    # comment's subcomments_count field in that tree
+    with {:ok, comment} <- select_comment(comment_id, user_id),
+         {:ok, _} <- Repo.delete(comment),
+         :ok <- update_subcomments_counts(comment.root_parent_id) do
+      {:ok, comment}
+    else
       {:error, error} ->
         {:error, error}
     end
@@ -172,11 +171,14 @@ defmodule Sanbase.Insight.Comment do
   defp update_subcomments_counts(nil), do: :ok
 
   defp update_subcomments_counts(root_id) do
-    from(c in __MODULE__,
-      where: c.parent_id == ^root_id or c.root_parent_id == ^root_id,
-      select: c.id
-    )
-    |> Repo.all()
+    ids =
+      from(c in __MODULE__,
+        where: c.parent_id == ^root_id or c.root_parent_id == ^root_id,
+        select: c.id
+      )
+      |> Repo.all()
+
+    [root_id | ids]
     |> Enum.each(fn id ->
       subcomments_count =
         from(c in __MODULE__,
@@ -196,11 +198,11 @@ defmodule Sanbase.Insight.Comment do
   defp multi_run(multi, :select_root_parent_id, %{parent_id: parent_id}) do
     multi
     |> Ecto.Multi.run(:select_root_parent_id, fn _ ->
-      parent_ids =
+      root_parent_id =
         from(c in __MODULE__, where: c.id == ^parent_id, select: c.root_parent_id)
         |> Repo.one()
 
-      {:ok, parent_ids}
+      {:ok, root_parent_id}
     end)
   end
 
@@ -230,16 +232,14 @@ defmodule Sanbase.Insight.Comment do
     )
   end
 
-  defp multi_run(multi, :update_parent_subcomments_count, %{parent_id: parent_id}) do
+  defp multi_run(multi, :update_subcomments_counts, args) do
     multi
     |> Ecto.Multi.run(
       :update_subcomments_count,
-      fn _ ->
-        from(c in __MODULE__, update: [inc: [subcomments_count: 1]], where: c.id == ^parent_id)
-        |> Repo.update_all([])
-        |> case do
-          {1, _} -> {:ok, "updated the subcomments count of comment #{parent_id}"}
-          {:error, error} -> {:error, error}
+      fn %{create_new_comment: %__MODULE__{root_parent_id: root_id}} ->
+        case update_subcomments_counts(root_id) do
+          :ok -> {:ok, "Updated all subcomment counts in the tree"}
+          _ -> {:error, "Failed to update all subcomment counts in the tree"}
         end
       end
     )

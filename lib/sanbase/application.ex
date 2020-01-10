@@ -58,11 +58,13 @@ defmodule Sanbase.Application do
           Sanbase.Application.Web.children()
       end
 
-    prepended_children = prepended_children(container_type)
+    prepended_children =
+      prepended_children(container_type) ++ prepend_api_call_exporter_children(container_type)
 
     children =
       (prepended_children ++ common_children() ++ children)
       |> Sanbase.ApplicationUtils.normalize_children()
+      |> Enum.uniq()
 
     # Add error tracking through sentry
     {:ok, _} = Logger.add_backend(Sentry.LoggerBackend)
@@ -125,7 +127,9 @@ defmodule Sanbase.Application do
     ]
   end
 
-  def prepended_children(container_type) when container_type in ["web", "all"] do
+  def prepended_children(_), do: []
+
+  def prepend_api_call_exporter_children(container_type) when container_type in ["web", "all"] do
     [
       # Start the Kafka Exporter
       {SanExporterEx,
@@ -144,7 +148,7 @@ defmodule Sanbase.Application do
     ]
   end
 
-  def prepended_children(_), do: []
+  def prepend_api_call_exporter_children(_), do: []
 
   @doc ~s"""
   Children common for all types of container types

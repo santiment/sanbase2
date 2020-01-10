@@ -146,6 +146,48 @@ defmodule Sanbase.Insight.Comment do
     end
   end
 
+  @doc ~s"""
+  NOTE: This function should be invoked only manually in special cases!
+  This is the only function that actually deletes a comment's record and all its
+  subcomments.
+  As this comment could be part of a bigger subcomment tree, all subcomment counts
+  above it are updated
+  """
+  def delete_subcomment_tree(comment_id, user_id) do
+    case select_comment(comment_id, user_id) do
+      {:ok, comment} ->
+        Repo.delete(comment)
+        update_subcomments_counts(comment.root_parent_id)
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp update_subcomments_counts(nil), do: :ok
+
+  defp update_subcomments_counts(root_id) do
+    from(c in __MODULE__,
+      where: c.parent_id == ^root_id or c.root_parent_id == ^root_id,
+      select: c.id
+    )
+    |> Repo.all()
+    |> Enum.each(fn id ->
+      subcomments_count =
+        from(c in __MODULE__,
+          where: c.parent_id == ^id or c.root_parent_id == ^id,
+          select: fragment("COUNT(*)")
+        )
+        |> Repo.one()
+
+      from(c in __MODULE__,
+        where: c.id == ^id,
+        update: [set: [subcomments_count: ^subcomments_count]]
+      )
+      |> Repo.update_all([])
+    end)
+  end
+
   defp multi_run(multi, :select_root_parent_id, %{parent_id: parent_id}) do
     multi
     |> Ecto.Multi.run(:select_root_parent_id, fn _ ->

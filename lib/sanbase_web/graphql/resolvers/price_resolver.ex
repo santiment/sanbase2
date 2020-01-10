@@ -84,7 +84,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   end
 
   def ohlc(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
-    case Price.ohlc(slug, from, to, interval) do
+    case Price.timeseries_ohlc_data(slug, from, to, interval) do
       {:ok, result} ->
         {:ok, result}
 

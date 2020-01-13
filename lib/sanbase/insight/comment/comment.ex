@@ -232,7 +232,7 @@ defmodule Sanbase.Insight.Comment do
     )
   end
 
-  defp multi_run(multi, :update_subcomments_counts, args) do
+  defp multi_run(multi, :update_subcomments_counts, _args) do
     multi
     |> Ecto.Multi.run(
       :update_subcomments_count,

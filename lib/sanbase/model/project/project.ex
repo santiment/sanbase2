@@ -281,9 +281,9 @@ defmodule Sanbase.Model.Project do
   """
   def projects_over_volume_threshold(projects, volume_threshold) do
     case Sanbase.Price.slugs_with_volume_over(volume_threshold) do
-      {:ok, projects} ->
+      {:ok, slugs_with_volume_over} ->
         slugs_with_volume_over_mapset =
-          projects
+          slugs_with_volume_over
           |> MapSet.new()
 
         projects |> Enum.filter(fn %{slug: slug} -> slug in slugs_with_volume_over_mapset end)

@@ -39,8 +39,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
                  "projectsListHistoryStats" => [
                    %{"datetime" => "2017-05-13T00:00:00Z", "marketcap" => 545, "volume" => 220},
                    %{"datetime" => "2017-05-14T00:00:00Z", "marketcap" => 2000, "volume" => 1400},
-                   %{"datetime" => "2017-05-15T00:00:00Z", "marketcap" => 2600, "volume" => 1600},
-                   %{"datetime" => "2017-05-16T00:00:00Z", "marketcap" => nil, "volume" => nil}
+                   %{"datetime" => "2017-05-15T00:00:00Z", "marketcap" => 2600, "volume" => 1600}
                  ]
                }
              }

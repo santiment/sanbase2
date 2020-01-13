@@ -138,7 +138,7 @@ defmodule Sanbase.Price do
           }
       end
     )
-    |> maybe_nullify_values()
+    |> remove_missing_values()
   end
 
   @doc ~s"""
@@ -327,7 +327,7 @@ defmodule Sanbase.Price do
           }
       end
     )
-    |> maybe_nullify_values()
+    |> remove_missing_values()
   end
 
   @doc ~s"""
@@ -376,8 +376,8 @@ defmodule Sanbase.Price do
           }
       end
     )
+    |> remove_missing_values()
     |> maybe_add_percent_of_total_marketcap()
-    |> maybe_nullify_values()
   end
 
   def slugs_with_volume_over(volume, opts \\ [])
@@ -387,36 +387,6 @@ defmodule Sanbase.Price do
     {query, args} = slugs_with_volume_over_query(volume, source)
 
     ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
-  end
-
-  # Get a
-  defp combine_marketcap_and_volume_results(results) do
-    result =
-      results
-      |> Enum.map(fn {:ok, data} -> data end)
-      |> Enum.zip()
-      |> Enum.map(&Tuple.to_list/1)
-      |> Enum.map(fn list ->
-        %{datetime: datetime} = List.last(list)
-
-        data =
-          Enum.reduce(
-            list,
-            %{volume: 0, volume_usd: 0, marketcap: 0, marketcap_usd: 0},
-            fn elem, acc ->
-              %{
-                marketcap: acc.marketcap + (elem.marketcap || 0),
-                marketcap_usd: acc.marketcap_usd + (elem.marketcap_usd || 0),
-                volume: acc.volume + (elem.volume || 0),
-                volume_usd: acc.volume_usd + (elem.volume_usd || 0)
-              }
-            end
-          )
-
-        Map.put(data, :datetime, datetime)
-      end)
-
-    {:ok, result}
   end
 
   @doc ~s"""
@@ -438,6 +408,42 @@ defmodule Sanbase.Price do
   end
 
   # Private functions
+
+  defp combine_marketcap_and_volume_results(results) do
+    result =
+      results
+      |> Enum.map(fn {:ok, data} -> data end)
+      |> Enum.zip()
+      |> Enum.map(&Tuple.to_list/1)
+      |> Enum.map(fn list ->
+        case Enum.any?(list, &(&1.has_changed != 0)) do
+          true ->
+            %{datetime: datetime} = List.last(list)
+
+            data =
+              Enum.reduce(
+                list,
+                %{volume: 0, volume_usd: 0, marketcap: 0, marketcap_usd: 0},
+                fn elem, acc ->
+                  %{
+                    marketcap: acc.marketcap + (elem.marketcap || 0),
+                    marketcap_usd: acc.marketcap_usd + (elem.marketcap_usd || 0),
+                    volume: acc.volume + (elem.volume || 0),
+                    volume_usd: acc.volume_usd + (elem.volume_usd || 0)
+                  }
+                end
+              )
+
+            Map.put(data, :datetime, datetime)
+
+          false ->
+            nil
+        end
+      end)
+      |> Enum.reject(&is_nil/1)
+
+    {:ok, result}
+  end
 
   # Take a list of maps and rewrite them if necessary.
   # All values of keys different than :slug and :datetime are set to nil
@@ -466,6 +472,12 @@ defmodule Sanbase.Price do
   end
 
   defp maybe_nullify_values({:error, error}), do: {:error, error}
+
+  defp remove_missing_values({:ok, data}) do
+    {:ok, Enum.reject(data, &(&1.has_changed == 0))}
+  end
+
+  defp remove_missing_values({:error, error}), do: {:error, error}
 
   defp maybe_unwrap_ok_value({:ok, [value]}), do: {:ok, value}
   defp maybe_unwrap_ok_value(data), do: data

@@ -24,6 +24,9 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   @restricted_metrics []
 
   @impl Sanbase.Metric.Behaviour
+  def has_incomplete_data?(_), do: false
+
+  @impl Sanbase.Metric.Behaviour
   def timeseries_data(metric, slug, from, to, interval, _aggregation) do
     case Project.github_organizations(slug) do
       {:ok, organizations} ->

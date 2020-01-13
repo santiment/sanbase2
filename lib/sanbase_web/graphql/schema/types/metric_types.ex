@@ -95,6 +95,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:to, non_null(:datetime))
       arg(:interval, :interval, default_value: "1d")
       arg(:aggregation, :aggregation, default_value: nil)
+      arg(:include_incomplete_data, :boolean, default_value: false)
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)

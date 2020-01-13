@@ -36,6 +36,9 @@ defmodule Sanbase.SocialData.MetricAdapter do
   @access_map Enum.reduce(@metrics, %{}, fn metric, acc -> Map.put(acc, metric, :restricted) end)
 
   @impl Sanbase.Metric.Behaviour
+  def has_incomplete_data?(_), do: false
+
+  @impl Sanbase.Metric.Behaviour
   def timeseries_data(metric, slug, from, to, interval, _aggregation)
       when metric in @social_volume_timeseries_metrics do
     [source, _] = String.split(metric, "_", parts: 2)

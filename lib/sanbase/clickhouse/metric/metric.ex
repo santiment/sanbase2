@@ -37,6 +37,7 @@ defmodule Sanbase.Clickhouse.Metric do
   @metrics_name_list (@histogram_metrics_name_list ++
                         @timeseries_metrics_name_list)
                      |> Enum.uniq()
+  @incomplete_data_map FileHandler.incomplete_data_map()
 
   @type slug :: String.t()
   @type metric :: String.t()
@@ -58,6 +59,9 @@ defmodule Sanbase.Clickhouse.Metric do
 
   @impl Sanbase.Metric.Behaviour
   def access_map(), do: @access_map
+
+  @impl Sanbase.Metric.Behaviour
+  def has_incomplete_data?(metric), do: Map.get(@incomplete_data_map, metric)
 
   @doc ~s"""
   Get a given metric for a slug and time range. The metric's aggregation

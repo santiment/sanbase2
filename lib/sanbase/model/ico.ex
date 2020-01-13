@@ -107,7 +107,7 @@ defmodule Sanbase.Model.Ico do
   # Private functions
 
   defp funds_raised_ico_end_price_from_currencies(
-         _project,
+         project,
          %Ico{} = ico,
          target_currency,
          date
@@ -116,16 +116,25 @@ defmodule Sanbase.Model.Ico do
 
     Repo.preload(ico, ico_currencies: [:currency]).ico_currencies
     |> Enum.map(fn ic ->
-      %Project{slug: slug} = Project.by_currency(ic.currency)
+      case Project.by_currency(ic.currency) do
+        %Project{slug: slug} ->
+          price =
+            Sanbase.Price.Utils.fetch_last_price_before(
+              slug,
+              target_currency,
+              datetime
+            )
 
-      Sanbase.Price.Utils.fetch_last_price_before(
-        slug,
-        target_currency,
-        datetime
-      )
-      |> case do
-        nil -> nil
-        price -> price * Decimal.to_float(ic.amount)
+          case price != nil and ic.amount != nil do
+            true ->
+              price * Decimal.to_float(ic.amount)
+
+            false ->
+              nil
+          end
+
+        _ ->
+          nil
       end
     end)
     |> Enum.reject(&is_nil/1)

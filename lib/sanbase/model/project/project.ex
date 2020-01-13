@@ -175,7 +175,7 @@ defmodule Sanbase.Model.Project do
   Return a project with a matching ticker. `Repo.one` fails if there are more
   than one project with the same ticker.
   """
-  @spec by_currency(%Currency{}) :: %Project{} | no_return()
+  @spec by_currency(%Currency{}) :: %Project{} | nil
   def by_currency(%Currency{code: code}) do
     from(
       p in Project,

@@ -280,11 +280,17 @@ defmodule Sanbase.Model.Project do
   Return all projects from the list which trading volume is over a given threshold
   """
   def projects_over_volume_threshold(projects, volume_threshold) do
-    slugs_with_volume_over_mapset =
-      Sanbase.Price.slugs_with_volume_over(volume_threshold)
-      |> MapSet.new()
+    case Sanbase.Price.slugs_with_volume_over(volume_threshold) do
+      {:ok, projects} ->
+        slugs_with_volume_over_mapset =
+          projects
+          |> MapSet.new()
 
-    projects |> Enum.filter(fn %{slug: slug} -> slug in slugs_with_volume_over_mapset end)
+        projects |> Enum.filter(fn %{slug: slug} -> slug in slugs_with_volume_over_mapset end)
+
+      _ ->
+        {:error, "Cannot filter projects with volume over threshold"}
+    end
   end
 
   def github_organizations(slug) when is_binary(slug) do

@@ -54,12 +54,11 @@ defmodule Sanbase.Chart do
   # Private functions
 
   defp generate_image_url(project, prices, from, to, opts) do
-    [_open, high_values, low_values, _close, _avg] = prices
+    [_open, high_values, _close, low_values] = prices
     min = low_values |> Enum.min() |> Float.floor(6)
     max = high_values |> Enum.max() |> Float.ceil(6)
 
-    [open_str, high_str, low_str, close_str, _average_str] =
-      prices |> Enum.map(&Enum.join(&1, ","))
+    [open_str, high_str, close_str, low_str] = prices |> Enum.map(&Enum.join(&1, ","))
 
     size = Enum.count(low_values)
 
@@ -84,32 +83,28 @@ defmodule Sanbase.Chart do
       ) |> String.replace(~r/[\n\s+]+/, "")}
   end
 
+  # Returns a list of 4 lists. Each list contains the list of open, high, low
+  # and close price respectively
   defp candlestick_prices(ohlc) do
-    Enum.map(
-      ohlc,
-      fn %{open_price_usd: open, close_price_usd: close, high_price_usd: high, low_price_usd: low} ->
-        [
-          open |> Math.to_float(0.0) |> Float.round(6),
-          high |> Math.to_float(0.0) |> Float.round(6),
-          close |> Math.to_float(0.0) |> Float.round(6),
-          low |> Math.to_float(0.0) |> Float.round(6)
-        ]
-      end
-    )
-
-    [_ | prices] =
-      ohlc
+    prices =
+      Enum.map(
+        ohlc,
+        fn %{
+             open_price_usd: open,
+             close_price_usd: close,
+             high_price_usd: high,
+             low_price_usd: low
+           } ->
+          [
+            open |> Math.to_float(0.0) |> Float.round(6),
+            high |> Math.to_float(0.0) |> Float.round(6),
+            close |> Math.to_float(0.0) |> Float.round(6),
+            low |> Math.to_float(0.0) |> Float.round(6)
+          ]
+        end
+      )
       |> Enum.zip()
       |> Enum.map(&Tuple.to_list/1)
-
-    prices =
-      prices
-      |> Enum.map(fn list -> list |> Enum.filter(&(&1 != 0)) end)
-      |> Enum.map(fn list ->
-        list
-        |> Enum.map(&Math.to_float/1)
-        |> Enum.map(fn num -> Float.round(num, 6) end)
-      end)
 
     {:ok, prices}
   end

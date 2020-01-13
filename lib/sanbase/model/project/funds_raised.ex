@@ -24,6 +24,7 @@ defmodule Sanbase.Model.Project.FundsRaised do
     end
   end
 
+  @spec initial_ico(Sanbase.Model.Project.t()) :: %Ico{} | nil
   def initial_ico(%Project{id: id}) do
     Ico
     |> where([i], i.project_id == ^id)
@@ -48,8 +49,11 @@ defmodule Sanbase.Model.Project.FundsRaised do
     |> Enum.map(ico_funds_raised_fun)
     |> Enum.reject(&is_nil/1)
     |> case do
-      [] -> nil
-      amounts -> Enum.reduce(amounts, 0, &Kernel.+/2)
+      [] ->
+        nil
+
+      amounts ->
+        Enum.reduce(amounts, 0, &Kernel.+/2)
     end
   end
 

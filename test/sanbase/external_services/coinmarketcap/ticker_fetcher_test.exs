@@ -95,8 +95,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
     state = Sanbase.InMemoryKafka.Producer.get_state()
     %{"asset_prices" => prices} = state
 
-    keys = prices |> Enum.map(&elem(&1, 0))
-
     expected_record1 =
       {"coinmarketcap_bitcoin_2018-08-17T08:55:37.000Z",
        "{\"marketcap_usd\":111774707274,\"price_btc\":1.0,\"price_usd\":6493.02288075,\"slug\":\"bitcoin\",\"source\":\"coinmarketcap\",\"timestamp\":1534496137,\"volume_usd\":4858871494}"}

@@ -300,7 +300,7 @@ defmodule Sanbase.Price.SqlQuery do
     """
 
     # Put an artificial lower boundary otherwise the query is too slow
-    from = Timex.shift(datetime, days: -180) |> DateTime.to_unix()
+    from = Timex.shift(datetime, days: -30) |> DateTime.to_unix()
     to = datetime |> DateTime.to_unix()
     args = [slug, source, from, to]
 

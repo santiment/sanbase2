@@ -124,6 +124,34 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     assert trigger_fired_event["trigger"]["id"] == user_trigger.id
   end
 
+  description "#likeTimelineEvent mutation" do
+    test "succeeds", context do
+      user_trigger =
+        insert(:user_trigger,
+          user: context.user,
+          trigger: %{
+            is_public: true,
+            settings: default_trigger_settings_string_keys(),
+            title: "my trigger",
+            description: "DAA going up 300%"
+          }
+        )
+
+      timeline_event =
+        insert(:timeline_event,
+          user_trigger: user_trigger,
+          user: context.user,
+          event_type: TimelineEvent.trigger_fired(),
+          payload: %{"default" => "some signal payload"}
+        )
+
+      like_timeline_event_mutation(timeline_event.id)
+      result = execute_mutation(context.conn, mutation, "likeTimelineEvent")
+
+      assert result["timelineEvent"]["likes"] == 1
+    end
+  end
+
   defp timeline_events_query(conn, args_str) do
     query =
       ~s|
@@ -164,6 +192,19 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       |> json_response(200)
 
     result["data"]["timelineEvents"]
+  end
+
+  defp like_timeline_event_mutation(timeline_event_id) do
+    """
+    mutation {
+      likeTimelineEvent(id: #{timeline_event_id}) {
+        timelineEvent {
+          id
+          likes
+        }
+      }
+    }
+    """
   end
 
   defp default_trigger_settings_string_keys() do

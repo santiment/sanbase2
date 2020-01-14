@@ -92,7 +92,7 @@ defmodule SanbaseWeb.Graphql.NVTApiTest do
   test "returns error to the user when calculation errors", context do
     error = "Some error description here"
 
-    with_mock Sanbase.Metric,
+    with_mock Sanbase.Metric, [:passthrough],
       timeseries_data: fn _, _, _, _, _, _ -> {:error, error} end do
       log =
         capture_log(fn ->
@@ -107,7 +107,8 @@ defmodule SanbaseWeb.Graphql.NVTApiTest do
   end
 
   test "uses 1d as default interval", context do
-    with_mock Sanbase.Metric, timeseries_data: fn _, _, _, _, _, _ -> {:ok, []} end do
+    with_mock Sanbase.Metric, [:passthrough],
+      timeseries_data: fn _, _, _, _, _, _ -> {:ok, []} end do
       query = """
         {
           nvtRatio(slug: "#{context.slug}", from: "#{context.from}", to: "#{context.to}"){

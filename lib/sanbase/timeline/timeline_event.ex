@@ -132,16 +132,23 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   def create_trigger_fired_events(fired_triggers) do
     fired_triggers
-    |> Enum.each(fn %{
-                      user_trigger_id: user_trigger_id,
-                      user_id: user_id,
-                      payload: payload
-                    } ->
-      create_event(:user_trigger_id, user_trigger_id, %{
+    |> Enum.map(fn %{
+                     user_trigger_id: user_trigger_id,
+                     user_id: user_id,
+                     payload: payload,
+                     triggered_at: triggered_at
+                   } ->
+      %{
         event_type: @trigger_fired,
+        user_trigger_id: user_trigger_id,
         user_id: user_id,
-        payload: payload
-      })
+        payload: payload,
+        inserted_at: triggered_at
+      }
+    end)
+    |> Enum.chunk_every(200)
+    |> Enum.each(fn chunk ->
+      Sanbase.Repo.insert_all(__MODULE__, chunk)
     end)
   end
 

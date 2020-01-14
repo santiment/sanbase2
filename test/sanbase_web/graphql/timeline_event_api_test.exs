@@ -85,11 +85,43 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     result = timeline_events_query(conn, "limit: 5")
 
     assert result |> hd() |> Map.get("events") |> length() == 4
+    assert result |> hd() |> Map.get("events") |> hd() |> Map.get("payload") == nil
 
     assert result |> hd() |> Map.get("cursor") == %{
              "after" => DateTime.to_iso8601(DateTime.truncate(event3.inserted_at, :second)),
              "before" => DateTime.to_iso8601(DateTime.truncate(event1.inserted_at, :second))
            }
+  end
+
+  test "get trigger fired event with signal payload", context do
+    user_trigger =
+      insert(:user_trigger,
+        user: context.user,
+        trigger: %{
+          is_public: true,
+          settings: default_trigger_settings_string_keys(),
+          title: "my trigger",
+          description: "DAA going up 300%"
+        }
+      )
+
+    insert(:timeline_event,
+      user_trigger: user_trigger,
+      user: context.user,
+      event_type: TimelineEvent.trigger_fired(),
+      payload: %{"default" => "some signal payload"}
+    )
+
+    trigger_fired_event =
+      timeline_events_query(context.conn, "limit: 5")
+      |> hd()
+      |> Map.get("events")
+      |> hd()
+
+    assert trigger_fired_event["eventType"] == TimelineEvent.trigger_fired()
+    assert trigger_fired_event["user"]["id"] |> String.to_integer() == context.user.id
+    assert trigger_fired_event["payload"] == %{"default" => "some signal payload"}
+    assert trigger_fired_event["trigger"]["id"] == user_trigger.id
   end
 
   defp timeline_events_query(conn, args_str) do
@@ -120,6 +152,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
             title
             description
           }
+          payload
         }
       }
     }|

@@ -137,32 +137,39 @@ defmodule Sanbase.Signal.Scheduler do
   end
 
   defp persist_sent_signals(user_triggers) do
-    user_triggers
-    |> Enum.map(fn
-      %UserTrigger{
-        id: id,
-        user_id: user_id,
-        trigger: %{
-          settings: %{triggered?: true, payload: payload},
-          last_triggered: last_triggered
-        }
-      }
-      when is_non_empty_map(last_triggered) ->
-        %{
-          user_trigger_id: id,
+    fired_triggers =
+      user_triggers
+      |> Enum.map(fn
+        %UserTrigger{
+          id: id,
           user_id: user_id,
-          payload: payload,
-          triggered_at: max_last_triggered(last_triggered)
+          trigger: %{
+            settings: %{triggered?: true, payload: payload},
+            last_triggered: last_triggered
+          }
         }
+        when is_non_empty_map(last_triggered) ->
+          %{
+            user_trigger_id: id,
+            user_id: user_id,
+            payload: payload,
+            triggered_at: max_last_triggered(last_triggered)
+          }
 
-      _ ->
-        nil
-    end)
-    |> Enum.reject(&is_nil/1)
+        _ ->
+          nil
+      end)
+      |> Enum.reject(&is_nil/1)
+
+    # Fixme: remove after frontend migrates to use only Timeline Events
+    fired_triggers
     |> Enum.chunk_every(200)
     |> Enum.each(fn chunk ->
       Sanbase.Repo.insert_all(HistoricalActivity, chunk)
     end)
+
+    fired_triggers
+    |> Sanbase.Timeline.TimelineEvent.create_trigger_fired_events()
   end
 
   defp log_sent_messages_stats([], type) do

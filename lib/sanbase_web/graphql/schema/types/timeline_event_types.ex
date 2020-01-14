@@ -13,5 +13,6 @@ defmodule SanbaseWeb.Graphql.TimelineEventTypes do
     field(:trigger, :trigger)
     field(:post, :post)
     field(:user_list, :user_list)
+    field(:payload, :json)
   end
 end

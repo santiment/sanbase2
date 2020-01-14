@@ -93,7 +93,8 @@ defmodule Sanbase.Timeline.TimelineEvent do
         %{limit: limit, cursor: %{type: cursor_type, datetime: cursor_datetime}}
       ) do
     TimelineEvent
-    |> events_by_followed_users_or_sanclan_query(user_id, min(limit, @max_events_returned))
+    |> events_by_followed_users_query(user_id, min(limit, @max_events_returned))
+    |> events_by_sanclan_query()
     |> user_fired_signals_query(user_id)
     |> by_cursor(cursor_type, cursor_datetime)
     |> Repo.all()
@@ -102,7 +103,8 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   def events(%User{id: user_id}, %{limit: limit}) do
     TimelineEvent
-    |> events_by_followed_users_or_sanclan_query(user_id, min(limit, @max_events_returned))
+    |> events_by_followed_users_query(user_id, min(limit, @max_events_returned))
+    |> events_by_sanclan_query()
     |> user_fired_signals_query(user_id)
     |> Repo.all()
     |> events_with_cursor()
@@ -206,15 +208,24 @@ defmodule Sanbase.Timeline.TimelineEvent do
     %__MODULE__{} |> create_changeset(Map.put(params, type, id)) |> Repo.insert()
   end
 
-  defp events_by_followed_users_or_sanclan_query(query, user_id, limit) do
-    followed_or_sanclan_ids = followed_or_sanclan_ids(user_id)
+  defp events_by_followed_users_query(query, user_id, limit) do
+    followed_users_ids = Sanbase.Auth.UserFollower.followed_by(user_id) |> Enum.map(& &1.id)
 
     from(
       event in query,
-      where: event.user_id in ^followed_or_sanclan_ids,
+      where: event.user_id in ^followed_users_ids,
       order_by: [desc: event.inserted_at],
       limit: ^limit,
       preload: [:user_trigger, [post: :tags], :user_list, :user]
+    )
+  end
+
+  defp events_by_sanclan_query(query) do
+    sanclan_ids = Sanbase.Auth.Role.san_family_ids()
+
+    from(
+      event in query,
+      or_where: event.user_id in ^sanclan_ids
     )
   end
 
@@ -223,13 +234,6 @@ defmodule Sanbase.Timeline.TimelineEvent do
       event in query,
       or_where: event.event_type == ^@trigger_fired and event.user_id == ^user_id
     )
-  end
-
-  defp followed_or_sanclan_ids(user_id) do
-    Sanbase.Auth.UserFollower.followed_by(user_id)
-    |> Enum.map(& &1.id)
-    |> Enum.concat(Sanbase.Auth.Role.san_family_ids())
-    |> Enum.uniq()
   end
 
   defp by_cursor(query, :before, datetime) do

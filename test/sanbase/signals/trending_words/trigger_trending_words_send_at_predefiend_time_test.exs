@@ -122,6 +122,8 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
       assert user_signal.user_id == context.user.id
       assert String.contains?(user_signal.payload |> Map.values() |> List.first(), "coinbase")
 
+      Process.sleep(100)
+
       timeline_event = Sanbase.Timeline.TimelineEvent |> Sanbase.Repo.all() |> List.first()
 
       assert timeline_event.id != nil

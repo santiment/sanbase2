@@ -161,6 +161,7 @@ defmodule Sanbase.Signal.Scheduler do
       end)
       |> Enum.reject(&is_nil/1)
 
+    # Fixme: remove after frontend migrates to use only Timeline Events
     fired_triggers
     |> Enum.chunk_every(200)
     |> Enum.each(fn chunk ->

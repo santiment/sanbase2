@@ -57,6 +57,12 @@ defmodule Sanbase.Timeline.TimelineEvent do
               after: DateTime.t()
             }
           }
+  @type fired_triggers_map :: %{
+          user_trigger_id: integer(),
+          user_id: integer(),
+          payload: map(),
+          triggered_at: DateTime.t()
+        }
 
   def publish_insight_type(), do: @publish_insight_type
   def update_watchlist_type(), do: @update_watchlist_type
@@ -130,25 +136,28 @@ defmodule Sanbase.Timeline.TimelineEvent do
     end)
   end
 
+  @spec create_trigger_fired_events(list(fired_triggers_map)) :: Task.t()
   def create_trigger_fired_events(fired_triggers) do
-    fired_triggers
-    |> Enum.map(fn %{
-                     user_trigger_id: user_trigger_id,
-                     user_id: user_id,
-                     payload: payload,
-                     triggered_at: triggered_at
-                   } ->
-      %{
-        event_type: @trigger_fired,
-        user_trigger_id: user_trigger_id,
-        user_id: user_id,
-        payload: payload,
-        inserted_at: triggered_at
-      }
-    end)
-    |> Enum.chunk_every(200)
-    |> Enum.each(fn chunk ->
-      Sanbase.Repo.insert_all(__MODULE__, chunk)
+    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+      fired_triggers
+      |> Enum.map(fn %{
+                       user_trigger_id: user_trigger_id,
+                       user_id: user_id,
+                       payload: payload,
+                       triggered_at: triggered_at
+                     } ->
+        %{
+          event_type: @trigger_fired,
+          user_trigger_id: user_trigger_id,
+          user_id: user_id,
+          payload: payload,
+          inserted_at: triggered_at
+        }
+      end)
+      |> Enum.chunk_every(200)
+      |> Enum.each(fn chunk ->
+        Sanbase.Repo.insert_all(__MODULE__, chunk)
+      end)
     end)
   end
 

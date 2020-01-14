@@ -85,6 +85,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     result = timeline_events_query(conn, "limit: 5")
 
     assert result |> hd() |> Map.get("events") |> length() == 4
+    assert result |> hd() |> Map.get("events") |> hd() |> Map.get("payload") == nil
 
     assert result |> hd() |> Map.get("cursor") == %{
              "after" => DateTime.to_iso8601(DateTime.truncate(event3.inserted_at, :second)),

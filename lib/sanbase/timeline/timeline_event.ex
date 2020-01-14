@@ -58,8 +58,8 @@ defmodule Sanbase.Timeline.TimelineEvent do
             }
           }
   @type fired_triggers_map :: %{
-          user_trigger_id: integer(),
-          user_id: integer(),
+          user_trigger_id: non_neg_integer(),
+          user_id: non_neg_integer(),
           payload: map(),
           triggered_at: DateTime.t()
         }

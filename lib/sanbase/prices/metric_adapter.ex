@@ -4,20 +4,16 @@ defmodule Sanbase.Price.MetricAdapter do
 
   @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median]
 
-  @timeseries_metrics_argument_mapping %{
-    "price_usd" => :price_usd,
-    "price_btc" => :price_btc,
-    "volume_usd" => :volume_usd,
-    "marketcap_usd" => :marketcap_usd
-  }
-
-  @timeseries_metrics Map.keys(@timeseries_metrics_argument_mapping)
+  @timeseries_metrics ["price_usd", "price_btc", "volume_usd", "marketcap_usd"]
   @histogram_metrics []
 
   @metrics @histogram_metrics ++ @timeseries_metrics
 
-  @free_metrics @metrics
-  @restricted_metrics []
+  @access_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
+
+  @free_metrics Enum.filter(@access_map, fn {_, level} -> level == :free end) |> Keyword.keys()
+  @restricted_metrics Enum.filter(@access_map, fn {_, level} -> level == :restricted end)
+                      |> Keyword.keys()
 
   @impl Sanbase.Metric.Behaviour
   def has_incomplete_data?(_), do: false
@@ -90,12 +86,5 @@ defmodule Sanbase.Price.MetricAdapter do
   def restricted_metrics(), do: @restricted_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def access_map() do
-    %{
-      "price_usd" => :free,
-      "price_btc" => :free,
-      "marketcap_usd" => :free,
-      "volume_usd" => :free
-    }
-  end
+  def access_map(), do: @access_map
 end

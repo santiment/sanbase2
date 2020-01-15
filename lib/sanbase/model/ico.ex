@@ -107,7 +107,7 @@ defmodule Sanbase.Model.Ico do
   # Private functions
 
   defp funds_raised_ico_end_price_from_currencies(
-         project,
+         _project,
          %Ico{} = ico,
          target_currency,
          date

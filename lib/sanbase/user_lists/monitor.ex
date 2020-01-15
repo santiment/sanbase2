@@ -9,7 +9,7 @@ defmodule Sanbase.UserList.Monitor do
   import Ecto.Query
 
   alias Sanbase.UserList
-  alias Sanbase.Auth.{User, UserRole, Role}
+  alias Sanbase.Auth.User
   alias Sanbase.Insight.Post
   alias Sanbase.Repo
 
@@ -205,12 +205,4 @@ defmodule Sanbase.UserList.Monitor do
   end
 
   defp week_ago(now), do: Timex.shift(now, days: -7)
-
-  defp san_family_ids() do
-    from(ur in UserRole,
-      where: ur.role_id == ^Role.san_family_role_id(),
-      select: ur.user_id
-    )
-    |> Repo.all()
-  end
 end

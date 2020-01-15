@@ -4,7 +4,7 @@ defmodule Sanbase.Metric.Behaviour do
   """
 
   @type slug :: String.t()
-  @type metric :: String.t() | Atom.t()
+  @type metric :: String.t()
   @type interval :: String.t()
   @type options :: Keyword.t()
   @type available_data_types :: :timeseries | :histogram

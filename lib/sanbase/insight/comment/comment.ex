@@ -237,10 +237,8 @@ defmodule Sanbase.Insight.Comment do
     |> Ecto.Multi.run(
       :update_subcomments_count,
       fn %{create_new_comment: %__MODULE__{root_parent_id: root_id}} ->
-        case update_subcomments_counts(root_id) do
-          :ok -> {:ok, "Updated all subcomment counts in the tree"}
-          _ -> {:error, "Failed to update all subcomment counts in the tree"}
-        end
+        :ok = update_subcomments_counts(root_id)
+        {:ok, "Updated all subcomment counts in the tree"}
       end
     )
   end

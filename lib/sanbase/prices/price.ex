@@ -9,9 +9,10 @@ defmodule Sanbase.Price do
 
   @default_source "coinmarketcap"
   @metrics [:price_usd, :price_btc, :marketcap_usd, :volume_usd]
+  @metrics @metrics ++ Enum.map(@metrics, &Atom.to_string/1)
   @aggregations aggregations()
-  @type metric :: :price_usd | :price_btc | :marketcap_usd | :volume_usd
 
+  @type metric :: String.t() | Atom.t()
   @type error :: String.t()
   @type slug :: String.t()
   @type slugs :: list(slug)

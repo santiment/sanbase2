@@ -88,6 +88,24 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     @desc ~s"""
     Return a list of 'datetime' and 'value' for a given metric, slug
     and time period.
+
+    The 'includeIncompleteData' flag has a default value 'false'.
+
+    Some metrics may have incomplete data for the last data point (usually today)
+    as they are computed since the beginning of the day. An example is daily
+    active addresses for today - at 12:00pm it will contain the data only
+    for the last 12 hours, not for a whole day. This incomplete data can be
+    confusing so it is excluded by default. If this incomplete data is needed,
+    the flag includeIncompleteData should be set to 'true'.
+
+    Incomplete data can still be useful. Here are two examples:
+    Daily Active Addresses: The number is only going to increase during the day,
+    so if the intention is to see when they reach over a threhsold the incomplete
+    data gives more timely signal.
+
+    NVT: Due to the way it is computed, the value is only going to decrease
+    during the day, so if the intention is to see when it falls below a threhsold,
+    the incomplete gives more timely signal.
     """
     field :timeseries_data, list_of(:metric_data) do
       arg(:slug, non_null(:string))

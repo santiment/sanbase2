@@ -85,6 +85,14 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> validate_required([:event_type, :user_id])
   end
 
+  def by_id(id) do
+    event =
+      from(te in TimelineEvent, where: te.id == ^id, preload: :likes)
+      |> Repo.one()
+
+    Map.put(event, :likes_count, length(event.likes))
+  end
+
   @doc """
   Returns the generated events by the activity of followed users.
   The events can be paginated with time-based cursor pagination.
@@ -257,6 +265,11 @@ defmodule Sanbase.Timeline.TimelineEvent do
   defp events_with_cursor(events) do
     before_datetime = events |> List.last() |> Map.get(:inserted_at)
     after_datetime = events |> List.first() |> Map.get(:inserted_at)
+
+    events =
+      Enum.map(events, fn %{likes: likes} = event ->
+        Map.put(event, :likes_count, length(likes))
+      end)
 
     {:ok,
      %{

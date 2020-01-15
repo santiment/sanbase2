@@ -110,7 +110,11 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           "daily_opening_price_usd",
           "daily_trading_volume_usd",
           "dev_activity",
-          "github_activity"
+          "github_activity",
+          "marketcap_usd",
+          "price_btc",
+          "price_usd",
+          "volume_usd"
         ]
         |> Enum.sort()
 

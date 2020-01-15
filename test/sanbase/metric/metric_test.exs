@@ -21,7 +21,8 @@ defmodule Sanbase.MetricTest do
     {Sanbase.Clickhouse.Github.MetricAdapter, [],
      timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
     {Sanbase.SocialData.MetricAdapter, [],
-     timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end}
+     timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
+    {Sanbase.Price.MetricAdapter, [], timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end}
   ]) do
     []
   end

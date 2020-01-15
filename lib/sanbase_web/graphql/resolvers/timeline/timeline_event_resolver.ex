@@ -1,7 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
   require Logger
 
-  import SanbaseWeb.Graphql.Helpers.Utils, only: [replace_user_trigger_with_trigger: 1]
+  import SanbaseWeb.Graphql.Helpers.Utils,
+    only: [replace_user_trigger_with_trigger: 1]
+
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.TimelineEvent.Like
 
@@ -21,8 +23,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
         context: %{auth: %{current_user: current_user}}
       }) do
     case Like.like(%{user_id: current_user.id, timeline_event_id: timeline_event_id}) do
-      {:ok, _} -> {:ok, TimelineEvent.by_id(timeline_event_id)}
-      {:error, error} -> {:error, error}
+      {:ok, _} ->
+        {:ok, TimelineEvent.by_id(timeline_event_id, current_user.id)}
+
+      {:error, _error} ->
+        {:error, "Can't like already liked event"}
     end
   end
 
@@ -30,8 +35,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
         context: %{auth: %{current_user: current_user}}
       }) do
     case Like.unlike(%{user_id: current_user.id, timeline_event_id: timeline_event_id}) do
-      {:ok, _} -> {:ok, TimelineEvent.by_id(timeline_event_id)}
-      {:error, error} -> {:error, error}
+      {:ok, _} -> {:ok, TimelineEvent.by_id(timeline_event_id, current_user.id)}
+      {:error, _error} -> {:error, "Can't unlike not liked event"}
     end
   end
 end

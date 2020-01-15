@@ -85,12 +85,17 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> validate_required([:event_type, :user_id])
   end
 
-  def by_id(id) do
+  def by_id(id, user_id) do
     event =
       from(te in TimelineEvent, where: te.id == ^id, preload: :likes)
       |> Repo.one()
 
-    Map.put(event, :likes_count, length(event.likes))
+    event
+    |> Map.put(:likes_count, length(event.likes))
+    |> Map.put(
+      :liked_by_current_user,
+      Enum.find_value(event.likes, fn like -> like.user_id == user_id end) || false
+    )
   end
 
   @doc """
@@ -108,7 +113,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> user_fired_signals_query(user_id)
     |> by_cursor(cursor_type, cursor_datetime)
     |> Repo.all()
-    |> events_with_cursor()
+    |> events_with_cursor(user_id)
   end
 
   def events(%User{id: user_id}, %{limit: limit}) do
@@ -117,7 +122,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> events_by_sanclan_query()
     |> user_fired_signals_query(user_id)
     |> Repo.all()
-    |> events_with_cursor()
+    |> events_with_cursor(user_id)
   end
 
   def events(_, _), do: {:error, "Bad arguments"}
@@ -260,15 +265,22 @@ defmodule Sanbase.Timeline.TimelineEvent do
     )
   end
 
-  defp events_with_cursor([]), do: {:ok, %{events: [], cursor: %{}}}
+  defp events_with_cursor([], _user_id), do: {:ok, %{events: [], cursor: %{}}}
 
-  defp events_with_cursor(events) do
+  defp events_with_cursor(events, user_id) do
     before_datetime = events |> List.last() |> Map.get(:inserted_at)
     after_datetime = events |> List.first() |> Map.get(:inserted_at)
 
+    IO.inspect(user_id)
+
     events =
       Enum.map(events, fn %{likes: likes} = event ->
-        Map.put(event, :likes_count, length(likes))
+        event
+        |> Map.put(:likes_count, length(likes))
+        |> Map.put(
+          :liked_by_current_user,
+          Enum.find_value(likes, fn like -> like.user_id == user_id end) || false
+        )
       end)
 
     {:ok,

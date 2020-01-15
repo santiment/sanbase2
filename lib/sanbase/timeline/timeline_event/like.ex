@@ -38,10 +38,13 @@ defmodule Sanbase.TimelineEvent.Like do
   end
 
   @spec unlike(timeline_event_like_params) ::
-          {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
+          {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, Ecto.Changeset.t()}
   def unlike(%{user_id: user_id, timeline_event_id: timeline_event_id}) do
     get_by_opts(user_id: user_id, timeline_event_id: timeline_event_id)
-    |> Repo.delete()
+    |> case do
+      nil -> {:error, "Can't unlike not liked event"}
+      %__MODULE__{} = resource -> Repo.delete(resource)
+    end
   end
 
   def get_by_opts(opts) when is_list(opts) do

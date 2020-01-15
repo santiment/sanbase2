@@ -13,6 +13,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
   alias Sanbase.Signal.UserTrigger
+  alias Sanbase.TimelineEvent.Like
 
   alias __MODULE__
 
@@ -37,6 +38,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     belongs_to(:post, Post)
     belongs_to(:user_list, UserList)
     belongs_to(:user_trigger, UserTrigger)
+    has_many(:likes, Like, on_delete: :delete_all)
     field(:payload, :map)
 
     timestamps()
@@ -216,7 +218,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
       where: event.user_id in ^followed_users_ids,
       order_by: [desc: event.inserted_at],
       limit: ^limit,
-      preload: [:user_trigger, [post: :tags], :user_list, :user]
+      preload: [:user_trigger, [post: :tags], :user_list, :user, :likes]
     )
   end
 

@@ -118,6 +118,8 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
     {:ok, from, to, interval, ma_interval}
   end
 
+  def calibrate_incomplete_data_params(include_incomplete_data, module, identifier, from, to)
+
   def calibrate_incomplete_data_params(true, _module, _identifier, from, to) do
     {:ok, from, to}
   end

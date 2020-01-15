@@ -40,6 +40,31 @@ defmodule Sanbase.Math do
     Float.round((current - previous) / previous * 100, 2)
   end
 
+  @spec percent_of(number(), number(), Keyword.t()) :: number() | nil
+  def percent_of(part, whole, opts \\ [])
+
+  def percent_of(part, whole, opts)
+      when is_number(part) and is_number(whole) and part >= 0 and whole > 0 and whole >= part do
+    result =
+      case Keyword.get(opts, :type, :between_0_and_1) do
+        :between_0_and_1 ->
+          part / whole
+
+        :between_0_and_100 ->
+          part / whole * 100
+      end
+
+    case Keyword.get(opts, :precision) do
+      precision when is_integer(precision) and precision >= 0 ->
+        Float.floor(result, precision)
+
+      nil ->
+        result
+    end
+  end
+
+  def percent_of(_, _, _), do: nil
+
   @doc ~S"""
   Integer power function. Erlang's :math is using floating point numbers.
   Sometimes the result is needed as Integer and not as Float (ex. for using in Decimal.div/1)

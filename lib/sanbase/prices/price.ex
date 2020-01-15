@@ -351,7 +351,7 @@ defmodule Sanbase.Price do
       end,
       max_concurrency: 8
     )
-    |> Enum.reject(&match?({:error, _}, &1))
+    |> Enum.filter(&match?({:ok, _}, &1))
     |> combine_marketcap_and_volume_results()
   end
 
@@ -483,13 +483,19 @@ defmodule Sanbase.Price do
   defp maybe_unwrap_ok_value(data), do: data
 
   defp maybe_add_percent_of_total_marketcap({:ok, data}) do
-    total_marketcap_usd = Enum.map(data, & &1.marketcap_usd) |> Enum.sum()
+    total_marketcap_usd =
+      Enum.reduce(data, 0, fn elem, acc -> acc + (elem.marketcap_usd || 0) end)
 
     result =
       Enum.map(
         data,
         fn %{marketcap_usd: marketcap_usd} = elem ->
-          marketcap_percent = Float.floor(marketcap_usd / total_marketcap_usd, 5)
+          marketcap_percent =
+            Sanbase.Math.percent_of(marketcap_usd, total_marketcap_usd,
+              type: :between_0_and_1,
+              precision: 5
+            )
+
           Map.put(elem, :marketcap_percent, marketcap_percent)
         end
       )

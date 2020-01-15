@@ -4,7 +4,11 @@ defmodule Sanbase.Price.SqlQuery do
 
   def aggregations(), do: @aggregations
 
-  def timeseries_data_query(slug, from, to, interval, source) do
+  defp aggregation(:last, value_column, dt_column), do: "argMax(#{value_column}, #{dt_column})"
+  defp aggregation(:first, value_column, dt_column), do: "argMin(#{value_column}, #{dt_column})"
+  defp aggregation(aggr, value_column, _dt_column), do: "#{aggr}(#{value_column})"
+
+  def timeseries_data_query(slug, from, to, interval, source, aggregation) do
     {from, to, interval, span} = timerange_parameters(from, to, interval)
 
     query = """
@@ -23,10 +27,10 @@ defmodule Sanbase.Price.SqlQuery do
 
       SELECT
         toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS time,
-        argMax(price_usd, dt) AS price_usd,
-        argMax(price_btc, dt) AS price_btc,
-        argMax(marketcap_usd, dt) AS marketcap_usd,
-        argMax(volume_usd, dt) AS volume_usd,
+        #{aggregation(aggregation, "price_usd", "dt")} AS price_usd,
+        #{aggregation(aggregation, "price_btc", "dt")} AS price_btc,
+        #{aggregation(aggregation, "marketcap_usd", "dt")} AS marketcap_usd,
+        #{aggregation(aggregation, "volume_usd", "dt")} AS volume_usd,
         toUInt32(1) AS has_changed
       FROM #{@table}
       PREWHERE
@@ -45,9 +49,27 @@ defmodule Sanbase.Price.SqlQuery do
     {query, args}
   end
 
-  defp aggregation(:last, value_column, dt_column), do: "argMax(#{value_column}, #{dt_column})"
-  defp aggregation(:first, value_column, dt_column), do: "argMin(#{value_column}, #{dt_column})"
-  defp aggregation(aggr, value_column, _dt_column), do: "#{aggr}(#{value_column})"
+  def timeseries_metric_data_query(slug, metric, from, to, interval, source, aggregation) do
+    {from, to, interval, span} = timerange_parameters(from, to, interval)
+
+    query = """
+    SELECT
+      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS time,
+      #{aggregation(aggregation, "#{metric}", "dt")}
+    FROM #{@table}
+    PREWHERE
+      slug = cast(?3, 'LowCardinality(String)') AND
+      source = cast(?4, 'LowCardinality(String)') AND
+      dt >= toDateTime(?5) AND
+      dt < toDateTime(?6)
+    GROUP BY time
+    ORDER BY time
+    """
+
+    args = [interval, span, slug, source, from, to]
+
+    {query, args}
+  end
 
   def aggregated_timeseries_data_query(slugs, from, to, source, opts \\ []) do
     price_aggr = Keyword.get(opts, :price_aggregation, :avg)
@@ -133,9 +155,7 @@ defmodule Sanbase.Price.SqlQuery do
      ]}
   end
 
-  def aggregated_metric_timeseries_data_query(slugs, metric, from, to, source, opts) do
-    aggr = Keyword.get(opts, :aggregation, :avg)
-
+  def aggregated_metric_timeseries_data_query(slugs, metric, from, to, source, aggregation) do
     query = """
     SELECT slug, SUM(value), toUInt32(SUM(has_changed))
     FROM (
@@ -148,7 +168,7 @@ defmodule Sanbase.Price.SqlQuery do
 
       SELECT
         cast(slug, 'String') AS slug,
-        #{aggregation(aggr, "#{metric}", "dt")} AS value,
+        #{aggregation(aggregation, "#{metric}", "dt")} AS value,
         toUInt32(1) AS has_changed
       FROM #{@table}
       PREWHERE
@@ -320,6 +340,18 @@ defmodule Sanbase.Price.SqlQuery do
     """
 
     args = [slug, source]
+
+    {query, args}
+  end
+
+  def available_slugs_query(source) do
+    query = """
+    SELECT distinct(slug)
+    FROM #{@table}
+    PREWHERE source = cast(?1, 'LowCardinality(String)')
+    """
+
+    args = [source]
 
     {query, args}
   end

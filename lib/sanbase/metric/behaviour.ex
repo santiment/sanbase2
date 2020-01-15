@@ -3,9 +3,9 @@ defmodule Sanbase.Metric.Behaviour do
   Behaviour describing a metric fetcher
   """
 
-  @type interval :: String.t()
-  @type metric :: String.t()
   @type slug :: String.t()
+  @type metric :: String.t() | Atom.t()
+  @type interval :: String.t()
   @type options :: Keyword.t()
   @type available_data_types :: :timeseries | :histogram
 

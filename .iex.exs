@@ -51,7 +51,8 @@ alias Sanbase.{
   DateTimeUtils,
   ApplicationUtils,
   Parallel,
-  MandrillApi
+  MandrillApi,
+  Price
 }
 
 alias Sanbase.InternalServices.{

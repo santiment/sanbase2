@@ -372,9 +372,14 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     """
       {
         getMetric(metric: "#{metric}") {
-          timeseriesData(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "30d"){
-            datetime
-            value
+          timeseriesData(
+            slug: "#{slug}"
+            from: "#{from}"
+            to: "#{to}"
+            interval: "30d"
+            includeIncompleteData: true){
+              datetime
+              value
           }
         }
       }

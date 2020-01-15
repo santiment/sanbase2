@@ -118,6 +118,37 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
     {:ok, from, to, interval, ma_interval}
   end
 
+  def calibrate_incomplete_data_params(true, _module, _identifier, from, to) do
+    {:ok, from, to}
+  end
+
+  def calibrate_incomplete_data_params(false, module, identifier, from, to) do
+    case module.has_incomplete_data?(identifier) do
+      true -> rewrite_params_incomplete_data(from, to)
+      false -> {:ok, from, to}
+    end
+  end
+
+  defp rewrite_params_incomplete_data(from, to) do
+    start_of_day = Timex.beginning_of_day(Timex.now())
+
+    case DateTime.compare(from, start_of_day) != :lt do
+      true ->
+        {:error,
+         """
+         The time range provided [#{from} - #{to}] is contained in today. The metric
+         requested could have incomplete data as it's calculated since the beginning
+         of the day and not for the last 24 hours. If you still want to see this
+         data you can pass the flag `includeIncompleteData: true` in the
+         `timeseriesData` arguments
+         """}
+
+      false ->
+        to = if DateTime.compare(to, start_of_day) == :gt, do: start_of_day, else: to
+        {:ok, from, to}
+    end
+  end
+
   def error_details(changeset) do
     changeset
     |> Ecto.Changeset.traverse_errors(&format_error/1)

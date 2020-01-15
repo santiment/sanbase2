@@ -56,6 +56,8 @@ defmodule Sanbase.Metric.Behaviour do
               opts :: options
             ) :: {:ok, list()} | {:error, String.t()}
 
+  @callback has_incomplete_data?(metric :: metric) :: true | false
+
   @callback first_datetime(metric, slug) ::
               {:ok, DateTime.t()} | {:error, String.t()}
 

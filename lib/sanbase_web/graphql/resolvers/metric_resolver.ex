@@ -1,7 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   require Logger
 
-  import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 8]
+  import SanbaseWeb.Graphql.Helpers.Utils,
+    only: [calibrate_interval: 8, calibrate_incomplete_data_params: 5]
+
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3, handle_graphql_error: 4]
 
   alias Sanbase.Metric
@@ -38,10 +40,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         %{slug: slug, from: from, to: to, interval: interval} = args,
         %{source: %{metric: metric}}
       ) do
+    include_incomplete_data = Map.get(args, :include_incomplete_data, false)
+    aggregation = Map.get(args, :aggregation, nil)
+
     with {:ok, from, to, interval} <-
            calibrate_interval(Metric, metric, slug, from, to, interval, 86_400, @datapoints),
+         {:ok, from, to} <-
+           calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
          {:ok, result} <-
-           Metric.timeseries_data(metric, slug, from, to, interval, args[:aggregation]) do
+           Metric.timeseries_data(metric, slug, from, to, interval, aggregation) do
       {:ok, result |> Enum.reject(&is_nil/1)}
     else
       {:error, error} ->

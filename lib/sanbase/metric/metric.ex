@@ -50,6 +50,11 @@ defmodule Sanbase.Metric do
   @metric_module_mapping (@histogram_metric_module_mapping ++ @timeseries_metric_module_mapping)
                          |> Enum.uniq()
 
+  @metric_to_module_map @metric_module_mapping
+                        |> Enum.into(%{}, fn %{metric: metric, module: module} ->
+                          {metric, module}
+                        end)
+
   @access_map Enum.reduce(@access_map_acc, %{}, fn map, acc -> Map.merge(map, acc) end)
   @aggregation_arg_supported [nil] ++ @available_aggregations
 
@@ -66,6 +71,12 @@ defmodule Sanbase.Metric do
       true -> true
       false -> metric_not_available_error(metric)
     end
+  end
+
+  def has_incomplete_data?(metric) do
+    module = Map.get(@metric_to_module_map, metric)
+
+    module.has_incomplete_data?(metric)
   end
 
   @doc ~s"""

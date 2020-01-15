@@ -51,6 +51,7 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   @human_readable_name_map Helper.name_to_field_map(@metrics_json, "human_readable_name")
   @metric_version_map Helper.name_to_field_map(@metrics_json, "version")
   @metrics_label_map Helper.name_to_field_map(@metrics_json, "label")
+  @incomplete_data_map Helper.name_to_field_map(@metrics_json, "has_incomplete_data")
 
   @metrics_list @metrics_json |> Enum.map(fn %{"name" => name} -> name end)
   @metrics_mapset MapSet.new(@metrics_list)
@@ -78,6 +79,7 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   def human_readable_name_map(), do: @human_readable_name_map
   def metric_version_map(), do: @metric_version_map
   def metrics_data_type_map(), do: @metrics_data_type_map
+  def incomplete_data_map(), do: @incomplete_data_map
 
   def metrics_label_map(), do: @metrics_label_map
 

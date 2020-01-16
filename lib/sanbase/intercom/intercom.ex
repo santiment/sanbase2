@@ -126,17 +126,13 @@ defmodule Sanbase.Intercom do
 
     Stripe.Customer.retrieve(stripe_customer_id)
     |> case do
-      {:ok, customer} ->
-        if not is_nil(customer.subscriptions) and customer.subscriptions.object == "list" do
-          customer.subscriptions.data
-          |> Enum.filter(&(&1.plan.product == sanbase_product_stripe_id))
-          |> Enum.max_by(& &1.created, fn -> nil end)
-          |> case do
-            nil -> {nil, nil}
-            subscription -> {subscription.status, format_dt(subscription.trial_start)}
-          end
-        else
-          {nil, nil}
+      {:ok, %{subscriptions: %{object: "list", data: data}}} when is_list(data) ->
+        data
+        |> Enum.filter(&(&1.plan.product == sanbase_product_stripe_id))
+        |> Enum.max_by(& &1.created, fn -> nil end)
+        |> case do
+          nil -> {nil, nil}
+          subscription -> {subscription.status, format_dt(subscription.trial_start)}
         end
 
       _ ->

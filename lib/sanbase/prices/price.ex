@@ -9,9 +9,10 @@ defmodule Sanbase.Price do
 
   @default_source "coinmarketcap"
   @metrics [:price_usd, :price_btc, :marketcap_usd, :volume_usd]
+  @metrics @metrics ++ Enum.map(@metrics, &Atom.to_string/1)
   @aggregations aggregations()
-  @type metric :: :price_usd | :price_btc | :marketcap_usd | :volume_usd
 
+  @type metric :: String.t() | Atom.t()
   @type error :: String.t()
   @type slug :: String.t()
   @type slugs :: list(slug)
@@ -30,6 +31,14 @@ defmodule Sanbase.Price do
         }
 
   @type timeseries_data_result :: {:ok, list(timeseries_data_map())} | {:error, error()}
+
+  @type timeseries_metric_data_map :: %{
+          datetime: DateTime.t(),
+          value: float() | nil
+        }
+
+  @type timeseries_metric_data_result ::
+          {:ok, list(timeseries_metric_data_map())} | {:error, error()}
 
   @type aggregated_metric_timeseries_data_map :: %{
           String.t() => float()
@@ -118,8 +127,9 @@ defmodule Sanbase.Price do
   end
 
   def timeseries_data(slug, from, to, interval, opts) when is_binary(slug) do
-    source = Keyword.get(opts, :source, @default_source)
-    {query, args} = timeseries_data_query(slug, from, to, interval, source)
+    source = Keyword.get(opts, :source) || @default_source
+    aggregation = Keyword.get(opts, :aggregation) || :last
+    {query, args} = timeseries_data_query(slug, from, to, interval, source, aggregation)
 
     ClickhouseRepo.query_transform(
       query,
@@ -139,6 +149,54 @@ defmodule Sanbase.Price do
       end
     )
     |> remove_missing_values()
+  end
+
+  @doc ~s"""
+  Return timeseries data for the given time period where every point consists
+  of price in USD, price in BTC, marketcap in USD and volume in USD
+  """
+  @spec timeseries_metric_data(slug, metric, DateTime.t(), DateTime.t(), interval, opts) ::
+          timeseries_metric_data_result
+  def timeseries_metric_data(slug, metric, from, to, interval, opts \\ [])
+
+  def timeseries_metric_data("TOTAL_ERC20", metric, from, to, interval, opts) do
+    Project.List.erc20_projects_slugs()
+    |> combined_marketcap_and_volume(from, to, interval, opts)
+    |> case do
+      {:ok, result} ->
+        metric = String.to_existing_atom(metric)
+
+        result =
+          result
+          |> Enum.map(fn %{^metric => value, datetime: datetime} ->
+            %{datetime: datetime, value: value}
+          end)
+
+        {:ok, result}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  def timeseries_metric_data(slug, metric, from, to, interval, opts) when is_binary(slug) do
+    source = Keyword.get(opts, :source) || @default_source
+    aggregation = Keyword.get(opts, :aggregation) || :last
+
+    {query, args} =
+      timeseries_metric_data_query(slug, metric, from, to, interval, source, aggregation)
+
+    ClickhouseRepo.query_transform(
+      query,
+      args,
+      fn
+        [timestamp, value] ->
+          %{
+            datetime: DateTime.from_unix!(timestamp),
+            value: value
+          }
+      end
+    )
   end
 
   @doc ~s"""
@@ -199,10 +257,12 @@ defmodule Sanbase.Price do
 
   def aggregated_metric_timeseries_data(slug_or_slugs, metric, from, to, opts)
       when metric in @metrics and (is_binary(slug_or_slugs) or is_list(slug_or_slugs)) do
-    source = Keyword.get(opts, :source, @default_source)
+    source = Keyword.get(opts, :source) || @default_source
+    aggregation = Keyword.get(opts, :aggregation) || :avg
     slugs = List.wrap(slug_or_slugs)
 
-    {query, args} = aggregated_metric_timeseries_data_query(slugs, metric, from, to, source, opts)
+    {query, args} =
+      aggregated_metric_timeseries_data_query(slugs, metric, from, to, source, aggregation)
 
     ClickhouseRepo.query_reduce(query, args, %{}, fn
       [slug, value, has_changed], acc ->
@@ -378,6 +438,23 @@ defmodule Sanbase.Price do
     )
     |> remove_missing_values()
     |> maybe_add_percent_of_total_marketcap()
+  end
+
+  def available_slugs(opts \\ [])
+
+  def available_slugs(opts) do
+    case Keyword.get(opts, :source) || @default_source do
+      "coinmarketcap" ->
+        slugs =
+          Sanbase.Model.Project.List.projects_with_source("coinmarketcap")
+          |> Enum.map(& &1.slug)
+
+        {:ok, slugs}
+
+      source ->
+        {query, args} = available_slugs_query(source)
+        ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
+    end
   end
 
   def slugs_with_volume_over(volume, opts \\ [])

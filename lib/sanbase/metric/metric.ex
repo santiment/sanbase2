@@ -12,7 +12,8 @@ defmodule Sanbase.Metric do
   @metric_modules [
     Clickhouse.Github.MetricAdapter,
     Clickhouse.Metric,
-    Sanbase.SocialData.MetricAdapter
+    Sanbase.SocialData.MetricAdapter,
+    Sanbase.Price.MetricAdapter
   ]
 
   Module.register_attribute(__MODULE__, :available_aggregations_acc, accumulate: true)

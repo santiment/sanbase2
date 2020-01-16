@@ -141,7 +141,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       event_type: TimelineEvent.publish_insight_type()
     )
 
-    result = timeline_events_query(build_conn(), "limit: 5") |> IO.inspect()
+    result = timeline_events_query(build_conn(), "limit: 5")
 
     assert result |> hd() |> Map.get("events") |> length() == 1
   end

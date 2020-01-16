@@ -26,9 +26,10 @@ alias Sanbase.Auth.{
 
 alias Sanbase.Tag
 
+alias Sanbase.Vote
+
 alias Sanbase.Insight.{
   Post,
-  Vote,
   PostImage
 }
 

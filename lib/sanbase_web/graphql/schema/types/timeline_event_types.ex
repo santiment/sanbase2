@@ -16,8 +16,6 @@ defmodule SanbaseWeb.Graphql.TimelineEventTypes do
     field(:user_list, :user_list)
     field(:payload, :json)
     field(:likes, list_of(:like))
-    field(:likes_count, non_null(:integer))
-    field(:liked_by_current_user, non_null(:boolean))
   end
 
   object :like do

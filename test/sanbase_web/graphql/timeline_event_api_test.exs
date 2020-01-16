@@ -115,8 +115,6 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       mutation = like_timeline_event_mutation(timeline_event.id)
       result = execute_mutation(context.conn, mutation, "likeTimelineEvent")
 
-      assert result["likesCount"] == 1
-      assert result["likedByCurrentUser"]
       assert result["likes"] == [%{"userId" => context.user.id}]
     end
 
@@ -127,7 +125,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       execute_mutation(context.conn, mutation, "likeTimelineEvent")
       error = execute_mutation_with_error(context.conn, mutation)
 
-      assert error == "Can't like already liked event"
+      assert error == "Can't vote for event with id #{timeline_event.id}"
     end
 
     test "when user has liked, he can unlike", context do
@@ -137,11 +135,10 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       unlike_mutation = unlike_timeline_event_mutation(timeline_event.id)
 
       result1 = execute_mutation(context.conn, like_mutation, "likeTimelineEvent")
-      assert result1["likesCount"] == 1
+      assert result1["likes"] == [%{"userId" => context.user.id}]
 
       result2 = execute_mutation(context.conn, unlike_mutation, "unlikeTimelineEvent")
-      assert result2["likesCount"] == 0
-      refute result2["likedByCurrentUser"]
+      assert result2["likes"] == []
     end
 
     test "when user has not liked, he can't unlike", context do
@@ -149,7 +146,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       {timeline_event, _user_trigger} = create_timeline_event(user)
       mutation = unlike_timeline_event_mutation(timeline_event.id)
       error = execute_mutation_with_error(context.conn, mutation)
-      assert error == "Can't unlike not liked event"
+      assert error == "Can't remove vote for event with id #{timeline_event.id}"
     end
   end
 
@@ -200,8 +197,6 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     mutation {
       likeTimelineEvent(timelineEventId: #{timeline_event_id}) {
         id
-        likesCount
-        likedByCurrentUser
         likes {
           userId
         }
@@ -215,8 +210,6 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     mutation {
       unlikeTimelineEvent(timelineEventId: #{timeline_event_id}) {
         id
-        likesCount
-        likedByCurrentUser
         likes {
           userId
         }

@@ -13,7 +13,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
   alias Sanbase.Signal.UserTrigger
-  alias Sanbase.TimelineEvent.Like
+  alias Sanbase.Vote
 
   alias __MODULE__
 
@@ -38,7 +38,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     belongs_to(:post, Post)
     belongs_to(:user_list, UserList)
     belongs_to(:user_trigger, UserTrigger)
-    has_many(:likes, Like, on_delete: :delete_all)
+    has_many(:likes, Vote, on_delete: :delete_all)
     field(:payload, :map)
 
     timestamps()
@@ -85,17 +85,9 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> validate_required([:event_type, :user_id])
   end
 
-  def by_id(id, user_id) do
-    event =
-      from(te in TimelineEvent, where: te.id == ^id, preload: :likes)
-      |> Repo.one()
-
-    event
-    |> Map.put(:likes_count, length(event.likes))
-    |> Map.put(
-      :liked_by_current_user,
-      Enum.find_value(event.likes, fn like -> like.user_id == user_id end) || false
-    )
+  def by_id(id) do
+    from(te in TimelineEvent, where: te.id == ^id, preload: :likes)
+    |> Repo.one()
   end
 
   @doc """
@@ -113,7 +105,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> user_fired_signals_query(user_id)
     |> by_cursor(cursor_type, cursor_datetime)
     |> Repo.all()
-    |> events_with_cursor(user_id)
+    |> events_with_cursor()
   end
 
   def events(%User{id: user_id}, %{limit: limit}) do
@@ -122,7 +114,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> events_by_sanclan_query()
     |> user_fired_signals_query(user_id)
     |> Repo.all()
-    |> events_with_cursor(user_id)
+    |> events_with_cursor()
   end
 
   def events(_, _), do: {:error, "Bad arguments"}
@@ -265,23 +257,11 @@ defmodule Sanbase.Timeline.TimelineEvent do
     )
   end
 
-  defp events_with_cursor([], _user_id), do: {:ok, %{events: [], cursor: %{}}}
+  defp events_with_cursor([]), do: {:ok, %{events: [], cursor: %{}}}
 
-  defp events_with_cursor(events, user_id) do
+  defp events_with_cursor(events) do
     before_datetime = events |> List.last() |> Map.get(:inserted_at)
     after_datetime = events |> List.first() |> Map.get(:inserted_at)
-
-    IO.inspect(user_id)
-
-    events =
-      Enum.map(events, fn %{likes: likes} = event ->
-        event
-        |> Map.put(:likes_count, length(likes))
-        |> Map.put(
-          :liked_by_current_user,
-          Enum.find_value(likes, fn like -> like.user_id == user_id end) || false
-        )
-      end)
 
     {:ok,
      %{

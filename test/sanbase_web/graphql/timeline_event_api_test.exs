@@ -106,6 +106,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     assert trigger_fired_event["user"]["id"] |> String.to_integer() == context.user.id
     assert trigger_fired_event["payload"] == %{"default" => "some signal payload"}
     assert trigger_fired_event["trigger"]["id"] == user_trigger.id
+    assert trigger_fired_event["likes"] == []
   end
 
   describe "likeTimelineEvent/unlikeTimelineEvent mutations" do
@@ -160,6 +161,10 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
           before
         }
         events {
+          id
+          likes {
+            userId
+          }
           eventType,
           insertedAt,
           user {

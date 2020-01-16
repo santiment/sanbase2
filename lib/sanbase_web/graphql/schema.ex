@@ -65,7 +65,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.ExchangeQueries)
 
   def dataloader() do
-    Dataloader.new(timeout: :timer.seconds(20))
+    Dataloader.new(timeout: :timer.seconds(20), get_policy: :return_nil_on_error)
     |> Dataloader.add_source(SanbaseRepo, SanbaseRepo.data())
     |> Dataloader.add_source(SanbaseDataloader, SanbaseDataloader.data())
   end

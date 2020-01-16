@@ -124,6 +124,28 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     assert trigger_fired_event["trigger"]["id"] == user_trigger.id
   end
 
+  test "timeline events for not logged in user", context do
+    san_author = insert(:user)
+    insert(:user_role, user: san_author, role: context.role_san_clan)
+
+    post =
+      insert(:post,
+        user: san_author,
+        state: Post.approved_state(),
+        ready_state: Post.published()
+      )
+
+    insert(:timeline_event,
+      post: post,
+      user: san_author,
+      event_type: TimelineEvent.publish_insight_type()
+    )
+
+    result = timeline_events_query(build_conn(), "limit: 5") |> IO.inspect()
+
+    assert result |> hd() |> Map.get("events") |> length() == 1
+  end
+
   defp timeline_events_query(conn, args_str) do
     query =
       ~s|

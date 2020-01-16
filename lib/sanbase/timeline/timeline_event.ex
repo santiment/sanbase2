@@ -83,6 +83,23 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> validate_required([:event_type, :user_id])
   end
 
+  def events(%{limit: limit, cursor: %{type: cursor_type, datetime: cursor_datetime}}) do
+    TimelineEvent
+    |> events_by_sanclan_query()
+    |> events_order_limit_preload_query(min(limit, @max_events_returned))
+    |> by_cursor(cursor_type, cursor_datetime)
+    |> Repo.all()
+    |> events_with_cursor()
+  end
+
+  def events(%{limit: limit}) do
+    TimelineEvent
+    |> events_by_sanclan_query()
+    |> events_order_limit_preload_query(min(limit, @max_events_returned))
+    |> Repo.all()
+    |> events_with_cursor()
+  end
+
   @doc """
   Returns the generated events by the activity of followed users.
   The events can be paginated with time-based cursor pagination.
@@ -93,9 +110,10 @@ defmodule Sanbase.Timeline.TimelineEvent do
         %{limit: limit, cursor: %{type: cursor_type, datetime: cursor_datetime}}
       ) do
     TimelineEvent
-    |> events_by_followed_users_query(user_id, min(limit, @max_events_returned))
+    |> events_by_followed_users_query(user_id)
     |> events_by_sanclan_query()
     |> user_fired_signals_query(user_id)
+    |> events_order_limit_preload_query(min(limit, @max_events_returned))
     |> by_cursor(cursor_type, cursor_datetime)
     |> Repo.all()
     |> events_with_cursor()
@@ -103,9 +121,10 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   def events(%User{id: user_id}, %{limit: limit}) do
     TimelineEvent
-    |> events_by_followed_users_query(user_id, min(limit, @max_events_returned))
+    |> events_by_followed_users_query(user_id)
     |> events_by_sanclan_query()
     |> user_fired_signals_query(user_id)
+    |> events_order_limit_preload_query(min(limit, @max_events_returned))
     |> Repo.all()
     |> events_with_cursor()
   end
@@ -208,15 +227,21 @@ defmodule Sanbase.Timeline.TimelineEvent do
     %__MODULE__{} |> create_changeset(Map.put(params, type, id)) |> Repo.insert()
   end
 
-  defp events_by_followed_users_query(query, user_id, limit) do
+  defp events_order_limit_preload_query(query, limit) do
+    from(
+      event in query,
+      order_by: [desc: event.inserted_at],
+      limit: ^limit,
+      preload: [:user_trigger, [post: :tags], :user_list, :user]
+    )
+  end
+
+  defp events_by_followed_users_query(query, user_id) do
     followed_users_ids = Sanbase.Auth.UserFollower.followed_by(user_id) |> Enum.map(& &1.id)
 
     from(
       event in query,
-      where: event.user_id in ^followed_users_ids,
-      order_by: [desc: event.inserted_at],
-      limit: ^limit,
-      preload: [:user_trigger, [post: :tags], :user_list, :user]
+      where: event.user_id in ^followed_users_ids
     )
   end
 

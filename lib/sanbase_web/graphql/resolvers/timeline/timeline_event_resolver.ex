@@ -15,4 +15,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
         {:error, error}
     end
   end
+
+  def timeline_events(_root, args, _resolution) do
+    case TimelineEvent.events(args) do
+      {:ok, %{events: events} = result} ->
+        {:ok, %{result | events: replace_user_trigger_with_trigger(events)}}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
 end

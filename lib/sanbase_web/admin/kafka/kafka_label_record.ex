@@ -29,7 +29,9 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
     form label do
       inputs do
         content do
-          raw("CSV Format: topic, sign, address, blockchain, label, metadata, datetime")
+          raw(
+            "CSV Format: topic, sign, address, blockchain, label, metadata, ISO8601 datetime string or timestmap"
+          )
         end
 
         input(label, :csv, type: :text, label: "Paste CSV")
@@ -50,17 +52,22 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
       |> Enum.reject(fn x -> x == [] end)
 
     topics = Enum.map(data, fn [topic | _] -> topic end)
-    datetimes = Enum.map(data, fn list -> List.last(list) end)
+
+    datetimes =
+      Enum.map(data, fn list -> List.last(list) end)
+      |> Enum.map(fn
+        timestamp when is_integer(timestamp) ->
+          DateTime.from_unix!(timestamp)
+
+        dt_str when is_binary(dt_str) ->
+          Sanbase.DateTimeUtils.from_iso8601(dt_str)
+      end)
 
     all_present? =
       Enum.reduce(data, true, fn [topic, sign, addr, chain, label, _, dt], acc ->
         acc and topic != "" and sign != "" and addr != "" and chain != "" and label != "" and
           dt != ""
       end)
-
-    Enum.map(datetimes, fn dt ->
-      {dt, DateTime.from_iso8601(dt)}
-    end)
 
     cond do
       not all_present? ->
@@ -104,7 +111,7 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
             blockchain: blockchain,
             label: label,
             metadata: metadata,
-            datetime: datetime
+            timestamp: datetime |> DateTime.to_unix()
           }
         end)
         |> Enum.map(&{"", Jason.encode!(&1)})

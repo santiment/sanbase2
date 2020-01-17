@@ -11,6 +11,8 @@ defmodule Sanbase.Signal.TriggerMetricTest do
   alias Sanbase.Metric
   alias Sanbase.Signal.Trigger.MetricTriggerSettings
 
+  @metrics_5m_min_interval Metric.available_metrics(min_interval_less_or_equal: "5m")
+
   setup_with_mocks([
     {Sanbase.Chart, [],
      [
@@ -113,10 +115,11 @@ defmodule Sanbase.Signal.TriggerMetricTest do
     end
   end
 
-  test "can create triggers with all available metrics", context do
+  test "can create triggers with all available metrics with min interval less than 5 min",
+       context do
     %{project: project, user: user} = context
 
-    Enum.each(Metric.available_metrics(), fn metric ->
+    Enum.each(@metrics_5m_min_interval, fn metric ->
       trigger_settings = %{
         type: "metric_signal",
         metric: metric,
@@ -150,18 +153,20 @@ defmodule Sanbase.Signal.TriggerMetricTest do
       }
 
       assert capture_log(fn ->
-               {:error, _} =
+               {:error, error_msg} =
                  UserTrigger.create_user_trigger(user, %{
                    title: "Generic title",
                    is_public: true,
                    cooldown: "12h",
                    settings: trigger_settings
                  })
-             end) =~ "UserTrigger struct is not valid"
+
+               assert error_msg =~ "not supported or is mistyped"
+             end)
     end)
   end
 
   defp random_metric() do
-    Metric.available_metrics() |> Enum.random()
+    @metrics_5m_min_interval |> Enum.random()
   end
 end

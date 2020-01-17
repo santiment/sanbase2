@@ -218,7 +218,27 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Get all available metrics
   """
-  def available_metrics(), do: @metrics
+  def available_metrics(opts \\ [])
+
+  def available_metrics(opts) do
+    case Keyword.get(opts, :min_interval_less_or_equal) do
+      nil ->
+        @metrics
+
+      interval ->
+        interval_to_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+
+        @metrics
+        |> Enum.filter(fn metric ->
+          {:ok, %{min_interval: min_interval}} = metadata(metric)
+
+          case Sanbase.DateTimeUtils.str_to_sec(min_interval) do
+            seconds when seconds <= interval_to_sec -> true
+            _ -> false
+          end
+        end)
+    end
+  end
 
   def available_timeseries_metrics(), do: @timeseries_metrics
 

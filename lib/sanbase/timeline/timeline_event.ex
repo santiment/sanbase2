@@ -246,11 +246,18 @@ defmodule Sanbase.Timeline.TimelineEvent do
   end
 
   defp events_by_sanclan_query(query) do
-    sanclan_ids = Sanbase.Auth.Role.san_family_ids()
+    san_family_ids = Sanbase.Auth.Role.san_family_ids()
 
     from(
       event in query,
-      or_where: event.user_id in ^sanclan_ids
+      left_join: ut in UserTrigger,
+      on: event.user_trigger_id == ut.id,
+      left_join: ul in UserList,
+      on: event.user_list_id == ul.id,
+      or_where:
+        event.user_id in ^san_family_ids and
+          (not is_nil(event.post_id) or ul.is_public == true or
+             fragment("trigger->>'is_public' = 'true'"))
     )
   end
 

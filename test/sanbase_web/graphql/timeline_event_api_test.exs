@@ -68,7 +68,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       insert(:user_trigger,
         user: user_to_follow,
         trigger: %{
-          is_public: true,
+          is_public: false,
           settings: default_trigger_settings_string_keys(),
           title: "my trigger",
           description: "DAA going up 300%"
@@ -82,7 +82,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
         event_type: TimelineEvent.create_public_trigger_type()
       )
 
-    result = timeline_events_query(conn, "limit: 5")
+    result = timeline_events_query(conn, "limit: 5") |> IO.inspect()
 
     assert result |> hd() |> Map.get("events") |> length() == 4
     assert result |> hd() |> Map.get("events") |> hd() |> Map.get("payload") == nil
@@ -122,6 +122,31 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     assert trigger_fired_event["user"]["id"] |> String.to_integer() == context.user.id
     assert trigger_fired_event["payload"] == %{"default" => "some signal payload"}
     assert trigger_fired_event["trigger"]["id"] == user_trigger.id
+  end
+
+  test "trigger fired event from private trigger from san family member", context do
+    san_author = insert(:user)
+    insert(:user_role, user: san_author, role: context.role_san_clan)
+
+    user_trigger =
+      insert(:user_trigger,
+        user: san_author,
+        trigger: %{
+          is_public: false,
+          settings: default_trigger_settings_string_keys(),
+          title: "my trigger",
+          description: "DAA going up 300%"
+        }
+      )
+
+    insert(:timeline_event,
+      user_trigger: user_trigger,
+      user: san_author,
+      event_type: TimelineEvent.trigger_fired(),
+      payload: %{"default" => "some signal payload"}
+    )
+
+    assert timeline_events_query(context.conn, "limit: 5") |> hd() |> Map.get("events") == []
   end
 
   test "timeline events for not logged in user", context do

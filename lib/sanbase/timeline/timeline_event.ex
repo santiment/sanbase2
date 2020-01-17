@@ -38,7 +38,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     belongs_to(:post, Post)
     belongs_to(:user_list, UserList)
     belongs_to(:user_trigger, UserTrigger)
-    has_many(:likes, Vote, on_delete: :delete_all)
+    has_many(:votes, Vote, on_delete: :delete_all)
     field(:payload, :map)
 
     timestamps()
@@ -86,7 +86,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   end
 
   def by_id(id) do
-    from(te in TimelineEvent, where: te.id == ^id, preload: :likes)
+    from(te in TimelineEvent, where: te.id == ^id, preload: :votes)
     |> Repo.one()
   end
 
@@ -223,7 +223,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
       where: event.user_id in ^followed_users_ids,
       order_by: [desc: event.inserted_at],
       limit: ^limit,
-      preload: [:user_trigger, [post: :tags], :user_list, :user, :likes]
+      preload: [:user_trigger, [post: :tags], :user_list, :user, :votes]
     )
   end
 

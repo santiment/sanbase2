@@ -15,10 +15,10 @@ defmodule SanbaseWeb.Graphql.TimelineEventTypes do
     field(:post, :post)
     field(:user_list, :user_list)
     field(:payload, :json)
-    field(:likes, list_of(:like))
+    field(:votes, list_of(:upvote))
   end
 
-  object :like do
+  object :upvote do
     field(:user_id, :integer)
   end
 end

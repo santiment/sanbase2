@@ -19,7 +19,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
     end
   end
 
-  def like_timeline_event(_root, %{timeline_event_id: timeline_event_id}, %{
+  def upvote_timeline_event(_root, %{timeline_event_id: timeline_event_id}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
     case Vote.create(%{user_id: current_user.id, timeline_event_id: timeline_event_id}) do
@@ -31,7 +31,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
     end
   end
 
-  def unlike_timeline_event(_root, %{timeline_event_id: timeline_event_id}, %{
+  def downvote_timeline_event(_root, %{timeline_event_id: timeline_event_id}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
     with %Vote{} = vote <-

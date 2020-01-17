@@ -28,7 +28,7 @@ defmodule SanbaseWeb.Graphql.SanbaseRepo do
 
   def query(TimelineEvent, _args) do
     TimelineEvent
-    |> preload([:likes])
+    |> preload([:votes])
   end
 
   def query(queryable, _args) do

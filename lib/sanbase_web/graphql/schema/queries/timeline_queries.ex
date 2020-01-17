@@ -21,21 +21,21 @@ defmodule SanbaseWeb.Graphql.Schema.TimelineQueries do
 
   object :timeline_mutations do
     @desc """
-    Like a timeline event.
+    Upvote a timeline event.
     """
-    field :like_timeline_event, :timeline_event do
+    field :upvote_timeline_event, :timeline_event do
       arg(:timeline_event_id, :integer)
       middleware(JWTAuth)
-      resolve(&TimelineEventResolver.like_timeline_event/3)
+      resolve(&TimelineEventResolver.upvote_timeline_event/3)
     end
 
     @desc """
-    Unlike a timeline event.
+    Downvote a timeline event.
     """
-    field :unlike_timeline_event, :timeline_event do
+    field :downvote_timeline_event, :timeline_event do
       arg(:timeline_event_id, :integer)
       middleware(JWTAuth)
-      resolve(&TimelineEventResolver.unlike_timeline_event/3)
+      resolve(&TimelineEventResolver.downvote_timeline_event/3)
     end
   end
 end

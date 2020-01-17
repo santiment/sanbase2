@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Absinthe.Resolution
-  alias Sanbase.Billing.{Subscription, Plan, GraphqlSchema}
+  alias Sanbase.Billing.{Subscription, GraphqlSchema, Plan}
 
   @allow_access_without_staking ["santiment"]
   @minimal_datetime_param from_iso8601!("2009-01-01T00:00:00Z")
@@ -110,7 +110,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
            resolution,
          middleware_args
        ) do
-    if Subscription.is_restricted?(query) do
+    if Plan.AccessChecker.is_restricted?(query) do
       restricted_query(resolution, middleware_args, query)
     else
       not_restricted_query(resolution, middleware_args)

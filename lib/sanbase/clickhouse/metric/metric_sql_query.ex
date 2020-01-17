@@ -1,4 +1,4 @@
-defmodule Sanbase.Clickhouse.Metric.SqlQueries do
+defmodule Sanbase.Clickhouse.Metric.SqlQuery do
   @table "daily_metrics_v2"
 
   @moduledoc ~s"""
@@ -11,8 +11,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQueries do
   use Ecto.Schema
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
-
-  import Sanbase.Clickhouse.Metric.Helper, only: [metric_name_id_map: 0]
+  import Sanbase.Clickhouse.MetadataHelper
 
   alias Sanbase.Clickhouse.Metric.FileHandler
 
@@ -127,7 +126,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQueries do
     GROUP BY asset_id
     """
 
-    {:ok, metric_map} = metric_name_id_map()
+    {:ok, metric_map} = metric_name_to_metric_id_map()
 
     args = [
       asset_ids,

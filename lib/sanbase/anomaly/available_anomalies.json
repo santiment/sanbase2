@@ -1,0 +1,13 @@
+[
+  {
+    "human_readable_name": "Daily Active Addresses Anomaly",
+    "model_name": "prophet_v1",
+    "name": "daily_active_addresses_anomaly",
+    "metric": "daily_active_addresses",
+    "access": "free",
+    "aggregation": "count",
+    "min_interval": "1d",
+    "table": "anomalies",
+    "data_type": "timeseries"
+  }
+]

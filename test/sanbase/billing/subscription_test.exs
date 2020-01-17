@@ -3,7 +3,7 @@ defmodule Sanbase.Billing.SubscriptionTest do
 
   import Sanbase.Factory
 
-  alias Sanbase.Billing.Subscription
+  alias Sanbase.Billing.{Subscription, Plan.AccessChecker}
 
   setup do
     %{user: insert(:user)}
@@ -11,13 +11,13 @@ defmodule Sanbase.Billing.SubscriptionTest do
 
   describe "#is_restricted?" do
     test "network_growth and daily_active_deposits are restricted" do
-      assert Subscription.is_restricted?({:query, :network_growth})
-      assert Subscription.is_restricted?({:query, :daily_active_deposits})
+      assert AccessChecker.is_restricted?({:query, :network_growth})
+      assert AccessChecker.is_restricted?({:query, :daily_active_deposits})
     end
 
     test "all_projects and history_price are not restricted" do
-      refute Subscription.is_restricted?({:query, :all_projects})
-      refute Subscription.is_restricted?({:query, :history_price})
+      refute AccessChecker.is_restricted?({:query, :all_projects})
+      refute AccessChecker.is_restricted?({:query, :history_price})
     end
   end
 

@@ -20,10 +20,5 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
       meta(access: :free)
       cache_resolve(&MetricResolver.get_available_metrics/3, ttl: 600)
     end
-
-    field :get_available_slugs, list_of(:string) do
-      meta(access: :free)
-      cache_resolve(&MetricResolver.get_available_slugs/3, ttl: 600)
-    end
   end
 end

@@ -413,5 +413,5 @@ defmodule Sanbase.Insight.Post do
     Tag.drop_tags(post)
   end
 
-  defp maybe_drop_post_tags(_, _), do: :oka
+  defp maybe_drop_post_tags(_, _), do: :ok
 end

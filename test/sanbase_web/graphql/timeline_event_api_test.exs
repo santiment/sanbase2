@@ -82,7 +82,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
         event_type: TimelineEvent.create_public_trigger_type()
       )
 
-    result = timeline_events_query(conn, "limit: 5") |> IO.inspect()
+    result = timeline_events_query(conn, "limit: 5")
 
     assert result |> hd() |> Map.get("events") |> length() == 4
     assert result |> hd() |> Map.get("events") |> hd() |> Map.get("payload") == nil

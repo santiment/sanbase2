@@ -11,10 +11,6 @@ defmodule SanbaseWeb.Graphql.InsightTagOrderTest do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
     conn = setup_jwt_auth(build_conn(), user)
 
-    tags = ["first", "second", "3", "AAA", "XYZ", "BTC"] |> Enum.map(fn name -> %{name: name} end)
-
-    Sanbase.Repo.insert_all(Sanbase.Tag, tags, on_conflict: :nothing, conflict_target: [:name])
-
     {:ok, conn: conn, user: user}
   end
 
@@ -64,6 +60,28 @@ defmodule SanbaseWeb.Graphql.InsightTagOrderTest do
     assert result3["data"]["updateInsight"]["tags"] |> Enum.map(& &1["name"]) == tags3
   end
 
+  test "create tags the first", %{conn: conn} do
+    tags = ["first", "second", "third"]
+
+    mutation = create_insight_mutation("Title", "Text", tags)
+    result = execute_mutation(conn, mutation)
+    id = result["data"]["createInsight"]["id"]
+
+    assert get_insight_tags(conn, id) == tags
+
+    tags2 = ["third", "first", "BTC", "second"]
+    mutation2 = update_insight_tags_mutation(id, tags2)
+    execute_mutation(conn, mutation2)
+
+    assert get_insight_tags(conn, id) == tags2
+
+    tags3 = ["SAN", "PESH" | tags2 |> Enum.reverse()] ++ ["ASD"]
+    mutation3 = update_insight_tags_mutation(id, tags3)
+    execute_mutation(conn, mutation3)
+
+    assert get_insight_tags(conn, id) == tags3
+  end
+
   defp create_insight_mutation(title, text, tags) do
     """
     mutation {
@@ -79,15 +97,37 @@ defmodule SanbaseWeb.Graphql.InsightTagOrderTest do
     """
     mutation {
       updateInsight(id: #{id}, tags: #{inspect(tags)}) {
+        id
         tags { name }
       }
     }
     """
   end
 
-  defp execute_mutation(conn, query) do
+  defp get_insight_tags(conn, id) do
+    query = """
+    {
+      insight(id: #{id}) {
+        id
+        tags { name }
+      }
+    }
+    """
+
+    execute_query(conn, query)
+    |> get_in(["data", "insight", "tags"])
+    |> Enum.map(& &1["name"])
+  end
+
+  defp execute_mutation(conn, mutation) do
     conn
-    |> post("/graphql", mutation_skeleton(query))
+    |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
+  end
+
+  defp execute_query(conn, query) do
+    conn
+    |> post("/graphql", query_skeleton(query))
     |> json_response(200)
   end
 end

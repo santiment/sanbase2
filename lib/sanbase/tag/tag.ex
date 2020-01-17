@@ -10,7 +10,7 @@ defmodule Sanbase.Tag do
   alias Sanbase.Signal.UserTrigger
 
   @posts_join_through_table "posts_tags"
-  @user_triggers_join_through_table "posts_tags"
+  @user_triggers_join_through_table "user_triggers_tags"
   schema "tags" do
     field(:name, :string)
 
@@ -51,7 +51,6 @@ defmodule Sanbase.Tag do
     Repo.insert_all(__MODULE__, tags, on_conflict: :nothing, conflict_target: [:name])
 
     tag_names = tags |> Enum.map(& &1.name)
-
     tag_structures = by_names(tag_names)
 
     # The `by_names` functions can return the tags in a different order if any new
@@ -66,4 +65,14 @@ defmodule Sanbase.Tag do
   end
 
   def put_tags(%Ecto.Changeset{} = changeset, _), do: changeset
+
+  def drop_tags(%Post{id: id}) do
+    from(pt in @posts_join_through_table, where: pt.post_id == ^id)
+    |> Repo.delete_all()
+  end
+
+  def drop_tags(%UserTrigger{id: id}) do
+    from(pt in @user_triggers_join_through_table, where: pt.user_trigger_id == ^id)
+    |> Repo.delete_all()
+  end
 end

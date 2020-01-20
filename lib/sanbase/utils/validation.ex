@@ -92,4 +92,16 @@ defmodule Sanbase.Validation do
         {:error, "#{inspect(metric)} is not a valid metric."}
     end
   end
+
+  def valid_5m_min_interval_metric?(metric) do
+    with {:ok, %{min_interval: min_interval}} <- Sanbase.Metric.metadata(metric),
+         interval_sec when is_number(interval_sec) and interval_sec <= 300 <-
+           Sanbase.DateTimeUtils.str_to_sec(min_interval) do
+      :ok
+    else
+      _ ->
+        {:error,
+         "The metric #{inspect(metric)} is not supported or is mistyped or does not have min interval equal or less than to 5 minutes."}
+    end
+  end
 end

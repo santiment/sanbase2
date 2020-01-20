@@ -514,19 +514,39 @@ these are the tickers of the projects. Supported currencies are: `XRP`, `BTC`, `
 
 #### Example settings structure for `metric_signal`
 
+Supported metrics are all metrics obtainable by the getMetric API that have
+a min interval at most 5 minutes. These metrics are:
+
+##### Price data
+
+- "price_usd", "price_btc", "volume_usd", "marketcap_usd"
+
+##### Social data
+
+"telegram_social_dominance", "reddit_social_dominance", "discord_social_dominance", "telegram_social_volume", "discord_social_volume"
+
+##### On-chain data
+
+- "transaction_volume", "exchange_balance", "exchange_inflow", "exchange_outflow", "age_destroyed"
+
+##### Github data
+
+- "dev_activity", "github_activity"
+
 ```json
-// The MVRV of Santiment's project is above 2
+// The transaction volume of Santiment's project is above 1,000,000
 {
   "type": "metric_signal",
-  "metric": "mvrv_usd",
+  "metric": "transaction_volume",
+  "time_window": "1d",
   "channel": "telegram",
   "target": { "slug": "santiment" },
-  "operation": { "above": 2 }
+  "operation": { "above": 1000000 }
 }
 ```
 
 ```json
-// The Circulation of Santiment's tokens increased by 10% compared to 1 day ago
+// The price of Santiment's tokens increased by 10% compared to 1 day ago
 {
   "type": "metric_signal",
   "metric": "circulation_1d",

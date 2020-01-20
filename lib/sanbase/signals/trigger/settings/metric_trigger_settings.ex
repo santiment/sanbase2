@@ -30,6 +30,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
             filtered_target: %{list: []}
 
   validates(:metric, &valid_metric?/1)
+  validates(:metric, &valid_5m_min_interval_metric?/1)
   validates(:target, &valid_target?/1)
   validates(:channel, &valid_notification_channel?/1)
   validates(:time_window, &valid_time_window?/1)

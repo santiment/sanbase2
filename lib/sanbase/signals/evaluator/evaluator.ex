@@ -30,7 +30,8 @@ defmodule Sanbase.Signal.Evaluator do
       &evaluate/1,
       ordered: false,
       max_concurrency: 8,
-      timeout: 90_000
+      timeout: 90_000,
+      on_timeout: :kill_task
     )
     |> Enum.filter(&triggered?/1)
   end

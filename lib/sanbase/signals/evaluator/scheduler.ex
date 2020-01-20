@@ -33,7 +33,7 @@ defmodule Sanbase.Signal.Scheduler do
       type
       |> UserTrigger.get_active_triggers_by_type()
       |> Evaluator.run(type)
-      |> filter_triggered?()
+      |> filter_triggered?(type)
       |> send_and_mark_as_sent()
 
     updated_user_triggers
@@ -47,15 +47,18 @@ defmodule Sanbase.Signal.Scheduler do
     |> log_sent_messages_stats(type)
   end
 
-  defp filter_triggered?(triggers) do
+  defp filter_triggered?(triggers, type) do
     triggers
     |> Enum.filter(fn
-      %UserTrigger{
-        trigger: %{
-          settings: %{triggered?: triggered?}
-        }
-      } ->
+      %UserTrigger{trigger: %{settings: %{triggered?: triggered?}}} ->
         triggered?
+
+      {:exit, :timeout} ->
+        Logger.info("A trigger of type #{type} has timed out and has been killed.")
+        false
+
+      _ ->
+        false
     end)
   end
 

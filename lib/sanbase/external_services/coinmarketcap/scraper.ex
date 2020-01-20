@@ -41,6 +41,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   end
 
   def parse_project_page(html, project_info) do
+    {:ok, html} = Floki.parse_document(html)
+
     %ProjectInfo{
       project_info
       | name: project_info.name || name(html),
@@ -60,10 +62,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   end
 
   defp ticker(html) do
-    Floki.find(html, "h1 > .text-bold.h3.text-gray.text-large")
-    |> hd
-    |> Floki.text()
-    |> String.replace(~r/[\(\)]/, "")
+    case Floki.find(html, "h1 > .text-bold.h3.text-gray.text-large") do
+      [{_, _, [str]}] when is_binary(str) ->
+        str
+        |> String.replace(~r/[\(\)]/, "")
+
+      _ ->
+        nil
+    end
   end
 
   defp website_link(html) do

@@ -101,7 +101,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> Repo.all()
     |> events_with_cursor()
   end
-  
+
   def by_id(id) do
     from(te in TimelineEvent, where: te.id == ^id, preload: :votes)
     |> Repo.one()

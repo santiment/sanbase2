@@ -94,23 +94,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   end
 
   test "get trigger fired event with signal payload", context do
-    user_trigger =
-      insert(:user_trigger,
-        user: context.user,
-        trigger: %{
-          is_public: true,
-          settings: default_trigger_settings_string_keys(),
-          title: "my trigger",
-          description: "DAA going up 300%"
-        }
-      )
-
-    insert(:timeline_event,
-      user_trigger: user_trigger,
-      user: context.user,
-      event_type: TimelineEvent.trigger_fired(),
-      payload: %{"default" => "some signal payload"}
-    )
+    {_timeline_event, user_trigger} = create_timeline_event(context.user)
 
     trigger_fired_event =
       timeline_events_query(context.conn, "limit: 5")
@@ -122,6 +106,49 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     assert trigger_fired_event["user"]["id"] |> String.to_integer() == context.user.id
     assert trigger_fired_event["payload"] == %{"default" => "some signal payload"}
     assert trigger_fired_event["trigger"]["id"] == user_trigger.id
+    assert trigger_fired_event["votes"] == []
+  end
+
+  describe "upvoteTimelineEvent/downvoteTimelineEvent mutations" do
+    test "upvote succeeds", context do
+      user = insert(:user)
+      {timeline_event, _user_trigger} = create_timeline_event(user)
+      mutation = upvote_timeline_event_mutation(timeline_event.id)
+      result = execute_mutation(context.conn, mutation, "upvoteTimelineEvent")
+
+      assert result["votes"] == [%{"userId" => context.user.id}]
+    end
+
+    test "when user upvotes twice - returns error", context do
+      user = insert(:user)
+      {timeline_event, _user_trigger} = create_timeline_event(user)
+      mutation = upvote_timeline_event_mutation(timeline_event.id)
+      execute_mutation(context.conn, mutation, "upvoteTimelineEvent")
+      error = execute_mutation_with_error(context.conn, mutation)
+
+      assert error == "Can't vote for event with id #{timeline_event.id}"
+    end
+
+    test "when user has upvoted, he can downvote", context do
+      user = insert(:user)
+      {timeline_event, _user_trigger} = create_timeline_event(user)
+      upvote_mutation = upvote_timeline_event_mutation(timeline_event.id)
+      downvote_mutation = downvote_timeline_event_mutation(timeline_event.id)
+
+      result1 = execute_mutation(context.conn, upvote_mutation, "upvoteTimelineEvent")
+      assert result1["votes"] == [%{"userId" => context.user.id}]
+
+      result2 = execute_mutation(context.conn, downvote_mutation, "downvoteTimelineEvent")
+      assert result2["votes"] == []
+    end
+
+    test "when user has not upvoted, he can't downvote", context do
+      user = insert(:user)
+      {timeline_event, _user_trigger} = create_timeline_event(user)
+      mutation = downvote_timeline_event_mutation(timeline_event.id)
+      error = execute_mutation_with_error(context.conn, mutation)
+      assert error == "Can't remove vote for event with id #{timeline_event.id}"
+    end
   end
 
   test "trigger fired event from private trigger from san family member", context do
@@ -181,6 +208,10 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
           before
         }
         events {
+          id
+          votes {
+            userId
+          }
           eventType,
           insertedAt,
           user {
@@ -211,6 +242,55 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       |> json_response(200)
 
     result["data"]["timelineEvents"]
+  end
+
+  defp upvote_timeline_event_mutation(timeline_event_id) do
+    """
+    mutation {
+      upvoteTimelineEvent(timelineEventId: #{timeline_event_id}) {
+        id
+        votes {
+          userId
+        }
+      }
+    }
+    """
+  end
+
+  defp downvote_timeline_event_mutation(timeline_event_id) do
+    """
+    mutation {
+      downvoteTimelineEvent(timelineEventId: #{timeline_event_id}) {
+        id
+        votes {
+          userId
+        }
+      }
+    }
+    """
+  end
+
+  defp create_timeline_event(user) do
+    user_trigger =
+      insert(:user_trigger,
+        user: user,
+        trigger: %{
+          is_public: true,
+          settings: default_trigger_settings_string_keys(),
+          title: "my trigger",
+          description: "DAA going up 300%"
+        }
+      )
+
+    timeline_event =
+      insert(:timeline_event,
+        user_trigger: user_trigger,
+        user: user,
+        event_type: TimelineEvent.trigger_fired(),
+        payload: %{"default" => "some signal payload"}
+      )
+
+    {timeline_event, user_trigger}
   end
 
   defp default_trigger_settings_string_keys() do

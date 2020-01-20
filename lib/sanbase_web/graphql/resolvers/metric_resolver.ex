@@ -1,12 +1,12 @@
 defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
-  require Logger
-
   import SanbaseWeb.Graphql.Helpers.Utils,
     only: [calibrate_interval: 8, calibrate_incomplete_data_params: 5]
 
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3, handle_graphql_error: 4]
 
   alias Sanbase.Metric
+
+  require Logger
 
   @datapoints 300
 

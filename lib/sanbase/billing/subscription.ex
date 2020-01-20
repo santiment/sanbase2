@@ -295,13 +295,6 @@ defmodule Sanbase.Billing.Subscription do
     |> AccessChecker.realtime_data_cut_off_in_days(query, product)
   end
 
-  @doc ~s"""
-  Check if a query full access is given only to users with a plan higher than free.
-  A query can be restricted but still accessible by not-paid users or users with
-  lower plans. In this case historical and/or realtime data access can be cut off
-  """
-  defdelegate is_restricted?(query), to: AccessChecker
-
   def plan_name(subscription), do: subscription.plan.name
   def create_or_update_stripe_customer(_, _card_token \\ nil)
 

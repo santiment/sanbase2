@@ -17,4 +17,24 @@ defmodule SanbaseWeb.Graphql.Schema.TimelineQueries do
       resolve(&TimelineEventResolver.timeline_events/3)
     end
   end
+
+  object :timeline_mutations do
+    @desc """
+    Upvote a timeline event.
+    """
+    field :upvote_timeline_event, :timeline_event do
+      arg(:timeline_event_id, :integer)
+      middleware(JWTAuth)
+      resolve(&TimelineEventResolver.upvote_timeline_event/3)
+    end
+
+    @desc """
+    Downvote a timeline event.
+    """
+    field :downvote_timeline_event, :timeline_event do
+      arg(:timeline_event_id, :integer)
+      middleware(JWTAuth)
+      resolve(&TimelineEventResolver.downvote_timeline_event/3)
+    end
+  end
 end

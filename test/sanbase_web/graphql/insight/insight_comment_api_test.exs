@@ -17,7 +17,6 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
 
   test "commentsCount on insights", context do
     %{conn: conn, post: post} = context
-
     assert comments_count(conn, post.id) == 0
 
     create_comment(conn, post.id, nil, "some content")

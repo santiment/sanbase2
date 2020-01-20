@@ -38,7 +38,7 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:state, :string)
     field(:moderation_comment, :string)
     field(:ready_state, :string)
-    field(:images, list_of(:image_data), resolve: dataloader(SanbaseRepo))
+    field(:images, list_of(:image_data))
     field(:tags, list_of(:tag))
 
     field :comments_count, :integer do

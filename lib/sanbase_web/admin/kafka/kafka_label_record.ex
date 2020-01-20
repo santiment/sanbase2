@@ -29,7 +29,9 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
     form label do
       inputs do
         content do
-          raw("CSV Format: topic, sign, address, blockchain, label, metadata, datetime")
+          raw(
+            "CSV Format: topic, sign, address, blockchain, label, metadata, ISO8601 datetime string or timestmap"
+          )
         end
 
         input(label, :csv, type: :text, label: "Paste CSV")
@@ -58,10 +60,6 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
           dt != ""
       end)
 
-    Enum.map(datetimes, fn dt ->
-      {dt, DateTime.from_iso8601(dt)}
-    end)
-
     cond do
       not all_present? ->
         {Phoenix.Controller.put_flash(
@@ -70,7 +68,13 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
            "All fields except metadata are mandatory."
          ), %{params | kafka_label_record: %{}}}
 
-      Enum.any?(datetimes, &match?({:error, _}, DateTime.from_iso8601(&1))) ->
+      Enum.any?(datetimes, fn
+        dt when is_binary(dt) ->
+          match?({:error, _}, DateTime.from_iso8601(dt))
+
+        timestamp when is_integer(timestamp) ->
+          match?({:error, _}, DateTime.from_unix(timestamp))
+      end) ->
         {Phoenix.Controller.put_flash(
            conn,
            :error,
@@ -104,7 +108,7 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
             blockchain: blockchain,
             label: label,
             metadata: metadata,
-            datetime: datetime
+            timestamp: datetime |> to_timestamp()
           }
         end)
         |> Enum.map(&{"", Jason.encode!(&1)})
@@ -112,6 +116,23 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
       @producer.send_data(topic, kafka_data)
     end)
   end
+
+  defp to_timestamp(dt_str) when is_binary(dt_str) do
+    Sanbase.DateTimeUtils.from_iso8601!(dt_str)
+    |> DateTime.to_unix()
+  end
+
+  defp to_timestamp(timestamp) when is_integer(timestamp), do: timestamp
+
+  defp to_timestamp(%DateTime{} = dt), do: DateTime.to_unix(dt)
+
+  defp to_dt_struct(dt_str) when is_binary(dt_str),
+    do: Sanbase.DateTimeUtils.from_iso8601!(dt_str)
+
+  defp to_dt_struct(timestamp) when is_integer(timestamp),
+    do: DateTime.from_unix!(timestamp)
+
+  defp to_dt_struct(%DateTime{} = dt), do: dt
 
   defp store_in_postgres(data) do
     insert_data =
@@ -125,7 +146,7 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
           blockchain: blockchain,
           label: label,
           metadata: metadata,
-          datetime: datetime
+          datetime: datetime |> to_dt_struct()
         }
       end)
 

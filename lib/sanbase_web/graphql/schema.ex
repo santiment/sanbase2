@@ -23,6 +23,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   alias SanbaseWeb.Graphql.Middlewares.ApiUsage
 
   # Types
+  import_types(Graphql.AggregationTypes)
   import_types(Graphql.CustomTypes.Decimal)
   import_types(Graphql.CustomTypes.DateTime)
   import_types(Graphql.CustomTypes.JSON)
@@ -41,11 +42,13 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.TimelineEventTypes)
   import_types(Graphql.InsightTypes)
   import_types(Graphql.TwitterTypes)
+  import_types(Graphql.AnomalyTypes)
   import_types(Graphql.MetricTypes)
   import_types(Graphql.HistoricalBalanceTypes)
   import_types(Graphql.Schema.KafkaTypes)
 
   # Queries and mutations
+  import_types(Graphql.Schema.AnomalyQueries)
   import_types(Graphql.Schema.MetricQueries)
   import_types(Graphql.Schema.SocialDataQueries)
   import_types(Graphql.Schema.WatchlistQueries)
@@ -65,7 +68,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.ExchangeQueries)
 
   def dataloader() do
-    Dataloader.new(timeout: :timer.seconds(20))
+    Dataloader.new(timeout: :timer.seconds(20), get_policy: :return_nil_on_error)
     |> Dataloader.add_source(SanbaseRepo, SanbaseRepo.data())
     |> Dataloader.add_source(SanbaseDataloader, SanbaseDataloader.data())
   end
@@ -99,6 +102,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   end
 
   query do
+    import_fields(:anomaly_queries)
     import_fields(:metric_queries)
     import_fields(:social_data_queries)
     import_fields(:user_list_queries)
@@ -124,6 +128,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:signal_mutations)
     import_fields(:user_mutations)
     import_fields(:billing_mutations)
+    import_fields(:timeline_mutations)
   end
 
   subscription do

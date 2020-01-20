@@ -11,7 +11,8 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Repo
   alias Sanbase.Auth.User
   alias Sanbase.Model.Project
-  alias Sanbase.Insight.{Post, Vote, PostImage}
+  alias Sanbase.Vote
+  alias Sanbase.Insight.{Post, PostImage}
   alias Sanbase.Timeline.TimelineEvent
 
   require Logger
@@ -94,7 +95,7 @@ defmodule Sanbase.Insight.Post do
     |> Repo.get(post_id)
     |> case do
       nil -> {:error, "There is no insight with id #{post_id}"}
-      post -> {:ok, post}
+      post -> {:ok, post |> Tag.Preloader.order_tags()}
     end
   end
 
@@ -104,7 +105,7 @@ defmodule Sanbase.Insight.Post do
     |> Repo.insert()
     |> case do
       {:ok, post} ->
-        {:ok, post}
+        {:ok, post |> Tag.Preloader.order_tags()}
 
       {:error, changeset} ->
         {
@@ -117,10 +118,21 @@ defmodule Sanbase.Insight.Post do
   def update(post_id, %User{id: user_id}, args) do
     case Repo.get(__MODULE__, post_id) do
       %__MODULE__{user_id: ^user_id} = post ->
+        # If the tags are updated they need to be dropped from the mapping table
+        # and inserted again as the order needs to be preserved.
+        maybe_drop_post_tags(post, args)
+
         post
         |> Repo.preload([:tags, :images])
         |> update_changeset(args)
         |> Repo.update()
+        |> case do
+          {:ok, post} ->
+            {:ok, post |> Tag.Preloader.order_tags()}
+
+          {:error, error} ->
+            {:error, error}
+        end
 
       %__MODULE__{user_id: another_user_id} when user_id != another_user_id ->
         {:error, "Cannot update not owned insight: #{post_id}"}
@@ -145,7 +157,7 @@ defmodule Sanbase.Insight.Post do
         # Note: When ecto changeset middleware is implemented return just `Repo.delete(post)`
         case Repo.delete(post) do
           {:ok, post} ->
-            {:ok, post}
+            {:ok, post |> Tag.Preloader.order_tags()}
 
           {:error, changeset} ->
             {
@@ -168,7 +180,7 @@ defmodule Sanbase.Insight.Post do
          {:own_post?, %Post{user_id: ^user_id}} <- {:own_post?, post},
          {:draft?, %Post{ready_state: @draft}} <- {:draft?, post},
          {:ok, post} <- publish_post(post) do
-      {:ok, post}
+      {:ok, post |> Tag.Preloader.order_tags()}
     else
       {:nil?, nil} ->
         {:error, "Cannot publish insight with id #{post_id}"}
@@ -208,6 +220,7 @@ defmodule Sanbase.Insight.Post do
     |> by_user(user_id)
     |> Repo.all()
     |> Repo.preload(@preloads)
+    |> Tag.Preloader.order_tags()
   end
 
   @doc """
@@ -218,6 +231,7 @@ defmodule Sanbase.Insight.Post do
     |> by_user(user_id)
     |> Repo.all()
     |> Repo.preload(@preloads)
+    |> Tag.Preloader.order_tags()
   end
 
   @doc """
@@ -229,6 +243,7 @@ defmodule Sanbase.Insight.Post do
     |> page(page, page_size)
     |> Repo.all()
     |> Repo.preload(@preloads)
+    |> Tag.Preloader.order_tags()
   end
 
   @doc """
@@ -239,6 +254,7 @@ defmodule Sanbase.Insight.Post do
     |> after_datetime(datetime)
     |> order_by_published_at()
     |> Repo.all()
+    |> Tag.Preloader.order_tags()
   end
 
   @doc """
@@ -393,4 +409,10 @@ defmodule Sanbase.Insight.Post do
     extract_image_url_from_post(post)
     |> Enum.map(&Sanbase.FileStore.delete/1)
   end
+
+  defp maybe_drop_post_tags(post, %{tags: tags}) when is_list(tags) do
+    Tag.drop_tags(post)
+  end
+
+  defp maybe_drop_post_tags(_, _), do: :ok
 end

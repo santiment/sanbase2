@@ -13,6 +13,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
   alias Sanbase.Signal.UserTrigger
+  alias Sanbase.Vote
 
   alias __MODULE__
 
@@ -37,6 +38,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     belongs_to(:post, Post)
     belongs_to(:user_list, UserList)
     belongs_to(:user_trigger, UserTrigger)
+    has_many(:votes, Vote, on_delete: :delete_all)
     field(:payload, :map)
 
     timestamps()
@@ -81,6 +83,11 @@ defmodule Sanbase.Timeline.TimelineEvent do
       :inserted_at
     ])
     |> validate_required([:event_type, :user_id])
+  end
+
+  def by_id(id) do
+    from(te in TimelineEvent, where: te.id == ^id, preload: :votes)
+    |> Repo.one()
   end
 
   @doc """
@@ -216,7 +223,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
       where: event.user_id in ^followed_users_ids,
       order_by: [desc: event.inserted_at],
       limit: ^limit,
-      preload: [:user_trigger, [post: :tags], :user_list, :user]
+      preload: [:user_trigger, [post: :tags], :user_list, :user, :votes]
     )
   end
 

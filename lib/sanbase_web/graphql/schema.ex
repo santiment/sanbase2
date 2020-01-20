@@ -128,6 +128,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:signal_mutations)
     import_fields(:user_mutations)
     import_fields(:billing_mutations)
+    import_fields(:timeline_mutations)
   end
 
   subscription do

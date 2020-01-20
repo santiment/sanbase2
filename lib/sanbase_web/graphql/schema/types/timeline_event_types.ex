@@ -7,6 +7,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventTypes do
   end
 
   object :timeline_event do
+    field(:id, non_null(:id))
     field(:event_type, non_null(:string))
     field(:inserted_at, non_null(:datetime))
     field(:user, non_null(:user))
@@ -14,5 +15,10 @@ defmodule SanbaseWeb.Graphql.TimelineEventTypes do
     field(:post, :post)
     field(:user_list, :user_list)
     field(:payload, :json)
+    field(:votes, list_of(:upvote))
+  end
+
+  object :upvote do
+    field(:user_id, :integer)
   end
 end

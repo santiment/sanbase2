@@ -11,7 +11,8 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Repo
   alias Sanbase.Auth.User
   alias Sanbase.Model.Project
-  alias Sanbase.Insight.{Post, Vote, PostImage}
+  alias Sanbase.Vote
+  alias Sanbase.Insight.{Post, PostImage}
   alias Sanbase.Timeline.TimelineEvent
 
   require Logger

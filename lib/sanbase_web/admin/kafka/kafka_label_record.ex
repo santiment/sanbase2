@@ -137,8 +137,6 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
   defp store_in_postgres(data) do
     insert_data =
       Enum.map(data, fn [topic, sign, address, blockchain, label, metadata, datetime] ->
-        {:ok, datetime, _} = DateTime.from_iso8601(datetime)
-
         %{
           topic: topic,
           sign: sign |> Sanbase.Math.to_integer(),

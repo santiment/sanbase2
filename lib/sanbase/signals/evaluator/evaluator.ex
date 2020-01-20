@@ -29,8 +29,8 @@ defmodule Sanbase.Signal.Evaluator do
     |> Sanbase.Parallel.map(
       &evaluate/1,
       ordered: false,
-      max_concurrency: 10,
-      timeout: 60_000
+      max_concurrency: 8,
+      timeout: 90_000
     )
     |> Enum.filter(&triggered?/1)
   end

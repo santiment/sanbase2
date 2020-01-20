@@ -12,7 +12,7 @@ defmodule Sanbase.Signal.Scheduler do
 
   @signal_modules Sanbase.Signal.List.get()
 
-  alias Sanbase.Signal.{Trigger, UserTrigger, HistoricalActivity}
+  alias Sanbase.Signal.{UserTrigger, HistoricalActivity}
   alias Sanbase.Signal.Evaluator
   alias Sanbase.Signal
 

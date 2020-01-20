@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   import Mock
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
-  import ExUnit.CaptureLog
   import Sanbase.TestHelpers
 
   alias Sanbase.Tag
@@ -933,6 +932,26 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     assert result_post["votes"]["totalSanVotes"] == 0
   end
 
+  test "voting is idempotent", context do
+    %{conn: conn, user: user} = context
+    post = insert(:post, %{user: user})
+
+    assert match?(
+             %{"data" => %{"vote" => %{"votedAt" => _}}},
+             vote_for(conn, post.id)
+           )
+
+    assert match?(
+             %{"data" => %{"vote" => %{"votedAt" => _}}},
+             vote_for(conn, post.id)
+           )
+
+    assert match?(
+             %{"data" => %{"vote" => %{"votedAt" => _}}},
+             vote_for(conn, post.id)
+           )
+  end
+
   # Helper functions
 
   defp publish_insight_mutation(post) do
@@ -1006,5 +1025,19 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       }
     }
     """
+  end
+
+  defp vote_for(conn, id) do
+    mutation = """
+    mutation {
+      vote(insightId: #{id}){
+        votedAt
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
   end
 end

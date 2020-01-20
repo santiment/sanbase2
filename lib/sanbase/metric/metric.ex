@@ -216,7 +216,11 @@ defmodule Sanbase.Metric do
   def available_aggregations(), do: @available_aggregations
 
   @doc ~s"""
-  Get all available metrics
+  Get all available metrics.
+
+  Available options:
+  - min_interval_less_or_equal - return all metrics with min interval that is
+  less or equal than a given amount (expessed as a string - 5m, 1h, etc.)
   """
   def available_metrics(opts \\ [])
 

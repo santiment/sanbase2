@@ -12,7 +12,7 @@ defmodule Sanbase.Signal.Scheduler do
 
   @signal_modules Sanbase.Signal.List.get()
 
-  alias Sanbase.Signal.{UserTrigger, HistoricalActivity}
+  alias Sanbase.Signal.{Trigger, UserTrigger, HistoricalActivity}
   alias Sanbase.Signal.Evaluator
   alias Sanbase.Signal
 
@@ -33,7 +33,6 @@ defmodule Sanbase.Signal.Scheduler do
       type
       |> UserTrigger.get_active_triggers_by_type()
       |> Evaluator.run(type)
-      |> filter_triggered?(type)
       |> send_and_mark_as_sent()
 
     updated_user_triggers
@@ -45,21 +44,6 @@ defmodule Sanbase.Signal.Scheduler do
     sent_list_results
     |> List.flatten()
     |> log_sent_messages_stats(type)
-  end
-
-  defp filter_triggered?(triggers, type) do
-    triggers
-    |> Enum.filter(fn
-      %UserTrigger{trigger: %{settings: %{triggered?: triggered?}}} ->
-        triggered?
-
-      {:exit, :timeout} ->
-        Logger.info("A trigger of type #{type} has timed out and has been killed.")
-        false
-
-      _ ->
-        false
-    end)
   end
 
   defp deactivate_non_repeating(triggers) do

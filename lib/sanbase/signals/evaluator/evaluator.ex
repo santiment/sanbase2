@@ -33,7 +33,7 @@ defmodule Sanbase.Signal.Evaluator do
       timeout: 90_000,
       on_timeout: :kill_task
     )
-    |> Enum.filter(&triggered?/1)
+    |> filter_triggered(type)
   end
 
   defp evaluate(%UserTrigger{trigger: trigger} = user_trigger) do
@@ -60,7 +60,18 @@ defmodule Sanbase.Signal.Evaluator do
     )
   end
 
-  defp triggered?(%UserTrigger{trigger: trigger}) do
-    Trigger.triggered?(trigger)
+  defp filter_triggered(triggers, type) do
+    triggers
+    |> Enum.filter(fn
+      %UserTrigger{trigger: trigger} ->
+        Trigger.triggered?(trigger)
+
+      {:exit, :timeout} ->
+        Logger.info("A trigger of type #{type} has timed out and has been killed.")
+        false
+
+      _ ->
+        false
+    end)
   end
 end

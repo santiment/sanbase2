@@ -19,6 +19,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
     end
   end
 
+  def timeline_events(_root, args, _resolution) do
+    case TimelineEvent.events(args) do
+      {:ok, %{events: events} = result} ->
+        {:ok, %{result | events: replace_user_trigger_with_trigger(events)}}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
   def upvote_timeline_event(_root, %{timeline_event_id: timeline_event_id}, %{
         context: %{auth: %{current_user: current_user}}
       }) do

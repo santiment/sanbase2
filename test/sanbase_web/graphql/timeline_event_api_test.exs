@@ -68,7 +68,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       insert(:user_trigger,
         user: user_to_follow,
         trigger: %{
-          is_public: true,
+          is_public: false,
           settings: default_trigger_settings_string_keys(),
           title: "my trigger",
           description: "DAA going up 300%"
@@ -149,6 +149,53 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       error = execute_mutation_with_error(context.conn, mutation)
       assert error == "Can't remove vote for event with id #{timeline_event.id}"
     end
+  end
+
+  test "trigger fired event from private trigger from san family member", context do
+    san_author = insert(:user)
+    insert(:user_role, user: san_author, role: context.role_san_clan)
+
+    user_trigger =
+      insert(:user_trigger,
+        user: san_author,
+        trigger: %{
+          is_public: false,
+          settings: default_trigger_settings_string_keys(),
+          title: "my trigger",
+          description: "DAA going up 300%"
+        }
+      )
+
+    insert(:timeline_event,
+      user_trigger: user_trigger,
+      user: san_author,
+      event_type: TimelineEvent.trigger_fired(),
+      payload: %{"default" => "some signal payload"}
+    )
+
+    assert timeline_events_query(context.conn, "limit: 5") |> hd() |> Map.get("events") == []
+  end
+
+  test "timeline events for not logged in user", context do
+    san_author = insert(:user)
+    insert(:user_role, user: san_author, role: context.role_san_clan)
+
+    post =
+      insert(:post,
+        user: san_author,
+        state: Post.approved_state(),
+        ready_state: Post.published()
+      )
+
+    insert(:timeline_event,
+      post: post,
+      user: san_author,
+      event_type: TimelineEvent.publish_insight_type()
+    )
+
+    result = timeline_events_query(build_conn(), "limit: 5")
+
+    assert result |> hd() |> Map.get("events") |> length() == 1
   end
 
   defp timeline_events_query(conn, args_str) do

@@ -14,7 +14,6 @@ defmodule SanbaseWeb.Graphql.Schema.TimelineQueries do
       arg(:cursor, :cursor_input)
       arg(:limit, :integer, default_value: 25)
 
-      middleware(JWTAuth)
       resolve(&TimelineEventResolver.timeline_events/3)
     end
   end

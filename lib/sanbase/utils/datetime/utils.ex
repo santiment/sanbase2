@@ -1,4 +1,19 @@
 defmodule Sanbase.DateTimeUtils do
+  def time_in_range?(%Time{} = time, %Time{} = from, %Time{} = to) do
+    case Time.compare(from, to) do
+      :eq ->
+        false
+
+      :gt ->
+        # from is bigger than to, intervals like: 23:59:00 - 00:01:00
+        time_in_range?(time, from, ~T[23:59:59.99999]) or time_in_range?(time, ~T[00:00:00], to)
+
+      :lt ->
+        # from is smaller than to, intervals like 13:00:00 - 13:05:00
+        Time.compare(time, from) != :lt and Time.compare(time, to) != :gt
+    end
+  end
+
   @doc ~s"""
   Sleep until `datetime` if and only if it is in the future.
   """
@@ -41,10 +56,6 @@ defmodule Sanbase.DateTimeUtils do
 
   def days_ago(days) do
     seconds_ago(days * 60 * 60 * 24)
-  end
-
-  def start_of_day(datetime \\ DateTime.utc_now()) do
-    %DateTime{datetime | hour: 0, minute: 0, second: 0, microsecond: {0, 0}}
   end
 
   def str_to_hours(interval) do

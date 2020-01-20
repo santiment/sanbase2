@@ -86,8 +86,10 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
            %{operation: %{send_at_predefined_time: true, trigger_time: trigger_time}} = settings
          ) do
       trigger_time = Sanbase.DateTimeUtils.time_from_iso8601!(trigger_time)
+      now = Time.utc_now()
+      after_15_mins = Time.add(now, 15 * 60, :second)
 
-      if Time.compare(Time.utc_now(), trigger_time) == :gt do
+      if Sanbase.DateTimeUtils.time_in_range?(trigger_time, now, after_15_mins) do
         %TrendingWordsTriggerSettings{
           settings
           | triggered?: true,

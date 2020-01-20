@@ -23,10 +23,12 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
     user = insert(:user)
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
+    send_at = Time.utc_now() |> Time.add(60) |> Time.to_iso8601()
+
     trending_words_settings = %{
       type: TrendingWordsTriggerSettings.type(),
       channel: "telegram",
-      operation: %{send_at_predefined_time: true, trigger_time: Time.to_iso8601(Time.utc_now())}
+      operation: %{send_at_predefined_time: true, trigger_time: send_at}
     }
 
     {:ok, trigger_trending_words} =

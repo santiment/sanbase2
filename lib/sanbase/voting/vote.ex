@@ -49,7 +49,8 @@ defmodule Sanbase.Vote do
   def create(attrs) do
     %__MODULE__{}
     |> changeset(attrs)
-    |> Repo.insert()
+    # Voting is idempotent - this fixes voting again due to caching
+    |> Repo.insert(on_conflict: :nothing)
   end
 
   @spec remove(%__MODULE__{}) ::

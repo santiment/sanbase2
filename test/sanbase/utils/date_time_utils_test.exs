@@ -40,13 +40,12 @@ defmodule Sanbase.DateTimeUtilsTest do
            ) == :eq
   end
 
-  test "start of day" do
-    datetime1 = DateTime.from_naive!(~N[2014-10-02 10:29:10], "Etc/UTC")
-    datetime2 = DateTime.from_naive!(~N[2014-10-02 00:00:00], "Etc/UTC")
-
-    assert DateTime.compare(
-             DateTimeUtils.start_of_day(datetime1),
-             datetime2
-           )
+  test "time in range" do
+    assert DateTimeUtils.time_in_range?(~T[12:00:00], ~T[13:00:00], ~T[14:00:00]) == false
+    assert DateTimeUtils.time_in_range?(~T[13:00:00], ~T[12:00:00], ~T[14:00:00]) == true
+    # from == to is not a range
+    assert DateTimeUtils.time_in_range?(~T[13:00:00], ~T[13:00:00], ~T[13:00:00]) == false
+    assert DateTimeUtils.time_in_range?(~T[23:55:00], ~T[23:50:00], ~T[23:59:00]) == true
+    assert DateTimeUtils.time_in_range?(~T[23:55:00], ~T[23:50:00], ~T[00:10:00]) == true
   end
 end

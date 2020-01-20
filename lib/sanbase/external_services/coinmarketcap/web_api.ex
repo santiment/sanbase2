@@ -29,8 +29,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     project
     |> Project.coinmarketcap_id()
     |> Sanbase.Model.LatestCoinmarketcapData.by_coinmarketcap_id()
-    |> Map.get(:coinmarketcap_integer_id)
-    |> get_first_datetime()
+    |> case do
+      nil ->
+        {:error,
+         "Cannot fetch first datetime for #{Project.describe(project)}. Reason: Missing coinmarketcap integer id"}
+
+      latest_cmc_data ->
+        latest_cmc_data
+        |> Map.get(:coinmarketcap_integer_id)
+        |> get_first_datetime()
+    end
   end
 
   def first_datetime("TOTAL_MARKET"),

@@ -1,4 +1,4 @@
-defmodule Sanbase.Insight.Comment do
+defmodule Sanbase.Comment do
   @moduledoc ~s"""
   Comment definition module.
 
@@ -13,7 +13,7 @@ defmodule Sanbase.Insight.Comment do
   - timestamp fields
 
 
-  The PostComment module is used to interact with comments and this module is
+  The PostComment and TimelineEventComment modules are used to interact with comments and are
   invisible to the outside world
   """
   use Ecto.Schema

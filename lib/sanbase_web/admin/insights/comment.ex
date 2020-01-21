@@ -1,7 +1,7 @@
 defmodule Sanbase.ExAdmin.Insight.Comment do
   use ExAdmin.Register
 
-  register_resource Sanbase.Insight.Comment do
+  register_resource Sanbase.Comment do
     action_items(only: [:show, :edit])
 
     action_item(:show, fn id ->

@@ -7,9 +7,9 @@ defmodule SanbaseWeb.CommentModerationController do
   def anonymize_comment(conn, _defn, %{id: comment_id}) do
     resource = conn.assigns.resource
 
-    %{user_id: user_id} = Sanbase.Insight.Comment.by_id(comment_id)
+    %{user_id: user_id} = Sanbase.Comment.by_id(comment_id)
 
-    case Sanbase.Insight.Comment.delete(comment_id, user_id) do
+    case Sanbase.Comment.delete(comment_id, user_id) do
       {:ok, _} ->
         put_flash(conn, :notice, "Comment with id #{comment_id} anonymized")
         |> redirect(to: admin_resource_path(resource, :show))
@@ -21,9 +21,9 @@ defmodule SanbaseWeb.CommentModerationController do
   end
 
   def delete_subcomment_tree(conn, _defn, %{id: comment_id}) do
-    %{user_id: user_id} = Sanbase.Insight.Comment.by_id(comment_id)
+    %{user_id: user_id} = Sanbase.Comment.by_id(comment_id)
 
-    case Sanbase.Insight.Comment.delete_subcomment_tree(comment_id, user_id) do
+    case Sanbase.Comment.delete_subcomment_tree(comment_id, user_id) do
       {:ok, _} ->
         put_flash(
           conn,

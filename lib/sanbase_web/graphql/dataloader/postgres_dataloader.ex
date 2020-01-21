@@ -49,6 +49,17 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     |> Map.new()
   end
 
+  def query(:comment_timeline_event_id, comment_ids) do
+    ids = Enum.to_list(comment_ids)
+
+    from(mapping in Sanbase.Timeline.TimelineEventComment,
+      where: mapping.comment_id in ^ids,
+      select: {mapping.comment_id, mapping.timeline_event_id}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
   def query(:comments_count, post_ids) do
     ids = Enum.to_list(post_ids)
 

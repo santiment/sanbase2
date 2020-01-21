@@ -4,7 +4,8 @@ defmodule Sanbase.Factory do
   alias Sanbase.Tag
   alias Sanbase.UserList
   alias Sanbase.Auth.{User, UserSettings, Role, UserRole}
-  alias Sanbase.Insight.{Post, Comment}
+  alias Sanbase.Insight.Post
+  alias Sanbase.Comment
 
   alias Sanbase.Model.{
     Project,

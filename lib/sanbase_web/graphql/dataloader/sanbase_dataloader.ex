@@ -19,6 +19,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
           | :market_segment
           | :infrastructure
           | :comment_insight_id
+          | :comment_timeline_event_id
           | :project_transparency_status,
           any()
         ) :: {:error, String.t()} | {:ok, float()} | map()
@@ -39,6 +40,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
       x
       when x in [
              :comment_insight_id,
+             :comment_timeline_event_id,
              :infrastructure,
              :market_segment,
              :project_transparency_status,

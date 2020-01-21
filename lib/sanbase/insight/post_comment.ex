@@ -9,7 +9,8 @@ defmodule Sanbase.Insight.PostComment do
   import Ecto.{Query, Changeset}
 
   alias Sanbase.Repo
-  alias Sanbase.Insight.{Post, Comment}
+  alias Sanbase.Insight.Post
+  alias Sanbase.Comment
 
   schema "post_comments_mapping" do
     belongs_to(:comment, Comment)

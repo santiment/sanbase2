@@ -292,16 +292,6 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       assert result["votes"] == [%{"userId" => context.user.id}]
     end
 
-    test "when user upvotes twice - returns error", context do
-      user = insert(:user)
-      {timeline_event, _user_trigger} = create_timeline_event(user)
-      mutation = upvote_timeline_event_mutation(timeline_event.id)
-      execute_mutation(context.conn, mutation, "upvoteTimelineEvent")
-      error = execute_mutation_with_error(context.conn, mutation)
-
-      assert error == "Can't vote for event with id #{timeline_event.id}"
-    end
-
     test "when user has upvoted, he can downvote", context do
       user = insert(:user)
       {timeline_event, _user_trigger} = create_timeline_event(user)

@@ -216,9 +216,33 @@ defmodule Sanbase.Metric do
   def available_aggregations(), do: @available_aggregations
 
   @doc ~s"""
-  Get all available metrics
+  Get all available metrics.
+
+  Available options:
+  - min_interval_less_or_equal - return all metrics with min interval that is
+  less or equal than a given amount (expessed as a string - 5m, 1h, etc.)
   """
-  def available_metrics(), do: @metrics
+  def available_metrics(opts \\ [])
+
+  def available_metrics(opts) do
+    case Keyword.get(opts, :min_interval_less_or_equal) do
+      nil ->
+        @metrics
+
+      interval ->
+        interval_to_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+
+        @metrics
+        |> Enum.filter(fn metric ->
+          {:ok, %{min_interval: min_interval}} = metadata(metric)
+
+          case Sanbase.DateTimeUtils.str_to_sec(min_interval) do
+            seconds when seconds <= interval_to_sec -> true
+            _ -> false
+          end
+        end)
+    end
+  end
 
   def available_timeseries_metrics(), do: @timeseries_metrics
 

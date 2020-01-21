@@ -27,6 +27,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
     {:ok, %{result | events: replace_user_trigger_with_trigger(events)}}
   end
 
+  def timeline_event(_root, %{id: timeline_event_id}, _resolution) do
+    TimelineEvent.by_id(timeline_event_id)
+    |> case do
+      nil -> {:error, "There is no event with id #{timeline_event_id}"}
+      timeline_event -> {:ok, timeline_event}
+    end
+  end
+
   def upvote_timeline_event(_root, %{timeline_event_id: timeline_event_id}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
@@ -114,9 +122,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
 
   def comments_count(%TimelineEvent{id: id}, _args, %{context: %{loader: loader}}) do
     loader
-    |> Dataloader.load(SanbaseDataloader, :comments_count, id)
+    |> Dataloader.load(SanbaseDataloader, :timeline_events_comments_count, id)
     |> on_load(fn loader ->
-      {:ok, Dataloader.get(loader, SanbaseDataloader, :comments_count, id) || 0}
+      {:ok, Dataloader.get(loader, SanbaseDataloader, :timeline_events_comments_count, id) || 0}
     end)
   end
 end

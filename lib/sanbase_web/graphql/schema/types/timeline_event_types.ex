@@ -21,6 +21,10 @@ defmodule SanbaseWeb.Graphql.TimelineEventTypes do
     field(:user_list, :user_list)
     field(:payload, :json)
     field(:votes, list_of(:upvote))
+
+    field :comments_count, :integer do
+      resolve(&TimelineEventResolver.comments_count/3)
+    end
   end
 
   object :upvote do

@@ -17,6 +17,14 @@ defmodule SanbaseWeb.Graphql.Schema.TimelineQueries do
       resolve(&TimelineEventResolver.timeline_events/3)
     end
 
+    field :timeline_event, :timeline_event do
+      meta(access: :free)
+
+      arg(:id, non_null(:integer))
+
+      resolve(&TimelineEventResolver.timeline_event/3)
+    end
+
     field :timeline_event_comments, list_of(:timeline_event_comment) do
       arg(:timeline_event_id, non_null(:id))
       arg(:cursor, :cursor_input, default_value: nil)

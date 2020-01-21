@@ -6,11 +6,11 @@ defmodule Sanbase.Insight.PostComment do
   """
   use Ecto.Schema
 
-  import Ecto.{Query, Changeset}
+  import Ecto.Changeset
 
-  alias Sanbase.Repo
-  alias Sanbase.Insight.Post
   alias Sanbase.Comment
+  alias Sanbase.Insight.Post
+  alias Sanbase.Comment.EntityComment
 
   schema "post_comments_mapping" do
     belongs_to(:comment, Comment)
@@ -30,21 +30,12 @@ defmodule Sanbase.Insight.PostComment do
   Create a new comment and link it to an insight.
   The operation is done in a transaction.
   """
-  def create_and_link(post_id, user_id, parent_id, content) do
-    Ecto.Multi.new()
-    |> Ecto.Multi.run(
-      :create_comment,
-      fn _changes -> Comment.create(user_id, content, parent_id) end
-    )
-    |> Ecto.Multi.run(:link_comment_and_post, fn
-      %{create_comment: comment} ->
-        link(comment.id, post_id)
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{create_comment: comment}} -> {:ok, comment}
-      {:error, _name, error, _} -> {:error, error}
-    end
+  def create_and_link(entity_id, user_id, parent_id, content) do
+    EntityComment.create_and_link(entity_id, user_id, parent_id, content, :post)
+  end
+
+  def link(comment_id, entity_id) do
+    EntityComment.link(comment_id, entity_id, :post)
   end
 
   def update_comment(comment_id, user_id, content) do
@@ -55,40 +46,11 @@ defmodule Sanbase.Insight.PostComment do
     Comment.delete(comment_id, user_id)
   end
 
-  def link(comment_id, post_id) do
-    %__MODULE__{}
-    |> changeset(%{comment_id: comment_id, post_id: post_id})
-    |> Repo.insert()
-  end
-
-  def get_comments(post_id, %{limit: limit} = args) do
-    cursor = Map.get(args, :cursor)
-
-    post_comments_query(post_id)
-    |> apply_cursor(cursor)
-    |> order_by([c], c.inserted_at)
-    |> limit(^limit)
-    |> Repo.all()
+  def get_comments(entity_id, args) do
+    EntityComment.get_comments(entity_id, args, :post)
   end
 
   def get_subcomments(comment_id, %{limit: limit}) do
     Comment.get_subcomments(comment_id, limit)
   end
-
-  defp post_comments_query(post_id) do
-    from(p in __MODULE__,
-      where: p.post_id == ^post_id,
-      preload: [:comment, comment: :user]
-    )
-  end
-
-  defp apply_cursor(query, %{type: :before, datetime: datetime}) do
-    from(c in query, where: c.inserted_at < ^datetime)
-  end
-
-  defp apply_cursor(query, %{type: :after, datetime: datetime}) do
-    from(c in query, where: c.inserted_at >= ^datetime)
-  end
-
-  defp apply_cursor(query, nil), do: query
 end

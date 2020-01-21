@@ -1,6 +1,7 @@
 defmodule Sanbase.Model.Kafka.KafkaLabelRecord do
   use Ecto.Schema
   import Ecto.Changeset
+  require Logger
 
   schema "kafka_label_records" do
     field(:topic, :string)
@@ -62,6 +63,8 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
 
     cond do
       not all_present? ->
+        Logger.warn("Exporing labels to kafka failed. Reason: There are missing fields")
+
         {Phoenix.Controller.put_flash(
            conn,
            :error,
@@ -75,6 +78,8 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
         timestamp when is_integer(timestamp) ->
           match?({:error, _}, DateTime.from_unix(timestamp))
       end) ->
+        Logger.warn("Exporing labels to kafka failed. Reason: Invalid datetime value")
+
         {Phoenix.Controller.put_flash(
            conn,
            :error,
@@ -82,6 +87,10 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
          ), %{params | kafka_label_record: %{}}}
 
       not Enum.all?(topics, &String.contains?(&1, "label")) ->
+        Logger.warn(
+          "Exporing labels to kafka failed. Reason: The kafka topic must contain `label` in its name                                    q"
+        )
+
         {Phoenix.Controller.put_flash(
            conn,
            :error,
@@ -89,14 +98,38 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
          ), %{params | kafka_label_record: %{}}}
 
       true ->
-        send_to_kafka(data)
-        store_in_postgres(data)
+        Logger.info("Sending address labels to kafka imported via the admin panel...")
 
-        {conn, params}
+        with {:kafka, :ok} <- {:kafka, send_to_kafka(data)},
+             {:postgres, {num, _}} when is_integer(num) <- {:postgres, store_in_postgres(data)} do
+          {conn, params}
+        else
+          {:kafka, {:error, error}} ->
+            error_msg = "Error exporting the labels to kafka. Reason: #{inspect(error)}"
+            Logger.warn(error_msg)
+
+            {Phoenix.Controller.put_flash(
+               conn,
+               :error,
+               error_msg
+             ), %{params | kafka_label_record: %{}}}
+
+          {:postgres, _} ->
+            error_msg = "The labels could not be stored in postrgres"
+            Logger.warn(error_msg)
+
+            {Phoenix.Controller.put_flash(
+               conn,
+               :error,
+               error_msg
+             ), %{params | kafka_label_record: %{}}}
+        end
     end
   end
 
   defp send_to_kafka(data) do
+    Logger.info("Exporting labels to kafka via the admin panel...")
+
     groups = Enum.group_by(data, fn [topic | _] -> topic end)
 
     Enum.each(groups, fn {topic, data} ->
@@ -135,6 +168,8 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
   defp to_dt_struct(%DateTime{} = dt), do: dt
 
   defp store_in_postgres(data) do
+    Logger.info("Exporting labels to postgres via the admin panel...")
+
     insert_data =
       Enum.map(data, fn [topic, sign, address, blockchain, label, metadata, datetime] ->
         %{

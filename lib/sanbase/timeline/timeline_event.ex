@@ -87,7 +87,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   def events(%{limit: limit, cursor: %{type: cursor_type, datetime: cursor_datetime}}) do
     TimelineEvent
-    |> events_by_sanclan_query()
+    |> events_by_sanfamily()
     |> events_order_limit_preload_query(min(limit, @max_events_returned))
     |> by_cursor(cursor_type, cursor_datetime)
     |> Repo.all()
@@ -96,7 +96,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   def events(%{limit: limit}) do
     TimelineEvent
-    |> events_by_sanclan_query()
+    |> events_by_sanfamily()
     |> events_order_limit_preload_query(min(limit, @max_events_returned))
     |> Repo.all()
     |> events_with_cursor()
@@ -117,9 +117,9 @@ defmodule Sanbase.Timeline.TimelineEvent do
         %{limit: limit, cursor: %{type: cursor_type, datetime: cursor_datetime}}
       ) do
     TimelineEvent
-    |> events_by_followed_users_query(user_id)
-    |> events_by_sanclan_query()
+    |> events_by_sanfamily_or_followed_users_query(user_id)
     |> user_fired_signals_query(user_id)
+    |> events_with_public_entities_query()
     |> events_order_limit_preload_query(min(limit, @max_events_returned))
     |> by_cursor(cursor_type, cursor_datetime)
     |> Repo.all()
@@ -128,9 +128,9 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   def events(%User{id: user_id}, %{limit: limit}) do
     TimelineEvent
-    |> events_by_followed_users_query(user_id)
-    |> events_by_sanclan_query()
+    |> events_by_sanfamily_or_followed_users_query(user_id)
     |> user_fired_signals_query(user_id)
+    |> events_with_public_entities_query()
     |> events_order_limit_preload_query(min(limit, @max_events_returned))
     |> Repo.all()
     |> events_with_cursor()
@@ -234,6 +234,20 @@ defmodule Sanbase.Timeline.TimelineEvent do
     %__MODULE__{} |> create_changeset(Map.put(params, type, id)) |> Repo.insert()
   end
 
+  defp events_with_public_entities_query(query) do
+    from(
+      event in query,
+      left_join: ut in UserTrigger,
+      on: event.user_trigger_id == ut.id,
+      left_join: ul in UserList,
+      on: event.user_list_id == ul.id,
+      where:
+        not is_nil(event.post_id) or
+          ul.is_public == true or
+          fragment("trigger->>'is_public' = 'true'")
+    )
+  end
+
   defp events_order_limit_preload_query(query, limit) do
     from(
       event in query,
@@ -243,28 +257,25 @@ defmodule Sanbase.Timeline.TimelineEvent do
     )
   end
 
-  defp events_by_followed_users_query(query, user_id) do
-    followed_users_ids = Sanbase.Auth.UserFollower.followed_by(user_id) |> Enum.map(& &1.id)
+  defp events_by_sanfamily(query) do
+    sanfamily_ids = Sanbase.Auth.Role.san_family_ids()
 
     from(
       event in query,
-      where: event.user_id in ^followed_users_ids
+      where: event.user_id in ^sanfamily_ids
     )
   end
 
-  defp events_by_sanclan_query(query) do
-    san_family_ids = Sanbase.Auth.Role.san_family_ids()
+  defp events_by_sanfamily_or_followed_users_query(query, user_id) do
+    sanclan_or_followed_users_ids =
+      Sanbase.Auth.UserFollower.followed_by(user_id)
+      |> Enum.map(& &1.id)
+      |> Enum.concat(Sanbase.Auth.Role.san_family_ids())
+      |> Enum.dedup()
 
     from(
       event in query,
-      left_join: ut in UserTrigger,
-      on: event.user_trigger_id == ut.id,
-      left_join: ul in UserList,
-      on: event.user_list_id == ul.id,
-      or_where:
-        event.user_id in ^san_family_ids and
-          (not is_nil(event.post_id) or ul.is_public == true or
-             fragment("trigger->>'is_public' = 'true'"))
+      where: event.user_id in ^sanclan_or_followed_users_ids
     )
   end
 

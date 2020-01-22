@@ -31,6 +31,7 @@ defmodule Sanbase.Math do
   """
   def percent_change(0, _current_daa), do: 0.0
   def percent_change(nil, _current_daa), do: 0.0
+  def percent_change(_previous, nil), do: 0.0
 
   def percent_change(previous, _current_daa)
       when is_number(previous) and previous <= @epsilon,

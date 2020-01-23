@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.Schema.AnomalyQueries do
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
 
   alias SanbaseWeb.Graphql.Resolvers.AnomalyResolver
+  alias SanbaseWeb.Graphql.Middlewares.TransformResolution
 
   object :anomaly_queries do
     @desc ~s"""
@@ -13,6 +14,7 @@ defmodule SanbaseWeb.Graphql.Schema.AnomalyQueries do
       meta(access: :free)
       arg(:anomaly, non_null(:string))
 
+      middleware(TransformResolution)
       resolve(&AnomalyResolver.get_anomaly/3)
     end
 

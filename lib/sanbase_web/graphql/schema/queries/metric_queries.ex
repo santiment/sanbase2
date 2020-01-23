@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
 
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
+  alias SanbaseWeb.Graphql.Middlewares.TransformResolution
 
   object :metric_queries do
     @desc ~s"""
@@ -13,6 +14,7 @@ defmodule SanbaseWeb.Graphql.Schema.MetricQueries do
       meta(access: :free)
       arg(:metric, non_null(:string))
 
+      middleware(TransformResolution)
       resolve(&MetricResolver.get_metric/3)
     end
 

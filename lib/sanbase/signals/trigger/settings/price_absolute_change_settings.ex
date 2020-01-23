@@ -76,6 +76,9 @@ defmodule Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings do
     Parameters like `channel` are discarded. The `type` is included
     so different triggers with the same parameter names can be distinguished
     """
+
+    alias Sanbase.Signal.OperationText
+
     def cache_key(%PriceAbsoluteChangeSettings{} = settings) do
       construct_cache_key([
         settings.type,
@@ -101,7 +104,7 @@ defmodule Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings do
       payload =
         Enum.reduce(list, %{}, fn {slug, {:ok, price}}, acc ->
           if operation_triggered?(price, operation) do
-            Map.put(acc, slug, payload(slug, price, operation_text(operation)))
+            Map.put(acc, slug, payload(slug, price, operation))
           else
             acc
           end
@@ -114,29 +117,29 @@ defmodule Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings do
       }
     end
 
-    defp payload(slug, last_price_usd, message) do
+    defp payload(slug, last_price_usd, operation) do
       project = Project.by_slug(slug)
 
+      {operation_tempalte, template_kv} =
+        OperationText.KV.to_template_kv(last_price_usd, operation)
+
+      kv =
+        %{
+          project_name: project.name,
+          project_link: Project.sanbase_link(project),
+          project_chart: chart_url(project, :volume)
+        }
+        |> Map.merge(template_kv)
+
+      template = """
+      **{{project_name}}**'s price #{operation_tempalte}
+
+      More information for the project you can find here: {{project_link}}
+
+      ![Price chart over the past 90 days]({{project_chart}})
       """
-      **#{project.name}**'s price has reached #{message} and is now $#{
-        round_price(last_price_usd)
-      }
-      More information for the project you can find here: #{Project.sanbase_link(project)}
-      ![Price chart over the past 90 days](#{chart_url(project, :volume)})
-      """
-    end
 
-    defp operation_text(%{above: above}), do: "above $#{above}"
-    defp operation_text(%{below: below}), do: "below $#{below}"
-
-    defp operation_text(%{inside_channel: inside_channel}) do
-      [lower, upper] = inside_channel
-      "between $#{lower} and $#{upper}"
-    end
-
-    defp operation_text(%{outside_channel: outside_channel}) do
-      [lower, upper] = outside_channel
-      "below $#{lower} or above >= $#{upper}"
+      Sanbase.TemplateEngine.run(template, kv)
     end
   end
 end

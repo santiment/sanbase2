@@ -9,7 +9,7 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
   import Sanbase.{Validation, Signal.Validation}
   import Sanbase.Signal.{Utils, OperationEvaluation}
   import Sanbase.Math, only: [percent_change: 2]
-  import Sanbase.DateTimeUtils, only: [str_to_sec: 1, interval_to_str: 1, round_datetime: 2]
+  import Sanbase.DateTimeUtils, only: [str_to_sec: 1, round_datetime: 2]
 
   alias __MODULE__
   alias Sanbase.Signal.Type
@@ -79,6 +79,8 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
   end
 
   defimpl Sanbase.Signal.Settings, for: PricePercentChangeSettings do
+    alias Sanbase.Signal.OperationText
+
     def triggered?(%PricePercentChangeSettings{triggered?: triggered}), do: triggered
 
     def evaluate(%PricePercentChangeSettings{} = settings, _trigger) do
@@ -132,15 +134,27 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
     defp payload(slug, settings, {percent_change, first_price, last_price}) do
       project = Sanbase.Model.Project.by_slug(slug)
 
-      operation_text = if percent_change > 0, do: "moved up", else: "moved down"
+      {operation_template, operation_kv} =
+        OperationText.KV.to_template_kv(percent_change, settings.operation)
 
-      """
-      **#{project.name}**'s price has #{operation_text} by **#{percent_change}%** from $#{
-        round_price(first_price)
-      } to $#{round_price(last_price)} for the last #{interval_to_str(settings.time_window)}.
+      kv =
+        %{
+          project_name: project.name,
+          project_link: Sanbase.Model.Project.sanbase_link(project),
+          chart_url: chart_url(project, :volume),
+          previous_value: first_price,
+          value: last_price
+        }
+        |> Map.merge(operation_kv)
+
+      template = """
+      **{{project_name}}**'s price #{operation_template} from {{previous_value}} and is now {{value}}.
+
       More info here: #{Sanbase.Model.Project.sanbase_link(project)}
       ![Price chart over the past 90 days](#{chart_url(project, :volume)})
       """
+
+      Sanbase.TemplateEngine.run(template, kv)
     end
   end
 end

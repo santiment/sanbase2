@@ -46,16 +46,17 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   defp transform_resolution(%Resolution{} = resolution) do
     %{context: context, definition: definition} = resolution
 
-    query_name =
+    query_atom_name =
       definition.name
       |> Macro.underscore()
       |> String.to_existing_atom()
       |> get_query(resolution.source)
 
-    %Resolution{
-      resolution
-      | context: Map.put(context, :__query_atom_name__, query_name)
-    }
+    context =
+      context
+      |> Map.put(:__query_atom_name__, query_atom_name)
+
+    %Resolution{resolution | context: context}
   end
 
   # If the query is resolved there's nothing to do here

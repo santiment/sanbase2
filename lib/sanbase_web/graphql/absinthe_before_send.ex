@@ -28,7 +28,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
   @compile :inline_list_funcs
   @compile inline: [
-             cache_result: 3,
+             construct_query_name: 1,
+             cache_result: 2,
              queries_in_request: 1,
              extract_caller_data: 1,
              export_api_call_data: 3,
@@ -38,14 +39,14 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
            ]
 
   @cached_queries [
-    "all_projects",
-    "all_erc20_projects",
-    "all_currency_projects",
-    "project_by_slug",
+    "allProjects",
+    "allErc20Projects",
+    "allCurrencyProjects",
+    "projectBySlug",
     "project",
-    "projects_list_history_stats",
-    "projects_list_stats",
-    "all_projects_by_function"
+    "projectsListHistoryStats",
+    "projectsListStats",
+    "allProjectsByFunction"
   ]
 
   def before_send(conn, %Absinthe.Blueprint{} = blueprint) do
@@ -57,29 +58,19 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
     queries = queries_in_request(blueprint)
     export_api_call_data(queries, conn, blueprint)
+    do_not_cache? = is_nil(Process.get(:do_not_cache_query))
 
-    case has_graphql_errors?(blueprint) do
-      true ->
-        :ok
-
-      false ->
-        should_cache? = !Process.get(:do_not_cache_query)
-        cache_result(should_cache?, queries, blueprint)
+    case do_not_cache? or has_graphql_errors?(blueprint) do
+      true -> :ok
+      false -> cache_result(queries, blueprint)
     end
 
     conn
     |> maybe_create_or_drop_session(blueprint.execution.context)
   end
 
-  # Do not cache in case of:
-  # -`:nocache` returend from a resolver
-  # - result is taken from the cache and should not be stored again. Storing
-  # it again `touch`es it and the TTL timer is restarted. This can lead
-  # to infinite storing the same value if there are enough requests
-  defp cache_result(true, queries, blueprint) do
-    all_queries_cachable? =
-      queries
-      |> Enum.all?(&Enum.member?(@cached_queries, Macro.underscore(&1)))
+  defp cache_result(queries, blueprint) do
+    all_queries_cachable? = queries |> Enum.all?(&Enum.member?(@cached_queries, &1))
 
     if all_queries_cachable? do
       Cache.store(
@@ -88,8 +79,6 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       )
     end
   end
-
-  defp cache_result(_, _, _), do: :ok
 
   defp maybe_create_or_drop_session(conn, %{create_session: true, auth_token: auth_token}) do
     Plug.Conn.put_session(conn, :auth_token, auth_token)
@@ -105,7 +94,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     operations
     |> Enum.flat_map(fn %{selections: selections} ->
       selections
-      |> Enum.map(fn %{name: name} -> name end)
+      |> Enum.map(fn %{name: name} -> Inflex.camelize(name, :lower) end)
     end)
   end
 
@@ -120,6 +109,12 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     {user_id, san_tokens, auth_method, api_token} =
       extract_caller_data(blueprint.execution.context)
 
+    # Replace all occurences of getMetric and getAnomaly with names where
+    # the metric or anomaly argument is also included
+    queries =
+      Map.get(blueprint.execution.context, :__get_query_name_arg__, []) ++
+        Enum.reject(queries, &(&1 == "getMetric" or &1 == "getAnomaly"))
+
     id =
       Logger.metadata() |> Keyword.get(:request_id) ||
         "gen_" <> (:crypto.strong_rand_bytes(16) |> Base.encode64())
@@ -128,7 +123,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       %{
         timestamp: div(now, 1_000_000_000),
         id: id,
-        query: query,
+        query: query |> construct_query_name(),
         status_code: 200,
         has_graphql_errors: has_graphql_errors?(blueprint),
         user_id: user_id,
@@ -143,6 +138,10 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     |> Sanbase.Kafka.ApiCall.json_kv_tuple()
     |> Sanbase.KafkaExporter.persist(:api_call_exporter)
   end
+
+  defp construct_query_name({:get_metric, metric}), do: "getMetric|#{metric}"
+  defp construct_query_name({:get_anomaly, anomaly}), do: "getAnomaly|#{anomaly}"
+  defp construct_query_name(query), do: query
 
   defp remote_ip(blueprint) do
     blueprint.execution.context.remote_ip |> :inet_parse.ntoa() |> to_string()

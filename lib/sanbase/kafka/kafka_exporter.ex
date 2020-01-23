@@ -109,8 +109,8 @@ defmodule Sanbase.KafkaExporter do
   end
 
   def handle_call(:flush, _from, state) do
-    send_data(state.data, state)
-    {:reply, %{state | data: [], size: 0}}
+    send_data_immediately(state.data, state)
+    {:reply, :ok, %{state | data: [], size: 0}}
   end
 
   @spec handle_cast({:persist, data | [data]}, state) :: {:noreply, state}

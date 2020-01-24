@@ -25,20 +25,4 @@ defmodule Sanbase.Insight.PostComment do
     |> validate_required([:post_id, :comment_id])
     |> unique_constraint(:comment_id)
   end
-
-  @doc ~s"""
-  Create a new comment and link it to an insight.
-  The operation is done in a transaction.
-  """
-  def create_and_link(entity_id, user_id, parent_id, content) do
-    EntityComment.create_and_link(entity_id, user_id, parent_id, content, :insight)
-  end
-
-  def link(comment_id, entity_id) do
-    EntityComment.link(comment_id, entity_id, :insight)
-  end
-
-  def get_comments(entity_id, args) do
-    EntityComment.get_comments(entity_id, args, :insight)
-  end
 end

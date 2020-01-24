@@ -67,7 +67,7 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
     |> Enum.map(fn {slug, volume} ->
       previous_volume = Map.get(previous_map, slug, 0)
 
-      if is_integer(previous_volume) and previous_volume > 1 and is_integer(volume) and volume > 1 do
+      if is_number(previous_volume) and previous_volume > 1 and is_number(volume) and volume > 1 do
         {slug, Sanbase.Math.percent_change(previous_volume, volume)}
       else
         {slug, nil}

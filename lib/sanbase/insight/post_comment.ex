@@ -31,26 +31,14 @@ defmodule Sanbase.Insight.PostComment do
   The operation is done in a transaction.
   """
   def create_and_link(entity_id, user_id, parent_id, content) do
-    EntityComment.create_and_link(entity_id, user_id, parent_id, content, :post)
+    EntityComment.create_and_link(entity_id, user_id, parent_id, content, :insight)
   end
 
   def link(comment_id, entity_id) do
-    EntityComment.link(comment_id, entity_id, :post)
-  end
-
-  def update_comment(comment_id, user_id, content) do
-    Comment.update(comment_id, user_id, content)
-  end
-
-  def delete_comment(comment_id, user_id) do
-    Comment.delete(comment_id, user_id)
+    EntityComment.link(comment_id, entity_id, :insight)
   end
 
   def get_comments(entity_id, args) do
-    EntityComment.get_comments(entity_id, args, :post)
-  end
-
-  def get_subcomments(comment_id, %{limit: limit}) do
-    Comment.get_subcomments(comment_id, limit)
+    EntityComment.get_comments(entity_id, args, :insight)
   end
 end

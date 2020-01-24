@@ -116,7 +116,7 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
     mutation = """
     mutation {
       createComment(
-        insightId: #{post_id}
+        id: #{post_id}
         parentId: #{parent_id || "null"}
         content: "#{content}") {
           id
@@ -183,8 +183,8 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
   defp insight_comments(conn, post_id) do
     query = """
     {
-      insightComments(
-        insightId: #{post_id},
+      comments(
+        id: #{post_id},
         cursor: {type: BEFORE, datetime: "#{Timex.now()}"}) {
           id
           content
@@ -200,7 +200,7 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
     conn
     |> post("/graphql", query_skeleton(query))
     |> json_response(200)
-    |> get_in(["data", "insightComments"])
+    |> get_in(["data", "comments"])
   end
 
   defp comments_count(conn, post_id) do

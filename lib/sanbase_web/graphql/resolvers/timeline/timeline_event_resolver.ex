@@ -6,7 +6,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
   import SanbaseWeb.Graphql.Helpers.Utils,
     only: [replace_user_trigger_with_trigger: 1]
 
-  alias Sanbase.Timeline.{TimelineEvent, TimelineEventComment}
+  alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Vote
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
@@ -58,58 +58,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
       _error ->
         {:error, "Can't remove vote for event with id #{timeline_event_id}"}
     end
-  end
-
-  def create_comment(
-        _root,
-        %{timeline_event_id: timeline_event_id, content: content} = args,
-        %{context: %{auth: %{current_user: user}}}
-      ) do
-    TimelineEventComment.create_and_link(
-      timeline_event_id,
-      user.id,
-      Map.get(args, :parent_id),
-      content
-    )
-  end
-
-  @spec update_comment(any, %{comment_id: any, content: any}, %{
-          context: %{auth: %{current_user: atom | map}}
-        }) :: any
-  def update_comment(
-        _root,
-        %{comment_id: comment_id, content: content},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
-    TimelineEventComment.update_comment(comment_id, user.id, content)
-  end
-
-  def delete_comment(
-        _root,
-        %{comment_id: comment_id},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
-    TimelineEventComment.delete_comment(comment_id, user.id)
-  end
-
-  def insight_comments(
-        _root,
-        %{timeline_event_id: timeline_event_id} = args,
-        _resolution
-      ) do
-    comments =
-      TimelineEventComment.get_comments(timeline_event_id, args)
-      |> Enum.map(& &1.comment)
-
-    {:ok, comments}
-  end
-
-  def subcomments(
-        _root,
-        %{comment_id: comment_id} = args,
-        _resolution
-      ) do
-    {:ok, TimelineEventComment.get_subcomments(comment_id, args)}
   end
 
   def timeline_event_id(%{id: id}, _args, %{context: %{loader: loader}}) do

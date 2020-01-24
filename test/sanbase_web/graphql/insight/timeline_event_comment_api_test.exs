@@ -135,8 +135,9 @@ defmodule SanbaseWeb.Graphql.TimelineEventCommentApiTest do
   defp create_comment(conn, timeline_event_id, parent_id, content) do
     mutation = """
     mutation {
-      createTimelineEventComment(
-        timelineEventId: #{timeline_event_id}
+      createComment(
+        entityType: TIMELINE_EVENT
+        id: #{timeline_event_id}
         parentId: #{parent_id || "null"}
         content: "#{content}") {
           id
@@ -153,13 +154,13 @@ defmodule SanbaseWeb.Graphql.TimelineEventCommentApiTest do
     conn
     |> post("/graphql", mutation_skeleton(mutation))
     |> json_response(200)
-    |> get_in(["data", "createTimelineEventComment"])
+    |> get_in(["data", "createComment"])
   end
 
   defp update_comment(conn, comment_id, content) do
     mutation = """
     mutation {
-      updateTimelineEventComment(
+      updateComment(
         commentId: #{comment_id}
         content: "#{content}") {
           id
@@ -176,13 +177,13 @@ defmodule SanbaseWeb.Graphql.TimelineEventCommentApiTest do
     conn
     |> post("/graphql", mutation_skeleton(mutation))
     |> json_response(200)
-    |> get_in(["data", "updateTimelineEventComment"])
+    |> get_in(["data", "updateComment"])
   end
 
   defp delete_comment(conn, comment_id) do
     mutation = """
     mutation {
-      deleteTimelineEventComment(commentId: #{comment_id}) {
+      deleteComment(commentId: #{comment_id}) {
         id
         content
         timelineEventId
@@ -197,14 +198,15 @@ defmodule SanbaseWeb.Graphql.TimelineEventCommentApiTest do
     conn
     |> post("/graphql", mutation_skeleton(mutation))
     |> json_response(200)
-    |> get_in(["data", "deleteTimelineEventComment"])
+    |> get_in(["data", "deleteComment"])
   end
 
   defp timeline_event_comments(conn, timeline_event_id) do
     query = """
     {
-      timelineEventComments(
-        timelineEventId: #{timeline_event_id},
+      comments(
+        entityType: TIMELINE_EVENT,
+        id: #{timeline_event_id},
         cursor: {type: BEFORE, datetime: "#{Timex.now()}"}) {
           id
           content
@@ -220,7 +222,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventCommentApiTest do
     conn
     |> post("/graphql", query_skeleton(query))
     |> json_response(200)
-    |> get_in(["data", "timelineEventComments"])
+    |> get_in(["data", "comments"])
   end
 
   defp comments_count(conn, timeline_event_id) do

@@ -38,19 +38,7 @@ defmodule Sanbase.Timeline.TimelineEventComment do
     EntityComment.link(comment_id, entity_id, :timeline_event)
   end
 
-  def update_comment(comment_id, user_id, content) do
-    Comment.update(comment_id, user_id, content)
-  end
-
-  def delete_comment(comment_id, user_id) do
-    Comment.delete(comment_id, user_id)
-  end
-
   def get_comments(entity_id, args) do
     EntityComment.get_comments(entity_id, args, :timeline_event)
-  end
-
-  def get_subcomments(comment_id, %{limit: limit}) do
-    Comment.get_subcomments(comment_id, limit)
   end
 end

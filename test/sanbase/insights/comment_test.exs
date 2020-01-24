@@ -36,8 +36,7 @@ defmodule Sanbase.Insight.CommentTest do
 
     naive_dt_before_update = NaiveDateTime.utc_now()
 
-    {:ok, updated_comment} =
-      PostComment.update_comment(comment.id, comment.user_id, updated_content)
+    {:ok, updated_comment} = Comment.update(comment.id, comment.user_id, updated_content)
 
     naive_dt_after_update = NaiveDateTime.utc_now()
 
@@ -56,7 +55,7 @@ defmodule Sanbase.Insight.CommentTest do
 
     {:ok, comment} = PostComment.create_and_link(post.id, post.user_id, nil, "some comment")
 
-    {:ok, deleted} = PostComment.delete_comment(comment.id, comment.user_id)
+    {:ok, deleted} = Comment.delete(comment.id, comment.user_id)
 
     # The `delete` actually anonymizes instead of deleting. This is done so the
     # tree structure and links can be kept

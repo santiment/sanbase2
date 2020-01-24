@@ -159,33 +159,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     end
   end
 
-  def create_comment(
-        _root,
-        %{insight_id: post_id, content: content} = args,
-        %{context: %{auth: %{current_user: user}}}
-      ) do
-    PostComment.create_and_link(post_id, user.id, Map.get(args, :parent_id), content)
-  end
-
-  @spec update_comment(any, %{comment_id: any, content: any}, %{
-          context: %{auth: %{current_user: atom | map}}
-        }) :: any
-  def update_comment(
-        _root,
-        %{comment_id: comment_id, content: content},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
-    PostComment.update_comment(comment_id, user.id, content)
-  end
-
-  def delete_comment(
-        _root,
-        %{comment_id: comment_id},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
-    PostComment.delete_comment(comment_id, user.id)
-  end
-
   def insight_comments(
         _root,
         %{insight_id: post_id} = args,
@@ -196,14 +169,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
       |> Enum.map(& &1.comment)
 
     {:ok, comments}
-  end
-
-  def subcomments(
-        _root,
-        %{comment_id: comment_id} = args,
-        _resolution
-      ) do
-    {:ok, PostComment.get_subcomments(comment_id, args)}
   end
 
   def insight_id(%{id: id}, _args, %{context: %{loader: loader}}) do

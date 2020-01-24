@@ -6,7 +6,7 @@ defmodule Sanbase.Comment.EntityComment do
   alias Sanbase.Timeline.TimelineEventComment
   alias Sanbase.Insight.PostComment
 
-  @entities [:post, :timeline_event]
+  @entities [:insight, :timeline_event]
 
   def create_and_link(entity_id, user_id, parent_id, content, entity) when entity in @entities do
     Ecto.Multi.new()
@@ -34,7 +34,7 @@ defmodule Sanbase.Comment.EntityComment do
     |> Repo.insert()
   end
 
-  def link(comment_id, entity_id, :post) do
+  def link(comment_id, entity_id, :insight) do
     %PostComment{}
     |> PostComment.changeset(%{comment_id: comment_id, post_id: entity_id})
     |> Repo.insert()
@@ -57,7 +57,7 @@ defmodule Sanbase.Comment.EntityComment do
     )
   end
 
-  defp entity_comments_query(entity_id, :post) do
+  defp entity_comments_query(entity_id, :insight) do
     from(p in Sanbase.Insight.PostComment,
       where: p.post_id == ^entity_id,
       preload: [:comment, comment: :user]

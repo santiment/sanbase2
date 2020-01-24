@@ -2,7 +2,8 @@ defmodule Sanbase.Price do
   use Ecto.Schema
 
   import Sanbase.Price.SqlQuery
-
+  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
+  import Sanbase.Metric.Helper, only: [maybe_nullify_values: 1, remove_missing_values: 1]
   alias Sanbase.Model.Project
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
@@ -484,6 +485,15 @@ defmodule Sanbase.Price do
     |> maybe_unwrap_ok_value()
   end
 
+  def last_datetime_computed_at(slug) do
+    {query, args} = last_datetime_computed_at_query(slug)
+
+    ClickhouseRepo.query_transform(query, args, fn [datetime] ->
+      DateTime.from_unix!(datetime)
+    end)
+    |> maybe_unwrap_ok_value()
+  end
+
   # Private functions
 
   defp combine_marketcap_and_volume_results(results) do
@@ -521,43 +531,6 @@ defmodule Sanbase.Price do
 
     {:ok, result}
   end
-
-  # Take a list of maps and rewrite them if necessary.
-  # All values of keys different than :slug and :datetime are set to nil
-  # if :has_changed equals zero
-  defp maybe_nullify_values({:ok, data}) do
-    result =
-      Enum.map(
-        data,
-        fn
-          %{has_changed: 0} = elem ->
-            # use :maps.map/2 instead of Enum.map/2 to avoid unnecessary Map.new/1
-            :maps.map(
-              fn
-                key, value when key in [:slug, :datetime] -> value
-                _, _ -> nil
-              end,
-              Map.delete(elem, :has_changed)
-            )
-
-          elem ->
-            Map.delete(elem, :has_changed)
-        end
-      )
-
-    {:ok, result}
-  end
-
-  defp maybe_nullify_values({:error, error}), do: {:error, error}
-
-  defp remove_missing_values({:ok, data}) do
-    {:ok, Enum.reject(data, &(&1.has_changed == 0))}
-  end
-
-  defp remove_missing_values({:error, error}), do: {:error, error}
-
-  defp maybe_unwrap_ok_value({:ok, [value]}), do: {:ok, value}
-  defp maybe_unwrap_ok_value(data), do: data
 
   defp maybe_add_percent_of_total_marketcap({:ok, data}) do
     total_marketcap_usd =

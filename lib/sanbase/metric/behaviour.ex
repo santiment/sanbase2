@@ -61,6 +61,9 @@ defmodule Sanbase.Metric.Behaviour do
   @callback first_datetime(metric, slug) ::
               {:ok, DateTime.t()} | {:error, String.t()}
 
+  @callback last_datetime_computed_at(metric, slug) ::
+              {:ok, DateTime.t()} | {:error, String.t()}
+
   @callback human_readable_name(metric) :: {:ok, String.t()} | {:error, String.t()}
 
   @callback metadata(metric) :: {:ok, metadata()} | {:error, String.t()}

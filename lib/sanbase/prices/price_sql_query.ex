@@ -327,6 +327,17 @@ defmodule Sanbase.Price.SqlQuery do
     {query, args}
   end
 
+  def last_datetime_computed_at_query(slug) do
+    query = """
+    SELECT toUnixTimestamp(max(dt))
+    FROM #{@table}
+    PREWHERE slug = cast(?1, 'LowCardinality(String)')
+    """
+
+    args = [slug]
+    {query, args}
+  end
+
   def first_datetime_query(slug, source) do
     query = """
     SELECT

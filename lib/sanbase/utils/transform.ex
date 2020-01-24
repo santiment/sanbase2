@@ -76,6 +76,6 @@ defmodule Sanbase.Utils.Transform do
     |> Enum.into(%{})
   end
 
-  def unpack_value({:ok, [value]}), do: {:ok, value}
-  def unpack_value({:error, error}), do: {:error, error}
+  def maybe_unwrap_ok_value({:ok, [value]}), do: {:ok, value}
+  def maybe_unwrap_ok_value({:error, error}), do: {:error, error}
 end

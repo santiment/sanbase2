@@ -11,6 +11,7 @@ defmodule Sanbase.Clickhouse.Metric do
 
   import Sanbase.Clickhouse.MetadataHelper
   import Sanbase.Clickhouse.Metric.SqlQuery
+  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
 
   alias Sanbase.Clickhouse.Metric.LabelTemplate
   alias __MODULE__.FileHandler
@@ -165,10 +166,17 @@ defmodule Sanbase.Clickhouse.Metric do
     ClickhouseRepo.query_transform(query, args, fn [datetime] ->
       DateTime.from_unix!(datetime)
     end)
-    |> case do
-      {:ok, [result]} -> {:ok, result}
-      {:error, error} -> {:error, error}
-    end
+    |> maybe_unwrap_ok_value()
+  end
+
+  @impl Sanbase.Metric.Behaviour
+  def last_datetime_computed_at(metric, slug) do
+    {query, args} = last_datetime_computed_at_query(metric, slug)
+
+    ClickhouseRepo.query_transform(query, args, fn [datetime] ->
+      DateTime.from_unix!(datetime)
+    end)
+    |> maybe_unwrap_ok_value()
   end
 
   # Private functions

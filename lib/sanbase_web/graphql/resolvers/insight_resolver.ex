@@ -6,7 +6,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Auth.User
   alias Sanbase.Vote
-  alias Sanbase.Insight.{Post, PostComment}
+  alias Sanbase.Insight.Post
+  alias Sanbase.Comment.EntityComment
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.Helpers.Utils
 
@@ -159,13 +160,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     end
   end
 
+  # Note: deprecated - should be removed if not used by frontend
   def insight_comments(
         _root,
         %{insight_id: post_id} = args,
         _resolution
       ) do
     comments =
-      PostComment.get_comments(post_id, args)
+      EntityComment.get_comments(post_id, args, :insight)
       |> Enum.map(& &1.comment)
 
     {:ok, comments}

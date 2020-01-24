@@ -1,17 +1,16 @@
 defmodule SanbaseWeb.Graphql.Resolvers.CommentResolver do
-  alias Sanbase.Insight.PostComment
   alias Sanbase.Comment
   alias Sanbase.Comment.EntityComment
 
   @entities [:insight, :timeline_event]
 
-  # deprecated - should be removed if not used
+  # # Note: deprecated - should be removed if not used by frontend
   def create_comment(
         _root,
         %{insight_id: post_id, content: content} = args,
         %{context: %{auth: %{current_user: user}}}
       ) do
-    PostComment.create_and_link(post_id, user.id, Map.get(args, :parent_id), content)
+    EntityComment.create_and_link(post_id, user.id, Map.get(args, :parent_id), content, :insight)
   end
 
   def create_comment(

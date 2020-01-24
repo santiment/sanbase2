@@ -10,7 +10,6 @@ defmodule Sanbase.Timeline.TimelineEventComment do
 
   alias Sanbase.Comment
   alias Sanbase.Timeline.TimelineEvent
-  alias Sanbase.Comment.EntityComment
 
   schema "timeline_event_comments_mapping" do
     belongs_to(:comment, Comment)

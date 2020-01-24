@@ -92,6 +92,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
     end
 
     field :insight_comments, list_of(:comment) do
+      deprecate("deprecated in favor of `comments` with `entityType` argument as INSIGHT")
+
       arg(:insight_id, non_null(:id))
       arg(:cursor, :cursor_input, default_value: nil)
       arg(:limit, :integer, default_value: 50)

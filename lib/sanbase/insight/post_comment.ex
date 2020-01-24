@@ -10,7 +10,6 @@ defmodule Sanbase.Insight.PostComment do
 
   alias Sanbase.Comment
   alias Sanbase.Insight.Post
-  alias Sanbase.Comment.EntityComment
 
   schema "post_comments_mapping" do
     belongs_to(:comment, Comment)

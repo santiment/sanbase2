@@ -1,4 +1,10 @@
 defmodule Sanbase.Comment.EntityComment do
+  @entities [:insight, :timeline_event]
+
+  @moduledoc """
+  Module for dealing with comments for certain entities.
+  Current list of supported entities: #{inspect(@entities)}
+  """
   import Ecto.Query
 
   alias Sanbase.Repo
@@ -6,8 +12,16 @@ defmodule Sanbase.Comment.EntityComment do
   alias Sanbase.Timeline.TimelineEventComment
   alias Sanbase.Insight.PostComment
 
-  @entities [:insight, :timeline_event]
+  @type entity :: :insight | :timeline_event
 
+  @spec create_and_link(
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer() | nil,
+          String.t(),
+          entity
+        ) ::
+          {:ok, %Comment{}} | {:error, any()}
   def create_and_link(entity_id, user_id, parent_id, content, entity) when entity in @entities do
     Ecto.Multi.new()
     |> Ecto.Multi.run(
@@ -25,6 +39,16 @@ defmodule Sanbase.Comment.EntityComment do
     end
   end
 
+  @spec link(non_neg_integer(), non_neg_integer(), :insight) ::
+          {:ok, %PostComment{}} | {:error, Ecto.Changeset.t()}
+  def link(comment_id, entity_id, :insight) do
+    %PostComment{}
+    |> PostComment.changeset(%{comment_id: comment_id, post_id: entity_id})
+    |> Repo.insert()
+  end
+
+  @spec link(non_neg_integer(), non_neg_integer(), :timeline_event) ::
+          {:ok, %TimelineEventComment{}} | {:error, Ecto.Changeset.t()}
   def link(comment_id, entity_id, :timeline_event) do
     %TimelineEventComment{}
     |> TimelineEventComment.changeset(%{
@@ -34,12 +58,7 @@ defmodule Sanbase.Comment.EntityComment do
     |> Repo.insert()
   end
 
-  def link(comment_id, entity_id, :insight) do
-    %PostComment{}
-    |> PostComment.changeset(%{comment_id: comment_id, post_id: entity_id})
-    |> Repo.insert()
-  end
-
+  @spec get_comments(non_neg_integer(), map(), entity) :: [%Comment{}]
   def get_comments(entity_id, %{limit: limit} = args, entity) when entity in @entities do
     cursor = Map.get(args, :cursor)
 
@@ -49,6 +68,8 @@ defmodule Sanbase.Comment.EntityComment do
     |> limit(^limit)
     |> Repo.all()
   end
+
+  # private functions
 
   defp entity_comments_query(entity_id, :timeline_event) do
     from(p in Sanbase.Timeline.TimelineEventComment,

@@ -13,7 +13,7 @@ defmodule Sanbase.Comment do
   - timestamp fields
 
 
-  The PostComment and TimelineEventComment modules are used to interact with comments and are
+  The EntityComment module is used to interact with comments and is
   invisible to the outside world
   """
   use Ecto.Schema

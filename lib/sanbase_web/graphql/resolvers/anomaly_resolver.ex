@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.AnomalyResolver do
   import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 8]
-  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3, handle_graphql_error: 4]
+  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
 
   alias Sanbase.Anomaly
 

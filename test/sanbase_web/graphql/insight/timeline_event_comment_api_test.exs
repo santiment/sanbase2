@@ -1,45 +1,65 @@
-defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
+defmodule SanbaseWeb.Graphql.TimelineEventCommentApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
   import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
 
+  alias Sanbase.Auth.UserFollower
+  alias Sanbase.Timeline.TimelineEvent
+  alias Sanbase.Insight.Post
+
   setup do
     clean_task_supervisor_children()
 
     user = insert(:user)
-    post = insert(:post)
     conn = setup_jwt_auth(build_conn(), user)
 
-    %{conn: conn, user: user, post: post}
+    user_to_follow = insert(:user)
+    UserFollower.follow(user_to_follow.id, user.id)
+
+    post =
+      insert(:post,
+        user: user_to_follow,
+        state: Post.approved_state(),
+        ready_state: Post.published()
+      )
+
+    timeline_event =
+      insert(:timeline_event,
+        post: post,
+        user: user_to_follow,
+        event_type: TimelineEvent.publish_insight_type()
+      )
+
+    %{conn: conn, user: user, timeline_event: timeline_event}
   end
 
-  test "commentsCount on insights", context do
-    %{conn: conn, post: post} = context
-    assert comments_count(conn, post.id) == 0
+  test "commentsCount on timeline event", context do
+    %{conn: conn, timeline_event: timeline_event} = context
+    assert comments_count(conn, timeline_event.id) == 0
 
-    create_comment(conn, post.id, nil, "some content")
-    assert comments_count(conn, post.id) == 1
+    create_comment(conn, timeline_event.id, nil, "some content")
+    assert comments_count(conn, timeline_event.id) == 1
 
-    create_comment(conn, post.id, nil, "some content")
-    create_comment(conn, post.id, nil, "some content")
-    create_comment(conn, post.id, nil, "some content")
-    assert comments_count(conn, post.id) == 4
+    create_comment(conn, timeline_event.id, nil, "some content")
+    create_comment(conn, timeline_event.id, nil, "some content")
+    create_comment(conn, timeline_event.id, nil, "some content")
+    assert comments_count(conn, timeline_event.id) == 4
 
-    create_comment(conn, post.id, nil, "some content")
-    assert comments_count(conn, post.id) == 5
+    create_comment(conn, timeline_event.id, nil, "some content")
+    assert comments_count(conn, timeline_event.id) == 5
   end
 
-  test "comment an insight", context do
-    %{conn: conn, post: post} = context
+  test "comment a timeline event", context do
+    %{conn: conn, timeline_event: timeline_event} = context
 
-    content = "nice post"
-    comment = create_comment(conn, post.id, nil, content)
+    content = "alabala portokala"
+    comment = create_comment(conn, timeline_event.id, nil, content)
 
-    comments = insight_comments(conn, post.id)
+    comments = timeline_event_comments(conn, timeline_event.id)
 
-    assert comment["insightId"] |> Sanbase.Math.to_integer() == post.id
+    assert comment["timelineEventId"] |> Sanbase.Math.to_integer() == timeline_event.id
     assert comment["content"] == content
     assert comment["insertedAt"] != nil
     assert comment["editedAt"] == nil
@@ -48,14 +68,14 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
   end
 
   test "update a comment", context do
-    %{conn: conn, post: post} = context
+    %{conn: conn, timeline_event: timeline_event} = context
 
-    content = "nice post"
+    content = "nice timeline_event"
     new_content = "updated content"
 
-    comment = create_comment(conn, post.id, nil, content)
+    comment = create_comment(conn, timeline_event.id, nil, content)
     updated_comment = update_comment(conn, comment["id"], new_content)
-    comments = insight_comments(conn, post.id)
+    comments = timeline_event_comments(conn, timeline_event.id)
 
     assert comment["editedAt"] == nil
     assert updated_comment["editedAt"] != nil
@@ -75,31 +95,31 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
   end
 
   test "delete a comment", context do
-    %{conn: conn, post: post} = context
+    %{conn: conn, timeline_event: timeline_event} = context
     fallback_user = insert(:insights_fallback_user)
 
-    content = "nice post"
-    comment = create_comment(conn, post.id, nil, content)
+    content = "nice timeline_event"
+    comment = create_comment(conn, timeline_event.id, nil, content)
     delete_comment(conn, comment["id"])
 
-    comments = insight_comments(conn, post.id)
-    post_comment = comments |> List.first()
+    comments = timeline_event_comments(conn, timeline_event.id)
+    timeline_event_comment = comments |> List.first()
 
-    assert post_comment["user"]["id"] != comment["user"]["id"]
-    assert post_comment["user"]["id"] |> Sanbase.Math.to_integer() == fallback_user.id
+    assert timeline_event_comment["user"]["id"] != comment["user"]["id"]
+    assert timeline_event_comment["user"]["id"] |> Sanbase.Math.to_integer() == fallback_user.id
 
-    assert post_comment["content"] != comment["content"]
-    assert post_comment["content"] =~ "deleted"
+    assert timeline_event_comment["content"] != comment["content"]
+    assert timeline_event_comment["content"] =~ "deleted"
   end
 
   test "create a subcomment", context do
-    %{conn: conn, post: post} = context
-    c1 = create_comment(conn, post.id, nil, "some content")
-    c2 = create_comment(conn, post.id, c1["id"], "other content")
-    create_comment(conn, post.id, c2["id"], "other content2")
+    %{conn: conn, timeline_event: timeline_event} = context
+    c1 = create_comment(conn, timeline_event.id, nil, "some content")
+    c2 = create_comment(conn, timeline_event.id, c1["id"], "other content")
+    create_comment(conn, timeline_event.id, c2["id"], "other content2")
 
     [comment, subcomment1, subcomment2] =
-      insight_comments(conn, post.id)
+      timeline_event_comments(conn, timeline_event.id)
       |> Enum.sort_by(&(&1["id"] |> String.to_integer()))
 
     assert comment["parentId"] == nil
@@ -112,16 +132,17 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
     assert subcomment2["rootParentId"] == comment["id"]
   end
 
-  defp create_comment(conn, post_id, parent_id, content) do
+  defp create_comment(conn, timeline_event_id, parent_id, content) do
     mutation = """
     mutation {
       createComment(
-        id: #{post_id}
+        entityType: TIMELINE_EVENT
+        id: #{timeline_event_id}
         parentId: #{parent_id || "null"}
         content: "#{content}") {
           id
           content
-          insightId
+          timelineEventId
           user{ id username email }
           subcommentsCount
           insertedAt
@@ -144,7 +165,7 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
         content: "#{content}") {
           id
           content
-          insightId
+          timelineEventId
           user{ id username email }
           subcommentsCount
           insertedAt
@@ -165,7 +186,7 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
       deleteComment(commentId: #{comment_id}) {
         id
         content
-        insightId
+        timelineEventId
         user{ id username email }
         subcommentsCount
         insertedAt
@@ -180,15 +201,16 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
     |> get_in(["data", "deleteComment"])
   end
 
-  defp insight_comments(conn, post_id) do
+  defp timeline_event_comments(conn, timeline_event_id) do
     query = """
     {
       comments(
-        id: #{post_id},
+        entityType: TIMELINE_EVENT,
+        id: #{timeline_event_id},
         cursor: {type: BEFORE, datetime: "#{Timex.now()}"}) {
           id
           content
-          insightId
+          timelineEventId
           parentId
           rootParentId
           user{ id username email }
@@ -203,10 +225,10 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
     |> get_in(["data", "comments"])
   end
 
-  defp comments_count(conn, post_id) do
+  defp comments_count(conn, timeline_event_id) do
     query = """
     {
-      insight(id: #{post_id}) {
+      timelineEvent(id: #{timeline_event_id}) {
         commentsCount
       }
     }
@@ -215,6 +237,6 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
     conn
     |> post("/graphql", query_skeleton(query))
     |> json_response(200)
-    |> get_in(["data", "insight", "commentsCount"])
+    |> get_in(["data", "timelineEvent", "commentsCount"])
   end
 end

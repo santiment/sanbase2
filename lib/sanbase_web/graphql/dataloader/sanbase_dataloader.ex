@@ -19,7 +19,10 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
           | :market_segment
           | :infrastructure
           | :comment_insight_id
-          | :project_transparency_status,
+          | :comment_timeline_event_id
+          | :project_transparency_status
+          | :insights_comments_count
+          | :timeline_events_comments_count,
           any()
         ) :: {:error, String.t()} | {:ok, float()} | map()
   def query(queryable, args) do
@@ -39,10 +42,12 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
       x
       when x in [
              :comment_insight_id,
+             :comment_timeline_event_id,
              :infrastructure,
              :market_segment,
              :project_transparency_status,
-             :comments_count
+             :insights_comments_count,
+             :timeline_events_comments_count
            ] ->
         PostgresDataloader.query(queryable, args)
     end

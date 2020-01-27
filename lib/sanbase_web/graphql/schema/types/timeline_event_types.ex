@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.TimelineEventTypes do
   use Absinthe.Schema.Notation
 
+  alias SanbaseWeb.Graphql.Resolvers.TimelineEventResolver
+
   object :timeline_events_paginated do
     field(:events, list_of(:timeline_event))
     field(:cursor, :cursor)
@@ -16,6 +18,10 @@ defmodule SanbaseWeb.Graphql.TimelineEventTypes do
     field(:user_list, :user_list)
     field(:payload, :json)
     field(:votes, list_of(:upvote))
+
+    field :comments_count, :integer do
+      resolve(&TimelineEventResolver.comments_count/3)
+    end
   end
 
   object :upvote do

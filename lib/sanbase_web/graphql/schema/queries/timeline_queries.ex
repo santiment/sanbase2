@@ -16,6 +16,14 @@ defmodule SanbaseWeb.Graphql.Schema.TimelineQueries do
 
       resolve(&TimelineEventResolver.timeline_events/3)
     end
+
+    field :timeline_event, :timeline_event do
+      meta(access: :free)
+
+      arg(:id, non_null(:integer))
+
+      resolve(&TimelineEventResolver.timeline_event/3)
+    end
   end
 
   object :timeline_mutations do

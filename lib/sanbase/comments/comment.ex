@@ -1,4 +1,4 @@
-defmodule Sanbase.Insight.Comment do
+defmodule Sanbase.Comment do
   @moduledoc ~s"""
   Comment definition module.
 
@@ -13,7 +13,7 @@ defmodule Sanbase.Insight.Comment do
   - timestamp fields
 
 
-  The PostComment module is used to interact with comments and this module is
+  The EntityComment module is used to interact with comments and is
   invisible to the outside world
   """
   use Ecto.Schema
@@ -160,7 +160,7 @@ defmodule Sanbase.Insight.Comment do
     # comment's subcomments_count field in that tree
     with {:ok, comment} <- select_comment(comment_id, user_id),
          {:ok, _} <- Repo.delete(comment),
-         :ok <- update_subcomments_counts(comment.root_parent_id) do
+         {:ok, _} <- update_subcomments_counts(comment.root_parent_id) do
       {:ok, comment}
     else
       {:error, error} ->
@@ -168,31 +168,28 @@ defmodule Sanbase.Insight.Comment do
     end
   end
 
-  defp update_subcomments_counts(nil), do: :ok
+  def update_subcomments_counts(nil), do: {:ok, nil}
 
-  defp update_subcomments_counts(root_id) do
-    ids =
-      from(c in __MODULE__,
-        where: c.parent_id == ^root_id or c.root_parent_id == ^root_id,
-        select: c.id
-      )
-      |> Repo.all()
+  def update_subcomments_counts(root_id) do
+    """
+    WITH ids AS (
+      SELECT id AS comment_id
+      FROM comments AS c
+      WHERE c.id = $1 OR c.parent_id = $1 OR c.root_parent_id = $1
+    ),
+    comment_id_count_map AS (
+      SELECT comment_id, COUNT(comment_id)
+      FROM comments, ids
+      WHERE comment_id = parent_id OR comment_id = root_parent_id
+      GROUP BY comment_id
+    )
 
-    [root_id | ids]
-    |> Enum.each(fn id ->
-      subcomments_count =
-        from(c in __MODULE__,
-          where: c.parent_id == ^id or c.root_parent_id == ^id,
-          select: fragment("COUNT(*)")
-        )
-        |> Repo.one()
-
-      from(c in __MODULE__,
-        where: c.id == ^id,
-        update: [set: [subcomments_count: ^subcomments_count]]
-      )
-      |> Repo.update_all([])
-    end)
+    UPDATE comments
+    SET subcomments_count = s.count
+    FROM (SELECT comment_id, count FROM comment_id_count_map) AS s
+    WHERE id = s.comment_id;
+    """
+    |> Repo.query([root_id])
   end
 
   defp multi_run(multi, :select_root_parent_id, %{parent_id: parent_id}) do
@@ -237,7 +234,7 @@ defmodule Sanbase.Insight.Comment do
     |> Ecto.Multi.run(
       :update_subcomments_count,
       fn %{create_new_comment: %__MODULE__{root_parent_id: root_id}} ->
-        :ok = update_subcomments_counts(root_id)
+        {:ok, _} = update_subcomments_counts(root_id)
         {:ok, "Updated all subcomment counts in the tree"}
       end
     )

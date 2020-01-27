@@ -49,13 +49,36 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     |> Map.new()
   end
 
-  def query(:comments_count, post_ids) do
+  def query(:comment_timeline_event_id, comment_ids) do
+    ids = Enum.to_list(comment_ids)
+
+    from(mapping in Sanbase.Timeline.TimelineEventComment,
+      where: mapping.comment_id in ^ids,
+      select: {mapping.comment_id, mapping.timeline_event_id}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  def query(:insights_comments_count, post_ids) do
     ids = Enum.to_list(post_ids)
 
     from(mapping in Sanbase.Insight.PostComment,
       where: mapping.post_id in ^ids,
       group_by: mapping.post_id,
       select: {mapping.post_id, fragment("COUNT(*)")}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  def query(:timeline_events_comments_count, timeline_events_ids) do
+    ids = Enum.to_list(timeline_events_ids)
+
+    from(mapping in Sanbase.Timeline.TimelineEventComment,
+      where: mapping.timeline_event_id in ^ids,
+      group_by: mapping.timeline_event_id,
+      select: {mapping.timeline_event_id, fragment("COUNT(*)")}
     )
     |> Repo.all()
     |> Map.new()

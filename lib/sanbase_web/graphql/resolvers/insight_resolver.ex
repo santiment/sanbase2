@@ -6,7 +6,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Auth.User
   alias Sanbase.Vote
-  alias Sanbase.Insight.{Post, PostComment}
+  alias Sanbase.Insight.Post
+  alias Sanbase.Comment.EntityComment
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.Helpers.Utils
 
@@ -159,51 +160,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     end
   end
 
-  def create_comment(
-        _root,
-        %{insight_id: post_id, content: content} = args,
-        %{context: %{auth: %{current_user: user}}}
-      ) do
-    PostComment.create_and_link(post_id, user.id, Map.get(args, :parent_id), content)
-  end
-
-  @spec update_comment(any, %{comment_id: any, content: any}, %{
-          context: %{auth: %{current_user: atom | map}}
-        }) :: any
-  def update_comment(
-        _root,
-        %{comment_id: comment_id, content: content},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
-    PostComment.update_comment(comment_id, user.id, content)
-  end
-
-  def delete_comment(
-        _root,
-        %{comment_id: comment_id},
-        %{context: %{auth: %{current_user: user}}}
-      ) do
-    PostComment.delete_comment(comment_id, user.id)
-  end
-
+  # Note: deprecated - should be removed if not used by frontend
   def insight_comments(
         _root,
         %{insight_id: post_id} = args,
         _resolution
       ) do
     comments =
-      PostComment.get_comments(post_id, args)
+      EntityComment.get_comments(:insight, post_id, args)
       |> Enum.map(& &1.comment)
 
     {:ok, comments}
-  end
-
-  def subcomments(
-        _root,
-        %{comment_id: comment_id} = args,
-        _resolution
-      ) do
-    {:ok, PostComment.get_subcomments(comment_id, args)}
   end
 
   def insight_id(%{id: id}, _args, %{context: %{loader: loader}}) do
@@ -216,9 +183,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
 
   def comments_count(%Post{id: id}, _args, %{context: %{loader: loader}}) do
     loader
-    |> Dataloader.load(SanbaseDataloader, :comments_count, id)
+    |> Dataloader.load(SanbaseDataloader, :insights_comments_count, id)
     |> on_load(fn loader ->
-      {:ok, Dataloader.get(loader, SanbaseDataloader, :comments_count, id) || 0}
+      {:ok, Dataloader.get(loader, SanbaseDataloader, :insights_comments_count, id) || 0}
     end)
   end
 end

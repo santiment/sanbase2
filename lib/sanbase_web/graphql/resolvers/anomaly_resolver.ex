@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.AnomalyResolver do
   import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 8]
-  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3, handle_graphql_error: 4]
+  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
 
   alias Sanbase.Anomaly
 
@@ -20,15 +20,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AnomalyResolver do
   def get_available_slugs(_root, _args, %{source: %{anomaly: anomaly}}),
     do: Anomaly.available_slugs(anomaly)
 
-  def get_metadata(_root, _args, %{source: %{anomaly: anomaly}}) do
-    case Anomaly.metadata(anomaly) do
-      {:ok, metadata} ->
-        {:ok, metadata}
-
-      {:error, error} ->
-        {:error, handle_graphql_error("metadata", anomaly, error, description: "anomaly")}
-    end
-  end
+  def get_metadata(_root, _args, %{source: %{anomaly: anomaly}}), do: Anomaly.metadata(anomaly)
 
   def available_since(_root, %{slug: slug}, %{source: %{anomaly: anomaly}}),
     do: Anomaly.first_datetime(anomaly, slug)

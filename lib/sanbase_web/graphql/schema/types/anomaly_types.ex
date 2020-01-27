@@ -78,7 +78,7 @@ defmodule SanbaseWeb.Graphql.AnomalyTypes do
       arg(:aggregation, :aggregation, default_value: nil)
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(AccessControl)
+      middleware(AccessControl, %{allow_realtime_data: true, allow_historical_data: true})
 
       cache_resolve(&AnomalyResolver.timeseries_data/3)
     end

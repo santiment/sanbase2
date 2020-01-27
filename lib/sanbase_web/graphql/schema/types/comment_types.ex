@@ -24,7 +24,7 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
     end
 
     field :timeline_event_id, non_null(:id) do
-      resolve(&TimelineEventResolver.timeline_event_id/3)
+      cache_resolve(&TimelineEventResolver.timeline_event_id/3)
     end
 
     field(:content, non_null(:string))

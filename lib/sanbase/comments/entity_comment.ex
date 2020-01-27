@@ -15,14 +15,14 @@ defmodule Sanbase.Comment.EntityComment do
   @type entity :: :insight | :timeline_event
 
   @spec create_and_link(
+          entity,
           non_neg_integer(),
           non_neg_integer(),
           non_neg_integer() | nil,
-          String.t(),
-          entity
+          String.t()
         ) ::
           {:ok, %Comment{}} | {:error, any()}
-  def create_and_link(entity_id, user_id, parent_id, content, entity) when entity in @entities do
+  def create_and_link(entity, entity_id, user_id, parent_id, content) when entity in @entities do
     Ecto.Multi.new()
     |> Ecto.Multi.run(
       :create_comment,
@@ -30,7 +30,7 @@ defmodule Sanbase.Comment.EntityComment do
     )
     |> Ecto.Multi.run(:link_comment_and_entity, fn
       %{create_comment: comment} ->
-        link(comment.id, entity_id, entity)
+        link(entity, entity_id, comment.id)
     end)
     |> Repo.transaction()
     |> case do
@@ -39,17 +39,17 @@ defmodule Sanbase.Comment.EntityComment do
     end
   end
 
-  @spec link(non_neg_integer(), non_neg_integer(), :insight) ::
+  @spec link(:insight, non_neg_integer(), non_neg_integer()) ::
           {:ok, %PostComment{}} | {:error, Ecto.Changeset.t()}
-  def link(comment_id, entity_id, :insight) do
+  def link(:insight, entity_id, comment_id) do
     %PostComment{}
     |> PostComment.changeset(%{comment_id: comment_id, post_id: entity_id})
     |> Repo.insert()
   end
 
-  @spec link(non_neg_integer(), non_neg_integer(), :timeline_event) ::
+  @spec link(:timeline_event, non_neg_integer(), non_neg_integer()) ::
           {:ok, %TimelineEventComment{}} | {:error, Ecto.Changeset.t()}
-  def link(comment_id, entity_id, :timeline_event) do
+  def link(:timeline_event, entity_id, comment_id) do
     %TimelineEventComment{}
     |> TimelineEventComment.changeset(%{
       comment_id: comment_id,
@@ -58,8 +58,8 @@ defmodule Sanbase.Comment.EntityComment do
     |> Repo.insert()
   end
 
-  @spec get_comments(non_neg_integer(), map(), entity) :: [%Comment{}]
-  def get_comments(entity_id, %{limit: limit} = args, entity) when entity in @entities do
+  @spec get_comments(entity, non_neg_integer(), map()) :: [%Comment{}]
+  def get_comments(entity, entity_id, %{limit: limit} = args) when entity in @entities do
     cursor = Map.get(args, :cursor)
 
     entity_comments_query(entity_id, entity)

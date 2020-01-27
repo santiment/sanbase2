@@ -10,7 +10,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.CommentResolver do
         %{insight_id: post_id, content: content} = args,
         %{context: %{auth: %{current_user: user}}}
       ) do
-    EntityComment.create_and_link(post_id, user.id, Map.get(args, :parent_id), content, :insight)
+    EntityComment.create_and_link(:insight, post_id, user.id, Map.get(args, :parent_id), content)
   end
 
   def create_comment(
@@ -19,7 +19,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.CommentResolver do
         %{context: %{auth: %{current_user: user}}}
       )
       when entity_type in @entities do
-    EntityComment.create_and_link(id, user.id, Map.get(args, :parent_id), content, entity_type)
+    EntityComment.create_and_link(entity_type, id, user.id, Map.get(args, :parent_id), content)
   end
 
   def create_comment(_root, _args, _resolution), do: {:error, "Invalid args for createComment"}
@@ -49,7 +49,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.CommentResolver do
         _resolution
       )
       when entity_type in @entities do
-    comments = EntityComment.get_comments(id, args, entity_type) |> Enum.map(& &1.comment)
+    comments = EntityComment.get_comments(entity_type, id, args) |> Enum.map(& &1.comment)
 
     {:ok, comments}
   end

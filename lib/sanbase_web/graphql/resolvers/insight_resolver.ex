@@ -167,7 +167,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
         _resolution
       ) do
     comments =
-      EntityComment.get_comments(post_id, args, :insight)
+      EntityComment.get_comments(:insight, post_id, args)
       |> Enum.map(& &1.comment)
 
     {:ok, comments}

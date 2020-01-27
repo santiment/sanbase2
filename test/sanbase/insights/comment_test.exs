@@ -12,9 +12,9 @@ defmodule Sanbase.Insight.CommentTest do
     user = insert(:user)
 
     {:ok, comment} =
-      EntityComment.create_and_link(post.id, user.id, nil, "some comment", @entity_type)
+      EntityComment.create_and_link(@entity_type, post.id, user.id, nil, "some comment")
 
-    post_comments = EntityComment.get_comments(post.id, %{cursor: nil, limit: 100}, @entity_type)
+    post_comments = EntityComment.get_comments(@entity_type, post.id, %{cursor: nil, limit: 100})
     assert length(post_comments) == 1
     [%{comment: %{id: post_comment_id}}] = post_comments
     assert comment.id == post_comment_id
@@ -25,10 +25,10 @@ defmodule Sanbase.Insight.CommentTest do
     user = insert(:user)
 
     {:ok, comment1} =
-      EntityComment.create_and_link(post.id, user.id, nil, "some comment", @entity_type)
+      EntityComment.create_and_link(@entity_type, post.id, user.id, nil, "some comment")
 
     {:ok, comment2} =
-      EntityComment.create_and_link(post.id, user.id, comment1.id, "some comment", @entity_type)
+      EntityComment.create_and_link(@entity_type, post.id, user.id, comment1.id, "some comment")
 
     assert comment2.parent_id == comment1.id
     assert comment2.root_parent_id == comment1.id
@@ -41,7 +41,7 @@ defmodule Sanbase.Insight.CommentTest do
     updated_content = "updated content"
 
     {:ok, comment} =
-      EntityComment.create_and_link(post.id, post.user_id, nil, content, @entity_type)
+      EntityComment.create_and_link(@entity_type, post.id, post.user_id, nil, content)
 
     naive_dt_before_update = NaiveDateTime.utc_now()
 
@@ -63,7 +63,7 @@ defmodule Sanbase.Insight.CommentTest do
     fallback_user = insert(:insights_fallback_user)
 
     {:ok, comment} =
-      EntityComment.create_and_link(post.id, post.user_id, nil, "some comment", @entity_type)
+      EntityComment.create_and_link(@entity_type, post.id, post.user_id, nil, "some comment")
 
     {:ok, deleted} = Comment.delete(comment.id, comment.user_id)
 
@@ -79,16 +79,16 @@ defmodule Sanbase.Insight.CommentTest do
     user = insert(:user)
 
     {:ok, comment1} =
-      EntityComment.create_and_link(post.id, user.id, nil, "some comment", @entity_type)
+      EntityComment.create_and_link(@entity_type, post.id, user.id, nil, "some comment")
 
     {:ok, comment2} =
-      EntityComment.create_and_link(post.id, user.id, comment1.id, "some comment", @entity_type)
+      EntityComment.create_and_link(@entity_type, post.id, user.id, comment1.id, "some comment")
 
     {:ok, comment3} =
-      EntityComment.create_and_link(post.id, user.id, comment2.id, "some comment", @entity_type)
+      EntityComment.create_and_link(@entity_type, post.id, user.id, comment2.id, "some comment")
 
     {:ok, comment4} =
-      EntityComment.create_and_link(post.id, user.id, comment3.id, "some comment", @entity_type)
+      EntityComment.create_and_link(@entity_type, post.id, user.id, comment3.id, "some comment")
 
     assert comment2.parent_id == comment1.id
     assert comment2.root_parent_id == comment1.id

@@ -2,7 +2,6 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
   use Absinthe.Schema.Notation
 
   import Absinthe.Resolution.Helpers
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
   alias SanbaseWeb.Graphql.Resolvers.InsightResolver
   alias SanbaseWeb.Graphql.SanbaseRepo

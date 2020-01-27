@@ -57,7 +57,8 @@ defmodule Sanbase.Intercom do
            email: email,
            username: username,
            san_balance: san_balance,
-           stripe_customer_id: stripe_customer_id
+           stripe_customer_id: stripe_customer_id,
+           inserted_at: inserted_at
          } = user,
          %{
            triggers_map: triggers_map,
@@ -79,6 +80,7 @@ defmodule Sanbase.Intercom do
       user_id: id,
       email: email,
       name: username,
+      signed_up_at: DateTime.to_unix(inserted_at),
       custom_attributes:
         %{
           all_watchlists_count: Map.get(watchlists_map, id, 0),

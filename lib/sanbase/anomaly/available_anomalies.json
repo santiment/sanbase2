@@ -9,5 +9,16 @@
     "min_interval": "1d",
     "table": "anomalies",
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Development Activity Anomaly",
+    "model_name": "prophet_v1",
+    "name": "dev_activity_anomaly",
+    "metric": "dev_activity",
+    "access": "free",
+    "aggregation": "count",
+    "min_interval": "1d",
+    "table": "anomalies",
+    "data_type": "timeseries"
   }
 ]

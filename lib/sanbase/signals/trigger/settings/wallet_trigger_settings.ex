@@ -178,58 +178,75 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
     end
 
     def payload(values, %{filtered_target: %{type: :address}} = settings) do
-      """
-      The #{selector_to_name(settings.selector)} of the address #{values.slug} has #{
-        OperationText.to_text(values, settings.operation)
-      }
+      {operation_template, operation_kv} =
+        OperationText.KV.to_template_kv(values, settings.operation)
 
-      More information about the project can be found here:
+      asset_target_blockchain_kv = asset_target_blockchain_kv(settings.selector)
+
+      kv =
+        %{address: settings.target.address}
+        |> Map.merge(operation_kv)
+        |> Map.merge(asset_target_blockchain_kv)
+
+      template = """
+      The {{asset}} balance on the {{target_blockchain}} blockchain of the address {{address}} has #{
+        operation_template
+      }
       """
+
+      Sanbase.TemplateEngine.run(template, kv)
     end
 
-    def payload(values, %{filtered_target: %{type: :slug}} = settings) do
-      %{slug: slug} = values
+    def payload(%{slug: slug} = values, %{filtered_target: %{type: :slug}} = settings) do
       project = Project.by_slug(slug)
 
-      """
-      The #{selector_to_name(settings.selector)} of the project **#{project.name}** has #{
-        OperationText.to_text(values, settings.operation)
+      {operation_template, operation_kv} =
+        OperationText.KV.to_template_kv(values, settings.operation)
+
+      asset_target_blockchain_kv = asset_target_blockchain_kv(settings.selector)
+
+      kv =
+        %{project_name: project.name, project_url: Project.sanbase_link(project)}
+        |> Map.merge(operation_kv)
+        |> Map.merge(asset_target_blockchain_kv)
+
+      template = """
+      The {{asset}} balance on the {{target_blockchain}} blockchain of the project **{{project_name}}** has #{
+        operation_template
       }
 
-      More information about the project can be found here:
+      More information about the project can be found here: {{project_url}}
       """
+
+      Sanbase.TemplateEngine.run(template, kv)
     end
 
-    defp selector_to_name(%{infrastructure: "ETH"} = selector) do
-      slug = Map.get(selector, :slug, "ethereum")
-      "#{slug} balance on the Ethereum blockchain"
+    defp asset_target_blockchain_kv(%{infrastructure: "ETH"} = selector) do
+      %{asset: Map.get(selector, :slug, "ethereum"), target_blockchain: "Ethereum"}
     end
 
-    defp selector_to_name(%{infrastructure: "EOS"} = selector) do
-      slug = Map.get(selector, :slug, "eos")
-      "#{slug} balance on the EOS blockchain"
+    defp asset_target_blockchain_kv(%{infrastructure: "EOS"} = selector) do
+      %{asset: Map.get(selector, :slug, "eos"), target_blockchain: "EOS"}
     end
 
-    defp selector_to_name(%{infrastructure: "BNB"} = selector) do
-      slug = Map.get(selector, :slug, "binance-coin")
-      "#{slug} balance on the Binance blockchain"
+    defp asset_target_blockchain_kv(%{infrastructure: "BNB"} = selector) do
+      %{asset: Map.get(selector, :slug, "binance-coin"), target_blockchain: "Binance"}
     end
 
-    defp selector_to_name(%{infrastructure: "XRP"} = selector) do
-      currency = Map.get(selector, :currency, "XRP")
-      "#{currency} balance on the Ripple blockchain"
+    defp asset_target_blockchain_kv(%{infrastructure: "XRP"} = selector) do
+      %{asset: Map.get(selector, :currency, "XRP"), target_blockchain: "Ripple"}
     end
 
-    defp selector_to_name(%{infrastructure: "BTC"}) do
-      "bitcoin balance on the Bitcoin blockchain"
+    defp asset_target_blockchain_kv(%{infrastructure: "BTC"}) do
+      %{asset: "bitcoin", target_blockchain: "Bitcoin"}
     end
 
-    defp selector_to_name(%{infrastructure: "BCH"}) do
-      "bitcoin-cash balance on the Bitcoin Cash blockchain"
+    defp asset_target_blockchain_kv(%{infrastructure: "BCH"}) do
+      %{asset: "bitcoin-cash", target_blockchain: "Bitcoin Cash"}
     end
 
-    defp selector_to_name(%{infrastructure: "LTC"}) do
-      "litecoin balance on the Litecoin blockchain"
+    defp asset_target_blockchain_kv(%{infrastructure: "LTC"}) do
+      %{asset: "litecoin", target_blockchain: "Litecoin"}
     end
   end
 end

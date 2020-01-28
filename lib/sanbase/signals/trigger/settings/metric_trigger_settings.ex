@@ -127,16 +127,27 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
       project = Project.by_slug(slug)
       {:ok, human_readable_name} = Sanbase.Metric.human_readable_name(settings.metric)
 
-      """
-      **#{project.name}**'s #{human_readable_name} #{
-        OperationText.to_text(values, settings.operation)
-      }**.
-      More info here: #{Project.sanbase_link(project)}
+      {operation_template, operation_kv} =
+        OperationText.to_template_kv(values, settings.operation)
 
-      ![#{human_readable_name} & OHLC for the past 90 days](#{
-        chart_url(project, {:metric, settings.metric})
-      })
+      kv =
+        %{
+          project_name: project.name,
+          metric: settings.metric,
+          metric_human_readable_name: human_readable_name,
+          project_link: Project.sanbase_link(project),
+          chart_url: chart_url(project, {:metric, settings.metric})
+        }
+        |> Map.merge(operation_kv)
+
+      template = """
+      **{{project.name}}**'s {{human_readable_name}} #{operation_template}.
+      More info here: {{project_link}}
+
+      ![#{human_readable_name} & OHLC for the past 90 days]({{chart_url}})
       """
+
+      Sanbase.TemplateEngine.run(template, kv)
     end
   end
 end

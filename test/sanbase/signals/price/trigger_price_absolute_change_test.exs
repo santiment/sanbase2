@@ -81,12 +81,13 @@ defmodule Sanbase.Signal.TriggerPriceAbsoluteChangeTest do
         assert length(triggered) == 3
 
         payload_list =
-          triggered |> Enum.map(fn ut -> ut.trigger.settings.payload[project.slug] end)
+          triggered
+          |> Enum.map(fn ut -> ut.trigger.settings.payload[project.slug] end)
 
         expected_payload = [
-          "**#{project.name}**'s price has reached below $80 and is now $62.0",
-          "**#{project.name}**'s price has reached between $59 and $65 and is now $62.0",
-          "**#{project.name}**'s price has reached below $80 or above >= $90 and is now $62.0"
+          "price is below 80 and is now 62",
+          "price is inside the [59, 65] interval and is now 62",
+          "price is outside the [80, 90] interval and is now 62"
         ]
 
         all_expectd_payload_present? =

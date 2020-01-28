@@ -101,6 +101,10 @@ defmodule SanbaseWeb.Endpoint do
     |> Path.join("?" <> URI.encode_query("assets[]": asset, address: address))
   end
 
+  def historical_balance_url(address, asset) do
+    frontend_url() <> "/labs/balance?address=#{address}&assets[]=#{asset}"
+  end
+
   def user_account_url() do
     Config.get(:website_url)
     |> Path.join("account")

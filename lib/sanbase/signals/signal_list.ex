@@ -5,7 +5,6 @@ defmodule Sanbase.Signal.List do
     [
       Trigger.DailyActiveAddressesSettings,
       Trigger.PricePercentChangeSettings,
-      Trigger.PriceSettings,
       Trigger.PriceAbsoluteChangeSettings,
       Trigger.PriceVolumeDifferenceTriggerSettings,
       Trigger.TrendingWordsTriggerSettings,

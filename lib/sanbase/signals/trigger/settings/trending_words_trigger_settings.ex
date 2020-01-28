@@ -199,28 +199,42 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       {last, previous} = List.pop_at(words, -1)
       words_str = (Enum.map(previous, &"**#{&1}**") |> Enum.join(",")) <> " and **#{last}**"
 
-      """
-      The words #{words_str} are in the trending words.
+      kv = %{
+        trendiong_words_list: words,
+        trending_words_str: words_str,
+        trending_words_url: SanbaseWeb.Endpoint.trending_word_url(words)
+      }
 
-      More info here: #{SanbaseWeb.Endpoint.trending_word_url(words)}
+      template = """
+      The words {{trending_words_str}} are in the trending words.
+
+      More info here: {{trending_words_url}}
       """
+
+      Sanbase.TemplateEngine.run(template, kv)
     end
 
     defp payload(%{operation: %{trending_project: true}}, project) do
-      """
-      The project **#{project.name}** is in the trending words.
+      kv = %{
+        project_name: project.name,
+        project_url: Project.sanbase_link(project),
+        chart_url: chart_url(project, :volume)
+      }
 
-      More info here: #{Project.sanbase_link(project)}
+      template = """
+      The project **{{project_name}}** is in the trending words.
 
-      ![Volume and OHLC price chart for the past 90 days](#{chart_url(project, :volume)})
+      More info here: {{project_url}}
+      ![Volume and OHLC price chart for the past 90 days]({{chart_url}})
       """
+
+      Sanbase.TemplateEngine.run(template, kv)
     end
 
     defp get_max_len(top_words) do
       top_words
-      |> Enum.max_by(fn %{word: word} -> String.length(word) end)
-      |> Map.get(:word)
-      |> String.length()
+      |> Enum.map(&String.length(&1.word))
+      |> Enum.max()
     end
   end
 end

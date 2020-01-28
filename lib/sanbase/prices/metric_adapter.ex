@@ -34,6 +34,11 @@ defmodule Sanbase.Price.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def last_datetime_computed_at(_metric, slug) do
+    Price.last_datetime_computed_at(slug)
+  end
+
+  @impl Sanbase.Metric.Behaviour
   def metadata(metric) do
     {:ok,
      %{

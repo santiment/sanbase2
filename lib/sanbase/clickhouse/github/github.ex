@@ -1,6 +1,6 @@
 defmodule Sanbase.Clickhouse.Github do
   @moduledoc ~s"""
-  Uses ClickHouse to work with ETH transfers.
+  Uses ClickHouse to work with github events.
   Allows to filter on particular events in the queries. Development activity can
   be more clearly calculated by excluding events releated to commenting, issues, forks, stars, etc.
   """
@@ -14,6 +14,8 @@ defmodule Sanbase.Clickhouse.Github do
         }
 
   use Ecto.Schema
+
+  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
 
   require Logger
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
@@ -60,12 +62,10 @@ defmodule Sanbase.Clickhouse.Github do
   def total_github_activity(organizations, from, to) do
     {query, args} = total_github_activity_query(organizations, from, to)
 
-    case ClickhouseRepo.query_transform(query, args, fn [github_activity] ->
-           github_activity |> String.to_integer()
-         end) do
-      {:ok, [result]} -> {:ok, result}
-      {:error, error} -> {:error, error}
-    end
+    ClickhouseRepo.query_transform(query, args, fn [github_activity] ->
+      github_activity |> Sanbase.Math.to_integer()
+    end)
+    |> maybe_unwrap_ok_value()
   end
 
   @doc ~s"""
@@ -96,7 +96,7 @@ defmodule Sanbase.Clickhouse.Github do
     {query, args} = total_dev_activity_query(organizations, from, to)
 
     ClickhouseRepo.query_transform(query, args, fn [organization, dev_activity] ->
-      {organization, dev_activity |> String.to_integer()}
+      {organization, dev_activity |> Sanbase.Math.to_integer()}
     end)
   end
 
@@ -193,20 +193,34 @@ defmodule Sanbase.Clickhouse.Github do
     end
   end
 
-  def first_datetime(slug) do
+  def first_datetime(organization) when is_binary(organization) do
     query = """
-    SELECT min(dt) FROM #{@table} WHERE owner = ?1
+    SELECT toUnixTimestamp(min(dt))
+    FROM #{@table}
+    PREWHERE owner = ?1
     """
 
-    args = [slug]
+    args = [organization]
 
     ClickhouseRepo.query_transform(query, args, fn [datetime] ->
-      datetime |> Sanbase.DateTimeUtils.from_erl!()
+      datetime |> DateTime.from_unix!()
     end)
-    |> case do
-      {:ok, [first_datetime]} -> {:ok, first_datetime}
-      error -> error
-    end
+    |> maybe_unwrap_ok_value()
+  end
+
+  def last_datetime_computed_at(organization) when is_binary(organization) do
+    query = """
+    SELECT toUnixTimestamp(max(dt))
+    FROM #{@table}
+    PREWHERE owner = ?1
+    """
+
+    args = [organization]
+
+    ClickhouseRepo.query_transform(query, args, fn [datetime] ->
+      datetime |> DateTime.from_unix!()
+    end)
+    |> maybe_unwrap_ok_value()
   end
 
   # Private functions
@@ -214,8 +228,8 @@ defmodule Sanbase.Clickhouse.Github do
   defp datetime_activity_execute({query, args}) do
     ClickhouseRepo.query_transform(query, args, fn [datetime, events_count] ->
       %{
-        datetime: datetime |> Sanbase.DateTimeUtils.from_erl!(),
-        activity: events_count |> String.to_integer()
+        datetime: datetime |> DateTime.from_unix!(),
+        activity: events_count |> Sanbase.Math.to_integer()
       }
     end)
   end
@@ -226,20 +240,21 @@ defmodule Sanbase.Clickhouse.Github do
     span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)
 
     query = """
-    SELECT time, SUM(events) as events_count
+    SELECT time, SUM(events) AS events_count
       FROM (
         SELECT
-          toDateTime(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) as time,
+          toUnixTimestamp(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) AS time,
           0 AS events
         FROM numbers(?2)
 
         UNION ALL
 
-        SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, count(events) as events
+        SELECT toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time, count(events) AS events
           FROM (
-            SELECT any(event) as events, dt
+            SELECT any(event) AS events, dt
             FROM #{@table}
-            PREWHERE owner IN (?3)
+            PREWHERE
+              owner IN (?3)
             AND dt >= toDateTime(?4)
             AND dt <= toDateTime(?5)
             AND event NOT IN (?6)
@@ -269,22 +284,23 @@ defmodule Sanbase.Clickhouse.Github do
     span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)
 
     query = """
-    SELECT time, SUM(events) as events_count
+    SELECT time, SUM(events) AS events_count
       FROM (
         SELECT
-          toDateTime(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) as time,
+          toUnixTimestamp(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) AS time,
           0 AS events
         FROM numbers(?2)
 
         UNION ALL
 
-        SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, count(events) as events
+        SELECT toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time, count(events) AS events
           FROM (
-            SELECT any(event) as events, dt
+            SELECT any(event) AS events, dt
             FROM #{@table}
-            PREWHERE owner IN (?3)
-            AND dt >= toDateTime(?4)
-            AND dt <= toDateTime(?5)
+            PREWHERE
+              owner IN (?3)
+              AND dt >= toDateTime(?4)
+              AND dt <= toDateTime(?5)
             GROUP BY owner, repo, dt, event
           )
           GROUP BY time
@@ -306,7 +322,7 @@ defmodule Sanbase.Clickhouse.Github do
 
   defp total_github_activity_query(organizations, from, to) do
     query = """
-    SELECT COUNT(*) FROM (
+    SELECT toUInt64(COUNT(*)) FROM (
       SELECT COUNT(*)
       FROM #{@table}
       PREWHERE
@@ -328,7 +344,7 @@ defmodule Sanbase.Clickhouse.Github do
 
   defp total_dev_activity_query(organizations, from, to) do
     query = """
-    SELECT owner, COUNT(*)
+    SELECT owner, toUInt64(COUNT(*))
     FROM(
       SELECT owner, COUNT(*)
       FROM #{@table}

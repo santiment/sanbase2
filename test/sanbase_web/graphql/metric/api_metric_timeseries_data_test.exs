@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricTimeseriesDataTest do
+defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mock
@@ -125,7 +125,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricTimeseriesDataTest do
   test "returns error for unavailable metrics", context do
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
     aggregation = :avg
-    rand_metrics = Enum.map(1..100, fn _ -> rand_str() end)
+    rand_metrics = Enum.map(1..20, fn _ -> rand_str() end)
     rand_metrics = rand_metrics -- Metric.available_timeseries_metrics()
 
     # Do not mock the `timeseries_data` function because it's the one that rejects

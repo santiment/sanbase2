@@ -165,4 +165,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   def first_datetime(<<"professional_traders_chat", _rest::binary>>, _slug),
     do: {:ok, ~U[2018-02-09 00:00:00Z]}
+
+  @impl Sanbase.Metric.Behaviour
+  def last_datetime_computed_at(_metric, _slug), do: {:ok, Timex.now()}
 end

@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricHistogramDataTest do
+defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mock
@@ -75,7 +75,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiMetricHistogramDataTest do
 
   test "returns error for unavailable metrics", context do
     %{conn: conn, slug: slug, from: from, to: to} = context
-    rand_metrics = Enum.map(1..100, fn _ -> rand_str() end)
+    rand_metrics = Enum.map(1..20, fn _ -> rand_str() end)
     rand_metrics = rand_metrics -- Metric.available_histogram_metrics()
 
     # Do not mock the `histogram_data` function because it's the one that rejects

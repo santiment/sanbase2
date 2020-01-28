@@ -197,6 +197,16 @@ defmodule Sanbase.Metric do
 
   def first_datetime(metric, _), do: metric_not_available_error(metric)
 
+  def last_datetime_computed_at(metric, slug)
+
+  for %{metric: metric, module: module} <- @metric_module_mapping do
+    def last_datetime_computed_at(unquote(metric), slug) do
+      unquote(module).last_datetime_computed_at(unquote(metric), slug)
+    end
+  end
+
+  def last_datetime_computed_at(metric, _), do: metric_not_available_error(metric)
+
   @doc ~s"""
   Get all available slugs for a given metric
   """

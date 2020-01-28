@@ -152,6 +152,19 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     {query, args}
   end
 
+  def last_datetime_computed_at_query(metric, slug) do
+    query = """
+    SELECT toUnixTimestamp(argMax(computed_at, dt))
+    FROM #{Map.get(@table_map, metric)} FINAL
+    PREWHERE
+      metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = ?1 ) AND
+      asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?2 )
+    """
+
+    args = [metric, slug]
+    {query, args}
+  end
+
   def first_datetime_query(metric, nil) do
     query = """
     SELECT

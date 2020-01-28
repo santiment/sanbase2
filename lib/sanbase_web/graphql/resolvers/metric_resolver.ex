@@ -35,6 +35,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   def available_since(_root, %{slug: slug}, %{source: %{metric: metric}}),
     do: Metric.first_datetime(metric, slug)
 
+  def last_datetime_computed_at(_root, %{slug: slug}, %{source: %{metric: metric}}),
+    do: Metric.last_datetime_computed_at(metric, slug)
+
   def timeseries_data(
         _root,
         %{slug: slug, from: from, to: to, interval: interval} = args,

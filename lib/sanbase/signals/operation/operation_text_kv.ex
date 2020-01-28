@@ -1,6 +1,6 @@
 defmodule Sanbase.Signal.OperationText.KV do
   @moduledoc ~s"""
-  A module providing a single function to_text/3 which transforms an operation
+  A module providing a single function to_template_kv/3 which transforms an operation
   to human readable text that can be included in the signal's payload
   """
   def to_template_kv(value, operation, opts \\ [])

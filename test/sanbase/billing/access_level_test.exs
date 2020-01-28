@@ -101,6 +101,7 @@ defmodule Sanbase.Billing.AccessLevelTest do
 
     expected_free_queries =
       [
+        "active_addresses_24h",
         "daily_active_addresses",
         "daily_avg_marketcap_usd",
         "daily_avg_price_usd",

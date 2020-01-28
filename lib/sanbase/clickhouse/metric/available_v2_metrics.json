@@ -108,6 +108,18 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Active Addresses for the last 24 hours",
+    "name": "active_addresses_24h",
+    "metric": "active_addresses_24h",
+    "version": "2019-01-01",
+    "access": "free",
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Mean Realized USD Price",
     "name": "mean_realized_price_usd",
     "metric": "mean_realized_price_usd_20y",

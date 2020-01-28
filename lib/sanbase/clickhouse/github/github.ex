@@ -208,21 +208,6 @@ defmodule Sanbase.Clickhouse.Github do
     |> maybe_unwrap_ok_value()
   end
 
-  def first_datetime2(organization) do
-    query = """
-    SELECT toUnixTimestamp(min(dt))
-    FROM #{@table}
-    PREWHERE owner IN (?1)
-    """
-
-    args = [organization]
-
-    ClickhouseRepo.query_transform(query, args, fn [datetime] ->
-      datetime |> DateTime.from_unix!()
-    end)
-    |> maybe_unwrap_ok_value()
-  end
-
   def last_datetime_computed_at(organization) when is_binary(organization) do
     query = """
     SELECT toUnixTimestamp(max(dt))

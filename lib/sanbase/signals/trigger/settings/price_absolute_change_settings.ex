@@ -128,6 +128,8 @@ defmodule Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings do
 
       kv =
         %{
+          type: PriceAbsoluteChangeSettings.type(),
+          operation: operation,
           project_name: project.name,
           project_link: Project.sanbase_link(project),
           project_chart: chart_url(project, :volume)

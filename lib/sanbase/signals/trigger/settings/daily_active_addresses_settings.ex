@@ -130,15 +130,15 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
       interval = interval_to_str(settings.time_window)
 
       kv = %{
+        type: DailyActiveAddressesSettings.type(),
+        operation: settings.operation,
         project_name: project.name,
         daily_active_addresses: current_daa,
         average_daily_active_addresses: average_daa,
         movement_text: Sanbase.Signal.OperationText.to_text(values, settings.operation),
         interval: interval,
         project_link: Project.sanbase_link(project),
-        chart_url: chart_url(project, {:metric, "daily_active_addresses"}),
-        chart_url_alt_text:
-          "Daily Active Addresses chart and OHLC price chart for the past 90 days"
+        chart_url: chart_url(project, {:metric, "daily_active_addresses"})
       }
 
       template = """
@@ -147,7 +147,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
       Average Daily Active Addresses for last **{{interval}}*: **{{average_daily_active_addresses}}**.
       More info here: {{project_link}}
 
-      ![{{chart_url_alt_text}}]({{chart_url}})
+      ![Daily Active Addresses chart and OHLC price chart for the past 90 days]({{chart_url}})
       """
 
       {template, kv}

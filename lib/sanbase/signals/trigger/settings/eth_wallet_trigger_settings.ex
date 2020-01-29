@@ -172,6 +172,8 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
 
     defp template_kv(%Project{} = project, settings, balance_change, from) do
       kv = %{
+        type: EthWalletTriggerSettings.type(),
+        operation: settings.operation,
         project_name: project.name,
         project_link: Sanbase.Model.Project.sanbase_link(project),
         asset: settings.asset.slug,
@@ -193,6 +195,8 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
       asset = settings.asset.slug
 
       kv = %{
+        type: EthWalletTriggerSettings.type(),
+        operation: settings.operation,
         address: address,
         asset: asset,
         historical_balance_link: SanbaseWeb.Endpoint.historical_balance_url(address, asset),

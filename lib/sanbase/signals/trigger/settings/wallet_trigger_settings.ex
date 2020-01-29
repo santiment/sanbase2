@@ -181,14 +181,18 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
       ])
     end
 
-    def template_kv(values, %{filtered_target: %{type: :address}} = settings) do
+    defp template_kv(values, %{filtered_target: %{type: :address}} = settings) do
       {operation_template, operation_kv} =
         OperationText.KV.to_template_kv(values, settings.operation)
 
       asset_target_blockchain_kv = asset_target_blockchain_kv(settings.selector)
 
       kv =
-        %{address: settings.target.address}
+        %{
+          type: WalletTriggerSettings.type(),
+          operation: settings.operation,
+          address: settings.target.address
+        }
         |> Map.merge(operation_kv)
         |> Map.merge(asset_target_blockchain_kv)
 
@@ -201,7 +205,7 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
       {template, kv}
     end
 
-    def template_kv(%{identifier: slug} = values, %{filtered_target: %{type: :slug}} = settings) do
+    defp template_kv(%{identifier: slug} = values, %{filtered_target: %{type: :slug}} = settings) do
       project = Project.by_slug(slug)
 
       {operation_template, operation_kv} =
@@ -210,7 +214,12 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
       asset_target_blockchain_kv = asset_target_blockchain_kv(settings.selector)
 
       kv =
-        %{project_name: project.name, project_url: Project.sanbase_link(project)}
+        %{
+          project_name: project.name,
+          project_url: Project.sanbase_link(project),
+          type: WalletTriggerSettings.type(),
+          operation: settings.operation
+        }
         |> Map.merge(operation_kv)
         |> Map.merge(asset_target_blockchain_kv)
 

@@ -125,7 +125,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
       ])
     end
 
-    def template_kv(values, settings) do
+    defp template_kv(values, settings) do
       %{identifier: slug} = values
 
       project = Project.by_slug(slug)
@@ -136,6 +136,8 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
 
       kv =
         %{
+          type: MetricTriggerSettings.type(),
+          operation: settings.operation,
           project_name: project.name,
           metric: settings.metric,
           metric_human_readable_name: human_readable_name,

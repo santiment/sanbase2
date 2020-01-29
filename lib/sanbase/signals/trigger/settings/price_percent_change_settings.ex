@@ -142,6 +142,8 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
 
       kv =
         %{
+          type: PricePercentChangeSettings.type(),
+          operation: settings.operation,
           project_name: project.name,
           project_link: Sanbase.Model.Project.sanbase_link(project),
           chart_url: chart_url(project, :volume),
@@ -153,8 +155,8 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
       template = """
       **{{project_name}}**'s price #{operation_template} from {{previous_value}} and is now {{value}}.
 
-      More info here: #{Sanbase.Model.Project.sanbase_link(project)}
-      ![Price chart over the past 90 days](#{chart_url(project, :volume)})
+      More info here: {{project_link}}
+      ![Price chart over the past 90 days]{{chart_url}}
       """
 
       {template, kv}

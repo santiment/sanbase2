@@ -164,7 +164,7 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       end
     end
 
-    defp template_kv(%{operation: %{send_at_predefined_time: true}}, top_words) do
+    defp template_kv(%{operation: %{send_at_predefined_time: true}} = operation, top_words) do
       max_len = get_max_len(top_words)
 
       top_words_strings =
@@ -177,6 +177,8 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       trending_words_str = Enum.join(top_words_strings, "\n")
 
       kv = %{
+        type: TrendingWordsTriggerSettings.type(),
+        operation: operation,
         trending_words_list: top_words,
         trending_words_str: trending_words_str,
         sonar_url: SanbaseWeb.Endpoint.sonar_url()
@@ -194,8 +196,10 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       {template, kv}
     end
 
-    defp template_kv(%{operation: %{trending_word: true}}, [word]) do
+    defp template_kv(%{operation: %{trending_word: true}} = operation, [word]) do
       kv = %{
+        type: TrendingWordsTriggerSettings.type(),
+        operation: operation,
         trending_words_list: [word],
         trending_words_str: "**#{word}**",
         trending_words_url: SanbaseWeb.Endpoint.trending_word_url(word)
@@ -210,11 +214,13 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       {template, kv}
     end
 
-    defp template_kv(%{operation: %{trending_word: true}}, [_, _ | _] = words) do
+    defp template_kv(%{operation: %{trending_word: true}} = operation, [_, _ | _] = words) do
       {last, previous} = List.pop_at(words, -1)
       words_str = (Enum.map(previous, &"**#{&1}**") |> Enum.join(",")) <> " and **#{last}**"
 
       kv = %{
+        type: TrendingWordsTriggerSettings.type(),
+        operation: operation,
         trending_words_list: words,
         trending_words_str: words_str,
         trending_words_url: SanbaseWeb.Endpoint.trending_word_url(words)
@@ -229,8 +235,10 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       {template, kv}
     end
 
-    defp template_kv(%{operation: %{trending_project: true}}, project) do
+    defp template_kv(%{operation: %{trending_project: true}} = operation, project) do
       kv = %{
+        type: TrendingWordsTriggerSettings.type(),
+        operation: operation,
         project_name: project.name,
         project_url: Project.sanbase_link(project),
         chart_url: chart_url(project, :volume)

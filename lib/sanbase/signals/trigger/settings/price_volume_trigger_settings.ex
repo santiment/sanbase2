@@ -139,11 +139,15 @@ defmodule Sanbase.Signal.Trigger.PriceVolumeDifferenceTriggerSettings do
       }
     end
 
-    defp template_kv(slug, _settings, _price_volume_diff) do
+    defp template_kv(slug, settings, price_volume_diff) do
       project = Sanbase.Model.Project.by_slug(slug)
 
       kv = %{
+        type: PriceVolumeDifferenceTriggerSettings.type(),
+        operation: settings.operation,
         project_name: project.name,
+        settings: settings.operation,
+        value: price_volume_diff,
         project_link: Sanbase.Model.Project.sanbase_link(project),
         chart_url: chart_url(project, :volume)
       }

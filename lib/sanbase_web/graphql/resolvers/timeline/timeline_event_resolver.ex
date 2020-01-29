@@ -68,7 +68,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TimelineEventResolver do
     end)
   end
 
-  def comments_count(%TimelineEvent{id: id}, _args, %{context: %{loader: loader}}) do
+  def comments_count(%{id: id}, _args, %{context: %{loader: loader}}) do
     loader
     |> Dataloader.load(SanbaseDataloader, :timeline_events_comments_count, id)
     |> on_load(fn loader ->

@@ -85,19 +85,23 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> validate_required([:event_type, :user_id])
   end
 
-  def events(%{limit: limit, cursor: %{type: cursor_type, datetime: cursor_datetime}}) do
+  def events(%{
+        order_by: order_by,
+        limit: limit,
+        cursor: %{type: cursor_type, datetime: cursor_datetime}
+      }) do
     TimelineEvent
     |> events_by_sanfamily()
-    |> events_order_limit_preload_query(min(limit, @max_events_returned))
+    |> events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
     |> by_cursor(cursor_type, cursor_datetime)
     |> Repo.all()
     |> events_with_cursor()
   end
 
-  def events(%{limit: limit}) do
+  def events(%{order_by: order_by, limit: limit}) do
     TimelineEvent
     |> events_by_sanfamily()
-    |> events_order_limit_preload_query(min(limit, @max_events_returned))
+    |> events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
     |> Repo.all()
     |> events_with_cursor()
   end
@@ -114,24 +118,28 @@ defmodule Sanbase.Timeline.TimelineEvent do
   @spec events(%User{}, cursor_with_limit) :: {:ok, events_with_cursor} | {:error, String.t()}
   def events(
         %User{id: user_id},
-        %{limit: limit, cursor: %{type: cursor_type, datetime: cursor_datetime}}
+        %{
+          order_by: order_by,
+          limit: limit,
+          cursor: %{type: cursor_type, datetime: cursor_datetime}
+        }
       ) do
     TimelineEvent
     |> events_by_sanfamily_or_followed_users_query(user_id)
     |> user_fired_signals_query(user_id)
     |> events_with_public_entities_query()
-    |> events_order_limit_preload_query(min(limit, @max_events_returned))
+    |> events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
     |> by_cursor(cursor_type, cursor_datetime)
     |> Repo.all()
     |> events_with_cursor()
   end
 
-  def events(%User{id: user_id}, %{limit: limit}) do
+  def events(%User{id: user_id}, %{order_by: order_by, limit: limit}) do
     TimelineEvent
     |> events_by_sanfamily_or_followed_users_query(user_id)
     |> user_fired_signals_query(user_id)
     |> events_with_public_entities_query()
-    |> events_order_limit_preload_query(min(limit, @max_events_returned))
+    |> events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
     |> Repo.all()
     |> events_with_cursor()
   end
@@ -248,12 +256,62 @@ defmodule Sanbase.Timeline.TimelineEvent do
     )
   end
 
-  defp events_order_limit_preload_query(query, limit) do
+  defp events_order_limit_preload_query(query, order_by, limit) do
+    query =
+      from(
+        event in query,
+        limit: ^limit
+      )
+      |> order_by_query(order_by)
+
+    from(event in query, preload: [:user_trigger, [post: :tags], :user_list, :user, :votes])
+  end
+
+  defp order_by_query(query, :datetime) do
     from(
       event in query,
-      order_by: [desc: event.inserted_at],
-      limit: ^limit,
-      preload: [:user_trigger, [post: :tags], :user_list, :user, :votes]
+      order_by: [desc: event.inserted_at]
+    )
+  end
+
+  defp order_by_query(query, :author) do
+    from(
+      event in query,
+      left_join: u in User,
+      on: event.user_id == u.id,
+      order_by: [asc: u.username, desc: event.inserted_at]
+    )
+  end
+
+  defp order_by_query(query, :votes) do
+    ids = fetch_ordered_ids(query, Sanbase.Vote)
+    by_id_in_order(query, ids)
+  end
+
+  defp order_by_query(query, :comments) do
+    ids = fetch_ordered_ids(query, Sanbase.Timeline.TimelineEventComment)
+
+    by_id_in_order(query, ids)
+  end
+
+  defp fetch_ordered_ids(query, assoc_module) do
+    from(
+      event in query,
+      left_join: assoc in ^assoc_module,
+      on: assoc.timeline_event_id == event.id,
+      select: {event.id, fragment("COUNT(?)", assoc.id)},
+      order_by: fragment("count DESC NULLS LAST, ? DESC", event.inserted_at),
+      group_by: event.id
+    )
+    |> Repo.all()
+    |> Enum.map(fn {id, _} -> id end)
+  end
+
+  defp by_id_in_order(query, ids) do
+    from(
+      event in query,
+      where: event.id in ^ids,
+      order_by: fragment("array_position(?, ?::int)", ^ids, event.id)
     )
   end
 

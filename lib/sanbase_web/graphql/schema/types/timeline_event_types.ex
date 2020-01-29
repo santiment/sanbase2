@@ -3,6 +3,13 @@ defmodule SanbaseWeb.Graphql.TimelineEventTypes do
 
   alias SanbaseWeb.Graphql.Resolvers.TimelineEventResolver
 
+  enum :order_by_enum do
+    value(:datetime)
+    value(:votes)
+    value(:comments)
+    value(:author)
+  end
+
   object :timeline_events_paginated do
     field(:events, list_of(:timeline_event))
     field(:cursor, :cursor)

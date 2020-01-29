@@ -14,6 +14,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   alias Sanbase.UserList
   alias Sanbase.Signal.UserTrigger
   alias Sanbase.Vote
+  alias Sanbase.EctoHelper
 
   alias __MODULE__
 
@@ -34,12 +35,14 @@ defmodule Sanbase.Timeline.TimelineEvent do
   @table "timeline_events"
   schema @table do
     field(:event_type, :string)
+    field(:payload, :map)
     belongs_to(:user, User)
     belongs_to(:post, Post)
     belongs_to(:user_list, UserList)
     belongs_to(:user_trigger, UserTrigger)
     has_many(:votes, Vote, on_delete: :delete_all)
-    field(:payload, :map)
+
+    many_to_many(:comments, Sanbase.Comment, join_through: "timeline_event_comments_mapping")
 
     timestamps()
   end
@@ -257,14 +260,10 @@ defmodule Sanbase.Timeline.TimelineEvent do
   end
 
   defp events_order_limit_preload_query(query, order_by, limit) do
-    query =
-      from(
-        event in query,
-        limit: ^limit
-      )
-      |> order_by_query(order_by)
-
-    from(event in query, preload: [:user_trigger, [post: :tags], :user_list, :user, :votes])
+    query
+    |> limit(^limit)
+    |> order_by_query(order_by)
+    |> preload([:user_trigger, [post: :tags], :user_list, :user, :votes])
   end
 
   defp order_by_query(query, :datetime) do
@@ -277,42 +276,19 @@ defmodule Sanbase.Timeline.TimelineEvent do
   defp order_by_query(query, :author) do
     from(
       event in query,
-      left_join: u in User,
-      on: event.user_id == u.id,
+      join: u in assoc(event, :user),
       order_by: [asc: u.username, desc: event.inserted_at]
     )
   end
 
   defp order_by_query(query, :votes) do
-    ids = fetch_ordered_ids(query, Sanbase.Vote)
-    by_id_in_order(query, ids)
+    ids = EctoHelper.fetch_ids_ordered_by_assoc_count(query, :votes)
+    EctoHelper.by_id_in_order_query(query, ids)
   end
 
   defp order_by_query(query, :comments) do
-    ids = fetch_ordered_ids(query, Sanbase.Timeline.TimelineEventComment)
-
-    by_id_in_order(query, ids)
-  end
-
-  defp fetch_ordered_ids(query, assoc_module) do
-    from(
-      event in query,
-      left_join: assoc in ^assoc_module,
-      on: assoc.timeline_event_id == event.id,
-      select: {event.id, fragment("COUNT(?)", assoc.id)},
-      order_by: fragment("count DESC NULLS LAST, ? DESC", event.inserted_at),
-      group_by: event.id
-    )
-    |> Repo.all()
-    |> Enum.map(fn {id, _} -> id end)
-  end
-
-  defp by_id_in_order(query, ids) do
-    from(
-      event in query,
-      where: event.id in ^ids,
-      order_by: fragment("array_position(?, ?::int)", ^ids, event.id)
-    )
+    ids = EctoHelper.fetch_ids_ordered_by_assoc_count(query, :comments)
+    EctoHelper.by_id_in_order_query(query, ids)
   end
 
   defp events_by_sanfamily(query) do

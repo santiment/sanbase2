@@ -21,26 +21,30 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
   alias Sanbase.Signal.Type
   alias Sanbase.SocialData.TrendingWords
 
-  @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
+  @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
   @trigger_type "trending_words"
   @trending_words_size 10
   @enforce_keys [:type, :channel, :operation]
 
   defstruct type: @trigger_type,
             channel: nil,
-            triggered?: false,
-            payload: %{},
             operation: %{},
             target: "default",
-            filtered_target: %{list: []}
+            # Private fields, not stored in DB.
+            filtered_target: %{list: []},
+            triggered?: false,
+            payload: %{},
+            template_kv: %{}
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
           channel: Type.channel(),
           operation: Type.operation(),
+          # Private fields, not stored in DB.
+          filtered_target: Type.filtered_target(),
           triggered?: boolean(),
           payload: Type.payload(),
-          triggered?: boolean()
+          template_kv: Type.template_kv()
         }
 
   # Validations
@@ -89,14 +93,13 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       now = Time.utc_now()
       after_15_mins = Time.add(now, 15 * 60, :second)
 
-      if Sanbase.DateTimeUtils.time_in_range?(trigger_time, now, after_15_mins) do
-        %TrendingWordsTriggerSettings{
-          settings
-          | triggered?: true,
-            payload: %{settings.target => payload(settings, top_words)}
-        }
-      else
-        %TrendingWordsTriggerSettings{settings | triggered?: false}
+      case Sanbase.DateTimeUtils.time_in_range?(trigger_time, now, after_15_mins) do
+        true ->
+          template_kv = %{settings.target => template_kv(settings, top_words)}
+          %TrendingWordsTriggerSettings{settings | triggered?: true, template_kv: template_kv}
+
+        false ->
+          %TrendingWordsTriggerSettings{settings | triggered?: false}
       end
     end
 
@@ -115,13 +118,8 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
           %TrendingWordsTriggerSettings{settings | triggered?: false}
 
         [_ | _] = words ->
-          payload = %{words => payload(settings, words)}
-
-          %TrendingWordsTriggerSettings{
-            settings
-            | triggered?: true,
-              payload: payload
-          }
+          template_kv = %{words => template_kv(settings, words)}
+          %TrendingWordsTriggerSettings{settings | triggered?: true, template_kv: template_kv}
       end
     end
 
@@ -150,20 +148,23 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
           %TrendingWordsTriggerSettings{settings | triggered?: false}
 
         false ->
-          payload =
+          template_kv =
             Enum.reduce(projects, %{}, fn project, acc ->
-              if Project.is_trending?(project, trending_words_mapset) do
-                Map.put(acc, project.slug, payload(settings, project))
-              else
-                acc
+              case Project.is_trending?(project, trending_words_mapset) do
+                true -> Map.put(acc, project.slug, template_kv(settings, project))
+                false -> acc
               end
             end)
 
-          %TrendingWordsTriggerSettings{settings | triggered?: true, payload: payload}
+          %TrendingWordsTriggerSettings{
+            settings
+            | triggered?: template_kv != %{},
+              template_kv: template_kv
+          }
       end
     end
 
-    defp payload(%{operation: %{send_at_predefined_time: true}}, top_words) do
+    defp template_kv(%{operation: %{send_at_predefined_time: true}}, top_words) do
       max_len = get_max_len(top_words)
 
       top_words_strings =
@@ -173,34 +174,48 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
           ~s/#{String.pad_trailing(tw.word, max_len)} | #{to_integer(tw.score)}/
         end)
 
-      top_words_table = Enum.join(top_words_strings, "\n")
+      trending_words_str = Enum.join(top_words_strings, "\n")
 
-      """
-      Trending words at: `#{Timex.now() |> Timex.set(second: 0, microsecond: {0, 0})}`
+      kv = %{
+        trending_words_list: top_words,
+        trending_words_str: trending_words_str,
+        sonar_url: SanbaseWeb.Endpoint.sonar_url()
+      }
+
+      template = """
+      Trending words at: {{time}}
 
       ```
-      #{String.pad_trailing("Word", max_len)} | Score
-      #{String.pad_trailing("-", max_len, "-")} | #{String.pad_trailing("-", max_len, "-")}
-      #{top_words_table}
+      {{trending_words_str}}
       ```
-      More info: #{SanbaseWeb.Endpoint.sonar_url()}
+      More info: {{sonar_url}}
       """
+
+      {template, kv}
     end
 
-    defp payload(%{operation: %{trending_word: true}}, [word]) do
-      """
-      The word **#{word}** is in the trending words.
+    defp template_kv(%{operation: %{trending_word: true}}, [word]) do
+      kv = %{
+        trending_words_list: [word],
+        trending_words_str: "**#{word}**",
+        trending_words_url: SanbaseWeb.Endpoint.trending_word_url(word)
+      }
 
-      More info here: #{SanbaseWeb.Endpoint.trending_word_url(word)}
+      template = """
+      The word {{trending_words_str}} is in the trending words.
+
+      More info here: {{trending_words_url}}
       """
+
+      {template, kv}
     end
 
-    defp payload(%{operation: %{trending_word: true}}, [_, _ | _] = words) do
+    defp template_kv(%{operation: %{trending_word: true}}, [_, _ | _] = words) do
       {last, previous} = List.pop_at(words, -1)
       words_str = (Enum.map(previous, &"**#{&1}**") |> Enum.join(",")) <> " and **#{last}**"
 
       kv = %{
-        trendiong_words_list: words,
+        trending_words_list: words,
         trending_words_str: words_str,
         trending_words_url: SanbaseWeb.Endpoint.trending_word_url(words)
       }
@@ -211,10 +226,10 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       More info here: {{trending_words_url}}
       """
 
-      Sanbase.TemplateEngine.run(template, kv)
+      {template, kv}
     end
 
-    defp payload(%{operation: %{trending_project: true}}, project) do
+    defp template_kv(%{operation: %{trending_project: true}}, project) do
       kv = %{
         project_name: project.name,
         project_url: Project.sanbase_link(project),
@@ -228,7 +243,7 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       ![Volume and OHLC price chart for the past 90 days]({{chart_url}})
       """
 
-      Sanbase.TemplateEngine.run(template, kv)
+      {template, kv}
     end
 
     defp get_max_len(top_words) do

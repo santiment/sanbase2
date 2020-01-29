@@ -5,7 +5,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsWatchlistTargetTest do
   import Sanbase.Factory
 
   alias Sanbase.UserList
-  alias Sanbase.Signal.UserTrigger
+  alias Sanbase.Signal.{Trigger, UserTrigger}
   alias Sanbase.Signal.Evaluator
 
   alias Sanbase.Signal.Trigger.TrendingWordsTriggerSettings
@@ -65,7 +65,12 @@ defmodule Sanbase.Signal.TriggerTrendingWordsWatchlistTargetTest do
         |> Evaluator.run()
 
       assert context.trigger_trending_words.id == triggered.id
-      payload = triggered.trigger.settings.payload |> Map.values() |> List.first()
+
+      payload =
+        triggered.trigger.settings.payload
+        |> Map.values()
+        |> List.first()
+
       assert payload =~ "The project **#{context.p1.name}** is in the trending words"
     end
   end

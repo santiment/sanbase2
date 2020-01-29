@@ -11,4 +11,7 @@ defmodule Sanbase.Signal.Type do
   @type threshold :: number()
   @type percent_threshold :: number()
   @type operation :: map()
+  @type template :: String.t()
+  @type kv :: map()
+  @type template_kv :: %{} | %{optional(String.t()) => {template(), kv()}}
 end

@@ -16,27 +16,31 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
   alias Sanbase.Model.Project
   alias Sanbase.Signal.Evaluator.Cache
 
-  @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
+  @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
   @trigger_type "price_percent_change"
   @enforce_keys [:type, :target, :channel, :time_window]
   defstruct type: @trigger_type,
             target: nil,
-            filtered_target: %{list: []},
             channel: nil,
             time_window: nil,
             operation: %{},
+            # Private fields, not stored in DB.
+            filtered_target: %{list: []},
             triggered?: false,
-            payload: nil
+            payload: %{},
+            template_kv: %{}
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
           target: Type.complex_target(),
-          filtered_target: Type.filtered_target(),
           channel: Type.channel(),
           time_window: Type.time_window(),
           operation: Type.operation(),
+          # Private fields, not stored in DB.
+          filtered_target: Type.filtered_target(),
           triggered?: boolean(),
-          payload: Type.payload()
+          payload: Type.payload(),
+          template_kv: Type.template_kv()
         }
 
   validates(:target, &valid_target?/1)
@@ -97,13 +101,12 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
            list,
            %PricePercentChangeSettings{operation: operation} = settings
          ) do
-      payload =
+      template_kv =
         Enum.reduce(list, %{}, fn
           {slug, {:ok, {percent_change, _, _} = price_data}}, acc ->
-            if operation_triggered?(percent_change, operation) do
-              Map.put(acc, slug, payload(slug, settings, price_data))
-            else
-              acc
+            case operation_triggered?(percent_change, operation) do
+              true -> Map.put(acc, slug, template_kv(slug, settings, price_data))
+              false -> acc
             end
 
           _, acc ->
@@ -112,8 +115,8 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
 
       %PricePercentChangeSettings{
         settings
-        | triggered?: payload != %{},
-          payload: payload
+        | triggered?: template_kv != %{},
+          template_kv: template_kv
       }
     end
 
@@ -131,7 +134,7 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
       ])
     end
 
-    defp payload(slug, settings, {percent_change, first_price, last_price}) do
+    defp template_kv(slug, settings, {percent_change, first_price, last_price}) do
       project = Sanbase.Model.Project.by_slug(slug)
 
       {operation_template, operation_kv} =
@@ -154,7 +157,7 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
       ![Price chart over the past 90 days](#{chart_url(project, :volume)})
       """
 
-      Sanbase.TemplateEngine.run(template, kv)
+      {template, kv}
     end
   end
 end

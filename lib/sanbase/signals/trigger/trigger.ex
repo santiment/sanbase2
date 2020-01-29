@@ -98,6 +98,14 @@ defmodule Sanbase.Signal.Trigger do
     end
   end
 
+  def payload_to_string(%Trigger{settings: %{payload: {template, kv}}}) do
+    Sanbase.TemplateEngine.run(template, kv)
+  end
+
+  def payload_to_string({template, kv}) do
+    Sanbase.TemplateEngine.run(template, kv)
+  end
+
   def evaluate(%Trigger{settings: %{target: target} = trigger_settings} = trigger) do
     filtered_target = remove_targets_on_cooldown(target, trigger)
 

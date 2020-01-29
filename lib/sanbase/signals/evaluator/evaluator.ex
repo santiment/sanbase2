@@ -34,6 +34,7 @@ defmodule Sanbase.Signal.Evaluator do
       on_timeout: :kill_task
     )
     |> filter_triggered(type)
+    |> populate_payload()
   end
 
   defp evaluate(%UserTrigger{trigger: trigger} = user_trigger) do
@@ -48,11 +49,12 @@ defmodule Sanbase.Signal.Evaluator do
         fn -> Trigger.evaluate(trigger) end
       )
 
-    # Take only `payload` and `triggered?` from the cache
+    # Take only `template_kv` and `triggered?` from the cache. Each `put` is done
+    # by a separete `put_in` invocation
     user_trigger
     |> put_in(
-      [Access.key!(:trigger), Access.key!(:settings), Access.key!(:payload)],
-      evaluated_trigger.settings.payload
+      [Access.key!(:trigger), Access.key!(:settings), Access.key!(:template_kv)],
+      evaluated_trigger.settings.template_kv
     )
     |> put_in(
       [Access.key!(:trigger), Access.key!(:settings), Access.key!(:triggered?)],
@@ -72,6 +74,24 @@ defmodule Sanbase.Signal.Evaluator do
 
       _ ->
         false
+    end)
+  end
+
+  defp populate_payload(triggers) do
+    triggers
+    |> Enum.map(fn %UserTrigger{} = user_trigger ->
+      template_kv = user_trigger.trigger.settings.template_kv
+
+      payload =
+        Enum.into(template_kv, %{}, fn {identifier, {template, kv}} ->
+          {identifier, Trigger.payload_to_string({template, kv})}
+        end)
+
+      user_trigger
+      |> put_in(
+        [Access.key!(:trigger), Access.key!(:settings), Access.key!(:payload)],
+        payload
+      )
     end)
   end
 end

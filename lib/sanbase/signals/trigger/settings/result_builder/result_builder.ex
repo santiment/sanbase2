@@ -10,25 +10,25 @@ defmodule Sanbase.Signal.ResultBuilder do
 
   @doc ~s"""
   Provided the raw data and the settings, and returns the trigger settings with
-  updated `triggered?` and `payload` fields. These fields are updated by computing
+  updated `triggered?` and `template_kv` fields. These fields are updated by computing
   whether or not the signal should be triggered.
   """
   def build(
         data,
         %trigger_module{operation: operation} = settings,
-        payload_fun,
+        template_kv_fun,
         opts \\ []
       )
       when trigger_module in @trigger_modules do
-    payload =
+    template_kv =
       Transformer.transform(data, Keyword.get(opts, :value_key, :value))
       |> Enum.reduce(%{}, fn %{} = transformed_data, acc ->
         case operation_triggered?(transformed_data, operation) do
           true ->
             Map.put(
               acc,
-              transformed_data.slug,
-              payload_fun.(transformed_data, settings)
+              transformed_data.identifier,
+              template_kv_fun.(transformed_data, settings)
             )
 
           false ->
@@ -38,8 +38,8 @@ defmodule Sanbase.Signal.ResultBuilder do
 
     %{
       settings
-      | triggered?: payload != %{},
-        payload: payload
+      | triggered?: template_kv != %{},
+        template_kv: template_kv
     }
   end
 end

@@ -36,13 +36,17 @@ defmodule Sanbase.Timeline.TimelineEvent do
   schema @table do
     field(:event_type, :string)
     field(:payload, :map)
+
     belongs_to(:user, User)
     belongs_to(:post, Post)
     belongs_to(:user_list, UserList)
     belongs_to(:user_trigger, UserTrigger)
+
     has_many(:votes, Vote, on_delete: :delete_all)
 
-    many_to_many(:comments, Sanbase.Comment, join_through: "timeline_event_comments_mapping")
+    has_many(:event_comment_mapping, Sanbase.Timeline.TimelineEventComment, on_delete: :delete_all)
+
+    has_many(:comments, through: [:event_comment_mapping, :comment])
 
     timestamps()
   end

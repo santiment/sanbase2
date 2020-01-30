@@ -36,6 +36,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   schema @table do
     field(:event_type, :string)
     field(:payload, :map)
+    field(:data, :map)
 
     belongs_to(:user, User)
     belongs_to(:post, Post)
@@ -87,6 +88,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
       :user_list_id,
       :user_trigger_id,
       :payload,
+      :data,
       :inserted_at
     ])
     |> validate_required([:event_type, :user_id])
@@ -187,6 +189,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
                        user_trigger_id: user_trigger_id,
                        user_id: user_id,
                        payload: payload,
+                       data: data,
                        triggered_at: triggered_at
                      } ->
         %{
@@ -194,6 +197,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
           user_trigger_id: user_trigger_id,
           user_id: user_id,
           payload: payload,
+          data: data,
           inserted_at: triggered_at
         }
       end)

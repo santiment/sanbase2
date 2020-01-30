@@ -147,7 +147,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
         |> Map.merge(operation_kv)
 
       template = """
-      **{{project.name}}**'s {{human_readable_name}} #{operation_template}.
+      **{{project_name}}**'s {{metric_human_readable_name}} #{operation_template}.
       More info here: {{project_link}}
 
       ![#{human_readable_name} & OHLC for the past 90 days]({{chart_url}})

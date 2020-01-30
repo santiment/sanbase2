@@ -35,11 +35,14 @@ defmodule Sanbase.Signal.Scheduler do
       |> Evaluator.run(type)
       |> send_and_mark_as_sent()
 
-    updated_user_triggers
-    |> persist_sent_signals()
+    fired_signals =
+      updated_user_triggers
+      |> get_fired_signals_data()
 
-    updated_user_triggers
-    |> deactivate_non_repeating()
+    fired_signals |> persist_historical_activity()
+    fired_signals |> persist_timeline_events()
+
+    updated_user_triggers |> deactivate_non_repeating()
 
     sent_list_results
     |> List.flatten()
@@ -123,38 +126,46 @@ defmodule Sanbase.Signal.Scheduler do
     })
   end
 
-  defp persist_sent_signals(user_triggers) do
-    fired_triggers =
-      user_triggers
-      |> Enum.map(fn
-        %UserTrigger{
-          id: id,
-          user_id: user_id,
-          trigger: %{
-            settings: %{triggered?: true, payload: payload},
-            last_triggered: last_triggered
-          }
+  defp get_fired_signals_data(user_triggers) do
+    user_triggers
+    |> Enum.map(fn
+      %UserTrigger{
+        id: id,
+        user_id: user_id,
+        trigger: %{
+          settings: %{triggered?: true, payload: payload, template_kv: template_kv},
+          last_triggered: last_triggered
         }
-        when is_non_empty_map(last_triggered) ->
-          %{
-            user_trigger_id: id,
-            user_id: user_id,
-            payload: payload,
-            triggered_at: max_last_triggered(last_triggered)
-          }
+      }
+      when is_non_empty_map(last_triggered) ->
+        identifier_kv_map =
+          template_kv
+          |> Enum.into(%{}, fn {identifier, {_template, kv}} -> {identifier, kv} end)
 
-        _ ->
-          nil
-      end)
-      |> Enum.reject(&is_nil/1)
+        %{
+          user_trigger_id: id,
+          user_id: user_id,
+          payload: payload,
+          triggered_at: max_last_triggered(last_triggered),
+          data: %{user_trigger_data: identifier_kv_map}
+        }
 
-    # Fixme: remove after frontend migrates to use only Timeline Events
+      _ ->
+        nil
+    end)
+    |> Enum.reject(&is_nil/1)
+  end
+
+  # Fixme: remove after frontend migrates to use only Timeline Events
+  defp persist_historical_activity(fired_triggers) do
     fired_triggers
     |> Enum.chunk_every(200)
     |> Enum.each(fn chunk ->
       Sanbase.Repo.insert_all(HistoricalActivity, chunk)
     end)
+  end
 
+  defp persist_timeline_events(fired_triggers) do
     fired_triggers
     |> Sanbase.Timeline.TimelineEvent.create_trigger_fired_events()
   end

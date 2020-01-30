@@ -144,9 +144,8 @@ defmodule Sanbase.Signal.Trigger.PriceVolumeDifferenceTriggerSettings do
 
       kv = %{
         type: PriceVolumeDifferenceTriggerSettings.type(),
-        operation: settings.operation,
+        threhsold: settings.threshold,
         project_name: project.name,
-        settings: settings.operation,
         value: price_volume_diff,
         project_link: Sanbase.Model.Project.sanbase_link(project),
         chart_url: chart_url(project, :volume)

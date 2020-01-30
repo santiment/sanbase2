@@ -113,6 +113,7 @@ defmodule Sanbase.Billing.AccessLevelTest do
         "daily_trading_volume_usd",
         "dev_activity",
         "github_activity",
+        "dev_activity_contributors_count",
         "marketcap_usd",
         "price_btc",
         "price_usd",

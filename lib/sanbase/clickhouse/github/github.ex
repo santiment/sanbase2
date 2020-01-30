@@ -223,7 +223,36 @@ defmodule Sanbase.Clickhouse.Github do
     |> maybe_unwrap_ok_value()
   end
 
+  def contributors_count(organizations, from, to, interval, "None", _) do
+    do_contributors_count(organizations, from, to, interval)
+  end
+
+  def contributors_count(organizations, from, to, interval, "movingAverage", ma_base) do
+    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+    from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
+
+    do_contributors_count(organizations, from, to, interval)
+    |> case do
+      {:ok, result} ->
+        Sanbase.Math.simple_moving_average(result, ma_base, value_key: :contributors_count)
+
+      error ->
+        error
+    end
+  end
+
   # Private functions
+
+  defp do_contributors_count(organizations, from, to, interval) do
+    {query, args} = contributors_count_query(organizations, from, to, interval)
+
+    ClickhouseRepo.query_transform(query, args, fn [datetime, contributors] ->
+      %{
+        datetime: datetime |> DateTime.from_unix!(),
+        contributors_count: contributors |> Sanbase.Math.to_integer()
+      }
+    end)
+  end
 
   defp datetime_activity_execute({query, args}) do
     ClickhouseRepo.query_transform(query, args, fn [datetime, events_count] ->
@@ -234,10 +263,51 @@ defmodule Sanbase.Clickhouse.Github do
     end)
   end
 
-  defp dev_activity_query(organizations, from_datetime, to_datetime, interval) do
-    from_datetime_unix = DateTime.to_unix(from_datetime)
-    to_datetime_unix = DateTime.to_unix(to_datetime)
-    span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)
+  defp contributors_count_query(organizations, from, to, interval) do
+    from_unix = DateTime.to_unix(from)
+    to_unix = DateTime.to_unix(to)
+    interval = Sanbase.DateTimeUtils.str_to_sec(interval)
+    span = div(to_unix - from_unix, interval) |> max(1)
+
+    query = """
+    SELECT time, toUInt32(SUM(uniq_actors)) AS uniq_actors
+      FROM (
+        SELECT
+          toUnixTimestamp(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) AS time,
+          0 AS uniq_actors
+        FROM numbers(?2)
+
+        UNION ALL
+
+        SELECT toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time, uniq(actor) AS uniq_actors
+        FROM #{@table}
+        PREWHERE
+          owner IN (?3) AND
+          dt >= toDateTime(?4) AND
+          dt < toDateTime(?5) AND
+          event NOT IN (?6)
+        GROUP BY time
+      )
+      GROUP BY time
+      ORDER BY time
+    """
+
+    args = [
+      interval,
+      span,
+      organizations,
+      from_unix,
+      to_unix,
+      @non_dev_events
+    ]
+
+    {query, args}
+  end
+
+  defp dev_activity_query(organizations, from, to, interval) do
+    from_unix = DateTime.to_unix(from)
+    to_unix = DateTime.to_unix(to)
+    span = div(to_unix - from_unix, interval) |> max(1)
 
     query = """
     SELECT time, SUM(events) AS events_count
@@ -270,18 +340,18 @@ defmodule Sanbase.Clickhouse.Github do
       interval,
       span,
       organizations,
-      from_datetime_unix,
-      to_datetime_unix,
+      from_unix,
+      to_unix,
       @non_dev_events
     ]
 
     {query, args}
   end
 
-  defp github_activity_query(organizations, from_datetime, to_datetime, interval) do
-    from_datetime_unix = DateTime.to_unix(from_datetime)
-    to_datetime_unix = DateTime.to_unix(to_datetime)
-    span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)
+  defp github_activity_query(organizations, from, to, interval) do
+    from_unix = DateTime.to_unix(from)
+    to_unix = DateTime.to_unix(to)
+    span = div(to_unix - from_unix, interval) |> max(1)
 
     query = """
     SELECT time, SUM(events) AS events_count
@@ -313,8 +383,8 @@ defmodule Sanbase.Clickhouse.Github do
       interval,
       span,
       organizations,
-      from_datetime_unix,
-      to_datetime_unix
+      from_unix,
+      to_unix
     ]
 
     {query, args}

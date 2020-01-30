@@ -114,6 +114,7 @@ defmodule Sanbase.Billing.AccessLevelTest do
         "dev_activity",
         "github_activity",
         "dev_activity_contributors_count",
+        "github_activity_contributors_count",
         "marketcap_usd",
         "price_btc",
         "price_usd",

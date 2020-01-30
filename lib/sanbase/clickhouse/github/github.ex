@@ -223,15 +223,40 @@ defmodule Sanbase.Clickhouse.Github do
     |> maybe_unwrap_ok_value()
   end
 
-  def contributors_count(organizations, from, to, interval, "None", _) do
-    do_contributors_count(organizations, from, to, interval)
+  def dev_activity_contributors_count(organizations, from, to, interval, "None", _) do
+    do_dev_activity_contributors_count(organizations, from, to, interval)
   end
 
-  def contributors_count(organizations, from, to, interval, "movingAverage", ma_base) do
+  def dev_activity_contributors_count(organizations, from, to, interval, "movingAverage", ma_base) do
     interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
     from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
 
-    do_contributors_count(organizations, from, to, interval)
+    do_dev_activity_contributors_count(organizations, from, to, interval)
+    |> case do
+      {:ok, result} ->
+        Sanbase.Math.simple_moving_average(result, ma_base, value_key: :contributors_count)
+
+      error ->
+        error
+    end
+  end
+
+  def github_activity_contributors_count(organizations, from, to, interval, "None", _) do
+    do_github_activity_contributors_count(organizations, from, to, interval)
+  end
+
+  def github_activity_contributors_count(
+        organizations,
+        from,
+        to,
+        interval,
+        "movingAverage",
+        ma_base
+      ) do
+    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+    from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
+
+    do_github_activity_contributors_count(organizations, from, to, interval)
     |> case do
       {:ok, result} ->
         Sanbase.Math.simple_moving_average(result, ma_base, value_key: :contributors_count)
@@ -243,8 +268,19 @@ defmodule Sanbase.Clickhouse.Github do
 
   # Private functions
 
-  defp do_contributors_count(organizations, from, to, interval) do
-    {query, args} = contributors_count_query(organizations, from, to, interval)
+  defp do_dev_activity_contributors_count(organizations, from, to, interval) do
+    {query, args} = dev_activity_contributors_count_query(organizations, from, to, interval)
+
+    ClickhouseRepo.query_transform(query, args, fn [datetime, contributors] ->
+      %{
+        datetime: datetime |> DateTime.from_unix!(),
+        contributors_count: contributors |> Sanbase.Math.to_integer()
+      }
+    end)
+  end
+
+  defp do_github_activity_contributors_count(organizations, from, to, interval) do
+    {query, args} = github_activity_contributors_count_query(organizations, from, to, interval)
 
     ClickhouseRepo.query_transform(query, args, fn [datetime, contributors] ->
       %{
@@ -263,7 +299,7 @@ defmodule Sanbase.Clickhouse.Github do
     end)
   end
 
-  defp contributors_count_query(organizations, from, to, interval) do
+  defp dev_activity_contributors_count_query(organizations, from, to, interval) do
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
     interval = Sanbase.DateTimeUtils.str_to_sec(interval)
@@ -299,6 +335,45 @@ defmodule Sanbase.Clickhouse.Github do
       from_unix,
       to_unix,
       @non_dev_events
+    ]
+
+    {query, args}
+  end
+
+  defp github_activity_contributors_count_query(organizations, from, to, interval) do
+    from_unix = DateTime.to_unix(from)
+    to_unix = DateTime.to_unix(to)
+    interval = Sanbase.DateTimeUtils.str_to_sec(interval)
+    span = div(to_unix - from_unix, interval) |> max(1)
+
+    query = """
+    SELECT time, toUInt32(SUM(uniq_actors)) AS uniq_actors
+      FROM (
+        SELECT
+          toUnixTimestamp(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) AS time,
+          0 AS uniq_actors
+        FROM numbers(?2)
+
+        UNION ALL
+
+        SELECT toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time, uniq(actor) AS uniq_actors
+        FROM #{@table}
+        PREWHERE
+          owner IN (?3) AND
+          dt >= toDateTime(?4) AND
+          dt < toDateTime(?5)
+        GROUP BY time
+      )
+      GROUP BY time
+      ORDER BY time
+    """
+
+    args = [
+      interval,
+      span,
+      organizations,
+      from_unix,
+      to_unix
     ]
 
     {query, args}

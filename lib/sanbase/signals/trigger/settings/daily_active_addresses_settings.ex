@@ -133,18 +133,18 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
         type: DailyActiveAddressesSettings.type(),
         operation: settings.operation,
         project_name: project.name,
-        daily_active_addresses: current_daa,
-        average_daily_active_addresses: average_daa,
-        movement_text: Sanbase.Signal.OperationText.to_text(values, settings.operation),
+        value: current_daa,
+        average_value: average_daa,
         interval: interval,
+        movement_text: Sanbase.Signal.OperationText.to_text(values, settings.operation),
         project_link: Project.sanbase_link(project),
         chart_url: chart_url(project, {:metric, "daily_active_addresses"})
       }
 
       template = """
-      **{{project_name}}**'s Daily Active Addresses {{movement_text}} up to {{daily_active_addresses}} active addresses.
+      **{{project_name}}**'s Daily Active Addresses {{movement_text}} up to {{value}} active addresses.
 
-      Average Daily Active Addresses for last **{{interval}}*: **{{average_daily_active_addresses}}**.
+      Average Daily Active Addresses for last **{{interval}}*: **{{average_value}}**.
       More info here: {{project_link}}
 
       ![Daily Active Addresses chart and OHLC price chart for the past 90 days]({{chart_url}})

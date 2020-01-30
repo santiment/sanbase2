@@ -197,16 +197,17 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
       kv = %{
         type: EthWalletTriggerSettings.type(),
         operation: settings.operation,
-        address: address,
+        target: settings.target,
         asset: asset,
+        address: address,
         historical_balance_link: SanbaseWeb.Endpoint.historical_balance_url(address, asset),
         since: DateTime.truncate(from, :second),
-        balance_change_text: operation_text(settings.operation),
-        balance_change: abs(balance_change)
+        balance_change: balance_change,
+        balance_change_abs: abs(balance_change)
       }
 
       template = """
-      The {{asset}} balance of the address {{address}} has {{balance_change_text}} by {{balance_change}} since {{since}}
+      The {{asset}} balance of the address {{address}} has #{operation_text(settings.operation)} by {{balance_change_abs}} since {{since}}
 
       More info here: {{historical_balance_link}}
       """

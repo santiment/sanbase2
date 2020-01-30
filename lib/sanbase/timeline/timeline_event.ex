@@ -14,6 +14,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   alias Sanbase.UserList
   alias Sanbase.Signal.UserTrigger
   alias Sanbase.Vote
+  alias Sanbase.EctoHelper
 
   alias __MODULE__
 
@@ -34,12 +35,18 @@ defmodule Sanbase.Timeline.TimelineEvent do
   @table "timeline_events"
   schema @table do
     field(:event_type, :string)
+    field(:payload, :map)
+
     belongs_to(:user, User)
     belongs_to(:post, Post)
     belongs_to(:user_list, UserList)
     belongs_to(:user_trigger, UserTrigger)
+
     has_many(:votes, Vote, on_delete: :delete_all)
-    field(:payload, :map)
+
+    has_many(:event_comment_mapping, Sanbase.Timeline.TimelineEventComment, on_delete: :delete_all)
+
+    has_many(:comments, through: [:event_comment_mapping, :comment])
 
     timestamps()
   end
@@ -85,19 +92,23 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> validate_required([:event_type, :user_id])
   end
 
-  def events(%{limit: limit, cursor: %{type: cursor_type, datetime: cursor_datetime}}) do
+  def events(%{
+        order_by: order_by,
+        limit: limit,
+        cursor: %{type: cursor_type, datetime: cursor_datetime}
+      }) do
     TimelineEvent
     |> events_by_sanfamily()
-    |> events_order_limit_preload_query(min(limit, @max_events_returned))
+    |> events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
     |> by_cursor(cursor_type, cursor_datetime)
     |> Repo.all()
     |> events_with_cursor()
   end
 
-  def events(%{limit: limit}) do
+  def events(%{order_by: order_by, limit: limit}) do
     TimelineEvent
     |> events_by_sanfamily()
-    |> events_order_limit_preload_query(min(limit, @max_events_returned))
+    |> events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
     |> Repo.all()
     |> events_with_cursor()
   end
@@ -114,24 +125,28 @@ defmodule Sanbase.Timeline.TimelineEvent do
   @spec events(%User{}, cursor_with_limit) :: {:ok, events_with_cursor} | {:error, String.t()}
   def events(
         %User{id: user_id},
-        %{limit: limit, cursor: %{type: cursor_type, datetime: cursor_datetime}}
+        %{
+          order_by: order_by,
+          limit: limit,
+          cursor: %{type: cursor_type, datetime: cursor_datetime}
+        }
       ) do
     TimelineEvent
     |> events_by_sanfamily_or_followed_users_query(user_id)
     |> user_fired_signals_query(user_id)
     |> events_with_public_entities_query()
-    |> events_order_limit_preload_query(min(limit, @max_events_returned))
+    |> events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
     |> by_cursor(cursor_type, cursor_datetime)
     |> Repo.all()
     |> events_with_cursor()
   end
 
-  def events(%User{id: user_id}, %{limit: limit}) do
+  def events(%User{id: user_id}, %{order_by: order_by, limit: limit}) do
     TimelineEvent
     |> events_by_sanfamily_or_followed_users_query(user_id)
     |> user_fired_signals_query(user_id)
     |> events_with_public_entities_query()
-    |> events_order_limit_preload_query(min(limit, @max_events_returned))
+    |> events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
     |> Repo.all()
     |> events_with_cursor()
   end
@@ -248,13 +263,36 @@ defmodule Sanbase.Timeline.TimelineEvent do
     )
   end
 
-  defp events_order_limit_preload_query(query, limit) do
+  defp events_order_limit_preload_query(query, order_by, limit) do
+    query
+    |> limit(^limit)
+    |> order_by_query(order_by)
+    |> preload([:user_trigger, [post: :tags], :user_list, :user, :votes])
+  end
+
+  defp order_by_query(query, :datetime) do
     from(
       event in query,
-      order_by: [desc: event.inserted_at],
-      limit: ^limit,
-      preload: [:user_trigger, [post: :tags], :user_list, :user, :votes]
+      order_by: [desc: event.inserted_at]
     )
+  end
+
+  defp order_by_query(query, :author) do
+    from(
+      event in query,
+      join: u in assoc(event, :user),
+      order_by: [asc: u.username, desc: event.inserted_at]
+    )
+  end
+
+  defp order_by_query(query, :votes) do
+    ids = EctoHelper.fetch_ids_ordered_by_assoc_count(query, :votes)
+    EctoHelper.by_id_in_order_query(query, ids)
+  end
+
+  defp order_by_query(query, :comments) do
+    ids = EctoHelper.fetch_ids_ordered_by_assoc_count(query, :comments)
+    EctoHelper.by_id_in_order_query(query, ids)
   end
 
   defp events_by_sanfamily(query) do

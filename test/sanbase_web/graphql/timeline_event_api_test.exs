@@ -8,6 +8,9 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   alias Sanbase.UserList
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Auth.UserFollower
+  alias Sanbase.Comment.EntityComment
+
+  @entity_type :timeline_event
 
   setup do
     user = insert(:user, email: "test@example.com")
@@ -314,6 +317,54 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     end
   end
 
+  describe "order timeline events" do
+    test "by datetime by default", context do
+      events = create_test_events(context)
+      result = timeline_events_query(context.conn, "limit: 3")
+
+      assert event_ids(result) == [
+               events.event_with_0_votes_and_0_comments.id,
+               events.event_with_1_votes_and_0_comments.id,
+               events.event_with_0_votes_and_1_comments.id
+             ]
+    end
+
+    test "by number of votes", context do
+      events = create_test_events(context)
+      result = timeline_events_query(context.conn, "limit: 3, orderBy: VOTES")
+
+      assert event_ids(result) == [
+               events.event_with_1_votes_and_0_comments.id,
+               events.event_with_0_votes_and_0_comments.id,
+               events.event_with_0_votes_and_1_comments.id
+             ]
+    end
+
+    test "by number of comments", context do
+      events = create_test_events(context)
+
+      result = timeline_events_query(context.conn, "limit: 3, orderBy: COMMENTS")
+
+      assert event_ids(result) == [
+               events.event_with_0_votes_and_1_comments.id,
+               events.event_with_0_votes_and_0_comments.id,
+               events.event_with_1_votes_and_0_comments.id
+             ]
+    end
+
+    test "by author name", context do
+      events = create_test_events(context)
+
+      result = timeline_events_query(context.conn, "limit: 3, orderBy: AUTHOR")
+
+      assert event_ids(result) == [
+               events.event_with_0_votes_and_1_comments.id,
+               events.event_with_0_votes_and_0_comments.id,
+               events.event_with_1_votes_and_0_comments.id
+             ]
+    end
+  end
+
   defp timeline_events_query(conn, args_str) do
     query =
       ~s|
@@ -328,6 +379,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
           votes {
             userId
           }
+          commentsCount,
           eventType,
           insertedAt,
           user {
@@ -417,6 +469,88 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       "time_window" => "1d",
       "operation" => %{"percent_up" => 300.0}
     }
+  end
+
+  defp create_test_events(context) do
+    # create event with 0 votes and 0 comments
+    # create event with 1 votes and 0 comments
+    # create event with 0 votes and 1 comments
+
+    user = insert(:user)
+
+    san_author1 = insert(:user, username: "a")
+    insert(:user_role, user: san_author1, role: context.role_san_clan)
+
+    san_author2 = insert(:user, username: "b")
+    insert(:user_role, user: san_author2, role: context.role_san_clan)
+
+    post1 =
+      insert(:post,
+        user: san_author1,
+        state: Post.approved_state(),
+        ready_state: Post.published()
+      )
+
+    post2 =
+      insert(:post,
+        user: san_author2,
+        state: Post.approved_state(),
+        ready_state: Post.published()
+      )
+
+    post3 =
+      insert(:post,
+        user: san_author2,
+        state: Post.approved_state(),
+        ready_state: Post.published()
+      )
+
+    event_with_0_votes_and_1_comments =
+      insert(:timeline_event,
+        post: post1,
+        user: san_author1,
+        event_type: TimelineEvent.publish_insight_type()
+      )
+
+    EntityComment.create_and_link(
+      @entity_type,
+      event_with_0_votes_and_1_comments.id,
+      user.id,
+      nil,
+      "some comment"
+    )
+
+    event_with_1_votes_and_0_comments =
+      insert(:timeline_event,
+        post: post2,
+        user: san_author2,
+        event_type: TimelineEvent.publish_insight_type()
+      )
+
+    Sanbase.Vote.create(%{
+      user_id: user.id,
+      timeline_event_id: event_with_1_votes_and_0_comments.id
+    })
+
+    event_with_0_votes_and_0_comments =
+      insert(:timeline_event,
+        post: post3,
+        user: san_author2,
+        event_type: TimelineEvent.publish_insight_type()
+      )
+
+    %{
+      event_with_0_votes_and_1_comments: event_with_0_votes_and_1_comments,
+      event_with_1_votes_and_0_comments: event_with_1_votes_and_0_comments,
+      event_with_0_votes_and_0_comments: event_with_0_votes_and_0_comments
+    }
+  end
+
+  defp event_ids(result) do
+    result
+    |> hd()
+    |> Map.get("events")
+    |> Enum.map(&String.to_integer(&1["id"]))
   end
 
   defp format_interpolated_json(string) do

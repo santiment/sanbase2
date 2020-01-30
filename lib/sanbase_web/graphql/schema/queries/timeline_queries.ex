@@ -12,6 +12,7 @@ defmodule SanbaseWeb.Graphql.Schema.TimelineQueries do
       meta(access: :free)
 
       arg(:cursor, :cursor_input)
+      arg(:order_by, :order_by_enum, default_value: :datetime)
       arg(:limit, :integer, default_value: 25)
 
       resolve(&TimelineEventResolver.timeline_events/3)

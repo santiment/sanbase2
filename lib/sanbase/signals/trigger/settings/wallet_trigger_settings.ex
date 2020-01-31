@@ -215,9 +215,9 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
 
       kv =
         %{
-          project_name: project.name,
-          project_url: Project.sanbase_link(project),
           type: WalletTriggerSettings.type(),
+          project_name: project.name,
+          project_slug: project.slug,
           operation: settings.operation
         }
         |> Map.merge(operation_kv)
@@ -228,7 +228,7 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
         operation_template
       }
 
-      More information about the project can be found here: {{project_url}}
+      More information about the project can be found here: #{Project.sanbase_link(project)}
       """
 
       {template, kv}

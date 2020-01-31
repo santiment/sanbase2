@@ -175,7 +175,7 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
         type: EthWalletTriggerSettings.type(),
         operation: settings.operation,
         project_name: project.name,
-        project_link: Sanbase.Model.Project.sanbase_link(project),
+        project_slug: project.slug,
         asset: settings.asset.slug,
         since: DateTime.truncate(from, :second),
         balance_change_text: operation_text(settings.operation),
@@ -185,7 +185,7 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
       template = """
       The {{asset}} balance of {{project_name}} wallets has {{balance_change_text}} by {{balance_change}} since {{since}}
 
-      More info here: {{project_link}}
+      More info here: #{Project.sanbase_link(project)}
       """
 
       {template, kv}

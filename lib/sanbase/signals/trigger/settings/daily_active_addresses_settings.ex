@@ -96,7 +96,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
   end
 
   defimpl Sanbase.Signal.Settings, for: DailyActiveAddressesSettings do
-    alias Sanbase.Signal.ResultBuilder
+    alias Sanbase.Signal.{ResultBuilder, OperationText}
 
     def triggered?(%DailyActiveAddressesSettings{triggered?: triggered}), do: triggered
 
@@ -124,28 +124,30 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
     end
 
     defp template_kv(%{identifier: slug} = values, settings) do
-      %{current: current_daa, previous_average: average_daa} = values
-
       project = Project.by_slug(slug)
       interval = interval_to_str(settings.time_window)
 
-      kv = %{
-        type: DailyActiveAddressesSettings.type(),
-        operation: settings.operation,
-        project_name: project.name,
-        value: current_daa,
-        average_value: average_daa,
-        interval: interval,
-        movement_text: Sanbase.Signal.OperationText.to_text(values, settings.operation),
-        project_link: Project.sanbase_link(project),
-        chart_url: chart_url(project, {:metric, "daily_active_addresses"})
-      }
+      {operation_template, operation_kv} =
+        OperationText.to_template_kv(values, settings.operation)
+
+      kv =
+        kv =
+        %{
+          type: DailyActiveAddressesSettings.type(),
+          operation: settings.operation,
+          project_name: project.name,
+          project_slug: project.slug,
+          average_value: values.average_daa,
+          interval: interval,
+          chart_url: chart_url(project, {:metric, "daily_active_addresses"})
+        }
+        |> Map.merge(operation_kv)
 
       template = """
-      **{{project_name}}**'s Daily Active Addresses {{movement_text}} up to {{value}} active addresses.
+      **{{project_name}}**'s Daily Active Addresses #{operation_template}
 
       Average Daily Active Addresses for last **{{interval}}*: **{{average_value}}**.
-      More info here: {{project_link}}
+      More info here: #{Project.sanbase_link(project)}
 
       ![Daily Active Addresses chart and OHLC price chart for the past 90 days]({{chart_url}})
       """

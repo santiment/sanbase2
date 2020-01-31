@@ -131,17 +131,17 @@ defmodule Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings do
           type: PriceAbsoluteChangeSettings.type(),
           operation: operation,
           project_name: project.name,
-          project_link: Project.sanbase_link(project),
-          project_chart: chart_url(project, :volume)
+          project_slug: project.slug,
+          chart_url: chart_url(project, :volume)
         }
         |> Map.merge(template_kv)
 
       template = """
       **{{project_name}}**'s price #{operation_tempalte}
 
-      More information for the project you can find here: {{project_link}}
+      More information for the project you can find here: #{Project.sanbase_link(project)}
 
-      ![Price chart over the past 90 days]({{project_chart}})
+      ![Price chart over the past 90 days]({{chart_url}})
       """
 
       {template, kv}

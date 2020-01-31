@@ -139,16 +139,16 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
           type: MetricTriggerSettings.type(),
           operation: settings.operation,
           project_name: project.name,
+          project_slug: project.slug,
           metric: settings.metric,
           metric_human_readable_name: human_readable_name,
-          project_link: Project.sanbase_link(project),
           chart_url: chart_url(project, {:metric, settings.metric})
         }
         |> Map.merge(operation_kv)
 
       template = """
       **{{project_name}}**'s {{metric_human_readable_name}} #{operation_template}.
-      More info here: {{project_link}}
+      More info here: #{Project.sanbase_link(project)}
 
       ![#{human_readable_name} & OHLC for the past 90 days]({{chart_url}})
       """

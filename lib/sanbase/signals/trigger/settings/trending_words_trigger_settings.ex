@@ -240,14 +240,14 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
         type: TrendingWordsTriggerSettings.type(),
         operation: operation,
         project_name: project.name,
-        project_url: Project.sanbase_link(project),
+        project_slug: project.slug,
         chart_url: chart_url(project, :volume)
       }
 
       template = """
       The project **{{project_name}}** is in the trending words.
 
-      More info here: {{project_url}}
+      More info here: #{Project.sanbase_link(project)}
       ![Volume and OHLC price chart for the past 90 days]({{chart_url}})
       """
 

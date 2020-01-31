@@ -45,13 +45,10 @@ defimpl Sanbase.Signal, for: Any do
     end)
   end
 
-  def send_email(%{
-        user: %Sanbase.Auth.User{
-          id: id,
-          user_settings: %{settings: %{has_telegram_connected: false}}
-        }
-      }) do
-    Logger.warn("User with id #{id} does not have an email linked, so a signal cannot be sent.")
+  def send_email(%{user: %Sanbase.Auth.User{id: id}}) do
+    Logger.warn(
+      "User with id #{id} does not have an email linked or the email notifications are disabled, so a signal cannot be sent."
+    )
 
     {:error, "No email linked for user with id #{id}"}
   end

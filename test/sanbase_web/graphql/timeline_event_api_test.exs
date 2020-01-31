@@ -323,20 +323,21 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       result = timeline_events_query(context.conn, "limit: 3")
 
       assert event_ids(result) == [
-               events.event_with_0_votes_and_0_comments.id,
-               events.event_with_1_votes_and_0_comments.id,
-               events.event_with_0_votes_and_1_comments.id
+               events.event_with_0_votes_and_0_comments_by_sanfam.id,
+               events.event_with_1_votes_and_0_comments_by_sanfam.id,
+               events.event_with_0_votes_and_1_comments_by_followed.id
              ]
     end
 
+    # FIXME: order by: date, likes_count, datetime
     test "by number of votes", context do
       events = create_test_events(context)
       result = timeline_events_query(context.conn, "limit: 3, orderBy: VOTES")
 
       assert event_ids(result) == [
-               events.event_with_1_votes_and_0_comments.id,
-               events.event_with_0_votes_and_0_comments.id,
-               events.event_with_0_votes_and_1_comments.id
+               events.event_with_1_votes_and_0_comments_by_sanfam.id,
+               events.event_with_0_votes_and_0_comments_by_sanfam.id,
+               events.event_with_0_votes_and_1_comments_by_followed.id
              ]
     end
 
@@ -346,9 +347,9 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       result = timeline_events_query(context.conn, "limit: 3, orderBy: COMMENTS")
 
       assert event_ids(result) == [
-               events.event_with_0_votes_and_1_comments.id,
-               events.event_with_0_votes_and_0_comments.id,
-               events.event_with_1_votes_and_0_comments.id
+               events.event_with_0_votes_and_1_comments_by_followed.id,
+               events.event_with_0_votes_and_0_comments_by_sanfam.id,
+               events.event_with_1_votes_and_0_comments_by_sanfam.id
              ]
     end
 
@@ -358,10 +359,91 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       result = timeline_events_query(context.conn, "limit: 3, orderBy: AUTHOR")
 
       assert event_ids(result) == [
-               events.event_with_0_votes_and_1_comments.id,
-               events.event_with_0_votes_and_0_comments.id,
-               events.event_with_1_votes_and_0_comments.id
+               events.event_with_0_votes_and_1_comments_by_followed.id,
+               events.event_with_0_votes_and_0_comments_by_sanfam.id,
+               events.event_with_1_votes_and_0_comments_by_sanfam.id
              ]
+    end
+  end
+
+  describe "filter timeline events" do
+    test "by san family and followed users (default)", context do
+      events = create_test_events(context)
+
+      result =
+        timeline_events_query(context.conn, "filterBy: {author: SANFAM_AND_FOLLOWED}, limit: 3")
+
+      assert event_ids(result) == [
+               events.event_with_0_votes_and_0_comments_by_sanfam.id,
+               events.event_with_1_votes_and_0_comments_by_sanfam.id,
+               events.event_with_0_votes_and_1_comments_by_followed.id
+             ]
+    end
+
+    test "by san family", context do
+      events = create_test_events(context)
+      result = timeline_events_query(context.conn, "filterBy: {author: SANFAM_ONLY}, limit: 3")
+
+      assert event_ids(result) == [
+               events.event_with_0_votes_and_0_comments_by_sanfam.id,
+               events.event_with_1_votes_and_0_comments_by_sanfam.id
+             ]
+    end
+
+    test "by followed users", context do
+      events = create_test_events(context)
+      result = timeline_events_query(context.conn, "filterBy: {author: FOLLOWED_ONLY}, limit: 3")
+
+      assert event_ids(result) == [
+               events.event_with_0_votes_and_1_comments_by_followed.id
+             ]
+    end
+
+    test "current user's events", context do
+      events = create_test_events(context)
+      result = timeline_events_query(context.conn, "filterBy: {author: OWN_ONLY}, limit: 3")
+
+      {:ok, user_list} =
+        UserList.create_user_list(context.user.id(%{name: "My Test List", is_public: true}))
+
+      watchlist_event =
+        insert(:timeline_event,
+          user_list: user_list,
+          user: context.user.id,
+          event_type: TimelineEvent.update_watchlist_type()
+        )
+
+      assert event_ids(result) == [watchlist_event.id]
+    end
+
+    test "by list of watchlists", context do
+      user_to_follow = insert(:user)
+      UserFollower.follow(user_to_follow.id, context.user.id)
+
+      {:ok, user_list} =
+        UserList.create_user_list(user_to_follow, %{name: "My Test List", is_public: true})
+
+      watchlist_event =
+        insert(:timeline_event,
+          user_list: user_list,
+          user: user_to_follow,
+          event_type: TimelineEvent.update_watchlist_type()
+        )
+
+      events = create_test_events(context)
+
+      result =
+        timeline_events_query(
+          context.conn,
+          "filterBy: {author: SANFAM_AND_FOLLOWED, watchlists: [#{user_list.id}]}, limit: 3"
+        )
+
+      assert event_ids(result) == [
+               watchlist_event.id
+             ]
+    end
+
+    test "by list of assets", context do
     end
   end
 
@@ -407,7 +489,9 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     result =
       conn
       |> post("/graphql", query_skeleton(query, "timelineEvents"))
+      |> IO.inspect()
       |> json_response(200)
+      |> IO.inspect()
 
     result["data"]["timelineEvents"]
   end
@@ -478,15 +562,15 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
 
     user = insert(:user)
 
-    san_author1 = insert(:user, username: "a")
-    insert(:user_role, user: san_author1, role: context.role_san_clan)
+    user_to_follow = insert(:user, username: "a")
+    UserFollower.follow(user_to_follow.id, context.user.id)
 
     san_author2 = insert(:user, username: "b")
     insert(:user_role, user: san_author2, role: context.role_san_clan)
 
     post1 =
       insert(:post,
-        user: san_author1,
+        user: user_to_follow,
         state: Post.approved_state(),
         ready_state: Post.published()
       )
@@ -505,22 +589,22 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
         ready_state: Post.published()
       )
 
-    event_with_0_votes_and_1_comments =
+    event_with_0_votes_and_1_comments_by_followed =
       insert(:timeline_event,
         post: post1,
-        user: san_author1,
+        user: user_to_follow,
         event_type: TimelineEvent.publish_insight_type()
       )
 
     EntityComment.create_and_link(
       @entity_type,
-      event_with_0_votes_and_1_comments.id,
+      event_with_0_votes_and_1_comments_by_followed.id,
       user.id,
       nil,
       "some comment"
     )
 
-    event_with_1_votes_and_0_comments =
+    event_with_1_votes_and_0_comments_by_sanfam =
       insert(:timeline_event,
         post: post2,
         user: san_author2,
@@ -529,10 +613,10 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
 
     Sanbase.Vote.create(%{
       user_id: user.id,
-      timeline_event_id: event_with_1_votes_and_0_comments.id
+      timeline_event_id: event_with_1_votes_and_0_comments_by_sanfam.id
     })
 
-    event_with_0_votes_and_0_comments =
+    event_with_0_votes_and_0_comments_by_sanfam =
       insert(:timeline_event,
         post: post3,
         user: san_author2,
@@ -540,9 +624,10 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       )
 
     %{
-      event_with_0_votes_and_1_comments: event_with_0_votes_and_1_comments,
-      event_with_1_votes_and_0_comments: event_with_1_votes_and_0_comments,
-      event_with_0_votes_and_0_comments: event_with_0_votes_and_0_comments
+      event_with_0_votes_and_1_comments_by_followed:
+        event_with_0_votes_and_1_comments_by_followed,
+      event_with_1_votes_and_0_comments_by_sanfam: event_with_1_votes_and_0_comments_by_sanfam,
+      event_with_0_votes_and_0_comments_by_sanfam: event_with_0_votes_and_0_comments_by_sanfam
     }
   end
 

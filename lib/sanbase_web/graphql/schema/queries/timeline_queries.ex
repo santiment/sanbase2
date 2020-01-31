@@ -14,7 +14,7 @@ defmodule SanbaseWeb.Graphql.Schema.TimelineQueries do
       arg(:cursor, :cursor_input)
 
       arg(:filter_by, :timeline_events_filter_input,
-        default_value: %{author: :sanfam_and_followed, watchlists: nil, assets: nil}
+        default_value: %{author: :all, watchlists: nil, assets: nil}
       )
 
       arg(:order_by, :order_by_enum, default_value: :datetime)

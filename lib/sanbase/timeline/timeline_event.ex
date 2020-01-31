@@ -52,7 +52,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   end
 
   @type event_type() :: String.t()
-  @type autor_type() :: :sanfam_and_followed | :followed_only | :sanfam_only | :own_only
+  @type autor_type() :: :all | :followed | :sanfam | :own
   @type filter() :: %{
           author: autor_type(),
           watchlists: list(non_neg_integer()),
@@ -116,9 +116,9 @@ defmodule Sanbase.Timeline.TimelineEvent do
         cursor: %{type: cursor_type, datetime: cursor_datetime}
       }) do
     TimelineEvent
+    |> by_cursor(cursor_type, cursor_datetime)
     |> events_by_sanfamily_query()
     |> events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
-    |> by_cursor(cursor_type, cursor_datetime)
     |> Repo.all()
     |> events_with_cursor()
   end
@@ -146,10 +146,10 @@ defmodule Sanbase.Timeline.TimelineEvent do
         }
       ) do
     TimelineEvent
+    |> by_cursor(cursor_type, cursor_datetime)
     |> filter_by_query(filter_by, user_id)
     |> events_with_public_entities_query(user_id)
     |> events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
-    |> by_cursor(cursor_type, cursor_datetime)
     |> Repo.all()
     |> events_with_cursor()
   end
@@ -159,7 +159,6 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> filter_by_query(filter_by, user_id)
     |> events_with_public_entities_query(user_id)
     |> events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
-    |> IO.inspect(limit: :infinity)
     |> Repo.all()
     |> events_with_cursor()
   end
@@ -262,7 +261,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     %__MODULE__{} |> create_changeset(Map.put(params, type, id)) |> Repo.insert()
   end
 
-  # show private entities only if they belong to current user, otherwise show only public entities
+  # show private and public entities only if they belong to current user, otherwise show only public entities
   defp events_with_public_entities_query(query, user_id) do
     from(
       event in query,
@@ -271,9 +270,11 @@ defmodule Sanbase.Timeline.TimelineEvent do
       left_join: ul in UserList,
       on: event.user_list_id == ul.id,
       where:
-        not is_nil(event.post_id) or
-          (ul.user_id != ^user_id and ul.is_public == true) or
-          (ut.user_id != ^user_id and fragment("trigger->>'is_public' = 'true'"))
+        event.user_id == ^user_id or
+          (event.user_id != ^user_id and
+             (not is_nil(event.post_id) or
+                ul.is_public == true or
+                fragment("trigger->>'is_public' = 'true'")))
     )
   end
 
@@ -281,7 +282,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     query
     |> filter_by_author_query(filter_by, user_id)
     |> filter_by_watchlists_query(filter_by)
-    |> filter_by_assets_query(filter_by)
+    |> filter_by_assets_query(filter_by, user_id)
   end
 
   defp filter_by_author_query(query, %{author: :all}, user_id) do
@@ -305,24 +306,87 @@ defmodule Sanbase.Timeline.TimelineEvent do
   end
 
   defp filter_by_watchlists_query(query, %{watchlists: watchlists})
-       when is_nil(watchlists) or length(watchlists) == 0 do
-    query
-  end
-
-  defp filter_by_watchlists_query(query, %{watchlists: watchlists})
        when is_list(watchlists) and length(watchlists) > 0 do
     from(event in query, where: event.user_list_id in ^watchlists)
   end
 
-  defp filter_by_assets_query(query, %{assets: assets})
-       when is_nil(assets) or length(assets) == 0 do
-    query
+  defp filter_by_watchlists_query(query, _), do: query
+
+  defp filter_by_assets_query(query, %{assets: assets} = filter_by, user_id)
+       when is_list(assets) and length(assets) > 0 do
+    {slugs, tickers} = get_slugs_and_tickers_by_asset_list(assets)
+    watchlist_ids = get_watchlist_ids_by_asset_list(assets, filter_by, user_id)
+    insight_ids = get_insight_ids_by_asset_list({slugs, tickers}, filter_by, user_id)
+    trigger_ids = get_trigger_ids_by_asset_list({slugs, tickers}, filter_by, user_id)
+
+    from(event in query,
+      where:
+        event.user_list_id in ^watchlist_ids or
+          event.post_id in ^insight_ids or
+          event.user_trigger_id in ^trigger_ids
+    )
   end
 
-  defp filter_by_assets_query(query, %{assets: assets})
-       when is_list(assets) and length(assets) > 0 do
-    # query insights tags, watchlists assets, user_triggers->trigger->settings->target
-    query
+  defp filter_by_assets_query(query, _, _), do: query
+
+  defp get_watchlist_ids_by_asset_list(assets, filter_by, user_id) do
+    from(
+      entity in UserList,
+      join: li in assoc(entity, :list_items),
+      where: li.project_id in ^assets,
+      select: entity.id
+    )
+    |> filter_by_author_query(filter_by, user_id)
+    |> Repo.all()
+  end
+
+  defp get_slugs_and_tickers_by_asset_list(assets) do
+    project_slugs_and_tickers =
+      from(p in Sanbase.Model.Project, where: p.id in ^assets, select: [p.slug, p.ticker])
+      |> Repo.all()
+
+    slugs = project_slugs_and_tickers |> Enum.map(fn [slug, _] -> slug end)
+    tickers = project_slugs_and_tickers |> Enum.map(fn [_, ticker] -> ticker end)
+
+    {slugs, tickers}
+  end
+
+  defp get_insight_ids_by_asset_list({slugs, tickers}, filter_by, user_id) do
+    from(
+      entity in Post,
+      join: t in assoc(entity, :tags),
+      where: t.name in ^slugs or t.name in ^tickers,
+      select: entity.id
+    )
+    |> filter_by_author_query(filter_by, user_id)
+    |> Repo.all()
+  end
+
+  defp get_trigger_ids_by_asset_list({slugs, tickers}, filter_by, user_id) do
+    triggers =
+      from(ut in UserTrigger, select: [ut.id, fragment("trigger->'settings'->'target'")])
+      |> filter_by_author_query(filter_by, user_id)
+      |> Repo.all()
+
+    triggers
+    |> Enum.filter(fn
+      [_, %{"slug" => slug}] when is_binary(slug) ->
+        slug in slugs
+
+      [_, %{"slug" => target_slugs}] when is_list(slugs) ->
+        MapSet.new(target_slugs) |> MapSet.intersection(MapSet.new(slugs)) |> MapSet.size() > 0
+
+      [_, %{"word" => word}] when is_binary(word) ->
+        word in slugs or String.upcase(word) in tickers
+
+      [_, %{"word" => words}] when is_list(words) ->
+        words_upcase = words |> Enum.map(&String.upcase/1)
+
+        MapSet.new(words) |> MapSet.intersection(MapSet.new(slugs)) |> MapSet.size() > 0 or
+          MapSet.new(words_upcase) |> MapSet.intersection(MapSet.new(tickers)) |> MapSet.size() >
+            0
+    end)
+    |> Enum.map(fn [id, _] -> id end)
   end
 
   defp events_by_sanfamily_or_followed_users_or_own_query(query, user_id) do
@@ -389,20 +453,29 @@ defmodule Sanbase.Timeline.TimelineEvent do
   end
 
   defp order_by_query(query, :votes) do
-    ids = EctoHelper.fetch_ids_ordered_by_assoc_count(query, :votes)
+    # order by: date, votes count, datetime
+    ids =
+      from(
+        entity in query,
+        left_join: assoc in assoc(entity, :votes),
+        select: {entity.id, fragment("COUNT(?)", assoc.id)},
+        group_by: entity.id,
+        order_by:
+          fragment(
+            "?::date DESC, count DESC NULLS LAST, ? DESC",
+            entity.inserted_at,
+            entity.inserted_at
+          )
+      )
+      |> Repo.all()
+      |> Enum.map(fn {id, _} -> id end)
+
     EctoHelper.by_id_in_order_query(query, ids)
   end
 
   defp order_by_query(query, :comments) do
     ids = EctoHelper.fetch_ids_ordered_by_assoc_count(query, :comments)
     EctoHelper.by_id_in_order_query(query, ids)
-  end
-
-  def user_fired_signals_query(query, user_id) do
-    from(
-      event in query,
-      or_where: event.event_type == ^@trigger_fired and event.user_id == ^user_id
-    )
   end
 
   defp by_cursor(query, :before, datetime) do

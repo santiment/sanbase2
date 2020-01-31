@@ -9,6 +9,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Auth.UserFollower
   alias Sanbase.Comment.EntityComment
+  alias Sanbase.Signal.UserTrigger
 
   @entity_type :timeline_event
 
@@ -17,7 +18,11 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     conn = setup_jwt_auth(build_conn(), user)
     role_san_clan = insert(:role_san_clan)
 
-    {:ok, conn: conn, user: user, role_san_clan: role_san_clan}
+    project = insert(:project, slug: "santiment")
+    project2 = insert(:project, slug: "ethereum", ticker: "ETH", name: "Ethereum")
+
+    {:ok,
+     conn: conn, user: user, role_san_clan: role_san_clan, project: project, project2: project2}
   end
 
   test "timeline events with public entities by followed users or by san family are fetched", %{
@@ -329,19 +334,31 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
              ]
     end
 
-    # FIXME: order by: date, likes_count, datetime
-    test "by number of votes", context do
+    test "by date, by number of votes, by datetime", context do
       events = create_test_events(context)
-      result = timeline_events_query(context.conn, "limit: 3, orderBy: VOTES")
+
+      {:ok, user_list} =
+        UserList.create_user_list(context.user, %{name: "My Test List", is_public: true})
+
+      watchlist_event =
+        insert(:timeline_event,
+          user_list: user_list,
+          user: context.user,
+          event_type: TimelineEvent.update_watchlist_type(),
+          inserted_at: Timex.shift(Timex.now(), days: +1)
+        )
+
+      result = timeline_events_query(context.conn, "limit: 4, orderBy: VOTES")
 
       assert event_ids(result) == [
+               watchlist_event.id,
                events.event_with_1_votes_and_0_comments_by_sanfam.id,
                events.event_with_0_votes_and_0_comments_by_sanfam.id,
                events.event_with_0_votes_and_1_comments_by_followed.id
              ]
     end
 
-    test "by number of comments", context do
+    test "by number of comments, by datetime", context do
       events = create_test_events(context)
 
       result = timeline_events_query(context.conn, "limit: 3, orderBy: COMMENTS")
@@ -353,7 +370,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
              ]
     end
 
-    test "by author name", context do
+    test "by author name, by datetime", context do
       events = create_test_events(context)
 
       result = timeline_events_query(context.conn, "limit: 3, orderBy: AUTHOR")
@@ -367,13 +384,23 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   end
 
   describe "filter timeline events" do
-    test "by san family and followed users (default)", context do
+    test "by own, san family and followed users (default)", context do
       events = create_test_events(context)
 
-      result =
-        timeline_events_query(context.conn, "filterBy: {author: SANFAM_AND_FOLLOWED}, limit: 3")
+      {:ok, user_list} =
+        UserList.create_user_list(context.user, %{name: "My Test List", is_public: true})
+
+      watchlist_event =
+        insert(:timeline_event,
+          user_list: user_list,
+          user: context.user,
+          event_type: TimelineEvent.update_watchlist_type()
+        )
+
+      result = timeline_events_query(context.conn, "filterBy: {author: ALL}, limit: 4")
 
       assert event_ids(result) == [
+               watchlist_event.id,
                events.event_with_0_votes_and_0_comments_by_sanfam.id,
                events.event_with_1_votes_and_0_comments_by_sanfam.id,
                events.event_with_0_votes_and_1_comments_by_followed.id
@@ -382,7 +409,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
 
     test "by san family", context do
       events = create_test_events(context)
-      result = timeline_events_query(context.conn, "filterBy: {author: SANFAM_ONLY}, limit: 3")
+      result = timeline_events_query(context.conn, "filterBy: {author: SANFAM}, limit: 3")
 
       assert event_ids(result) == [
                events.event_with_0_votes_and_0_comments_by_sanfam.id,
@@ -392,7 +419,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
 
     test "by followed users", context do
       events = create_test_events(context)
-      result = timeline_events_query(context.conn, "filterBy: {author: FOLLOWED_ONLY}, limit: 3")
+      result = timeline_events_query(context.conn, "filterBy: {author: FOLLOWED}, limit: 3")
 
       assert event_ids(result) == [
                events.event_with_0_votes_and_1_comments_by_followed.id
@@ -400,19 +427,19 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     end
 
     test "current user's events", context do
-      events = create_test_events(context)
-      result = timeline_events_query(context.conn, "filterBy: {author: OWN_ONLY}, limit: 3")
+      create_test_events(context)
 
       {:ok, user_list} =
-        UserList.create_user_list(context.user.id(%{name: "My Test List", is_public: true}))
+        UserList.create_user_list(context.user, %{name: "My Test List", is_public: true})
 
       watchlist_event =
         insert(:timeline_event,
           user_list: user_list,
-          user: context.user.id,
+          user: context.user,
           event_type: TimelineEvent.update_watchlist_type()
         )
 
+      result = timeline_events_query(context.conn, "filterBy: {author: OWN}, limit: 3")
       assert event_ids(result) == [watchlist_event.id]
     end
 
@@ -430,12 +457,12 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
           event_type: TimelineEvent.update_watchlist_type()
         )
 
-      events = create_test_events(context)
+      create_test_events(context)
 
       result =
         timeline_events_query(
           context.conn,
-          "filterBy: {author: SANFAM_AND_FOLLOWED, watchlists: [#{user_list.id}]}, limit: 3"
+          "filterBy: {author: ALL, watchlists: [#{user_list.id}]}, limit: 3"
         )
 
       assert event_ids(result) == [
@@ -444,6 +471,54 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     end
 
     test "by list of assets", context do
+      post = create_insight(context)
+      watchlist = create_watchlist(context)
+      {trigger1, trigger2} = create_trigger(context)
+
+      insight_event =
+        insert(:timeline_event,
+          post: post,
+          user: context.user,
+          event_type: TimelineEvent.publish_insight_type()
+        )
+
+      watchlist_event =
+        insert(:timeline_event,
+          user_list: watchlist,
+          user: context.user,
+          event_type: TimelineEvent.update_watchlist_type()
+        )
+
+      trigger1_event =
+        insert(:timeline_event,
+          user_trigger: trigger1,
+          user: context.user,
+          event_type: TimelineEvent.trigger_fired(),
+          payload: %{"default" => "some signal payload"}
+        )
+
+      trigger2_event =
+        insert(:timeline_event,
+          user_trigger: trigger2,
+          user: context.user,
+          event_type: TimelineEvent.trigger_fired(),
+          payload: %{"default" => "some signal payload"}
+        )
+
+      create_test_events(context)
+
+      result =
+        timeline_events_query(
+          context.conn,
+          "filterBy: {author: ALL, assets: [#{context.project.id}]}, limit: 5"
+        )
+
+      assert event_ids(result) == [
+               trigger2_event.id,
+               trigger1_event.id,
+               watchlist_event.id,
+               insight_event.id
+             ]
     end
   end
 
@@ -489,9 +564,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     result =
       conn
       |> post("/graphql", query_skeleton(query, "timelineEvents"))
-      |> IO.inspect()
       |> json_response(200)
-      |> IO.inspect()
 
     result["data"]["timelineEvents"]
   end
@@ -629,6 +702,71 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       event_with_1_votes_and_0_comments_by_sanfam: event_with_1_votes_and_0_comments_by_sanfam,
       event_with_0_votes_and_0_comments_by_sanfam: event_with_0_votes_and_0_comments_by_sanfam
     }
+  end
+
+  defp create_insight(context, opts \\ %{}) do
+    params =
+      %{
+        state: Post.approved_state(),
+        ready_state: Post.published(),
+        title: "Test insight",
+        user: context.user,
+        tags: [build(:tag, name: context.project.slug)],
+        published_at: DateTime.to_naive(Timex.now())
+      }
+      |> Map.merge(opts)
+
+    insert(:post, params)
+  end
+
+  def create_watchlist(context, create_opts \\ %{}, update_opts \\ %{}) do
+    create_opts = %{user: context.user} |> Map.merge(create_opts)
+    watchlist = insert(:watchlist, create_opts)
+
+    update_opts =
+      %{
+        name: "My watch list of assets",
+        id: watchlist.id,
+        list_items: [%{project_id: context.project.id}, %{project_id: context.project2.id}]
+      }
+      |> Map.merge(update_opts)
+
+    {:ok, watchlist} = UserList.update_user_list(update_opts)
+    watchlist
+  end
+
+  def create_trigger(context) do
+    trigger_settings = %{
+      type: "price_volume_difference",
+      target: %{slug: context.project.slug},
+      channel: "telegram",
+      threshold: 0.1
+    }
+
+    trending_words_settings = %{
+      type: Sanbase.Signal.Trigger.TrendingWordsTriggerSettings.type(),
+      channel: "telegram",
+      operation: %{trending_word: true},
+      target: %{word: [context.project.slug]}
+    }
+
+    {:ok, trigger1} =
+      UserTrigger.create_user_trigger(context.user, %{
+        title: "Generic title",
+        is_public: false,
+        cooldown: "1d",
+        settings: trigger_settings
+      })
+
+    {:ok, trigger2} =
+      UserTrigger.create_user_trigger(context.user, %{
+        title: "Generic title",
+        is_public: false,
+        cooldown: "1d",
+        settings: trending_words_settings
+      })
+
+    {trigger1, trigger2}
   end
 
   defp event_ids(result) do

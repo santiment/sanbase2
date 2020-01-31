@@ -59,7 +59,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.PriceQueries)
   import_types(Graphql.Schema.GithubQueries)
   import_types(Graphql.Schema.BlockchainQueries)
-  import_types(Graphql.Schema.SignalQueries)
+  import_types(Graphql.Schema.UserTriggerQueries)
   import_types(Graphql.Schema.FeaturedQueries)
   import_types(Graphql.Schema.UserQueries)
   import_types(Graphql.Schema.TimelineQueries)

@@ -14,7 +14,7 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
   import Sanbase.Validation
   import Sanbase.Signal.Validation
   import Sanbase.Signal.OperationEvaluation
-  import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
+  import Sanbase.DateTimeUtils, only: [str_to_sec: 1, round_datetime: 2]
 
   alias __MODULE__
   alias Sanbase.Signal.Type
@@ -22,9 +22,8 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
   alias Sanbase.Clickhouse.HistoricalBalance
   alias Sanbase.Signal.Evaluator.Cache
 
-  @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
   @trigger_type "eth_wallet"
-
+  @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
   @enforce_keys [:type, :channel, :target, :asset]
   defstruct type: @trigger_type,
             channel: nil,
@@ -32,9 +31,11 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
             asset: nil,
             operation: nil,
             time_window: "1d",
+            # Private fields, not stored in DB.
             filtered_target: %{list: []},
+            triggered?: false,
             payload: %{},
-            triggered?: false
+            template_kv: %{}
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
@@ -43,9 +44,11 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
           asset: Type.asset(),
           operation: Type.operation(),
           time_window: Type.time_window(),
+          # Private fields, not stored in DB.
           filtered_target: Type.filtered_target(),
           triggered?: boolean(),
-          payload: Type.payload()
+          payload: Type.payload(),
+          template_kv: Type.tempalte_kv()
         }
 
   validates(:channel, &valid_notification_channel?/1)
@@ -69,10 +72,10 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
     |> Enum.map(fn addr ->
       case balance_change(addr, settings.asset.slug, from, to) do
         [{^addr, {_, _, balance_change}}] ->
-          {:eth_address, addr, balance_change, from}
+          {addr, balance_change, from}
 
         _ ->
-          {:eth_address, addr, 0, from}
+          {addr, 0, from}
       end
     end)
   end
@@ -93,13 +96,13 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
         |> Enum.map(fn {_, {_, _, change}} -> change end)
         |> Enum.sum()
 
-      {:project, project, project_balance_change, from}
+      {project, project_balance_change, from}
     end)
   end
 
   defp balance_change(addresses, slug, from, to) do
     cache_key =
-      {:balance_change, addresses, slug, bucket_datetime(from), bucket_datetime(to)}
+      {:balance_change, addresses, slug, round_datetime(from, 300), round_datetime(to, 300)}
       |> :erlang.phash2()
 
     Cache.get_or_store(
@@ -119,10 +122,6 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
     )
   end
 
-  # All datetimes in 5 minute time intervals will generate the same result
-  # to be used in cache keys
-  defp bucket_datetime(%DateTime{} = dt), do: div(DateTime.to_unix(dt, :second), 300)
-
   alias __MODULE__
 
   defimpl Sanbase.Signal.Settings, for: EthWalletTriggerSettings do
@@ -134,10 +133,7 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
           build_result(list, settings)
 
         _ ->
-          %EthWalletTriggerSettings{
-            settings
-            | triggered?: false
-          }
+          %EthWalletTriggerSettings{settings | triggered?: false}
       end
     end
 
@@ -145,36 +141,41 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
     def cache_key(%EthWalletTriggerSettings{}), do: :nocache
 
     defp build_result(list, settings) do
-      payload =
+      template_kv =
         Enum.reduce(list, %{}, fn
-          {_, _, balance_change, _} = elem, payload ->
-            if operation_triggered?(balance_change, settings.operation) do
-              case elem do
-                {:project, %Project{slug: slug} = project, balance_change, from} ->
-                  Map.put(payload, slug, payload(project, settings, balance_change, from))
+          {project_or_addr, balance_change, from}, acc ->
+            case operation_triggered?(balance_change, settings.operation) do
+              true ->
+                Map.put(
+                  acc,
+                  to_identifier(project_or_addr),
+                  template_kv(project_or_addr, settings, balance_change, from)
+                )
 
-                {:eth_address, address, balance_change, from} ->
-                  Map.put(payload, address, payload(address, settings, balance_change, from))
-              end
-            else
-              payload
+              false ->
+                acc
             end
         end)
 
       %EthWalletTriggerSettings{
         settings
-        | payload: payload,
-          triggered?: payload != %{}
+        | template_kv: template_kv,
+          triggered?: template_kv != %{}
       }
     end
+
+    defp to_identifier(%Project{slug: slug}), do: slug
+    defp to_identifier(addr) when is_binary(addr), do: addr
 
     defp operation_text(%{amount_up: _}), do: "increased"
     defp operation_text(%{amount_down: _}), do: "decreased"
 
-    defp payload(%Project{} = project, settings, balance_change, from) do
+    defp template_kv(%Project{} = project, settings, balance_change, from) do
       kv = %{
+        type: EthWalletTriggerSettings.type(),
+        operation: settings.operation,
         project_name: project.name,
-        project_link: Sanbase.Model.Project.sanbase_link(project),
+        project_slug: project.slug,
         asset: settings.asset.slug,
         since: DateTime.truncate(from, :second),
         balance_change_text: operation_text(settings.operation),
@@ -184,31 +185,34 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
       template = """
       The {{asset}} balance of {{project_name}} wallets has {{balance_change_text}} by {{balance_change}} since {{since}}
 
-      More info here: {{project_link}}
+      More info here: #{Project.sanbase_link(project)}
       """
 
-      Sanbase.TemplateEngine.run(template, kv)
+      {template, kv}
     end
 
-    defp payload(address, settings, balance_change, from) do
+    defp template_kv(address, settings, balance_change, from) do
       asset = settings.asset.slug
 
       kv = %{
-        address: address,
+        type: EthWalletTriggerSettings.type(),
+        operation: settings.operation,
+        target: settings.target,
         asset: asset,
+        address: address,
         historical_balance_link: SanbaseWeb.Endpoint.historical_balance_url(address, asset),
         since: DateTime.truncate(from, :second),
-        balance_change_text: operation_text(settings.operation),
-        balance_change: abs(balance_change)
+        balance_change: balance_change,
+        balance_change_abs: abs(balance_change)
       }
 
       template = """
-      The {{asset}} balance of the address {{address}} has {{balance_change_text}} by {{balance_change}} since {{since}}
+      The {{asset}} balance of the address {{address}} has #{operation_text(settings.operation)} by {{balance_change_abs}} since {{since}}
 
       More info here: {{historical_balance_link}}
       """
 
-      Sanbase.TemplateEngine.run(template, kv)
+      {template, kv}
     end
   end
 end

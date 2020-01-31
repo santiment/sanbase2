@@ -19,17 +19,19 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
   alias Sanbase.Clickhouse.DailyActiveAddresses
   alias Sanbase.Signal.Evaluator.Cache
 
-  @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
+  @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
   @trigger_type "daily_active_addresses"
   @enforce_keys [:type, :target, :channel, :operation]
   defstruct type: @trigger_type,
             target: nil,
-            filtered_target: %{list: []},
             channel: nil,
             time_window: "2d",
             operation: nil,
+            # Private fields, not stored in DB.
+            filtered_target: %{list: []},
             triggered?: false,
-            payload: nil
+            payload: %{},
+            template_kv: %{}
 
   validates(:target, &valid_target?/1)
   validates(:channel, &valid_notification_channel?/1)
@@ -40,12 +42,14 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
           target: Type.complex_target(),
-          filtered_target: Type.filtered_target(),
           channel: Type.channel(),
           time_window: Type.time_window(),
           operation: Type.operation(),
+          # Private fields, not stored in DB.
+          filtered_target: Type.filtered_target(),
           triggered?: boolean(),
-          payload: Type.payload()
+          payload: Type.payload(),
+          template_kv: Type.template_kv()
         }
 
   @spec type() :: Type.trigger_type()
@@ -85,17 +89,14 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
 
     Cache.get_or_store(cache_key, fn ->
       case DailyActiveAddresses.average_active_addresses(contract, from, to, interval) do
-        {:ok, result} ->
-          result
-
-        _ ->
-          []
+        {:ok, result} -> result
+        _ -> []
       end
     end)
   end
 
   defimpl Sanbase.Signal.Settings, for: DailyActiveAddressesSettings do
-    alias Sanbase.Signal.ResultBuilder
+    alias Sanbase.Signal.{ResultBuilder, OperationText}
 
     def triggered?(%DailyActiveAddressesSettings{triggered?: triggered}), do: triggered
 
@@ -110,7 +111,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
     end
 
     defp build_result(data, %DailyActiveAddressesSettings{} = settings) do
-      ResultBuilder.build(data, settings, &payload/2, value_key: :active_addresses)
+      ResultBuilder.build(data, settings, &template_kv/2, value_key: :active_addresses)
     end
 
     def cache_key(%DailyActiveAddressesSettings{} = settings) do
@@ -122,34 +123,36 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
       ])
     end
 
-    defp payload(%{slug: slug} = values, settings) do
-      %{current: current_daa, previous_average: average_daa} = values
-
+    defp template_kv(%{identifier: slug} = values, settings) do
       project = Project.by_slug(slug)
       interval = interval_to_str(settings.time_window)
 
-      kv = %{
-        project_name: project.name,
-        daily_active_addresses: current_daa,
-        average_daily_active_addresses: average_daa,
-        movement_text: Sanbase.Signal.OperationText.to_text(values, settings.operation),
-        interval: interval,
-        project_link: Project.sanbase_link(project),
-        chart_url: chart_url(project, {:metric, "daily_active_addresses"}),
-        chart_url_alt_text:
-          "Daily Active Addresses chart and OHLC price chart for the past 90 days"
-      }
+      {operation_template, operation_kv} =
+        OperationText.to_template_kv(values, settings.operation)
+
+      kv =
+        kv =
+        %{
+          type: DailyActiveAddressesSettings.type(),
+          operation: settings.operation,
+          project_name: project.name,
+          project_slug: project.slug,
+          average_value: values.previous_average,
+          interval: interval,
+          chart_url: chart_url(project, {:metric, "daily_active_addresses"})
+        }
+        |> Map.merge(operation_kv)
 
       template = """
-      **{{project_name}}**'s Daily Active Addresses {{movement_text}} up to {{daily_active_addresses}} active addresses.
+      **{{project_name}}**'s Daily Active Addresses #{operation_template}
 
-      Average Daily Active Addresses for last **{{interval}}*: **{{average_daily_active_addresses}}**.
-      More info here: {{project_link}}
+      Average Daily Active Addresses for last **{{interval}}*: **{{average_value}}**.
+      More info here: #{Project.sanbase_link(project)}
 
-      ![{{chart_url_alt_text}}]({{chart_url}})
+      ![Daily Active Addresses chart and OHLC price chart for the past 90 days]({{chart_url}})
       """
 
-      Sanbase.TemplateEngine.run(template, kv)
+      {template, kv}
     end
   end
 end

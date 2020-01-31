@@ -15,15 +15,17 @@ defmodule Sanbase.Signal.HistoricalActivity do
   alias __MODULE__
 
   schema "signals_historical_activity" do
+    field(:payload, :map)
+    field(:data, :map)
+    field(:triggered_at, :naive_datetime)
+
     belongs_to(:user, User)
     belongs_to(:user_trigger, UserTrigger)
-    field(:payload, :map)
-    field(:triggered_at, :naive_datetime)
   end
 
   def changeset(%HistoricalActivity{} = user_signal, attrs \\ %{}) do
     user_signal
-    |> cast(attrs, [:user_id, :user_trigger_id, :payload, :triggered_at])
+    |> cast(attrs, [:user_id, :user_trigger_id, :payload, :data, :triggered_at])
     |> validate_required([:user_id, :user_trigger_id, :payload, :triggered_at])
   end
 

@@ -8,25 +8,31 @@ defmodule Sanbase.Signal.Trigger.PriceVolumeDifferenceTriggerSettings do
   alias Sanbase.Model.Project
   alias Sanbase.TechIndicators.PriceVolumeDifference
 
-  @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
+  @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
   @trigger_type "price_volume_difference"
   @enforce_keys [:type, :target, :channel, :threshold]
 
   defstruct type: @trigger_type,
             target: nil,
-            filtered_target: %{list: []},
             channel: nil,
             threshold: 0.002,
             aggregate_interval: "1d",
             window_type: "bohman",
             approximation_window: 14,
             comparison_window: 7,
+            # Private fields, not stored in DB.
+            filtered_target: %{list: []},
             triggered?: false,
-            payload: nil
+            payload: %{},
+            template_kv: %{}
 
   validates(:target, &valid_target?/1)
   validates(:channel, &valid_notification_channel?/1)
   validates(:threshold, &valid_threshold?/1)
+
+  @type window_type :: String.t()
+  @type approximation_window :: non_neg_integer()
+  @type comparison_window :: non_neg_integer()
 
   @typedoc ~s"""
   threshold - the sensitivity of the trigger. Defaults to 0.002
@@ -43,15 +49,17 @@ defmodule Sanbase.Signal.Trigger.PriceVolumeDifferenceTriggerSettings do
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
           target: Type.complex_target(),
-          filtered_target: Type.filtered_target(),
           channel: Type.channel(),
           threshold: Type.threshold(),
           aggregate_interval: Type.time(),
-          window_type: nil,
-          approximation_window: nil,
-          comparison_window: nil,
+          window_type: window_type(),
+          approximation_window: approximation_window(),
+          comparison_window: comparison_window(),
+          # Private fields, not stored in DB.
+          filtered_target: Type.filtered_target(),
           triggered?: boolean(),
-          payload: Type.payload()
+          payload: Type.payload(),
+          template_kv: Type.template_kv()
         }
 
   @spec type() :: Type.trigger_type()
@@ -114,11 +122,11 @@ defmodule Sanbase.Signal.Trigger.PriceVolumeDifferenceTriggerSettings do
            list,
            %PriceVolumeDifferenceTriggerSettings{threshold: threshold} = settings
          ) do
-      payload =
+      template_kv =
         Enum.reduce(list, %{}, fn
           {slug, {:ok, %{price_volume_diff: price_volume_diff}}}, acc
           when price_volume_diff >= threshold ->
-            Map.put(acc, slug, payload(slug, settings, price_volume_diff))
+            Map.put(acc, slug, template_kv(slug, settings, price_volume_diff))
 
           _, acc ->
             acc
@@ -126,28 +134,31 @@ defmodule Sanbase.Signal.Trigger.PriceVolumeDifferenceTriggerSettings do
 
       %PriceVolumeDifferenceTriggerSettings{
         settings
-        | triggered?: payload != %{},
-          payload: payload
+        | triggered?: template_kv != %{},
+          template_kv: template_kv
       }
     end
 
-    defp payload(slug, _settings, _price_volume_diff) do
+    defp template_kv(slug, settings, price_volume_diff) do
       project = Sanbase.Model.Project.by_slug(slug)
 
       kv = %{
+        type: PriceVolumeDifferenceTriggerSettings.type(),
+        threhsold: settings.threshold,
         project_name: project.name,
-        project_link: Sanbase.Model.Project.sanbase_link(project),
+        project_slug: project.slug,
+        value: price_volume_diff,
         chart_url: chart_url(project, :volume)
       }
 
       template = """
       The price and volume of **{{project_name}}** have diverged - the price is increasing while the volume is decreasing.
 
-      More info here: {{project_url}}
+      More info here: #{Sanbase.Model.Project.sanbase_link(project)}
       ![PriceVolume chart over the past 90 days]({{chart_url}})
       """
 
-      Sanbase.TemplateEngine.run(template, kv)
+      {template, kv}
     end
   end
 end

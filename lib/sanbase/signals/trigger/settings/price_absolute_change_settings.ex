@@ -15,16 +15,18 @@ defmodule Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings do
   alias Sanbase.Model.Project
   alias Sanbase.Signal.Evaluator.Cache
 
-  @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
+  @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
   @trigger_type "price_absolute_change"
   @enforce_keys [:type, :target, :channel]
   defstruct type: @trigger_type,
             target: nil,
-            filtered_target: %{list: []},
             channel: nil,
             operation: %{},
+            # Private fields, not stored in DB.
+            filtered_target: %{list: []},
             triggered?: false,
-            payload: nil
+            payload: %{},
+            template_kv: %{}
 
   validates(:target, &valid_target?/1)
   validates(:channel, &valid_notification_channel?/1)
@@ -33,11 +35,13 @@ defmodule Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings do
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
           target: Type.complex_target(),
-          filtered_target: Type.filtered_target(),
           channel: Type.channel(),
           operation: Type.operation(),
+          # Private fields, not stored in DB.
+          filtered_target: Type.filtered_target(),
           triggered?: boolean(),
-          payload: Type.payload()
+          payload: Type.payload(),
+          template_kv: Type.template_kv()
         }
 
   @spec type() :: Type.trigger_type()
@@ -101,45 +105,46 @@ defmodule Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings do
     end
 
     defp build_result(list, %PriceAbsoluteChangeSettings{operation: operation} = settings) do
-      payload =
+      template_kv =
         Enum.reduce(list, %{}, fn {slug, {:ok, price}}, acc ->
-          if operation_triggered?(price, operation) do
-            Map.put(acc, slug, payload(slug, price, operation))
-          else
-            acc
+          case operation_triggered?(price, operation) do
+            true -> Map.put(acc, slug, template_kv(slug, price, operation))
+            false -> acc
           end
         end)
 
       %PriceAbsoluteChangeSettings{
         settings
-        | triggered?: payload != %{},
-          payload: payload
+        | triggered?: template_kv != %{},
+          template_kv: template_kv
       }
     end
 
-    defp payload(slug, last_price_usd, operation) do
+    defp template_kv(slug, last_price_usd, operation) do
       project = Project.by_slug(slug)
 
       {operation_tempalte, template_kv} =
-        OperationText.KV.to_template_kv(last_price_usd, operation)
+        OperationText.KV.to_template_kv(round_price(last_price_usd), operation)
 
       kv =
         %{
+          type: PriceAbsoluteChangeSettings.type(),
+          operation: operation,
           project_name: project.name,
-          project_link: Project.sanbase_link(project),
-          project_chart: chart_url(project, :volume)
+          project_slug: project.slug,
+          chart_url: chart_url(project, :volume)
         }
         |> Map.merge(template_kv)
 
       template = """
       **{{project_name}}**'s price #{operation_tempalte}
 
-      More information for the project you can find here: {{project_link}}
+      More information for the project you can find here: #{Project.sanbase_link(project)}
 
-      ![Price chart over the past 90 days]({{project_chart}})
+      ![Price chart over the past 90 days]({{chart_url}})
       """
 
-      Sanbase.TemplateEngine.run(template, kv)
+      {template, kv}
     end
   end
 end

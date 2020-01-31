@@ -104,38 +104,6 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
     end
   end
 
-  test "successfull signal is written in signals_historical_activity table and timeline event is created",
-       context do
-    Tesla.Mock.mock_global(fn
-      %{method: :post} ->
-        %Tesla.Env{status: 200, body: "ok"}
-    end)
-
-    with_mock Sanbase.SocialData.TrendingWords, [],
-      get_currently_trending_words: fn _ ->
-        {:ok, top_words()}
-      end do
-      assert capture_log(fn ->
-               Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
-             end) =~ "In total 1/1 trending_words signals were sent successfully"
-
-      user_signal = HistoricalActivity |> Sanbase.Repo.all() |> List.first()
-
-      assert user_signal.user_id == context.user.id
-      assert String.contains?(user_signal.payload |> Map.values() |> List.first(), "coinbase")
-
-      Process.sleep(100)
-
-      timeline_event = Sanbase.Timeline.TimelineEvent |> Sanbase.Repo.all() |> List.first()
-
-      assert timeline_event.id != nil
-      assert timeline_event.event_type == "trigger_fired"
-      assert timeline_event.user_id == context.user.id
-      assert timeline_event.user_trigger_id == context.trigger_trending_words.id
-      assert String.contains?(timeline_event.payload |> Map.values() |> List.first(), "coinbase")
-    end
-  end
-
   test "Non active signals are filtered", context do
     UserTrigger.update_user_trigger(context.user, %{
       id: context.trigger_trending_words.id,

@@ -16,8 +16,8 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
   alias Sanbase.Metric
   alias Sanbase.Signal.Evaluator.Cache
 
-  @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
   @trigger_type "metric_signal"
+  @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
   @enforce_keys [:type, :metric, :target, :channel, :operation]
   defstruct type: @trigger_type,
             metric: nil,
@@ -25,9 +25,11 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
             channel: nil,
             time_window: "1d",
             operation: nil,
+            # Private fields, not stored in DB.
+            filtered_target: %{list: []},
             triggered?: false,
-            payload: nil,
-            filtered_target: %{list: []}
+            payload: %{},
+            template_kv: %{}
 
   validates(:metric, &valid_metric?/1)
   validates(:metric, &valid_5m_min_interval_metric?/1)
@@ -43,9 +45,11 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
           channel: Type.channel(),
           time_window: Type.time_window(),
           operation: Type.operation(),
+          # Private fields, not stored in DB.
+          filtered_target: Type.filtered_target(),
           triggered?: boolean(),
           payload: Type.payload(),
-          filtered_target: Type.filtered_target()
+          template_kv: Type.template_kv()
         }
 
   @spec type() :: Type.trigger_type()
@@ -108,7 +112,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
     end
 
     def build_result(data, %MetricTriggerSettings{} = settings) do
-      ResultBuilder.build(data, settings, &payload/2)
+      ResultBuilder.build(data, settings, &template_kv/2)
     end
 
     def cache_key(%MetricTriggerSettings{} = settings) do
@@ -121,8 +125,8 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
       ])
     end
 
-    def payload(values, settings) do
-      %{slug: slug} = values
+    defp template_kv(values, settings) do
+      %{identifier: slug} = values
 
       project = Project.by_slug(slug)
       {:ok, human_readable_name} = Sanbase.Metric.human_readable_name(settings.metric)
@@ -132,22 +136,24 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
 
       kv =
         %{
+          type: MetricTriggerSettings.type(),
+          operation: settings.operation,
           project_name: project.name,
+          project_slug: project.slug,
           metric: settings.metric,
           metric_human_readable_name: human_readable_name,
-          project_link: Project.sanbase_link(project),
           chart_url: chart_url(project, {:metric, settings.metric})
         }
         |> Map.merge(operation_kv)
 
       template = """
-      **{{project.name}}**'s {{human_readable_name}} #{operation_template}.
-      More info here: {{project_link}}
+      **{{project_name}}**'s {{metric_human_readable_name}} #{operation_template}.
+      More info here: #{Project.sanbase_link(project)}
 
       ![#{human_readable_name} & OHLC for the past 90 days]({{chart_url}})
       """
 
-      Sanbase.TemplateEngine.run(template, kv)
+      {template, kv}
     end
   end
 end

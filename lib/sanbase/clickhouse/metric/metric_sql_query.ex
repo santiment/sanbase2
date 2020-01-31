@@ -109,7 +109,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     query = """
     SELECT
       toUInt32(asset_id),
-      #{aggregation(aggregation, "value", "t")}
+      #{aggregation(aggregation, "value", "dt")}
     FROM(
       SELECT
         dt,

@@ -59,6 +59,37 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
+  def aggregated_timeseries_data(
+        _root,
+        %{slug: slug, from: from, to: to} = args,
+        %{source: %{metric: metric}}
+      ) do
+    include_incomplete_data = Map.get(args, :include_incomplete_data, false)
+    aggregation = Map.get(args, :aggregation, nil)
+
+    with {:ok, from, to} <-
+           calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
+         {:ok, result} <- Metric.aggregated_timeseries_data(metric, slug, from, to, aggregation) do
+      # This requires internal rework - all aggregated_timeseries_data queries must return the same format
+      case result do
+        value when is_number(value) ->
+          {:ok, value}
+
+        [%{slug: ^slug, value: value}] ->
+          {:ok, value}
+
+        %{^slug => value} ->
+          {:ok, value}
+
+        _ ->
+          {:ok, nil}
+      end
+    else
+      {:error, error} ->
+        {:error, handle_graphql_error(metric, slug, error)}
+    end
+  end
+
   def histogram_data(
         _root,
         %{slug: slug, from: from, to: to, interval: interval, limit: limit},

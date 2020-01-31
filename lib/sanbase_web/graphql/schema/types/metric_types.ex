@@ -121,6 +121,18 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       cache_resolve(&MetricResolver.timeseries_data/3)
     end
 
+    field :aggregated_timeseries_data, :float do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:aggregation, :aggregation, default_value: nil)
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(AccessControl)
+
+      cache_resolve(&MetricResolver.aggregated_timeseries_data/3)
+    end
+
     field :histogram_data, :histogram_data do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))

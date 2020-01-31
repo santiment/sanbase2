@@ -2,7 +2,7 @@ defmodule Sanbase.ExAdmin.Signal.HistoricalActivity do
   use ExAdmin.Register
 
   register_resource Sanbase.Signal.HistoricalActivity do
-    action_items(only: [:show])
+    action_items(only: [:show, :delete])
 
     index do
       column(:user)

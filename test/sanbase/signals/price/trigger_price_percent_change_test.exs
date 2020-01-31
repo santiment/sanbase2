@@ -29,7 +29,12 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
     {:ok, _} = create_trigger(user, trigger_settings1)
     {:ok, trigger2} = create_trigger(user, trigger_settings2)
 
-    ohlc = %{open_price_usd: 53, close_price_usd: 62, high_price_usd: 70, low_price_usd: 40}
+    ohlc = %{
+      open_price_usd: 53.512,
+      close_price_usd: 62.12312,
+      high_price_usd: 70.5121,
+      low_price_usd: 40.12512
+    }
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Price.ohlc/3, {:ok, ohlc})
     |> Sanbase.Mock.prepare_mock2(&Sanbase.Chart.build_embedded_chart/4, [
@@ -47,7 +52,7 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
 
       payload = triggered.trigger.settings.payload |> Map.values() |> hd()
 
-      assert payload =~ "price increased by 16.98% from 53 and is now 62"
+      assert payload =~ "price increased by 16.09% from 53.51 and is now 62.12"
     end)
   end
 

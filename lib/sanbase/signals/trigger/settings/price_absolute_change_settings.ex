@@ -124,7 +124,7 @@ defmodule Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings do
       project = Project.by_slug(slug)
 
       {operation_tempalte, template_kv} =
-        OperationText.KV.to_template_kv(last_price_usd, operation)
+        OperationText.KV.to_template_kv(round_price(last_price_usd), operation)
 
       kv =
         %{

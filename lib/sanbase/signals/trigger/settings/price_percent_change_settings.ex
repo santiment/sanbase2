@@ -84,7 +84,6 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
 
   defimpl Sanbase.Signal.Settings, for: PricePercentChangeSettings do
     alias Sanbase.Signal.OperationText
-    alias Sanbase.Model.Project
 
     def triggered?(%PricePercentChangeSettings{triggered?: triggered}), do: triggered
 
@@ -147,8 +146,8 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
           operation: settings.operation,
           project_name: project.name,
           project_slug: project.slug,
-          value: last_price,
-          previous_value: first_price,
+          previous_value: round_price(first_price),
+          value: round_price(last_price),
           chart_url: chart_url(project, :volume)
         }
         |> Map.merge(operation_kv)

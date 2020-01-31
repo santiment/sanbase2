@@ -137,7 +137,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
           operation: settings.operation,
           project_name: project.name,
           project_slug: project.slug,
-          average_value: values.average_daa,
+          average_value: values.previous_average,
           interval: interval,
           chart_url: chart_url(project, {:metric, "daily_active_addresses"})
         }

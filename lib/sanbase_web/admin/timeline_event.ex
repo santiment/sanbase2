@@ -15,6 +15,7 @@ defmodule Sanbase.ExAdmin.TimelineEvent do
       column(:user_trigger, link: true)
       column(:inserted_at)
       column(:payload)
+      column(:data)
       # display the default actions column
       actions()
     end

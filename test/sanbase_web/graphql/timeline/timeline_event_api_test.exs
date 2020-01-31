@@ -94,6 +94,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
 
     assert result |> hd() |> Map.get("events") |> length() == 4
     assert result |> hd() |> Map.get("events") |> hd() |> Map.get("payload") == nil
+    assert result |> hd() |> Map.get("events") |> hd() |> Map.get("data") == nil
 
     assert result |> hd() |> Map.get("cursor") == %{
              "after" => DateTime.to_iso8601(DateTime.truncate(event3.inserted_at, :second)),
@@ -156,6 +157,11 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     assert trigger_fired_event["eventType"] == TimelineEvent.trigger_fired()
     assert trigger_fired_event["user"]["id"] |> String.to_integer() == context.user.id
     assert trigger_fired_event["payload"] == %{"default" => "some signal payload"}
+
+    assert trigger_fired_event["data"] == %{
+             "user_trigger_data" => %{"default" => %{"value" => 15}}
+           }
+
     assert trigger_fired_event["trigger"]["id"] == user_trigger.id
     assert trigger_fired_event["votes"] == []
   end
@@ -180,7 +186,8 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       user_trigger: user_trigger,
       user: san_author,
       event_type: TimelineEvent.trigger_fired(),
-      payload: %{"default" => "some signal payload"}
+      payload: %{"default" => "some signal payload"},
+      data: %{"user_trigger_data" => %{"default" => %{"value" => 15}}}
     )
 
     assert timeline_events_query(context.conn, "limit: 5")
@@ -208,7 +215,8 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       user_trigger: user_trigger,
       user: user_to_follow,
       event_type: TimelineEvent.trigger_fired(),
-      payload: %{"default" => "some signal payload"}
+      payload: %{"default" => "some signal payload"},
+      data: %{"user_trigger_data" => %{"default" => %{"value" => 15}}}
     )
 
     assert timeline_events_query(context.conn, "limit: 5")
@@ -237,7 +245,8 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       user_trigger: user_trigger,
       user: san_author,
       event_type: TimelineEvent.trigger_fired(),
-      payload: %{"default" => "some signal payload"}
+      payload: %{"default" => "some signal payload"},
+      data: %{"user_trigger_data" => %{"default" => %{"value" => 15}}}
     )
 
     assert timeline_events_query(context.conn, "limit: 5") |> hd() |> Map.get("events") == []
@@ -262,7 +271,8 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       user_trigger: user_trigger,
       user: user_to_follow,
       event_type: TimelineEvent.trigger_fired(),
-      payload: %{"default" => "some signal payload"}
+      payload: %{"default" => "some signal payload"},
+      data: %{"user_trigger_data" => %{"default" => %{"value" => 15}}}
     )
 
     assert timeline_events_query(context.conn, "limit: 5") |> hd() |> Map.get("events") == []
@@ -310,7 +320,8 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
         user_trigger: user_trigger,
         user: san_author,
         event_type: TimelineEvent.trigger_fired(),
-        payload: %{"default" => "some signal payload"}
+        payload: %{"default" => "some signal payload"},
+        data: %{"user_trigger_data" => %{"default" => %{"value" => 15}}}
       )
 
       result = timeline_events_query(build_conn(), "limit: 5")
@@ -522,7 +533,8 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
         user_trigger: nil,
         user: context.user,
         event_type: TimelineEvent.trigger_fired(),
-        payload: %{"default" => "some signal payload"}
+        payload: %{"default" => "some signal payload"},
+        data: %{"user_trigger_data" => %{"default" => %{"value" => 15}}}
       }
 
       trigger1_event =
@@ -586,6 +598,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
             description
           }
           payload
+          data
         }
       }
     }|
@@ -642,7 +655,8 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
         user_trigger: user_trigger,
         user: user,
         event_type: TimelineEvent.trigger_fired(),
-        payload: %{"default" => "some signal payload"}
+        payload: %{"default" => "some signal payload"},
+        data: %{"user_trigger_data" => %{"default" => %{"value" => 15}}}
       )
 
     {timeline_event, user_trigger}

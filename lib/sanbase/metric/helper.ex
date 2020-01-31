@@ -1,4 +1,23 @@
 defmodule Sanbase.Metric.Helper do
+  def transform_to_value_pairs(data, key_name \\ nil)
+
+  def transform_to_value_pairs({:ok, []}, _), do: {:ok, []}
+
+  def transform_to_value_pairs({:ok, result}, nil) do
+    # deduce the key name. It is the key other than the :datetime
+    # If there are more than 1 key different than :datetime then this will
+    # fail. In such cases an explicit key name should be passed
+    [key_name] = (result |> hd() |> Map.keys()) -- [:datetime]
+
+    result =
+      result
+      |> Enum.map(fn %{^key_name => value, datetime: datetime} ->
+        %{value: value, datetime: datetime}
+      end)
+
+    {:ok, result}
+  end
+
   def transform_to_value_pairs({:ok, result}, key_name) do
     result =
       result

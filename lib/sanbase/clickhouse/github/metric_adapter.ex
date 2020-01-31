@@ -7,7 +7,9 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
 
   @timeseries_metrics_function_mapping %{
     "dev_activity" => :dev_activity,
-    "github_activity" => :github_activity
+    "github_activity" => :github_activity,
+    "dev_activity_contributors_count" => :dev_activity_contributors_count,
+    "github_activity_contributors_count" => :github_activity_contributors_count
   }
 
   @aggregated_metrics_function_mapping %{
@@ -29,13 +31,16 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def timeseries_data(metric, slug, from, to, interval, _aggregation) do
     case Project.github_organizations(slug) do
+      {:ok, []} ->
+        {:ok, []}
+
       {:ok, organizations} ->
         apply(
           Github,
           Map.get(@timeseries_metrics_function_mapping, metric),
           [organizations, from, to, interval, "None", nil]
         )
-        |> transform_to_value_pairs(:activity)
+        |> transform_to_value_pairs()
 
       {:error, error} ->
         {:error, error}
@@ -121,8 +126,17 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def human_readable_name(metric) do
     case metric do
-      "dev_activity" -> {:ok, "Development Activity"}
-      "github_activity" -> {:ok, "Github Activity"}
+      "dev_activity" ->
+        {:ok, "Development Activity"}
+
+      "github_activity" ->
+        {:ok, "Github Activity"}
+
+      "dev_activity_contributors_count" ->
+        {:ok, "Number of Github contributors (related to dev activity events)"}
+
+      "github_activity_contributors_count" ->
+        {:ok, "Number of all Github contributors"}
     end
   end
 
@@ -160,9 +174,14 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def access_map() do
-    %{
-      "dev_activity" => :free,
-      "github_activity" => :free
-    }
+    free_metrics_map =
+      @free_metrics
+      |> Enum.into(%{}, fn metric -> {metric, :free} end)
+
+    restricted_metrics_map =
+      @restricted_metrics
+      |> Enum.into(%{}, fn metric -> {metric, :restricted} end)
+
+    Map.merge(free_metrics_map, restricted_metrics_map)
   end
 end

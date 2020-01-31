@@ -95,35 +95,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
       assert free_queries == expected_free_queries
     end
 
-    test "free metrics" do
-      free_queries =
-        Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:free)
-        |> Enum.sort()
-
-      expected_free_queries =
-        [
-          "active_addresses_24h",
-          "daily_active_addresses",
-          "daily_avg_marketcap_usd",
-          "daily_avg_price_usd",
-          "daily_closing_marketcap_usd",
-          "daily_closing_price_usd",
-          "daily_high_price_usd",
-          "daily_low_price_usd",
-          "daily_opening_price_usd",
-          "daily_trading_volume_usd",
-          "dev_activity",
-          "github_activity",
-          "marketcap_usd",
-          "price_btc",
-          "price_usd",
-          "volume_usd"
-        ]
-        |> Enum.sort()
-
-      assert free_queries == expected_free_queries
-    end
-
     test "restricted queries defined in the schema" do
       basic_queries =
         Sanbase.Billing.GraphqlSchema.get_queries_with_access_level(:restricted)

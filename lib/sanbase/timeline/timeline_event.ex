@@ -14,7 +14,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   alias Sanbase.UserList
   alias Sanbase.Signal.UserTrigger
   alias Sanbase.Vote
-  alias Sanbase.EctoHelper
+  alias Sanbase.Timeline.{Query, Filter, Order, Cursor, Type}
 
   alias __MODULE__
 
@@ -23,6 +23,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   * Publish Insight
   * Update a public Watchlist with projects
   * Create a public UserTrigger
+  * Signal for UserTrigger fires
   """
   @publish_insight_type "publish_insight"
   @update_watchlist_type "update_watchlist"
@@ -52,28 +53,6 @@ defmodule Sanbase.Timeline.TimelineEvent do
     timestamps()
   end
 
-  @type event_type() :: String.t()
-  @type cursor_type() :: :before | :after
-  @type cursor() :: %{type: cursor_type(), datetime: DateTime.t()}
-  @type cursor_with_limit :: %{
-          limit: non_neg_integer(),
-          cursor: cursor()
-        }
-  @type events_with_cursor ::
-          %{
-            events: list(%TimelineEvent{}),
-            cursor: %{
-              before: DateTime.t(),
-              after: DateTime.t()
-            }
-          }
-  @type fired_triggers_map :: %{
-          user_trigger_id: non_neg_integer(),
-          user_id: non_neg_integer(),
-          payload: map(),
-          triggered_at: DateTime.t()
-        }
-
   def publish_insight_type(), do: @publish_insight_type
   def update_watchlist_type(), do: @update_watchlist_type
   def create_public_trigger_type(), do: @create_public_trigger_type
@@ -94,63 +73,67 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> validate_required([:event_type, :user_id])
   end
 
-  def events(%{
-        order_by: order_by,
-        limit: limit,
-        cursor: %{type: cursor_type, datetime: cursor_datetime}
-      }) do
-    TimelineEvent
-    |> events_by_sanfamily()
-    |> events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
-    |> by_cursor(cursor_type, cursor_datetime)
-    |> Repo.all()
-    |> events_with_cursor()
-  end
-
-  def events(%{order_by: order_by, limit: limit}) do
-    TimelineEvent
-    |> events_by_sanfamily()
-    |> events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
-    |> Repo.all()
-    |> events_with_cursor()
-  end
-
   def by_id(id) do
     from(te in TimelineEvent, where: te.id == ^id, preload: :votes)
     |> Repo.one()
   end
 
   @doc """
-  Returns the generated events by the activity of followed users.
+  Public events by sanfamily members.
   The events can be paginated with time-based cursor pagination.
   """
-  @spec events(%User{}, cursor_with_limit) :: {:ok, events_with_cursor} | {:error, String.t()}
+  def events(%{
+        order_by: order_by,
+        limit: limit,
+        cursor: %{type: cursor_type, datetime: cursor_datetime}
+      }) do
+    TimelineEvent
+    |> Cursor.filter_by_cursor(cursor_type, cursor_datetime)
+    |> Query.events_by_sanfamily_query()
+    |> Order.events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
+    |> Repo.all()
+    |> Cursor.wrap_events_with_cursor()
+  end
+
+  def events(%{order_by: order_by, limit: limit}) do
+    TimelineEvent
+    |> Query.events_by_sanfamily_query()
+    |> Order.events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
+    |> Repo.all()
+    |> Cursor.wrap_events_with_cursor()
+  end
+
+  @doc """
+  Events by current user, followed users or sanfamily members.
+  The events can be paginated with time-based cursor pagination.
+  """
+  @spec events(%User{}, Type.timeline_event_args()) ::
+          {:ok, Type.events_with_cursor()} | {:error, String.t()}
   def events(
         %User{id: user_id},
         %{
           order_by: order_by,
+          filter_by: filter_by,
           limit: limit,
           cursor: %{type: cursor_type, datetime: cursor_datetime}
         }
       ) do
     TimelineEvent
-    |> events_by_sanfamily_or_followed_users_query(user_id)
-    |> user_fired_signals_query(user_id)
-    |> events_with_public_entities_query()
-    |> events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
-    |> by_cursor(cursor_type, cursor_datetime)
+    |> Cursor.filter_by_cursor(cursor_type, cursor_datetime)
+    |> Filter.filter_by_query(filter_by, user_id)
+    |> Query.events_with_public_entities_query(user_id)
+    |> Order.events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
     |> Repo.all()
-    |> events_with_cursor()
+    |> Cursor.wrap_events_with_cursor()
   end
 
-  def events(%User{id: user_id}, %{order_by: order_by, limit: limit}) do
+  def events(%User{id: user_id}, %{order_by: order_by, filter_by: filter_by, limit: limit}) do
     TimelineEvent
-    |> events_by_sanfamily_or_followed_users_query(user_id)
-    |> user_fired_signals_query(user_id)
-    |> events_with_public_entities_query()
-    |> events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
+    |> Filter.filter_by_query(filter_by, user_id)
+    |> Query.events_with_public_entities_query(user_id)
+    |> Order.events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
     |> Repo.all()
-    |> events_with_cursor()
+    |> Cursor.wrap_events_with_cursor()
   end
 
   def events(_, _), do: {:error, "Bad arguments"}
@@ -164,7 +147,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     - changeset: the changes used to determine if an event should be created.
   """
   @spec maybe_create_event_async(
-          event_type,
+          Type.event_type(),
           %Post{} | %UserList{} | %UserTrigger{},
           Ecto.Changeset.t()
         ) :: Task.t()
@@ -181,7 +164,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     end)
   end
 
-  @spec create_trigger_fired_events(list(fired_triggers_map)) :: Task.t()
+  @spec create_trigger_fired_events(list(Type.fired_triggers_map())) :: Task.t()
   def create_trigger_fired_events(fired_triggers) do
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
       fired_triggers
@@ -251,110 +234,5 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   defp create_event(type, id, params) do
     %__MODULE__{} |> create_changeset(Map.put(params, type, id)) |> Repo.insert()
-  end
-
-  defp events_with_public_entities_query(query) do
-    from(
-      event in query,
-      left_join: ut in UserTrigger,
-      on: event.user_trigger_id == ut.id,
-      left_join: ul in UserList,
-      on: event.user_list_id == ul.id,
-      where:
-        not is_nil(event.post_id) or
-          ul.is_public == true or
-          fragment("trigger->>'is_public' = 'true'")
-    )
-  end
-
-  defp events_order_limit_preload_query(query, order_by, limit) do
-    query
-    |> limit(^limit)
-    |> order_by_query(order_by)
-    |> preload([:user_trigger, [post: :tags], :user_list, :user, :votes])
-  end
-
-  defp order_by_query(query, :datetime) do
-    from(
-      event in query,
-      order_by: [desc: event.inserted_at]
-    )
-  end
-
-  defp order_by_query(query, :author) do
-    from(
-      event in query,
-      join: u in assoc(event, :user),
-      order_by: [asc: u.username, desc: event.inserted_at]
-    )
-  end
-
-  defp order_by_query(query, :votes) do
-    ids = EctoHelper.fetch_ids_ordered_by_assoc_count(query, :votes)
-    EctoHelper.by_id_in_order_query(query, ids)
-  end
-
-  defp order_by_query(query, :comments) do
-    ids = EctoHelper.fetch_ids_ordered_by_assoc_count(query, :comments)
-    EctoHelper.by_id_in_order_query(query, ids)
-  end
-
-  defp events_by_sanfamily(query) do
-    sanfamily_ids = Sanbase.Auth.Role.san_family_ids()
-
-    from(
-      event in query,
-      where: event.user_id in ^sanfamily_ids
-    )
-  end
-
-  defp events_by_sanfamily_or_followed_users_query(query, user_id) do
-    sanclan_or_followed_users_ids =
-      Sanbase.Auth.UserFollower.followed_by(user_id)
-      |> Enum.map(& &1.id)
-      |> Enum.concat(Sanbase.Auth.Role.san_family_ids())
-      |> Enum.dedup()
-
-    from(
-      event in query,
-      where: event.user_id in ^sanclan_or_followed_users_ids
-    )
-  end
-
-  def user_fired_signals_query(query, user_id) do
-    from(
-      event in query,
-      or_where: event.event_type == ^@trigger_fired and event.user_id == ^user_id
-    )
-  end
-
-  defp by_cursor(query, :before, datetime) do
-    from(
-      event in query,
-      where: event.inserted_at < ^datetime
-    )
-  end
-
-  defp by_cursor(query, :after, datetime) do
-    from(
-      event in query,
-      where: event.inserted_at > ^datetime
-    )
-  end
-
-  defp events_with_cursor([]), do: {:ok, %{events: [], cursor: %{}}}
-
-  defp events_with_cursor(events) do
-    before_datetime = events |> List.last() |> Map.get(:inserted_at)
-    after_datetime = events |> List.first() |> Map.get(:inserted_at)
-
-    {:ok,
-     %{
-       events: events,
-       cursor: %{
-         before: before_datetime,
-         after: after_datetime
-       }
-     }}
   end
 end

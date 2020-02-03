@@ -442,7 +442,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
   object :currency_amount do
     field(:currency_code, :string)
-    field(:amount, :float)
+    field(:amount, :decimal)
   end
 
   object :eth_spent_data do

@@ -85,12 +85,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiEthSpentOverTimeTest do
 
       assert %{
                "datetime" => "2017-05-16T00:00:00Z",
-               "ethSpent" => 0
+               "ethSpent" => 0.0
              } in eth_spent_over_time
 
       assert %{
                "datetime" => "2017-05-17T00:00:00Z",
-               "ethSpent" => 0
+               "ethSpent" => 0.0
              } in eth_spent_over_time
 
       assert %{

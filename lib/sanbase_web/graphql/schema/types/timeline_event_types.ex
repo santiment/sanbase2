@@ -10,6 +10,14 @@ defmodule SanbaseWeb.Graphql.TimelineEventTypes do
     value(:author)
   end
 
+  enum(:author_filter, values: [:all, :own, :followed, :sanfam])
+
+  input_object :timeline_events_filter_input do
+    field(:author, :author_filter, default_value: :all)
+    field(:watchlists, list_of(:integer), default_value: nil)
+    field(:assets, list_of(:integer), default_value: nil)
+  end
+
   object :timeline_events_paginated do
     field(:events, list_of(:timeline_event))
     field(:cursor, :cursor)

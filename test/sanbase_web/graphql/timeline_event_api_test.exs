@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     conn = setup_jwt_auth(build_conn(), user)
     role_san_clan = insert(:role_san_clan)
 
-    project = insert(:project, slug: "santiment")
+    project = insert(:project, slug: "santiment", ticker: "SAN")
     project2 = insert(:project, slug: "ethereum", ticker: "ETH", name: "Ethereum")
 
     {:ok,
@@ -473,7 +473,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     test "by list of assets", context do
       post = create_insight(context)
       watchlist = create_watchlist(context)
-      {trigger1, trigger2} = create_trigger(context)
+      {trigger1, trigger2, trigger3} = create_trigger(context)
 
       insight_event =
         insert(:timeline_event,
@@ -489,21 +489,21 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
           event_type: TimelineEvent.update_watchlist_type()
         )
 
+      generic_setting_trigger_event = %{
+        user_trigger: nil,
+        user: context.user,
+        event_type: TimelineEvent.trigger_fired(),
+        payload: %{"default" => "some signal payload"}
+      }
+
       trigger1_event =
-        insert(:timeline_event,
-          user_trigger: trigger1,
-          user: context.user,
-          event_type: TimelineEvent.trigger_fired(),
-          payload: %{"default" => "some signal payload"}
-        )
+        insert(:timeline_event, %{generic_setting_trigger_event | user_trigger: trigger1})
 
       trigger2_event =
-        insert(:timeline_event,
-          user_trigger: trigger2,
-          user: context.user,
-          event_type: TimelineEvent.trigger_fired(),
-          payload: %{"default" => "some signal payload"}
-        )
+        insert(:timeline_event, %{generic_setting_trigger_event | user_trigger: trigger2})
+
+      trigger3_event =
+        insert(:timeline_event, %{generic_setting_trigger_event | user_trigger: trigger3})
 
       create_test_events(context)
 
@@ -514,6 +514,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
         )
 
       assert event_ids(result) == [
+               trigger3_event.id,
                trigger2_event.id,
                trigger1_event.id,
                watchlist_event.id,
@@ -736,6 +737,13 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   end
 
   def create_trigger(context) do
+    generic_settings = %{
+      title: "Generic title",
+      is_public: false,
+      cooldown: "1d",
+      settings: %{}
+    }
+
     trigger_settings = %{
       type: "price_volume_difference",
       target: %{slug: context.project.slug},
@@ -750,23 +758,32 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       target: %{word: [context.project.slug]}
     }
 
+    trending_words_settings2 = %{
+      type: Sanbase.Signal.Trigger.TrendingWordsTriggerSettings.type(),
+      channel: "telegram",
+      operation: %{trending_word: true},
+      target: %{word: ["san"]}
+    }
+
     {:ok, trigger1} =
       UserTrigger.create_user_trigger(context.user, %{
-        title: "Generic title",
-        is_public: false,
-        cooldown: "1d",
-        settings: trigger_settings
+        generic_settings
+        | settings: trigger_settings
       })
 
     {:ok, trigger2} =
       UserTrigger.create_user_trigger(context.user, %{
-        title: "Generic title",
-        is_public: false,
-        cooldown: "1d",
-        settings: trending_words_settings
+        generic_settings
+        | settings: trending_words_settings
       })
 
-    {trigger1, trigger2}
+    {:ok, trigger3} =
+      UserTrigger.create_user_trigger(context.user, %{
+        generic_settings
+        | settings: trending_words_settings2
+      })
+
+    {trigger1, trigger2, trigger3}
   end
 
   defp event_ids(result) do

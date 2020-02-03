@@ -418,8 +418,8 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   defp daily_active_deposits_resp() do
     {:ok,
      [
-       %{active_deposits: 0.1, datetime: ~U[2019-01-01 00:00:00Z]},
-       %{active_deposits: 0.2, datetime: ~U[2019-01-02 00:00:00Z]}
+       %{active_deposits: 1, datetime: ~U[2019-01-01 00:00:00Z]},
+       %{active_deposits: 2, datetime: ~U[2019-01-02 00:00:00Z]}
      ]}
   end
 

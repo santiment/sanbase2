@@ -5,7 +5,7 @@ defmodule Sanbase.Timeline.Query do
   alias Sanbase.UserList
   alias Sanbase.Signal.UserTrigger
 
-  # Events with public antities and current user private events
+  # Events with public entities and current user private events
   def events_with_public_entities_query(query, user_id) do
     from(
       event in query,

@@ -108,7 +108,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     {:ok,
      %{
        total_votes: total_votes,
-       total_san_votes: total_san_votes |> round() |> trunc()
+       total_san_votes: total_san_votes |> Sanbase.Math.to_integer()
      }}
   end
 

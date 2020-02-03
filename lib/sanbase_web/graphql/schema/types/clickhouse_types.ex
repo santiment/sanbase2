@@ -3,25 +3,25 @@ defmodule SanbaseWeb.Graphql.ClickhouseTypes do
 
   object :active_addresses do
     field(:datetime, non_null(:datetime))
-    field(:active_addresses, non_null(:integer))
+    field(:active_addresses, non_null(:float))
   end
 
   object :active_deposits do
     field(:datetime, non_null(:datetime))
-    field(:active_deposits, non_null(:integer))
+    field(:active_deposits, non_null(:float))
   end
 
   object :share_of_deposits do
     field(:datetime, non_null(:datetime))
-    field(:active_addresses, non_null(:integer))
-    field(:active_deposits, non_null(:integer))
+    field(:active_addresses, non_null(:float))
+    field(:active_deposits, non_null(:float))
     field(:share_of_deposits, :float)
   end
 
   object :gas_used do
     field(:datetime, non_null(:datetime))
-    field(:eth_gas_used, :integer, deprecate: "Use gasUsed")
-    field(:gas_used, :integer)
+    field(:eth_gas_used, :float, deprecate: "Use gasUsed")
+    field(:gas_used, :float)
   end
 
   object :mining_pools_distribution do
@@ -38,7 +38,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseTypes do
 
   object :network_growth do
     field(:datetime, non_null(:datetime))
-    field(:new_addresses, :integer)
+    field(:new_addresses, :float)
   end
 
   object :nvt_ratio do
@@ -49,8 +49,8 @@ defmodule SanbaseWeb.Graphql.ClickhouseTypes do
 
   object :realized_value do
     field(:datetime, non_null(:datetime))
-    field(:realized_value, :integer)
-    field(:non_exchange_realized_value, :integer)
+    field(:realized_value, :float)
+    field(:non_exchange_realized_value, :float)
   end
 
   object :percent_of_token_supply_on_exchanges do

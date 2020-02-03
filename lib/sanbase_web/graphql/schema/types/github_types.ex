@@ -9,6 +9,6 @@ defmodule SanbaseWeb.Graphql.GithubTypes do
 
   object :activity_point do
     field(:datetime, non_null(:datetime))
-    field(:activity, non_null(:integer))
+    field(:activity, non_null(:float))
   end
 end

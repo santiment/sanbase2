@@ -61,8 +61,7 @@ defmodule Sanbase.InternalServices.Ethauth do
     get(client(), "san_balance", query: [addr: address], opts: @tesla_opts)
     |> case do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
-        san_balance =
-          body |> Sanbase.Math.to_float() |> IO.inspect(label: "BALANCEEEE ", limit: :infinity)
+        san_balance = body |> Sanbase.Math.to_float()
 
         {:ok, san_balance / @san_token_decimals}
 

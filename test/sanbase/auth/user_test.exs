@@ -35,7 +35,7 @@ defmodule Sanbase.Auth.UserTest do
   end
 
   test "update_san_balance_changeset is returning a changeset with updated san balance" do
-    mock(Sanbase.InternalServices.Ethauth, :san_balance, {:ok, Decimal.new(5)})
+    mock(Sanbase.InternalServices.Ethauth, :san_balance, {:ok, 5.0})
 
     user =
       insert(:user,
@@ -46,7 +46,7 @@ defmodule Sanbase.Auth.UserTest do
 
     changeset = User.update_san_balance_changeset(user)
 
-    assert changeset.changes[:san_balance] == Decimal.new(5)
+    assert changeset.changes[:san_balance] == 5.0
     #
     assert Sanbase.TestUtils.datetime_close_to(
              Timex.now(),
@@ -67,7 +67,7 @@ defmodule Sanbase.Auth.UserTest do
       )
 
     capture_log(fn ->
-      assert User.san_balance!(user) == Decimal.new(100)
+      assert User.san_balance!(user) == 100.0
     end)
   end
 
@@ -79,7 +79,7 @@ defmodule Sanbase.Auth.UserTest do
         privacy_policy_accepted: true
       )
 
-    assert User.san_balance!(user) == Decimal.new(5)
+    assert User.san_balance!(user) == 5.0
   end
 
   test "san_balance! updates the balance if the balance cache is stale" do
@@ -89,7 +89,7 @@ defmodule Sanbase.Auth.UserTest do
         privacy_policy_accepted: true
       )
 
-    mock(Sanbase.InternalServices.Ethauth, :san_balance, {:ok, Decimal.new(10)})
+    mock(Sanbase.InternalServices.Ethauth, :san_balance, {:ok, 10.0})
 
     %EthAccount{address: "0x000000000001", user_id: user.id}
     |> Repo.insert!()
@@ -98,7 +98,7 @@ defmodule Sanbase.Auth.UserTest do
       Repo.get(User, user.id)
       |> Repo.preload(:eth_accounts)
 
-    assert User.san_balance!(user) == Decimal.new(10)
+    assert User.san_balance!(user) == 10.0
 
     user = Repo.get(User, user.id)
 
@@ -118,7 +118,7 @@ defmodule Sanbase.Auth.UserTest do
         san_balance_updated_at: Timex.shift(Timex.now(), minutes: -2)
       )
 
-    assert User.san_balance!(user) == Decimal.new(20)
+    assert User.san_balance!(user) == 20.0
   end
 
   test "san_balance! returns cached san_balance if test_san_balance not present" do
@@ -129,7 +129,7 @@ defmodule Sanbase.Auth.UserTest do
         privacy_policy_accepted: true
       )
 
-    assert User.san_balance!(user) == Decimal.new(10)
+    assert User.san_balance!(user) == 10.0
   end
 
   test "find_or_insert_by_email when the user does not exist" do

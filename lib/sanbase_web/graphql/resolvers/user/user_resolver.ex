@@ -24,8 +24,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
       ) do
     case User.san_balance(user) do
       {:ok, san_balance} ->
-        san_balance = san_balance || Decimal.new(0)
-        {:ok, Decimal.to_float(san_balance)}
+        {:ok, san_balance || 0}
 
       {:error, error} ->
         Logger.warn("Error getting a user's san balance. Reason: #{inspect(error)}")

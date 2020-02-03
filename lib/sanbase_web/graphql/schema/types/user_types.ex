@@ -134,7 +134,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
   object :eth_account do
     field(:address, non_null(:string))
 
-    field :san_balance, non_null(:integer) do
+    field :san_balance, non_null(:float) do
       cache_resolve(&EthAccountResolver.san_balance/3)
     end
   end

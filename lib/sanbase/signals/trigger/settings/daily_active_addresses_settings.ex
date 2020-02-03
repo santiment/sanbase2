@@ -131,7 +131,6 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
         OperationText.to_template_kv(values, settings.operation)
 
       kv =
-        kv =
         %{
           type: DailyActiveAddressesSettings.type(),
           operation: settings.operation,

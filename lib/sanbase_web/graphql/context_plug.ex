@@ -233,7 +233,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   defp san_balance(%User{} = user) do
     case User.san_balance(user) do
-      {:ok, %Decimal{} = balance} -> balance |> Decimal.to_float()
+      {:ok, balance} -> balance
       _ -> 0
     end
   end

@@ -126,7 +126,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
           callback: fn query, project, _args ->
             {:ok, query || Project.SocialVolumeQuery.default_query(project)}
           end
-        )
+        ),
+        fun_name: :social_volume_query
       )
     end
 
@@ -134,7 +135,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve(
         dataloader(SanbaseRepo, :source_slug_mappings,
           callback: fn query, _project, _args -> {:ok, query} end
-        )
+        ),
+        fun_name: :source_slug_mappings
       )
     end
 
@@ -157,7 +159,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
           callback: fn query, _project, _args ->
             {:ok, query |> Enum.map(& &1.name)}
           end
-        )
+        ),
+        fun_name: :market_segments
       )
     end
 
@@ -370,7 +373,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     @desc "Average daily active addresses for a ERC20 project or Ethereum and given time period"
-    field :average_daily_active_addresses, :integer do
+    field :average_daily_active_addresses, :float do
       arg(:from, :datetime)
       arg(:to, :datetime)
 

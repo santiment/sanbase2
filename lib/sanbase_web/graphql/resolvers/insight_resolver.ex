@@ -102,7 +102,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
       |> Stream.map(&Map.get(&1, :user))
       |> Stream.map(&User.san_balance!/1)
       |> Enum.reduce({0, 0}, fn san_balance, {votes, san_token_votes} ->
-        {votes + 1, san_token_votes + Decimal.to_float(san_balance)}
+        {votes + 1, san_token_votes + san_balance}
       end)
 
     {:ok,

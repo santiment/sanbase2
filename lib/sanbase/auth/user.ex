@@ -195,9 +195,10 @@ defmodule Sanbase.Auth.User do
     |> change(san_balance: san_balance, san_balance_updated_at: Timex.now())
   end
 
-  def san_balance(%User{test_san_balance: test_san_balance} = _user)
+  @spec san_balance(%User{}) :: {:ok, float()} | {:error, String.t()}
+  def san_balance(%User{test_san_balance: test_san_balance})
       when not is_nil(test_san_balance) do
-    {:ok, test_san_balance}
+    {:ok, test_san_balance |> Sanbase.Math.to_float()}
   end
 
   def san_balance(%User{san_balance: san_balance} = user) do
@@ -205,14 +206,14 @@ defmodule Sanbase.Auth.User do
       update_san_balance_changeset(user)
       |> Repo.update()
       |> case do
-        {:ok, user} ->
-          {:ok, user |> Map.get(:san_balance)}
+        {:ok, %{san_balance: san_balance}} ->
+          {:ok, san_balance |> Sanbase.Math.to_float()}
 
         {:error, error} ->
           {:error, error}
       end
     else
-      {:ok, san_balance}
+      {:ok, san_balance |> Sanbase.Math.to_float()}
     end
   end
 
@@ -231,7 +232,7 @@ defmodule Sanbase.Auth.User do
 
     case Enum.member?(eth_accounts_balances, :error) do
       true -> san_balance
-      _ -> Enum.reduce(eth_accounts_balances, Decimal.new(0), &Decimal.add/2)
+      _ -> Enum.reduce(eth_accounts_balances, 0, &Kernel.+/2)
     end
   end
 

@@ -2,7 +2,7 @@ defmodule Sanbase.InternalServices.Ethauth do
   use Tesla
   require Sanbase.Utils.Config, as: Config
 
-  @san_token_decimals Decimal.new(Sanbase.SantimentContract.decimals_expanded())
+  @san_token_decimals Sanbase.SantimentContract.decimals_expanded()
   @tesla_opts [adapter: [recv_timeout: 15_000]]
 
   def token_decimals(contract) when is_binary(contract) do
@@ -62,11 +62,9 @@ defmodule Sanbase.InternalServices.Ethauth do
     |> case do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         san_balance =
-          body
-          |> Decimal.new()
-          |> Decimal.div(@san_token_decimals)
+          body |> Sanbase.Math.to_float() |> IO.inspect(label: "BALANCEEEE ", limit: :infinity)
 
-        {:ok, san_balance}
+        {:ok, san_balance / @san_token_decimals}
 
       {:ok, %Tesla.Env{status: status, body: body}} ->
         {:error,

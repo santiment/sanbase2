@@ -370,7 +370,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     @desc "Average daily active addresses for a ERC20 project or Ethereum and given time period"
-    field :average_daily_active_addresses, :integer do
+    field :average_daily_active_addresses, :float do
       arg(:from, :datetime)
       arg(:to, :datetime)
 

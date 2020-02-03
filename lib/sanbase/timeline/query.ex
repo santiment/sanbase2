@@ -6,6 +6,20 @@ defmodule Sanbase.Timeline.Query do
   alias Sanbase.Signal.UserTrigger
 
   # Events with public entities and current user private events
+  def events_with_public_entities_query(query) do
+    from(
+      event in query,
+      left_join: ut in UserTrigger,
+      on: event.user_trigger_id == ut.id,
+      left_join: ul in UserList,
+      on: event.user_list_id == ul.id,
+      where:
+        not is_nil(event.post_id) or
+          ul.is_public == true or
+          fragment("trigger->>'is_public' = 'true'")
+    )
+  end
+
   def events_with_public_entities_query(query, user_id) do
     from(
       event in query,

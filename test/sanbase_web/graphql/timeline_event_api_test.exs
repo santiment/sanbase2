@@ -268,26 +268,55 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     assert timeline_events_query(context.conn, "limit: 5") |> hd() |> Map.get("events") == []
   end
 
-  test "timeline events for not logged in user", context do
-    san_author = insert(:user)
-    insert(:user_role, user: san_author, role: context.role_san_clan)
+  describe "timeline events for not logged in user" do
+    test "shows sanfamily insight", context do
+      san_author = insert(:user)
+      insert(:user_role, user: san_author, role: context.role_san_clan)
 
-    post =
-      insert(:post,
+      post =
+        insert(:post,
+          user: san_author,
+          state: Post.approved_state(),
+          ready_state: Post.published()
+        )
+
+      insert(:timeline_event,
+        post: post,
         user: san_author,
-        state: Post.approved_state(),
-        ready_state: Post.published()
+        event_type: TimelineEvent.publish_insight_type()
       )
 
-    insert(:timeline_event,
-      post: post,
-      user: san_author,
-      event_type: TimelineEvent.publish_insight_type()
-    )
+      result = timeline_events_query(build_conn(), "limit: 5")
 
-    result = timeline_events_query(build_conn(), "limit: 5")
+      assert result |> hd() |> Map.get("events") |> length() == 1
+    end
 
-    assert result |> hd() |> Map.get("events") |> length() == 1
+    test "doesn't show private trigger that fired", context do
+      san_author = insert(:user)
+      insert(:user_role, user: san_author, role: context.role_san_clan)
+
+      user_trigger =
+        insert(:user_trigger,
+          user: san_author,
+          trigger: %{
+            is_public: false,
+            settings: default_trigger_settings_string_keys(),
+            title: "my trigger",
+            description: "DAA going up 300%"
+          }
+        )
+
+      insert(:timeline_event,
+        user_trigger: user_trigger,
+        user: san_author,
+        event_type: TimelineEvent.trigger_fired(),
+        payload: %{"default" => "some signal payload"}
+      )
+
+      result = timeline_events_query(build_conn(), "limit: 5")
+
+      assert result |> hd() |> Map.get("events") == []
+    end
   end
 
   describe "upvoteTimelineEvent/downvoteTimelineEvent mutations" do

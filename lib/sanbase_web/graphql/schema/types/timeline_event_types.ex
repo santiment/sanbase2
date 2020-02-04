@@ -32,6 +32,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventTypes do
     field(:post, :post)
     field(:user_list, :user_list)
     field(:payload, :json)
+    field(:data, :json)
     field(:votes, list_of(:upvote))
 
     field :comments_count, :integer do

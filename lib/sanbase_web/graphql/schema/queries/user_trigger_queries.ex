@@ -1,6 +1,6 @@
-defmodule SanbaseWeb.Graphql.Schema.SignalQueries do
+defmodule SanbaseWeb.Graphql.Schema.UserTriggerQueries do
   @moduledoc ~s"""
-  Queries and mutations for working with Signals
+  Queries and mutations for working with user triggers
   """
   use Absinthe.Schema.Notation
 

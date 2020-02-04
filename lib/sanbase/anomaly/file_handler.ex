@@ -14,6 +14,16 @@ defmodule Sanbase.Anomaly.FileHandler do
       |> Enum.reject(&is_nil/1)
       |> Map.new()
     end
+
+    def fields_to_name_map(map, fields) do
+      map
+      |> Enum.into(
+        %{},
+        fn %{"name" => name} = elem ->
+          {Map.take(elem, fields), name}
+        end
+      )
+    end
   end
 
   # Structure
@@ -40,6 +50,10 @@ defmodule Sanbase.Anomaly.FileHandler do
   @human_readable_name_map Helper.name_to_field_map(@anomalies_json, "human_readable_name")
   @model_name_map Helper.name_to_field_map(@anomalies_json, "model_name")
   @data_type_map Helper.name_to_field_map(@anomalies_json, "data_type", &String.to_atom/1)
+  @metric_and_model_to_anomaly_map Helper.fields_to_name_map(@anomalies_json, [
+                                     "metric",
+                                     "model_name"
+                                   ])
 
   @anomalies_list @anomalies_json |> Enum.map(fn %{"name" => name} -> name end)
   @anomalies_mapset MapSet.new(@anomalies_list)
@@ -54,6 +68,7 @@ defmodule Sanbase.Anomaly.FileHandler do
   def table_map(), do: @table_map
   def data_type_map(), do: @data_type_map
   def model_name_map(), do: @model_name_map
+  def metric_and_model_to_anomaly_map(), do: @metric_and_model_to_anomaly_map
 
   def anomalies_with_access(level) when level in [:free, :restricted] do
     @access_map

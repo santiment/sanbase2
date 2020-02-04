@@ -13,6 +13,7 @@ defmodule Sanbase.Anomaly do
   @anomalies @anomalies_mapset |> Enum.to_list()
   @metric_map FileHandler.metric_map()
   @data_type_map FileHandler.data_type_map()
+  @metric_and_model_to_anomaly_map FileHandler.metric_and_model_to_anomaly_map()
 
   def has_anomaly?(anomaly) do
     case anomaly in @anomalies_mapset do
@@ -22,6 +23,17 @@ defmodule Sanbase.Anomaly do
   end
 
   def available_anomalies(), do: @anomalies
+
+  def available_anomalies(slug) do
+    Sanbase.Cache.get_or_store(
+      {__MODULE__, :slug_to_anomalies_map} |> :erlang.phash2(),
+      fn -> slug_to_anomalies_map() end
+    )
+    |> case do
+      {:ok, map} -> {:ok, Map.get(map, slug, [])}
+      {:error, error} -> {:error, error}
+    end
+  end
 
   def available_slugs(anomaly) do
     {query, args} = available_slugs_query(anomaly)
@@ -84,6 +96,24 @@ defmodule Sanbase.Anomaly do
   def available_aggregations(), do: @aggregations
 
   # Private functions
+
+  defp slug_to_anomalies_map() do
+    {:ok, asset_map} = asset_id_to_slug_map()
+    {:ok, metric_map} = metric_id_to_metric_name_map()
+
+    {query, args} = available_anomalies_query()
+
+    ClickhouseRepo.query_reduce(query, args, %{}, fn [model_name, asset_id, metric_id], acc ->
+      key = %{"metric" => Map.get(metric_map, metric_id), "model_name" => model_name}
+
+      with anomaly when not is_nil(anomaly) <- Map.get(@metric_and_model_to_anomaly_map, key),
+           slug when not is_nil(slug) <- Map.get(asset_map, asset_id) do
+        Map.update(acc, slug, [anomaly], fn list -> [anomaly | list] end)
+      else
+        _ -> acc
+      end
+    end)
+  end
 
   defp get_aggregated_timeseries_data(anomaly, slugs, from, to, aggr)
        when is_list(slugs) and length(slugs) > 20 do

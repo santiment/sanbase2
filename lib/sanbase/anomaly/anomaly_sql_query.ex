@@ -1,5 +1,6 @@
 defmodule Sanbase.Anomaly.SqlQuery do
   @table "anomalies"
+  @metadata_table "anomalies_model_metadata"
 
   @moduledoc ~s"""
   Define the SQL queries to access to the anomalies in Clickhouse
@@ -10,7 +11,6 @@ defmodule Sanbase.Anomaly.SqlQuery do
   use Ecto.Schema
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
-  import Sanbase.Anomaly.Helper
 
   alias Sanbase.Anomaly.FileHandler
 
@@ -46,7 +46,7 @@ defmodule Sanbase.Anomaly.SqlQuery do
         dt < toDateTime(?3) AND
         model_id GLOBAL IN (
           SELECT model_id
-          FROM anomalies_model_metadata
+          FROM #{@metadata_table}
           PREWHERE
             name = ?4 AND
             metric_id = ( SELECT argMax(metric_id, computed_at) AS metric_id FROM metric_metadata PREWHERE name = ?5 ) AND
@@ -86,7 +86,7 @@ defmodule Sanbase.Anomaly.SqlQuery do
         dt < toDateTime(?2) AND
         model_id GLOBAL IN (
           SELECT model_id
-          FROM anomalies_model_metadata
+          FROM #{@metadata_table}
           PREWHERE
             asset_id IN (?3) AND
             name = ?4 AND
@@ -114,10 +114,10 @@ defmodule Sanbase.Anomaly.SqlQuery do
     FROM asset_metadata
     PREWHERE asset_id GLOBAL IN (
       SELECT DISTINCT(asset_id)
-      FROM anomalies_model_metadata
+      FROM #{@metadata_table}
       PREWHERE
         name = ?1 AND
-        metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = ?2 )
+        metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = ?2 a
     )
     """
 
@@ -129,13 +129,24 @@ defmodule Sanbase.Anomaly.SqlQuery do
     {query, args}
   end
 
+  def available_anomalies_query() do
+    query = """
+    SELECT name, toUInt32(asset_id), toUInt32(metric_id)
+    FROM #{@metadata_table}
+    GROUP BY name, asset_id, metric_id
+    """
+
+    args = []
+    {query, args}
+  end
+
   def first_datetime_query(anomaly, nil) do
     query = """
     SELECT toUnixTimestamp(toDateTime(min(dt)))
     FROM #{@table}
     PREWHERE model_id GLOBAL IN (
       SELECT
-        model_id FROM anomalies_model_metadata
+        model_id FROM #{@metadata_table}
       PREWHERE
         name = ?1 AND
         metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = ?2 )
@@ -156,7 +167,7 @@ defmodule Sanbase.Anomaly.SqlQuery do
     FROM #{@table}
     PREWHERE model_id GLOBAL IN (
       SELECT
-        model_id FROM anomalies_model_metadata
+        model_id FROM #{@metadata_table}
       PREWHERE
         name = ?1 AND
         metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = ?2 ) AND

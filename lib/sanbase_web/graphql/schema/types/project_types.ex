@@ -9,6 +9,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   alias SanbaseWeb.Graphql.Resolvers.{
     ClickhouseResolver,
     ProjectResolver,
+    ProjectAnomaliesResolver,
     ProjectMetricsResolver,
     ProjectBalanceResolver,
     ProjectTransactionsResolver,
@@ -25,6 +26,35 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   A type fully describing a project.
   """
   object :project do
+    @desc ~s"""
+    Returns a list of available anomalies. Every one of the anomalies in the list
+    can be passed as the `metric` argument of the `getMetric` query.
+
+    For example, any of of the anomalies from the query:
+    ```
+    {
+      projectBySlug(slug: "ethereum"){ availableAnomalies }
+    }
+    ```
+    can be used like this:
+    ```
+    {
+      getAnomaly(anomaly: "<anomaly>"){
+        timeseriesData(
+          slug: "ethereum"
+          from: "2019-01-01T00:00:00Z"
+          to: "2019-02-01T00:00:00Z"
+          interval: "1d"){
+            datetime
+            value
+          }
+      }
+    ```
+    """
+    field :available_anomalies, list_of(:string) do
+      cache_resolve(&ProjectAnomaliesResolver.available_anomalies/3, ttl: 600)
+    end
+
     @desc ~s"""
     Returns a list of available metrics. Every one of the metrics in the list
     can be passed as the `metric` argument of the `getMetric` query.
@@ -48,16 +78,81 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
             value
           }
       }
+    }
+    ```
+    or
+    ```
+    {
+      getMetric(metric: "<metric>"){
+        histogramData(
+          slug: "ethereum"
+          from: "2019-01-01T00:00:00Z"
+          to: "2019-02-01T00:00:00Z"
+          interval: "1d"
+          limit: 50){
+            datetime
+            value
+          }
+      }
+    }
+    ```
+
+    The breakdown of the metrics into those fetchable by `timeseriesData` and
+    `histogramData` is fetchable by the following fields:
+    ```
+    {
+      projectBySlug(slug: "ethereum"){
+        availableTimeseriesMetrics
+        availableHistogramMetrics
+      }
+    }
     ```
     """
     field :available_metrics, list_of(:string) do
       cache_resolve(&ProjectMetricsResolver.available_metrics/3, ttl: 600)
     end
 
+    @desc ~s"""
+    Returns a subset of the availableMetrics that are fetchable by getMetric's
+    timeseriesData
+    ```
+    {
+      getMetric(metric: "<metric>"){
+        timeseriesData(
+          slug: "ethereum"
+          from: "2019-01-01T00:00:00Z"
+          to: "2019-02-01T00:00:00Z"
+          interval: "1d"){
+            datetime
+            value
+          }
+      }
+    }
+    ```
+    """
     field :available_timeseries_metrics, list_of(:string) do
       cache_resolve(&ProjectMetricsResolver.available_timeseries_metrics/3, ttl: 600)
     end
 
+    @desc ~s"""
+    Returns a subset of the availableMetrics that are fetchable by getMetric's
+    histogramDAta
+    ```
+    {
+      getMetric(metric: "<metric>"){
+        histogramData(
+          slug: "ethereum"
+          from: "2019-01-01T00:00:00Z"
+          to: "2019-02-01T00:00:00Z"
+          interval: "1d"
+          limit: 50){
+            datetime
+            value
+          }
+      }
+    }
+    ```
+    """
     field :available_histogram_metrics, list_of(:string) do
       cache_resolve(&ProjectMetricsResolver.available_histogram_metrics/3, ttl: 600)
     end

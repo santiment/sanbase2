@@ -179,9 +179,11 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
 
       trending_words_str = Enum.join(top_words_strings, "\n")
 
+      # Having only the trigger_time won't be enough for the payload - include
+      # also the date
       kv = %{
         type: TrendingWordsTriggerSettings.type(),
-        time: trigger_time,
+        datetime: "#{Date.utc_today()} #{trigger_time}",
         operation: operation,
         trending_words_list: top_words,
         trending_words_str: trending_words_str,
@@ -189,7 +191,7 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       }
 
       template = """
-      Trending words at: {{time}}
+      Trending words at: {{datetime}}
 
       ```
       {{trending_words_str}}

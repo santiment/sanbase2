@@ -164,7 +164,10 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       end
     end
 
-    defp template_kv(%{operation: %{send_at_predefined_time: true}} = operation, top_words) do
+    defp template_kv(
+           %{operation: %{send_at_predefined_time: true, trigger_time: trigger_time}} = operation,
+           top_words
+         ) do
       max_len = get_max_len(top_words)
 
       top_words_strings =
@@ -176,8 +179,11 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
 
       trending_words_str = Enum.join(top_words_strings, "\n")
 
+      # Having only the trigger_time won't be enough for the payload - include
+      # also the date
       kv = %{
         type: TrendingWordsTriggerSettings.type(),
+        datetime: "#{Date.utc_today()} #{trigger_time}",
         operation: operation,
         trending_words_list: top_words,
         trending_words_str: trending_words_str,
@@ -185,7 +191,7 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       }
 
       template = """
-      Trending words at: {{time}}
+      Trending words at: {{datetime}}
 
       ```
       {{trending_words_str}}

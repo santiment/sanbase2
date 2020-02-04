@@ -102,22 +102,18 @@ defmodule Sanbase.Signal.Scheduler do
     # all signals will be different, sometimes only by a second
     now = Timex.now() |> Timex.set(second: 0, microsecond: {0, 0})
 
+    # Update all triggered_at regardless if the send to the channel succeed
+    # because the signal will be stored in the timeline events.
     last_triggered =
       send_results_list
       |> Enum.reduce(last_triggered, fn
-        # If the key is a list we'll record each individual element separately
-        # because we're checking every item in the list separately if it was
-        # triggered or not.
-        {list, :ok}, acc when is_list(list) ->
+        {list, _}, acc when is_list(list) ->
           Enum.reduce(list, acc, fn elem, inner_acc ->
             Map.put(inner_acc, elem, now)
           end)
 
-        {slug, :ok}, acc ->
+        {slug, _}, acc ->
           Map.put(acc, slug, now)
-
-        _, acc ->
-          acc
       end)
 
     UserTrigger.update_user_trigger(user, %{

@@ -42,10 +42,18 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
 
   def create_promo_trial(%{plans: plans, trial_days: trial_days, user_id: user_id}) do
     {:ok, user} = User.by_id(user_id)
-    plans = plans |> Enum.map(&String.to_integer/1)
-    trial_days = String.to_integer(trial_days)
+    plans = plans |> Enum.map(&maybe_convert_to_integer?/1)
+    trial_days = maybe_convert_to_integer?(trial_days)
 
     create_promo_subscription(user, plans, trial_days)
+  end
+
+  defp maybe_convert_to_integer?(value) when is_integer(value) do
+    value
+  end
+
+  defp maybe_convert_to_integer?(value) when is_binary(value) do
+    String.to_integer(value)
   end
 
   defp create_promo_subscription(

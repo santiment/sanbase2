@@ -269,9 +269,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     User.by_id(user_id)
   end
 
-  defp create_free_trial_on_signup(user) do
-    unless user.email_token_validated_at do
-      Sanbase.Billing.Subscription.create_free_trial_subscription(user.id)
-    end
+  # when `email_token_validated_at` is nil - user haven't completed registration
+  defp create_free_trial_on_signup(%User{email_token_validated_at: nil} = user) do
+    Sanbase.Billing.Subscription.create_free_trial_subscription(user.id)
+  end
+
+  defp create_free_trial_on_signup(%User{email_token_validated_at: email_token_validated_at})
+       when not is_nil(email_token_validated_at) do
+    :ok
   end
 end

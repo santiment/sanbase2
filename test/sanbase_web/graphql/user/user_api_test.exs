@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mockery
+  import Mock
   import SanbaseWeb.Graphql.TestHelpers
   import ExUnit.CaptureLog
   import Sanbase.Factory
@@ -9,7 +10,10 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
   alias Sanbase.Auth.User
   alias Sanbase.Repo
 
-  setup do
+  setup_with_mocks([
+    {Sanbase.Billing.Subscription.PromoTrial, [:passthrough],
+     [create_promo_trial: fn _ -> {:ok, %{}} end]}
+  ]) do
     user =
       %User{salt: User.generate_salt(), privacy_policy_accepted: true}
       |> Repo.insert!()

@@ -57,6 +57,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field(:marketing_accepted, :boolean)
     field(:first_login, :boolean, default_value: false)
     field(:avatar_url, :string)
+    field(:stripe_customer_id, :string)
 
     field :permissions, :access_level do
       resolve(&UserResolver.permissions/3)

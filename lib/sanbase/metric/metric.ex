@@ -254,6 +254,27 @@ defmodule Sanbase.Metric do
     end
   end
 
+  def available_metrics_for_slug(slug) do
+    Sanbase.Cache.get_or_store({:available_metrics_for_slug, slug} |> :erlang.phash2(), fn ->
+      case available_slugs_per_module() do
+        {:ok, result} ->
+          metrics =
+            Enum.flat_map(result, fn {module, slugs} ->
+              if slug in slugs do
+                module.available_metrics()
+              else
+                []
+              end
+            end)
+
+          {:ok, metrics}
+
+        {:error, error} ->
+          {:error, error}
+      end
+    end)
+  end
+
   def available_timeseries_metrics(), do: @timeseries_metrics
 
   def available_histogram_metrics(), do: @histogram_metrics
@@ -276,6 +297,23 @@ defmodule Sanbase.Metric do
       case errors do
         [] -> {:ok, slugs |> Enum.uniq()}
         _ -> {:error, "Cannot fetch all available slugs. Errors: #{inspect(errors)}"}
+      end
+    end)
+  end
+
+  def available_slugs_per_module() do
+    Sanbase.Cache.get_or_store({:available_slugs_per_module, 1800}, fn ->
+      {result, errors} =
+        Enum.reduce(@metric_modules, {%{}, []}, fn module, {acc, errors} ->
+          case module.available_slugs() do
+            {:ok, slugs} -> {Map.put(acc, module, slugs), errors}
+            {:error, error} -> {acc, [error | errors]}
+          end
+        end)
+
+      case errors do
+        [] -> {:ok, result}
+        _ -> {:error, "Cannot fetch all available slugs per module. Errors: #{inspect(errors)}"}
       end
     end)
   end

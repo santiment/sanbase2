@@ -48,14 +48,6 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
     create_promo_subscription(user, plans, trial_days)
   end
 
-  defp maybe_convert_to_integer?(value) when is_integer(value) do
-    value
-  end
-
-  defp maybe_convert_to_integer?(value) when is_binary(value) do
-    String.to_integer(value)
-  end
-
   defp create_promo_subscription(
          %User{stripe_customer_id: stripe_customer_id} = user,
          plans,
@@ -142,4 +134,12 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
   end
 
   defp stringify_plans(changeset, _), do: changeset
+
+  defp maybe_convert_to_integer?(value) when is_integer(value) do
+    value
+  end
+
+  defp maybe_convert_to_integer?(value) when is_binary(value) do
+    String.to_integer(value)
+  end
 end

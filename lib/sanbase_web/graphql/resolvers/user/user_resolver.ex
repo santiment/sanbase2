@@ -111,12 +111,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     end
   end
 
-  defp create_free_trial_on_signup(user) do
-    unless user.email_token_validated_at do
-      Sanbase.Billing.Subscription.create_free_trial_subscription(user.id)
-    end
-  end
-
   def change_email(_root, %{email: email_candidate}, %{
         context: %{auth: %{auth_method: :user_token, current_user: user}}
       }) do
@@ -273,5 +267,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   # Existing eth account, login as the user of the eth account
   defp fetch_user(_, %EthAccount{user_id: user_id}) do
     User.by_id(user_id)
+  end
+
+  defp create_free_trial_on_signup(user) do
+    unless user.email_token_validated_at do
+      Sanbase.Billing.Subscription.create_free_trial_subscription(user.id)
+    end
   end
 end

@@ -552,6 +552,38 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     end
   end
 
+  describe "mixing order by and filter" do
+    test "filter by own, order by votes gives correct order", context do
+      # these will be filtered by cursor
+      events = create_test_events(context)
+
+      vote_user = insert(:user)
+
+      cursor_datetime = Timex.shift(Timex.now(), hours: -6) |> DateTime.to_iso8601()
+
+      {event, trigger} =
+        create_timeline_event(context.user, %{inserted_at: Timex.shift(Timex.now(), days: -1)})
+
+      {event2, trigger2} =
+        create_timeline_event(context.user, %{inserted_at: Timex.shift(Timex.now(), days: -1)})
+
+      Sanbase.Vote.create(%{
+        user_id: vote_user.id,
+        timeline_event_id: event.id
+      })
+
+      result =
+        timeline_events_query(
+          context.conn,
+          "limit: 4, orderBy: VOTES, filterBy: {author: OWN}, cursor: {type: BEFORE, datetime: '#{
+            cursor_datetime
+          }'}"
+        )
+
+      assert event_ids(result) == [event.id, event2.id]
+    end
+  end
+
   defp timeline_events_query(conn, args_str) do
     query =
       ~s|
@@ -595,6 +627,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       conn
       |> post("/graphql", query_skeleton(query, "timelineEvents"))
       |> json_response(200)
+      |> IO.inspect()
 
     result["data"]["timelineEvents"]
   end
@@ -625,7 +658,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     """
   end
 
-  defp create_timeline_event(user) do
+  defp create_timeline_event(user, params \\ %{}) do
     user_trigger =
       insert(:user_trigger,
         user: user,
@@ -637,13 +670,16 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
         }
       )
 
-    timeline_event =
-      insert(:timeline_event,
-        user_trigger: user_trigger,
-        user: user,
-        event_type: TimelineEvent.trigger_fired(),
-        payload: %{"default" => "some signal payload"}
-      )
+    event_params = %{
+      user_trigger: user_trigger,
+      user: user,
+      event_type: TimelineEvent.trigger_fired(),
+      payload: %{"default" => "some signal payload"}
+    }
+
+    event_params = Map.merge(event_params, params)
+
+    timeline_event = insert(:timeline_event, event_params)
 
     {timeline_event, user_trigger}
   end

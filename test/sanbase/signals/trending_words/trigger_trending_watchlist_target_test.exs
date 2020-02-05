@@ -5,7 +5,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsWatchlistTargetTest do
   import Sanbase.Factory
 
   alias Sanbase.UserList
-  alias Sanbase.Signal.{Trigger, UserTrigger}
+  alias Sanbase.Signal.UserTrigger
   alias Sanbase.Signal.Evaluator
 
   alias Sanbase.Signal.Trigger.TrendingWordsTriggerSettings

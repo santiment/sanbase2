@@ -99,7 +99,7 @@ defmodule Sanbase.KafkaExporter do
   @spec handle_call({:persist, data | [data]}, any(), state) :: {:reply, result, state}
         when state: map()
   def handle_call({:persist, data}, _from, state) do
-    data = data = List.wrap(data)
+    data = List.wrap(data)
 
     send_data_result =
       (data ++ state.data)

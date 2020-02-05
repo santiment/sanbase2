@@ -15,7 +15,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     {:ok, conn: conn, user: user}
   end
 
-  describe "Create trigger" do
+  describe "Create traigger" do
     test "with proper args - creates it successfully", %{conn: conn} do
       with_mock Sanbase.Telegram,
         send_message: fn _user, text ->
@@ -122,47 +122,18 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   end
 
   test "update trigger", %{user: user, conn: conn} do
-    trigger_settings = default_trigger_settings_string_keys()
+    trigger_settings =
+      default_trigger_settings_string_keys() |> Map.put("operation", %{"percent_up" => 400.0})
 
-    insert(:user_trigger, user: user, trigger: %{is_public: false, settings: trigger_settings})
+    user_trigger =
+      insert(:user_trigger, user: user, trigger: %{is_public: false, settings: trigger_settings})
 
-    updated_trigger = trigger_settings |> Map.put("operation", %{"percent_up" => 400.0})
-    user_trigger = UserTrigger.triggers_for(user) |> List.first()
-    trigger_id = user_trigger.id
+    trigger =
+      update_trigger(conn, user_trigger.id, trigger_settings, ["tag1", "tag2"], "123h", false)
+      |> get_in(["data", "updateTrigger", "trigger"])
 
-    trigger_settings_json = updated_trigger |> Jason.encode!()
-
-    query =
-      ~s|
-    mutation {
-      updateTrigger(
-        id: #{trigger_id}
-        settings: '#{trigger_settings_json}'
-        tags: ['tag1', 'tag2']
-        cooldown: '123h'
-        isRepeating: false
-      ) {
-        trigger{
-          id
-          cooldown
-          isRepeating
-          settings
-          tags{ name }
-        }
-      }
-    }
-    |
-      |> format_interpolated_json()
-
-    result =
-      conn
-      |> post("/graphql", %{"query" => query})
-      |> json_response(200)
-
-    trigger = result["data"]["updateTrigger"]["trigger"]
-
-    assert trigger["settings"] == updated_trigger
-    assert trigger["id"] == trigger_id
+    assert trigger["settings"] == trigger_settings
+    assert trigger["id"] == user_trigger.id
     assert trigger["cooldown"] == "123h"
     assert trigger["isRepeating"] == false
     assert trigger["tags"] == [%{"name" => "tag1"}, %{"name" => "tag2"}]
@@ -369,263 +340,35 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     assert created_trigger["tags"] == [%{"name" => "SAN"}, %{"name" => "santiment"}]
   end
 
-  test "create trending words trigger with empty tags", %{conn: conn} do
-    trigger_settings = %{
-      "type" => "trending_words",
-      "channel" => "telegram",
-      "operation" => %{"send_at_predefined_time" => true, "trigger_time" => "12:00:00"}
-    }
+  defp update_trigger(conn, trigger_id, trigger_settings, tags, cooldown, is_repeating) do
+    tags_str = tags |> Enum.map(&"'#{&1}'") |> Enum.join(", ")
+    trigger_settings_json = trigger_settings |> Jason.encode!()
 
-    result = create_trigger(conn, title: "Some title", settings: trigger_settings, tags: [])
-    created_trigger = result["data"]["createTrigger"]["trigger"]
-
-    assert created_trigger["settings"] == trigger_settings
-    assert created_trigger["id"] != nil
-    assert created_trigger["tags"] == []
-  end
-
-  test "signals historical activity from sanclan user", %{conn: conn} do
-    san_clan_user = insert(:user)
-    role_san_clan = insert(:role_san_clan)
-    insert(:user_role, user: san_clan_user, role: role_san_clan)
-
-    trigger_settings = default_trigger_settings_string_keys()
-
-    user_trigger1 =
-      insert(:user_trigger,
-        user: san_clan_user,
-        trigger: %{
-          is_public: true,
-          settings: trigger_settings,
-          title: "alabala",
-          description: "portokala"
-        }
-      )
-
-    user_trigger2 =
-      insert(:user_trigger,
-        user: san_clan_user,
-        trigger: %{
-          is_public: false,
-          settings: trigger_settings,
-          title: "alabala",
-          description: "portokala"
-        }
-      )
-
-    insert(:signals_historical_activity,
-      user: san_clan_user,
-      user_trigger: user_trigger1,
-      payload: %{"all" => "first"},
-      triggered_at: NaiveDateTime.from_iso8601!("2019-01-21T00:00:00")
-    )
-
-    insert(:signals_historical_activity,
-      user: san_clan_user,
-      user_trigger: user_trigger2,
-      payload: %{"all" => "second"},
-      triggered_at: NaiveDateTime.from_iso8601!("2019-01-21T00:00:00")
-    )
-
-    latest_two = current_user_signals_activity(conn, "limit: 2")
-
-    assert latest_two["activity"]
-           |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "first"}]
-  end
-
-  test "fetches signals historical activity for current user", %{user: user, conn: conn} do
-    trigger_settings = default_trigger_settings_string_keys()
-
-    user_trigger =
-      insert(:user_trigger,
-        user: user,
-        trigger: %{
-          is_public: false,
-          settings: trigger_settings,
-          title: "alabala",
-          description: "portokala"
-        }
-      )
-
-    _oldest =
-      insert(:signals_historical_activity,
-        user: user,
-        user_trigger: user_trigger,
-        payload: %{"all" => "oldest"},
-        triggered_at: NaiveDateTime.from_iso8601!("2019-01-20T00:00:00")
-      )
-
-    first_activity =
-      insert(:signals_historical_activity,
-        user: user,
-        user_trigger: user_trigger,
-        payload: %{"all" => "first"},
-        triggered_at: NaiveDateTime.from_iso8601!("2019-01-21T00:00:00")
-      )
-
-    second_activity =
-      insert(:signals_historical_activity,
-        user: user,
-        user_trigger: user_trigger,
-        payload: %{"all" => "second"},
-        triggered_at: NaiveDateTime.from_iso8601!("2019-01-22T00:00:00")
-      )
-
-    # fetch the last 2 signal activities
-    latest_two = current_user_signals_activity(conn, "limit: 2")
-
-    assert NaiveDateTime.compare(
-             NaiveDateTime.from_iso8601!(latest_two["cursor"]["before"]),
-             first_activity.triggered_at
-           ) == :eq
-
-    assert NaiveDateTime.compare(
-             NaiveDateTime.from_iso8601!(latest_two["cursor"]["after"]),
-             second_activity.triggered_at
-           ) == :eq
-
-    assert latest_two["activity"]
-           |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "second"}, %{"all" => "first"}]
-
-    before_cursor = latest_two["cursor"]["before"]
-
-    # fetch one activity before previous last 2 fetched activities
-    before_cursor_res =
-      current_user_signals_activity(
-        conn,
-        "limit: 1, cursor: {type: BEFORE, datetime: '#{before_cursor}'}"
-      )
-
-    assert before_cursor_res["activity"]
-           |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "oldest"}]
-
-    # insert new latest activity and fetch it with after cursor
-    _latest =
-      insert(:signals_historical_activity,
-        user: user,
-        user_trigger: user_trigger,
-        payload: %{"all" => "latest"},
-        triggered_at: NaiveDateTime.from_iso8601!("2019-01-23T00:00:00")
-      )
-
-    after_cursor = latest_two["cursor"]["after"]
-
-    after_cursor_res =
-      current_user_signals_activity(
-        conn,
-        "limit: 1, cursor: {type: AFTER, datetime: '#{after_cursor}'}"
-      )
-
-    assert after_cursor_res["activity"]
-           |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "latest"}]
-  end
-
-  test "test fetching signal historical activities when there is none", %{conn: conn} do
-    result = current_user_signals_activity(conn, "limit: 2")
-    assert result["activity"] == []
-    assert result["cursor"] == %{"after" => nil, "before" => nil}
-
-    result =
-      current_user_signals_activity(
-        conn,
-        "limit: 1, cursor: {type: BEFORE, datetime: '2019-01-20T00:00:00Z'}"
-      )
-
-    assert result["activity"] == []
-    assert result["cursor"] == %{"after" => nil, "before" => nil}
-
-    result =
-      current_user_signals_activity(
-        conn,
-        "limit: 1, cursor: {type: AFTER, datetime: '2019-01-20T00:00:00Z'}"
-      )
-
-    assert result["activity"] == []
-    assert result["cursor"] == %{"after" => nil, "before" => nil}
-  end
-
-  test "fetch signal historical activities without logged in user" do
-    assert current_user_signals_activity(
-             build_conn(),
-             "limit: 1"
-           ) == nil
-  end
-
-  test "deactivate signal", %{user: user, conn: conn} do
-    trigger_settings = default_trigger_settings_string_keys()
-
-    ut = insert(:user_trigger, user: user, trigger: %{settings: trigger_settings})
-
-    assert ut.trigger.is_active
-
-    updated_trigger = update_trigger_active_field(conn, ut.id, false)
-
-    assert updated_trigger["isActive"] == false
-  end
-
-  test "activate signal", %{user: user, conn: conn} do
-    trigger_settings = default_trigger_settings_string_keys()
-
-    ut =
-      insert(:user_trigger, user: user, trigger: %{is_active: false, settings: trigger_settings})
-
-    refute ut.trigger.is_active
-
-    updated_trigger = update_trigger_active_field(conn, ut.id, true)
-
-    assert updated_trigger["isActive"] == true
-  end
-
-  defp current_user_signals_activity(conn, args_str) do
     query =
       ~s|
-    {
-      signalsHistoricalActivity(#{args_str}) {
-        cursor {
-          after
-          before
-        }
-        activity {
-          payload
-          triggered_at
-          trigger {
-            id
-            title
-            description
-          }
+    mutation {
+      updateTrigger(
+        id: #{trigger_id}
+        settings: '#{trigger_settings_json}'
+        tags: [#{tags_str}]
+        cooldown: '#{cooldown}'
+        isRepeating: #{is_repeating}
+      ) {
+        trigger{
+          id
+          cooldown
+          isRepeating
+          settings
+          tags{ name }
         }
       }
-    }|
+    }
+    |
       |> format_interpolated_json()
 
-    result =
-      conn
-      |> post("/graphql", query_skeleton(query, "signalsHistoricalActivity"))
-      |> json_response(200)
-
-    result["data"]["signalsHistoricalActivity"]
-  end
-
-  defp update_trigger_active_field(conn, id, is_active) do
-    mutation = """
-      mutation {
-        updateTrigger(
-          id: #{id},
-          isActive: #{is_active}
-        ) {
-          trigger{
-            isActive
-          }
-        }
-      }
-    """
-
-    result =
-      conn
-      |> post("/graphql", %{"query" => mutation})
-      |> json_response(200)
-
-    result["data"]["updateTrigger"]["trigger"]
+    conn
+    |> post("/graphql", %{"query" => query})
+    |> json_response(200)
   end
 
   defp create_trigger(conn, opts) do

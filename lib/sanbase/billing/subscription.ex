@@ -18,10 +18,9 @@ defmodule Sanbase.Billing.Subscription do
   require Logger
 
   @free_trial_days 14
-  # Free trial plans are Sanbase and Sansheets PRO plans
-  @free_trial_plans [13, 23]
+  # Free trial plans are Sanbase PRO plans
+  @free_trial_plans [13]
   @percent_discount_1000_san 20
-  @percent_discount_200_san 4
   @generic_error_message """
   Current subscription attempt failed.
   Please, contact administrator of the site for more information.
@@ -85,6 +84,14 @@ defmodule Sanbase.Billing.Subscription do
          {:ok, subscription} <- create_subscription_db(stripe_subscription, user, plan) do
       {:ok, subscription |> Repo.preload(plan: [:product])}
     end
+  end
+
+  def create_free_trial_subscription(user_id) do
+    Sanbase.Billing.Subscription.PromoTrial.create_promo_trial(%{
+      user_id: user_id,
+      plans: @free_trial_plans,
+      trial_days: @free_trial_days
+    })
   end
 
   @doc """
@@ -356,15 +363,6 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
-  defp subscription_defaults(user, %Plan{id: plan_id, stripe_id: stripe_id})
-       when plan_id in @free_trial_plans do
-    %{
-      customer: user.stripe_customer_id,
-      items: [%{plan: stripe_id}],
-      trial_period_days: @free_trial_days
-    }
-  end
-
   defp subscription_defaults(user, plan) do
     %{
       customer: user.stripe_customer_id,
@@ -386,7 +384,6 @@ defmodule Sanbase.Billing.Subscription do
   defp update_subscription_with_coupon(subscription, nil), do: {:ok, subscription}
 
   defp percent_discount(balance) when balance >= 1000, do: @percent_discount_1000_san
-  defp percent_discount(balance) when balance >= 200, do: @percent_discount_200_san
   defp percent_discount(_), do: nil
 
   defp user_subscriptions_query(user) do

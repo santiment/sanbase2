@@ -207,10 +207,10 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       assert response["plan"]["name"] == context.plans.plan_essential.name
     end
 
-    test "subscribe to sanbase PRO plan gives 14 days free trial", context do
+    test "subscribe to sanbase PRO plan doesn't give 14 days free trial", context do
       query = subscribe_mutation(context.plans.plan_pro_sanbase.id)
       response = execute_mutation(context.conn, query, "subscribe")
-      assert_called(StripeApi.create_subscription(%{trial_period_days: 14}))
+      refute called(StripeApi.create_subscription(%{trial_period_days: 14}))
       assert response["plan"]["name"] == context.plans.plan_pro_sanbase.name
     end
 
@@ -221,10 +221,10 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       assert response["plan"]["name"] == context.plans.plan_pro.name
     end
 
-    test "subscribe without card to sanbase PRO plan gives 14 days free trial", context do
+    test "subscribe without card to sanbase PRO plan doesn't give 14 days free trial", context do
       query = subscribe_without_card_mutation(context.plans.plan_pro_sanbase.id)
       response = execute_mutation(context.conn, query, "subscribe")
-      assert_called(StripeApi.create_subscription(%{trial_period_days: 14}))
+      refute called(StripeApi.create_subscription(%{trial_period_days: 14}))
       assert response["plan"]["name"] == context.plans.plan_pro_sanbase.name
     end
   end

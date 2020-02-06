@@ -102,6 +102,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   def email_login_verify(%{token: token, email: email}, _resolution) do
     with {:ok, user} <- User.find_or_insert_by_email(email),
          true <- User.email_token_valid?(user, token),
+         _ <- create_free_trial_on_signup(user),
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),
          {:ok, user} <- User.mark_email_token_as_validated(user) do
       {:ok, %{user: user, token: token}}
@@ -266,5 +267,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   # Existing eth account, login as the user of the eth account
   defp fetch_user(_, %EthAccount{user_id: user_id}) do
     User.by_id(user_id)
+  end
+
+  # when `email_token_validated_at` is nil - user haven't completed registration
+  defp create_free_trial_on_signup(%User{email_token_validated_at: nil} = user) do
+    Sanbase.Billing.Subscription.create_free_trial_subscription(user.id)
+  end
+
+  defp create_free_trial_on_signup(%User{email_token_validated_at: email_token_validated_at})
+       when not is_nil(email_token_validated_at) do
+    :ok
   end
 end

@@ -259,8 +259,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{add_user: user}} -> {:ok, user}
-      {:error, _, reason, _} -> {:error, message: reason}
+      {:ok, %{add_user: user}} ->
+        Sanbase.Billing.Subscription.create_free_trial_subscription(user.id)
+        {:ok, user}
+
+      {:error, _, reason, _} ->
+        {:error, message: reason}
     end
   end
 
@@ -271,7 +275,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
 
   # when `email_token_validated_at` is nil - user haven't completed registration
   defp create_free_trial_on_signup(%User{email_token_validated_at: nil} = user) do
-    Sanbase.Billing.Subscription.create_free_trial_subscription(user.id)
+    user = Repo.preload(user, :eth_accounts)
+
+    if user.eth_accounts == [] do
+      Sanbase.Billing.Subscription.create_free_trial_subscription(user.id)
+    else
+      :ok
+    end
   end
 
   defp create_free_trial_on_signup(%User{email_token_validated_at: email_token_validated_at})

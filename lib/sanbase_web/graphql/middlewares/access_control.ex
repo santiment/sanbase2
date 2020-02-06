@@ -123,7 +123,9 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   end
 
   defp get_query(:timeseries_data, %{metric: metric}), do: {:metric, metric}
+  defp get_query(:aggregated_timeseries_data, %{metric: metric}), do: {:metric, metric}
   defp get_query(:histogram_data, %{metric: metric}), do: {:metric, metric}
+
   defp get_query(query, _), do: {:query, query}
 
   defp restricted_query(

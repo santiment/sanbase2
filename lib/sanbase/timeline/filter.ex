@@ -121,6 +121,8 @@ defmodule Sanbase.Timeline.Filter do
     has_intersection?(words, slugs) or has_intersection?(words_upcase, tickers)
   end
 
+  defp filter_by_trigger_target(_, _), do: false
+
   defp has_intersection?(list1, list2) do
     MapSet.intersection(MapSet.new(list1), MapSet.new(list2)) |> MapSet.size() > 0
   end

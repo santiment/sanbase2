@@ -11,8 +11,8 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
   alias Sanbase.Repo
 
   @free_trial_days 14
-  # Free trial plans are Sanbase PRO and Sandata Premium plans
-  @free_trial_plans [13, 43]
+  # Free trial plans are Sanbase PRO plans
+  @free_trial_plans [13]
 
   @day_email_type_map %{
     3 => :sent_3day_email,

@@ -17,9 +17,6 @@ defmodule Sanbase.Billing.Subscription do
 
   require Logger
 
-  @free_trial_days 14
-  # Free trial plans are Sanbase PRO plans
-  @free_trial_plans [13]
   @percent_discount_1000_san 20
   @generic_error_message """
   Current subscription attempt failed.
@@ -84,14 +81,6 @@ defmodule Sanbase.Billing.Subscription do
          {:ok, subscription} <- create_subscription_db(stripe_subscription, user, plan) do
       {:ok, subscription |> Repo.preload(plan: [:product])}
     end
-  end
-
-  def create_free_trial_subscription(user_id) do
-    Sanbase.Billing.Subscription.PromoTrial.create_promo_trial(%{
-      user_id: user_id,
-      plans: @free_trial_plans,
-      trial_days: @free_trial_days
-    })
   end
 
   @doc """

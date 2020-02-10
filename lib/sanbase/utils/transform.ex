@@ -77,5 +77,6 @@ defmodule Sanbase.Utils.Transform do
   end
 
   def maybe_unwrap_ok_value({:ok, [value]}), do: {:ok, value}
+  def maybe_unwrap_ok_value({:ok, []}), do: {:ok, nil}
   def maybe_unwrap_ok_value({:error, error}), do: {:error, error}
 end

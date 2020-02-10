@@ -73,6 +73,17 @@ defmodule Sanbase.Price.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
+  def available_metrics("TOTAL_ERC20"), do: @metrics
+
+  def available_metrics(slug) do
+    case Price.first_datetime(slug) do
+      {:ok, %DateTime{}} -> {:ok, @metrics}
+      {:ok, nil} -> {:ok, []}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl Sanbase.Metric.Behaviour
   def available_slugs() do
     Sanbase.Cache.get_or_store({:slugs_with_prices, 1800}, fn ->
       Price.available_slugs()

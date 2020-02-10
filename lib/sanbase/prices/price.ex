@@ -470,7 +470,7 @@ defmodule Sanbase.Price do
   @doc ~s"""
   Return the first datetime for which `slug` has data
   """
-  @spec first_datetime(slug, opts) :: {:ok, DateTime.t()} | {:error, error}
+  @spec first_datetime(slug, opts) :: {:ok, DateTime.t()} | {:ok, nil} | {:error, error}
   def first_datetime(slug, opts \\ [])
 
   def first_datetime("TOTAL_ERC20", _), do: ~U[2015-07-30 00:00:00Z]
@@ -479,8 +479,8 @@ defmodule Sanbase.Price do
     source = Keyword.get(opts, :source, @default_source)
     {query, args} = first_datetime_query(slug, source)
 
-    ClickhouseRepo.query_transform(query, args, fn [timestamp] ->
-      DateTime.from_unix!(timestamp)
+    ClickhouseRepo.query_transform(query, args, fn
+      [timestamp] -> DateTime.from_unix!(timestamp)
     end)
     |> maybe_unwrap_ok_value()
   end

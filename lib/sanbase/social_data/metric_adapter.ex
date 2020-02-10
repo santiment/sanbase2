@@ -136,6 +136,17 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
+  def available_metrics(slug) do
+    with {:ok, slugs} <- available_slugs(),
+         true <- slug in slugs do
+      {:ok, @metrics}
+    else
+      false -> {:ok, []}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl Sanbase.Metric.Behaviour
   def free_metrics(), do: []
 
   @impl Sanbase.Metric.Behaviour

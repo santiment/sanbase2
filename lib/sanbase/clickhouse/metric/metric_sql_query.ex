@@ -16,7 +16,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
   alias Sanbase.Clickhouse.Metric.FileHandler
 
   @min_interval_map FileHandler.min_interval_map()
-  @name_to_column_map FileHandler.name_to_column_map()
+  @name_to_metric_map FileHandler.name_to_metric_map()
   @table_map FileHandler.table_map()
 
   schema @table do
@@ -65,7 +65,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
 
     args = [
       str_to_sec(interval),
-      Map.get(@name_to_column_map, metric),
+      Map.get(@name_to_metric_map, metric),
       from,
       to,
       slug
@@ -94,7 +94,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     # """
 
     args = [
-      Map.get(@name_to_column_map, metric),
+      Map.get(@name_to_metric_map, metric),
       slug,
       from |> DateTime.to_unix(),
       to |> DateTime.to_unix(),
@@ -130,7 +130,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
 
     args = [
       asset_ids,
-      Map.get(metric_map, Map.get(@name_to_column_map, metric)),
+      Map.get(metric_map, Map.get(@name_to_metric_map, metric)),
       from,
       to
     ]
@@ -181,7 +181,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
       value > 0
     """
 
-    args = [Map.get(@name_to_column_map, metric)]
+    args = [Map.get(@name_to_metric_map, metric)]
 
     {query, args}
   end
@@ -206,8 +206,23 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
       value > 0
     """
 
-    args = [slug, Map.get(@name_to_column_map, metric)]
+    args = [slug, Map.get(@name_to_metric_map, metric)]
 
+    {query, args}
+  end
+
+  def available_metrics_in_table_query(table, slug) do
+    query = """
+    SELECT distinct(metric_id)
+    FROM #{table}
+    PREWHERE
+      asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
+      dt > toDateTime(?2)
+    """
+
+    # artifical boundary so the query checks less results
+    datetime = Timex.shift(Timex.now(), days: -90) |> DateTime.to_unix()
+    args = [slug, datetime]
     {query, args}
   end
 

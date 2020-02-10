@@ -6,6 +6,11 @@ defmodule Sanbase.Clickhouse.MetadataHelper do
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
+  # Map from the names used in ClickHouse to the publicly exposed ones.
+  # Example: stack_circulation_20y -> circulation
+  @original_name_to_metric_name Sanbase.Clickhouse.Metric.FileHandler.name_to_metric_map()
+                                |> Enum.into(%{}, fn {k, v} -> {v, k} end)
+
   def slug_to_asset_id_map() do
     Sanbase.Cache.get_or_store({__MODULE__, __ENV__.function}, fn ->
       query = "SELECT toUInt32(asset_id), name FROM asset_metadata"
@@ -35,6 +40,7 @@ defmodule Sanbase.Clickhouse.MetadataHelper do
       args = []
 
       ClickhouseRepo.query_reduce(query, args, %{}, fn [metric_id, name], acc ->
+        name = Map.get(@original_name_to_metric_name, name, name)
         Map.put(acc, name, metric_id)
       end)
     end)

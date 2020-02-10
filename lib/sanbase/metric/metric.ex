@@ -254,25 +254,36 @@ defmodule Sanbase.Metric do
     end
   end
 
+  @spec available_metrics_for_slug(any) ::
+          {:ok, list(String.t())} | {:nocache, {:ok, list(String.t())}}
   def available_metrics_for_slug(slug) do
-    Sanbase.Cache.get_or_store({:available_metrics_for_slug, slug} |> :erlang.phash2(), fn ->
-      case available_slugs_per_module() do
-        {:ok, result} ->
-          metrics =
-            Enum.flat_map(result, fn {module, slugs} ->
-              if slug in slugs do
-                module.available_metrics()
-              else
-                []
-              end
-            end)
+    cache_key =
+      {__MODULE__, :available_metrics_for_slug, slug}
+      |> :erlang.phash2()
 
-          {:ok, metrics}
-
-        {:error, error} ->
-          {:error, error}
-      end
+    Sanbase.Cache.get_or_store(cache_key, fn ->
+      get_available_metrics_for_slug(slug)
     end)
+  end
+
+  def available_timeseries_metrics_for_slug(slug) do
+    case available_metrics_for_slug(slug) do
+      {:nocache, {:ok, metrics}} ->
+        {:nocache, {:ok, metrics -- @histogram_metrics}}
+
+      {:ok, metrics} ->
+        {:ok, metrics -- @histogram_metrics}
+    end
+  end
+
+  def available_histogram_metrics_for_slug(slug) do
+    case available_metrics_for_slug(slug) do
+      {:nocache, {:ok, metrics}} ->
+        {:nocache, {:ok, metrics -- @timeseries_metrics}}
+
+      {:ok, metrics} ->
+        {:ok, metrics -- @timeseries_metrics}
+    end
   end
 
   def available_timeseries_metrics(), do: @timeseries_metrics
@@ -375,5 +386,25 @@ defmodule Sanbase.Metric do
         Enum.find(@histogram_metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.8 end),
       error_msg: "The histogram metric '#{metric}' is not supported or is mistyped."
     }
+  end
+
+  defp get_available_metrics_for_slug(slug) do
+    metrics_in_modules =
+      Sanbase.Parallel.map(@metric_modules, fn module ->
+        module.available_metrics(slug)
+      end)
+
+    available_metrics =
+      Enum.flat_map(metrics_in_modules, fn
+        {:ok, metrics} -> metrics
+        _ -> []
+      end)
+
+    has_errors? = metrics_in_modules |> Enum.any?(&match?({:error, _}, &1))
+
+    case has_errors? do
+      true -> {:nocache, {:ok, available_metrics}}
+      false -> {:ok, available_metrics}
+    end
   end
 end

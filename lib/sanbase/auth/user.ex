@@ -73,6 +73,7 @@ defmodule Sanbase.Auth.User do
     field(:stripe_customer_id, :string)
     field(:first_login, :boolean, default: false, virtual: true)
     field(:avatar_url, :string)
+    field(:is_registered, :boolean, default: false)
 
     # GDPR related fields
     field(:privacy_policy_accepted, :boolean, default: false)
@@ -121,7 +122,8 @@ defmodule Sanbase.Auth.User do
       :marketing_accepted,
       :stripe_customer_id,
       :first_login,
-      :avatar_url
+      :avatar_url,
+      :is_registered
     ])
     |> normalize_username(attrs)
     |> normalize_email(attrs[:email], :email)
@@ -289,7 +291,10 @@ defmodule Sanbase.Auth.User do
 
   def mark_email_token_as_validated(user) do
     user
-    |> change(email_token_validated_at: user.email_token_validated_at || Timex.now())
+    |> change(
+      email_token_validated_at: user.email_token_validated_at || Timex.now(),
+      is_registered: true
+    )
     |> Repo.update()
   end
 

@@ -249,7 +249,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     Multi.new()
     |> Multi.insert(
       :add_user,
-      User.changeset(%User{}, %{username: address, salt: User.generate_salt(), first_login: true})
+      User.changeset(%User{}, %{
+        username: address,
+        salt: User.generate_salt(),
+        first_login: true,
+        is_registered: true
+      })
     )
     |> Multi.run(:add_eth_account, fn %{add_user: %User{id: id}} ->
       eth_account =
@@ -275,18 +280,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   end
 
   # when `email_token_validated_at` is nil - user haven't completed registration
-  defp create_free_trial_on_signup(%User{email_token_validated_at: nil} = user) do
-    user = Repo.preload(user, :eth_accounts)
-
-    if user.eth_accounts == [] do
-      SignUpTrial.create_subscription(user.id)
-    else
-      :ok
-    end
+  defp create_free_trial_on_signup(%User{is_registered: false} = user) do
+    SignUpTrial.create_subscription(user.id)
   end
 
-  defp create_free_trial_on_signup(%User{email_token_validated_at: email_token_validated_at})
-       when not is_nil(email_token_validated_at) do
-    :ok
-  end
+  defp create_free_trial_on_signup(%User{is_registered: true}), do: :ok
 end

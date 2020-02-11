@@ -2,7 +2,7 @@ defmodule Sanbase.ExAdmin.Billing.SignUpTrial do
   use ExAdmin.Register
 
   register_resource Sanbase.Billing.Subscription.SignUpTrial do
-    action_items(only: [:show, :edit])
+    action_items(only: [:show, :edit, :delete])
 
     index do
       column(:user, fields: [:email, :username], link: true)

@@ -7,6 +7,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   alias Sanbase.Auth.{User, EthAccount, UserFollower}
   alias Sanbase.Repo
   alias Ecto.Multi
+  alias Sanbase.Billing.Subscription.SignUpTrial
 
   def permissions(
         %User{} = user,
@@ -260,7 +261,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     |> Repo.transaction()
     |> case do
       {:ok, %{add_user: user}} ->
-        Sanbase.Billing.Subscription.create_free_trial_subscription(user.id)
+        SignUpTrial.create_subscription(user.id)
         {:ok, user}
 
       {:error, _, reason, _} ->
@@ -278,7 +279,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     user = Repo.preload(user, :eth_accounts)
 
     if user.eth_accounts == [] do
-      Sanbase.Billing.Subscription.create_free_trial_subscription(user.id)
+      SignUpTrial.create_subscription(user.id)
     else
       :ok
     end

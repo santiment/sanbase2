@@ -77,6 +77,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :dev_activity,
           :watchlist,
           :watchlist_by_slug,
+          :get_access_restrictions,
           :get_available_metrics,
           :get_available_anomalies,
           :get_metric,

@@ -59,14 +59,9 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
     |> Plan.plan_atom_name()
     |> signals_limit()
     |> case do
-      :no_limit ->
-        true
-
-      limit when is_integer(limit) and created_signals_count >= limit ->
-        false
-
-      _ ->
-        true
+      :no_limit -> true
+      limit when is_integer(limit) and created_signals_count >= limit -> false
+      _ -> true
     end
   end
 
@@ -77,6 +72,7 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
       :free -> @free_plan_stats
       :basic -> @basic_plan_stats
       :pro -> @pro_plan_stats
+      :premium -> @enterprise_plan_stats
       :enterprise -> @enterprise_plan_stats
     end
   end

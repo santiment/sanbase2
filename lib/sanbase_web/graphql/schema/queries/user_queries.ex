@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
   use Absinthe.Schema.Notation
 
   alias SanbaseWeb.Graphql.Resolvers.{
+    AccessControlResolver,
     UserResolver,
     ApikeyResolver,
     UserSettingsResolver,
@@ -45,6 +46,11 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
 
       middleware(JWTAuth)
       resolve(&TelegramResolver.get_telegram_deep_link/3)
+    end
+
+    field :get_access_restrictions, list_of(:access_restriction) do
+      meta(access: :free)
+      resolve(&AccessControlResolver.get_access_restrictions/3)
     end
   end
 

@@ -123,6 +123,14 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     end
   end
 
+  object :access_restriction do
+    field(:type, non_null(:string))
+    field(:name, non_null(:string))
+    field(:is_restricted, non_null(:boolean))
+    field(:restricted_from, :datetime)
+    field(:restricted_to, :datetime)
+  end
+
   object :api_call_data do
     field(:datetime, non_null(:datetime))
     field(:api_calls_count, non_null(:integer))

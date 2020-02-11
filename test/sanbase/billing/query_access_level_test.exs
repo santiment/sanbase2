@@ -77,6 +77,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :dev_activity,
           :watchlist,
           :watchlist_by_slug,
+          :get_access_restrictions,
           :get_available_metrics,
           :get_available_anomalies,
           :get_metric,
@@ -139,98 +140,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
       assert basic_queries == expected_basic_queries
     end
 
-    test "restricted metrics" do
-      restricted_queries =
-        Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:restricted)
-        |> Enum.sort()
-
-      added_with_metric_adapter = [
-        "discord_social_dominance",
-        "discord_social_volume",
-        "reddit_social_dominance",
-        "telegram_social_dominance",
-        "telegram_social_volume"
-      ]
-
-      metrics = [
-        "mean_realized_price_usd",
-        "mean_realized_price_usd_10y",
-        "mean_realized_price_usd_5y",
-        "mean_realized_price_usd_3y",
-        "mean_realized_price_usd_2y",
-        "mean_realized_price_usd_365d",
-        "mean_realized_price_usd_180d",
-        "mean_realized_price_usd_90d",
-        "mean_realized_price_usd_60d",
-        "mean_realized_price_usd_30d",
-        "mean_realized_price_usd_7d",
-        "mean_realized_price_usd_1d",
-        "mvrv_long_short_diff_usd",
-        "mvrv_usd",
-        "mvrv_usd_10y",
-        "mvrv_usd_5y",
-        "mvrv_usd_3y",
-        "mvrv_usd_2y",
-        "mvrv_usd_365d",
-        "mvrv_usd_180d",
-        "mvrv_usd_90d",
-        "mvrv_usd_60d",
-        "mvrv_usd_30d",
-        "mvrv_usd_7d",
-        "mvrv_usd_1d",
-        "circulation",
-        "circulation_10y",
-        "circulation_5y",
-        "circulation_3y",
-        "circulation_2y",
-        "circulation_365d",
-        "circulation_180d",
-        "circulation_90d",
-        "circulation_60d",
-        "circulation_30d",
-        "circulation_7d",
-        "circulation_1d",
-        "mean_age",
-        "mean_dollar_invested_age",
-        "realized_value_usd",
-        "realized_value_usd_10y",
-        "realized_value_usd_5y",
-        "realized_value_usd_3y",
-        "realized_value_usd_2y",
-        "realized_value_usd_365d",
-        "realized_value_usd_180d",
-        "realized_value_usd_90d",
-        "realized_value_usd_60d",
-        "realized_value_usd_30d",
-        "realized_value_usd_7d",
-        "realized_value_usd_1d",
-        "velocity",
-        "transaction_volume",
-        "exchange_inflow",
-        "exchange_outflow",
-        "exchange_balance",
-        "age_destroyed",
-        "nvt",
-        "nvt_transaction_volume",
-        "network_growth",
-        "age_distribution"
-      ]
-
-      expected_metrics =
-        (added_with_metric_adapter ++ metrics)
-        |> Enum.uniq()
-        |> Enum.sort()
-
-      # The diff algorithm fails to nicely print that a single metric is
-      # missing but instead shows some not-understandable result when comparing
-      # the lists directly
-      assert MapSet.difference(MapSet.new(restricted_queries), MapSet.new(expected_metrics))
-             |> Enum.to_list() == []
-
-      assert MapSet.difference(MapSet.new(expected_metrics), MapSet.new(restricted_queries))
-             |> Enum.to_list() == []
-    end
-
     test "forbidden queries from the schema" do
       # Forbidden queries are acessible only by basic authorization
       forbidden_queries =
@@ -255,16 +164,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         |> Enum.sort()
 
       assert pro_queries == expected_pro_queries
-    end
-
-    test "forbidden metrics" do
-      forbidden_metrics =
-        Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:forbidden)
-        |> Enum.sort()
-
-      expected_forbidden_metrics = [] |> Enum.sort()
-
-      assert forbidden_metrics == expected_forbidden_metrics
     end
   end
 end

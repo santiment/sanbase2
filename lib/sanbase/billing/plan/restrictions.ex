@@ -21,7 +21,10 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   @spec get(%Subscription{}, %Product{}) :: list(restriction)
   def get(subscription, product) do
     metrics = Sanbase.Metric.available_metrics() |> Enum.map(&{:metric, &1})
-    queries = Sanbase.Model.Project.AvailableQueries.all() |> Enum.map(&{:query, &1})
+
+    queries =
+      Sanbase.Model.Project.AvailableQueries.all_atom_names()
+      |> Enum.map(&{:query, &1})
 
     now = Timex.now()
 
@@ -29,7 +32,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
     (queries ++ metrics)
     |> Enum.map(fn {type, name} ->
       type_str = type |> to_string()
-      name_str = name |> to_string()
+      name_str = construct_name(type, name)
 
       case AccessChecker.is_restricted?({type, name}) do
         false ->
@@ -62,4 +65,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
       end
     end)
   end
+
+  defp construct_name(:metric, name), do: name |> to_string()
+  defp construct_name(:query, name), do: name |> Inflex.camelize(:lower)
 end

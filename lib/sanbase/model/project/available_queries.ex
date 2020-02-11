@@ -14,6 +14,12 @@ defmodule Sanbase.Model.Project.AvailableQueries do
     project_queries()
   end
 
+  @spec all_atom_names() :: [atom()]
+  def all_atom_names() do
+    project_queries()
+    |> Enum.map(&(&1 |> Macro.underscore() |> String.to_atom()))
+  end
+
   @doc ~s"""
   Return a list of all GraphQL query names that have data for the provided
   project identified by a `slug` argument.

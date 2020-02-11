@@ -41,20 +41,21 @@ defmodule Sanbase.Billing.Plan.Restrictions do
 
         true ->
           restricted_from =
-            Timex.shift(now,
-              days: -Subscription.historical_data_in_days(subscription, {type, name}, product)
-            )
+            case Subscription.historical_data_in_days(subscription, {type, name}, product) do
+              nil -> nil
+              days -> Timex.shift(now, days: -days)
+            end
 
           restricted_to =
-            Timex.shift(now,
-              days:
-                -Subscription.realtime_data_cut_off_in_days(subscription, {type, name}, product)
-            )
+            case Subscription.realtime_data_cut_off_in_days(subscription, {type, name}, product) do
+              nil -> nil
+              days -> Timex.shift(now, days: -days)
+            end
 
           %{
             type: type_str,
             name: name_str,
-            is_restricted: true,
+            is_restricted: not (is_nil(restricted_from) or is_nil(restricted_to)),
             restricted_from: restricted_from,
             restricted_to: restricted_to
           }

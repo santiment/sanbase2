@@ -111,7 +111,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   ]
 
   @spec historical_data_in_days(%Plan{}, query_or_metric(), non_neg_integer()) ::
-          non_neg_integer()
+          non_neg_integer() | nil
   def historical_data_in_days(plan, query_or_metric, _product_id)
       when query_or_metric in @custom_access_queries do
     Map.get(@custom_access_queries_stats, query_or_metric)
@@ -125,7 +125,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   end
 
   @spec realtime_data_cut_off_in_days(%Plan{}, query_or_metric(), non_neg_integer()) ::
-          non_neg_integer()
+          non_neg_integer() | nil
   def realtime_data_cut_off_in_days(plan, query_or_metric, _product_id)
       when query_or_metric in @custom_access_queries do
     Map.get(@custom_access_queries_stats, query_or_metric)

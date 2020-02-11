@@ -204,7 +204,7 @@ defmodule Sanbase.Model.Project.AvailableQueries do
     |> Enum.filter(fn %{"args" => args} ->
       Enum.any?(args, fn elem -> elem == %{"name" => "slug"} end)
     end)
-    |> Enum.reject(fn %{"isDeprecated" => is_deprecated} -> is_deprecated == true end)
+    |> Enum.reject(& &1["isDeprecated"])
     |> Enum.map(& &1["name"])
   end
 

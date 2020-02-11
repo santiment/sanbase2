@@ -35,7 +35,9 @@ defmodule Sanbase.Clickhouse.Metric do
   @metrics_label_map FileHandler.metrics_label_map()
   @metrics_name_list (@histogram_metrics_name_list ++ @timeseries_metrics_name_list)
                      |> Enum.uniq()
+  @metrics_mapset @metrics_name_list |> MapSet.new()
   @incomplete_data_map FileHandler.incomplete_data_map()
+  @tables_list FileHandler.table_map() |> Map.values() |> Enum.uniq()
 
   @type slug :: String.t()
   @type metric :: String.t()
@@ -151,6 +153,20 @@ defmodule Sanbase.Clickhouse.Metric do
   def available_metrics(), do: @metrics_name_list
 
   @impl Sanbase.Metric.Behaviour
+  def available_metrics(slug) when is_binary(slug) do
+    Enum.reduce_while(@tables_list, [], fn table, acc ->
+      case available_metrics_in_table(table, slug) do
+        {:ok, metrics} -> {:cont, metrics ++ acc}
+        _ -> {:halt, {:error, "Error fetching available metrics for #{slug}"}}
+      end
+    end)
+    |> case do
+      {:error, error} -> {:error, error}
+      metrics when is_list(metrics) -> {:ok, metrics}
+    end
+  end
+
+  @impl Sanbase.Metric.Behaviour
   def available_slugs(), do: get_available_slugs()
 
   @impl Sanbase.Metric.Behaviour
@@ -223,5 +239,20 @@ defmodule Sanbase.Clickhouse.Metric do
           %{slug: Map.get(asset_id_map, asset_id), value: value}
         end)
     end
+  end
+
+  def available_metrics_in_table(table, slug) do
+    {query, args} = available_metrics_in_table_query(table, slug)
+
+    {:ok, metric_map} = metric_id_to_metric_name_map()
+
+    ClickhouseRepo.query_reduce(query, args, [], fn [metric_id], acc ->
+      metric = Map.get(metric_map, metric_id |> Sanbase.Math.to_integer())
+
+      case is_nil(metric) or metric not in @metrics_mapset do
+        true -> acc
+        false -> [metric | acc]
+      end
+    end)
   end
 end

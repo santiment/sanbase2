@@ -254,6 +254,38 @@ defmodule Sanbase.Metric do
     end
   end
 
+  @spec available_metrics_for_slug(any) ::
+          {:ok, list(String.t())} | {:nocache, {:ok, list(String.t())}}
+  def available_metrics_for_slug(slug) do
+    cache_key =
+      {__MODULE__, :available_metrics_for_slug, slug}
+      |> :erlang.phash2()
+
+    Sanbase.Cache.get_or_store(cache_key, fn ->
+      get_available_metrics_for_slug(slug)
+    end)
+  end
+
+  def available_timeseries_metrics_for_slug(slug) do
+    case available_metrics_for_slug(slug) do
+      {:nocache, {:ok, metrics}} ->
+        {:nocache, {:ok, metrics -- @histogram_metrics}}
+
+      {:ok, metrics} ->
+        {:ok, metrics -- @histogram_metrics}
+    end
+  end
+
+  def available_histogram_metrics_for_slug(slug) do
+    case available_metrics_for_slug(slug) do
+      {:nocache, {:ok, metrics}} ->
+        {:nocache, {:ok, metrics -- @timeseries_metrics}}
+
+      {:ok, metrics} ->
+        {:ok, metrics -- @timeseries_metrics}
+    end
+  end
+
   def available_timeseries_metrics(), do: @timeseries_metrics
 
   def available_histogram_metrics(), do: @histogram_metrics
@@ -276,6 +308,23 @@ defmodule Sanbase.Metric do
       case errors do
         [] -> {:ok, slugs |> Enum.uniq()}
         _ -> {:error, "Cannot fetch all available slugs. Errors: #{inspect(errors)}"}
+      end
+    end)
+  end
+
+  def available_slugs_per_module() do
+    Sanbase.Cache.get_or_store({:available_slugs_per_module, 1800}, fn ->
+      {result, errors} =
+        Enum.reduce(@metric_modules, {%{}, []}, fn module, {acc, errors} ->
+          case module.available_slugs() do
+            {:ok, slugs} -> {Map.put(acc, module, slugs), errors}
+            {:error, error} -> {acc, [error | errors]}
+          end
+        end)
+
+      case errors do
+        [] -> {:ok, result}
+        _ -> {:error, "Cannot fetch all available slugs per module. Errors: #{inspect(errors)}"}
       end
     end)
   end
@@ -337,5 +386,25 @@ defmodule Sanbase.Metric do
         Enum.find(@histogram_metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.8 end),
       error_msg: "The histogram metric '#{metric}' is not supported or is mistyped."
     }
+  end
+
+  defp get_available_metrics_for_slug(slug) do
+    metrics_in_modules =
+      Sanbase.Parallel.map(@metric_modules, fn module ->
+        module.available_metrics(slug)
+      end)
+
+    available_metrics =
+      Enum.flat_map(metrics_in_modules, fn
+        {:ok, metrics} -> metrics
+        _ -> []
+      end)
+
+    has_errors? = metrics_in_modules |> Enum.any?(&match?({:error, _}, &1))
+
+    case has_errors? do
+      true -> {:nocache, {:ok, available_metrics}}
+      false -> {:ok, available_metrics}
+    end
   end
 end

@@ -49,7 +49,39 @@ defmodule Sanbase.Cache do
   def get_or_store(cache \\ @cache_name, key, func)
 
   def get_or_store(cache, key, func) do
-    ConCache.fetch_or_store(cache, key, func)
+    {result, error_if_any} =
+      case ConCache.get(cache, key) do
+        {:stored, value} ->
+          {value, nil}
+
+        _ ->
+          ConCache.isolated(cache, key, fn ->
+            case ConCache.get(cache, key) do
+              {:stored, value} ->
+                {value, nil}
+
+              _ ->
+                case func.() do
+                  {:error, _} = error ->
+                    {nil, error}
+
+                  {:nocache, {:ok, _result} = value} ->
+                    Process.put(:do_not_cache_query, true)
+                    {value, nil}
+
+                  value ->
+                    cache_item(cache, key, {:stored, value})
+                    {value, nil}
+                end
+            end
+          end)
+      end
+
+    if error_if_any != nil do
+      error_if_any
+    else
+      result
+    end
   end
 
   defp cache_item(cache, {_, ttl} = key, value) when is_integer(ttl) and ttl <= @max_cache_ttl do

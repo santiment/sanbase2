@@ -153,6 +153,20 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
+  def available_metrics(slug) do
+    case Project.github_organizations(slug) do
+      {:ok, []} ->
+        {:ok, []}
+
+      {:ok, organizations} when is_list(organizations) ->
+        {:ok, @metrics}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  @impl Sanbase.Metric.Behaviour
   def available_slugs() do
     # Providing a 2 element tuple `{any, integer}` will use that second element
     # as TTL for the cache key

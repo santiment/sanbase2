@@ -1,4 +1,13 @@
 defmodule Sanbase.Billing.Subscription.SignUpTrial do
+  @moduledoc """
+  Module for creating free trial and sending follow-up emails after user signs up.
+  We send 4 types of emails in the span of the 14-day free trial:
+  * A welcome email - immediately post registration.
+  * An email at the 3rd day of free trial.
+  * An email at the 11th day of free trial.
+  * And an email when the free trial expired.
+  A cron job runs twice a day and makes sure to send email at the proper day of the user's trial.
+  """
   use Ecto.Schema
 
   import Ecto.Changeset
@@ -9,10 +18,11 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
   alias Sanbase.Auth.User
   alias Sanbase.Billing.Subscription.PromoTrial
   alias Sanbase.Repo
+  alias Sanbase.Billing.Plan
 
   @free_trial_days 14
   # Free trial plans are Sanbase PRO plans
-  @free_trial_plans [13]
+  @free_trial_plans [Plan.Metadata.sanbase_pro()]
 
   @day_email_type_map %{
     3 => :sent_3day_email,
@@ -21,7 +31,7 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
   }
 
   @templates %{
-    sent_welcome_email: "welcome_email"
+    sent_welcome_email: "sanbase-post-registration"
   }
 
   schema "sign_up_trials" do
@@ -106,7 +116,9 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
       }"
     )
 
-    Sanbase.MandrillApi.send(template, user.email, %{name: user.username || user.email})
+    Sanbase.MandrillApi.send(template, user.email, %{name: user.username || user.email}, %{
+      merge_language: "handlebars"
+    })
   end
 
   defp maybe_send_email(%__MODULE__{user: user, inserted_at: inserted_at} = sign_up_trial) do

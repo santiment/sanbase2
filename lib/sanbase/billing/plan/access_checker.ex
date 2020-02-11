@@ -29,16 +29,10 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
 
   @doc documentation_ref: "# DOCS access-plans/index.md"
 
-  alias Sanbase.Billing.Product
-  alias Sanbase.Billing.Plan.CustomAccess
+  @type query_or_metric :: {:metric, String.t()} | {:query, atom()}
 
-  alias Sanbase.Billing.Plan.{
-    ApiAccessChecker,
-    SanbaseAccessChecker
-  }
-
-  alias Sanbase.Billing.Product
-  alias Sanbase.Billing.GraphqlSchema
+  alias Sanbase.Billing.{Plan, Product, Subscription, GraphqlSchema}
+  alias Sanbase.Billing.Plan.{CustomAccess, ApiAccessChecker, SanbaseAccessChecker}
 
   # Raise an error if there is any query without subscription plan
   case GraphqlSchema.get_all_without_access_level() do
@@ -74,7 +68,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   @custom_access_queries @custom_access_queries_stats |> Map.keys() |> Enum.sort()
   @custom_access_queries_mapset MapSet.new(@custom_access_queries)
 
-  @free_subscription Sanbase.Billing.Subscription.free_subscription()
+  @free_subscription Subscription.free_subscription()
 
   # Raise an error if there are queries with custom access logic that are marked
   # as free. If there are such queries the access restriction logic will never
@@ -105,33 +99,42 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   A query can be restricted but still accessible by not-paid users or users with
   lower plans. In this case historical and/or realtime data access can be cut off
   """
-  def is_restricted?(query), do: query not in @free_metrics_mapset
+  @spec is_restricted?(query_or_metric) :: boolean()
+  def is_restricted?(query_or_metric), do: query_or_metric not in @free_metrics_mapset
 
-  def custom_access_queries_stats, do: @custom_access_queries_stats
-  def custom_access_queries, do: @custom_access_queries
+  def custom_access_queries_stats(), do: @custom_access_queries_stats
+  def custom_access_queries(), do: @custom_access_queries
 
   @product_to_access_module [
     {Product.product_api(), ApiAccessChecker},
     {Product.product_sanbase(), SanbaseAccessChecker}
   ]
 
-  def historical_data_in_days(plan, query, _product) when query in @custom_access_queries do
-    Map.get(@custom_access_queries_stats, query)
+  @spec historical_data_in_days(%Plan{}, query_or_metric(), non_neg_integer()) ::
+          non_neg_integer()
+  def historical_data_in_days(plan, query_or_metric, _product_id)
+      when query_or_metric in @custom_access_queries do
+    Map.get(@custom_access_queries_stats, query_or_metric)
     |> get_in([:plan_access, plan, :historical_data_in_days])
   end
 
-  def realtime_data_cut_off_in_days(plan, query) when query in @custom_access_queries do
-    Map.get(@custom_access_queries_stats, query)
+  for {product_id, module} <- @product_to_access_module do
+    def historical_data_in_days(plan, query_or_metric, unquote(product_id)) do
+      unquote(module).historical_data_in_days(plan, query_or_metric)
+    end
+  end
+
+  @spec realtime_data_cut_off_in_days(%Plan{}, query_or_metric(), non_neg_integer()) ::
+          non_neg_integer()
+  def realtime_data_cut_off_in_days(plan, query_or_metric, _product_id)
+      when query_or_metric in @custom_access_queries do
+    Map.get(@custom_access_queries_stats, query_or_metric)
     |> get_in([:plan_access, plan, :realtime_data_cut_off_in_days])
   end
 
-  for {product, module} <- @product_to_access_module do
-    def historical_data_in_days(plan, query, unquote(product)) do
-      unquote(module).historical_data_in_days(plan, query)
-    end
-
-    def realtime_data_cut_off_in_days(plan, query, unquote(product)) do
-      unquote(module).realtime_data_cut_off_in_days(plan, query)
+  for {product_id, module} <- @product_to_access_module do
+    def realtime_data_cut_off_in_days(plan, query_or_metric, unquote(product_id)) do
+      unquote(module).realtime_data_cut_off_in_days(plan, query_or_metric)
     end
   end
 

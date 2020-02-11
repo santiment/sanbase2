@@ -279,19 +279,28 @@ defmodule Sanbase.Billing.Subscription do
   @doc """
   How much historical days a subscription plan can access.
   """
-  def historical_data_in_days(%__MODULE__{plan: plan}, query, product) do
+  @spec historical_data_in_days(%__MODULE__{}, AccessChecker.query_or_metric(), non_neg_integer()) ::
+          non_neg_integer()
+  def historical_data_in_days(%__MODULE__{plan: plan}, query_or_metric, product_id) do
     plan
     |> Plan.plan_atom_name()
-    |> AccessChecker.historical_data_in_days(query, product)
+    |> AccessChecker.historical_data_in_days(query_or_metric, product_id)
   end
 
-  def realtime_data_cut_off_in_days(%__MODULE__{plan: plan}, query, product) do
+  @spec realtime_data_cut_off_in_days(
+          %__MODULE__{},
+          AccessChecker.query_or_metric(),
+          non_neg_integer()
+        ) ::
+          non_neg_integer()
+  def realtime_data_cut_off_in_days(%__MODULE__{plan: plan}, query_or_metric, product_id) do
     plan
     |> Plan.plan_atom_name()
-    |> AccessChecker.realtime_data_cut_off_in_days(query, product)
+    |> AccessChecker.realtime_data_cut_off_in_days(query_or_metric, product_id)
   end
 
   def plan_name(subscription), do: subscription.plan.name
+
   def create_or_update_stripe_customer(_, _card_token \\ nil)
 
   def create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)

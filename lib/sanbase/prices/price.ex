@@ -467,6 +467,17 @@ defmodule Sanbase.Price do
     ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
   end
 
+  def has_data?(slug) do
+    {query, args} = select_any_record_query(slug)
+
+    ClickhouseRepo.query_transform(query, args, & &1)
+    |> case do
+      {:ok, [_]} -> {:ok, true}
+      {:ok, []} -> {:ok, false}
+      {:error, error} -> {:error, error}
+    end
+  end
+
   @doc ~s"""
   Return the first datetime for which `slug` has data
   """

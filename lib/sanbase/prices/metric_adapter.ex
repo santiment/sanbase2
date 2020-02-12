@@ -76,9 +76,9 @@ defmodule Sanbase.Price.MetricAdapter do
   def available_metrics("TOTAL_ERC20"), do: @metrics
 
   def available_metrics(slug) do
-    case Price.first_datetime(slug) do
-      {:ok, %DateTime{}} -> {:ok, @metrics}
-      {:ok, nil} -> {:ok, []}
+    case Price.has_data?(slug) do
+      {:ok, true} -> {:ok, @metrics}
+      {:ok, false} -> {:ok, []}
       {:error, error} -> {:error, error}
     end
   end

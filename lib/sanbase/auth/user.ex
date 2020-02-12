@@ -198,7 +198,7 @@ defmodule Sanbase.Auth.User do
     |> change(san_balance: san_balance, san_balance_updated_at: Timex.now())
   end
 
-  @spec san_balance(%User{}) :: {:ok, float()} | {:error, String.t()}
+  @spec san_balance(%User{}) :: {:ok, float()} | {:ok, nil} | {:error, String.t()}
   def san_balance(%User{test_san_balance: test_san_balance})
       when not is_nil(test_san_balance) do
     {:ok, test_san_balance |> Sanbase.Math.to_float()}
@@ -220,6 +220,7 @@ defmodule Sanbase.Auth.User do
     end
   end
 
+  @spec san_balance!(%User{}) :: float | nil | no_return
   def san_balance!(%User{} = user) do
     case san_balance(user) do
       {:ok, san_balance} -> san_balance

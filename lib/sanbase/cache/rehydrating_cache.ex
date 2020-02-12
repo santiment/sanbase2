@@ -74,7 +74,7 @@ defmodule Sanbase.Cache.RehydratingCache do
       The count for ttl starts from 0 again when value is recomputed.
   """
   @spec register_function((() -> any()), any(), pos_integer(), pos_integer()) ::
-          :ok | {:error, String.t()}
+          :ok | {:error, :already_registered}
   def register_function(fun, key, ttl, refresh_time_delta)
       when are_proper_function_arguments(fun, ttl, refresh_time_delta) do
     map = %{function: fun, key: key, ttl: ttl, refresh_time_delta: refresh_time_delta}
@@ -91,7 +91,8 @@ defmodule Sanbase.Cache.RehydratingCache do
   2. The value has been already computed and it's returned straight away. Note that
   if a recomputation is running when get is invoked, the old value is returned.
   """
-  @spec get(any(), non_neg_integer()) :: {:ok, any()} | {:error, :timeout} | {:error, String.t()}
+  @spec get(any(), non_neg_integer()) ::
+          {:ok, any()} | {:error, :timeout} | {:error, :not_registered}
   def get(key, timeout \\ 30_000) when is_integer(timeout) and timeout > 0 do
     try do
       GenServer.call(@name, {:get, key, timeout}, timeout)
@@ -139,14 +140,14 @@ defmodule Sanbase.Cache.RehydratingCache do
         {:noreply, new_state}
 
       _ ->
-        {:reply, {:error, "The key #{inspect(key)} is not registered"}, state}
+        {:reply, {:error, :not_registered}, state}
     end
   end
 
   def handle_call({:register_function, %{key: key} = fun_map}, _from, state) do
     case Map.has_key?(state.functions, key) do
       true ->
-        {:reply, {:error, "Key #{inspect(key)} is already registered"}, state}
+        {:reply, {:error, :already_registered}, state}
 
       false ->
         new_state = do_register_function(state, fun_map)
@@ -169,6 +170,17 @@ defmodule Sanbase.Cache.RehydratingCache do
       {:error, _} ->
         new_progress = Map.put(progress, key, now_unix)
         {:noreply, %{state | progress: new_progress}}
+
+      {:nocache, {:ok, value}} ->
+        %{waiting: waiting} = state
+        %{refresh_time_delta: refresh_time_delta} = fun_map
+
+        {reply_to_list, new_waiting} = Map.pop(waiting, key, [])
+        reply_to_waiting(reply_to_list, value)
+
+        new_progress = Map.put(progress, key, now_unix + refresh_time_delta)
+
+        {:noreply, %{state | progress: new_progress, waiting: new_waiting}}
 
       {:ok, value} ->
         %{store: store, waiting: waiting} = state

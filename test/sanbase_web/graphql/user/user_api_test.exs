@@ -11,8 +11,8 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
   alias Sanbase.Repo
 
   setup_with_mocks([
-    {Sanbase.Billing.Subscription.PromoTrial, [:passthrough],
-     [create_promo_trial: fn _ -> {:ok, %{}} end]}
+    {Sanbase.Billing.Subscription.SignUpTrial, [:passtrough],
+     [create_subscription: fn _ -> {:ok, %{}} end]}
   ]) do
     user =
       %User{salt: User.generate_salt(), privacy_policy_accepted: true}

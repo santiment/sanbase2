@@ -52,6 +52,7 @@ defmodule Sanbase.Cache.RehydratingCache do
       )
 
     initial_state = %{
+      init_time: Timex.now(),
       task_supervisor: Keyword.fetch!(opts, :task_supervisor),
       functions: functions,
       store: %{},
@@ -254,8 +255,8 @@ defmodule Sanbase.Cache.RehydratingCache do
             _task = run_function(self(), fun_map, task_supervisor)
             Map.put(acc, key, :in_progress)
 
-          _ ->
-            acc
+          run_after_unix ->
+            Map.put(acc, key, run_after_unix)
         end
       end)
 

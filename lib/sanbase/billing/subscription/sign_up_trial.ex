@@ -56,6 +56,7 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
       :sent_end_trial_email
     ])
     |> validate_required([:user_id])
+    |> unique_constraint(:user_id)
   end
 
   def send_emails() do
@@ -77,31 +78,28 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
   end
 
   def create_subscription(user_id) do
-    PromoTrial.create_promo_trial(%{
-      user_id: user_id,
-      plans: @free_trial_plans,
-      trial_days: @free_trial_days
-    })
-    |> case do
-      {:ok, subscriptions} ->
-        send_email_async(user_id, :sent_welcome_email)
-
-        {:ok, subscriptions}
-
+    with {:ok, sign_up_trial} <- create(user_id),
+         {:ok, subscriptions} <-
+           PromoTrial.create_promo_trial(%{
+             user_id: user_id,
+             plans: @free_trial_plans,
+             trial_days: @free_trial_days
+           }) do
+      send_email_async(sign_up_trial, :sent_welcome_email)
+      {:ok, subscriptions}
+    else
       {:error, error} ->
         {:error, error}
     end
   end
 
-  def send_email_async(user_id, email_type) when is_integer(user_id) do
+  def send_email_async(%__MODULE__{} = sign_up_trial, email_type) do
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-      send_email(user_id, email_type)
+      send_email(sign_up_trial, email_type)
     end)
   end
 
-  defp send_email(user_id, :sent_welcome_email = email_type) do
-    {:ok, sign_up_trial} = create(user_id)
-
+  defp send_email(%__MODULE__{user_id: user_id} = sign_up_trial, :sent_welcome_email = email_type) do
     template = @templates[email_type]
     user = Repo.get(User, user_id)
 

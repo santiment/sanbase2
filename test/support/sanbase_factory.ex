@@ -453,7 +453,8 @@ defmodule Sanbase.Factory do
     %Subscription{
       stripe_id: rand_str(),
       plan_id: 2,
-      current_period_end: Timex.shift(Timex.now(), days: 1)
+      current_period_end: Timex.shift(Timex.now(), days: 1),
+      status: "active"
     }
   end
 
@@ -461,7 +462,8 @@ defmodule Sanbase.Factory do
     %Subscription{
       stripe_id: rand_str(),
       plan_id: 3,
-      current_period_end: Timex.shift(Timex.now(), days: 1)
+      current_period_end: Timex.shift(Timex.now(), days: 1),
+      status: "active"
     }
   end
 
@@ -469,21 +471,24 @@ defmodule Sanbase.Factory do
     %Subscription{
       stripe_id: rand_str(),
       plan_id: 4,
-      current_period_end: Timex.shift(Timex.now(), days: 1)
+      current_period_end: Timex.shift(Timex.now(), days: 1),
+      status: "active"
     }
   end
 
   def subscription_basic_sanbase_factory() do
     %Subscription{
       plan_id: 12,
-      current_period_end: Timex.shift(Timex.now(), days: 1)
+      current_period_end: Timex.shift(Timex.now(), days: 1),
+      status: "active"
     }
   end
 
   def subscription_pro_sanbase_factory() do
     %Subscription{
       plan_id: 13,
-      current_period_end: Timex.shift(Timex.now(), days: 1)
+      current_period_end: Timex.shift(Timex.now(), days: 1),
+      status: "active"
     }
   end
 
@@ -497,21 +502,24 @@ defmodule Sanbase.Factory do
   def subscription_pro_sheets_factory() do
     %Subscription{
       plan_id: 23,
-      current_period_end: Timex.shift(Timex.now(), days: 1)
+      current_period_end: Timex.shift(Timex.now(), days: 1),
+      status: "active"
     }
   end
 
   def subscription_pro_enterprise_factory() do
     %Subscription{
       plan_id: 24,
-      current_period_end: Timex.shift(Timex.now(), days: 1)
+      current_period_end: Timex.shift(Timex.now(), days: 1),
+      status: "active"
     }
   end
 
   def subscription_exchange_wallets_extension_factory() do
     %Subscription{
       plan_id: 51,
-      current_period_end: Timex.shift(Timex.now(), days: 1)
+      current_period_end: Timex.shift(Timex.now(), days: 1),
+      status: "active"
     }
   end
 

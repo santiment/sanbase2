@@ -129,15 +129,6 @@ defmodule Sanbase.Project.AvailableQueriesTest do
            )
 
     # some ERC20 metrics
-    assert Enum.all?(
-             [
-               "dailyActiveAddresses",
-               "transactionVolume",
-               "tokenVelocity",
-               "exchangeFundsFlow",
-               "historicalBalance"
-             ],
-             &Enum.member?(available_metrics, &1)
-           )
+    assert Enum.all?(["historicalBalance"], &Enum.member?(available_metrics, &1))
   end
 end

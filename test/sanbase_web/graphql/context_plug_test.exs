@@ -9,7 +9,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.ContextPlug
   alias Sanbase.Auth.Apikey
-  alias Sanbase.Billing.Product
+  alias Sanbase.Billing.{Subscription, Product}
 
   test "loading the user from the current token", %{conn: conn} do
     user =
@@ -28,7 +28,8 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
              auth_method: :user_token,
              current_user: user,
              san_balance: 500_000.0,
-             subscription: nil
+             subscription: Subscription.free_subscription(),
+             plan: :free
            }
 
     assert conn_context.remote_ip == {127, 0, 0, 1}
@@ -198,7 +199,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product == Product.product_sanbase()
+      assert conn_context.product_id == Product.product_sanbase()
     end
 
     test "when no authorization and other Origin - product is SANApi" do
@@ -206,7 +207,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product == Product.product_api()
+      assert conn_context.product_id == Product.product_api()
     end
 
     test "when JWT auth - product is SANBase" do
@@ -215,7 +216,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product == Product.product_sanbase()
+      assert conn_context.product_id == Product.product_sanbase()
     end
 
     test "when Apikey and User-Agent is from sheets - product is SANsheets" do
@@ -233,7 +234,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product == Product.product_sanbase()
+      assert conn_context.product_id == Product.product_sanbase()
     end
 
     test "when Apikey and other User-Agent - product is SANApi" do
@@ -244,7 +245,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
       conn_context = conn.private.absinthe.context
 
-      assert conn_context.product == Product.product_api()
+      assert conn_context.product_id == Product.product_api()
     end
   end
 end

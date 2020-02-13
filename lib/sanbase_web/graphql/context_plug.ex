@@ -12,6 +12,20 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   @behaviour Plug
 
+  @compile :inline_list_funcs
+  @compile {:inline,
+            build_context: 2,
+            build_error_msg: 1,
+            bearer_auth_token_authentication: 1,
+            bearer_auth_header_authentication: 1,
+            bearer_authorize: 1,
+            basic_authentication: 1,
+            basic_authorize: 1,
+            apikey_authorize: 1,
+            get_no_auth_product_id: 1,
+            get_apikey_product_id: 1,
+            san_balance: 1}
+
   import Plug.Conn
   require Sanbase.Utils.Config, as: Config
 
@@ -28,8 +42,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     &ContextPlug.apikey_authentication/1
   ]
 
-  @product_api Product.product_api()
-  @product_sanbase Product.product_sanbase()
+  @product_id_api Product.product_api()
+  @product_id_sanbase Product.product_sanbase()
 
   def init(opts), do: opts
 
@@ -76,11 +90,11 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   defp build_context(conn, []) do
     case get_req_header(conn, "authorization") do
       header when no_auth_header(header) ->
-        product =
+        product_id =
           get_req_header(conn, "origin")
-          |> get_no_auth_product()
+          |> get_no_auth_product_id()
 
-        {conn, %{permissions: User.Permissions.no_permissions(), product: product}}
+        {conn, %{permissions: User.Permissions.no_permissions(), product_id: product_id}}
 
       [header] ->
         Logger.warn("Unsupported authorization header value: #{inspect(header)}")
@@ -109,17 +123,21 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       }) do
     case bearer_authorize(token) do
       {:ok, current_user} ->
+        subscription =
+          Subscription.current_subscription(current_user, @product_id_sanbase) ||
+            Subscription.current_subscription(current_user, @product_id_api) ||
+            Subscription.free_subscription()
+
         %{
           permissions: User.Permissions.permissions(current_user),
           auth: %{
             auth_method: :user_token,
             current_user: current_user,
             san_balance: san_balance(current_user),
-            subscription:
-              Subscription.current_subscription(current_user, @product_sanbase) ||
-                Subscription.current_subscription(current_user, @product_api)
+            subscription: subscription,
+            plan: Subscription.plan_name(subscription)
           },
-          product: @product_sanbase
+          product_id: @product_id_sanbase
         }
 
       _ ->
@@ -133,17 +151,21 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     with {:has_header?, ["Bearer " <> token]} <-
            {:has_header?, get_req_header(conn, "authorization")},
          {:ok, current_user} <- bearer_authorize(token) do
+      subscription =
+        Subscription.current_subscription(current_user, @product_id_sanbase) ||
+          Subscription.current_subscription(current_user, @product_id_api) ||
+          Subscription.free_subscription()
+
       %{
         permissions: User.Permissions.permissions(current_user),
         auth: %{
           auth_method: :user_token,
           current_user: current_user,
           san_balance: san_balance(current_user),
-          subscription:
-            Subscription.current_subscription(current_user, @product_sanbase) ||
-              Subscription.current_subscription(current_user, @product_api)
+          subscription: subscription,
+          plan: Subscription.plan_name(subscription)
         },
-        product: @product_sanbase
+        product_id: @product_id_sanbase
       }
     else
       {:has_header?, _} -> :try_next
@@ -161,9 +183,10 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
           auth_method: :basic,
           current_user: current_user,
           san_balance: 0,
-          subscription: nil
+          subscription: nil,
+          plan: nil
         },
-        product: @product_api
+        product_id: @product_id_api
       }
     else
       {:has_header?, _} -> :try_next
@@ -176,9 +199,13 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
            {:has_header?, get_req_header(conn, "authorization")},
          {:ok, current_user} <- apikey_authorize(apikey),
          {:ok, {token, _apikey}} <- Sanbase.Auth.Hmac.split_apikey(apikey) do
-      product =
+      product_id =
         get_req_header(conn, "user-agent")
-        |> get_apikey_product()
+        |> get_apikey_product_id()
+
+      subscription =
+        Subscription.current_subscription(current_user, product_id) ||
+          Subscription.free_subscription()
 
       %{
         permissions: User.Permissions.permissions(current_user),
@@ -187,9 +214,10 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
           current_user: current_user,
           token: token,
           san_balance: san_balance(current_user),
-          subscription: Subscription.current_subscription(current_user, product)
+          subscription: subscription,
+          plan: Subscription.plan_name(subscription)
         },
-        product: product
+        product_id: product_id
       }
     else
       {:has_header?, _} -> :try_next
@@ -238,21 +266,21 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     end
   end
 
-  defp get_no_auth_product([origin]) do
+  defp get_no_auth_product_id([origin]) do
     case String.ends_with?(origin, "santiment.net") do
-      true -> @product_sanbase
-      false -> @product_api
+      true -> @product_id_sanbase
+      false -> @product_id_api
     end
   end
 
-  defp get_no_auth_product(_), do: @product_api
+  defp get_no_auth_product_id(_), do: @product_id_api
 
-  defp get_apikey_product([user_agent]) do
+  defp get_apikey_product_id([user_agent]) do
     case String.contains?(user_agent, "Google-Apps-Script") do
-      true -> @product_sanbase
-      false -> @product_api
+      true -> @product_id_sanbase
+      false -> @product_id_api
     end
   end
 
-  defp get_apikey_product(_), do: @product_api
+  defp get_apikey_product_id(_), do: @product_id_api
 end

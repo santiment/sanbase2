@@ -102,6 +102,11 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   @spec is_restricted?(query_or_metric) :: boolean()
   def is_restricted?(query_or_metric), do: query_or_metric not in @free_metrics_mapset
 
+  @spec plan_has_access?(plan_name, query_or_metric) :: boolean() when plan_name: atom()
+  def plan_has_access?(_plan, _query_or_metric) do
+    true
+  end
+
   def custom_access_queries_stats(), do: @custom_access_queries_stats
   def custom_access_queries(), do: @custom_access_queries
 

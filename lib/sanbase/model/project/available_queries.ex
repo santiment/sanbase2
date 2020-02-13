@@ -151,15 +151,9 @@ defmodule Sanbase.Model.Project.AvailableQueries do
 
   @mineable_specific_queries ["exchangeWallets", "allExchanges"]
 
-  @ethereum_specific_queries [
-    "exchangeWallets",
-    "miningPoolsDistribution",
-    "dailyActiveDeposits",
-    "gasUsed"
-  ]
+  @ethereum_specific_queries ["miningPoolsDistribution", "dailyActiveDeposits", "gasUsed"]
 
   @erc20_specific_queries [
-    "exchangeFundsFlow",
     "historicalBalance",
     "topHoldersPercentOfTotalSupply",
     "percentOfTokenSupplyOnExchanges",
@@ -170,23 +164,11 @@ defmodule Sanbase.Model.Project.AvailableQueries do
   @bitcoin_specific_queries []
 
   @common_blockchain_queries [
-    "realizedValue",
-    "networkGrowth",
-    "mvrvRatio",
-    "dailyActiveAddresses",
-    "tokenAgeConsumed",
-    "burnRate",
-    "averageTokenAgeConsumedInDays",
-    "tokenVelocity",
-    "nvtRatio",
-    "transactionVolume",
-    "tokenCirculation"
+    "averageTokenAgeConsumedInDays"
   ]
 
   defp blockchain_queries(%Project{} = project) do
-    is_erc20? = Project.is_erc20?(project)
-
-    case {project, is_erc20?} do
+    case {project, Project.is_erc20?(project)} do
       {%Project{slug: "ethereum"}, _} ->
         @mineable_specific_queries ++
           @ethereum_specific_queries ++ @erc20_specific_queries ++ @common_blockchain_queries

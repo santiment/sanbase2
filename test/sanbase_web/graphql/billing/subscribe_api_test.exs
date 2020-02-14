@@ -71,6 +71,13 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
   end
 
+  test "updateCustomerCard", context do
+    query = update_customer_card()
+    response = execute_mutation(context.conn, query, "updateCustomerCard")
+
+    assert response["success"]
+  end
+
   test "list products with plans", context do
     query = products_with_plans_query()
 
@@ -679,6 +686,16 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       cancelSubscription(subscriptionId: #{subscription_id}) {
         isScheduledForCancellation
         scheduledForCancellationAt
+      }
+    }
+    """
+  end
+
+  defp update_customer_card() do
+    """
+    mutation {
+      updateCustomerCard(cardToken: "token") {
+        success
       }
     }
     """

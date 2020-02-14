@@ -4,15 +4,10 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   defmodule Helper do
     def name_to_field_map(map, field, transform_fn \\ fn x -> x end) do
       map
-      |> Enum.map(fn
-        %{"name" => name, ^field => value} ->
-          {name, transform_fn.(value)}
-
-        _ ->
-          nil
+      |> Enum.into(%{}, fn
+        %{"name" => name, ^field => value} -> {name, transform_fn.(value)}
+        %{"name" => name} -> {name, nil}
       end)
-      |> Enum.reject(&is_nil/1)
-      |> Map.new()
     end
   end
 

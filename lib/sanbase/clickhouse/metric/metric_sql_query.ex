@@ -130,7 +130,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
 
     args = [
       asset_ids,
-      Map.get(metric_map, Map.get(@name_to_metric_map, metric)),
+      Map.get(metric_map, metric, metric),
       from,
       to
     ]

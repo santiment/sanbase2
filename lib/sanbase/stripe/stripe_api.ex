@@ -33,6 +33,10 @@ defmodule Sanbase.StripeApi do
     Stripe.Customer.update(stripe_customer_id, %{source: card_token})
   end
 
+  def retrieve_customer(%User{stripe_customer_id: stripe_customer_id}) do
+    Stripe.Customer.retrieve(stripe_customer_id)
+  end
+
   def create_product(%Product{name: name}) do
     Stripe.Product.create(%{name: name, type: "service"})
   end
@@ -66,6 +70,10 @@ defmodule Sanbase.StripeApi do
   def cancel_subscription(stripe_id) do
     stripe_id
     |> update_subscription(%{cancel_at_period_end: true})
+  end
+
+  def delete_subscription(stripe_id) do
+    Stripe.Subscription.delete(stripe_id)
   end
 
   def get_subscription_first_item_id(stripe_id) do

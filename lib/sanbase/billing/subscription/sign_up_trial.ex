@@ -75,21 +75,10 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     end
   end
 
-  defp create_promo_trial(%__MODULE__{user_id: user_id} = sign_up_trial) do
-    user = Repo.get(User, user_id)
-
-    PromoTrial.create_promo_trial(%{
-      user_id: user_id,
-      plans: @free_trial_plans,
-      trial_days: @free_trial_days
-    })
-    |> case do
-      {:ok, _} ->
-        current_subscription = Subscription.current_subscription(user, Product.product_sanbase())
-        update_trial(sign_up_trial, %{subscription_id: current_subscription.id})
-
-      {:error, reason} ->
-        {:error, reason}
+  def handle_trial_will_end(stripe_subscription_id) do
+    with {:ok, subscription} <- get_trialing_subscription(stripe_subscription_id),
+         {:ok, sign_up_trial} <- get_sign_up_trial(subscription) do
+      do_send_email_and_mark_sent(sign_up_trial, :sent_trial_will_end_email)
     end
   end
 
@@ -97,13 +86,6 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
       do_send_email_and_mark_sent(sign_up_trial, email_type)
     end)
-  end
-
-  def handle_trial_will_end(stripe_subscription_id) do
-    with {:ok, subscription} <- get_trialing_subscription(stripe_subscription_id),
-         {:ok, sign_up_trial} <- get_sign_up_trial(subscription) do
-      do_send_email_and_mark_sent(sign_up_trial, :sent_trial_will_end_email)
-    end
   end
 
   defp get_trialing_subscription(stripe_subscription_id) do
@@ -125,6 +107,24 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
 
       _ ->
         {:error, :no_sign_up_trial}
+    end
+  end
+
+  defp create_promo_trial(%__MODULE__{user_id: user_id} = sign_up_trial) do
+    user = Repo.get(User, user_id)
+
+    PromoTrial.create_promo_trial(%{
+      user_id: user_id,
+      plans: @free_trial_plans,
+      trial_days: @free_trial_days
+    })
+    |> case do
+      {:ok, _} ->
+        current_subscription = Subscription.current_subscription(user, Product.product_sanbase())
+        update_trial(sign_up_trial, %{subscription_id: current_subscription.id})
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

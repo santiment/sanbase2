@@ -338,6 +338,22 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
+  # Cancel trialing subscriptions which are about to expire (in 2 hours) and where there is no payment instrument attached
+  def cancel_about_to_expire_trials() do
+    sanbase_plan_id = Plan.Metadata.sanbase_pro()
+    now = Timex.now()
+    after_2_hours = Timex.shift(now, hours: 2)
+
+    from(s in __MODULE__,
+      where:
+        s.plan_id == ^sanbase_plan_id and
+          s.status == "trialing" and
+          s.trial_end >= ^now and s.trial_end <= ^after_2_hours
+    )
+    |> Repo.all()
+    |> Enum.each(&maybe_delete_subscription_if_no_card_attached/1)
+  end
+
   # Private functions
 
   defp create_stripe_subscription(user, plan, nil) do
@@ -450,6 +466,19 @@ defmodule Sanbase.Billing.Subscription do
 
   defp calculate_trial_end(%Stripe.Subscription{trial_end: trial_end}) do
     format_trial_end(trial_end)
+  end
+
+  defp maybe_delete_subscription_if_no_card_attached(%__MODULE__{
+         user_id: user_id,
+         stripe_id: stripe_id
+       }) do
+    with %User{} = user <- Repo.get(User, user_id),
+         {:ok, customer} <- StripeApi.retrieve_customer(user) do
+      unless customer.default_source do
+        Logger.info("Deleting subscription with id: #{stripe_id} for user: #{user_id}")
+        StripeApi.delete_subscription(stripe_id)
+      end
+    end
   end
 
   defp format_trial_end(nil), do: nil

@@ -44,7 +44,16 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   @product_id_api Product.product_api()
   @product_id_sanbase Product.product_sanbase()
-
+  @free_subscription Subscription.free_subscription()
+  @anon_user_base_context %{
+    permissions: User.Permissions.no_permissions(),
+    auth: %{
+      auth_method: :none,
+      san_balance: 0,
+      subscription: @free_subscription,
+      plan: Subscription.plan_name(@free_subscription)
+    }
+  }
   def init(opts), do: opts
 
   def call(conn, _) do
@@ -94,7 +103,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
           get_req_header(conn, "origin")
           |> get_no_auth_product_id()
 
-        {conn, %{permissions: User.Permissions.no_permissions(), product_id: product_id}}
+        {conn, Map.put(@anon_user_base_context, :product_id, product_id)}
 
       [header] ->
         Logger.warn("Unsupported authorization header value: #{inspect(header)}")
@@ -126,7 +135,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         subscription =
           Subscription.current_subscription(current_user, @product_id_sanbase) ||
             Subscription.current_subscription(current_user, @product_id_api) ||
-            Subscription.free_subscription()
+            @free_subscription
 
         %{
           permissions: User.Permissions.permissions(current_user),
@@ -154,7 +163,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       subscription =
         Subscription.current_subscription(current_user, @product_id_sanbase) ||
           Subscription.current_subscription(current_user, @product_id_api) ||
-          Subscription.free_subscription()
+          @free_subscription
 
       %{
         permissions: User.Permissions.permissions(current_user),
@@ -205,7 +214,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
       subscription =
         Subscription.current_subscription(current_user, product_id) ||
-          Subscription.free_subscription()
+          @free_subscription
 
       %{
         permissions: User.Permissions.permissions(current_user),

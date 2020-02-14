@@ -10,6 +10,7 @@ defmodule Sanbase.Price.MetricAdapter do
   @metrics @histogram_metrics ++ @timeseries_metrics
 
   @access_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
+  @min_plan_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
 
   @free_metrics Enum.filter(@access_map, fn {_, level} -> level == :free end) |> Keyword.keys()
   @restricted_metrics Enum.filter(@access_map, fn {_, level} -> level == :restricted end)
@@ -103,4 +104,7 @@ defmodule Sanbase.Price.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def access_map(), do: @access_map
+
+  @impl Sanbase.Metric.Behaviour
+  def min_plan_map(), do: @min_plan_map
 end

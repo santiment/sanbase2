@@ -22,6 +22,9 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
 
   @metrics @histogram_metrics ++ @timeseries_metrics
 
+  @access_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
+  @min_plan_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
+
   @free_metrics @metrics
   @restricted_metrics []
 
@@ -187,15 +190,8 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   def restricted_metrics(), do: @restricted_metrics
 
   @impl Sanbase.Metric.Behaviour
-  def access_map() do
-    free_metrics_map =
-      @free_metrics
-      |> Enum.into(%{}, fn metric -> {metric, :free} end)
+  def access_map(), do: @access_map
 
-    restricted_metrics_map =
-      @restricted_metrics
-      |> Enum.into(%{}, fn metric -> {metric, :restricted} end)
-
-    Map.merge(free_metrics_map, restricted_metrics_map)
-  end
+  @impl Sanbase.Metric.Behaviour
+  def min_plan_map(), do: @min_plan_map
 end

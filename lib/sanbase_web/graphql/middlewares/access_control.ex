@@ -67,7 +67,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   end
 
   defp check_plan(%Resolution{context: %{__query_atom_name__: query_or_metric}} = resolution) do
-    plan = resolution.context[:auth][:plan]
+    plan = resolution.context[:auth][:plan] || :free
 
     case Plan.AccessChecker.plan_has_access?(plan, query_or_metric) do
       true -> resolution

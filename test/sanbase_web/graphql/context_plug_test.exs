@@ -152,7 +152,9 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
     conn_context = conn.private.absinthe.context
 
-    refute Map.has_key?(conn_context, :auth)
+    assert Map.has_key?(conn_context, :auth)
+    assert conn_context.auth.auth_method == :none
+    assert conn_context.auth.plan == :free
     assert conn_context.remote_ip == {127, 0, 0, 1}
     assert conn_context.permissions == User.Permissions.no_permissions()
   end
@@ -169,7 +171,9 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
     conn_context = conn.private.absinthe.context
 
-    refute Map.has_key?(conn_context, :auth)
+    assert Map.has_key?(conn_context, :auth)
+    assert conn_context.auth.auth_method == :none
+    assert conn_context.auth.plan == :free
     assert conn_context.remote_ip == {127, 0, 0, 1}
     assert conn_context.permissions == User.Permissions.no_permissions()
   end
@@ -181,7 +185,9 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
     conn_context = conn.private.absinthe.context
 
-    refute Map.has_key?(conn_context, :auth)
+    assert Map.has_key?(conn_context, :auth)
+    assert conn_context.auth.auth_method == :none
+    assert conn_context.auth.plan == :free
     assert conn_context.remote_ip == {127, 0, 0, 1}
     assert conn_context.permissions == User.Permissions.no_permissions()
   end

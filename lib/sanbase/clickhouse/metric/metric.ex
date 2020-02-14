@@ -26,6 +26,7 @@ defmodule Sanbase.Clickhouse.Metric do
   @timeseries_metrics_name_list FileHandler.metrics_with_data_type(:timeseries)
   @histogram_metrics_name_list FileHandler.metrics_with_data_type(:histogram)
   @access_map FileHandler.access_map()
+  @min_plan_map FileHandler.min_plan_map()
   @min_interval_map FileHandler.min_interval_map()
   @free_metrics FileHandler.metrics_with_access(:free)
   @restricted_metrics FileHandler.metrics_with_access(:restricted)
@@ -51,6 +52,9 @@ defmodule Sanbase.Clickhouse.Metric do
 
   @impl Sanbase.Metric.Behaviour
   def access_map(), do: @access_map
+
+  @impl Sanbase.Metric.Behaviour
+  def min_plan_map(), do: @min_plan_map
 
   @impl Sanbase.Metric.Behaviour
   def has_incomplete_data?(metric), do: Map.get(@incomplete_data_map, metric)

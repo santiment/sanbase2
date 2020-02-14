@@ -40,6 +40,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
         RehydratingCache.get(cache_key)
         |> maybe_handle_graphql_error(&generate_error_message(&1, slug))
 
+      {:error, :timeout} ->
+        # Try again
+        # Recursively call itself. This is guaranteed to not continue forever
+        # as the graphql request will timeout at some point and stop the recursion
+        maybe_register_and_get(cache_key, fun, slug)
+
       {:ok, value} ->
         {:ok, value}
     end

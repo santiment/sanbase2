@@ -351,7 +351,7 @@ defmodule Sanbase.Billing.Subscription do
           s.trial_end >= ^now and s.trial_end <= ^after_2_hours
     )
     |> Repo.all()
-    |> Enum.each(&delete_subscription_if_no_card_attached?/1)
+    |> Enum.each(&maybe_delete_subscription_if_no_card_attached/1)
   end
 
   # Private functions
@@ -468,7 +468,7 @@ defmodule Sanbase.Billing.Subscription do
     format_trial_end(trial_end)
   end
 
-  defp delete_subscription_if_no_card_attached?(%__MODULE__{
+  defp maybe_delete_subscription_if_no_card_attached(%__MODULE__{
          user_id: user_id,
          stripe_id: stripe_id
        }) do

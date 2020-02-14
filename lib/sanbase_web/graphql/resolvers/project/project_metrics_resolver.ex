@@ -29,8 +29,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     maybe_register_and_get(cache_key, fun, slug)
   end
 
-  defp get_error_handler(_error, slug), do: {:error, "Cannot fetch available metrics for #{slug}"}
-
   # Get the available metrics from the rehydrating cache. If the function for computing it
   # is not register - register it and get the result after that.z
   defp maybe_register_and_get(cache_key, fun, slug) do
@@ -40,10 +38,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
         RehydratingCache.register_function(fun, cache_key, @ttl, refresh_time_delta)
 
         RehydratingCache.get(cache_key)
-        |> maybe_handle_graphql_error(&get_error_handler(&1, slug))
+        |> maybe_handle_graphql_error(&generate_error_message(&1, slug))
 
       {:ok, value} ->
         {:ok, value}
     end
   end
+
+  defp generate_error_message(_error, slug), do: "Cannot fetch available metrics for #{slug}"
 end

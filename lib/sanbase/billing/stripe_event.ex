@@ -156,6 +156,14 @@ defmodule Sanbase.Billing.StripeEvent do
     handle_subscription_created(id, "customer.subscription.created", subscription_id)
   end
 
+  defp handle_event(%{
+         "id" => _id,
+         "type" => "customer.subscription.trial_will_end",
+         "data" => %{"object" => %{"id" => subscription_id}}
+       }) do
+    Sanbase.Billing.Subscription.SignUpTrial.handle_trial_will_end(subscription_id)
+  end
+
   defp handle_event(_), do: :ok
 
   defp handle_subscription_created(id, type, subscription_id) do

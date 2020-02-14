@@ -60,6 +60,10 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "2-59/5 * * * *",
       task: {Sanbase.Billing.Subscription, :sync_all, []}
     ],
+    cancel_about_to_expire_trials: [
+      schedule: "3-59/30 * * * *",
+      task: {Sanbase.Billing.Subscription, :cancel_about_to_expire_trials, []}
+    ],
     logo_fetcher: [
       schedule: "@daily",
       task: {Sanbase.ExternalServices.Coinmarketcap.LogoFetcher, :run, []}

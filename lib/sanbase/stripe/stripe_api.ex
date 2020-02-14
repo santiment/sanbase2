@@ -28,7 +28,8 @@ defmodule Sanbase.StripeApi do
     })
   end
 
-  def update_customer(%User{stripe_customer_id: stripe_customer_id}, card_token) do
+  def update_customer(%User{stripe_customer_id: stripe_customer_id}, card_token)
+      when is_binary(stripe_customer_id) do
     Stripe.Customer.update(stripe_customer_id, %{source: card_token})
   end
 

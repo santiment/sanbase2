@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   def update_customer_card(_root, %{card_token: card_token}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    StripeApi.update_customer(current_user, card_token)
+    Subscription.create_or_update_stripe_customer(current_user, card_token)
     |> case do
       {:ok, _} ->
         {:ok, %{success: true}}

@@ -53,8 +53,13 @@ defmodule Sanbase.Billing.Subscription do
     |> foreign_key_constraint(:plan_id, name: :subscriptions_plan_id_fkey)
   end
 
-  def by_id(plan_id) do
-    Repo.get(__MODULE__, plan_id)
+  def by_id(id) do
+    Repo.get(__MODULE__, id)
+    |> Repo.preload(:plan)
+  end
+
+  def by_stripe_id(stripe_id) do
+    Repo.get_by(__MODULE__, stripe_id: stripe_id)
     |> Repo.preload(:plan)
   end
 

@@ -12,7 +12,7 @@ config :sanbase, SanbaseWeb.Endpoint,
 # Print only warnings and errors during test. Do not log JSON in tests.
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
-  level: :debug
+  level: :warn
 
 # Test adapter that allows mocking
 config :tesla, adapter: Tesla.Mock

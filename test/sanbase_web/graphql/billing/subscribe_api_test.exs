@@ -71,7 +71,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
   end
 
-  test "updateCustomerCard", context do
+  test "update customer card", context do
     query = update_customer_card()
     response = execute_mutation(context.conn, query, "updateCustomerCard")
 

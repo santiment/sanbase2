@@ -94,5 +94,16 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
 
       resolve(&BillingResolver.renew_cancelled_subscription/3)
     end
+
+    @desc ~s"""
+    Request to add payment source when customer is trialing without a card.
+    """
+    field :update_customer_card, :update_card_result do
+      arg(:card_token, non_null(:string))
+
+      middleware(JWTAuth)
+
+      resolve(&BillingResolver.update_customer_card/3)
+    end
   end
 end

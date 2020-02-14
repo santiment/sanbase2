@@ -85,7 +85,7 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
       trial_days: @free_trial_days
     })
     |> case do
-      {:ok, _} -> update_trial(sign_up_trial, %{subscription_id: current_subscription})
+      {:ok, _} -> update_trial(sign_up_trial, %{subscription_id: current_subscription.id})
       {:error, reason} -> {:error, reason}
     end
   end

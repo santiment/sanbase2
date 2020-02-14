@@ -32,6 +32,11 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:data, list_of(:float))
   end
 
+  object :range_value_float do
+    field(:range, list_of(:float))
+    field(:value, :float)
+  end
+
   union :value_list do
     description("Type Parameterized Array")
 
@@ -40,12 +45,13 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     resolve_type(fn
       %{data: [value | _]}, _ when is_number(value) -> :float_list
       %{data: [value | _]}, _ when is_binary(value) -> :string_list
+      # %{data: [%{range: _, value: _}]} -> list_of(:range_value_float)
       %{data: []}, _ -> :float_list
     end)
   end
 
   object :histogram_data do
-    field(:labels, non_null(list_of(:string)))
+    field(:labels, list_of(:string))
     field(:values, :value_list)
   end
 

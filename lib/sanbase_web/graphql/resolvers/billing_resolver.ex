@@ -10,6 +10,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     Plan.product_with_plans()
   end
 
+  def update_customer_card(_root, %{card_token: card_token}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    StripeApi.update_customer(current_user, card_token)
+    |> case do
+      {:ok, _} ->
+        {:ok, %{success: true}}
+
+      {:error, %Stripe.Error{message: message} = reason} ->
+        Logger.error(
+          "Update customer card: user=#{inspect(current_user)} reason=#{inspect(reason)}"
+        )
+
+        {:error, message}
+    end
+  end
+
   def subscribe(_root, %{plan_id: plan_id} = args, %{
         context: %{auth: %{current_user: current_user}}
       }) do

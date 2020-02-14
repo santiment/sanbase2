@@ -65,4 +65,8 @@ defmodule SanbaseWeb.Graphql.Schema.BillingTypes do
     field(:amount_off, :float)
     field(:percent_off, :float)
   end
+
+  object :update_card_result do
+    field(:success, :boolean)
+  end
 end

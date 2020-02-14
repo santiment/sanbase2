@@ -77,7 +77,6 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
 
   defp create_promo_trial(%__MODULE__{user_id: user_id} = sign_up_trial) do
     user = Repo.get(User, user_id)
-    current_subscription = Subscription.current_subscription(user, Product.product_sanbase())
 
     PromoTrial.create_promo_trial(%{
       user_id: user_id,
@@ -85,8 +84,12 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
       trial_days: @free_trial_days
     })
     |> case do
-      {:ok, _} -> update_trial(sign_up_trial, %{subscription_id: current_subscription.id})
-      {:error, reason} -> {:error, reason}
+      {:ok, _} ->
+        current_subscription = Subscription.current_subscription(user, Product.product_sanbase())
+        update_trial(sign_up_trial, %{subscription_id: current_subscription.id})
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

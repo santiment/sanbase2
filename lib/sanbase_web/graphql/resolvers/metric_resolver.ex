@@ -110,6 +110,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
            values: %{data: values}
          }}
 
+      {:ok, data} ->
+        {:ok, %{values: %{data: data}}}
+
       {:error, error} ->
         {:error, handle_graphql_error(metric, to_selector(args), error)}
     end

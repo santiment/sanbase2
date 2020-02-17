@@ -35,10 +35,8 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
     {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
 
     ClickhouseRepo.query_transform(query, args, fn [price, amount] ->
-      price = Sanbase.Math.to_float(price) |> Float.round(2)
-
       %{
-        price: price,
+        price: Sanbase.Math.to_float(price),
         value: Sanbase.Math.to_float(amount)
       }
     end)
@@ -81,6 +79,13 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
         key = price_to_range.(price)
         Map.update(acc, key, 0.0, fn curr_amount -> Float.round(curr_amount + value, 2) end)
       end)
+      |> Enum.map(fn {range, amount} ->
+        %{
+          range: range,
+          value: amount
+        }
+      end)
+      |> Enum.sort_by(fn %{range: [range_start | _]} -> range_start end)
 
     {:ok, data}
   end

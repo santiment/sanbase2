@@ -27,9 +27,11 @@ defmodule Sanbase.Clickhouse.Metric.HistogramSqlQuery do
       (
         SELECT
           toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?4) * ?4) AS t,
-          avg(price_usd) AS price
-        FROM asset_prices FINAL
-        PREWHERE slug = cast(?1, 'LowCardinality(String)')
+          avg(value) AS price
+        FROM intraday_metrics FINAL
+        PREWHERE
+          asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1) AND
+          metric_id = (SELECT metric_id FROM metric_metadata FINAL PREWHERE name = 'price_usd')
         GROUP BY t
       ) USING (t)
     )

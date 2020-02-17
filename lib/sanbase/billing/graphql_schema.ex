@@ -10,7 +10,6 @@ defmodule Sanbase.Billing.GraphqlSchema do
   require SanbaseWeb.Graphql.Schema
 
   @query_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :query)
-  # @query_type %{fields: %{}}
   @fields @query_type.fields |> Map.keys()
 
   @doc ~s"""

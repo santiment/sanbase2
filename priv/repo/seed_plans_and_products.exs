@@ -2,11 +2,10 @@ alias Sanbase.Repo
 
 Repo.query!("""
 INSERT INTO products (id, name) VALUES
-  (1, 'SanAPI by Santiment'),
+  (1, 'Neuro by Santiment'),
   (2, 'Sanbase by Santiment'),
   (3, 'Sheets by Santiment'),
-  (4, 'Sandata by Santiment'),
-  (5, 'Exchange Wallets by Santiment')
+  (4, 'Graphs by Santiment')
   ON CONFLICT DO NOTHING
 """)
 
@@ -34,18 +33,6 @@ INSERT INTO plans (id, name, product_id, amount, currency, interval) VALUES
   (24, 'ENTERPRISE', 3, 0, 'USD', 'month'),
   (25, 'BASIC', 3, 96120, 'USD', 'year'),
   (26, 'PRO', 3, 204120, 'USD', 'year'),
-  (27, 'ENTERPRISE', 3, 0, 'USD', 'year'),
-  (41, 'BASIC', 4, 5000, 'USD', 'month'),
-  (42, 'PRO', 4, 14000, 'USD', 'month'),
-  (43, 'PREMIUM', 4, 29000, 'USD', 'month'),
-  (44, 'BASIC', 4, 54000, 'USD', 'year'),
-  (45, 'PRO', 4, 151200, 'USD', 'year'),
-  (46, 'PREMIUM', 4, 313200, 'USD', 'year'),
-  (51, 'EXTENSION', 5, 20000, 'USD', 'month'),
-  (52, 'EXTENSION', 5, 216000, 'USD', 'year'),
-  (101, 'ESSENTIAL', 1, 16000, 'USD', 'month'),
-  (102, 'PRO', 1, 42000, 'USD', 'month'),
-  (103, 'ESSENTIAL', 1, 178800, 'USD', 'year'),
-  (104, 'PRO', 1, 478800, 'USD', 'year')
+  (27, 'ENTERPRISE', 3, 0, 'USD', 'year')
   ON CONFLICT DO NOTHING
 """)

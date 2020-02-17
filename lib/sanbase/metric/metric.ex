@@ -20,6 +20,7 @@ defmodule Sanbase.Metric do
   Module.register_attribute(__MODULE__, :free_metrics_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :restricted_metrics_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :access_map_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :min_plan_map_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :timeseries_metric_module_mapping_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :histogram_metric_module_mapping_acc, accumulate: true)
 
@@ -28,6 +29,8 @@ defmodule Sanbase.Metric do
     @free_metrics_acc module.free_metrics()
     @restricted_metrics_acc module.restricted_metrics()
     @access_map_acc module.access_map()
+    @min_plan_map_acc module.min_plan_map()
+
     @timeseries_metric_module_mapping_acc Enum.map(
                                             module.available_timeseries_metrics(),
                                             fn metric -> %{metric: metric, module: module} end
@@ -57,6 +60,7 @@ defmodule Sanbase.Metric do
                         end)
 
   @access_map Enum.reduce(@access_map_acc, %{}, fn map, acc -> Map.merge(map, acc) end)
+  @min_plan_map Enum.reduce(@min_plan_map_acc, %{}, fn map, acc -> Map.merge(map, acc) end)
   @aggregation_arg_supported [nil] ++ @available_aggregations
 
   @metrics Enum.map(@metric_module_mapping, & &1.metric)
@@ -376,6 +380,12 @@ defmodule Sanbase.Metric do
   Get a map where the key is a metric and the value is the access level
   """
   def access_map(), do: @access_map
+
+  @doc ~s"""
+  Get a map where the key is a metric and the value is the min plan it is
+  accessible in.
+  """
+  def min_plan_map(), do: @min_plan_map
 
   # Private functions
 

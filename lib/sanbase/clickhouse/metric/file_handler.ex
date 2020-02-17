@@ -4,15 +4,10 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   defmodule Helper do
     def name_to_field_map(map, field, transform_fn \\ fn x -> x end) do
       map
-      |> Enum.map(fn
-        %{"name" => name, ^field => value} ->
-          {name, transform_fn.(value)}
-
-        _ ->
-          nil
+      |> Enum.into(%{}, fn
+        %{"name" => name, ^field => value} -> {name, transform_fn.(value)}
+        %{"name" => name} -> {name, nil}
       end)
-      |> Enum.reject(&is_nil/1)
-      |> Map.new()
     end
   end
 
@@ -48,6 +43,7 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   @table_map Helper.name_to_field_map(@metrics_json, "table")
   @aggregation_map Helper.name_to_field_map(@metrics_json, "aggregation", &String.to_atom/1)
   @min_interval_map Helper.name_to_field_map(@metrics_json, "min_interval")
+  @min_plan_map Helper.name_to_field_map(@metrics_json, "min_plan", &String.to_atom/1)
   @human_readable_name_map Helper.name_to_field_map(@metrics_json, "human_readable_name")
   @metric_version_map Helper.name_to_field_map(@metrics_json, "version")
   @metrics_label_map Helper.name_to_field_map(@metrics_json, "label")
@@ -75,6 +71,7 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   def metrics_mapset(), do: @metrics_mapset
   def aggregation_map(), do: @aggregation_map
   def min_interval_map(), do: @min_interval_map
+  def min_plan_map(), do: @min_plan_map
   def name_to_metric_map(), do: @name_to_metric_map
   def human_readable_name_map(), do: @human_readable_name_map
   def metric_version_map(), do: @metric_version_map

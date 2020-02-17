@@ -13,11 +13,12 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   @compile :inline_list_funcs
   @compile {:inline,
+            transform_resolution: 1,
+            check_plan: 1,
+            check_from_to_params: 1,
+            do_call: 2,
             restrict_from: 3,
             restrict_to: 3,
-            do_call: 2,
-            transform_resolution: 1,
-            check_from_to_params: 1,
             check_from_to_both_outside: 1}
 
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
@@ -35,6 +36,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     # First call `check_from_to_params` and then pass the execution to do_call/2
     resolution
     |> transform_resolution()
+    |> check_plan()
     |> check_from_to_params()
     |> do_call(opts)
     |> check_from_to_both_outside()
@@ -59,6 +61,20 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     %Resolution{resolution | context: context}
   end
 
+  # Basic auth should have no restrictions
+  defp check_plan(%Resolution{context: %{auth: %{auth_method: :basic}}} = resolution) do
+    resolution
+  end
+
+  defp check_plan(%Resolution{context: %{__query_atom_name__: query_or_metric}} = resolution) do
+    plan = resolution.context[:auth][:plan] || :free
+
+    case Plan.AccessChecker.plan_has_access?(plan, query_or_metric) do
+      true -> resolution
+      false -> Resolution.put_result(resolution, {:error, :unauthorized})
+    end
+  end
+
   # If the query is resolved there's nothing to do here
   # A query can get resolved if it's rejected by the AccessControl middleware
   defp do_call(%Resolution{state: :resolved} = resolution, _) do
@@ -79,6 +95,16 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     resolution
   end
 
+  # Allow access to historical data and real-time data for the Santiment project.
+  # This will serve the purpose of showing to anonymous and users with lesser plans
+  # how the data looks like.
+  defp do_call(%Resolution{arguments: %{slug: slug}} = resolution, _)
+       when slug in @allow_access_without_staking do
+    resolution
+  end
+
+  # Some specific queries/metrics are available only when a special extension is
+  # present.
   defp do_call(%Resolution{context: %{__query_atom_name__: query}} = resolution, _)
        when query in @extension_metrics do
     case resolution.context[:auth][:current_user] do
@@ -94,14 +120,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
       _ ->
         Resolution.put_result(resolution, {:error, :unauthorized})
     end
-  end
-
-  # Allow access to historical data and real-time data for the Santiment project.
-  # This will serve the purpose of showing to anonymous and users with lesser plans
-  # how the data looks like.
-  defp do_call(%Resolution{arguments: %{slug: slug}} = resolution, _)
-       when slug in @allow_access_without_staking do
-    resolution
   end
 
   # Dispatch the resolution of restricted and not-restricted queries to
@@ -134,12 +152,13 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
          query
        ) do
     subscription = context[:auth][:subscription] || @free_subscription
-    product = subscription.plan.product_id || context.product
+    product_id = subscription.plan.product_id || context.product_id
 
-    historical_data_in_days = Subscription.historical_data_in_days(subscription, query, product)
+    historical_data_in_days =
+      Subscription.historical_data_in_days(subscription, query, product_id)
 
     realtime_data_cut_off_in_days =
-      Subscription.realtime_data_cut_off_in_days(subscription, query, product)
+      Subscription.realtime_data_cut_off_in_days(subscription, query, product_id)
 
     resolution
     |> update_resolution_from_to(

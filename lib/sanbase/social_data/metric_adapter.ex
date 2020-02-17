@@ -34,6 +34,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   @metrics @histogram_metrics ++ @timeseries_metrics
   @access_map Enum.reduce(@metrics, %{}, fn metric, acc -> Map.put(acc, metric, :restricted) end)
+  @min_plan_map Enum.reduce(@metrics, %{}, fn metric, acc -> Map.put(acc, metric, :free) end)
 
   @impl Sanbase.Metric.Behaviour
   def has_incomplete_data?(_), do: false
@@ -154,6 +155,9 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def access_map(), do: @access_map
+
+  @impl Sanbase.Metric.Behaviour
+  def min_plan_map(), do: @min_plan_map
 
   @impl Sanbase.Metric.Behaviour
   def metadata(metric) do

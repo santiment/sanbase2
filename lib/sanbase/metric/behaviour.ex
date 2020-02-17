@@ -88,5 +88,7 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback access_map() :: map()
 
+  @callback min_plan_map() :: map()
+
   @optional_callbacks [histogram_data: 6]
 end

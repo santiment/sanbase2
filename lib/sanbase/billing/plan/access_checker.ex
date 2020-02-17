@@ -70,6 +70,8 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
 
   @free_subscription Subscription.free_subscription()
 
+  @min_plan_map GraphqlSchema.min_plan_map()
+
   # Raise an error if there are queries with custom access logic that are marked
   # as free. If there are such queries the access restriction logic will never
   # be applied
@@ -101,6 +103,19 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   """
   @spec is_restricted?(query_or_metric) :: boolean()
   def is_restricted?(query_or_metric), do: query_or_metric not in @free_metrics_mapset
+
+  @spec plan_has_access?(plan_name, query_or_metric) :: boolean() when plan_name: atom()
+  def plan_has_access?(plan, query_or_metric) do
+    case Map.get(@min_plan_map, query_or_metric, :free) do
+      :free -> true
+      :essential -> plan != :free
+      :pro -> plan not in [:free, :essential]
+      :premium -> plan not in [:free, :essential, :pro]
+      :enterprise -> plan not in [:free, :eseential, :pro, :premium]
+      # extensions plans can be with other plan. They're handled separately
+      _ -> true
+    end
+  end
 
   def custom_access_queries_stats(), do: @custom_access_queries_stats
   def custom_access_queries(), do: @custom_access_queries

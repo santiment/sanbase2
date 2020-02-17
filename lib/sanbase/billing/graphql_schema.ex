@@ -38,6 +38,21 @@ defmodule Sanbase.Billing.GraphqlSchema do
     |> Map.new()
   end
 
+  def min_plan_map() do
+    query_min_plan_map =
+      get_query_meta_field_list(:min_plan)
+      |> Enum.into(%{}, fn
+        {query, nil} -> {{:query, query}, :free}
+        {query, plan} when is_atom(plan) -> {{:query, query}, plan}
+      end)
+
+    Metric.min_plan_map()
+    |> Enum.into(query_min_plan_map, fn
+      {metric, nil} -> {{:metric, metric}, :free}
+      {metric, plan} when is_atom(plan) -> {{:metric, metric}, plan}
+    end)
+  end
+
   @doc ~s"""
   Return all query names that have all `fields` with the values specified in
   the corresponding position of the `values` list
@@ -51,6 +66,12 @@ defmodule Sanbase.Billing.GraphqlSchema do
       Enum.all?(field_value_pairs, fn {field, value} ->
         Map.get(@query_type.fields, f) |> Absinthe.Type.meta(field) == value
       end)
+    end)
+  end
+
+  def get_query_meta_field_list(field) do
+    Enum.map(@fields, fn f ->
+      {f, Map.get(@query_type.fields, f) |> Absinthe.Type.meta(field)}
     end)
   end
 

@@ -205,7 +205,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     """
 
     # artifical boundary so the query checks less results
-    datetime = Timex.shift(Timex.now(), days: -90) |> DateTime.to_unix()
+    datetime = Timex.shift(Timex.now(), days: -30) |> DateTime.to_unix()
     args = [slug, datetime]
     {query, args}
   end

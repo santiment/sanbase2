@@ -125,6 +125,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
                 ... on FloatList {
                   data
                 }
+                ... on FloatRangeFloatValueList {
+                  data {
+                    range
+                    value
+                  }
+                }
               }
             }
         }

@@ -156,7 +156,7 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
       **{{project_name}}**'s price #{operation_template} from {{previous_value}} and is now {{value}}.
 
       More info here: #{Project.sanbase_link(project)}
-      ![Price chart over the past 90 days]{{chart_url}}
+      ![Price chart over the past 90 days]({{chart_url}})
       """
 
       {template, kv}

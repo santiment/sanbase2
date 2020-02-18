@@ -10,8 +10,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
   setup_with_mocks([
     {Sanbase.Price, [], [timeseries_data: fn _, _, _, _ -> price_resp() end]},
-    {Sanbase.Clickhouse.DailyActiveDeposits, [],
-     [active_deposits: fn _, _, _, _ -> daily_active_deposits_resp() end]},
     {Sanbase.Clickhouse.NetworkGrowth, [],
      [network_growth: fn _, _, _, _ -> network_growth_resp() end]},
     {Metric, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> metric_resp() end]}
@@ -77,21 +75,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "cannot access RESTRICTED metrics realtime", context do
-      {from, to} = from_to(10, 0)
-      query = daily_active_deposits_query(context.project.slug, from, to)
-      result = execute_query(context.conn, query, "dailyActiveDeposits")
-      contract = context.project.main_contract_address
-
-      refute called(
-               Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(contract, from, to, :_)
-             )
-
-      assert result != nil
-    end
-
     test "can access RESTRICTED metrics within 90 days and 2 day interval", context do
-      {from, to} = from_to(89, 3)
+      {from, to} = from_to(89, 2)
       metric = v2_restricted_metric(context.next_integer.())
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
@@ -102,15 +87,12 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "can access RESTRICTED queries within 90 days and 2 day interval", context do
-      {from, to} = from_to(89, 3)
-      query = daily_active_deposits_query(context.project.slug, from, to)
-      result = execute_query(context.conn, query, "dailyActiveDeposits")
+      {from, to} = from_to(89, 2)
+      query = network_growth_query(context.project.slug, from, to)
+      result = execute_query(context.conn, query, "networkGrowth")
       contract = context.project.main_contract_address
 
-      assert_called(
-        Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(contract, from, to, :_)
-      )
-
+      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
       assert result != nil
     end
   end
@@ -380,17 +362,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
               datetime
               value
           }
-        }
-      }
-    """
-  end
-
-  defp daily_active_deposits_query(slug, from, to) do
-    """
-      {
-        dailyActiveDeposits(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "1d"){
-          datetime
-          activeDeposits
         }
       }
     """

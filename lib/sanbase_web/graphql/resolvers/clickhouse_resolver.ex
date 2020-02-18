@@ -13,7 +13,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   alias Sanbase.Clickhouse.{
     RealizedValue,
-    DailyActiveDeposits,
     GasUsed,
     MiningPoolsDistribution,
     NetworkGrowth,
@@ -193,27 +192,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   def daily_active_deposits(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval},
+        %{slug: _, from: _, to: _, interval: _} = args,
         _resolution
       ) do
-    with {:ok, contract, _} <- Project.contract_info_by_slug(slug),
-         {:ok, from, to, interval} <-
-           calibrate_interval(
-             DailyActiveDeposits,
-             contract,
-             from,
-             to,
-             interval,
-             @one_hour_in_seconds,
-             @datapoints
-           ),
-         {:ok, active_deposits} <-
-           DailyActiveDeposits.active_deposits(contract, from, to, interval) do
-      {:ok, active_deposits}
-    else
-      {:error, error} ->
-        {:error, handle_graphql_error("Daily Active Deposits", slug, error)}
-    end
+    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+      %{},
+      args,
+      %{source: %{metric: "active_deposits"}}
+    )
+    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :active_deposits)
   end
 
   def realized_value(

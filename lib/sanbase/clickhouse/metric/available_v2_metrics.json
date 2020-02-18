@@ -938,5 +938,48 @@
     "table": "distribution_deltas_5min",
     "has_incomplete_data": false,
     "data_type": "histogram"
+  },
+
+  {
+    "human_readable_name": "Active Deposits",
+    "name": "active_deposits",
+    "metric": "active_deposits",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": "free",
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+
+  {
+    "human_readable_name": "Active Withdrawals",
+    "name": "active_withdrawals",
+    "metric": "active_withdrawals",
+    "version": "2020-01-01",
+    "access": "restricted",
+    "min_plan": "free",
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+
+  {
+    "human_readable_name": "Withdrawal Transactions",
+    "name": "withdrawal_transactions",
+    "metric": "withdrawal_transactions",
+    "version": "2020-01-01",
+    "access": "restricted",
+    "min_plan": "free",
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"  
   }
+
 ]

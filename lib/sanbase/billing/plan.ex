@@ -6,7 +6,9 @@ defmodule Sanbase.Billing.Plan do
   """
   use Ecto.Schema
 
+  import Ecto.Query
   import Ecto.Changeset
+
   alias Sanbase.Repo
   alias Sanbase.Billing.{Product, Subscription}
 
@@ -23,13 +25,19 @@ defmodule Sanbase.Billing.Plan do
     field(:interval, :string)
     field(:stripe_id, :string)
 
+    # There might be still customers on this plan, but new subscriptions should be disabled.
+    field(:is_deprecated, :boolean, default: false)
+
+    # order first by `order` field, then by id
+    field(:order, :integer, default: 0)
+
     belongs_to(:product, Product)
     has_many(:subscriptions, Subscription, on_delete: :delete_all)
   end
 
   def changeset(%__MODULE__{} = plan, attrs \\ %{}) do
     plan
-    |> cast(attrs, [:amount, :name, :stripe_id])
+    |> cast(attrs, [:amount, :name, :stripe_id, :is_deprecated, :order])
   end
 
   def free_plan() do
@@ -68,9 +76,16 @@ defmodule Sanbase.Billing.Plan do
     product_with_plans =
       Product
       |> Repo.all()
-      |> Repo.preload(:plans)
+      |> Repo.preload(plans: from(p in __MODULE__, order_by: [desc: p.order, asc: p.id]))
 
     {:ok, product_with_plans}
+  end
+
+  def sync_plans_in_stripe() do
+    __MODULE__
+    |> Repo.all()
+    |> Repo.preload(:product)
+    |> Enum.each(&maybe_create_plan_in_stripe/1)
   end
 
   @doc """

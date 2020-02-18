@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     card_token = Map.get(args, :card_token)
     coupon = Map.get(args, :coupon)
 
-    with {:plan?, %Plan{} = plan} <- {:plan?, Plan.by_id(plan_id)},
+    with {:plan?, %Plan{is_deprecated: false} = plan} <- {:plan?, Plan.by_id(plan_id)},
          {:ok, subscription} <-
            Subscription.subscribe(current_user, plan, card_token, coupon) do
       {:ok, subscription}
@@ -54,7 +54,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
            {:subscription?, Subscription.by_id(subscription_id)},
          {:not_cancelled?, %Subscription{cancel_at_period_end: false}} <-
            {:not_cancelled?, subscription},
-         {:plan?, %Plan{} = new_plan} <- {:plan?, Plan.by_id(plan_id)},
+         {:plan?, %Plan{is_deprecated: false} = new_plan} <- {:plan?, Plan.by_id(plan_id)},
          {:ok, subscription} <- Subscription.update_subscription(subscription, new_plan) do
       {:ok, subscription}
     else

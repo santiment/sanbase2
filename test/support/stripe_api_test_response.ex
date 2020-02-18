@@ -35,7 +35,7 @@ defmodule Sanbase.StripeApiTestReponse do
        images: [],
        livemode: false,
        metadata: %{},
-       name: "SANapi",
+       name: "SanAPI",
        object: "product",
        package_dimensions: nil,
        shippable: nil,

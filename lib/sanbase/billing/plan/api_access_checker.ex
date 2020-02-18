@@ -10,26 +10,21 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
   @doc documentation_ref: "# DOCS access-plans/index.md"
 
   @free_plan_stats %{
-    api_calls_minute: 10,
     api_calls_month: 1000,
     historical_data_in_days: 3 * 30,
-    realtime_data_cut_off_in_days: 1
+    realtime_data_cut_off_in_days: 2
   }
 
   @basic_plan_stats %{
-    api_calls_minute: 60,
-    api_calls_month: 10_000,
-    historical_data_in_days: 3 * 365
+    api_calls_month: 100_000,
+    historical_data_in_days: 2 * 365
   }
 
   @pro_plan_stats %{
-    api_calls_minute: 120,
-    api_calls_month: 150_000,
-    historical_data_in_days: 7 * 365
+    api_calls_month: 300_000
   }
 
   @premium_plan_stats %{
-    api_calls_minute: 180,
     api_calls_month: 500_000
   }
 

@@ -25,7 +25,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     [user: user, conn: conn, project: project]
   end
 
-  describe "SANApi product, No subscription" do
+  describe "SanAPI product, No subscription" do
     test "can access FREE metrics for all time", context do
       {from, to} = from_to(2500, 0)
       metric = v2_free_metric(context.next_integer.())
@@ -90,8 +90,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "can access RESTRICTED metrics within 90 days and 1 day interval", context do
-      {from, to} = from_to(89, 2)
+    test "can access RESTRICTED metrics within 90 days and 2 day interval", context do
+      {from, to} = from_to(89, 3)
       metric = v2_restricted_metric(context.next_integer.())
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
@@ -101,8 +101,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "can access RESTRICTED queries within 90 days and 1 day interval", context do
-      {from, to} = from_to(89, 2)
+    test "can access RESTRICTED queries within 90 days and 2 day interval", context do
+      {from, to} = from_to(89, 3)
       query = daily_active_deposits_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "dailyActiveDeposits")
       contract = context.project.main_contract_address
@@ -115,7 +115,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
   end
 
-  describe "SANApi product, user with BASIC plan" do
+  describe "SanAPI product, user with BASIC plan" do
     setup context do
       insert(:subscription_essential, user: context.user)
       :ok
@@ -140,8 +140,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "can access RESTRICTED metrics for less than 3 years", context do
-      {from, to} = from_to(3 * 365 - 1, 3 * 365 - 2)
+    test "can access RESTRICTED metrics for less than 2 years", context do
+      {from, to} = from_to(2 * 365 - 1, 2 * 365 - 2)
       metric = v2_restricted_metric(context.next_integer.())
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
@@ -151,8 +151,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "can access RESTRICTED queries for less than 3 years", context do
-      {from, to} = from_to(3 * 365 - 1, 3 * 365 - 2)
+    test "can access RESTRICTED queries for less than 2 years", context do
+      {from, to} = from_to(2 * 365 - 1, 2 * 365 - 2)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
       contract = context.project.main_contract_address
@@ -161,8 +161,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "cannot access RESTRICTED queries for more than 3 years", context do
-      {from, to} = from_to(3 * 365 + 1, 3 * 365 - 1)
+    test "cannot access RESTRICTED queries for more than 2 years", context do
+      {from, to} = from_to(2 * 365 + 1, 2 * 365 - 1)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
       contract = context.project.main_contract_address
@@ -171,8 +171,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "cannot access RESTRICTED metrics for more than 3 years", context do
-      {from, to} = from_to(3 * 365 + 1, 3 * 365 - 1)
+    test "cannot access RESTRICTED metrics for more than 2 years", context do
+      {from, to} = from_to(2 * 365 + 1, 2 * 365 - 1)
       metric = v2_restricted_metric(context.next_integer.())
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
@@ -183,9 +183,9 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "cannot access RESTRICTED metrics for more than 3 years - both params outside allowed",
+    test "cannot access RESTRICTED metrics for more than 2 years - both params outside allowed",
          context do
-      {from, to} = from_to(3 * 365 - 10, 3 * 365 - 2)
+      {from, to} = from_to(2 * 365 - 10, 2 * 365 - 2)
       metric = v2_restricted_metric(context.next_integer.())
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
@@ -217,7 +217,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
   end
 
-  describe "SANApi product, user with PRO plan" do
+  describe "SanAPI product, user with PRO plan" do
     setup context do
       insert(:subscription_pro, user: context.user)
       :ok
@@ -263,25 +263,24 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "cannot access RESTRICTED metrics for over 7 years", context do
+    test "can access RESTRICTED metrics for over 7 years", context do
       {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)
       metric = v2_restricted_metric(context.next_integer.())
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
-      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
-      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
 
-    test "cannot access RESTRICTED queries for more than 7 years", context do
+    test "can access RESTRICTED queries for more than 7 years", context do
       {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
       contract = context.project.main_contract_address
 
-      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
+      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
       assert result != nil
     end
 
@@ -307,7 +306,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
   end
 
-  describe "SANApi product, user with PREMIUM plan" do
+  describe "SanAPI product, user with PREMIUM plan" do
     setup context do
       insert(:subscription_premium, user: context.user)
       :ok

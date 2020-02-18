@@ -301,7 +301,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
   end
 
-  describe "for SANapi when signals limit reached" do
+  describe "for SanAPI when signals limit reached" do
     setup_with_mocks([
       {UserTrigger, [:passthrough], [triggers_count_for: fn _ -> @triggers_limit_count end]}
     ]) do

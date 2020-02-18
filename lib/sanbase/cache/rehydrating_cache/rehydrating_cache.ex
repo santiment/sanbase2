@@ -13,7 +13,12 @@ defmodule Sanbase.Cache.RehydratingCache do
   """
   use GenServer
 
+  alias Sanbase.Cache.RehydratingCache.Store
+
   @name :__rehydrating_cache__
+  @store_name Store.name(@name)
+
+  def name(), do: @name
 
   @run_interval 15_000
   @purge_timeout_interval 30_000
@@ -55,7 +60,6 @@ defmodule Sanbase.Cache.RehydratingCache do
       init_time: Timex.now(),
       task_supervisor: Keyword.fetch!(opts, :task_supervisor),
       functions: functions,
-      store: %{},
       progress: %{},
       waiting: %{}
     }
@@ -96,7 +100,16 @@ defmodule Sanbase.Cache.RehydratingCache do
           {:ok, any()} | {:error, :timeout} | {:error, :not_registered}
   def get(key, timeout \\ 30_000) when is_integer(timeout) and timeout > 0 do
     try do
-      GenServer.call(@name, {:get, key, timeout}, timeout)
+      case Store.get(@store_name, key) do
+        nil ->
+          GenServer.call(@name, {:get, key, timeout}, timeout)
+
+        {:ok, value, _datetime_stored_at} ->
+          {:ok, value}
+
+        data ->
+          data
+      end
     catch
       :exit, {:timeout, _} ->
         {:error, :timeout}
@@ -117,7 +130,7 @@ defmodule Sanbase.Cache.RehydratingCache do
     #    re-register the function and add the caller to the wait list
     # 4. None of the above - the key has not been registered
     tuple = %{
-      value: Map.get(state.store, key),
+      value: Store.get(@store_name, key),
       progress: Map.get(state.progress, key),
       function: Map.get(state.functions, key)
     }
@@ -164,8 +177,8 @@ defmodule Sanbase.Cache.RehydratingCache do
   end
 
   def handle_info({:store_result, fun_map, result}, state) do
-    %{progress: progress, waiting: waiting, store: store} = state
-    %{key: key, refresh_time_delta: refresh_time_delta} = fun_map
+    %{progress: progress, waiting: waiting} = state
+    %{key: key, refresh_time_delta: refresh_time_delta, ttl: ttl} = fun_map
 
     now_unix = Timex.now() |> DateTime.to_unix()
 
@@ -183,9 +196,9 @@ defmodule Sanbase.Cache.RehydratingCache do
         reply_to_waiting(reply_to_list, {:ok, value})
 
         new_progress = Map.put(progress, key, now_unix)
-        new_store = Map.put(store, key, {:ok, value, Timex.now()})
+        Store.put(@store_name, key, {:ok, value, Timex.now()}, ttl)
 
-        {:noreply, %{state | store: new_store, progress: new_progress, waiting: new_waiting}}
+        {:noreply, %{state | progress: new_progress, waiting: new_waiting}}
 
       # Put the value in the store. Send the result to the waiting callers.
       {:ok, value} ->
@@ -193,21 +206,21 @@ defmodule Sanbase.Cache.RehydratingCache do
         reply_to_waiting(reply_to_list, {:ok, value})
 
         new_progress = Map.put(progress, key, now_unix + refresh_time_delta)
-        new_store = Map.put(store, key, {:ok, value, Timex.now()})
+        Store.put(@store_name, key, {:ok, value, Timex.now()}, ttl)
 
-        {:noreply, %{state | store: new_store, progress: new_progress, waiting: new_waiting}}
+        {:noreply, %{state | progress: new_progress, waiting: new_waiting}}
 
       # The function returned malformed result. Send error to the waiting callers.
       # De-register the function.
       _ ->
         new_progress = Map.put(progress, key, now_unix + refresh_time_delta)
         result = {:error, :malformed_result}
-        new_store = Map.put(store, key, {result, Timex.now()})
+        Store.put(@store_name, key, {result, Timex.now()}, ttl)
 
         {reply_to_list, new_waiting} = Map.pop(waiting, key, [])
         reply_to_waiting(reply_to_list, result)
 
-        {:noreply, %{state | store: new_store, progress: new_progress, waiting: new_waiting}}
+        {:noreply, %{state | progress: new_progress, waiting: new_waiting}}
     end
   end
 

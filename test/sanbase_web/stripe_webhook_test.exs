@@ -444,7 +444,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
                 "object": "line_item",
                 "amount": 11900,
                 "currency": "usd",
-                "description": "1 × SANapi (at $119.00 / month)",
+                "description": "1 × SanAPI (at $119.00 / month)",
                 "discountable": true,
                 "livemode": false,
                 "metadata": {

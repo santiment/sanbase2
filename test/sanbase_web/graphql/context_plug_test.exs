@@ -208,7 +208,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
       assert conn_context.product_id == Product.product_sanbase()
     end
 
-    test "when no authorization and other Origin - product is SANApi" do
+    test "when no authorization and other Origin - product is SanAPI" do
       conn = ContextPlug.call(build_conn(), %{})
 
       conn_context = conn.private.absinthe.context
@@ -243,7 +243,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
       assert conn_context.product_id == Product.product_sanbase()
     end
 
-    test "when Apikey and other User-Agent - product is SANApi" do
+    test "when Apikey and other User-Agent - product is SanAPI" do
       user = insert(:user)
       {:ok, apikey} = Apikey.generate_apikey(user)
 

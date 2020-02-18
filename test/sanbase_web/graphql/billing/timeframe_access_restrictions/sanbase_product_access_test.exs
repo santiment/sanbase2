@@ -13,8 +13,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
 
   setup_with_mocks([
     {Sanbase.Price, [], [timeseries_data: fn _, _, _, _ -> price_resp() end]},
-    {Sanbase.Clickhouse.DailyActiveDeposits, [],
-     [active_deposits: fn _, _, _, _ -> daily_active_deposits_resp() end]},
     {Sanbase.Clickhouse.NetworkGrowth, [],
      [network_growth: fn _, _, _, _ -> network_growth_resp() end]},
     {Metric, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> metric_resp() end]},
@@ -151,13 +149,11 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       from = Timex.shift(Timex.now(), days: -(5 * 365 - 1))
       to = Timex.now()
       slug = context.project.slug
-      query = daily_active_deposits_query(slug, from, to)
-      result = execute_query(context.conn, query, "dailyActiveDeposits")
+      query = network_growth_query(slug, from, to)
+      result = execute_query(context.conn, query, "networkGrowth")
       contract = context.project.main_contract_address
 
-      assert_called(
-        Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(contract, from, to, :_)
-      )
+      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
 
       assert result != nil
     end
@@ -166,14 +162,11 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       insert(:subscription_premium, user: context.user)
       {from, to} = from_to(18 * 30 + 1, 0)
       slug = context.project.slug
-      query = daily_active_deposits_query(slug, from, to)
-      result = execute_query(context.conn, query, "dailyActiveDeposits")
+      query = network_growth_query(slug, from, to)
+      result = execute_query(context.conn, query, "networkGrowth")
       contract = context.project.main_contract_address
 
-      assert_called(
-        Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(contract, from, to, :_)
-      )
-
+      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
       assert result != nil
     end
   end
@@ -250,28 +243,22 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "cannot access RESTRICTED queries for more than 5 years", context do
       {from, to} = from_to(5 * 365 + 1, 10)
       slug = context.project.slug
-      query = daily_active_deposits_query(slug, from, to)
-      result = execute_query(context.conn, query, "dailyActiveDeposits")
+      query = network_growth_query(slug, from, to)
+      result = execute_query(context.conn, query, "networkGrowth")
       contract = context.project.main_contract_address
 
-      refute called(
-               Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(contract, from, to, :_)
-             )
-
+      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
       assert result != nil
     end
 
     test "can access RESTRICTED queries for less than 5 years", context do
       {from, to} = from_to(5 * 365 - 1, 10)
       slug = context.project.slug
-      query = daily_active_deposits_query(slug, from, to)
-      result = execute_query(context.conn, query, "dailyActiveDeposits")
+      query = network_growth_query(slug, from, to)
+      result = execute_query(context.conn, query, "networkGrowth")
       contract = context.project.main_contract_address
 
-      assert_called(
-        Sanbase.Clickhouse.DailyActiveDeposits.active_deposits(contract, from, to, :_)
-      )
-
+      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
       assert result != nil
     end
   end
@@ -374,17 +361,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     """
   end
 
-  defp daily_active_deposits_query(slug, from, to) do
-    """
-      {
-        dailyActiveDeposits(slug: "#{slug}", from: "#{from}", to: "#{to}", interval: "1d"){
-          datetime
-          activeDeposits
-        }
-      }
-    """
-  end
-
   defp network_growth_query(slug, from, to) do
     """
       {
@@ -412,14 +388,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
      [
        %{value: 10.0, datetime: ~U[2019-01-01 00:00:00Z]},
        %{value: 20.0, datetime: ~U[2019-01-02 00:00:00Z]}
-     ]}
-  end
-
-  defp daily_active_deposits_resp() do
-    {:ok,
-     [
-       %{active_deposits: 1, datetime: ~U[2019-01-01 00:00:00Z]},
-       %{active_deposits: 2, datetime: ~U[2019-01-02 00:00:00Z]}
      ]}
   end
 

@@ -1,7 +1,8 @@
 defmodule Sanbase.Cache do
   @behaviour Sanbase.Cache.Behaviour
   @cache_name :sanbase_cache
-  @max_cache_ttl 300
+  @max_cache_ttl 84600
+
   def name, do: @cache_name
 
   @impl Sanbase.Cache.Behaviour
@@ -84,7 +85,7 @@ defmodule Sanbase.Cache do
     end
   end
 
-  defp cache_item(cache, {_, ttl} = key, value) when is_integer(ttl) and ttl <= @max_cache_ttl do
+  defp cache_item(cache, {key, ttl}, value) when is_integer(ttl) and ttl <= @max_cache_ttl do
     ConCache.put(cache, key, %ConCache.Item{value: value, ttl: :timer.seconds(ttl)})
   end
 

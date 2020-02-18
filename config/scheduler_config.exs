@@ -56,6 +56,10 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
   global: true,
   timeout: 30_000,
   jobs: [
+    sync_plans_in_stripe: [
+      schedule: "@reboot",
+      task: {Sanbase.Billing.Plan, :sync_plans_in_stripe, []}
+    ],
     sync_stripe_subscriptions: [
       schedule: "2-59/5 * * * *",
       task: {Sanbase.Billing.Subscription, :sync_all, []}

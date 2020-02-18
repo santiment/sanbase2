@@ -175,14 +175,17 @@ defmodule Sanbase.Cache.RehydratingCache do
         new_progress = Map.put(progress, key, now_unix)
         {:noreply, %{state | progress: new_progress}}
 
+      # Store the result but let it be reevaluated immediately on the next run.
+      # This is to not calculate a function that always returns :nocache on
+      # every run.
       {:nocache, {:ok, value}} ->
-        # Do not put the value in the store. Send the result to the waiting callers.
         {reply_to_list, new_waiting} = Map.pop(waiting, key, [])
         reply_to_waiting(reply_to_list, {:ok, value})
 
-        new_progress = Map.put(progress, key, now_unix + refresh_time_delta)
+        new_progress = Map.put(progress, key, now_unix)
+        new_store = Map.put(store, key, {:ok, value, Timex.now()})
 
-        {:noreply, %{state | progress: new_progress, waiting: new_waiting}}
+        {:noreply, %{state | store: new_store, progress: new_progress, waiting: new_waiting}}
 
       # Put the value in the store. Send the result to the waiting callers.
       {:ok, value} ->

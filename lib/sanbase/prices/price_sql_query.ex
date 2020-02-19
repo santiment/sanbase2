@@ -401,6 +401,7 @@ defmodule Sanbase.Price.SqlQuery do
   defp timerange_parameters(from, to, interval \\ nil)
 
   defp timerange_parameters(from, to, nil) do
+    to = Enum.min_by([to, Timex.now()], &DateTime.to_unix/1)
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
 

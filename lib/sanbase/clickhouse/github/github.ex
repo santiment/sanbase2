@@ -300,6 +300,7 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   defp dev_activity_contributors_count_query(organizations, from, to, interval) do
+    to = Enum.min_by([to, Timex.now()], &DateTime.to_unix/1)
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
     interval = Sanbase.DateTimeUtils.str_to_sec(interval)
@@ -341,6 +342,7 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   defp github_activity_contributors_count_query(organizations, from, to, interval) do
+    to = Enum.min_by([to, Timex.now()], &DateTime.to_unix/1)
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
     interval = Sanbase.DateTimeUtils.str_to_sec(interval)
@@ -380,6 +382,7 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   defp dev_activity_query(organizations, from, to, interval) do
+    to = Enum.min_by([to, Timex.now()], &DateTime.to_unix/1)
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
     span = div(to_unix - from_unix, interval) |> max(1)
@@ -401,7 +404,7 @@ defmodule Sanbase.Clickhouse.Github do
             PREWHERE
               owner IN (?3)
             AND dt >= toDateTime(?4)
-            AND dt <= toDateTime(?5)
+            AND dt < toDateTime(?5)
             AND event NOT IN (?6)
             GROUP BY owner, repo, dt, event
           )
@@ -424,6 +427,7 @@ defmodule Sanbase.Clickhouse.Github do
   end
 
   defp github_activity_query(organizations, from, to, interval) do
+    to = Enum.min_by([to, Timex.now()], &DateTime.to_unix/1)
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
     span = div(to_unix - from_unix, interval) |> max(1)

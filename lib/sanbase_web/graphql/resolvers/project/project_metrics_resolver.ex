@@ -38,7 +38,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   defp maybe_register_and_get(cache_key, fun, slug, query, attempts \\ 5)
 
   defp maybe_register_and_get(_cache_key, _fun, slug, query, 0) do
-    handle_graphql_error(query, slug, "timeout")
+    {:error, handle_graphql_error(query, slug, "timeout")}
   end
 
   defp maybe_register_and_get(cache_key, fun, slug, query, attempts) do

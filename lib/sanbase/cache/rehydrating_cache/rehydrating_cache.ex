@@ -20,7 +20,7 @@ defmodule Sanbase.Cache.RehydratingCache do
 
   def name(), do: @name
 
-  @run_interval 15_000
+  @run_interval 10_000
   @purge_timeout_interval 30_000
 
   defguard are_proper_function_arguments(fun, ttl, refresh_time_delta)
@@ -30,36 +30,16 @@ defmodule Sanbase.Cache.RehydratingCache do
 
   @doc ~s"""
   Start the self rehydrating cache service.
-
-  Options:
-    functions: A list of function descriptions. A function description is a
-    map with the following keys:
-      - function: Anonymous 0-arity function that computes the value
-      - key: The key the computed value will be associated with
-      - ttl: The maximal time the value will be stored for in seconds
-      - refresh_time_delta: A number of seconds strictly smaller than ttl. Every
-      refresh_time_delta seconds the cache will be recomputed and stored again.
-      The count for ttl starts from 0 again when value is recomputed.
   """
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: @name)
   end
 
   def init(opts) do
-    functions =
-      Keyword.get(opts, :functions, %{})
-      |> Enum.into(
-        %{},
-        fn %{key: key, ttl: ttl, refresh_time_delta: refresh_time_delta, function: fun} = fun_map
-           when are_proper_function_arguments(fun, ttl, refresh_time_delta) ->
-          {key, fun_map}
-        end
-      )
-
     initial_state = %{
       init_time: Timex.now(),
       task_supervisor: Keyword.fetch!(opts, :task_supervisor),
-      functions: functions,
+      functions: %{},
       progress: %{},
       waiting: %{}
     }
@@ -87,8 +67,7 @@ defmodule Sanbase.Cache.RehydratingCache do
       key: key,
       ttl: ttl,
       refresh_time_delta: refresh_time_delta,
-      description: description,
-      registered_at: Timex.now()
+      description: description
     }
 
     GenServer.call(@name, {:register_function, map})
@@ -185,7 +164,7 @@ defmodule Sanbase.Cache.RehydratingCache do
   end
 
   def handle_info({:store_result, fun_map, result}, state) do
-    %{progress: progress, waiting: waiting} = state
+    %{progress: progress, waiting: waiting, functions: functions} = state
     %{key: key, refresh_time_delta: refresh_time_delta, ttl: ttl} = fun_map
 
     now_unix = Timex.now() |> DateTime.to_unix()
@@ -203,23 +182,28 @@ defmodule Sanbase.Cache.RehydratingCache do
         {reply_to_list, new_waiting} = Map.pop(waiting, key, [])
         reply_to_waiting(reply_to_list, {:ok, value})
 
+        new_fun_map = Map.update(fun_map, :nocache_refresh_count, 1, &(&1 + 1))
+        new_functions = Map.put(functions, key, new_fun_map)
         new_progress = Map.put(progress, key, now_unix)
         Store.put(@store_name, key, {:ok, value, Timex.now()}, ttl)
 
-        {:noreply, %{state | progress: new_progress, waiting: new_waiting}}
+        {:noreply,
+         %{state | progress: new_progress, waiting: new_waiting, functions: new_functions}}
 
       # Put the value in the store. Send the result to the waiting callers.
       {:ok, value} ->
         {reply_to_list, new_waiting} = Map.pop(waiting, key, [])
         reply_to_waiting(reply_to_list, {:ok, value})
 
+        new_fun_map = Map.update(fun_map, :refresh_count, 1, &(&1 + 1))
+        new_functions = Map.put(functions, key, new_fun_map)
         new_progress = Map.put(progress, key, now_unix + refresh_time_delta)
         Store.put(@store_name, key, {:ok, value, Timex.now()}, ttl)
 
-        {:noreply, %{state | progress: new_progress, waiting: new_waiting}}
+        {:noreply,
+         %{state | progress: new_progress, waiting: new_waiting, functions: new_functions}}
 
       # The function returned malformed result. Send error to the waiting callers.
-      # De-register the function.
       _ ->
         new_progress = Map.put(progress, key, now_unix + refresh_time_delta)
         result = {:error, :malformed_result}
@@ -247,6 +231,15 @@ defmodule Sanbase.Cache.RehydratingCache do
 
   defp do_register_function(state, fun_map) do
     %{key: key} = fun_map
+
+    fun_map =
+      fun_map
+      |> Map.merge(%{
+        registered_at: Timex.now(),
+        refresh_count: 0,
+        nocache_refresh_count: 0
+      })
+
     _task = run_function(self(), fun_map, state.task_supervisor)
 
     new_progress = Map.put(state.progress, key, :in_progress)

@@ -30,36 +30,16 @@ defmodule Sanbase.Cache.RehydratingCache do
 
   @doc ~s"""
   Start the self rehydrating cache service.
-
-  Options:
-    functions: A list of function descriptions. A function description is a
-    map with the following keys:
-      - function: Anonymous 0-arity function that computes the value
-      - key: The key the computed value will be associated with
-      - ttl: The maximal time the value will be stored for in seconds
-      - refresh_time_delta: A number of seconds strictly smaller than ttl. Every
-      refresh_time_delta seconds the cache will be recomputed and stored again.
-      The count for ttl starts from 0 again when value is recomputed.
   """
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: @name)
   end
 
   def init(opts) do
-    functions =
-      Keyword.get(opts, :functions, %{})
-      |> Enum.into(
-        %{},
-        fn %{key: key, ttl: ttl, refresh_time_delta: refresh_time_delta, function: fun} = fun_map
-           when are_proper_function_arguments(fun, ttl, refresh_time_delta) ->
-          {key, fun_map}
-        end
-      )
-
     initial_state = %{
       init_time: Timex.now(),
       task_supervisor: Keyword.fetch!(opts, :task_supervisor),
-      functions: functions,
+      functions: %{},
       progress: %{},
       waiting: %{}
     }

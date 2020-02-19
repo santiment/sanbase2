@@ -87,7 +87,8 @@ defmodule Sanbase.Cache.RehydratingCache do
       key: key,
       ttl: ttl,
       refresh_time_delta: refresh_time_delta,
-      description: description
+      description: description,
+      registered_at: Timex.now()
     }
 
     GenServer.call(@name, {:register_function, map})

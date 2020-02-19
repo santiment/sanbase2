@@ -161,7 +161,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
       asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?2 )
     """
 
-    args = [metric, slug]
+    args = [Map.get(@name_to_metric_map, metric), slug]
     {query, args}
   end
 

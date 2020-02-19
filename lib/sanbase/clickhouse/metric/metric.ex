@@ -174,7 +174,7 @@ defmodule Sanbase.Clickhouse.Metric do
   def available_slugs(), do: get_available_slugs()
 
   @impl Sanbase.Metric.Behaviour
-  def available_slugs(_metric), do: get_available_slugs()
+  def available_slugs(metric), do: get_available_slugs(metric)
 
   @impl Sanbase.Metric.Behaviour
   def available_aggregations(), do: @aggregations
@@ -207,7 +207,13 @@ defmodule Sanbase.Clickhouse.Metric do
     # NOTE: Fetch the metrics from the daily_metrics_v2 only for performance reasons
     # currently searching in the intraday and distributions tables does not
     # add slugs that are not present in the daily metrics
-    {query, args} = available_slugs_query("daily_metrics_v2")
+    {query, args} = available_slugs_in_table_query("daily_metrics_v2")
+
+    ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
+  end
+
+  defp get_available_slugs(metric) do
+    {query, args} = available_slugs_for_metric_query(metric)
 
     ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
   end

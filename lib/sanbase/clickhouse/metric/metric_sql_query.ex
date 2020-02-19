@@ -138,7 +138,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     {query, args}
   end
 
-  def available_slugs_query(table) do
+  def available_slugs_in_table_query(table) do
     query = """
     SELECT name
     FROM asset_metadata
@@ -148,6 +148,22 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     """
 
     args = []
+
+    {query, args}
+  end
+
+  def available_slugs_for_metric_query(metric) do
+    query = """
+    SELECT name
+    FROM asset_metadata
+    PREWHERE asset_id in (
+      SELECT asset_id
+      FROM #{Map.get(@table_map, metric)}
+      PREWHERE metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = ?1 )
+    )
+    """
+
+    args = [Map.get(@name_to_metric_map, metric)]
 
     {query, args}
   end

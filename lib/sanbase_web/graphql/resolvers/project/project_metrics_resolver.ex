@@ -48,7 +48,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
 
       {:error, :not_registered} ->
         refresh_time_delta = @refresh_time_delta + :rand.uniform(@refresh_time_max_offset)
-        RehydratingCache.register_function(fun, cache_key, @ttl, refresh_time_delta)
+        description = "#{query} for #{slug} from project metrics resolver"
+        RehydratingCache.register_function(fun, cache_key, @ttl, refresh_time_delta, description)
 
         maybe_register_and_get(cache_key, fun, slug, query, attempts - 1)
 

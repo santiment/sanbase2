@@ -80,9 +80,17 @@ defmodule Sanbase.Cache.RehydratingCache do
   """
   @spec register_function((() -> any()), any(), pos_integer(), pos_integer()) ::
           :ok | {:error, :already_registered}
-  def register_function(fun, key, ttl, refresh_time_delta)
+  def register_function(fun, key, ttl, refresh_time_delta, description \\ nil)
       when are_proper_function_arguments(fun, ttl, refresh_time_delta) do
-    map = %{function: fun, key: key, ttl: ttl, refresh_time_delta: refresh_time_delta}
+    map = %{
+      function: fun,
+      key: key,
+      ttl: ttl,
+      refresh_time_delta: refresh_time_delta,
+      description: description,
+      registered_at: Timex.now()
+    }
+
     GenServer.call(@name, {:register_function, map})
   end
 

@@ -235,19 +235,24 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   end
 
   defp bearer_authorize(token) do
-    case SanbaseWeb.Guardian.resource_from_token(token) do
-      {:ok, %User{salt: salt} = user, %{"salt" => salt}} ->
-        {:ok, user}
+    Sanbase.Cache.get_or_store(
+      {__MODULE__, :bearer_authorize, token} |> :erlang.phash2(),
+      fn ->
+        case SanbaseWeb.Guardian.resource_from_token(token) do
+          {:ok, %User{salt: salt} = user, %{"salt" => salt}} ->
+            {:ok, user}
 
-      {:error, :token_expired} ->
-        %{permissions: User.Permissions.no_permissions()}
+          {:error, :token_expired} ->
+            %{permissions: User.Permissions.no_permissions()}
 
-      {:error, :invalid_token} ->
-        %{permissions: User.Permissions.no_permissions()}
+          {:error, :invalid_token} ->
+            %{permissions: User.Permissions.no_permissions()}
 
-      _ ->
-        {:error, "Invalid JSON Web Token (JWT)"}
-    end
+          _ ->
+            {:error, "Invalid JSON Web Token (JWT)"}
+        end
+      end
+    )
   end
 
   defp basic_authorize(auth_attempt) do
@@ -265,7 +270,10 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   end
 
   defp apikey_authorize(apikey) do
-    Sanbase.Auth.Apikey.apikey_to_user(apikey)
+    Sanbase.Cache.get_or_store(
+      {__MODULE__, :apikey_authorize, apikey} |> :erlang.phash2(),
+      fn -> Sanbase.Auth.Apikey.apikey_to_user(apikey) end
+    )
   end
 
   defp san_balance(%User{} = user) do

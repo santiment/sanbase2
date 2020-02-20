@@ -7,7 +7,6 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   JSON Web Token (JWT) and apikey are the supported credential mechanisms.
   - Inject the permissions for the logged in or anonymous user. The permissions
   are a simple map that marks if the user has access to historical and realtime data
-  - Inject the cache key for the query in the context.
   """
 
   @behaviour Plug

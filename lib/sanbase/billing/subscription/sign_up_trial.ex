@@ -25,7 +25,8 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
   @free_trial_plans [Plan.Metadata.sanbase_pro()]
 
   @templates %{
-    sent_welcome_email: "sanbase-post-registration"
+    sent_welcome_email: "sanbase-post-registration",
+    sent_trial_will_end_email: "trial-three-days-before-end"
   }
 
   schema "sign_up_trials" do

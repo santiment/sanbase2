@@ -25,6 +25,19 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
       assert metadata["defaultAggregation"] in aggregations
       assert metadata["minInterval"] in ["1m", "5m", "1d"]
       assert metadata["dataType"] in ["TIMESERIES", "HISTOGRAM"]
+      assert metadata["isRestricted"] in [true, false]
+
+      assert is_nil(metadata["restrictedFrom"]) or
+               match?(
+                 %DateTime{},
+                 metadata["restrictedFrom"] |> Sanbase.DateTimeUtils.from_iso8601!()
+               )
+
+      assert is_nil(metadata["restrictedTo"]) or
+               match?(
+                 %DateTime{},
+                 metadata["restrictedTo"] |> Sanbase.DateTimeUtils.from_iso8601!()
+               )
     end
   end
 
@@ -53,6 +66,9 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
           defaultAggregation
           dataType
           metric
+          isRestricted
+          restrictedFrom
+          restrictedTo
         }
       }
     }

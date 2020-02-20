@@ -6,7 +6,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
       }) do
     subscription = context[:auth][:subscription] || Subscription.free_subscription()
 
-    restrictions = Sanbase.Billing.Plan.Restrictions.get(subscription, product_id)
+    restrictions = Sanbase.Billing.Plan.Restrictions.get_all(subscription, product_id)
 
     {:ok, restrictions}
   end

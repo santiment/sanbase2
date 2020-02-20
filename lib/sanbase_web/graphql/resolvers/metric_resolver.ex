@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3, handle_graphql_error: 4]
 
   alias Sanbase.Metric
+  alias Sanbase.Billing.Plan.Restrictions
 
   require Logger
 
@@ -22,10 +23,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   def get_available_slugs(_root, _args, %{source: %{metric: metric}}),
     do: Metric.available_slugs(metric)
 
-  def get_metadata(%{}, _args, %{source: %{metric: metric}}) do
+  def get_metadata(%{}, _args, %{source: %{metric: metric}} = resolution) do
+    %{context: %{product_id: product_id, auth: %{subscription: subscription}}} = resolution
+
     case Metric.metadata(metric) do
       {:ok, metadata} ->
-        {:ok, metadata}
+        access_restrictions = Restrictions.get({:metric, metric}, subscription, product_id)
+        {:ok, Map.merge(access_restrictions, metadata)}
 
       {:error, error} ->
         {:error, handle_graphql_error("metadata", metric, error, description: "metric")}

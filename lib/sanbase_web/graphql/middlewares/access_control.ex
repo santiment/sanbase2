@@ -54,9 +54,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
       |> String.to_existing_atom()
       |> get_query(resolution.source)
 
-    context =
-      context
-      |> Map.put(:__query_atom_name__, query_atom_name)
+    context = context |> Map.put(:__query_atom_name__, query_atom_name)
 
     %Resolution{resolution | context: context}
   end

@@ -82,6 +82,12 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:available_aggregations, list_of(:aggregation))
 
     field(:data_type, :metric_data_type)
+
+    field(:is_restricted, :boolean)
+
+    field(:restricted_from, :datetime)
+
+    field(:restricted_to, :datetime)
   end
 
   object :metric do

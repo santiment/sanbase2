@@ -28,7 +28,9 @@ defmodule Sanbase.Billing.Plan.CustomAccess do
 
   # MVRV and RV metrics from the schema and from Clickhouse
   @metric %{
-    metric_name: [:mvrv_ratio, :realized_value] ++ mvrv_metrics() ++ realized_value_metrics(),
+    metric_name:
+      [{:query, :mvrv_ratio}, {:query, :realized_value}] ++
+        mvrv_metrics() ++ realized_value_metrics(),
     plan_access: %{
       free: %{realtime_data_cut_off_in_days: 30, historical_data_in_days: 365},
       basic: %{realtime_data_cut_off_in_days: 14, historical_data_in_days: 2 * 365}
@@ -37,7 +39,8 @@ defmodule Sanbase.Billing.Plan.CustomAccess do
 
   # Token age consumed metrics from the shcme and from Clickhouse
   @metric %{
-    metric_name: [:token_age_consumed, :burn_rate] ++ token_age_consumed_metrics(),
+    metric_name:
+      [{:query, :token_age_consumed}, {:query, :burn_rate}] ++ token_age_consumed_metrics(),
     plan_access: %{
       free: %{realtime_data_cut_off_in_days: 30}
     }

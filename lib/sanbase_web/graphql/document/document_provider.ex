@@ -66,14 +66,20 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do
 
   @spec run(Absinthe.Blueprint.t(), Keyword.t()) :: Absinthe.Phase.result_t()
   def run(bp_root, _) do
-    permissions = bp_root.execution.context.permissions
+    context = bp_root.execution.context
+
+    # Add keys that can affect the data the user can have access to
+    additional_keys_hash =
+      {context.permissions, context.product_id, context.auth.subscription, context.auth.plan,
+       context.auth.auth_method}
+      |> :erlang.phash2()
 
     cache_key =
       SanbaseWeb.Graphql.Cache.cache_key(
-        {"bp_root", permissions},
+        {"bp_root", additional_keys_hash},
         santize_blueprint(bp_root),
         ttl: 120,
-        max_ttl_offset: 90
+        max_ttl_offset: 120
       )
 
     bp_root = add_cache_key_to_blueprint(bp_root, cache_key)

@@ -41,10 +41,24 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:value, :float)
   end
 
+  object :datetime_range_float_value_list do
+    field(:data, list_of(:datetime_range_float_value))
+  end
+
+  object :datetime_range_float_value do
+    field(:range, list_of(:datetime))
+    field(:value, :float)
+  end
+
   union :value_list do
     description("Type Parameterized Array")
 
-    types([:string_list, :float_list, :float_range_float_value_list])
+    types([
+      :string_list,
+      :float_list,
+      :float_range_float_value_list,
+      :datetime_range_float_value_list
+    ])
 
     resolve_type(fn
       %{data: [value | _]}, _ when is_number(value) ->
@@ -55,6 +69,9 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
       %{data: [%{range: [r | _], value: f} | _]}, _ when is_float(r) and is_float(f) ->
         :float_range_float_value_list
+
+      %{data: [%{range: [%DateTime{} | _], value: f} | _]}, _ when is_float(f) ->
+        :datetime_range_float_value_list
 
       %{data: []}, _ ->
         :float_list

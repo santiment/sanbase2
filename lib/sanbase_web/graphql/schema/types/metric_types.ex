@@ -9,6 +9,16 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
 
+  enum :selector_name do
+    value(:slug)
+    value(:word)
+  end
+
+  enum :metric_data_type do
+    value(:timeseries)
+    value(:histogram)
+  end
+
   object :metric_data do
     field(:datetime, non_null(:datetime))
     field(:value, :float)
@@ -81,6 +91,8 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     """
     field(:available_aggregations, list_of(:aggregation))
 
+    field(:available_selectors, list_of(:selector_name))
+
     field(:data_type, :metric_data_type)
 
     field(:is_restricted, :boolean)
@@ -88,6 +100,11 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:restricted_from, :datetime)
 
     field(:restricted_to, :datetime)
+  end
+
+  input_object :metric_target_selector_input_object do
+    field(:slug, :string)
+    field(:word, :string)
   end
 
   object :metric do
@@ -114,7 +131,8 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     the incomplete gives more timely signal.
     """
     field :timeseries_data, list_of(:metric_data) do
-      arg(:slug, non_null(:string))
+      arg(:slug, :string)
+      arg(:selector, :metric_target_selector_input_object)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :interval, default_value: "1d")
@@ -128,7 +146,8 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     end
 
     field :aggregated_timeseries_data, :float do
-      arg(:slug, non_null(:string))
+      arg(:slug, :string)
+      arg(:selector, :metric_target_selector_input_object)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:aggregation, :aggregation, default_value: nil)
@@ -140,7 +159,8 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     end
 
     field :histogram_data, :histogram_data do
-      arg(:slug, non_null(:string))
+      arg(:slug, :string)
+      arg(:selector, :metric_target_selector_input_object)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :interval, default_value: "1d")
@@ -153,22 +173,19 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     end
 
     field :available_since, :datetime do
-      arg(:slug, non_null(:string))
+      arg(:slug, :string)
+      arg(:selector, :metric_target_selector_input_object)
       cache_resolve(&MetricResolver.available_since/3)
     end
 
     field :last_datetime_computed_at, :datetime do
-      arg(:slug, non_null(:string))
+      arg(:slug, :string)
+      arg(:selector, :metric_target_selector_input_object)
       cache_resolve(&MetricResolver.last_datetime_computed_at/3)
     end
 
     field :metadata, :metric_metadata do
       cache_resolve(&MetricResolver.get_metadata/3)
     end
-  end
-
-  enum :metric_data_type do
-    value(:timeseries)
-    value(:histogram)
   end
 end

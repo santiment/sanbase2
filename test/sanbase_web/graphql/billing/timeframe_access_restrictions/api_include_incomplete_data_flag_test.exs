@@ -35,10 +35,17 @@ defmodule Sanbase.Billing.ApiIncludeIncompleteDataFlagTest do
     query = metric_query(metric, project.slug, from, to, interval, false)
     execute_query(conn, query, "getMetric")
 
-    refute called(Metric.timeseries_data(metric, project.slug, from, to, interval, :_))
+    refute called(Metric.timeseries_data(metric, %{slug: project.slug}, from, to, interval, :_))
 
     assert called(
-             Metric.timeseries_data(metric, project.slug, from, beginning_of_day, interval, :_)
+             Metric.timeseries_data(
+               metric,
+               %{slug: project.slug},
+               from,
+               beginning_of_day,
+               interval,
+               :_
+             )
            )
   end
 
@@ -53,10 +60,17 @@ defmodule Sanbase.Billing.ApiIncludeIncompleteDataFlagTest do
     query = metric_query(metric, project.slug, from, to, interval, true)
     execute_query(conn, query, "getMetric")
 
-    assert called(Metric.timeseries_data(metric, project.slug, from, to, interval, :_))
+    assert called(Metric.timeseries_data(metric, %{slug: project.slug}, from, to, interval, :_))
 
     refute called(
-             Metric.timeseries_data(metric, project.slug, from, beginning_of_day, interval, :_)
+             Metric.timeseries_data(
+               metric,
+               %{slug: project.slug},
+               from,
+               beginning_of_day,
+               interval,
+               :_
+             )
            )
   end
 

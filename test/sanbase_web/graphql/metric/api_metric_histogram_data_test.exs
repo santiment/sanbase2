@@ -43,7 +43,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
                "values" => %{"__typename" => "FloatList", "data" => [1, 2, 3]}
              }
 
-      assert_called(Metric.histogram_data(metric, slug, from, to, "1d", 3))
+      assert_called(Metric.histogram_data(metric, %{slug: slug}, from, to, "1d", 3))
     end
   end
 

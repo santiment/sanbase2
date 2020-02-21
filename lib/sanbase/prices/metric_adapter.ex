@@ -20,22 +20,22 @@ defmodule Sanbase.Price.MetricAdapter do
   def has_incomplete_data?(_), do: false
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data(metric, slug, from, to, interval, aggregation) do
+  def timeseries_data(metric, %{slug: slug}, from, to, interval, aggregation) do
     Price.timeseries_metric_data(slug, metric, from, to, interval, aggregation: aggregation)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def aggregated_timeseries_data(metric, slug, from, to, aggregation) do
+  def aggregated_timeseries_data(metric, %{slug: slug}, from, to, aggregation) do
     Price.aggregated_metric_timeseries_data(slug, metric, from, to, aggregation: aggregation)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime(_metric, slug) do
+  def first_datetime(_metric, %{slug: slug}) do
     Price.first_datetime(slug)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def last_datetime_computed_at(_metric, slug) do
+  def last_datetime_computed_at(_metric, %{slug: slug}) do
     Price.last_datetime_computed_at(slug)
   end
 
@@ -47,6 +47,7 @@ defmodule Sanbase.Price.MetricAdapter do
        min_interval: "5m",
        default_aggregation: :last,
        available_aggregations: @aggregations,
+       available_selectors: [:slug],
        data_type: :timeseries
      }}
   end
@@ -74,9 +75,9 @@ defmodule Sanbase.Price.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics("TOTAL_ERC20"), do: @metrics
+  def available_metrics(%{slug: "TOTAL_ERC20"}), do: @metrics
 
-  def available_metrics(slug) do
+  def available_metrics(%{slug: slug}) do
     case Price.has_data?(slug) do
       {:ok, true} -> {:ok, @metrics}
       {:ok, false} -> {:ok, []}

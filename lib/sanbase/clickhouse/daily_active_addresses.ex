@@ -19,7 +19,7 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
   end
 
   def first_datetime(slug) when slug in @bitcoin do
-    Metric.first_datetime("daily_active_addresses", slug)
+    Metric.first_datetime("daily_active_addresses", %{slug: slug})
   end
 
   def first_datetime(contract) when is_binary(contract) do
@@ -41,7 +41,7 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
 
   def average_active_addresses(btc, from, to, interval)
       when is_binary(btc) and btc in @bitcoin do
-    Metric.timeseries_data("daily_active_addresses", "bitcoin", from, to, interval)
+    Metric.timeseries_data("daily_active_addresses", %{slug: "bitcoin"}, from, to, interval)
   end
 
   def average_active_addresses(eth, from, to, interval)
@@ -86,7 +86,7 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
   defp do_btc_average_active_addresses([], _, _), do: {:ok, []}
 
   defp do_btc_average_active_addresses([_ | _], from, to) do
-    case Metric.aggregated_timeseries_data("daily_active_addresses", "bitcoin", from, to) do
+    case Metric.aggregated_timeseries_data("daily_active_addresses", %{slug: "bitcoin"}, from, to) do
       {:ok, result} -> {:ok, [{"BTC", result}]}
       {:error, error} -> handle_error("Bitcoin", error)
     end

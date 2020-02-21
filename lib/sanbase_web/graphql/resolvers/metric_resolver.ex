@@ -36,36 +36,37 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
-  def available_since(_root, %{slug: slug}, %{source: %{metric: metric}}),
-    do: Metric.first_datetime(metric, slug)
+  def available_since(_root, args, %{source: %{metric: metric}}),
+    do: Metric.first_datetime(metric, to_selector(args))
 
-  def last_datetime_computed_at(_root, %{slug: slug}, %{source: %{metric: metric}}),
-    do: Metric.last_datetime_computed_at(metric, slug)
+  def last_datetime_computed_at(_root, args, %{source: %{metric: metric}}),
+    do: Metric.last_datetime_computed_at(metric, to_selector(args))
 
   def timeseries_data(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval} = args,
+        %{from: from, to: to, interval: interval} = args,
         %{source: %{metric: metric}}
       ) do
     include_incomplete_data = Map.get(args, :include_incomplete_data, false)
     aggregation = Map.get(args, :aggregation, nil)
+    selector = to_selector(args)
 
     with {:ok, from, to, interval} <-
-           calibrate_interval(Metric, metric, slug, from, to, interval, 86_400, @datapoints),
+           calibrate_interval(Metric, metric, selector, from, to, interval, 86_400, @datapoints),
          {:ok, from, to} <-
            calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
          {:ok, result} <-
-           Metric.timeseries_data(metric, slug, from, to, interval, aggregation) do
+           Metric.timeseries_data(metric, selector, from, to, interval, aggregation) do
       {:ok, result |> Enum.reject(&is_nil/1)}
     else
       {:error, error} ->
-        {:error, handle_graphql_error(metric, slug, error)}
+        {:error, handle_graphql_error(metric, selector, error)}
     end
   end
 
   def aggregated_timeseries_data(
         _root,
-        %{slug: slug, from: from, to: to} = args,
+        %{from: from, to: to} = args,
         %{source: %{metric: metric}}
       ) do
     include_incomplete_data = Map.get(args, :include_incomplete_data, false)
@@ -73,16 +74,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
     with {:ok, from, to} <-
            calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
-         {:ok, result} <- Metric.aggregated_timeseries_data(metric, slug, from, to, aggregation) do
+         {:ok, result} <-
+           Metric.aggregated_timeseries_data(metric, to_selector(args), from, to, aggregation) do
       # This requires internal rework - all aggregated_timeseries_data queries must return the same format
       case result do
         value when is_number(value) ->
           {:ok, value}
 
-        [%{slug: ^slug, value: value}] ->
+        [%{value: value}] ->
           {:ok, value}
 
-        %{^slug => value} ->
+        %{} = map ->
+          value = Map.values(map) |> hd
           {:ok, value}
 
         _ ->
@@ -90,16 +93,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
       end
     else
       {:error, error} ->
-        {:error, handle_graphql_error(metric, slug, error)}
+        {:error, handle_graphql_error(metric, to_selector(args), error)}
     end
   end
 
   def histogram_data(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval, limit: limit},
+        %{from: from, to: to, interval: interval, limit: limit} = args,
         %{source: %{metric: metric}}
       ) do
-    case Metric.histogram_data(metric, slug, from, to, interval, limit) do
+    case Metric.histogram_data(metric, to_selector(args), from, to, interval, limit) do
       {:ok, %{labels: labels, values: values}} ->
         {:ok,
          %{
@@ -108,7 +111,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          }}
 
       {:error, error} ->
-        {:error, handle_graphql_error(metric, slug, error)}
+        {:error, handle_graphql_error(metric, to_selector(args), error)}
     end
   end
+
+  defp to_selector(%{slug: slug}), do: %{slug: slug}
+  defp to_selector(%{word: word}), do: %{word: word}
+  defp to_selector(%{selector: %{} = selector}), do: selector
 end

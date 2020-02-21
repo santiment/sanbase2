@@ -45,7 +45,7 @@ defmodule Sanbase.Signal.History.MetricHistory do
 
       Sanbase.Metric.timeseries_data(
         metric,
-        slug,
+        %{slug: slug},
         Timex.shift(to, days: -shift),
         to,
         @historical_days_interval

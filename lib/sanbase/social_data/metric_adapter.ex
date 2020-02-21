@@ -40,7 +40,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def has_incomplete_data?(_), do: false
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data(metric, slug, from, to, interval, _aggregation)
+  def timeseries_data(metric, %{slug: slug}, from, to, interval, _aggregation)
       when metric in @social_volume_timeseries_metrics do
     [source, _] = String.split(metric, "_", parts: 2)
 
@@ -54,7 +54,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     |> transform_to_value_pairs(:mentions_count)
   end
 
-  def timeseries_data(metric, slug, from, to, interval, _aggregation)
+  def timeseries_data(metric, %{slug: slug}, from, to, interval, _aggregation)
       when metric in @social_dominance_timeseries_metrics do
     [source, _] = String.split(metric, "_", parts: 2)
 
@@ -69,7 +69,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def aggregated_timeseries_data(metric, slug, from, to, _aggregation)
+  def aggregated_timeseries_data(metric, %{slug: slug}, from, to, _aggregation)
       when is_binary(slug) and metric in @social_volume_timeseries_metrics do
     [source, _] = String.split(metric, "_", parts: 2)
     source = Map.get(@social_volume_source_type, source)
@@ -85,7 +85,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     end
   end
 
-  def aggregated_timeseries_data(metric, slug, from, to, _aggregation)
+  def aggregated_timeseries_data(metric, %{slug: slug}, from, to, _aggregation)
       when metric in @social_dominance_timeseries_metrics do
     [source, _] = String.split(metric, "_", parts: 2)
     source = Map.get(@social_dominance_source_type, source)
@@ -137,7 +137,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(slug) do
+  def available_metrics(%{slug: slug}) do
     with {:ok, slugs} <- available_slugs(),
          true <- slug in slugs do
       {:ok, @metrics}
@@ -167,6 +167,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
        min_interval: "5m",
        default_aggregation: :sum,
        available_aggregations: @aggregations,
+       available_selectors: [:slug, :word],
        data_type: :histogram
      }}
   end

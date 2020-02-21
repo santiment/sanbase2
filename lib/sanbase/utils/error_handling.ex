@@ -20,7 +20,12 @@ defmodule Sanbase.Utils.ErrorHandling do
 
   def handle_graphql_error(metric, identifier, reason, opts \\ []) do
     target = Keyword.get(opts, :description, "project with slug")
-    error_msg = "[#{Ecto.UUID.generate()}] Can't fetch #{metric} for #{target}: #{identifier}"
+
+    error_msg =
+      "[#{Ecto.UUID.generate()}] Can't fetch #{metric} for #{target}: #{
+        identifier_to_string(identifier)
+      }"
+
     error_msg_with_reason = error_msg <> ", Reason: #{inspect(reason)}"
 
     Logger.warn(error_msg_with_reason)
@@ -39,6 +44,10 @@ defmodule Sanbase.Utils.ErrorHandling do
   end
 
   # Private functions
+
+  defp identifier_to_string(str) when is_binary(str), do: str
+  defp identifier_to_string(data), do: inspect(data)
+
   defp format_error({msg, opts}) do
     Enum.reduce(opts, msg, fn {key, value}, acc ->
       String.replace(acc, "%{#{key}}", to_string(inspect(value)))

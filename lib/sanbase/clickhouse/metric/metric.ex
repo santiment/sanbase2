@@ -65,9 +65,9 @@ defmodule Sanbase.Clickhouse.Metric do
   aggregations are #{inspect(@plain_aggregations)}
   """
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data(metric, slug, from, to, interval, aggregation \\ nil)
+  def timeseries_data(metric, selector, from, to, interval, aggregation \\ nil)
 
-  def timeseries_data(metric, slug, from, to, interval, aggregation) do
+  def timeseries_data(metric, %{slug: slug}, from, to, interval, aggregation) do
     aggregation = aggregation || Map.get(@aggregation_map, metric)
     {query, args} = timeseries_data_query(metric, slug, from, to, interval, aggregation)
 
@@ -80,7 +80,7 @@ defmodule Sanbase.Clickhouse.Metric do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def histogram_data(metric, slug, from, to, interval, limit) do
+  def histogram_data(metric, %{slug: slug}, from, to, interval, limit) do
     {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
     label_template = Map.get(@metrics_label_map, metric)
 
@@ -107,17 +107,17 @@ defmodule Sanbase.Clickhouse.Metric do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def aggregated_timeseries_data(metric, slug, from, to, aggregation \\ nil)
+  def aggregated_timeseries_data(metric, selector, from, to, aggregation \\ nil)
 
   def aggregated_timeseries_data(_metric, nil, _from, _to, _aggregation), do: {:ok, []}
   def aggregated_timeseries_data(_metric, [], _from, _to, _aggregation), do: {:ok, []}
 
-  def aggregated_timeseries_data(_metric, _slug, _from, _to, aggregation)
+  def aggregated_timeseries_data(_metric, _selector, _from, _to, aggregation)
       when aggregation not in @aggregations do
     {:error, "The aggregation '#{inspect(aggregation)}' is not supported"}
   end
 
-  def aggregated_timeseries_data(metric, slug_or_slugs, from, to, aggregation)
+  def aggregated_timeseries_data(metric, %{slug: slug_or_slugs}, from, to, aggregation)
       when is_binary(slug_or_slugs) or is_list(slug_or_slugs) do
     aggregation = aggregation || Map.get(@aggregation_map, metric)
     get_aggregated_timeseries_data(metric, slug_or_slugs |> List.wrap(), from, to, aggregation)
@@ -134,6 +134,7 @@ defmodule Sanbase.Clickhouse.Metric do
        min_interval: min_interval,
        default_aggregation: default_aggregation,
        available_aggregations: @plain_aggregations,
+       available_selectors: [:slug],
        data_type: Map.get(@metrics_data_type_map, metric)
      }}
   end
@@ -157,7 +158,7 @@ defmodule Sanbase.Clickhouse.Metric do
   def available_metrics(), do: @metrics_name_list
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(slug) when is_binary(slug) do
+  def available_metrics(%{slug: slug}) when is_binary(slug) do
     Enum.reduce_while(@tables_list, [], fn table, acc ->
       case available_metrics_in_table(table, slug) do
         {:ok, metrics} -> {:cont, metrics ++ acc}
@@ -180,7 +181,7 @@ defmodule Sanbase.Clickhouse.Metric do
   def available_aggregations(), do: @aggregations
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime(metric, slug) do
+  def first_datetime(metric, %{slug: slug}) do
     {query, args} = first_datetime_query(metric, slug)
 
     ClickhouseRepo.query_transform(query, args, fn [datetime] ->
@@ -190,7 +191,7 @@ defmodule Sanbase.Clickhouse.Metric do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def last_datetime_computed_at(metric, slug) do
+  def last_datetime_computed_at(metric, %{slug: slug}) do
     {query, args} = last_datetime_computed_at_query(metric, slug)
 
     ClickhouseRepo.query_transform(query, args, fn [datetime] ->

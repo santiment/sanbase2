@@ -9,11 +9,14 @@ defmodule Sanbase.Metric.Behaviour do
   @type options :: Keyword.t()
   @type available_data_types :: :timeseries | :histogram
 
+  @type selector :: slug | map()
+
   @type metadata :: %{
           metric: metric,
           min_interval: interval(),
           default_aggregation: atom(),
-          available_aggregations: list(),
+          available_aggregations: list(atom()),
+          available_selectors: list(atom()),
           data_type: available_data_types()
         }
 
@@ -31,7 +34,7 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback timeseries_data(
               metric :: metric(),
-              selector :: any(),
+              selector :: selector,
               from :: DatetTime.t(),
               to :: DateTime.t(),
               interval :: interval(),
@@ -41,7 +44,7 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback histogram_data(
               metric :: metric(),
-              selector :: any(),
+              selector :: selector,
               from :: DateTime.t(),
               to :: DateTime.t(),
               interval :: interval(),
@@ -50,7 +53,7 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback aggregated_timeseries_data(
               metric :: metric,
-              selector :: any(),
+              selector :: selector,
               from :: DatetTime.t(),
               to :: DateTime.t(),
               opts :: options
@@ -58,10 +61,10 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback has_incomplete_data?(metric :: metric) :: true | false
 
-  @callback first_datetime(metric, slug) ::
+  @callback first_datetime(metric, selector) ::
               {:ok, DateTime.t()} | {:error, String.t()}
 
-  @callback last_datetime_computed_at(metric, slug) ::
+  @callback last_datetime_computed_at(metric, selector) ::
               {:ok, DateTime.t()} | {:error, String.t()}
 
   @callback human_readable_name(metric) :: {:ok, String.t()} | {:error, String.t()}
@@ -76,7 +79,7 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback available_metrics() :: list(metric)
 
-  @callback available_metrics(slug) :: {:ok, list(metric)} | {:error, String.t()}
+  @callback available_metrics(selector) :: {:ok, list(metric)} | {:error, String.t()}
 
   @callback available_timeseries_metrics() :: list(metric)
 

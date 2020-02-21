@@ -57,7 +57,7 @@ defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
 
       Sanbase.Metric.timeseries_data(
         "daily_active_addresses",
-        slug,
+        %{slug: slug},
         Timex.shift(to, days: -shift),
         to,
         @historical_days_interval,

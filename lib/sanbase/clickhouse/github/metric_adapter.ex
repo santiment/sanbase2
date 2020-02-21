@@ -32,7 +32,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   def has_incomplete_data?(_), do: false
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data(metric, slug, from, to, interval, _aggregation) do
+  def timeseries_data(metric, %{slug: slug}, from, to, interval, _aggregation) do
     case Project.github_organizations(slug) do
       {:ok, []} ->
         {:ok, []}
@@ -51,7 +51,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def aggregated_timeseries_data(metric, organizations, from, to, _aggregation)
+  def aggregated_timeseries_data(metric, %{organizations: organizations}, from, to, _aggregation)
       when is_binary(organizations) or is_list(organizations) do
     apply(
       Github,
@@ -64,8 +64,14 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
     )
   end
 
+  def aggregated_timeseries_data(metric, %{slug: slug_or_slugs}, from, to, aggregation) do
+    slugs = slug_or_slugs |> List.wrap()
+    organizations = Enum.flat_map(slugs, &Project.github_organizations/1)
+    aggregated_timeseries_data(metric, %{organizations: organizations}, from, to, aggregation)
+  end
+
   @impl Sanbase.Metric.Behaviour
-  def first_datetime(_metric, slug) do
+  def first_datetime(_metric, %{slug: slug}) do
     case Project.github_organizations(slug) do
       {:ok, []} ->
         {:ok, nil}
@@ -90,7 +96,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def last_datetime_computed_at(_metric, slug) do
+  def last_datetime_computed_at(_metric, %{slug: slug}) do
     case Project.github_organizations(slug) do
       {:ok, []} ->
         {:ok, nil}
@@ -156,7 +162,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(slug) do
+  def available_metrics(%{slug: slug}) do
     case Project.github_organizations(slug) do
       {:ok, []} ->
         {:ok, []}

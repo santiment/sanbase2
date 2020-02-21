@@ -29,7 +29,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
     slugs = Enum.map(projects, & &1.slug) |> Enum.reject(&is_nil/1)
 
-    Metric.aggregated_timeseries_data("exchange_inflow", slugs, from, to, :sum)
+    Metric.aggregated_timeseries_data("exchange_inflow", %{slug: slugs}, from, to, :sum)
     |> case do
       {:ok, list} ->
         notification_type = Type.get_or_create("exchange_inflow")
@@ -115,7 +115,13 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   defp build_payload(%Project{} = project, from, inflow) do
     %Project{slug: slug} = project
 
-    case Metric.aggregated_timeseries_data("exchange_inflow", slug, from, Timex.now(), :sum) do
+    case Metric.aggregated_timeseries_data(
+           "exchange_inflow",
+           %{slug: slug},
+           from,
+           Timex.now(),
+           :sum
+         ) do
       {:ok, [%{slug: ^slug, value: new_inflow}]} ->
         new_percent_of_total_supply = percent_of_total_supply(project, new_inflow)
 
@@ -144,9 +150,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     slug = project.slug
 
     {:ok, %{^slug => avg_price_usd}} =
-      Sanbase.Price.aggregated_metric_timeseries_data(slug, :price_usd, from, to,
-        aggregation: :avg
-      )
+      Sanbase.Metric.aggregated_timeseries_data("price_usd", %{slug: slug}, from, to, :avg)
 
     """
     Project **#{project.name}** has **#{percent_of_total_supply(project, inflow)}%** of its circulating supply (#{

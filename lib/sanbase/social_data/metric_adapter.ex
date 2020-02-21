@@ -173,15 +173,19 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime(<<"telegram", _rest::binary>>, _slug), do: {:ok, ~U[2016-03-29 00:00:00Z]}
-  def first_datetime(<<"twitter", _rest::binary>>, _slug), do: {:ok, ~U[2018-02-13 00:00:00Z]}
-  def first_datetime(<<"reddit", _rest::binary>>, _slug), do: {:ok, ~U[2016-01-01 00:00:00Z]}
-  def first_datetime(<<"discord", _rest::binary>>, _slug), do: {:ok, ~U[2016-05-21 00:00:00Z]}
-  def first_datetime(<<"bitcointalk", _rest::binary>>, _slug), do: {:ok, ~U[2009-11-22 00:00:00Z]}
+  def first_datetime(<<"telegram", _rest::binary>>, _selector),
+    do: {:ok, ~U[2016-03-29 00:00:00Z]}
 
-  def first_datetime(<<"professional_traders_chat", _rest::binary>>, _slug),
+  def first_datetime(<<"twitter", _rest::binary>>, _selector), do: {:ok, ~U[2018-02-13 00:00:00Z]}
+  def first_datetime(<<"reddit", _rest::binary>>, _selector), do: {:ok, ~U[2016-01-01 00:00:00Z]}
+  def first_datetime(<<"discord", _rest::binary>>, _selector), do: {:ok, ~U[2016-05-21 00:00:00Z]}
+
+  def first_datetime(<<"bitcointalk", _rest::binary>>, _selector),
+    do: {:ok, ~U[2009-11-22 00:00:00Z]}
+
+  def first_datetime(<<"professional_traders_chat", _rest::binary>>, _selector),
     do: {:ok, ~U[2018-02-09 00:00:00Z]}
 
   @impl Sanbase.Metric.Behaviour
-  def last_datetime_computed_at(_metric, _slug), do: {:ok, Timex.now()}
+  def last_datetime_computed_at(_metric, _selector), do: {:ok, Timex.now()}
 end

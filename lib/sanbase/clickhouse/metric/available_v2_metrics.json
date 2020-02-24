@@ -934,8 +934,21 @@
     "min_plan": "free",
     "aggregation": "last",
     "min_interval": "5m",
-    "label": "The amount of tokens last moved between ${1} and ${2}",
+    "label": "The amount of tokens last moved between {{from}} and {{to}}",
     "table": "distribution_deltas_5min",
+    "has_incomplete_data": false,
+    "data_type": "histogram"
+  },
+
+  {
+    "human_readable_name": "Price Histogram",
+    "name": "price_histogram",
+    "metric": "price_histogram",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": ["distribution_deltas_5min", "intraday_metrics"],
     "has_incomplete_data": false,
     "data_type": "histogram"
   },

@@ -13,8 +13,7 @@ defmodule Sanbase.Clickhouse.Metric do
   import Sanbase.Clickhouse.Metric.SqlQuery
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
 
-  alias Sanbase.Clickhouse.Metric.LabelTemplate
-  alias __MODULE__.FileHandler
+  alias __MODULE__.{HistogramMetric, FileHandler}
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
@@ -33,7 +32,6 @@ defmodule Sanbase.Clickhouse.Metric do
   @aggregation_map FileHandler.aggregation_map()
   @human_readable_name_map FileHandler.human_readable_name_map()
   @metrics_data_type_map FileHandler.metrics_data_type_map()
-  @metrics_label_map FileHandler.metrics_label_map()
   @metrics_name_list (@histogram_metrics_name_list ++ @timeseries_metrics_name_list)
                      |> Enum.uniq()
   @metrics_mapset @metrics_name_list |> MapSet.new()
@@ -80,31 +78,7 @@ defmodule Sanbase.Clickhouse.Metric do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def histogram_data(metric, %{slug: slug}, from, to, interval, limit) do
-    {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
-    label_template = Map.get(@metrics_label_map, metric)
-
-    ClickhouseRepo.query_reduce(
-      query,
-      args,
-      %{labels: [], values: []},
-      fn
-        [unix, value], %{labels: labels, values: values} ->
-          dt1 = unix |> DateTime.from_unix!()
-
-          dt2 =
-            [dt1 |> Timex.shift(seconds: Sanbase.DateTimeUtils.str_to_sec(interval)), to]
-            |> Enum.min_by(&DateTime.to_unix/1)
-
-          label =
-            [dt1, dt2]
-            |> Enum.map(&Timex.format!(&1, "%Y-%m-%d %H:%M %Z", :strftime))
-            |> LabelTemplate.get(label_template)
-
-          %{labels: [label | labels], values: [value | values]}
-      end
-    )
-  end
+  defdelegate histogram_data(metric, slug, from, to, interval, limit), to: HistogramMetric
 
   @impl Sanbase.Metric.Behaviour
   def aggregated_timeseries_data(metric, selector, from, to, aggregation \\ nil)

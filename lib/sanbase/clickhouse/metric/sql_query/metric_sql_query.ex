@@ -74,37 +74,6 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     {query, args}
   end
 
-  def histogram_data_query(metric, slug, from, to, interval, limit) do
-    query = """
-    SELECT
-      toUnixTimestamp(intDiv(toUInt32(toDateTime(value)), ?5) * ?5) AS t,
-      -sum(measure)
-    FROM #{Map.get(@table_map, metric)} FINAL
-    PREWHERE
-      metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = ?1 ) AND
-      asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?2 ) AND
-      dt != value AND
-      dt >= #{maybe_convert_to_date(metric, "toDateTime(?3)")} AND
-      dt < #{maybe_convert_to_date(metric, "toDateTime(?4)")}
-    GROUP BY t
-    ORDER BY t DESC
-    LIMIT ?6
-    """
-
-    # """
-
-    args = [
-      Map.get(@name_to_metric_map, metric),
-      slug,
-      from |> DateTime.to_unix(),
-      to |> DateTime.to_unix(),
-      interval |> str_to_sec(),
-      limit
-    ]
-
-    {query, args}
-  end
-
   def aggregated_timeseries_data_query(metric, asset_ids, from, to, aggregation) do
     query = """
     SELECT
@@ -232,12 +201,11 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     SELECT distinct(metric_id)
     FROM #{table}
     PREWHERE
-      asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
       dt > toDateTime(?2)
     """
 
     # artifical boundary so the query checks less results
-    datetime = Timex.shift(Timex.now(), days: -90) |> DateTime.to_unix()
+    datetime = Timex.shift(Timex.now(), days: -30) |> DateTime.to_unix()
     args = [slug, datetime]
     {query, args}
   end

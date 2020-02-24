@@ -103,7 +103,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
       "nvt",
       "nvt_transaction_volume",
       "network_growth",
-      "age_distribution",
       "discord_social_dominance",
       "discord_social_volume",
       "reddit_social_dominance",
@@ -111,7 +110,10 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
       "telegram_social_volume",
       "active_deposits",
       "active_withdrawals",
-      "withdrawal_transactions"
+      "withdrawal_transactions",
+      # histogram metrics
+      "age_distribution",
+      "price_histogram"
     ]
 
     expected_result = metrics |> Enum.sort()

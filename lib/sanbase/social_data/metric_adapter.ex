@@ -167,7 +167,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
        min_interval: "5m",
        default_aggregation: :sum,
        available_aggregations: @aggregations,
-       available_selectors: [:slug, :word],
+       available_selectors: [:slug],
        data_type: :histogram
      }}
   end

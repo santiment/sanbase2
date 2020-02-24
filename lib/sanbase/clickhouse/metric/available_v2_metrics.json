@@ -934,7 +934,6 @@
     "min_plan": "free",
     "aggregation": "last",
     "min_interval": "5m",
-    "label": "The amount of tokens last moved between {{from}} and {{to}}",
     "table": "distribution_deltas_5min",
     "has_incomplete_data": false,
     "data_type": "histogram"

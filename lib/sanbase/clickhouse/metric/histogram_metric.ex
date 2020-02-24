@@ -2,36 +2,26 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
   import Sanbase.Clickhouse.Metric.HistogramSqlQuery
 
-  alias Sanbase.Clickhouse.Metric.FileHandler
-
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
-  @metrics_label_map FileHandler.metrics_label_map()
 
-  def histogram_data("age_distribution" = metric, slug, from, to, interval, limit) do
+  def histogram_data("age_distribution" = metric, %{slug: slug}, from, to, interval, limit) do
     {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
-    label_template = Map.get(@metrics_label_map, metric)
 
-    ClickhouseRepo.query_reduce(
-      query,
-      args,
-      %{labels: [], values: []},
-      fn
-        [unix, value], %{labels: labels, values: values} ->
-          dt1 = unix |> DateTime.from_unix!()
+    ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
+      range_from = unix |> DateTime.from_unix!()
 
-          dt2 =
-            [dt1 |> Timex.shift(seconds: str_to_sec(interval)), to]
-            |> Enum.min_by(&DateTime.to_unix/1)
+      range_to =
+        [range_from |> Timex.shift(seconds: str_to_sec(interval)), to]
+        |> Enum.min_by(&DateTime.to_unix/1)
 
-          label_kv = %{"from" => dt1, "to" => dt2}
-          label = Sanbase.TemplateEngine.run(label_template, label_kv)
-
-          %{labels: [label | labels], values: [value | values]}
-      end
-    )
+      %{
+        range: [range_from, range_to],
+        value: value
+      }
+    end)
   end
 
-  def histogram_data("price_histogram" = metric, slug, from, to, interval, limit) do
+  def histogram_data("price_histogram" = metric, %{slug: slug}, from, to, interval, limit) do
     {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
 
     ClickhouseRepo.query_transform(query, args, fn [price, amount] ->
@@ -79,12 +69,7 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
         key = price_to_range.(price)
         Map.update(acc, key, 0.0, fn curr_amount -> Float.round(curr_amount + value, 2) end)
       end)
-      |> Enum.map(fn {range, amount} ->
-        %{
-          range: range,
-          value: amount
-        }
-      end)
+      |> Enum.map(fn {range, amount} -> %{range: range, value: amount} end)
       |> Enum.sort_by(fn %{range: [range_start | _]} -> range_start end)
 
     {:ok, data}

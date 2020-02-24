@@ -4,7 +4,7 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
-  def histogram_data("age_distribution" = metric, slug, from, to, interval, limit) do
+  def histogram_data("age_distribution" = metric, %{slug: slug}, from, to, interval, limit) do
     {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
 
     ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
@@ -21,7 +21,7 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
     end)
   end
 
-  def histogram_data("price_histogram" = metric, slug, from, to, interval, limit) do
+  def histogram_data("price_histogram" = metric, %{slug: slug}, from, to, interval, limit) do
     {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
 
     ClickhouseRepo.query_transform(query, args, fn [price, amount] ->

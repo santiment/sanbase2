@@ -128,6 +128,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
        min_interval: "1m",
        default_aggregation: :sum,
        available_aggregations: [:sum],
+       available_selectors: [:slug],
        data_type: :timeseries
      }}
   end

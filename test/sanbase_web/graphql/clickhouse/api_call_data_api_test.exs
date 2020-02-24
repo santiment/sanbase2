@@ -30,7 +30,7 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
       %{"sanbase_api_call_data" => api_calls} = Sanbase.InMemoryKafka.Producer.get_state()
 
       api_calls_queries =
-        Enum.map(api_calls, fn {"", data} -> Jason.decode!(data) |> Map.get("query") end)
+        Enum.map(api_calls, fn {_, data} -> Jason.decode!(data) |> Map.get("query") end)
 
       # There could be some test that exported api calls data and that happens async
       # so something could happend even after the `clear_state` is called

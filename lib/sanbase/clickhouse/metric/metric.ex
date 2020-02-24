@@ -36,7 +36,7 @@ defmodule Sanbase.Clickhouse.Metric do
                      |> Enum.uniq()
   @metrics_mapset @metrics_name_list |> MapSet.new()
   @incomplete_data_map FileHandler.incomplete_data_map()
-  @tables_list FileHandler.table_map() |> Map.values() |> Enum.uniq()
+  @tables_list FileHandler.table_map() |> Map.values() |> List.flatten() |> Enum.uniq()
 
   @type slug :: String.t()
   @type metric :: String.t()
@@ -135,8 +135,11 @@ defmodule Sanbase.Clickhouse.Metric do
   def available_metrics(%{slug: slug}) when is_binary(slug) do
     Enum.reduce_while(@tables_list, [], fn table, acc ->
       case available_metrics_in_table(table, slug) do
-        {:ok, metrics} -> {:cont, metrics ++ acc}
-        _ -> {:halt, {:error, "Error fetching available metrics for #{slug}"}}
+        {:ok, metrics} ->
+          {:cont, metrics ++ acc}
+
+        _ ->
+          {:halt, {:error, "Error fetching available metrics for #{slug}"}}
       end
     end)
     |> case do

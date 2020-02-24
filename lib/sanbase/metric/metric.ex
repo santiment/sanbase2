@@ -260,9 +260,9 @@ defmodule Sanbase.Metric do
 
   @spec available_metrics_for_slug(any) ::
           {:ok, list(String.t())} | {:nocache, {:ok, list(String.t())}}
-  def available_metrics_for_slug(slug) do
+  def available_metrics_for_slug(selector) do
     metrics_in_modules =
-      Sanbase.Parallel.map(@metric_modules, fn module -> module.available_metrics(slug) end,
+      Sanbase.Parallel.map(@metric_modules, fn module -> module.available_metrics(selector) end,
         ordered: false,
         max_concurrency: 8,
         timeout: 25_000

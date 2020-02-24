@@ -27,6 +27,6 @@ defmodule Sanbase.Kafka.ApiCall do
   def json_kv_tuple(api_call_data) do
     api_call_data
     |> List.wrap()
-    |> Enum.map(&{"", Jason.encode!(&1)})
+    |> Enum.map(&{:erlang.phash2(api_call_data), Jason.encode!(&1)})
   end
 end

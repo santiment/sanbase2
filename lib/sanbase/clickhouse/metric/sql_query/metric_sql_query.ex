@@ -154,7 +154,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     query = """
     SELECT
       toUnixTimestamp(toDateTime(min(dt)))
-    FROM #{@table}
+    FROM #{Map.get(@table_map, metric)}
     PREWHERE
       metric_id = (
         SELECT
@@ -175,7 +175,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     query = """
     SELECT
       toUnixTimestamp(toDateTime(min(dt)))
-    FROM #{@table}
+    FROM #{Map.get(@table_map, metric)}
     PREWHERE
       asset_id = (
         SELECT argMax(asset_id, computed_at)

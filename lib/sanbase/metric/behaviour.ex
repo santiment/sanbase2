@@ -23,11 +23,12 @@ defmodule Sanbase.Metric.Behaviour do
   @type histogram_value :: String.t() | float() | integer()
   @type histogram_label :: String.t()
 
-  @type histogram_data :: %{
-          datetime: DateTime.t(),
-          labels: [histogram_label()],
-          values: list(histogram_value())
+  @type histogram_data_map :: %{
+          range: list(float()) | list(DateTime.t()),
+          value: float()
         }
+
+  @type histogram_data :: list(histogram_data_map())
 
   @type aggregation :: nil | :any | :sum | :avg | :min | :max | :last | :first | :median
   @type timeseries_data_point :: %{datetime: Datetime.t(), value: float()}

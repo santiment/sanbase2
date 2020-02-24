@@ -29,18 +29,28 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
     with_mock Metric, [:passthrough],
       histogram_data: fn _, _, _, _, _, _ ->
         {:ok,
-         %{
-           labels: ["l1", "l2", "l3"],
-           values: [1, 2, 3]
-         }}
+         [
+           %{
+             range: [2.0, 3.0],
+             value: 15.0
+           },
+           %{
+             range: [3.0, 4.0],
+             value: 22.2
+           }
+         ]}
       end do
       result =
         get_histogram_metric(conn, metric, slug, from, to, interval, limit)
-        |> extract_histogram_data()
+        |> get_in(["data", "getMetric", "histogramData"])
 
       assert result == %{
-               "labels" => ["l1", "l2", "l3"],
-               "values" => %{"__typename" => "FloatList", "data" => [1, 2, 3]}
+               "values" => %{
+                 "data" => [
+                   %{"range" => [2.0, 3.0], "value" => 15.0},
+                   %{"range" => [3.0, 4.00], "value" => 22.2}
+                 ]
+               }
              }
 
       assert_called(Metric.histogram_data(metric, %{slug: slug}, from, to, "1d", 3))
@@ -54,21 +64,26 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
     with_mock Metric, [:passthrough],
       histogram_data: fn _, _, _, _, _, _ ->
         {:ok,
-         %{
-           labels: ["l1", "l2", "l3"],
-           values: [1, 2, 3]
-         }}
+         [
+           %{
+             range: [2.0, 3.0],
+             value: 15.0
+           }
+         ]}
       end do
       result =
         for metric <- metrics do
           get_histogram_metric(conn, metric, slug, from, to)
-          |> extract_histogram_data()
+          |> get_in(["data", "getMetric", "histogramData"])
         end
 
       # Assert that all results are lists where we have a map with values
       assert Enum.all?(
                result,
-               &match?(%{"labels" => _, "values" => %{"__typename" => _, "data" => _}}, &1)
+               &match?(
+                 %{"values" => %{"data" => [%{"range" => [2.0, 3.0], "value" => 15.0}]}},
+                 &1
+               )
              )
     end
   end
@@ -100,11 +115,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
     |> json_response(200)
   end
 
-  defp extract_histogram_data(result) do
-    %{"data" => %{"getMetric" => %{"histogramData" => histogram_data}}} = result
-    histogram_data
-  end
-
   defp get_histogram_query(metric, slug, from, to, interval, limit) do
     """
       {
@@ -116,15 +126,14 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
             interval: "#{interval}",
             limit: #{limit})
             {
-              labels
               values {
-                __typename
-                ... on StringList {
-                  data
+                ... on DatetimeRangeFloatValueList{
+                  data{
+                    range
+                    value
+                  }
                 }
-                ... on FloatList {
-                  data
-                }
+
                 ... on FloatRangeFloatValueList {
                   data {
                     range

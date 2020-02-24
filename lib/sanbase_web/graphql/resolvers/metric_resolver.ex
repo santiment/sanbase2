@@ -103,13 +103,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         %{source: %{metric: metric}}
       ) do
     case Metric.histogram_data(metric, to_selector(args), from, to, interval, limit) do
-      {:ok, %{labels: labels, values: values}} ->
-        {:ok,
-         %{
-           labels: labels,
-           values: %{data: values}
-         }}
-
       {:ok, data} ->
         {:ok, %{values: %{data: data}}}
 

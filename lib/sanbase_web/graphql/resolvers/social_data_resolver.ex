@@ -12,54 +12,37 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
 
   def twitter_mention_count(
         _root,
-        %{
-          ticker: ticker,
-          from: from,
-          to: to,
-          interval: interval,
-          result_size_tail: result_size_tail
-        },
+        %{ticker: ticker, from: from, to: to, interval: interval, result_size_tail: size},
         _resolution
       ) do
-    TechIndicators.twitter_mention_count(
-      ticker,
-      from,
-      to,
-      interval,
-      result_size_tail
-    )
+    TechIndicators.twitter_mention_count(ticker, from, to, interval, size)
   end
 
   def emojis_sentiment(
         _root,
-        %{from: from, to: to, interval: interval, result_size_tail: result_size_tail},
+        %{from: from, to: to, interval: interval, result_size_tail: size},
         _resolution
       ) do
-    TechIndicators.emojis_sentiment(from, to, interval, result_size_tail)
+    TechIndicators.emojis_sentiment(from, to, interval, size)
   end
 
   def social_volume(
         _root,
-        %{
-          slug: slug,
-          from: from,
-          to: to,
-          interval: interval,
-          social_volume_type: social_volume_type
-        },
+        %{slug: slug, from: from, to: to, interval: interval, social_volume_type: type},
         _resolution
       ) do
-    TechIndicators.social_volume(
-      slug,
-      from,
-      to,
-      interval,
-      social_volume_type
-    )
+    # The `*_discussion_overview` are counting the total number of messages in a given medium
+    case type in [:telegram_discussion_overview, :discord_discussion_overview] do
+      true ->
+        SocialData.community_messages_count(slug, from, to, interval, type)
+
+      false ->
+        SocialData.social_volume(slug, from, to, interval, type)
+    end
   end
 
   def social_volume_projects(_root, %{}, _resolution) do
-    TechIndicators.social_volume_projects()
+    SocialData.SocialVolume.social_volume_projects()
   end
 
   def topic_search(
@@ -67,7 +50,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
         %{source: source, search_text: search_text, from: from, to: to, interval: interval},
         _resolution
       ) do
-    TechIndicators.topic_search(source, search_text, from, to, interval)
+    SocialData.SocialVolume.topic_search(source, search_text, from, to, interval)
   end
 
   def get_trending_words(

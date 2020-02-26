@@ -2,7 +2,7 @@ defmodule Sanbase.SocialData do
   import Sanbase.Utils.ErrorHandling, only: [error_result: 1]
 
   alias Sanbase.DateTimeUtils
-  alias Sanbase.SocialData.SocialDominance
+  alias Sanbase.SocialData.{SocialVolume, SocialDominance, Community}
   alias Sanbase.SocialData.News
 
   require Logger
@@ -13,79 +13,36 @@ defmodule Sanbase.SocialData do
 
   @recv_timeout 15_000
 
-  defdelegate social_dominance(
-                slug,
-                datetime_from,
-                datetime_to,
-                interval,
-                source
-              ),
-              to: SocialDominance
+  defdelegate social_dominance(slug, datetime_from, datetime_to, interval, source),
+    to: SocialDominance
 
-  defdelegate google_news(
-                word,
-                datetime_from,
-                datetime_to,
-                size
-              ),
-              to: News
+  defdelegate social_volume(slug, from, to, interval, source),
+    to: SocialVolume
 
-  def trending_words(
-        source,
-        size,
-        hour,
-        from_datetime,
-        to_datetime
-      ) do
-    trending_words_request(
-      source,
-      size,
-      hour,
-      from_datetime,
-      to_datetime
-    )
+  defdelegate community_messages_count(slug, from, to, interval, source),
+    to: Community
+
+  defdelegate google_news(word, datetime_from, datetime_to, size),
+    to: News
+
+  def trending_words(source, size, hour, from_datetime, to_datetime) do
+    trending_words_request(source, size, hour, from_datetime, to_datetime)
     |> handle_response(&trending_words_result/1, "trending words", "source: #{source}")
   end
 
-  def word_context(
-        word,
-        source,
-        size,
-        from_datetime,
-        to_datetime
-      ) do
-    word_context_request(
-      word,
-      source,
-      size,
-      from_datetime,
-      to_datetime
-    )
+  def word_context(word, source, size, from_datetime, to_datetime) do
+    word_context_request(word, source, size, from_datetime, to_datetime)
     |> handle_response(&word_context_result/1, "word context", "word #{word}")
   end
 
-  def word_trend_score(
-        word,
-        source,
-        from_datetime,
-        to_datetime
-      ) do
-    word_trend_score_request(
-      word,
-      source,
-      from_datetime,
-      to_datetime
-    )
+  def word_trend_score(word, source, from_datetime, to_datetime) do
+    word_trend_score_request(word, source, from_datetime, to_datetime)
     |> handle_response(&word_trend_score_result/1, "word trend score", "word #{word}")
   end
 
-  def top_social_gainers_losers(%{
-        status: status,
-        from: from,
-        to: to,
-        time_window: time_window,
-        size: size
-      }) do
+  def top_social_gainers_losers(args) do
+    %{status: status, from: from, to: to, time_window: time_window, size: size} = args
+
     case validate_time_window(time_window) do
       {:ok, time_window_in_days_str} ->
         social_gainers_losers_request(status, from, to, time_window_in_days_str, size)
@@ -101,12 +58,9 @@ defmodule Sanbase.SocialData do
     end
   end
 
-  def social_gainers_losers_status(%{
-        slug: slug,
-        from: from,
-        to: to,
-        time_window: time_window
-      }) do
+  def social_gainers_losers_status(args) do
+    %{slug: slug, from: from, to: to, time_window: time_window} = args
+
     case validate_time_window(time_window) do
       {:ok, time_window_in_days_str} ->
         social_gainers_losers_status_request(slug, from, to, time_window_in_days_str)
@@ -124,13 +78,7 @@ defmodule Sanbase.SocialData do
 
   # Private functions
 
-  defp trending_words_request(
-         source,
-         size,
-         hour,
-         from_datetime,
-         to_datetime
-       ) do
+  defp trending_words_request(source, size, hour, from_datetime, to_datetime) do
     from_unix = DateTime.to_unix(from_datetime)
     to_unix = DateTime.to_unix(to_datetime)
 
@@ -150,13 +98,7 @@ defmodule Sanbase.SocialData do
     http_client().get(url, [], options)
   end
 
-  defp word_context_request(
-         word,
-         source,
-         size,
-         from_datetime,
-         to_datetime
-       ) do
+  defp word_context_request(word, source, size, from_datetime, to_datetime) do
     from_unix = DateTime.to_unix(from_datetime)
     to_unix = DateTime.to_unix(to_datetime)
 
@@ -176,12 +118,7 @@ defmodule Sanbase.SocialData do
     http_client().get(url, [], options)
   end
 
-  defp word_trend_score_request(
-         word,
-         source,
-         from_datetime,
-         to_datetime
-       ) do
+  defp word_trend_score_request(word, source, from_datetime, to_datetime) do
     from_unix = DateTime.to_unix(from_datetime)
     to_unix = DateTime.to_unix(to_datetime)
 
@@ -200,13 +137,7 @@ defmodule Sanbase.SocialData do
     http_client().get(url, [], options)
   end
 
-  defp social_gainers_losers_request(
-         status,
-         from_datetime,
-         to_datetime,
-         time_window,
-         size
-       ) do
+  defp social_gainers_losers_request(status, from_datetime, to_datetime, time_window, size) do
     from_unix = DateTime.to_unix(from_datetime)
     to_unix = DateTime.to_unix(to_datetime)
 
@@ -279,17 +210,13 @@ defmodule Sanbase.SocialData do
   defp word_trend_score_result(result) do
     result =
       result
-      |> Enum.map(fn %{
-                       "timestamp" => timestamp,
-                       "score" => score,
-                       "hour" => hour,
-                       "source" => source
-                     } ->
-        %{
-          datetime: combine_unix_dt_and_hour(timestamp, hour),
-          score: score,
-          source: String.to_existing_atom(source)
-        }
+      |> Enum.map(fn
+        %{"timestamp" => timestamp, "score" => score, "hour" => hour, "source" => source} ->
+          %{
+            datetime: combine_unix_dt_and_hour(timestamp, hour),
+            score: score,
+            source: String.to_existing_atom(source)
+          }
       end)
       |> Enum.sort(&(&1.score >= &2.score))
 
@@ -300,14 +227,12 @@ defmodule Sanbase.SocialData do
     result =
       result
       |> Enum.sort(&(&1["timestamp"] <= &2["timestamp"]))
-      |> Enum.map(fn %{
-                       "timestamp" => timestamp,
-                       "projects" => projects
-                     } ->
-        %{
-          datetime: DateTime.from_unix!(timestamp),
-          projects: convert_projects_result(projects)
-        }
+      |> Enum.map(fn
+        %{"timestamp" => timestamp, "projects" => projects} ->
+          %{
+            datetime: DateTime.from_unix!(timestamp),
+            projects: convert_projects_result(projects)
+          }
       end)
 
     {:ok, result}
@@ -317,16 +242,13 @@ defmodule Sanbase.SocialData do
     result =
       result
       |> Enum.sort(&(&1["timestamp"] <= &2["timestamp"]))
-      |> Enum.map(fn %{
-                       "timestamp" => timestamp,
-                       "status" => status,
-                       "change" => change
-                     } ->
-        %{
-          datetime: DateTime.from_unix!(timestamp),
-          status: String.to_existing_atom(status),
-          change: change
-        }
+      |> Enum.map(fn
+        %{"timestamp" => timestamp, "status" => status, "change" => change} ->
+          %{
+            datetime: DateTime.from_unix!(timestamp),
+            status: String.to_existing_atom(status),
+            change: change
+          }
       end)
 
     {:ok, result}

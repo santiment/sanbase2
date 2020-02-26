@@ -6,30 +6,37 @@ defmodule Sanbase.SocialData.MetricAdapter do
   @aggregations [:sum]
 
   @social_volume_timeseries_metrics [
-    "telegram_social_volume",
-    "discord_social_volume"
+    # Social volume counts the mentions of a given word or words describing as subject
+    # A project can be addressed by different words.
+    # Example: `btc` and `bitcoin` refer to bitcoin
+    "social_volume_telegram",
+    "social_volume_discord",
+    "social_volume_reddit",
+    "social_volume_professional_traders_chat",
+    "social_volume_total"
+  ]
+
+  @community_messages_count_timeseries_metrics [
+    ## Community messages count counts the total amount of messages in a project's
+    # own social medium. All messages are counted. Handles spam
+    "community_messages_count_telegram",
+    "community_messages_count_discord",
+    # "community_messages_count_reddit",
+    "community_messages_count_total"
   ]
 
   @social_dominance_timeseries_metrics [
-    "telegram_social_dominance",
-    "reddit_social_dominance",
-    "discord_social_dominance"
+    "social_dominance_telegram",
+    "social_dominance_discord",
+    "social_dominance_reddit",
+    "social_dominance_professional_traders_chat",
+    "social_dominance_total"
   ]
 
-  @social_volume_source_type %{
-    "professional_traders_chat" => :professional_traders_chat_overview,
-    "telegram" => :telegram_chats_overview,
-    "discord" => :discord_discussion_overview
-  }
+  @timeseries_metrics @social_dominance_timeseries_metrics ++
+                        @social_volume_timeseries_metrics ++
+                        @community_messages_count_timeseries_metrics
 
-  @social_dominance_source_type %{
-    "professional_traders_chat" => :professional_traders_chat,
-    "telegram" => :telegram,
-    "discord" => :discord,
-    "reddit" => :reddit
-  }
-
-  @timeseries_metrics @social_dominance_timeseries_metrics ++ @social_volume_timeseries_metrics
   @histogram_metrics []
 
   @metrics @histogram_metrics ++ @timeseries_metrics
@@ -42,41 +49,33 @@ defmodule Sanbase.SocialData.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def timeseries_data(metric, %{slug: slug}, from, to, interval, _aggregation)
       when metric in @social_volume_timeseries_metrics do
-    [source, _] = String.split(metric, "_", parts: 2)
+    "social_volume_" <> source = metric
 
-    Sanbase.TechIndicators.social_volume(
-      slug,
-      from,
-      to,
-      interval,
-      Map.get(@social_volume_source_type, source)
-    )
+    Sanbase.SocialData.social_volume(slug, from, to, interval, source)
     |> transform_to_value_pairs(:mentions_count)
   end
 
   def timeseries_data(metric, %{slug: slug}, from, to, interval, _aggregation)
       when metric in @social_dominance_timeseries_metrics do
-    [source, _] = String.split(metric, "_", parts: 2)
+    "social_dominance_" <> source = metric
 
-    Sanbase.SocialData.social_dominance(
-      slug,
-      from,
-      to,
-      interval,
-      Map.get(@social_dominance_source_type, source)
-    )
+    Sanbase.SocialData.social_dominance(slug, from, to, interval, source)
     |> transform_to_value_pairs(:dominance)
   end
 
-  @impl Sanbase.Metric.Behaviour
-  def aggregated_timeseries_data(metric, %{slug: slug}, from, to, _aggregation)
-      when is_binary(slug) and metric in @social_volume_timeseries_metrics do
-    [source, _] = String.split(metric, "_", parts: 2)
-    source = Map.get(@social_volume_source_type, source)
+  def timeseries_data(metric, %{slug: slug}, from, to, interval, _aggregation)
+      when metric in @community_messages_count_timeseries_metrics do
+    "community_messages_count_" <> source = metric
 
-    Sanbase.TechIndicators.social_volume(slug, from, to, "1h", source)
+    Sanbase.SocialData.community_messages_count(slug, from, to, interval, source)
     |> transform_to_value_pairs(:mentions_count)
-    |> case do
+  end
+
+  @impl Sanbase.Metric.Behaviour
+  def aggregated_timeseries_data(metric, selector, from, to, aggregation)
+      when metric in @social_volume_timeseries_metrics or
+             metric in @community_messages_count_timeseries_metrics do
+    case timeseries_data(metric, selector, from, to, "1h", aggregation) do
       {:ok, result} ->
         {:ok, Enum.reduce(result, 0, &(&1.value + &2))}
 
@@ -85,17 +84,15 @@ defmodule Sanbase.SocialData.MetricAdapter do
     end
   end
 
-  def aggregated_timeseries_data(metric, %{slug: slug}, from, to, _aggregation)
+  def aggregated_timeseries_data(metric, selector, from, to, aggregation)
       when metric in @social_dominance_timeseries_metrics do
-    [source, _] = String.split(metric, "_", parts: 2)
-    source = Map.get(@social_dominance_source_type, source)
-
-    Sanbase.SocialData.social_dominance(slug, from, to, "1h", source)
-    |> transform_to_value_pairs(:dominance)
-    |> case do
+    case timeseries_data(metric, selector, from, to, "1h", aggregation) do
       {:ok, result} ->
-        sum = Enum.reduce(result, 0, &(&1.value + &2))
-        {:ok, Sanbase.Math.average(sum)}
+        result =
+          Enum.reduce(result, 0, &(&1.value + &2))
+          |> Sanbase.Math.average()
+
+        {:ok, result}
 
       {:error, error} ->
         {:error, error}
@@ -120,7 +117,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     # Providing a 2 element tuple `{any, integer}` will use that second element
     # as TTL for the cache key
     Sanbase.Cache.get_or_store({:social_metrics_available_slugs, 1800}, fn ->
-      Sanbase.TechIndicators.social_volume_projects()
+      Sanbase.SocialData.SocialVolume.social_volume_projects()
     end)
   end
 
@@ -167,7 +164,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
        min_interval: "5m",
        default_aggregation: :sum,
        available_aggregations: @aggregations,
-       available_selectors: [:slug],
+       available_selectors: [:slug, :word],
        data_type: :histogram
      }}
   end

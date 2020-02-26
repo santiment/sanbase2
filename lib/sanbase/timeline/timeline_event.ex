@@ -91,6 +91,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> Cursor.filter_by_cursor(cursor_type, cursor_datetime)
     |> Query.events_by_sanfamily_query()
     |> Query.events_with_public_entities_query()
+    |> Query.events_with_event_type([@publish_insight_type, @trigger_fired])
     |> Order.events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
     |> Repo.all()
     |> Cursor.wrap_events_with_cursor()

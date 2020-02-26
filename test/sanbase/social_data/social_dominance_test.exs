@@ -40,14 +40,8 @@ defmodule Sanbase.SocialDominanceTest do
       assert result ==
                {:ok,
                 [
-                  %{
-                    dominance: 5 * 100 / 25,
-                    datetime: from
-                  },
-                  %{
-                    dominance: 10 * 100 / 30,
-                    datetime: to
-                  }
+                  %{dominance: 20, datetime: from},
+                  %{dominance: 33.33, datetime: to}
                 ]}
     end
 
@@ -69,8 +63,8 @@ defmodule Sanbase.SocialDominanceTest do
         assert result ==
                  {:ok,
                   [
-                    %{dominance: 5 * 100 / 25, datetime: from},
-                    %{dominance: 10 * 100 / 30, datetime: to}
+                    %{dominance: 20.0, datetime: from},
+                    %{dominance: 33.33, datetime: to}
                   ]}
       end
     end

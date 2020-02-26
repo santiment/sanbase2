@@ -23,7 +23,6 @@ defmodule Sanbase.SocialData.SocialVolume do
         end,
         max_concurrency: 4
       )
-      |> IO.inspect(label: "26", limit: :infinity)
       |> List.zip()
       |> Enum.map(&Tuple.to_list/1)
       |> Enum.map(fn all_sources_point ->

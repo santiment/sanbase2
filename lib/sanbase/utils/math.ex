@@ -3,6 +3,10 @@ defmodule Sanbase.Math do
 
   @epsilon 1.0e-6
 
+  def round_float(f) when is_float(f) and f >= 1, do: Float.round(f, 2)
+  def round_float(f) when is_float(f), do: Float.round(f, 6)
+  def round_float(i) when is_integer(i), do: round(i * 1.0)
+
   @doc ~s"""
   Calculate the % change that occured between the first and the second arguments
 

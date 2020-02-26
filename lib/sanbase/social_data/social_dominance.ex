@@ -50,6 +50,7 @@ defmodule Sanbase.SocialData.SocialDominance do
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, result} = Jason.decode(body)
+
         parse_result(result, ticker_slug)
 
       {:ok, %HTTPoison.Response{status_code: status}} ->
@@ -99,9 +100,12 @@ defmodule Sanbase.SocialData.SocialDominance do
       result
       |> Enum.map(fn
         %{"datetime" => datetime} = datapoint ->
+          dominance = Map.get(datapoint, ticker_slug, 0) * 100 / total_mentions(datapoint)
+          dominance = dominance |> Sanbase.Math.round_float()
+
           %{
             datetime: DateTime.from_unix!(datetime),
-            dominance: Map.get(datapoint, ticker_slug, 0) * 100 / total_mentions(datapoint)
+            dominance: dominance
           }
       end)
 

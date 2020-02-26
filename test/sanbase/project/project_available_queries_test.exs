@@ -16,7 +16,7 @@ defmodule Sanbase.Project.AvailableQueriesTest do
   ]
 
   setup_with_mocks([
-    {Sanbase.TechIndicators, [:passthrough],
+    {Sanbase.SocialData.SocialVolume, [:passthrough],
      [social_volume_projects: fn -> {:ok, ["bitcoin", "ethereum", "santiment"]} end]}
   ]) do
     []

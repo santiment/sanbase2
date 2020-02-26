@@ -109,7 +109,8 @@ defmodule Sanbase.Mixfile do
       {:faker, "~> 0.12"},
       {:inflex, "~> 2.0", override: true},
       {:mogrify, "~> 0.7.2"},
-      {:lz4b, "0.0.4"}
+      {:lz4b, "0.0.4"},
+      {:rexbug, ">= 1.0.0", only: [:dev]}
     ]
   end
 

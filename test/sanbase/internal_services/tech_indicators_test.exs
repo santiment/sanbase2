@@ -5,6 +5,7 @@ defmodule Sanbase.TechIndicatorsTest do
   import ExUnit.CaptureLog
 
   alias Sanbase.TechIndicators
+  alias Sanbase.SocialData.SocialVolume
   import Sanbase.Factory
 
   setup do
@@ -182,8 +183,8 @@ defmodule Sanbase.TechIndicatorsTest do
 
   describe "social_volume/5" do
     test "response: success" do
-      from = 1_523_876_400
-      to = 1_523_880_000
+      from = ~U[2018-04-16 11:00:00Z]
+      to = ~U[2018-04-16 12:00:00Z]
 
       mock(
         HTTPoison,
@@ -196,75 +197,37 @@ defmodule Sanbase.TechIndicatorsTest do
          }}
       )
 
-      result =
-        TechIndicators.social_volume(
-          "santiment",
-          DateTime.from_unix!(from),
-          DateTime.from_unix!(to),
-          "1h",
-          :telegram_discussion_overview
-        )
+      result = SocialVolume.social_volume("santiment", from, to, "1h", :telegram)
 
       assert result ==
                {:ok,
                 [
-                  %{
-                    mentions_count: 5,
-                    datetime: DateTime.from_unix!(from)
-                  },
-                  %{
-                    mentions_count: 15,
-                    datetime: DateTime.from_unix!(to)
-                  }
+                  %{mentions_count: 5, datetime: from},
+                  %{mentions_count: 15, datetime: to}
                 ]}
     end
 
     test "response: 404" do
-      mock(
-        HTTPoison,
-        :get,
-        {:ok,
-         %HTTPoison.Response{
-           body: "Some message",
-           status_code: 404
-         }}
-      )
+      from = ~U[2018-04-16 11:00:00Z]
+      to = ~U[2018-04-16 12:00:00Z]
 
-      result = fn ->
-        TechIndicators.social_volume(
-          "santiment",
-          DateTime.from_unix!(1_523_876_400),
-          DateTime.from_unix!(1_523_880_000),
-          "1h",
-          :telegram_discussion_overview
-        )
-      end
+      mock(HTTPoison, :get, {:ok, %HTTPoison.Response{body: "Some message", status_code: 404}})
 
-      assert capture_log(result) =~
+      assert capture_log(fn ->
+               SocialVolume.social_volume("santiment", from, to, "1h", :telegram)
+             end) =~
                "Error status 404 fetching social volume for project santiment"
     end
 
     test "response: error" do
-      mock(
-        HTTPoison,
-        :get,
-        {:error,
-         %HTTPoison.Error{
-           reason: :econnrefused
-         }}
-      )
+      from = ~U[2018-04-16 11:00:00Z]
+      to = ~U[2018-04-16 12:00:00Z]
 
-      result = fn ->
-        TechIndicators.social_volume(
-          "santiment",
-          DateTime.from_unix!(1_523_876_400),
-          DateTime.from_unix!(1_523_880_000),
-          "1h",
-          :telegram_discussion_overview
-        )
-      end
+      mock(HTTPoison, :get, {:error, %HTTPoison.Error{reason: :econnrefused}})
 
-      assert capture_log(result) =~
+      assert capture_log(fn ->
+               SocialVolume.social_volume("santiment", from, to, "1h", :telegram)
+             end) =~
                "Cannot fetch social volume data for project santiment: :econnrefused\n"
     end
   end
@@ -282,47 +245,30 @@ defmodule Sanbase.TechIndicatorsTest do
          }}
       )
 
-      result = TechIndicators.social_volume_projects()
+      result = SocialVolume.social_volume_projects()
 
       assert result == {:ok, ["cardano", "bitcoin-cash", "bitcoin", "dragonchain", "eos"]}
     end
 
     test "response: 404" do
-      mock(
-        HTTPoison,
-        :get,
-        {:ok,
-         %HTTPoison.Response{
-           body: "Some message",
-           status_code: 404
-         }}
-      )
+      mock(HTTPoison, :get, {:ok, %HTTPoison.Response{body: "Some message", status_code: 404}})
 
-      result = fn -> TechIndicators.social_volume_projects() end
-
-      assert capture_log(result) =~ "Error status 404 fetching social volume projects"
+      assert capture_log(fn -> SocialVolume.social_volume_projects() end) =~
+               "Error status 404 fetching social volume projects"
     end
 
     test "response: error" do
-      mock(
-        HTTPoison,
-        :get,
-        {:error,
-         %HTTPoison.Error{
-           reason: :econnrefused
-         }}
-      )
+      mock(HTTPoison, :get, {:error, %HTTPoison.Error{reason: :econnrefused}})
 
-      result = fn -> TechIndicators.social_volume_projects() end
-
-      assert capture_log(result) =~ "Cannot fetch social volume projects data: :econnrefused\n"
+      assert capture_log(fn -> SocialVolume.social_volume_projects() end) =~
+               "Cannot fetch social volume projects data: :econnrefused\n"
     end
   end
 
   describe "topic_search/5" do
     test "response: success" do
-      from = 1_533_114_000
-      to = 1_534_323_600
+      from = ~U[2018-04-16 11:00:00Z]
+      to = ~U[2018-04-16 12:00:00Z]
 
       mock(
         HTTPoison,
@@ -335,14 +281,7 @@ defmodule Sanbase.TechIndicatorsTest do
          }}
       )
 
-      result =
-        TechIndicators.topic_search(
-          :telegram,
-          "btc moon",
-          DateTime.from_unix!(from),
-          DateTime.from_unix!(to),
-          "6h"
-        )
+      result = SocialVolume.topic_search(:telegram, "btc moon", from, to, "6h")
 
       assert result ==
                {:ok,
@@ -362,51 +301,26 @@ defmodule Sanbase.TechIndicatorsTest do
     end
 
     test "response: 404" do
-      mock(
-        HTTPoison,
-        :get,
-        {:ok,
-         %HTTPoison.Response{
-           body: "Some message",
-           status_code: 404
-         }}
-      )
+      from = ~U[2018-04-16 11:00:00Z]
+      to = ~U[2018-04-16 12:00:00Z]
 
-      result = fn ->
-        TechIndicators.topic_search(
-          :telegram,
-          "btc moon",
-          DateTime.from_unix!(1_533_114_000),
-          DateTime.from_unix!(1_534_323_600),
-          "6h"
-        )
-      end
+      mock(HTTPoison, :get, {:ok, %HTTPoison.Response{body: "Some message", status_code: 404}})
 
-      assert capture_log(result) =~
+      assert capture_log(fn ->
+               SocialVolume.topic_search(:telegram, "btc moon", from, to, "6h")
+             end) =~
                "Error status 404 fetching results for search text \"btc moon\": Some message\n"
     end
 
     test "response: error" do
-      mock(
-        HTTPoison,
-        :get,
-        {:error,
-         %HTTPoison.Error{
-           reason: :econnrefused
-         }}
-      )
+      from = ~U[2018-04-16 11:00:00Z]
+      to = ~U[2018-04-16 12:00:00Z]
 
-      result = fn ->
-        TechIndicators.topic_search(
-          :telegram,
-          "btc moon",
-          DateTime.from_unix!(1_533_114_000),
-          DateTime.from_unix!(1_534_323_600),
-          "6h"
-        )
-      end
+      mock(HTTPoison, :get, {:error, %HTTPoison.Error{reason: :econnrefused}})
 
-      assert capture_log(result) =~
+      assert capture_log(fn ->
+               SocialVolume.topic_search(:telegram, "btc moon", from, to, "6h")
+             end) =~
                "Cannot fetch results for search text \"btc moon\": :econnrefused\n"
     end
   end

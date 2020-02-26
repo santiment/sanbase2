@@ -19,15 +19,9 @@ defmodule Sanbase.SocialDominanceTest do
   ])
 
   setup do
-    project =
-      insert(:project, %{
-        slug: "ethereum",
-        ticker: "ETH"
-      })
+    project = insert(:project, %{slug: "ethereum", ticker: "ETH"})
 
-    [
-      project: project
-    ]
+    [project: project]
   end
 
   describe "social_dominance/5" do
@@ -38,21 +32,10 @@ defmodule Sanbase.SocialDominanceTest do
       mock(
         HTTPoison,
         :get,
-        {:ok,
-         %HTTPoison.Response{
-           body: @successful_response_body,
-           status_code: 200
-         }}
+        {:ok, %HTTPoison.Response{body: @successful_response_body, status_code: 200}}
       )
 
-      result =
-        SocialData.social_dominance(
-          "ethereum",
-          from,
-          to,
-          "1h",
-          :telegram
-        )
+      result = SocialData.social_dominance("ethereum", from, to, "1h", :telegram)
 
       assert result ==
                {:ok,
@@ -81,26 +64,13 @@ defmodule Sanbase.SocialDominanceTest do
            }}
         end
       ) do
-        result =
-          SocialData.social_dominance(
-            "ethereum",
-            from,
-            to,
-            "1h",
-            :all
-          )
+        result = SocialData.social_dominance("ethereum", from, to, "1h", :all)
 
         assert result ==
                  {:ok,
                   [
-                    %{
-                      dominance: 5 * 100 / 25,
-                      datetime: from
-                    },
-                    %{
-                      dominance: 10 * 100 / 30,
-                      datetime: to
-                    }
+                    %{dominance: 5 * 100 / 25, datetime: from},
+                    %{dominance: 10 * 100 / 30, datetime: to}
                   ]}
       end
     end

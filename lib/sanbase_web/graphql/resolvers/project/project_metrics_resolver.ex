@@ -1,5 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
+  import SanbaseWeb.Graphql.Helpers.Async, only: [async: 1]
 
   alias Sanbase.Model.Project
   alias Sanbase.Metric
@@ -11,25 +12,31 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   @refresh_time_max_offset 120
 
   def available_metrics(%Project{slug: slug}, _args, _resolution) do
-    query = :available_metrics
-    cache_key = {__MODULE__, query, slug} |> :erlang.phash2()
-    fun = fn -> Metric.available_metrics_for_slug(%{slug: slug}) end
+    async(fn ->
+      query = :available_metrics
+      cache_key = {__MODULE__, query, slug} |> :erlang.phash2()
+      fun = fn -> Metric.available_metrics_for_slug(%{slug: slug}) end
 
-    maybe_register_and_get(cache_key, fun, slug, query)
+      maybe_register_and_get(cache_key, fun, slug, query)
+    end)
   end
 
   def available_timeseries_metrics(%Project{slug: slug}, _args, _resolution) do
-    query = :available_timeseries_metrics
-    cache_key = {__MODULE__, query, slug} |> :erlang.phash2()
-    fun = fn -> Metric.available_timeseries_metrics_for_slug(%{slug: slug}) end
-    maybe_register_and_get(cache_key, fun, slug, query)
+    async(fn ->
+      query = :available_timeseries_metrics
+      cache_key = {__MODULE__, query, slug} |> :erlang.phash2()
+      fun = fn -> Metric.available_timeseries_metrics_for_slug(%{slug: slug}) end
+      maybe_register_and_get(cache_key, fun, slug, query)
+    end)
   end
 
   def available_histogram_metrics(%Project{slug: slug}, _args, _resolution) do
-    query = :available_histogram_metrics
-    cache_key = {__MODULE__, query, slug} |> :erlang.phash2()
-    fun = fn -> Metric.available_histogram_metrics_for_slug(%{slug: slug}) end
-    maybe_register_and_get(cache_key, fun, slug, query)
+    async(fn ->
+      query = :available_histogram_metrics
+      cache_key = {__MODULE__, query, slug} |> :erlang.phash2()
+      fun = fn -> Metric.available_histogram_metrics_for_slug(%{slug: slug}) end
+      maybe_register_and_get(cache_key, fun, slug, query)
+    end)
   end
 
   # Get the available metrics from the rehydrating cache. If the function for computing it

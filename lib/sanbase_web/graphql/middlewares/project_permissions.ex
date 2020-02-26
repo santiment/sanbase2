@@ -31,6 +31,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.ProjectPermissions do
       "fundsRaisedUsdIcoEndPrice",
       "fundsRaisedBtcIcoEndPrice",
       "availableMetrics",
+      "availableTimeseriesMetrics",
+      "availableHistogramMetrics",
       "availableQueries"
     ]
 

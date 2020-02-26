@@ -16,7 +16,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   def available_queries(%Project{} = project, _args, _resolution) do
-    {:ok, Project.AvailableQueries.get(project)}
+    async(fn -> {:ok, Project.AvailableQueries.get(project)} end)
   end
 
   def projects_count(_root, args, _resolution) do
@@ -35,6 +35,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, projects}
   end
 
+  @spec all_projects(any, map, any) :: {:ok, any}
   def all_projects(_parent, args, _resolution) do
     page = Map.get(args, :page)
     page_size = Map.get(args, :page_size)

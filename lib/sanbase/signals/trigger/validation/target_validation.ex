@@ -3,6 +3,9 @@ defmodule Sanbase.Signal.Validation.Target do
 
   def valid_target?(%{user_list: int}) when is_integer(int), do: :ok
   def valid_target?(%{watchlist_id: int}) when is_integer(int), do: :ok
+
+  def valid_target?(%{text: text}) when is_binary(text), do: :ok
+
   def valid_target?(%{word: word}) when is_binary(word), do: :ok
 
   def valid_target?(%{word: words}) when is_list(words) do

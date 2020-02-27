@@ -514,24 +514,58 @@ these are the tickers of the projects. Supported currencies are: `XRP`, `BTC`, `
 
 #### Example settings structure for `metric_signal`
 
-Supported metrics are all metrics obtainable by the getMetric API that have
-a min interval at most 5 minutes. These metrics are:
+Supported metrics are all metrics obtainable by the getMetric API that have a min interval at most 5 minutes. These metrics are:
+
+All metrics support the `slug` target.
+All `social_volume_*` metrics also support the `text` target.
 
 ##### Price data
 
-- "price_usd", "price_btc", "volume_usd", "marketcap_usd"
+- "price_usd"
+- "price_btc"
+- "volume_usd"
+- "marketcap_usd"
 
 ##### Social data
 
-"telegram_social_dominance", "reddit_social_dominance", "discord_social_dominance", "telegram_social_volume", "discord_social_volume"
+- "community_messages_count_discord"
+- "community_messages_count_telegram"
+- "community_messages_count_total"
+- "social_dominance_discord"
+- "social_dominance_professional_traders_chat"
+- "social_dominance_reddit"
+- "social_dominance_telegram"
+- "social_dominance_total"
+- "social_volume_discord"
+- "social_volume_professional_traders_chat"
+- "social_volume_reddit"
+- "social_volume_telegram"
+- "social_volume_total"
 
 ##### On-chain data
 
-- "transaction_volume", "exchange_balance", "exchange_inflow", "exchange_outflow", "age_destroyed"
+- "transaction_volume"
+- "exchange_balance"
+- "exchange_inflow"
+- "exchange_outflow"
+- "age_destroyed"
 
 ##### Github data
 
-- "dev_activity", "github_activity"
+- "dev_activity"
+- "github_activity"
+
+```json
+// The social volume (mentions) of a random word or any correct Lucene query is above 300
+{
+  "type": "metric_signal",
+  "metric": "social_volume_total",
+  "time_window": "1d",
+  "channel": "telegram",
+  "target": { "text": "buy OR sell OR dump" },
+  "operation": { "above": 300 }
+}
+```
 
 ```json
 // The transaction volume of Santiment's project is above 1,000,000

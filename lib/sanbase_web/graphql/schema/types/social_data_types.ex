@@ -53,7 +53,6 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   end
 
   object :topic_search do
-    field(:messages, list_of(:messages))
     field(:chart_data, list_of(:chart_data))
   end
 

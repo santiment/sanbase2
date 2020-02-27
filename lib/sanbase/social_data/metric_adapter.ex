@@ -71,6 +71,14 @@ defmodule Sanbase.SocialData.MetricAdapter do
     |> transform_to_value_pairs(:mentions_count)
   end
 
+  def timeseries_data(metric, %{text: text}, from, to, interval, _aggregation)
+      when metric in @social_volume_timeseries_metrics do
+    "social_volume_" <> source = metric
+
+    Sanbase.SocialData.topic_search(text, from, to, interval, source)
+    |> transform_to_value_pairs(:mentions_count)
+  end
+
   @impl Sanbase.Metric.Behaviour
   def aggregated_timeseries_data(metric, selector, from, to, aggregation)
       when metric in @social_volume_timeseries_metrics or
@@ -164,7 +172,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
        min_interval: "5m",
        default_aggregation: :sum,
        available_aggregations: @aggregations,
-       available_selectors: [:slug, :word],
+       available_selectors: [:slug, :text],
        data_type: :histogram
      }}
   end

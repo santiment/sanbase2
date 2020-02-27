@@ -281,23 +281,14 @@ defmodule Sanbase.TechIndicatorsTest do
          }}
       )
 
-      result = SocialVolume.topic_search(:telegram, "btc moon", from, to, "6h")
+      result = SocialVolume.topic_search("btc moon", from, to, "6h", :telegram)
 
       assert result ==
                {:ok,
-                %{
-                  chart_data: [
-                    %{datetime: DateTime.from_unix!(1_533_146_400), mentions_count: 1},
-                    %{datetime: DateTime.from_unix!(1_533_168_000), mentions_count: 0}
-                  ],
-                  messages: [
-                    %{datetime: DateTime.from_unix!(1_533_307_652), text: "BTC moon"},
-                    %{
-                      datetime: DateTime.from_unix!(1_533_694_150),
-                      text: "0.1c of usd won't make btc moon, you realize that?"
-                    }
-                  ]
-                }}
+                [
+                  %{datetime: DateTime.from_unix!(1_533_146_400), mentions_count: 1},
+                  %{datetime: DateTime.from_unix!(1_533_168_000), mentions_count: 0}
+                ]}
     end
 
     test "response: 404" do
@@ -307,7 +298,7 @@ defmodule Sanbase.TechIndicatorsTest do
       mock(HTTPoison, :get, {:ok, %HTTPoison.Response{body: "Some message", status_code: 404}})
 
       assert capture_log(fn ->
-               SocialVolume.topic_search(:telegram, "btc moon", from, to, "6h")
+               SocialVolume.topic_search("btc moon", from, to, "6h", :reddit)
              end) =~
                "Error status 404 fetching results for search text \"btc moon\": Some message\n"
     end
@@ -319,7 +310,7 @@ defmodule Sanbase.TechIndicatorsTest do
       mock(HTTPoison, :get, {:error, %HTTPoison.Error{reason: :econnrefused}})
 
       assert capture_log(fn ->
-               SocialVolume.topic_search(:telegram, "btc moon", from, to, "6h")
+               SocialVolume.topic_search("btc moon", from, to, "6h", :discord)
              end) =~
                "Cannot fetch results for search text \"btc moon\": :econnrefused\n"
     end

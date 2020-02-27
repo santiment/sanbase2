@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
   enum :selector_name do
     value(:slug)
-    value(:word)
+    value(:text)
   end
 
   enum :metric_data_type do
@@ -138,7 +138,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
   input_object :metric_target_selector_input_object do
     field(:slug, :string)
-    field(:word, :string)
+    field(:text, :string)
   end
 
   object :metric do

@@ -201,6 +201,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     SELECT distinct(metric_id)
     FROM #{table}
     PREWHERE
+      asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
       dt > toDateTime(?2)
     """
 

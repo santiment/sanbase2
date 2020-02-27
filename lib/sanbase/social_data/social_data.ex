@@ -19,6 +19,9 @@ defmodule Sanbase.SocialData do
   defdelegate social_volume(slug, from, to, interval, source),
     to: SocialVolume
 
+  defdelegate topic_search(text, from, to, interval, source),
+    to: SocialVolume
+
   defdelegate community_messages_count(slug, from, to, interval, source),
     to: Community
 

@@ -71,8 +71,33 @@ defmodule Sanbase.SocialData.SocialVolume do
     end
   end
 
-  def topic_search(source, search_text, from, to, interval) do
-    topic_search_request(source, search_text, from, to, interval)
+  def topic_search(search_text, from, to, interval, source)
+      when source in [:all, "all", :total, "total"] do
+    result =
+      @sources
+      |> Sanbase.Parallel.map(
+        fn source ->
+          {:ok, result} = topic_search(search_text, from, to, interval, source)
+          result
+        end,
+        max_concurrency: 4
+      )
+      |> List.zip()
+      |> Enum.map(&Tuple.to_list/1)
+      |> Enum.map(fn all_sources_point ->
+        total_mentions_count = all_sources_point |> Enum.reduce(0, &(&2 + &1.mentions_count))
+
+        %{
+          datetime: all_sources_point |> List.first() |> Map.get(:datetime),
+          mentions_count: total_mentions_count
+        }
+      end)
+
+    {:ok, result}
+  end
+
+  def topic_search(search_text, from, to, interval, source) do
+    topic_search_request(search_text, from, to, interval, source)
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, result} = Jason.decode(body)
@@ -148,7 +173,7 @@ defmodule Sanbase.SocialData.SocialVolume do
     {:ok, result}
   end
 
-  defp topic_search_request(source, search_text, from, to, interval) do
+  defp topic_search_request(search_text, from, to, interval, source) do
     url = "#{tech_indicators_url()}/indicator/topic_search"
 
     options = [
@@ -165,13 +190,10 @@ defmodule Sanbase.SocialData.SocialVolume do
     http_client().get(url, [], options)
   end
 
-  defp topic_search_result(%{"messages" => messages, "chart_data" => chart_data}) do
-    messages = parse_topic_search_data(messages, :text)
+  defp topic_search_result(%{"chart_data" => chart_data}) do
     chart_data = parse_topic_search_data(chart_data, :mentions_count)
 
-    result = %{messages: messages, chart_data: chart_data}
-
-    {:ok, result}
+    {:ok, chart_data}
   end
 
   defp parse_topic_search_data(data, key) do

@@ -32,6 +32,7 @@ defmodule Sanbase.Signal.TriggerMetricTest do
 
       user = insert(:user)
       Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
+      %{user: user}
     end
 
     test "signal with text selector works", context do
@@ -107,11 +108,7 @@ defmodule Sanbase.Signal.TriggerMetricTest do
 
       datetimes = generate_datetimes(~U[2019-01-01 00:00:00Z], "1d", 7)
 
-      [
-        user: user,
-        project: project,
-        datetimes: datetimes
-      ]
+      %{user: user, project: project, datetimes: datetimes}
     end
 
     test "signal with random metric works - above operation", context do

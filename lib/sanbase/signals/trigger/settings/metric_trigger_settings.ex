@@ -62,10 +62,12 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
   def get_data(%__MODULE__{} = settings) do
     {from, to, interval} = get_timeseries_params(settings)
 
-    %{metric: metric, filtered_target: %{list: target_list}} = settings
+    %{metric: metric, filtered_target: %{list: target_list, type: type}} = settings
 
     target_list
-    |> Enum.map(fn slug -> {slug, fetch_metric(metric, slug, from, to, interval)} end)
+    |> Enum.map(fn identifier ->
+      {identifier, fetch_metric(metric, %{type => identifier}, from, to, interval)}
+    end)
     |> Enum.reject(&is_nil/1)
   end
 
@@ -81,13 +83,14 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
     {from, to, time_window}
   end
 
-  defp fetch_metric(metric, slug, from, to, interval) do
+  defp fetch_metric(metric, selector, from, to, interval) do
     cache_key =
-      {:metric_signal, metric, slug, round_datetime(from, 300), round_datetime(to, 300), interval}
+      {:metric_signal, metric, selector, round_datetime(from, 300), round_datetime(to, 300),
+       interval}
       |> :erlang.phash2()
 
     Cache.get_or_store(cache_key, fn ->
-      case Metric.timeseries_data(metric, %{slug: slug}, from, to, interval) do
+      case Metric.timeseries_data(metric, selector, from, to, interval) do
         {:ok, [_ | _] = result} -> result |> Enum.take(-2)
         _ -> nil
       end
@@ -125,7 +128,32 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
       ])
     end
 
-    defp template_kv(values, settings) do
+    defp template_kv(values, %{target: %{text: _}} = settings) do
+      %{identifier: text} = values
+
+      {:ok, human_readable_name} = Sanbase.Metric.human_readable_name(settings.metric)
+
+      {operation_template, operation_kv} =
+        OperationText.to_template_kv(values, settings.operation)
+
+      kv =
+        %{
+          type: MetricTriggerSettings.type(),
+          operation: settings.operation,
+          search_text: text,
+          metric: settings.metric,
+          metric_human_readable_name: human_readable_name
+        }
+        |> Map.merge(operation_kv)
+
+      template = """
+      **{{project_name}}**'s {{metric_human_readable_name}} #{operation_template}.
+      """
+
+      {template, kv}
+    end
+
+    defp template_kv(values, %{target: %{slug: _}} = settings) do
       %{identifier: slug} = values
 
       project = Project.by_slug(slug)

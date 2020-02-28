@@ -166,13 +166,19 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def metadata(metric) do
+    selectors =
+      case metric do
+        "community_messages_count" <> _ -> [:slug]
+        _ -> [:slug, :text]
+      end
+
     {:ok,
      %{
        metric: metric,
        min_interval: "5m",
        default_aggregation: :sum,
        available_aggregations: @aggregations,
-       available_selectors: [:slug, :text],
+       available_selectors: selectors,
        data_type: :histogram
      }}
   end

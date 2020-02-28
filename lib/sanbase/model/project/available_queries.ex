@@ -218,7 +218,7 @@ defmodule Sanbase.Model.Project.AvailableQueries do
   defp social_volume_projects() do
     SanbaseWeb.Graphql.Cache.wrap(
       fn ->
-        {:ok, projects} = Sanbase.SocialData.SocialVolume.social_volume_projects()
+        {:ok, projects} = Sanbase.SocialData.social_volume_projects()
         projects
       end,
       :social_volume_projects_list,

@@ -9,7 +9,7 @@ defmodule Sanbase.Timeline.Query do
   def events_with_event_type(query, types) do
     from(
       event in query,
-      where: event.type in ^types
+      where: event.event_type in ^types
     )
   end
 

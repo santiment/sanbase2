@@ -42,7 +42,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
   end
 
   def social_volume_projects(_root, %{}, _resolution) do
-    SocialData.SocialVolume.social_volume_projects()
+    SocialData.social_volume_projects()
   end
 
   def topic_search(
@@ -50,7 +50,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
         %{source: source, search_text: search_text, from: from, to: to, interval: interval},
         _resolution
       ) do
-    case SocialData.SocialVolume.topic_search(search_text, from, to, interval, source) do
+    case SocialData.topic_search(search_text, from, to, interval, source) do
       {:ok, data} -> {:ok, %{chart_data: data}}
       {:error, error} -> {:error, error}
     end

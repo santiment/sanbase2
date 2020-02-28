@@ -13,13 +13,13 @@ defmodule Sanbase.SocialData.SocialDominance do
   @recv_timeout 15_000
   @sources [:telegram, :professional_traders_chat, :reddit, :discord]
 
-  def social_dominance(slug, from, to, interval, source)
+  def social_dominance(%{slug: _slug} = selector, from, to, interval, source)
       when source in [:all, "all", :total, "total"] do
     result =
       @sources
       |> Sanbase.Parallel.map(
         fn source ->
-          {:ok, result} = social_dominance(slug, from, to, interval, source)
+          {:ok, result} = social_dominance(selector, from, to, interval, source)
 
           result
         end,
@@ -42,7 +42,24 @@ defmodule Sanbase.SocialData.SocialDominance do
     {:ok, result}
   end
 
-  def social_dominance(slug, from, to, interval, source) do
+  def social_dominance(%{text: text}, from, to, interval, source) do
+    {:ok, text_volume} = Sanbase.SocialData.topic_search(text, from, to, interval, source)
+    {:ok, total_volume} = Sanbase.SocialData.topic_search("*", from, to, interval, source)
+
+    result =
+      Enum.zip(text_volume, total_volume)
+      |> Enum.map(fn {%{datetime: dt, mentions_count: text_mentions},
+                      %{datetime: _, mentions_count: total_mentions}} ->
+        %{
+          datetime: dt,
+          mentions_count: (text_mentions / total_mentions) |> Sanbase.Math.round_float()
+        }
+      end)
+
+    {:ok, result}
+  end
+
+  def social_dominance(%{slug: slug}, from, to, interval, source) do
     ticker = Project.ticker_by_slug(slug)
     ticker_slug = "#{ticker}_#{slug}"
 

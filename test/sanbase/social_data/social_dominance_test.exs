@@ -26,8 +26,8 @@ defmodule Sanbase.SocialDominanceTest do
 
   describe "social_dominance/5" do
     test "response: success" do
-      from = DateTime.from_naive!(~N[2018-04-16 10:00:00], "Etc/UTC")
-      to = DateTime.from_naive!(~N[2018-04-16 22:00:00], "Etc/UTC")
+      from = ~U[2018-04-16 10:00:00Z]
+      to = ~U[2018-04-16 22:00:00Z]
 
       mock(
         HTTPoison,
@@ -35,7 +35,7 @@ defmodule Sanbase.SocialDominanceTest do
         {:ok, %HTTPoison.Response{body: @successful_response_body, status_code: 200}}
       )
 
-      result = SocialData.social_dominance("ethereum", from, to, "1h", :telegram)
+      result = SocialData.social_dominance(%{slug: "ethereum"}, from, to, "1h", :telegram)
 
       assert result ==
                {:ok,
@@ -46,8 +46,8 @@ defmodule Sanbase.SocialDominanceTest do
     end
 
     test "when computing for all sources" do
-      from = DateTime.from_naive!(~N[2018-04-16 10:00:00], "Etc/UTC")
-      to = DateTime.from_naive!(~N[2018-04-16 22:00:00], "Etc/UTC")
+      from = ~U[2018-04-16 10:00:00Z]
+      to = ~U[2018-04-16 22:00:00Z]
 
       with_mock(HTTPoison, [],
         get: fn _, _, _ ->
@@ -58,7 +58,7 @@ defmodule Sanbase.SocialDominanceTest do
            }}
         end
       ) do
-        result = SocialData.social_dominance("ethereum", from, to, "1h", :all)
+        result = SocialData.social_dominance(%{slug: "ethereum"}, from, to, "1h", :all)
 
         assert result ==
                  {:ok,
@@ -70,58 +70,30 @@ defmodule Sanbase.SocialDominanceTest do
     end
 
     test "when there are no mentions for any project" do
-      from = DateTime.from_naive!(~N[2018-04-16 10:00:00], "Etc/UTC")
-      to = DateTime.from_naive!(~N[2018-04-16 22:00:00], "Etc/UTC")
+      from = ~U[2018-04-16 10:00:00Z]
+      to = ~U[2018-04-16 22:00:00Z]
 
       mock(
         HTTPoison,
         :get,
         {:ok,
-         %HTTPoison.Response{
-           body: @successful_response_body_with_no_mentions,
-           status_code: 200
-         }}
+         %HTTPoison.Response{body: @successful_response_body_with_no_mentions, status_code: 200}}
       )
 
-      result =
-        SocialData.social_dominance(
-          "ethereum",
-          from,
-          to,
-          "1h",
-          :telegram
-        )
+      result = SocialData.social_dominance(%{slug: "ethereum"}, from, to, "1h", :telegram)
 
       assert result ==
-               {:ok,
-                [
-                  %{
-                    dominance: 0,
-                    datetime: from
-                  },
-                  %{
-                    dominance: 0,
-                    datetime: to
-                  }
-                ]}
+               {:ok, [%{dominance: 0, datetime: from}, %{dominance: 0, datetime: to}]}
     end
 
     test "response: 404" do
-      mock(
-        HTTPoison,
-        :get,
-        {:ok,
-         %HTTPoison.Response{
-           body: "Some message",
-           status_code: 404
-         }}
-      )
+      mock(HTTPoison, :get, {:ok, %HTTPoison.Response{body: "Some message", status_code: 404}})
 
       result = fn ->
         SocialData.social_dominance(
-          "santiment",
-          DateTime.from_naive!(~N[2018-04-16 10:00:00], "Etc/UTC"),
-          DateTime.from_naive!(~N[2018-04-16 22:00:00], "Etc/UTC"),
+          %{slug: "santiment"},
+          ~U[2018-04-16 10:00:00Z],
+          ~U[2018-04-16 22:00:00Z],
           "1h",
           :telegram
         )
@@ -132,20 +104,13 @@ defmodule Sanbase.SocialDominanceTest do
     end
 
     test "response: error" do
-      mock(
-        HTTPoison,
-        :get,
-        {:error,
-         %HTTPoison.Error{
-           reason: :econnrefused
-         }}
-      )
+      mock(HTTPoison, :get, {:error, %HTTPoison.Error{reason: :econnrefused}})
 
       result = fn ->
         SocialData.social_dominance(
-          "santiment",
-          DateTime.from_naive!(~N[2018-04-16 10:00:00], "Etc/UTC"),
-          DateTime.from_naive!(~N[2018-04-16 22:00:00], "Etc/UTC"),
+          %{slug: "santiment"},
+          ~U[2018-04-16 10:00:00Z],
+          ~U[2018-04-16 22:00:00Z],
           "1h",
           :telegram
         )

@@ -55,11 +55,11 @@ defmodule Sanbase.SocialData.MetricAdapter do
     |> transform_to_value_pairs(:mentions_count)
   end
 
-  def timeseries_data(metric, %{slug: slug}, from, to, interval, _aggregation)
+  def timeseries_data(metric, %{} = selector, from, to, interval, _aggregation)
       when metric in @social_dominance_timeseries_metrics do
     "social_dominance_" <> source = metric
 
-    Sanbase.SocialData.social_dominance(slug, from, to, interval, source)
+    Sanbase.SocialData.social_dominance(selector, from, to, interval, source)
     |> transform_to_value_pairs(:dominance)
   end
 
@@ -166,13 +166,19 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def metadata(metric) do
+    selectors =
+      case metric do
+        "community_messages_count" <> _ -> [:slug]
+        _ -> [:slug, :text]
+      end
+
     {:ok,
      %{
        metric: metric,
        min_interval: "5m",
        default_aggregation: :sum,
        available_aggregations: @aggregations,
-       available_selectors: [:slug, :text],
+       available_selectors: selectors,
        data_type: :histogram
      }}
   end

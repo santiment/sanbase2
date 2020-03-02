@@ -13,7 +13,7 @@ defmodule Sanbase.SocialData do
 
   @recv_timeout 15_000
 
-  defdelegate social_dominance(slug, datetime_from, datetime_to, interval, source),
+  defdelegate social_dominance(selector, datetime_from, datetime_to, interval, source),
     to: SocialDominance
 
   defdelegate social_volume(slug, from, to, interval, source),

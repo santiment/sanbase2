@@ -13,29 +13,45 @@ defmodule Sanbase.SocialData.SocialDominance do
   @recv_timeout 15_000
   @sources [:telegram, :professional_traders_chat, :reddit, :discord]
 
-  def social_dominance(%{slug: _slug} = selector, from, to, interval, source)
+  def social_dominance(%{slug: slug}, from, to, interval, source)
       when source in [:all, "all", :total, "total"] do
+    ticker = Project.ticker_by_slug(slug)
+    ticker_slug = "#{ticker}_#{slug}"
+
     result =
       @sources
-      |> Sanbase.Parallel.map(
+      |> Sanbase.Parallel.flat_map(
         fn source ->
-          {:ok, result} = social_dominance(selector, from, to, interval, source)
+          case social_dominance_request(from, to, interval, source |> to_string()) do
+            {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+              {:ok, result} = Jason.decode(body)
 
-          result
+              Enum.map(result, fn map ->
+                {timestamp, rest} = Map.pop(map, "datetime")
+                {DateTime.from_unix!(timestamp), rest}
+              end)
+
+            _ ->
+              []
+          end
         end,
         max_concurrency: 4
       )
-      |> List.zip()
-      |> Enum.map(&Tuple.to_list/1)
-      |> Enum.map(fn all_sources_point ->
-        average_dominance =
-          all_sources_point
-          |> Enum.reduce(0, &(&2 + &1.dominance))
-          |> Kernel./(length(@sources))
+      |> Enum.group_by(fn {datetime, _} -> datetime end, fn {_, data} -> data end)
+      |> Enum.map(fn {datetime, maps_list} ->
+        map =
+          Enum.reduce(maps_list, %{}, fn map, acc ->
+            Map.merge(map, acc, fn _k, v1, v2 -> v1 + v2 end)
+          end)
+
+        project_mentions = Map.get(map, ticker_slug, 0)
+        total_mentions = Enum.reduce(map, 0, fn {_k, v}, acc -> acc + v end)
 
         %{
-          datetime: all_sources_point |> List.first() |> Map.get(:datetime),
-          dominance: average_dominance
+          datetime: datetime,
+          dominance:
+            Sanbase.Math.percent_of(project_mentions, total_mentions, type: :between_0_and_100)
+            |> Sanbase.Math.round_float()
         }
       end)
 
@@ -43,28 +59,33 @@ defmodule Sanbase.SocialData.SocialDominance do
   end
 
   def social_dominance(%{text: text}, from, to, interval, source) do
-    {:ok, text_volume} = Sanbase.SocialData.topic_search(text, from, to, interval, source)
-    {:ok, total_volume} = Sanbase.SocialData.topic_search("*", from, to, interval, source)
+    with {:ok, text_volume} <- Sanbase.SocialData.topic_search(text, from, to, interval, source),
+         {:ok, total_volume} <- Sanbase.SocialData.topic_search("*", from, to, interval, source) do
+      # If `text_volume` is empty replace it with 0 mentions, so the end result
+      # will be with all dominance = 0
+      text_volume =
+        case text_volume do
+          [_ | _] -> text_volume
+          _ -> [%{mentions_count: 0}]
+        end
 
-    # If `text_volume` is empty replace it with 0 mentions, so the end result
-    # will be with all dominance = 0
-    text_volume =
-      case text_volume do
-        [_ | _] -> text_volume
-        _ -> [%{mentions_count: 0}]
-      end
+      result =
+        Enum.zip(total_volume, Stream.cycle(text_volume))
+        |> Enum.map(fn
+          {
+            %{datetime: dt, mentions_count: total_mentions},
+            %{mentions_count: text_mentions}
+          } ->
+            %{
+              datetime: dt,
+              dominance:
+                Sanbase.Math.percent_of(text_mentions, total_mentions, type: :between_0_and_100)
+                |> Sanbase.Math.round_float()
+            }
+        end)
 
-    result =
-      Enum.zip(total_volume, Stream.cycle(text_volume))
-      |> Enum.map(fn {%{datetime: dt, mentions_count: total_mentions},
-                      %{mentions_count: text_mentions}} ->
-        %{
-          datetime: dt,
-          dominance: (text_mentions / total_mentions) |> Sanbase.Math.round_float()
-        }
-      end)
-
-    {:ok, result}
+      {:ok, result}
+    end
   end
 
   def social_dominance(%{slug: slug}, from, to, interval, source) do

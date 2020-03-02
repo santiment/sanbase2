@@ -3,10 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
 
   alias SanbaseWeb.Graphql.Helpers.Utils
 
-  alias Sanbase.{
-    SocialData,
-    TechIndicators
-  }
+  alias Sanbase.{SocialData, TechIndicators}
 
   @context_words_default_size 10
 
@@ -32,6 +29,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
         _resolution
       ) do
     # The `*_discussion_overview` are counting the total number of messages in a given medium
+    # Deprecated. To be replaced with `getMetric(metric: "community_messages_count_*")` and
+    # `getMetric(metric: "social_volume_*")`
     case type in [:telegram_discussion_overview, :discord_discussion_overview] do
       true ->
         SocialData.community_messages_count(slug, from, to, interval, type)
@@ -138,7 +137,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
         %{slug: slug, from: from, to: to, interval: interval, source: source},
         _resolution
       ) do
-    SocialData.social_dominance(slug, from, to, interval, source)
+    SocialData.social_dominance(%{slug: slug}, from, to, interval, source)
   end
 
   def news(_root, %{tag: tag, from: from, to: to, size: size}, _resolution) do

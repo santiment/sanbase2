@@ -54,6 +54,7 @@ defmodule Sanbase.SocialData.SocialDominance do
             |> Sanbase.Math.round_float()
         }
       end)
+      |> Enum.sort_by(&DateTime.to_unix(&1.datetime))
 
     {:ok, result}
   end
@@ -83,6 +84,7 @@ defmodule Sanbase.SocialData.SocialDominance do
                 |> Sanbase.Math.round_float()
             }
         end)
+        |> Enum.sort_by(&DateTime.to_unix(&1.datetime))
 
       {:ok, result}
     end
@@ -154,6 +156,7 @@ defmodule Sanbase.SocialData.SocialDominance do
             dominance: dominance
           }
       end)
+      |> Enum.sort_by(&DateTime.to_unix(&1.datetime))
 
     {:ok, result}
   end

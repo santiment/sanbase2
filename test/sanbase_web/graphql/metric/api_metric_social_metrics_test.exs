@@ -194,6 +194,52 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
         end
       end)
     end
+
+    test "social dominance test", context do
+      %{conn: conn, from: from, to: to, interval: interval} = context
+      [single_source_metrics, combined_metrics] = social_dominance_metrics()
+
+      text_mentions = [
+        %{mentions_count: 48, datetime: from},
+        %{mentions_count: 72, datetime: to}
+      ]
+
+      total_mentions = [
+        %{mentions_count: 2210, datetime: from},
+        %{mentions_count: 1203, datetime: to}
+      ]
+
+      Sanbase.Mock.prepare_mock(Sanbase.SocialData.SocialVolume, :topic_search, fn
+        text, _, _, _, _ ->
+          case text do
+            "*" -> {:ok, total_mentions}
+            _ -> {:ok, text_mentions}
+          end
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        for metric <- single_source_metrics do
+          result =
+            get_timeseries_metric(conn, metric, :text, "text", from, to, interval)
+            |> extract_timeseries_data()
+
+          assert result == [
+                   %{"value" => 2.17, "datetime" => from |> DateTime.to_iso8601()},
+                   %{"value" => 5.99, "datetime" => to |> DateTime.to_iso8601()}
+                 ]
+        end
+
+        for metric <- combined_metrics do
+          result =
+            get_timeseries_metric(conn, metric, :text, "text", from, to, interval)
+            |> extract_timeseries_data()
+
+          assert result == [
+                   %{"value" => 2.17, "datetime" => from |> DateTime.to_iso8601()},
+                   %{"value" => 5.99, "datetime" => to |> DateTime.to_iso8601()}
+                 ]
+        end
+      end)
+    end
   end
 
   # Private functions

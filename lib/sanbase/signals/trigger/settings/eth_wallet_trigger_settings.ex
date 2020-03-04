@@ -71,13 +71,19 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
     target_list
     |> Enum.map(fn addr ->
       case balance_change(addr, settings.asset.slug, from, to) do
-        [{^addr, {_, _, balance_change}}] ->
-          {addr, balance_change, from}
+        [{^addr, {start_balance, end_balance, balance_change}}] ->
+          {addr, from,
+           %{
+             start_balance: start_balance,
+             end_balance: end_balance,
+             balance_change: balance_change
+           }}
 
         _ ->
-          {addr, 0, from}
+          nil
       end
     end)
+    |> Enum.reject(&is_nil/1)
   end
 
   def get_data(%__MODULE__{filtered_target: %{list: target_list, type: :slug}} = settings) do
@@ -89,14 +95,29 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
     |> Enum.map(fn %Project{} = project ->
       {:ok, eth_addresses} = Project.eth_addresses(project)
 
-      project_balance_change =
+      project_balance_data =
         eth_addresses
         |> Enum.map(&String.downcase/1)
         |> balance_change(settings.asset.slug, from, to)
-        |> Enum.map(fn {_, {_, _, change}} -> change end)
-        |> Enum.sum()
+        |> Enum.map(fn {_, data} -> data end)
 
-      {project, project_balance_change, from}
+      {start_balance, end_balance, balance_change} =
+        project_balance_data
+        |> Enum.reduce({0, 0, 0}, fn
+          {start_balance, end_balance, balance_change}, {start_acc, end_acc, change_acc} ->
+            {
+              start_acc + start_balance,
+              end_acc + end_balance,
+              change_acc + balance_change
+            }
+        end)
+
+      {project, from,
+       %{
+         start_balance: start_balance,
+         end_balance: end_balance,
+         balance_change: balance_change
+       }}
     end)
   end
 
@@ -108,12 +129,9 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
     Cache.get_or_store(
       cache_key,
       fn ->
-        HistoricalBalance.balance_change(
-          %{infrastructure: "ETH", slug: slug},
-          addresses,
-          from,
-          to
-        )
+        selector = %{infrastructure: "ETH", slug: slug}
+
+        HistoricalBalance.balance_change(selector, addresses, from, to)
         |> case do
           {:ok, result} -> result
           _ -> []
@@ -143,13 +161,13 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
     defp build_result(list, settings) do
       template_kv =
         Enum.reduce(list, %{}, fn
-          {project_or_addr, balance_change, from}, acc ->
+          {project_or_addr, from, %{balance_change: balance_change} = balance_data}, acc ->
             case operation_triggered?(balance_change, settings.operation) do
               true ->
                 Map.put(
                   acc,
                   to_identifier(project_or_addr),
-                  template_kv(project_or_addr, settings, balance_change, from)
+                  template_kv(project_or_addr, settings, balance_data, from)
                 )
 
               false ->
@@ -170,7 +188,7 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
     defp operation_text(%{amount_up: _}), do: "increased"
     defp operation_text(%{amount_down: _}), do: "decreased"
 
-    defp template_kv(%Project{} = project, settings, balance_change, from) do
+    defp template_kv(%Project{} = project, settings, balance_data, from) do
       kv = %{
         type: EthWalletTriggerSettings.type(),
         operation: settings.operation,
@@ -179,11 +197,13 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
         asset: settings.asset.slug,
         since: DateTime.truncate(from, :second),
         balance_change_text: operation_text(settings.operation),
-        balance_change: abs(balance_change)
+        balance_change: balance_data.balance_change,
+        balance_change_abs: abs(balance_data.balance_change),
+        balance: balance_data.end_balance
       }
 
       template = """
-      The {{asset}} balance of {{project_name}} wallets has {{balance_change_text}} by {{balance_change}} since {{since}}
+      The {{asset}} balance of {{project_name}} wallets has {{balance_change_text}} by {{balance_change}} since {{since}} and is now {{balance}}
 
       More info here: #{Project.sanbase_link(project)}
       """
@@ -191,7 +211,7 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
       {template, kv}
     end
 
-    defp template_kv(address, settings, balance_change, from) do
+    defp template_kv(address, settings, balance_data, from) do
       asset = settings.asset.slug
 
       kv = %{
@@ -202,12 +222,13 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
         address: address,
         historical_balance_link: SanbaseWeb.Endpoint.historical_balance_url(address, asset),
         since: DateTime.truncate(from, :second),
-        balance_change: balance_change,
-        balance_change_abs: abs(balance_change)
+        balance_change: balance_data.balance_change,
+        balance_change_abs: abs(balance_data.balance_change),
+        balance: balance_data.end_balance
       }
 
       template = """
-      The {{asset}} balance of the address {{address}} has #{operation_text(settings.operation)} by {{balance_change_abs}} since {{since}}
+      The {{asset}} balance of the address {{address}} has #{operation_text(settings.operation)} by {{balance_change_abs}} since {{since}} and is now {{balance}}
 
       More info here: {{historical_balance_link}}
       """

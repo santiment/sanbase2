@@ -52,7 +52,7 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
 
       payload = triggered.trigger.settings.payload |> Map.values() |> hd()
 
-      assert payload =~ "price increased by 16.09% from 53.51 and is now 62.12"
+      assert payload =~ "price increased by 16.09% and is now 62.12"
     end)
   end
 

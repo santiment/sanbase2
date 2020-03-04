@@ -1,7 +1,6 @@
 defmodule Sanbase.Signal.OperationText do
   @moduledoc ~s"""
-  A module providing a single function to_text/3 which transforms an operation
-  to human readable text that can be included in the signal's payload
+  Convert values and operations to human readable text (or template and KV pairs)
   """
   def to_text(value, operation, opts \\ [])
 
@@ -14,4 +13,9 @@ defmodule Sanbase.Signal.OperationText do
 
   def to_template_kv(value, operation, opts),
     do: __MODULE__.KV.to_template_kv(value, operation, opts)
+
+  def current_value(value, operation, opts \\ [])
+
+  def current_value(value, operation, opts),
+    do: __MODULE__.KV.current_value(value, operation, opts)
 end

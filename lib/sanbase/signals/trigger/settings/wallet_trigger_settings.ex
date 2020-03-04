@@ -183,7 +183,10 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
 
     defp template_kv(values, %{filtered_target: %{type: :address}} = settings) do
       {operation_template, operation_kv} =
-        OperationText.KV.to_template_kv(values, settings.operation)
+        OperationText.to_template_kv(values, settings.operation)
+
+      {curr_value_template, curr_value_kv} =
+        OperationText.current_value(values, settings.operation)
 
       asset_target_blockchain_kv = asset_target_blockchain_kv(settings.selector)
 
@@ -194,12 +197,13 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
           address: settings.target.address
         }
         |> Map.merge(operation_kv)
+        |> Map.merge(curr_value_kv)
         |> Map.merge(asset_target_blockchain_kv)
 
       template = """
       The {{asset}} balance on the {{target_blockchain}} blockchain of the address {{address}} has #{
         operation_template
-      }
+      } and #{curr_value_template}
       """
 
       {template, kv}
@@ -209,7 +213,10 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
       project = Project.by_slug(slug)
 
       {operation_template, operation_kv} =
-        OperationText.KV.to_template_kv(values, settings.operation)
+        OperationText.to_template_kv(values, settings.operation)
+
+      {curr_value_template, curr_value_kv} =
+        OperationText.current_value(values, settings.operation)
 
       asset_target_blockchain_kv = asset_target_blockchain_kv(settings.selector)
 
@@ -221,12 +228,13 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
           operation: settings.operation
         }
         |> Map.merge(operation_kv)
+        |> Map.merge(curr_value_kv)
         |> Map.merge(asset_target_blockchain_kv)
 
       template = """
       The {{asset}} balance on the {{target_blockchain}} blockchain of the project **{{project_name}}** has #{
         operation_template
-      }
+      } and #{curr_value_template}
 
       More information about the project can be found here: #{Project.sanbase_link(project)}
       """

@@ -130,6 +130,9 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
       {operation_template, operation_kv} =
         OperationText.to_template_kv(values, settings.operation)
 
+      {curr_value_template, curr_value_kv} =
+        OperationText.current_value(values, settings.operation)
+
       kv =
         %{
           type: DailyActiveAddressesSettings.type(),
@@ -141,9 +144,12 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
           chart_url: chart_url(project, {:metric, "daily_active_addresses"})
         }
         |> Map.merge(operation_kv)
+        |> Map.merge(curr_value_kv)
 
       template = """
-      **{{project_name}}**'s Daily Active Addresses #{operation_template}
+      **{{project_name}}**'s Daily Active Addresses #{operation_template} and #{
+        curr_value_template
+      }
 
       Average Daily Active Addresses for last **{{interval}}*: **{{average_value}}**.
       More info here: #{Project.sanbase_link(project)}

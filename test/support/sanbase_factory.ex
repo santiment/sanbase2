@@ -58,6 +58,7 @@ defmodule Sanbase.Factory do
       title: "Awesome analysis",
       link: "http://example.com",
       text: "Text of the post",
+      is_pulse: false,
       tags: [build(:tag), build(:tag)]
     }
   end

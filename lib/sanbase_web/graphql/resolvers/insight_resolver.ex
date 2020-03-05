@@ -13,16 +13,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
 
   require Logger
 
-  def insights(%User{} = user, _args, _resolution) do
-    {:ok, Post.user_insights(user.id)}
+  def insights(%User{} = user, args, _resolution) do
+    opts = [is_pulse: Map.get(args, :is_pulse, false)]
+    {:ok, Post.user_insights(user.id, opts)}
   end
 
-  def public_insights(%User{} = user, _args, _resolution) do
-    {:ok, Post.user_public_insights(user.id)}
-  end
-
-  def public_pulses(%User{} = user, _args, _resolution) do
-    {:ok, Post.user_public_insights(user.id, is_pulse: true)}
+  def public_insights(%User{} = user, args, _resolution) do
+    opts = [is_pulse: Map.get(args, :is_pulse, false)]
+    {:ok, Post.user_public_insights(user.id, opts)}
   end
 
   def related_projects(%Post{} = post, _, _) do

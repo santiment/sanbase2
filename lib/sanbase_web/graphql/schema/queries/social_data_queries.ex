@@ -318,7 +318,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       arg(:source, non_null(:social_dominance_sources), default_value: :all)
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(AccessControl)
+      # middleware(AccessControl)
       resolve(&SocialDataResolver.social_dominance/3)
     end
 

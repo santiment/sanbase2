@@ -136,9 +136,13 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
 
     defp template_kv(slug, settings, {percent_change, first_price, last_price}) do
       project = Project.by_slug(slug)
+      last_price = Sanbase.Signal.Utils.round_price(last_price)
 
       {operation_template, operation_kv} =
-        OperationText.KV.to_template_kv(percent_change, settings.operation)
+        OperationText.to_template_kv(percent_change, settings.operation)
+
+      {curr_value_template, curr_value_kv} =
+        OperationText.current_value(%{current: last_price}, settings.operation)
 
       kv =
         %{
@@ -151,9 +155,10 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
           chart_url: chart_url(project, :volume)
         }
         |> Map.merge(operation_kv)
+        |> Map.merge(curr_value_kv)
 
       template = """
-      **{{project_name}}**'s price #{operation_template} from {{previous_value}} and is now {{value}}.
+      **{{project_name}}**'s price #{operation_template} and #{curr_value_template}
 
       More info here: #{Project.sanbase_link(project)}
       ![Price chart over the past 90 days]({{chart_url}})

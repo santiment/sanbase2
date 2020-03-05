@@ -136,6 +136,9 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
       {operation_template, operation_kv} =
         OperationText.to_template_kv(values, settings.operation)
 
+      {curr_value_template, curr_value_kv} =
+        OperationText.current_value(values, settings.operation)
+
       kv =
         %{
           type: MetricTriggerSettings.type(),
@@ -145,9 +148,12 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
           metric_human_readable_name: human_readable_name
         }
         |> Map.merge(operation_kv)
+        |> Map.merge(curr_value_kv)
 
       template = """
-      **{{project_name}}**'s {{metric_human_readable_name}} #{operation_template}.
+      **{{project_name}}**'s {{metric_human_readable_name}} #{operation_template} and #{
+        curr_value_template
+      }.
       """
 
       {template, kv}
@@ -162,6 +168,9 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
       {operation_template, operation_kv} =
         OperationText.to_template_kv(values, settings.operation)
 
+      {curr_value_template, curr_value_kv} =
+        OperationText.current_value(values, settings.operation)
+
       kv =
         %{
           type: MetricTriggerSettings.type(),
@@ -173,9 +182,12 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
           chart_url: chart_url(project, {:metric, settings.metric})
         }
         |> Map.merge(operation_kv)
+        |> Map.merge(curr_value_kv)
 
       template = """
-      **{{project_name}}**'s {{metric_human_readable_name}} #{operation_template}.
+      **{{project_name}}**'s {{metric_human_readable_name}} #{operation_template} and #{
+        curr_value_template
+      }.
       More info here: #{Project.sanbase_link(project)}
 
       ![#{human_readable_name} & OHLC for the past 90 days]({{chart_url}})

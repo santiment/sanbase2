@@ -43,6 +43,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       cache_resolve(&InsightResolver.public_insights/3, ttl: 60)
     end
 
+    field :pulses, list_of(:post) do
+      cache_resolve(&InsightResolver.public_pulses/3, ttl: 60)
+    end
+
     field :watchlists, list_of(:user_list) do
       cache_resolve(&UserListResolver.public_watchlists/3, ttl: 60)
     end

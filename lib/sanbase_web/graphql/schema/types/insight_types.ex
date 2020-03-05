@@ -23,6 +23,7 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:ready_state, :string)
     field(:images, list_of(:image_data))
     field(:tags, list_of(:tag))
+    field(:is_pulse, :boolean)
 
     field :comments_count, :integer do
       resolve(&InsightResolver.comments_count/3)

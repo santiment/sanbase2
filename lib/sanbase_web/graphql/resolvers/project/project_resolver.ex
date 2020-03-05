@@ -501,7 +501,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   # Private functions
 
   defp fetch_posts_by_ticker(ticker) do
-    posts = Post.public_insights_by_tag(ticker)
+    posts = Post.public_insights_by_tags([ticker])
     {:ok, posts}
   end
 

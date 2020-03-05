@@ -51,7 +51,7 @@ defmodule Sanbase.Math do
   def percent_of(part, whole, opts)
       when is_number(part) and is_number(whole) and part >= 0 and whole > 0 and whole >= part do
     result =
-      case Keyword.get(opts, :type, :between_0_and_1) do
+      case Keyword.get(opts, :type, :between_0_and_100) do
         :between_0_and_1 ->
           part / whole
 

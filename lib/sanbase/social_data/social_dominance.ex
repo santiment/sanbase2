@@ -47,11 +47,11 @@ defmodule Sanbase.SocialData.SocialDominance do
         project_mentions = Map.get(map, ticker_slug, 0)
         total_mentions = Enum.reduce(map, 0, fn {_k, v}, acc -> acc + v end)
 
+        dominance = Sanbase.Math.percent_of(project_mentions, total_mentions) || 0.0
+
         %{
           datetime: datetime,
-          dominance:
-            Sanbase.Math.percent_of(project_mentions, total_mentions, type: :between_0_and_100)
-            |> Sanbase.Math.round_float()
+          dominance: dominance |> Sanbase.Math.round_float()
         }
       end)
       |> Enum.sort_by(&DateTime.to_unix(&1.datetime))
@@ -77,11 +77,11 @@ defmodule Sanbase.SocialData.SocialDominance do
             %{datetime: dt, mentions_count: total_mentions},
             %{mentions_count: text_mentions}
           } ->
+            dominance = Sanbase.Math.percent_of(text_mentions, total_mentions) || 0.0
+
             %{
               datetime: dt,
-              dominance:
-                Sanbase.Math.percent_of(text_mentions, total_mentions, type: :between_0_and_100)
-                |> Sanbase.Math.round_float()
+              dominance: dominance |> Sanbase.Math.round_float()
             }
         end)
         |> Enum.sort_by(&DateTime.to_unix(&1.datetime))
@@ -148,12 +148,12 @@ defmodule Sanbase.SocialData.SocialDominance do
       result
       |> Enum.map(fn
         %{"datetime" => datetime} = datapoint ->
-          dominance = Map.get(datapoint, ticker_slug, 0) * 100 / total_mentions(datapoint)
-          dominance = dominance |> Sanbase.Math.round_float()
+          mentions = Map.get(datapoint, ticker_slug, 0)
+          dominance = Sanbase.Math.percent_of(mentions, total_mentions(datapoint)) || 0.0
 
           %{
             datetime: DateTime.from_unix!(datetime),
-            dominance: dominance
+            dominance: dominance |> Sanbase.Math.round_float()
           }
       end)
       |> Enum.sort_by(&DateTime.to_unix(&1.datetime))

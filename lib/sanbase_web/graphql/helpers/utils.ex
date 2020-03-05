@@ -161,14 +161,17 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
   This is used when a query to influxdb is made. Influxdb can return a timestamp
   that's outside `from` - `to` interval due to its inner working with buckets
   """
-  def fit_from_datetime([%{datetime: datetime} = first | rest], %{from: from_query_argument}) do
-    [
-      %{first | datetime: Enum.max_by([datetime, from_query_argument], &DateTime.to_unix/1)}
-      | rest
-    ]
+  def fit_from_datetime([%{datetime: _} | _] = data, %{from: from}) do
+    result =
+      data
+      |> Enum.drop_while(fn %{datetime: datetime} ->
+        DateTime.compare(datetime, from) == :lt
+      end)
+
+    {:ok, result}
   end
 
-  def fit_from_datetime(enum, _args), do: enum
+  def fit_from_datetime(result, _args), do: {:ok, result}
 
   @doc ~s"""
   Extract the arguments passed to the root query from subfield resolution

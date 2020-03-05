@@ -1,6 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
-  import SanbaseWeb.Graphql.Helpers.Utils,
-    only: [calibrate_interval: 8, calibrate_incomplete_data_params: 5]
+  import SanbaseWeb.Graphql.Helpers.Utils
 
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3, handle_graphql_error: 4]
 
@@ -48,6 +47,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         %{source: %{metric: metric}}
       ) do
     include_incomplete_data = Map.get(args, :include_incomplete_data, false)
+    transform = Map.get(args, :transform, %{type: "none"})
     aggregation = Map.get(args, :aggregation, nil)
     selector = to_selector(args)
 
@@ -55,13 +55,37 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
            calibrate_interval(Metric, metric, selector, from, to, interval, 86_400, @datapoints),
          {:ok, from, to} <-
            calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
+         {:ok, from} <-
+           calibrate_transform_params(transform, from, to, interval),
          {:ok, result} <-
-           Metric.timeseries_data(metric, selector, from, to, interval, aggregation) do
+           Metric.timeseries_data(metric, selector, from, to, interval, aggregation),
+         {:ok, result} <- apply_transform(transform, result),
+         {:ok, result} <- fit_from_datetime(result, args) do
       {:ok, result |> Enum.reject(&is_nil/1)}
     else
       {:error, error} ->
         {:error, handle_graphql_error(metric, selector, error)}
     end
+  end
+
+  defp calibrate_transform_params(%{type: "none"}, from, _to, _interval),
+    do: {:ok, from}
+
+  defp calibrate_transform_params(
+         %{type: "moving_average", moving_average_base: base},
+         from,
+         _to,
+         interval
+       ) do
+    shift_by_sec = base * Sanbase.DateTimeUtils.str_to_sec(interval)
+    from = Timex.shift(from, seconds: -shift_by_sec)
+    {:ok, from}
+  end
+
+  defp apply_transform(%{type: "none"}, data), do: {:ok, data}
+
+  defp apply_transform(%{type: "moving_average", moving_average_base: base}, data) do
+    Sanbase.Math.simple_moving_average(data, base, value_key: :value)
   end
 
   def aggregated_timeseries_data(

@@ -253,7 +253,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl, %{allow_realtime_data: true})
-      resolve(&SocialDataResolver.social_volume/3)
+      cache_resolve(&SocialDataResolver.social_volume/3)
     end
 
     @desc ~s"""
@@ -290,7 +290,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl, %{allow_realtime_data: true})
-      cache_resolve(&SocialDataResolver.topic_search/3, ttl: 600, max_ttl_offset: 240)
+      cache_resolve(&SocialDataResolver.topic_search/3)
     end
 
     @desc ~s"""
@@ -319,7 +319,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
-      resolve(&SocialDataResolver.social_dominance/3)
+      cache_resolve(&SocialDataResolver.social_dominance/3)
     end
 
     @desc ~s"""

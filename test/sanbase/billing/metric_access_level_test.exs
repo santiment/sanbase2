@@ -30,7 +30,26 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "marketcap_usd",
         "price_btc",
         "price_usd",
-        "volume_usd"
+        "volume_usd",
+        # change metrics
+        "volume_usd_change_1d",
+        "volume_usd_change_7d",
+        "volume_usd_change_30d",
+        "volume_usd_change_90d",
+        "volume_usd_change_180d",
+        "volume_usd_change_365d",
+        "price_usd_change_1d",
+        "price_usd_change_7d",
+        "price_usd_change_30d",
+        "price_usd_change_90d",
+        "price_usd_change_180d",
+        "price_usd_change_365d",
+        "active_addresses_24h_change_1d",
+        "active_addresses_24h_change_7d",
+        "active_addresses_24h_change_30d",
+        "active_addresses_24h_change_90d",
+        "active_addresses_24h_change_180d",
+        "active_addresses_24h_change_365d"
       ]
       |> Enum.sort()
 
@@ -122,7 +141,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
       "social_volume_total",
       # histogram metrics
       "age_distribution",
-      "price_histogram"
+      "price_histogram",
+      # exchange supply metrics
+      "exchange_token_supply"
     ]
 
     expected_result = metrics |> Enum.sort()

@@ -340,23 +340,6 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       cache_resolve(&ClickhouseResolver.daily_active_deposits/3)
     end
 
-    # MISC - currently not in STANDART or ADVANCED plan
-    @desc ~s"""
-    Fetch share of deposits from Daily Active Addresses.
-    """
-    field :share_of_deposits, list_of(:share_of_deposits) do
-      meta(access: :restricted)
-
-      arg(:slug, non_null(:string))
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-      arg(:interval, :interval, default_value: "1d")
-
-      complexity(&Complexity.from_to_interval/3)
-      middleware(AccessControl)
-      cache_resolve(&ClickhouseResolver.share_of_deposits/3)
-    end
-
     @desc """
     Fetch a list of all exchange wallets.
     This query requires you to have a plan extension or basic authentication.

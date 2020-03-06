@@ -17,8 +17,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     MiningPoolsDistribution,
     NetworkGrowth,
     PercentOfTokenSupplyOnExchanges,
-    TopHolders,
-    ShareOfDeposits
+    TopHolders
   }
 
   # Return this number of datapoints is the provided interval is an empty string
@@ -260,34 +259,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
       {:error, error} ->
         {:error, handle_graphql_error("Percent of Token Supply on Exchanges", slug, error)}
-    end
-  end
-
-  def share_of_deposits(
-        _root,
-        %{slug: slug, from: from, to: to, interval: interval},
-        _resolution
-      ) do
-    with {:ok, contract, _} <- Project.contract_info_by_slug(slug),
-         {:ok, from, to, interval} <-
-           calibrate_interval(
-             ShareOfDeposits,
-             contract,
-             from,
-             to,
-             interval,
-             @one_hour_in_seconds,
-             @datapoints
-           ),
-         {:ok, share_of_deposits} <-
-           ShareOfDeposits.share_of_deposits(contract, from, to, interval) do
-      {:ok, share_of_deposits}
-    else
-      {:error, {:missing_contract, error_msg}} ->
-        {:error, error_msg}
-
-      {:error, error} ->
-        {:error, handle_graphql_error("Share of Deposits", slug, error)}
     end
   end
 end

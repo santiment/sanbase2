@@ -120,7 +120,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :nvt_ratio,
           :percent_of_token_supply_on_exchanges,
           :realized_value,
-          :share_of_deposits,
           :social_dominance,
           :social_gainers_losers_status,
           :social_volume,

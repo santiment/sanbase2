@@ -11,13 +11,6 @@ defmodule SanbaseWeb.Graphql.ClickhouseTypes do
     field(:active_deposits, non_null(:float))
   end
 
-  object :share_of_deposits do
-    field(:datetime, non_null(:datetime))
-    field(:active_addresses, non_null(:float))
-    field(:active_deposits, non_null(:float))
-    field(:share_of_deposits, :float)
-  end
-
   object :gas_used do
     field(:datetime, non_null(:datetime))
     field(:eth_gas_used, :float, deprecate: "Use gasUsed")

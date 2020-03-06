@@ -141,6 +141,11 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:text, :string)
   end
 
+  input_object :timeseries_metric_transform_input_object do
+    field(:type, :string)
+    field(:moving_average_base, :integer)
+  end
+
   object :metric do
     @desc ~s"""
     Return a list of 'datetime' and 'value' for a given metric, slug
@@ -171,6 +176,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:to, non_null(:datetime))
       arg(:interval, :interval, default_value: "1d")
       arg(:aggregation, :aggregation, default_value: nil)
+      arg(:transform, :timeseries_metric_transform_input_object)
       arg(:include_incomplete_data, :boolean, default_value: false)
 
       complexity(&Complexity.from_to_interval/3)

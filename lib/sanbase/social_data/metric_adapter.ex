@@ -184,19 +184,23 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime(<<"telegram", _rest::binary>>, _selector),
-    do: {:ok, ~U[2016-03-29 00:00:00Z]}
-
-  def first_datetime(<<"twitter", _rest::binary>>, _selector), do: {:ok, ~U[2018-02-13 00:00:00Z]}
-  def first_datetime(<<"reddit", _rest::binary>>, _selector), do: {:ok, ~U[2016-01-01 00:00:00Z]}
-  def first_datetime(<<"discord", _rest::binary>>, _selector), do: {:ok, ~U[2016-05-21 00:00:00Z]}
-
-  def first_datetime(<<"bitcointalk", _rest::binary>>, _selector),
-    do: {:ok, ~U[2009-11-22 00:00:00Z]}
-
-  def first_datetime(<<"professional_traders_chat", _rest::binary>>, _selector),
-    do: {:ok, ~U[2018-02-09 00:00:00Z]}
+  def first_datetime(metric, _selector), do: metric |> metric_to_source |> source_first_datetime()
 
   @impl Sanbase.Metric.Behaviour
   def last_datetime_computed_at(_metric, _selector), do: {:ok, Timex.now()}
+
+  # Private functions
+
+  # total has the datetime of the earliest of all - bitcointalk
+  defp source_first_datetime("total"), do: {:ok, ~U[2009-11-22 00:00:00Z]}
+  defp source_first_datetime("telegram"), do: {:ok, ~U[2016-03-29 00:00:00Z]}
+  defp source_first_datetime("twitter"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
+  defp source_first_datetime("reddit"), do: {:ok, ~U[2016-01-01 00:00:00Z]}
+  defp source_first_datetime("discord"), do: {:ok, ~U[2016-05-21 00:00:00Z]}
+  defp source_first_datetime("bitcointalk"), do: {:ok, ~U[2009-11-22 00:00:00Z]}
+  defp source_first_datetime("professional_traders_chat"), do: {:ok, ~U[2018-02-09 00:00:00Z]}
+
+  defp metric_to_source("social_volume_" <> source), do: source
+  defp metric_to_source("social_dominance_" <> source), do: source
+  defp metric_to_source("community_messages_count_" <> source), do: source
 end

@@ -2,7 +2,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   require Logger
 
   alias Sanbase.Model.Project
-  import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 7]
 
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
   import Sanbase.DateTimeUtils, only: [round_datetime: 2]
@@ -21,9 +20,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   }
 
   # Return this number of datapoints is the provided interval is an empty string
-  @datapoints 300
-
-  @one_hour_in_seconds 3_600
 
   def top_holders_percent_of_total_supply(
         _root,

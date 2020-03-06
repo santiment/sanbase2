@@ -96,6 +96,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
 
     Mogrify.open(source_filepath)
     |> Mogrify.resize("#{@size}x#{@size}")
+    |> Mogrify.custom("type", "PaletteAlpha")
     |> Mogrify.save(path: dest_filepath)
 
     {:ok, dest_filepath}

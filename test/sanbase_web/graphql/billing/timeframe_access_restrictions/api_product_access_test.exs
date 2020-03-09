@@ -10,8 +10,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
   setup_with_mocks([
     {Sanbase.Price, [], [timeseries_data: fn _, _, _, _ -> price_resp() end]},
-    {Sanbase.Clickhouse.NetworkGrowth, [],
-     [network_growth: fn _, _, _, _ -> network_growth_resp() end]},
     {Metric, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> metric_resp() end]}
   ]) do
     user = insert(:user)
@@ -59,9 +57,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(91, 10)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
-      contract = context.project.main_contract_address
 
-      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
+      refute called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -69,9 +66,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(10, 0)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
-      contract = context.project.main_contract_address
 
-      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
+      refute called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -90,9 +86,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(89, 2)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
-      contract = context.project.main_contract_address
 
-      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
+      assert_called(Metric.timeseries_data("network_growth", :_, :_, :_, :_, :_))
       assert result != nil
     end
   end
@@ -137,9 +132,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(2 * 365 - 1, 2 * 365 - 2)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
-      contract = context.project.main_contract_address
 
-      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
+      assert_called(Metric.timeseries_data("network_growth", :_, :_, :_, :_, :_))
       assert result != nil
     end
 
@@ -147,9 +141,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(2 * 365 + 1, 2 * 365 - 1)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
-      contract = context.project.main_contract_address
 
-      refute called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
+      refute called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -192,9 +185,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(10, 0)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
-      contract = context.project.main_contract_address
 
-      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
+      assert_called(Metric.timeseries_data("network_growth", :_, :_, :_, :_, :_))
       assert result != nil
     end
   end
@@ -239,9 +231,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(7 * 365 - 1, 7 * 365 - 2)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
-      contract = context.project.main_contract_address
 
-      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
+      assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -260,9 +251,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
-      contract = context.project.main_contract_address
 
-      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
+      assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -281,9 +271,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(10, 0)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
-      contract = context.project.main_contract_address
 
-      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
+      assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
       assert result != nil
     end
   end
@@ -327,9 +316,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       {from, to} = from_to(2500, 0)
       query = network_growth_query(context.project.slug, from, to)
       result = execute_query(context.conn, query, "networkGrowth")
-      contract = context.project.main_contract_address
 
-      assert_called(Sanbase.Clickhouse.NetworkGrowth.network_growth(contract, from, to, :_))
+      assert_called(Metric.timeseries_data("network_growth", :_, :_, :_, :_, :_))
       assert result != nil
     end
   end
@@ -418,14 +406,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
          volume: 2500,
          volume_usd: 2500
        }
-     ]}
-  end
-
-  defp network_growth_resp() do
-    {:ok,
-     [
-       %{new_addresses: 10, datetime: ~U[2019-01-01 00:00:00Z]},
-       %{new_addresses: 20, datetime: ~U[2019-01-02 00:00:00Z]}
      ]}
   end
 end

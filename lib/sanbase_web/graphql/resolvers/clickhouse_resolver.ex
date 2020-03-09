@@ -14,7 +14,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     RealizedValue,
     GasUsed,
     MiningPoolsDistribution,
-    NetworkGrowth,
     PercentOfTokenSupplyOnExchanges,
     TopHolders
   }
@@ -63,15 +62,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     end
   end
 
-  def network_growth(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
-    with {:ok, contract, _} <- Project.contract_info_by_slug(slug),
-         {:ok, network_growth} <-
-           NetworkGrowth.network_growth(contract, from, to, interval) do
-      {:ok, network_growth}
-    else
-      {:error, error} ->
-        {:error, handle_graphql_error("Network Growth", slug, error)}
-    end
+  def network_growth(_root, %{slug: _, from: _, to: _, interval: _} = args, _resolution) do
+    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+      %{},
+      Map.put(args, :include_incomplete_data, true),
+      %{source: %{metric: "network_growth"}}
+    )
+    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :ne_addresses)
   end
 
   def mining_pools_distribution(

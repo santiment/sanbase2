@@ -11,7 +11,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
 
   alias Sanbase.Clickhouse.{
-    RealizedValue,
     GasUsed,
     MiningPoolsDistribution,
     PercentOfTokenSupplyOnExchanges,
@@ -197,16 +196,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   def realized_value(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval},
+        %{slug: _, from: _, to: _, interval: _} = args,
         _resolution
       ) do
-    case RealizedValue.realized_value(slug, from, to, interval) do
-      {:ok, realized_value} ->
-        {:ok, realized_value}
-
-      {:error, error} ->
-        {:error, handle_graphql_error("Realized Value", slug, error)}
-    end
+    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+      %{},
+      Map.put(args, :include_incomplete_data, true),
+      %{source: %{metric: "realized_value"}}
+    )
+    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :realized_value)
   end
 
   def nvt_ratio(

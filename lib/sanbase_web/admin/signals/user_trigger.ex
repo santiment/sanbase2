@@ -38,6 +38,7 @@ defmodule Sanbase.ExAdmin.Signal.UserTrigger do
           collection: ~w[true false]
         )
 
+        input(user_trigger, :user_id)
         input(user_trigger, :is_public, collection: ~w[true false])
       end
     end

@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
              )
 
       assert metadata["defaultAggregation"] in aggregations
-      assert metadata["minInterval"] in ["1m", "5m", "1d"]
+      assert metadata["minInterval"] in ["1m", "5m", "6h", "1d"]
       assert metadata["dataType"] in ["TIMESERIES", "HISTOGRAM"]
       assert metadata["isRestricted"] in [true, false]
 

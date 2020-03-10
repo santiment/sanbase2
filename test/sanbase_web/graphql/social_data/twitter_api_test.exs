@@ -114,9 +114,7 @@ defmodule Sanbase.Github.TwitterApiTest do
   test "fetching last twitter data", context do
     query = """
     {
-      twitterData(
-        slug: "santiment") {
-          twitterName
+      twitterData(slug: "santiment") {
           followersCount
         }
     }
@@ -129,17 +127,14 @@ defmodule Sanbase.Github.TwitterApiTest do
     twitter_data = json_response(result, 200)["data"]["twitterData"]
 
     assert twitter_data["followersCount"] == 1500
-    assert twitter_data["twitterName"] == "santimentfeed"
   end
 
   test "fetching last twitter data for a project with invalid twitter link", context do
     query = """
     {
-      twitterData(
-        slug: "test2") {
-          twitterName
-          followersCount
-        }
+      twitterData(slug: "test2") {
+        followersCount
+      }
     }
     """
 
@@ -150,7 +145,6 @@ defmodule Sanbase.Github.TwitterApiTest do
     twitter_data = json_response(result, 200)["data"]["twitterData"]
 
     assert twitter_data["followersCount"] == nil
-    assert twitter_data["twitterName"] == nil
   end
 
   test "fetch history twitter data when no interval is provided", context do

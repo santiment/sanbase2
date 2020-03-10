@@ -93,6 +93,7 @@ defmodule Sanbase.Project.AvailableQueriesTest do
         github_link: nil,
         infrastructure: nil,
         main_contract_address: nil,
+        twitter_link: nil,
         eth_addresses: [],
         github_organizations: []
       })

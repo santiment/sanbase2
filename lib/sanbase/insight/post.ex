@@ -38,14 +38,13 @@ defmodule Sanbase.Insight.Post do
     field(:state, :string, default: @approved)
     field(:moderation_comment, :string)
     field(:ready_state, :string, default: @draft)
+    field(:is_pulse, :boolean, default: false)
 
     has_many(:images, PostImage, on_delete: :delete_all)
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
     has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
 
-    many_to_many(
-      :tags,
-      Tag,
+    many_to_many(:tags, Tag,
       join_through: "posts_tags",
       on_replace: :delete,
       on_delete: :delete_all
@@ -55,14 +54,14 @@ defmodule Sanbase.Insight.Post do
     timestamps()
   end
 
-  # Needed by ex_admin :(
+  # Needed by ex_admin
   def changeset(%Post{} = post, attrs \\ %{}) do
     post |> cast(attrs, [])
   end
 
   def create_changeset(%Post{} = post, attrs) do
     post
-    |> cast(attrs, [:title, :short_desc, :link, :text, :user_id])
+    |> cast(attrs, [:title, :short_desc, :link, :text, :user_id, :is_pulse])
     |> Tag.put_tags(attrs)
     |> images_cast(attrs)
     |> validate_required([:user_id, :title])
@@ -71,7 +70,7 @@ defmodule Sanbase.Insight.Post do
 
   def update_changeset(%Post{} = post, attrs) do
     post
-    |> cast(attrs, [:title, :short_desc, :link, :text, :moderation_comment, :state])
+    |> cast(attrs, [:title, :short_desc, :link, :text, :moderation_comment, :state, :is_pulse])
     |> Tag.put_tags(attrs)
     |> images_cast(attrs)
     |> validate_length(:title, max: 140)
@@ -86,9 +85,9 @@ defmodule Sanbase.Insight.Post do
   def awaiting_approval_state(), do: @awaiting_approval
   def approved_state(), do: @approved
   def declined_state(), do: @declined
-
   def published(), do: @published
   def draft(), do: @draft
+  def preloads(), do: @preloads
 
   def by_id(post_id) do
     from(p in __MODULE__, preload: ^@preloads)
@@ -173,7 +172,7 @@ defmodule Sanbase.Insight.Post do
   end
 
   def publish(post_id, user_id) do
-    post_id = String.to_integer(post_id)
+    post_id = Sanbase.Math.to_integer(post_id)
     post = Repo.get(Post, post_id)
 
     with {:nil?, %Post{id: ^post_id}} <- {:nil?, post},
@@ -198,8 +197,6 @@ defmodule Sanbase.Insight.Post do
     end
   end
 
-  def preloads(), do: @preloads
-
   def related_projects(%Post{} = post) do
     tags =
       post
@@ -215,9 +212,10 @@ defmodule Sanbase.Insight.Post do
   @doc """
   All insights for given user_id
   """
-  def user_insights(user_id) do
+  def user_insights(user_id, opts \\ []) do
     Post
     |> by_user(user_id)
+    |> by_is_pulse(Keyword.get(opts, :is_pulse, false))
     |> Repo.all()
     |> Repo.preload(@preloads)
     |> Tag.Preloader.order_tags()
@@ -226,9 +224,10 @@ defmodule Sanbase.Insight.Post do
   @doc """
   All published insights for given user_id
   """
-  def user_public_insights(user_id) do
+  def user_public_insights(user_id, opts \\ []) do
     published_and_approved_insights()
     |> by_user(user_id)
+    |> by_is_pulse(Keyword.get(opts, :is_pulse, false))
     |> Repo.all()
     |> Repo.preload(@preloads)
     |> Tag.Preloader.order_tags()
@@ -237,8 +236,9 @@ defmodule Sanbase.Insight.Post do
   @doc """
   All public (published and approved) insights paginated
   """
-  def public_insights(page, page_size) do
+  def public_insights(page, page_size, opts \\ []) do
     published_and_approved_insights()
+    |> by_is_pulse(Keyword.get(opts, :is_pulse, false))
     |> order_by_published_at()
     |> page(page, page_size)
     |> Repo.all()
@@ -249,28 +249,29 @@ defmodule Sanbase.Insight.Post do
   @doc """
   All public insights published after datetime
   """
-  def public_insights_after(datetime) do
+  def public_insights_after(datetime, opts \\ []) do
     published_and_approved_insights()
+    |> by_is_pulse(Keyword.get(opts, :is_pulse, false))
     |> after_datetime(datetime)
     |> order_by_published_at()
     |> Repo.all()
     |> Tag.Preloader.order_tags()
   end
 
-  @doc """
-  All published and approved insights by given tag
-  """
-  def public_insights_by_tag(tag) do
+  def public_insights_by_tags(tags, opts \\ []) when is_list(tags) do
     published_and_approved_insights()
-    |> by_tag(tag)
+    |> by_tags(tags)
+    |> by_is_pulse(Keyword.get(opts, :is_pulse, false))
+    |> distinct(true)
     |> order_by_published_at()
     |> Repo.all()
     |> Repo.preload(@preloads)
   end
 
-  def public_insights_by_tags(tags, page, page_size) when is_list(tags) do
+  def public_insights_by_tags(tags, page, page_size, opts \\ []) when is_list(tags) do
     published_and_approved_insights()
     |> by_tags(tags)
+    |> by_is_pulse(Keyword.get(opts, :is_pulse, false))
     |> distinct(true)
     |> order_by_published_at()
     |> page(page, page_size)
@@ -281,9 +282,10 @@ defmodule Sanbase.Insight.Post do
   @doc """
   All published and approved insights that given user has voted for
   """
-  def all_insights_user_voted_for(user_id) do
+  def all_insights_user_voted_for(user_id, opts \\ []) do
     published_and_approved_insights()
     |> user_has_voted_for(user_id)
+    |> by_is_pulse(Keyword.get(opts, :is_pulse, false))
     |> Repo.all()
     |> Repo.preload(@preloads)
   end
@@ -332,10 +334,11 @@ defmodule Sanbase.Insight.Post do
     )
   end
 
-  defp by_tag(query, tag_name) do
-    query
-    |> join(:left, [p], t in assoc(p, :tags))
-    |> where([_p, t], t.name == ^tag_name)
+  defp by_is_pulse(query, is_pulse) do
+    from(
+      p in query,
+      where: p.is_pulse == ^is_pulse
+    )
   end
 
   defp by_tags(query, tags) do

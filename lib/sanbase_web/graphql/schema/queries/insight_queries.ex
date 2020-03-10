@@ -50,6 +50,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:page, :integer, default_value: 1)
       arg(:page_size, :integer, default_value: 20)
       arg(:tags, list_of(:string))
+      arg(:is_pulse, :boolean, default_value: false)
 
       resolve(&InsightResolver.all_insights/3)
     end
@@ -59,6 +60,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       meta(access: :free)
 
       arg(:user_id, non_null(:integer))
+      arg(:is_pulse, :boolean, default_value: false)
 
       resolve(&InsightResolver.all_insights_for_user/3)
     end
@@ -68,6 +70,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       meta(access: :free)
 
       arg(:user_id, non_null(:integer))
+      arg(:is_pulse, :boolean, default_value: false)
 
       resolve(&InsightResolver.all_insights_user_voted_for/3)
     end
@@ -80,6 +83,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       meta(access: :free)
 
       arg(:tag, non_null(:string))
+      arg(:is_pulse, :boolean, default_value: false)
 
       resolve(&InsightResolver.all_insights_by_tag/3)
     end
@@ -116,6 +120,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:text, :string)
       arg(:image_urls, list_of(:string))
       arg(:tags, list_of(:string))
+      arg(:is_pulse, :boolean, default_value: false)
 
       middleware(JWTAuth)
       resolve(&InsightResolver.create_post/3)
@@ -133,6 +138,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:text, :string)
       arg(:image_urls, list_of(:string))
       arg(:tags, list_of(:string))
+      arg(:is_pulse, :boolean, default_value: false)
 
       middleware(JWTAuth)
       resolve(&InsightResolver.create_post/3)
@@ -151,6 +157,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:text, :string)
       arg(:image_urls, list_of(:string))
       arg(:tags, list_of(:string))
+      arg(:is_pulse, :boolean)
 
       middleware(JWTAuth)
       resolve(&InsightResolver.update_post/3)
@@ -168,6 +175,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:text, :string)
       arg(:image_urls, list_of(:string))
       arg(:tags, list_of(:string))
+      arg(:is_pulse, :boolean)
 
       middleware(JWTAuth)
       resolve(&InsightResolver.update_post/3)

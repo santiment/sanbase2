@@ -40,6 +40,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     end
 
     field :insights, list_of(:post) do
+      arg(:is_pulse, :boolean, default_value: false)
       cache_resolve(&InsightResolver.public_insights/3, ttl: 60)
     end
 
@@ -103,6 +104,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     end
 
     field :insights, list_of(:post) do
+      arg(:is_pulse, :boolean, default_value: false)
       resolve(&InsightResolver.insights/3)
     end
 

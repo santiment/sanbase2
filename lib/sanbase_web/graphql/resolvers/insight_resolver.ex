@@ -13,12 +13,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
 
   require Logger
 
-  def insights(%User{} = user, _args, _resolution) do
-    {:ok, Post.user_insights(user.id)}
+  def insights(%User{} = user, args, _resolution) do
+    opts = [is_pulse: Map.get(args, :is_pulse, false)]
+    {:ok, Post.user_insights(user.id, opts)}
   end
 
-  def public_insights(%User{} = user, _args, _resolution) do
-    {:ok, Post.user_public_insights(user.id)}
+  def public_insights(%User{} = user, args, _resolution) do
+    opts = [is_pulse: Map.get(args, :is_pulse, false)]
+    {:ok, Post.user_public_insights(user.id, opts)}
   end
 
   def related_projects(%Post{} = post, _, _) do
@@ -29,40 +31,43 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     Post.by_id(post_id)
   end
 
-  def all_insights(_root, %{tags: tags, page: page, page_size: page_size}, _context)
+  def all_insights(_root, %{tags: tags, page: page, page_size: page_size} = args, _context)
       when is_list(tags) do
-    posts = Post.public_insights_by_tags(tags, page, page_size)
+    opts = [is_pulse: Map.get(args, :is_pulse, false)]
+    posts = Post.public_insights_by_tags(tags, page, page_size, opts)
 
     {:ok, posts}
   end
 
-  def all_insights(_root, %{page: page, page_size: page_size}, _resolution) do
-    posts = Post.public_insights(page, page_size)
+  def all_insights(_root, %{page: page, page_size: page_size} = args, _resolution) do
+    opts = [is_pulse: Map.get(args, :is_pulse, false)]
+    posts = Post.public_insights(page, page_size, opts)
 
     {:ok, posts}
   end
 
-  def all_insights_for_user(_root, %{user_id: user_id}, _context) do
-    posts = Post.user_public_insights(user_id)
+  def all_insights_for_user(_root, %{user_id: user_id} = args, _context) do
+    opts = [is_pulse: Map.get(args, :is_pulse, false)]
+    posts = Post.user_public_insights(user_id, opts)
 
     {:ok, posts}
   end
 
-  def all_insights_user_voted_for(_root, %{user_id: user_id}, _context) do
-    posts = Post.all_insights_user_voted_for(user_id)
+  def all_insights_user_voted_for(_root, %{user_id: user_id} = args, _context) do
+    opts = [is_pulse: Map.get(args, :is_pulse, false)]
+    posts = Post.all_insights_user_voted_for(user_id, opts)
 
     {:ok, posts}
   end
 
-  def all_insights_by_tag(_root, %{tag: tag}, _context) do
-    posts = Post.public_insights_by_tag(tag)
+  def all_insights_by_tag(_root, %{tag: tag} = args, _context) do
+    opts = [is_pulse: Map.get(args, :is_pulse, false)]
+    posts = Post.public_insights_by_tags([tag], opts)
 
     {:ok, posts}
   end
 
-  def create_post(_root, args, %{
-        context: %{auth: %{current_user: user}}
-      }) do
+  def create_post(_root, args, %{context: %{auth: %{current_user: user}}}) do
     Post.create(user, args)
   end
 
@@ -127,9 +132,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
 
   def voted_at(%Post{}, _args, _context), do: {:ok, nil}
 
-  def vote(_root, args, %{
-        context: %{auth: %{current_user: user}}
-      }) do
+  def vote(_root, args, %{context: %{auth: %{current_user: user}}}) do
     insight_id = Map.get(args, :insight_id) || Map.fetch!(args, :post_id)
 
     Vote.create(%{post_id: insight_id, user_id: user.id})
@@ -146,9 +149,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     end
   end
 
-  def unvote(_root, args, %{
-        context: %{auth: %{current_user: user}}
-      }) do
+  def unvote(_root, args, %{context: %{auth: %{current_user: user}}}) do
     insight_id = Map.get(args, :insight_id) || Map.fetch!(args, :post_id)
 
     with %Vote{} = vote <- Vote.get_by_opts(post_id: insight_id, user_id: user.id),
@@ -161,11 +162,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   end
 
   # Note: deprecated - should be removed if not used by frontend
-  def insight_comments(
-        _root,
-        %{insight_id: post_id} = args,
-        _resolution
-      ) do
+  def insight_comments(_root, %{insight_id: post_id} = args, _resolution) do
     comments =
       EntityComment.get_comments(:insight, post_id, args)
       |> Enum.map(& &1.comment)

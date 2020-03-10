@@ -1,4 +1,4 @@
-defmodule Sanbase.Chart do
+defmodule Sanbase.GoogleChart do
   @moduledoc ~s"""
   Builds an image and stores it in S3
   """

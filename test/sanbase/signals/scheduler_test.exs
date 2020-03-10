@@ -51,7 +51,7 @@ defmodule Sanbase.Signal.SchedulerTest do
     %{mock_data: mock_data, mock_chart: mock_chart, user: user, project: project} = context
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Metric.timeseries_data/5, {:ok, mock_data})
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.Chart.build_embedded_chart/4, {:ok, mock_chart})
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.GoogleChart.build_embedded_chart/4, {:ok, mock_chart})
     |> Sanbase.Mock.run_with_mocks(fn ->
       Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
 
@@ -84,7 +84,7 @@ defmodule Sanbase.Signal.SchedulerTest do
     } = context
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Metric.timeseries_data/5, {:ok, mock_data})
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.Chart.build_embedded_chart/4, {:ok, mock_chart})
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.GoogleChart.build_embedded_chart/4, {:ok, mock_chart})
     |> Sanbase.Mock.run_with_mocks(fn ->
       Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
 

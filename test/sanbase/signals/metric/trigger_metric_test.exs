@@ -15,7 +15,7 @@ defmodule Sanbase.Signal.TriggerMetricTest do
 
   describe "metrics with text selector" do
     setup_with_mocks([
-      {Sanbase.Chart, [],
+      {Sanbase.GoogleChart, [],
        [
          build_embedded_chart: fn _, _, _, _ -> [%{image: %{url: "somelink"}}] end,
          build_embedded_chart: fn _, _, _ -> [%{image: %{url: "somelink"}}] end
@@ -84,7 +84,7 @@ defmodule Sanbase.Signal.TriggerMetricTest do
 
   describe "metrics with slug selector" do
     setup_with_mocks([
-      {Sanbase.Chart, [],
+      {Sanbase.GoogleChart, [],
        [
          build_embedded_chart: fn _, _, _, _ -> [%{image: %{url: "somelink"}}] end,
          build_embedded_chart: fn _, _, _ -> [%{image: %{url: "somelink"}}] end

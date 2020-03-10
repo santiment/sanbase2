@@ -10,7 +10,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentDownChangeTest do
   alias Sanbase.Signal.Trigger.DailyActiveAddressesSettings
 
   setup_with_mocks([
-    {Sanbase.Chart, [],
+    {Sanbase.GoogleChart, [],
      [
        build_embedded_chart: fn _, _, _, _ -> [%{image: %{url: "somelink"}}] end,
        build_embedded_chart: fn _, _, _ -> [%{image: %{url: "somelink"}}] end

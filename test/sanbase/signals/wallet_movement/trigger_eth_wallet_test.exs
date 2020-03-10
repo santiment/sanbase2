@@ -15,7 +15,7 @@ defmodule Sanbase.Signal.EthWalletTriggerTest do
   alias Sanbase.Clickhouse.HistoricalBalance
 
   setup_with_mocks([
-    {Sanbase.Chart, [],
+    {Sanbase.GoogleChart, [],
      [
        build_embedded_chart: fn _, _, _, _ -> [%{image: %{url: "somelink"}}] end,
        build_embedded_chart: fn _, _, _ -> [%{image: %{url: "somelink"}}] end

@@ -2,7 +2,7 @@ defmodule Sanbase.Signal.Utils do
   alias Sanbase.Math
 
   def chart_url(project, type) do
-    Sanbase.Chart.build_embedded_chart(
+    Sanbase.GoogleChart.build_embedded_chart(
       project,
       Timex.shift(Timex.now(), days: -90),
       Timex.now(),

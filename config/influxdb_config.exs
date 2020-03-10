@@ -16,8 +16,8 @@ config :sanbase, Sanbase.Prices.Store,
   pool: [max_overflow: 40, size: 30],
   database: "prices"
 
-config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
-  init: {Sanbase.ExternalServices.TwitterData.Store, :init},
+config :sanbase, Sanbase.Twitter.Store,
+  init: {Sanbase.Twitter.Store, :init},
   host: "localhost",
   port: 8086,
   pool: [max_overflow: 20, size: 20],

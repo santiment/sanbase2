@@ -1,4 +1,4 @@
-defmodule Sanbase.ExternalServices.TwitterData.Store do
+defmodule Sanbase.Twitter.Store do
   @moduledoc ~S"""
     A module for storing and fetching twitter account data from a time series data store
   """
@@ -6,12 +6,19 @@ defmodule Sanbase.ExternalServices.TwitterData.Store do
   use Sanbase.Influxdb.Store
 
   alias Sanbase.Influxdb.Measurement
-  alias Sanbase.ExternalServices.TwitterData.Store
+  alias Sanbase.Twitter.Store
 
-  def all_records_for_measurement!(measurement_name, from, to, interval) do
+  def all_records_for_measurement(measurement_name, from, to, interval) do
     select_from_to_query(measurement_name, from, to, interval)
     |> get()
-    |> parse_twitter_data_series!()
+    |> parse_twitter_data_series()
+  end
+
+  def all_records_for_measurement!(measurement_name, from, to, interval) do
+    case all_records_for_measurement(measurement_name, from, to, interval) do
+      {:ok, result} -> result
+      {:error, error} -> raise(error)
+    end
   end
 
   def last_record_for_measurement(measurement_name) do
@@ -39,9 +46,9 @@ defmodule Sanbase.ExternalServices.TwitterData.Store do
     ~s/SELECT LAST(followers_count) FROM "#{measurement_name}"/
   end
 
-  defp parse_twitter_data_series!(%{results: [%{error: error}]}), do: raise(error)
+  defp parse_twitter_data_series(%{results: [%{error: error}]}), do: {:error, error}
 
-  defp parse_twitter_data_series!(%{
+  defp parse_twitter_data_series(%{
          results: [
            %{
              series: [
@@ -52,14 +59,17 @@ defmodule Sanbase.ExternalServices.TwitterData.Store do
            }
          ]
        }) do
-    twitter_data_series
-    |> Enum.map(fn [iso8601_datetime, followers_count] ->
-      {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
-      {datetime, followers_count}
-    end)
+    result =
+      twitter_data_series
+      |> Enum.map(fn [iso8601_datetime, followers_count] ->
+        {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+        {datetime, followers_count}
+      end)
+
+    {:ok, result}
   end
 
-  defp parse_twitter_data_series!(_), do: []
+  defp parse_twitter_data_series(_), do: {:ok, []}
 
   defp parse_twitter_record(%{
          results: [

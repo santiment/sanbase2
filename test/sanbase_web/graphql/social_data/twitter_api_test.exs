@@ -2,7 +2,7 @@ defmodule Sanbase.Github.TwitterApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   alias Sanbase.Influxdb.Measurement
-  alias Sanbase.ExternalServices.TwitterData.Store
+  alias Sanbase.Twitter.Store
   alias Sanbase.Repo
   alias Sanbase.Model.Project
 

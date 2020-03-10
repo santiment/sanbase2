@@ -3,9 +3,6 @@ defmodule SanbaseWeb.Graphql.TwitterTypes do
 
   object :twitter_data do
     field(:datetime, non_null(:datetime))
-    field(:twitter_name, :string)
     field(:followers_count, :integer)
-    field(:ticker, :string)
-    field(:slug, :string)
   end
 end

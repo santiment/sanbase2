@@ -36,8 +36,8 @@ defmodule Sanbase.Application.Web do
         id: :api_cache
       ),
 
-      # Time sereies TwitterData DB connection
-      Sanbase.ExternalServices.TwitterData.Store.child_spec(),
+      # Time sereies Twitter DB connection
+      Sanbase.Twitter.Store.child_spec(),
 
       # Rehydrating cache
       Sanbase.Cache.RehydratingCache.Supervisor,

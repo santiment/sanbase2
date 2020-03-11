@@ -67,10 +67,10 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       %{data: [value | _]}, _ when is_binary(value) ->
         :string_list
 
-      %{data: [%{range: [r | _], value: f} | _]}, _ when is_float(r) and is_float(f) ->
+      %{data: [%{range: [r | _], value: value} | _]}, _ when is_number(r) and is_number(value) ->
         :float_range_float_value_list
 
-      %{data: [%{range: [%DateTime{} | _], value: f} | _]}, _ when is_float(f) ->
+      %{data: [%{range: [%DateTime{} | _], value: value} | _]}, _ when is_number(value) ->
         :datetime_range_float_value_list
 
       %{data: []}, _ ->

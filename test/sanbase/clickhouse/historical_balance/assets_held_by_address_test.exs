@@ -32,7 +32,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.AssetsHeldByAdderssTest do
          {:ok, [%{balance: 1000.0, slug: context.eth_project.slug}]}
        end}
     ] do
-      assert HistoricalBalance.assets_held_by_address("0x123") ==
+      assert HistoricalBalance.assets_held_by_address(%{address: "0x123", infrastructure: "ETH"}) ==
                {:ok,
                 [
                   %{slug: context.eth_project.slug, balance: 1000.0},
@@ -44,32 +44,24 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.AssetsHeldByAdderssTest do
 
   test "clickhouse returns no results", _context do
     with_mocks [
-      {Sanbase.Clickhouse.HistoricalBalance.Erc20Balance, [:passthrough],
-       assets_held_by_address: fn _ ->
-         {:ok, []}
-       end},
-      {Sanbase.Clickhouse.HistoricalBalance.EthBalance, [:passthrough],
+      {Sanbase.Clickhouse.HistoricalBalance.BtcBalance, [:passthrough],
        assets_held_by_address: fn _ ->
          {:ok, []}
        end}
     ] do
-      assert HistoricalBalance.assets_held_by_address("0x123") ==
+      assert HistoricalBalance.assets_held_by_address(%{address: "0x123", infrastructure: "BTC"}) ==
                {:ok, []}
     end
   end
 
   test "clickhouse returns error", _context do
     with_mocks [
-      {Sanbase.Clickhouse.HistoricalBalance.Erc20Balance, [:passthrough],
-       assets_held_by_address: fn _ ->
-         {:ok, []}
-       end},
-      {Sanbase.Clickhouse.HistoricalBalance.EthBalance, [:passthrough],
+      {Sanbase.Clickhouse.HistoricalBalance.LtcBalance, [:passthrough],
        assets_held_by_address: fn _ ->
          {:error, "Something went wrong"}
        end}
     ] do
-      assert HistoricalBalance.assets_held_by_address("0x123") ==
+      assert HistoricalBalance.assets_held_by_address(%{address: "0x123", infrastructure: "LTC"}) ==
                {:error, "Something went wrong"}
     end
   end

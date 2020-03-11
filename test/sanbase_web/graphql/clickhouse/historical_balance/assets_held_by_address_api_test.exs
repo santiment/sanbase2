@@ -15,7 +15,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
     {:ok, [p1: p1, p2: p2, eth_project: eth_project]}
   end
 
-  test "historical balances returns lists of results", context do
+  test "historical balances returns lists of results for ETH", context do
     with_mocks [
       {Sanbase.Clickhouse.HistoricalBalance.Erc20Balance, [:passthrough],
        assets_held_by_address: fn _ ->
@@ -27,12 +27,12 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
        end},
       {Sanbase.Clickhouse.HistoricalBalance.EthBalance, [:passthrough],
        assets_held_by_address: fn _ ->
-         {:ok, [%{balance: 1.0e3, slug: context.eth_project.slug}]}
+         {:ok, [%{balance: 1000.0, slug: context.eth_project.slug}]}
        end}
     ] do
       address = "0x123"
 
-      query = assets_held_by_address_query(address)
+      query = assets_held_by_address_query(address, "ETH")
 
       result =
         context.conn
@@ -50,20 +50,42 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
     end
   end
 
-  test "historical balances returns empty list", context do
+  test "historical balances returns lists of results for BTC", context do
     with_mocks [
-      {Sanbase.Clickhouse.HistoricalBalance.Erc20Balance, [:passthrough],
+      {Sanbase.Clickhouse.HistoricalBalance.BtcBalance, [:passthrough],
        assets_held_by_address: fn _ ->
-         {:ok, []}
-       end},
-      {Sanbase.Clickhouse.HistoricalBalance.EthBalance, [:passthrough],
-       assets_held_by_address: fn _ ->
-         {:ok, []}
+         {:ok, [%{balance: 200.0, slug: "bitcoin"}]}
        end}
     ] do
       address = "0x123"
 
-      query = assets_held_by_address_query(address)
+      query = assets_held_by_address_query(address, "BTC")
+
+      result =
+        context.conn
+        |> post("/graphql", query_skeleton(query, "assetsHeldByAddress"))
+        |> json_response(200)
+
+      assert result == %{
+               "data" => %{
+                 "assetsHeldByAddress" => [
+                   %{"balance" => 200.0, "slug" => "bitcoin"}
+                 ]
+               }
+             }
+    end
+  end
+
+  test "historical balances returns empty list", context do
+    with_mocks [
+      {Sanbase.Clickhouse.HistoricalBalance.Erc20Balance, [:passthrough],
+       assets_held_by_address: fn _ -> {:ok, []} end},
+      {Sanbase.Clickhouse.HistoricalBalance.EthBalance, [:passthrough],
+       assets_held_by_address: fn _ -> {:ok, []} end}
+    ] do
+      address = "0x123"
+
+      query = assets_held_by_address_query(address, "ETH")
 
       result =
         context.conn
@@ -87,7 +109,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
     ] do
       address = "0x123"
 
-      query = assets_held_by_address_query(address)
+      query = assets_held_by_address_query(address, "ETH")
 
       assert capture_log(fn ->
                result =
@@ -105,7 +127,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
 
   test "negative balances are discarded", context do
     with_mocks [
-      {Sanbase.Clickhouse.HistoricalBalance.Erc20Balance, [:passthrough],
+      {Sanbase.Clickhouse.HistoricalBalance.XrpBalance, [:passthrough],
        assets_held_by_address: fn _ ->
          {:ok,
           [
@@ -120,7 +142,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
     ] do
       address = "0x123"
 
-      query = assets_held_by_address_query(address)
+      query = assets_held_by_address_query(address, "XRP")
 
       result =
         context.conn
@@ -131,11 +153,11 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
     end
   end
 
-  defp assets_held_by_address_query(address) do
+  defp assets_held_by_address_query(address, infrastructure) do
     """
       {
         assetsHeldByAddress(
-          address: "#{address}"
+          selector: {infrastructure: "#{infrastructure}", address: "#{address}"}
         ){
             slug
             balance

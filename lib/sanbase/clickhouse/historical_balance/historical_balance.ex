@@ -21,8 +21,15 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
     XrpBalance
   }
 
-  @typedoc ~s"""
-  """
+  @infrastructure_to_module %{
+    "BCH" => BchBalance,
+    "BNB" => BnbBalance,
+    "BTC" => BtcBalance,
+    "EOS" => EosBalance,
+    "LTC" => LtcBalance,
+    "XRP" => XrpBalance,
+    "ETH" => [EthBalance, Erc20Balance]
+  }
   @type selector :: %{
           required(:infrastructure) => String.t(),
           optional(:currency) => String.t(),
@@ -54,14 +61,18 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   This can be combined with the historical balance query to see the historical
   balance of all currently owned assets
   """
-  @spec assets_held_by_address(address) :: {:ok, list(slug)} | {:error, String.t()}
-  def assets_held_by_address(address) do
+  @spec assets_held_by_address(map()) :: {:ok, list(map())} | {:error, String.t()}
+  def assets_held_by_address(%{infrastructure: "ETH", address: address}) do
     async with {:ok, erc20_assets} <- Erc20Balance.assets_held_by_address(address),
                {:ok, ethereum} <- EthBalance.assets_held_by_address(address) do
       {:ok, ethereum ++ erc20_assets}
-    else
-      error ->
-        error
+    end
+  end
+
+  def assets_held_by_address(%{infrastructure: infr, address: address}) do
+    case Map.get(@infrastructure_to_module, infr) do
+      nil -> {:error, "Infrastructure #{infr} is not supported."}
+      module -> module.assets_held_by_address(address)
     end
   end
 

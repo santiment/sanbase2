@@ -9,8 +9,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
   # Return this number of datapoints is the provided interval is an empty string
   @datapoints 300
 
-  def assets_held_by_address(_root, %{address: address}, _resolution) do
-    HistoricalBalance.assets_held_by_address(address)
+  def assets_held_by_address(_root, args, _resolution) do
+    selector =
+      case Map.get(args, :selector) do
+        nil -> %{infrastructure: "ETH", address: Map.fetch!(args, :address)}
+        selector -> selector
+      end
+
+    HistoricalBalance.assets_held_by_address(selector)
     |> case do
       {:ok, result} ->
         # We do this, because many contracts emit a transfer
@@ -26,7 +32,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
 
       {:error, error} ->
         {:error,
-         handle_graphql_error("Assets held by address", address, error, description: "address")}
+         handle_graphql_error("Assets held by address", selector.address, error,
+           description: "address"
+         )}
     end
   end
 

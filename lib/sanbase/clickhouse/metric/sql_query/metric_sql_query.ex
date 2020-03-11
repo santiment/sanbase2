@@ -42,8 +42,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
         argMax(value, computed_at) AS value
       FROM #{Map.get(@table_map, metric)}
       PREWHERE
-        dt >= #{maybe_convert_to_date(metric, "toDateTime(?3)")} AND
-        dt < #{maybe_convert_to_date(metric, "toDateTime(?4)")} AND
+        #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
+        #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
         asset_id = (
           SELECT argMax(asset_id, computed_at)
           FROM asset_metadata
@@ -86,8 +86,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
         argMax(value, computed_at) AS value
       FROM #{Map.get(@table_map, metric)}
       PREWHERE
-        dt >= #{maybe_convert_to_date(metric, "toDateTime(?3)")} AND
-        dt < #{maybe_convert_to_date(metric, "toDateTime(?4)")} AND
+        #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
+        #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
         asset_id IN (?1) AND
         metric_id = ?2
       GROUP BY dt, asset_id
@@ -156,13 +156,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
       toUnixTimestamp(toDateTime(min(dt)))
     FROM #{Map.get(@table_map, metric)}
     PREWHERE
-      metric_id = (
-        SELECT
-          argMax(metric_id, computed_at) AS metric_id
-        FROM
-          metric_metadata
-        PREWHERE
-          name = ?1 ) AND
+      metric_id = ( SELECT argMax(metric_id, computed_at) AS metric_id FROM metric_metadata PREWHERE name = ?1 ) AND
       value > 0
     """
 
@@ -177,17 +171,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
       toUnixTimestamp(toDateTime(min(dt)))
     FROM #{Map.get(@table_map, metric)}
     PREWHERE
-      asset_id = (
-        SELECT argMax(asset_id, computed_at)
-        FROM asset_metadata
-        PREWHERE name = ?1
-      ) AND metric_id = (
-        SELECT
-          argMax(metric_id, computed_at) AS metric_id
-        FROM
-          metric_metadata
-        PREWHERE
-          name = ?2 ) AND
+      asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
+      metric_id = ( SELECT argMax(metric_id, computed_at) AS metric_id FROM metric_metadata PREWHERE name = ?2 ) AND
       value > 0
     """
 
@@ -211,10 +196,17 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     {query, args}
   end
 
-  defp maybe_convert_to_date(metric, code) do
+  defp maybe_convert_to_date(:after, metric, dt_column, code) do
     case Map.get(@min_interval_map, metric) do
-      "5m" -> code
-      _ -> "toDate(#{code})"
+      "5m" -> "#{dt_column} >= #{code}"
+      _ -> "#{dt_column} >= toDate(#{code})"
+    end
+  end
+
+  defp maybe_convert_to_date(:before, metric, dt_column, code) do
+    case Map.get(@min_interval_map, metric) do
+      "5m" -> "#{dt_column} < #{code}"
+      _ -> "#{dt_column} <= toDate(#{code})"
     end
   end
 end

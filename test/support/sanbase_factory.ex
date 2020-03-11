@@ -97,6 +97,7 @@ defmodule Sanbase.Factory do
       ],
       token_decimals: 18,
       total_supply: :rand.uniform(50_000_000) + 10_000_000,
+      twitter_link: "https://twitter.com/#{rand_hex_str()}",
       github_organizations: [build(:github_organization)],
       market_segments: [build(:market_segment)],
       infrastructure:
@@ -120,6 +121,7 @@ defmodule Sanbase.Factory do
       ],
       token_decimals: 18,
       total_supply: 83_000_000,
+      twitter_link: "https://twitter.com/#{rand_hex_str()}",
       github_organizations: [build(:github_organization)],
       market_segments: [build(:market_segment)],
       infrastructure: nil,
@@ -141,6 +143,7 @@ defmodule Sanbase.Factory do
       ],
       token_decimals: 18,
       total_supply: :rand.uniform(50_000_000) + 10_000_000,
+      twitter_link: "https://twitter.com/#{rand_hex_str()}",
       github_organizations: [build(:github_organization)],
       market_segments: [build(:market_segment)],
       infrastructure: nil,

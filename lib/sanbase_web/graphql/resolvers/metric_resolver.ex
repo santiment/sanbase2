@@ -82,10 +82,29 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     {:ok, from}
   end
 
+  defp calibrate_transform_params(%{type: "changes"}, from, _to, interval) do
+    shift_by_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+    from = Timex.shift(from, seconds: -shift_by_sec)
+    {:ok, from}
+  end
+
   defp apply_transform(%{type: "none"}, data), do: {:ok, data}
 
   defp apply_transform(%{type: "moving_average", moving_average_base: base}, data) do
     Sanbase.Math.simple_moving_average(data, base, value_key: :value)
+  end
+
+  defp apply_transform(%{type: "changes"}, data) do
+    result =
+      Stream.chunk_every(data, 2, 1, :discard)
+      |> Enum.map(fn [%{value: previous}, %{value: next, datetime: datetime}] ->
+        %{
+          datetime: datetime,
+          value: next - previous
+        }
+      end)
+
+    {:ok, result}
   end
 
   def aggregated_timeseries_data(

@@ -27,7 +27,7 @@ defmodule Sanbase.Clickhouse.V2ClickhouseMetadataTest do
     for metric <- metrics do
       {:ok, metadata} = Metric.metadata(metric)
       assert metadata.default_aggregation in aggregations
-      assert metadata.min_interval in ["1m", "5m", "1d"]
+      assert metadata.min_interval in ["1m", "5m", "6h", "1d"]
     end
   end
 end

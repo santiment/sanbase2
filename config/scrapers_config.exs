@@ -19,14 +19,14 @@ config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
 config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
   apikey: {:system, "ETHERSCAN_APIKEY", ""}
 
-config :sanbase, Sanbase.ExternalServices.TwitterData.Worker,
+config :sanbase, Sanbase.Twitter.Worker,
   consumer_key: {:system, "TWITTER_CONSUMER_KEY"},
   consumer_secret: {:system, "TWITTER_CONSUMER_SECRET"},
   # 6 hours
   update_interval: 1000 * 60 * 60 * 6,
   sync_enabled: {:system, "TWITTER_SCRAPER_ENABLED", false}
 
-config :sanbase, Sanbase.ExternalServices.TwitterData.HistoricalData,
+config :sanbase, Sanbase.Twitter.HistoricalData,
   apikey: {:system, "TWITTERCOUNTER_API_KEY"},
   # 1 day
   update_interval: 1000 * 60 * 60 * 24,

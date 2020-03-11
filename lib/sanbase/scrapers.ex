@@ -13,8 +13,8 @@ defmodule Sanbase.Application.Scrapers do
       # Start a Registry
       {Registry, keys: :unique, name: Sanbase.Registry},
 
-      # Time sereies TwitterData DB connection
-      Sanbase.ExternalServices.TwitterData.Store.child_spec(),
+      # Time sereies Twitter DB connection
+      Sanbase.Twitter.Store.child_spec(),
 
       # Etherscan rate limiter
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(
@@ -71,10 +71,10 @@ defmodule Sanbase.Application.Scrapers do
       Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
 
       # Twitter account data tracking worker
-      Sanbase.ExternalServices.TwitterData.Worker,
+      Sanbase.Twitter.Worker,
 
       # Twitter account historical data
-      Sanbase.ExternalServices.TwitterData.HistoricalData,
+      Sanbase.Twitter.HistoricalData,
 
       # Quantum Scheduler
       start_if(

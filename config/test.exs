@@ -48,8 +48,7 @@ config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
   webhook_url: "http://example.com/webhook_url",
   notifications_enabled: true
 
-config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
-  database: "twitter_followers_data_test"
+config :sanbase, Sanbase.Twitter.Store, database: "twitter_followers_data_test"
 
 config :sanbase, SanbaseWeb.Graphql.ContextPlug,
   basic_auth_username: "user",

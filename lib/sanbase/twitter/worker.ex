@@ -1,4 +1,4 @@
-defmodule Sanbase.ExternalServices.TwitterData.Worker do
+defmodule Sanbase.Twitter.Worker do
   @moduledoc ~S"""
     A worker that regularly polls twitter for account data and stores it in
     a time series database.
@@ -17,7 +17,7 @@ defmodule Sanbase.ExternalServices.TwitterData.Worker do
   alias Sanbase.Model.Project
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.ExternalServices.RateLimiting.Server
-  alias Sanbase.ExternalServices.TwitterData.Store
+  alias Sanbase.Twitter.Store
 
   @default_update_interval 1000 * 60 * 60 * 6
 

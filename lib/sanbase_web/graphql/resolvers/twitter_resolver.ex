@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
   alias Sanbase.Model.Project
-  alias Sanbase.ExternalServices.TwitterData.Store
+  alias Sanbase.Twitter.Store
   alias SanbaseWeb.Graphql.Helpers.Utils
 
   import SanbaseWeb.Graphql.Helpers.Async
@@ -19,14 +19,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
   end
 
   defp calculate_twitter_data(slug) do
-    with %Project{twitter_link: twitter_link, ticker: ticker} <- Project.by_slug(slug),
-         {:ok, twitter_name} <- extract_twitter_name(twitter_link),
+    with %Project{} = project <- Project.by_slug(slug),
+         {:ok, twitter_name} <- Project.twitter_handle(project),
          {datetime, followers_count} <- Store.last_record_for_measurement(twitter_name) do
       {:ok,
        %{
-         ticker: ticker,
          datetime: datetime,
-         twitter_name: twitter_name,
          followers_count: followers_count
        }}
     else
@@ -50,8 +48,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
         %{slug: slug, from: from, to: to, interval: interval},
         _resolution
       ) do
-    with %Project{twitter_link: twitter_link} <- Project.by_slug(slug),
-         {:ok, twitter_name} <- extract_twitter_name(twitter_link),
+    with %Project{} = project <- Project.by_slug(slug),
+         {:ok, twitter_name} <- Project.twitter_handle(project),
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(Store, twitter_name, from, to, interval, 60 * 60),
          twitter_historical_data <-
@@ -71,17 +69,4 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
         {:error, "Cannot fetch twitter history data for slug #{slug}: #{inspect(error)}"}
     end
   end
-
-  defp extract_twitter_name("https://twitter.com/" <> twitter_name = twitter_link) do
-    case String.split(twitter_name, "/") |> hd do
-      "" ->
-        {:error,
-         "Twitter name must not be empty or the twitter link has wrong format: #{twitter_link}"}
-
-      name ->
-        {:ok, name}
-    end
-  end
-
-  defp extract_twitter_name(_), do: {:error, "Can't parse twitter link"}
 end

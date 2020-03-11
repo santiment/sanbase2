@@ -1,4 +1,4 @@
-defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
+defmodule Sanbase.Twitter.HistoricalData do
   @moduledoc ~S"""
     Polls twittercounter.com for account data and stores it in
     a time series database.
@@ -19,7 +19,7 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
   alias Sanbase.Model.Project
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.ExternalServices.RateLimiting
-  alias Sanbase.ExternalServices.TwitterData.Store
+  alias Sanbase.Twitter.Store
 
   # 1 day
   @default_update_interval 1000 * 60 * 60 * 24
@@ -65,7 +65,7 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
     twitter_name = String.split(twitter_name, "/") |> hd
 
     twitter_name
-    |> Sanbase.ExternalServices.TwitterData.Worker.fetch_twitter_user_data()
+    |> Sanbase.Twitter.Worker.fetch_twitter_user_data()
     |> fetch_and_store_twittercounter_user_data(twitter_name)
   end
 

@@ -31,6 +31,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "price_btc",
         "price_usd",
         "volume_usd",
+        "twitter_followers",
         # change metrics
         "volume_usd_change_1d",
         "volume_usd_change_7d",

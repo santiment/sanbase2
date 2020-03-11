@@ -19,6 +19,10 @@ defmodule SanbaseWeb.Graphql.ApiMetricComputedAtTest do
     clickhouse_response = {:ok, %{rows: [[datetime |> DateTime.to_unix()]]}}
 
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, clickhouse_response)
+    |> Sanbase.Mock.prepare_mock2(
+      &Sanbase.Twitter.MetricAdapter.last_datetime_computed_at/2,
+      {:ok, datetime}
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       for metric <- metrics do
         %{"data" => %{"getMetric" => %{"lastDatetimeComputedAt" => last_dt}}} =

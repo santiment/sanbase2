@@ -1,10 +1,10 @@
 defmodule Sanbase.InfluxdbHelpers do
   defmacro setup_twitter_influxdb() do
     quote do
-      Sanbase.ExternalServices.TwitterData.Store.create_db()
+      Sanbase.Twitter.Store.create_db()
 
       on_exit(fn ->
-        Sanbase.ExternalServices.TwitterData.Store.drop_db()
+        Sanbase.Twitter.Store.drop_db()
       end)
     end
   end

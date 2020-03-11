@@ -68,7 +68,10 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
     |> Enum.map(fn identifier ->
       {identifier, fetch_metric(metric, %{type => identifier}, from, to, interval)}
     end)
-    |> Enum.reject(&is_nil/1)
+    |> Enum.reject(fn
+      {_, nil} -> true
+      _ -> false
+    end)
   end
 
   defp get_timeseries_params(settings) do

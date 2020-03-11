@@ -1,11 +1,15 @@
 defmodule Sanbase.Billing.Subscription.SignUpTrial do
   @moduledoc """
   Module for creating free trial and sending follow-up emails after user signs up.
-  We send 4 types of emails in the span of the 14-day free trial:
-  * A welcome email - immediately post registration.
-  * An email at the 3rd day of free trial.
-  * An email at the 11th day of free trial.
-  * And an email when the free trial expired.
+  We send 6 types of emails in the span of the 14-day free trial:
+
+  1. A welcome email - immediately post registration.
+  2. An educational email on **day 4** of free trial.
+  3. A second educational email on **day 7** of free trial
+  4. An email with coupon **3 days before free trial ends**.
+  5. An email to users with credit card **1 day before charging them**.
+  6. An email to users without credit card when we cancel expired free trial.
+
   A cron job runs twice a day and makes sure to send email at the proper day of the user's trial.
   """
   use Ecto.Schema
@@ -24,9 +28,25 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
   # Free trial plans are Sanbase PRO plans
   @free_trial_plans [Plan.Metadata.sanbase_pro()]
 
+  @day_email_type_map %{
+    4 => :sent_first_education_email,
+    7 => :sent_second_education_email,
+    13 => :sent_cc_will_be_charged
+  }
+
   @templates %{
+    # immediately after sign up
     sent_welcome_email: "sanbase-post-registration",
-    sent_trial_will_end_email: "trial-three-days-before-end"
+    # on the 4th day
+    sent_first_education_email: "first-edu-email",
+    # on the 7th day
+    sent_second_education_email: "second-edu-email",
+    # 3 days before end with coupon code
+    sent_trial_will_end_email: "trial-three-days-before-end",
+    # 1 day before end on customers with credit card
+    sent_cc_will_be_charged: "trial-finished",
+    # when we cancel - ~ 2 hours before end
+    sent_trial_finished_without_cc: "trial-finished-without-card"
   }
 
   schema "sign_up_trials" do
@@ -34,8 +54,11 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     belongs_to(:subscription, Subscription)
 
     field(:sent_welcome_email, :boolean, dafault: false)
+    field(:sent_first_education_email, :boolean, dafault: false)
+    field(:sent_second_education_email, :boolean, dafault: false)
     field(:sent_trial_will_end_email, :boolean, dafault: false)
-    field(:sent_end_trial_email, :boolean, dafault: false)
+    field(:sent_cc_will_be_charged, :boolean, dafault: false)
+    field(:sent_trial_finished_without_cc, :boolean, dafault: false)
 
     timestamps()
   end
@@ -45,14 +68,38 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     sign_up_trial
     |> cast(attrs, [
       :user_id,
+      :subscription_id,
       :sent_welcome_email,
+      :sent_first_education_email,
+      :sent_second_education_email,
       :sent_trial_will_end_email,
-      :sent_end_trial_email,
-      :subscription_id
+      :sent_cc_will_be_charged,
+      :sent_trial_finished_without_cc
     ])
     |> validate_required([:user_id])
     |> unique_constraint(:user_id)
     |> unique_constraint(:subscription_id)
+  end
+
+  # schedule to run twice a day
+  def run do
+    __MODULE__
+    |> Repo.all()
+    |> Enum.each(fn sign_up_trial ->
+      trial_day = calc_trial_day(sign_up_trial)
+
+      case Map.get(@day_email_type_map, trial_day) do
+        nil ->
+          :ok
+
+        email_type ->
+          maybe_send_email(sign_up_trial, email_type)
+      end
+    end)
+  end
+
+  defp calc_trial_day(%__MODULE__{inserted_at: inserted_at}) do
+    Timex.diff(Timex.now(), inserted_at, :days)
   end
 
   def by_user_id(user_id) do
@@ -80,6 +127,17 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     with {:ok, subscription} <- get_trialing_subscription(stripe_subscription_id),
          {:ok, sign_up_trial} <- get_sign_up_trial(subscription) do
       do_send_email_and_mark_sent(sign_up_trial, :sent_trial_will_end_email)
+    end
+  end
+
+  def maybe_send_trial_finished_email(subscription) do
+    Repo.get_by(__MODULE__, user_id: subscription.user_id, subscription_id: subscription.id)
+    |> case do
+      %__MODULE__{sent_trial_finished_without_cc: false} = sign_up_trial ->
+        do_send_email_and_mark_sent(sign_up_trial, :sent_trial_finished_without_cc)
+
+      _ ->
+        :ok
     end
   end
 
@@ -129,11 +187,27 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     end
   end
 
+  # this email is send only to users with credit card in Stripe
+  defp maybe_send_email(sign_up_trial, :sent_cc_will_be_charged) do
+    if User.has_credit_card_in_stripe?(sign_up_trial.user_id) do
+      do_send_email_and_mark_sent(sign_up_trial, :sent_cc_will_be_charged)
+    end
+  end
+
+  defp maybe_send_email(sign_up_trial, email_type)
+       when email_type in [
+              :sent_first_education_email,
+              :sent_second_education_email
+            ] do
+    do_send_email_and_mark_sent(sign_up_trial, email_type)
+  end
+
   defp do_send_email_and_mark_sent(%__MODULE__{user_id: user_id} = sign_up_trial, email_type) do
     user = Repo.get(User, user_id)
     template = @templates[email_type]
 
-    if user && template do
+    # User exists, we have proper template in Mandrill and this email type is not already sent
+    if user && template && !sign_up_trial[email_type] do
       Logger.info(
         "Trial email template #{template} sent to: #{user.email}, name=#{
           user.username || user.email

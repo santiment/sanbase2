@@ -464,6 +464,15 @@ defmodule Sanbase.Auth.User do
     String.replace(@sanbase_bot_email, "@", "#{idx}@")
   end
 
+  def has_credit_card_in_stripe?(user_id) do
+    with {:ok, user} <- by_id(user_id),
+         {:ok, customer} <- Sanbase.StripeApi.retrieve_customer(user) do
+      customer.default_source != nil
+    else
+      _ -> false
+    end
+  end
+
   def update_avatar_url(%User{} = user, avatar_url) do
     user
     |> changeset(%{avatar_url: avatar_url})

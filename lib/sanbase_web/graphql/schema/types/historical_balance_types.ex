@@ -11,6 +11,11 @@ defmodule SanbaseWeb.Graphql.HistoricalBalanceTypes do
     field(:balance, :float)
   end
 
+  input_object :address_selector_input_object do
+    field(:infrastructure, non_null(:string))
+    field(:address, non_null(:string))
+  end
+
   input_object :historical_balance_selector do
     field(:infrastructure, non_null(:string))
     field(:currency, :string)

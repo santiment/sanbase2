@@ -24,7 +24,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.UtxoSqlQueries do
     SELECT balance
     FROM #{table}
     PREWHERE
-      address = ?1 AND
+      address = ?1
     ORDER BY dt DESC
     LIMIT 1
     """

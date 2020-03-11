@@ -127,7 +127,7 @@ defmodule Sanbase.Signal.OperationText.KV do
   end
 
   # Amount
-  def to_template_kv(%{absolute_change: value}, %{amount_down: amount_down} = op, opts),
+  def to_template_kv(%{absolute_change: value}, %{amount_down: _} = op, opts),
     do: to_template_kv(value, op, opts)
 
   def to_template_kv(amount_change, %{amount_down: amount_down}, opts) do

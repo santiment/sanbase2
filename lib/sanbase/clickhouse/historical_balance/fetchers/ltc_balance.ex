@@ -30,7 +30,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.LtcBalance do
 
     ClickhouseRepo.query_transform(query, args, fn [value] ->
       %{
-        slug: "bitcoin",
+        slug: "litecoin",
         balance: value
       }
     end)

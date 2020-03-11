@@ -15,7 +15,8 @@ defmodule SanbaseWeb.Graphql.Schema.HistoricalBalanceQueries do
     field :assets_held_by_address, list_of(:slug_balance) do
       meta(access: :free)
 
-      arg(:address, non_null(:string))
+      arg(:selector, :address_selector_input_object)
+      arg(:address, :string)
 
       cache_resolve(&HistoricalBalanceResolver.assets_held_by_address/3)
     end

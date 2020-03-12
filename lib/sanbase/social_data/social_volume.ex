@@ -16,23 +16,14 @@ defmodule Sanbase.SocialData.SocialVolume do
       when source in [:all, "all", :total, "total"] do
     result =
       @sources
-      |> Sanbase.Parallel.map(
+      |> Sanbase.Parallel.flat_map(
         fn source ->
           {:ok, result} = social_volume(slug, from, to, interval, source)
           result
         end,
         max_concurrency: 4
       )
-      |> List.zip()
-      |> Enum.map(&Tuple.to_list/1)
-      |> Enum.map(fn all_sources_point ->
-        total_mentions_count = all_sources_point |> Enum.reduce(0, &(&2 + &1.mentions_count))
-
-        %{
-          datetime: all_sources_point |> List.first() |> Map.get(:datetime),
-          mentions_count: total_mentions_count
-        }
-      end)
+      |> Sanbase.Utils.Transform.sum_by_datetime(:mentions_count)
 
     {:ok, result}
   end
@@ -75,23 +66,14 @@ defmodule Sanbase.SocialData.SocialVolume do
       when source in [:all, "all", :total, "total"] do
     result =
       @sources
-      |> Sanbase.Parallel.map(
+      |> Sanbase.Parallel.flat_map(
         fn source ->
           {:ok, result} = topic_search(search_text, from, to, interval, source)
           result
         end,
         max_concurrency: 4
       )
-      |> List.zip()
-      |> Enum.map(&Tuple.to_list/1)
-      |> Enum.map(fn all_sources_point ->
-        total_mentions_count = all_sources_point |> Enum.reduce(0, &(&2 + &1.mentions_count))
-
-        %{
-          datetime: all_sources_point |> List.first() |> Map.get(:datetime),
-          mentions_count: total_mentions_count
-        }
-      end)
+      |> Sanbase.Utils.Transform.sum_by_datetime(:mentions_count)
 
     {:ok, result}
   end

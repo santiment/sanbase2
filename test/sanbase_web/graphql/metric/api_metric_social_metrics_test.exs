@@ -12,13 +12,57 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
     [
       conn: conn,
       project: insert(:random_erc20_project),
-      from: from_iso8601!("2019-01-01T00:00:00Z"),
-      to: from_iso8601!("2019-01-02T00:00:00Z"),
+      from: ~U[2019-01-01T00:00:00Z],
+      to: ~U[2019-01-02T00:00:00Z],
+      after_to: ~U[2019-01-03T00:00:00Z],
       interval: "1d"
     ]
   end
 
   describe "metrics by slug selector" do
+    test "community messages - one source returns more data", context do
+      %{conn: conn, project: project, from: from, to: to, interval: interval, after_to: after_to} =
+        context
+
+      [_, combined_metrics] = community_messages_count_metrics()
+
+      resp1 = """
+       [
+        {"mentions_count": 100, "timestamp": #{DateTime.to_unix(from)}},
+        {"mentions_count": 200, "timestamp": #{DateTime.to_unix(to)}},
+        {"mentions_count": 300, "timestamp": #{DateTime.to_unix(after_to)}}
+      ]
+      """
+
+      resp2 = """
+      [
+        {"mentions_count": 100, "timestamp": #{DateTime.to_unix(from)}},
+        {"mentions_count": 200, "timestamp": #{DateTime.to_unix(to)}}
+      ]
+      """
+
+      Sanbase.Mock.prepare_mock(HTTPoison, :get, fn url, _, _ ->
+        case String.contains?(url, "telegram") do
+          true -> {:ok, %HTTPoison.Response{body: resp1, status_code: 200}}
+          false -> {:ok, %HTTPoison.Response{body: resp2, status_code: 200}}
+        end
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        for metric <- combined_metrics do
+          result =
+            get_timeseries_metric(conn, metric, :slug, project.slug, from, to, interval)
+            |> extract_timeseries_data()
+
+          # There is only 1 source for community messages - telegram
+          assert result == [
+                   %{"value" => 100.0, "datetime" => from |> DateTime.to_iso8601()},
+                   %{"value" => 200.0, "datetime" => to |> DateTime.to_iso8601()},
+                   %{"value" => 300.0, "datetime" => after_to |> DateTime.to_iso8601()}
+                 ]
+        end
+      end)
+    end
+
     test "community messages count test", context do
       %{conn: conn, project: project, from: from, to: to, interval: interval} = context
       [single_source_metrics, combined_metrics] = community_messages_count_metrics()
@@ -95,6 +139,48 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
           assert result == [
                    %{"value" => 400.0, "datetime" => from |> DateTime.to_iso8601()},
                    %{"value" => 800.0, "datetime" => to |> DateTime.to_iso8601()}
+                 ]
+        end
+      end)
+    end
+
+    test "social_volume - one source returns more data", context do
+      %{conn: conn, project: project, from: from, to: to, interval: interval, after_to: after_to} =
+        context
+
+      [_, combined_metrics] = social_volume_metrics()
+
+      resp1 = """
+       [
+        {"mentions_count": 100, "timestamp": #{DateTime.to_unix(from)}},
+        {"mentions_count": 200, "timestamp": #{DateTime.to_unix(to)}},
+        {"mentions_count": 300, "timestamp": #{DateTime.to_unix(after_to)}}
+      ]
+      """
+
+      resp2 = """
+      [
+        {"mentions_count": 100, "timestamp": #{DateTime.to_unix(from)}},
+        {"mentions_count": 200, "timestamp": #{DateTime.to_unix(to)}}
+      ]
+      """
+
+      Sanbase.Mock.prepare_mock(HTTPoison, :get, fn url, _, _ ->
+        case String.contains?(url, "telegram") do
+          true -> {:ok, %HTTPoison.Response{body: resp1, status_code: 200}}
+          false -> {:ok, %HTTPoison.Response{body: resp2, status_code: 200}}
+        end
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        for metric <- combined_metrics do
+          result =
+            get_timeseries_metric(conn, metric, :slug, project.slug, from, to, interval)
+            |> extract_timeseries_data()
+
+          assert result == [
+                   %{"value" => 400.0, "datetime" => from |> DateTime.to_iso8601()},
+                   %{"value" => 800.0, "datetime" => to |> DateTime.to_iso8601()},
+                   %{"value" => 300.0, "datetime" => after_to |> DateTime.to_iso8601()}
                  ]
         end
       end)
@@ -190,6 +276,70 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
           assert result == [
                    %{"value" => 48.0, "datetime" => from |> DateTime.to_iso8601()},
                    %{"value" => 72.0, "datetime" => to |> DateTime.to_iso8601()}
+                 ]
+        end
+      end)
+    end
+
+    test "social_volume - one source returns more data", context do
+      %{conn: conn, project: project, from: from, to: to, interval: interval, after_to: after_to} =
+        context
+
+      [_, combined_metrics] = social_volume_metrics()
+
+      resp1 = """
+      {
+        "messages":
+          [
+            {"text": "BTC moon", "timestamp": #{DateTime.to_unix(from)}},
+            {"text": "12k whoo btc?", "timestamp": #{DateTime.to_unix(to)}},
+            {"text": "14k buy?", "timestamp": #{DateTime.to_unix(after_to)}}
+          ],
+        "chart_data":
+          [
+            {"mentions_count": 12, "timestamp": #{DateTime.to_unix(from)}},
+            {"mentions_count": 18, "timestamp": #{DateTime.to_unix(to)}},
+            {"mentions_count": 10, "timestamp": #{DateTime.to_unix(after_to)}}
+          ]
+      }
+      """
+
+      resp2 = """
+      {
+        "messages":
+          [
+            {"text": "BTC moon", "timestamp": #{DateTime.to_unix(from)}},
+            {"text": "12k whoo btc?", "timestamp": #{DateTime.to_unix(to)}}
+          ],
+        "chart_data":
+          [
+            {"mentions_count": 12, "timestamp": #{DateTime.to_unix(from)}},
+            {"mentions_count": 18, "timestamp": #{DateTime.to_unix(to)}}
+          ]
+      }
+      """
+
+      Sanbase.Mock.prepare_mock(HTTPoison, :get, fn _, _, options ->
+        source =
+          Enum.find(Keyword.get(options, :params), &match?({"source", _}, &1))
+          |> elem(1)
+          |> to_string()
+
+        case source do
+          "telegram" -> {:ok, %HTTPoison.Response{body: resp1, status_code: 200}}
+          _ -> {:ok, %HTTPoison.Response{body: resp2, status_code: 200}}
+        end
+      end)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        for metric <- combined_metrics do
+          result =
+            get_timeseries_metric(conn, metric, :text, "12k OR 14k", from, to, interval)
+            |> extract_timeseries_data()
+
+          assert result == [
+                   %{"value" => 48.0, "datetime" => from |> DateTime.to_iso8601()},
+                   %{"value" => 72.0, "datetime" => to |> DateTime.to_iso8601()},
+                   %{"value" => 10.0, "datetime" => after_to |> DateTime.to_iso8601()}
                  ]
         end
       end)

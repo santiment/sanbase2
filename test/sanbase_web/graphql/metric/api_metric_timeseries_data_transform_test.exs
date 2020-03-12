@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTransformTest do
   import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Sanbase.Metric
 

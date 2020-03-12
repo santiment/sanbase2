@@ -3,7 +3,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   setup do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
@@ -282,8 +281,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
     end
 
     test "social_volume - one source returns more data", context do
-      %{conn: conn, project: project, from: from, to: to, interval: interval, after_to: after_to} =
-        context
+      %{conn: conn, from: from, to: to, interval: interval, after_to: after_to} = context
 
       [_, combined_metrics] = social_volume_metrics()
 

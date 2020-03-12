@@ -79,4 +79,30 @@ defmodule Sanbase.Utils.Transform do
   def maybe_unwrap_ok_value({:ok, [value]}), do: {:ok, value}
   def maybe_unwrap_ok_value({:ok, []}), do: {:ok, nil}
   def maybe_unwrap_ok_value({:error, error}), do: {:error, error}
+
+  @doc ~s"""
+  Sums the values of all keys with the same datetime
+
+  ## Examples:
+      iex> Sanbase.Utils.Transform.sum_by_datetime([%{datetime: ~U[2019-01-01 00:00:00Z], val: 2}, %{datetime: ~U[2019-01-01 00:00:00Z], val: 3}, %{datetime: ~U[2019-01-02 00:00:00Z], val: 2}], :val)
+      [%{datetime: ~U[2019-01-01 00:00:00Z], val: 5}, %{datetime: ~U[2019-01-02 00:00:00Z], val: 2}]
+
+      iex> Sanbase.Utils.Transform.sum_by_datetime([], :key)
+      []
+  """
+  @spec sum_by_datetime(list(map), atom()) :: list(map)
+  def sum_by_datetime(data, key) do
+    data
+    |> Enum.group_by(& &1[:datetime], & &1[key])
+    |> Enum.map(fn {datetime, list} ->
+      value =
+        case list do
+          [] -> 0
+          [_ | _] = list -> Enum.sum(list)
+        end
+
+      %{:datetime => datetime, key => value}
+    end)
+    |> Enum.sort_by(&DateTime.to_unix(&1[:datetime]))
+  end
 end

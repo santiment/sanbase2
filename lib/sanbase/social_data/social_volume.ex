@@ -23,7 +23,7 @@ defmodule Sanbase.SocialData.SocialVolume do
         end,
         max_concurrency: 4
       )
-      |> sum_by_datetime()
+      |> Sanbase.Utils.Transform.sum_by_datetime(:mentions_count)
 
     {:ok, result}
   end
@@ -73,7 +73,7 @@ defmodule Sanbase.SocialData.SocialVolume do
         end,
         max_concurrency: 4
       )
-      |> sum_by_datetime()
+      |> Sanbase.Utils.Transform.sum_by_datetime(:mentions_count)
 
     {:ok, result}
   end
@@ -186,21 +186,6 @@ defmodule Sanbase.SocialData.SocialVolume do
         key => Map.get(result, to_string(key))
       }
     end)
-  end
-
-  defp sum_by_datetime(data) do
-    data
-    |> Enum.group_by(& &1.datetime, & &1.mentions_count)
-    |> Enum.map(fn {datetime, mentions_list} ->
-      mentions =
-        case mentions_list do
-          [] -> 0
-          [_ | _] = list -> Enum.sum(list)
-        end
-
-      %{datetime: datetime, mentions_count: mentions}
-    end)
-    |> Enum.sort_by(&DateTime.to_unix(&1.datetime))
   end
 
   defp tech_indicators_url() do

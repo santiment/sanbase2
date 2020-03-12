@@ -26,7 +26,12 @@ defmodule Sanbase.DataCase do
   setup tags do
     require Sanbase.CaseHelpers
     Sanbase.CaseHelpers.checkout_shared(tags)
-    :ok
+    Sanbase.Billing.TestSeed.seed_products_and_plans()
+
+    product_and_plans = Sanbase.Billing.TestSeed.seed_products_and_plans()
+
+    {:ok,
+     product: Map.get(product_and_plans, :product), plans: Map.delete(product_and_plans, :product)}
   end
 
   @doc """

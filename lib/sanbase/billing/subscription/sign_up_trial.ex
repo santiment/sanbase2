@@ -81,8 +81,8 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     |> unique_constraint(:subscription_id)
   end
 
-  # schedule to run twice a day
-  def run do
+  # scheduled to run once a day
+  def send_email_on_trial_day() do
     __MODULE__
     |> Repo.all()
     |> Enum.each(fn sign_up_trial ->
@@ -96,10 +96,6 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
           maybe_send_email(sign_up_trial, email_type)
       end
     end)
-  end
-
-  defp calc_trial_day(%__MODULE__{inserted_at: inserted_at}) do
-    Timex.diff(Timex.now(), inserted_at, :days)
   end
 
   def by_user_id(user_id) do
@@ -207,7 +203,7 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     template = @templates[email_type]
 
     # User exists, we have proper template in Mandrill and this email type is not already sent
-    if user && template && !sign_up_trial[email_type] do
+    if user && template && !Map.get(sign_up_trial, email_type) do
       Logger.info(
         "Trial email template #{template} sent to: #{user.email}, name=#{
           user.username || user.email
@@ -220,5 +216,9 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
 
       update_trial(sign_up_trial, %{email_type => true})
     end
+  end
+
+  defp calc_trial_day(%__MODULE__{inserted_at: inserted_at}) do
+    Timex.diff(Timex.now(), inserted_at, :days)
   end
 end

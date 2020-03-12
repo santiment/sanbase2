@@ -1,5 +1,5 @@
 defmodule Sanbase.Billing.SubscriptionTest do
-  use SanbaseWeb.ConnCase
+  use Sanbase.DataCase
 
   import Sanbase.Factory
 

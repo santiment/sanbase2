@@ -56,6 +56,10 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
   global: true,
   timeout: 30_000,
   jobs: [
+    send_email_on_trial_day: [
+      schedule: "00 07 * * *",
+      task: {Sanbase.Billing.Subscription.SignUpTrial, :send_email_on_trial_day, []}
+    ],
     sync_plans_in_stripe: [
       schedule: "@reboot",
       task: {Sanbase.Billing.Plan, :sync_plans_in_stripe, []}

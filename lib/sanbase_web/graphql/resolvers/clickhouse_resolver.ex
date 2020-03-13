@@ -67,7 +67,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       Map.put(args, :include_incomplete_data, true),
       %{source: %{metric: "network_growth"}}
     )
-    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :ne_addresses)
+    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :new_addresses)
   end
 
   def mining_pools_distribution(

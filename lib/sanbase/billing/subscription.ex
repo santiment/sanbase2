@@ -22,6 +22,7 @@ defmodule Sanbase.Billing.Subscription do
   Current subscription attempt failed.
   Please, contact administrator of the site for more information.
   """
+  @sanbase_pro_plan_id Plan.Metadata.sanbase_pro()
 
   schema "subscriptions" do
     field(:stripe_id, :string)
@@ -339,21 +340,21 @@ defmodule Sanbase.Billing.Subscription do
   end
 
   @doc """
-  Cancel trialing subscriptions which are:
-   - for Sanbase PRO
+  Cancel trialing subscriptions.
+  * For Sanbase PRO cancel those:
    - about to expire (in 2 hours)
    - there is no payment instrument attached
   and send an email for finished trial.
+
+  * For other plans - cancel regardless of card presense.
   """
   def cancel_about_to_expire_trials() do
-    sanbase_plan_id = Plan.Metadata.sanbase_pro()
     now = Timex.now()
     after_2_hours = Timex.shift(now, hours: 2)
 
     from(s in __MODULE__,
       where:
-        s.plan_id == ^sanbase_plan_id and
-          s.status == "trialing" and
+        s.status == "trialing" and
           s.trial_end >= ^now and s.trial_end <= ^after_2_hours
     )
     |> Repo.all()
@@ -478,15 +479,24 @@ defmodule Sanbase.Billing.Subscription do
   defp maybe_send_email_and_delete_subscription(
          %__MODULE__{
            user_id: user_id,
-           stripe_id: stripe_id
+           stripe_id: stripe_id,
+           plan_id: plan_id
          } = subscription
-       ) do
+       )
+       when plan_id == @sanbase_pro_plan_id do
     unless User.has_credit_card_in_stripe?(user_id) do
       Logger.info("Deleting subscription with id: #{stripe_id} for user: #{user_id}")
 
       StripeApi.delete_subscription(stripe_id)
+
       __MODULE__.SignUpTrial.maybe_send_trial_finished_email(subscription)
     end
+  end
+
+  defp maybe_send_email_and_delete_subscription(%__MODULE__{stripe_id: stripe_id}) do
+    Logger.info("Deleting subscription with id: #{stripe_id}")
+
+    StripeApi.delete_subscription(stripe_id)
   end
 
   defp format_trial_end(nil), do: nil

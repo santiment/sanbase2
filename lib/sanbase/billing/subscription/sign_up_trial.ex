@@ -123,6 +123,7 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     with {:ok, subscription} <- get_trialing_subscription(stripe_subscription_id),
          {:ok, sign_up_trial} <- get_sign_up_trial(subscription) do
       do_send_email_and_mark_sent(sign_up_trial, :sent_trial_will_end_email)
+      {:ok, "Trial will end email is sent for subscription_id: #{stripe_subscription_id}"}
     end
   end
 

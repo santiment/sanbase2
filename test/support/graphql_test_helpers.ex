@@ -95,6 +95,16 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     |> Map.get("message")
   end
 
+  def map_to_input_object_str(%{} = map) do
+    str =
+      Enum.map(map, fn
+        {k, v} -> ~s/#{k}: #{inspect(v)}/
+      end)
+      |> Enum.join(", ")
+
+    "{" <> str <> "}"
+  end
+
   def graphql_error_msg(metric_name, error) do
     "Can't fetch #{metric_name}, Reason: \"#{error}\""
   end

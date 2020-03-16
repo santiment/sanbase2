@@ -56,6 +56,7 @@ defmodule Sanbase.Model.Project do
     has_many(:github_organizations, Project.GithubOrganization)
     has_many(:eth_addresses, ProjectEthAddress)
     has_many(:btc_addresses, ProjectBtcAddress)
+    has_many(:chart_configurations, Sanbase.Chart.Configuration, on_delete: :delete_all)
 
     belongs_to(:market_segment, MarketSegment, on_replace: :nilify)
     belongs_to(:infrastructure, Infrastructure, on_replace: :nilify)

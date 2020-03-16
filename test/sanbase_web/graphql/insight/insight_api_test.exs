@@ -714,8 +714,9 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       result =
         conn
         |> post("/graphql", mutation_skeleton(query))
+        |> json_response(200)
 
-      result_post = json_response(result, 200)["data"]["deleteInsight"]
+      result_post = result["data"]["deleteInsight"]
 
       assert result_post["id"] == Integer.to_string(sanbase_post.id)
     end

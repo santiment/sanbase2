@@ -36,7 +36,7 @@ defmodule Sanbase.Signal.TriggerPriceAbsoluteChangeTest do
         &Sanbase.Price.aggregated_metric_timeseries_data/5,
         {:ok, %{project.slug => price_usd}}
       )
-      |> Sanbase.Mock.prepare_mock2(&Sanbase.Chart.build_embedded_chart/4, [
+      |> Sanbase.Mock.prepare_mock2(&Sanbase.GoogleChart.build_embedded_chart/4, [
         %{image: %{url: "url"}}
       ])
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -69,7 +69,7 @@ defmodule Sanbase.Signal.TriggerPriceAbsoluteChangeTest do
         &Sanbase.Price.aggregated_metric_timeseries_data/5,
         {:ok, %{project.slug => price_usd}}
       )
-      |> Sanbase.Mock.prepare_mock2(&Sanbase.Chart.build_embedded_chart/4, [
+      |> Sanbase.Mock.prepare_mock2(&Sanbase.GoogleChart.build_embedded_chart/4, [
         %{image: %{url: "url"}}
       ])
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -146,7 +146,7 @@ defmodule Sanbase.Signal.TriggerPriceAbsoluteChangeTest do
         &Sanbase.Price.aggregated_metric_timeseries_data/5,
         {:ok, %{project.slug => price_usd}}
       )
-      |> Sanbase.Mock.prepare_mock2(&Sanbase.Chart.build_embedded_chart/4, [
+      |> Sanbase.Mock.prepare_mock2(&Sanbase.GoogleChart.build_embedded_chart/4, [
         %{image: %{url: "url"}}
       ])
       |> Sanbase.Mock.run_with_mocks(fn ->

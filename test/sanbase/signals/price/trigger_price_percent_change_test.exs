@@ -37,7 +37,7 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
     }
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Price.ohlc/3, {:ok, ohlc})
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.Chart.build_embedded_chart/4, [
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.GoogleChart.build_embedded_chart/4, [
       %{image: %{url: "url"}}
     ])
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -71,7 +71,7 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
     ohlc = %{open_price_usd: 53, close_price_usd: 40, high_price_usd: 70, low_price_usd: 40}
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Price.ohlc/3, {:ok, ohlc})
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.Chart.build_embedded_chart/4, [
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.GoogleChart.build_embedded_chart/4, [
       %{image: %{url: "url"}}
     ])
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -99,7 +99,7 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
     ohlc = %{open_price_usd: 53, close_price_usd: 62, high_price_usd: 70, low_price_usd: 0.1}
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Price.ohlc/3, {:ok, ohlc})
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.Chart.build_embedded_chart/4, [
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.GoogleChart.build_embedded_chart/4, [
       %{image: %{url: "url"}}
     ])
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -127,7 +127,7 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
     ohlc = %{open_price_usd: 53, close_price_usd: 1, high_price_usd: 70, low_price_usd: 0.1}
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Price.ohlc/3, {:ok, ohlc})
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.Chart.build_embedded_chart/4, [
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.GoogleChart.build_embedded_chart/4, [
       %{image: %{url: "url"}}
     ])
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -155,7 +155,7 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
     ohlc = %{open_price_usd: 53, close_price_usd: 62, high_price_usd: 70, low_price_usd: 0.1}
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Price.ohlc/3, {:ok, ohlc})
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.Chart.build_embedded_chart/4, [
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.GoogleChart.build_embedded_chart/4, [
       %{image: %{url: "url"}}
     ])
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -179,7 +179,7 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
     ohlc = %{open_price_usd: 53, close_price_usd: 62, high_price_usd: 70, low_price_usd: 0.1}
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Price.ohlc/3, {:ok, ohlc})
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.Chart.build_embedded_chart/4, [
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.GoogleChart.build_embedded_chart/4, [
       %{image: %{url: "url"}}
     ])
     |> Sanbase.Mock.run_with_mocks(fn ->

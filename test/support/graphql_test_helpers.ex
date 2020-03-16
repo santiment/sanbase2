@@ -6,6 +6,25 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   # The default endpoint for testing
   @endpoint SanbaseWeb.Endpoint
 
+  @custom_access_metrics Sanbase.Billing.Plan.CustomAccess.get()
+                         |> Enum.filter(&match?({{:metric, _}, _}, &1))
+                         |> Enum.map(fn {{_, name}, _} -> name end)
+
+  def v2_restricted_metric(position),
+    do:
+      (Sanbase.Metric.restricted_metrics() -- @custom_access_metrics)
+      |> Stream.cycle()
+      |> Enum.at(position)
+
+  def v2_free_metric(position),
+    do: Sanbase.Metric.free_metrics() |> Stream.cycle() |> Enum.at(position)
+
+  def from_to(from_days_shift, to_days_shift) do
+    from = Timex.shift(Timex.now(), days: -from_days_shift)
+    to = Timex.shift(Timex.now(), days: -to_days_shift)
+    {from, to}
+  end
+
   def query_skeleton(query, query_name \\ "", variable_defs \\ "", variables \\ "{}") do
     %{
       "operationName" => "#{query_name}",

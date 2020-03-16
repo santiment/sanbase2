@@ -318,17 +318,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     execute_mutation_with_error(context.conn, query)
   end
 
-  defp v2_free_metric(position), do: Metric.free_metrics() |> Stream.cycle() |> Enum.at(position)
-
-  defp v2_restricted_metric(position),
-    do: Metric.restricted_metrics() |> Stream.cycle() |> Enum.at(position)
-
-  defp from_to(from_days_shift, to_days_shift) do
-    from = Timex.shift(Timex.now(), days: -from_days_shift)
-    to = Timex.shift(Timex.now(), days: -to_days_shift)
-    {from, to}
-  end
-
   defp metric_query(metric, slug, from, to) do
     """
       {

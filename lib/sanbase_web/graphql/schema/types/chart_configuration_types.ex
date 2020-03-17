@@ -10,7 +10,7 @@ defmodule SanbaseWeb.Graphql.ProjectChartTypes do
     field(:is_public, :boolean)
     field(:metrics, list_of(:string))
     field(:anomalies, list_of(:string))
-    field(:user_id, :integer)
+    field(:drawings, :json)
     field(:project_id, :integer)
   end
 
@@ -21,6 +21,8 @@ defmodule SanbaseWeb.Graphql.ProjectChartTypes do
     field(:is_public, :boolean)
     field(:metrics, list_of(:string))
     field(:anomalies, list_of(:string))
+    field(:drawings, :json)
+
     field(:user, :user, resolve: dataloader(SanbaseRepo))
     field(:project, :project, resolve: dataloader(SanbaseRepo))
 

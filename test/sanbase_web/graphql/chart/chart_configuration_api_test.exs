@@ -23,6 +23,12 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         "daily_active_addresses",
         "ethereum-CC-ETH-CC-daily_active_addresses"
       ],
+      drawings: %{
+        "lines" => [
+          %{"x0" => 0, "y0" => 0, "x1" => 15, "y1" => 15},
+          %{"x0" => 20, "y0" => 0, "x1" => 55, "y1" => 15}
+        ]
+      },
       project_id: project.id
     }
 
@@ -50,6 +56,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["isPublic"] == settings.is_public
       assert config["anomalies"] == settings.anomalies
       assert config["metrics"] == settings.metrics
+      assert config["drawings"] == settings.drawings
       assert config["project"]["id"] |> String.to_integer() == project.id
       assert config["project"]["slug"] == project.slug
       assert config["user"]["id"] |> String.to_integer() == user.id
@@ -68,7 +75,12 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         description: "New description",
         is_public: true,
         metrics: ["getMetric|nvt"],
-        anomalies: []
+        anomalies: [],
+        drawings: %{
+          "circles" => [
+            %{"cx" => 50, "cy" => 50, "r" => 20}
+          ]
+        }
       }
 
       config =
@@ -80,6 +92,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["isPublic"] == new_settings.is_public
       assert config["anomalies"] == new_settings.anomalies
       assert config["metrics"] == new_settings.metrics
+      assert config["drawings"] == new_settings.drawings
     end
 
     test "cannot update other user's configuration", context do
@@ -260,7 +273,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
 
       settings = Map.put(settings, :is_public, true)
 
-      [config_id1, config_id2, config_id3, config_id4] =
+      [_, config_id2, config_id3, config_id4] =
         [
           create_chart_configuration(conn, %{settings | project_id: project.id}),
           create_chart_configuration(conn, %{settings | project_id: project2.id}),
@@ -367,6 +380,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         project{ id slug }
         metrics
         anomalies
+        drawings
       }
     }
     """
@@ -388,6 +402,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         project{ id slug }
         metrics
         anomalies
+        drawings
       }
     }
     """
@@ -409,6 +424,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         project{ id slug }
         metrics
         anomalies
+        drawings
       }
     }
     """
@@ -430,6 +446,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         project{ id slug }
         metrics
         anomalies
+        drawings
       }
     }
     """
@@ -451,6 +468,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         project{ id slug }
         metrics
         anomalies
+        drawings
       }
     }
     """
@@ -475,6 +493,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         project{ id slug }
         metrics
         anomalies
+        drawings
       }
     }
     """

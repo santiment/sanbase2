@@ -22,7 +22,8 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
           | :comment_timeline_event_id
           | :project_transparency_status
           | :insights_comments_count
-          | :timeline_events_comments_count,
+          | :timeline_events_comments_count
+          | :project_by_slug,
           any()
         ) :: {:error, String.t()} | {:ok, float()} | map()
   def query(queryable, args) do
@@ -47,7 +48,8 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
              :market_segment,
              :project_transparency_status,
              :insights_comments_count,
-             :timeline_events_comments_count
+             :timeline_events_comments_count,
+             :project_by_slug
            ] ->
         PostgresDataloader.query(queryable, args)
     end

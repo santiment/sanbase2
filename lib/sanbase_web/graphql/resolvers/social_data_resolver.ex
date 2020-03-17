@@ -1,11 +1,21 @@
 defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
   import SanbaseWeb.Graphql.Helpers.Async, only: [async: 1]
+  import Absinthe.Resolution.Helpers, except: [async: 1]
 
   alias SanbaseWeb.Graphql.Helpers.Utils
 
   alias Sanbase.{SocialData, TechIndicators}
+  alias SanbaseWeb.Graphql.SanbaseDataloader
 
   @context_words_default_size 10
+
+  def project_from_slug(_root, _args, %{source: %{slug: slug}, context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :project_by_slug, slug)
+    |> on_load(fn loader ->
+      {:ok, Dataloader.get(loader, SanbaseDataloader, :project_by_slug, slug)}
+    end)
+  end
 
   def twitter_mention_count(
         _root,

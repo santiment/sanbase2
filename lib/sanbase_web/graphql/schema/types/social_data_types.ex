@@ -122,6 +122,11 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
 
   object :projects_change do
     field(:slug, non_null(:string))
+
+    field :project, :project do
+      cache_resolve(&SocialDataResolver.project_from_slug/3)
+    end
+
     field(:change, non_null(:float))
     field(:status, :social_gainers_losers_status_enum)
   end

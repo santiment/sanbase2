@@ -179,18 +179,21 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
 
   describe "social gainers/losers" do
     test "successfully fetch top social gainers losers", context do
+      p1 = insert(:random_project)
+      p2 = insert(:random_project)
+
       success_response = [
         %{
           datetime: DateTimeUtils.from_iso8601!("2019-03-15T13:00:00Z"),
           projects: [
             %{
               change: 137.13186813186815,
-              slug: "qtum",
+              slug: p1.slug,
               status: :gainer
             },
             %{
               change: -1.0,
-              slug: "abbc-coin",
+              slug: p2.slug,
               status: :loser
             }
           ]
@@ -208,29 +211,29 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
 
         query = top_social_gainers_losers_query(args)
 
-        result = execute_and_parse_success_response(context.conn, query, "topSocialGainersLosers")
+        result =
+          execute_and_parse_success_response(context.conn, query, "topSocialGainersLosers")
+          |> get_in(["data", "topSocialGainersLosers"])
 
-        assert result == %{
-                 "data" => %{
-                   "topSocialGainersLosers" => [
+        assert result == [
+                 %{
+                   "datetime" => "2019-03-15T13:00:00Z",
+                   "projects" => [
                      %{
-                       "datetime" => "2019-03-15T13:00:00Z",
-                       "projects" => [
-                         %{
-                           "change" => 137.13186813186815,
-                           "slug" => "qtum",
-                           "status" => "GAINER"
-                         },
-                         %{
-                           "change" => -1.0,
-                           "slug" => "abbc-coin",
-                           "status" => "LOSER"
-                         }
-                       ]
+                       "project" => %{"slug" => p1.slug},
+                       "slug" => p1.slug,
+                       "change" => 137.13186813186815,
+                       "status" => "GAINER"
+                     },
+                     %{
+                       "project" => %{"slug" => p2.slug},
+                       "slug" => p2.slug,
+                       "change" => -1.0,
+                       "status" => "LOSER"
                      }
                    ]
                  }
-               }
+               ]
       end
     end
 
@@ -435,16 +438,17 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
     """
     {
       topSocialGainersLosers(
-        status: #{args.status},
-        from: "#{args.from}",
-        to: "#{args.to}",
-        timeWindow: "#{args.time_window}",
+        status: #{args.status}
+        from: "#{args.from}"
+        to: "#{args.to}"
+        timeWindow: "#{args.time_window}"
         size: #{args.size}
       ) {
-        datetime,
+        datetime
         projects {
-          slug,
-          change,
+          project{ slug }
+          slug
+          change
           status
         }
       }
@@ -456,13 +460,13 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
     """
     {
       socialGainersLosersStatus(
-        slug: "#{args.slug}",
-        from: "#{args.from}",
-        to: "#{args.to}",
+        slug: "#{args.slug}"
+        from: "#{args.from}"
+        to: "#{args.to}"
         timeWindow: "#{args.time_window}"
       ) {
         datetime,
-        change,
+        change
         status
       }
     }

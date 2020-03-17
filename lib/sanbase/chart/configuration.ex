@@ -12,6 +12,7 @@ defmodule Sanbase.Chart.Configuration do
 
     field(:metrics, {:array, :string}, default: [])
     field(:anomalies, {:array, :string}, default: [])
+    field(:drawings, :map, default: %{})
 
     belongs_to(:user, Sanbase.Auth.User)
     belongs_to(:project, Sanbase.Model.Project)
@@ -27,6 +28,7 @@ defmodule Sanbase.Chart.Configuration do
       :is_public,
       :metrics,
       :anomalies,
+      :drawings,
       :user_id,
       :project_id
     ])

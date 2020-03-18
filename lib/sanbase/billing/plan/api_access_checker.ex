@@ -31,7 +31,7 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
   @enterprise_plan_stats @premium_plan_stats
 
   # Some queries/metrics are further restricted for basic/essential plan.
-  # The are served with the free timeframe restriction.
+  # They are served with the free timeframe restriction.
   @restricted_in_basic_plan_queries [
     {:metric, "active_deposits"},
     {:query, :daily_active_deposits},

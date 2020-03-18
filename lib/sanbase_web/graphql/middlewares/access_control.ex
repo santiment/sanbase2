@@ -31,6 +31,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   @free_subscription Subscription.free_subscription()
   @extension_metrics Plan.AccessChecker.extension_metrics()
   @extension_metric_product_map GraphqlSchema.extension_metric_product_map()
+  @product_api Sanbase.Billing.Product.product_api()
 
   def call(resolution, opts) do
     # First call `check_from_to_params` and then pass the execution to do_call/2
@@ -64,13 +65,24 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     resolution
   end
 
-  defp check_plan(%Resolution{context: %{__query_atom_name__: query_or_metric}} = resolution) do
-    plan = resolution.context[:auth][:plan] || :free
+  defp check_plan(
+         %Resolution{context: %{__query_atom_name__: query_or_metric} = context} = resolution
+       ) do
+    plan = context[:auth][:plan] || :free
+    subscription = context[:auth][:subscription] || @free_subscription
+    product_id = subscription.plan.product_id || context.product_id
 
-    case Plan.AccessChecker.plan_has_access?(plan, query_or_metric) do
+    case plan_has_access?(product_id, plan, query_or_metric) do
       true -> resolution
       false -> Resolution.put_result(resolution, {:error, :unauthorized})
     end
+  end
+
+  # Only API has minimal plan that can access certain query/metric
+  defp plan_has_access?(product, _plan, _query_or_metric) when product != @product_api, do: true
+
+  defp plan_has_access?(product, plan, query_or_metric) when product == @product_api do
+    Plan.AccessChecker.plan_has_access?(plan, query_or_metric)
   end
 
   # If the query is resolved there's nothing to do here

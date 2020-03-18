@@ -13,7 +13,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   alias Sanbase.Clickhouse.{
     GasUsed,
     MiningPoolsDistribution,
-    PercentOfTokenSupplyOnExchanges,
     TopHolders
   }
 
@@ -241,15 +240,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   def percent_of_token_supply_on_exchanges(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval},
+        %{slug: _, from: _, to: _, interval: _} = args,
         _resolution
       ) do
-    case PercentOfTokenSupplyOnExchanges.percent_on_exchanges(slug, from, to, interval) do
-      {:ok, percent_tokens_on_exchanges} ->
-        {:ok, percent_tokens_on_exchanges}
-
-      {:error, error} ->
-        {:error, handle_graphql_error("Percent of Token Supply on Exchanges", slug, error)}
+    # TODO: After percent_of_total_supply_on_exchanges metric is fully computed
+    # on production, this one would be replaced with a single call to it
+    with {:ok, total_supply} <-
+           SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+             %{},
+             args,
+             %{source: %{metric: "circulation"}}
+           ),
+         {:ok, supply_on_exchanges} <-
+           SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+             %{},
+             args,
+             %{source: %{metric: "exchange_token_supply"}}
+           ) do
+      Enum.zip(supply_on_exchanges, total_supply)
+      |> Enum.map(fn {%{datetime: datetime, value: supply_on_exchanges}, %{value: total_supply}} ->
+        %{
+          datetime: datetime,
+          value: Sanbase.Math.percent_of(supply_on_exchanges, total_supply)
+        }
+      end)
     end
   end
 end

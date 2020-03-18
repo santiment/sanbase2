@@ -109,7 +109,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     ```
     """
     field :available_metrics, list_of(:string) do
-      cache_resolve(&ProjectMetricsResolver.available_metrics/3, ttl: 10, max_ttl_offset: 20)
+      cache_resolve(&ProjectMetricsResolver.available_metrics/3, ttl: 20, max_ttl_offset: 20)
     end
 
     @desc ~s"""

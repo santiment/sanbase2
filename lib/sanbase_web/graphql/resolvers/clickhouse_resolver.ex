@@ -257,13 +257,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
              args,
              %{source: %{metric: "exchange_token_supply"}}
            ) do
-      Enum.zip(supply_on_exchanges, total_supply)
-      |> Enum.map(fn {%{datetime: datetime, value: supply_on_exchanges}, %{value: total_supply}} ->
-        %{
-          datetime: datetime,
-          value: Sanbase.Math.percent_of(supply_on_exchanges, total_supply)
-        }
-      end)
+      result =
+        Enum.zip(supply_on_exchanges, total_supply)
+        |> Enum.map(fn {%{datetime: datetime, value: supply_on_exchanges}, %{value: total_supply}} ->
+          %{
+            datetime: datetime,
+            percent_on_exchanges: Sanbase.Math.percent_of(supply_on_exchanges, total_supply)
+          }
+        end)
+
+      {:ok, result}
     end
   end
 end

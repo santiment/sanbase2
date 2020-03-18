@@ -266,7 +266,7 @@ defmodule Sanbase.Metric do
       Sanbase.Parallel.map(@metric_modules, fn module -> module.available_metrics(selector) end,
         ordered: false,
         max_concurrency: 8,
-        timeout: 25_000
+        timeout: 60_000
       )
 
     available_metrics =

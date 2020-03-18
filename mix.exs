@@ -110,7 +110,7 @@ defmodule Sanbase.Mixfile do
       {:inflex, "~> 2.0", override: true},
       {:mogrify, "~> 0.7.2"},
       {:lz4b, "0.0.4"},
-      {:rexbug, ">= 1.0.0", only: [:dev]}
+      {:rexbug, ">= 1.0.0"}
     ]
   end
 

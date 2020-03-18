@@ -56,9 +56,8 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
     end
   end
 
-  def realtime_data_cut_off_in_days(plan, metric)
-      when plan in [:essential, :basic] and
-             metric in @restricted_in_basic_plan_queries do
+  def realtime_data_cut_off_in_days(:basic, metric)
+      when metric in @restricted_in_basic_plan_queries do
     @free_plan_stats[:realtime_data_cut_off_in_days]
   end
 

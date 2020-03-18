@@ -241,14 +241,17 @@ defmodule Sanbase.Cache.RehydratingCache do
     {:noreply, state}
   end
 
-  def handle_info({:DOWN, _ref, _, pid, _}, state) do
+  def handle_info({:DOWN, _ref, _, pid, reason}, state) do
     %{progress: progress, fails: fails} = state
 
     new_state =
       case Enum.find(progress, fn {_k, v} -> match?({:in_progress, ^pid, _}, v) end) do
         {k, _v} ->
           new_progress = Map.update!(progress, k, fn _ -> :failed end)
-          new_fails = Map.update(fails, k, 1, &(&1 + 1))
+
+          new_fails =
+            Map.update(fails, k, {1, reason}, fn {count, _last_reason} -> {count + 1, reason} end)
+
           %{state | progress: new_progress, fails: new_fails}
 
         nil ->

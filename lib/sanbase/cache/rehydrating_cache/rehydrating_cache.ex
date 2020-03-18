@@ -15,6 +15,8 @@ defmodule Sanbase.Cache.RehydratingCache do
 
   alias Sanbase.Cache.RehydratingCache.Store
 
+  require Logger
+
   @name :__rehydrating_cache__
   @store_name Store.name(@name)
 
@@ -22,6 +24,7 @@ defmodule Sanbase.Cache.RehydratingCache do
 
   @run_interval 10_000
   @purge_timeout_interval 30_000
+  @function_runtime_timeout 5 * 1000 * 60
 
   defguard are_proper_function_arguments(fun, ttl, refresh_time_delta)
            when is_function(fun, 0) and is_integer(ttl) and ttl > 0 and
@@ -41,6 +44,7 @@ defmodule Sanbase.Cache.RehydratingCache do
       task_supervisor: Keyword.fetch!(opts, :task_supervisor),
       functions: %{},
       progress: %{},
+      fails: %{},
       waiting: %{}
     }
 
@@ -126,7 +130,7 @@ defmodule Sanbase.Cache.RehydratingCache do
       %{value: {value, _datetime_stored_at}} ->
         {:reply, value, state}
 
-      %{progress: :in_progress} ->
+      %{progress: {:in_progress, _task_pid, _started_time_tuple}} ->
         # If the value is still computing the response will be sent
         # once the value is computed. This will be reached only on the first
         # computation. For subsequent calls with :in_progress progress, the
@@ -134,7 +138,15 @@ defmodule Sanbase.Cache.RehydratingCache do
         new_state = do_fill_waiting_list(state, key, from, timeout)
         {:noreply, new_state}
 
+      %{progress: :failed} ->
+        # If progress :failed it will get started on the next run
+        new_state = do_fill_waiting_list(state, key, from, timeout)
+        {:noreply, new_state}
+
       %{function: fun_map} when is_map(fun_map) ->
+        # Reaching here is unexpected. If we reached here the function is
+        # registered but for some reason it has not started executing because
+        # there's no stored value and no progress
         new_state =
           state
           |> do_register_function(fun_map)
@@ -225,9 +237,33 @@ defmodule Sanbase.Cache.RehydratingCache do
     {:noreply, state}
   end
 
-  def handle_info({:DOWN, _ref, _, _pid, _reason}, state) do
+  def handle_info({:DOWN, _ref, _, _pid, :normal}, state) do
     {:noreply, state}
   end
+
+  def handle_info({:DOWN, _ref, _, pid, _}, state) do
+    %{progress: progress, fails: fails} = state
+
+    new_state =
+      case Enum.find(progress, fn {_k, v} -> match?({:in_progress, ^pid, _}, v) end) do
+        {k, _v} ->
+          new_progress = Map.update!(progress, k, fn _ -> :failed end)
+          new_fails = Map.update(fails, k, 1, &(&1 + 1))
+          %{state | progress: new_progress, fails: new_fails}
+
+        nil ->
+          state
+      end
+
+    {:noreply, new_state}
+  end
+
+  def handle_info(msg, state) do
+    Logger.error("[Rehydrating Cache] Got unexpected message: #{inspect(msg)}")
+    {:noreply, state}
+  end
+
+  # Private functions
 
   defp do_register_function(state, fun_map) do
     %{key: key} = fun_map
@@ -240,9 +276,9 @@ defmodule Sanbase.Cache.RehydratingCache do
         nocache_refresh_count: 0
       })
 
-    _task = run_function(self(), fun_map, state.task_supervisor)
-
-    new_progress = Map.put(state.progress, key, :in_progress)
+    %{pid: pid} = run_function(self(), fun_map, state.task_supervisor)
+    now = Timex.now()
+    new_progress = Map.put(state.progress, key, {:in_progress, pid, {now, DateTime.to_unix(now)}})
     new_functions = Map.put(state.functions, key, fun_map)
 
     %{state | functions: new_functions, progress: new_progress}
@@ -273,17 +309,50 @@ defmodule Sanbase.Cache.RehydratingCache do
   end
 
   defp do_run(state) do
-    now_unix = Timex.now() |> DateTime.to_unix()
+    now = Timex.now()
+    now_unix = now |> DateTime.to_unix()
     %{progress: progress, functions: functions, task_supervisor: task_supervisor} = state
+
+    run_fun_update_progress = fn prog, key, fun_map ->
+      %{pid: pid} = run_function(self(), fun_map, task_supervisor)
+      Map.put(prog, key, {:in_progress, pid, {now, DateTime.to_unix(now)}})
+    end
 
     new_progress =
       Enum.reduce(functions, %{}, fn {key, fun_map}, acc ->
         case Map.get(progress, key, now_unix) do
-          run_after_unix when is_integer(run_after_unix) and now_unix >= run_after_unix ->
-            _task = run_function(self(), fun_map, task_supervisor)
-            Map.put(acc, key, :in_progress)
+          :failed ->
+            # Task execution failed, retry immediatelly
+            run_fun_update_progress.(progress, key, fun_map)
 
-          run_after_unix ->
+          run_after_unix when is_integer(run_after_unix) and now_unix >= run_after_unix ->
+            # It is time to execute the function again
+            run_fun_update_progress.(progress, key, fun_map)
+
+          {:in_progress, pid, {_started_datetime, started_unix}} ->
+            case Process.alive?(pid) do
+              false ->
+                # If the process is dead but for some reason the progress is not
+                # changed to some timestamp or to :failed, we rerun it
+                run_fun_update_progress.(progress, key, fun_map)
+
+              true ->
+                if now_unix - started_unix > @function_runtime_timeout do
+                  # Process computing the function is alive but it is taking
+                  # too long, maybe something is stuck. Restart the computation
+                  Process.exit(pid, :kill)
+                  run_fun_update_progress.(progress, key, fun_map)
+                else
+                  progress
+                end
+            end
+
+          nil ->
+            # No recorded progress. Should not happend.
+            run_fun_update_progress.(progress, key, fun_map)
+
+          run_after_unix when is_integer(run_after_unix) and now_unix < run_after_unix ->
+            # It's still not time to reevaluate the function again
             Map.put(acc, key, run_after_unix)
         end
       end)

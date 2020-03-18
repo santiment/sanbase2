@@ -139,7 +139,7 @@ defmodule Sanbase.Cache.RehydratingCache do
         {:noreply, new_state}
 
       %{progress: :failed} ->
-        # If progress if :failed it will get started on the next run
+        # If progress :failed it will get started on the next run
         new_state = do_fill_waiting_list(state, key, from, timeout)
         {:noreply, new_state}
 

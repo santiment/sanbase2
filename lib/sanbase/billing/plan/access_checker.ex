@@ -108,9 +108,9 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   def plan_has_access?(plan, query_or_metric) do
     case Map.get(@min_plan_map, query_or_metric, :free) do
       :free -> true
-      :essential -> plan != :free
-      :pro -> plan not in [:free, :essential]
-      :premium -> plan not in [:free, :essential, :pro]
+      :basic -> plan != :free
+      :pro -> plan not in [:free, :basic]
+      :premium -> plan not in [:free, :basic, :pro]
       :enterprise -> plan not in [:free, :eseential, :pro, :premium]
       # extensions plans can be with other plan. They're handled separately
       _ -> true

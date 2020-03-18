@@ -16,6 +16,17 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
       |> Stream.cycle()
       |> Enum.at(position)
 
+  def v2_restricted_metric_for_plan(position, plan_name) do
+    all_v2_restricted_metrics_for_plan(plan_name)
+    |> Stream.cycle()
+    |> Enum.at(position)
+  end
+
+  def all_v2_restricted_metrics_for_plan(plan_name) do
+    (Sanbase.Metric.restricted_metrics() -- @custom_access_metrics)
+    |> Enum.filter(&Sanbase.Billing.Plan.AccessChecker.plan_has_access?(plan_name, {:metric, &1}))
+  end
+
   def v2_free_metric(position),
     do: Sanbase.Metric.free_metrics() |> Stream.cycle() |> Enum.at(position)
 

@@ -9,9 +9,9 @@ defmodule Sanbase.Clickhouse.Metric.Helper do
     |> Enum.filter(fn metric -> String.contains?(metric, str) end)
   end
 
-  def mvrv_metrics(), do: metric_with_name_containing("mvrv") |> wrap()
-  def realized_value_metrics(), do: metric_with_name_containing("realized") |> wrap()
-  def token_age_consumed_metrics(), do: metric_with_name_containing("age_consumed") |> wrap()
+  def mvrv_metrics(), do: wrap(["mvrv_usd"])
+  def realized_value_metrics(), do: wrap(["realized_value_usd"])
+  def token_age_consumed_metrics(), do: wrap(["age_destroyed"])
 
   defp wrap(list) do
     list

@@ -42,9 +42,7 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
     {:query, :exchange_volume}
   ]
 
-  def historical_data_in_days(plan, metric)
-      when plan in [:essential, :basic] and
-             metric in @restricted_in_basic_plan_queries do
+  def historical_data_in_days(:basic, metric) when metric in @restricted_in_basic_plan_queries do
     @free_plan_stats[:historical_data_in_days]
   end
 

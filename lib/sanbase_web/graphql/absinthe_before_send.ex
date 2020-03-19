@@ -42,8 +42,6 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     "allProjects",
     "allErc20Projects",
     "allCurrencyProjects",
-    "projectBySlug",
-    "project",
     "projectsListHistoryStats",
     "projectsListStats",
     "allProjectsByFunction"

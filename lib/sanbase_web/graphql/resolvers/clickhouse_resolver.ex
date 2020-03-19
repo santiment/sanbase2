@@ -201,7 +201,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
       %{},
       Map.put(args, :include_incomplete_data, true),
-      %{source: %{metric: "realized_value"}}
+      %{source: %{metric: "realized_value_usd"}}
     )
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :realized_value)
   end

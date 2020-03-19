@@ -162,7 +162,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
       {template, kv}
     end
 
-    defp template_kv(values, %{target: %{slug: _}} = settings) do
+    defp template_kv(values, settings) do
       %{identifier: slug} = values
 
       project = Project.by_slug(slug)

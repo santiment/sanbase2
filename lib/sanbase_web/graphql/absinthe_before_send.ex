@@ -47,6 +47,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     "allProjectsByFunction"
   ]
 
+  def cached_queries(), do: @cached_queries
+
   def before_send(conn, %Absinthe.Blueprint{} = blueprint) do
     # Do not cache in case of:
     # -`:nocache` returend from a resolver

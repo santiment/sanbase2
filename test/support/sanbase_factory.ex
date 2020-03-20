@@ -60,6 +60,7 @@ defmodule Sanbase.Factory do
       link: "http://example.com",
       text: "Text of the post",
       is_pulse: false,
+      is_paywall_required: false,
       tags: [build(:tag), build(:tag)]
     }
   end

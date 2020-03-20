@@ -14,6 +14,7 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Vote
   alias Sanbase.Insight.{Post, PostImage}
   alias Sanbase.Timeline.TimelineEvent
+  alias Sanbase.Billing.{Subscription, Product, Plan}
 
   require Logger
 
@@ -27,6 +28,10 @@ defmodule Sanbase.Insight.Post do
   @draft "draft"
   @published "published"
 
+  # If insight is behind paywall - show only first @words_count_shown_as_preview word of content
+  @words_count_shown_as_preview 70
+  @product_sanbase Product.product_sanbase()
+
   schema "posts" do
     belongs_to(:user, User)
     has_many(:votes, Vote, on_delete: :delete_all)
@@ -39,6 +44,8 @@ defmodule Sanbase.Insight.Post do
     field(:moderation_comment, :string)
     field(:ready_state, :string, default: @draft)
     field(:is_pulse, :boolean, default: false)
+    field(:is_paywall_required, :boolean, default: false)
+    field(:text_preview, :string, virtual: true)
 
     has_many(:images, PostImage, on_delete: :delete_all)
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
@@ -61,7 +68,7 @@ defmodule Sanbase.Insight.Post do
 
   def create_changeset(%Post{} = post, attrs) do
     post
-    |> cast(attrs, [:title, :short_desc, :link, :text, :user_id, :is_pulse])
+    |> cast(attrs, [:title, :short_desc, :link, :text, :user_id, :is_pulse, :is_paywall_required])
     |> Tag.put_tags(attrs)
     |> images_cast(attrs)
     |> validate_required([:user_id, :title])
@@ -70,7 +77,16 @@ defmodule Sanbase.Insight.Post do
 
   def update_changeset(%Post{} = post, attrs) do
     post
-    |> cast(attrs, [:title, :short_desc, :link, :text, :moderation_comment, :state, :is_pulse])
+    |> cast(attrs, [
+      :title,
+      :short_desc,
+      :link,
+      :text,
+      :moderation_comment,
+      :state,
+      :is_pulse,
+      :is_paywall_required
+    ])
     |> Tag.put_tags(attrs)
     |> images_cast(attrs)
     |> validate_length(:title, max: 140)
@@ -216,6 +232,7 @@ defmodule Sanbase.Insight.Post do
     Post
     |> by_user(user_id)
     |> by_is_pulse(Keyword.get(opts, :is_pulse, false))
+    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, false))
     |> Repo.all()
     |> Repo.preload(@preloads)
     |> Tag.Preloader.order_tags()
@@ -228,6 +245,7 @@ defmodule Sanbase.Insight.Post do
     published_and_approved_insights()
     |> by_user(user_id)
     |> by_is_pulse(Keyword.get(opts, :is_pulse, false))
+    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, false))
     |> Repo.all()
     |> Repo.preload(@preloads)
     |> Tag.Preloader.order_tags()
@@ -239,6 +257,7 @@ defmodule Sanbase.Insight.Post do
   def public_insights(page, page_size, opts \\ []) do
     published_and_approved_insights()
     |> by_is_pulse(Keyword.get(opts, :is_pulse, false))
+    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, false))
     |> order_by_published_at()
     |> page(page, page_size)
     |> Repo.all()
@@ -252,6 +271,7 @@ defmodule Sanbase.Insight.Post do
   def public_insights_after(datetime, opts \\ []) do
     published_and_approved_insights()
     |> by_is_pulse(Keyword.get(opts, :is_pulse, false))
+    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, false))
     |> after_datetime(datetime)
     |> order_by_published_at()
     |> Repo.all()
@@ -262,6 +282,7 @@ defmodule Sanbase.Insight.Post do
     published_and_approved_insights()
     |> by_tags(tags)
     |> by_is_pulse(Keyword.get(opts, :is_pulse, false))
+    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, false))
     |> distinct(true)
     |> order_by_published_at()
     |> Repo.all()
@@ -272,6 +293,7 @@ defmodule Sanbase.Insight.Post do
     published_and_approved_insights()
     |> by_tags(tags)
     |> by_is_pulse(Keyword.get(opts, :is_pulse, false))
+    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, false))
     |> distinct(true)
     |> order_by_published_at()
     |> page(page, page_size)
@@ -286,6 +308,7 @@ defmodule Sanbase.Insight.Post do
     published_and_approved_insights()
     |> user_has_voted_for(user_id)
     |> by_is_pulse(Keyword.get(opts, :is_pulse, false))
+    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, false))
     |> Repo.all()
     |> Repo.preload(@preloads)
   end
@@ -334,10 +357,21 @@ defmodule Sanbase.Insight.Post do
     )
   end
 
+  defp by_is_pulse(query, nil), do: query
+
   defp by_is_pulse(query, is_pulse) do
     from(
       p in query,
       where: p.is_pulse == ^is_pulse
+    )
+  end
+
+  defp by_is_paywall_required(query, nil), do: query
+
+  defp by_is_paywall_required(query, is_paywall_required) do
+    from(
+      p in query,
+      where: p.is_paywall_required == ^is_paywall_required
     )
   end
 
@@ -418,4 +452,44 @@ defmodule Sanbase.Insight.Post do
   end
 
   defp maybe_drop_post_tags(_, _), do: :ok
+
+  defp maybe_filter_result({:error, reason}, _querying_user_id), do: {:error, reason}
+
+  defp maybe_filter_result(result, user_id) do
+    subscription = Subscription.current_subscription(user_id, @product_sanbase)
+
+    if Plan.plan_atom_name(subscription.plan) != :pro do
+      maybe_filter_result(result)
+    else
+      result
+    end
+  end
+
+  defp maybe_filter_result({:error, reason}), do: {:error, reason}
+
+  defp maybe_filter_result({:ok, insight}) do
+    do_filter(insight) |> wrap_ok()
+  end
+
+  defp maybe_filter_result({:ok, insights}) when is_list(insights) do
+    Enum.map(insights, &do_filter/1) |> wrap_ok()
+  end
+
+  defp do_filter(%Post{short_desc: short_desc}) when is_binary(short_desc) do
+    insight |> Map.put(:text, nil)
+  end
+
+  defp do_filter(insight) do
+    insight
+    |> Map.put(:text, nil)
+    |> Map.put(:preview_text, preview_text(insight))
+  end
+
+  defp wrap_ok(data), do: {:ok, data}
+
+  defp preview_text(%Post{text: text}) do
+    String.split(text, " ")
+    |> Enum.take(@words_count_shown_as_preview)
+    |> Enum.join(" ")
+  end
 end

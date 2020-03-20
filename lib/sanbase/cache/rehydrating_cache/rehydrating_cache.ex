@@ -87,16 +87,20 @@ defmodule Sanbase.Cache.RehydratingCache do
   2. The value has been already computed and it's returned straight away. Note that
   if a recomputation is running when get is invoked, the old value is returned.
   """
-  @spec get(any(), non_neg_integer()) ::
+  @spec get(any(), non_neg_integer(), Keyword.t()) ::
           {:ok, any()} | {:error, :timeout} | {:error, :not_registered}
-  def get(key, timeout \\ 30_000) when is_integer(timeout) and timeout > 0 do
+  def get(key, timeout \\ 30_000, opts \\ []) when is_integer(timeout) and timeout > 0 do
     try do
       case Store.get(@store_name, key) do
         nil ->
           GenServer.call(@name, {:get, key, timeout}, timeout)
+          |> handle_get_response(opts)
 
-        {:ok, value, _datetime_stored_at} ->
+        {:ok, value} ->
           {:ok, value}
+
+        {:nocache, {:ok, _value}} = value ->
+          handle_get_response(value, opts)
 
         data ->
           data
@@ -104,6 +108,23 @@ defmodule Sanbase.Cache.RehydratingCache do
     catch
       :exit, {:timeout, _} ->
         {:error, :timeout}
+    end
+  end
+
+  defp handle_get_response(data, opts) do
+    case data do
+      {:ok, value} ->
+        {:ok, value}
+
+      {:nocache, {:ok, value}} ->
+        if Keyword.get(opts, :return_nocache) do
+          {:nocache, {:ok, value}}
+        else
+          {:ok, value}
+        end
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -127,7 +148,7 @@ defmodule Sanbase.Cache.RehydratingCache do
     }
 
     case tuple do
-      %{value: {value, _datetime_stored_at}} ->
+      %{value: value} when not is_nil(value) ->
         {:reply, value, state}
 
       %{progress: {:in_progress, _task_pid, _started_time_tuple}} ->
@@ -175,13 +196,13 @@ defmodule Sanbase.Cache.RehydratingCache do
     {:noreply, new_state}
   end
 
-  def handle_info({:store_result, fun_map, result}, state) do
+  def handle_info({:store_result, fun_map, data}, state) do
     %{progress: progress, waiting: waiting, functions: functions} = state
     %{key: key, refresh_time_delta: refresh_time_delta, ttl: ttl} = fun_map
 
     now_unix = Timex.now() |> DateTime.to_unix()
 
-    case result do
+    case data do
       {:error, _} ->
         # Can be reevaluated immediately
         new_progress = Map.put(progress, key, now_unix)
@@ -190,39 +211,40 @@ defmodule Sanbase.Cache.RehydratingCache do
       # Store the result but let it be reevaluated immediately on the next run.
       # This is to not calculate a function that always returns :nocache on
       # every run.
-      {:nocache, {:ok, value}} ->
+      {:nocache, {:ok, _value}} = result ->
         {reply_to_list, new_waiting} = Map.pop(waiting, key, [])
-        reply_to_waiting(reply_to_list, {:ok, value})
+        reply_to_waiting(reply_to_list, result)
 
         new_fun_map = Map.update(fun_map, :nocache_refresh_count, 1, &(&1 + 1))
         new_functions = Map.put(functions, key, new_fun_map)
         new_progress = Map.put(progress, key, now_unix)
-        Store.put(@store_name, key, {:ok, value, Timex.now()}, ttl)
+        Store.put(@store_name, key, result, ttl)
 
         {:noreply,
          %{state | progress: new_progress, waiting: new_waiting, functions: new_functions}}
 
       # Put the value in the store. Send the result to the waiting callers.
-      {:ok, value} ->
+      {:ok, _value} = result ->
         {reply_to_list, new_waiting} = Map.pop(waiting, key, [])
-        reply_to_waiting(reply_to_list, {:ok, value})
+        reply_to_waiting(reply_to_list, result)
 
         new_fun_map = Map.update(fun_map, :refresh_count, 1, &(&1 + 1))
         new_functions = Map.put(functions, key, new_fun_map)
         new_progress = Map.put(progress, key, now_unix + refresh_time_delta)
-        Store.put(@store_name, key, {:ok, value, Timex.now()}, ttl)
+        Store.put(@store_name, key, result, ttl)
 
         {:noreply,
          %{state | progress: new_progress, waiting: new_waiting, functions: new_functions}}
 
       # The function returned malformed result. Send error to the waiting callers.
       _ ->
-        new_progress = Map.put(progress, key, now_unix + refresh_time_delta)
         result = {:error, :malformed_result}
-        Store.put(@store_name, key, {result, Timex.now()}, ttl)
 
         {reply_to_list, new_waiting} = Map.pop(waiting, key, [])
         reply_to_waiting(reply_to_list, result)
+
+        new_progress = Map.put(progress, key, now_unix + refresh_time_delta)
+        Store.put(@store_name, key, {:error, :malformed_result}, ttl)
 
         {:noreply, %{state | progress: new_progress, waiting: new_waiting}}
     end

@@ -42,7 +42,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   end
 
   defp maybe_register_and_get(cache_key, fun, slug, query, attempts) do
-    case RehydratingCache.get(cache_key, 5_000) do
+    case RehydratingCache.get(cache_key, 5_000, return_nocache: true) do
+      {:nocache, {:ok, value}} ->
+        {:nocache, {:ok, value}}
+
       {:ok, value} ->
         {:ok, value}
 

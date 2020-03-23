@@ -139,7 +139,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
       "supply_outside_exchanges",
       "percent_of_total_supply_on_exchanges",
       # top holders metrics
-      "top_holders_balance"
+      "amount_in_top_holders"
     ]
 
     expected_result = metrics |> Enum.sort()

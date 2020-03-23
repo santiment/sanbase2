@@ -22,7 +22,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
 
-  @timeseries_metrics ["top_holders_balance"]
+  @timeseries_metrics ["amount_in_top_holders"]
   @histogram_metrics []
 
   @metrics @histogram_metrics ++ @timeseries_metrics
@@ -97,7 +97,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def human_readable_name(metric) do
     case metric do
-      "top_holders_balance" -> {:ok, "Top Holders Balance"}
+      "amount_in_top_holders" -> {:ok, "Top Holders Balance"}
     end
   end
 

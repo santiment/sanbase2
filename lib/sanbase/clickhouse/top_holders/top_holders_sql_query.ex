@@ -6,7 +6,7 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
 
   def timeseries_data_query(
         table,
-        "top_holders_balance",
+        "amount_in_top_holders",
         contract,
         count,
         from,

@@ -12,6 +12,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
   }
 
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
+  alias SanbaseWeb.Graphql.Middlewares.PostPaywallFilter
 
   object :insight_queries do
     @desc ~s"""
@@ -37,6 +38,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:id, non_null(:integer))
 
       resolve(&InsightResolver.post/3)
+      middleware(PostPaywallFilter)
     end
 
     @desc """

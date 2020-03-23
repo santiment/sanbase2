@@ -14,7 +14,6 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Vote
   alias Sanbase.Insight.{Post, PostImage}
   alias Sanbase.Timeline.TimelineEvent
-  alias Sanbase.Billing.{Subscription, Product, Plan}
 
   require Logger
 
@@ -27,10 +26,6 @@ defmodule Sanbase.Insight.Post do
   # ready_state
   @draft "draft"
   @published "published"
-
-  # If insight is behind paywall - show only first @words_count_shown_as_preview word of content
-  @words_count_shown_as_preview 70
-  @product_sanbase Product.product_sanbase()
 
   schema "posts" do
     belongs_to(:user, User)
@@ -452,44 +447,4 @@ defmodule Sanbase.Insight.Post do
   end
 
   defp maybe_drop_post_tags(_, _), do: :ok
-
-  defp maybe_filter_result({:error, reason}, _querying_user_id), do: {:error, reason}
-
-  defp maybe_filter_result(result, user_id) do
-    subscription = Subscription.current_subscription(user_id, @product_sanbase)
-
-    if Plan.plan_atom_name(subscription.plan) != :pro do
-      maybe_filter_result(result)
-    else
-      result
-    end
-  end
-
-  defp maybe_filter_result({:error, reason}), do: {:error, reason}
-
-  defp maybe_filter_result({:ok, insight}) do
-    do_filter(insight) |> wrap_ok()
-  end
-
-  defp maybe_filter_result({:ok, insights}) when is_list(insights) do
-    Enum.map(insights, &do_filter/1) |> wrap_ok()
-  end
-
-  defp do_filter(%Post{short_desc: short_desc}) when is_binary(short_desc) do
-    insight |> Map.put(:text, nil)
-  end
-
-  defp do_filter(insight) do
-    insight
-    |> Map.put(:text, nil)
-    |> Map.put(:preview_text, preview_text(insight))
-  end
-
-  defp wrap_ok(data), do: {:ok, data}
-
-  defp preview_text(%Post{text: text}) do
-    String.split(text, " ")
-    |> Enum.take(@words_count_shown_as_preview)
-    |> Enum.join(" ")
-  end
 end

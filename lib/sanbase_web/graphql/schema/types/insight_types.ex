@@ -25,7 +25,7 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:tags, list_of(:tag))
     field(:is_pulse, :boolean)
     field(:is_paywall_required, :boolean)
-    field(:preview_text, :string)
+    field(:text_preview, :string)
 
     field :comments_count, :integer do
       resolve(&InsightResolver.comments_count/3)

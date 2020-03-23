@@ -29,6 +29,7 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
     signals: %{
       limit: :no_limit
     },
+    access_paywalled_insights: true,
     external_data_providers: true,
     sangraphs_access: true
   }
@@ -66,6 +67,15 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
   end
 
   def signals_limits_upgrade_message(), do: @signals_limits_upgrade_message
+
+  def access_paywalled_insights?(nil), do: false
+
+  def access_paywalled_insights?(subscription) do
+    subscription.plan
+    |> Plan.plan_atom_name()
+    |> plan_stats()
+    |> Map.get(:access_paywalled_insights, false)
+  end
 
   defp plan_stats(plan) do
     case plan do

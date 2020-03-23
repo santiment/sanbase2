@@ -77,7 +77,12 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   end
 
   test "get an insight by id", %{conn: conn, user: user} do
-    post = insert(:post, user: user, state: Post.approved_state())
+    post =
+      insert(:post,
+        text: "test123",
+        user: user,
+        state: Post.approved_state()
+      )
 
     query = """
     {

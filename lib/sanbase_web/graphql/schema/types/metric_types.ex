@@ -22,7 +22,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   end
 
   input_object :timeseries_metric_transform_input_object do
-    field(:type, :string)
+    field(:type, non_null(:string))
     field(:moving_average_base, :integer)
   end
 

@@ -64,7 +64,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?6) * ?6) AS time,
       sumIf(partOfTotal, isExchange = 1) * 100 AS in_exchanges,
       sumIf(partOfTotal, isExchange = 0) * 100 AS outside_exchanges,
-      in_exchanges + ah AS in_top_holders_total
+      in_exchanges + outside_exchanges AS in_top_holders_total
     FROM
     (
       SELECT

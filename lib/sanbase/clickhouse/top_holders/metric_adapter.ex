@@ -1,9 +1,8 @@
 defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
-  @behaviour Sanbase.Metric.Behaviour
-
   @moduledoc ~s"""
-  Uses ClickHouse to calculate the percent supply in exchanges, non exchanges and combined
+  Adapter for pluging top holders metrics in the getMetric API
   """
+  @behaviour Sanbase.Metric.Behaviour
 
   import Sanbase.Clickhouse.TopHolders.SqlQuery
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
@@ -156,7 +155,9 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_slugs() do
-    Sanbase.Cache.get_or_store({:slugs_with_prices, 1800}, fn ->
+    cache_key = {__MODULE__, :available_slugs} |> :erlang.phash2()
+
+    Sanbase.Cache.get_or_store({cache_key, 1800}, fn ->
       result =
         Project.List.projects()
         |> Enum.filter(&(Project.infrastructure(&1) in @supported_chains_infrastrucutres))

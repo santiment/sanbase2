@@ -996,8 +996,22 @@
 
   {
     "human_readable_name": "Tokens/Coins On Exchanges",
-    "name": "exchange_token_supply",
+    "name": "supply_on_exchanges",
     "metric": "exchange_token_supply",
+    "version": "2020-01-01",
+    "access": "restricted",
+    "min_plan": "free",
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+
+  {
+    "human_readable_name": "Tokens/Coins On Exchanges",
+    "name": "supply_outside_exchanges",
+    "metric": "non_exchange_token_supply",
     "version": "2020-01-01",
     "access": "restricted",
     "min_plan": "free",

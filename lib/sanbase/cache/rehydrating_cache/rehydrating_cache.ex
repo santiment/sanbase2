@@ -88,7 +88,7 @@ defmodule Sanbase.Cache.RehydratingCache do
   if a recomputation is running when get is invoked, the old value is returned.
   """
   @spec get(any(), non_neg_integer(), Keyword.t()) ::
-          {:ok, any()} | {:error, :timeout} | {:error, :not_registered}
+          {:ok, any()} | {:nocache, {:ok, any()}} | {:error, :timeout} | {:error, :not_registered}
   def get(key, timeout \\ 30_000, opts \\ []) when is_integer(timeout) and timeout > 0 do
     try do
       case Store.get(@store_name, key) do

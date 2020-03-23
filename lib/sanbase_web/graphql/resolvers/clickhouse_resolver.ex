@@ -243,30 +243,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         %{slug: _, from: _, to: _, interval: _} = args,
         _resolution
       ) do
-    # TODO: After percent_of_total_supply_on_exchanges metric is fully computed
-    # on production, this one would be replaced with a single call to it
-    with {:ok, total_supply} <-
-           SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
-             %{},
-             args,
-             %{source: %{metric: "circulation"}}
-           ),
-         {:ok, supply_on_exchanges} <-
-           SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
-             %{},
-             args,
-             %{source: %{metric: "exchange_token_supply"}}
-           ) do
-      result =
-        Enum.zip(supply_on_exchanges, total_supply)
-        |> Enum.map(fn {%{datetime: datetime, value: supply_on_exchanges}, %{value: total_supply}} ->
-          %{
-            datetime: datetime,
-            percent_on_exchanges: Sanbase.Math.percent_of(supply_on_exchanges, total_supply)
-          }
-        end)
-
-      {:ok, result}
-    end
+    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+      %{},
+      args,
+      %{source: %{metric: "percent_of_total_supply_on_exchanges"}}
+    )
   end
 end

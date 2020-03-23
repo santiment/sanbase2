@@ -2,6 +2,7 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
   @moduledoc false
 
   import Sanbase.DateTimeUtils
+  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3]
 
   def timeseries_data_query(
         table,
@@ -11,7 +12,8 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
         from,
         to,
         interval,
-        decimals
+        decimals,
+        aggregation
       ) do
     decimals = Sanbase.Math.ipow(10, decimals)
 
@@ -20,7 +22,7 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
     FROM (
       SELECT
         toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS dt,
-        argMax(value, dt) / #{decimals} AS value
+       #{aggregation(aggregation, "value", "dt")} / #{decimals} AS value
       FROM #{table} FINAL
       PREWHERE
         contract = ?2 AND

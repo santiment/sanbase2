@@ -35,7 +35,7 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   @metrics_file "available_v2_metrics.json"
   @external_resource available_metrics_file = Path.join(__DIR__, @metrics_file)
   @metrics_json File.read!(available_metrics_file) |> Jason.decode!()
-  @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median]
+  @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
 
   @metrics_data_type_map Helper.name_to_field_map(@metrics_json, "data_type", &String.to_atom/1)
   @name_to_metric_map Helper.name_to_field_map(@metrics_json, "metric")

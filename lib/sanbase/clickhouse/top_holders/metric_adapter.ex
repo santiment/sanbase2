@@ -20,7 +20,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
     "BEP2" => "bnb_top_holders"
   }
 
-  @aggregations [:last]
+  @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
 
   @timeseries_metrics ["top_holders_balance"]
   @histogram_metrics []
@@ -43,15 +43,26 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
         from,
         to,
         interval,
-        _aggregation
+        aggregation
       ) do
+    aggregation = aggregation || :last
     count = Map.get(selector, :holders_count, @default_holders_count)
 
     with {:ok, contract, decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug) do
       table = Map.get(@infrastructure_to_table, infr)
 
       {query, args} =
-        timeseries_data_query(table, metric, contract, count, from, to, interval, decimals)
+        timeseries_data_query(
+          table,
+          metric,
+          contract,
+          count,
+          from,
+          to,
+          interval,
+          decimals,
+          aggregation
+        )
 
       ClickhouseRepo.query_transform(query, args, fn [timestamp, value] ->
         %{datetime: DateTime.from_unix!(timestamp), value: value}
@@ -78,7 +89,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
        min_interval: "1d",
        default_aggregation: :last,
        available_aggregations: @aggregations,
-       available_selectors: [:slug, :count],
+       available_selectors: [:slug, :holders_count],
        data_type: data_type
      }}
   end

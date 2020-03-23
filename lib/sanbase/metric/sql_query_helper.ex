@@ -1,5 +1,5 @@
 defmodule Sanbase.Metric.SqlQuery.Helper do
-  @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median]
+  @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median, :count]
 
   def aggregations(), do: @aggregations
 

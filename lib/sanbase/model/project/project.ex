@@ -136,6 +136,8 @@ defmodule Sanbase.Model.Project do
 
   defdelegate describe(project), to: Project.Description
 
+  defdelegate contract_info_infrastructure_by_slug(slug), to: Project.ContractData
+
   defdelegate contract_info_by_slug(slug), to: Project.ContractData
 
   defdelegate contract_info(project), to: Project.ContractData
@@ -313,7 +315,7 @@ defmodule Sanbase.Model.Project do
 
   def infrastructure(%Project{} = project) do
     %Project{infrastructure: infrastructure} = project |> Repo.preload(:infrastructure)
-    {:ok, infrastructure}
+    infrastructure
   end
 
   def is_erc20?(%Project{} = project) do

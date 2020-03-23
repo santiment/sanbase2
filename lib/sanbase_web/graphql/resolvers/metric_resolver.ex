@@ -47,7 +47,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         %{source: %{metric: metric}}
       ) do
     include_incomplete_data = Map.get(args, :include_incomplete_data, false)
-    transform = Map.get(args, :transform, %{type: "none"})
+
+    transform =
+      Map.get(args, :transform, %{type: "none"}) |> Map.update!(:type, &Inflex.underscore/1)
+
     aggregation = Map.get(args, :aggregation, nil)
     selector = to_selector(args)
 

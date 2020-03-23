@@ -111,7 +111,8 @@ defmodule Sanbase.Mixfile do
       {:mogrify, "~> 0.7.2"},
       {:lz4b, "0.0.4"},
       {:rexbug, ">= 1.0.0"},
-      {:exprof, "~> 0.2.0"}
+      {:exprof, "~> 0.2.0"},
+      {:erlex, "~> 0.2.6", override: true}
     ]
   end
 

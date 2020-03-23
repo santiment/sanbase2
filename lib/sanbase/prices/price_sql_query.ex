@@ -1,12 +1,7 @@
 defmodule Sanbase.Price.SqlQuery do
   @table "asset_prices"
-  @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median]
 
-  def aggregations(), do: @aggregations
-
-  defp aggregation(:last, value_column, dt_column), do: "argMax(#{value_column}, #{dt_column})"
-  defp aggregation(:first, value_column, dt_column), do: "argMin(#{value_column}, #{dt_column})"
-  defp aggregation(aggr, value_column, _dt_column), do: "#{aggr}(#{value_column})"
+  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3]
 
   def timeseries_data_query(slug, from, to, interval, source, aggregation) do
     {from, to, interval, span} = timerange_parameters(from, to, interval)

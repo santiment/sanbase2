@@ -11,6 +11,7 @@ defmodule Sanbase.Anomaly.SqlQuery do
   use Ecto.Schema
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
+  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3]
 
   alias Sanbase.Anomaly.FileHandler
 
@@ -26,10 +27,6 @@ defmodule Sanbase.Anomaly.SqlQuery do
     field(:model_id, :integer)
     field(:computed_at, :utc_datetime)
   end
-
-  defp aggregation(:last, value_column, dt_column), do: "argMax(#{value_column}, #{dt_column})"
-  defp aggregation(:first, value_column, dt_column), do: "argMin(#{value_column}, #{dt_column})"
-  defp aggregation(aggr, value_column, _dt_column), do: "#{aggr}(#{value_column})"
 
   def timeseries_data_query(anomaly, slug, from, to, interval, aggregation) do
     query = """

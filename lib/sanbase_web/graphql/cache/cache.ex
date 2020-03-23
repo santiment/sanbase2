@@ -222,7 +222,6 @@ defmodule SanbaseWeb.Graphql.Cache do
     cache_key = [name, args] |> :erlang.phash2()
 
     {cache_key, ttl}
-    |> IO.inspect(label: "KEY: #{inspect({name, additional_args})}", limit: :infinity)
   end
 
   # Convert the values for using in the cache. A special treatement is done for

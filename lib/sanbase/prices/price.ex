@@ -11,7 +11,7 @@ defmodule Sanbase.Price do
   @default_source "coinmarketcap"
   @metrics [:price_usd, :price_btc, :marketcap_usd, :volume_usd]
   @metrics @metrics ++ Enum.map(@metrics, &Atom.to_string/1)
-  @aggregations aggregations()
+  @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
 
   @type metric :: String.t() | Atom.t()
   @type error :: String.t()

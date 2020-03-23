@@ -313,6 +313,22 @@ defmodule Sanbase.Model.Project do
     {:ok, project |> Project.GithubOrganization.organizations_of()}
   end
 
+  def infrastructure_code(%Project{} = project) do
+    case infrastructure(project) do
+      %{code: code} when is_binary(code) ->
+        case String.downcase(code) do
+          "own" ->
+            with {:ok, contract, _} <- contract_info(project), do: {:ok, contract}
+
+          _ ->
+            {:ok, code}
+        end
+
+      _ ->
+        {:ok, nil}
+    end
+  end
+
   def infrastructure(%Project{} = project) do
     %Project{infrastructure: infrastructure} = project |> Repo.preload(:infrastructure)
     infrastructure
@@ -349,14 +365,27 @@ defmodule Sanbase.Model.Project do
   def preloads(), do: @preloads
 
   def preload_assocs(projects, opts \\ []) do
-    additional_preloads = Keyword.get(opts, :additional_preloads, [])
-    Repo.preload(projects, additional_preloads ++ @preloads)
+    case Keyword.get(opts, :only_preload) do
+      preloads when is_list(preloads) ->
+        Repo.preload(projects, preloads)
+
+      nil ->
+        additional_preloads = Keyword.get(opts, :additional_preloads, [])
+        Repo.preload(projects, additional_preloads ++ @preloads)
+    end
   end
 
   defp preload_query(query, opts) do
-    additional_preloads = Keyword.get(opts, :additional_preloads, [])
+    case Keyword.get(opts, :only_preload) do
+      preloads when is_list(preloads) ->
+        query
+        |> preload(^preloads)
 
-    query
-    |> preload(^(additional_preloads ++ @preloads))
+      nil ->
+        additional_preloads = Keyword.get(opts, :additional_preloads, [])
+
+        query
+        |> preload(^(additional_preloads ++ @preloads))
+    end
   end
 end

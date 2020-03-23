@@ -117,8 +117,8 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_metrics(%{slug: slug}) do
-    with {:ok, project} <- Project.by_slug(slug),
-         %{code: infr} <- Project.infrastructure(project) do
+    with %Project{} = project <- Project.by_slug(slug, only_preload: [:infrastructure]),
+         {:ok, infr} <- Project.infrastructure_code(project) do
       if infr in @supported_chains_infrastrucutres do
         {:ok, @metrics}
       else
@@ -159,8 +159,14 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
     Sanbase.Cache.get_or_store({cache_key, 1800}, fn ->
       result =
-        Project.List.projects()
-        |> Enum.filter(&(Project.infrastructure(&1) in @supported_chains_infrastrucutres))
+        Project.List.projects(preload: [:infrastructure])
+        |> Enum.filter(fn project ->
+          case Project.infrastructure_code(project) do
+            {:ok, infr_code} -> infr_code in @supported_chains_infrastrucutres
+            _ -> false
+          end
+        end)
+        |> Enum.map(& &1.slug)
 
       {:ok, result}
     end)

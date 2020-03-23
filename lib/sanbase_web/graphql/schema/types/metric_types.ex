@@ -12,6 +12,18 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   enum :selector_name do
     value(:slug)
     value(:text)
+    value(:holders_count)
+  end
+
+  input_object :metric_target_selector_input_object do
+    field(:slug, :string)
+    field(:text, :string)
+    field(:holders_count, :integer)
+  end
+
+  input_object :timeseries_metric_transform_input_object do
+    field(:type, :string)
+    field(:moving_average_base, :integer)
   end
 
   enum :metric_data_type do
@@ -134,16 +146,6 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:restricted_from, :datetime)
 
     field(:restricted_to, :datetime)
-  end
-
-  input_object :metric_target_selector_input_object do
-    field(:slug, :string)
-    field(:text, :string)
-  end
-
-  input_object :timeseries_metric_transform_input_object do
-    field(:type, :string)
-    field(:moving_average_base, :integer)
   end
 
   object :metric do

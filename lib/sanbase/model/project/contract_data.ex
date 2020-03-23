@@ -41,6 +41,24 @@ defmodule Sanbase.Model.Project.ContractData do
     end
   end
 
+  @spec contract_info_by_slug(String.t()) :: {:ok, contract, decimals} | {:error, String.t()}
+        when contract: String.t(), decimals: non_neg_integer()
+  def contract_info_infrastructure_by_slug(slug) do
+    from(p in Project,
+      where: p.slug == ^slug,
+      inner_join: infr in assoc(p, :infrastructure),
+      select: {p.main_contract_address, p.token_decimals, infr.code}
+    )
+    |> Repo.one()
+    |> case do
+      {contract, token_decimals, infr} when is_binary(contract) ->
+        {:ok, String.downcase(contract), token_decimals || 0, infr}
+
+      _ ->
+        {:error, {:missing_contract, "Can't find contract address of project with slug: #{slug}"}}
+    end
+  end
+
   for {slug, %{main_contract_address: contract}} <- @special_cases do
     def contract_address(%Project{slug: unquote(slug)}), do: unquote(contract)
   end

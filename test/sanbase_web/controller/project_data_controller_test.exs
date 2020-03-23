@@ -35,8 +35,8 @@ defmodule SanbaseWeb.ProjectDataControllerTest do
   end
 
   defp project_data(project) do
+    infrastructure = Project.infrastructure(project)
     {:ok, contract, decimals} = Project.contract_info(project)
-    {:ok, infrastructure} = Project.infrastructure(project)
     {:ok, github_organizations} = Project.github_organizations(project)
 
     %{

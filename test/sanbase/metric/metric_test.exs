@@ -23,9 +23,11 @@ defmodule Sanbase.MetricTest do
     {Sanbase.Twitter.MetricAdapter, [], timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
     {Sanbase.SocialData.MetricAdapter, [],
      timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
-    {Sanbase.Price.MetricAdapter, [], timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end}
+    {Sanbase.Price.MetricAdapter, [], timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
+    {Sanbase.Clickhouse.TopHolders.MetricAdapter, [],
+     timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end}
   ]) do
-    [project: insert(:project, slug: "santiment")]
+    [project: insert(:random_erc20_project, slug: "santiment")]
   end
 
   describe "timeseries data" do
@@ -40,7 +42,7 @@ defmodule Sanbase.MetricTest do
       assert Enum.all?(results, &match?({:ok, _}, &1))
     end
 
-    test "cannot fetch available metrics that are not in the available list", %{project: project} do
+    test "cannot fetch available metrics that are not in the available list", _context do
       metrics = Metric.available_timeseries_metrics()
       rand_metrics = Enum.map(1..100, fn _ -> rand_str() end)
       rand_metrics = rand_metrics -- metrics

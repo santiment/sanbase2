@@ -378,7 +378,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     test "by date, by number of votes, by datetime", context do
       events = create_test_events(context)
 
-      {:ok, user_list} =
+      {:ok, _user_list} =
         UserList.create_user_list(context.user, %{name: "My Test List", is_public: true})
 
       result = timeline_events_query(context.conn, "limit: 4, orderBy: VOTES")

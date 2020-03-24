@@ -1,5 +1,18 @@
 [
   {
+    "human_readable_name": "USD Price",
+    "name": "price_usd_5m",
+    "metric": "price_usd",
+    "version": "2019-01-01",
+    "access": "free",
+    "min_plan": "free",
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Daily Average USD Marketcap",
     "name": "daily_avg_marketcap_usd",
     "metric": "daily_avg_marketcap_usd",

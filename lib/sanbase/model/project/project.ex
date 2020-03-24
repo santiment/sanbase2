@@ -313,7 +313,12 @@ defmodule Sanbase.Model.Project do
     {:ok, project |> Project.GithubOrganization.organizations_of()}
   end
 
-  def infrastructure_code(%Project{} = project) do
+  @doc ~s"""
+  Return the real infrastructure code
+  If the infrastructure is set to `own` in the database it will use the contract.
+  Ethereum has ETH as contract, Bitcoin has BTC and so on, which is the real one,
+  """
+  def infrastructure_real_code(%Project{} = project) do
     case infrastructure(project) do
       %{code: code} when is_binary(code) ->
         case String.downcase(code) do

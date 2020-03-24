@@ -25,22 +25,22 @@ defmodule Sanbase.Model.Infrastructure do
     |> unique_constraint(:code)
   end
 
-  def get(infrastructure_code) do
-    Repo.get_by(Infrastructure, code: infrastructure_code)
+  def get(infrastructure_real_code) do
+    Repo.get_by(Infrastructure, code: infrastructure_real_code)
   end
 
-  def insert!(infrastructure_code) do
+  def insert!(infrastructure_real_code) do
     %Infrastructure{}
-    |> Infrastructure.changeset(%{code: infrastructure_code})
+    |> Infrastructure.changeset(%{code: infrastructure_real_code})
     |> Repo.insert!()
   end
 
-  def get_or_insert(infrastructure_code) do
+  def get_or_insert(infrastructure_real_code) do
     {:ok, infrastructure} =
       Repo.transaction(fn ->
-        get(infrastructure_code)
+        get(infrastructure_real_code)
         |> case do
-          nil -> insert!(infrastructure_code)
+          nil -> insert!(infrastructure_real_code)
           infrastructure -> infrastructure
         end
       end)

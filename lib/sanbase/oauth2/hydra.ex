@@ -47,7 +47,7 @@ defmodule Sanbase.Oauth2.Hydra do
         end
 
       nil ->
-        error_msg = "#{user.email || user.username} doesn't have an active Sangraphs subscription"
+        error_msg = "#{user.email || user.username} doesn't have an active Sandata subscription"
         Logger.error(error_msg)
         reject_consent(consent, access_token, error_msg)
     end

@@ -14,6 +14,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   @supported_chains_infrastrucutres ["EOS", "ETH", "BNB", "BEP2"]
   @infrastructure_to_table %{
     "EOS" => "eos_top_holders",
+    "eosio.token/EOS" => "eos_top_holders",
     "ETH" => "eth_top_holders",
     "BNB" => "bnb_top_holders",
     "BEP2" => "bnb_top_holders"

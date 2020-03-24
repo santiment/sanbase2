@@ -275,6 +275,7 @@ defmodule Sanbase.Metric do
         {:ok, metrics} -> metrics
         _ -> []
       end)
+      |> Enum.sort()
 
     has_errors? =
       metrics_in_modules

@@ -1,13 +1,15 @@
 defmodule Sanbase.Insight.PostPaywall do
   @moduledoc """
-
+  Filter paywalled insights for anonymous users or users with free plan that are not insight's author.
+  Filtering means removing the text and populating a virtual field that is truncated to
+  @words_count_shown_as_preview words of the original text.
   """
   alias Sanbase.Insight.Post
   alias Sanbase.Billing.{Subscription, Product}
   alias Sanbase.Auth.User
   alias Sanbase.Billing.Plan.SanbaseAccessChecker
 
-  # If insight is behind paywall - show only first @words_count_shown_as_preview word of content
+  # Show only first @words_count_shown_as_preview word of content
   @words_count_shown_as_preview 70
   @product_sanbase Product.product_sanbase()
 
@@ -38,7 +40,9 @@ defmodule Sanbase.Insight.PostPaywall do
        do: insight
 
   defp do_filter(%Post{short_desc: short_desc} = insight, _) when is_binary(short_desc) do
-    insight |> Map.put(:text, nil)
+    insight
+    |> Map.put(:text, nil)
+    |> Map.put(:text_preview, short_desc)
   end
 
   defp do_filter(insight, _) do

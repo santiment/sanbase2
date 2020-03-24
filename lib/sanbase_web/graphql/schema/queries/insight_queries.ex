@@ -26,6 +26,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:id, non_null(:integer))
 
       resolve(&InsightResolver.post/3)
+      middleware(PostPaywallFilter)
     end
 
     @desc ~s"""
@@ -56,6 +57,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:is_paywall_required, :boolean)
 
       resolve(&InsightResolver.all_insights/3)
+      middleware(PostPaywallFilter)
     end
 
     @desc "Fetch a list of all posts for given user ID."
@@ -67,6 +69,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:is_paywall_required, :boolean)
 
       resolve(&InsightResolver.all_insights_for_user/3)
+      middleware(PostPaywallFilter)
     end
 
     @desc "Fetch a list of all posts for which a user has voted."
@@ -78,6 +81,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:is_paywall_required, :boolean)
 
       resolve(&InsightResolver.all_insights_user_voted_for/3)
+      middleware(PostPaywallFilter)
     end
 
     @desc ~s"""
@@ -92,6 +96,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:is_paywall_required, :boolean)
 
       resolve(&InsightResolver.all_insights_by_tag/3)
+      middleware(PostPaywallFilter)
     end
 
     @desc "Fetch a list of all tags used for posts/insights. This query also returns tags that are not yet in use."

@@ -32,7 +32,6 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
       {
         insight(id: #{post.id}) {
           text
-          textPreview
           isPaywallRequired
         }
       }
@@ -45,8 +44,8 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
       insight = execute_query(context.conn, context.query, "insight")
 
       assert insight["isPaywallRequired"]
-      assert insight["text"] == nil
-      assert insight["textPreview"] =~ "alabala"
+      assert insight["text"] != context.post.text
+      assert insight["text"] =~ "alabala"
     end
 
     test "with logged in user with pro subscription", context do
@@ -55,15 +54,14 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
 
       assert insight["isPaywallRequired"]
       assert insight["text"] == context.post.text
-      assert insight["textPreview"] == nil
     end
 
     test "with not logged in user", context do
       insight = execute_query(build_conn(), context.query, "insight")
 
       assert insight["isPaywallRequired"]
-      assert insight["text"] == nil
-      assert insight["textPreview"] =~ "alabala"
+      assert insight["text"] != context.post.text
+      assert insight["text"] =~ "alabala"
     end
 
     test "when the current user is the author of the insight", context do
@@ -72,7 +70,6 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
 
       assert insight["isPaywallRequired"]
       assert insight["text"] == context.post.text
-      assert insight["textPreview"] == nil
     end
 
     test "when paywall is not required", context do
@@ -82,7 +79,6 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
 
       refute insight["isPaywallRequired"]
       assert insight["text"] == context.post.text
-      assert insight["textPreview"] == nil
     end
 
     test "when there short_desc - use it as text preview", context do
@@ -91,9 +87,8 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
       insight = execute_query(context.conn, query, "insight")
 
       assert insight["isPaywallRequired"]
-      assert insight["text"] == nil
       assert insight["shortDesc"] == "short description"
-      assert insight["textPreview"] == "short description"
+      assert insight["text"] == "short description"
     end
   end
 
@@ -108,7 +103,7 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
 
     test "filter text only in paywalled", context do
       insight1 = create_insight(context, %{is_paywall_required: false})
-      create_insight(context, %{is_paywall_required: true})
+      insight2 = create_insight(context, %{is_paywall_required: true})
 
       insights = execute_query(context.conn, context.query, "allInsights")
 
@@ -116,10 +111,9 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
       [result_insight2] = Enum.filter(insights, & &1["isPaywallRequired"])
 
       assert result_insight1["text"] == insight1.text
-      assert result_insight1["textPreview"] == nil
 
-      assert result_insight2["text"] == nil
-      assert result_insight2["textPreview"] =~ "alabala"
+      assert result_insight2["text"] != insight2.text
+      assert result_insight2["text"] =~ "alabala"
     end
 
     test "text is filtered in timeline events", context do
@@ -136,14 +130,14 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
 
       events = execute_query(context.conn, timeline_events_query(), "timelineEvents")
       event = events |> hd |> Map.get("events") |> hd
-      assert event["post"]["text"] == nil
-      assert event["post"]["textPreview"] =~ "alabala"
+      assert event["post"]["text"] != insight.text
+      assert event["post"]["text"] =~ "alabala"
 
       event =
         execute_query(context.conn, timeline_event_query(timeline_event.id), "timelineEvent")
 
-      assert event["post"]["text"] == nil
-      assert event["post"]["textPreview"] =~ "alabala"
+      assert event["post"]["text"] != insight
+      assert event["post"]["text"] =~ "alabala"
     end
   end
 
@@ -156,7 +150,6 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
           id
           tags { name }
           text
-          textPreview
           isPaywallRequired
         }
       }
@@ -178,7 +171,6 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
             id
             tags { name }
             text
-            textPreview
             isPaywallRequired
           }
         }
@@ -192,7 +184,6 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
     {
       insight(id: #{insight_id}) {
         text
-        textPreview
         shortDesc
         isPaywallRequired
       }
@@ -205,7 +196,6 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
     {
       allInsights {
         text
-        textPreview
         shortDesc
         isPaywallRequired
       }

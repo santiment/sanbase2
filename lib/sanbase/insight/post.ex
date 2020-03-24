@@ -40,7 +40,6 @@ defmodule Sanbase.Insight.Post do
     field(:ready_state, :string, default: @draft)
     field(:is_pulse, :boolean, default: false)
     field(:is_paywall_required, :boolean, default: false)
-    field(:text_preview, :string, virtual: true)
 
     has_many(:images, PostImage, on_delete: :delete_all)
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)

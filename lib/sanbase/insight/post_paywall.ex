@@ -40,15 +40,11 @@ defmodule Sanbase.Insight.PostPaywall do
        do: insight
 
   defp do_filter(%Post{short_desc: short_desc} = insight, _) when is_binary(short_desc) do
-    insight
-    |> Map.put(:text, nil)
-    |> Map.put(:text_preview, short_desc)
+    Map.put(insight, :text, short_desc)
   end
 
   defp do_filter(insight, _) do
-    insight
-    |> Map.put(:text, nil)
-    |> Map.put(:text_preview, text_preview(insight))
+    Map.put(insight, :text, text_preview(insight))
   end
 
   defp text_preview(%Post{text: text}) do

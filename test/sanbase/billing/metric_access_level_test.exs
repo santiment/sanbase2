@@ -138,8 +138,33 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
       "supply_on_exchanges",
       "supply_outside_exchanges",
       "percent_of_total_supply_on_exchanges",
-      # top holders metrics
-      "amount_in_top_holders"
+      # holders metrics
+      "amount_in_top_holders",
+      "holders_distribution_0.001_to_0.01",
+      "holders_distribution_0.01_to_0.1",
+      "holders_distribution_0.1_to_1",
+      "holders_distribution_0_to_0.001",
+      "holders_distribution_100_to_1k",
+      "holders_distribution_100k_to_1M",
+      "holders_distribution_10M_to_inf",
+      "holders_distribution_10_to_100",
+      "holders_distribution_10k_to_100k",
+      "holders_distribution_1M_to_10M",
+      "holders_distribution_1_to_10",
+      "holders_distribution_1k_to_10k",
+      "holders_distribution_combined_balance_0.001_to_0.01",
+      "holders_distribution_combined_balance_0.01_to_0.1",
+      "holders_distribution_combined_balance_0.1_to_1",
+      "holders_distribution_combined_balance_0_to_0.001",
+      "holders_distribution_combined_balance_100_to_1k",
+      "holders_distribution_combined_balance_100k_to_1M",
+      "holders_distribution_combined_balance_10M_to_inf",
+      "holders_distribution_combined_balance_10_to_100",
+      "holders_distribution_combined_balance_10k_to_100k",
+      "holders_distribution_combined_balance_1M_to_10M",
+      "holders_distribution_combined_balance_1_to_10",
+      "holders_distribution_combined_balance_1k_to_10k",
+      "holders_distribution_total"
     ]
 
     expected_result = metrics |> Enum.sort()

@@ -32,9 +32,14 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   #  `time-bound` means that the metric is calculated by taking into account
   #  only the coins/tokens that moved in the past N days/years
 
-  @metrics_file "available_v2_metrics.json"
-  @external_resource available_metrics_file = Path.join(__DIR__, @metrics_file)
-  @metrics_json File.read!(available_metrics_file) |> Jason.decode!()
+  @metrics_file "metric_files/available_v2_metrics.json"
+  @holders_file "metric_files/holders_metrics.json"
+  @external_resource metrics_file = Path.join(__DIR__, @metrics_file)
+  @external_resource holders_file = Path.join(__DIR__, @holders_file)
+
+  @metrics_json (File.read!(metrics_file) |> Jason.decode!()) ++
+                  (File.read!(holders_file) |> Jason.decode!())
+
   @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
 
   @metrics_data_type_map Helper.name_to_field_map(@metrics_json, "data_type", &String.to_atom/1)

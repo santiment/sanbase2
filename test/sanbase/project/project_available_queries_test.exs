@@ -7,13 +7,14 @@ defmodule Sanbase.Project.AvailableQueriesTest do
   alias Sanbase.Model.Project.AvailableQueries
 
   @slug_metrics [
-    "historyPrice",
-    "ohlc",
-    "priceVolumeDiff",
-    "socialGainersLosersStatus",
-    "socialVolume",
-    "socialDominance"
-  ]
+                  "historyPrice",
+                  "ohlc",
+                  "priceVolumeDiff",
+                  "socialGainersLosersStatus",
+                  "socialVolume",
+                  "socialDominance"
+                ]
+                |> Enum.sort()
 
   setup_with_mocks([
     {Sanbase.SocialData.SocialVolume, [:passthrough],

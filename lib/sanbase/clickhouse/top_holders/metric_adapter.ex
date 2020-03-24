@@ -47,7 +47,8 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
     aggregation = aggregation || :last
     count = Map.get(selector, :holders_count, @default_holders_count)
 
-    with {:ok, contract, decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug) do
+    with {:ok, contract, decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug),
+         true <- chain_supported?(infr, slug, metric) do
       table = Map.get(@infrastructure_to_table, infr)
 
       {query, args} =
@@ -75,12 +76,8 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def metadata(metric) do
-    data_type =
-      cond do
-        metric in @timeseries_metrics -> :timeseries
-        metric in @histogram_metrics -> :histogram
-      end
+  def metadata(metric) when metric in @metrics do
+    data_type = if metric in @timeseries_metrics, do: :timeseries, else: :histogram
 
     {:ok,
      %{
@@ -118,7 +115,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def available_metrics(%{slug: slug}) do
     with %Project{} = project <- Project.by_slug(slug, only_preload: [:infrastructure]),
-         {:ok, infr} <- Project.infrastructure_code(project) do
+         {:ok, infr} <- Project.infrastructure_real_code(project) do
       if infr in @supported_chains_infrastrucutres do
         {:ok, @metrics}
       else
@@ -128,8 +125,9 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime(_metric, %{slug: slug}) do
-    with {:ok, contract, _decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug) do
+  def first_datetime(metric, %{slug: slug}) do
+    with {:ok, contract, _decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug),
+         true <- chain_supported?(infr, slug, metric) do
       table = Map.get(@infrastructure_to_table, infr)
       {query, args} = first_datetime_query(table, contract)
 
@@ -141,8 +139,9 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def last_datetime_computed_at(_metric, %{slug: slug}) do
-    with {:ok, contract, _decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug) do
+  def last_datetime_computed_at(metric, %{slug: slug}) do
+    with {:ok, contract, _decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug),
+         true <- chain_supported?(infr, slug, metric) do
       table = Map.get(@infrastructure_to_table, infr)
       {query, args} = last_datetime_computed_at_query(table, contract)
 
@@ -161,7 +160,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
       result =
         Project.List.projects(preload: [:infrastructure])
         |> Enum.filter(fn project ->
-          case Project.infrastructure_code(project) do
+          case Project.infrastructure_real_code(project) do
             {:ok, infr_code} -> infr_code in @supported_chains_infrastrucutres
             _ -> false
           end
@@ -188,4 +187,12 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def min_plan_map(), do: @min_plan_map
+
+  # Private functions
+  defp chain_supported?(infr, _slug, _metric_) when infr in @supported_chains_infrastrucutres,
+    do: true
+
+  defp chain_supported?(_infr, slug, metric) do
+    {:error, "The metric #{metric} is not supported for #{slug}"}
+  end
 end

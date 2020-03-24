@@ -5,13 +5,13 @@ defmodule Sanbase.Model.Project.ContractData do
   alias Sanbase.Model.Project
 
   @special_cases %{
-    "ethereum" => %{main_contract_address: "ETH", token_decimals: 18},
-    "bitcoin" => %{main_contract_address: "BTC", token_decimals: 8},
-    "bitcoin-cash" => %{main_contract_address: "BCH", token_decimals: 8},
-    "litecoin" => %{main_contract_address: "LTC", token_decimals: 8},
-    "eos" => %{main_contract_address: "eosio.token/EOS", token_decimals: 0},
-    "ripple" => %{main_contract_address: "XRP", token_decimals: 0},
-    "binance-coin" => %{main_contract_address: "BNB", token_decimals: 0}
+    "ethereum" => %{main_contract_address: "ETH", token_decimals: 18, infrastructure: "ETH"},
+    "bitcoin" => %{main_contract_address: "BTC", token_decimals: 8, infrastructure: "BTC"},
+    "bitcoin-cash" => %{main_contract_address: "BCH", token_decimals: 8, infrastructure: "BCH"},
+    "litecoin" => %{main_contract_address: "LTC", token_decimals: 8, infrastructure: "LTC"},
+    "eos" => %{main_contract_address: "eosio.token/EOS", token_decimals: 0, infrastructure: "EOS"},
+    "ripple" => %{main_contract_address: "XRP", token_decimals: 0, infrastructure: "XRP"},
+    "binance-coin" => %{main_contract_address: "BNB", token_decimals: 0, infrastructure: "BNB"}
   }
 
   @special_case_slugs @special_cases |> Map.keys()
@@ -20,12 +20,14 @@ defmodule Sanbase.Model.Project.ContractData do
 
   def special_cases(), do: @special_cases
 
+  @spec contract_info_by_slug(String.t()) :: {:ok, contract, decimals} | {:error, String.t()}
+        when contract: String.t(), decimals: non_neg_integer()
+  def contract_info_by_slug(slug)
+
   for {slug, %{main_contract_address: contract, token_decimals: decimals}} <- @special_cases do
     def contract_info_by_slug(unquote(slug)), do: {:ok, unquote(contract), unquote(decimals)}
   end
 
-  @spec contract_info_by_slug(String.t()) :: {:ok, contract, decimals} | {:error, String.t()}
-        when contract: String.t(), decimals: non_neg_integer()
   def contract_info_by_slug(slug) do
     from(p in Project,
       where: p.slug == ^slug,
@@ -41,8 +43,22 @@ defmodule Sanbase.Model.Project.ContractData do
     end
   end
 
-  @spec contract_info_by_slug(String.t()) :: {:ok, contract, decimals} | {:error, String.t()}
-        when contract: String.t(), decimals: non_neg_integer()
+  @doc ~s"""
+  Return contract info and the real infrastructure. If the infrastructure is set
+  to `own` in the database it will use the contract. Ethereum has ETH as contract,
+  Bitcoin has BTC and so on, which is the real infrastructure
+  """
+  @spec contract_info_infrastructure_by_slug(String.t()) ::
+          {:ok, contract, decimals, infrastructure} | {:error, String.t()}
+        when contract: String.t(), decimals: non_neg_integer(), infrastructure: String.t()
+  def contract_info_infrastructure_by_slug(slug)
+
+  for {slug, %{main_contract_address: contract, token_decimals: decimals, infrastructure: infr}} <-
+        @special_cases do
+    def contract_info_infrastructure_by_slug(unquote(slug)),
+      do: {:ok, unquote(contract), unquote(decimals), unquote(infr)}
+  end
+
   def contract_info_infrastructure_by_slug(slug) do
     from(p in Project,
       where: p.slug == ^slug,

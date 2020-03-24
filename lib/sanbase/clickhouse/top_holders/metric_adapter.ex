@@ -11,7 +11,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
-  @supported_chains_infrastrucutres ["EOS", "ETH", "BNB", "BEP2"]
+  @supported_chains_infrastrucutres ["eosio.token/EOS", "EOS", "ETH", "BNB", "BEP2"]
   @infrastructure_to_table %{
     "EOS" => "eos_top_holders",
     "eosio.token/EOS" => "eos_top_holders",

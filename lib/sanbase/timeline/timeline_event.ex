@@ -74,7 +74,10 @@ defmodule Sanbase.Timeline.TimelineEvent do
   end
 
   def by_id(id) do
-    from(te in TimelineEvent, where: te.id == ^id, preload: :votes)
+    from(te in TimelineEvent,
+      where: te.id == ^id,
+      preload: [:user_trigger, [post: :tags], :user_list, :user, :votes]
+    )
     |> Repo.one()
   end
 

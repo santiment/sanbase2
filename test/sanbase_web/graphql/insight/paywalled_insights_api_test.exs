@@ -5,12 +5,14 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
   import Sanbase.Factory
 
   alias Sanbase.Insight.Post
+  alias Sanbase.Timeline.TimelineEvent
 
   setup do
     user = insert(:user)
+    role_san_clan = insert(:role_san_clan)
     conn = setup_jwt_auth(build_conn(), user)
 
-    {:ok, conn: conn, user: user}
+    {:ok, conn: conn, user: user, role_san_clan: role_san_clan}
   end
 
   describe "filter paywalled when fetching insight by id" do
@@ -95,7 +97,7 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
     end
   end
 
-  describe "filter paywalled when fetching all insights" do
+  describe "filter paywalled when fetching all insights and timeline events" do
     setup do
       text = Stream.cycle(["alabala"]) |> Enum.take(200) |> Enum.join(" ")
       author = insert(:user)
@@ -119,6 +121,70 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
       assert result_insight2["text"] == nil
       assert result_insight2["textPreview"] =~ "alabala"
     end
+
+    test "text is filtered in timeline events", context do
+      san_author = insert(:user)
+      insert(:user_role, user: san_author, role: context.role_san_clan)
+      insight = create_insight(context, %{user: san_author, is_paywall_required: true})
+
+      timeline_event =
+        insert(:timeline_event,
+          post: insight,
+          user: san_author,
+          event_type: TimelineEvent.publish_insight_type()
+        )
+
+      events = execute_query(context.conn, timeline_events_query(), "timelineEvents")
+      event = events |> hd |> Map.get("events") |> hd
+      assert event["post"]["text"] == nil
+      assert event["post"]["textPreview"] =~ "alabala"
+
+      event =
+        execute_query(context.conn, timeline_event_query(timeline_event.id), "timelineEvent")
+
+      assert event["post"]["text"] == nil
+      assert event["post"]["textPreview"] =~ "alabala"
+    end
+  end
+
+  defp timeline_event_query(event_id) do
+    """
+    {
+      timelineEvent(id: #{event_id}) {
+        id
+        post {
+          id
+          tags { name }
+          text
+          textPreview
+          isPaywallRequired
+        }
+      }
+    }
+    """
+  end
+
+  defp timeline_events_query() do
+    """
+    {
+      timelineEvents {
+        cursor {
+          after
+          before
+        }
+        events {
+          id
+          post {
+            id
+            tags { name }
+            text
+            textPreview
+            isPaywallRequired
+          }
+        }
+      }
+    }
+    """
   end
 
   defp insight_by_id_query(insight_id) do
@@ -147,7 +213,7 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
     """
   end
 
-  defp create_insight(context, params \\ %{}) do
+  defp create_insight(context, params) do
     default_fields = %{
       text: context.text,
       user: context.author,

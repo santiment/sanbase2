@@ -1,16 +1,15 @@
 defmodule Sanbase.Insight.PostPaywall do
   @moduledoc """
   Filter paywalled insights for anonymous users or users with free plan that are not insight's author.
-  Filtering means removing the text and populating a virtual field that is truncated to
-  @words_count_shown_as_preview words of the original text.
+  Filtering means truncating the text to @max_words_shown_as_preview words of the original text.
   """
   alias Sanbase.Insight.Post
   alias Sanbase.Billing.{Subscription, Product}
   alias Sanbase.Auth.User
   alias Sanbase.Billing.Plan.SanbaseAccessChecker
 
-  # Show only first @words_count_shown_as_preview word of content
-  @words_count_shown_as_preview 70
+  # Show only first @max_words_shown_as_preview word of content
+  @max_words_shown_as_preview 140
   @product_sanbase Product.product_sanbase()
 
   def maybe_filter_paywalled(insights, nil), do: maybe_filter(insights, nil)
@@ -44,12 +43,10 @@ defmodule Sanbase.Insight.PostPaywall do
   end
 
   defp do_filter(insight, _) do
-    Map.put(insight, :text, text_preview(insight))
+    Map.put(insight, :text, truncate(insight))
   end
 
-  defp text_preview(%Post{text: text}) do
-    String.split(text, " ")
-    |> Enum.take(@words_count_shown_as_preview)
-    |> Enum.join(" ")
+  defp truncate(%Post{text: text}) do
+    Sanbase.HTML.truncate(text, @max_words_shown_as_preview)
   end
 end

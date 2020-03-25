@@ -34,11 +34,15 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
 
   @metrics_file "metric_files/available_v2_metrics.json"
   @holders_file "metric_files/holders_metrics.json"
+  @makerdao_file "metric_files/makerdao_metrics.json"
+
   @external_resource metrics_file = Path.join(__DIR__, @metrics_file)
   @external_resource holders_file = Path.join(__DIR__, @holders_file)
+  @external_resource makerdao_file = Path.join(__DIR__, @makerdao_file)
 
   @metrics_json (File.read!(metrics_file) |> Jason.decode!()) ++
-                  (File.read!(holders_file) |> Jason.decode!())
+                  (File.read!(holders_file) |> Jason.decode!()) ++
+                  (File.read!(makerdao_file) |> Jason.decode!())
 
   @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
 

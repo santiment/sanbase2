@@ -1,0 +1,108 @@
+[
+  {
+    "human_readable_name": "Multi-Collateral DAI Locked",
+    "name": "mcd_locked_token",
+    "metric": "mcd_locked_token",
+    "version": "2019-01-01",
+    "access": "free",
+    "min_plan": "free",
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+
+  {
+    "human_readable_name": "Multi-Collateral DAI Total Supply",
+    "name": "mcd_total_supply",
+    "metric": "mcd_total_supply",
+    "version": "2019-01-01",
+    "access": "free",
+    "min_plan": "free",
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+
+  {
+    "human_readable_name": "Multi-Collateral DAI Collateral Ratio",
+    "name": "mcd_collat_ratio",
+    "metric": "daily_dai_collat_ratio",
+    "version": "2019-01-01",
+    "access": "free",
+    "min_plan": "free",
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Multi-Collateral DAI Collateral Ratio In WETH",
+    "name": "mcd_collat_ratio_weth",
+    "metric": "daily_dai_collat_ratio_weth",
+    "version": "2019-01-01",
+    "access": "free",
+    "min_plan": "free",
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Multi-Collateral DAI DSR",
+    "name": "mcd_dsr",
+    "metric": "mcd_dsr",
+    "version": "2019-01-01",
+    "access": "free",
+    "min_plan": "free",
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Multi-Collateral Stability Fee",
+    "name": "mcd_stability_fee",
+    "metric": "mcd_stability_fee",
+    "version": "2019-01-01",
+    "access": "free",
+    "min_plan": "free",
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DAI Created",
+    "name": "dai_created",
+    "metric": "daily_dai_created",
+    "version": "2019-01-01",
+    "access": "free",
+    "min_plan": "free",
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "SAI Collateral Ratio",
+    "name": "sai_collat_ratio",
+    "metric": "daily_sai_collat_ratio",
+    "version": "2019-01-01",
+    "access": "free",
+    "min_plan": "free",
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  }
+]

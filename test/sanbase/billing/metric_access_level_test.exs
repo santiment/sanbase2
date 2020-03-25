@@ -42,7 +42,16 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "price_usd_change_30d",
         "active_addresses_24h_change_1d",
         "active_addresses_24h_change_7d",
-        "active_addresses_24h_change_30d"
+        "active_addresses_24h_change_30d",
+        # makerdao metrics
+        "mcd_locked_token",
+        "mcd_total_supply",
+        "mcd_collat_ratio",
+        "mcd_collat_ratio_weth",
+        "mcd_dsr",
+        "mcd_stability_fee",
+        "dai_created",
+        "sai_collat_ratio"
       ]
       |> Enum.sort()
 

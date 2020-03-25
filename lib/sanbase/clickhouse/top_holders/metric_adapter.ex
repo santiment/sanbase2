@@ -12,6 +12,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
   @supported_chains_infrastrucutres ["eosio.token/EOS", "EOS", "ETH", "BNB", "BEP2"]
+
   @infrastructure_to_table %{
     "EOS" => "eos_top_holders",
     "eosio.token/EOS" => "eos_top_holders",
@@ -20,9 +21,21 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
     "BEP2" => "bnb_top_holders"
   }
 
-  @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
+  @infrastructure_to_blockchain %{
+    "EOS" => "eos",
+    "eosio.token/EOS" => "eos",
+    "ETH" => "ethereum",
+    "BNB" => "binance-coin",
+    "BEP2" => "binance-coin"
+  }
 
-  @timeseries_metrics ["amount_in_top_holders"]
+  @aggregations [:last, :min, :max, :first]
+
+  @timeseries_metrics [
+    "amount_in_top_holders",
+    "amount_in_exchange_top_holders",
+    "amount_in_non_exchange_top_holders"
+  ]
   @histogram_metrics []
 
   @metrics @histogram_metrics ++ @timeseries_metrics
@@ -51,12 +64,14 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
     with {:ok, contract, decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug),
          true <- chain_supported?(infr, slug, metric) do
       table = Map.get(@infrastructure_to_table, infr)
+      blockchain = Map.get(@infrastructure_to_blockchain, infr)
 
       {query, args} =
         timeseries_data_query(
-          table,
           metric,
+          table,
           contract,
+          blockchain,
           count,
           from,
           to,
@@ -95,6 +110,8 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   def human_readable_name(metric) do
     case metric do
       "amount_in_top_holders" -> {:ok, "Top Holders Balance"}
+      "amount_in_exchange_top_holders" -> {:ok, "Exchange Top Holders Balance"}
+      "amount_in_non_exchange top_holders" -> {:ok, "Non-Exchange Top Holders Balance"}
     end
   end
 

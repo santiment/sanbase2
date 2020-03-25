@@ -138,8 +138,11 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
       "supply_on_exchanges",
       "supply_outside_exchanges",
       "percent_of_total_supply_on_exchanges",
-      # holders metrics
+      # top holders metrics
       "amount_in_top_holders",
+      "amount_in_exchange_top_holders",
+      "amount_in_non_exchange_top_holders",
+      # holders distribution metrics
       "holders_distribution_0.001_to_0.01",
       "holders_distribution_0.01_to_0.1",
       "holders_distribution_0.1_to_1",

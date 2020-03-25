@@ -53,6 +53,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
     aggregation = Map.get(args, :aggregation, nil)
     selector = to_selector(args)
+    metric = maybe_replace_metric(metric, selector)
 
     with {:ok, from, to, interval} <-
            calibrate_interval(Metric, metric, selector, from, to, interval, 86_400, @datapoints),
@@ -70,6 +71,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         {:error, handle_graphql_error(metric, selector, error)}
     end
   end
+
+  # gold and s-and-p-500 are present only in the intrday metrics table, not in asset_prices
+  defp maybe_replace_metric("price_usd", %{slug: slug}) when slug in ["gold", "s-and-p-500"],
+    do: "price_usd_5m"
+
+  defp maybe_replace_metric(metric, _selector), do: metric
 
   defp calibrate_transform_params(%{type: "none"}, from, _to, _interval),
     do: {:ok, from}

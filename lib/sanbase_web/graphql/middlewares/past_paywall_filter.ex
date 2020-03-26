@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.PostPaywallFilter do
   alias Sanbase.Insight.{Post, PostPaywall}
   alias Sanbase.Timeline.TimelineEvent
 
-  def call(%Resolution{errors: errors} = resolution, _opts) when errors != [], do: resolution
+  def call(%Resolution{errors: [_|_]} = resolution, _opts), do: resolution
 
   def call(
         %Resolution{value: value, context: context} = resolution,

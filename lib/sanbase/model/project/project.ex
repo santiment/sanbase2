@@ -381,16 +381,22 @@ defmodule Sanbase.Model.Project do
   end
 
   defp preload_query(query, opts) do
-    case Keyword.get(opts, :only_preload) do
-      preloads when is_list(preloads) ->
+    case Keyword.get(opts, :preload?, true) do
+      false ->
         query
-        |> preload(^preloads)
 
-      nil ->
-        additional_preloads = Keyword.get(opts, :additional_preloads, [])
+      true ->
+        case Keyword.get(opts, :only_preload) do
+          preloads when is_list(preloads) ->
+            query
+            |> preload(^preloads)
 
-        query
-        |> preload(^(additional_preloads ++ @preloads))
+          nil ->
+            additional_preloads = Keyword.get(opts, :additional_preloads, [])
+
+            query
+            |> preload(^(additional_preloads ++ @preloads))
+        end
     end
   end
 end

@@ -128,7 +128,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
       "active_withdrawals",
       "withdrawal_transactions",
       # social metrics
-      "community_messages_count_discord",
       "community_messages_count_telegram",
       "community_messages_count_total",
       "social_dominance_discord",

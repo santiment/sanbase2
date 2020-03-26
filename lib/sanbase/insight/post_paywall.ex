@@ -12,6 +12,10 @@ defmodule Sanbase.Insight.PostPaywall do
   @max_words_shown_as_preview 140
   @product_sanbase Product.product_sanbase()
 
+  @type insight_or_insights :: %Post{} | [%Post{}]
+  @type current_user_or_nil :: %User{} | nil
+
+  @spec maybe_filter_paywalled(insight_or_insights, current_user_or_nil) :: insight_or_insights
   def maybe_filter_paywalled(insights, nil), do: maybe_filter(insights, nil)
 
   def maybe_filter_paywalled(insights, %User{} = user) do
@@ -47,6 +51,6 @@ defmodule Sanbase.Insight.PostPaywall do
   end
 
   defp truncate(%Post{text: text}) do
-    Sanbase.HTML.truncate(text, @max_words_shown_as_preview)
+    Sanbase.HTML.truncate_html(text, @max_words_shown_as_preview)
   end
 end

@@ -1,77 +1,169 @@
 defmodule Sanbase.HTML do
-  def truncate(text, max_words \\ 100) do
-    tree =
-      text
-      |> Floki.parse_document!()
-      |> Floki.HTMLTree.build()
+  @moduledoc """
+  Module for html/text utility functions
+  """
 
-    sorted_nodes = Enum.sort_by(tree.nodes, fn {k, _v} -> k end)
+  @doc """
+  Truncates html text to max_words by keeping the result html valid.
+  """
+  @spec truncate_html(String.t(), non_neg_integer()) :: String.t()
+  def truncate_html(html, max_words \\ 100) do
+    html
+    |> build_floki_tree()
+    |> truncate_nodes(max_words)
+    |> update_tree()
+    |> create_html_from_tree()
+  end
 
-    truncated_nodes =
-      sorted_nodes
-      |> Enum.reduce_while({0, []}, fn {idx, node}, {words_acc, nodes_acc} ->
-        case node do
-          %Floki.HTMLTree.Text{content: content} ->
-            node_words_count = calc_words(content)
+  @spec truncate_html(String.t()) :: non_neg_integer()
+  def calc_words(text) do
+    text
+    |> String.split(" ", trim: true)
+    |> Enum.reject(&(&1 == "\n"))
+    |> length
+  end
 
-            if words_acc + node_words_count > max_words do
-              updated_node = %Floki.HTMLTree.Text{
+  @doc """
+  Truncate text to max words by preserving whitespace characters.
+  """
+  @spec truncate_text(String.t(), non_neg_integer()) :: String.t()
+  def truncate_text(_, 0), do: ""
+
+  def truncate_text(text, max_words) do
+    text
+    |> escape_whitespace_chars()
+    |> String.split(" ")
+    |> Enum.reduce_while({0, []}, fn word, {acc, words} ->
+      if acc >= max_words do
+        {:halt, {acc, words}}
+      else
+        case word do
+          "\\n" -> {:cont, {acc, ["\n" | words]}}
+          "\\t" -> {:cont, {acc, ["\t" | words]}}
+          "\\r" -> {:cont, {acc, ["\r" | words]}}
+          "\\f" -> {:cont, {acc, ["\f" | words]}}
+          "" -> {:cont, {acc, ["" | words]}}
+          _ -> {:cont, {acc + 1, [word | words]}}
+        end
+      end
+    end)
+    |> elem(1)
+    |> Enum.reverse()
+    |> Enum.join(" ")
+    |> unescape_whitespace_chars()
+  end
+
+  # helpers
+  defp build_floki_tree(html) do
+    html
+    |> Floki.parse_document!()
+    |> Floki.HTMLTree.build()
+  end
+
+  def truncate_nodes(tree, max_words) do
+    tree.nodes
+    |> Enum.sort_by(fn {k, _v} -> k end)
+    |> Enum.reduce_while({0, []}, fn {idx, node}, {words_acc, nodes_acc} ->
+      case node do
+        %Floki.HTMLTree.Text{content: _content} ->
+          maybe_halt_if_max_words_reached(idx, node, words_acc, nodes_acc, max_words)
+
+        _ ->
+          {:cont, {words_acc, [{idx, node} | nodes_acc]}}
+      end
+    end)
+    |> elem(1)
+    |> Enum.reverse()
+    |> Enum.into(%{})
+  end
+
+  def update_tree(nodes) do
+    node_ids = Map.keys(nodes) |> Enum.reverse()
+
+    root_nodes_ids =
+      Enum.filter(nodes, fn {_id, node} -> is_nil(node.parent_node_id) end)
+      |> Enum.map(fn {k, _v} -> k end)
+      |> Enum.sort()
+
+    nodes =
+      nodes
+      |> Enum.into(%{}, fn {idx, node} ->
+        node =
+          case node do
+            %Floki.HTMLTree.HTMLNode{children_nodes_ids: children_nodes_ids} ->
+              new_children_nodes_ids =
+                intersection(children_nodes_ids, node_ids) |> Enum.reverse()
+
+              %Floki.HTMLTree.HTMLNode{
                 node
-                | content: truncate_text(content, max_words - words_acc)
+                | children_nodes_ids: new_children_nodes_ids
               }
 
-              {:halt, {max_words, [{idx, updated_node} | nodes_acc]}}
-            else
-              {:cont, {words_acc + node_words_count, [{idx, node} | nodes_acc]}}
-            end
+            _ ->
+              node
+          end
 
-          _ ->
-            {:cont, {words_acc, [{idx, node} | nodes_acc]}}
-        end
+        {idx, node}
       end)
-      |> elem(1)
-      |> Enum.reverse()
-      |> Enum.into(%{})
 
-    updated_tree = %Floki.HTMLTree{
-      node_ids: Map.keys(truncated_nodes),
-      root_nodes_ids:
-        Enum.filter(truncated_nodes, fn {_id, node} -> is_nil(node.parent_node_id) end)
-        |> Enum.map(fn {k, _v} -> k end),
-      nodes:
-        truncated_nodes
-        |> Enum.into(%{}, fn {k, node} ->
-          node =
-            case node do
-              %Floki.HTMLTree.HTMLNode{children_nodes_ids: cni} ->
-                new_cni =
-                  MapSet.intersection(MapSet.new(cni), MapSet.new(Map.keys(truncated_nodes)))
-                  |> MapSet.to_list()
-
-                %Floki.HTMLTree.HTMLNode{node | children_nodes_ids: new_cni}
-
-              _ ->
-                node
-            end
-
-          {k, node}
-        end)
+    %Floki.HTMLTree{
+      node_ids: node_ids,
+      root_nodes_ids: root_nodes_ids,
+      nodes: nodes
     }
+  end
 
-    updated_tree.root_nodes_ids
+  defp create_html_from_tree(tree) do
+    tree.root_nodes_ids
     |> Enum.map(fn id ->
-      Floki.HTMLTree.to_tuple(updated_tree, Map.get(updated_tree.nodes, id))
+      Floki.HTMLTree.to_tuple(tree, Map.get(tree.nodes, id))
     end)
-    |> Floki.raw_html()
+    |> Floki.raw_html(encode: false)
   end
 
-  defp calc_words(text) do
-    String.split(text, " ") |> length()
+  defp maybe_halt_if_max_words_reached(
+         idx,
+         %Floki.HTMLTree.Text{content: content} = node,
+         words_acc,
+         nodes_acc,
+         max_words
+       ) do
+    node_words_count = calc_words(content)
+
+    if words_acc + node_words_count >= max_words do
+      updated_node = %Floki.HTMLTree.Text{
+        node
+        | content:
+            truncate_text(
+              content,
+              max_words - words_acc
+            )
+      }
+
+      {:halt, {max_words, [{idx, updated_node} | nodes_acc]}}
+    else
+      {:cont, {words_acc + node_words_count, [{idx, node} | nodes_acc]}}
+    end
   end
 
-  defp truncate_text(text, words) do
-    String.split(text, " ")
-    |> Enum.take(words)
-    |> Enum.join(" ")
+  defp intersection(list1, list2) do
+    MapSet.intersection(MapSet.new(list1), MapSet.new(list2))
+    |> MapSet.to_list()
+  end
+
+  defp escape_whitespace_chars(string) do
+    string
+    |> String.replace("\n", "\\n")
+    |> String.replace("\t", "\\t")
+    |> String.replace("\r", "\\r")
+    |> String.replace("\f", "\\f")
+  end
+
+  defp unescape_whitespace_chars(string) do
+    string
+    |> String.replace("\\n", "\n")
+    |> String.replace("\\t", "\t")
+    |> String.replace("\\r", "\r")
+    |> String.replace("\\f", "\f")
   end
 end

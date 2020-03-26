@@ -503,8 +503,12 @@ defmodule Sanbase.Billing.Subscription do
     |> user_subscriptions_query()
     |> active_subscriptions_query()
     |> last_subscription_for_product_query(product_id)
+    |> preload_query(plan: [:product])
     |> Repo.one()
-    |> Repo.preload(plan: [:product])
+  end
+
+  defp preload_query(query, preloads) do
+    from(s in query, preload: ^preloads)
   end
 
   defp format_trial_end(nil), do: nil

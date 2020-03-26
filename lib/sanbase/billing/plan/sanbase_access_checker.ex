@@ -68,9 +68,9 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
 
   def signals_limits_upgrade_message(), do: @signals_limits_upgrade_message
 
-  def access_paywalled_insights?(nil), do: false
+  def can_access_paywalled_insights?(nil), do: false
 
-  def access_paywalled_insights?(subscription) do
+  def can_access_paywalled_insights?(subscription) do
     subscription.plan
     |> Plan.plan_atom_name()
     |> plan_stats()

@@ -21,7 +21,7 @@ defmodule Sanbase.Insight.PostPaywall do
   def maybe_filter_paywalled(insights, %User{} = user) do
     subscription = Subscription.current_subscription(user, @product_sanbase)
 
-    if SanbaseAccessChecker.access_paywalled_insights?(subscription) do
+    if SanbaseAccessChecker.can_access_paywalled_insights?(subscription) do
       insights
     else
       maybe_filter(insights, user.id)
@@ -48,6 +48,7 @@ defmodule Sanbase.Insight.PostPaywall do
 
   defp do_filter(insight, _) do
     Map.put(insight, :text, truncate(insight))
+    |> Map.put(:comments, [])
   end
 
   defp truncate(%Post{text: text}) do

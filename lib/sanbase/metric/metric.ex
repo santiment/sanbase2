@@ -18,7 +18,8 @@ defmodule Sanbase.Metric do
     Sanbase.Clickhouse.TopHolders.MetricAdapter
   ]
 
-  Module.register_attribute(__MODULE__, :available_aggregations_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :aggregations_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :aggregations_per_metric_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :free_metrics_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :restricted_metrics_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :access_map_acc, accumulate: true)
@@ -27,11 +28,22 @@ defmodule Sanbase.Metric do
   Module.register_attribute(__MODULE__, :histogram_metric_module_mapping_acc, accumulate: true)
 
   for module <- @metric_modules do
-    @available_aggregations_acc module.available_aggregations()
+    @aggregations_acc module.available_aggregations()
     @free_metrics_acc module.free_metrics()
     @restricted_metrics_acc module.restricted_metrics()
     @access_map_acc module.access_map()
     @min_plan_map_acc module.min_plan_map()
+
+    @aggregations_per_metric_acc Enum.into(
+                                   module.available_metrics(),
+                                   %{},
+                                   fn metric ->
+                                     {:ok, %{available_aggregations: aggr}} =
+                                       module.metadata(metric)
+
+                                     {metric, [nil] ++ aggr}
+                                   end
+                                 )
 
     @timeseries_metric_module_mapping_acc Enum.map(
                                             module.available_timeseries_metrics(),
@@ -44,7 +56,7 @@ defmodule Sanbase.Metric do
                                          )
   end
 
-  @available_aggregations List.flatten(@available_aggregations_acc) |> Enum.uniq()
+  @aggregations List.flatten(@aggregations_acc) |> Enum.uniq()
   @free_metrics List.flatten(@free_metrics_acc) |> Enum.uniq()
   @restricted_metrics List.flatten(@restricted_metrics_acc) |> Enum.uniq()
   @timeseries_metric_module_mapping List.flatten(@timeseries_metric_module_mapping_acc)
@@ -61,9 +73,9 @@ defmodule Sanbase.Metric do
                           {metric, module}
                         end)
 
-  @access_map Enum.reduce(@access_map_acc, %{}, fn map, acc -> Map.merge(map, acc) end)
-  @min_plan_map Enum.reduce(@min_plan_map_acc, %{}, fn map, acc -> Map.merge(map, acc) end)
-  @aggregation_arg_supported [nil] ++ @available_aggregations
+  @aggregations_per_metric Enum.reduce(@aggregations_per_metric_acc, %{}, &Map.merge(&1, &2))
+  @access_map Enum.reduce(@access_map_acc, %{}, &Map.merge(&1, &2))
+  @min_plan_map Enum.reduce(@min_plan_map_acc, %{}, &Map.merge(&1, &2))
 
   @metrics Enum.map(@metric_module_mapping, & &1.metric)
   @timeseries_metrics Enum.map(@timeseries_metric_module_mapping, & &1.metric)
@@ -89,18 +101,14 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Get a given metric for an identifier and time range. The metric's aggregation
   function can be changed by the last optional parameter. The available
-  aggregations are #{inspect(@available_aggregations)}. If no aggregation is provided,
+  aggregations are #{inspect(@aggregations)}. If no aggregation is provided,
   a default one (based on the metric) will be used.
   """
   def timeseries_data(metric, identifier, from, to, interval, aggregation \\ nil)
 
-  def timeseries_data(_, _, _, _, _, aggregation)
-      when aggregation not in @aggregation_arg_supported do
-    {:error, "The aggregation '#{inspect(aggregation)}' is not supported"}
-  end
-
   for %{metric: metric, module: module} <- @timeseries_metric_module_mapping do
-    def timeseries_data(unquote(metric), identifier, from, to, interval, aggregation) do
+    def timeseries_data(unquote(metric), identifier, from, to, interval, aggregation)
+        when aggregation in unquote(Map.get(@aggregations_per_metric, metric)) do
       unquote(module).timeseries_data(
         unquote(metric),
         identifier,
@@ -112,19 +120,27 @@ defmodule Sanbase.Metric do
     end
   end
 
-  def timeseries_data(metric, _, _, _, _, _),
-    do: metric_not_available_error(metric, type: :timeseries)
+  def timeseries_data(metric, _, _, _, _, aggregation) do
+    cond do
+      metric not in @metrics_mapset ->
+        metric_not_available_error(metric, type: :timeseries)
+
+      aggregation not in Map.get(@aggregations_per_metric, metric) ->
+        {:error, "The aggregation #{aggregation} is not supported for the metric #{metric}"}
+    end
+  end
 
   @doc ~s"""
   Get the aggregated value for a metric, an identifier and time range.
   The metric's aggregation function can be changed by the last optional parameter.
-  The available aggregations are #{inspect(@available_aggregations)}. If no aggregation is
+  The available aggregations are #{inspect(@aggregations)}. If no aggregation is
   provided, a default one (based on the metric) will be used.
   """
   def aggregated_timeseries_data(metric, identifier, from, to, aggregation \\ nil)
 
   for %{metric: metric, module: module} <- @timeseries_metric_module_mapping do
-    def aggregated_timeseries_data(unquote(metric), identifier, from, to, aggregation) do
+    def aggregated_timeseries_data(unquote(metric), identifier, from, to, aggregation)
+        when aggregation in unquote(Map.get(@aggregations_per_metric, metric)) do
       unquote(module).aggregated_timeseries_data(
         unquote(metric),
         identifier,
@@ -135,8 +151,15 @@ defmodule Sanbase.Metric do
     end
   end
 
-  def aggregated_timeseries_data(metric, _, _, _, _),
-    do: metric_not_available_error(metric, type: :timeseries)
+  def aggregated_timeseries_data(metric, _, _, _, _, aggregation) do
+    cond do
+      metric not in @metrics_mapset ->
+        metric_not_available_error(metric, type: :timeseries)
+
+      aggregation not in Map.get(@aggregations_per_metric, metric) ->
+        {:error, "The aggregation #{aggregation} is not supported for the metric #{metric}"}
+    end
+  end
 
   @doc ~s"""
   Get a histogram for a given metric
@@ -229,7 +252,7 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Get all available aggregations
   """
-  def available_aggregations(), do: @available_aggregations
+  def available_aggregations(), do: @aggregations
 
   @doc ~s"""
   Get all available metrics.

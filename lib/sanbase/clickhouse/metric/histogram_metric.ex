@@ -33,6 +33,20 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
     |> maybe_transform_into_buckets(limit)
   end
 
+  def first_datetime("price_histogram", %{slug: _} = selector) do
+    with {:ok, dt1} <- Sanbase.Metric.first_datetime("price_usd", selector),
+         {:ok, dt2} <- Sanbase.Metric.first_datetime("age_distribution", selector) do
+      {:ok, Enum.max_by([dt1, dt2], &DateTime.to_unix/1)}
+    end
+  end
+
+  def last_datetime_computed_at("price_histogram", %{slug: _} = selector) do
+    with {:ok, dt1} <- Sanbase.Metric.last_datetime_computed_at("price_usd", selector),
+         {:ok, dt2} <- Sanbase.Metric.last_datetime_computed_at("age_distribution", selector) do
+      {:ok, Enum.min_by([dt1, dt2], &DateTime.to_unix/1)}
+    end
+  end
+
   # Aggregate the separate prices into `limit` number of evenly spaced buckets
   defp maybe_transform_into_buckets({:ok, data}, limit) do
     {min, max} = Enum.map(data, & &1.price) |> Sanbase.Math.min_max()

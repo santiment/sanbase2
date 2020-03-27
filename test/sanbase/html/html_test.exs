@@ -31,7 +31,7 @@ defmodule Sanbase.HtmlTest do
     original = replace_space_in_closing(html)
 
     for i <- 0..140 |> Enum.take_every(5) do
-      result = HTML.truncate_html(html, 60) |> replace_trailing_closing_tags()
+      result = HTML.truncate_html(html, i) |> replace_trailing_closing_tags()
       assert String.contains?(original, result)
     end
   end

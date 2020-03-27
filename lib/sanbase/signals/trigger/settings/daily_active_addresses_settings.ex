@@ -63,32 +63,27 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
     from = Timex.shift(Timex.now(), days: -(3 * time_window_in_days))
     to = Timex.now()
 
-    contract_info_map = Project.List.contract_info_map()
-
     target_list
     |> Enum.map(fn slug ->
-      with {contract, _token_decimals} when not is_nil(contract) <-
-             Map.get(contract_info_map, slug),
-           daa when length(daa) >= time_window_in_days <-
-             fetch_daily_active_addersses(contract, from, to, "1d") do
-        last = List.last(daa)
-        previous = Enum.at(daa, -time_window_in_days)
-        daily_active_addresses = [previous, last]
-        {slug, daily_active_addresses}
-      else
-        _ -> nil
+      case fetch_24h_active_addersses(slug, from, to, "1d") do
+        {:ok, result} ->
+          {slug, Enum.take(result, -2)}
+
+        _ ->
+          nil
       end
     end)
     |> Enum.reject(&is_nil/1)
   end
 
-  defp fetch_daily_active_addersses(contract, from, to, interval) do
+  defp fetch_24h_active_addersses(slug, from, to, interval) do
     cache_key =
-      {:daa_signal, contract, round_datetime(from, 300), round_datetime(to, 300), interval}
+      {__MODULE__, :fetch_24h_active_addersses, slug, round_datetime(from, 300),
+       round_datetime(to, 300), interval}
       |> :erlang.phash2()
 
-    Cache.get_or_store(cache_key, fn ->
-      case DailyActiveAddresses.average_active_addresses(contract, from, to, interval) do
+    Sanbase.Cache.get_or_store(cache_key, fn ->
+      case Sanbase.Metric.timeseries_data("active_addresses_24h", slug, from, to, interval, :last) do
         {:ok, result} -> result
         _ -> []
       end
@@ -111,7 +106,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
     end
 
     defp build_result(data, %DailyActiveAddressesSettings{} = settings) do
-      ResultBuilder.build(data, settings, &template_kv/2, value_key: :active_addresses)
+      ResultBuilder.build(data, settings, &template_kv/2, value_key: :value)
     end
 
     def cache_key(%DailyActiveAddressesSettings{} = settings) do
@@ -147,14 +142,14 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
         |> Map.merge(curr_value_kv)
 
       template = """
-      **{{project_name}}**'s Daily Active Addresses #{operation_template} and #{
+      **{{project_name}}**'s Active Addresses for the past 24 hours #{operation_template} and #{
         curr_value_template
       }
 
-      Average Daily Active Addresses for last **{{interval}}*: **{{average_value}}**.
+      Average 24 hours Active Addresses for last **{{interval}}*: **{{average_value}}**.
       More info here: #{Project.sanbase_link(project)}
 
-      ![Daily Active Addresses chart and OHLC price chart for the past 90 days]({{chart_url}})
+      ![Active Addresses chart and OHLC price chart for the past 90 days]({{chart_url}})
       """
 
       {template, kv}

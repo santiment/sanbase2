@@ -16,7 +16,6 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
   alias __MODULE__
   alias Sanbase.Signal.Type
   alias Sanbase.Model.Project
-  alias Sanbase.Signal.Evaluator.Cache
 
   @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
   @trigger_type "daily_active_addresses"

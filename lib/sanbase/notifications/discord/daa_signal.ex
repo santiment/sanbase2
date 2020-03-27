@@ -14,7 +14,6 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias Sanbase.Metric
-  alias Sanbase.Clickhouse.DailyActiveAddresses
 
   alias Sanbase.Notifications.{Discord, Notification, Type}
 
@@ -96,16 +95,17 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     if Notification.has_cooldown?(project, notification_type, project_cooldown()) do
       nil
     else
-      avg_daa = get_daa_contract(Project.contract_address(project), avg_daa_for_projects)
-      current_daa = get_daa_contract(Project.contract_address(project), today_daa_for_projects)
-      {last_triggered_daa, hours} = last_triggered_daa(project, notification_type)
+      avg_daa = Map.get(avg_daa_for_projects, project.slug)
+      current_daa = Map.get(today_daa_for_projects, project.slug)
 
-      percent_change = Sanbase.Math.percent_change(avg_daa, current_daa - last_triggered_daa)
+      if avg_daa != nil and current_daa != nil do
+        {last_triggered_daa, hours} = last_triggered_daa(project, notification_type)
 
-      if percent_change > trigger_percent(project) * 100 do
-        {project, avg_daa, current_daa, last_triggered_daa, percent_change, hours}
-      else
-        nil
+        percent_change = Sanbase.Math.percent_change(avg_daa, current_daa - last_triggered_daa)
+
+        if percent_change > trigger_percent(project) * 100 do
+          {project, avg_daa, current_daa, last_triggered_daa, percent_change, hours}
+        end
       end
     end
   end
@@ -172,8 +172,12 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
         get_average_active_addresses(projects)
         |> case do
           {:ok, avg_daa} ->
-            :ok = ConCache.put(@cache_id, cache_key, avg_daa)
-            {:ok, avg_daa}
+            avg_daa_map =
+              avg_daa
+              |> Enum.into(%{}, fn %{slug: slug, value: value} -> {slug, value} end)
+
+            :ok = ConCache.put(@cache_id, cache_key, avg_daa_map)
+            {:ok, avg_daa_map}
 
           {:error, error} ->
             {:error, error}
@@ -197,37 +201,33 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
       timeframe_to(),
       :avg
     )
-    |> handle_result()
-  end
-
-  defp get_daa_contract(contract, all_projects_daa) do
-    all_projects_daa
-    |> Map.new()
-    |> Map.get(contract, 0)
   end
 
   defp all_projects_daa_for_today(projects) do
-    projects
-    |> Enum.map(&Project.contract_address/1)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.chunk_every(50)
-    |> Enum.map(fn contracts -> DailyActiveAddresses.realtime_active_addresses(contracts) end)
-    |> handle_result()
-  end
+    slugs =
+      projects
+      |> Enum.map(& &1.slug)
+      |> Enum.reject(&is_nil/1)
 
-  defp handle_result(daa_for_projects) do
-    daa_for_projects
-    |> Enum.find(&match?({:error, _}, &1))
+    now = Timex.now()
+
+    Sanbase.Metric.aggregated_timeseries_data(
+      "active_addresses_24h",
+      slugs,
+      Timex.shift(now, days: -1),
+      now,
+      :last
+    )
     |> case do
       {:error, error} ->
         {:error, error}
 
-      nil ->
-        {
-          :ok,
-          daa_for_projects
-          |> Enum.flat_map(fn {:ok, daa} -> daa end)
-        }
+      {:ok, data} ->
+        data
+        |> Enum.into(
+          %{},
+          fn %{slug: slug, value: value} -> {slug, value} end
+        )
     end
   end
 

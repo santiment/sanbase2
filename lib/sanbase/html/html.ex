@@ -15,7 +15,7 @@ defmodule Sanbase.HTML do
     |> create_html_from_tree()
   end
 
-  @spec truncate_html(String.t()) :: non_neg_integer()
+  @spec calc_words(String.t()) :: non_neg_integer()
   def calc_words(text) do
     text
     |> String.split(" ", trim: true)

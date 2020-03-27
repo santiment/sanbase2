@@ -39,6 +39,7 @@ defmodule Sanbase.Insight.Post do
     field(:moderation_comment, :string)
     field(:ready_state, :string, default: @draft)
     field(:is_pulse, :boolean, default: false)
+    field(:is_paywall_required, :boolean, default: false)
 
     has_many(:images, PostImage, on_delete: :delete_all)
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
@@ -61,7 +62,7 @@ defmodule Sanbase.Insight.Post do
 
   def create_changeset(%Post{} = post, attrs) do
     post
-    |> cast(attrs, [:title, :short_desc, :link, :text, :user_id, :is_pulse])
+    |> cast(attrs, [:title, :short_desc, :link, :text, :user_id, :is_pulse, :is_paywall_required])
     |> Tag.put_tags(attrs)
     |> images_cast(attrs)
     |> validate_required([:user_id, :title])
@@ -70,7 +71,16 @@ defmodule Sanbase.Insight.Post do
 
   def update_changeset(%Post{} = post, attrs) do
     post
-    |> cast(attrs, [:title, :short_desc, :link, :text, :moderation_comment, :state, :is_pulse])
+    |> cast(attrs, [
+      :title,
+      :short_desc,
+      :link,
+      :text,
+      :moderation_comment,
+      :state,
+      :is_pulse,
+      :is_paywall_required
+    ])
     |> Tag.put_tags(attrs)
     |> images_cast(attrs)
     |> validate_length(:title, max: 140)
@@ -215,7 +225,8 @@ defmodule Sanbase.Insight.Post do
   def user_insights(user_id, opts \\ []) do
     Post
     |> by_user(user_id)
-    |> by_is_pulse(Keyword.get(opts, :is_pulse, false))
+    |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
+    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
     |> Repo.all()
     |> Repo.preload(@preloads)
     |> Tag.Preloader.order_tags()
@@ -227,7 +238,8 @@ defmodule Sanbase.Insight.Post do
   def user_public_insights(user_id, opts \\ []) do
     published_and_approved_insights()
     |> by_user(user_id)
-    |> by_is_pulse(Keyword.get(opts, :is_pulse, false))
+    |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
+    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
     |> Repo.all()
     |> Repo.preload(@preloads)
     |> Tag.Preloader.order_tags()
@@ -238,7 +250,8 @@ defmodule Sanbase.Insight.Post do
   """
   def public_insights(page, page_size, opts \\ []) do
     published_and_approved_insights()
-    |> by_is_pulse(Keyword.get(opts, :is_pulse, false))
+    |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
+    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
     |> order_by_published_at()
     |> page(page, page_size)
     |> Repo.all()
@@ -251,7 +264,8 @@ defmodule Sanbase.Insight.Post do
   """
   def public_insights_after(datetime, opts \\ []) do
     published_and_approved_insights()
-    |> by_is_pulse(Keyword.get(opts, :is_pulse, false))
+    |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
+    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
     |> after_datetime(datetime)
     |> order_by_published_at()
     |> Repo.all()
@@ -261,7 +275,8 @@ defmodule Sanbase.Insight.Post do
   def public_insights_by_tags(tags, opts \\ []) when is_list(tags) do
     published_and_approved_insights()
     |> by_tags(tags)
-    |> by_is_pulse(Keyword.get(opts, :is_pulse, false))
+    |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
+    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
     |> distinct(true)
     |> order_by_published_at()
     |> Repo.all()
@@ -271,7 +286,8 @@ defmodule Sanbase.Insight.Post do
   def public_insights_by_tags(tags, page, page_size, opts \\ []) when is_list(tags) do
     published_and_approved_insights()
     |> by_tags(tags)
-    |> by_is_pulse(Keyword.get(opts, :is_pulse, false))
+    |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
+    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
     |> distinct(true)
     |> order_by_published_at()
     |> page(page, page_size)
@@ -285,7 +301,8 @@ defmodule Sanbase.Insight.Post do
   def all_insights_user_voted_for(user_id, opts \\ []) do
     published_and_approved_insights()
     |> user_has_voted_for(user_id)
-    |> by_is_pulse(Keyword.get(opts, :is_pulse, false))
+    |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
+    |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
     |> Repo.all()
     |> Repo.preload(@preloads)
   end
@@ -334,10 +351,21 @@ defmodule Sanbase.Insight.Post do
     )
   end
 
+  defp by_is_pulse(query, nil), do: query
+
   defp by_is_pulse(query, is_pulse) do
     from(
       p in query,
       where: p.is_pulse == ^is_pulse
+    )
+  end
+
+  defp by_is_paywall_required(query, nil), do: query
+
+  defp by_is_paywall_required(query, is_paywall_required) do
+    from(
+      p in query,
+      where: p.is_paywall_required == ^is_paywall_required
     )
   end
 

@@ -40,7 +40,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     end
 
     field :insights, list_of(:post) do
-      arg(:is_pulse, :boolean, default_value: false)
+      arg(:is_pulse, :boolean)
+      arg(:is_paywall_required, :boolean)
       cache_resolve(&InsightResolver.public_insights/3, ttl: 60)
     end
 
@@ -104,7 +105,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     end
 
     field :insights, list_of(:post) do
-      arg(:is_pulse, :boolean, default_value: false)
+      arg(:is_pulse, :boolean)
+      arg(:is_paywall_required, :boolean)
       resolve(&InsightResolver.insights/3)
     end
 

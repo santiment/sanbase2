@@ -92,7 +92,7 @@ defmodule Sanbase.MetricTest do
     test "fetch a single metric", %{project: project} do
       [metric | _] = Metric.available_timeseries_metrics()
 
-      result = Metric.timeseries_data(metric, %{slug: project.slug}, @from, @to, "1d", :avg)
+      result = Metric.timeseries_data(metric, %{slug: project.slug}, @from, @to, "1d")
 
       assert result == {:ok, @resp}
     end

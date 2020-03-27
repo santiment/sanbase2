@@ -19,12 +19,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.PostPaywallFilter do
 
   # helpers
   defp filter_value(%Post{} = insight, current_user) do
-    PostPaywall.maybe_filter_paywalled_insights([insight], current_user)
-    |> hd()
+    PostPaywall.maybe_filter_paywalled(insight, current_user)
   end
 
   defp filter_value([%Post{} | _rest] = insights, current_user) do
-    PostPaywall.maybe_filter_paywalled_insights(insights, current_user)
+    PostPaywall.maybe_filter_paywalled(insights, current_user)
   end
 
   defp filter_value(%TimelineEvent{} = event, current_user) do
@@ -39,8 +38,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.PostPaywallFilter do
 
   defp update_event_insight(event, current_user) do
     Map.update(event, :post, nil, fn insight ->
-      Sanbase.Insight.PostPaywall.maybe_filter_paywalled_insights([insight], current_user)
-      |> hd()
+      Sanbase.Insight.PostPaywall.maybe_filter_paywalled(insight, current_user)
     end)
   end
 end

@@ -16,6 +16,7 @@ defmodule Sanbase.Insight.PostPaywall do
   @type current_user_or_nil :: %User{} | nil
 
   @spec maybe_filter_paywalled(insight_or_insights, current_user_or_nil) :: insight_or_insights
+  def maybe_filter_paywalled(nil, _), do: nil
   def maybe_filter_paywalled(insights, nil), do: maybe_filter(insights, nil)
 
   def maybe_filter_paywalled(insights, %User{} = user) do

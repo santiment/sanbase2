@@ -127,19 +127,13 @@ defmodule Sanbase.Math do
       iex> Sanbase.Math.to_integer(500)
       500
   """
-  def to_integer(x) when is_integer(x), do: x
+  def to_integer(x, default_when_nil \\ nil)
 
-  def to_integer(f) when is_float(f) do
-    f |> round() |> trunc()
-  end
-
-  def to_integer(%Decimal{} = d) do
-    d |> Decimal.round() |> Decimal.to_integer()
-  end
-
-  def to_integer(str) when is_binary(str) do
-    String.trim(str) |> String.to_integer()
-  end
+  def to_integer(nil, default_when_nil), do: default_when_nil
+  def to_integer(x, _) when is_integer(x), do: x
+  def to_integer(f, _) when is_float(f), do: f |> round() |> trunc()
+  def to_integer(%Decimal{} = d, _), do: d |> Decimal.round() |> Decimal.to_integer()
+  def to_integer(str, _) when is_binary(str), do: String.trim(str) |> String.to_integer()
 
   @doc ~S"""
   Convert a string that potentially contains trailing non-digit symbols to an integer

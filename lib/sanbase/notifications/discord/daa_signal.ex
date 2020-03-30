@@ -196,7 +196,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
 
     Metric.aggregated_timeseries_data(
       "daily_active_addresses",
-      slugs,
+      %{slug: slugs},
       timeframe_from(),
       timeframe_to(),
       :avg
@@ -213,7 +213,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
 
     Sanbase.Metric.aggregated_timeseries_data(
       "active_addresses_24h",
-      slugs,
+      %{slug: slugs},
       Timex.shift(now, days: -1),
       now,
       :last
@@ -223,11 +223,14 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
         {:error, error}
 
       {:ok, data} ->
-        data
-        |> Enum.into(
-          %{},
-          fn %{slug: slug, value: value} -> {slug, value} end
-        )
+        data =
+          data
+          |> Enum.into(
+            %{},
+            fn %{slug: slug, value: value} -> {slug, value} end
+          )
+
+        {:ok, data}
     end
   end
 

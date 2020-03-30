@@ -326,7 +326,7 @@ defmodule Sanbase.Clickhouse.Github do
 
     args = [
       interval,
-      organizations,
+      organizations |> Enum.map(&String.downcase/1),
       from_unix,
       to_unix,
       @non_dev_events
@@ -361,7 +361,7 @@ defmodule Sanbase.Clickhouse.Github do
 
     args = [
       interval,
-      organizations,
+      organizations |> Enum.map(&String.downcase/1),
       from_unix,
       to_unix
     ]
@@ -399,7 +399,7 @@ defmodule Sanbase.Clickhouse.Github do
 
     args = [
       interval,
-      organizations,
+      organizations |> Enum.map(&String.downcase/1),
       from_unix,
       to_unix,
       @non_dev_events
@@ -437,7 +437,7 @@ defmodule Sanbase.Clickhouse.Github do
 
     args = [
       interval,
-      organizations,
+      organizations |> Enum.map(&String.downcase/1),
       from_unix,
       to_unix
     ]
@@ -459,7 +459,7 @@ defmodule Sanbase.Clickhouse.Github do
     """
 
     args = [
-      organizations,
+      organizations |> Enum.map(&String.downcase/1),
       DateTime.to_unix(from),
       DateTime.to_unix(to)
     ]
@@ -484,7 +484,7 @@ defmodule Sanbase.Clickhouse.Github do
     """
 
     args = [
-      organizations,
+      organizations |> Enum.map(&String.downcase/1),
       DateTime.to_unix(from),
       DateTime.to_unix(to),
       @non_dev_events

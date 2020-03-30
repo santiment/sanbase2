@@ -48,7 +48,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ApikeyResolver do
   @doc ~s"""
   Returns a list of all apikeys for the currently JWT authenticated user.
   """
-  def apikeys_list(%User{} = user, _args, %{context: %{auth: %{auth_method: :apikey}}}) do
+  def apikeys_list(%User{}, _args, %{context: %{auth: %{auth_method: :apikey}}}) do
     {:error, "Only JWT authenticated users can access their apikeys."}
   end
 

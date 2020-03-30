@@ -121,6 +121,8 @@ config :sanbase, Sanbase.MandrillApi,
 
 config :sanbase, Sanbase.TechIndicators, url: {:system, "TECH_INDICATORS_URL"}
 
+config :sanbase, Sanbase.SocialData, metricshub_url: {:system, "METRICS_HUB_URL", "http://localhost:3000"}
+
 config :arc,
   storage: Arc.Storage.S3,
   # To support AWS regions other than US Standard

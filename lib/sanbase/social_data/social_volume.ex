@@ -107,18 +107,18 @@ defmodule Sanbase.SocialData.SocialVolume do
     do: "professional_traders_chat_overview"
 
   defp social_volume_request(slug, from, to, interval, source) do
-    url = "#{tech_indicators_url()}/indicator/#{source_to_indicator(source |> to_string())}"
+    url = "#{metrics_hub_url()}/social_volume?slug=#{slug}&from_timestamp=#{from}&to_timestamp=#{to}&interval=#{interval}&source=#{source}"
 
     options = [
       recv_timeout: @recv_timeout,
       params: [
         {"project", "#{Project.ticker_by_slug(slug)}_#{slug}"},
-        {"datetime_from", DateTime.to_unix(from)},
-        {"datetime_to", DateTime.to_unix(to)},
+        {"datetime_from", from},
+        {"datetime_to", to},
         {"interval", interval}
       ]
     ]
-
+    IO.inspect(url)
     http_client().get(url, [], options)
   end
 
@@ -190,5 +190,9 @@ defmodule Sanbase.SocialData.SocialVolume do
 
   defp tech_indicators_url() do
     Config.module_get(Sanbase.TechIndicators, :url)
+  end
+
+  defp metrics_hub_url() do
+    Config.module_get(Sanbase.SocialData, :metricshub_url)
   end
 end

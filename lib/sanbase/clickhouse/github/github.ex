@@ -304,7 +304,6 @@ defmodule Sanbase.Clickhouse.Github do
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
     interval = Sanbase.DateTimeUtils.str_to_sec(interval)
-    span = div(to_unix - from_unix, interval) |> max(1)
 
     query = """
     SELECT time, toUInt32(SUM(uniq_actors)) AS uniq_actors
@@ -327,7 +326,6 @@ defmodule Sanbase.Clickhouse.Github do
 
     args = [
       interval,
-      span,
       organizations,
       from_unix,
       to_unix,
@@ -342,7 +340,6 @@ defmodule Sanbase.Clickhouse.Github do
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
     interval = Sanbase.DateTimeUtils.str_to_sec(interval)
-    span = div(to_unix - from_unix, interval) |> max(1)
 
     query = """
     SELECT time, toUInt32(SUM(uniq_actors)) AS uniq_actors
@@ -364,7 +361,6 @@ defmodule Sanbase.Clickhouse.Github do
 
     args = [
       interval,
-      span,
       organizations,
       from_unix,
       to_unix
@@ -377,7 +373,6 @@ defmodule Sanbase.Clickhouse.Github do
     to = Enum.min_by([to, Timex.now()], &DateTime.to_unix/1)
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
-    span = div(to_unix - from_unix, interval) |> max(1)
 
     query = """
     SELECT time, SUM(events)
@@ -404,7 +399,6 @@ defmodule Sanbase.Clickhouse.Github do
 
     args = [
       interval,
-      span,
       organizations,
       from_unix,
       to_unix,
@@ -418,7 +412,6 @@ defmodule Sanbase.Clickhouse.Github do
     to = Enum.min_by([to, Timex.now()], &DateTime.to_unix/1)
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
-    span = div(to_unix - from_unix, interval) |> max(1)
 
     query = """
     SELECT time, SUM(events)
@@ -444,7 +437,6 @@ defmodule Sanbase.Clickhouse.Github do
 
     args = [
       interval,
-      span,
       organizations,
       from_unix,
       to_unix

@@ -81,7 +81,14 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
       |> :erlang.phash2()
 
     Sanbase.Cache.get_or_store(cache_key, fn ->
-      case Sanbase.Metric.timeseries_data("active_addresses_24h", slug, from, to, interval, :last) do
+      case Sanbase.Metric.timeseries_data(
+             "active_addresses_24h",
+             %{slug: slug},
+             from,
+             to,
+             interval,
+             :last
+           ) do
         {:ok, result} -> result
         _ -> []
       end

@@ -16,6 +16,7 @@ defmodule Sanbase.Auth.Settings do
     field(:has_telegram_connected, :boolean, virtual: true)
     field(:newsletter_subscription, :string, default: "OFF")
     field(:newsletter_subscription_updated_at_unix, :integer, default: nil)
+    field(:is_promoter, :boolean, default: false)
   end
 
   def changeset(schema, params) do
@@ -28,7 +29,8 @@ defmodule Sanbase.Auth.Settings do
       :signal_notify_email,
       :signal_notify_telegram,
       :telegram_chat_id,
-      :hide_privacy_data
+      :hide_privacy_data,
+      :is_promoter
     ])
     |> normalize_newsletter_subscription(
       :newsletter_subscription,

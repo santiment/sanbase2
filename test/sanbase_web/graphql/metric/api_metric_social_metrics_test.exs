@@ -150,18 +150,11 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
       [_, combined_metrics] = social_volume_metrics()
 
       resp1 = """
-       [
-        {"mentions_count": 100, "timestamp": #{DateTime.to_unix(from)}},
-        {"mentions_count": 200, "timestamp": #{DateTime.to_unix(to)}},
-        {"mentions_count": 300, "timestamp": #{DateTime.to_unix(after_to)}}
-      ]
+        {"data": {#{from}: 100, #{to}: 200, #{after_to}: 300}}",
       """
 
       resp2 = """
-      [
-        {"mentions_count": 100, "timestamp": #{DateTime.to_unix(from)}},
-        {"mentions_count": 200, "timestamp": #{DateTime.to_unix(to)}}
-      ]
+        {"data": {#{from}: 100, #{to}: 200}}",
       """
 
       Sanbase.Mock.prepare_mock(HTTPoison, :get, fn url, _, _ ->
@@ -286,35 +279,11 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
       [_, combined_metrics] = social_volume_metrics()
 
       resp1 = """
-      {
-        "messages":
-          [
-            {"text": "BTC moon", "timestamp": #{DateTime.to_unix(from)}},
-            {"text": "12k whoo btc?", "timestamp": #{DateTime.to_unix(to)}},
-            {"text": "14k buy?", "timestamp": #{DateTime.to_unix(after_to)}}
-          ],
-        "chart_data":
-          [
-            {"mentions_count": 12, "timestamp": #{DateTime.to_unix(from)}},
-            {"mentions_count": 18, "timestamp": #{DateTime.to_unix(to)}},
-            {"mentions_count": 10, "timestamp": #{DateTime.to_unix(after_to)}}
-          ]
-      }
+      {"data": {#{from}: 100, #{to}: 200, #{after_to}: 300}}", 
       """
 
       resp2 = """
-      {
-        "messages":
-          [
-            {"text": "BTC moon", "timestamp": #{DateTime.to_unix(from)}},
-            {"text": "12k whoo btc?", "timestamp": #{DateTime.to_unix(to)}}
-          ],
-        "chart_data":
-          [
-            {"mentions_count": 12, "timestamp": #{DateTime.to_unix(from)}},
-            {"mentions_count": 18, "timestamp": #{DateTime.to_unix(to)}}
-          ]
-      }
+      {"data": {#{from}: 100, #{to}: 200}}", 
       """
 
       Sanbase.Mock.prepare_mock(HTTPoison, :get, fn _, _, options ->
@@ -333,7 +302,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
           result =
             get_timeseries_metric(conn, metric, :text, "12k OR 14k", from, to, interval)
             |> extract_timeseries_data()
-
+            |> IO.inspect()
           assert result == [
                    %{"value" => 48.0, "datetime" => from |> DateTime.to_iso8601()},
                    %{"value" => 72.0, "datetime" => to |> DateTime.to_iso8601()},

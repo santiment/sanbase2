@@ -192,7 +192,7 @@ defmodule Sanbase.TechIndicatorsTest do
         {:ok,
          %HTTPoison.Response{
            body:
-             "[{\"mentions_count\": 5, \"timestamp\": 1523876400}, {\"mentions_count\": 15, \"timestamp\": 1523880000}]",
+             "{\"data\": {\"2018-04-16T11:00:00Z\": 5, \"2018-04-16T12:00:00Z\": 15}}",
            status_code: 200
          }}
       )
@@ -276,7 +276,7 @@ defmodule Sanbase.TechIndicatorsTest do
         {:ok,
          %HTTPoison.Response{
            body:
-             "{\"messages\": [{\"text\": \"BTC moon\", \"timestamp\": 1533307652}, {\"text\": \"0.1c of usd won't make btc moon, you realize that?\", \"timestamp\": 1533694150}], \"chart_data\": [{\"mentions_count\": 1, \"timestamp\": 1533146400}, {\"mentions_count\": 0, \"timestamp\": 1533168000}]}",
+             "{\"data\": {\"2018-04-16T11:00:00Z\": 1, \"2018-04-16T12:00:00Z\": 0}}",
            status_code: 200
          }}
       )
@@ -286,8 +286,8 @@ defmodule Sanbase.TechIndicatorsTest do
       assert result ==
                {:ok,
                 [
-                  %{datetime: DateTime.from_unix!(1_533_146_400), mentions_count: 1},
-                  %{datetime: DateTime.from_unix!(1_533_168_000), mentions_count: 0}
+                  %{datetime: from, mentions_count: 1},
+                  %{datetime: to, mentions_count: 0}
                 ]}
     end
 

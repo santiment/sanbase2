@@ -29,7 +29,7 @@ defmodule Sanbase.SocialData.SocialVolume do
   end
 
   def social_volume(slug, from, to, interval, source) do
-    social_volume_request(slug, from, to, interval, source)
+    social_volume_request(%{slug: slug}, from, to, interval, source)
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, result} = Jason.decode(body)
@@ -79,11 +79,11 @@ defmodule Sanbase.SocialData.SocialVolume do
   end
 
   def topic_search(search_text, from, to, interval, source) do
-    topic_search_request(search_text, from, to, interval, source)
+    social_volume_request(%{search_text: search_text}, from, to, interval, source)
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, result} = Jason.decode(body)
-        topic_search_result(result)
+        social_volume_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         error_result(
@@ -106,34 +106,49 @@ defmodule Sanbase.SocialData.SocialVolume do
   defp source_to_indicator(<<"professional_traders_chat", _::binary>>),
     do: "professional_traders_chat_overview"
 
-  defp social_volume_request(slug, from, to, interval, source) do
-    url = "#{metrics_hub_url()}/social_volume?slug=#{slug}&from_timestamp=#{from}&to_timestamp=#{to}&interval=#{interval}&source=#{source}"
+  defp social_volume_request(selector, from, to, interval, source) do
+    option =
+      case selector do
+        %{slug: slug} ->
+          {"slug", "#{slug}"}
+
+        %{search_text: search_text} ->
+          {"search_text", search_text}
+
+        {:error, error} ->
+          error
+      end
+
+    url =
+      "#{metrics_hub_url()}/social_volume?from_timestamp=#{from}&to_timestamp=#{to}&interval=#{
+        interval
+      }&source=#{source}"
 
     options = [
       recv_timeout: @recv_timeout,
       params: [
-        {"project", "#{Project.ticker_by_slug(slug)}_#{slug}"},
-        {"datetime_from", from},
-        {"datetime_to", to},
-        {"interval", interval}
+        option
       ]
     ]
-    IO.inspect(url)
+
     http_client().get(url, [], options)
   end
 
   defp social_volume_result(result) do
-    result =
-      result
-      |> Enum.map(fn
-        %{"timestamp" => timestamp, "mentions_count" => mentions_count} ->
-          %{
-            datetime: DateTime.from_unix!(timestamp),
-            mentions_count: mentions_count
-          }
+    %{"data" => map} = result
+
+    map =
+      Map.to_list(map)
+      |> Enum.map(fn {timestamp, value} ->
+        {:ok, datetime, _status} = DateTime.from_iso8601(timestamp)
+
+        %{
+          datetime: datetime,
+          mentions_count: value
+        }
       end)
 
-    {:ok, result}
+    {:ok, map}
   end
 
   defp social_volume_projects_request() do
@@ -153,39 +168,6 @@ defmodule Sanbase.SocialData.SocialVolume do
       end)
 
     {:ok, result}
-  end
-
-  defp topic_search_request(search_text, from, to, interval, source) do
-    url = "#{tech_indicators_url()}/indicator/topic_search"
-
-    options = [
-      recv_timeout: @recv_timeout,
-      params: [
-        {"source", source},
-        {"search_text", search_text},
-        {"from_timestamp", DateTime.to_unix(from)},
-        {"to_timestamp", DateTime.to_unix(to)},
-        {"interval", interval}
-      ]
-    ]
-
-    http_client().get(url, [], options)
-  end
-
-  defp topic_search_result(%{"chart_data" => chart_data}) do
-    chart_data = parse_topic_search_data(chart_data, :mentions_count)
-
-    {:ok, chart_data}
-  end
-
-  defp parse_topic_search_data(data, key) do
-    data
-    |> Enum.map(fn result ->
-      %{
-        :datetime => Map.get(result, "timestamp") |> DateTime.from_unix!(),
-        key => Map.get(result, to_string(key))
-      }
-    end)
   end
 
   defp tech_indicators_url() do

@@ -151,13 +151,16 @@ defmodule Sanbase.Metric do
     end
   end
 
-  def aggregated_timeseries_data(metric, _, _, _, _, aggregation) do
+  def aggregated_timeseries_data(metric, _, _, _, aggregation) do
     cond do
       metric not in @metrics_mapset ->
         metric_not_available_error(metric, type: :timeseries)
 
       aggregation not in Map.get(@aggregations_per_metric, metric) ->
         {:error, "The aggregation #{aggregation} is not supported for the metric #{metric}"}
+
+      true ->
+        {:error, "Error fetching metric #{metric} with aggregation #{aggregation}"}
     end
   end
 

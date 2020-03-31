@@ -70,10 +70,29 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentDownChangeTest do
     ]
   end
 
+  test "get_data works properly", context do
+    data =
+      {:ok,
+       [
+         %{datetime: ~U[2020-01-01 00:00:00Z], value: 1022},
+         %{datetime: ~U[2020-01-02 00:00:00Z], value: 800},
+         %{datetime: ~U[2020-01-03 00:00:00Z], value: 1000},
+         %{datetime: ~U[2020-01-04 00:00:00Z], value: 1500}
+       ]}
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.timeseries_data/6, data)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      # Works without crashing
+      DailyActiveAddressesSettings.type()
+      |> UserTrigger.get_active_triggers_by_type()
+      |> Evaluator.run()
+    end)
+  end
+
   test "all of daily active addresses signals triggered", context do
     data =
       Enum.zip(context.datetimes, [200, 150, 220, 80, 130, 30])
-      |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
+      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
@@ -96,7 +115,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentDownChangeTest do
   test "only some of daily active addresses signals triggered", context do
     data =
       Enum.zip(context.datetimes, [200, 150, 220, 80, 130, 80])
-      |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
+      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
@@ -116,7 +135,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentDownChangeTest do
   test "none of daily active addresses signals triggered", context do
     data =
       Enum.zip(context.datetimes, [100, 100, 100, 100, 100, 100, 100])
-      |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
+      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
@@ -137,7 +156,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentDownChangeTest do
   test "only payload and triggered are taken from cache", context do
     data =
       Enum.zip(context.datetimes, [200, 150, 220, 80, 130, 30])
-      |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
+      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
@@ -188,7 +207,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentDownChangeTest do
        context do
     data =
       Enum.zip(context.datetimes, [200, 150, 220, 80, 130, 30])
-      |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
+      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
@@ -244,7 +263,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentDownChangeTest do
        context do
     data =
       Enum.zip(context.datetimes, [200, 150, 220, 80, 130, 30])
-      |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
+      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->

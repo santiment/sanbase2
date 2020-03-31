@@ -103,7 +103,7 @@ defmodule Sanbase.Signal.DailyActiveAddresseAbsoluetChangeTest do
   test "DAA value 5000", context do
     data =
       Enum.zip(context.datetimes, [100, 100, 100, 100, 100, 100, 5000])
-      |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
+      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
@@ -126,7 +126,7 @@ defmodule Sanbase.Signal.DailyActiveAddresseAbsoluetChangeTest do
   test "Daa value 400", context do
     data =
       Enum.zip(context.datetimes, [100, 120, 100, 80, 200, 200, 400])
-      |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
+      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
@@ -146,7 +146,7 @@ defmodule Sanbase.Signal.DailyActiveAddresseAbsoluetChangeTest do
   test "DAA value 10", context do
     data =
       Enum.zip(context.datetimes, [100, 100, 100, 100, 100, 100, 10])
-      |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
+      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
@@ -167,7 +167,7 @@ defmodule Sanbase.Signal.DailyActiveAddresseAbsoluetChangeTest do
   test "DAA value 0", context do
     data =
       Enum.zip(context.datetimes, [100, 120, 100, 80, 100, 100, 0])
-      |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
+      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
@@ -190,7 +190,7 @@ defmodule Sanbase.Signal.DailyActiveAddresseAbsoluetChangeTest do
   test "DAA value 700", context do
     data =
       Enum.zip(context.datetimes, [100, 120, 100, 80, 100, 100, 700])
-      |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
+      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
@@ -214,7 +214,7 @@ defmodule Sanbase.Signal.DailyActiveAddresseAbsoluetChangeTest do
        context do
     data =
       Enum.zip(context.datetimes, [100, 120, 100, 80, 20, 10, 5])
-      |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
+      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
@@ -270,7 +270,7 @@ defmodule Sanbase.Signal.DailyActiveAddresseAbsoluetChangeTest do
        context do
     data =
       Enum.zip(context.datetimes, [100, 120, 100, 80, 20, 10, 5])
-      |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
+      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->

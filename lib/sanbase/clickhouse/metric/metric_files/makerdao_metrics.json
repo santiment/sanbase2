@@ -47,7 +47,7 @@
     "min_plan": "free",
     "aggregation": "last",
     "min_interval": "1d",
-    "table": "daily_metrics_v2",
+    "table": "intraday_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
   },
@@ -132,13 +132,13 @@
   {
     "human_readable_name": "Multi-Collateral DAI Created",
     "name": "dai_created",
-    "metric": "daily_dai_created",
+    "metric": "mcd_debt_created_5m",
     "version": "2019-12-22",
     "access": "free",
     "min_plan": "free",
     "aggregation": "sum",
     "min_interval": "1d",
-    "table": "daily_metrics_v2",
+    "table": "intraday_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
   },
@@ -151,7 +151,7 @@
     "min_plan": "free",
     "aggregation": "sum",
     "min_interval": "1d",
-    "table": "daily_metrics_v2",
+    "table": "intraday_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
   }

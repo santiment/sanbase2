@@ -1,6 +1,6 @@
 [
   {
-    "human_readable_name": "Multi-Collateral DAI Locked",
+    "human_readable_name": "Multi-Collateral Token Locked",
     "name": "mcd_locked_token",
     "metric": "mcd_locked_token",
     "version": "2019-01-01",
@@ -13,10 +13,39 @@
     "data_type": "timeseries"
   },
 
+    {
+    "human_readable_name": "Single-Collateral WETH Locked",
+    "name": "scd_locked_token",
+    "metric": "daily_sai_locked",
+    "version": "2019-01-01",
+    "access": "free",
+    "min_plan": "free",
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+
+
+    {
+    "human_readable_name": "Multi-Collateral DAI ERC20 Supply",
+    "name": "mcd_erc20_supply",
+    "metric": "mcd_total_supply",
+    "version": "2019-01-01",
+    "access": "free",
+    "min_plan": "free",
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+
   {
     "human_readable_name": "Multi-Collateral DAI Total Supply",
-    "name": "mcd_total_supply",
-    "metric": "mcd_total_supply",
+    "name": "mcd_supply",
+    "metric": "mcd_debt",
     "version": "2019-01-01",
     "access": "free",
     "min_plan": "free",

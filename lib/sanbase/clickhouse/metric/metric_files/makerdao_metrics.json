@@ -1,6 +1,6 @@
 [
   {
-    "human_readable_name": "Multi-Collateral Token Locked",
+    "human_readable_name": "Token Locked in Multi-Collateral CDPs",
     "name": "mcd_locked_token",
     "metric": "mcd_locked_token",
     "version": "2019-12-22",
@@ -13,7 +13,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Single-Collateral WETH Locked",
+    "human_readable_name": "WETH Locked in Single-Collateral CDPs",
     "name": "scd_locked_token",
     "metric": "daily_sai_locked",
     "version": "2019-12-09",
@@ -52,7 +52,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Multi-Collateral BAT and USDC Collateralization Ratio",
+    "human_readable_name": "Collateralization Ratio for BAT and USDC in Multi-Collateral CDPs",
     "name": "mcd_collat_ratio",
     "metric": "daily_dai_collat_ratio",
     "version": "2019-12-22",
@@ -65,7 +65,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Multi-Collateral WETH Collateralization Ratio",
+    "human_readable_name": "Collateralization Ratio for WETH in Multi-Collateral CDPs",
     "name": "mcd_collat_ratio_weth",
     "metric": "daily_dai_collat_ratio_weth",
     "version": "2019-12-22",
@@ -78,7 +78,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Multi-Collateral SAI Collateralization Ratio",
+    "human_readable_name": "Collateralization Ratio for SAI in Multi-Collateral CDPs",
     "name": "mcd_collat_ratio_sai",
     "metric": "daily_dai_collat_ratio_sai",
     "version": "2019-12-22",
@@ -91,7 +91,7 @@
     "data_type": "timeseries"
   },
     {
-    "human_readable_name": "Single-Collateral Collateralization Ratio",
+    "human_readable_name": "Collateralization Ratio for Single-Collateral CDPs",
     "name": "scd_collat_ratio",
     "metric": "daily_sai_collat_ratio",
     "version": "2019-12-09",

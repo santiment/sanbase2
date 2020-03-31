@@ -133,7 +133,7 @@
     "human_readable_name": "Multi-Collateral DAI Created",
     "name": "dai_created",
     "metric": "mcd_debt_created_5m",
-    "version": "2019-12-22",
+    "version": "2019-12-09",
     "access": "free",
     "min_plan": "free",
     "aggregation": "sum",

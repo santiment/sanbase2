@@ -45,13 +45,17 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "active_addresses_24h_change_30d",
         # makerdao metrics
         "mcd_locked_token",
-        "mcd_total_supply",
         "mcd_collat_ratio",
         "mcd_collat_ratio_weth",
         "mcd_dsr",
         "mcd_stability_fee",
         "dai_created",
-        "sai_collat_ratio"
+        "scd_locked_token",
+        "mcd_erc20_supply",
+        "mcd_supply",
+        "mcd_collat_ratio_sai",
+        "scd_collat_ratio",
+        "dai_repaid"
       ]
       |> Enum.sort()
 

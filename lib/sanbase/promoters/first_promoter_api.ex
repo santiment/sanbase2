@@ -27,7 +27,7 @@ defmodule Sanbase.Promoters.FirstPromoterApi do
   def create(%User{id: id, email: email}, args) do
     data = Map.merge(%{email: email, cust_id: id}, args) |> URI.encode_query()
 
-    Path.join(base_url(), "create")
+    Path.join(@promoters_api_base_url, "create")
     |> http_client().post(
       data,
       headers() ++ [{"Content-Type", "application/x-www-form-urlencoded"}]
@@ -40,7 +40,7 @@ defmodule Sanbase.Promoters.FirstPromoterApi do
 
   @spec show(String.t()) :: {:ok, promoter} | {:error, String.t()}
   def show(user_id) do
-    Path.join(base_url(), "show?cust_id=#{user_id}")
+    Path.join(@promoters_api_base_url, "show?cust_id=#{user_id}")
     |> http_client().get(headers())
     |> handle_response()
   end
@@ -49,7 +49,7 @@ defmodule Sanbase.Promoters.FirstPromoterApi do
   def update(user_id, args) do
     data = Map.merge(%{cust_id: user_id}, args) |> URI.encode_query()
 
-    Path.join(base_url(), "update")
+    Path.join(@promoters_api_base_url, "update")
     |> http_client().put(
       data,
       [{"Content-Type", "application/x-www-form-urlencoded"} | headers()]
@@ -59,14 +59,14 @@ defmodule Sanbase.Promoters.FirstPromoterApi do
 
   @spec delete(String.t()) :: {:ok, promoter} | {:error, String.t()}
   def delete(user_id) do
-    Path.join(base_url(), "delete?cust_id=#{user_id}")
+    Path.join(@promoters_api_base_url, "delete?cust_id=#{user_id}")
     |> http_client().delete(headers())
     |> handle_response()
   end
 
   # helpers
   defp do_list(promoters: promoters, page: page) do
-    Path.join(base_url(), "list?page=#{page}")
+    Path.join(@promoters_api_base_url, "list?page=#{page}")
     |> http_client().get(headers())
     |> handle_response()
     |> case do
@@ -100,8 +100,6 @@ defmodule Sanbase.Promoters.FirstPromoterApi do
   end
 
   defp http_client(), do: HTTPoison
-
-  defp base_url, do: @promoters_api_base_url
 
   defp headers() do
     [

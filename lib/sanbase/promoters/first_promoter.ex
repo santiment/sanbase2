@@ -1,4 +1,4 @@
-defmodule Sanbase.Promoter.FirstPromoter do
+defmodule Sanbase.Promoters.FirstPromoter do
   alias Sanbase.Promoters.FirstPromoterApi
   alias Sanbase.Auth.{User, UserSettings}
 

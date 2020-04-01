@@ -46,7 +46,7 @@
     "access": "free",
     "min_plan": "free",
     "aggregation": "last",
-    "min_interval": "1d",
+    "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
@@ -137,7 +137,7 @@
     "access": "free",
     "min_plan": "free",
     "aggregation": "sum",
-    "min_interval": "1d",
+    "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
@@ -150,7 +150,7 @@
     "access": "free",
     "min_plan": "free",
     "aggregation": "sum",
-    "min_interval": "1d",
+    "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"

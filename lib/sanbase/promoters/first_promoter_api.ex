@@ -82,14 +82,20 @@ defmodule Sanbase.Promoters.FirstPromoterApi do
   end
 
   defp handle_response(response) do
+    default_error_msg = "Error response from first promoter API"
+
     response
     |> case do
       {:ok, %HTTPoison.Response{status_code: code, body: body}} when code in 200..299 ->
         {:ok, Jason.decode!(body, keys: &atomize_keys/1)}
 
-      other ->
-        Logger.error("Error response from first promoter API: #{inspect(filter_response(other))}")
-        {:error, "Error response from first promoter API"}
+      {:ok, %HTTPoison.Response{status_code: _code, body: body}} = response ->
+        Logger.error("#{default_error_msg}: #{inspect(filter_response(response))}")
+        {:error, Jason.decode!(body) |> Map.get("error", default_error_msg)}
+
+      response ->
+        Logger.error("#{default_error_msg}: #{inspect(filter_response(response))}")
+        {:error, default_error_msg}
     end
   end
 

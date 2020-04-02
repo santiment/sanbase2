@@ -248,5 +248,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       args,
       %{source: %{metric: "percent_of_total_supply_on_exchanges"}}
     )
+    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :percent_on_exchanges)
   end
 end

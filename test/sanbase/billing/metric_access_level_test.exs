@@ -129,6 +129,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
       "nvt_transaction_volume",
       "network_growth",
       "active_deposits",
+      "deposit_transactions",
       "active_withdrawals",
       "withdrawal_transactions",
       # social metrics

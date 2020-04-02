@@ -980,6 +980,20 @@
   },
 
   {
+    "human_readable_name": "Deposit Transactions",
+    "name": "deposit_transactions",
+    "metric": "deposit_transactions",
+    "version": "2020-01-01",
+    "access": "restricted",
+    "min_plan": "free",
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+
+  {
     "human_readable_name": "Active Withdrawals",
     "name": "active_withdrawals",
     "metric": "active_withdrawals",

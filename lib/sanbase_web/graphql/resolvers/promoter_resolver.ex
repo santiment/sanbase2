@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PromoterResolver do
     FirstPromoter.create_promoter(current_user, args)
   end
 
-  def show_promoter(_root, args, %{
+  def show_promoter(_root, _args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
     FirstPromoter.show_promoter(current_user)

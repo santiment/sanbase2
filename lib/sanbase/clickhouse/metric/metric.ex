@@ -90,11 +90,6 @@ defmodule Sanbase.Clickhouse.Metric do
   def aggregated_timeseries_data(_metric, nil, _from, _to, _aggregation), do: {:ok, []}
   def aggregated_timeseries_data(_metric, [], _from, _to, _aggregation), do: {:ok, []}
 
-  def aggregated_timeseries_data(_metric, _selector, _from, _to, aggregation)
-      when aggregation not in @aggregations do
-    {:error, "The aggregation '#{inspect(aggregation)}' is not supported"}
-  end
-
   def aggregated_timeseries_data(metric, %{slug: slug_or_slugs}, from, to, aggregation)
       when is_binary(slug_or_slugs) or is_list(slug_or_slugs) do
     aggregation = aggregation || Map.get(@aggregation_map, metric)

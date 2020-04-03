@@ -92,7 +92,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     {:ok, from}
   end
 
-  defp calibrate_transform_params(%{type: "changes"}, from, _to, interval) do
+  defp calibrate_transform_params(%{type: type}, from, _to, interval)
+       when type in ["changes", "consecutive_differences"] do
     shift_by_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
     from = Timex.shift(from, seconds: -shift_by_sec)
     {:ok, from}
@@ -104,7 +105,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     Sanbase.Math.simple_moving_average(data, base, value_key: :value)
   end
 
-  defp apply_transform(%{type: "changes"}, data) do
+  defp apply_transform(%{type: type}, data) when type in ["changes", "consecutive_differences"] do
     result =
       Stream.chunk_every(data, 2, 1, :discard)
       |> Enum.map(fn [%{value: previous}, %{value: next, datetime: datetime}] ->

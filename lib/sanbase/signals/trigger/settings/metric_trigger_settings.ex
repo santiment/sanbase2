@@ -8,7 +8,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
 
   import Sanbase.{Validation, Signal.Validation}
   import Sanbase.Signal.Utils
-  import Sanbase.DateTimeUtils, only: [round_datetime: 2, str_to_days: 1]
+  import Sanbase.DateTimeUtils
 
   alias __MODULE__
   alias Sanbase.Signal.Type
@@ -60,42 +60,41 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
   """
   @spec get_data(MetricTriggerSettings.t()) :: list(Metric.metric_result())
   def get_data(%__MODULE__{} = settings) do
-    {from, to, interval} = get_timeseries_params(settings)
+    %{time_window: time_window} = settings
 
     %{metric: metric, filtered_target: %{list: target_list, type: type}} = settings
 
     target_list
     |> Enum.map(fn identifier ->
-      {identifier, fetch_metric(metric, %{type => identifier}, from, to, interval)}
+      {identifier, fetch_metric(metric, %{type => identifier}, time_window)}
     end)
     |> Enum.reject(fn
+      {_, {:error, _}} -> true
       {_, nil} -> true
       _ -> false
     end)
   end
 
-  defp get_timeseries_params(settings) do
-    %{time_window: time_window} = settings
-
-    time_window_in_days = Enum.max([str_to_days(time_window), 1])
-    to = Timex.now()
-    # Ensure there are enough data points in the interval. The not needed
-    # ones are ignored
-    from = Timex.shift(to, days: -(3 * time_window_in_days))
-
-    {from, to, time_window}
-  end
-
-  defp fetch_metric(metric, selector, from, to, interval) do
+  defp fetch_metric(metric, selector, time_window) do
     cache_key =
-      {:metric_signal, metric, selector, round_datetime(from, 300), round_datetime(to, 300),
-       interval}
+      {:metric_signal, metric, selector, time_window, round_datetime(Timex.now(), 300)}
       |> :erlang.phash2()
 
+    interval_seconds = str_to_sec(time_window)
+    now = Timex.now()
+
+    first = Timex.shift(now, seconds: -2 * interval_seconds)
+    middle = Timex.shift(now, seconds: -interval_seconds)
+    last = now
+
     Cache.get_or_store(cache_key, fn ->
-      case Metric.timeseries_data(metric, selector, from, to, interval) do
-        {:ok, [_ | _] = result} -> result |> Enum.take(-2)
-        _ -> nil
+      with {:ok, [%{} = first | _]} <-
+             Metric.timeseries_data(metric, selector, first, middle, time_window),
+           {:ok, [%{} = second | _]} <-
+             Metric.timeseries_data(metric, selector, middle, last, time_window) do
+        [first, second]
+      else
+        _ -> {:error, "error"}
       end
     end)
   end

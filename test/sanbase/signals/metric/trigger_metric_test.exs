@@ -29,14 +29,15 @@ defmodule Sanbase.Signal.TriggerMetricTest do
       # Clean children on exit, otherwise DB calls from async tasks can be attempted
       clean_task_supervisor_children()
       Sanbase.Signal.Evaluator.Cache.clear()
+      datetimes = generate_datetimes(~U[2019-01-01 00:00:00Z], "1d", 7)
 
       user = insert(:user)
       Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
-      %{user: user}
+      %{user: user, datetimes: datetimes}
     end
 
     test "signal with text selector works", context do
-      %{user: user} = context
+      %{user: user, datetimes: datetimes} = context
 
       trigger_settings = %{
         type: "metric_signal",
@@ -54,23 +55,16 @@ defmodule Sanbase.Signal.TriggerMetricTest do
           settings: trigger_settings
         })
 
-      now = Timex.now()
-      yesterday = Timex.shift(now, days: -1)
+      # Return a fun with arity 5 that will return different results
+      # for consecutive calls
+      mock_fun =
+        [
+          fn -> {:ok, [%{datetime: datetimes |> List.first(), value: 100}]} end,
+          fn -> {:ok, [%{datetiem: datetimes |> List.last(), value: 5000}]} end
+        ]
+        |> Sanbase.Mock.wrap_consecutives(5)
 
-      # 4 sources with 100 mentions = 400 mentions
-      resp = """
-      {
-        "chart_data":
-          [
-            {"mentions_count": 50, "timestamp": #{DateTime.to_unix(yesterday)}},
-            {"mentions_count": 100, "timestamp": #{DateTime.to_unix(now)}}
-          ]
-      }
-      """
-
-      http_resp = %HTTPoison.Response{body: resp, status_code: 200}
-
-      Sanbase.Mock.prepare_mock2(&HTTPoison.get/3, {:ok, http_resp})
+      Sanbase.Mock.prepare_mock(Metric, :timeseries_data, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         [triggered] =
           MetricTriggerSettings.type()
@@ -130,18 +124,24 @@ defmodule Sanbase.Signal.TriggerMetricTest do
           settings: trigger_settings
         })
 
-      data =
-        Enum.zip(datetimes, [100, 100, 100, 100, 100, 100, 5000])
-        |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
+      # Return a fun with arity 5 that will return different results
+      # for consecutive calls
+      mock_fun =
+        [
+          fn -> {:ok, [%{datetime: datetimes |> List.first(), value: 100}]} end,
+          fn -> {:ok, [%{datetiem: datetimes |> List.last(), value: 5000}]} end
+        ]
+        |> Sanbase.Mock.wrap_consecutives(5)
 
-      with_mock Metric, [:passthrough], timeseries_data: fn _, _, _, _, _ -> {:ok, data} end do
+      Sanbase.Mock.prepare_mock(Metric, :timeseries_data, mock_fun)
+      |> Sanbase.Mock.run_with_mocks(fn ->
         [triggered] =
           MetricTriggerSettings.type()
           |> UserTrigger.get_active_triggers_by_type()
           |> Evaluator.run()
 
         assert triggered.id == trigger.id
-      end
+      end)
     end
 
     test "signal with random metric works - percent change operation", context do
@@ -163,18 +163,22 @@ defmodule Sanbase.Signal.TriggerMetricTest do
           settings: trigger_settings
         })
 
-      data =
-        Enum.zip(datetimes, [100, 100, 100, 100, 100, 100, 500])
-        |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
+      mock_fun =
+        [
+          fn -> {:ok, [%{datetime: datetimes |> List.first(), value: 100}]} end,
+          fn -> {:ok, [%{datetiem: datetimes |> List.last(), value: 500}]} end
+        ]
+        |> Sanbase.Mock.wrap_consecutives(5)
 
-      with_mock Metric, [:passthrough], timeseries_data: fn _, _, _, _, _ -> {:ok, data} end do
+      Sanbase.Mock.prepare_mock(Metric, :timeseries_data, mock_fun)
+      |> Sanbase.Mock.run_with_mocks(fn ->
         [triggered] =
           MetricTriggerSettings.type()
           |> UserTrigger.get_active_triggers_by_type()
           |> Evaluator.run()
 
         assert triggered.id == trigger.id
-      end
+      end)
     end
 
     test "can create triggers with all available metrics with min interval less than 5 min",

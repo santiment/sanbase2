@@ -495,7 +495,11 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     end
 
     test "by list of assets", context do
-      post = create_insight(context)
+      post =
+        create_insight(context, %{
+          tags: [build(:tag, name: String.downcase(context.project.ticker))]
+        })
+
       {trigger1, trigger2, trigger3} = create_trigger(context)
 
       insight_event =

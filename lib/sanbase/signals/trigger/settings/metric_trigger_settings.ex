@@ -75,7 +75,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
     end)
   end
 
-  defp fetch_metric(metric, selector, time_window) do
+  def fetch_metric(metric, selector, time_window) do
     cache_key =
       {:metric_signal, metric, selector, time_window, round_datetime(Timex.now(), 300)}
       |> :erlang.phash2()
@@ -88,11 +88,11 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
     last = now
 
     Cache.get_or_store(cache_key, fn ->
-      with {:ok, [%{} = first | _]} <-
+      with {:ok, [_ | _] = first} <-
              Metric.timeseries_data(metric, selector, first, middle, time_window),
-           {:ok, [%{} = second | _]} <-
+           {:ok, [_ | _] = second} <-
              Metric.timeseries_data(metric, selector, middle, last, time_window) do
-        [first, second]
+        [first |> List.last(), second |> List.last()]
       else
         _ -> {:error, "Cannot fetch #{metric} for #{inspect(selector)}"}
       end

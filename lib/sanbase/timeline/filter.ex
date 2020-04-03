@@ -82,10 +82,13 @@ defmodule Sanbase.Timeline.Filter do
   end
 
   defp get_insight_ids_by_asset_list({slugs, tickers}, filter_by, user_id) do
+    tickers_lc = Enum.map(tickers, &String.downcase/1)
+    tickers_uc = Enum.map(tickers, &String.upcase/1)
+
     from(
       entity in Post,
       join: t in assoc(entity, :tags),
-      where: t.name in ^slugs or t.name in ^tickers,
+      where: t.name in ^slugs or t.name in ^tickers_uc or t.name in ^tickers_lc,
       select: entity.id
     )
     |> filter_by_author_query(filter_by, user_id)
@@ -112,13 +115,15 @@ defmodule Sanbase.Timeline.Filter do
   end
 
   defp filter_by_trigger_target(%{"word" => word}, {slugs, tickers}) when is_binary(word) do
-    word in slugs or String.upcase(word) in tickers
+    word in slugs or word in tickers or String.upcase(word) in tickers
   end
 
   defp filter_by_trigger_target(%{"word" => words}, {slugs, tickers}) when is_list(words) do
-    words_upcase = words |> Enum.map(&String.upcase/1)
+    tickers_lc = Enum.map(tickers, &String.downcase/1)
+    tickers_uc = Enum.map(tickers, &String.upcase/1)
 
-    has_intersection?(words, slugs) or has_intersection?(words_upcase, tickers)
+    has_intersection?(words, slugs) or has_intersection?(words, tickers_lc) or
+      has_intersection?(words, tickers_uc)
   end
 
   defp filter_by_trigger_target(_, _), do: false

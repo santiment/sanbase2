@@ -62,7 +62,7 @@ defmodule Sanbase.Signal.TriggerMetricTest do
           fn -> {:ok, [%{datetime: datetimes |> List.first(), value: 100}]} end,
           fn -> {:ok, [%{datetiem: datetimes |> List.last(), value: 5000}]} end
         ]
-        |> Sanbase.Mock.wrap_consecutives(5)
+        |> Sanbase.Mock.wrap_consecutives(arity: 5)
 
       Sanbase.Mock.prepare_mock(Metric, :timeseries_data, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -131,7 +131,7 @@ defmodule Sanbase.Signal.TriggerMetricTest do
           fn -> {:ok, [%{datetime: datetimes |> List.first(), value: 100}]} end,
           fn -> {:ok, [%{datetiem: datetimes |> List.last(), value: 5000}]} end
         ]
-        |> Sanbase.Mock.wrap_consecutives(5)
+        |> Sanbase.Mock.wrap_consecutives(arity: 5)
 
       Sanbase.Mock.prepare_mock(Metric, :timeseries_data, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -168,7 +168,7 @@ defmodule Sanbase.Signal.TriggerMetricTest do
           fn -> {:ok, [%{datetime: datetimes |> List.first(), value: 100}]} end,
           fn -> {:ok, [%{datetiem: datetimes |> List.last(), value: 500}]} end
         ]
-        |> Sanbase.Mock.wrap_consecutives(5)
+        |> Sanbase.Mock.wrap_consecutives(arity: 5)
 
       Sanbase.Mock.prepare_mock(Metric, :timeseries_data, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->

@@ -39,7 +39,7 @@ defmodule Sanbase.Signal.SchedulerTest do
         fn -> {:ok, [%{datetime: datetimes |> List.first(), value: 100}]} end,
         fn -> {:ok, [%{datetiem: datetimes |> List.last(), value: 5000}]} end
       ]
-      |> Sanbase.Mock.wrap_consecutives(5)
+      |> Sanbase.Mock.wrap_consecutives(arity: 5)
 
     [
       trigger: trigger,

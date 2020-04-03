@@ -94,7 +94,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
              Metric.timeseries_data(metric, selector, middle, last, time_window) do
         [first, second]
       else
-        _ -> {:error, "error"}
+        _ -> {:error, "Cannot fetch #{metric} for #{inspect(selector)}"}
       end
     end)
   end

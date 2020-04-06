@@ -9,7 +9,7 @@ defmodule Sanbase.Auth.User.Permissions do
       api: Product.product_api() in user_subscriptions_product_ids,
       sanbase: Product.product_sanbase() in user_subscriptions_product_ids,
       spreadsheet: Product.product_sanbase() in user_subscriptions_product_ids,
-      sangraphs: Product.product_sangraphs() in user_subscriptions_product_ids
+      sangraphs: Product.product_sandata() in user_subscriptions_product_ids
     }
   end
 

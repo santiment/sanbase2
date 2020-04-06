@@ -13,7 +13,7 @@ defmodule Sanbase.Repo.Migrations.SyncGrafanaPlans do
     stripe_api_key = stripe_api_key()
 
     if stripe_api_key != nil and stripe_api_key != "" do
-      product_id = Product.product_sangraphs()
+      product_id = Product.product_sandata()
 
       from(p in Product, where: p.id == ^product_id)
       |> Repo.all()

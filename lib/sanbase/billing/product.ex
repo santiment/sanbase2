@@ -15,30 +15,37 @@ defmodule Sanbase.Billing.Product do
   # Sanbase API product id. Ids for products are fixed.
   @product_api 1
   @product_sanbase 2
-  @product_sheets 3
-  @product_sangraphs 4
+  @product_sandata 4
   @product_exchange_wallets 5
 
   schema "products" do
     field(:name, :string)
     field(:stripe_id, :string)
+    field(:code, :string)
 
-    has_many(:plans, Plan)
+    has_many(:plans, Plan, on_delete: :delete_all)
   end
 
   def product_api(), do: @product_api
   def product_sanbase(), do: @product_sanbase
-  def product_sheets(), do: @product_sheets
-  def product_sangraphs(), do: @product_sangraphs
+  def product_sandata(), do: @product_sandata
   def product_exchange_wallets(), do: @product_exchange_wallets
 
   def changeset(%__MODULE__{} = product, attrs \\ %{}) do
     product
-    |> cast(attrs, [:name, :stripe_id])
+    |> cast(attrs, [:name, :code, :stripe_id])
   end
 
-  def by_id(product_id) do
-    Repo.get(__MODULE__, product_id)
+  def by_id(id) do
+    Repo.get(__MODULE__, id)
+  end
+
+  def by_code(code) do
+    Repo.get_by(__MODULE__, code: code)
+  end
+
+  def code_by_id(id) do
+    Repo.get(__MODULE__, id).code
   end
 
   @doc """

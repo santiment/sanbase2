@@ -18,7 +18,7 @@ defmodule Sanbase.Auth.UserPermissionsTest do
              api: true,
              sanbase: true,
              spreadsheet: true,
-             sangraphs: false
+             sandata: false
            }
   end
 end

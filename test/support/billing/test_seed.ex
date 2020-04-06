@@ -12,7 +12,7 @@ defmodule Sanbase.Billing.TestSeed do
         product_exchange_wallets = insert(:product_exchange_wallets)
 
         data = %{
-          product: product,
+          product: product_api,
           plan_free: insert(:plan_free, product: product_api),
           plan_essential: insert(:plan_essential, product: product_api),
           plan_pro: insert(:plan_pro, product: product_api),

@@ -12,6 +12,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
   }
 
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
+  alias SanbaseWeb.Graphql.Middlewares.PostPaywallFilter
 
   object :insight_queries do
     @desc ~s"""
@@ -25,6 +26,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:id, non_null(:integer))
 
       resolve(&InsightResolver.post/3)
+      middleware(PostPaywallFilter)
     end
 
     @desc ~s"""
@@ -37,6 +39,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:id, non_null(:integer))
 
       resolve(&InsightResolver.post/3)
+      middleware(PostPaywallFilter)
     end
 
     @desc """
@@ -50,9 +53,11 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:page, :integer, default_value: 1)
       arg(:page_size, :integer, default_value: 20)
       arg(:tags, list_of(:string))
-      arg(:is_pulse, :boolean, default_value: false)
+      arg(:is_pulse, :boolean)
+      arg(:is_paywall_required, :boolean)
 
       resolve(&InsightResolver.all_insights/3)
+      middleware(PostPaywallFilter)
     end
 
     @desc "Fetch a list of all posts for given user ID."
@@ -60,9 +65,11 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       meta(access: :free)
 
       arg(:user_id, non_null(:integer))
-      arg(:is_pulse, :boolean, default_value: false)
+      arg(:is_pulse, :boolean)
+      arg(:is_paywall_required, :boolean)
 
       resolve(&InsightResolver.all_insights_for_user/3)
+      middleware(PostPaywallFilter)
     end
 
     @desc "Fetch a list of all posts for which a user has voted."
@@ -70,9 +77,11 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       meta(access: :free)
 
       arg(:user_id, non_null(:integer))
-      arg(:is_pulse, :boolean, default_value: false)
+      arg(:is_pulse, :boolean)
+      arg(:is_paywall_required, :boolean)
 
       resolve(&InsightResolver.all_insights_user_voted_for/3)
+      middleware(PostPaywallFilter)
     end
 
     @desc ~s"""
@@ -83,9 +92,11 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       meta(access: :free)
 
       arg(:tag, non_null(:string))
-      arg(:is_pulse, :boolean, default_value: false)
+      arg(:is_pulse, :boolean)
+      arg(:is_paywall_required, :boolean)
 
       resolve(&InsightResolver.all_insights_by_tag/3)
+      middleware(PostPaywallFilter)
     end
 
     @desc "Fetch a list of all tags used for posts/insights. This query also returns tags that are not yet in use."
@@ -120,7 +131,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:text, :string)
       arg(:image_urls, list_of(:string))
       arg(:tags, list_of(:string))
-      arg(:is_pulse, :boolean, default_value: false)
+      arg(:is_pulse, :boolean)
+      arg(:is_paywall_required, :boolean)
 
       middleware(JWTAuth)
       resolve(&InsightResolver.create_post/3)
@@ -138,7 +150,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:text, :string)
       arg(:image_urls, list_of(:string))
       arg(:tags, list_of(:string))
-      arg(:is_pulse, :boolean, default_value: false)
+      arg(:is_pulse, :boolean)
+      arg(:is_paywall_required, :boolean)
 
       middleware(JWTAuth)
       resolve(&InsightResolver.create_post/3)
@@ -158,6 +171,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:image_urls, list_of(:string))
       arg(:tags, list_of(:string))
       arg(:is_pulse, :boolean)
+      arg(:is_paywall_required, :boolean)
 
       middleware(JWTAuth)
       resolve(&InsightResolver.update_post/3)
@@ -176,6 +190,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:image_urls, list_of(:string))
       arg(:tags, list_of(:string))
       arg(:is_pulse, :boolean)
+      arg(:is_paywall_required, :boolean)
 
       middleware(JWTAuth)
       resolve(&InsightResolver.update_post/3)

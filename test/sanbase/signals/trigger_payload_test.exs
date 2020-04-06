@@ -30,7 +30,7 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
 
     daily_active_addresses =
       Enum.zip(datetimes, [100, 120, 100, 80, 20, 10, 5])
-      |> Enum.map(&%{datetime: elem(&1, 0), active_addresses: elem(&1, 1)})
+      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
 
     trigger_settings = %{
       type: "daily_active_addresses",

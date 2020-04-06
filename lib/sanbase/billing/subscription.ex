@@ -251,8 +251,8 @@ defmodule Sanbase.Billing.Subscription do
   @doc """
   List all active user subscriptions with plans and products.
   """
-  def user_subscriptions(user) do
-    user
+  def user_subscriptions(%User{id: user_id}) do
+    user_id
     |> user_subscriptions_query()
     |> active_subscriptions_query()
     |> join_plan_and_product_query()
@@ -262,8 +262,8 @@ defmodule Sanbase.Billing.Subscription do
   @doc """
   List active subcriptions' product ids
   """
-  def user_subscriptions_product_ids(user) do
-    user
+  def user_subscriptions_product_ids(%User{id: user_id}) do
+    user_id
     |> user_subscriptions_query()
     |> active_subscriptions_query()
     |> select_product_id_query()
@@ -273,13 +273,12 @@ defmodule Sanbase.Billing.Subscription do
   @doc """
   Current subscription is the last active subscription for a product.
   """
-  def current_subscription(user, product_id) do
-    user
-    |> user_subscriptions_query()
-    |> active_subscriptions_query()
-    |> last_subscription_for_product_query(product_id)
-    |> Repo.one()
-    |> Repo.preload(plan: [:product])
+  def current_subscription(%User{id: user_id}, product_id) do
+    fetch_current_subscription(user_id, product_id)
+  end
+
+  def current_subscription(user_id, product_id) when is_integer(user_id) do
+    fetch_current_subscription(user_id, product_id)
   end
 
   @doc """
@@ -411,9 +410,9 @@ defmodule Sanbase.Billing.Subscription do
   defp percent_discount(balance) when balance >= 1000, do: @percent_discount_1000_san
   defp percent_discount(_), do: nil
 
-  defp user_subscriptions_query(user) do
+  defp user_subscriptions_query(user_id) do
     from(s in __MODULE__,
-      where: s.user_id == ^user.id,
+      where: s.user_id == ^user_id,
       order_by: [desc: s.id]
     )
   end
@@ -497,6 +496,19 @@ defmodule Sanbase.Billing.Subscription do
     Logger.info("Deleting subscription with id: #{stripe_id}")
 
     StripeApi.delete_subscription(stripe_id)
+  end
+
+  defp fetch_current_subscription(user_id, product_id) do
+    user_id
+    |> user_subscriptions_query()
+    |> active_subscriptions_query()
+    |> last_subscription_for_product_query(product_id)
+    |> preload_query(plan: [:product])
+    |> Repo.one()
+  end
+
+  defp preload_query(query, preloads) do
+    from(s in query, preload: ^preloads)
   end
 
   defp format_trial_end(nil), do: nil

@@ -42,12 +42,12 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     "allProjects",
     "allErc20Projects",
     "allCurrencyProjects",
-    "projectBySlug",
-    "project",
     "projectsListHistoryStats",
     "projectsListStats",
     "allProjectsByFunction"
   ]
+
+  def cached_queries(), do: @cached_queries
 
   def before_send(conn, %Absinthe.Blueprint{} = blueprint) do
     # Do not cache in case of:

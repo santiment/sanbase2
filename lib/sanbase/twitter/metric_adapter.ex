@@ -99,9 +99,12 @@ defmodule Sanbase.Twitter.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_metrics(%{slug: slug}) do
-    with %Project{} = project <- Project.by_slug(slug),
-         {:ok, _} <- Project.twitter_handle(project) do
-      {:ok, @metrics}
+    with %Project{} = project <- Project.by_slug(slug) do
+      case Project.twitter_handle(project) do
+        {:ok, _} -> {:ok, @metrics}
+        {:error, "Missing" <> _} -> {:ok, []}
+        error -> error
+      end
     end
   end
 

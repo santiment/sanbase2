@@ -21,6 +21,31 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
     %{conn: conn, conn2: conn2, user: user, user2: user2}
   end
 
+  test "can get apikey list with jwt auth", %{conn: conn} do
+    _ = generate_apikey(conn)
+
+    apikeys =
+      get_apikeys(conn)
+      |> json_response(200)
+      |> get_in(["data", "currentUser", "apikeys"])
+
+    assert is_list(apikeys)
+    assert length(apikeys) > 0
+  end
+
+  test "cannot get apikey list with apikey auth", %{user: user} do
+    {:ok, apikey} = Sanbase.Auth.Apikey.generate_apikey(user)
+    apikey_conn = setup_apikey_auth(build_conn(), apikey)
+
+    error =
+      get_apikeys(apikey_conn)
+      |> json_response(200)
+      |> get_in(["errors"])
+      |> hd()
+
+    assert error["message"] =~ "Only JWT authenticated users can access their apikeys"
+  end
+
   test "generate a valid apikey", %{conn: conn} do
     apikeys =
       generate_apikey(conn)
@@ -206,5 +231,17 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
     """
 
     conn |> post("/graphql", mutation_skeleton(query))
+  end
+
+  defp get_apikeys(conn) do
+    query = """
+    {
+      currentUser{
+        apikeys
+      }
+    }
+    """
+
+    conn |> post("/graphql", query_skeleton(query))
   end
 end

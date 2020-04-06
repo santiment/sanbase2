@@ -378,7 +378,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     test "by date, by number of votes, by datetime", context do
       events = create_test_events(context)
 
-      {:ok, user_list} =
+      {:ok, _user_list} =
         UserList.create_user_list(context.user, %{name: "My Test List", is_public: true})
 
       result = timeline_events_query(context.conn, "limit: 4, orderBy: VOTES")
@@ -495,7 +495,11 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     end
 
     test "by list of assets", context do
-      post = create_insight(context)
+      post =
+        create_insight(context, %{
+          tags: [build(:tag, name: String.downcase(context.project.ticker))]
+        })
+
       {trigger1, trigger2, trigger3} = create_trigger(context)
 
       insight_event =

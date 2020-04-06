@@ -3,6 +3,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   import Sanbase.Metric.Helper
 
+  alias Sanbase.Model.Project
+
   @aggregations [:sum]
 
   @social_volume_timeseries_metrics [
@@ -20,8 +22,6 @@ defmodule Sanbase.SocialData.MetricAdapter do
     ## Community messages count counts the total amount of messages in a project's
     # own social medium. All messages are counted. Handles spam
     "community_messages_count_telegram",
-    "community_messages_count_discord",
-    # "community_messages_count_reddit",
     "community_messages_count_total"
   ]
 
@@ -143,12 +143,19 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_metrics(%{slug: slug}) do
-    with {:ok, slugs} <- available_slugs(),
-         true <- slug in slugs do
-      {:ok, @metrics}
-    else
-      false -> {:ok, []}
-      {:error, error} -> {:error, error}
+    with %Project{telegram_link: telegram_link} <- Project.by_slug(slug, preload?: false),
+         {:ok, slugs} <- available_slugs() do
+      metrics = if slug in slugs, do: @metrics, else: []
+
+      # Add or remove community messages metrics based on the presence of telegram link
+      # If community messages count metric is added twice, that would be comensated
+      # by the uniq()
+      metrics =
+        if is_binary(telegram_link),
+          do: (metrics ++ @community_messages_count_timeseries_metrics) |> Enum.uniq(),
+          else: metrics -- @community_messages_count_timeseries_metrics
+
+      {:ok, metrics}
     end
   end
 
@@ -192,12 +199,11 @@ defmodule Sanbase.SocialData.MetricAdapter do
   # Private functions
 
   # total has the datetime of the earliest of all - bitcointalk
-  defp source_first_datetime("total"), do: {:ok, ~U[2009-11-22 00:00:00Z]}
+  defp source_first_datetime("total"), do: {:ok, ~U[2016-01-01 00:00:00Z]}
   defp source_first_datetime("telegram"), do: {:ok, ~U[2016-03-29 00:00:00Z]}
   defp source_first_datetime("twitter"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
   defp source_first_datetime("reddit"), do: {:ok, ~U[2016-01-01 00:00:00Z]}
   defp source_first_datetime("discord"), do: {:ok, ~U[2016-05-21 00:00:00Z]}
-  defp source_first_datetime("bitcointalk"), do: {:ok, ~U[2009-11-22 00:00:00Z]}
   defp source_first_datetime("professional_traders_chat"), do: {:ok, ~U[2018-02-09 00:00:00Z]}
 
   defp metric_to_source("social_volume_" <> source), do: source

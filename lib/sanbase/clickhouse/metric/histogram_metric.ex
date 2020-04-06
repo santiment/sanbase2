@@ -33,6 +33,20 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
     |> maybe_transform_into_buckets(limit)
   end
 
+  def first_datetime("price_histogram", %{slug: _} = selector) do
+    with {:ok, dt1} <- Sanbase.Metric.first_datetime("price_usd", selector),
+         {:ok, dt2} <- Sanbase.Metric.first_datetime("age_distribution", selector) do
+      {:ok, Enum.max_by([dt1, dt2], &DateTime.to_unix/1)}
+    end
+  end
+
+  def last_datetime_computed_at("price_histogram", %{slug: _} = selector) do
+    with {:ok, dt1} <- Sanbase.Metric.last_datetime_computed_at("price_usd", selector),
+         {:ok, dt2} <- Sanbase.Metric.last_datetime_computed_at("age_distribution", selector) do
+      {:ok, Enum.min_by([dt1, dt2], &DateTime.to_unix/1)}
+    end
+  end
+
   # Aggregate the separate prices into `limit` number of evenly spaced buckets
   defp maybe_transform_into_buckets({:ok, data}, limit) do
     {min, max} = Enum.map(data, & &1.price) |> Sanbase.Math.min_max()
@@ -40,11 +54,16 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
     # Avoid precision issues when using `round` for prices.
     min = Float.floor(min, 2)
     max = Float.ceil(max, 2)
-    bucket_size = Float.round((max - min) / limit, 2)
+    bucket_size = Enum.max([Float.round((max - min) / limit, 2), 0.01])
+
+    # Generate the range for given low and high price
+    low_high_range = fn low, high ->
+      [Float.round(low, 2), Float.round(high, 2)]
+    end
 
     # Generate ranges tuples in the format needed by Stream.unfold/2
-    price_ranges = fn x ->
-      [lower, upper] = [Float.round(x, 2), Float.round(x + bucket_size, 2)]
+    price_ranges = fn value ->
+      [lower, upper] = low_high_range.(value, value + bucket_size)
       {[lower, upper], upper}
     end
 
@@ -60,7 +79,7 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
       lower = min + bucket * bucket_size
       upper = min + (1 + bucket) * bucket_size
 
-      [Float.round(lower, 2), Float.round(upper, 2)]
+      low_high_range.(lower, upper)
     end
 
     # Put every amount moved at a given price in the proper bucket

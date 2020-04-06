@@ -44,6 +44,7 @@ defmodule Sanbase.Model.Project.AvailableQueries do
     ]
     |> Enum.flat_map(fn fun -> fun.(project) end)
     |> Enum.uniq()
+    |> Enum.sort()
   end
 
   # Metrics can also be added from the admin dashboard

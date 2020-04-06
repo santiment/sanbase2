@@ -109,7 +109,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     ```
     """
     field :available_metrics, list_of(:string) do
-      cache_resolve(&ProjectMetricsResolver.available_metrics/3, ttl: 10, max_ttl_offset: 20)
+      cache_resolve(&ProjectMetricsResolver.available_metrics/3, ttl: 1200)
     end
 
     @desc ~s"""
@@ -131,10 +131,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     ```
     """
     field :available_timeseries_metrics, list_of(:string) do
-      cache_resolve(&ProjectMetricsResolver.available_timeseries_metrics/3,
-        ttl: 10,
-        max_ttl_offset: 20
-      )
+      cache_resolve(&ProjectMetricsResolver.available_timeseries_metrics/3, ttl: 1200)
     end
 
     @desc ~s"""
@@ -157,10 +154,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     ```
     """
     field :available_histogram_metrics, list_of(:string) do
-      cache_resolve(&ProjectMetricsResolver.available_histogram_metrics/3,
-        ttl: 10,
-        max_ttl_offset: 20
-      )
+      cache_resolve(&ProjectMetricsResolver.available_histogram_metrics/3, ttl: 1200)
     end
 
     @desc ~s"""

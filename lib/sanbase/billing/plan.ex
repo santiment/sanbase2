@@ -59,6 +59,8 @@ defmodule Sanbase.Billing.Plan do
     end
   end
 
+  def plan_atom_name(_), do: :free
+
   def by_id(plan_id) do
     Repo.get(__MODULE__, plan_id)
     |> Repo.preload(:product)

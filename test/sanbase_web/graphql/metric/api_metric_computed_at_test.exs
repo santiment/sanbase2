@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricComputedAtTest do
   alias Sanbase.Metric
 
   setup do
-    project = insert(:random_project)
+    project = insert(:random_erc20_project)
     %{project: project}
   end
 

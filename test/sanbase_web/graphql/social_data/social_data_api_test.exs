@@ -17,353 +17,366 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
     %{conn: conn}
   end
 
-  test "successfully fetch trending words", context do
-    success_response = [
-      %{
-        datetime: DateTimeUtils.from_iso8601!("2018-11-10T00:00:00Z"),
-        top_words: [
-          %{score: 167.74716011726295, word: "pele"},
-          %{score: 137.61557511242117, word: "people"}
-        ]
-      }
-    ]
+  describe "trending words" do
+    test "successfully fetch trending words", context do
+      success_response = [
+        %{
+          datetime: DateTimeUtils.from_iso8601!("2018-11-10T00:00:00Z"),
+          top_words: [
+            %{score: 167.74716011726295, word: "pele"},
+            %{score: 137.61557511242117, word: "people"}
+          ]
+        }
+      ]
 
-    with_mock SocialData, trending_words: fn _, _, _, _, _ -> {:ok, success_response} end do
-      args = %{
-        source: "TELEGRAM",
-        from: "2018-01-09T00:00:00Z",
-        to: "2018-01-10T00:00:00Z",
-        size: 1,
-        hour: 8
-      }
+      with_mock SocialData, trending_words: fn _, _, _, _, _ -> {:ok, success_response} end do
+        args = %{
+          source: "TELEGRAM",
+          from: "2018-01-09T00:00:00Z",
+          to: "2018-01-10T00:00:00Z",
+          size: 1,
+          hour: 8
+        }
 
-      query = trending_words_query(args)
-      result = execute_and_parse_success_response(context.conn, query, "trendingWords")
+        query = trending_words_query(args)
+        result = execute_and_parse_success_response(context.conn, query, "trendingWords")
 
-      assert result == %{
-               "data" => %{
-                 "trendingWords" => [
-                   %{
-                     "datetime" => "2018-11-10T00:00:00Z",
-                     "topWords" => [
-                       %{"score" => 167.74716011726295, "word" => "pele"},
-                       %{"score" => 137.61557511242117, "word" => "people"}
-                     ]
-                   }
-                 ]
+        assert result == %{
+                 "data" => %{
+                   "trendingWords" => [
+                     %{
+                       "datetime" => "2018-11-10T00:00:00Z",
+                       "topWords" => [
+                         %{"score" => 167.74716011726295, "word" => "pele"},
+                         %{"score" => 137.61557511242117, "word" => "people"}
+                       ]
+                     }
+                   ]
+                 }
                }
-             }
+      end
+    end
+
+    test "fetch trending words - proper error is returned", context do
+      with_mock SocialData, trending_words: fn _, _, _, _, _ -> {:error, @error_response} end do
+        args = %{
+          source: "TELEGRAM",
+          from: "2018-01-09T00:00:00Z",
+          to: "2018-01-10T00:00:00Z",
+          size: 1,
+          hour: 8
+        }
+
+        query = trending_words_query(args)
+        error = execute_and_parse_error_response(context.conn, query, "trendingWords")
+        assert error =~ @error_response
+      end
     end
   end
 
-  test "fetch trending words - proper error is returned", context do
-    with_mock SocialData, trending_words: fn _, _, _, _, _ -> {:error, @error_response} end do
-      args = %{
-        source: "TELEGRAM",
-        from: "2018-01-09T00:00:00Z",
-        to: "2018-01-10T00:00:00Z",
-        size: 1,
-        hour: 8
-      }
+  describe "word context" do
+    test "successfully fetch word context", context do
+      success_response = [
+        %{score: 1.0, word: "mas"},
+        %{score: 0.7688603531300161, word: "christ"},
+        %{score: 0.7592295345104334, word: "christmas"}
+      ]
 
-      query = trending_words_query(args)
-      error = execute_and_parse_error_response(context.conn, query, "trendingWords")
-      assert error =~ @error_response
-    end
-  end
+      with_mock SocialData, word_context: fn _, _, _, _, _ -> {:ok, success_response} end do
+        args = %{
+          word: "merry",
+          source: "TELEGRAM",
+          from: "2018-01-09T00:00:00Z",
+          to: "2018-01-10T00:00:00Z",
+          size: 1
+        }
 
-  test "successfully fetch word context", context do
-    success_response = [
-      %{score: 1.0, word: "mas"},
-      %{score: 0.7688603531300161, word: "christ"},
-      %{score: 0.7592295345104334, word: "christmas"}
-    ]
+        query = word_context_query(args)
+        result = execute_and_parse_success_response(context.conn, query, "wordContext")
 
-    with_mock SocialData, word_context: fn _, _, _, _, _ -> {:ok, success_response} end do
-      args = %{
-        word: "merry",
-        source: "TELEGRAM",
-        from: "2018-01-09T00:00:00Z",
-        to: "2018-01-10T00:00:00Z",
-        size: 1
-      }
-
-      query = word_context_query(args)
-      result = execute_and_parse_success_response(context.conn, query, "wordContext")
-
-      assert result == %{
-               "data" => %{
-                 "wordContext" => [
-                   %{"score" => 1.0, "word" => "mas"},
-                   %{"score" => 0.7688603531300161, "word" => "christ"},
-                   %{"score" => 0.7592295345104334, "word" => "christmas"}
-                 ]
+        assert result == %{
+                 "data" => %{
+                   "wordContext" => [
+                     %{"score" => 1.0, "word" => "mas"},
+                     %{"score" => 0.7688603531300161, "word" => "christ"},
+                     %{"score" => 0.7592295345104334, "word" => "christmas"}
+                   ]
+                 }
                }
-             }
+      end
+    end
+
+    test "fetch word context - proper error is returned", context do
+      with_mock SocialData, word_context: fn _, _, _, _, _ -> {:error, @error_response} end do
+        args = %{
+          word: "merry",
+          source: "TELEGRAM",
+          from: "2018-01-09T00:00:00Z",
+          to: "2018-01-10T00:00:00Z",
+          size: 1
+        }
+
+        query = word_context_query(args)
+        error = execute_and_parse_error_response(context.conn, query, "wordContext")
+        assert error =~ @error_response
+      end
     end
   end
 
-  test "fetch word context - proper error is returned", context do
-    with_mock SocialData, word_context: fn _, _, _, _, _ -> {:error, @error_response} end do
-      args = %{
-        word: "merry",
-        source: "TELEGRAM",
-        from: "2018-01-09T00:00:00Z",
-        to: "2018-01-10T00:00:00Z",
-        size: 1
-      }
+  describe "trend score" do
+    test "successfully fetch word trend score", context do
+      success_response = [
+        %{
+          score: 3725.6617392595313,
+          source: :telegram,
+          datetime: DateTimeUtils.from_iso8601!("2019-01-10T08:00:00Z")
+        }
+      ]
 
-      query = word_context_query(args)
-      error = execute_and_parse_error_response(context.conn, query, "wordContext")
-      assert error =~ @error_response
-    end
-  end
+      with_mock SocialData, word_trend_score: fn _, _, _, _ -> {:ok, success_response} end do
+        args = %{
+          word: "qtum",
+          source: "TELEGRAM",
+          from: "2018-01-09T00:00:00Z",
+          to: "2018-01-10T00:00:00Z"
+        }
 
-  test "successfully fetch word trend score", context do
-    success_response = [
-      %{
-        score: 3725.6617392595313,
-        source: :telegram,
-        datetime: DateTimeUtils.from_iso8601!("2019-01-10T08:00:00Z")
-      }
-    ]
+        query = word_trend_score_query(args)
+        result = execute_and_parse_success_response(context.conn, query, "wordTrendScore")
 
-    with_mock SocialData, word_trend_score: fn _, _, _, _ -> {:ok, success_response} end do
-      args = %{
-        word: "qtum",
-        source: "TELEGRAM",
-        from: "2018-01-09T00:00:00Z",
-        to: "2018-01-10T00:00:00Z"
-      }
-
-      query = word_trend_score_query(args)
-      result = execute_and_parse_success_response(context.conn, query, "wordTrendScore")
-
-      assert result == %{
-               "data" => %{
-                 "wordTrendScore" => [
-                   %{
-                     "score" => 3725.6617392595313,
-                     "source" => "TELEGRAM",
-                     "datetime" => "2019-01-10T08:00:00Z"
-                   }
-                 ]
+        assert result == %{
+                 "data" => %{
+                   "wordTrendScore" => [
+                     %{
+                       "score" => 3725.6617392595313,
+                       "source" => "TELEGRAM",
+                       "datetime" => "2019-01-10T08:00:00Z"
+                     }
+                   ]
+                 }
                }
-             }
+      end
+    end
+
+    test "fetching word trend score - proper error message is returned", context do
+      error_response =
+        "Error status 500 fetching word trend score for word merry: Internal Server Error"
+
+      with_mock SocialData, word_trend_score: fn _, _, _, _ -> {:error, error_response} end do
+        args = %{
+          word: "merry",
+          source: "TELEGRAM",
+          from: "#{Timex.shift(Timex.now(), days: -20)}",
+          to: "#{Timex.now()}"
+        }
+
+        query = word_trend_score_query(args)
+        error = execute_and_parse_error_response(context.conn, query, "wordTrendScore")
+        assert error == error_response
+      end
     end
   end
 
-  test "fetching word trend score - proper error message is returned", context do
-    error_response =
-      "Error status 500 fetching word trend score for word merry: Internal Server Error"
+  describe "social gainers/losers" do
+    test "successfully fetch top social gainers losers", context do
+      p1 = insert(:random_project)
+      p2 = insert(:random_project)
 
-    with_mock SocialData, word_trend_score: fn _, _, _, _ -> {:error, error_response} end do
-      args = %{
-        word: "merry",
-        source: "TELEGRAM",
-        from: "#{Timex.shift(Timex.now(), days: -20)}",
-        to: "#{Timex.now()}"
-      }
+      success_response = [
+        %{
+          datetime: DateTimeUtils.from_iso8601!("2019-03-15T13:00:00Z"),
+          projects: [
+            %{
+              change: 137.13186813186815,
+              slug: p1.slug,
+              status: :gainer
+            },
+            %{
+              change: -1.0,
+              slug: p2.slug,
+              status: :loser
+            }
+          ]
+        }
+      ]
 
-      query = word_trend_score_query(args)
-      error = execute_and_parse_error_response(context.conn, query, "wordTrendScore")
-      assert error == error_response
+      with_mock SocialData, top_social_gainers_losers: fn _ -> {:ok, success_response} end do
+        args = %{
+          status: "ALL",
+          from: Timex.now() |> Timex.shift(days: -10) |> DateTime.to_iso8601(),
+          to: Timex.now() |> Timex.shift(days: -2) |> DateTime.to_iso8601(),
+          time_window: "15d",
+          size: 1
+        }
+
+        query = top_social_gainers_losers_query(args)
+
+        result =
+          execute_and_parse_success_response(context.conn, query, "topSocialGainersLosers")
+          |> get_in(["data", "topSocialGainersLosers"])
+
+        assert result == [
+                 %{
+                   "datetime" => "2019-03-15T13:00:00Z",
+                   "projects" => [
+                     %{
+                       "project" => %{"slug" => p1.slug},
+                       "slug" => p1.slug,
+                       "change" => 137.13186813186815,
+                       "status" => "GAINER"
+                     },
+                     %{
+                       "project" => %{"slug" => p2.slug},
+                       "slug" => p2.slug,
+                       "change" => -1.0,
+                       "status" => "LOSER"
+                     }
+                   ]
+                 }
+               ]
+      end
     end
-  end
 
-  test "successfully fetch top social gainers losers", context do
-    success_response = [
-      %{
-        datetime: DateTimeUtils.from_iso8601!("2019-03-15T13:00:00Z"),
-        projects: [
-          %{
-            change: 137.13186813186815,
-            slug: "qtum",
-            status: :gainer
-          },
-          %{
-            change: -1.0,
-            slug: "abbc-coin",
-            status: :loser
-          }
-        ]
-      }
-    ]
+    test "fetch top social gainers losers - proper error is returned", context do
+      with_mock SocialData, top_social_gainers_losers: fn _ -> {:error, @error_response} end do
+        args = %{
+          status: "ALL",
+          from: "2018-01-09T00:00:00Z",
+          to: "2018-01-10T00:00:00Z",
+          time_window: "15d",
+          size: 1
+        }
 
-    with_mock SocialData, top_social_gainers_losers: fn _ -> {:ok, success_response} end do
-      args = %{
-        status: "ALL",
-        from: Timex.now() |> Timex.shift(days: -10) |> DateTime.to_iso8601(),
-        to: Timex.now() |> Timex.shift(days: -2) |> DateTime.to_iso8601(),
-        time_window: "15d",
-        size: 1
-      }
+        query = top_social_gainers_losers_query(args)
 
-      query = top_social_gainers_losers_query(args)
+        error = execute_and_parse_error_response(context.conn, query, "topSocialGainersLosers")
 
-      result = execute_and_parse_success_response(context.conn, query, "topSocialGainersLosers")
+        assert error =~ @error_response
+      end
+    end
 
-      assert result == %{
-               "data" => %{
-                 "topSocialGainersLosers" => [
-                   %{
-                     "datetime" => "2019-03-15T13:00:00Z",
-                     "projects" => [
-                       %{
-                         "change" => 137.13186813186815,
-                         "slug" => "qtum",
-                         "status" => "GAINER"
-                       },
-                       %{
-                         "change" => -1.0,
-                         "slug" => "abbc-coin",
-                         "status" => "LOSER"
-                       }
-                     ]
-                   }
-                 ]
+    test "successfully fetch social gainers losers status for slug", context do
+      success_response = [
+        %{
+          change: 12.709016393442624,
+          datetime: DateTimeUtils.from_iso8601!("2019-03-15T15:00:00Z"),
+          status: :gainer
+        }
+      ]
+
+      with_mock SocialData, social_gainers_losers_status: fn _ -> {:ok, success_response} end do
+        args = %{
+          slug: "qtum",
+          from: Timex.now() |> Timex.shift(days: -10) |> DateTime.to_iso8601(),
+          to: Timex.now() |> Timex.shift(days: -2) |> DateTime.to_iso8601(),
+          time_window: "15d"
+        }
+
+        query = social_gainers_losers_status_query(args)
+
+        result =
+          execute_and_parse_success_response(
+            context.conn,
+            query,
+            "socialGainersLosersStatus"
+          )
+
+        func_args = %{
+          args
+          | from: DateTimeUtils.from_iso8601!(args.from),
+            to: DateTimeUtils.from_iso8601!(args.to)
+        }
+
+        assert_called(SocialData.social_gainers_losers_status(func_args))
+
+        assert result == %{
+                 "data" => %{
+                   "socialGainersLosersStatus" => [
+                     %{
+                       "change" => 12.709016393442624,
+                       "datetime" => "2019-03-15T15:00:00Z",
+                       "status" => "GAINER"
+                     }
+                   ]
+                 }
                }
-             }
+      end
+    end
+
+    test "fetching social gainers losers status - proper error message is returned", context do
+      with_mock SocialData, social_gainers_losers_status: fn _ -> {:error, @error_response} end do
+        args = %{
+          slug: "qtum",
+          from: "2018-01-09T00:00:00Z",
+          to: "2018-01-10T00:00:00Z",
+          time_window: "15d"
+        }
+
+        query = social_gainers_losers_status_query(args)
+
+        error = execute_and_parse_error_response(context.conn, query, "topSocialGainersLosers")
+
+        assert error =~ @error_response
+      end
     end
   end
 
-  test "fetch top social gainers losers - proper error is returned", context do
-    with_mock SocialData, top_social_gainers_losers: fn _ -> {:error, @error_response} end do
-      args = %{
-        status: "ALL",
-        from: "2018-01-09T00:00:00Z",
-        to: "2018-01-10T00:00:00Z",
-        time_window: "15d",
-        size: 1
-      }
+  describe "news" do
+    test "successfully fetch news", context do
+      success_response = [
+        %{
+          datetime: Sanbase.DateTimeUtils.from_iso8601!("2018-04-16T10:00:00Z"),
+          description: "test description",
+          media_url: "http://alabala",
+          source_name: "ForexTV.com",
+          title: "test title",
+          url: "http://example.com"
+        }
+      ]
 
-      query = top_social_gainers_losers_query(args)
+      with_mock SocialData, google_news: fn _, _, _, _ -> {:ok, success_response} end do
+        args = %{
+          tag: "qtum",
+          from: "2018-01-09T00:00:00Z",
+          to: "2018-01-10T00:00:00Z",
+          size: 10
+        }
 
-      error = execute_and_parse_error_response(context.conn, query, "topSocialGainersLosers")
+        query = news_query(args)
+        result = execute_and_parse_success_response(context.conn, query, "news")
 
-      assert error =~ @error_response
-    end
-  end
-
-  test "successfully fetch social gainers losers status for slug", context do
-    success_response = [
-      %{
-        change: 12.709016393442624,
-        datetime: DateTimeUtils.from_iso8601!("2019-03-15T15:00:00Z"),
-        status: :gainer
-      }
-    ]
-
-    with_mock SocialData, social_gainers_losers_status: fn _ -> {:ok, success_response} end do
-      args = %{
-        slug: "qtum",
-        from: Timex.now() |> Timex.shift(days: -10) |> DateTime.to_iso8601(),
-        to: Timex.now() |> Timex.shift(days: -2) |> DateTime.to_iso8601(),
-        time_window: "15d"
-      }
-
-      query = social_gainers_losers_status_query(args)
-
-      result =
-        execute_and_parse_success_response(
-          context.conn,
-          query,
-          "socialGainersLosersStatus"
-        )
-
-      func_args = %{
-        args
-        | from: DateTimeUtils.from_iso8601!(args.from),
-          to: DateTimeUtils.from_iso8601!(args.to)
-      }
-
-      assert_called(SocialData.social_gainers_losers_status(func_args))
-
-      assert result == %{
-               "data" => %{
-                 "socialGainersLosersStatus" => [
-                   %{
-                     "change" => 12.709016393442624,
-                     "datetime" => "2019-03-15T15:00:00Z",
-                     "status" => "GAINER"
-                   }
-                 ]
+        assert result == %{
+                 "data" => %{
+                   "news" => [
+                     %{
+                       "datetime" => "2018-04-16T10:00:00Z",
+                       "description" => "test description",
+                       "mediaUrl" => "http://alabala",
+                       "sourceName" => "ForexTV.com",
+                       "title" => "test title",
+                       "url" => "http://example.com"
+                     }
+                   ]
+                 }
                }
-             }
+      end
     end
-  end
 
-  test "fetching social gainers losers status - proper error message is returned", context do
-    with_mock SocialData, social_gainers_losers_status: fn _ -> {:error, @error_response} end do
-      args = %{
-        slug: "qtum",
-        from: "2018-01-09T00:00:00Z",
-        to: "2018-01-10T00:00:00Z",
-        time_window: "15d"
-      }
+    test "fetching news error", context do
+      with_mock SocialData, google_news: fn _, _, _, _ -> {:error, @error_response} end do
+        args = %{
+          tag: "qtum",
+          from: "2018-01-09T00:00:00Z",
+          to: "2018-01-10T00:00:00Z",
+          size: 10
+        }
 
-      query = social_gainers_losers_status_query(args)
+        query = news_query(args)
 
-      error = execute_and_parse_error_response(context.conn, query, "topSocialGainersLosers")
+        error = execute_and_parse_error_response(context.conn, query, "news")
 
-      assert error =~ @error_response
-    end
-  end
-
-  test "successfully fetch news", context do
-    success_response = [
-      %{
-        datetime: Sanbase.DateTimeUtils.from_iso8601!("2018-04-16T10:00:00Z"),
-        description: "test description",
-        media_url: "http://alabala",
-        source_name: "ForexTV.com",
-        title: "test title",
-        url: "http://example.com"
-      }
-    ]
-
-    with_mock SocialData, google_news: fn _, _, _, _ -> {:ok, success_response} end do
-      args = %{
-        tag: "qtum",
-        from: "2018-01-09T00:00:00Z",
-        to: "2018-01-10T00:00:00Z",
-        size: 10
-      }
-
-      query = news_query(args)
-      result = execute_and_parse_success_response(context.conn, query, "news")
-
-      assert result == %{
-               "data" => %{
-                 "news" => [
-                   %{
-                     "datetime" => "2018-04-16T10:00:00Z",
-                     "description" => "test description",
-                     "mediaUrl" => "http://alabala",
-                     "sourceName" => "ForexTV.com",
-                     "title" => "test title",
-                     "url" => "http://example.com"
-                   }
-                 ]
-               }
-             }
-    end
-  end
-
-  test "fetching news error", context do
-    with_mock SocialData, google_news: fn _, _, _, _ -> {:error, @error_response} end do
-      args = %{
-        tag: "qtum",
-        from: "2018-01-09T00:00:00Z",
-        to: "2018-01-10T00:00:00Z",
-        size: 10
-      }
-
-      query = news_query(args)
-
-      error = execute_and_parse_error_response(context.conn, query, "news")
-
-      assert error =~ @error_response
+        assert error =~ @error_response
+      end
     end
   end
 
@@ -425,16 +438,17 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
     """
     {
       topSocialGainersLosers(
-        status: #{args.status},
-        from: "#{args.from}",
-        to: "#{args.to}",
-        timeWindow: "#{args.time_window}",
+        status: #{args.status}
+        from: "#{args.from}"
+        to: "#{args.to}"
+        timeWindow: "#{args.time_window}"
         size: #{args.size}
       ) {
-        datetime,
+        datetime
         projects {
-          slug,
-          change,
+          project{ slug }
+          slug
+          change
           status
         }
       }
@@ -446,13 +460,13 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
     """
     {
       socialGainersLosersStatus(
-        slug: "#{args.slug}",
-        from: "#{args.from}",
-        to: "#{args.to}",
+        slug: "#{args.slug}"
+        from: "#{args.from}"
+        to: "#{args.to}"
         timeWindow: "#{args.time_window}"
       ) {
         datetime,
-        change,
+        change
         status
       }
     }

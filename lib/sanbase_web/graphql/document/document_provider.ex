@@ -61,41 +61,60 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do
   use Absinthe.Phase
 
   alias SanbaseWeb.Graphql.Cache
+  @compile inline: [add_cache_key_to_blueprint: 2, queries_in_request: 1]
 
-  @compile inline: [add_cache_key_to_blueprint: 2]
+  @cached_queries SanbaseWeb.Graphql.AbsintheBeforeSend.cached_queries()
 
   @spec run(Absinthe.Blueprint.t(), Keyword.t()) :: Absinthe.Phase.result_t()
   def run(bp_root, _) do
-    context = bp_root.execution.context
+    queries_in_request = queries_in_request(bp_root)
 
-    # Add keys that can affect the data the user can have access to
-    additional_keys_hash =
-      {context.permissions, context.product_id, context.auth.subscription, context.auth.plan,
-       context.auth.auth_method}
-      |> :erlang.phash2()
-
-    cache_key =
-      SanbaseWeb.Graphql.Cache.cache_key(
-        {"bp_root", additional_keys_hash},
-        santize_blueprint(bp_root),
-        ttl: 120,
-        max_ttl_offset: 120
-      )
-
-    bp_root = add_cache_key_to_blueprint(bp_root, cache_key)
-
-    case Cache.get(cache_key) do
-      nil ->
+    case Enum.any?(queries_in_request, &(&1 in @cached_queries)) do
+      false ->
         {:ok, bp_root}
 
-      result ->
-        # Storing it again `touch`es it and the TTL timer is restarted.
-        # This can lead to infinite storing the same value
-        Process.put(:do_not_cache_query, true)
+      true ->
+        context = bp_root.execution.context
 
-        {:jump, %{bp_root | result: result},
-         SanbaseWeb.Graphql.Phase.Document.Execution.Idempotent}
+        # Add keys that can affect the data the user can have access to
+        additional_keys_hash =
+          {context.permissions, context.product_id, context.auth.subscription, context.auth.plan,
+           context.auth.auth_method}
+          |> :erlang.phash2()
+
+        cache_key =
+          SanbaseWeb.Graphql.Cache.cache_key(
+            {"bp_root", additional_keys_hash},
+            santize_blueprint(bp_root),
+            ttl: 120,
+            max_ttl_offset: 120
+          )
+
+        bp_root = add_cache_key_to_blueprint(bp_root, cache_key)
+
+        case Cache.get(cache_key) do
+          nil ->
+            {:ok, bp_root}
+
+          result ->
+            # Storing it again `touch`es it and the TTL timer is restarted.
+            # This can lead to infinite storing the same value
+            Process.put(:do_not_cache_query, true)
+
+            {:jump, %{bp_root | result: result},
+             SanbaseWeb.Graphql.Phase.Document.Execution.Idempotent}
+        end
     end
+  end
+
+  # Private functions
+
+  defp queries_in_request(%{operations: operations}) do
+    operations
+    |> Enum.flat_map(fn %{selections: selections} ->
+      selections
+      |> Enum.map(fn %{name: name} -> Inflex.camelize(name, :lower) end)
+    end)
   end
 
   defp add_cache_key_to_blueprint(

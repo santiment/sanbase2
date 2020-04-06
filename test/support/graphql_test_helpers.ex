@@ -109,7 +109,16 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   def map_to_input_object_str(%{} = map) do
     str =
       Enum.map(map, fn
-        {k, v} -> ~s/#{k}: #{inspect(v)}/
+        {k, [%{} | _] = l} ->
+          ~s/#{k}: [#{Enum.map(l, &map_to_input_object_str/1) |> Enum.join(",")}]/
+
+        {k, m} when is_map(m) ->
+          ~s/#{k}: '#{Jason.encode!(m)}'/
+          |> String.replace(~r|\"|, ~S|\\"|)
+          |> String.replace(~r|'|, ~S|"|)
+
+        {k, v} ->
+          ~s/#{k}: #{inspect(v)}/
       end)
       |> Enum.join(", ")
 

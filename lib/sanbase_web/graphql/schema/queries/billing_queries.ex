@@ -3,9 +3,7 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
 
   alias SanbaseWeb.Graphql.Resolvers.BillingResolver
 
-  alias SanbaseWeb.Graphql.Middlewares.{
-    JWTAuth
-  }
+  alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
   import_types(SanbaseWeb.Graphql.Schema.BillingTypes)
 

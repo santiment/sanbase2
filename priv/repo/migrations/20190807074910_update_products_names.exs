@@ -12,8 +12,7 @@ defmodule Sanbase.Repo.Migrations.UpdateProductsNames do
     %{
       Product.product_api() => "Neuro by Santiment",
       Product.product_sanbase() => "Sanbase by Santiment",
-      Product.product_sheets() => "Sheets by Santiment",
-      Product.product_sangraphs() => "Graphs by Santiment"
+      Product.product_sandata() => "Sandata by Santiment"
     }
     |> Enum.each(fn {id, new_name} ->
       Repo.get(Product, id)

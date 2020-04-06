@@ -11,6 +11,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
   use Ecto.Schema
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
+  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3]
   import Sanbase.Clickhouse.MetadataHelper
 
   alias Sanbase.Clickhouse.Metric.FileHandler
@@ -26,10 +27,6 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     field(:value, :float)
     field(:computed_at, :utc_datetime)
   end
-
-  defp aggregation(:last, value_column, dt_column), do: "argMax(#{value_column}, #{dt_column})"
-  defp aggregation(:first, value_column, dt_column), do: "argMin(#{value_column}, #{dt_column})"
-  defp aggregation(aggr, value_column, _dt_column), do: "#{aggr}(#{value_column})"
 
   def timeseries_data_query(metric, slug, from, to, interval, aggregation) do
     query = """
@@ -191,7 +188,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     """
 
     # artifical boundary so the query checks less results
-    datetime = Timex.shift(Timex.now(), days: -30) |> DateTime.to_unix()
+    datetime = Timex.shift(Timex.now(), days: -14) |> DateTime.to_unix()
     args = [slug, datetime]
     {query, args}
   end

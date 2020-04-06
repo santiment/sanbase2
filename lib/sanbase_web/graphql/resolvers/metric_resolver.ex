@@ -47,9 +47,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         %{source: %{metric: metric}}
       ) do
     include_incomplete_data = Map.get(args, :include_incomplete_data, false)
-    transform = Map.get(args, :transform, %{type: "none"})
+
+    transform =
+      Map.get(args, :transform, %{type: "none"}) |> Map.update!(:type, &Inflex.underscore/1)
+
     aggregation = Map.get(args, :aggregation, nil)
     selector = to_selector(args)
+    metric = maybe_replace_metric(metric, selector)
 
     with {:ok, from, to, interval} <-
            calibrate_interval(Metric, metric, selector, from, to, interval, 86_400, @datapoints),
@@ -68,6 +72,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
+  # gold and s-and-p-500 are present only in the intrday metrics table, not in asset_prices
+  defp maybe_replace_metric("price_usd", %{slug: slug}) when slug in ["gold", "s-and-p-500"],
+    do: "price_usd_5m"
+
+  defp maybe_replace_metric(metric, _selector), do: metric
+
   defp calibrate_transform_params(%{type: "none"}, from, _to, _interval),
     do: {:ok, from}
 
@@ -82,7 +92,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     {:ok, from}
   end
 
-  defp calibrate_transform_params(%{type: "changes"}, from, _to, interval) do
+  defp calibrate_transform_params(%{type: type}, from, _to, interval)
+       when type in ["changes", "consecutive_differences"] do
     shift_by_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
     from = Timex.shift(from, seconds: -shift_by_sec)
     {:ok, from}
@@ -94,7 +105,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     Sanbase.Math.simple_moving_average(data, base, value_key: :value)
   end
 
-  defp apply_transform(%{type: "changes"}, data) do
+  defp apply_transform(%{type: type}, data) when type in ["changes", "consecutive_differences"] do
     result =
       Stream.chunk_every(data, 2, 1, :discard)
       |> Enum.map(fn [%{value: previous}, %{value: next, datetime: datetime}] ->

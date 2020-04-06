@@ -15,12 +15,12 @@ defmodule Sanbase.Clickhouse.TopHolders do
         }
 
   @spec percent_of_total_supply(
-          String.t(),
-          non_neg_integer(),
-          non_neg_integer(),
-          DateTime.t(),
-          DateTime.t(),
-          String.t()
+          contract :: String.t(),
+          decimals :: non_neg_integer(),
+          number_of_top_holders :: non_neg_integer(),
+          from :: DateTime.t(),
+          to :: DateTime.t(),
+          interval :: String.t()
         ) :: {:ok, list(percent_of_total_supply)} | {:error, String.t()}
   def percent_of_total_supply(contract, token_decimals, number_of_holders, from, to, interval) do
     {query, args} =

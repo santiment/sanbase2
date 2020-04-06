@@ -17,8 +17,12 @@ defmodule Sanbase.Clickhouse.Metric do
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
-  @metrics_file "available_v2_metrics.json"
+  @metrics_file "metric_files/available_v2_metrics.json"
+  @holders_file "metric_files/holders_metrics.json"
+  @makerdao_file "metric_files/makerdao_metrics.json"
   @external_resource Path.join(__DIR__, @metrics_file)
+  @external_resource Path.join(__DIR__, @holders_file)
+  @external_resource Path.join(__DIR__, @makerdao_file)
 
   @plain_aggregations FileHandler.aggregations()
   @aggregations [nil] ++ @plain_aggregations
@@ -85,11 +89,6 @@ defmodule Sanbase.Clickhouse.Metric do
 
   def aggregated_timeseries_data(_metric, nil, _from, _to, _aggregation), do: {:ok, []}
   def aggregated_timeseries_data(_metric, [], _from, _to, _aggregation), do: {:ok, []}
-
-  def aggregated_timeseries_data(_metric, _selector, _from, _to, aggregation)
-      when aggregation not in @aggregations do
-    {:error, "The aggregation '#{inspect(aggregation)}' is not supported"}
-  end
 
   def aggregated_timeseries_data(metric, %{slug: slug_or_slugs}, from, to, aggregation)
       when is_binary(slug_or_slugs) or is_list(slug_or_slugs) do
@@ -158,6 +157,9 @@ defmodule Sanbase.Clickhouse.Metric do
   def available_aggregations(), do: @aggregations
 
   @impl Sanbase.Metric.Behaviour
+  def first_datetime("price_histogram" = metric, selector),
+    do: HistogramMetric.first_datetime(metric, selector)
+
   def first_datetime(metric, %{slug: slug}) do
     {query, args} = first_datetime_query(metric, slug)
 
@@ -168,6 +170,9 @@ defmodule Sanbase.Clickhouse.Metric do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def last_datetime_computed_at("price_histogram" = metric, selector),
+    do: HistogramMetric.last_datetime_computed_at(metric, selector)
+
   def last_datetime_computed_at(metric, %{slug: slug}) do
     {query, args} = last_datetime_computed_at_query(metric, slug)
 

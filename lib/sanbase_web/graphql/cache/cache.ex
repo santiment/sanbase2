@@ -22,7 +22,8 @@ defmodule SanbaseWeb.Graphql.Cache do
             get_or_store: 3,
             cache_modify_middleware: 3,
             cache_key: 2,
-            convert_values: 2}
+            convert_values: 2,
+            generate_additional_args: 1}
 
   alias __MODULE__, as: CacheMod
   alias SanbaseWeb.Graphql.ConCacheProvider, as: CacheProvider
@@ -126,25 +127,30 @@ defmodule SanbaseWeb.Graphql.Cache do
   # Private functions
 
   defp resolver(resolver_fn, name, opts) do
-    # Works only for top-level resolvers and fields with root object that has `id` field
     fn
-      %{id: id} = root, args, resolution ->
+      %{} = root, args, resolution ->
         fun = fn -> resolver_fn.(root, args, resolution) end
 
-        cache_key({name, id, resolution.source}, args, opts)
+        # If the root object is not empty map use some if its arguments as
+        # additional arguments
+        additional_args = Map.take(root, [:id, :slug, :word])
+        # resolution.source contains the arguments passed to a parent object
+        # in order to properly cache timeseries data in the query
+        # {getMetric(metric: "nvt") {timeseriesData(...)}}
+        # the key must include `metric` from the parent's args
+        args_from_source = generate_additional_args(resolution.source)
+
+        cache_key({name, additional_args, args_from_source}, args, opts)
         |> get_or_store(fun)
+    end
+  end
 
-      %{word: word} = root, args, resolution ->
-        fun = fn -> resolver_fn.(root, args, resolution) end
-
-        cache_key({name, word, resolution.source}, args, opts)
-        |> get_or_store(fun)
-
-      %{}, args, resolution ->
-        fun = fn -> resolver_fn.(%{}, args, resolution) end
-
-        cache_key({name, resolution.source}, args, opts)
-        |> get_or_store(fun)
+  defp generate_additional_args(data) do
+    case data do
+      %{id: id} -> id
+      %{slug: slug} -> slug
+      %{word: word} -> word
+      _ -> data
     end
   end
 
@@ -205,27 +211,22 @@ defmodule SanbaseWeb.Graphql.Cache do
   def cache_key(name, args, opts \\ []) do
     base_ttl = Keyword.get(opts, :ttl, @ttl)
     max_ttl_offset = Keyword.get(opts, :max_ttl_offset, @max_ttl_offset)
-    slug = Map.get(args, :slug, "")
 
-    ttl = base_ttl + ({name, slug} |> :erlang.phash2(max_ttl_offset))
+    # Used to randomize the TTL for lists of objects like list of projects
+    additional_args = Map.take(args, [:slug, :id])
 
-    args =
-      args
-      |> convert_values(ttl)
+    ttl = base_ttl + ({name, additional_args} |> :erlang.phash2(max_ttl_offset))
 
-    cache_key =
-      [name, args]
-      |> :erlang.phash2()
+    args = args |> convert_values(ttl)
+
+    cache_key = [name, args] |> :erlang.phash2()
 
     {cache_key, ttl}
   end
 
   # Convert the values for using in the cache. A special treatement is done for
   # `%DateTime{}` so all datetimes in a @ttl sized window are treated the same
-  defp convert_values(%DateTime{} = v, ttl) do
-    div(DateTime.to_unix(v, :second), ttl)
-  end
-
+  defp convert_values(%DateTime{} = v, ttl), do: div(DateTime.to_unix(v, :second), ttl)
   defp convert_values(%_{} = v, _), do: Map.from_struct(v)
 
   defp convert_values(args, ttl) when is_list(args) or is_map(args) do

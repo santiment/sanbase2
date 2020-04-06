@@ -63,7 +63,7 @@ defmodule Sanbase.Clickhouse.Github do
     {query, args} = total_github_activity_query(organizations, from, to)
 
     ClickhouseRepo.query_transform(query, args, fn [github_activity] ->
-      github_activity |> Sanbase.Math.to_integer()
+      github_activity |> Sanbase.Math.to_integer(0)
     end)
     |> maybe_unwrap_ok_value()
   end
@@ -96,7 +96,7 @@ defmodule Sanbase.Clickhouse.Github do
     {query, args} = total_dev_activity_query(organizations, from, to)
 
     ClickhouseRepo.query_transform(query, args, fn [organization, dev_activity] ->
-      {organization, dev_activity |> Sanbase.Math.to_integer()}
+      {organization, dev_activity |> Sanbase.Math.to_integer(0)}
     end)
   end
 
@@ -274,7 +274,7 @@ defmodule Sanbase.Clickhouse.Github do
     ClickhouseRepo.query_transform(query, args, fn [datetime, contributors] ->
       %{
         datetime: datetime |> DateTime.from_unix!(),
-        contributors_count: contributors |> Sanbase.Math.to_integer()
+        contributors_count: contributors |> Sanbase.Math.to_integer(0)
       }
     end)
   end
@@ -285,7 +285,7 @@ defmodule Sanbase.Clickhouse.Github do
     ClickhouseRepo.query_transform(query, args, fn [datetime, contributors] ->
       %{
         datetime: datetime |> DateTime.from_unix!(),
-        contributors_count: contributors |> Sanbase.Math.to_integer()
+        contributors_count: contributors |> Sanbase.Math.to_integer(0)
       }
     end)
   end
@@ -294,7 +294,7 @@ defmodule Sanbase.Clickhouse.Github do
     ClickhouseRepo.query_transform(query, args, fn [datetime, events_count] ->
       %{
         datetime: datetime |> DateTime.from_unix!(),
-        activity: events_count |> Sanbase.Math.to_integer()
+        activity: events_count |> Sanbase.Math.to_integer(0)
       }
     end)
   end
@@ -304,35 +304,29 @@ defmodule Sanbase.Clickhouse.Github do
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
     interval = Sanbase.DateTimeUtils.str_to_sec(interval)
-    span = div(to_unix - from_unix, interval) |> max(1)
 
     query = """
     SELECT time, toUInt32(SUM(uniq_actors)) AS uniq_actors
-      FROM (
-        SELECT
-          toUnixTimestamp(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) AS time,
-          0 AS uniq_actors
-        FROM numbers(?2)
-
-        UNION ALL
-
-        SELECT toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time, uniq(actor) AS uniq_actors
-        FROM #{@table}
-        PREWHERE
-          owner IN (?3) AND
-          dt >= toDateTime(?4) AND
-          dt < toDateTime(?5) AND
-          event NOT IN (?6)
-        GROUP BY time
-      )
+    FROM (
+      SELECT
+        toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
+        uniqExact(actor) AS uniq_actors
+      FROM #{@table}
+      PREWHERE
+        owner IN (?2) AND
+        dt >= toDateTime(?3) AND
+        dt < toDateTime(?4) AND
+        event NOT IN (?5)
       GROUP BY time
-      ORDER BY time
+    )
+    GROUP BY time
+    ORDER BY time
+    WITH FILL FROM toUnixTimestamp(intDiv(toUInt32(?3), ?1) * ?1) TO ?4 STEP ?1
     """
 
     args = [
       interval,
-      span,
-      organizations,
+      organizations |> Enum.map(&String.downcase/1),
       from_unix,
       to_unix,
       @non_dev_events
@@ -346,34 +340,28 @@ defmodule Sanbase.Clickhouse.Github do
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
     interval = Sanbase.DateTimeUtils.str_to_sec(interval)
-    span = div(to_unix - from_unix, interval) |> max(1)
 
     query = """
     SELECT time, toUInt32(SUM(uniq_actors)) AS uniq_actors
-      FROM (
-        SELECT
-          toUnixTimestamp(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) AS time,
-          0 AS uniq_actors
-        FROM numbers(?2)
-
-        UNION ALL
-
-        SELECT toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time, uniq(actor) AS uniq_actors
-        FROM #{@table}
-        PREWHERE
-          owner IN (?3) AND
-          dt >= toDateTime(?4) AND
-          dt < toDateTime(?5)
-        GROUP BY time
-      )
+    FROM (
+      SELECT
+        toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
+        uniqExact(actor) AS uniq_actors
+      FROM #{@table}
+      PREWHERE
+        owner IN (?2) AND
+        dt >= toDateTime(?3) AND
+        dt < toDateTime(?4)
       GROUP BY time
-      ORDER BY time
+    )
+    GROUP BY time
+    ORDER BY time
+    WITH FILL FROM toUnixTimestamp(intDiv(toUInt32(?3), ?1) * ?1) TO ?4 STEP ?1
     """
 
     args = [
       interval,
-      span,
-      organizations,
+      organizations |> Enum.map(&String.downcase/1),
       from_unix,
       to_unix
     ]
@@ -385,39 +373,33 @@ defmodule Sanbase.Clickhouse.Github do
     to = Enum.min_by([to, Timex.now()], &DateTime.to_unix/1)
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
-    span = div(to_unix - from_unix, interval) |> max(1)
 
     query = """
-    SELECT time, SUM(events) AS events_count
+    SELECT time, SUM(events)
+    FROM (
+      SELECT
+        toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
+        count(events) AS events
       FROM (
-        SELECT
-          toUnixTimestamp(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) AS time,
-          0 AS events
-        FROM numbers(?2)
-
-        UNION ALL
-
-        SELECT toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time, count(events) AS events
-          FROM (
-            SELECT any(event) AS events, dt
-            FROM #{@table}
-            PREWHERE
-              owner IN (?3)
-            AND dt >= toDateTime(?4)
-            AND dt < toDateTime(?5)
-            AND event NOT IN (?6)
-            GROUP BY owner, repo, dt, event
-          )
-          GROUP BY time
+        SELECT any(event) AS events, dt
+        FROM #{@table}
+        PREWHERE
+          owner IN (?2) AND
+          dt >= toDateTime(?3) AND
+          dt < toDateTime(?4) AND
+          event NOT IN (?5)
+        GROUP BY owner, repo, dt, event
       )
       GROUP BY time
-      ORDER BY time
+    )
+    GROUP BY time
+    ORDER BY time
+    WITH FILL FROM toUnixTimestamp(intDiv(toUInt32(?3), ?1) * ?1) TO ?4 STEP ?1
     """
 
     args = [
       interval,
-      span,
-      organizations,
+      organizations |> Enum.map(&String.downcase/1),
       from_unix,
       to_unix,
       @non_dev_events
@@ -430,38 +412,32 @@ defmodule Sanbase.Clickhouse.Github do
     to = Enum.min_by([to, Timex.now()], &DateTime.to_unix/1)
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
-    span = div(to_unix - from_unix, interval) |> max(1)
 
     query = """
-    SELECT time, SUM(events) AS events_count
+    SELECT time, SUM(events)
+    FROM (
+      SELECT
+        toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time,
+        count(events) AS events
       FROM (
-        SELECT
-          toUnixTimestamp(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) AS time,
-          0 AS events
-        FROM numbers(?2)
-
-        UNION ALL
-
-        SELECT toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS time, count(events) AS events
-          FROM (
-            SELECT any(event) AS events, dt
-            FROM #{@table}
-            PREWHERE
-              owner IN (?3)
-              AND dt >= toDateTime(?4)
-              AND dt <= toDateTime(?5)
-            GROUP BY owner, repo, dt, event
-          )
-          GROUP BY time
+        SELECT any(event) AS events, dt
+        FROM #{@table}
+        PREWHERE
+          owner IN (?2) AND
+          dt >= toDateTime(?3) AND
+          dt < toDateTime(?4)
+        GROUP BY owner, repo, dt, event
       )
       GROUP BY time
-      ORDER BY time
+    )
+    GROUP BY time
+    ORDER BY time
+    WITH FILL FROM toUnixTimestamp(intDiv(toUInt32(?3), ?1) * ?1) TO ?4 STEP ?1
     """
 
     args = [
       interval,
-      span,
-      organizations,
+      organizations |> Enum.map(&String.downcase/1),
       from_unix,
       to_unix
     ]
@@ -483,7 +459,7 @@ defmodule Sanbase.Clickhouse.Github do
     """
 
     args = [
-      organizations,
+      organizations |> Enum.map(&String.downcase/1),
       DateTime.to_unix(from),
       DateTime.to_unix(to)
     ]
@@ -508,7 +484,7 @@ defmodule Sanbase.Clickhouse.Github do
     """
 
     args = [
-      organizations,
+      organizations |> Enum.map(&String.downcase/1),
       DateTime.to_unix(from),
       DateTime.to_unix(to),
       @non_dev_events

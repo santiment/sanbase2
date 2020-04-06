@@ -136,6 +136,8 @@ defmodule Sanbase.Model.Project do
 
   defdelegate describe(project), to: Project.Description
 
+  defdelegate contract_info_infrastructure_by_slug(slug), to: Project.ContractData
+
   defdelegate contract_info_by_slug(slug), to: Project.ContractData
 
   defdelegate contract_info(project), to: Project.ContractData
@@ -311,9 +313,30 @@ defmodule Sanbase.Model.Project do
     {:ok, project |> Project.GithubOrganization.organizations_of()}
   end
 
+  @doc ~s"""
+  Return the real infrastructure code
+  If the infrastructure is set to `own` in the database it will use the contract.
+  Ethereum has ETH as contract, Bitcoin has BTC and so on, which is the real one,
+  """
+  def infrastructure_real_code(%Project{} = project) do
+    case infrastructure(project) do
+      %{code: code} when is_binary(code) ->
+        case String.downcase(code) do
+          "own" ->
+            with {:ok, contract, _} <- contract_info(project), do: {:ok, contract}
+
+          _ ->
+            {:ok, code}
+        end
+
+      _ ->
+        {:ok, nil}
+    end
+  end
+
   def infrastructure(%Project{} = project) do
     %Project{infrastructure: infrastructure} = project |> Repo.preload(:infrastructure)
-    {:ok, infrastructure}
+    infrastructure
   end
 
   def is_erc20?(%Project{} = project) do
@@ -347,14 +370,33 @@ defmodule Sanbase.Model.Project do
   def preloads(), do: @preloads
 
   def preload_assocs(projects, opts \\ []) do
-    additional_preloads = Keyword.get(opts, :additional_preloads, [])
-    Repo.preload(projects, additional_preloads ++ @preloads)
+    case Keyword.get(opts, :only_preload) do
+      preloads when is_list(preloads) ->
+        Repo.preload(projects, preloads)
+
+      nil ->
+        additional_preloads = Keyword.get(opts, :additional_preloads, [])
+        Repo.preload(projects, additional_preloads ++ @preloads)
+    end
   end
 
   defp preload_query(query, opts) do
-    additional_preloads = Keyword.get(opts, :additional_preloads, [])
+    case Keyword.get(opts, :preload?, true) do
+      false ->
+        query
 
-    query
-    |> preload(^(additional_preloads ++ @preloads))
+      true ->
+        case Keyword.get(opts, :only_preload) do
+          preloads when is_list(preloads) ->
+            query
+            |> preload(^preloads)
+
+          nil ->
+            additional_preloads = Keyword.get(opts, :additional_preloads, [])
+
+            query
+            |> preload(^(additional_preloads ++ @preloads))
+        end
+    end
   end
 end

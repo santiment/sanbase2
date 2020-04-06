@@ -91,7 +91,8 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :slugs_to_exchange_market_pair,
           :timeline_event,
           :chart_configuration,
-          :chart_configurations
+          :chart_configurations,
+          :show_promoter
         ]
         |> Enum.sort()
 

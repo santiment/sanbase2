@@ -14,12 +14,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   require Logger
 
   def insights(%User{} = user, args, _resolution) do
-    opts = [is_pulse: Map.get(args, :is_pulse, false)]
+    opts = [
+      is_pulse: Map.get(args, :is_pulse),
+      is_paywall_required: Map.get(args, :is_paywall_required)
+    ]
+
     {:ok, Post.user_insights(user.id, opts)}
   end
 
   def public_insights(%User{} = user, args, _resolution) do
-    opts = [is_pulse: Map.get(args, :is_pulse, false)]
+    opts = [
+      is_pulse: Map.get(args, :is_pulse),
+      is_paywall_required: Map.get(args, :is_paywall_required)
+    ]
+
     {:ok, Post.user_public_insights(user.id, opts)}
   end
 
@@ -33,35 +41,55 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
 
   def all_insights(_root, %{tags: tags, page: page, page_size: page_size} = args, _context)
       when is_list(tags) do
-    opts = [is_pulse: Map.get(args, :is_pulse, false)]
+    opts = [
+      is_pulse: Map.get(args, :is_pulse),
+      is_paywall_required: Map.get(args, :is_paywall_required)
+    ]
+
     posts = Post.public_insights_by_tags(tags, page, page_size, opts)
 
     {:ok, posts}
   end
 
   def all_insights(_root, %{page: page, page_size: page_size} = args, _resolution) do
-    opts = [is_pulse: Map.get(args, :is_pulse, false)]
+    opts = [
+      is_pulse: Map.get(args, :is_pulse),
+      is_paywall_required: Map.get(args, :is_paywall_required)
+    ]
+
     posts = Post.public_insights(page, page_size, opts)
 
     {:ok, posts}
   end
 
   def all_insights_for_user(_root, %{user_id: user_id} = args, _context) do
-    opts = [is_pulse: Map.get(args, :is_pulse, false)]
+    opts = [
+      is_pulse: Map.get(args, :is_pulse),
+      is_paywall_required: Map.get(args, :is_paywall_required)
+    ]
+
     posts = Post.user_public_insights(user_id, opts)
 
     {:ok, posts}
   end
 
   def all_insights_user_voted_for(_root, %{user_id: user_id} = args, _context) do
-    opts = [is_pulse: Map.get(args, :is_pulse, false)]
+    opts = [
+      is_pulse: Map.get(args, :is_pulse),
+      is_paywall_required: Map.get(args, :is_paywall_required)
+    ]
+
     posts = Post.all_insights_user_voted_for(user_id, opts)
 
     {:ok, posts}
   end
 
   def all_insights_by_tag(_root, %{tag: tag} = args, _context) do
-    opts = [is_pulse: Map.get(args, :is_pulse, false)]
+    opts = [
+      is_pulse: Map.get(args, :is_pulse),
+      is_paywall_required: Map.get(args, :is_paywall_required)
+    ]
+
     posts = Post.public_insights_by_tags([tag], opts)
 
     {:ok, posts}

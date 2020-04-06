@@ -13,7 +13,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   alias Sanbase.Clickhouse.{
     GasUsed,
     MiningPoolsDistribution,
-    PercentOfTokenSupplyOnExchanges,
     TopHolders
   }
 
@@ -202,7 +201,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
       %{},
       Map.put(args, :include_incomplete_data, true),
-      %{source: %{metric: "realized_value"}}
+      %{source: %{metric: "realized_value_usd"}}
     )
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :realized_value)
   end
@@ -241,15 +240,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   def percent_of_token_supply_on_exchanges(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval},
+        %{slug: _, from: _, to: _, interval: _} = args,
         _resolution
       ) do
-    case PercentOfTokenSupplyOnExchanges.percent_on_exchanges(slug, from, to, interval) do
-      {:ok, percent_tokens_on_exchanges} ->
-        {:ok, percent_tokens_on_exchanges}
-
-      {:error, error} ->
-        {:error, handle_graphql_error("Percent of Token Supply on Exchanges", slug, error)}
-    end
+    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+      %{},
+      args,
+      %{source: %{metric: "percent_of_total_supply_on_exchanges"}}
+    )
+    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :percent_on_exchanges)
   end
 end

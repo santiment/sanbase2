@@ -167,6 +167,10 @@ config :sanbase, Sanbase.GrafanaApi,
 config :sanbase, Sanbase.Intercom, api_key: {:system, "INTERCOM_API_KEY"}
 config :sanbase, Sanbase.Email.Mailchimp, api_key: {:system, "MAILCHIMP_API_KEY"}
 
+config :sanbase, Sanbase.Promoters.FirstPromoterApi,
+  api_id: {:system, "FIRST_PROMOTER_API_ID"},
+  api_key: {:system, "FIRST_PROMOTER_API_KEY"}
+
 # Import configs
 import_config "ex_admin_config.exs"
 import_config "influxdb_config.exs"

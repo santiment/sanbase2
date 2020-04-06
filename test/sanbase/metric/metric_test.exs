@@ -17,30 +17,35 @@ defmodule Sanbase.MetricTest do
   setup_with_mocks([
     {Sanbase.SocialData.SocialVolume, [:passthrough],
      social_volume_projects: fn -> {:ok, ["bitcoin", "santiment"]} end},
-    {Sanbase.Clickhouse.Metric, [], timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
-    {Sanbase.Clickhouse.Github.MetricAdapter, [],
+    {Sanbase.Clickhouse.Metric, [:passthrough],
      timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
-    {Sanbase.Twitter.MetricAdapter, [], timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
-    {Sanbase.SocialData.MetricAdapter, [],
+    {Sanbase.Clickhouse.Github.MetricAdapter, [:passthrough],
      timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
-    {Sanbase.Price.MetricAdapter, [], timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end}
+    {Sanbase.Twitter.MetricAdapter, [:passthrough],
+     timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
+    {Sanbase.SocialData.MetricAdapter, [:passthrough],
+     timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
+    {Sanbase.Price.MetricAdapter, [:passthrough],
+     timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
+    {Sanbase.Clickhouse.TopHolders.MetricAdapter, [:passthrough],
+     timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end}
   ]) do
-    [project: insert(:project, slug: "santiment")]
+    [project: insert(:random_erc20_project, slug: "santiment")]
   end
 
   describe "timeseries data" do
-    test "can fetch all available metrics", %{project: project} do
+    test "can fetch all available metrics with default aggregation", %{project: project} do
       metrics = Metric.available_timeseries_metrics()
 
       results =
         for metric <- metrics do
-          Metric.timeseries_data(metric, %{slug: project.slug}, @from, @to, "1d", :avg)
+          Metric.timeseries_data(metric, %{slug: project.slug}, @from, @to, "1d")
         end
 
       assert Enum.all?(results, &match?({:ok, _}, &1))
     end
 
-    test "cannot fetch available metrics that are not in the available list", %{project: project} do
+    test "cannot fetch available metrics that are not in the available list", _context do
       metrics = Metric.available_timeseries_metrics()
       rand_metrics = Enum.map(1..100, fn _ -> rand_str() end)
       rand_metrics = rand_metrics -- metrics
@@ -54,15 +59,19 @@ defmodule Sanbase.MetricTest do
     end
 
     test "can use all available aggregations", %{project: project} do
-      [metric | _] = Metric.available_timeseries_metrics()
-      aggregations = Metric.available_aggregations()
+      metrics = Metric.available_timeseries_metrics()
 
-      results =
-        for aggregation <- aggregations do
-          Metric.timeseries_data(metric, %{slug: project.slug}, @from, @to, "1d", aggregation)
-        end
+      for _ <- 1..10 do
+        metric = metrics |> Enum.random()
+        {:ok, %{available_aggregations: aggregations}} = Metric.metadata(metric)
 
-      assert Enum.all?(results, &match?({:ok, _}, &1))
+        results =
+          for aggregation <- aggregations do
+            Metric.timeseries_data(metric, %{slug: project.slug}, @from, @to, "1d", aggregation)
+          end
+
+        assert Enum.all?(results, &match?({:ok, _}, &1))
+      end
     end
 
     test "cannot use aggregation that is not available", %{project: project} do
@@ -83,7 +92,7 @@ defmodule Sanbase.MetricTest do
     test "fetch a single metric", %{project: project} do
       [metric | _] = Metric.available_timeseries_metrics()
 
-      result = Metric.timeseries_data(metric, %{slug: project.slug}, @from, @to, "1d", :avg)
+      result = Metric.timeseries_data(metric, %{slug: project.slug}, @from, @to, "1d")
 
       assert result == {:ok, @resp}
     end

@@ -6,6 +6,7 @@ defmodule SanbaseWeb.Graphql.Schema.TimelineQueries do
 
   alias SanbaseWeb.Graphql.Resolvers.TimelineEventResolver
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
+  alias SanbaseWeb.Graphql.Middlewares.PostPaywallFilter
 
   object :timeline_queries do
     field :timeline_events, list_of(:timeline_events_paginated) do
@@ -21,6 +22,7 @@ defmodule SanbaseWeb.Graphql.Schema.TimelineQueries do
       arg(:limit, :integer, default_value: 25)
 
       resolve(&TimelineEventResolver.timeline_events/3)
+      middleware(PostPaywallFilter)
     end
 
     field :timeline_event, :timeline_event do
@@ -29,6 +31,7 @@ defmodule SanbaseWeb.Graphql.Schema.TimelineQueries do
       arg(:id, non_null(:integer))
 
       resolve(&TimelineEventResolver.timeline_event/3)
+      middleware(PostPaywallFilter)
     end
   end
 

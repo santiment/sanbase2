@@ -27,7 +27,7 @@ defmodule Sanbase.Oauth2.Hydra do
   end
 
   def manage_consent(consent, access_token, user) do
-    case Subscription.current_subscription(user, Product.product_sangraphs()) do
+    case Subscription.current_subscription(user, Product.product_sandata()) do
       %Subscription{plan: %Plan{id: plan_id}} ->
         find_or_create_grafana_user(user)
         |> case do
@@ -47,7 +47,7 @@ defmodule Sanbase.Oauth2.Hydra do
         end
 
       nil ->
-        error_msg = "#{user.email || user.username} doesn't have an active Sangraphs subscription"
+        error_msg = "#{user.email || user.username} doesn't have an active Sandata subscription"
         Logger.error(error_msg)
         reject_consent(consent, access_token, error_msg)
     end

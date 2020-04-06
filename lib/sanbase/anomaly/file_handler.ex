@@ -40,7 +40,7 @@ defmodule Sanbase.Anomaly.FileHandler do
   @anomalies_file "available_anomalies.json"
   @external_resource available_anomalies_file = Path.join(__DIR__, @anomalies_file)
   @anomalies_json File.read!(available_anomalies_file) |> Jason.decode!()
-  @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median, :count]
+  @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
 
   @metric_map Helper.name_to_field_map(@anomalies_json, "metric")
   @access_map Helper.name_to_field_map(@anomalies_json, "access", &String.to_atom/1)

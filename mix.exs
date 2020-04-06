@@ -6,7 +6,7 @@ defmodule Sanbase.Mixfile do
       app: :sanbase,
       name: "Sanbase",
       version: "0.0.1",
-      elixir: "~> 1.8",
+      elixir: "~> 1.10",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
@@ -110,7 +110,9 @@ defmodule Sanbase.Mixfile do
       {:inflex, "~> 2.0", override: true},
       {:mogrify, "~> 0.7.2"},
       {:lz4b, "0.0.4"},
-      {:rexbug, ">= 1.0.0", only: [:dev]}
+      {:rexbug, ">= 1.0.0"},
+      {:exprof, "~> 0.2.0"},
+      {:erlex, "~> 0.2.6", override: true}
     ]
   end
 

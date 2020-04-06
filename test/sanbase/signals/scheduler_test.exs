@@ -32,25 +32,29 @@ defmodule Sanbase.Signal.SchedulerTest do
         settings: trigger_settings
       })
 
-    mock_data =
-      generate_datetimes(~U[2019-01-01 00:00:00Z], "1d", 7)
-      |> Enum.zip([100, 100, 100, 100, 100, 100, 5000])
-      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
+    datetimes = generate_datetimes(~U[2019-01-01 00:00:00Z], "1d", 7)
+
+    mock_fun =
+      [
+        fn -> {:ok, [%{datetime: datetimes |> List.first(), value: 100}]} end,
+        fn -> {:ok, [%{datetiem: datetimes |> List.last(), value: 5000}]} end
+      ]
+      |> Sanbase.Mock.wrap_consecutives(arity: 5)
 
     [
       trigger: trigger,
       project: project,
       price_usd: 62,
       user: user,
-      mock_data: mock_data,
+      mock_fun: mock_fun,
       mock_chart: [%{image: %{url: "somelink"}}]
     ]
   end
 
   test "successfull signal is written in signals_historical_activity", context do
-    %{mock_data: mock_data, mock_chart: mock_chart, user: user, project: project} = context
+    %{mock_fun: mock_fun, mock_chart: mock_chart, user: user, project: project} = context
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.timeseries_data/5, {:ok, mock_data})
+    Sanbase.Mock.prepare_mock(Sanbase.Metric, :timeseries_data, mock_fun)
     |> Sanbase.Mock.prepare_mock2(&Sanbase.GoogleChart.build_embedded_chart/4, {:ok, mock_chart})
     |> Sanbase.Mock.run_with_mocks(fn ->
       Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
@@ -76,14 +80,14 @@ defmodule Sanbase.Signal.SchedulerTest do
 
   test "successfull signal is written in timeline_events", context do
     %{
-      mock_data: mock_data,
+      mock_fun: mock_fun,
       mock_chart: mock_chart,
       user: user,
       trigger: trigger,
       project: project
     } = context
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.timeseries_data/5, {:ok, mock_data})
+    Sanbase.Mock.prepare_mock(Sanbase.Metric, :timeseries_data, mock_fun)
     |> Sanbase.Mock.prepare_mock2(&Sanbase.GoogleChart.build_embedded_chart/4, {:ok, mock_chart})
     |> Sanbase.Mock.run_with_mocks(fn ->
       Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)

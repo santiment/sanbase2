@@ -1,11 +1,11 @@
 alias Sanbase.Repo
 
 Repo.query!("""
-INSERT INTO products (id, name) VALUES
-  (1, 'Neuro by Santiment'),
-  (2, 'Sanbase by Santiment'),
-  (3, 'Sheets by Santiment'),
-  (4, 'Graphs by Santiment')
+INSERT INTO products (id, name, code) VALUES
+  (1, 'Neuro by Santiment', 'SANAPI'),
+  (2, 'Sanbase by Santiment', 'SANBASE'),
+  (4, 'Sandata by Santiment', 'SANDATA'),
+  (5, 'Exchange Wallets by Santiment', 'SAN_EXCHANGE_WALLETS')
   ON CONFLICT DO NOTHING
 """)
 

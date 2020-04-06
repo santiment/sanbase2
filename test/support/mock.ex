@@ -1,6 +1,48 @@
 defmodule Sanbase.Mock do
   import Mock
 
+  @doc ~s"""
+  Return a function of the specified arity that on its N-th call returns the
+  result of executing the length(list) % N
+  """
+  def wrap_consecutives(list, opts) do
+    arity = Keyword.fetch!(opts, :arity)
+    cycle? = Keyword.get(opts, :cycle?, true)
+    do_wrap_consecutives(list, arity, cycle?)
+  end
+
+  for arity <- 0..16 do
+    @arity arity
+
+    defp do_wrap_consecutives(list, unquote(arity), cycle?) do
+      key = :rand.uniform(1_000_000_000)
+      list_length = list |> length
+      :persistent_term.put(key, 0)
+
+      fn unquote_splicing(Macro.generate_arguments(@arity, __MODULE__)) ->
+        position = :persistent_term.get(key)
+        :persistent_term.put(key, position + 1)
+
+        fun =
+          case cycle? do
+            true ->
+              list |> Stream.cycle() |> Enum.at(position)
+
+            false ->
+              if(position >= list_length) do
+                raise(
+                  "Mocked function with wrap_consecutive is called more than #{list_length} times with `cycle?: false`"
+                )
+              else
+                list |> Enum.at(position)
+              end
+          end
+
+        fun.()
+      end
+    end
+  end
+
   def with_mock2(assert_fun, {module, fun_name, fun_body}) do
     with_mock(module, [{fun_name, fun_body}], do: assert_fun.())
   end

@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
   object :user_settings do
     field(:hide_privacy_data, :boolean)
     field(:is_beta_mode, :boolean)
+    field(:is_promoter, :boolean)
     field(:theme, :string)
     field(:page_size, :integer)
     field(:table_columns, :json)

@@ -14,7 +14,7 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
   @plan_id_name_map %{
     "3" => "Neuro by Santiment / PRO",
     "13" => "Sanbase by Santiment / PRO",
-    "43" => "Graphs by Santiment / PREMIUM"
+    "43" => "Sandata by Santiment / PREMIUM"
   }
 
   # API Pro, Sanbase Pro and Grafana Premium

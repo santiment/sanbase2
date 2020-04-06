@@ -27,7 +27,7 @@ defmodule Sanbase.Oauth2.Hydra do
   end
 
   def manage_consent(consent, access_token, user) do
-    case Subscription.current_subscription(user, Product.product_sangraphs()) do
+    case Subscription.current_subscription(user, Product.product_sandata()) do
       %Subscription{plan: %Plan{id: plan_id}} ->
         find_or_create_grafana_user(user)
         |> case do

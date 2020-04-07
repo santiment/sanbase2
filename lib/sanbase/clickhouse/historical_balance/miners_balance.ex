@@ -3,7 +3,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.MinersBalance do
   Uses ClickHouse to calculate miner balances over time.
   """
 
-  alias Sanbase.DateTimeUtils
+  import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
   @table "eth_miners_metrics"
@@ -18,23 +18,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.MinersBalance do
           String.t()
         ) :: {:ok, list(balance)} | {:error, String.t()}
   def historical_balance("ethereum", from, to, interval) do
-    interval_in_seconds = DateTimeUtils.str_to_sec(interval)
-
-    case rem(interval_in_seconds, 86_400) do
-      0 ->
-        calculate_balances(from, to, interval_in_seconds)
-
-      _ ->
-        {:error, "The interval must consist of whole days!"}
-    end
-  end
-
-  def historical_balance(_, _, _, _), do: {:error, "Currently only ethereum is supported!"}
-
-  def first_datetime(_), do: ~U[2015-07-30 00:00:00Z]
-
-  defp calculate_balances(from, to, interval_in_seconds) do
-    {query, args} = balances_query(from, to, interval_in_seconds)
+    {query, args} = balances_query(from, to, interval)
 
     ClickhouseRepo.query_transform(
       query,
@@ -48,10 +32,11 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.MinersBalance do
     )
   end
 
-  defp balances_query(from, to, interval) do
-    from_datetime_unix = DateTime.to_unix(from)
-    to_datetime_unix = DateTime.to_unix(to)
+  def historical_balance(_, _, _, _), do: {:error, "Currently only ethereum is supported!"}
 
+  def first_datetime(_), do: ~U[2015-07-30 00:00:00Z]
+
+  defp balances_query(from, to, interval) do
     query = """
     SELECT
       toUnixTimestamp((intDiv(toUInt32(toDateTime(dt)), ?1) * ?1)) AS ts,
@@ -92,7 +77,11 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.MinersBalance do
     ORDER BY ts
     """
 
-    args = [interval, from_datetime_unix, to_datetime_unix]
+    args = [
+      interval |> str_to_sec(),
+      from |> DateTime.to_unix(),
+      to |> DateTime.to_unix()
+    ]
 
     {query, args}
   end

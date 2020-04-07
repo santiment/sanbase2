@@ -8,6 +8,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
   alias Sanbase.Auth.Apikey
   alias Sanbase.Metric
 
+  @product "SANAPI"
+
   setup_with_mocks([
     {Sanbase.Price, [], [timeseries_data: fn _, _, _, _ -> price_resp() end]},
     {Metric, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> metric_resp() end]}
@@ -43,7 +45,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "cannot access RESTRICTED metrics for over 3 months", context do
       {from, to} = from_to(91, 10)
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), :free)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
@@ -73,7 +75,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED metrics within 90 days and 2 day interval", context do
       {from, to} = from_to(89, 2)
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), :free)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
@@ -119,7 +121,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED metrics for less than 2 years", context do
       {from, to} = from_to(2 * 365 - 1, 2 * 365 - 2)
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), :basic)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :pro)
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
@@ -148,7 +150,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "cannot access RESTRICTED metrics for more than 2 years", context do
       {from, to} = from_to(2 * 365 + 1, 2 * 365 - 1)
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), :basic)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :basic)
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
@@ -161,7 +163,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     test "cannot access RESTRICTED metrics for more than 2 years - both params outside allowed",
          context do
       {from, to} = from_to(2 * 365 - 10, 2 * 365 - 2)
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), :basic)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :basic)
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
       result = execute_query_with_error(context.conn, query, "getMetric")
@@ -172,7 +174,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED metrics realtime", context do
       {from, to} = from_to(10, 0)
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), :basic)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :basic)
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
@@ -252,7 +254,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED metrics for less than 7 years", context do
       {from, to} = from_to(7 * 365 - 1, 7 * 365 - 2)
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), :pro)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :pro)
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
@@ -272,7 +274,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED metrics for over 7 years", context do
       {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), :pro)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :pro)
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
@@ -292,7 +294,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED metrics realtime", context do
       {from, to} = from_to(10, 0)
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), :pro)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :pro)
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
@@ -338,7 +340,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED metrics for all time & realtime", context do
       {from, to} = from_to(2500, 0)
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), :premium)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :premium)
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")

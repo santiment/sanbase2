@@ -4,8 +4,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   Currently the implemented scheme is like this:
   * For users accessing data for slug `santiment` - there is no restriction.
-  * If the user is anonymous the allowed timeframe is in the inteval [now() - 90days, now() - 1day].
-  * If the user has staked 1000SAN, currently he has unlimited historical data.
   * If the logged in user is subscribed to a plan - the allowed historical days is the value of `historical_data_in_days`
   for this plan.
   """
@@ -24,14 +22,13 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Absinthe.Resolution
-  alias Sanbase.Billing.{Subscription, GraphqlSchema, Plan}
+  alias Sanbase.Billing.{Subscription, GraphqlSchema, Plan, Product}
 
   @allow_access_without_staking ["santiment"]
   @minimal_datetime_param from_iso8601!("2009-01-01T00:00:00Z")
   @free_subscription Subscription.free_subscription()
   @extension_metrics Plan.AccessChecker.extension_metrics()
   @extension_metric_product_map GraphqlSchema.extension_metric_product_map()
-  @product_api Sanbase.Billing.Product.product_api()
 
   def call(resolution, opts) do
     # First call `check_from_to_params` and then pass the execution to do_call/2
@@ -71,18 +68,12 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     plan = context[:auth][:plan] || :free
     subscription = context[:auth][:subscription] || @free_subscription
     product_id = subscription.plan.product_id || context.product_id
+    product = Product.code_by_id(product_id)
 
-    case plan_has_access?(product_id, plan, query_or_metric) do
+    case Plan.AccessChecker.plan_has_access?(plan, product, query_or_metric) do
       true -> resolution
       false -> Resolution.put_result(resolution, {:error, :unauthorized})
     end
-  end
-
-  # Only API has minimal plan that can access certain query/metric
-  defp plan_has_access?(product, _plan, _query_or_metric) when product != @product_api, do: true
-
-  defp plan_has_access?(product, plan, query_or_metric) when product == @product_api do
-    Plan.AccessChecker.plan_has_access?(plan, query_or_metric)
   end
 
   # If the query is resolved there's nothing to do here

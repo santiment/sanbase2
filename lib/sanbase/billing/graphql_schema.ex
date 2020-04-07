@@ -39,17 +39,29 @@ defmodule Sanbase.Billing.GraphqlSchema do
   end
 
   def min_plan_map() do
+    # Metadata looks like this:
+    # meta(access: :restricted, min_plan: [SANAPI: :pro, SANBASE: :free])
     query_min_plan_map =
       get_query_meta_field_list(:min_plan)
       |> Enum.into(%{}, fn
-        {query, nil} -> {{:query, query}, :free}
-        {query, plan} when is_atom(plan) -> {{:query, query}, plan}
+        {query, kw_list} when is_list(kw_list) ->
+          {{:query, query},
+           %{
+             "SANAPI" => Keyword.get(kw_list, :SANAPI, :free),
+             "SANBASE" => Keyword.get(kw_list, :SANBASE, :free)
+           }}
+
+        {query, _} ->
+          {{:query, query}, %{"SANAPI" => :free, "SANBASE" => :free}}
       end)
 
     Metric.min_plan_map()
     |> Enum.into(query_min_plan_map, fn
-      {metric, nil} -> {{:metric, metric}, :free}
-      {metric, plan} when is_atom(plan) -> {{:metric, metric}, plan}
+      {metric, product_plan_map} when is_map(product_plan_map) ->
+        {{:metric, metric}, product_plan_map}
+
+      {metric, _} ->
+        {{:metric, metric}, %{"SANAPI" => :free, "SANBASE" => :free}}
     end)
   end
 

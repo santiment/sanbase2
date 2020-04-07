@@ -5,7 +5,10 @@
     "metric": "holders_distribution_1e_3",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -18,7 +21,10 @@
     "metric": "holders_distribution_1e_2",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -31,7 +37,10 @@
     "metric": "holders_distribution_1e_1",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -44,7 +53,10 @@
     "metric": "holders_distribution_1",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -57,7 +69,10 @@
     "metric": "holders_distribution_1e1",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -70,7 +85,10 @@
     "metric": "holders_distribution_1e2",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -83,7 +101,10 @@
     "metric": "holders_distribution_1e3",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -96,7 +117,10 @@
     "metric": "holders_distribution_1e4",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -109,7 +133,10 @@
     "metric": "holders_distribution_1e5",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -122,7 +149,10 @@
     "metric": "holders_distribution_1e6",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -135,7 +165,10 @@
     "metric": "holders_distribution_1e7",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -148,7 +181,10 @@
     "metric": "holders_distribution_inf",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -161,21 +197,26 @@
     "metric": "holders_distribution_all",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries"
   },
-
   {
     "human_readable_name": "Combined Balance Of Holders With Balance Between 0 and 0.001",
     "name": "holders_distribution_combined_balance_0_to_0.001",
     "metric": "holders_distribution_amount_1e_3",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -188,7 +229,10 @@
     "metric": "holders_distribution_amount_1e_2",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -201,7 +245,10 @@
     "metric": "holders_distribution_amount_1e_1",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -214,7 +261,10 @@
     "metric": "holders_distribution_amount_1",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -227,7 +277,10 @@
     "metric": "holders_distribution_amount_e1",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -240,7 +293,10 @@
     "metric": "holders_distribution_amount_e2",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -253,7 +309,10 @@
     "metric": "holders_distribution_amount_e3",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -266,7 +325,10 @@
     "metric": "holders_distribution_amount_e4",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -279,7 +341,10 @@
     "metric": "holders_distribution_amount_e5",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -292,7 +357,10 @@
     "metric": "holders_distribution_amount_e6",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -305,7 +373,10 @@
     "metric": "holders_distribution_amount_e7",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
@@ -318,7 +389,10 @@
     "metric": "holders_distribution_amount_inf",
     "version": "2019-01-01",
     "access": "restricted",
-    "min_plan": "free",
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
     "aggregation": "avg",
     "min_interval": "1d",
     "table": "daily_metrics_v2",

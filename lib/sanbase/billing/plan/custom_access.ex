@@ -23,7 +23,7 @@ defmodule Sanbase.Billing.Plan.CustomAccess do
 
   Module.register_attribute(__MODULE__, :metric, accumulate: true)
 
-  # MVRV and RV metrics from the schema and from Clickhouse
+  # MVRV and RV metrics from the graphql schema and from metrics .json file
   # The other time-bound `mvrv_usd_*` and `realized_value_usd_*` are removed from custom metrics.
   @metric %{
     metric_name: [
@@ -38,7 +38,7 @@ defmodule Sanbase.Billing.Plan.CustomAccess do
     }
   }
 
-  # Token age consumed metrics from the schema and from Clickhouse
+  # Token age consumed metrics from the graphql schema and from metrics .json file
   @metric %{
     metric_name: [{:query, :token_age_consumed}, {:query, :burn_rate}, {:metric, "age_destroyed"}],
     plan_access: %{

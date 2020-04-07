@@ -582,7 +582,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "min_plan": {
-      "SANAPI": "pro",
+      "SANAPI": "free",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -758,7 +758,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "min_plan": {
-      "SANAPI": "free",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",

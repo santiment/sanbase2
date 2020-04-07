@@ -152,14 +152,15 @@ defmodule Sanbase.Model.Project.AvailableQueries do
 
   @mineable_specific_queries ["exchangeWallets", "allExchanges"]
 
-  @ethereum_specific_queries ["miningPoolsDistribution", "dailyActiveDeposits", "gasUsed"]
+  @ethereum_specific_queries ["miningPoolsDistribution", "minersBalance", "gasUsed"]
 
   @erc20_specific_queries [
     "historicalBalance",
     "topHoldersPercentOfTotalSupply",
     "percentOfTokenSupplyOnExchanges",
     "shareOfDeposits",
-    "tokenTopTransactions"
+    "tokenTopTransactions",
+    "dailyActiveDeposits"
   ]
 
   @bitcoin_specific_queries []

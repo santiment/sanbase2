@@ -97,12 +97,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.MinersBalanceTest do
     end
   end
 
-  test "returns error when requested interval is less than a day", context do
-    result = MinersBalance.historical_balance(context.slug, context.from, context.to, "23h")
-
-    assert result == {:error, "The interval must consist of whole days!"}
-  end
-
   test "returns error when something except ethereum is requested", context do
     with_mock Sanbase.ClickhouseRepo, query: fn _, _ -> {:ok, %{rows: []}} end do
       result =

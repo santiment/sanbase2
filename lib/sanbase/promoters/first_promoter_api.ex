@@ -24,7 +24,7 @@ defmodule Sanbase.Promoters.FirstPromoterApi do
   @spec create(%User{}, promoter_args) :: {:ok, promoter} | {:error, String.t()}
   def create(user, args \\ %{})
 
-  def create(%User{id: id, email: email}, args) do
+  def create(%User{id: id, email: email}, args) when is_binary(email) do
     data = Map.merge(%{email: email, cust_id: id}, args) |> URI.encode_query()
 
     Path.join(@promoters_api_base_url, "create")

@@ -206,12 +206,13 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :interval, default_value: "1d")
-      arg(:limit, :integer, default_value: 100)
+      arg(:limit, :integer, default_value: 20)
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(AccessControl)
 
-      resolve(&MetricResolver.histogram_data/3)
+      # middleware(AccessControl)
+
+      cache_resolve(&MetricResolver.histogram_data/3)
     end
 
     field :available_since, :datetime do

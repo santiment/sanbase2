@@ -102,7 +102,7 @@
     "version": "2019-12-22",
     "access": "restricted",
     "min_plan": {
-      "SANAPI": "free",
+      "SANAPI": "custom",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -118,7 +118,7 @@
     "version": "2019-12-09",
     "access": "restricted",
     "min_plan": {
-      "SANAPI": "free",
+      "SANAPI": "custom",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -134,7 +134,7 @@
     "version": "2019-12-09",
     "access": "restricted",
     "min_plan": {
-      "SANAPI": "free",
+      "SANAPI": "custom",
       "SANBASE": "free"
     },
     "aggregation": "avg",
@@ -150,7 +150,7 @@
     "version": "2019-12-09",
     "access": "restricted",
     "min_plan": {
-      "SANAPI": "free",
+      "SANAPI": "custom",
       "SANBASE": "free"
     },
     "aggregation": "last",

@@ -11,7 +11,7 @@ defmodule Sanbase.Clickhouse.Metric.Helper do
 
   def mvrv_metrics(), do: metric_with_name_containing("mvrv") |> wrap()
   def realized_value_metrics(), do: metric_with_name_containing("realized") |> wrap()
-  def token_age_consumed_metrics(), do: metric_with_name_containing("age_consumed") |> wrap()
+  def token_age_consumed_metrics(), do: metric_with_name_containing("age_destroyed") |> wrap()
 
   defp wrap(list) do
     list

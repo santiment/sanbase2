@@ -122,7 +122,8 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
       subscription =
         Subscription.current_subscription(sign_up_trial.user_id, Product.product_sanbase())
 
-      if subscription.id != sign_up_trial.subscription_id and subscription.status == :active do
+      if subscription && subscription.id != sign_up_trial.subscription_id &&
+           subscription.status == :active do
         with {:ok, _} <- StripeApi.delete_subscription(sign_up_trial.subscription.stripe_id) do
           update_trial(sign_up_trial, %{is_finished: true})
         else

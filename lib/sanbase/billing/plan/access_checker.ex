@@ -9,7 +9,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   The subscription plan needed for a given query is given in the query definition
     ```
     field :network_growth, list_of(:network_growth) do
-        meta(access: :restricted, min_plan: [SANAPI: :pro, SANBASE: :free])
+        meta(access: :restricted, min_plan: [sanapi: :pro, sanbase: :free])
         ...
     end
     ```
@@ -107,7 +107,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   @spec plan_has_access?(plan, product, query_or_metric) :: boolean()
         when plan: atom(), product: binary()
   def plan_has_access?(plan, product, query_or_metric) do
-    case @min_plan_map[query_or_metric][product] || :free do
+    case min_plan(product, query_or_metric) do
       :free -> true
       :basic -> plan != :free
       :pro -> plan not in [:free, :basic]
@@ -116,6 +116,11 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
       # extensions plans can be with other plan. They're handled separately
       _ -> true
     end
+  end
+
+  @spec min_plan(product, query_or_metric) :: atom() when product: binary()
+  def min_plan(product, query_or_metric) do
+    @min_plan_map[query_or_metric][product] || :free
   end
 
   def custom_access_queries_stats(), do: @custom_access_queries_stats

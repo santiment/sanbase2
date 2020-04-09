@@ -71,8 +71,19 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     product = Product.code_by_id(product_id)
 
     case Plan.AccessChecker.plan_has_access?(plan, product, query_or_metric) do
-      true -> resolution
-      false -> Resolution.put_result(resolution, {:error, :unauthorized})
+      true ->
+        resolution
+
+      false ->
+        min_plan = Plan.AccessChecker.min_plan(product, query_or_metric)
+
+        Resolution.put_result(
+          resolution,
+          {:error,
+           "The metric #{elem(query_or_metric, 1)} is not accessible with your current plan #{
+             plan
+           }. Please upgrade to #{min_plan} plan."}
+        )
     end
   end
 

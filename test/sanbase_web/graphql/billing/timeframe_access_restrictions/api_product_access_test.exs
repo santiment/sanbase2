@@ -200,7 +200,9 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       error_message = execute_query_with_error(context.conn, query, "getMetric")
 
       refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
-      assert error_message == "unauthorized"
+
+      assert error_message ==
+               "The metric mvrv_long_short_diff_usd is not accessible with your current plan basic. Please upgrade to pro plan."
     end
 
     test "some metrics can be accessed only with free timeframe", context do

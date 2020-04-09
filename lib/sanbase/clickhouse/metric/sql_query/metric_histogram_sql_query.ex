@@ -6,6 +6,14 @@ defmodule Sanbase.Clickhouse.Metric.HistogramSqlQuery do
   @name_to_metric_map FileHandler.name_to_metric_map()
 
   def histogram_data_query("price_histogram", slug, from, to, interval, _limit) do
+    interval_sec = interval |> str_to_sec()
+
+    metric =
+      case rem(interval_sec, 86400) do
+        0 -> "age_distribution_1day_delta"
+        _ -> "age_distribution_5min_delta"
+      end
+
     query = """
     SELECT round(price, 2) AS price, sum(tokens_amount) AS tokens_amount
     FROM (
@@ -16,10 +24,14 @@ defmodule Sanbase.Clickhouse.Metric.HistogramSqlQuery do
             -sum(measure) AS tokens_amount
         FROM distribution_deltas_5min FINAL
         PREWHERE
+          metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = '#{
+      metric
+    }' ) AND
           asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
           dt >= toDateTime(?2) AND
           dt < toDateTime(?3) AND
-          dt != value
+          dt != value AND
+          value < toDateTime(?2)
         GROUP BY t
         ORDER BY t ASC
       )
@@ -43,7 +55,7 @@ defmodule Sanbase.Clickhouse.Metric.HistogramSqlQuery do
       slug,
       from |> DateTime.to_unix(),
       to |> DateTime.to_unix(),
-      interval |> str_to_sec()
+      interval_sec
     ]
 
     {query, args}
@@ -53,16 +65,17 @@ defmodule Sanbase.Clickhouse.Metric.HistogramSqlQuery do
     query = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(value)), ?5) * ?5) AS t,
-      -sum(measure)
+      -sum(measure) AS sum_measure
     FROM #{Map.get(@table_map, metric)} FINAL
     PREWHERE
       metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = ?1 ) AND
       asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?2 ) AND
       dt != value AND
       dt >= toDateTime(?3) AND
-      dt < toDateTime(?4)
+      dt < toDateTime(?4) AND
+      value < toDateTime(?3)
     GROUP BY t
-    ORDER BY t DESC
+    ORDER BY sum_measure DESC
     LIMIT ?6
     """
 

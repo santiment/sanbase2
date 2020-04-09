@@ -48,6 +48,8 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
   end
 
   # Aggregate the separate prices into `limit` number of evenly spaced buckets
+  defp maybe_transform_into_buckets({:ok, []}, _slug, _from, _to, _limit), do: {:ok, []}
+
   defp maybe_transform_into_buckets({:ok, data}, slug, from, to, limit) do
     {min, max} = Enum.map(data, & &1.price) |> Sanbase.Math.min_max()
 

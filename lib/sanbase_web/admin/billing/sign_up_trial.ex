@@ -7,6 +7,7 @@ defmodule Sanbase.ExAdmin.Billing.SignUpTrial do
     index do
       column(:user, fields: [:email, :username], link: true)
       column(:subscription, link: true)
+      column(:is_finished)
       column(:inserted_at)
       column(:updated_at)
     end

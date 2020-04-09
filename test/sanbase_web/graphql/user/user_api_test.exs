@@ -514,28 +514,69 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
     assert json_response(result, 200)["errors"] != nil
   end
 
-  test "emailLogin returns true if the login email was sent successfully", %{
-    conn: conn
-  } do
-    mock(Sanbase.MandrillApi, :send, {:ok, %{}})
+  describe "#email_login" do
+    setup_with_mocks([
+      {Sanbase.MandrillApi, [], [send: fn _, _, _ -> {:ok, %{}} end]}
+    ]) do
+      mutation_func = fn args ->
+        args_str =
+          Enum.reduce(args, [], fn {k, v}, acc ->
+            if is_atom(v) do
+              acc ++ ["#{k}: #{v}"]
+            else
+              acc ++ ["#{k}: \"#{v}\""]
+            end
+          end)
+          |> Enum.join(",")
 
-    query = """
-    mutation {
-      emailLogin(email: "john@example.com") {
-        success
-        firstLogin
-      }
-    }
-    """
+        """
+        mutation {
+          emailLogin(#{args_str}) {
+            success
+            firstLogin
+          }
+        }
+        """
+      end
 
-    result =
-      conn
-      |> post("/graphql", mutation_skeleton(query))
+      {:ok, mutation_func: mutation_func}
+    end
 
-    assert Repo.get_by(User, email: "john@example.com")
-    response = json_response(result, 200)["data"]["emailLogin"]
-    assert response["success"]
-    assert response["firstLogin"]
+    test "emailLogin returns true if the login email was sent successfully", context do
+      result =
+        execute_mutation(
+          context.conn,
+          context.mutation_func.(email: "john@example.com"),
+          "emailLogin"
+        )
+
+      assert Repo.get_by(User, email: "john@example.com")
+      assert result["success"]
+      assert result["firstLogin"]
+    end
+
+    test "emailLogin with newsletter subscription adds newsletter subscription param", context do
+      result =
+        execute_mutation(
+          context.conn,
+          context.mutation_func.(email: "john@example.com", subscribeToWeeklyNewsletter: true),
+          "emailLogin"
+        )
+
+      assert Repo.get_by(User, email: "john@example.com")
+      assert result["success"]
+      assert result["firstLogin"]
+
+      assert_called(
+        Sanbase.MandrillApi.send(
+          :_,
+          "john@example.com",
+          :meck.is(fn %{LOGIN_LINK: login_link} ->
+            assert login_link =~ "subscribe_to_weekly_newsletter=true"
+          end)
+        )
+      )
+    end
   end
 
   test "logout clears session", %{

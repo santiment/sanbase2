@@ -72,6 +72,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       arg(:email, non_null(:string))
       arg(:username, :string)
       arg(:consent, :string)
+      arg(:subscribe_to_weekly_newsletter, :boolean)
 
       resolve(&UserResolver.email_login/2)
     end

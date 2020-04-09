@@ -358,11 +358,11 @@ defmodule Sanbase.Auth.User do
     |> Repo.update()
   end
 
-  def send_login_email(user, origin_url) do
+  def send_login_email(user, origin_url, args \\ %{}) do
     origin_url
     |> Sanbase.Email.Template.choose_login_template(first_login?: user.first_login)
     |> mandrill_api().send(user.email, %{
-      LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email, origin_url)
+      LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email, origin_url, args)
     })
   end
 

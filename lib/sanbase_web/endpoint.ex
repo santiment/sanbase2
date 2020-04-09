@@ -122,12 +122,17 @@ defmodule SanbaseWeb.Endpoint do
     backend_url() <> "/graphql"
   end
 
-  def login_url(token, email, nil) do
-    frontend_url() <> "/email_login?" <> URI.encode_query(token: token, email: email)
-  end
+  def login_url(token, email, origin_url, args \\ %{}) do
+    query_string =
+      Map.merge(%{token: token, email: email}, Map.take(args, [:subscribe_to_weekly_newsletter]))
+      |> URI.encode_query()
 
-  def login_url(token, email, origin_url) do
-    origin_url <> "/email_login?" <> URI.encode_query(token: token, email: email)
+    login_path = "/email_login?#{query_string}"
+
+    case origin_url do
+      nil -> frontend_url() <> login_path
+      origin_url -> origin_url <> login_path
+    end
   end
 
   def verify_url(email_candidate_token, email_candidate) do

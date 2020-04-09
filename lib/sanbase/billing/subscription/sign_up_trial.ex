@@ -15,6 +15,7 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
   use Ecto.Schema
 
   import Ecto.Changeset
+  import Ecto.Query
 
   require Logger
 
@@ -23,6 +24,7 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
   alias Sanbase.Repo
   alias Sanbase.Billing.Plan
   alias Sanbase.Billing.{Subscription, Product}
+  alias Sanbase.StripeApi
 
   @free_trial_days 14
   # Free trial plans are Sanbase PRO plans
@@ -59,6 +61,7 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     field(:sent_trial_will_end_email, :boolean, dafault: false)
     field(:sent_cc_will_be_charged, :boolean, dafault: false)
     field(:sent_trial_finished_without_cc, :boolean, dafault: false)
+    field(:is_finished, :boolean, default: false)
 
     timestamps()
   end
@@ -74,7 +77,8 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
       :sent_second_education_email,
       :sent_trial_will_end_email,
       :sent_cc_will_be_charged,
-      :sent_trial_finished_without_cc
+      :sent_trial_finished_without_cc,
+      :is_finished
     ])
     |> validate_required([:user_id])
     |> unique_constraint(:user_id)
@@ -83,7 +87,7 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
 
   # scheduled to run once a day
   def send_email_on_trial_day() do
-    __MODULE__
+    from(sut in __MODULE__, where: sut.is_finished == false)
     |> Repo.all()
     |> Enum.each(fn sign_up_trial ->
       trial_day = calc_trial_day(sign_up_trial)
@@ -98,16 +102,47 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     end)
   end
 
+  # scheduled to run every 10 mins
+  def update_finished() do
+    free_trial_days_ago = Timex.shift(Timex.now(), days: -@free_trial_days)
+
+    from(sut in __MODULE__,
+      where: sut.is_finished == false and sut.inserted_at < ^free_trial_days_ago,
+      update: [set: [is_finished: true]]
+    )
+    |> Repo.update_all([])
+  end
+
+  # Cancel trial when customer has subscribed
+  # scheduled to run every 5 mins
+  def cancel_prematurely_ended_trials() do
+    from(sut in __MODULE__, where: sut.is_finished == false, preload: [:subscription])
+    |> Repo.all()
+    |> Enum.each(fn sign_up_trial ->
+      subscription =
+        Subscription.current_subscription(sign_up_trial.user_id, Product.product_sanbase())
+
+      if subscription.id != sign_up_trial.subscription_id and subscription.status == :active do
+        with {:ok, _} <- StripeApi.delete_subscription(sign_up_trial.subscription.stripe_id) do
+          update_trial(sign_up_trial, %{is_finished: true})
+        else
+          {:error, reason} ->
+            Logger.error(
+              "Can't delete the subscription for: #{inspect(sign_up_trial)}, reason: #{
+                inspect(reason)
+              }"
+            )
+        end
+      end
+    end)
+  end
+
   def by_user_id(user_id) do
-    Repo.get_by(__MODULE__, user_id: user_id)
+    Repo.get_by(__MODULE__, user_id: user_id, is_finished: false)
   end
 
   def create(user_id) do
     %__MODULE__{} |> changeset(%{user_id: user_id}) |> Repo.insert()
-  end
-
-  def update_trial(sign_up_trial, params) do
-    sign_up_trial |> changeset(params) |> Repo.update()
   end
 
   def create_subscription(user_id) do
@@ -128,7 +163,11 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
   end
 
   def maybe_send_trial_finished_email(subscription) do
-    Repo.get_by(__MODULE__, user_id: subscription.user_id, subscription_id: subscription.id)
+    Repo.get_by(__MODULE__,
+      user_id: subscription.user_id,
+      subscription_id: subscription.id,
+      is_finished: false
+    )
     |> case do
       %__MODULE__{sent_trial_finished_without_cc: false} = sign_up_trial ->
         do_send_email_and_mark_sent(sign_up_trial, :sent_trial_finished_without_cc)
@@ -144,6 +183,11 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     end)
   end
 
+  # helpers
+  def update_trial(sign_up_trial, params) do
+    sign_up_trial |> changeset(params) |> Repo.update()
+  end
+
   defp get_trialing_subscription(stripe_subscription_id) do
     Subscription.by_stripe_id(stripe_subscription_id)
     |> case do
@@ -156,7 +200,11 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
   end
 
   defp get_sign_up_trial(subscription) do
-    Repo.get_by(__MODULE__, user_id: subscription.user_id, subscription_id: subscription.id)
+    Repo.get_by(__MODULE__,
+      user_id: subscription.user_id,
+      subscription_id: subscription.id,
+      is_finished: false
+    )
     |> case do
       %__MODULE__{sent_trial_will_end_email: false} = sign_up_trial ->
         {:ok, sign_up_trial}

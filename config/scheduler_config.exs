@@ -60,6 +60,14 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "00 07 * * *",
       task: {Sanbase.Billing.Subscription.SignUpTrial, :send_email_on_trial_day, []}
     ],
+    update_finished_trials: [
+      schedule: "*/10 * * * *",
+      task: {Sanbase.Billing.Subscription.SignUpTrial, :update_finished, []}
+    ],
+    cancel_prematurely_ended_trials: [
+      schedule: "*/5 * * * *",
+      task: {Sanbase.Billing.Subscription.SignUpTrial, :cancel_prematurely_ended_trials, []}
+    ],
     sync_plans_in_stripe: [
       schedule: "@reboot",
       task: {Sanbase.Billing.Plan, :sync_plans_in_stripe, []}

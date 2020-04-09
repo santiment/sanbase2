@@ -66,7 +66,18 @@ defmodule SanbaseWeb.Endpoint do
   def init(_key, config) do
     if config[:load_from_system_env] do
       port = System.get_env("PORT") || raise "expected the PORT environment variable to be set"
-      {:ok, Keyword.put(config, :http, [:inet6, port: port])}
+
+      {:ok,
+       Keyword.put(config, :http, [
+         :inet6,
+         port: port,
+         protocol_options: [
+           max_header_name_length: 64,
+           max_header_value_length: 8192,
+           max_request_line_length: 16_384,
+           max_headers: 100
+         ]
+       ])}
     else
       {:ok, config}
     end

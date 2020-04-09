@@ -57,6 +57,7 @@ config :sanbase, Sanbase.Auth.Hmac, secret_key: {:system, "APIKEY_HMAC_SECRET_KE
 
 # Configures the endpoint
 config :sanbase, SanbaseWeb.Endpoint,
+  http: [protocol_options: [max_request_line_length: 16_384, max_header_value_length: 8192]],
   url: [host: "localhost"],
   secret_key_base: "Vq7Rfo0T4EfiLX2/ryYal3O0l9ebBNhyh58cfWdTAUHxEJGu2p9u1WTQ31Ki4Phj",
   render_errors: [view: SanbaseWeb.ErrorView, accepts: ~w(json)],

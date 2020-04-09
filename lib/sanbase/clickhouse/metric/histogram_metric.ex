@@ -71,7 +71,7 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
     # Generate limit number of ranges to properly empty ranges as 0
     ranges_map =
       Stream.unfold(min, price_ranges)
-      |> Enum.take_while(fn [_lower, upper] -> upper > max end)
+      |> Enum.take(limit)
       |> Enum.into(%{}, fn range -> {range, 0.0} end)
 
     # Map every price to the proper range
@@ -110,7 +110,7 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
   defp break_bucket(bucketed_data, original_data, [low, high], divider) do
     {lower_half_amount, upper_half_amount} =
       original_data
-      |> Enum.reduce({0, 0}, fn %{price: price, value: value}, {acc_lower, acc_upper} ->
+      |> Enum.reduce({0.0, 0.0}, fn %{price: price, value: value}, {acc_lower, acc_upper} ->
         cond do
           price >= low and price < divider -> {acc_lower + value, acc_upper}
           price >= divider and price < high -> {acc_lower, acc_upper + value}

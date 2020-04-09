@@ -209,8 +209,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:limit, :integer, default_value: 20)
 
       complexity(&Complexity.from_to_interval/3)
-
-      # middleware(AccessControl)
+      middleware(AccessControl)
 
       cache_resolve(&MetricResolver.histogram_data/3)
     end

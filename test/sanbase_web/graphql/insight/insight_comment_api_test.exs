@@ -43,6 +43,7 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
     assert comment["content"] == content
     assert comment["insertedAt"] != nil
     assert comment["editedAt"] == nil
+    assert comment["user"]["email"] == "<email hidden>"
     assert length(comments) == 1
     assert comments |> List.first() |> Map.get("id") == comment["id"]
   end

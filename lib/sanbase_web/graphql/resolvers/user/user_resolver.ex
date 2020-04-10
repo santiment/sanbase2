@@ -9,6 +9,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   alias Ecto.Multi
   alias Sanbase.Billing.Subscription.SignUpTrial
 
+  def email(%User{} = user, _args, _resolution) do
+    user = User.Public.hide_private_data(user)
+    {:ok, user.email}
+  end
+
   def permissions(
         %User{} = user,
         _args,

@@ -23,7 +23,11 @@ defmodule SanbaseWeb.Graphql.UserTypes do
 
   object :public_user do
     field(:id, non_null(:id))
-    field(:email, :string)
+
+    field :email, :string do
+      resolve(&UserResolver.email/3)
+    end
+
     field(:username, :string)
     field(:avatar_url, :string)
 

@@ -643,9 +643,8 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
   end
 
   defp to_graphql_args_string(args) do
-    Enum.reduce(args, [], fn {k, v}, acc ->
-      new_arg = if is_atom(v), do: "#{k}: #{v}", else: "#{k}: \"#{v}\""
-      acc ++ [new_arg]
+    Enum.map(args, fn {k, v} ->
+      if is_atom(v), do: "#{k}: #{v}", else: "#{k}: \"#{v}\""
     end)
     |> Enum.join(",")
   end

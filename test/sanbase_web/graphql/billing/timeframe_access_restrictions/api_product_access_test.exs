@@ -192,7 +192,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "can't access PRO metric", context do
+    test "can't access metric with min plan PRO", context do
       {from, to} = from_to(2 * 365 - 1, 2 * 365 - 2)
       metric = "mvrv_long_short_diff_usd"
       slug = context.project.slug
@@ -311,6 +311,17 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       result = execute_query(context.conn, query, "networkGrowth")
 
       assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "can access metric with min plan PRO", context do
+      {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)
+      metric = "mvrv_long_short_diff_usd"
+      slug = context.project.slug
+      query = metric_query(metric, slug, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
   end

@@ -10,12 +10,6 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
                          |> Enum.filter(&match?({{:metric, _}, _}, &1))
                          |> Enum.map(fn {{_, name}, _} -> name end)
 
-  def v2_restricted_metric(position),
-    do:
-      (Sanbase.Metric.restricted_metrics() -- @custom_access_metrics)
-      |> Stream.cycle()
-      |> Enum.at(position)
-
   def v2_restricted_metric_for_plan(position, product, plan_name) do
     all_v2_restricted_metrics_for_plan(product, plan_name)
     |> Stream.cycle()

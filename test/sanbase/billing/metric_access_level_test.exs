@@ -42,20 +42,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "price_usd_change_30d",
         "active_addresses_24h_change_1d",
         "active_addresses_24h_change_7d",
-        "active_addresses_24h_change_30d",
-        # makerdao metrics
-        "mcd_locked_token",
-        "mcd_collat_ratio",
-        "mcd_collat_ratio_weth",
-        "mcd_dsr",
-        "mcd_stability_fee",
-        "dai_created",
-        "scd_locked_token",
-        "mcd_erc20_supply",
-        "mcd_supply",
-        "mcd_collat_ratio_sai",
-        "scd_collat_ratio",
-        "dai_repaid"
+        "active_addresses_24h_change_30d"
       ]
       |> Enum.sort()
 
@@ -181,7 +168,20 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
       "holders_distribution_combined_balance_1M_to_10M",
       "holders_distribution_combined_balance_1_to_10",
       "holders_distribution_combined_balance_1k_to_10k",
-      "holders_distribution_total"
+      "holders_distribution_total",
+      # makerdao metrics
+      "dai_created",
+      "dai_repaid",
+      "mcd_collat_ratio",
+      "mcd_collat_ratio_sai",
+      "mcd_collat_ratio_weth",
+      "mcd_dsr",
+      "mcd_erc20_supply",
+      "mcd_locked_token",
+      "mcd_stability_fee",
+      "mcd_supply",
+      "scd_collat_ratio",
+      "scd_locked_token"
     ]
 
     expected_result = metrics |> Enum.sort()

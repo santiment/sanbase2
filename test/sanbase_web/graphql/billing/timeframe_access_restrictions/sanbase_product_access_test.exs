@@ -10,6 +10,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   alias Sanbase.Metric
 
   @triggers_limit_count 10
+  @product "SANBASE"
 
   setup_with_mocks([
     {Sanbase.Price, [], [timeseries_data: fn _, _, _, _ -> price_resp() end]},
@@ -52,7 +53,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "cannot access RESTRICTED metrics for over 2 years", context do
       {from, to} = from_to(2 * 365 + 1, 31)
       slug = context.project.slug
-      metric = v2_restricted_metric(context.next_integer.())
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
@@ -75,7 +76,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "cannot access RESTRICTED metrics for the past 30 days", context do
       {from, to} = from_to(32, 28)
       slug = context.project.slug
-      metric = v2_restricted_metric(context.next_integer.())
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
@@ -87,7 +88,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
          context do
       {from, to} = from_to(20, 10)
       slug = context.project.slug
-      metric = v2_restricted_metric(context.next_integer.())
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
       query = metric_query(metric, slug, from, to)
       result = execute_query_with_error(context.conn, query, "getMetric")
 
@@ -129,7 +130,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "can access RESTRICTED metrics within 2 years and 30 day ago interval", context do
       {from, to} = from_to(2 * 365 - 1, 31)
       slug = context.project.slug
-      metric = v2_restricted_metric(context.next_integer.())
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
 
@@ -191,7 +192,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "can access RESTRICTED v2 clickhouse metrics for 1 year", context do
       {from, to} = from_to(12 * 30, 0)
       slug = context.project.slug
-      metric = v2_restricted_metric(context.next_integer.())
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :pro)
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))

@@ -4,8 +4,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   Currently the implemented scheme is like this:
   * For users accessing data for slug `santiment` - there is no restriction.
-  * If the user is anonymous the allowed timeframe is in the inteval [now() - 90days, now() - 1day].
-  * If the user has staked 1000SAN, currently he has unlimited historical data.
   * If the logged in user is subscribed to a plan - the allowed historical days is the value of `historical_data_in_days`
   for this plan.
   """
@@ -24,7 +22,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Absinthe.Resolution
-  alias Sanbase.Billing.{Subscription, GraphqlSchema, Plan}
+  alias Sanbase.Billing.{Subscription, GraphqlSchema, Plan, Product}
 
   @allow_access_without_staking ["santiment"]
   @minimal_datetime_param from_iso8601!("2009-01-01T00:00:00Z")
@@ -64,12 +62,28 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     resolution
   end
 
-  defp check_plan(%Resolution{context: %{__query_atom_name__: query_or_metric}} = resolution) do
-    plan = resolution.context[:auth][:plan] || :free
+  defp check_plan(
+         %Resolution{context: %{__query_atom_name__: query_or_metric} = context} = resolution
+       ) do
+    plan = context[:auth][:plan] || :free
+    subscription = context[:auth][:subscription] || @free_subscription
+    product_id = subscription.plan.product_id || context.product_id
+    product = Product.code_by_id(product_id)
 
-    case Plan.AccessChecker.plan_has_access?(plan, query_or_metric) do
-      true -> resolution
-      false -> Resolution.put_result(resolution, {:error, :unauthorized})
+    case Plan.AccessChecker.plan_has_access?(plan, product, query_or_metric) do
+      true ->
+        resolution
+
+      false ->
+        min_plan = Plan.AccessChecker.min_plan(product, query_or_metric)
+
+        Resolution.put_result(
+          resolution,
+          {:error,
+           "The metric #{elem(query_or_metric, 1)} is not accessible with your current plan #{
+             plan
+           }. Please upgrade to #{min_plan} plan."}
+        )
     end
   end
 

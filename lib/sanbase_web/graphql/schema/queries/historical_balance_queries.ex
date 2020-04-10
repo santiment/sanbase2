@@ -45,7 +45,7 @@ defmodule SanbaseWeb.Graphql.Schema.HistoricalBalanceQueries do
     Currently only ETH is supported.
     """
     field :miners_balance, list_of(:miners_balance) do
-      meta(access: :restricted)
+      meta(access: :restricted, min_plan: [sanapi: :pro, sanbase: :free])
 
       arg(:slug, :string, default_value: "ethereum")
       arg(:from, non_null(:datetime))

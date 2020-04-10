@@ -21,26 +21,26 @@ defmodule Sanbase.Billing.Plan.CustomAccess do
 
   @doc documentation_ref: "# DOCS access-plans/index.md"
 
-  import Sanbase.Clickhouse.Metric.Helper,
-    only: [mvrv_metrics: 0, realized_value_metrics: 0, token_age_consumed_metrics: 0]
-
   Module.register_attribute(__MODULE__, :metric, accumulate: true)
 
-  # MVRV and RV metrics from the schema and from Clickhouse
+  # MVRV and RV metrics from the graphql schema and from metrics .json file
+  # The other time-bound `mvrv_usd_*` and `realized_value_usd_*` are removed from custom metrics.
   @metric %{
-    metric_name:
-      [{:query, :mvrv_ratio}, {:query, :realized_value}] ++
-        mvrv_metrics() ++ realized_value_metrics(),
+    metric_name: [
+      {:query, :mvrv_ratio},
+      {:query, :realized_value},
+      {:metric, "mvrv_usd"},
+      {:metric, "realized_value_usd"}
+    ],
     plan_access: %{
       free: %{realtime_data_cut_off_in_days: 30, historical_data_in_days: 365},
       basic: %{realtime_data_cut_off_in_days: 14, historical_data_in_days: 2 * 365}
     }
   }
 
-  # Token age consumed metrics from the shcme and from Clickhouse
+  # Token age consumed metrics from the graphql schema and from metrics .json file
   @metric %{
-    metric_name:
-      [{:query, :token_age_consumed}, {:query, :burn_rate}] ++ token_age_consumed_metrics(),
+    metric_name: [{:query, :token_age_consumed}, {:query, :burn_rate}, {:metric, "age_destroyed"}],
     plan_access: %{
       free: %{realtime_data_cut_off_in_days: 30}
     }

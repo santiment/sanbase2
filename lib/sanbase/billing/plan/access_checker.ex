@@ -9,7 +9,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   The subscription plan needed for a given query is given in the query definition
     ```
     field :network_growth, list_of(:network_growth) do
-        meta(access: :restricted)
+        meta(access: :restricted, min_plan: [sanapi: :pro, sanbase: :free])
         ...
     end
     ```
@@ -104,17 +104,23 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   @spec is_restricted?(query_or_metric) :: boolean()
   def is_restricted?(query_or_metric), do: query_or_metric not in @free_metrics_mapset
 
-  @spec plan_has_access?(plan_name, query_or_metric) :: boolean() when plan_name: atom()
-  def plan_has_access?(plan, query_or_metric) do
-    case Map.get(@min_plan_map, query_or_metric, :free) do
+  @spec plan_has_access?(plan, product, query_or_metric) :: boolean()
+        when plan: atom(), product: binary()
+  def plan_has_access?(plan, product, query_or_metric) do
+    case min_plan(product, query_or_metric) do
       :free -> true
-      :essential -> plan != :free
-      :pro -> plan not in [:free, :essential]
-      :premium -> plan not in [:free, :essential, :pro]
+      :basic -> plan != :free
+      :pro -> plan not in [:free, :basic]
+      :premium -> plan not in [:free, :basic, :pro]
       :enterprise -> plan not in [:free, :eseential, :pro, :premium]
       # extensions plans can be with other plan. They're handled separately
       _ -> true
     end
+  end
+
+  @spec min_plan(product, query_or_metric) :: atom() when product: binary()
+  def min_plan(product, query_or_metric) do
+    @min_plan_map[query_or_metric][product] || :free
   end
 
   def custom_access_queries_stats(), do: @custom_access_queries_stats
@@ -125,7 +131,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     {Product.product_sanbase(), SanbaseAccessChecker}
   ]
 
-  @spec historical_data_in_days(%Plan{}, query_or_metric(), non_neg_integer()) ::
+  @spec historical_data_in_days(atom(), query_or_metric(), non_neg_integer()) ::
           non_neg_integer() | nil
   def historical_data_in_days(plan, query_or_metric, _product_id)
       when query_or_metric in @custom_access_queries do
@@ -139,7 +145,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     end
   end
 
-  @spec realtime_data_cut_off_in_days(%Plan{}, query_or_metric(), non_neg_integer()) ::
+  @spec realtime_data_cut_off_in_days(atom(), query_or_metric(), non_neg_integer()) ::
           non_neg_integer() | nil
   def realtime_data_cut_off_in_days(plan, query_or_metric, _product_id)
       when query_or_metric in @custom_access_queries do

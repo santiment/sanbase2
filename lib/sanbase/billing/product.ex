@@ -18,6 +18,14 @@ defmodule Sanbase.Billing.Product do
   @product_sandata 4
   @product_exchange_wallets 5
 
+  @code_product_id_map %{
+    "SANAPI" => 1,
+    "SANBASE" => 2,
+    "SANDATA" => 4,
+    "SAN_EXCHANGE_WALLETS" => 5
+  }
+  @product_code_by_id_map Enum.into(@code_product_id_map, %{}, fn {k, v} -> {v, k} end)
+
   schema "products" do
     field(:name, :string)
     field(:stripe_id, :string)
@@ -45,7 +53,11 @@ defmodule Sanbase.Billing.Product do
   end
 
   def code_by_id(id) do
-    Repo.get(__MODULE__, id).code
+    Map.get(@product_code_by_id_map, id)
+  end
+
+  def id_by_code(code) do
+    Map.get(@code_product_id_map, code)
   end
 
   @doc """

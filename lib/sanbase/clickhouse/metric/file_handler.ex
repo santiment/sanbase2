@@ -52,7 +52,10 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   @table_map Helper.name_to_field_map(@metrics_json, "table")
   @aggregation_map Helper.name_to_field_map(@metrics_json, "aggregation", &String.to_atom/1)
   @min_interval_map Helper.name_to_field_map(@metrics_json, "min_interval")
-  @min_plan_map Helper.name_to_field_map(@metrics_json, "min_plan", &String.to_atom/1)
+  @min_plan_map Helper.name_to_field_map(@metrics_json, "min_plan", fn plan_map ->
+                  Enum.into(plan_map, %{}, fn {k, v} -> {k, String.to_atom(v)} end)
+                end)
+
   @human_readable_name_map Helper.name_to_field_map(@metrics_json, "human_readable_name")
   @metric_version_map Helper.name_to_field_map(@metrics_json, "version")
   @metrics_label_map Helper.name_to_field_map(@metrics_json, "label")

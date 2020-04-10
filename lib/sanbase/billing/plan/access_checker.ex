@@ -31,7 +31,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
 
   @type query_or_metric :: {:metric, String.t()} | {:query, atom()}
 
-  alias Sanbase.Billing.{Plan, Product, Subscription, GraphqlSchema}
+  alias Sanbase.Billing.{Product, Subscription, GraphqlSchema}
   alias Sanbase.Billing.Plan.{CustomAccess, ApiAccessChecker, SanbaseAccessChecker}
 
   # Raise an error if there is any query without subscription plan

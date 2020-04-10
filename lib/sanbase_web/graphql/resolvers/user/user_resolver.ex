@@ -93,7 +93,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
       }) do
     with {:ok, user} <- User.find_or_insert_by_email(email, args[:username]),
          {:ok, user} <- User.update_email_token(user, args[:consent]),
-         {:ok, _user} <- User.send_login_email(user, origin_url) do
+         {:ok, _user} <- User.send_login_email(user, origin_url, args) do
       {:ok, %{success: true, first_login: user.first_login}}
     else
       _ -> {:error, message: "Can't login"}

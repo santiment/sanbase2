@@ -519,9 +519,14 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
       {Sanbase.MandrillApi, [], [send: fn _, _, _ -> {:ok, %{}} end]}
     ]) do
       mutation_func = fn args ->
+        graphql_args_string =
+          map_to_input_object_str(args)
+          |> String.replace_leading("{", "")
+          |> String.replace_trailing("}", "")
+
         """
         mutation {
-          emailLogin(#{to_graphql_args_string(args)}) {
+          emailLogin(#{graphql_args_string}) {
             success
             firstLogin
           }
@@ -536,7 +541,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
       result =
         execute_mutation(
           context.conn,
-          context.mutation_func.(email: "john@example.com"),
+          context.mutation_func.(%{email: "john@example.com"}),
           "emailLogin"
         )
 
@@ -549,7 +554,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
       result =
         execute_mutation(
           context.conn,
-          context.mutation_func.(email: "john@example.com", subscribeToWeeklyNewsletter: true),
+          context.mutation_func.(%{email: "john@example.com", subscribeToWeeklyNewsletter: true}),
           "emailLogin"
         )
 
@@ -640,12 +645,5 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
                  "`something invalid` is not a valid URL. Reason: it is missing scheme (e.g. missing https:// part)"
                ]
              }
-  end
-
-  defp to_graphql_args_string(args) do
-    Enum.map(args, fn {k, v} ->
-      if is_atom(v), do: "#{k}: #{v}", else: "#{k}: \"#{v}\""
-    end)
-    |> Enum.join(",")
   end
 end

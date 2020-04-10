@@ -5,6 +5,7 @@ defmodule Sanbase.SocialData.SocialVolume do
   require Sanbase.Utils.Config, as: Config
 
   alias Sanbase.Model.Project
+  alias Sanbase.Model.Project.SocialVolumeQuery
 
   require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
@@ -106,44 +107,49 @@ defmodule Sanbase.SocialData.SocialVolume do
   defp source_to_indicator(<<"professional_traders_chat", _::binary>>),
     do: "professional_traders_chat_overview"
 
-  defp social_volume_request(selector, from, to, interval, source) do
-    option =
-      case selector do
-        %{slug: slug} ->
-          {"slug", "#{slug}"}
-
-        %{search_text: search_text} ->
-          {"search_text", search_text}
-
-        {:error, error} ->
-          error
+  defp social_volume_selector_handler(%{slug: slug}) do
+    query =
+      case slug |> Project.by_slug(only_preload: [:social_volume_query]) do
+        %Project{social_volume_query: query} when not is_nil(query) -> query
+        %Project{} = project -> SocialVolumeQuery.default_query(project)
+        _ -> {:error, "Invalid slug"}
       end
+
+    {"slug", query}
+  end
+
+  defp social_volume_selector_handler(%{search_text: search_text}) do
+    {"search_text", search_text}
+  end
+
+  defp social_volume_selector_handler(%{}) do
+    {:error, "Invalid argument for social_volume, please input a slug or search_text"}
+  end
+
+  defp social_volume_request(selector, from, to, interval, source) do
+    slug_or_search_text_string = social_volume_selector_handler(selector)
 
     url =
       "#{metrics_hub_url()}/social_volume?from_timestamp=#{from}&to_timestamp=#{to}&interval=#{
         interval
-      }&source=#{source}"
+      }"
 
     options = [
       recv_timeout: @recv_timeout,
       params: [
-        option
+        slug_or_search_text_string,
+        {"source", source}
       ]
     ]
 
     http_client().get(url, [], options)
   end
 
-  defp social_volume_result(result) do
-    %{"data" => map} = result
-
+  defp social_volume_result(%{"data" => map}) do
     map =
-      Map.to_list(map)
-      |> Enum.map(fn {timestamp, value} ->
-        {:ok, datetime, _status} = DateTime.from_iso8601(timestamp)
-
+      Enum.map(map, fn {datetime, value} ->
         %{
-          datetime: datetime,
+          datetime: Sanbase.DateTimeUtils.from_iso8601!(datetime),
           mentions_count: value
         }
       end)

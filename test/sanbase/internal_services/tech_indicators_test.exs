@@ -191,8 +191,7 @@ defmodule Sanbase.TechIndicatorsTest do
         :get,
         {:ok,
          %HTTPoison.Response{
-           body:
-             "{\"data\": {\"2018-04-16T11:00:00Z\": 5, \"2018-04-16T12:00:00Z\": 15}}",
+           body: "{\"data\": {\"2018-04-16T11:00:00Z\": 5, \"2018-04-16T12:00:00Z\": 15}}",
            status_code: 200
          }}
       )
@@ -275,8 +274,7 @@ defmodule Sanbase.TechIndicatorsTest do
         :get,
         {:ok,
          %HTTPoison.Response{
-           body:
-             "{\"data\": {\"2018-04-16T11:00:00Z\": 1, \"2018-04-16T12:00:00Z\": 0}}",
+           body: "{\"data\": {\"2018-04-16T11:00:00Z\": 1, \"2018-04-16T12:00:00Z\": 0}}",
            status_code: 200
          }}
       )

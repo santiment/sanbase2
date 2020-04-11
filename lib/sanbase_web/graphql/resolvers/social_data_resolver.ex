@@ -63,7 +63,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
         %{source: source, search_text: search_text, from: from, to: to, interval: interval},
         _resolution
       ) do
-    case SocialData.topic_search(search_text, from, to, interval, source) do
+    case SocialData.social_volume(search_text, from, to, interval, source) do
       {:ok, data} -> {:ok, %{chart_data: data}}
       {:error, error} -> {:error, error}
     end

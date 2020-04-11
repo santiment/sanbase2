@@ -13,13 +13,13 @@ defmodule Sanbase.SocialData.SocialVolume do
   @recv_timeout 25_000
   @sources [:telegram, :professional_traders_chat, :reddit, :discord]
 
-  def social_volume(slug, from, to, interval, source)
+  def social_volume(selector, from, to, interval, source)
       when source in [:all, "all", :total, "total"] do
     result =
       @sources
       |> Sanbase.Parallel.flat_map(
         fn source ->
-          {:ok, result} = social_volume(slug, from, to, interval, source)
+          {:ok, result} = social_volume(selector, from, to, interval, source)
           result
         end,
         max_concurrency: 4
@@ -29,20 +29,18 @@ defmodule Sanbase.SocialData.SocialVolume do
     {:ok, result}
   end
 
-  def social_volume(slug, from, to, interval, source) do
-    social_volume_request(%{slug: slug}, from, to, interval, source)
+  def social_volume(selector, from, to, interval, source) do
+    social_volume_request(selector, from, to, interval, source)
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, result} = Jason.decode(body)
         social_volume_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status}} ->
-        warn_result("Error status #{status} fetching social volume for project #{slug}")
+        warn_result("Error status #{status} fetching social volume")
 
       {:error, %HTTPoison.Error{} = error} ->
-        error_result(
-          "Cannot fetch social volume data for project #{slug}: #{HTTPoison.Error.message(error)}"
-        )
+        error_result("Cannot fetch social volume data: #{HTTPoison.Error.message(error)}")
     end
   end
 
@@ -63,81 +61,45 @@ defmodule Sanbase.SocialData.SocialVolume do
     end
   end
 
-  def topic_search(search_text, from, to, interval, source)
-      when source in [:all, "all", :total, "total"] do
-    result =
-      @sources
-      |> Sanbase.Parallel.flat_map(
-        fn source ->
-          {:ok, result} = topic_search(search_text, from, to, interval, source)
-          result
-        end,
-        max_concurrency: 4
-      )
-      |> Sanbase.Utils.Transform.sum_by_datetime(:mentions_count)
-
-    {:ok, result}
-  end
-
-  def topic_search(search_text, from, to, interval, source) do
-    social_volume_request(%{search_text: search_text}, from, to, interval, source)
-    |> case do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Jason.decode(body)
-        social_volume_result(result)
-
-      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        error_result(
-          "Error status #{status} fetching results for search text \"#{search_text}\": #{body}"
-        )
-
-      {:error, %HTTPoison.Error{} = error} ->
-        error_result(
-          "Cannot fetch results for search text \"#{search_text}\": #{
-            HTTPoison.Error.message(error)
-          }"
-        )
-    end
-  end
-
-  defp source_to_indicator(<<"reddit", _::binary>>), do: "reddit_comments_overview"
-  defp source_to_indicator(<<"discord", _::binary>>), do: "discord_chats_overview"
-  defp source_to_indicator(<<"telegram", _::binary>>), do: "telegram_chats_overview"
-
-  defp source_to_indicator(<<"professional_traders_chat", _::binary>>),
-    do: "professional_traders_chat_overview"
-
   defp social_volume_selector_handler(%{slug: slug}) do
     query =
-      case slug |> Project.by_slug(only_preload: [:social_volume_query]) do
-        %Project{social_volume_query: query} when not is_nil(query) -> query
-        %Project{} = project -> SocialVolumeQuery.default_query(project)
-        _ -> {:error, "Invalid slug"}
+      slug
+      |> Project.by_slug(only_preload: [:social_volume_query])
+      |> case do
+        %Project{social_volume_query: %Sanbase.Model.Project.SocialVolumeQuery{query: query_text}}
+        when not is_nil(query_text) ->
+          query_text
+
+        %Project{} = project ->
+          SocialVolumeQuery.default_query(project)
+
+        _ ->
+          {:error, "Invalid slug"}
       end
 
-    {"slug", query}
+    {"search_text", query}
   end
 
   defp social_volume_selector_handler(%{search_text: search_text}) do
     {"search_text", search_text}
   end
 
-  defp social_volume_selector_handler(%{}) do
+  defp social_volume_selector_handler(args) do
     {:error, "Invalid argument for social_volume, please input a slug or search_text"}
   end
 
   defp social_volume_request(selector, from, to, interval, source) do
     slug_or_search_text_string = social_volume_selector_handler(selector)
 
-    url =
-      "#{metrics_hub_url()}/social_volume?from_timestamp=#{from}&to_timestamp=#{to}&interval=#{
-        interval
-      }"
+    url = "#{metrics_hub_url()}/social_volume?"
 
     options = [
       recv_timeout: @recv_timeout,
       params: [
         slug_or_search_text_string,
+        {"from_timestamp", from},
+        {"to_timestamp", to},
+        {"interval", interval},
         {"source", source}
       ]
     ]

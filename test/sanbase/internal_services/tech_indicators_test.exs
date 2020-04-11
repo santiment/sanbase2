@@ -215,7 +215,7 @@ defmodule Sanbase.TechIndicatorsTest do
       assert capture_log(fn ->
                SocialVolume.social_volume("santiment", from, to, "1h", :telegram)
              end) =~
-               "Error status 404 fetching social volume for project santiment"
+               "Error status 404 fetching social volume\n"
     end
 
     test "response: error" do
@@ -227,7 +227,7 @@ defmodule Sanbase.TechIndicatorsTest do
       assert capture_log(fn ->
                SocialVolume.social_volume("santiment", from, to, "1h", :telegram)
              end) =~
-               "Cannot fetch social volume data for project santiment: :econnrefused\n"
+               "Cannot fetch social volume data: :econnrefused\n"
     end
   end
 
@@ -279,7 +279,7 @@ defmodule Sanbase.TechIndicatorsTest do
          }}
       )
 
-      result = SocialVolume.topic_search("btc moon", from, to, "6h", :telegram)
+      result = SocialVolume.social_volume("btc moon", from, to, "6h", :telegram)
 
       assert result ==
                {:ok,
@@ -296,9 +296,9 @@ defmodule Sanbase.TechIndicatorsTest do
       mock(HTTPoison, :get, {:ok, %HTTPoison.Response{body: "Some message", status_code: 404}})
 
       assert capture_log(fn ->
-               SocialVolume.topic_search("btc moon", from, to, "6h", :reddit)
+               SocialVolume.social_volume("btc moon", from, to, "6h", :reddit)
              end) =~
-               "Error status 404 fetching results for search text \"btc moon\": Some message\n"
+               "Error status 404 fetching social volume\n"
     end
 
     test "response: error" do
@@ -308,9 +308,9 @@ defmodule Sanbase.TechIndicatorsTest do
       mock(HTTPoison, :get, {:error, %HTTPoison.Error{reason: :econnrefused}})
 
       assert capture_log(fn ->
-               SocialVolume.topic_search("btc moon", from, to, "6h", :discord)
+               SocialVolume.social_volume("btc moon", from, to, "6h", :discord)
              end) =~
-               "Cannot fetch results for search text \"btc moon\": :econnrefused\n"
+               "Cannot fetch social volume data: :econnrefused\n"
     end
   end
 end

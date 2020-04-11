@@ -56,7 +56,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
       when metric in @social_volume_timeseries_metrics do
     "social_volume_" <> source = metric
 
-    Sanbase.SocialData.social_volume(slug, from, to, interval, source)
+    Sanbase.SocialData.social_volume(%{slug: slug}, from, to, interval, source)
     |> transform_to_value_pairs(:mentions_count)
   end
 
@@ -80,7 +80,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
       when metric in @social_volume_timeseries_metrics do
     "social_volume_" <> source = metric
 
-    Sanbase.SocialData.topic_search(text, from, to, interval, source)
+    Sanbase.SocialData.social_volume(%{text: text}, from, to, interval, source)
     |> transform_to_value_pairs(:mentions_count)
   end
 

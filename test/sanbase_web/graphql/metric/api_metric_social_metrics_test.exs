@@ -317,7 +317,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
         %{mentions_count: 1203, datetime: to}
       ]
 
-      Sanbase.Mock.prepare_mock(Sanbase.SocialData.SocialVolume, :topic_search, fn
+      Sanbase.Mock.prepare_mock(Sanbase.SocialData.SocialVolume, :social_volume, fn
         text, _, _, _, _ ->
           case text do
             "*" -> {:ok, total_mentions}

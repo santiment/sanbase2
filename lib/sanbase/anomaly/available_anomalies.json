@@ -7,7 +7,7 @@
     "access": "free",
     "aggregation": "count",
     "min_interval": "1d",
-    "table": "anomalies",
+    "table": "anomalies_v2",
     "data_type": "timeseries"
   },
   {
@@ -18,7 +18,7 @@
     "access": "free",
     "aggregation": "count",
     "min_interval": "1d",
-    "table": "anomalies",
+    "table": "anomalies_v2",
     "data_type": "timeseries"
   },
   {
@@ -29,7 +29,7 @@
     "access": "free",
     "aggregation": "count",
     "min_interval": "1d",
-    "table": "anomalies",
+    "table": "anomalies_v2",
     "data_type": "timeseries"
   }
 ]

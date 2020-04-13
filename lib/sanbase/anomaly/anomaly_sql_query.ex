@@ -1,5 +1,5 @@
 defmodule Sanbase.Anomaly.SqlQuery do
-  @table "anomalies"
+  @table "anomalies_v2"
   @metadata_table "anomalies_model_metadata"
 
   @moduledoc ~s"""

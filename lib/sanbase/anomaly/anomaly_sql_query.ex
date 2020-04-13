@@ -140,7 +140,7 @@ defmodule Sanbase.Anomaly.SqlQuery do
   def first_datetime_query(anomaly, nil) do
     query = """
     SELECT toUnixTimestamp(toDateTime(min(dt)))
-    FROM #{@table}
+    FROM #{Map.get(@table_map, anomaly)}
     PREWHERE model_id GLOBAL IN (
       SELECT
         model_id FROM #{@metadata_table}
@@ -161,7 +161,7 @@ defmodule Sanbase.Anomaly.SqlQuery do
   def first_datetime_query(anomaly, slug) do
     query = """
     SELECT toUnixTimestamp(toDateTime(min(dt)))
-    FROM #{@table}
+    FROM #{Map.get(@table_map, anomaly)}
     PREWHERE model_id GLOBAL IN (
       SELECT
         model_id FROM #{@metadata_table}

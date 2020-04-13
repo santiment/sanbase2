@@ -32,19 +32,23 @@ defmodule SanbaseWeb.Graphql.InsightCommentApiTest do
   end
 
   test "comment an insight", context do
-    %{conn: conn, post: post} = context
+    %{post: post, conn: conn, user: user} = context
+    other_user_conn = setup_jwt_auth(build_conn(), insert(:user))
 
     content = "nice post"
+
     comment = create_comment(conn, post.id, nil, content)
 
-    comments = insight_comments(conn, post.id)
+    comments = insight_comments(other_user_conn, post.id)
 
     assert comment["insightId"] |> Sanbase.Math.to_integer() == post.id
     assert comment["content"] == content
     assert comment["insertedAt"] != nil
     assert comment["editedAt"] == nil
+    assert comment["user"]["email"] == user.email
     assert length(comments) == 1
     assert comments |> List.first() |> Map.get("id") == comment["id"]
+    assert comments |> hd() |> get_in(["user", "email"]) == "<email hidden>"
   end
 
   test "update a comment", context do

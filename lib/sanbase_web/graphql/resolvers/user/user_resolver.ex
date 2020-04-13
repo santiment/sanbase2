@@ -9,6 +9,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   alias Ecto.Multi
   alias Sanbase.Billing.Subscription.SignUpTrial
 
+  def email(%User{email: nil}, _args, _resolution), do: {:ok, nil}
+
+  def email(%User{id: id, email: email}, _args, %{
+        context: %{auth: %{current_user: %User{id: id}}}
+      }) do
+    {:ok, email}
+  end
+
+  def email(%User{} = user, _args, _resolution) do
+    {:ok, User.Public.hide_private_data(user).email}
+  end
+
   def permissions(
         %User{} = user,
         _args,
@@ -52,7 +64,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   def get_user(_root, %{selector: selector}, _resolution) do
     case User.by_selector(selector) do
       nil -> {:error, "Cannot fetch user by: #{inspect(selector)}"}
-      user -> {:ok, user |> User.Public.hide_private_data()}
+      user -> {:ok, user}
     end
   end
 

@@ -60,8 +60,10 @@ defmodule Sanbase.SocialData.SocialDominance do
   end
 
   def social_dominance(%{text: text}, from, to, interval, source) do
-    with {:ok, text_volume} <- Sanbase.SocialData.social_volume(text, from, to, interval, source),
-         {:ok, total_volume} <- Sanbase.SocialData.social_volume("*", from, to, interval, source) do
+    with {:ok, text_volume} <-
+           Sanbase.SocialData.social_volume(%{text: text}, from, to, interval, source),
+         {:ok, total_volume} <-
+           Sanbase.SocialData.social_volume(%{text: "*"}, from, to, interval, source) do
       # If `text_volume` is empty replace it with 0 mentions, so the end result
       # will be with all dominance = 0
       text_volume_map =

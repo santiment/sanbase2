@@ -80,18 +80,18 @@ defmodule Sanbase.SocialData.SocialVolume do
     {"search_text", query}
   end
 
-  defp social_volume_selector_handler(%{search_text: search_text}) do
+  defp social_volume_selector_handler(%{text: search_text}) do
     {"search_text", search_text}
   end
 
-  defp social_volume_selector_handler(args) do
+  defp social_volume_selector_handler(_args) do
     {:error, "Invalid argument for social_volume, please input a slug or search_text"}
   end
 
   defp social_volume_request(selector, from, to, interval, source) do
     slug_or_search_text_string = social_volume_selector_handler(selector)
 
-    url = "#{metrics_hub_url()}/social_volume?"
+    url = "#{metrics_hub_url()}/social_volume"
 
     options = [
       recv_timeout: @recv_timeout,

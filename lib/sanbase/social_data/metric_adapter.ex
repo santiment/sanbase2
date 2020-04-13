@@ -56,7 +56,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
       when metric in @social_volume_timeseries_metrics do
     "social_volume_" <> source = metric
 
-    Sanbase.SocialData.social_volume(%{slug: slug}, from, to, interval, source)
+    Sanbase.SocialData.social_volume(selector, from, to, interval, source)
     |> transform_to_value_pairs(:mentions_count)
   end
 
@@ -68,19 +68,19 @@ defmodule Sanbase.SocialData.MetricAdapter do
     |> transform_to_value_pairs(:dominance)
   end
 
-  def timeseries_data(metric, %{slug: slug}, from, to, interval, _aggregation)
+  def timeseries_data(metric, %{slug: slug} = selector, from, to, interval, _aggregation)
       when metric in @community_messages_count_timeseries_metrics do
     "community_messages_count_" <> source = metric
 
-    Sanbase.SocialData.community_messages_count(slug, from, to, interval, source)
+    Sanbase.SocialData.community_messages_count(selector, from, to, interval, source)
     |> transform_to_value_pairs(:mentions_count)
   end
 
-  def timeseries_data(metric, %{text: text}, from, to, interval, _aggregation)
+  def timeseries_data(metric, %{text: text} = selector, from, to, interval, _aggregation)
       when metric in @social_volume_timeseries_metrics do
     "social_volume_" <> source = metric
 
-    Sanbase.SocialData.social_volume(%{text: text}, from, to, interval, source)
+    Sanbase.SocialData.social_volume(selector, from, to, interval, source)
     |> transform_to_value_pairs(:mentions_count)
   end
 

@@ -153,9 +153,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   def histogram_data(
         _root,
-        %{from: from, to: to, interval: interval, limit: limit} = args,
+        args,
         %{source: %{metric: metric}}
       ) do
+    %{to: to, interval: interval, limit: limit} = args
+    from = Map.get(args, :from, nil)
+
     case Metric.histogram_data(metric, to_selector(args), from, to, interval, limit) do
       {:ok, data} ->
         {:ok, %{values: %{data: data}}}

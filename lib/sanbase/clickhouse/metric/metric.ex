@@ -157,8 +157,9 @@ defmodule Sanbase.Clickhouse.Metric do
   def available_aggregations(), do: @aggregations
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime("price_histogram" = metric, selector),
-    do: HistogramMetric.first_datetime(metric, selector)
+  def first_datetime(metric, selector)
+      when metric in ["price_histogram", "spent_coins_cost", "all_spent_coins_cost"],
+      do: HistogramMetric.first_datetime(metric, selector)
 
   def first_datetime(metric, %{slug: slug}) do
     {query, args} = first_datetime_query(metric, slug)
@@ -170,8 +171,9 @@ defmodule Sanbase.Clickhouse.Metric do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def last_datetime_computed_at("price_histogram" = metric, selector),
-    do: HistogramMetric.last_datetime_computed_at(metric, selector)
+  def last_datetime_computed_at(metric, selector)
+      when metric in ["price_histogram", "spent_coins_cost", "all_spent_coins_cost"],
+      do: HistogramMetric.last_datetime_computed_at(metric, selector)
 
   def last_datetime_computed_at(metric, %{slug: slug}) do
     {query, args} = last_datetime_computed_at_query(metric, slug)

@@ -1169,6 +1169,36 @@
     "data_type": "histogram"
   },
   {
+    "human_readable_name": "Spent Coins Cost",
+    "name": "spent_coins_cost",
+    "metric": "spent_coins_cost",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": [
+      "distribution_deltas_5min",
+      "intraday_metrics"
+    ],
+    "has_incomplete_data": false,
+    "data_type": "histogram"
+  },
+  {
+    "human_readable_name": "All Spent Coins Cost",
+    "name": "all_spent_coins_cost",
+    "metric": "all_spent_coins_cost",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": [
+      "distribution_deltas_5min",
+      "intraday_metrics"
+    ],
+    "has_incomplete_data": false,
+    "data_type": "histogram"
+  },
+  {
     "human_readable_name": "Active Deposits",
     "name": "active_deposits",
     "metric": "active_deposits",

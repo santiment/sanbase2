@@ -170,7 +170,7 @@ defmodule Sanbase.Price.SqlQuery do
         slug IN (?1) AND
         source = cast(?2, 'LowCardinality(String)') AND
         dt < toDateTime(?3)
-        #{if from, do: "AND dt >= toDateTime(?3)"}
+        #{if from, do: "AND dt >= toDateTime(?4)"}
       GROUP BY slug
     )
     GROUP BY slug

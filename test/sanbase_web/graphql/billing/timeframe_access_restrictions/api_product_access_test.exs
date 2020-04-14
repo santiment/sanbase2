@@ -121,7 +121,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED metrics for less than 2 years", context do
       {from, to} = from_to(2 * 365 - 1, 2 * 365 - 2)
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :pro)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :basic)
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")

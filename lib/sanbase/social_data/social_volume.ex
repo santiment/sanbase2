@@ -37,10 +37,14 @@ defmodule Sanbase.SocialData.SocialVolume do
         social_volume_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status}} ->
-        warn_result("Error status #{status} fetching social volume")
+        warn_result("Error status #{status} fetching social volume for #{inspect(selector)}")
 
       {:error, %HTTPoison.Error{} = error} ->
-        error_result("Cannot fetch social volume data: #{HTTPoison.Error.message(error)}")
+        error_result(
+          "Cannot fetch social volume data for #{inspect(selector)}: #{
+            HTTPoison.Error.message(error)
+          }"
+        )
     end
   end
 
@@ -62,22 +66,19 @@ defmodule Sanbase.SocialData.SocialVolume do
   end
 
   defp social_volume_selector_handler(%{slug: slug}) do
-    query =
-      slug
-      |> Project.by_slug(only_preload: [:social_volume_query])
-      |> case do
-        %Project{social_volume_query: %Sanbase.Model.Project.SocialVolumeQuery{query: query_text}}
-        when not is_nil(query_text) ->
-          query_text
+    slug
+    |> Project.by_slug(only_preload: [:social_volume_query])
+    |> case do
+      %Project{social_volume_query: %Sanbase.Model.Project.SocialVolumeQuery{query: query_text}}
+      when not is_nil(query_text) ->
+        {"search_text", query_text}
 
-        %Project{} = project ->
-          SocialVolumeQuery.default_query(project)
+      %Project{} = project ->
+        {"search_text", SocialVolumeQuery.default_query(project)}
 
-        _ ->
-          {:error, "Invalid slug"}
-      end
-
-    {"search_text", query}
+      _ ->
+        {:error, "Invalid slug"}
+    end
   end
 
   defp social_volume_selector_handler(%{text: search_text}) do
@@ -89,16 +90,16 @@ defmodule Sanbase.SocialData.SocialVolume do
   end
 
   defp social_volume_request(selector, from, to, interval, source) do
-    slug_or_search_text_string = social_volume_selector_handler(selector)
+    {"search_text", search_text} = social_volume_selector_handler(selector)
 
     url = "#{metrics_hub_url()}/social_volume"
 
     options = [
       recv_timeout: @recv_timeout,
       params: [
-        slug_or_search_text_string,
-        {"from_timestamp", from},
-        {"to_timestamp", to},
+        {"search_text", search_text},
+        {"from_timestamp", from |> DateTime.to_iso8601()},
+        {"to_timestamp", to |> DateTime.to_iso8601()},
         {"interval", interval},
         {"source", source}
       ]
@@ -115,6 +116,7 @@ defmodule Sanbase.SocialData.SocialVolume do
           mentions_count: value
         }
       end)
+      |> Enum.sort_by(&DateTime.to_unix(&1.datetime))
 
     {:ok, map}
   end

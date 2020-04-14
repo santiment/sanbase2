@@ -215,7 +215,7 @@ defmodule Sanbase.TechIndicatorsTest do
       assert capture_log(fn ->
                SocialVolume.social_volume(%{slug: "santiment"}, from, to, "1h", :telegram)
              end) =~
-               "Error status 404 fetching social volume\n"
+               "Error status 404 fetching social volume for %{slug: \"santiment\"}\n"
     end
 
     test "response: error" do
@@ -227,7 +227,7 @@ defmodule Sanbase.TechIndicatorsTest do
       assert capture_log(fn ->
                SocialVolume.social_volume(%{slug: "santiment"}, from, to, "1h", :telegram)
              end) =~
-               "Cannot fetch social volume data: :econnrefused\n"
+               "Cannot fetch social volume data for %{slug: \"santiment\"}: :econnrefused\n"
     end
   end
 
@@ -298,7 +298,7 @@ defmodule Sanbase.TechIndicatorsTest do
       assert capture_log(fn ->
                SocialVolume.social_volume(%{text: "btc moon"}, from, to, "6h", :reddit)
              end) =~
-               "Error status 404 fetching social volume\n"
+               "Error status 404 fetching social volume for %{text: \"btc moon\"}\n"
     end
 
     test "response: error" do
@@ -310,7 +310,7 @@ defmodule Sanbase.TechIndicatorsTest do
       assert capture_log(fn ->
                SocialVolume.social_volume(%{text: "btc moon"}, from, to, "6h", :discord)
              end) =~
-               "Cannot fetch social volume data: :econnrefused\n"
+               "Cannot fetch social volume data for %{text: \"btc moon\"}: :econnrefused\n"
     end
   end
 end

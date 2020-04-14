@@ -49,7 +49,7 @@ defmodule Sanbase.SocialData.Community do
   end
 
   def community_messages_count(argument) do
-    {:error, "Invalid argument #{argument}"}
+    {:error, "Invalid argument #{inspect(argument)}"}
   end
 
   defp source_to_indicator(<<"discord", _::binary>>), do: "discord_discussion_overview"

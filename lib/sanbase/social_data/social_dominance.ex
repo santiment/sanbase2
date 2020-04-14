@@ -64,25 +64,18 @@ defmodule Sanbase.SocialData.SocialDominance do
          {:ok, total_volume} <- Sanbase.SocialData.topic_search("*", from, to, interval, source) do
       # If `text_volume` is empty replace it with 0 mentions, so the end result
       # will be with all dominance = 0
-      text_volume =
-        case text_volume do
-          [_ | _] -> text_volume
-          _ -> [%{mentions_count: 0}]
-        end
+      text_volume_map =
+        text_volume |> Enum.into(%{}, fn elem -> {elem.datetime, elem.mentions_count} end)
 
       result =
-        Enum.zip(total_volume, Stream.cycle(text_volume))
-        |> Enum.map(fn
-          {
-            %{datetime: dt, mentions_count: total_mentions},
-            %{mentions_count: text_mentions}
-          } ->
-            dominance = Sanbase.Math.percent_of(text_mentions, total_mentions) || 0.0
+        Enum.map(total_volume, fn %{datetime: datetime, mentions_count: total_mentions} ->
+          text_mentions = Map.get(text_volume_map, datetime, 0)
+          dominance = Sanbase.Math.percent_of(text_mentions, total_mentions) || 0.0
 
-            %{
-              datetime: dt,
-              dominance: dominance |> Sanbase.Math.round_float()
-            }
+          %{
+            datetime: datetime,
+            dominance: dominance |> Sanbase.Math.round_float()
+          }
         end)
         |> Enum.sort_by(&DateTime.to_unix(&1.datetime))
 

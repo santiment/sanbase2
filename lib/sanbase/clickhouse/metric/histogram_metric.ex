@@ -4,6 +4,8 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
+  @spent_coins_cost_histograms ["price_histogram", "spent_coins_cost", "all_spent_coins_cost"]
+
   def histogram_data("age_distribution" = metric, %{slug: slug}, from, to, interval, limit) do
     {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
 
@@ -22,7 +24,7 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
   end
 
   def histogram_data(metric, %{slug: slug}, from, to, interval, limit)
-      when metric in ["price_histogram", "spent_coins_cost", "all_spent_coins_cost"] do
+      when metric in @spent_coins_cost_histograms do
     {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
 
     ClickhouseRepo.query_transform(query, args, fn [price, amount] ->
@@ -35,7 +37,7 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
   end
 
   def first_datetime(metric, %{slug: _} = selector)
-      when metric in ["price_histogram", "spent_coins_cost", "all_spent_coins_cost"] do
+      when metric in @spent_coins_cost_histograms do
     with {:ok, dt1} <- Sanbase.Metric.first_datetime("price_usd", selector),
          {:ok, dt2} <- Sanbase.Metric.first_datetime("age_distribution", selector) do
       {:ok, Enum.max_by([dt1, dt2], &DateTime.to_unix/1)}

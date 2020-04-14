@@ -5,7 +5,7 @@ defmodule Sanbase.Clickhouse.Metric.HistogramSqlQuery do
   @table_map FileHandler.table_map()
   @name_to_metric_map FileHandler.name_to_metric_map()
 
-  def histogram_data_query("all_spent_coins_cost", slug, nil, to, interval, _limit) do
+  def histogram_data_query("all_spent_coins_cost", slug, _from, to, interval, _limit) do
     interval_sec = interval |> str_to_sec()
 
     metric =

@@ -157,6 +157,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         %{source: %{metric: metric}}
       ) do
     %{to: to, interval: interval, limit: limit} = args
+    # from datetime arg is not required for `all_spent_coins_cost` metric which calculates
+    # the histogram for all time.
     from = Map.get(args, :from, nil)
 
     case Metric.histogram_data(metric, to_selector(args), from, to, interval, limit) do

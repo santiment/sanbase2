@@ -153,7 +153,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
         |> Map.merge(curr_value_kv)
 
       template = """
-      **{{project_name}}**'s {{metric_human_readable_name}} #{operation_template} and #{
+      {{metric_human_readable_name}} of the search term '#{text}' #{operation_template} and #{
         curr_value_template
       }.
       """

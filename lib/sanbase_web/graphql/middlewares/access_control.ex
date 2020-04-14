@@ -24,7 +24,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   alias Absinthe.Resolution
   alias Sanbase.Billing.{Subscription, GraphqlSchema, Plan, Product}
 
-  @allow_access_without_staking ["santiment"]
+  @freely_available_slugs ["santiment"]
   @minimal_datetime_param from_iso8601!("2009-01-01T00:00:00Z")
   @free_subscription Subscription.free_subscription()
   @extension_metrics Plan.AccessChecker.extension_metrics()
@@ -59,6 +59,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   # Basic auth should have no restrictions
   defp check_plan(%Resolution{context: %{auth: %{auth_method: :basic}}} = resolution) do
+    resolution
+  end
+
+  defp check_plan(%Resolution{arguments: %{slug: slug}} = resolution)
+       when slug in @freely_available_slugs do
     resolution
   end
 
@@ -111,7 +116,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   # This will serve the purpose of showing to anonymous and users with lesser plans
   # how the data looks like.
   defp do_call(%Resolution{arguments: %{slug: slug}} = resolution, _)
-       when slug in @allow_access_without_staking do
+       when slug in @freely_available_slugs do
     resolution
   end
 

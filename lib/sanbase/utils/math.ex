@@ -39,10 +39,11 @@ defmodule Sanbase.Math do
 
   def percent_change(previous, _current_daa)
       when is_number(previous) and previous <= @epsilon,
-      do: 0
+      do: 0.0
 
   def percent_change(previous, current) when is_number(previous) and is_number(current) do
-    Float.round((current - previous) / previous * 100, 2)
+    ((current / previous - 1) * 100)
+    |> Float.round(2)
   end
 
   @spec percent_of(number(), number(), Keyword.t()) :: number() | nil

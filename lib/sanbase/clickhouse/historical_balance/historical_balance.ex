@@ -24,12 +24,17 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   @infrastructure_to_module %{
     "BCH" => BchBalance,
     "BNB" => BnbBalance,
+    "BEP2" => BnbBalance,
     "BTC" => BtcBalance,
     "EOS" => EosBalance,
+    "eosio.token/EOS" => EosBalance,
     "LTC" => LtcBalance,
     "XRP" => XrpBalance,
     "ETH" => [EthBalance, Erc20Balance]
   }
+  @supported_infrastructures Map.keys(@infrastructure_to_module)
+  def supported_infrastructures(), do: @supported_infrastructures
+
   @type selector :: %{
           required(:infrastructure) => String.t(),
           optional(:currency) => String.t(),

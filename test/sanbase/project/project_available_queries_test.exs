@@ -6,55 +6,12 @@ defmodule Sanbase.Project.AvailableQueriesTest do
 
   alias Sanbase.Model.Project.AvailableQueries
 
-  @slug_metrics [
-                  "historyPrice",
-                  "ohlc",
-                  "priceVolumeDiff",
-                  "socialGainersLosersStatus",
-                  "socialVolume",
-                  "socialDominance"
-                ]
-                |> Enum.sort()
-
+  @slug_metrics ["priceVolumeDiff", "socialGainersLosersStatus"] |> Enum.sort()
   setup_with_mocks([
     {Sanbase.SocialData.SocialVolume, [:passthrough],
      [social_volume_projects: fn -> {:ok, ["bitcoin", "ethereum", "santiment"]} end]}
   ]) do
     []
-  end
-
-  test "btcBalance present only when there are btc addresses" do
-    project_with_btc =
-      insert(:project, %{
-        slug: rand_str(),
-        btc_addresses: [build(:project_btc_address)]
-      })
-
-    project_without_btc =
-      insert(:project, %{
-        slug: rand_str(),
-        btc_addresses: []
-      })
-
-    assert "btcBalance" in AvailableQueries.get(project_with_btc)
-    assert "btcBalance" not in AvailableQueries.get(project_without_btc)
-  end
-
-  test "ethBalance present only when there are eth addresses" do
-    project_with_eth =
-      insert(:project, %{
-        slug: rand_str(),
-        eth_addresses: [build(:project_eth_address)]
-      })
-
-    project_without_eth =
-      insert(:project, %{
-        slug: rand_str(),
-        eth_addresses: []
-      })
-
-    assert "ethBalance" in AvailableQueries.get(project_with_eth)
-    assert "ethBalance" not in AvailableQueries.get(project_without_eth)
   end
 
   test "ethereum has specific metrics" do
@@ -65,10 +22,10 @@ defmodule Sanbase.Project.AvailableQueriesTest do
         eth_addresses: [build(:project_eth_address)]
       })
 
-    available_metrics = AvailableQueries.get(project)
-    assert "gasUsed" in available_metrics
-    assert "allExchanges" in available_metrics
-    assert "exchangeWallets" in available_metrics
+    available_queries = AvailableQueries.get(project)
+    assert "gasUsed" in available_queries
+    assert "allExchanges" in available_queries
+    assert "exchangeWallets" in available_queries
   end
 
   test "bitcoin has specific metrics" do
@@ -78,12 +35,12 @@ defmodule Sanbase.Project.AvailableQueriesTest do
         github_link: "https://github.com/bitcoin"
       })
 
-    available_metrics = AvailableQueries.get(project)
+    available_queries = AvailableQueries.get(project)
 
     # There is no gas used for Bitcoin
-    assert "gasUsed" not in available_metrics
-    assert "allExchanges" in available_metrics
-    assert "exchangeWallets" in available_metrics
+    assert "gasUsed" not in available_queries
+    assert "allExchanges" in available_queries
+    assert "exchangeWallets" in available_queries
   end
 
   test "project with slug only" do
@@ -110,27 +67,21 @@ defmodule Sanbase.Project.AvailableQueriesTest do
         eth_addresses: [build(:project_eth_address)]
       })
 
-    available_metrics = AvailableQueries.get(project)
-
-    # some github metrics
-    assert Enum.all?(
-             ["githubActivity", "averageDevActivity", "averageGithubActivity"],
-             &Enum.member?(available_metrics, &1)
-           )
+    available_queries = AvailableQueries.get(project)
 
     # some slug metrics
     assert Enum.all?(
              @slug_metrics,
-             &Enum.member?(available_metrics, &1)
+             &Enum.member?(available_queries, &1)
            )
 
     # some eth addresses metrics
     assert Enum.all?(
-             ["ethSpent", "ethSpentOverTime", "ethTopTransactions", "ethBalance"],
-             &Enum.member?(available_metrics, &1)
+             ["ethSpent", "ethSpentOverTime", "ethTopTransactions"],
+             &Enum.member?(available_queries, &1)
            )
 
     # some ERC20 metrics
-    assert Enum.all?(["historicalBalance"], &Enum.member?(available_metrics, &1))
+    assert "historicalBalance" in available_queries
   end
 end

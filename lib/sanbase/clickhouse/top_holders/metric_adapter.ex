@@ -11,7 +11,9 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
-  @supported_chains_infrastrucutres ["eosio.token/EOS", "EOS", "ETH", "BNB", "BEP2"]
+  @supported_infrastructures ["eosio.token/EOS", "EOS", "ETH", "BNB", "BEP2"]
+
+  def supported_infrastructures(), do: @supported_infrastructures
 
   @infrastructure_to_table %{
     "EOS" => "eos_top_holders",
@@ -136,7 +138,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   def available_metrics(%{slug: slug}) do
     with %Project{} = project <- Project.by_slug(slug, only_preload: [:infrastructure]),
          {:ok, infr} <- Project.infrastructure_real_code(project) do
-      if infr in @supported_chains_infrastrucutres do
+      if infr in @supported_infrastructures do
         {:ok, @metrics}
       else
         {:ok, []}
@@ -181,7 +183,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
         Project.List.projects(preload: [:infrastructure])
         |> Enum.filter(fn project ->
           case Project.infrastructure_real_code(project) do
-            {:ok, infr_code} -> infr_code in @supported_chains_infrastrucutres
+            {:ok, infr_code} -> infr_code in @supported_infrastructures
             _ -> false
           end
         end)
@@ -209,7 +211,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   def min_plan_map(), do: @min_plan_map
 
   # Private functions
-  defp chain_supported?(infr, _slug, _metric_) when infr in @supported_chains_infrastrucutres,
+  defp chain_supported?(infr, _slug, _metric_) when infr in @supported_infrastructures,
     do: true
 
   defp chain_supported?(_infr, slug, metric) do

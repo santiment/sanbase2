@@ -7,11 +7,11 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
   end
 
   test "free metrics" do
-    free_queries =
+    free_metrics =
       Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:free)
       |> Enum.sort()
 
-    expected_free_queries =
+    expected_free_metrics =
       [
         "active_addresses_24h",
         "daily_active_addresses",
@@ -46,7 +46,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
       ]
       |> Enum.sort()
 
-    assert free_queries == expected_free_queries
+    assert free_metrics == expected_free_metrics
   end
 
   test "restricted metrics" do
@@ -54,150 +54,156 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
       Sanbase.Billing.GraphqlSchema.get_metrics_with_access_level(:restricted)
       |> Enum.sort()
 
-    metrics = [
-      "mean_realized_price_usd",
-      "mean_realized_price_usd_10y",
-      "mean_realized_price_usd_5y",
-      "mean_realized_price_usd_3y",
-      "mean_realized_price_usd_2y",
-      "mean_realized_price_usd_365d",
-      "mean_realized_price_usd_180d",
-      "mean_realized_price_usd_90d",
-      "mean_realized_price_usd_60d",
-      "mean_realized_price_usd_30d",
-      "mean_realized_price_usd_7d",
-      "mean_realized_price_usd_1d",
-      "mvrv_long_short_diff_usd",
-      "mvrv_usd",
-      "mvrv_usd_10y",
-      "mvrv_usd_5y",
-      "mvrv_usd_3y",
-      "mvrv_usd_2y",
-      "mvrv_usd_365d",
-      "mvrv_usd_180d",
-      "mvrv_usd_90d",
-      "mvrv_usd_60d",
-      "mvrv_usd_30d",
-      "mvrv_usd_7d",
-      "mvrv_usd_1d",
-      "circulation",
-      "circulation_10y",
-      "circulation_5y",
-      "circulation_3y",
-      "circulation_2y",
-      "circulation_365d",
-      "circulation_180d",
-      "circulation_90d",
-      "circulation_60d",
-      "circulation_30d",
-      "circulation_7d",
-      "circulation_1d",
-      "mean_age",
-      "mean_dollar_invested_age",
-      "realized_value_usd",
-      "realized_value_usd_10y",
-      "realized_value_usd_5y",
-      "realized_value_usd_3y",
-      "realized_value_usd_2y",
-      "realized_value_usd_365d",
-      "realized_value_usd_180d",
-      "realized_value_usd_90d",
-      "realized_value_usd_60d",
-      "realized_value_usd_30d",
-      "realized_value_usd_7d",
-      "realized_value_usd_1d",
-      "velocity",
-      "transaction_volume",
-      "exchange_inflow",
-      "exchange_outflow",
-      "exchange_balance",
-      "age_destroyed",
-      "nvt",
-      "nvt_transaction_volume",
-      "network_growth",
-      "active_deposits",
-      "deposit_transactions",
-      "active_withdrawals",
-      "withdrawal_transactions",
-      # social metrics
-      "community_messages_count_telegram",
-      "community_messages_count_total",
-      "social_dominance_discord",
-      "social_dominance_professional_traders_chat",
-      "social_dominance_reddit",
-      "social_dominance_telegram",
-      "social_dominance_total",
-      "social_volume_discord",
-      "social_volume_professional_traders_chat",
-      "social_volume_reddit",
-      "social_volume_telegram",
-      "social_volume_total",
-      # histogram metrics
-      "age_distribution",
-      "price_histogram",
-      "spent_coins_cost",
-      "all_spent_coins_cost",
-      # exchange supply metrics
-      "supply_on_exchanges",
-      "supply_outside_exchanges",
-      "percent_of_total_supply_on_exchanges",
-      # top holders metrics
-      "amount_in_top_holders",
-      "amount_in_exchange_top_holders",
-      "amount_in_non_exchange_top_holders",
-      # holders distribution metrics
-      "holders_distribution_0.001_to_0.01",
-      "holders_distribution_0.01_to_0.1",
-      "holders_distribution_0.1_to_1",
-      "holders_distribution_0_to_0.001",
-      "holders_distribution_100_to_1k",
-      "holders_distribution_100k_to_1M",
-      "holders_distribution_10M_to_inf",
-      "holders_distribution_10_to_100",
-      "holders_distribution_10k_to_100k",
-      "holders_distribution_1M_to_10M",
-      "holders_distribution_1_to_10",
-      "holders_distribution_1k_to_10k",
-      "holders_distribution_combined_balance_0.001_to_0.01",
-      "holders_distribution_combined_balance_0.01_to_0.1",
-      "holders_distribution_combined_balance_0.1_to_1",
-      "holders_distribution_combined_balance_0_to_0.001",
-      "holders_distribution_combined_balance_100_to_1k",
-      "holders_distribution_combined_balance_100k_to_1M",
-      "holders_distribution_combined_balance_10M_to_inf",
-      "holders_distribution_combined_balance_10_to_100",
-      "holders_distribution_combined_balance_10k_to_100k",
-      "holders_distribution_combined_balance_1M_to_10M",
-      "holders_distribution_combined_balance_1_to_10",
-      "holders_distribution_combined_balance_1k_to_10k",
-      "holders_distribution_total",
-      # makerdao metrics
-      "dai_created",
-      "dai_repaid",
-      "mcd_collat_ratio",
-      "mcd_collat_ratio_sai",
-      "mcd_collat_ratio_weth",
-      "mcd_dsr",
-      "mcd_erc20_supply",
-      "mcd_locked_token",
-      "mcd_stability_fee",
-      "mcd_supply",
-      "scd_collat_ratio",
-      "scd_locked_token"
-    ]
-
-    expected_result = metrics |> Enum.sort()
+    expected_restricted_metrics =
+      [
+        "mean_realized_price_usd",
+        "mean_realized_price_usd_10y",
+        "mean_realized_price_usd_5y",
+        "mean_realized_price_usd_3y",
+        "mean_realized_price_usd_2y",
+        "mean_realized_price_usd_365d",
+        "mean_realized_price_usd_180d",
+        "mean_realized_price_usd_90d",
+        "mean_realized_price_usd_60d",
+        "mean_realized_price_usd_30d",
+        "mean_realized_price_usd_7d",
+        "mean_realized_price_usd_1d",
+        "mvrv_long_short_diff_usd",
+        "mvrv_usd",
+        "mvrv_usd_10y",
+        "mvrv_usd_5y",
+        "mvrv_usd_3y",
+        "mvrv_usd_2y",
+        "mvrv_usd_365d",
+        "mvrv_usd_180d",
+        "mvrv_usd_90d",
+        "mvrv_usd_60d",
+        "mvrv_usd_30d",
+        "mvrv_usd_7d",
+        "mvrv_usd_1d",
+        "circulation",
+        "circulation_10y",
+        "circulation_5y",
+        "circulation_3y",
+        "circulation_2y",
+        "circulation_365d",
+        "circulation_180d",
+        "circulation_90d",
+        "circulation_60d",
+        "circulation_30d",
+        "circulation_7d",
+        "circulation_1d",
+        "mean_age",
+        "mean_dollar_invested_age",
+        "realized_value_usd",
+        "realized_value_usd_10y",
+        "realized_value_usd_5y",
+        "realized_value_usd_3y",
+        "realized_value_usd_2y",
+        "realized_value_usd_365d",
+        "realized_value_usd_180d",
+        "realized_value_usd_90d",
+        "realized_value_usd_60d",
+        "realized_value_usd_30d",
+        "realized_value_usd_7d",
+        "realized_value_usd_1d",
+        "velocity",
+        "transaction_volume",
+        "exchange_inflow",
+        "exchange_outflow",
+        "exchange_balance",
+        "age_destroyed",
+        "nvt",
+        "nvt_transaction_volume",
+        "network_growth",
+        "active_deposits",
+        "deposit_transactions",
+        "active_withdrawals",
+        "withdrawal_transactions",
+        # social metrics
+        "community_messages_count_telegram",
+        "community_messages_count_total",
+        "social_dominance_discord",
+        "social_dominance_professional_traders_chat",
+        "social_dominance_reddit",
+        "social_dominance_telegram",
+        "social_dominance_total",
+        "social_volume_discord",
+        "social_volume_professional_traders_chat",
+        "social_volume_reddit",
+        "social_volume_telegram",
+        "social_volume_total",
+        # histogram metrics
+        "age_distribution",
+        "price_histogram",
+        "spent_coins_cost",
+        "all_spent_coins_cost",
+        # exchange supply metrics
+        "supply_on_exchanges",
+        "supply_outside_exchanges",
+        "percent_of_total_supply_on_exchanges",
+        # top holders metrics
+        "amount_in_top_holders",
+        "amount_in_exchange_top_holders",
+        "amount_in_non_exchange_top_holders",
+        # holders distribution metrics
+        "holders_distribution_0.001_to_0.01",
+        "holders_distribution_0.01_to_0.1",
+        "holders_distribution_0.1_to_1",
+        "holders_distribution_0_to_0.001",
+        "holders_distribution_100_to_1k",
+        "holders_distribution_100k_to_1M",
+        "holders_distribution_10M_to_inf",
+        "holders_distribution_10_to_100",
+        "holders_distribution_10k_to_100k",
+        "holders_distribution_1M_to_10M",
+        "holders_distribution_1_to_10",
+        "holders_distribution_1k_to_10k",
+        "holders_distribution_combined_balance_0.001_to_0.01",
+        "holders_distribution_combined_balance_0.01_to_0.1",
+        "holders_distribution_combined_balance_0.1_to_1",
+        "holders_distribution_combined_balance_0_to_0.001",
+        "holders_distribution_combined_balance_100_to_1k",
+        "holders_distribution_combined_balance_100k_to_1M",
+        "holders_distribution_combined_balance_10M_to_inf",
+        "holders_distribution_combined_balance_10_to_100",
+        "holders_distribution_combined_balance_10k_to_100k",
+        "holders_distribution_combined_balance_1M_to_10M",
+        "holders_distribution_combined_balance_1_to_10",
+        "holders_distribution_combined_balance_1k_to_10k",
+        "holders_distribution_total",
+        # makerdao metrics
+        "dai_created",
+        "dai_repaid",
+        "mcd_collat_ratio",
+        "mcd_collat_ratio_sai",
+        "mcd_collat_ratio_weth",
+        "mcd_dsr",
+        "mcd_erc20_supply",
+        "mcd_locked_token",
+        "mcd_stability_fee",
+        "mcd_supply",
+        "scd_collat_ratio",
+        "scd_locked_token"
+      ]
+      |> Enum.sort()
 
     # The diff algorithm fails to nicely print that a single metric is
     # missing but instead shows some not-understandable result when comparing
     # the lists directly
 
     # not present in expected
-    assert MapSet.difference(MapSet.new(restricted_metrics), MapSet.new(expected_result))
+    assert MapSet.difference(
+             MapSet.new(restricted_metrics),
+             MapSet.new(expected_restricted_metrics)
+           )
            |> Enum.to_list() == []
 
     # not present in the metrics list
-    assert MapSet.difference(MapSet.new(expected_result), MapSet.new(restricted_metrics))
+    assert MapSet.difference(
+             MapSet.new(expected_restricted_metrics),
+             MapSet.new(restricted_metrics)
+           )
            |> Enum.to_list() == []
   end
 

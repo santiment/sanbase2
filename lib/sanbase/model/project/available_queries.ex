@@ -31,15 +31,15 @@ defmodule Sanbase.Model.Project.AvailableQueries do
   """
   @spec get(Sanbase.Model.Project.t()) :: [String.t()]
   def get(%Project{} = project) do
+    project = project |> Sanbase.Repo.preload([:eth_addresses, :infrastructure])
+
     [
       &slug_queries/1,
-      &github_queries/1,
-      &twitter_queries/1,
-      &social_queries/1,
+      &historical_balance_queries/1,
+      &holders_queries/1,
       &blockchain_queries/1,
-      &database_defined_queries/1,
+      &social_queries/1,
       &wallets_queries/1,
-      &ico_queries/1,
       &get_metric_queries/1
     ]
     |> Enum.flat_map(fn fun -> fun.(project) end)
@@ -47,139 +47,71 @@ defmodule Sanbase.Model.Project.AvailableQueries do
     |> Enum.sort()
   end
 
-  # Metrics can also be added from the admin dashboard
-  defp database_defined_queries(%Project{} = _project) do
-    []
-  end
-
   defp get_metric_queries(%Project{slug: slug}) do
     case Sanbase.Metric.available_slugs() do
-      {:ok, list} ->
-        if slug in list, do: ["getMetric"], else: []
-
-      _ ->
-        []
-    end
-  end
-
-  defp ico_queries(%Project{} = project) do
-    project
-    |> Sanbase.Repo.preload([:icos])
-    |> case do
-      %Project{icos: icos} when icos != [] ->
-        [
-          "icos",
-          "icoPrice",
-          "initialIco",
-          "fundsRaisedUsdIcoEndPrice",
-          "fundsRaisedEthIcoEndPrice",
-          "fundsRaisedBtcIcoEndPrice"
-        ]
-
-      _ ->
-        []
+      {:ok, list} -> if slug in list, do: ["getMetric"], else: []
+      _ -> []
     end
   end
 
   defp wallets_queries(%Project{} = project) do
-    project =
-      project
-      |> Sanbase.Repo.preload([:eth_addresses, :btc_addresses])
+    case project do
+      %Project{eth_addresses: addresses} when addresses != [] ->
+        ["ethSpent", "ethSpentOverTime", "ethTopTransactions"]
 
-    eth_wallet_queries =
-      case project do
-        %Project{eth_addresses: addresses} when addresses != [] ->
-          ["ethSpent", "ethSpentOverTime", "ethTopTransactions", "ethBalance", "usdBalance"]
-
-        _ ->
-          []
-      end
-
-    btc_wallet_queries =
-      case project do
-        %Project{btc_addresses: addresses} when addresses != [] ->
-          ["btcBalance", "usdBalance"]
-
-        _ ->
-          []
-      end
-
-    btc_wallet_queries ++ eth_wallet_queries
+      _ ->
+        []
+    end
   end
 
   defp slug_queries(%Project{slug: slug}) do
     case slug do
       slug when is_binary(slug) and slug != "" ->
-        ["historyPrice", "ohlc", "priceVolumeDiff"]
+        ["priceVolumeDiff"]
 
       _ ->
         []
     end
   end
 
-  defp github_queries(%Project{} = project) do
-    case Project.github_organizations(project) do
-      {:ok, orgs} when is_list(orgs) and orgs != [] ->
-        [
-          "devActivity",
-          "githubActivity",
-          "averageDevActivity",
-          "averageGithubActivity"
-        ]
+  defp social_queries(%Project{}), do: ["socialGainersLosersStatus"]
+
+  def historical_balance_queries(%Project{} = project) do
+    case Project.infrastructure_real_code(project) do
+      {:ok, infr} ->
+        if infr in Sanbase.Clickhouse.HistoricalBalance.supported_infrastructures(),
+          do: ["historicalBalance"],
+          else: []
 
       _ ->
         []
     end
   end
 
-  defp twitter_queries(%Project{twitter_link: twitter_link}) do
-    case twitter_link do
-      l when is_binary(l) and l != "" -> ["historyTwitterData", "twitterData"]
-      _ -> []
-    end
-  end
+  def holders_queries(%Project{} = project) do
+    case Project.infrastructure_real_code(project) do
+      {:ok, infr} ->
+        if infr in Sanbase.Clickhouse.TopHolders.MetricAdapter.supported_infrastructures(),
+          do: ["topHoldersPercentOfTotalSupply"],
+          else: []
 
-  defp social_queries(%Project{slug: slug}) do
-    common_social_queries = [
-      "socialGainersLosersStatus"
-    ]
-
-    case slug in social_volume_projects() do
-      true -> common_social_queries ++ ["socialVolume", "socialDominance"]
-      false -> common_social_queries
+      _ ->
+        []
     end
   end
 
   @mineable_specific_queries ["exchangeWallets", "allExchanges"]
-
   @ethereum_specific_queries ["miningPoolsDistribution", "minersBalance", "gasUsed"]
-
-  @erc20_specific_queries [
-    "historicalBalance",
-    "topHoldersPercentOfTotalSupply",
-    "percentOfTokenSupplyOnExchanges",
-    "shareOfDeposits",
-    "tokenTopTransactions",
-    "dailyActiveDeposits"
-  ]
-
   @bitcoin_specific_queries []
-
-  @common_blockchain_queries [
-    "averageTokenAgeConsumedInDays"
-  ]
 
   defp blockchain_queries(%Project{} = project) do
     case {project, Project.is_erc20?(project)} do
       {%Project{slug: "ethereum"}, _} ->
         @mineable_specific_queries ++
-          @ethereum_specific_queries ++ @erc20_specific_queries ++ @common_blockchain_queries
+          @ethereum_specific_queries
 
       {%Project{slug: "bitcoin"}, _} ->
-        @mineable_specific_queries ++ @bitcoin_specific_queries ++ @common_blockchain_queries
-
-      {_, true} ->
-        @erc20_specific_queries ++ @common_blockchain_queries
+        @mineable_specific_queries ++ @bitcoin_specific_queries
 
       _ ->
         []
@@ -214,18 +146,5 @@ defmodule Sanbase.Model.Project.AvailableQueries do
       }
     }
     """
-  end
-
-  # Fetch and cache the social volume projects for 30 minutes
-  defp social_volume_projects() do
-    SanbaseWeb.Graphql.Cache.wrap(
-      fn ->
-        {:ok, projects} = Sanbase.SocialData.social_volume_projects()
-        projects
-      end,
-      :social_volume_projects_list,
-      %{},
-      ttl: 1800
-    ).()
   end
 end

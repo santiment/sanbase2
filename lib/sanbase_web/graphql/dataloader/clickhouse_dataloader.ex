@@ -98,10 +98,9 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     |> case do
       {:ok, result} ->
         result
-        |> Enum.map(fn {org, dev_activity} ->
+        |> Enum.into(%{}, fn {org, dev_activity} ->
           {org, dev_activity / days}
         end)
-        |> Map.new()
 
       {:error, error} ->
         {:error, error}

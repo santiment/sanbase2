@@ -58,7 +58,7 @@ defmodule Sanbase.Metric.Behaviour do
               from :: DatetTime.t(),
               to :: DateTime.t(),
               opts :: options
-            ) :: {:ok, list()} | {:error, String.t()}
+            ) :: {:ok, map()} | {:error, String.t()}
 
   @callback has_incomplete_data?(metric :: metric) :: true | false
 

@@ -54,18 +54,33 @@ defmodule Sanbase.Clickhouse.Github do
   @doc ~s"""
   Return the number of all github events for a given organization and time period
   """
-  @spec total_github_activity(list(String.t()), DateTime.t(), DateTime.t()) ::
-          {:ok, float()}
-          | {:error, String.t()}
+
+  @spec total_dev_activity(list(String.t()), DateTime.t(), DateTime.t()) ::
+          {:ok, map()} | {:error, String.t()}
   def total_github_activity([], _from, _to), do: {:ok, []}
+
+  def total_github_activity(organizations, from, to) when length(organizations) > 20 do
+    total_github_activity =
+      Enum.chunk_every(organizations, 20)
+      |> Sanbase.Parallel.map(
+        &total_github_activity(&1, from, to),
+        timeout: 25_000,
+        max_concurrency: 8,
+        ordered: false
+      )
+      |> Enum.filter(&match?({:ok, _}, &1))
+      |> Enum.map(&elem(&1, 1))
+      |> Enum.reduce(%{}, &Map.merge(&1, &2))
+
+    {:ok, total_github_activity}
+  end
 
   def total_github_activity(organizations, from, to) do
     {query, args} = total_github_activity_query(organizations, from, to)
 
-    ClickhouseRepo.query_transform(query, args, fn [github_activity] ->
-      github_activity |> Sanbase.Math.to_integer(0)
+    ClickhouseRepo.query_reduce(query, args, %{}, fn [organization, github_activity], acc ->
+      Map.put(acc, organization, github_activity |> Sanbase.Math.to_integer(0))
     end)
-    |> maybe_unwrap_ok_value()
   end
 
   @doc ~s"""
@@ -87,7 +102,8 @@ defmodule Sanbase.Clickhouse.Github do
         ordered: false
       )
       |> Enum.filter(&match?({:ok, _}, &1))
-      |> Enum.flat_map(&elem(&1, 1))
+      |> Enum.map(&elem(&1, 1))
+      |> Enum.reduce(%{}, &Map.merge(&1, &2))
 
     {:ok, total_dev_activity}
   end
@@ -95,8 +111,8 @@ defmodule Sanbase.Clickhouse.Github do
   def total_dev_activity(organizations, from, to) do
     {query, args} = total_dev_activity_query(organizations, from, to)
 
-    ClickhouseRepo.query_transform(query, args, fn [organization, dev_activity] ->
-      {organization, dev_activity |> Sanbase.Math.to_integer(0)}
+    ClickhouseRepo.query_reduce(query, args, %{}, fn [organization, dev_activity], acc ->
+      Map.put(acc, organization, dev_activity |> Sanbase.Math.to_integer(0))
     end)
   end
 
@@ -447,8 +463,9 @@ defmodule Sanbase.Clickhouse.Github do
 
   defp total_github_activity_query(organizations, from, to) do
     query = """
-    SELECT toUInt64(COUNT(*)) FROM (
-      SELECT COUNT(*)
+    SELECT owner, toUInt64(COUNT(*))
+    FROM(
+      SELECT owner, COUNT(*)
       FROM #{@table}
       PREWHERE
         owner IN (?1) AND
@@ -456,6 +473,7 @@ defmodule Sanbase.Clickhouse.Github do
         dt <= toDateTime(?3)
       GROUP BY owner, repo, dt, event
     )
+    GROUP BY owner
     """
 
     args = [

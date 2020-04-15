@@ -169,14 +169,18 @@ defmodule Sanbase.Price.SqlQuery do
       PREWHERE
         slug IN (?1) AND
         source = cast(?2, 'LowCardinality(String)') AND
-        dt >= toDateTime(?3) AND
-        dt < toDateTime(?4)
+        dt < toDateTime(?3)
+        #{if from, do: "AND dt >= toDateTime(?4)"}
       GROUP BY slug
     )
     GROUP BY slug
     """
 
-    args = [slugs, source, from |> DateTime.to_unix(), to |> DateTime.to_unix()]
+    args =
+      case from do
+        %DateTime{} -> [slugs, source, to |> DateTime.to_unix(), from |> DateTime.to_unix()]
+        _ -> [slugs, source, to |> DateTime.to_unix()]
+      end
 
     {query, args}
   end

@@ -4,6 +4,8 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
+  @spent_coins_cost_histograms ["price_histogram", "spent_coins_cost", "all_spent_coins_cost"]
+
   def histogram_data("age_distribution" = metric, %{slug: slug}, from, to, interval, limit) do
     {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
 
@@ -21,7 +23,8 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
     end)
   end
 
-  def histogram_data("price_histogram" = metric, %{slug: slug}, from, to, interval, limit) do
+  def histogram_data(metric, %{slug: slug}, from, to, interval, limit)
+      when metric in @spent_coins_cost_histograms do
     {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
 
     ClickhouseRepo.query_transform(query, args, fn [price, amount] ->
@@ -33,14 +36,16 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
     |> maybe_transform_into_buckets(slug, from, to, limit)
   end
 
-  def first_datetime("price_histogram", %{slug: _} = selector) do
+  def first_datetime(metric, %{slug: _} = selector)
+      when metric in @spent_coins_cost_histograms do
     with {:ok, dt1} <- Sanbase.Metric.first_datetime("price_usd", selector),
          {:ok, dt2} <- Sanbase.Metric.first_datetime("age_distribution", selector) do
       {:ok, Enum.max_by([dt1, dt2], &DateTime.to_unix/1)}
     end
   end
 
-  def last_datetime_computed_at("price_histogram", %{slug: _} = selector) do
+  def last_datetime_computed_at(metric, %{slug: _} = selector)
+      when metric in ["price_histogram", "spent_coins_cost", "all_spent_coins_cost"] do
     with {:ok, dt1} <- Sanbase.Metric.last_datetime_computed_at("price_usd", selector),
          {:ok, dt2} <- Sanbase.Metric.last_datetime_computed_at("age_distribution", selector) do
       {:ok, Enum.min_by([dt1, dt2], &DateTime.to_unix/1)}

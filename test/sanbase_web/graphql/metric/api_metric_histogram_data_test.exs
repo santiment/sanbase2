@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
+  import ExUnit.CaptureLog
 
   alias Sanbase.Metric
 
@@ -26,20 +27,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
     interval = "1d"
     limit = 3
 
-    with_mock Metric, [:passthrough],
-      histogram_data: fn _, _, _, _, _, _ ->
-        {:ok,
-         [
-           %{
-             range: [2.0, 3.0],
-             value: 15.0
-           },
-           %{
-             range: [3.0, 4.0],
-             value: 22.2
-           }
-         ]}
-      end do
+    with_mock Metric, [:passthrough], histogram_data: success_result() do
       result =
         get_histogram_metric(conn, metric, slug, from, to, interval, limit)
         |> get_in(["data", "getMetric", "histogramData"])
@@ -105,7 +93,66 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
     end
   end
 
+  test "all_spent_coins_cost histogram - converts interval to full days and successfully returns",
+       context do
+    %{conn: conn, slug: slug, to: to} = context
+    metric = "all_spent_coins_cost"
+    interval = "47h"
+    limit = 3
+
+    with_mock Metric, [:passthrough], histogram_data: success_result() do
+      result =
+        get_histogram_metric(conn, metric, slug, nil, to, interval, limit)
+        |> get_in(["data", "getMetric", "histogramData"])
+
+      assert result == %{
+               "values" => %{
+                 "data" => [
+                   %{"range" => [2.0, 3.0], "value" => 15.0},
+                   %{"range" => [3.0, 4.00], "value" => 22.2}
+                 ]
+               }
+             }
+
+      assert_called(Metric.histogram_data(metric, %{slug: slug}, nil, to, "1d", 3))
+    end
+  end
+
+  test "histogram metric different than all_spent_coins_cost without from datetime - returns proper error",
+       context do
+    %{conn: conn, slug: slug, to: to} = context
+    metric = "spent_coins_cost"
+    interval = "1d"
+    limit = 3
+
+    with_mock Metric, [:passthrough], histogram_data: success_result() do
+      capture_log(fn ->
+        result = get_histogram_metric(conn, metric, slug, nil, to, interval, limit)
+        error_msg = hd(result["errors"]) |> Map.get("message")
+
+        assert error_msg =~ "Missing required `from` argument"
+        refute called(Metric.histogram_data(metric, %{slug: slug}, nil, to, "1d", 3))
+      end)
+    end
+  end
+
   # Private functions
+
+  defp success_result() do
+    fn _, _, _, _, _, _ ->
+      {:ok,
+       [
+         %{
+           range: [2.0, 3.0],
+           value: 15.0
+         },
+         %{
+           range: [3.0, 4.0],
+           value: 22.2
+         }
+       ]}
+    end
+  end
 
   defp get_histogram_metric(conn, metric, slug, from, to, interval \\ "1d", limit \\ 100) do
     query = get_histogram_query(metric, slug, from, to, interval, limit)
@@ -121,9 +168,9 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
         getMetric(metric: "#{metric}"){
           histogramData(
             slug: "#{slug}"
-            from: "#{from}",
-            to: "#{to}",
-            interval: "#{interval}",
+            #{if from, do: "from: \"#{from}\""}
+            to: "#{to}"
+            interval: "#{interval}"
             limit: #{limit})
             {
               values {

@@ -203,12 +203,13 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field :histogram_data, :histogram_data do
       arg(:slug, :string)
       arg(:selector, :metric_target_selector_input_object)
-      arg(:from, non_null(:datetime))
+      # from datetime arg is not required for `all_spent_coins_cost` metric which calculates
+      # the histogram for all time.
+      arg(:from, :datetime)
       arg(:to, non_null(:datetime))
       arg(:interval, :interval, default_value: "1d")
       arg(:limit, :integer, default_value: 20)
 
-      complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
 
       cache_resolve(&MetricResolver.histogram_data/3)

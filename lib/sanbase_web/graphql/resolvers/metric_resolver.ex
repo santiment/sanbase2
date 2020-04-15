@@ -153,15 +153,39 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   def histogram_data(
         _root,
-        %{from: from, to: to, interval: interval, limit: limit} = args,
+        args,
         %{source: %{metric: metric}}
       ) do
-    case Metric.histogram_data(metric, to_selector(args), from, to, interval, limit) do
-      {:ok, data} ->
-        {:ok, %{values: %{data: data}}}
+    %{to: to, interval: interval, limit: limit} = args
+    # from datetime arg is not required for `all_spent_coins_cost` metric which calculates
+    # the histogram for all time.
+    from = Map.get(args, :from, nil)
+    interval = transform_interval(metric, interval)
 
+    with :ok <- valid_histogram_args?(metric, args),
+         {:ok, data} <-
+           Metric.histogram_data(metric, to_selector(args), from, to, interval, limit) do
+      {:ok, %{values: %{data: data}}}
+    else
       {:error, error} ->
         {:error, handle_graphql_error(metric, to_selector(args), error)}
+    end
+  end
+
+  defp transform_interval("all_spent_coins_cost", interval) do
+    Enum.max([Sanbase.DateTimeUtils.str_to_days(interval), 1])
+    |> to_string
+    |> Kernel.<>("d")
+  end
+
+  defp transform_interval(_, interval), do: interval
+
+  # All histogram metrics except "all_spent_coins_cost" require `from` argument
+  def valid_histogram_args?(metric, args) do
+    if metric != "all_spent_coins_cost" && !Map.get(args, :from, false) do
+      {:error, "Missing required `from` argument"}
+    else
+      :ok
     end
   end
 

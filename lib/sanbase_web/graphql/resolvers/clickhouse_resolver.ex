@@ -160,7 +160,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     #    avg2: averageDailyActiveAddresses(from: <from2>, to: <to2>)
     #  }
     # }
-    # will correctly group and calculate the different average addresses.
+    # will correctly group and calculate the different average addresses
+
     average_daa_activity_map =
       loader
       |> Dataloader.get(SanbaseDataloader, :average_daily_active_addresses, {from, to}) ||

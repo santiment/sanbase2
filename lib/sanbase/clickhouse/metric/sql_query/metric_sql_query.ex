@@ -16,7 +16,6 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
 
   alias Sanbase.Clickhouse.Metric.FileHandler
 
-  @min_interval_map FileHandler.min_interval_map()
   @name_to_metric_map FileHandler.name_to_metric_map()
   @table_map FileHandler.table_map()
 
@@ -96,9 +95,10 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
 
     args = [
       asset_ids,
+      # Fetch internal metric name used. Fallback to the same name if missing.
       Map.get(metric_map, metric, metric),
-      from,
-      to
+      from |> DateTime.to_unix(),
+      to |> DateTime.to_unix()
     ]
 
     {query, args}
@@ -194,16 +194,16 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
   end
 
   defp maybe_convert_to_date(:after, metric, dt_column, code) do
-    case Map.get(@min_interval_map, metric) do
-      "5m" -> "#{dt_column} >= #{code}"
-      _ -> "#{dt_column} >= toDate(#{code})"
+    case Map.get(@table_map, metric) do
+      "daily_metrics_v2" -> "#{dt_column} >= toDate(#{code})"
+      _ -> "#{dt_column} >= #{code}"
     end
   end
 
   defp maybe_convert_to_date(:before, metric, dt_column, code) do
-    case Map.get(@min_interval_map, metric) do
-      "5m" -> "#{dt_column} < #{code}"
-      _ -> "#{dt_column} <= toDate(#{code})"
+    case Map.get(@table_map, metric) do
+      "daily_metrics_v2" -> "#{dt_column} <= toDate(#{code})"
+      _ -> "#{dt_column} <= #{code}"
     end
   end
 end

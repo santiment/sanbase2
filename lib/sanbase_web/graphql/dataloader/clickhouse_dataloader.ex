@@ -1,11 +1,32 @@
 defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   alias Sanbase.Clickhouse
   alias Sanbase.Model.Project
+  alias Sanbase.Metric
 
-  @max_concurrency 100
+  @max_concurrency 8
 
-  def data() do
-    Dataloader.KV.new(&query/2)
+  def data(), do: Dataloader.KV.new(&query/2)
+
+  def query(:aggregated_metric, args) do
+    args_list = args |> Enum.to_list()
+
+    args_list
+    |> Enum.group_by(fn %{metric: metric, from: from, to: to, aggregation: aggregation} ->
+      {metric, from, to, aggregation}
+    end)
+    |> Sanbase.Parallel.map(fn {selector, group} ->
+      {metric, from, to, aggregation} = selector
+      slugs = Enum.map(group, & &1.slug)
+
+      data =
+        case Metric.aggregated_timeseries_data(metric, %{slug: slugs}, from, to, aggregation) do
+          {:ok, result} -> result
+          {:error, error} -> {:error, error}
+        end
+
+      {selector, data}
+    end)
+    |> Map.new()
   end
 
   def query(:average_daily_active_addresses, args) do
@@ -18,6 +39,22 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     |> Map.new()
   end
 
+  @doc ~s"""
+  Returns a map with the average dev activity for every project passed in `args`.
+
+  The map key is the `days` argument passed. This is done so aliases are
+  supported in the format:
+    ```
+    ...
+    dev_7d: averageDevActivity(days: 7)
+    dev_30d: averageDevActivity(days: 30)
+    ...
+    ```
+
+  The `days` key points to a map of results or to an {:error, error} tuple.
+  The map of results has github organizations as key and their average activity
+  as value.
+  """
   def query(:average_dev_activity, args) do
     args = Enum.to_list(args)
 

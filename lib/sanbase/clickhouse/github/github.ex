@@ -55,7 +55,7 @@ defmodule Sanbase.Clickhouse.Github do
   Return the number of all github events for a given organization and time period
   """
 
-  @spec total_dev_activity(list(String.t()), DateTime.t(), DateTime.t()) ::
+  @spec total_github_activity(list(String.t()), DateTime.t(), DateTime.t()) ::
           {:ok, map()} | {:error, String.t()}
   def total_github_activity([], _from, _to), do: {:ok, []}
 

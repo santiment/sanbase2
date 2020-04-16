@@ -22,12 +22,19 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
           | :comment_timeline_event_id
           | :insights_comments_count
           | :timeline_events_comments_count
-          | :project_by_slug,
+          | :project_by_slug
+          | :aggregated_metric,
           any()
         ) :: {:error, String.t()} | {:ok, float()} | map()
   def query(queryable, args) do
     case queryable do
-      x when x in [:average_daily_active_addresses, :average_dev_activity, :eth_spent] ->
+      x
+      when x in [
+             :average_daily_active_addresses,
+             :average_dev_activity,
+             :eth_spent,
+             :aggregated_metric
+           ] ->
         ClickhouseDataloader.query(queryable, args)
 
       :volume_change_24h ->

@@ -1,9 +1,11 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
+  import Absinthe.Resolution.Helpers
 
   alias Sanbase.Model.Project
   alias Sanbase.Metric
   alias Sanbase.Cache.RehydratingCache
+  alias SanbaseWeb.Graphql.SanbaseDataloader
 
   require Logger
   @ttl 3600
@@ -30,6 +32,48 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     cache_key = {__MODULE__, query, slug} |> :erlang.phash2()
     fun = fn -> Metric.available_histogram_metrics_for_slug(%{slug: slug}) end
     maybe_register_and_get(cache_key, fun, slug, query)
+  end
+
+  def aggregated_metric(%Project{slug: slug}, %{metric: metric} = args, %{
+        context: %{loader: loader}
+      }) do
+    case Metric.has_metric?(metric) do
+      true ->
+        %{from: from, to: to} = args
+        from = from |> Sanbase.DateTimeUtils.round_datetime(300)
+        to = to |> Sanbase.DateTimeUtils.round_datetime(300)
+        aggregation = Map.get(args, :aggregation)
+
+        data = %{
+          metric: metric,
+          slug: slug,
+          from: from,
+          to: to,
+          aggregation: aggregation,
+          selector: {metric, from, to, aggregation}
+        }
+
+        loader
+        |> Dataloader.load(SanbaseDataloader, :aggregated_metric, data)
+        |> on_load(&aggregated_metric_from_loader(&1, data))
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  # Private functions
+
+  defp aggregated_metric_from_loader(loader, data) do
+    %{selector: selector, slug: slug} = data
+
+    loader
+    |> Dataloader.get(SanbaseDataloader, :aggregated_metric, selector)
+    |> case do
+      %{} = map -> {:ok, map |> Map.get(slug)}
+      nil -> {:ok, nil}
+      _ -> {:nocache, {:ok, nil}}
+    end
   end
 
   # Get the available metrics from the rehydrating cache. If the function for computing it

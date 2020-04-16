@@ -186,6 +186,18 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve(&ProjectResolver.available_queries/3, ttl: 1800)
     end
 
+    field :aggregated_metric, :float do
+      arg(:metric, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:aggregation, :aggregation, default_value: nil)
+
+      cache_resolve(&ProjectMetricsResolver.aggregated_metric/3,
+        ttl: 600,
+        max_ttl_offset: 600
+      )
+    end
+
     field(:id, non_null(:id))
     field(:name, non_null(:string))
     field(:slug, :string)

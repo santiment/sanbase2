@@ -2,7 +2,6 @@ alias Sanbase.Model.{
   Infrastructure,
   MarketSegment,
   LatestCoinmarketcapData,
-  ProjectTransparencyStatus,
   ModelUtils,
   ProjectBtcAddress,
   Currency,

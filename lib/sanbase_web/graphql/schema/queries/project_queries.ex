@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
   }
 
   alias SanbaseWeb.Graphql.Complexity
-  alias SanbaseWeb.Graphql.Middlewares.{BasicAuth, AccessControl, ProjectPermissions}
+  alias SanbaseWeb.Graphql.Middlewares.{AccessControl, ProjectPermissions}
 
   import_types(SanbaseWeb.Graphql.ProjectTypes)
 
@@ -69,16 +69,6 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       middleware(ProjectPermissions)
       cache_resolve(&ProjectResolver.all_projects_by_ticker/3)
     end
-
-    @desc "Fetch all project transparency projects. This query requires basic authentication."
-    field :all_projects_project_transparency, list_of(:project) do
-      meta(access: :forbidden)
-
-      middleware(BasicAuth)
-      resolve(&ProjectResolver.all_projects_project_transparency/3)
-    end
-
-    @desc "Return the number of projects in each"
 
     @desc "Fetch a project by its ID."
     field :project, :project do

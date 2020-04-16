@@ -6,7 +6,6 @@ defmodule Sanbase.ExAdmin.Model.Project do
   alias Sanbase.Tag
   alias Sanbase.Model.Project
   alias Sanbase.Model.Infrastructure
-  alias Sanbase.Model.ProjectTransparencyStatus
 
   alias Sanbase.Repo
 
@@ -150,18 +149,8 @@ defmodule Sanbase.ExAdmin.Model.Project do
         input(project, :linkedin_link)
         input(project, :telegram_link)
         input(project, :main_contract_address)
-        input(project, :project_transparency)
 
         input(project, :email)
-
-        input(
-          project,
-          :project_transparency_status,
-          collection:
-            from(pt in ProjectTransparencyStatus, order_by: pt.name) |> Sanbase.Repo.all()
-        )
-
-        input(project, :project_transparency_description)
 
         input(project, :token_decimals)
         input(project, :token_supply)

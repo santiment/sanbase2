@@ -275,14 +275,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve(&ProjectResolver.infrastructure/3)
     end
 
-    field(:project_transparency, :boolean)
-
-    field :project_transparency_status, :string do
-      cache_resolve(&ProjectResolver.project_transparency_status/3)
-    end
-
-    field(:project_transparency_description, :string)
-
     field :eth_balance, :float do
       cache_resolve(&ProjectBalanceResolver.eth_balance/3)
     end

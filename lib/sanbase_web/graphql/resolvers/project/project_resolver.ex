@@ -30,11 +30,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
      }}
   end
 
-  def all_projects_project_transparency(_parent, _args, _resolution) do
-    projects = Project.List.projects_transparency()
-    {:ok, projects}
-  end
-
   @spec all_projects(any, map, any) :: {:ok, any}
   def all_projects(_parent, args, _resolution) do
     page = Map.get(args, :page)
@@ -152,35 +147,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       |> Dataloader.get(SanbaseDataloader, :infrastructure, infrastructure_id)
 
     {:ok, infrastructure}
-  end
-
-  def project_transparency_status(
-        %Project{project_transparency_status_id: nil},
-        _args,
-        _resolution
-      ),
-      do: {:ok, nil}
-
-  def project_transparency_status(
-        %Project{project_transparency_status_id: ptsi},
-        _args,
-        %{context: %{loader: loader}}
-      ) do
-    loader
-    |> Dataloader.load(SanbaseDataloader, :project_transparency_status, ptsi)
-    |> on_load(&project_transparency_status_from_loader(&1, ptsi))
-  end
-
-  defp project_transparency_status_from_loader(loader, project_transparency_status_id) do
-    status =
-      loader
-      |> Dataloader.get(
-        SanbaseDataloader,
-        :project_transparency_status,
-        project_transparency_status_id
-      )
-
-    {:ok, status}
   end
 
   def roi_usd(%Project{} = project, _args, _resolution) do

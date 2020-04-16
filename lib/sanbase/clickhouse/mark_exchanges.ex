@@ -62,6 +62,8 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
   fields with `address` string and `is_exchange` boolean fields
   """
   @spec mark_exchange_wallets(list(input_transaction)) :: {:ok, list(output_transaction)}
+  def mark_exchange_wallets([]), do: {:ok, []}
+
   def mark_exchange_wallets(transactions) when is_list(transactions) do
     GenServer.call(@name, :update_state_if_staled)
     GenServer.call(@name, {:mark_exchange_wallets, transactions})

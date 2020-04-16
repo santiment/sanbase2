@@ -63,6 +63,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   """
   @spec top_wallet_transfers(wallets, %DateTime{}, %DateTime{}, integer, String.t()) ::
           {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
+  def top_wallet_transfers([], _from, _to, _limit, _type), do: {:ok, []}
+
   def top_wallet_transfers(wallets, from_datetime, to_datetime, limit, type) do
     wallet_transfers(wallets, from_datetime, to_datetime, limit, type)
   end

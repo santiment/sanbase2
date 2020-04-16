@@ -11,28 +11,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   @max_concurrency 100
 
   def token_top_transactions(
-        %Project{id: id} = project,
+        %Project{} = project,
         args,
         _resolution
       ) do
-    async(
-      Cache.wrap(
-        fn -> calculate_token_top_transactions(project, args) end,
-        {:token_top_transactions, id},
-        args
-      )
-    )
+    async(fn -> calculate_token_top_transactions(project, args) end)
   end
 
-  defp calculate_token_top_transactions(%Project{} = project, %{
-         from: from,
-         to: to,
-         limit: limit
-       }) do
+  defp calculate_token_top_transactions(%Project{} = project, args) do
+    %{from: from, to: to, limit: limit} = args
     limit = Enum.min([limit, 100])
 
-    with {:contract, {:ok, contract_address, token_decimals}} <-
-           {:contract, Project.contract_info(project)},
+    with {:ok, contract_address, token_decimals} <- Project.contract_info(project),
          {:ok, token_transactions} <-
            Clickhouse.Erc20Transfers.token_top_transfers(
              contract_address,
@@ -45,7 +35,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
            Clickhouse.MarkExchanges.mark_exchange_wallets(token_transactions) do
       {:ok, token_transactions}
     else
-      {:contract, _} ->
+      {:error, {:missing_contract, _}} ->
         {:ok, []}
 
       error ->
@@ -165,17 +155,39 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   end
 
   def eth_top_transactions(
-        %Project{id: id} = project,
+        %Project{} = project,
         args,
         _resolution
       ) do
-    async(
-      Cache.wrap(
-        fn -> calculate_eth_top_transactions(project, args) end,
-        {:eth_top_transactions, id},
-        args
-      )
-    )
+    async(fn -> calculate_eth_top_transactions(project, args) end)
+  end
+
+  defp calculate_eth_top_transactions(%Project{} = project, args) do
+    %{from: from, to: to, transaction_type: trx_type, limit: limit} = args
+    limit = Enum.min([limit, 100])
+
+    with {:ok, eth_addresses} <- Project.eth_addresses(project),
+         {:ok, eth_transactions} <-
+           Clickhouse.EthTransfers.top_wallet_transfers(
+             eth_addresses,
+             from,
+             to,
+             limit,
+             trx_type
+           ),
+         {:ok, eth_transactions} <-
+           Clickhouse.MarkExchanges.mark_exchange_wallets(eth_transactions) do
+      {:ok, eth_transactions}
+    else
+      error ->
+        Logger.warn(
+          "Cannot fetch top ETH transactions for #{Project.describe(project)}. Reason: #{
+            inspect(error)
+          }"
+        )
+
+        {:nocache, {:ok, []}}
+    end
   end
 
   # Private functions
@@ -242,42 +254,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
       error ->
         Logger.warn(
           "Cannot calculate ETH spent over time for for #{Project.describe(project)}. Reason: #{
-            inspect(error)
-          }"
-        )
-
-        {:nocache, {:ok, []}}
-    end
-  end
-
-  defp calculate_eth_top_transactions(%Project{} = project, %{
-         from: from,
-         to: to,
-         transaction_type: trx_type,
-         limit: limit
-       }) do
-    limit = Enum.min([limit, 100])
-
-    with {:eth_addresses, {:ok, eth_addresses}} when eth_addresses != [] <-
-           {:eth_addresses, Project.eth_addresses(project)},
-         {:ok, eth_transactions} <-
-           Clickhouse.EthTransfers.top_wallet_transfers(
-             eth_addresses,
-             from,
-             to,
-             limit,
-             trx_type
-           ),
-         {:ok, eth_transactions} <-
-           Clickhouse.MarkExchanges.mark_exchange_wallets(eth_transactions) do
-      {:ok, eth_transactions}
-    else
-      {:eth_addresses, _} ->
-        {:ok, []}
-
-      error ->
-        Logger.warn(
-          "Cannot fetch top ETH transactions for #{Project.describe(project)}. Reason: #{
             inspect(error)
           }"
         )

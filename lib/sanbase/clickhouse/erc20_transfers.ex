@@ -56,12 +56,11 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     ClickhouseRepo.query_transform(
       query,
       args,
-      fn [contract, from_address, to_address, datetime, trx_hash, trx_value] ->
+      fn [datetime, from_address, to_address, trx_hash, trx_value] ->
         %{
-          contract: contract,
+          datetime: DateTime.from_unix!(datetime),
           from_address: from_address,
           to_address: to_address,
-          datetime: DateTime.from_unix!(datetime),
           trx_hash: trx_hash,
           trx_value: trx_value
         }
@@ -75,17 +74,16 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
 
     query = """
     SELECT
-      contract,
+      toUnixTimestamp(dt) AS datetime,
       from,
       to,
-      toUnixTimestamp(dt) AS datetime,
       transactionHash,
-      any(value) / ?1 AS value
-    FROM #{@table}
-    PREWHERE contract = ?2
-    AND dt >= toDateTime(?3)
-    AND dt <= toDateTime(?4)
-    GROUP BY contract, from, to, dt, transactionHash, logIndex
+      value / ?1
+    FROM #{@table} FINAL
+    PREWHERE
+      contract = ?2
+      AND dt >= toDateTime(?3)
+      AND dt <= toDateTime(?4)
     ORDER BY value DESC
     LIMIT ?5
     """

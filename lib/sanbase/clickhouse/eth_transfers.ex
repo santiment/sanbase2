@@ -65,19 +65,30 @@ defmodule Sanbase.Clickhouse.EthTransfers do
           {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
   def top_wallet_transfers([], _from, _to, _limit, _type), do: {:ok, []}
 
-  def top_wallet_transfers(wallets, from_datetime, to_datetime, limit, type) do
-    wallet_transfers(wallets, from_datetime, to_datetime, limit, type)
+  def top_wallet_transfers(wallets, from, to, limit, type) do
+    {query, args} = wallet_transactions_query(wallets, from, to, limit, type)
+
+    ClickhouseRepo.query_transform(query, args, fn
+      [timestamp, from_address, to_address, trx_hash, trx_value] ->
+        %{
+          datetime: DateTime.from_unix!(timestamp),
+          from_address: from_address,
+          to_address: to_address,
+          trx_hash: trx_hash,
+          trx_value: trx_value
+        }
+    end)
   end
 
   @doc ~s"""
-  The total ETH spent in the `from_datetime` - `to_datetime` interval
+  The total ETH spent in the `from` - `to` interval
   """
   @spec eth_spent(wallets, %DateTime{}, %DateTime{}) ::
           {:ok, []} | {:ok, [{String.t(), float()}]} | {:error, String.t()}
   def eth_spent([], _, _), do: {:ok, []}
 
-  def eth_spent(wallets, from_datetime, to_datetime) do
-    {query, args} = eth_spent_query(wallets, from_datetime, to_datetime)
+  def eth_spent(wallets, from, to) do
+    {query, args} = eth_spent_query(wallets, from, to)
 
     ClickhouseRepo.query_transform(query, args, fn [from, value] ->
       {from, value / @eth_decimals}
@@ -94,19 +105,19 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   @doc ~s"""
   Return a list of maps `%{datetime: datetime, eth_spent: ethspent}` that shows
   how much ETH has been spent for the list of `wallets` for each `interval` in the
-  time period [`from_datetime`, `to_datetime`]
+  time period [`from`, `to`]
   """
   @spec eth_spent_over_time(%Project{} | wallets, %DateTime{}, %DateTime{}, String.t()) ::
           {:ok, list(spent_over_time_type)} | {:error, String.t()}
-  def eth_spent_over_time(%Project{} = project, from_datetime, to_datetime, interval) do
+  def eth_spent_over_time(%Project{} = project, from, to, interval) do
     {:ok, eth_addresses} = Project.eth_addresses(project)
-    eth_spent_over_time(eth_addresses, from_datetime, to_datetime, interval)
+    eth_spent_over_time(eth_addresses, from, to, interval)
   end
 
   def eth_spent_over_time([], _, _, _), do: {:ok, []}
 
-  def eth_spent_over_time(wallets, from_datetime, to_datetime, interval) when is_list(wallets) do
-    {query, args} = eth_spent_over_time_query(wallets, from_datetime, to_datetime, interval)
+  def eth_spent_over_time(wallets, from, to, interval) when is_list(wallets) do
+    {query, args} = eth_spent_over_time_query(wallets, from, to, interval)
 
     ClickhouseRepo.query_transform(query, args, fn [value, datetime_str] ->
       %{
@@ -124,9 +135,9 @@ defmodule Sanbase.Clickhouse.EthTransfers do
           %DateTime{},
           %DateTime{}
         ) :: {:ok, list(exchange_volume)} | {:error, String.t()}
-  def exchange_volume(exchange_addresses, from_datetime, to_datetime) do
+  def exchange_volume(exchange_addresses, from, to) do
     exchange_addresses = exchange_addresses |> Enum.map(&String.downcase/1)
-    {query, args} = exchange_volume_query(exchange_addresses, from_datetime, to_datetime)
+    {query, args} = exchange_volume_query(exchange_addresses, from, to)
 
     query
     |> ClickhouseRepo.query_transform(args, fn [dt, inflow, outflow] ->
@@ -147,97 +158,98 @@ defmodule Sanbase.Clickhouse.EthTransfers do
 
   # Private functions
 
-  defp wallet_transfers([], _, _, _, _), do: []
-
-  defp wallet_transfers(wallets, from_datetime, to_datetime, limit, type) do
-    {query, args} = wallet_transactions_query(wallets, from_datetime, to_datetime, limit, type)
-
-    ClickhouseRepo.query_transform(query, args)
-  end
-
-  defp wallet_transactions_query(wallets, from_datetime, to_datetime, limit, :out) do
-    from_datetime_unix = DateTime.to_unix(from_datetime)
-    to_datetime_unix = DateTime.to_unix(to_datetime)
-
+  defp wallet_transactions_query(wallets, from, to, limit, :out) do
     query = """
-    SELECT from, type, to, dt, transactionHash, any(value) / #{@eth_decimals} as value
-    FROM #{@table}
-    PREWHERE from IN (?1) AND NOT to IN (?1)
-    AND dt >= toDateTime(?2)
-    AND dt <= toDateTime(?3)
-    AND type == 'call'
-    GROUP BY from, type, to, dt, transactionHash
+    SELECT
+      toUnixTimestamp(dt),
+      from,
+      to,
+      transactionHash,
+      value / #{@eth_decimals}
+    FROM #{@table} FINAL
+    PREWHERE
+      from IN (?1) AND
+      NOT to IN (?1) AND
+      dt >= toDateTime(?2) AND
+      dt <= toDateTime(?3) AND
+      type = 'call'
     ORDER BY value DESC
     LIMIT ?4
     """
 
     args = [
       wallets,
-      from_datetime_unix,
-      to_datetime_unix,
+      from |> DateTime.to_unix(),
+      to |> DateTime.to_unix(),
       limit
     ]
 
     {query, args}
   end
 
-  defp wallet_transactions_query(wallets, from_datetime, to_datetime, limit, :in) do
-    from_datetime_unix = DateTime.to_unix(from_datetime)
-    to_datetime_unix = DateTime.to_unix(to_datetime)
-
+  defp wallet_transactions_query(wallets, from, to, limit, :in) do
     query = """
-    SELECT from, type, to, dt, transactionHash, any(value) / #{@eth_decimals} as value
-    FROM #{@table}
-    PREWHERE NOT from IN (?1) AND to IN (?1)
-    AND dt >= toDateTime(?2)
-    AND dt <= toDateTime(?3)
-    AND type == 'call'
-    GROUP BY from, type, to, dt, transactionHash
-    ORDER BY value desc
+    SELECT
+      toUnixTimestamp(dt),
+      from,
+      to,
+      transactionHash,
+      value / #{@eth_decimals}
+    FROM #{@table} FINAL
+    PREWHERE
+      from NOT IN (?1) AND
+      to IN (?1) AND
+      dt >= toDateTime(?2) AND
+      dt <= toDateTime(?3) AND
+      type = 'call'
+    ORDER BY value DESC
     LIMIT ?4
     """
 
     args = [
       wallets,
-      from_datetime_unix,
-      to_datetime_unix,
+      from |> DateTime.to_unix(),
+      to |> DateTime.to_unix(),
       limit
     ]
 
     {query, args}
   end
 
-  defp wallet_transactions_query(wallets, from_datetime, to_datetime, limit, :all) do
-    from_datetime_unix = DateTime.to_unix(from_datetime)
-    to_datetime_unix = DateTime.to_unix(to_datetime)
-
+  defp wallet_transactions_query(wallets, from, to, limit, :all) do
     query = """
-    SELECT from, type, to, dt, transactionHash, any(value) / #{@eth_decimals} as value
-    FROM #{@table}
-    PREWHERE (
-      (from IN (?1) AND NOT to IN (?1)) OR
-      (NOT from IN (?1) AND to IN (?1)))
-    AND dt >= toDateTime(?2)
-    AND dt <= toDateTime(?3)
-    AND type == 'call'
-    GROUP BY from, type, to, dt, transactionHash
-    ORDER BY value desc
+    SELECT
+      toUnixTimestamp(dt),
+      from,
+      to,
+      transactionHash,
+      value / #{@eth_decimals}
+    FROM #{@table} FINAL
+    PREWHERE
+      (
+        (from IN (?1) AND NOT to IN (?1)) OR
+        (NOT from IN (?1) AND to IN (?1))
+      ) AND
+      dt >= toDateTime(?2) AND
+      dt <= toDateTime(?3) AND
+      type = 'call'
+    ORDER BY value DESC
     LIMIT ?4
     """
 
     args = [
       wallets,
-      from_datetime_unix,
-      to_datetime_unix,
+      from |> DateTime.to_unix(),
+      to |> DateTime.to_unix(),
       limit
     ]
 
     {query, args}
   end
 
-  defp eth_spent_query(wallets, from_datetime, to_datetime) do
-    from_datetime_unix = DateTime.to_unix(from_datetime)
-    to_datetime_unix = DateTime.to_unix(to_datetime)
+  defp eth_spent_query(wallets, from, to) do
+    from_unix = DateTime.to_unix(from)
+    to_unix = DateTime.to_unix(to)
 
     prewhere_clause =
       wallets
@@ -262,18 +274,18 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     """
 
     args = [
-      from_datetime_unix,
-      to_datetime_unix
+      from_unix,
+      to_unix
     ]
 
     {query, args}
   end
 
-  defp eth_spent_over_time_query(wallets, from_datetime, to_datetime, interval) do
-    from_datetime_unix = DateTime.to_unix(from_datetime)
-    to_datetime_unix = DateTime.to_unix(to_datetime)
+  defp eth_spent_over_time_query(wallets, from, to, interval) do
+    from_unix = DateTime.to_unix(from)
+    to_unix = DateTime.to_unix(to)
     interval = DateTimeUtils.str_to_sec(interval)
-    span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)
+    span = div(to_unix - from_unix, interval) |> max(1)
 
     query = """
     SELECT SUM(value), time
@@ -305,14 +317,14 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       interval,
       span,
       wallets,
-      from_datetime_unix,
-      to_datetime_unix
+      from_unix,
+      to_unix
     ]
 
     {query, args}
   end
 
-  defp exchange_volume_query(exchange_addresses, from_datetime, to_datetime) do
+  defp exchange_volume_query(exchange_addresses, from, to) do
     query = """
     SELECT
       toUnixTimestamp(dt) as datetime,
@@ -362,8 +374,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
 
     args = [
       exchange_addresses,
-      from_datetime,
-      to_datetime
+      from,
+      to
     ]
 
     {query, args}

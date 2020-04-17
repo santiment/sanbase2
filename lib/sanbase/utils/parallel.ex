@@ -3,7 +3,7 @@ defmodule Sanbase.Parallel do
   Module implementing concurrent map and filter functions on enumerable under Sanbase.TaskSupervisor
   """
 
-  @default_timeout 15_000
+  @default_timeout 25_000
 
   def flat_map(collection, func, opts \\ [])
 

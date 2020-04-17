@@ -9,7 +9,7 @@ defmodule Sanbase.SocialData.SocialVolume do
   require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
-  @recv_timeout 15_000
+  @recv_timeout 25_000
   @sources [:telegram, :professional_traders_chat, :reddit, :discord]
 
   def social_volume(slug, from, to, interval, source)

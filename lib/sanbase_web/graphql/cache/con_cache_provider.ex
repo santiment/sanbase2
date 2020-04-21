@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
   @compile :inline_list_funcs
   @compile {:inline, get: 2, store: 3, get_or_store: 4, cache_item: 3}
 
-  @max_cache_ttl 30 * 60
+  @max_cache_ttl 86400
 
   @impl true
   def size(cache, :megabytes) do
@@ -22,7 +22,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
 
   @impl true
   def get(cache, key) do
-    case ConCache.get(cache, key) do
+    case ConCache.get(cache, true_key(key)) do
       {:stored, value} -> value
       nil -> nil
     end
@@ -45,20 +45,17 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
 
   @impl true
   def get_or_store(cache, key, func, cache_modify_middleware) do
-    true_key =
-      case key do
-        {value, _ttl} -> value
-        value -> value
-      end
+    # Do not include the TTL as part of the key name.
+    true_key = true_key(key)
 
     {result, error_if_any} =
-      case ConCache.get(cache, key) do
+      case ConCache.get(cache, true_key) do
         {:stored, value} ->
           {value, nil}
 
         _ ->
-          ConCache.isolated(cache, key, fn ->
-            case ConCache.get(cache, key) do
+          ConCache.isolated(cache, true_key, fn ->
+            case ConCache.get(cache, true_key) do
               {:stored, value} ->
                 {value, nil}
 
@@ -84,18 +81,20 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
       end
 
     if error_if_any != nil do
-      # Logger.warn("Somethting went wrong...")
       error_if_any
     else
       result
     end
   end
 
-  defp cache_item(cache, {_, ttl} = key, value) when is_integer(ttl) and ttl <= @max_cache_ttl do
+  defp cache_item(cache, {key, ttl}, value) when is_integer(ttl) and ttl <= @max_cache_ttl do
     ConCache.put(cache, key, %ConCache.Item{value: value, ttl: :timer.seconds(ttl)})
   end
 
   defp cache_item(cache, key, value) do
     ConCache.put(cache, key, value)
   end
+
+  defp true_key({key, ttl}) when is_integer(ttl) and ttl <= @max_cache_ttl, do: key
+  defp true_key(key), do: key
 end

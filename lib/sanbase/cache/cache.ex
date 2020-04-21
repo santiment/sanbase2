@@ -1,7 +1,7 @@
 defmodule Sanbase.Cache do
   @behaviour Sanbase.Cache.Behaviour
   @cache_name :sanbase_cache
-  @max_cache_ttl 84600
+  @max_cache_ttl 86400
 
   def name, do: @cache_name
 
@@ -27,7 +27,7 @@ defmodule Sanbase.Cache do
   def get(cache \\ @cache_name, key)
 
   def get(cache, key) do
-    case ConCache.get(cache, key) do
+    case ConCache.get(cache, true_key(key)) do
       {:stored, value} -> value
       nil -> nil
     end
@@ -50,11 +50,7 @@ defmodule Sanbase.Cache do
   def get_or_store(cache \\ @cache_name, key, func)
 
   def get_or_store(cache, key, func) do
-    true_key =
-      case key do
-        {value, ttl} when is_integer(ttl) -> value
-        value -> value
-      end
+    true_key = true_key(key)
 
     {result, error_if_any} =
       case ConCache.get(cache, true_key) do
@@ -97,4 +93,7 @@ defmodule Sanbase.Cache do
   defp cache_item(cache, key, value) do
     ConCache.put(cache, key, value)
   end
+
+  defp true_key({key, ttl}) when is_integer(ttl) and ttl <= @max_cache_ttl, do: key
+  defp true_key(key), do: key
 end

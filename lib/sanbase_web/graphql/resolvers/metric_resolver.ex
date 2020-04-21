@@ -22,6 +22,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   def get_available_slugs(_root, _args, %{source: %{metric: metric}}),
     do: Metric.available_slugs(metric)
 
+  def get_human_readable_name(_root, _args, %{source: %{metric: metric}}),
+    do: Metric.human_readable_name(metric)
+
   def get_metadata(%{}, _args, %{source: %{metric: metric}} = resolution) do
     %{context: %{product_id: product_id, auth: %{subscription: subscription}}} = resolution
 

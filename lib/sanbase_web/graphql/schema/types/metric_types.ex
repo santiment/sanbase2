@@ -102,6 +102,14 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:metric, non_null(:string))
 
     @desc ~s"""
+    A human readable name of the metric.
+    For example the human readable name of `mvrv_usd_5y` is `MVRV for coins that moved in the past 5 years`
+    """
+    field :human_readable_name, non_null(:string) do
+      cache_resolve(&MetricResolver.get_human_readable_name/3, ttl: 3600)
+    end
+
+    @desc ~s"""
     List of slugs which can be provided to the `timeseriesData` field to fetch
     the metric.
     """

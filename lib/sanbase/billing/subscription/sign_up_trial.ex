@@ -28,7 +28,7 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
 
   @free_trial_days 14
   # Free trial plans are Sanbase PRO plans
-  @free_trial_plans [Plan.Metadata.current_free_trial_plan()]
+  @free_trial_plans [Plan.Metadata.sanbase_pro()]
 
   @day_email_type_map %{
     4 => :sent_first_education_email,

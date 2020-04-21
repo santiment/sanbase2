@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.PostgresDataloader do
   import Ecto.Query
-  alias Sanbase.Model.{MarketSegment, Infrastructure, ProjectTransparencyStatus}
+  alias Sanbase.Model.{MarketSegment, Infrastructure}
   alias Sanbase.Repo
 
   def data() do
@@ -26,15 +26,6 @@ defmodule SanbaseWeb.Graphql.PostgresDataloader do
     )
     |> Repo.all()
     |> Enum.map(fn %Infrastructure{id: id, code: code} -> {id, code} end)
-    |> Map.new()
-  end
-
-  def query(:project_transparency_status, project_transparency_status_ids) do
-    project_transparency_status_ids = Enum.to_list(project_transparency_status_ids)
-
-    from(pts in ProjectTransparencyStatus, where: pts.id in ^project_transparency_status_ids)
-    |> Repo.all()
-    |> Enum.map(fn %ProjectTransparencyStatus{id: id, name: name} -> {id, name} end)
     |> Map.new()
   end
 

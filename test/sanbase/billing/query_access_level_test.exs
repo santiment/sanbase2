@@ -148,9 +148,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         Sanbase.Billing.GraphqlSchema.get_queries_with_access_level(:forbidden)
         |> Enum.sort()
 
-      expected_forbidden_queries =
-        [:all_projects_project_transparency]
-        |> Enum.sort()
+      expected_forbidden_queries = []
 
       assert forbidden_queries == expected_forbidden_queries
     end

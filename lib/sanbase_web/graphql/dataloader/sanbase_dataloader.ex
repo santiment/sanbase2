@@ -20,7 +20,6 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
           | :infrastructure
           | :comment_insight_id
           | :comment_timeline_event_id
-          | :project_transparency_status
           | :insights_comments_count
           | :timeline_events_comments_count
           | :project_by_slug,
@@ -46,7 +45,6 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
              :comment_timeline_event_id,
              :infrastructure,
              :market_segment,
-             :project_transparency_status,
              :insights_comments_count,
              :timeline_events_comments_count,
              :project_by_slug

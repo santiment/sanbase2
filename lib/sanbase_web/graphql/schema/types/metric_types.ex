@@ -137,8 +137,27 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     """
     field(:available_aggregations, list_of(:aggregation))
 
+    @desc ~s"""
+    The supported selector types for the metric. It is used to choose the
+    target for which the metric is computed. Available selectors are:
+      - slug - Identifies an asset/project
+      - text - Provides random text/search term for the social metrics
+      - holders_count - Provides the number of holders used in holders metrics
+
+    Every metric has `availableSelectors` in its metadata, showing exactly
+    which of the selectors can be used.
+    """
     field(:available_selectors, list_of(:selector_name))
 
+    @desc ~s"""
+    The data type of the metric can be either timeseries or histogram.
+      - Timeseries data is a sequence taken at successive equally spaced points
+        in time (every 5 minutes, every day, every year, etc.).
+      - Histogram data is an approximate representation of the distribution of
+        numerical or categorical data. The metric is represented as a list of data
+        points, where every point is represented represented by a tuple containing
+        a range an a value.
+    """
     field(:data_type, :metric_data_type)
 
     field(:is_restricted, :boolean)
@@ -187,6 +206,14 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       cache_resolve(&MetricResolver.timeseries_data/3)
     end
 
+    @desc ~s"""
+    A derivative of the `timeseriesData` - read its full descriptio if not
+    familiar with it.
+
+    `aggregatedTimeseriesData` returns a single float value instead of list
+    of datetimes and values. The single values is computed by aggregating all
+    of the values in the specified from-to range with the `aggregation` aggregation.
+    """
     field :aggregated_timeseries_data, :float do
       arg(:slug, :string)
       arg(:selector, :metric_target_selector_input_object)
@@ -200,6 +227,42 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       cache_resolve(&MetricResolver.aggregated_timeseries_data/3)
     end
 
+    @desc ~s"""
+    A histogram is an approximate representation of the distribution of numerical or
+    categorical data.
+
+    The metric is represented as a list of data points, where every point is
+    represented represented by a tuple containing a range an a value.
+
+    Example (histogram data) The price_histogram (or spent_coins_cost) shows at what
+    price were acquired the coins/tokens transacted on a given day D. The metric is
+    represented as a list of price ranges and values with the following meaning: Out
+    of all coins/tokens transacted on day D, value amount of them were acquired when
+    the price was in the range range.
+
+    On April 07, the bitcoins that circulated during that day were 124k and the
+    average price for the day was $7307. Out of all of the 124k bitcoins, 13.8k of
+    them were acquired when the price was in the range $8692.08 - $10845.62, so
+    they were last moved when the price was higher. The same logic applies for all
+    of the ranges.
+
+    [
+      ...
+      {
+        "range": [7307.7, 8692.08],
+        "value": 2582.64
+      },
+      {
+        "range": [8692.08, 10845.62],
+        "value": 13804.97
+      },
+      {
+        "range": [10845.62, 12999.16],
+        "value": 130.33
+      },
+      ...
+    ]
+    """
     field :histogram_data, :histogram_data do
       arg(:slug, :string)
       arg(:selector, :metric_target_selector_input_object)

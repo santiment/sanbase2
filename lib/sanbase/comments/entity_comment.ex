@@ -69,7 +69,31 @@ defmodule Sanbase.Comment.EntityComment do
     |> Repo.all()
   end
 
+  def notify_users() do
+    comments =
+      comments_query(:insight)
+      |> order_by([c], c.inserted_at)
+      |> Repo.all()
+
+    Enum.reduce(comments, %{}, fn comment, acc ->
+      ntf_post_author(acc, comment) |> IO.inspect()
+    end)
+    |> IO.inspect()
+  end
+
+  defp ntf_post_author(notify_users_map, comment) do
+    Map.put(notify_users_map, comment.post.user.id, [
+      comment.id | Map.get(notify_users_map, comment.post.user.id, [])
+    ])
+  end
+
   # private functions
+
+  defp comments_query(:insight) do
+    from(p in Sanbase.Insight.PostComment,
+      preload: [comment: :user, post: :user]
+    )
+  end
 
   defp entity_comments_query(entity_id, :timeline_event) do
     from(p in Sanbase.Timeline.TimelineEventComment,

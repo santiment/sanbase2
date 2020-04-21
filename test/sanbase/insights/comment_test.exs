@@ -7,6 +7,35 @@ defmodule Sanbase.Insight.CommentTest do
 
   @entity_type :insight
 
+  setup do
+    author = insert(:user)
+    post = insert(:post, user: author)
+    user = insert(:user)
+
+    {:ok, user: user, author: author, post: post}
+  end
+
+  test "test", context do
+    {:ok, comment} =
+      EntityComment.create_and_link(
+        @entity_type,
+        context.post.id,
+        context.user.id,
+        nil,
+        "some comment"
+      )
+
+    EntityComment.create_and_link(
+      @entity_type,
+      context.post.id,
+      context.user.id,
+      nil,
+      "some comment"
+    )
+
+    assert EntityComment.notify_users() == []
+  end
+
   test "add a comment to a post" do
     post = insert(:post)
     user = insert(:user)

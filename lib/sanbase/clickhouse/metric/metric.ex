@@ -204,13 +204,14 @@ defmodule Sanbase.Clickhouse.Metric do
   end
 
   defp get_aggregated_timeseries_data(metric, slugs, from, to, aggregation)
-       when is_list(slugs) and length(slugs) > 20 do
+       when is_list(slugs) and length(slugs) > 50 do
     result =
-      Enum.chunk_every(slugs, 20)
+      Enum.chunk_every(slugs, 50)
       |> Sanbase.Parallel.map(&get_aggregated_timeseries_data(metric, &1, from, to, aggregation),
         timeout: 25_000,
         max_concurrency: 8,
-        ordered: false
+        ordered: false,
+        on_timeout: :kill_task
       )
       |> Enum.filter(&match?({:ok, _}, &1))
       |> Enum.map(&elem(&1, 1))

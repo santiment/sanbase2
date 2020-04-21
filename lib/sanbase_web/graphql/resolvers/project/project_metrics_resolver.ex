@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
   import Absinthe.Resolution.Helpers
+  import SanbaseWeb.Graphql.Helpers.Utils
 
   alias Sanbase.Model.Project
   alias Sanbase.Metric
@@ -34,12 +35,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     maybe_register_and_get(cache_key, fun, slug, query)
   end
 
-  def aggregated_metric(%Project{slug: slug}, %{metric: metric} = args, %{
+  def aggregated_timeseries_data(%Project{slug: slug}, %{metric: metric} = args, %{
         context: %{loader: loader}
       }) do
     case Metric.has_metric?(metric) do
       true ->
         %{from: from, to: to} = args
+        include_incomplete_data = Map.get(args, :include_incomplete_data, false)
+
+        {:ok, from, to} =
+          calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to)
+
         from = from |> Sanbase.DateTimeUtils.round_datetime(300)
         to = to |> Sanbase.DateTimeUtils.round_datetime(300)
         aggregation = Map.get(args, :aggregation)
@@ -65,14 +71,29 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   # Private functions
 
   defp aggregated_metric_from_loader(loader, data) do
-    %{selector: selector, slug: slug} = data
+    %{selector: selector, slug: slug, metric: metric} = data
+
+    cache_key =
+      {__MODULE__, :available_slugs_for_metric, metric}
+      |> :erlang.phash2()
+
+    {:ok, slugs_for_metric} =
+      Sanbase.Cache.get_or_store({cache_key, 1800}, fn -> Metric.available_slugs(metric) end)
 
     loader
     |> Dataloader.get(SanbaseDataloader, :aggregated_metric, selector)
     |> case do
-      %{} = map -> {:ok, map |> Map.get(slug)}
-      nil -> {:ok, nil}
-      _ -> {:nocache, {:ok, nil}}
+      map when is_map(map) ->
+        case Map.fetch(map, slug) do
+          {:ok, value} ->
+            {:ok, value}
+
+          :error ->
+            if slug in slugs_for_metric, do: {:nocache, {:ok, nil}}, else: {:ok, nil}
+        end
+
+      _ ->
+        {:nocache, {:ok, nil}}
     end
   end
 

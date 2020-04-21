@@ -20,6 +20,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   alias Sanbase.Model.Project
   alias SanbaseWeb.Graphql.SanbaseRepo
   alias SanbaseWeb.Graphql.Complexity
+  alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
   # Includes all available fields
   @desc ~s"""
@@ -186,13 +187,17 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve(&ProjectResolver.available_queries/3, ttl: 1800)
     end
 
-    field :aggregated_metric, :float do
+    field :aggregated_timeseries_data, :float do
       arg(:metric, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:aggregation, :aggregation, default_value: nil)
+      arg(:include_incomplete_data, :boolean, default_value: false)
 
-      cache_resolve(&ProjectMetricsResolver.aggregated_metric/3,
+      complexity(&Complexity.from_to_interval/3)
+      middleware(AccessControl)
+
+      cache_resolve(&ProjectMetricsResolver.aggregated_timeseries_data/3,
         ttl: 600,
         max_ttl_offset: 600
       )

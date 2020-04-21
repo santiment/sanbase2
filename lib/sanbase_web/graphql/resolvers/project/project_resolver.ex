@@ -244,7 +244,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
                month_ago,
                Timex.now()
              ) do
-          {:ok, total_activity} ->
+          {:ok, organizations_activity_map} ->
+            total_activity = organizations_activity_map |> Map.values() |> Enum.sum()
             {:ok, total_activity / days}
 
           _ ->

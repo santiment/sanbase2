@@ -50,14 +50,20 @@ defmodule Sanbase.Cache do
   def get_or_store(cache \\ @cache_name, key, func)
 
   def get_or_store(cache, key, func) do
+    true_key =
+      case key do
+        {value, ttl} when is_integer(ttl) -> value
+        value -> value
+      end
+
     {result, error_if_any} =
-      case ConCache.get(cache, key) do
+      case ConCache.get(cache, true_key) do
         {:stored, value} ->
           {value, nil}
 
         _ ->
-          ConCache.isolated(cache, key, fn ->
-            case ConCache.get(cache, key) do
+          ConCache.isolated(cache, true_key, fn ->
+            case ConCache.get(cache, true_key) do
               {:stored, value} ->
                 {value, nil}
 
@@ -67,7 +73,6 @@ defmodule Sanbase.Cache do
                     {nil, error}
 
                   {:nocache, {:ok, _result} = value} ->
-                    Process.put(:do_not_cache_query, true)
                     {value, nil}
 
                   value ->

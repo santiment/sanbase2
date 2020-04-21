@@ -45,6 +45,12 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
 
   @impl true
   def get_or_store(cache, key, func, cache_modify_middleware) do
+    true_key =
+      case key do
+        {value, _ttl} -> value
+        value -> value
+      end
+
     {result, error_if_any} =
       case ConCache.get(cache, key) do
         {:stored, value} ->

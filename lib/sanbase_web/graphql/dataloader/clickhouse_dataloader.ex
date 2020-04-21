@@ -107,8 +107,6 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     |> case do
       {:ok, result} ->
         result
-        |> Enum.map(fn %{slug: slug, value: value} -> {slug, value} end)
-        |> Map.new()
 
       {:error, error} ->
         {:error, error}

@@ -22,7 +22,7 @@ defmodule Sanbase.Billing.Subscription do
   Current subscription attempt failed.
   Please, contact administrator of the site for more information.
   """
-  @free_trial_plans Plan.Metadata.free_trial_plans()
+  @sanbase_pro_plan_id Plan.Metadata.sanbase_pro()
 
   schema "subscriptions" do
     field(:stripe_id, :string)
@@ -482,7 +482,7 @@ defmodule Sanbase.Billing.Subscription do
            plan_id: plan_id
          } = subscription
        )
-       when plan_id in @free_trial_plans do
+       when plan_id == @sanbase_pro_plan_id do
     unless User.has_credit_card_in_stripe?(user_id) do
       Logger.info("Deleting subscription with id: #{stripe_id} for user: #{user_id}")
 

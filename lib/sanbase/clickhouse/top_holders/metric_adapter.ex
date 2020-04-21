@@ -115,7 +115,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
     case metric do
       "amount_in_top_holders" -> {:ok, "Top Holders Balance"}
       "amount_in_exchange_top_holders" -> {:ok, "Exchange Top Holders Balance"}
-      "amount_in_non_exchange top_holders" -> {:ok, "Non-Exchange Top Holders Balance"}
+      "amount_in_non_exchange_top_holders" -> {:ok, "Non-Exchange Top Holders Balance"}
     end
   end
 

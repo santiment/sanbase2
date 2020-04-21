@@ -73,8 +73,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   # gold and s-and-p-500 are present only in the intrday metrics table, not in asset_prices
-  defp maybe_replace_metric("price_usd", %{slug: slug}) when slug in ["gold", "s-and-p-500"],
-    do: "price_usd_5m"
+  defp maybe_replace_metric("price_usd", %{slug: slug})
+       when slug in ["gold", "s-and-p-500", "crude-oil"],
+       do: "price_usd_5m"
 
   defp maybe_replace_metric(metric, _selector), do: metric
 

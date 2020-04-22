@@ -112,6 +112,8 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
     field :projects_count, :projects_count do
       meta(access: :free)
 
+      arg(:filters, list_of(:project_filter_input_object))
+
       arg(:min_volume, :integer)
       cache_resolve(&ProjectResolver.projects_count/3)
     end

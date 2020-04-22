@@ -10,9 +10,10 @@ defmodule SanbaseWeb.Graphql.ConCacheProviderTest do
   end
 
   test "return {:ok, value} when {:ok, value} is explicitly stored" do
-    key = {123_123, 60}
+    key = 123_123
+    cache_key = {key, 60}
     value = "something"
-    CacheProvider.store(@cache_name, key, {:ok, value})
+    CacheProvider.store(@cache_name, cache_key, {:ok, value})
     assert {:ok, value} == CacheProvider.get(@cache_name, key)
   end
 

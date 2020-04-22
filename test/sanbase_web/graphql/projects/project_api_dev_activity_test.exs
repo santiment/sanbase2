@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiDevActivityTest do
 
     with_mock Github,
       total_dev_activity: fn _, _, _ ->
-        {:ok, [{org, 300}]}
+        {:ok, %{org => 300}}
       end do
       result = avg_dev_activity(context.conn, project.slug)
 
@@ -48,7 +48,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiDevActivityTest do
 
     with_mock Github,
       total_dev_activity: fn _, _, _ ->
-        {:ok, [{org1, 300}, {org2, 600}]}
+        {:ok, %{org1 => 300, org2 => 600}}
       end do
       result = avg_dev_activity(context.conn, project.slug)
 
@@ -78,7 +78,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiDevActivityTest do
 
     with_mock Github,
       total_dev_activity: fn _, _, _ ->
-        {:ok, []}
+        {:ok, %{}}
       end do
       result = avg_dev_activity(context.conn, project.slug)
 

@@ -44,15 +44,15 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   # Here we transform the name to an atom in snake case for consistency
   # and faster comparison of atoms
   defp transform_resolution(%Resolution{} = resolution) do
-    %{context: context, definition: definition} = resolution
+    %{context: context, definition: definition, arguments: arguments, source: source} = resolution
 
     query_atom_name =
       definition.name
       |> Macro.underscore()
       |> String.to_existing_atom()
-      |> get_query(resolution.source)
+      |> get_query_or_metric(source, arguments)
 
-    context = context |> Map.put(:__query_atom_name__, query_atom_name)
+    context = context |> Map.put(:__query_or_metric_atom_name__, query_atom_name)
 
     %Resolution{resolution | context: context}
   end
@@ -68,7 +68,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   end
 
   defp check_plan(
-         %Resolution{context: %{__query_atom_name__: query_or_metric} = context} = resolution
+         %Resolution{context: %{__query_or_metric_atom_name__: query_or_metric} = context} =
+           resolution
        ) do
     plan = context[:auth][:plan] || :free
     subscription = context[:auth][:subscription] || @free_subscription
@@ -122,7 +123,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
   # Some specific queries/metrics are available only when a special extension is
   # present.
-  defp do_call(%Resolution{context: %{__query_atom_name__: query}} = resolution, _)
+  defp do_call(%Resolution{context: %{__query_or_metric_atom_name__: query}} = resolution, _)
        when query in @extension_metrics do
     case resolution.context[:auth][:current_user] do
       %Sanbase.Auth.User{} = user ->
@@ -142,8 +143,10 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   # Dispatch the resolution of restricted and not-restricted queries to
   # different functions if there are `from` and `to` parameters
   defp do_call(
-         %Resolution{context: %{__query_atom_name__: query}, arguments: %{from: _from, to: _to}} =
-           resolution,
+         %Resolution{
+           context: %{__query_or_metric_atom_name__: query},
+           arguments: %{from: _from, to: _to}
+         } = resolution,
          middleware_args
        ) do
     if Plan.AccessChecker.is_restricted?(query) do
@@ -157,11 +160,17 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     resolution
   end
 
-  defp get_query(:timeseries_data, %{metric: metric}), do: {:metric, metric}
-  defp get_query(:aggregated_timeseries_data, %{metric: metric}), do: {:metric, metric}
-  defp get_query(:histogram_data, %{metric: metric}), do: {:metric, metric}
+  defp get_query_or_metric(:timeseries_data, %{metric: metric}, _args), do: {:metric, metric}
 
-  defp get_query(query, _), do: {:query, query}
+  defp get_query_or_metric(:aggregated_timeseries_data, %{metric: metric}, _args),
+    do: {:metric, metric}
+
+  defp get_query_or_metric(:aggregated_timeseries_data, _source, %{metric: metric}),
+    do: {:metric, metric}
+
+  defp get_query_or_metric(:histogram_data, %{metric: metric}, _args), do: {:metric, metric}
+
+  defp get_query_or_metric(query, _source, _args), do: {:query, query}
 
   defp restricted_query(
          %Resolution{arguments: %{from: from, to: to}, context: context} = resolution,

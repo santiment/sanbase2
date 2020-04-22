@@ -92,7 +92,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def aggregated_timeseries_data(_, %{slug: _slug}, _from, _to, _aggregation) do
-    {:error, "not_implemented"}
+    {:error, "Aggregated timeseries data is not implemented for Top Holders."}
   end
 
   @impl Sanbase.Metric.Behaviour

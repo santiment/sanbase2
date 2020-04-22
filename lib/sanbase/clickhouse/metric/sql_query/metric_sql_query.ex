@@ -32,7 +32,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     query = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
-      #{aggregation(aggregation, "value", "t")}
+      #{aggregation(aggregation, "value", "dt")}
     FROM(
       SELECT
         dt,
@@ -41,19 +41,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
       PREWHERE
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
-        asset_id = (
-          SELECT argMax(asset_id, computed_at)
-          FROM asset_metadata
-          PREWHERE name = ?5
-        ) AND
-        metric_id = (
-          SELECT
-            argMax(metric_id, computed_at) AS metric_id
-          FROM
-            metric_metadata
-          PREWHERE
-            name = ?2
-        )
+        asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?5 ) AND
+        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 )
       GROUP BY dt
     )
     GROUP BY t
@@ -63,8 +52,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     args = [
       str_to_sec(interval),
       Map.get(@name_to_metric_map, metric),
-      from,
-      to,
+      from |> DateTime.to_unix(),
+      to |> DateTime.to_unix(),
       slug
     ]
 

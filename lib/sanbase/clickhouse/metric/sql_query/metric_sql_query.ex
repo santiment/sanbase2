@@ -32,7 +32,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     query = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
-      #{aggregation(aggregation, "value", "t")}
+      #{aggregation(aggregation, "value", "dt")}
     FROM(
       SELECT
         dt,

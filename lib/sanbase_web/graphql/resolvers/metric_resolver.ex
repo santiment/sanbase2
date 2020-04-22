@@ -97,7 +97,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   defp calibrate_transform_params(%{type: type}, from, _to, interval)
-       when type in ["changes", "consecutive_differences"] do
+       when type in [
+              "changes",
+              "consecutive_differences",
+              "percent_change",
+              "cumulative_percent_change"
+            ] do
     shift_by_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
     from = Timex.shift(from, seconds: -shift_by_sec)
     {:ok, from}
@@ -112,14 +117,37 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   defp apply_transform(%{type: type}, data) when type in ["changes", "consecutive_differences"] do
     result =
       Stream.chunk_every(data, 2, 1, :discard)
-      |> Enum.map(fn [%{value: previous}, %{value: next, datetime: datetime}] ->
+      |> Enum.map(fn [%{value: previous}, %{value: current, datetime: datetime}] ->
         %{
           datetime: datetime,
-          value: next - previous
+          value: current - previous
         }
       end)
 
     {:ok, result}
+  end
+
+  defp apply_transform(%{type: type}, data) when type in ["percent_change"] do
+    result =
+      Stream.chunk_every(data, 2, 1, :discard)
+      |> Enum.map(fn [%{value: previous}, %{value: current, datetime: datetime}] ->
+        %{
+          datetime: datetime,
+          value: Sanbase.Math.percent_change(previous, current)
+        }
+      end)
+
+    {:ok, result}
+  end
+
+  defp apply_transform(%{type: type}, data) when type in ["cumulative_percent_change"] do
+    cumsum =
+      data
+      |> Enum.scan(fn %{value: current} = elem, %{value: previous} ->
+        %{elem | value: current + previous}
+      end)
+
+    apply_transform(%{type: "percent_change"}, cumsum)
   end
 
   def aggregated_timeseries_data(

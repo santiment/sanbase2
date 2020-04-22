@@ -32,7 +32,7 @@ defmodule Sanbase.Anomaly.SqlQuery do
     query = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
-      toFloat32(#{aggregation(aggregation, "value", "t")})
+      toFloat32(#{aggregation(aggregation, "value", "dt")})
     FROM(
       SELECT
         dt,
@@ -71,7 +71,7 @@ defmodule Sanbase.Anomaly.SqlQuery do
     query = """
     SELECT
       toUInt32(asset_id),
-      toFloat32(#{aggregation(aggregation, "value", "t")})
+      toFloat32(#{aggregation(aggregation, "value", "dt")})
     FROM(
       SELECT
         dt,

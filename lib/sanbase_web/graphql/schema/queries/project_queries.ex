@@ -20,7 +20,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
     field :all_projects, list_of(:project) do
       meta(access: :free)
 
-      arg(:filter, :project_filter_input_object)
+      arg(:filters, list_of(:project_filter_input_object))
 
       arg(:page, :integer)
       arg(:page_size, :integer)
@@ -34,6 +34,8 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
     field :all_erc20_projects, list_of(:project) do
       meta(access: :free)
 
+      arg(:filters, list_of(:project_filter_input_object))
+
       arg(:page, :integer)
       arg(:page_size, :integer)
       arg(:min_volume, :integer)
@@ -45,6 +47,8 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
     @desc "Fetch all currency projects. A currency project is a project that has price data but is not classified as ERC20."
     field :all_currency_projects, list_of(:project) do
       meta(access: :free)
+
+      arg(:filters, list_of(:project_filter_input_object))
 
       arg(:page, :integer)
       arg(:page_size, :integer)

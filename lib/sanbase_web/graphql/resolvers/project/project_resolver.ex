@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
   import Absinthe.Resolution.Helpers, except: [async: 1]
   import SanbaseWeb.Graphql.Helpers.Async
+  import Sanbase.DateTimeUtils
 
   alias Sanbase.Model.{
     Project,
@@ -30,19 +31,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
      }}
   end
 
-  @spec all_projects(any, map, any) :: {:ok, any}
-  def all_projects(_parent, args, _resolution) do
-    page = Map.get(args, :page)
-    page_size = Map.get(args, :page_size)
-    min_volume = Map.get(args, :min_volume)
+  defp included_slugs_by_filters(nil), do: :all
+  defp included_slugs_by_filters([]), do: :all
 
-    included_slugs =
-      case Map.get(args, :filter) do
-        nil ->
-          :all
+  defp included_slugs_by_filters(filters) when is_list(filters) do
+    filters
+    |> Sanbase.Parallel.map(
+      fn filter ->
+        cache_key =
+          {:included_slugs_by_filters,
+           %{filter | from: round_datetime(filter.from), to: round_datetime(filter.to)}}
+          |> :erlang.phash2()
 
-        %{} = filter ->
-          {:ok, slugs} =
+        {:ok, slugs} =
+          Sanbase.Cache.get_or_store(cache_key, fn ->
             Sanbase.Clickhouse.Metric.filtered_slugs(
               filter.metric,
               filter.from,
@@ -51,9 +53,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
               filter.operator,
               filter.threshold
             )
+          end)
 
-          slugs
-      end
+        slugs |> MapSet.new()
+      end,
+      ordered: false,
+      max_concurrency: 8
+    )
+    |> Enum.reduce(&MapSet.intersection(&1, &2))
+    |> Enum.to_list()
+  end
+
+  @spec all_projects(any, map, any) :: {:ok, any}
+  def all_projects(_parent, args, _resolution) do
+    page = Map.get(args, :page)
+    page_size = Map.get(args, :page_size)
+    min_volume = Map.get(args, :min_volume)
+    included_slugs = Map.get(args, :filters) |> included_slugs_by_filters()
 
     projects =
       if page_arguments_valid?(page, page_size) do
@@ -72,12 +88,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     page = Map.get(args, :page)
     page_size = Map.get(args, :page_size)
     min_volume = Map.get(args, :min_volume)
+    included_slugs = Map.get(args, :filter) |> included_slugs_by_filters()
 
     erc20_projects =
       if page_arguments_valid?(page, page_size) do
-        Project.List.erc20_projects_page(page, page_size, min_volume: min_volume)
+        Project.List.erc20_projects_page(page, page_size,
+          min_volume: min_volume,
+          included_slugs: included_slugs
+        )
       else
-        Project.List.erc20_projects(min_volume: min_volume)
+        Project.List.erc20_projects(min_volume: min_volume, included_slugs: included_slugs)
       end
 
     {:ok, erc20_projects}
@@ -87,12 +107,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     page = Map.get(args, :page)
     page_size = Map.get(args, :page_size)
     min_volume = Map.get(args, :min_volume)
+    included_slugs = Map.get(args, :filter) |> included_slugs_by_filters()
 
     currency_projects =
       if page_arguments_valid?(page, page_size) do
-        Project.List.currency_projects_page(page, page_size, min_volume: min_volume)
+        Project.List.currency_projects_page(page, page_size,
+          min_volume: min_volume,
+          included_slugs: included_slugs
+        )
       else
-        Project.List.currency_projects(min_volume: min_volume)
+        Project.List.currency_projects(min_volume: min_volume, included_slugs: included_slugs)
       end
 
     {:ok, currency_projects}

@@ -20,6 +20,8 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
     field :all_projects, list_of(:project) do
       meta(access: :free)
 
+      arg(:filter, :project_filter_input_object)
+
       arg(:page, :integer)
       arg(:page_size, :integer)
       arg(:min_volume, :integer)

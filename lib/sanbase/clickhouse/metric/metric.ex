@@ -96,6 +96,11 @@ defmodule Sanbase.Clickhouse.Metric do
     get_aggregated_timeseries_data(metric, slug_or_slugs |> List.wrap(), from, to, aggregation)
   end
 
+  def filtered_slugs(metric, from, to, aggregation, operator, threshold) do
+    {query, args} = filtered_slugs_query(metric, from, to, aggregation, operator, threshold)
+    ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
+  end
+
   @impl Sanbase.Metric.Behaviour
   def metadata(metric) do
     min_interval = min_interval(metric)

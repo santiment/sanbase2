@@ -36,11 +36,33 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     page_size = Map.get(args, :page_size)
     min_volume = Map.get(args, :min_volume)
 
+    included_slugs =
+      case Map.get(args, :filter) do
+        nil ->
+          :all
+
+        %{} = filter ->
+          {:ok, slugs} =
+            Sanbase.Clickhouse.Metric.filtered_slugs(
+              filter.metric,
+              filter.from,
+              filter.to,
+              filter.aggregation,
+              filter.operator,
+              filter.threshold
+            )
+
+          slugs
+      end
+
     projects =
       if page_arguments_valid?(page, page_size) do
-        Project.List.projects_page(page, page_size, min_volume: min_volume)
+        Project.List.projects_page(page, page_size,
+          min_volume: min_volume,
+          included_slugs: included_slugs
+        )
       else
-        Project.List.projects(min_volume: min_volume)
+        Project.List.projects(min_volume: min_volume, included_slugs: included_slugs)
       end
 
     {:ok, projects}

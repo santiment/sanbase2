@@ -22,6 +22,20 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
+  enum :operator_name do
+    value(:less_than)
+    value(:greater_than)
+  end
+
+  input_object :project_filter_input_object do
+    field(:metric, non_null(:string))
+    field(:from, non_null(:datetime))
+    field(:to, non_null(:datetime))
+    field(:aggregation, :aggregation, default_value: nil)
+    field(:operator, non_null(:operator_name))
+    field(:threshold, non_null(:float))
+  end
+
   # Includes all available fields
   @desc ~s"""
   A type fully describing a project.

@@ -450,6 +450,7 @@ defmodule Sanbase.Model.Project.List do
       where: not is_nil(p.slug) and not is_nil(p.ticker)
     )
     |> maybe_preload(opts)
+    |> maybe_only_included_slugs(opts)
     |> maybe_include_hidden_projects(opts)
     |> maybe_order_by_rank_above_volume(opts)
   end
@@ -550,6 +551,18 @@ defmodule Sanbase.Model.Project.List do
 
       false ->
         query
+    end
+  end
+
+  defp maybe_only_included_slugs(query, opts) do
+    case Keyword.get(opts, :included_slugs, :all) do
+      # Do not exclude any projects
+      :all ->
+        query
+
+      slugs when is_list(slugs) ->
+        query
+        |> where([p], p.slug in ^slugs)
     end
   end
 end

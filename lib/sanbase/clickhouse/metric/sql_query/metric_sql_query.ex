@@ -41,8 +41,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
       PREWHERE
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
-        asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata FINAL PREWHERE name = ?5 ) AND
-        metric_id = ( SELECT argMax(metric_id, computed_at) AS metric_id FROM metric_metadata FINAL PREWHERE name = ?2 )
+        asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?5 ) AND
+        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 )
       GROUP BY dt
     )
     GROUP BY t

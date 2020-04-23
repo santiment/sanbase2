@@ -11,7 +11,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
   use Ecto.Schema
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
-  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3]
+  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3, generate_comprasion_string: 2]
 
   alias Sanbase.Clickhouse.Metric.FileHandler
 
@@ -90,7 +90,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     {query, args}
   end
 
-  def filtered_slugs_query(metric, from, to, aggregation, operation, threshold) do
+  def slugs_by_filter_query(metric, from, to, aggregation, operation, threshold) do
     query = """
     SELECT name AS slug
     FROM (
@@ -116,7 +116,6 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
       SELECT asset_id, name
       FROM asset_metadata FINAL
     ) USING (asset_id)
-
     WHERE value #{generate_comprasion_string(operation, threshold)}
     """
 
@@ -129,11 +128,6 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
 
     {query, args}
   end
-
-  def generate_comprasion_string(:less_than, threshold), do: "< #{threshold}"
-  def generate_comprasion_string(:less_or_equal_to, threshold), do: "<= #{threshold}"
-  def generate_comprasion_string(:greater_than, threshold), do: "> #{threshold}"
-  def generate_comprasion_string(:greater_or_equal_to, threshold), do: ">= #{threshold}"
 
   def available_slugs_in_table_query(table) do
     query = """

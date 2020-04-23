@@ -79,6 +79,11 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def slugs_by_filter(_metric, _from, _to, _aggregation, _operator, _threshold) do
+    {:error, "Slugs filtering is not implemented for github data. Use `dev_activity_1d` instead"}
+  end
+
+  @impl Sanbase.Metric.Behaviour
   def first_datetime(_metric, %{slug: slug}) do
     case Project.github_organizations(slug) do
       {:ok, []} ->

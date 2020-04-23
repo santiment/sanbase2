@@ -67,7 +67,6 @@ defmodule Sanbase.Clickhouse.Metric do
   aggregations are #{inspect(@plain_aggregations)}
   """
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data(metric, selector, from, to, interval, aggregation \\ nil)
 
   def timeseries_data(metric, %{slug: slug}, from, to, interval, aggregation) do
     aggregation = aggregation || Map.get(@aggregation_map, metric)
@@ -96,8 +95,9 @@ defmodule Sanbase.Clickhouse.Metric do
     get_aggregated_timeseries_data(metric, slug_or_slugs |> List.wrap(), from, to, aggregation)
   end
 
-  def filtered_slugs(metric, from, to, aggregation, operator, threshold) do
-    {query, args} = filtered_slugs_query(metric, from, to, aggregation, operator, threshold)
+  @impl Sanbase.Metric.Behaviour
+  def slugs_by_filter(metric, from, to, aggregation, operator, threshold) do
+    {query, args} = slugs_by_filter_query(metric, from, to, aggregation, operator, threshold)
     ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
   end
 

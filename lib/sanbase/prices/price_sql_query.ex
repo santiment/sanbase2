@@ -1,7 +1,7 @@
 defmodule Sanbase.Price.SqlQuery do
   @table "asset_prices"
 
-  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3]
+  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3, generate_comprasion_string: 2]
 
   def timeseries_data_query(slug, from, to, interval, source, aggregation) do
     {from, to, interval, span} = timerange_parameters(from, to, interval)
@@ -181,6 +181,30 @@ defmodule Sanbase.Price.SqlQuery do
         %DateTime{} -> [slugs, source, to |> DateTime.to_unix(), from |> DateTime.to_unix()]
         _ -> [slugs, source, to |> DateTime.to_unix()]
       end
+
+    {query, args}
+  end
+
+  def slugs_by_filter_query(metric, from, to, aggregation, operation, threshold) do
+    query = """
+    SELECT slug
+    FROM (
+      SELECT
+        slug,
+        #{aggregation(aggregation, "#{metric}", "dt")} AS value
+      FROM #{@table}
+      PREWHERE
+        dt >= toDateTime(?1) AND
+        dt < toDateTime(?2)
+      GROUP BY slug
+    )
+    WHERE value #{generate_comprasion_string(operation, threshold)}
+    """
+
+    args = [
+      from |> DateTime.to_unix(),
+      to |> DateTime.to_unix()
+    ]
 
     {query, args}
   end

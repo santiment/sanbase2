@@ -30,6 +30,11 @@ defmodule Sanbase.Price.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def slugs_by_filter(metric, from, to, aggregation, operator, threshold) do
+    Price.slugs_by_filter(metric, from, to, aggregation, operator, threshold)
+  end
+
+  @impl Sanbase.Metric.Behaviour
   def first_datetime(_metric, %{slug: slug}) do
     Price.first_datetime(slug)
   end

@@ -52,7 +52,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
         {:ok, slugs} =
           Sanbase.Cache.get_or_store(cache_key, fn ->
-            Sanbase.Clickhouse.Metric.filtered_slugs(
+            Sanbase.Metric.slugs_by_filter(
               filter.metric,
               filter.from,
               filter.to,

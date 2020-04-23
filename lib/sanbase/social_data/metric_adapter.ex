@@ -108,6 +108,11 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def slugs_by_filter(_metric, _from, _to, _aggregation, _operator, _threshold) do
+    {:error, "Slugs filtering is not implemented for Social Data."}
+  end
+
+  @impl Sanbase.Metric.Behaviour
   def human_readable_name(metric) when metric in @metrics do
     human_readable_name =
       String.split(metric, "_")

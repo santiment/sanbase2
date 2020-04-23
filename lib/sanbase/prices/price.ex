@@ -325,6 +325,11 @@ defmodule Sanbase.Price do
     |> maybe_nullify_values()
   end
 
+  def slugs_by_filter(metric, from, to, aggregation, operator, threshold) do
+    {query, args} = slugs_by_filter_query(metric, from, to, aggregation, operator, threshold)
+    ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
+  end
+
   @doc ~s"""
   Return the last record  before the given `datetime`
   """

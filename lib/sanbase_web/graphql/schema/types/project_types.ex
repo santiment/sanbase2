@@ -25,6 +25,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   enum :operator_name do
     value(:less_than)
     value(:greater_than)
+    value(:greater_than_or_equal_to)
+    value(:less_than_or_equal_to)
   end
 
   input_object :project_filter_input_object do

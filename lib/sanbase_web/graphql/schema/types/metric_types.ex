@@ -8,6 +8,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
+  alias SanbaseWeb.Graphql.Middlewares.TransformResolution
 
   enum :selector_name do
     value(:slug)
@@ -210,6 +211,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
+      middleware(TransformResolution)
 
       cache_resolve(&MetricResolver.timeseries_data/3)
     end
@@ -231,6 +233,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
+      middleware(TransformResolution)
 
       cache_resolve(&MetricResolver.aggregated_timeseries_data/3)
     end
@@ -282,6 +285,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:limit, :integer, default_value: 20)
 
       middleware(AccessControl)
+      middleware(TransformResolution)
 
       cache_resolve(&MetricResolver.histogram_data/3)
     end

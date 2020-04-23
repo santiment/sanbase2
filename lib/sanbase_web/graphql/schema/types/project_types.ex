@@ -229,7 +229,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:main_contract_address, :string)
 
     field :eth_addresses, list_of(:eth_address) do
-      cache_resolve(dataloader(SanbaseRepo))
+      cache_resolve(
+        dataloader(SanbaseRepo),
+        fun_name: :eth_addresses
+      )
     end
 
     field :social_volume_query, :string do

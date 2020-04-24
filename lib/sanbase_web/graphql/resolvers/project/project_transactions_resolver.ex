@@ -3,6 +3,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
 
   import SanbaseWeb.Graphql.Helpers.Async
   import Absinthe.Resolution.Helpers, except: [async: 1]
+  import Sanbase.DateTimeUtils, only: [round_datetime: 2]
+
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse
   alias SanbaseWeb.Graphql.Cache
@@ -50,21 +52,29 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   end
 
   def eth_spent(%Project{} = project, %{days: days}, %{context: %{loader: loader}}) do
+    from = Timex.shift(Timex.now(), days: -days) |> round_datetime(600)
+    to = Timex.now() |> round_datetime(600)
+
     loader
     |> Dataloader.load(SanbaseDataloader, :eth_spent, %{
       project: project,
-      from: Timex.shift(Timex.now(), days: -days),
-      to: Timex.now()
+      days: days
     })
-    |> on_load(&eth_spent_from_loader(&1, project))
+    |> on_load(&eth_spent_from_loader(&1, project, days))
   end
 
-  def eth_spent_from_loader(loader, %Project{id: id}) do
+  def eth_spent_from_loader(loader, %Project{id: id}, days) do
     loader
-    |> Dataloader.get(SanbaseDataloader, :eth_spent, id)
+    |> Dataloader.get(SanbaseDataloader, :eth_spent, days)
     |> case do
-      nil -> {:ok, 0}
-      result -> result
+      %{} = eth_spent_map ->
+        case Map.get(eth_spent_map, id) do
+          nil -> {:ok, 0}
+          result -> result
+        end
+
+      _ ->
+        {:nocache, {:ok, nil}}
     end
   end
 

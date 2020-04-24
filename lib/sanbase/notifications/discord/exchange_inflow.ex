@@ -31,10 +31,10 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
     Metric.aggregated_timeseries_data("exchange_inflow", %{slug: slugs}, from, to, :sum)
     |> case do
-      {:ok, list} ->
+      {:ok, slug_inflow_map} ->
         notification_type = Type.get_or_create("exchange_inflow")
 
-        case build_payload(projects, list) do
+        case build_payload(projects, slug_inflow_map) do
           [] ->
             Logger.info(
               "There are no signals for tokens moved into exchanges. Won't send anything to Discord."
@@ -64,11 +64,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
   # Private functions
 
-  defp build_payload(projects, list) do
-    slug_inflow_map =
-      Enum.map(list, fn %{slug: slug, value: inflow} -> {slug, inflow} end)
-      |> Map.new()
-
+  defp build_payload(projects, slug_inflow_map) do
     notification_type = Type.get_or_create("exchange_inflow")
 
     projects
@@ -122,7 +118,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
            Timex.now(),
            :sum
          ) do
-      {:ok, [%{slug: ^slug, value: new_inflow}]} ->
+      {:ok, %{^slug => new_inflow}} ->
         new_percent_of_total_supply = percent_of_total_supply(project, new_inflow)
 
         if new_inflow && new_percent_of_total_supply > signal_trigger_percent(project) do

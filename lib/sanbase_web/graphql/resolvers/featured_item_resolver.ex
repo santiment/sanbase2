@@ -16,4 +16,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.FeaturedItemResolver do
   def user_triggers(_root, _args, _context) do
     {:ok, FeaturedItem.user_triggers() |> Enum.map(&transform_user_trigger/1)}
   end
+
+  def chart_configurations(_root, _args, _context) do
+    {:ok, FeaturedItem.chart_configurations()}
+  end
 end

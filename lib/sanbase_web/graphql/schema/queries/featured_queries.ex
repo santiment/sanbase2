@@ -23,5 +23,10 @@ defmodule SanbaseWeb.Graphql.Schema.FeaturedQueries do
       meta(access: :free)
       cache_resolve(&FeaturedItemResolver.user_triggers/3)
     end
+
+    field :featured_chart_configurations, list_of(:chart_configuration) do
+      meta(access: :free)
+      cache_resolve(&FeaturedItemResolver.chart_configurations/3)
+    end
   end
 end

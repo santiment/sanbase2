@@ -6,6 +6,39 @@ defmodule Sanbase.FeaturedItemTest do
   alias Sanbase.FeaturedItem
   alias Sanbase.Insight.Post
 
+  describe "chart configuration featured items" do
+    test "no chart configurations are featured" do
+      assert FeaturedItem.insights() == []
+    end
+
+    test "marking chart configurations as featured" do
+      chart_config = insert(:chart_configuration)
+
+      FeaturedItem.update_item(chart_config, true)
+      [featured_chart_config] = FeaturedItem.chart_configurations()
+
+      assert featured_chart_config.id == chart_config.id
+    end
+
+    test "unmarking chart configurations as featured" do
+      chart_config = insert(:chart_configuration)
+
+      FeaturedItem.update_item(chart_config, true)
+      FeaturedItem.update_item(chart_config, false)
+      assert FeaturedItem.chart_configurations() == []
+    end
+
+    test "marking chart configuration as featured is idempotent" do
+      chart_config = insert(:chart_configuration)
+
+      FeaturedItem.update_item(chart_config, true)
+      FeaturedItem.update_item(chart_config, true)
+      FeaturedItem.update_item(chart_config, true)
+      [featured_chart_config] = FeaturedItem.chart_configurations()
+      assert featured_chart_config.id == chart_config.id
+    end
+  end
+
   describe "insight featured items" do
     test "no insights are featured" do
       assert FeaturedItem.insights() == []

@@ -14,6 +14,11 @@ defmodule Sanbase.Chart.Configuration do
     field(:anomalies, {:array, :string}, default: [])
     field(:drawings, :map, default: %{})
 
+    has_one(:featured_item, Sanbase.FeaturedItem,
+      on_delete: :delete_all,
+      foreign_key: :chart_configuration_id
+    )
+
     belongs_to(:user, Sanbase.Auth.User)
     belongs_to(:project, Sanbase.Model.Project)
 

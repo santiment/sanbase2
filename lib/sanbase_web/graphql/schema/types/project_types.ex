@@ -38,6 +38,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:threshold, non_null(:float))
   end
 
+  input_object :projects_selector_input_object do
+    field(:filters, list_of(:project_filter_input_object))
+  end
+
   # Includes all available fields
   @desc ~s"""
   A type fully describing a project.

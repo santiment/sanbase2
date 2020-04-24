@@ -20,7 +20,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
     field :all_projects, list_of(:project) do
       meta(access: :free)
 
-      arg(:filters, list_of(:project_filter_input_object))
+      arg(:selector, :projects_selector_input_object)
 
       arg(:page, :integer)
       arg(:page_size, :integer)
@@ -34,7 +34,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
     field :all_erc20_projects, list_of(:project) do
       meta(access: :free)
 
-      arg(:filters, list_of(:project_filter_input_object))
+      arg(:selector, :projects_selector_input_object)
 
       arg(:page, :integer)
       arg(:page_size, :integer)
@@ -48,7 +48,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
     field :all_currency_projects, list_of(:project) do
       meta(access: :free)
 
-      arg(:filters, list_of(:project_filter_input_object))
+      arg(:selector, :projects_selector_input_object)
 
       arg(:page, :integer)
       arg(:page_size, :integer)
@@ -112,7 +112,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
     field :projects_count, :projects_count do
       meta(access: :free)
 
-      arg(:filters, list_of(:project_filter_input_object))
+      arg(:selector, :projects_selector_input_object)
 
       arg(:min_volume, :integer)
       cache_resolve(&ProjectResolver.projects_count/3)

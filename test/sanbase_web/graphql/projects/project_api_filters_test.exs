@@ -101,7 +101,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFiltersTest do
 
     query = """
     {
-      allProjects(filters: #{filters_str}){
+      allProjects(selector: {filters: #{filters_str} }){
         slug
       }
     }

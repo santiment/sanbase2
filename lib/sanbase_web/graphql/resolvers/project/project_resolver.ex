@@ -34,7 +34,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   defp args_to_opts(args) do
     [
       min_volume: Map.get(args, :min_volume),
-      included_slugs: Map.get(args, :filters) |> included_slugs_by_filters()
+      included_slugs: get_in(args, [:selector, :filters]) |> included_slugs_by_filters()
     ]
   end
 

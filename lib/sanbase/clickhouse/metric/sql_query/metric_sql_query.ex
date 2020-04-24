@@ -11,7 +11,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
   use Ecto.Schema
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
-  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3, generate_comprasion_string: 2]
+  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3, generate_comparison_string: 2]
 
   alias Sanbase.Clickhouse.Metric.FileHandler
 
@@ -116,7 +116,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
       SELECT asset_id, name
       FROM asset_metadata FINAL
     ) USING (asset_id)
-    WHERE value #{generate_comprasion_string(operation, threshold)}
+    WHERE value #{generate_comparison_string(operation, threshold)}
     """
 
     args = [

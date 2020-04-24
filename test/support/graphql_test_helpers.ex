@@ -108,10 +108,19 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
         {k, [%{} | _] = l} ->
           ~s/#{k}: [#{Enum.map(l, &map_to_input_object_str/1) |> Enum.join(",")}]/
 
+        {k, %DateTime{} = dt} ->
+          ~s/#{k}: "#{dt |> DateTime.truncate(:second) |> DateTime.to_iso8601()}"/
+
         {k, m} when is_map(m) ->
           ~s/#{k}: '#{Jason.encode!(m)}'/
           |> String.replace(~r|\"|, ~S|\\"|)
           |> String.replace(~r|'|, ~S|"|)
+
+        {k, a} when a in [true, false, nil] ->
+          ~s/#{k}: #{inspect(a)}/
+
+        {k, a} when is_atom(a) ->
+          ~s/#{k}: #{a |> Atom.to_string() |> String.upcase()}/
 
         {k, v} ->
           ~s/#{k}: #{inspect(v)}/

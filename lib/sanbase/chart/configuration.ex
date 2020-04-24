@@ -13,6 +13,7 @@ defmodule Sanbase.Chart.Configuration do
     field(:metrics, {:array, :string}, default: [])
     field(:anomalies, {:array, :string}, default: [])
     field(:drawings, :map, default: %{})
+    field(:options, :map, default: %{})
 
     has_one(:featured_item, Sanbase.FeaturedItem,
       on_delete: :delete_all,
@@ -34,6 +35,7 @@ defmodule Sanbase.Chart.Configuration do
       :metrics,
       :anomalies,
       :drawings,
+      :options,
       :user_id,
       :project_id
     ])

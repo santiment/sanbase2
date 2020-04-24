@@ -29,6 +29,10 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
           %{"x0" => 20, "y0" => 0, "x1" => 55, "y1" => 15}
         ]
       },
+      options: %{
+        "multi_chart" => true,
+        "log_scale" => true
+      },
       project_id: project.id
     }
 
@@ -57,6 +61,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["anomalies"] == settings.anomalies
       assert config["metrics"] == settings.metrics
       assert config["drawings"] == settings.drawings
+      assert config["options"] == settings.options
       assert config["project"]["id"] |> String.to_integer() == project.id
       assert config["project"]["slug"] == project.slug
       assert config["user"]["id"] |> String.to_integer() == user.id
@@ -80,6 +85,11 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
           "circles" => [
             %{"cx" => 50, "cy" => 50, "r" => 20}
           ]
+        },
+        options: %{
+          "multi_chart" => false,
+          "log_scale" => true,
+          "non_boolean_option" => 12
         }
       }
 
@@ -93,6 +103,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["anomalies"] == new_settings.anomalies
       assert config["metrics"] == new_settings.metrics
       assert config["drawings"] == new_settings.drawings
+      assert config["options"] == new_settings.options
     end
 
     test "cannot update other user's configuration", context do
@@ -381,6 +392,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         metrics
         anomalies
         drawings
+        options
       }
     }
     """
@@ -403,6 +415,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         metrics
         anomalies
         drawings
+        options
       }
     }
     """
@@ -425,6 +438,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         metrics
         anomalies
         drawings
+        options
       }
     }
     """

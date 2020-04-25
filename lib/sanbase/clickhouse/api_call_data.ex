@@ -1,4 +1,5 @@
 defmodule Sanbase.Clickhouse.ApiCallData do
+  @table "api_call_data"
   @moduledoc ~s"""
   Get data about the API Calls that were made by users
   """
@@ -72,7 +73,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
       toUnixTimestamp(intDiv(toUInt32(dt), ?1) * ?1) AS t,
       toUInt32(count())
     FROM
-      sanbase_api_call_data
+      #{@table}
     PREWHERE
       dt >= toDateTime(?2) AND
       dt < toDateTime(?3) AND
@@ -96,7 +97,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     SELECT
       uniqExact(user_id)
     FROM
-      sanbase_api_call_data
+      #{@table}
     PREWHERE
       dt >= toDateTime(?1) AND
       dt < toDateTime(?2)
@@ -115,7 +116,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     SELECT
       distinct(user_id)
     FROM
-      sanbase_api_call_data
+      #{@table}
     PREWHERE
       auth_method = 'apikey' AND
       user_id != 0
@@ -129,7 +130,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     SELECT
       distinct(user_id)
     FROM
-      sanbase_api_call_data
+      #{@table}
     PREWHERE
       user_agent LIKE '%Google-Apps-Script%' AND
       user_id != 0
@@ -143,7 +144,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     SELECT
       user_id, count(*) as count
     FROM
-      sanbase_api_call_data
+      #{@table}
     PREWHERE auth_method = 'apikey' AND user_id != 0
     GROUP BY user_id
     ORDER BY count desc

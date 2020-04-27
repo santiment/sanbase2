@@ -211,7 +211,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   end
 
   defp calculate_eth_spent(%Project{} = project, from_datetime, to_datetime) do
-    with {:eth_addresses, {:ok, eth_addresses}} when eth_addresses != [] <-
+    with {_, {:ok, eth_addresses}} when eth_addresses != [] <-
            {:eth_addresses, Project.eth_addresses(project)},
          {:ok, eth_spent} <-
            Clickhouse.HistoricalBalance.EthSpent.eth_spent(
@@ -247,7 +247,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   end
 
   defp calculate_eth_spent_over_time(%Project{} = project, from, to, interval) do
-    with {:eth_addresses, {:ok, eth_addresses}} when eth_addresses != [] <-
+    with {_, {:ok, eth_addresses}} when eth_addresses != [] <-
            {:eth_addresses, Project.eth_addresses(project)},
          {:ok, eth_spent_over_time} <-
            Clickhouse.HistoricalBalance.EthSpent.eth_spent_over_time(

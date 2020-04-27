@@ -11,7 +11,7 @@ defmodule Sanbase.Prices.Store do
 
   use Sanbase.Influxdb.Store
 
-  alias SanbaseWeb.Graphql.Cache
+  alias Sanbase.Cache
   alias __MODULE__
   alias Sanbase.Influxdb.Measurement
 

@@ -1,7 +1,6 @@
 defmodule Sanbase.MonitorTest do
   use Sanbase.DataCase, async: false
 
-  import Mock
   import Sanbase.Factory
 
   alias Sanbase.UserList
@@ -9,19 +8,7 @@ defmodule Sanbase.MonitorTest do
   alias Sanbase.Insight.Post
   alias Sanbase.Auth.UserFollower
 
-  setup_with_mocks([
-    {Sanbase.Prices.Store, [:passthrough],
-     [
-       fetch_volume_mcap_multiple_measurements_no_cache: fn _, _, _ ->
-         {:ok,
-          [
-            {"santiment", 3295, 23_478_250, 1.3e-4},
-            {"bitcoin", 20_305_395_991, 154_445_333_816, 0.88107},
-            {"ethereum", 9_414_231_425, 20_823_808_375, 0.11879}
-          ]}
-       end
-     ]}
-  ]) do
+  setup do
     user = insert(:user)
     author = insert(:user, username: "tsetso")
     role_san_clan = insert(:role_san_clan)

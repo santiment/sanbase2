@@ -1,8 +1,6 @@
 defmodule Sanbase.SocialDominanceTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Mock
-  import Mockery
   import ExUnit.CaptureLog
 
   alias Sanbase.SocialData
@@ -19,6 +17,7 @@ defmodule Sanbase.SocialDominanceTest do
   ])
 
   setup do
+    Sanbase.Cache.clear_all()
     project = insert(:project, %{slug: "ethereum", ticker: "ETH"})
 
     [project: project]
@@ -29,35 +28,31 @@ defmodule Sanbase.SocialDominanceTest do
       from = ~U[2018-04-16 10:00:00Z]
       to = ~U[2018-04-16 22:00:00Z]
 
-      mock(
-        HTTPoison,
-        :get,
+      Sanbase.Mock.prepare_mock2(
+        &HTTPoison.get/3,
         {:ok, %HTTPoison.Response{body: @successful_response_body, status_code: 200}}
       )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result = SocialData.social_dominance(%{slug: "ethereum"}, from, to, "1h", :telegram)
 
-      result = SocialData.social_dominance(%{slug: "ethereum"}, from, to, "1h", :telegram)
-
-      assert result ==
-               {:ok,
-                [
-                  %{dominance: 20, datetime: from},
-                  %{dominance: 33.33, datetime: to}
-                ]}
+        assert result ==
+                 {:ok,
+                  [
+                    %{dominance: 20, datetime: from},
+                    %{dominance: 33.33, datetime: to}
+                  ]}
+      end)
     end
 
     test "when computing for all sources" do
       from = ~U[2018-04-16 10:00:00Z]
       to = ~U[2018-04-16 22:00:00Z]
 
-      with_mock(HTTPoison, [],
-        get: fn _, _, _ ->
-          {:ok,
-           %HTTPoison.Response{
-             body: @successful_response_body,
-             status_code: 200
-           }}
-        end
-      ) do
+      Sanbase.Mock.prepare_mock2(
+        &HTTPoison.get/3,
+        {:ok, %HTTPoison.Response{body: @successful_response_body, status_code: 200}}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
         result = SocialData.social_dominance(%{slug: "ethereum"}, from, to, "1h", :all)
 
         assert result ==
@@ -66,58 +61,66 @@ defmodule Sanbase.SocialDominanceTest do
                     %{dominance: 20.0, datetime: from},
                     %{dominance: 33.33, datetime: to}
                   ]}
-      end
+      end)
     end
 
     test "when there are no mentions for any project" do
       from = ~U[2018-04-16 10:00:00Z]
       to = ~U[2018-04-16 22:00:00Z]
 
-      mock(
-        HTTPoison,
-        :get,
+      Sanbase.Mock.prepare_mock2(
+        &HTTPoison.get/3,
         {:ok,
          %HTTPoison.Response{body: @successful_response_body_with_no_mentions, status_code: 200}}
       )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result = SocialData.social_dominance(%{slug: "ethereum"}, from, to, "1h", :telegram)
 
-      result = SocialData.social_dominance(%{slug: "ethereum"}, from, to, "1h", :telegram)
-
-      assert result ==
-               {:ok, [%{dominance: 0, datetime: from}, %{dominance: 0, datetime: to}]}
+        assert result ==
+                 {:ok, [%{dominance: 0, datetime: from}, %{dominance: 0, datetime: to}]}
+      end)
     end
 
     test "response: 404" do
-      mock(HTTPoison, :get, {:ok, %HTTPoison.Response{body: "Some message", status_code: 404}})
+      Sanbase.Mock.prepare_mock2(
+        &HTTPoison.get/3,
+        {:ok, %HTTPoison.Response{body: "Some message", status_code: 404}}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result = fn ->
+          SocialData.social_dominance(
+            %{slug: "santiment"},
+            ~U[2018-04-16 10:00:00Z],
+            ~U[2018-04-16 22:00:00Z],
+            "1h",
+            :telegram
+          )
+        end
 
-      result = fn ->
-        SocialData.social_dominance(
-          %{slug: "santiment"},
-          ~U[2018-04-16 10:00:00Z],
-          ~U[2018-04-16 22:00:00Z],
-          "1h",
-          :telegram
-        )
-      end
-
-      assert capture_log(result) =~
-               "Error status 404 fetching social dominance for project santiment"
+        assert capture_log(result) =~
+                 "Error status 404 fetching social dominance for project santiment"
+      end)
     end
 
     test "response: error" do
-      mock(HTTPoison, :get, {:error, %HTTPoison.Error{reason: :econnrefused}})
+      Sanbase.Mock.prepare_mock2(
+        &HTTPoison.get/3,
+        {:error, %HTTPoison.Error{reason: :econnrefused}}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result = fn ->
+          SocialData.social_dominance(
+            %{slug: "santiment"},
+            ~U[2018-04-16 10:00:00Z],
+            ~U[2018-04-16 22:00:00Z],
+            "1h",
+            :telegram
+          )
+        end
 
-      result = fn ->
-        SocialData.social_dominance(
-          %{slug: "santiment"},
-          ~U[2018-04-16 10:00:00Z],
-          ~U[2018-04-16 22:00:00Z],
-          "1h",
-          :telegram
-        )
-      end
-
-      assert capture_log(result) =~
-               "Cannot fetch social dominance data for project santiment: :econnrefused\n"
+        assert capture_log(result) =~
+                 "Cannot fetch social dominance data for project santiment: :econnrefused\n"
+      end)
     end
   end
 end

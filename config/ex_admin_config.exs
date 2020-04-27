@@ -55,7 +55,6 @@ config :ex_admin,
     Sanbase.ExAdmin.UserList,
     Sanbase.ExAdmin.Auth.UserSettings,
     Sanbase.ExAdmin.Signal.UserTrigger,
-    Sanbase.ExAdmin.PriceMigrationTmp,
     Sanbase.ExAdmin.Exchanges.MarketPairMapping,
     Sanbase.ExAdmin.Billing.SignUpTrial
   ],

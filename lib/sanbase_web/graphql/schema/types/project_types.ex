@@ -231,7 +231,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :eth_addresses, list_of(:eth_address) do
       cache_resolve(
         dataloader(SanbaseRepo),
-        fun_name: :eth_addresses
+        fun_name: :eth_addresses_resolver_fun
       )
     end
 

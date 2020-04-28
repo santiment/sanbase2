@@ -52,9 +52,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   end
 
   def eth_spent(%Project{} = project, %{days: days}, %{context: %{loader: loader}}) do
-    from = Timex.shift(Timex.now(), days: -days) |> round_datetime(600)
-    to = Timex.now() |> round_datetime(600)
-
     loader
     |> Dataloader.load(SanbaseDataloader, :eth_spent, %{
       project: project,

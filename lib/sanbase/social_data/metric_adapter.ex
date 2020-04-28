@@ -35,9 +35,45 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "social_dominance_total"
   ]
 
+  @sentiment_positive_timeseries_metrics [
+    "sentiment_positive_telegram",
+    "sentiment_positive_discord",
+    "sentiment_positive_reddit",
+    "sentiment_positive_professional_traders_chat",
+    "sentiment_positive_total"
+  ]
+
+  @sentiment_negative_timeseries_metrics [
+    "sentiment_negative_telegram",
+    "sentiment_negative_discord",
+    "sentiment_negative_reddit",
+    "sentiment_negative_professional_traders_chat",
+    "sentiment_negative_total"
+  ]
+
+  @sentiment_balance_timeseries_metrics [
+    "sentiment_balance_telegram",
+    "sentiment_balance_discord",
+    "sentiment_balance_reddit",
+    "sentiment_balance_professional_traders_chat",
+    "sentiment_balance_total"
+  ]
+
+  @sentiment_volume_consumed_timeseries_metrics [
+    "sentiment_volume_consumed_telegram",
+    "sentiment_volume_consumed_discord",
+    "sentiment_volume_consumed_reddit",
+    "sentiment_volume_consumed_professional_traders_chat",
+    "sentiment_volume_consumed_total"
+  ]
+
   @timeseries_metrics @social_dominance_timeseries_metrics ++
                         @social_volume_timeseries_metrics ++
-                        @community_messages_count_timeseries_metrics
+                        @community_messages_count_timeseries_metrics ++
+                        @sentiment_positive_timeseries_metrics ++
+                        @sentiment_negative_timeseries_metrics ++
+                        @sentiment_balance_timeseries_metrics ++
+                        @sentiment_volume_consumed_timeseries_metrics
 
   @histogram_metrics []
 
@@ -84,6 +120,14 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
     Sanbase.SocialData.social_volume(selector, from, to, interval, source)
     |> transform_to_value_pairs(:mentions_count)
+  end
+
+  def timeseries_data(metric, %{} = selector, from, to, interval, _aggregation)
+      when metric in @sentiment_positive_timeseries_metrics do
+        "sentiment_positive" <> source = metric
+
+    Sanbase.SocialData.sentiment(selector, from, to, interval, "positive")
+    |> transform_to_value_pairs(:positive_sentiment)
   end
 
   @impl Sanbase.Metric.Behaviour

@@ -29,6 +29,16 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     value(:less_than_or_equal_to)
   end
 
+  enum :direction_type do
+    value(:asc)
+    value(:desc)
+  end
+
+  input_object :project_pagination_input_object do
+    field(:page, non_null(:integer))
+    field(:page_size, non_null(:integer))
+  end
+
   input_object :project_filter_input_object do
     field(:metric, non_null(:string))
     field(:from, non_null(:datetime))
@@ -38,8 +48,18 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:threshold, non_null(:float))
   end
 
+  input_object :project_order_input_object do
+    field(:metric, non_null(:string))
+    field(:from, non_null(:datetime))
+    field(:to, non_null(:datetime))
+    field(:aggregation, :aggregation, default_value: nil)
+    field(:direction, non_null(:direction_type))
+  end
+
   input_object :projects_selector_input_object do
     field(:filters, list_of(:project_filter_input_object))
+    field(:order_by, :project_order_input_object)
+    field(:pagination, :project_pagination_input_object)
   end
 
   # Includes all available fields

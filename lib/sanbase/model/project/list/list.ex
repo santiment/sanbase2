@@ -38,13 +38,11 @@ defmodule Sanbase.Model.Project.List do
 
   def projects(opts) do
     projects_query(opts)
-    |> order_by([p], p.name)
     |> Repo.all()
   end
 
   def projects_slugs(opts) do
     projects_query(opts)
-    |> order_by([p], p.name)
     |> select([p], p.slug)
     |> Repo.all()
   end
@@ -59,7 +57,6 @@ defmodule Sanbase.Model.Project.List do
 
   def erc20_projects(opts) do
     erc20_projects_query(opts)
-    |> order_by([p], p.name)
     |> Repo.all()
   end
 
@@ -110,13 +107,11 @@ defmodule Sanbase.Model.Project.List do
 
   def currency_projects(opts) do
     currency_projects_query(opts)
-    |> order_by([p], p.name)
     |> Repo.all()
   end
 
   def currency_projects_slugs(opts) do
     currency_projects_query(opts)
-    |> order_by([p], p.name)
     |> select([p], p.slug)
     |> Repo.all()
   end
@@ -451,6 +446,8 @@ defmodule Sanbase.Model.Project.List do
     )
     |> maybe_preload(opts)
     |> maybe_only_included_slugs(opts)
+    |> maybe_order_by_slugs_list(opts)
+    |> maybe_paginate(opts)
     |> maybe_include_hidden_projects(opts)
     |> maybe_order_by_rank_above_volume(opts)
   end
@@ -563,6 +560,34 @@ defmodule Sanbase.Model.Project.List do
       slugs when is_list(slugs) ->
         query
         |> where([p], p.slug in ^slugs)
+    end
+  end
+
+  defp maybe_order_by_slugs_list(query, opts) do
+    case Keyword.get(opts, :ordered_slugs) do
+      # Do not exclude any projects
+      slugs when is_list(slugs) ->
+        query
+        |> order_by([p], fragment("array_position(?, ?)", ^slugs, p.slug))
+
+      _ ->
+        query
+        |> order_by([p], p.name)
+    end
+  end
+
+  defp maybe_paginate(query, opts) do
+    case Keyword.get(opts, :has_pagination?) do
+      # Do not exclude any projects
+      true ->
+        page = opts[:pagination][:page]
+        page_size = opts[:pagination][:page_size]
+
+        query
+        |> page(page, page_size)
+
+      _ ->
+        query
     end
   end
 end

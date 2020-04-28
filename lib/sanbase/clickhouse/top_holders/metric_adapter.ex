@@ -101,6 +101,11 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def slugs_order(_metric, _from, _to, _aggregation, _direction) do
+    {:error, "Slugs ordering is not implemented for Top Holders."}
+  end
+
+  @impl Sanbase.Metric.Behaviour
   def metadata(metric) when metric in @metrics do
     data_type = if metric in @timeseries_metrics, do: :timeseries, else: :histogram
 

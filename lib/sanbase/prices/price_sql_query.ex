@@ -186,8 +186,32 @@ defmodule Sanbase.Price.SqlQuery do
   end
 
   def slugs_by_filter_query(metric, from, to, aggregation, operation, threshold) do
+    {query, args} = filter_order_base_query(metric, from, to, aggregation)
+
+    query =
+      query <>
+        """
+        WHERE value #{generate_comparison_string(operation, threshold)}
+        """
+
+    {query, args}
+  end
+
+  def slugs_order_query(metric, from, to, aggregation, direction) do
+    {query, args} = filter_order_base_query(metric, from, to, aggregation)
+
+    query =
+      query <>
+        """
+        ORDER BY value #{direction |> Atom.to_string() |> String.upcase()}
+        """
+
+    {query, args}
+  end
+
+  defp filter_order_base_query(metric, from, to, aggregation) do
     query = """
-    SELECT slug
+    SELECT slug, value
     FROM (
       SELECT
         slug,
@@ -198,7 +222,6 @@ defmodule Sanbase.Price.SqlQuery do
         dt < toDateTime(?2)
       GROUP BY slug
     )
-    WHERE value #{generate_comparison_string(operation, threshold)}
     """
 
     args = [

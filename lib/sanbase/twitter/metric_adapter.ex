@@ -52,6 +52,11 @@ defmodule Sanbase.Twitter.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def slugs_order(_metric, _from, _to, _aggregation, _direction) do
+    {:error, "Slugs ordering is not implemented for twitter data."}
+  end
+
+  @impl Sanbase.Metric.Behaviour
   def first_datetime("twitter_followers", %{slug: slug}) do
     with %Project{} = project <- Project.by_slug(slug),
          {:ok, twitter_name} <- Project.twitter_handle(project) do

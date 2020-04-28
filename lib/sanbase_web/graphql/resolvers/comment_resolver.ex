@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.CommentResolver do
   alias Sanbase.Comment
-  alias Sanbase.Comment.EntityComment
+  alias Sanbase.Comments.EntityComment
 
   @entities [:insight, :timeline_event]
 

@@ -145,3 +145,11 @@ alias Sanbase.Billing.{
 
 now = fn -> Timex.now() end
 days_ago = fn days -> Timex.shift(Timex.now(), days: -days) end
+
+run_test = fn func ->
+  Repo.transaction(fn ->
+    func.()
+    |> Repo.rollback()
+  end)
+  |> elem(1)
+end

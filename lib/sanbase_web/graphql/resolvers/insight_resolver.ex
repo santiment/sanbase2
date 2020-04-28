@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   alias Sanbase.Auth.User
   alias Sanbase.Vote
   alias Sanbase.Insight.Post
-  alias Sanbase.Comment.EntityComment
+  alias Sanbase.Comments.EntityComment
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.Helpers.Utils
 

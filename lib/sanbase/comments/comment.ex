@@ -32,7 +32,7 @@ defmodule Sanbase.Comment do
     belongs_to(:user, User)
 
     field(:parent_id, :integer)
-    belongs_to(:parent, __MODULE__, foreign_key: :id, references: :parent_id, define_field: false)
+    belongs_to(:parent, __MODULE__, foreign_key: :parent_id, references: :id, define_field: false)
 
     field(:root_parent_id, :integer)
 

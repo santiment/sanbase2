@@ -6,6 +6,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
   alias SanbaseWeb.Graphql.Resolvers.{
     PriceResolver,
     ProjectResolver,
+    ProjectListResolver,
     ProjectTransactionsResolver,
     MarketSegmentResolver
   }
@@ -27,7 +28,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       arg(:min_volume, :integer)
 
       middleware(ProjectPermissions)
-      cache_resolve(&ProjectResolver.all_projects/3)
+      cache_resolve(&ProjectListResolver.all_projects/3)
     end
 
     @desc "Fetch all ERC20 projects."
@@ -41,7 +42,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       arg(:min_volume, :integer)
 
       middleware(ProjectPermissions)
-      cache_resolve(&ProjectResolver.all_erc20_projects/3)
+      cache_resolve(&ProjectListResolver.all_erc20_projects/3)
     end
 
     @desc "Fetch all currency projects. A currency project is a project that has price data but is not classified as ERC20."
@@ -55,7 +56,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       arg(:min_volume, :integer)
 
       middleware(ProjectPermissions)
-      cache_resolve(&ProjectResolver.all_currency_projects/3)
+      cache_resolve(&ProjectListResolver.all_currency_projects/3)
     end
 
     field :all_projects_by_function, list_of(:project) do
@@ -64,7 +65,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       arg(:function, :json)
 
       middleware(ProjectPermissions)
-      cache_resolve(&ProjectResolver.all_projects_by_function/3)
+      cache_resolve(&ProjectListResolver.all_projects_by_function/3)
     end
 
     field :all_projects_by_ticker, list_of(:project) do
@@ -73,7 +74,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       arg(:ticker, non_null(:string))
 
       middleware(ProjectPermissions)
-      cache_resolve(&ProjectResolver.all_projects_by_ticker/3)
+      cache_resolve(&ProjectListResolver.all_projects_by_ticker/3)
     end
 
     @desc "Fetch a project by its ID."
@@ -115,7 +116,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       arg(:selector, :projects_selector_input_object)
 
       arg(:min_volume, :integer)
-      cache_resolve(&ProjectResolver.projects_count/3)
+      cache_resolve(&ProjectListResolver.projects_count/3)
     end
 
     @desc ~s"""

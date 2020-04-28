@@ -35,6 +35,11 @@ defmodule Sanbase.Price.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def slugs_order(metric, from, to, aggregation, direction) do
+    Price.slugs_order(metric, from, to, aggregation, direction)
+  end
+
+  @impl Sanbase.Metric.Behaviour
   def first_datetime(_metric, %{slug: slug}) do
     Price.first_datetime(slug)
   end

@@ -98,7 +98,13 @@ defmodule Sanbase.Clickhouse.Metric do
   @impl Sanbase.Metric.Behaviour
   def slugs_by_filter(metric, from, to, aggregation, operator, threshold) do
     {query, args} = slugs_by_filter_query(metric, from, to, aggregation, operator, threshold)
-    ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
+    ClickhouseRepo.query_transform(query, args, fn [slug, _value] -> slug end)
+  end
+
+  @impl Sanbase.Metric.Behaviour
+  def slugs_order(metric, from, to, aggregation, direction) do
+    {query, args} = slugs_order_query(metric, from, to, aggregation, direction)
+    ClickhouseRepo.query_transform(query, args, fn [slug, _value] -> slug end)
   end
 
   @impl Sanbase.Metric.Behaviour

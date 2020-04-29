@@ -165,10 +165,14 @@ defmodule Sanbase.Metric do
   end
 
   @doc ~s"""
-  Get the aggregated value for a metric, an identifier and time range.
-  The metric's aggregation function can be changed by the last optional parameter.
-  The available aggregations are #{inspect(@aggregations)}. If no aggregation is
-  provided, a default one (based on the metric) will be used.
+  Get a list of all slugs that satisfy a given filter
+
+  The filtering is determined by the aggregated values of the value of `metric`,
+  aggregated in the `from`-`to` interval, aggregated by `aggregation`. Of all
+  slugs, only those whose value is satisfying the `operator` and `threhsold` checks
+  are taken.
+
+  If no aggregation is provided, a default one (based on the metric) will be used.
   """
   def slugs_by_filter(metric, from, to, operation, threshold, aggregation \\ nil)
 
@@ -200,10 +204,13 @@ defmodule Sanbase.Metric do
   end
 
   @doc ~s"""
-  Get the aggregated value for a metric, an identifier and time range.
-  The metric's aggregation function can be changed by the last optional parameter.
-  The available aggregations are #{inspect(@aggregations)}. If no aggregation is
-  provided, a default one (based on the metric) will be used.
+  Get a list of all slugs in a specific order.
+
+  The order is determined by the aggregated values of the value of `metric`,
+  aggregated in the `from`-`to` interval, aggregated by `aggregation`.
+  The order is either in ascending or descending order, defined by the `direction`
+  argument with two values - :asc and :desc
+  If no aggregation is provided, a default one (based on the metric) will be used.
   """
   def slugs_order(metric, from, to, direction, aggregation \\ nil)
 

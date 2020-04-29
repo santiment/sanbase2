@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeQueriesTest do
+defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory

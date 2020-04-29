@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
   import Absinthe.Resolution.Helpers, except: [async: 1]
   import SanbaseWeb.Graphql.Helpers.Async
+  import Sanbase.DateTimeUtils
 
   alias Sanbase.Model.{
     Project,
@@ -20,27 +21,66 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def projects_count(_root, args, _resolution) do
-    min_volume = Map.get(args, :min_volume)
+    opts = args_to_opts(args)
 
     {:ok,
      %{
-       erc20_projects_count: Project.List.erc20_projects_count(min_volume: min_volume),
-       currency_projects_count: Project.List.currency_projects_count(min_volume: min_volume),
-       projects_count: Project.List.projects_count(min_volume: min_volume)
+       erc20_projects_count: Project.List.erc20_projects_count(opts),
+       currency_projects_count: Project.List.currency_projects_count(opts),
+       projects_count: Project.List.projects_count(opts)
      }}
+  end
+
+  defp args_to_opts(args) do
+    [
+      min_volume: Map.get(args, :min_volume),
+      included_slugs: get_in(args, [:selector, :filters]) |> included_slugs_by_filters()
+    ]
+  end
+
+  defp included_slugs_by_filters(nil), do: :all
+  defp included_slugs_by_filters([]), do: :all
+
+  defp included_slugs_by_filters(filters) when is_list(filters) do
+    filters
+    |> Sanbase.Parallel.map(
+      fn filter ->
+        cache_key =
+          {:included_slugs_by_filters,
+           %{filter | from: round_datetime(filter.from), to: round_datetime(filter.to)}}
+          |> :erlang.phash2()
+
+        {:ok, slugs} =
+          Sanbase.Cache.get_or_store(cache_key, fn ->
+            Sanbase.Metric.slugs_by_filter(
+              filter.metric,
+              filter.from,
+              filter.to,
+              filter.aggregation,
+              filter.operator,
+              filter.threshold
+            )
+          end)
+
+        slugs |> MapSet.new()
+      end,
+      ordered: false,
+      max_concurrency: 8
+    )
+    |> Enum.reduce(&MapSet.intersection(&1, &2))
+    |> Enum.to_list()
   end
 
   @spec all_projects(any, map, any) :: {:ok, any}
   def all_projects(_parent, args, _resolution) do
     page = Map.get(args, :page)
     page_size = Map.get(args, :page_size)
-    min_volume = Map.get(args, :min_volume)
 
     projects =
       if page_arguments_valid?(page, page_size) do
-        Project.List.projects_page(page, page_size, min_volume: min_volume)
+        Project.List.projects_page(page, page_size, args_to_opts(args))
       else
-        Project.List.projects(min_volume: min_volume)
+        Project.List.projects(args_to_opts(args))
       end
 
     {:ok, projects}
@@ -49,13 +89,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   def all_erc20_projects(_root, args, _resolution) do
     page = Map.get(args, :page)
     page_size = Map.get(args, :page_size)
-    min_volume = Map.get(args, :min_volume)
 
     erc20_projects =
       if page_arguments_valid?(page, page_size) do
-        Project.List.erc20_projects_page(page, page_size, min_volume: min_volume)
+        Project.List.erc20_projects_page(page, page_size, args_to_opts(args))
       else
-        Project.List.erc20_projects(min_volume: min_volume)
+        Project.List.erc20_projects(args_to_opts(args))
       end
 
     {:ok, erc20_projects}
@@ -64,13 +103,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   def all_currency_projects(_root, args, _resolution) do
     page = Map.get(args, :page)
     page_size = Map.get(args, :page_size)
-    min_volume = Map.get(args, :min_volume)
 
     currency_projects =
       if page_arguments_valid?(page, page_size) do
-        Project.List.currency_projects_page(page, page_size, min_volume: min_volume)
+        Project.List.currency_projects_page(page, page_size, args_to_opts(args))
       else
-        Project.List.currency_projects(min_volume: min_volume)
+        Project.List.currency_projects(args_to_opts(args))
       end
 
     {:ok, currency_projects}

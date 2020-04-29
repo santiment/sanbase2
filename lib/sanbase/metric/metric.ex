@@ -165,6 +165,41 @@ defmodule Sanbase.Metric do
   end
 
   @doc ~s"""
+  Get the aggregated value for a metric, an identifier and time range.
+  The metric's aggregation function can be changed by the last optional parameter.
+  The available aggregations are #{inspect(@aggregations)}. If no aggregation is
+  provided, a default one (based on the metric) will be used.
+  """
+  def slugs_by_filter(metric, from, to, aggregation, operation, threshold)
+
+  for %{metric: metric, module: module} <- @timeseries_metric_module_mapping do
+    def slugs_by_filter(unquote(metric), from, to, aggregation, operation, threshold)
+        when aggregation in unquote(Map.get(@aggregations_per_metric, metric)) do
+      unquote(module).slugs_by_filter(
+        unquote(metric),
+        from,
+        to,
+        aggregation,
+        operation,
+        threshold
+      )
+    end
+  end
+
+  def slugs_by_filter(metric, _from, _to, aggregation, _operation, _threshold) do
+    cond do
+      metric not in @metrics_mapset ->
+        metric_not_available_error(metric, type: :timeseries)
+
+      aggregation not in Map.get(@aggregations_per_metric, metric) ->
+        {:error, "The aggregation #{aggregation} is not supported for the metric #{metric}"}
+
+      true ->
+        {:error, "Error fetching slugs by filter for #{metric}"}
+    end
+  end
+
+  @doc ~s"""
   Get a histogram for a given metric
   """
   def histogram_data(metric, identifier, from, to, interval, limit \\ 100)

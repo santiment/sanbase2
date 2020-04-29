@@ -1,20 +1,71 @@
 defmodule Sanbase.Comments.Notification do
+  use Ecto.Schema
+
+  import Ecto.Changeset
   import Ecto.Query
 
   alias Sanbase.Insight.PostComment
   alias Sanbase.Timeline.TimelineEventComment
   alias Sanbase.Repo
 
-  def notify_users() do
-    %{
-      insight: notify_map(:insight),
-      timeline_event: notify_map(:timeline_event)
-    }
+  schema "comment_notifications" do
+    field(:last_insight_comment_id, :integer)
+    field(:last_timeline_event_comment_id, :integer)
+    field(:notify_users_map, :map)
+
+    timestamps()
   end
 
-  def notify_map(type) do
-    recent_comments_query(type)
-    |> Repo.all()
+  @doc false
+  def changeset(notifications, attrs) do
+    notifications
+    |> cast(attrs, [:last_insight_comment_id, :last_timeline_event_comment_id, :notify_users_map])
+    |> validate_required([
+      :last_insight_comment_id,
+      :last_timeline_event_comment_id,
+      :notify_users_map
+    ])
+  end
+
+  def get_last_record() do
+    __MODULE__ |> last() |> Repo.one()
+  end
+
+  def create(params) do
+    %__MODULE__{} |> changeset(params) |> Repo.insert()
+  end
+
+  def notify_users() do
+    last_comment_notification = get_last_record()
+
+    recent_insight_comments =
+      recent_comments_query(:insight, last_comment_notification) |> Repo.all()
+
+    recent_timeline_event_comments =
+      recent_comments_query(:timeline_event, last_comment_notification) |> Repo.all()
+
+    notify_users_map = %{
+      insight: notify_map(:insight, recent_insight_comments),
+      timeline_event: notify_map(:timeline_event, recent_timeline_event_comments)
+    }
+
+    last_insight_comment_id =
+      recent_insight_comments |> List.last() |> last_id(last_comment_notification, :insight)
+
+    last_timeline_event_comment_id =
+      recent_timeline_event_comments
+      |> List.last()
+      |> last_id(last_comment_notification, :timeline_event)
+
+    create(%{
+      notify_users_map: notify_users_map,
+      last_insight_comment_id: last_insight_comment_id,
+      last_timeline_event_comment_id: last_timeline_event_comment_id
+    })
+  end
+
+  def notify_map(type, recent_comments) do
+    recent_comments
     |> Enum.reduce(%{}, fn comment, acc ->
       acc
       |> ntf_author(comment, type)
@@ -97,21 +148,29 @@ defmodule Sanbase.Comments.Notification do
     end)
   end
 
-  defp recent_comments_query(:insight) do
+  defp recent_comments_query(:insight, last_comment_notification) do
+    last_insight_comment_id =
+      if last_comment_notification, do: last_comment_notification.last_insight_comment_id, else: 0
+
     yesterday = Timex.shift(Timex.now(), days: -1)
 
     from(p in PostComment,
-      where: p.inserted_at > ^yesterday,
+      where: p.id > ^last_insight_comment_id and p.inserted_at > ^yesterday,
       preload: [comment: [:user, parent: :user], post: :user],
       order_by: [asc: :inserted_at]
     )
   end
 
-  defp recent_comments_query(:timeline_event) do
+  defp recent_comments_query(:timeline_event, last_comment_notification) do
+    last_timeline_event_comment_id =
+      if last_comment_notification,
+        do: last_comment_notification.last_timeline_event_comment_id,
+        else: 0
+
     yesterday = Timex.shift(Timex.now(), days: -1)
 
     from(t in TimelineEventComment,
-      where: t.inserted_at > ^yesterday,
+      where: t.id > ^last_timeline_event_comment_id and t.inserted_at > ^yesterday,
       preload: [comment: [:user, parent: :user], timeline_event: :user],
       order_by: [asc: :inserted_at]
     )
@@ -136,11 +195,18 @@ defmodule Sanbase.Comments.Notification do
     )
   end
 
-  defp last_processed_id(result_map) do
-    result_map
-    |> Map.values()
-    |> Enum.map(&Map.keys/1)
-    |> List.flatten()
-    |> Enum.max()
-  end
+  defp last_id(nil, nil, _), do: 0
+
+  defp last_id(nil, %__MODULE__{last_insight_comment_id: last_insight_comment_id}, :insight),
+    do: last_insight_comment_id
+
+  defp last_id(
+         nil,
+         %__MODULE__{last_timeline_event_comment_id: last_timeline_event_comment_id},
+         :timeline_event
+       ),
+       do: last_timeline_event_comment_id
+
+  defp last_id(%PostComment{id: id}, _, _), do: id
+  defp last_id(%TimelineEventComment{id: id}, _, _), do: id
 end

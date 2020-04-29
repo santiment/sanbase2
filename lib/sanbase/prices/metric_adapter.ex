@@ -3,6 +3,7 @@ defmodule Sanbase.Price.MetricAdapter do
   alias Sanbase.Price
 
   @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median]
+  @default_aggregation :last
 
   @timeseries_metrics ["price_usd", "price_btc", "volume_usd", "marketcap_usd"]
   @histogram_metrics []
@@ -21,22 +22,26 @@ defmodule Sanbase.Price.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def timeseries_data(metric, %{slug: slug}, from, to, interval, aggregation) do
+    aggregation = aggregation || @default_aggregation
     Price.timeseries_metric_data(slug, metric, from, to, interval, aggregation: aggregation)
   end
 
   @impl Sanbase.Metric.Behaviour
   def aggregated_timeseries_data(metric, %{slug: slug}, from, to, aggregation) do
+    aggregation = aggregation || @default_aggregation
     Price.aggregated_metric_timeseries_data(slug, metric, from, to, aggregation: aggregation)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_by_filter(metric, from, to, aggregation, operator, threshold) do
-    Price.slugs_by_filter(metric, from, to, aggregation, operator, threshold)
+  def slugs_by_filter(metric, from, to, operator, threshold, aggregation) do
+    aggregation = aggregation || @default_aggregation
+    Price.slugs_by_filter(metric, from, to, operator, threshold, aggregation)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_order(metric, from, to, aggregation, direction) do
-    Price.slugs_order(metric, from, to, aggregation, direction)
+  def slugs_order(metric, from, to, direction, aggregation) do
+    aggregation = aggregation || @default_aggregation
+    Price.slugs_order(metric, from, to, direction, aggregation)
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -55,7 +60,7 @@ defmodule Sanbase.Price.MetricAdapter do
      %{
        metric: metric,
        min_interval: "5m",
-       default_aggregation: :last,
+       default_aggregation: @default_aggregation,
        available_aggregations: @aggregations,
        available_selectors: [:slug],
        data_type: :timeseries

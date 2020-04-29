@@ -96,12 +96,12 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_by_filter(_metric, _from, _to, _aggregation, _operator, _threshold) do
+  def slugs_by_filter(_metric, _from, _to, _operator, _threshold, _aggregation) do
     {:error, "Slugs filtering is not implemented for Top Holders."}
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_order(_metric, _from, _to, _aggregation, _direction) do
+  def slugs_order(_metric, _from, _to, _direction, _aggregation) do
     {:error, "Slugs ordering is not implemented for Top Holders."}
   end
 

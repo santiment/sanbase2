@@ -90,7 +90,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     {query, args}
   end
 
-  def slugs_by_filter_query(metric, from, to, aggregation, operation, threshold) do
+  def slugs_by_filter_query(metric, from, to, operation, threshold, aggregation) do
     {query, args} = aggregated_slugs_base_query(metric, from, to, aggregation)
 
     query =
@@ -102,7 +102,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     {query, args}
   end
 
-  def slugs_order_query(metric, from, to, aggregation, direction)
+  def slugs_order_query(metric, from, to, direction, aggregation)
       when direction in [:asc, :desc] do
     {query, args} = aggregated_slugs_base_query(metric, from, to, aggregation)
 

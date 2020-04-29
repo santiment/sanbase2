@@ -68,17 +68,17 @@ defmodule Sanbase.Metric.Behaviour do
               metric :: metric,
               from :: DateTime.t(),
               to :: DateTime.t(),
-              aggregation :: aggregation,
               operator :: operator,
-              threshold :: number()
+              threshold :: number(),
+              aggregation :: aggregation
             ) :: {:ok, list(slug())} | {:error, String.t()}
 
   @callback slugs_order(
               metric :: metric,
               from :: DateTime.t(),
               to :: DateTime.t(),
-              aggregation :: aggregation(),
-              direction :: direction
+              direction :: direction,
+              aggregation :: aggregation()
             ) :: {:ok, list(slug())} | {:error, String.t()}
 
   @callback has_incomplete_data?(metric :: metric) :: true | false

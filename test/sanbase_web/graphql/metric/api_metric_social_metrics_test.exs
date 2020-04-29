@@ -133,8 +133,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
             |> extract_timeseries_data()
 
           assert result == [
-                   %{"value" => 400.0, "datetime" => from |> DateTime.to_iso8601()},
-                   %{"value" => 800.0, "datetime" => to |> DateTime.to_iso8601()}
+                   %{"value" => 600.0, "datetime" => from |> DateTime.to_iso8601()},
+                   %{"value" => 1200.0, "datetime" => to |> DateTime.to_iso8601()}
                  ]
         end
       end)
@@ -172,8 +172,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
             |> extract_timeseries_data()
 
           assert result == [
-                   %{"value" => 400.0, "datetime" => from |> DateTime.to_iso8601()},
-                   %{"value" => 800.0, "datetime" => to |> DateTime.to_iso8601()},
+                   %{"value" => 600.0, "datetime" => from |> DateTime.to_iso8601()},
+                   %{"value" => 1200.0, "datetime" => to |> DateTime.to_iso8601()},
                    %{"value" => 300.0, "datetime" => after_to |> DateTime.to_iso8601()}
                  ]
         end
@@ -257,8 +257,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
             |> extract_timeseries_data()
 
           assert result == [
-                   %{"value" => 48.0, "datetime" => from |> DateTime.to_iso8601()},
-                   %{"value" => 72.0, "datetime" => to |> DateTime.to_iso8601()}
+                   %{"value" => 72.0, "datetime" => from |> DateTime.to_iso8601()},
+                   %{"value" => 108.0, "datetime" => to |> DateTime.to_iso8601()}
                  ]
         end
       end)
@@ -295,8 +295,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
             |> extract_timeseries_data()
 
           assert result == [
-                   %{"value" => 48.0, "datetime" => from |> DateTime.to_iso8601()},
-                   %{"value" => 72.0, "datetime" => to |> DateTime.to_iso8601()},
+                   %{"value" => 72.0, "datetime" => from |> DateTime.to_iso8601()},
+                   %{"value" => 108.0, "datetime" => to |> DateTime.to_iso8601()},
                    %{"value" => 10.0, "datetime" => after_to |> DateTime.to_iso8601()}
                  ]
         end

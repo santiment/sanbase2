@@ -140,8 +140,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectListResolver do
   defp ordered_slugs_by_order_by(nil, slugs), do: slugs
 
   defp ordered_slugs_by_order_by(order_by, slugs) do
-    %{metric: metric, from: from, to: to, direction: direction, aggregation: aggregation} =
-      order_by
+    %{metric: metric, from: from, to: to, direction: direction} = order_by
+    aggregation = Map.get(order_by, :aggregation)
 
     {:ok, ordered_slugs} = Sanbase.Metric.slugs_order(metric, from, to, direction, aggregation)
 

@@ -182,75 +182,6 @@ defmodule Sanbase.TechIndicatorsTest do
               ]}
   end
 
-  describe "social_volume/5" do
-    test "response: success" do
-      from = ~U[2018-04-16 11:00:00Z]
-      to = ~U[2018-04-16 12:00:00Z]
-
-      mock(
-        HTTPoison,
-        :get,
-        {:ok,
-         %HTTPoison.Response{
-           body: "{\"data\": {\"2018-04-16T11:00:00Z\": 5, \"2018-04-16T12:00:00Z\": 15}}",
-           status_code: 200
-         }}
-      )
-
-      result = SocialVolume.social_volume(%{slug: "santiment"}, from, to, "1h", :telegram)
-
-      assert result ==
-               {:ok,
-                [
-                  %{mentions_count: 5, datetime: from},
-                  %{mentions_count: 15, datetime: to}
-                ]}
-    end
-
-    test "all sources in total" do
-      sources =
-        MetricAdapter.available_metrics()
-        |> Enum.filter(fn
-          "social_volume_total" -> false
-          "social_volume_" <> _source -> true
-          _ -> false
-        end)
-        |> Enum.map(fn "social_volume_" <> source -> source end)
-
-      expected_sources =
-        SocialVolume.sources()
-        |> Enum.map(fn
-          source -> Atom.to_string(source)
-        end)
-
-      assert expected_sources |> Enum.sort() == sources |> Enum.sort()
-    end
-
-    test "response: 404" do
-      from = ~U[2018-04-16 11:00:00Z]
-      to = ~U[2018-04-16 12:00:00Z]
-
-      mock(HTTPoison, :get, {:ok, %HTTPoison.Response{body: "Some message", status_code: 404}})
-
-      assert capture_log(fn ->
-               SocialVolume.social_volume(%{slug: "santiment"}, from, to, "1h", :telegram)
-             end) =~
-               "Error status 404 fetching social volume for %{slug: \"santiment\"}\n"
-    end
-
-    test "response: error" do
-      from = ~U[2018-04-16 11:00:00Z]
-      to = ~U[2018-04-16 12:00:00Z]
-
-      mock(HTTPoison, :get, {:error, %HTTPoison.Error{reason: :econnrefused}})
-
-      assert capture_log(fn ->
-               SocialVolume.social_volume(%{slug: "santiment"}, from, to, "1h", :telegram)
-             end) =~
-               "Cannot fetch social volume data for %{slug: \"santiment\"}: :econnrefused\n"
-    end
-  end
-
   describe "social_volume_projects/0" do
     test "response: success" do
       mock(
@@ -281,56 +212,6 @@ defmodule Sanbase.TechIndicatorsTest do
 
       assert capture_log(fn -> SocialVolume.social_volume_projects() end) =~
                "Cannot fetch social volume projects data: :econnrefused\n"
-    end
-  end
-
-  describe "topic_search/5" do
-    test "response: success" do
-      from = ~U[2018-04-16 11:00:00Z]
-      to = ~U[2018-04-16 12:00:00Z]
-
-      mock(
-        HTTPoison,
-        :get,
-        {:ok,
-         %HTTPoison.Response{
-           body: "{\"data\": {\"2018-04-16T11:00:00Z\": 1, \"2018-04-16T12:00:00Z\": 0}}",
-           status_code: 200
-         }}
-      )
-
-      result = SocialVolume.social_volume(%{text: "btc moon"}, from, to, "6h", :telegram)
-
-      assert result ==
-               {:ok,
-                [
-                  %{datetime: from, mentions_count: 1},
-                  %{datetime: to, mentions_count: 0}
-                ]}
-    end
-
-    test "response: 404" do
-      from = ~U[2018-04-16 11:00:00Z]
-      to = ~U[2018-04-16 12:00:00Z]
-
-      mock(HTTPoison, :get, {:ok, %HTTPoison.Response{body: "Some message", status_code: 404}})
-
-      assert capture_log(fn ->
-               SocialVolume.social_volume(%{text: "btc moon"}, from, to, "6h", :reddit)
-             end) =~
-               "Error status 404 fetching social volume for %{text: \"btc moon\"}\n"
-    end
-
-    test "response: error" do
-      from = ~U[2018-04-16 11:00:00Z]
-      to = ~U[2018-04-16 12:00:00Z]
-
-      mock(HTTPoison, :get, {:error, %HTTPoison.Error{reason: :econnrefused}})
-
-      assert capture_log(fn ->
-               SocialVolume.social_volume(%{text: "btc moon"}, from, to, "6h", :discord)
-             end) =~
-               "Cannot fetch social volume data for %{text: \"btc moon\"}: :econnrefused\n"
     end
   end
 end

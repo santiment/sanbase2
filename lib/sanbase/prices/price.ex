@@ -256,6 +256,23 @@ defmodule Sanbase.Price do
 
   def aggregated_metric_timeseries_data([], _, _, _, _), do: {:ok, %{}}
 
+  def aggregated_metric_timeseries_data(slugs, metric, from, to, opts)
+      when is_list(slugs) and length(slugs) > 50 do
+    result =
+      Enum.chunk_every(slugs, 50)
+      |> Sanbase.Parallel.map(
+        &aggregated_metric_timeseries_data(&1, metric, from, to, opts),
+        timeout: 25_000,
+        max_concurrency: 8,
+        ordered: false
+      )
+      |> Enum.filter(&match?({:ok, _}, &1))
+      |> Enum.map(&elem(&1, 1))
+      |> Enum.reduce(%{}, &Map.merge(&1, &2))
+
+    {:ok, result}
+  end
+
   def aggregated_metric_timeseries_data(slug_or_slugs, metric, from, to, opts)
       when metric in @metrics and (is_binary(slug_or_slugs) or is_list(slug_or_slugs)) do
     source = Keyword.get(opts, :source) || @default_source
@@ -306,6 +323,11 @@ defmodule Sanbase.Price do
     end)
     |> maybe_add_percent_of_total_marketcap()
     |> maybe_nullify_values()
+  end
+
+  def slugs_by_filter(metric, from, to, aggregation, operator, threshold) do
+    {query, args} = slugs_by_filter_query(metric, from, to, aggregation, operator, threshold)
+    ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
   end
 
   @doc ~s"""

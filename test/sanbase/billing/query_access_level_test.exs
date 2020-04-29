@@ -47,9 +47,11 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :twitter_mention_count,
           :all_currency_projects,
           :featured_user_triggers,
+          :featured_watchlists,
+          :featured_insights,
+          :featured_chart_configurations,
           :timeline_events,
           :all_insights,
-          :featured_watchlists,
           :signals_historical_activity,
           :erc20_market_segments,
           :github_activity,
@@ -63,7 +65,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :twitter_data,
           :github_availables_repos,
           :eth_spent_by_erc20_projects,
-          :featured_insights,
           :insight,
           :all_projects_by_function,
           :eth_spent_by_all_projects,
@@ -148,9 +149,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         Sanbase.Billing.GraphqlSchema.get_queries_with_access_level(:forbidden)
         |> Enum.sort()
 
-      expected_forbidden_queries =
-        [:all_projects_project_transparency]
-        |> Enum.sort()
+      expected_forbidden_queries = []
 
       assert forbidden_queries == expected_forbidden_queries
     end

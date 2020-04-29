@@ -92,7 +92,12 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def aggregated_timeseries_data(_, %{slug: _slug}, _from, _to, _aggregation) do
-    {:error, "not_implemented"}
+    {:error, "Aggregated timeseries data is not implemented for Top Holders."}
+  end
+
+  @impl Sanbase.Metric.Behaviour
+  def slugs_by_filter(_metric, _from, _to, _aggregation, _operator, _threshold) do
+    {:error, "Slugs filtering is not implemented for Top Holders."}
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -115,7 +120,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
     case metric do
       "amount_in_top_holders" -> {:ok, "Top Holders Balance"}
       "amount_in_exchange_top_holders" -> {:ok, "Exchange Top Holders Balance"}
-      "amount_in_non_exchange top_holders" -> {:ok, "Non-Exchange Top Holders Balance"}
+      "amount_in_non_exchange_top_holders" -> {:ok, "Non-Exchange Top Holders Balance"}
     end
   end
 

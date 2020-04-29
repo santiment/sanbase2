@@ -90,24 +90,4 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApiTest do
 
     assert record in prices
   end
-
-  test "total marketcap correctly saved to influxdb" do
-    Tesla.Mock.mock(fn %{method: :get} ->
-      %Tesla.Env{
-        status: 200,
-        body: File.read!(Path.join(__DIR__, "data/total_market_web_api_success.json"))
-      }
-    end)
-
-    WebApi.fetch_and_store_prices("TOTAL_MARKET", ~U[2018-01-01 00:00:00Z])
-
-    {:ok, [[_datetime, mean_volume]]} =
-      Store.fetch_average_volume(
-        @total_market_measurement,
-        ~U[2018-01-01 00:00:00Z],
-        ~U[2018-01-05 00:00:00Z]
-      )
-
-    assert mean_volume == 47_753_700_352
-  end
 end

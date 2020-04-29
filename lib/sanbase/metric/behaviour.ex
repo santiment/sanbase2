@@ -31,6 +31,8 @@ defmodule Sanbase.Metric.Behaviour do
   @type histogram_data :: list(histogram_data_map())
 
   @type aggregation :: nil | :any | :sum | :avg | :min | :max | :last | :first | :median
+  @type operator ::
+          :greater_than | :less_than | :greater_than_or_equal_to | :less_than_or_equal_to
   @type timeseries_data_point :: %{datetime: Datetime.t(), value: float()}
 
   @callback timeseries_data(
@@ -39,7 +41,7 @@ defmodule Sanbase.Metric.Behaviour do
               from :: DatetTime.t(),
               to :: DateTime.t(),
               interval :: interval(),
-              opts :: Keyword.t()
+              aggregation :: aggregation
             ) ::
               {:ok, list(timeseries_data_point)} | {:error, String.t()}
 
@@ -57,8 +59,17 @@ defmodule Sanbase.Metric.Behaviour do
               selector :: selector,
               from :: DatetTime.t(),
               to :: DateTime.t(),
-              opts :: options
-            ) :: {:ok, list()} | {:error, String.t()}
+              aggregation :: aggregation
+            ) :: {:ok, map()} | {:error, String.t()}
+
+  @callback slugs_by_filter(
+              metric :: metric,
+              from :: DateTime.t(),
+              to :: DateTime.t(),
+              aggregation :: aggregation,
+              operator :: operator,
+              threshold :: number()
+            ) :: {:ok, list(slug())} | {:error, String.t()}
 
   @callback has_incomplete_data?(metric :: metric) :: true | false
 

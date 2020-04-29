@@ -13,6 +13,12 @@ defmodule Sanbase.Chart.Configuration do
     field(:metrics, {:array, :string}, default: [])
     field(:anomalies, {:array, :string}, default: [])
     field(:drawings, :map, default: %{})
+    field(:options, :map, default: %{})
+
+    has_one(:featured_item, Sanbase.FeaturedItem,
+      on_delete: :delete_all,
+      foreign_key: :chart_configuration_id
+    )
 
     belongs_to(:user, Sanbase.Auth.User)
     belongs_to(:project, Sanbase.Model.Project)
@@ -29,6 +35,7 @@ defmodule Sanbase.Chart.Configuration do
       :metrics,
       :anomalies,
       :drawings,
+      :options,
       :user_id,
       :project_id
     ])
@@ -50,7 +57,8 @@ defmodule Sanbase.Chart.Configuration do
   end
 
   def configurations(querying_user_id \\ nil) do
-    configurations_query(querying_user_id)
+    __MODULE__
+    |> accessible_by_user_query(querying_user_id)
     |> Repo.all()
   end
 
@@ -84,7 +92,7 @@ defmodule Sanbase.Chart.Configuration do
   end
 
   defp get_chart_configuration(config_id, querying_user_id) do
-    case from(conf in __MODULE__, where: conf.id == ^config_id) |> Repo.one() do
+    case Repo.get(__MODULE__, config_id) do
       %__MODULE__{user_id: user_id, is_public: is_public} = conf
       when user_id == querying_user_id or is_public == true ->
         {:ok, conf}
@@ -98,7 +106,7 @@ defmodule Sanbase.Chart.Configuration do
   end
 
   defp get_chart_configuration_if_owner(config_id, user_id) do
-    case from(conf in __MODULE__, where: conf.id == ^config_id) |> Repo.one() do
+    case Repo.get(__MODULE__, config_id) do
       %__MODULE__{user_id: ^user_id} = conf ->
         {:ok, conf}
 
@@ -111,42 +119,35 @@ defmodule Sanbase.Chart.Configuration do
     end
   end
 
-  defp all_user_configurations_query(user_id, querying_user_id) do
-    from(
-      conf in __MODULE__,
-      where:
-        conf.user_id == ^user_id and
-          (conf.user_id == ^querying_user_id or conf.is_public == true)
-    )
-  end
-
   defp user_chart_configurations_query(user_id, querying_user_id, nil) do
-    all_user_configurations_query(user_id, querying_user_id)
+    __MODULE__
+    |> where([conf], conf.user_id == ^user_id)
+    |> accessible_by_user_query(querying_user_id)
   end
 
   defp user_chart_configurations_query(user_id, querying_user_id, project_id) do
-    from(
-      conf in __MODULE__,
-      where:
-        conf.user_id == ^user_id and conf.project_id == ^project_id and
-          (conf.user_id == ^querying_user_id or conf.is_public == true)
-    )
+    filter_by_project_query(project_id)
+    |> where([conf], conf.user_id == ^user_id)
+    |> accessible_by_user_query(querying_user_id)
   end
 
   defp project_chart_configurations_query(project_id, querying_user_id) do
-    from(
-      conf in __MODULE__,
-      where:
-        conf.project_id == ^project_id and
-          (conf.user_id == ^querying_user_id or conf.is_public == true)
-    )
+    filter_by_project_query(project_id)
+    |> accessible_by_user_query(querying_user_id)
   end
 
-  defp configurations_query(nil) do
-    from(conf in __MODULE__, where: conf.is_public == true)
+  defp filter_by_project_query(project_id) when not is_nil(project_id) do
+    __MODULE__
+    |> where([conf], conf.project_id == ^project_id)
   end
 
-  defp configurations_query(querying_user_id) do
-    from(conf in __MODULE__, where: conf.is_public == true or conf.user_id == ^querying_user_id)
+  defp accessible_by_user_query(query, nil) do
+    query
+    |> where([conf], conf.is_public == true)
+  end
+
+  defp accessible_by_user_query(query, querying_user_id) do
+    query
+    |> where([conf], conf.is_public == true or conf.user_id == ^querying_user_id)
   end
 end

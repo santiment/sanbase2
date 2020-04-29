@@ -1,11 +1,11 @@
 defmodule Sanbase.SocialData.SocialDominance do
   import Sanbase.Utils.ErrorHandling
+  import Sanbase.DateTimeUtils, only: [round_datetime: 1]
 
   alias Sanbase.Model.Project
-  alias SanbaseWeb.Graphql.Cache
+  alias Sanbase.Cache
 
   require Mockery.Macro
-  defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   require Sanbase.Utils.Config, as: Config
   require SanbaseWeb.Graphql.Schema
@@ -115,25 +115,21 @@ defmodule Sanbase.SocialData.SocialDominance do
 
   defp social_dominance_request(from, to, interval, source) do
     cache_key =
-      Cache.cache_key(
-        :social_dominance_api_request,
-        %{from: from, to: to, interval: interval, source: source}
-      )
+      {:social_dominance_api_request, round_datetime(from), round_datetime(to), interval, source}
+      |> :erlang.phash2()
 
-    Cache.get_or_store(cache_key, fn ->
-      url = "#{tech_indicators_url()}/indicator/#{source_to_indicator(source)}"
+    url = "#{tech_indicators_url()}/indicator/#{source_to_indicator(source)}"
 
-      options = [
-        recv_timeout: @recv_timeout,
-        params: [
-          {"from_timestamp", DateTime.to_unix(from)},
-          {"to_timestamp", DateTime.to_unix(to)},
-          {"interval", interval}
-        ]
+    options = [
+      recv_timeout: @recv_timeout,
+      params: [
+        {"from_timestamp", DateTime.to_unix(from)},
+        {"to_timestamp", DateTime.to_unix(to)},
+        {"interval", interval}
       ]
+    ]
 
-      http_client().get(url, [], options)
-    end)
+    Cache.get_or_store(cache_key, fn -> HTTPoison.get(url, [], options) end)
   end
 
   defp parse_result(result, ticker_slug) do

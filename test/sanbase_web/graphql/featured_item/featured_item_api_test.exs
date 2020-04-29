@@ -7,6 +7,74 @@ defmodule Sanbase.FeaturedItemApiTest do
   alias Sanbase.FeaturedItem
   alias Sanbase.Insight.Post
 
+  describe "chart configuration featured items" do
+    test "no chart configurations are featured", context do
+      assert chart_configurations(context.conn) == %{
+               "data" => %{"featuredChartConfigurations" => []}
+             }
+    end
+
+    test "marking watchlists as featured", context do
+      chart_configuration = insert(:chart_configuration)
+
+      FeaturedItem.update_item(chart_configuration, true)
+
+      assert chart_configurations(context.conn) == %{
+               "data" => %{
+                 "featuredChartConfigurations" => [
+                   %{
+                     "id" => chart_configuration.id,
+                     "title" => "#{chart_configuration.title}"
+                   }
+                 ]
+               }
+             }
+    end
+
+    test "unmarking chart configurations as featured", context do
+      chart_configuration = insert(:chart_configuration)
+      FeaturedItem.update_item(chart_configuration, true)
+      FeaturedItem.update_item(chart_configuration, false)
+
+      assert chart_configurations(context.conn) == %{
+               "data" => %{"featuredChartConfigurations" => []}
+             }
+    end
+
+    test "marking chart configuration as featured is idempotent", context do
+      chart_configuration = insert(:chart_configuration)
+      FeaturedItem.update_item(chart_configuration, true)
+      FeaturedItem.update_item(chart_configuration, true)
+      FeaturedItem.update_item(chart_configuration, true)
+
+      assert chart_configurations(context.conn) == %{
+               "data" => %{
+                 "featuredChartConfigurations" => [
+                   %{
+                     "id" => chart_configuration.id,
+                     "title" => "#{chart_configuration.title}"
+                   }
+                 ]
+               }
+             }
+    end
+
+    defp chart_configurations(conn) do
+      query = """
+      {
+        featuredChartConfigurations{
+          id
+          title
+        }
+      }
+      """
+
+      conn
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
+    end
+  end
+
   describe "insight featured items" do
     test "no insights are featured", context do
       assert fetch_insights(context.conn) == %{"data" => %{"featuredInsights" => []}}

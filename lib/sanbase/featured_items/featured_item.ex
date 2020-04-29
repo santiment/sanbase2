@@ -13,12 +13,14 @@ defmodule Sanbase.FeaturedItem do
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
   alias Sanbase.Signal.UserTrigger
+  alias Sanbase.Chart.Configuration
 
   @table "featured_items"
   schema @table do
     belongs_to(:post, Post)
     belongs_to(:user_list, UserList)
     belongs_to(:user_trigger, UserTrigger)
+    belongs_to(:chart_configuration, Configuration)
 
     timestamps()
   end
@@ -30,10 +32,11 @@ defmodule Sanbase.FeaturedItem do
   """
   def changeset(%__MODULE__{} = featured_items, attrs \\ %{}) do
     featured_items
-    |> cast(attrs, [:post_id, :user_list_id, :user_trigger_id])
+    |> cast(attrs, [:post_id, :user_list_id, :user_trigger_id, :chart_configuration_id])
     |> unique_constraint(:post_id)
     |> unique_constraint(:user_list_id)
     |> unique_constraint(:user_trigger_id)
+    |> unique_constraint(:chart_configuration_id)
   end
 
   def insights() do
@@ -64,6 +67,13 @@ defmodule Sanbase.FeaturedItem do
     |> Repo.preload([:user, :tags])
   end
 
+  def chart_configurations() do
+    chart_configurations_query()
+    |> join(:inner, [fi], fi in assoc(fi, :chart_configuration))
+    |> select([_fi, trigger], trigger)
+    |> Repo.all()
+  end
+
   @doc ~s"""
   Mark the insight, watchlist or user trigger as featured or not.
 
@@ -71,7 +81,7 @@ defmodule Sanbase.FeaturedItem do
   present record will be deleted. If the second argument is `true` a new record
   will be created if it does not exist
   """
-  @spec update_item(%Post{} | %UserList{} | %UserTrigger{}, boolean) ::
+  @spec update_item(%Post{} | %UserList{} | %UserTrigger{} | %Configuration{}, boolean) ::
           :ok | {:error, Ecto.Changeset.t()}
   def update_item(%Post{id: id}, featured?) do
     update_item(:post_id, id, featured?)
@@ -83,6 +93,10 @@ defmodule Sanbase.FeaturedItem do
 
   def update_item(%UserTrigger{id: id}, featured?) do
     update_item(:user_trigger_id, id, featured?)
+  end
+
+  def update_item(%Configuration{id: id}, featured?) do
+    update_item(:chart_configuration_id, id, featured?)
   end
 
   # Private functions
@@ -103,4 +117,7 @@ defmodule Sanbase.FeaturedItem do
   defp insights_query(), do: from(fi in __MODULE__, where: not is_nil(fi.post_id))
   defp watchlists_query(), do: from(fi in __MODULE__, where: not is_nil(fi.user_list_id))
   defp user_triggers_query(), do: from(fi in __MODULE__, where: not is_nil(fi.user_trigger_id))
+
+  defp chart_configurations_query(),
+    do: from(fi in __MODULE__, where: not is_nil(fi.chart_configuration_id))
 end

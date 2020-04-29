@@ -11,12 +11,10 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
   use Ecto.Schema
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
-  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3]
-  import Sanbase.Clickhouse.MetadataHelper
+  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3, generate_comparison_string: 2]
 
   alias Sanbase.Clickhouse.Metric.FileHandler
 
-  @min_interval_map FileHandler.min_interval_map()
   @name_to_metric_map FileHandler.name_to_metric_map()
   @table_map FileHandler.table_map()
 
@@ -32,7 +30,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     query = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
-      #{aggregation(aggregation, "value", "t")}
+      #{aggregation(aggregation, "value", "dt")}
     FROM(
       SELECT
         dt,
@@ -41,19 +39,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
       PREWHERE
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
-        asset_id = (
-          SELECT argMax(asset_id, computed_at)
-          FROM asset_metadata
-          PREWHERE name = ?5
-        ) AND
-        metric_id = (
-          SELECT
-            argMax(metric_id, computed_at) AS metric_id
-          FROM
-            metric_metadata
-          PREWHERE
-            name = ?2
-        )
+        asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?5 ) AND
+        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 )
       GROUP BY dt
     )
     GROUP BY t
@@ -63,8 +50,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     args = [
       str_to_sec(interval),
       Map.get(@name_to_metric_map, metric),
-      from,
-      to,
+      from |> DateTime.to_unix(),
+      to |> DateTime.to_unix(),
       slug
     ]
 
@@ -83,22 +70,60 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
         argMax(value, computed_at) AS value
       FROM #{Map.get(@table_map, metric)}
       PREWHERE
-        #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
-        #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
         asset_id IN (?1) AND
-        metric_id = ?2
+        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 ) AND
+        #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
+        #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")}
       GROUP BY dt, asset_id
     )
     GROUP BY asset_id
     """
 
-    {:ok, metric_map} = metric_name_to_metric_id_map()
-
     args = [
       asset_ids,
-      Map.get(metric_map, metric, metric),
-      from,
-      to
+      # Fetch internal metric name used. Fallback to the same name if missing.
+      Map.get(@name_to_metric_map, metric),
+      from |> DateTime.to_unix(),
+      to |> DateTime.to_unix()
+    ]
+
+    {query, args}
+  end
+
+  def slugs_by_filter_query(metric, from, to, aggregation, operation, threshold) do
+    query = """
+    SELECT name AS slug
+    FROM (
+      SELECT
+        asset_id,
+        #{aggregation(aggregation, "value", "dt")} AS value
+      FROM(
+        SELECT
+          dt,
+          asset_id,
+          argMax(value, computed_at) AS value
+        FROM #{Map.get(@table_map, metric)}
+        PREWHERE
+          metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?1 ) AND
+          #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?2)")} AND
+          #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?3)")}
+        GROUP BY dt, asset_id
+      )
+      GROUP BY asset_id
+    )
+    ALL LEFT JOIN
+    (
+      SELECT asset_id, name
+      FROM asset_metadata FINAL
+    ) USING (asset_id)
+    WHERE value #{generate_comparison_string(operation, threshold)}
+    """
+
+    args = [
+      # Fetch internal metric name used. Fallback to the same name if missing.
+      Map.get(@name_to_metric_map, metric),
+      from |> DateTime.to_unix(),
+      to |> DateTime.to_unix()
     ]
 
     {query, args}
@@ -194,16 +219,16 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
   end
 
   defp maybe_convert_to_date(:after, metric, dt_column, code) do
-    case Map.get(@min_interval_map, metric) do
-      "5m" -> "#{dt_column} >= #{code}"
-      _ -> "#{dt_column} >= toDate(#{code})"
+    case Map.get(@table_map, metric) do
+      "daily_metrics_v2" -> "#{dt_column} >= toDate(#{code})"
+      _ -> "#{dt_column} >= #{code}"
     end
   end
 
   defp maybe_convert_to_date(:before, metric, dt_column, code) do
-    case Map.get(@min_interval_map, metric) do
-      "5m" -> "#{dt_column} < #{code}"
-      _ -> "#{dt_column} <= toDate(#{code})"
+    case Map.get(@table_map, metric) do
+      "daily_metrics_v2" -> "#{dt_column} <= toDate(#{code})"
+      _ -> "#{dt_column} <= #{code}"
     end
   end
 end

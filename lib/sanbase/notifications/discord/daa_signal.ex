@@ -171,11 +171,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
       nil ->
         get_average_active_addresses(projects)
         |> case do
-          {:ok, avg_daa} ->
-            avg_daa_map =
-              avg_daa
-              |> Enum.into(%{}, fn %{slug: slug, value: value} -> {slug, value} end)
-
+          {:ok, avg_daa_map} ->
             :ok = ConCache.put(@cache_id, cache_key, avg_daa_map)
             {:ok, avg_daa_map}
 
@@ -218,20 +214,6 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
       now,
       :last
     )
-    |> case do
-      {:error, error} ->
-        {:error, error}
-
-      {:ok, data} ->
-        data =
-          data
-          |> Enum.into(
-            %{},
-            fn %{slug: slug, value: value} -> {slug, value} end
-          )
-
-        {:ok, data}
-    end
   end
 
   defp diff_in_hours(%NaiveDateTime{} = datetime, last_datetime) do

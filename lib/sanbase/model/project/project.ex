@@ -12,8 +12,7 @@ defmodule Sanbase.Model.Project do
     Currency,
     MarketSegment,
     Infrastructure,
-    LatestCoinmarketcapData,
-    ProjectTransparencyStatus
+    LatestCoinmarketcapData
   }
 
   import Ecto.Query
@@ -44,9 +43,7 @@ defmodule Sanbase.Model.Project do
     field(:total_supply, :decimal)
     field(:description, :string)
     field(:long_description, :string)
-    field(:project_transparency, :boolean, default: false)
     field(:main_contract_address, :string)
-    field(:project_transparency_description, :string)
     field(:is_hidden, :boolean, default: false)
 
     has_one(:social_volume_query, Project.SocialVolumeQuery)
@@ -60,7 +57,6 @@ defmodule Sanbase.Model.Project do
 
     belongs_to(:market_segment, MarketSegment, on_replace: :nilify)
     belongs_to(:infrastructure, Infrastructure, on_replace: :nilify)
-    belongs_to(:project_transparency_status, ProjectTransparencyStatus, on_replace: :nilify)
 
     belongs_to(
       :latest_coinmarketcap_data,
@@ -108,9 +104,6 @@ defmodule Sanbase.Model.Project do
       :team_token_wallet,
       :description,
       :long_description,
-      :project_transparency,
-      :project_transparency_status_id,
-      :project_transparency_description,
       :token_decimals,
       :total_supply,
       :is_hidden

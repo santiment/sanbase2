@@ -183,21 +183,6 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
   end
 
-  @doc ~s"""
-  Returns all projects where the project_transparency field is true
-  Filtering out projects based on some conditions can be controled by the options.
-
-  See the "Shared options" section at the module documentation for more options.
-  """
-  def projects_transparency(opts \\ [])
-
-  def projects_transparency(opts) do
-    projects_query(opts)
-    |> where([p], p.project_transparency)
-    |> order_by([p], p.name)
-    |> Repo.all()
-  end
-
   def projects_by_ticker(ticker, opts \\ []) do
     projects_query(opts)
     |> where([p], p.ticker == ^ticker)
@@ -465,6 +450,7 @@ defmodule Sanbase.Model.Project.List do
       where: not is_nil(p.slug) and not is_nil(p.ticker)
     )
     |> maybe_preload(opts)
+    |> maybe_only_included_slugs(opts)
     |> maybe_include_hidden_projects(opts)
     |> maybe_order_by_rank_above_volume(opts)
   end
@@ -565,6 +551,18 @@ defmodule Sanbase.Model.Project.List do
 
       false ->
         query
+    end
+  end
+
+  defp maybe_only_included_slugs(query, opts) do
+    case Keyword.get(opts, :included_slugs, :all) do
+      # Do not exclude any projects
+      :all ->
+        query
+
+      slugs when is_list(slugs) ->
+        query
+        |> where([p], p.slug in ^slugs)
     end
   end
 end

@@ -66,8 +66,21 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
 
   def aggregated_timeseries_data(metric, %{slug: slug_or_slugs}, from, to, aggregation) do
     slugs = slug_or_slugs |> List.wrap()
-    organizations = Enum.flat_map(slugs, &Project.github_organizations/1)
+
+    organizations =
+      slugs
+      |> Project.List.by_slugs(preload?: true, preload: [:github_organizations])
+      |> Enum.map(&Project.github_organizations/1)
+      |> Enum.filter(&match?({:ok, _}, &1))
+      |> Enum.map(&elem(&1, 1))
+      |> List.flatten()
+
     aggregated_timeseries_data(metric, %{organizations: organizations}, from, to, aggregation)
+  end
+
+  @impl Sanbase.Metric.Behaviour
+  def slugs_by_filter(_metric, _from, _to, _aggregation, _operator, _threshold) do
+    {:error, "Slugs filtering is not implemented for github data. Use `dev_activity_1d` instead"}
   end
 
   @impl Sanbase.Metric.Behaviour

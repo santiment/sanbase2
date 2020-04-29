@@ -67,7 +67,6 @@ defmodule Sanbase.Clickhouse.Metric do
   aggregations are #{inspect(@plain_aggregations)}
   """
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data(metric, selector, from, to, interval, aggregation \\ nil)
 
   def timeseries_data(metric, %{slug: slug}, from, to, interval, aggregation) do
     aggregation = aggregation || Map.get(@aggregation_map, metric)
@@ -87,13 +86,19 @@ defmodule Sanbase.Clickhouse.Metric do
   @impl Sanbase.Metric.Behaviour
   def aggregated_timeseries_data(metric, selector, from, to, aggregation \\ nil)
 
-  def aggregated_timeseries_data(_metric, nil, _from, _to, _aggregation), do: {:ok, []}
-  def aggregated_timeseries_data(_metric, [], _from, _to, _aggregation), do: {:ok, []}
+  def aggregated_timeseries_data(_metric, nil, _from, _to, _aggregation), do: {:ok, %{}}
+  def aggregated_timeseries_data(_metric, [], _from, _to, _aggregation), do: {:ok, %{}}
 
   def aggregated_timeseries_data(metric, %{slug: slug_or_slugs}, from, to, aggregation)
       when is_binary(slug_or_slugs) or is_list(slug_or_slugs) do
     aggregation = aggregation || Map.get(@aggregation_map, metric)
     get_aggregated_timeseries_data(metric, slug_or_slugs |> List.wrap(), from, to, aggregation)
+  end
+
+  @impl Sanbase.Metric.Behaviour
+  def slugs_by_filter(metric, from, to, aggregation, operator, threshold) do
+    {query, args} = slugs_by_filter_query(metric, from, to, aggregation, operator, threshold)
+    ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -204,16 +209,18 @@ defmodule Sanbase.Clickhouse.Metric do
   end
 
   defp get_aggregated_timeseries_data(metric, slugs, from, to, aggregation)
-       when is_list(slugs) and length(slugs) > 20 do
+       when is_list(slugs) and length(slugs) > 50 do
     result =
-      Enum.chunk_every(slugs, 20)
+      Enum.chunk_every(slugs, 50)
       |> Sanbase.Parallel.map(&get_aggregated_timeseries_data(metric, &1, from, to, aggregation),
         timeout: 25_000,
         max_concurrency: 8,
-        ordered: false
+        ordered: false,
+        on_timeout: :kill_task
       )
       |> Enum.filter(&match?({:ok, _}, &1))
-      |> Enum.flat_map(&elem(&1, 1))
+      |> Enum.map(&elem(&1, 1))
+      |> Enum.reduce(%{}, &Map.merge(&1, &2))
 
     {:ok, result}
   end
@@ -223,15 +230,16 @@ defmodule Sanbase.Clickhouse.Metric do
 
     case Map.take(asset_map, slugs) |> Map.values() do
       [] ->
-        {:ok, []}
+        {:ok, %{}}
 
       asset_ids ->
         {:ok, asset_id_map} = asset_id_to_slug_map()
 
         {query, args} = aggregated_timeseries_data_query(metric, asset_ids, from, to, aggregation)
 
-        ClickhouseRepo.query_transform(query, args, fn [asset_id, value] ->
-          %{slug: Map.get(asset_id_map, asset_id), value: value}
+        ClickhouseRepo.query_reduce(query, args, %{}, fn [asset_id, value], acc ->
+          slug = Map.get(asset_id_map, asset_id)
+          Map.put(acc, slug, value)
         end)
     end
   end

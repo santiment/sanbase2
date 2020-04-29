@@ -1161,10 +1161,7 @@
     "access": "restricted",
     "aggregation": "last",
     "min_interval": "5m",
-    "table": [
-      "distribution_deltas_5min",
-      "intraday_metrics"
-    ],
+    "table": ["distribution_deltas_5min", "intraday_metrics"],
     "has_incomplete_data": false,
     "data_type": "histogram"
   },
@@ -1176,10 +1173,7 @@
     "access": "restricted",
     "aggregation": "last",
     "min_interval": "5m",
-    "table": [
-      "distribution_deltas_5min",
-      "intraday_metrics"
-    ],
+    "table": ["distribution_deltas_5min", "intraday_metrics"],
     "has_incomplete_data": false,
     "data_type": "histogram"
   },
@@ -1191,10 +1185,7 @@
     "access": "restricted",
     "aggregation": "last",
     "min_interval": "5m",
-    "table": [
-      "distribution_deltas_5min",
-      "intraday_metrics"
-    ],
+    "table": ["distribution_deltas_5min", "intraday_metrics"],
     "has_incomplete_data": false,
     "data_type": "histogram"
   },
@@ -1452,6 +1443,22 @@
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Daily Development Activity",
+    "name": "dev_activity_1d",
+    "metric": "dev_activity",
+    "version": "2019-01-01",
+    "access": "free",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
     "data_type": "timeseries"
   }
 ]

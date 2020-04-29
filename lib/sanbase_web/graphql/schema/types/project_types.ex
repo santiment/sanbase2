@@ -20,6 +20,27 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   alias Sanbase.Model.Project
   alias SanbaseWeb.Graphql.SanbaseRepo
   alias SanbaseWeb.Graphql.Complexity
+  alias SanbaseWeb.Graphql.Middlewares.AccessControl
+
+  enum :operator_name do
+    value(:less_than)
+    value(:greater_than)
+    value(:greater_than_or_equal_to)
+    value(:less_than_or_equal_to)
+  end
+
+  input_object :project_filter_input_object do
+    field(:metric, non_null(:string))
+    field(:from, non_null(:datetime))
+    field(:to, non_null(:datetime))
+    field(:aggregation, :aggregation, default_value: nil)
+    field(:operator, non_null(:operator_name))
+    field(:threshold, non_null(:float))
+  end
+
+  input_object :projects_selector_input_object do
+    field(:filters, list_of(:project_filter_input_object))
+  end
 
   # Includes all available fields
   @desc ~s"""
@@ -186,6 +207,22 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve(&ProjectResolver.available_queries/3, ttl: 1800)
     end
 
+    field :aggregated_timeseries_data, :float do
+      arg(:metric, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:aggregation, :aggregation, default_value: nil)
+      arg(:include_incomplete_data, :boolean, default_value: false)
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(AccessControl)
+
+      cache_resolve(&ProjectMetricsResolver.aggregated_timeseries_data/3,
+        ttl: 600,
+        max_ttl_offset: 600
+      )
+    end
+
     field(:id, non_null(:id))
     field(:name, non_null(:string))
     field(:slug, :string)
@@ -212,7 +249,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:main_contract_address, :string)
 
     field :eth_addresses, list_of(:eth_address) do
-      cache_resolve(dataloader(SanbaseRepo))
+      cache_resolve(
+        dataloader(SanbaseRepo),
+        fun_name: :eth_addresses_resolver_fun
+      )
     end
 
     field :social_volume_query, :string do
@@ -274,14 +314,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :infrastructure, :string do
       cache_resolve(&ProjectResolver.infrastructure/3)
     end
-
-    field(:project_transparency, :boolean)
-
-    field :project_transparency_status, :string do
-      cache_resolve(&ProjectResolver.project_transparency_status/3)
-    end
-
-    field(:project_transparency_description, :string)
 
     field :eth_balance, :float do
       cache_resolve(&ProjectBalanceResolver.eth_balance/3)

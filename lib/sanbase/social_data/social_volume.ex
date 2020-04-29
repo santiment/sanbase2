@@ -11,7 +11,9 @@ defmodule Sanbase.SocialData.SocialVolume do
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 25_000
-  @sources [:telegram, :professional_traders_chat, :reddit, :discord]
+  @sources [:telegram, :professional_traders_chat, :reddit, :discord, :twitter, :bitcointalk]
+
+  def sources(), do: @sources
 
   def social_volume(selector, from, to, interval, source)
       when source in [:all, "all", :total, "total"] do
@@ -69,7 +71,7 @@ defmodule Sanbase.SocialData.SocialVolume do
     slug
     |> Project.by_slug(only_preload: [:social_volume_query])
     |> case do
-      %Project{social_volume_query: %Sanbase.Model.Project.SocialVolumeQuery{query: query_text}}
+      %Project{social_volume_query: %{query: query_text}}
       when not is_nil(query_text) ->
         {"search_text", query_text}
 
@@ -116,7 +118,7 @@ defmodule Sanbase.SocialData.SocialVolume do
           mentions_count: value
         }
       end)
-      |> Enum.sort_by(&DateTime.to_unix(&1.datetime))
+      |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
 
     {:ok, map}
   end

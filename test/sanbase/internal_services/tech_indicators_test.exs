@@ -6,6 +6,7 @@ defmodule Sanbase.TechIndicatorsTest do
 
   alias Sanbase.TechIndicators
   alias Sanbase.SocialData.SocialVolume
+  alias Sanbase.SocialData.MetricAdapter
   import Sanbase.Factory
 
   setup do
@@ -204,6 +205,25 @@ defmodule Sanbase.TechIndicatorsTest do
                   %{mentions_count: 5, datetime: from},
                   %{mentions_count: 15, datetime: to}
                 ]}
+    end
+
+    test "all sources in total" do
+      sources =
+        MetricAdapter.available_metrics()
+        |> Enum.filter(fn
+          "social_volume_total" -> false
+          "social_volume_" <> _source -> true
+          _ -> false
+        end)
+        |> Enum.map(fn "social_volume_" <> source -> source end)
+
+      expected_sources =
+        SocialVolume.sources()
+        |> Enum.map(fn
+          source -> Atom.to_string(source)
+        end)
+
+      assert expected_sources |> Enum.sort() == sources |> Enum.sort()
     end
 
     test "response: 404" do

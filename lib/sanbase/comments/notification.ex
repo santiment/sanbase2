@@ -143,9 +143,7 @@ defmodule Sanbase.Comments.Notification do
     events = notify_users_map[email][comment_id][:events] || []
     comment_map = %{comment_id => events ++ [event]}
 
-    Map.update(notify_users_map, email, comment_map, fn current_map ->
-      Map.merge(current_map, comment_map)
-    end)
+    Map.update(notify_users_map, email, comment_map, &Map.merge(&1, comment_map))
   end
 
   defp recent_comments_query(:insight, last_comment_notification) do
@@ -179,7 +177,8 @@ defmodule Sanbase.Comments.Notification do
   defp previous_comments_query(post_comment, :insight) do
     from(p in PostComment,
       where:
-        p.post_id == ^post_comment.post.id and p.comment_id != ^post_comment.comment.id and
+        p.post_id == ^post_comment.post.id and
+          p.comment_id != ^post_comment.comment.id and
           p.inserted_at < ^post_comment.inserted_at,
       preload: [comment: :user]
     )

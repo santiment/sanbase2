@@ -219,7 +219,7 @@ defmodule SanbaseWeb.Graphql.Cache do
 
     args = args |> convert_values(ttl)
 
-    cache_key = [name, args] |> IO.inspect() |> :erlang.phash2()
+    cache_key = [name, args] |> :erlang.phash2()
 
     {cache_key, ttl}
   end

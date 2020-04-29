@@ -7,14 +7,6 @@ defmodule Sanbase.Insight.CommentTest do
 
   @entity_type :insight
 
-  setup do
-    author = insert(:user)
-    post = insert(:post, user: author)
-    user = insert(:user)
-
-    {:ok, user: user, author: author, post: post}
-  end
-
   test "add a comment to a post" do
     post = insert(:post)
     user = insert(:user)

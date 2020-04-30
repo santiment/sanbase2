@@ -550,7 +550,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "min_plan": {
-      "SANAPI": "free",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "avg",
@@ -566,7 +566,7 @@
     "version": "2019-01-01",
     "access": "restricted",
     "min_plan": {
-      "SANAPI": "free",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "avg",
@@ -1161,7 +1161,10 @@
     "access": "restricted",
     "aggregation": "last",
     "min_interval": "5m",
-    "table": ["distribution_deltas_5min", "intraday_metrics"],
+    "table": [
+      "distribution_deltas_5min",
+      "intraday_metrics"
+    ],
     "has_incomplete_data": false,
     "data_type": "histogram"
   },
@@ -1173,7 +1176,10 @@
     "access": "restricted",
     "aggregation": "last",
     "min_interval": "5m",
-    "table": ["distribution_deltas_5min", "intraday_metrics"],
+    "table": [
+      "distribution_deltas_5min",
+      "intraday_metrics"
+    ],
     "has_incomplete_data": false,
     "data_type": "histogram"
   },
@@ -1185,7 +1191,10 @@
     "access": "restricted",
     "aggregation": "last",
     "min_interval": "5m",
-    "table": ["distribution_deltas_5min", "intraday_metrics"],
+    "table": [
+      "distribution_deltas_5min",
+      "intraday_metrics"
+    ],
     "has_incomplete_data": false,
     "data_type": "histogram"
   },

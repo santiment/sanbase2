@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
   import Absinthe.Resolution.Helpers, except: [async: 1]
   import SanbaseWeb.Graphql.Helpers.Async
-  import Sanbase.DateTimeUtils
 
   alias Sanbase.Model.{
     Project,
@@ -18,111 +17,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def available_queries(%Project{} = project, _args, _resolution) do
     {:ok, Project.AvailableQueries.get(project)}
-  end
-
-  def projects_count(_root, args, _resolution) do
-    opts = args_to_opts(args)
-
-    {:ok,
-     %{
-       erc20_projects_count: Project.List.erc20_projects_count(opts),
-       currency_projects_count: Project.List.currency_projects_count(opts),
-       projects_count: Project.List.projects_count(opts)
-     }}
-  end
-
-  defp args_to_opts(args) do
-    [
-      min_volume: Map.get(args, :min_volume),
-      included_slugs: get_in(args, [:selector, :filters]) |> included_slugs_by_filters()
-    ]
-  end
-
-  defp included_slugs_by_filters(nil), do: :all
-  defp included_slugs_by_filters([]), do: :all
-
-  defp included_slugs_by_filters(filters) when is_list(filters) do
-    filters
-    |> Sanbase.Parallel.map(
-      fn filter ->
-        cache_key =
-          {:included_slugs_by_filters,
-           %{filter | from: round_datetime(filter.from), to: round_datetime(filter.to)}}
-          |> :erlang.phash2()
-
-        {:ok, slugs} =
-          Sanbase.Cache.get_or_store(cache_key, fn ->
-            Sanbase.Metric.slugs_by_filter(
-              filter.metric,
-              filter.from,
-              filter.to,
-              filter.aggregation,
-              filter.operator,
-              filter.threshold
-            )
-          end)
-
-        slugs |> MapSet.new()
-      end,
-      ordered: false,
-      max_concurrency: 8
-    )
-    |> Enum.reduce(&MapSet.intersection(&1, &2))
-    |> Enum.to_list()
-  end
-
-  @spec all_projects(any, map, any) :: {:ok, any}
-  def all_projects(_parent, args, _resolution) do
-    page = Map.get(args, :page)
-    page_size = Map.get(args, :page_size)
-
-    projects =
-      if page_arguments_valid?(page, page_size) do
-        Project.List.projects_page(page, page_size, args_to_opts(args))
-      else
-        Project.List.projects(args_to_opts(args))
-      end
-
-    {:ok, projects}
-  end
-
-  def all_erc20_projects(_root, args, _resolution) do
-    page = Map.get(args, :page)
-    page_size = Map.get(args, :page_size)
-
-    erc20_projects =
-      if page_arguments_valid?(page, page_size) do
-        Project.List.erc20_projects_page(page, page_size, args_to_opts(args))
-      else
-        Project.List.erc20_projects(args_to_opts(args))
-      end
-
-    {:ok, erc20_projects}
-  end
-
-  def all_currency_projects(_root, args, _resolution) do
-    page = Map.get(args, :page)
-    page_size = Map.get(args, :page_size)
-
-    currency_projects =
-      if page_arguments_valid?(page, page_size) do
-        Project.List.currency_projects_page(page, page_size, args_to_opts(args))
-      else
-        Project.List.currency_projects(args_to_opts(args))
-      end
-
-    {:ok, currency_projects}
-  end
-
-  def all_projects_by_function(_root, %{function: function}, _resolution) do
-    with {:ok, function} <- Sanbase.WatchlistFunction.cast(function),
-         projects when is_list(projects) <- Sanbase.WatchlistFunction.evaluate(function) do
-      {:ok, projects}
-    end
-  end
-
-  def all_projects_by_ticker(_root, %{ticker: ticker}, _resolution) do
-    {:ok, Project.List.projects_by_ticker(ticker)}
   end
 
   def project(_parent, %{id: id}, _resolution) do
@@ -150,18 +44,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       {:ok, result} -> {:ok, slug in result}
       _ -> {:nocache, {:ok, false}}
     end
-  end
-
-  defp trending_projects() do
-    Cache.wrap(
-      fn ->
-        case Sanbase.SocialData.TrendingWords.get_currently_trending_projects() do
-          {:ok, data} -> {:ok, Enum.map(data, & &1.slug)}
-          {:error, error} -> {:error, error}
-        end
-      end,
-      :currently_trending_projects
-    ).()
   end
 
   def funds_raised_icos(%Project{} = project, _args, _resolution) do
@@ -218,7 +100,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, price_usd |> float_or_nil()}
+    {:ok, price_usd |> Sanbase.Math.to_float()}
   end
 
   def price_usd(_parent, _args, _resolution), do: {:ok, nil}
@@ -228,7 +110,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, price_btc |> float_or_nil()}
+    {:ok, price_btc |> Sanbase.Math.to_float()}
   end
 
   def price_btc(_parent, _args, _resolution), do: {:ok, nil}
@@ -238,7 +120,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, volume_usd |> float_or_nil()}
+    {:ok, volume_usd |> Sanbase.Math.to_float()}
   end
 
   def volume_usd(_parent, _args, _resolution), do: {:ok, nil}
@@ -270,6 +152,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         {:average_github_activity, id, days}
       )
     )
+  end
+
+  # Private functions
+
+  defp trending_projects() do
+    Cache.wrap(
+      fn ->
+        case Sanbase.SocialData.TrendingWords.get_currently_trending_projects() do
+          {:ok, data} -> {:ok, Enum.map(data, & &1.slug)}
+          {:error, error} -> {:error, error}
+        end
+      end,
+      :currently_trending_projects
+    ).()
   end
 
   defp calculate_average_github_activity(%Project{} = project, %{days: days}) do
@@ -357,7 +253,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, market_cap_usd |> float_or_nil()}
+    {:ok, market_cap_usd |> Sanbase.Math.to_float()}
   end
 
   def marketcap_usd(_parent, _args, _resolution), do: {:ok, nil}
@@ -509,14 +405,4 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     posts = Post.public_insights_by_tags([ticker])
     {:ok, posts}
   end
-
-  # Calling Decimal.to_float/1 with `nil` crashes the process
-  defp float_or_nil(nil), do: nil
-  defp float_or_nil(num), do: Decimal.to_float(num)
-
-  defp page_arguments_valid?(page, page_size) when is_integer(page) and is_integer(page_size) do
-    page > 0 and page_size > 0
-  end
-
-  defp page_arguments_valid?(_, _), do: false
 end

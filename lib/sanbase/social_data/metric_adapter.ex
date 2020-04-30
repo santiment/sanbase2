@@ -108,8 +108,13 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_by_filter(_metric, _from, _to, _aggregation, _operator, _threshold) do
+  def slugs_by_filter(_metric, _from, _to, _operator, _threshold, _aggregation) do
     {:error, "Slugs filtering is not implemented for Social Data."}
+  end
+
+  @impl Sanbase.Metric.Behaviour
+  def slugs_order(_metric, _from, _to, _direction, _aggregation) do
+    {:error, "Slugs ordering is not implemented for Social Data."}
   end
 
   @impl Sanbase.Metric.Behaviour

@@ -90,9 +90,34 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     {query, args}
   end
 
-  def slugs_by_filter_query(metric, from, to, aggregation, operation, threshold) do
+  def slugs_by_filter_query(metric, from, to, operation, threshold, aggregation) do
+    {query, args} = aggregated_slugs_base_query(metric, from, to, aggregation)
+
+    query =
+      query <>
+        """
+        WHERE value #{generate_comparison_string(operation, threshold)}
+        """
+
+    {query, args}
+  end
+
+  def slugs_order_query(metric, from, to, direction, aggregation)
+      when direction in [:asc, :desc] do
+    {query, args} = aggregated_slugs_base_query(metric, from, to, aggregation)
+
+    query =
+      query <>
+        """
+        ORDER BY value #{direction |> Atom.to_string() |> String.upcase()}
+        """
+
+    {query, args}
+  end
+
+  defp aggregated_slugs_base_query(metric, from, to, aggregation) do
     query = """
-    SELECT name AS slug
+    SELECT name AS slug, value
     FROM (
       SELECT
         asset_id,
@@ -116,7 +141,6 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
       SELECT asset_id, name
       FROM asset_metadata FINAL
     ) USING (asset_id)
-    WHERE value #{generate_comparison_string(operation, threshold)}
     """
 
     args = [

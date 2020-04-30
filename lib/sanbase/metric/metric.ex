@@ -169,7 +169,7 @@ defmodule Sanbase.Metric do
 
   The filtering is determined by the aggregated values of the value of `metric`,
   aggregated in the `from`-`to` interval, aggregated by `aggregation`. Of all
-  slugs, only those whose value is satisfying the `operator` and `threhsold` checks
+  slugs, only those whose value is satisfying the `operator` and `threshold` checks
   are taken.
 
   If no aggregation is provided, a default one (based on the metric) will be used.

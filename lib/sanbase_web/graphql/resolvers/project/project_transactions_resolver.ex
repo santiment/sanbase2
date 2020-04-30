@@ -3,7 +3,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
 
   import SanbaseWeb.Graphql.Helpers.Async
   import Absinthe.Resolution.Helpers, except: [async: 1]
-  import Sanbase.DateTimeUtils, only: [round_datetime: 2]
 
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse

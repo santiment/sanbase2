@@ -165,28 +165,32 @@ defmodule Sanbase.Metric do
   end
 
   @doc ~s"""
-  Get the aggregated value for a metric, an identifier and time range.
-  The metric's aggregation function can be changed by the last optional parameter.
-  The available aggregations are #{inspect(@aggregations)}. If no aggregation is
-  provided, a default one (based on the metric) will be used.
+  Get a list of all slugs that satisfy a given filter
+
+  The filtering is determined by the aggregated values of the value of `metric`,
+  aggregated in the `from`-`to` interval, aggregated by `aggregation`. Of all
+  slugs, only those whose value is satisfying the `operator` and `threshold` checks
+  are taken.
+
+  If no aggregation is provided, a default one (based on the metric) will be used.
   """
-  def slugs_by_filter(metric, from, to, aggregation, operation, threshold)
+  def slugs_by_filter(metric, from, to, operation, threshold, aggregation \\ nil)
 
   for %{metric: metric, module: module} <- @timeseries_metric_module_mapping do
-    def slugs_by_filter(unquote(metric), from, to, aggregation, operation, threshold)
+    def slugs_by_filter(unquote(metric), from, to, operation, threshold, aggregation)
         when aggregation in unquote(Map.get(@aggregations_per_metric, metric)) do
       unquote(module).slugs_by_filter(
         unquote(metric),
         from,
         to,
-        aggregation,
         operation,
-        threshold
+        threshold,
+        aggregation
       )
     end
   end
 
-  def slugs_by_filter(metric, _from, _to, aggregation, _operation, _threshold) do
+  def slugs_by_filter(metric, _from, _to, _operation, _threshold, aggregation) do
     cond do
       metric not in @metrics_mapset ->
         metric_not_available_error(metric, type: :timeseries)
@@ -196,6 +200,43 @@ defmodule Sanbase.Metric do
 
       true ->
         {:error, "Error fetching slugs by filter for #{metric}"}
+    end
+  end
+
+  @doc ~s"""
+  Get a list of all slugs in a specific order.
+
+  The order is determined by the aggregated values of the value of `metric`,
+  aggregated in the `from`-`to` interval, aggregated by `aggregation`.
+  The order is either in ascending or descending order, defined by the `direction`
+  argument with two values - :asc and :desc
+  If no aggregation is provided, a default one (based on the metric) will be used.
+  """
+  def slugs_order(metric, from, to, direction, aggregation \\ nil)
+
+  for %{metric: metric, module: module} <- @timeseries_metric_module_mapping do
+    def slugs_order(unquote(metric), from, to, direction, aggregation)
+        when aggregation in unquote(Map.get(@aggregations_per_metric, metric)) do
+      unquote(module).slugs_order(
+        unquote(metric),
+        from,
+        to,
+        direction,
+        aggregation
+      )
+    end
+  end
+
+  def slugs_order(metric, _from, _to, _direction, aggregation) do
+    cond do
+      metric not in @metrics_mapset ->
+        metric_not_available_error(metric, type: :timeseries)
+
+      aggregation not in Map.get(@aggregations_per_metric, metric) ->
+        {:error, "The aggregation #{aggregation} is not supported for the metric #{metric}"}
+
+      true ->
+        {:error, "Error fetching slugs order for #{metric}"}
     end
   end
 

@@ -152,6 +152,9 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:tags, list_of(:string))
       arg(:is_pulse, :boolean)
       arg(:is_paywall_required, :boolean)
+      arg(:prediction, :string)
+      arg(:metrics, list_of(:string))
+      arg(:price_chart_project_id, :integer)
 
       middleware(JWTAuth)
       resolve(&InsightResolver.create_post/3)
@@ -191,6 +194,9 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:tags, list_of(:string))
       arg(:is_pulse, :boolean)
       arg(:is_paywall_required, :boolean)
+      arg(:prediction, :string)
+      arg(:metrics, list_of(:string))
+      arg(:price_chart_project_id, :integer)
 
       middleware(JWTAuth)
       resolve(&InsightResolver.update_post/3)

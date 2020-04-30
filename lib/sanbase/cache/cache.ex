@@ -3,6 +3,11 @@ defmodule Sanbase.Cache do
   @cache_name :sanbase_cache
   @max_cache_ttl 86400
 
+  def hash(data) do
+    :crypto.hash(:sha256, data |> :erlang.term_to_binary())
+    |> Base.encode64()
+  end
+
   def name, do: @cache_name
 
   @impl Sanbase.Cache.Behaviour

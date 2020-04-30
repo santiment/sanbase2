@@ -116,7 +116,7 @@ defmodule Sanbase.SocialData.SocialDominance do
   defp social_dominance_request(from, to, interval, source) do
     cache_key =
       {:social_dominance_api_request, round_datetime(from), round_datetime(to), interval, source}
-      |> :erlang.phash2()
+      |> Sanbase.Cache.hash()
 
     url = "#{tech_indicators_url()}/indicator/#{source_to_indicator(source)}"
 

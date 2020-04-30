@@ -78,7 +78,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
   def fetch_metric(metric, selector, time_window) do
     cache_key =
       {:metric_signal, metric, selector, time_window, round_datetime(Timex.now(), 300)}
-      |> :erlang.phash2()
+      |> Sanbase.Cache.hash()
 
     interval_seconds = str_to_sec(time_window)
     now = Timex.now()

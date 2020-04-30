@@ -66,7 +66,7 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
   defp price_percent_change(project, from, to) do
     cache_key =
       {:price_percent_signal, project.slug, round_datetime(from, 300), round_datetime(to, 300)}
-      |> :erlang.phash2()
+      |> Sanbase.Cache.hash()
 
     Cache.get_or_store(
       cache_key,

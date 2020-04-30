@@ -185,7 +185,7 @@ defmodule Sanbase.Price.SqlQuery do
     {query, args}
   end
 
-  def slugs_by_filter_query(metric, from, to, aggregation, operation, threshold) do
+  def slugs_by_filter_query(metric, from, to, operation, threshold, aggregation) do
     {query, args} = filter_order_base_query(metric, from, to, aggregation)
 
     query =
@@ -197,7 +197,7 @@ defmodule Sanbase.Price.SqlQuery do
     {query, args}
   end
 
-  def slugs_order_query(metric, from, to, aggregation, direction) do
+  def slugs_order_query(metric, from, to, direction, aggregation) do
     {query, args} = filter_order_base_query(metric, from, to, aggregation)
 
     query =

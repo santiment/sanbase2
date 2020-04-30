@@ -26,7 +26,7 @@ defmodule Sanbase.Anomaly do
 
   def available_anomalies(slug) do
     Sanbase.Cache.get_or_store(
-      {__MODULE__, :slug_to_anomalies_map} |> :erlang.phash2(),
+      {__MODULE__, :slug_to_anomalies_map} |> Sanbase.Cache.hash(),
       fn -> slug_to_anomalies_map() end
     )
     |> case do

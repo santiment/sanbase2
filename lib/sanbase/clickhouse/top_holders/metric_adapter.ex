@@ -186,7 +186,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_slugs() do
-    cache_key = {__MODULE__, :available_slugs} |> :erlang.phash2()
+    cache_key = {__MODULE__, :available_slugs} |> Sanbase.Cache.hash()
 
     Sanbase.Cache.get_or_store({cache_key, 1800}, fn ->
       result =

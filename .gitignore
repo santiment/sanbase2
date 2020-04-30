@@ -19,6 +19,7 @@ erl_crash.dump
 /config/*.secret.exs
 /app/node_modules/
 /app/build/
+/local_dev
 
 # Generated on crash by NPM
 npm-debug.log

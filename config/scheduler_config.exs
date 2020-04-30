@@ -56,6 +56,10 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
   global: true,
   timeout: 30_000,
   jobs: [
+    notify_users_for_comments: [
+      schedule: "@hourly",
+      task: {Sanbase.Comments.Notification, :notify_users, []}
+    ],
     send_email_on_trial_day: [
       schedule: "00 07 * * *",
       task: {Sanbase.Billing.Subscription.SignUpTrial, :send_email_on_trial_day, []}

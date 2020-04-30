@@ -2,7 +2,7 @@ defmodule Sanbase.Insight.CommentTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
-  alias Sanbase.Comment.EntityComment
+  alias Sanbase.Comments.EntityComment
   alias Sanbase.Comment
 
   @entity_type :insight

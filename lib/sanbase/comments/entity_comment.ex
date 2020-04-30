@@ -1,4 +1,4 @@
-defmodule Sanbase.Comment.EntityComment do
+defmodule Sanbase.Comments.EntityComment do
   @entities [:insight, :timeline_event]
 
   @moduledoc """
@@ -70,7 +70,6 @@ defmodule Sanbase.Comment.EntityComment do
   end
 
   # private functions
-
   defp entity_comments_query(entity_id, :timeline_event) do
     from(p in Sanbase.Timeline.TimelineEventComment,
       where: p.timeline_event_id == ^entity_id,

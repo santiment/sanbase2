@@ -41,10 +41,6 @@ defmodule SanbaseWeb.Router do
 
     get("/anonymize_comment/:id", CommentModerationController, :anonymize_comment)
     get("/delete_subcomment_tree/:id", CommentModerationController, :delete_subcomment_tree)
-
-    get("/intercom/:user_id", IntercomController, :get_user_data)
-    get("/intercom_sync/", IntercomController, :sync_users)
-    get("/mailchimp_sync", MailchimpController, :sync_users)
   end
 
   scope "/" do

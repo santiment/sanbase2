@@ -19,7 +19,7 @@ erl_crash.dump
 /config/*.secret.exs
 /app/node_modules/
 /app/build/
-/lib/sanbase_test.ex
+/local_dev
 
 # Generated on crash by NPM
 npm-debug.log

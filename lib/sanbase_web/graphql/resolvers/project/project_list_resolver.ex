@@ -7,51 +7,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectListResolver do
 
   @spec all_projects(any, map, any) :: {:ok, any}
   def all_projects(_parent, args, _resolution) do
+    get_projects(args, :projects_page, :projects)
+  end
+
+  def all_erc20_projects(_root, args, _resolution) do
+    get_projects(args, :erc20_projects_page, :erc20_projects)
+  end
+
+  def all_currency_projects(_root, args, _resolution) do
+    get_projects(args, :currency_projects_page, :currency_projects)
+  end
+
+  defp get_projects(args, paged_fun, fun) do
     page = Map.get(args, :page)
     page_size = Map.get(args, :page_size)
     opts = args_to_opts(args)
 
     projects =
       if page_arguments_valid?(page, page_size) do
-        Project.List.projects_page(page, page_size, opts)
+        apply(Project.List, paged_fun, [page, page_size, opts])
       else
-        Project.List.projects(opts)
-        # |> post_fetch_projects_processing(opts)
+        apply(Project.List, fun, [opts])
       end
 
     {:ok, projects}
-  end
-
-  def all_erc20_projects(_root, args, _resolution) do
-    page = Map.get(args, :page)
-    page_size = Map.get(args, :page_size)
-    opts = args_to_opts(args)
-
-    erc20_projects =
-      if page_arguments_valid?(page, page_size) do
-        Project.List.erc20_projects_page(page, page_size, opts)
-      else
-        Project.List.erc20_projects(opts)
-        # |> post_fetch_projects_processing(opts)
-      end
-
-    {:ok, erc20_projects}
-  end
-
-  def all_currency_projects(_root, args, _resolution) do
-    page = Map.get(args, :page)
-    page_size = Map.get(args, :page_size)
-    opts = args_to_opts(args)
-
-    currency_projects =
-      if page_arguments_valid?(page, page_size) do
-        Project.List.currency_projects_page(page, page_size, opts)
-      else
-        Project.List.currency_projects(opts)
-        # |> post_fetch_projects_processing(opts)
-      end
-
-    {:ok, currency_projects}
   end
 
   def all_projects_by_function(_root, %{function: function}, _resolution) do

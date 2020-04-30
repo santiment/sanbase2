@@ -215,11 +215,12 @@ defmodule SanbaseWeb.Graphql.Cache do
     # Used to randomize the TTL for lists of objects like list of projects
     additional_args = Map.take(args, [:slug, :id])
 
+    # Using phash2 as a random number between 0 and max_ttl_offset is needed.
+    # collisions are allowed and do not lead to errors
     ttl = base_ttl + ({name, additional_args} |> :erlang.phash2(max_ttl_offset))
 
     args = args |> convert_values(ttl)
-
-    cache_key = [name, args] |> :erlang.phash2()
+    cache_key = [name, args] |> Sanbase.Cache.hash()
 
     {cache_key, ttl}
   end

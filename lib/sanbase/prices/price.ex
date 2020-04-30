@@ -431,7 +431,7 @@ defmodule Sanbase.Price do
     |> Enum.chunk_every(30)
     |> Sanbase.Parallel.map(
       fn slugs_chunk ->
-        cache_key = Enum.sort(slugs_chunk) |> :erlang.phash2()
+        cache_key = Enum.sort(slugs_chunk) |> Sanbase.Cache.hash()
 
         Sanbase.Cache.get_or_store({__MODULE__, __ENV__.function, cache_key}, fn ->
           combined_marketcap_and_volume(slugs_chunk, from, to, interval, opts)

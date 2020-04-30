@@ -12,7 +12,7 @@ defmodule Sanbase.Clickhouse.MetadataHelper do
                                 |> Enum.into(%{}, fn {k, v} -> {v, k} end)
 
   def slug_to_asset_id_map() do
-    cache_key = {__MODULE__, __ENV__.function} |> :erlang.phash2()
+    cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
 
     Sanbase.Cache.get_or_store({cache_key, 600}, fn ->
       query = "SELECT toUInt32(asset_id), name FROM asset_metadata"
@@ -25,7 +25,7 @@ defmodule Sanbase.Clickhouse.MetadataHelper do
   end
 
   def asset_id_to_slug_map() do
-    cache_key = {__MODULE__, __ENV__.function} |> :erlang.phash2()
+    cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
 
     Sanbase.Cache.get_or_store({cache_key, 600}, fn ->
       case slug_to_asset_id_map() do
@@ -39,7 +39,7 @@ defmodule Sanbase.Clickhouse.MetadataHelper do
   end
 
   def metric_name_to_metric_id_map() do
-    cache_key = {__MODULE__, __ENV__.function} |> :erlang.phash2()
+    cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
 
     Sanbase.Cache.get_or_store({cache_key, 600}, fn ->
       query = "SELECT toUInt32(metric_id), name FROM metric_metadata"
@@ -53,7 +53,7 @@ defmodule Sanbase.Clickhouse.MetadataHelper do
   end
 
   def metric_id_to_metric_name_map() do
-    cache_key = {__MODULE__, __ENV__.function} |> :erlang.phash2()
+    cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
 
     Sanbase.Cache.get_or_store({cache_key, 600}, fn ->
       case metric_name_to_metric_id_map() do

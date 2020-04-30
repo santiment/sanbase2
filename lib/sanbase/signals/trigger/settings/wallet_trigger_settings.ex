@@ -132,7 +132,7 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
   defp balance_change(selector, address, from, to) do
     cache_key =
       {:wallet_signal, selector, address, round_datetime(from, 300), round_datetime(to, 300)}
-      |> :erlang.phash2()
+      |> Sanbase.Cache.hash()
 
     Sanbase.Signal.Evaluator.Cache.get_or_store(cache_key, fn ->
       case Sanbase.Clickhouse.HistoricalBalance.balance_change(

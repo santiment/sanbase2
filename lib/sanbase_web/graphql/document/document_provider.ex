@@ -80,7 +80,7 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do
         additional_keys_hash =
           {context.permissions, context.product_id, context.auth.subscription, context.auth.plan,
            context.auth.auth_method}
-          |> :erlang.phash2()
+          |> Sanbase.Cache.hash()
 
         cache_key =
           SanbaseWeb.Graphql.Cache.cache_key(

@@ -124,7 +124,7 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
   defp balance_change(addresses, slug, from, to) do
     cache_key =
       {:balance_change, addresses, slug, round_datetime(from, 300), round_datetime(to, 300)}
-      |> :erlang.phash2()
+      |> Sanbase.Cache.hash()
 
     Cache.get_or_store(
       cache_key,

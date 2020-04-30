@@ -15,7 +15,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
 
   def available_metrics(%Project{slug: slug}, _args, _resolution) do
     query = :available_metrics
-    cache_key = {__MODULE__, query, slug} |> :erlang.phash2()
+    cache_key = {__MODULE__, query, slug} |> Sanbase.Cache.hash()
     fun = fn -> Metric.available_metrics_for_slug(%{slug: slug}) end
 
     maybe_register_and_get(cache_key, fun, slug, query)
@@ -23,14 +23,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
 
   def available_timeseries_metrics(%Project{slug: slug}, _args, _resolution) do
     query = :available_timeseries_metrics
-    cache_key = {__MODULE__, query, slug} |> :erlang.phash2()
+    cache_key = {__MODULE__, query, slug} |> Sanbase.Cache.hash()
     fun = fn -> Metric.available_timeseries_metrics_for_slug(%{slug: slug}) end
     maybe_register_and_get(cache_key, fun, slug, query)
   end
 
   def available_histogram_metrics(%Project{slug: slug}, _args, _resolution) do
     query = :available_histogram_metrics
-    cache_key = {__MODULE__, query, slug} |> :erlang.phash2()
+    cache_key = {__MODULE__, query, slug} |> Sanbase.Cache.hash()
     fun = fn -> Metric.available_histogram_metrics_for_slug(%{slug: slug}) end
     maybe_register_and_get(cache_key, fun, slug, query)
   end
@@ -75,7 +75,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
 
     cache_key =
       {__MODULE__, :available_slugs_for_metric, metric}
-      |> :erlang.phash2()
+      |> Sanbase.Cache.hash()
 
     {:ok, slugs_for_metric} =
       Sanbase.Cache.get_or_store({cache_key, 1800}, fn -> Metric.available_slugs(metric) end)

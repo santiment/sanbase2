@@ -93,7 +93,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectListResolver do
         cache_key =
           {:included_slugs_by_filters,
            %{filter | from: round_datetime(filter.from), to: round_datetime(filter.to)}}
-          |> :erlang.phash2()
+          |> Sanbase.Cache.hash()
 
         {:ok, slugs} =
           Sanbase.Cache.get_or_store(cache_key, fn ->

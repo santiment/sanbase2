@@ -392,7 +392,7 @@ defmodule Sanbase.Metric do
   def available_timeseries_metrics_for_slug(slug) do
     available_metrics =
       Sanbase.Cache.get_or_store(
-        {__MODULE__, :available_metrics_for_slug, slug} |> :erlang.phash2(),
+        {__MODULE__, :available_metrics_for_slug, slug} |> Sanbase.Cache.hash(),
         fn -> available_metrics_for_slug(slug) end
       )
 
@@ -408,7 +408,7 @@ defmodule Sanbase.Metric do
   def available_histogram_metrics_for_slug(slug) do
     available_metrics =
       Sanbase.Cache.get_or_store(
-        {__MODULE__, :available_metrics_for_slug, slug} |> :erlang.phash2(),
+        {__MODULE__, :available_metrics_for_slug, slug} |> Sanbase.Cache.hash(),
         fn -> available_metrics_for_slug(slug) end
       )
 

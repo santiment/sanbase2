@@ -47,7 +47,10 @@ defmodule SanbaseWeb.Graphql.Complexity do
   end
 
   defp interval_seconds(args) do
-    Map.get(args, :interval, "1d")
+    case Map.get(args, :interval, "") do
+      "" -> "1d"
+      interval -> interval
+    end
     |> Sanbase.DateTimeUtils.str_to_sec()
   end
 

@@ -134,7 +134,7 @@ defmodule Sanbase.Comments.Notification do
   defp ntf_reply(
          notify_users_map,
          %{comment: %{parent: %{user: %{email: email}}}} = comment,
-         :insight
+         _
        )
        when is_binary(email) do
     put_event_in_map(notify_users_map, email, comment.id, "ntf_reply")

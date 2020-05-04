@@ -74,6 +74,28 @@ defmodule Sanbase.Comments.NotificationTest do
            }
   end
 
+  test "Don't notify self when author", context do
+    EntityComment.create_and_link(:insight, context.post.id, context.author.id, nil, "comment1")
+    {:ok, comment_notification} = Notification.notify_users()
+    assert comment_notification.notify_users_map == %{insight: %{}, timeline_event: %{}}
+  end
+
+  test "Don't notify self when reply to self", context do
+    {:ok, comment1} =
+      EntityComment.create_and_link(:insight, context.post.id, context.author.id, nil, "comment1")
+
+    EntityComment.create_and_link(
+      :insight,
+      context.post.id,
+      context.author.id,
+      comment1.id,
+      "comment1"
+    )
+
+    {:ok, comment_notification} = Notification.notify_users()
+    assert comment_notification.notify_users_map == %{insight: %{}, timeline_event: %{}}
+  end
+
   defp entity_id(comment_id) do
     (Sanbase.Repo.get_by(Sanbase.Insight.PostComment, comment_id: comment_id) ||
        Sanbase.Repo.get_by(Sanbase.Timeline.TimelineEventComment, comment_id: comment_id)).id

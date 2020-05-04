@@ -78,6 +78,28 @@ defmodule Sanbase.Comments.Notification do
 
   defp ntf_author(
          notify_users_map,
+         %PostComment{
+           comment: %{user_id: commenter_id},
+           post: %{user_id: author_id}
+         },
+         _
+       )
+       when commenter_id == author_id,
+       do: notify_users_map
+
+  defp ntf_author(
+         notify_users_map,
+         %TimelineEventComment{
+           comment: %{user_id: commenter_id},
+           timeline_event: %{user_id: author_id}
+         },
+         _
+       )
+       when commenter_id == author_id,
+       do: notify_users_map
+
+  defp ntf_author(
+         notify_users_map,
          %PostComment{post: %{user: %{email: email}}} = comment,
          :insight
        )
@@ -98,17 +120,21 @@ defmodule Sanbase.Comments.Notification do
 
   defp ntf_reply(
          notify_users_map,
-         %PostComment{comment: %{parent: %{user: %{email: email}}}} = comment,
-         :insight
+         %{
+           comment: %{
+             user_id: commenter_id,
+             parent: %{user_id: parrent_commenter_id}
+           }
+         },
+         _
        )
-       when is_binary(email) do
-    put_event_in_map(notify_users_map, email, comment.id, "ntf_reply")
-  end
+       when commenter_id == parrent_commenter_id,
+       do: notify_users_map
 
   defp ntf_reply(
          notify_users_map,
-         %TimelineEventComment{comment: %{parent: %{user: %{email: email}}}} = comment,
-         :timeline_event
+         %{comment: %{parent: %{user: %{email: email}}}} = comment,
+         _
        )
        when is_binary(email) do
     put_event_in_map(notify_users_map, email, comment.id, "ntf_reply")

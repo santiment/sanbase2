@@ -418,7 +418,9 @@ defmodule Sanbase.Billing.Subscription do
   end
 
   defp active_subscriptions_query(query) do
-    from(s in query, where: s.status == "active" or s.status == "trialing")
+    from(s in query,
+      where: s.status == "active" or s.status == "trialing" or s.status == "past_due"
+    )
   end
 
   defp join_plan_and_product_query(query) do

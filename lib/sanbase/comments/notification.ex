@@ -170,6 +170,7 @@ defmodule Sanbase.Comments.Notification do
       |> Enum.reject(&(&1.comment.id == comment.comment.parent_id))
       |> Enum.map(& &1.comment.user.email)
       |> Enum.reject(&(&1 == nil || &1 == comment.comment.user.email))
+      |> Enum.dedup()
 
     put_event_in_map(
       notify_users_map,
@@ -190,6 +191,8 @@ defmodule Sanbase.Comments.Notification do
     comment = post_comment.comment
     events = notify_users_map[email] || []
 
+    events = events |> Enum.reject(fn event -> event.comment_id == post_comment.id end)
+
     new_event = %{
       comment_id: post_comment.id,
       entity: "insight",
@@ -207,6 +210,8 @@ defmodule Sanbase.Comments.Notification do
   defp put_event_in_map(notify_users_map, email, feed_comment, event_type, :timeline_event) do
     comment = feed_comment.comment
     events = notify_users_map[email] || []
+
+    events = events |> Enum.reject(fn event -> event.comment_id == feed_comment.id end)
 
     new_event = %{
       comment_id: feed_comment.id,
@@ -302,6 +307,9 @@ defmodule Sanbase.Comments.Notification do
   end
 
   defp merge_events(map1, map2) do
-    Enum.into(map1, %{}, fn {email, list} -> {email, list ++ (map2[email] || [])} end)
+    Enum.reduce(map2, map1, fn {email, list}, acc ->
+      new_list = list ++ (acc[email] || [])
+      Map.put(acc, email, new_list)
+    end)
   end
 end

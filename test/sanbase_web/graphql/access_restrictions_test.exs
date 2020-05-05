@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.AccessRestrictionsTest do
-  use SanbaseWeb.ConnCase
+  use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers

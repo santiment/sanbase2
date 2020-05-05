@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.Exchanges.MarketDepthTest do
-  use SanbaseWeb.ConnCase
+  use SanbaseWeb.ConnCase, async: false
 
   import Mock
   import SanbaseWeb.Graphql.TestHelpers

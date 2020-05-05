@@ -4,19 +4,24 @@ defmodule Sanbase.Signal.PriceVolumeDiffTest do
   import Mock
   import Sanbase.Factory
   import ExUnit.CaptureLog
+  import Sanbase.TestHelpers
 
   alias Sanbase.Signal.{Trigger, UserTrigger, Evaluator}
   alias Sanbase.Signal.Trigger.PriceVolumeDifferenceTriggerSettings
 
   @ticker "SAN"
   @cmc_id "santiment"
-  setup_with_mocks([
+  setup_all_with_mocks([
     {Sanbase.GoogleChart, [],
      [
        build_embedded_chart: fn _, _, _, _ -> [%{image: %{url: "somelink"}}] end,
        build_embedded_chart: fn _, _, _ -> [%{image: %{url: "somelink"}}] end
      ]}
   ]) do
+    []
+  end
+
+  setup do
     Sanbase.Signal.Evaluator.Cache.clear()
 
     Tesla.Mock.mock(fn

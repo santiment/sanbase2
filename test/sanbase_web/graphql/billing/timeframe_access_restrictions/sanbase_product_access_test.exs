@@ -1,23 +1,24 @@
 defmodule Sanbase.Billing.SanbaseProductAccessTest do
-  use SanbaseWeb.ConnCase
+  use SanbaseWeb.ConnCase, async: false
 
   import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.TestHelpers
 
-  alias Sanbase.Signal.UserTrigger
   alias Sanbase.Billing.Plan.SanbaseAccessChecker
   alias Sanbase.Metric
 
   @triggers_limit_count 10
   @product "SANBASE"
 
-  setup_with_mocks([
-    {Sanbase.Price, [], [timeseries_data: fn _, _, _, _ -> price_resp() end]},
-    {Metric, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> metric_resp() end]},
-    {UserTrigger, [:passthrough], [triggers_count_for: fn _ -> @triggers_limit_count end]}
+  setup_all_with_mocks([
+    {Sanbase.Price, [:passthrough], [timeseries_data: fn _, _, _, _ -> price_resp() end]},
+    {Sanbase.Metric, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> metric_resp() end]},
+    {Sanbase.Signal.UserTrigger, [:passthrough],
+     [triggers_count_for: fn _ -> @triggers_limit_count end]}
   ]) do
-    :ok
+    []
   end
 
   setup do
@@ -35,6 +36,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       slug = context.project.slug
       metric = v2_free_metric(context.next_integer.())
       query = metric_query(metric, slug, from, to)
+
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -44,6 +46,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "can access FREE queries for all time", context do
       {from, to} = from_to(2500, 0)
       query = history_price_query(context.project, from, to)
+
       result = execute_query(context.conn, query, "historyPrice")
 
       assert_called(Sanbase.Price.timeseries_data(:_, from, to, :_))
@@ -55,6 +58,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       slug = context.project.slug
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
       query = metric_query(metric, slug, from, to)
+
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
@@ -66,6 +70,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       {from, to} = from_to(2 * 365 + 1, 31)
       slug = context.project.slug
       query = network_growth_query(slug, from, to)
+
       result = execute_query(context.conn, query, "networkGrowth")
 
       assert_called(Metric.timeseries_data("network_growth", :_, :_, :_, :_, :_))
@@ -78,6 +83,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       slug = context.project.slug
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
       query = metric_query(metric, slug, from, to)
+
       result = execute_query(context.conn, query, "getMetric")
 
       refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -90,6 +96,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       slug = context.project.slug
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
       query = metric_query(metric, slug, from, to)
+
       result = execute_query_with_error(context.conn, query, "getMetric")
 
       refute called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
@@ -100,6 +107,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       {from, to} = from_to(31, 29)
       slug = context.project.slug
       query = network_growth_query(slug, from, to)
+
       result = execute_query(context.conn, query, "networkGrowth")
 
       refute called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
@@ -111,6 +119,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       {from, to} = from_to(20, 10)
       slug = context.project.slug
       query = network_growth_query(slug, from, to)
+
       result = execute_query_with_error(context.conn, query, "networkGrowth")
 
       refute called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
@@ -121,6 +130,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       {from, to} = from_to(2 * 365 - 1, 31)
       slug = context.project.slug
       query = network_growth_query(slug, from, to)
+
       result = execute_query(context.conn, query, "networkGrowth")
 
       assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
@@ -132,6 +142,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       slug = context.project.slug
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
       query = metric_query(metric, slug, from, to)
+
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -145,6 +156,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       to = Timex.now()
       slug = context.project.slug
       query = network_growth_query(slug, from, to)
+
       result = execute_query(context.conn, query, "networkGrowth")
 
       assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
@@ -156,6 +168,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       {from, to} = from_to(18 * 30 + 1, 0)
       slug = context.project.slug
       query = network_growth_query(slug, from, to)
+
       result = execute_query(context.conn, query, "networkGrowth")
 
       assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
@@ -174,6 +187,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       slug = context.project.slug
       metric = v2_free_metric(context.next_integer.())
       query = metric_query(metric, slug, from, to)
+
       result = execute_query(context.conn, query, "getMetric")
 
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
@@ -183,6 +197,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "can access FREE queries for all time", context do
       {from, to} = from_to(2500, 0)
       query = history_price_query(context.project, from, to)
+
       result = execute_query(context.conn, query, "historyPrice")
 
       assert_called(Sanbase.Price.timeseries_data(:_, from, to, :_))
@@ -194,7 +209,9 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       slug = context.project.slug
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :pro)
       query = metric_query(metric, slug, from, to)
+
       result = execute_query(context.conn, query, "getMetric")
+
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
@@ -203,6 +220,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       {from, to} = from_to(5 * 365 + 1, 10)
       slug = context.project.slug
       query = network_growth_query(slug, from, to)
+
       result = execute_query(context.conn, query, "networkGrowth")
 
       refute called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
@@ -213,6 +231,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       {from, to} = from_to(5 * 365 - 1, 10)
       slug = context.project.slug
       query = network_growth_query(slug, from, to)
+
       result = execute_query(context.conn, query, "networkGrowth")
 
       assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
@@ -223,6 +242,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       {from, to} = from_to(10, 0)
       slug = context.project.slug
       query = network_growth_query(slug, from, to)
+
       result = execute_query(context.conn, query, "networkGrowth")
 
       assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
@@ -233,6 +253,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       {from, to} = from_to(5 * 365 + 1, 10)
       slug = context.project.slug
       query = network_growth_query(slug, from, to)
+
       result = execute_query(context.conn, query, "networkGrowth")
 
       refute called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
@@ -243,6 +264,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       {from, to} = from_to(5 * 365 - 1, 10)
       slug = context.project.slug
       query = network_growth_query(slug, from, to)
+
       result = execute_query(context.conn, query, "networkGrowth")
 
       assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
@@ -251,12 +273,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   end
 
   describe "for SANbase when signals limit reached" do
-    setup_with_mocks([
-      {UserTrigger, [:passthrough], [triggers_count_for: fn _ -> @triggers_limit_count end]}
-    ]) do
-      :ok
-    end
-
     test "user with FREE plan cannot create new trigger", context do
       assert create_trigger_mutation_with_error(context) ==
                SanbaseAccessChecker.signals_limits_upgrade_message()
@@ -276,12 +292,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   end
 
   describe "for SanAPI when signals limit reached" do
-    setup_with_mocks([
-      {UserTrigger, [:passthrough], [triggers_count_for: fn _ -> @triggers_limit_count end]}
-    ]) do
-      :ok
-    end
-
     test "with BASIC plan can create new trigger", context do
       insert(:subscription_essential, user: context.user)
 
@@ -295,17 +305,18 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
   end
 
-  describe "for FREE plan when signals limits not reached" do
-    setup_with_mocks([
-      {UserTrigger, [:passthrough], [triggers_count_for: fn _ -> @triggers_limit_count - 1 end]}
-    ]) do
-      :ok
-    end
+  # describe "for FREE plan when signals limits not reached" do
+  #   # Override the setup_all mock
+  #   setup_with_mocks([
+  #     {UserTrigger, [:passthrough], [triggers_count_for: fn _ -> @triggers_limit_count - 1 end]}
+  #   ]) do
+  #     []
+  #   end
 
-    test "user can create new trigger", context do
-      assert create_trigger_mutation(context)["trigger"]["id"] != nil
-    end
-  end
+  #   test "user can create new trigger", context do
+  #     assert create_trigger_mutation(context)["trigger"]["id"] != nil
+  #   end
+  # end
 
   # Private functions
 

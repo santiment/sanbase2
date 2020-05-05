@@ -727,7 +727,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     }
   end
 
-  defp create_insight(context, opts \\ %{}) do
+  defp create_insight(context, opts) do
     params =
       %{
         state: Post.approved_state(),

@@ -5,10 +5,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApiTest do
   import Sanbase.InfluxdbHelpers
 
   alias Sanbase.ExternalServices.Coinmarketcap.WebApi
-  alias Sanbase.Prices.Store
 
   @moduletag capture_log: true
-  @total_market_measurement "TOTAL_MARKET_total-market"
 
   setup do
     setup_prices_influxdb()

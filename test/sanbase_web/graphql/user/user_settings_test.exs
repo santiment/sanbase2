@@ -5,12 +5,16 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
 
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
-  import Mock
+  import Sanbase.TestHelpers
 
-  setup_with_mocks([
+  setup_all_with_mocks([
     {Sanbase.Email.Mailchimp, [:passthrough], [unsubscribe_email: fn _ -> :ok end]},
     {Sanbase.Email.Mailchimp, [:passthrough], [subscribe_email: fn _ -> :ok end]}
   ]) do
+    []
+  end
+
+  setup do
     user = insert(:user, email: "test@example.com")
     conn = setup_jwt_auth(build_conn(), user)
 

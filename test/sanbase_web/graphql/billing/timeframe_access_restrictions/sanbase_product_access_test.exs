@@ -6,6 +6,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.TestHelpers
 
+  alias Sanbase.Signal.UserTrigger
   alias Sanbase.Billing.Plan.SanbaseAccessChecker
   alias Sanbase.Metric
 

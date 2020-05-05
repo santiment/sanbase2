@@ -25,8 +25,7 @@ defmodule Sanbase.Comments.NotificationTest do
     {:ok, comment1} =
       EntityComment.create_and_link(:insight, context.post.id, context.user.id, nil, "comment1")
 
-    {:ok, comment2} =
-      EntityComment.create_and_link(:insight, context.post.id, user2.id, nil, "comment2")
+    EntityComment.create_and_link(:insight, context.post.id, user2.id, nil, "comment2")
 
     {:ok, comment3} =
       EntityComment.create_and_link(
@@ -46,54 +45,23 @@ defmodule Sanbase.Comments.NotificationTest do
         "an event comment"
       )
 
-    {:ok, comment_notification} = Notification.notify_users()
+    comment_notification = Notification.build_ntf_events_map()
 
     assert comment_notification.last_insight_comment_id == entity_id(comment3.id)
     assert comment_notification.last_timeline_event_comment_id == entity_id(comment4.id)
 
-    assert comment_notification.notify_users_map == %{
-             insight: %{
-               context.user.email => %{
-                 entity_id(comment2.id) => ["ntf_previously_commented"],
-                 entity_id(comment3.id) => ["ntf_reply"]
-               },
-               user2.email => %{
-                 entity_id(comment3.id) => ["ntf_previously_commented"]
-               },
-               context.author.email => %{
-                 entity_id(comment1.id) => ["ntf_author"],
-                 entity_id(comment2.id) => ["ntf_author"],
-                 entity_id(comment3.id) => ["ntf_author"]
-               }
-             },
-             timeline_event: %{
-               context.author.email => %{
-                 entity_id(comment4.id) => ["ntf_author"]
-               }
-             }
-           }
-  end
+    author_data = comment_notification.notify_users_map[context.author.email]
+    assert length(author_data) == 4
 
-  test "Don't notify self when author", context do
-    EntityComment.create_and_link(:insight, context.post.id, context.author.id, nil, "comment1")
-    {:ok, comment_notification} = Notification.notify_users()
-    assert comment_notification.notify_users_map == %{insight: %{}, timeline_event: %{}}
-  end
+    author_events =
+      Enum.map(author_data, fn %{event: event} -> event end)
+      |> Enum.filter(&(&1 == "ntf_author"))
 
-  test "Don't notify self when reply to self", context do
-    {:ok, comment1} =
-      EntityComment.create_and_link(:insight, context.post.id, context.author.id, nil, "comment1")
+    assert length(author_events) == 4
 
-    EntityComment.create_and_link(
-      :insight,
-      context.post.id,
-      context.author.id,
-      comment1.id,
-      "comment1"
-    )
-
-    {:ok, comment_notification} = Notification.notify_users()
-    assert comment_notification.notify_users_map == %{insight: %{}, timeline_event: %{}}
+    assert Enum.map(comment_notification.notify_users_map[context.user.email], fn %{event: event} ->
+             event
+           end) == ["ntf_previously_commented", "ntf_reply"]
   end
 
   defp entity_id(comment_id) do

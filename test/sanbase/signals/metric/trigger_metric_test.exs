@@ -1,7 +1,6 @@
 defmodule Sanbase.Signal.TriggerMetricTest do
   use Sanbase.DataCase, async: false
 
-  import Mock
   import Sanbase.Factory
   import Sanbase.TestHelpers
   import ExUnit.CaptureLog
@@ -12,20 +11,24 @@ defmodule Sanbase.Signal.TriggerMetricTest do
   alias Sanbase.Signal.Trigger.MetricTriggerSettings
 
   @metrics_5m_min_interval Metric.available_metrics(min_interval_less_or_equal: "5m")
+  setup_all_with_mocks([
+    {Sanbase.GoogleChart, [],
+     [
+       build_embedded_chart: fn _, _, _, _ -> [%{image: %{url: "somelink"}}] end,
+       build_embedded_chart: fn _, _, _ -> [%{image: %{url: "somelink"}}] end
+     ]},
+    {
+      Sanbase.Timeline.TimelineEvent,
+      [:passthrough],
+      maybe_create_event_async: fn user_trigger_tuple, _, _ -> user_trigger_tuple end
+    },
+    {Metric, [:passthrough], timeseries_data: fn _, _, _, _, _ -> {:ok, []} end}
+  ]) do
+    []
+  end
 
   describe "metrics with text selector" do
-    setup_with_mocks([
-      {Sanbase.GoogleChart, [],
-       [
-         build_embedded_chart: fn _, _, _, _ -> [%{image: %{url: "somelink"}}] end,
-         build_embedded_chart: fn _, _, _ -> [%{image: %{url: "somelink"}}] end
-       ]},
-      {
-        Sanbase.Timeline.TimelineEvent,
-        [:passthrough],
-        maybe_create_event_async: fn user_trigger_tuple, _, _ -> user_trigger_tuple end
-      }
-    ]) do
+    setup do
       # Clean children on exit, otherwise DB calls from async tasks can be attempted
       clean_task_supervisor_children()
       Sanbase.Signal.Evaluator.Cache.clear()
@@ -77,19 +80,7 @@ defmodule Sanbase.Signal.TriggerMetricTest do
   end
 
   describe "metrics with slug selector" do
-    setup_with_mocks([
-      {Sanbase.GoogleChart, [],
-       [
-         build_embedded_chart: fn _, _, _, _ -> [%{image: %{url: "somelink"}}] end,
-         build_embedded_chart: fn _, _, _ -> [%{image: %{url: "somelink"}}] end
-       ]},
-      {
-        Sanbase.Timeline.TimelineEvent,
-        [:passthrough],
-        maybe_create_event_async: fn user_trigger_tuple, _, _ -> user_trigger_tuple end
-      },
-      {Metric, [:passthrough], timeseries_data: fn _, _, _, _, _ -> {:ok, []} end}
-    ]) do
+    setup do
       # Clean children on exit, otherwise DB calls from async tasks can be attempted
       clean_task_supervisor_children()
 

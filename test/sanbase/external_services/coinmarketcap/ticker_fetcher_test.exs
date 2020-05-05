@@ -2,14 +2,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
   use Sanbase.DataCase, async: false
 
   alias Sanbase.ExternalServices.Coinmarketcap.TickerFetcher
-  alias Sanbase.Prices.Store
   alias Sanbase.Model.Project
 
-  import Sanbase.Factory
   import Sanbase.InfluxdbHelpers
-
-  @btc_measurement "BTC_bitcoin"
-  @eth_measurement "ETH_ethereum"
 
   @topic "asset_prices"
 

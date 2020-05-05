@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.ProjectApiIsTrendingTest do
-  use SanbaseWeb.ConnCase
+  use SanbaseWeb.ConnCase, async: false
 
   import Mock
   import Sanbase.Factory

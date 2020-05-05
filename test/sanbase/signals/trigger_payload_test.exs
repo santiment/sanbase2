@@ -4,16 +4,21 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
   import Mock
   import Sanbase.Factory
   import Sanbase.TestHelpers
+
   alias Sanbase.Signal.{UserTrigger, Scheduler}
   alias Sanbase.Signal.Trigger.DailyActiveAddressesSettings
 
-  setup_with_mocks([
+  setup_all_with_mocks([
     {Sanbase.GoogleChart, [],
      [
        build_embedded_chart: fn _, _, _, _ -> [%{image: %{url: "somelink"}}] end,
        build_embedded_chart: fn _, _, _ -> [%{image: %{url: "somelink"}}] end
      ]}
   ]) do
+    []
+  end
+
+  setup do
     Sanbase.Signal.Evaluator.Cache.clear()
     user = insert(:user, email: "test@example.com")
     Sanbase.Auth.UserSettings.update_settings(user, %{signal_notify_email: true})

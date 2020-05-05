@@ -1,8 +1,8 @@
 defmodule Sanbase.MetricTest do
   use Sanbase.DataCase
 
-  import Mock
   import Sanbase.Factory
+  import Sanbase.TestHelpers
 
   alias Sanbase.Metric
 
@@ -14,7 +14,7 @@ defmodule Sanbase.MetricTest do
     %{datetime: @to, value: 20}
   ]
 
-  setup_with_mocks([
+  setup_all_with_mocks([
     {Sanbase.SocialData.SocialVolume, [:passthrough],
      social_volume_projects: fn -> {:ok, ["bitcoin", "santiment"]} end},
     {Sanbase.Clickhouse.Metric, [:passthrough],
@@ -30,6 +30,10 @@ defmodule Sanbase.MetricTest do
     {Sanbase.Clickhouse.TopHolders.MetricAdapter, [:passthrough],
      timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end}
   ]) do
+    []
+  end
+
+  setup do
     [project: insert(:random_erc20_project, slug: "santiment")]
   end
 

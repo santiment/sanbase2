@@ -31,7 +31,6 @@ defmodule Sanbase.Billing.TestSeed do
         }
 
         :persistent_term.put(@key, data)
-
         data
 
       _ ->

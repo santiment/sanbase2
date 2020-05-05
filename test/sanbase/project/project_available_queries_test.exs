@@ -1,13 +1,13 @@
 defmodule Sanbase.Project.AvailableQueriesTest do
   use Sanbase.DataCase, async: false
 
-  import Mock
   import Sanbase.Factory
+  import Sanbase.TestHelpers
 
   alias Sanbase.Model.Project.AvailableQueries
 
   @slug_metrics ["priceVolumeDiff", "socialGainersLosersStatus"] |> Enum.sort()
-  setup_with_mocks([
+  setup_all_with_mocks([
     {Sanbase.SocialData.SocialVolume, [:passthrough],
      [social_volume_projects: fn -> {:ok, ["bitcoin", "ethereum", "santiment"]} end]}
   ]) do

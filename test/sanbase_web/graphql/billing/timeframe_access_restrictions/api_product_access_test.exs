@@ -1,7 +1,8 @@
 defmodule Sanbase.Billing.ApiProductAccessTest do
-  use SanbaseWeb.ConnCase
+  use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
+  import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
   import Mock
 
@@ -10,13 +11,16 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
   @product "SANAPI"
 
-  setup_with_mocks([
+  setup_all_with_mocks([
     {Sanbase.Price, [], [timeseries_data: fn _, _, _, _ -> price_resp() end]},
-    {Metric, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> metric_resp() end]}
+    {Sanbase.Metric, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> metric_resp() end]}
   ]) do
+    []
+  end
+
+  setup do
     user = insert(:user)
     project = insert(:random_erc20_project)
-
     {:ok, apikey} = Apikey.generate_apikey(user)
     conn = setup_apikey_auth(build_conn(), apikey)
 

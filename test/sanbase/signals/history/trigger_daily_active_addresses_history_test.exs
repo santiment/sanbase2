@@ -1,16 +1,16 @@
 defmodule Sanbase.Signal.TriggerDailyActiveAddressesHistoryTest do
   use Sanbase.DataCase, async: false
 
-  import Mock
   import Sanbase.Factory
+  import Sanbase.TestHelpers
 
   alias Sanbase.Signal.UserTrigger
 
-  setup_with_mocks([
+  setup_all_with_mocks([
     {Sanbase.Metric, [:passthrough],
      [timeseries_data: fn "daily_active_addresses", _, _, _, _, _ -> {:ok, daa_resp()} end]}
   ]) do
-    :ok
+    []
   end
 
   setup do

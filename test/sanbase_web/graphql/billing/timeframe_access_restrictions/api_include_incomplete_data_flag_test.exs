@@ -1,8 +1,9 @@
 defmodule Sanbase.Billing.ApiIncludeIncompleteDataFlagTest do
-  use SanbaseWeb.ConnCase
+  use SanbaseWeb.ConnCase, async: false
 
   import Mock
   import Sanbase.Factory
+  import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Auth.Apikey
@@ -10,9 +11,13 @@ defmodule Sanbase.Billing.ApiIncludeIncompleteDataFlagTest do
 
   @moduletag capture_log: true
 
-  setup_with_mocks([
-    {Metric, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> metric_resp() end]}
+  setup_all_with_mocks([
+    {Sanbase.Metric, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> metric_resp() end]}
   ]) do
+    []
+  end
+
+  setup do
     user = insert(:user)
     insert(:subscription_premium, user: user)
 

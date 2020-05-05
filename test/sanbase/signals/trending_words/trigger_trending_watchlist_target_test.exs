@@ -3,6 +3,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsWatchlistTargetTest do
 
   import Mock
   import Sanbase.Factory
+  import Sanbase.TestHelpers
 
   alias Sanbase.UserList
   alias Sanbase.Signal.UserTrigger
@@ -10,13 +11,17 @@ defmodule Sanbase.Signal.TriggerTrendingWordsWatchlistTargetTest do
 
   alias Sanbase.Signal.Trigger.TrendingWordsTriggerSettings
 
-  setup_with_mocks([
+  setup_all_with_mocks([
     {Sanbase.GoogleChart, [],
      [
        build_embedded_chart: fn _, _, _, _ -> [%{image: %{url: "somelink"}}] end,
        build_embedded_chart: fn _, _, _ -> [%{image: %{url: "somelink"}}] end
      ]}
   ]) do
+    []
+  end
+
+  setup do
     Sanbase.Signal.Evaluator.Cache.clear()
 
     user = insert(:user)

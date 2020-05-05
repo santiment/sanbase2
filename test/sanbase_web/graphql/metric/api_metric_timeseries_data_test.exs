@@ -139,7 +139,48 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     end
   end
 
+  test "complexity for clickhouse metrics is smaller", context do
+    slug = "ethereum"
+    to = ~U[2020-05-01 00:00:00Z]
+    from = ~U[2009-01-01 00:00:00Z]
+    interval = "1h"
+
+    ch_metric_error =
+      get_timeseries_metric(context.conn, "mvrv_usd", slug, from, to, interval, :last)
+      |> get_in(["errors"])
+      |> List.first()
+      |> get_in(["message"])
+
+    social_metric_error =
+      get_timeseries_metric(
+        context.conn,
+        "social_volume_telegram",
+        slug,
+        from,
+        to,
+        interval,
+        :last
+      )
+      |> get_in(["errors"])
+      |> List.first()
+      |> get_in(["message"])
+
+    ch_metric_complexity = error_to_complexity(ch_metric_error)
+    social_metric_complexity = error_to_complexity(social_metric_error)
+
+    assert ch_metric_complexity + 1 < social_metric_complexity
+  end
+
   # Private functions
+
+  defp error_to_complexity(error_msg) do
+    error_msg
+    |> String.split("complexity is ")
+    |> List.last()
+    |> String.split(" and maximum is")
+    |> List.first()
+    |> String.to_integer()
+  end
 
   defp get_timeseries_metric(conn, metric, slug, from, to, interval, aggregation) do
     query = get_timeseries_query(metric, slug, from, to, interval, aggregation)

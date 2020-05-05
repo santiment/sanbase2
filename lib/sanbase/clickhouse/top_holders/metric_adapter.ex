@@ -13,6 +13,8 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   @supported_infrastructures ["eosio.token/EOS", "EOS", "ETH", "BNB", "BEP2"]
 
+  @default_complexity_weight 0.3
+
   def supported_infrastructures(), do: @supported_infrastructures
 
   @infrastructure_to_table %{
@@ -116,7 +118,8 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
        default_aggregation: :last,
        available_aggregations: @aggregations,
        available_selectors: [:slug, :holders_count],
-       data_type: data_type
+       data_type: data_type,
+       complexity_weight: @default_complexity_weight
      }}
   end
 
@@ -131,6 +134,9 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def has_incomplete_data?(_), do: false
+
+  @impl Sanbase.Metric.Behaviour
+  def complexity_weight(_), do: @default_complexity_weight
 
   @impl Sanbase.Metric.Behaviour
   def available_aggregations(), do: @aggregations

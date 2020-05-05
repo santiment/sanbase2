@@ -17,8 +17,13 @@ defmodule Sanbase.Price.MetricAdapter do
   @restricted_metrics Enum.filter(@access_map, fn {_, level} -> level == :restricted end)
                       |> Keyword.keys()
 
+  @default_complexity_weight 0.3
+
   @impl Sanbase.Metric.Behaviour
   def has_incomplete_data?(_), do: false
+
+  @impl Sanbase.Metric.Behaviour
+  def complexity_weight(_), do: @default_complexity_weight
 
   @impl Sanbase.Metric.Behaviour
   def timeseries_data(metric, %{slug: slug}, from, to, interval, aggregation) do
@@ -63,7 +68,8 @@ defmodule Sanbase.Price.MetricAdapter do
        default_aggregation: @default_aggregation,
        available_aggregations: @aggregations,
        available_selectors: [:slug],
-       data_type: :timeseries
+       data_type: :timeseries,
+       complexity_weight: @default_complexity_weight
      }}
   end
 

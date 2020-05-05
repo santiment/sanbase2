@@ -42,6 +42,8 @@ defmodule Sanbase.Clickhouse.Metric do
   @incomplete_data_map FileHandler.incomplete_data_map()
   @tables_list FileHandler.table_map() |> Map.values() |> List.flatten() |> Enum.uniq()
 
+  @default_complexity_weight 0.3
+
   @type slug :: String.t()
   @type metric :: String.t()
   @type interval :: String.t()
@@ -60,6 +62,9 @@ defmodule Sanbase.Clickhouse.Metric do
 
   @impl Sanbase.Metric.Behaviour
   def has_incomplete_data?(metric), do: Map.get(@incomplete_data_map, metric)
+
+  @impl Sanbase.Metric.Behaviour
+  def complexity_weight(_), do: @default_complexity_weight
 
   @doc ~s"""
   Get a given metric for a slug and time range. The metric's aggregation
@@ -121,7 +126,8 @@ defmodule Sanbase.Clickhouse.Metric do
        default_aggregation: default_aggregation,
        available_aggregations: @plain_aggregations,
        available_selectors: [:slug],
-       data_type: Map.get(@metrics_data_type_map, metric)
+       data_type: Map.get(@metrics_data_type_map, metric),
+       complexity_weight: @default_complexity_weight
      }}
   end
 

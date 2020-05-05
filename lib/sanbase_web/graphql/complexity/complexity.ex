@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.Complexity do
   require Logger
 
+  @compile :inline_list_funcs
+  @compile inline: [calculate_complexity: 2, interval_seconds: 1, years_difference_weighted: 2]
   @doc ~S"""
   Internal services use basic authentication. Return complexity = 0 to allow them
   to access everything without limits.
@@ -40,9 +42,18 @@ defmodule SanbaseWeb.Graphql.Complexity do
   defp calculate_complexity(%{from: from, to: to} = args, child_complexity) do
     seconds_difference = Timex.diff(from, to, :seconds) |> abs
     years_difference_weighted = years_difference_weighted(from, to)
-    interval_seconds = interval_seconds(args) |> max(60)
+    interval_seconds = interval_seconds(args) |> max(1)
 
-    (child_complexity * (seconds_difference / interval_seconds) * years_difference_weighted)
+    complexity_weight =
+      with metric when is_binary(metric) <- Process.get(:__metric_name_from_get_metric_api__),
+           weight when is_number(weight) <- Sanbase.Metric.complexity_weight(metric) do
+        weight
+      else
+        _ -> 1
+      end
+
+    (child_complexity * (seconds_difference / interval_seconds) * years_difference_weighted *
+       complexity_weight)
     |> Sanbase.Math.to_integer()
   end
 

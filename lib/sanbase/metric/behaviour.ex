@@ -20,7 +20,8 @@ defmodule Sanbase.Metric.Behaviour do
           default_aggregation: atom(),
           available_aggregations: list(atom()),
           available_selectors: list(atom()),
-          data_type: available_data_types()
+          data_type: available_data_types(),
+          complexity_weight: number()
         }
 
   @type histogram_value :: String.t() | float() | integer()
@@ -82,6 +83,8 @@ defmodule Sanbase.Metric.Behaviour do
             ) :: {:ok, list(slug())} | {:error, String.t()}
 
   @callback has_incomplete_data?(metric :: metric) :: true | false
+
+  @callback complexity_weight(metric :: metric) :: number
 
   @callback first_datetime(metric, selector) ::
               {:ok, DateTime.t()} | {:error, String.t()}

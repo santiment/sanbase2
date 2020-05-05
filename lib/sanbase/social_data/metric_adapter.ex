@@ -43,8 +43,13 @@ defmodule Sanbase.SocialData.MetricAdapter do
   @access_map Enum.reduce(@metrics, %{}, fn metric, acc -> Map.put(acc, metric, :restricted) end)
   @min_plan_map Enum.reduce(@metrics, %{}, fn metric, acc -> Map.put(acc, metric, :free) end)
 
+  @default_complexity_weight 1
+
   @impl Sanbase.Metric.Behaviour
   def has_incomplete_data?(_), do: false
+
+  @impl Sanbase.Metric.Behaviour
+  def complexity_weight(_), do: @default_complexity_weight
 
   @impl Sanbase.Metric.Behaviour
   def timeseries_data(metric, %{slug: slug}, from, to, interval, _aggregation)
@@ -196,7 +201,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
        default_aggregation: :sum,
        available_aggregations: @aggregations,
        available_selectors: selectors,
-       data_type: :histogram
+       data_type: :timeseries,
+       complexity_weight: @default_complexity_weight
      }}
   end
 

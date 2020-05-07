@@ -1,4 +1,4 @@
-defmodule Sanbase.Metric.PostgresData do
+defmodule Sanbase.Metric.MetricPostgresData do
   use Ecto.Schema
 
   import Ecto.Changeset

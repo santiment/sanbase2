@@ -14,7 +14,7 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Vote
   alias Sanbase.Insight.{Post, PostImage}
   alias Sanbase.Timeline.TimelineEvent
-  alias Sanbase.Metric
+  alias Sanbase.Metric.MetricPostgresData
 
   require Logger
 
@@ -54,7 +54,7 @@ defmodule Sanbase.Insight.Post do
       on_delete: :delete_all
     )
 
-    many_to_many(:metrics, Metric.PostgresData,
+    many_to_many(:metrics, MetricPostgresData,
       join_through: "posts_metrics",
       join_keys: [post_id: :id, metric_id: :id],
       on_replace: :delete,
@@ -83,7 +83,7 @@ defmodule Sanbase.Insight.Post do
       :price_chart_project_id
     ])
     |> Tag.put_tags(attrs)
-    |> Metric.PostgresData.put_metrics(attrs)
+    |> MetricPostgresData.put_metrics(attrs)
     |> images_cast(attrs)
     |> validate_required([:user_id, :title])
     |> validate_length(:title, max: 140)

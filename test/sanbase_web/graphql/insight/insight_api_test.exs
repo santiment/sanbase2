@@ -581,24 +581,25 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         insert(:post,
           user: user,
           ready_state: Post.draft(),
-          tags: [tag1]
+          tags: [tag1],
+          metrics: [build(:metric_postgres, name: "nvt")]
         )
 
       mutation = """
         mutation {
-          updateInsight(id: #{post.id} title: "Awesome post2", text: "Example body2", tags: ["#{
-        tag2.name
-      }"], imageUrls: ["#{image_url}"]) {
-            id
-            title
-            text
-            images{
-              imageUrl
-              contentHash
-            }
-            tags {
-              name
-            }
+          updateInsight(
+            id: #{post.id}
+            title: "Awesome post2"
+            text: "Example body2"
+            tags: ["#{tag2.name}"]
+            imageUrls: ["#{image_url}"]
+            metrics: ["nvt"]) {
+              id
+              title
+              text
+              metrics{ name }
+              images{ imageUrl contentHash }
+              tags { name }
           }
         }
       """

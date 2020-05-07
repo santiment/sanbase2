@@ -61,7 +61,14 @@ defmodule Sanbase.Factory do
       text: "Text of the post",
       is_pulse: false,
       is_paywall_required: false,
-      tags: [build(:tag), build(:tag)]
+      tags: [build(:tag), build(:tag)],
+      metrics: [build(:metric_postgres)]
+    }
+  end
+
+  def metric_postgres_factory() do
+    %Sanbase.Metric.MetricPostgresData{
+      name: Sanbase.Metric.available_metrics() |> Enum.random()
     }
   end
 

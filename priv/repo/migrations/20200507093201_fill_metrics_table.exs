@@ -11,7 +11,7 @@ defmodule Sanbase.Repo.Migrations.AddMetricsTable do
         %{name: metric, inserted_at: now, updated_at: now}
       end)
 
-    Sanbase.Repo.insert_all(Sanbase.Metric.PostgresData, metrics)
+    Sanbase.Repo.insert_all(Sanbase.Metric.MetricPostgresData, metrics)
   end
 
   def down(), do: :ok

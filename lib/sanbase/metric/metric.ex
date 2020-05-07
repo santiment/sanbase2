@@ -275,6 +275,21 @@ defmodule Sanbase.Metric do
   def human_readable_name(metric), do: metric_not_available_error(metric)
 
   @doc ~s"""
+  Get the complexity weight of a metric. This is a multiplier applied to the
+  computed complexity. Clickhouse is faster compared to Elasticsearch for fetching
+  timeseries data, so it has a smaller weight
+  """
+  def complexity_weight(metric)
+
+  for %{metric: metric, module: module} <- @metric_module_mapping do
+    def complexity_weight(unquote(metric)) do
+      unquote(module).complexity_weight(unquote(metric))
+    end
+  end
+
+  def complexity_weight(metric), do: metric_not_available_error(metric)
+
+  @doc ~s"""
   Get metadata for a given metric. This includes:
   - The minimal interval for which the metric is available
     (every 5 minutes, once a day, etc.)

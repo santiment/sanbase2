@@ -28,8 +28,13 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   @free_metrics @metrics
   @restricted_metrics []
 
+  @default_complexity_weight 0.3
+
   @impl Sanbase.Metric.Behaviour
   def has_incomplete_data?(_), do: false
+
+  @impl Sanbase.Metric.Behaviour
+  def complexity_weight(_), do: @default_complexity_weight
 
   @impl Sanbase.Metric.Behaviour
   def timeseries_data(metric, %{slug: slug}, from, to, interval, _aggregation) do
@@ -147,7 +152,8 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
        default_aggregation: :sum,
        available_aggregations: [:sum],
        available_selectors: [:slug],
-       data_type: :timeseries
+       data_type: :timeseries,
+       complexity_weight: @default_complexity_weight
      }}
   end
 

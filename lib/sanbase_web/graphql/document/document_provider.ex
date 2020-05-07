@@ -29,6 +29,10 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
   def pipeline(%Absinthe.Plug.Request.Query{pipeline: pipeline}) do
     pipeline
     |> Absinthe.Pipeline.insert_before(
+      Absinthe.Phase.Document.Complexity.Analysis,
+      SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess
+    )
+    |> Absinthe.Pipeline.insert_before(
       Absinthe.Phase.Document.Execution.Resolution,
       SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument
     )
@@ -166,4 +170,29 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.Idempotent do
   use Absinthe.Phase
   @spec run(Absinthe.Blueprint.t(), Keyword.t()) :: Absinthe.Phase.result_t()
   def run(bp_root, _), do: {:ok, bp_root}
+end
+
+defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do
+  use Absinthe.Phase
+  @spec run(Absinthe.Blueprint.t(), Keyword.t()) :: Absinthe.Phase.result_t()
+  def run(bp_root, _) do
+    bp_root.operations
+    |> Enum.flat_map(fn %{selections: selections} ->
+      selections
+      |> Enum.map(fn
+        %{name: "getMetric", argument_data: %{metric: metric}} ->
+          metric
+
+        _ ->
+          nil
+      end)
+      |> Enum.reject(&is_nil/1)
+    end)
+    |> case do
+      [metric] -> Process.put(:__metric_name_from_get_metric_api__, metric)
+      _ -> :ok
+    end
+
+    {:ok, bp_root}
+  end
 end

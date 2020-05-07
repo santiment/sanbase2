@@ -100,6 +100,14 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def popular_search_term_factory() do
+    %Sanbase.SocialData.PopularSearchTerm{
+      datetime: Timex.now(),
+      selector_type: "text",
+      search_term: rand_str(3) <> " OR " <> rand_str(6)
+    }
+  end
+
   def random_erc20_project_factory(attrs) do
     slug = Map.get(attrs, :slug, rand_str())
 

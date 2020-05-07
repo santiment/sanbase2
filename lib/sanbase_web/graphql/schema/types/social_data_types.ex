@@ -42,6 +42,12 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     value(:discord)
   end
 
+  object :popular_search_term do
+    field(:datetime, non_null(:datetime))
+    field(:search_term, non_null(:string))
+    field(:selector_type, non_null(:string))
+  end
+
   object :twitter_mention_count do
     field(:datetime, non_null(:datetime))
     field(:mention_count, :integer)

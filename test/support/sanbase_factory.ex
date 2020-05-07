@@ -58,7 +58,6 @@ defmodule Sanbase.Factory do
     %Post{
       user: build(:user),
       title: "Awesome analysis",
-      link: "http://example.com",
       text: "Text of the post",
       is_pulse: false,
       is_paywall_required: false,
@@ -89,7 +88,6 @@ defmodule Sanbase.Factory do
   def post_no_default_user_factory() do
     %Post{
       title: "Awesome analysis",
-      link: "http://example.com",
       text: "Text of the post",
       state: Post.awaiting_approval_state()
     }

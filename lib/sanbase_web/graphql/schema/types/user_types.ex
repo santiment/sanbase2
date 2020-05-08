@@ -7,6 +7,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
   alias SanbaseWeb.Graphql.Resolvers.{
     ApikeyResolver,
     UserResolver,
+    UserChartConfigurationResolver,
     EthAccountResolver,
     UserSettingsResolver,
     UserTriggerResolver,
@@ -33,6 +34,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
 
     field :triggers, list_of(:trigger) do
       cache_resolve(&UserTriggerResolver.public_triggers/3, ttl: 60)
+    end
+
+    field :chart_configurations, list_of(:chart_configuration) do
+      cache_resolve(&UserChartConfigurationResolver.public_chart_configurations/3, ttl: 60)
     end
 
     field :following, :follower_data do
@@ -100,6 +105,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       resolve(&UserTriggerResolver.triggers/3)
     end
 
+    field :chart_configurations, list_of(:chart_configuration) do
+      resolve(&UserChartConfigurationResolver.chart_configurations/3)
+    end
+
     field :following, :follower_data do
       cache_resolve(&UserResolver.following/3)
     end
@@ -112,6 +121,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       arg(:is_pulse, :boolean)
       arg(:is_paywall_required, :boolean)
       resolve(&InsightResolver.insights/3)
+    end
+
+    field :watchlists, list_of(:user_list) do
+      cache_resolve(&UserListResolver.watchlists/3, ttl: 60)
     end
 
     field :subscriptions, list_of(:subscription_plan) do

@@ -245,12 +245,28 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def user_trigger_factory() do
+  def user_trigger_factory(attrs) do
+    is_public = Map.get(attrs, :is_public, false)
+    attrs = Map.delete(attrs, :is_public)
+
     %UserTrigger{
       user: build(:user),
       trigger: %{
-        title: "Generic title"
+        title: "Generic title",
+        is_public: is_public,
+        settings: trigger_settings()
       }
+    }
+    |> merge_attributes(attrs)
+  end
+
+  defp trigger_settings() do
+    %{
+      "type" => "daily_active_addresses",
+      "target" => %{"slug" => "santiment"},
+      "channel" => "telegram",
+      "time_window" => "1d",
+      "operation" => %{"percent_up" => 300.0}
     }
   end
 

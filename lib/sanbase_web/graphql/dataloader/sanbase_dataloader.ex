@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
   alias SanbaseWeb.Graphql.ClickhouseDataloader
   alias SanbaseWeb.Graphql.PriceDataloader
   alias SanbaseWeb.Graphql.ParityDataloader
-  alias SanbaseWeb.Graphql.PostgresDataloader
+  alias SanbaseWeb.Graphql.MetricPostgresDataloader
 
   @spec data() :: Dataloader.KV.t()
   def data() do
@@ -56,7 +56,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
              :timeline_events_comments_count,
              :project_by_slug
            ] ->
-        PostgresDataloader.query(queryable, args)
+        MetricPostgresDataloader.query(queryable, args)
     end
   end
 end

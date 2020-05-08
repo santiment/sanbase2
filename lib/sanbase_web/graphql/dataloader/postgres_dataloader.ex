@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.PostgresDataloader do
+defmodule SanbaseWeb.Graphql.MetricPostgresDataloader do
   import Ecto.Query
   alias Sanbase.Model.{MarketSegment, Infrastructure}
   alias Sanbase.Repo

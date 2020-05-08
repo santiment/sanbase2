@@ -58,11 +58,17 @@ defmodule Sanbase.Factory do
     %Post{
       user: build(:user),
       title: "Awesome analysis",
-      link: "http://example.com",
       text: "Text of the post",
       is_pulse: false,
       is_paywall_required: false,
-      tags: [build(:tag), build(:tag)]
+      tags: [build(:tag), build(:tag)],
+      metrics: [build(:metric_postgres)]
+    }
+  end
+
+  def metric_postgres_factory() do
+    %Sanbase.Metric.MetricPostgresData{
+      name: Sanbase.Metric.available_metrics() |> Enum.random()
     }
   end
 
@@ -89,7 +95,6 @@ defmodule Sanbase.Factory do
   def post_no_default_user_factory() do
     %Post{
       title: "Awesome analysis",
-      link: "http://example.com",
       text: "Text of the post",
       state: Post.awaiting_approval_state()
     }

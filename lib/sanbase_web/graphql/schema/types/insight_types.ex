@@ -11,18 +11,24 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:total_san_votes, non_null(:integer))
   end
 
+  object :metric_short_description do
+    field(:name, non_null(:string))
+  end
+
   object :post do
     field(:id, non_null(:id))
     field(:user, non_null(:post_author), resolve: dataloader(SanbaseRepo))
     field(:title, non_null(:string))
     field(:short_desc, :string)
-    field(:link, :string)
     field(:text, :string)
     field(:state, :string)
     field(:moderation_comment, :string)
     field(:ready_state, :string)
     field(:images, list_of(:image_data))
     field(:tags, list_of(:tag))
+    field(:metrics, list_of(:metric_short_description), resolve: dataloader(SanbaseRepo))
+    field(:price_chart_project, :project, resolve: dataloader(SanbaseRepo))
+    field(:prediction, :string)
     field(:is_pulse, :boolean)
     field(:is_paywall_required, :boolean)
 

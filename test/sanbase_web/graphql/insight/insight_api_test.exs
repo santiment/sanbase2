@@ -413,21 +413,27 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
   describe "create insight" do
     test "adding a new insight", %{user: user, conn: conn} do
+      project = insert(:random_project)
+
       query = """
       mutation {
-        createInsight(title: "Awesome post", text: "Example body") {
-          id,
-          title,
-          text,
-          user {
+        createInsight(
+          title: "Awesome post"
+          text: "Example body"
+          metrics: ["daily_active_addresses", "price_usd", "volume_usd"]
+          prediction: "heavy_bullish"
+          priceChartProjectId: #{project.id}) {
             id
-          },
-          votes{
-            totalSanVotes,
-          }
-          state,
-          createdAt
-          publishedAt
+            title
+            text
+            user { id }
+            votes{ totalSanVotes }
+            state
+            prediction
+            priceChartProject{ id slug }
+            metrics{ name }
+            createdAt
+            publishedAt
         }
       }
       """
@@ -441,6 +447,15 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       assert insight["id"] != nil
       assert insight["title"] == "Awesome post"
       assert insight["state"] == Post.approved_state()
+      assert insight["prediction"] == "heavy_bullish"
+
+      assert insight["metrics"] == [
+               %{"name" => "daily_active_addresses"},
+               %{"name" => "price_usd"},
+               %{"name" => "volume_usd"}
+             ]
+
+      assert insight["priceChartProject"]["id"] |> String.to_integer() == project.id
       assert insight["user"]["id"] == user.id |> Integer.to_string()
       assert insight["votes"]["totalSanVotes"] == 0
       assert insight["publishedAt"] == nil
@@ -566,24 +581,25 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         insert(:post,
           user: user,
           ready_state: Post.draft(),
-          tags: [tag1]
+          tags: [tag1],
+          metrics: [build(:metric_postgres, name: "nvt")]
         )
 
       mutation = """
         mutation {
-          updateInsight(id: #{post.id} title: "Awesome post2", text: "Example body2", tags: ["#{
-        tag2.name
-      }"], imageUrls: ["#{image_url}"]) {
-            id
-            title
-            text
-            images{
-              imageUrl
-              contentHash
-            }
-            tags {
-              name
-            }
+          updateInsight(
+            id: #{post.id}
+            title: "Awesome post2"
+            text: "Example body2"
+            tags: ["#{tag2.name}"]
+            imageUrls: ["#{image_url}"]
+            metrics: ["nvt"]) {
+              id
+              title
+              text
+              metrics{ name }
+              images{ imageUrl contentHash }
+              tags { name }
           }
         }
       """

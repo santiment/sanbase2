@@ -14,6 +14,7 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Vote
   alias Sanbase.Insight.{Post, PostImage}
   alias Sanbase.Timeline.TimelineEvent
+  alias Sanbase.Metric.MetricPostgresData
 
   require Logger
 
@@ -29,24 +30,33 @@ defmodule Sanbase.Insight.Post do
 
   schema "posts" do
     belongs_to(:user, User)
-    has_many(:votes, Vote, on_delete: :delete_all)
 
     field(:title, :string)
     field(:short_desc, :string)
-    field(:link, :string)
     field(:text, :string)
     field(:state, :string, default: @approved)
     field(:moderation_comment, :string)
     field(:ready_state, :string, default: @draft)
     field(:is_pulse, :boolean, default: false)
     field(:is_paywall_required, :boolean, default: false)
+    field(:prediction, :string, default: nil)
 
-    has_many(:images, PostImage, on_delete: :delete_all)
+    belongs_to(:price_chart_project, Project)
+
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
+    has_many(:images, PostImage, on_delete: :delete_all)
     has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
+    has_many(:votes, Vote, on_delete: :delete_all)
 
     many_to_many(:tags, Tag,
       join_through: "posts_tags",
+      on_replace: :delete,
+      on_delete: :delete_all
+    )
+
+    many_to_many(:metrics, MetricPostgresData,
+      join_through: "posts_metrics",
+      join_keys: [post_id: :id, metric_id: :id],
       on_replace: :delete,
       on_delete: :delete_all
     )
@@ -62,8 +72,18 @@ defmodule Sanbase.Insight.Post do
 
   def create_changeset(%Post{} = post, attrs) do
     post
-    |> cast(attrs, [:title, :short_desc, :link, :text, :user_id, :is_pulse, :is_paywall_required])
+    |> cast(attrs, [
+      :title,
+      :short_desc,
+      :text,
+      :user_id,
+      :is_pulse,
+      :is_paywall_required,
+      :prediction,
+      :price_chart_project_id
+    ])
     |> Tag.put_tags(attrs)
+    |> MetricPostgresData.put_metrics(attrs)
     |> images_cast(attrs)
     |> validate_required([:user_id, :title])
     |> validate_length(:title, max: 140)
@@ -74,16 +94,18 @@ defmodule Sanbase.Insight.Post do
     |> cast(attrs, [
       :title,
       :short_desc,
-      :link,
       :text,
       :moderation_comment,
       :state,
       :is_pulse,
-      :is_paywall_required
+      :is_paywall_required,
+      :prediction,
+      :price_chart_project_id
     ])
     |> Tag.put_tags(attrs)
     |> images_cast(attrs)
     |> validate_length(:title, max: 140)
+    |> validate_change(:prediction, &valid_prediction?/2)
   end
 
   def publish_changeset(%Post{} = post, attrs) do
@@ -446,4 +468,17 @@ defmodule Sanbase.Insight.Post do
   end
 
   defp maybe_drop_post_tags(_, _), do: :ok
+
+  @predictions ["heavy_bullish", "semi_bullish", "neutral", "semi_bearish", "heavy_bearish"]
+  defp valid_prediction?(_, nil), do: []
+  defp valid_prediction?(_, prediction) when prediction in @predictions, do: []
+
+  defp valid_prediction?(_, prediction) do
+    [
+      prediction: """
+      The prediction #{inspect(prediction)} is not supported.
+      Supported predictions are: #{@predictions |> Enum.join(", ")}
+      """
+    ]
+  end
 end

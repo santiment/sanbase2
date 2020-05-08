@@ -9,6 +9,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
 
   @context_words_default_size 10
 
+  def popular_search_terms(_root, %{from: from, to: to}, _) do
+    Sanbase.SocialData.PopularSearchTerm.get(from, to)
+  end
+
   def project_from_slug(_root, _args, %{source: %{slug: slug}, context: %{loader: loader}}) do
     loader
     |> Dataloader.load(SanbaseDataloader, :project_by_slug, slug)

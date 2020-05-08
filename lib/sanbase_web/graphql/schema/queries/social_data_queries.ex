@@ -17,6 +17,15 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
   import_types(SanbaseWeb.Graphql.ElasticsearchTypes)
 
   object :social_data_queries do
+    field :popular_search_terms, list_of(:popular_search_term) do
+      meta(access: :free)
+
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      cache_resolve(&SocialDataResolver.popular_search_terms/3)
+    end
+
     @desc "Fetch the current data for a Twitter account (currently includes only Twitter followers)."
     field :twitter_data, :twitter_data do
       meta(access: :free)

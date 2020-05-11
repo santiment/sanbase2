@@ -39,6 +39,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "sentiment_positive_telegram",
     "sentiment_positive_discord",
     "sentiment_positive_reddit",
+    "sentiment_positive_twitter",
+    "sentiment_positive_bitcointalk",
     "sentiment_positive_professional_traders_chat",
     "sentiment_positive_total"
   ]
@@ -47,6 +49,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "sentiment_negative_telegram",
     "sentiment_negative_discord",
     "sentiment_negative_reddit",
+    "sentiment_negative_twitter",
+    "sentiment_negative_bitcointalk",
     "sentiment_negative_professional_traders_chat",
     "sentiment_negative_total"
   ]
@@ -55,6 +59,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "sentiment_balance_telegram",
     "sentiment_balance_discord",
     "sentiment_balance_reddit",
+    "sentiment_balance_twitter",
+    "sentiment_balance_bitcointalk",
     "sentiment_balance_professional_traders_chat",
     "sentiment_balance_total"
   ]
@@ -63,6 +69,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "sentiment_volume_consumed_telegram",
     "sentiment_volume_consumed_discord",
     "sentiment_volume_consumed_reddit",
+    "sentiment_volume_consumed_twitter",
+    "sentiment_volume_consumed_bitcointalk",
     "sentiment_volume_consumed_professional_traders_chat",
     "sentiment_volume_consumed_total"
   ]
@@ -124,10 +132,34 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   def timeseries_data(metric, %{} = selector, from, to, interval, _aggregation)
       when metric in @sentiment_positive_timeseries_metrics do
-        "sentiment_positive" <> source = metric
+    "sentiment_positive_" <> source = metric
 
-    Sanbase.SocialData.sentiment(selector, from, to, interval, "positive")
-    |> transform_to_value_pairs(:positive_sentiment)
+    Sanbase.SocialData.sentiment(selector, from, to, interval, source, "positive")
+    |> transform_to_value_pairs(:value)
+  end
+
+  def timeseries_data(metric, %{} = selector, from, to, interval, _aggregation)
+      when metric in @sentiment_negative_timeseries_metrics do
+    "sentiment_negative_" <> source = metric
+
+    Sanbase.SocialData.sentiment(selector, from, to, interval, source, "negative")
+    |> transform_to_value_pairs(:value)
+  end
+
+  def timeseries_data(metric, %{} = selector, from, to, interval, _aggregation)
+      when metric in @sentiment_balance_timeseries_metrics do
+    "sentiment_balance_" <> source = metric
+
+    Sanbase.SocialData.sentiment(selector, from, to, interval, source, "balance")
+    |> transform_to_value_pairs(:value)
+  end
+
+  def timeseries_data(metric, %{} = selector, from, to, interval, _aggregation)
+      when metric in @sentiment_volume_consumed_timeseries_metrics do
+    "sentiment_volume_consumed_" <> source = metric
+
+    Sanbase.SocialData.sentiment(selector, from, to, interval, source, "volume_consumed")
+    |> transform_to_value_pairs(:value)
   end
 
   @impl Sanbase.Metric.Behaviour

@@ -4,14 +4,13 @@ defmodule Sanbase.SocialData.Sentiment do
   require Logger
   require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Model.Project
-  alias Sanbase.Model.Project.SocialVolumeQuery
+  alias Sanbase.SocialData.SocialHelper
 
   require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 25_000
-  @sources [:telegram, :professional_traders_chat, :reddit, :discord]
+  @sources [:telegram, :professional_traders_chat, :reddit, :discord, :twitter, :bitcointalk]
 
   def sentiment(selector, from, to, interval, source, column)
       when source in [:all, "all", :total, "total"] do
@@ -24,8 +23,7 @@ defmodule Sanbase.SocialData.Sentiment do
         end,
         max_concurency: 4
       )
-      |> Sanbase.Utils.Transform.sum_by_datetime(:positive_sentiment)
-      # COLUMN VALUE TODO
+      |> Sanbase.Utils.Transform.sum_by_datetime(:value)
 
     {:ok, result}
   end
@@ -35,64 +33,50 @@ defmodule Sanbase.SocialData.Sentiment do
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, result} = Jason.decode(body)
-        sentiment_result(result, column)
+        sentiment_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status}} ->
-        warn_result("Error status #{status} fetching sentiment #{column} for project #{slug}")
+        warn_result(
+          "Error status #{status} fetching sentiment #{column} for #{inspect(selector)}"
+        )
 
       {:error, %HTTPoison.Error{} = error} ->
         error_result(
-          "Cannot fetch sentiment #{column} data for project #{slug}: #{HTTPoison.Error.message(error)}"
+          "Cannot fetch sentiment #{column} data for #{inspect(selector)}: #{
+            HTTPoison.Error.message(error)
+          }"
         )
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
   defp sentiment_request(selector, from, to, interval, source, column) do
-    {"search_text", search_text} = sentiment_selector_handler(selector, from, to, interval, source)
+    with {:ok, search_text} <- SocialHelper.social_metrics_selector_handler(selector) do
+      url = "#{metrics_hub_url()}/sentiment_#{column}"
 
-    url = "#{metrics_hub_url()}/sentiment_#{column}"
-
-    options = [
-      recv_timeout: @recv_timeout,
-      params: [
-        {"search_text", search_text},
-        {"from_timestamp", from |> DateTime.to_iso8601()},
-        {"to_timestamp", to |> DateTime.to_iso8601()},
-        {"interval", interval},
-        {"source", source}
+      options = [
+        recv_timeout: @recv_timeout,
+        params: [
+          {"search_text", search_text},
+          {"from_timestamp", from |> DateTime.to_iso8601()},
+          {"to_timestamp", to |> DateTime.to_iso8601()},
+          {"interval", interval},
+          {"source", source}
+        ]
       ]
-    ]
 
-    http_client().get(url, [], options)
-  end
-
-  defp sentiment_selector_handler(%{slug: slug}) do
-    slug
-    |> Project.by_slug(only_preload: [:social_volume_query])
-    |> case do
-      %Project{social_volume_query: %{query: query_text}}
-      when not is_nil(query_text) ->
-        {"search_text", query_text}
-
-      %Project{} = project ->
-        {"search_text", SocialVolumeQuery.default_query(project)}
-
-      _ ->
-        {:error, "Invalid slug"}
+      http_client().get(url, [], options)
     end
   end
 
-  defp sentiment_selector_handler(%{text: search_text}) do
-    {"search_text", search_text}
-  end
-
-  defp sentiment_result(%{"data" => map}, column) do
-    # COLUMN VALUE TODO
+  defp sentiment_result(%{"data" => map}) do
     map =
       Enum.map(map, fn {datetime, value} ->
         %{
           datetime: Sanbase.DateTimeUtils.from_iso8601!(datetime),
-          positive_sentiment: value
+          value: value
         }
       end)
       |> Enum.sort_by(& &1.datetime, {:asc, DateTime})

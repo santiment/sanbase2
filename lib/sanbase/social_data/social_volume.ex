@@ -4,8 +4,7 @@ defmodule Sanbase.SocialData.SocialVolume do
   require Logger
   require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Model.Project
-  alias Sanbase.Model.Project.SocialVolumeQuery
+  alias Sanbase.SocialData.SocialHelper
 
   require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
@@ -77,32 +76,8 @@ defmodule Sanbase.SocialData.SocialVolume do
     end
   end
 
-  defp social_volume_selector_handler(%{slug: slug}) do
-    slug
-    |> Project.by_slug(only_preload: [:social_volume_query])
-    |> case do
-      %Project{social_volume_query: %{query: query_text}}
-      when not is_nil(query_text) ->
-        {:ok, query_text}
-
-      %Project{} = project ->
-        {:ok, SocialVolumeQuery.default_query(project)}
-
-      _ ->
-        {:error, "Invalid slug for social volume"}
-    end
-  end
-
-  defp social_volume_selector_handler(%{text: search_text}) do
-    {:ok, search_text}
-  end
-
-  defp social_volume_selector_handler(_args) do
-    {:error, "Invalid argument for social_volume, please input a slug or search_text"}
-  end
-
   defp social_volume_request(selector, from, to, interval, source) do
-    with {:ok, search_text} <- social_volume_selector_handler(selector) do
+    with {:ok, search_text} <- SocialHelper.social_metrics_selector_handler(selector) do
       url = "#{metrics_hub_url()}/social_volume"
 
       options = [

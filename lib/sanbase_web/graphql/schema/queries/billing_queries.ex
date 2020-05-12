@@ -38,6 +38,19 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
 
       resolve(&BillingResolver.get_coupon/3)
     end
+
+    @desc ~s"""
+    Get available metrics for PRODUCT and PLAN
+    """
+    field :get_available_metrics_for_plan, list_of(:string) do
+      meta(access: :free)
+
+      arg(:product, non_null(:products_enum), default_value: :sanapi)
+      arg(:plan, non_null(:plans_enum))
+      arg(:restriction_type, non_null(:restriction_types_enum), default_value: :all)
+
+      resolve(&BillingResolver.get_available_metrics_for_plan/3)
+    end
   end
 
   object :billing_mutations do

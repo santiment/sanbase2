@@ -55,6 +55,8 @@ defmodule Sanbase.Factory do
   end
 
   def post_factory() do
+    metric = Sanbase.Metric.available_metrics() |> Enum.random()
+
     %Post{
       user: build(:user),
       title: "Awesome analysis",
@@ -62,7 +64,10 @@ defmodule Sanbase.Factory do
       is_pulse: false,
       is_paywall_required: false,
       tags: [build(:tag), build(:tag)],
-      metrics: [build(:metric_postgres)]
+      metrics: [
+        Sanbase.Repo.get_by(Sanbase.Metric.MetricPostgresData, name: metric) ||
+          build(:metric_postgres, %{name: metric})
+      ]
     }
   end
 

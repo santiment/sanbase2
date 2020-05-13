@@ -201,9 +201,10 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
         |> Map.merge(asset_target_blockchain_kv)
 
       template = """
-      The {{asset}} balance on the {{target_blockchain}} blockchain of the address {{address}} has #{
+      The address {{address}}'s {{asset}} balance on the {{target_blockchain}} blockchain has #{
         operation_template
-      } and #{curr_value_template}
+      }.
+      #{curr_value_template}
       """
 
       {template, kv}
@@ -224,6 +225,7 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
         %{
           type: WalletTriggerSettings.type(),
           project_name: project.name,
+          project_ticker: project.ticker,
           project_slug: project.slug,
           operation: settings.operation
         }
@@ -232,9 +234,10 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
         |> Map.merge(asset_target_blockchain_kv)
 
       template = """
-      The {{asset}} balance on the {{target_blockchain}} blockchain of the project **{{project_name}}** has #{
+      🔔 \#{{project_ticker}} | **{{project_name}}**'s {{asset}} balance on the {{target_blockchain}} blockchain has #{
         operation_template
-      } and #{curr_value_template}
+      }.
+      #{curr_value_template}
 
       More information about the project can be found here: #{Project.sanbase_link(project)}
       """
@@ -242,32 +245,16 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
       {template, kv}
     end
 
-    defp asset_target_blockchain_kv(%{infrastructure: "ETH"} = selector) do
-      %{asset: Map.get(selector, :slug, "ethereum"), target_blockchain: "Ethereum"}
-    end
-
-    defp asset_target_blockchain_kv(%{infrastructure: "EOS"} = selector) do
-      %{asset: Map.get(selector, :slug, "eos"), target_blockchain: "EOS"}
-    end
-
-    defp asset_target_blockchain_kv(%{infrastructure: "BNB"} = selector) do
-      %{asset: Map.get(selector, :slug, "binance-coin"), target_blockchain: "Binance"}
-    end
-
-    defp asset_target_blockchain_kv(%{infrastructure: "XRP"} = selector) do
-      %{asset: Map.get(selector, :currency, "XRP"), target_blockchain: "Ripple"}
-    end
-
-    defp asset_target_blockchain_kv(%{infrastructure: "BTC"}) do
-      %{asset: "bitcoin", target_blockchain: "Bitcoin"}
-    end
-
-    defp asset_target_blockchain_kv(%{infrastructure: "BCH"}) do
-      %{asset: "bitcoin-cash", target_blockchain: "Bitcoin Cash"}
-    end
-
-    defp asset_target_blockchain_kv(%{infrastructure: "LTC"}) do
-      %{asset: "litecoin", target_blockchain: "Litecoin"}
+    defp asset_target_blockchain_kv(%{infrastructure: infrastructure} = selector) do
+      case infrastructure do
+        "ETH" -> %{asset: Map.get(selector, :slug, "ethereum"), target_blockchain: "Ethereum"}
+        "EOS" -> %{asset: Map.get(selector, :slug, "eos"), target_blockchain: "EOS"}
+        "BNB" -> %{asset: Map.get(selector, :slug, "binance-coin"), target_blockchain: "Binance"}
+        "XRP" -> %{asset: Map.get(selector, :currency, "XRP"), target_blockchain: "Ripple"}
+        "BTC" -> %{asset: "bitcoin", target_blockchain: "Bitcoin"}
+        "BCH" -> %{asset: "bitcoin-cash", target_blockchain: "Bitcoin Cash"}
+        "LTC" -> %{asset: "litecoin", target_blockchain: "Litecoin"}
+      end
     end
   end
 end

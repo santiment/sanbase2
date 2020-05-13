@@ -4,10 +4,21 @@ defmodule Sanbase.Signal.OperationText.KV do
   to human readable text that can be included in the signal's payload
   """
 
-  def current_value(%{current: value}, _, opts) do
-    form = Keyword.get(opts, :form, :singular) |> form_to_text()
-    template = "#{form} now {{value}}"
-    kv = %{value: value}
+  def current_value(%{current: value, previous: previous}, _operation, opts) do
+    special_symbol = Keyword.get(opts, :special_symbol, "")
+    transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
+
+    template = "was: #{special_symbol}{{previous}}, now: #{special_symbol}{{value}}"
+    kv = %{value: transform_fun.(value), previous: transform_fun.(previous)}
+    {template, kv}
+  end
+
+  def current_value(%{current: value}, _operation, opts) do
+    special_symbol = Keyword.get(opts, :special_symbol, "")
+    transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
+
+    template = "now: #{special_symbol}{{value}}"
+    kv = %{value: transform_fun.(value)}
     {template, kv}
   end
 
@@ -19,14 +30,16 @@ defmodule Sanbase.Signal.OperationText.KV do
 
   def to_template_kv(value, %{above: above}, opts) do
     form = Keyword.get(opts, :form, :singular) |> form_to_text()
+    special_symbol = Keyword.get(opts, :special_symbol, "")
+    transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
 
     template =
       case Keyword.get(opts, :negative, false) do
-        true -> "#{form} not above {{above}}"
-        false -> "#{form} above {{above}}"
+        true -> "#{form} not above #{special_symbol}{{above}}"
+        false -> "#{form} above #{special_symbol}{{above}}"
       end
 
-    kv = %{above: above, value: value}
+    kv = %{above: above, value: transform_fun.(value)}
     {template, kv}
   end
 
@@ -36,14 +49,16 @@ defmodule Sanbase.Signal.OperationText.KV do
 
   def to_template_kv(value, %{below: below}, opts) do
     form = Keyword.get(opts, :form, :singular) |> form_to_text()
+    special_symbol = Keyword.get(opts, :special_symbol, "")
+    transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
 
     template =
       case Keyword.get(opts, :negative, false) do
-        true -> "#{form} not below {{below}}"
-        false -> "#{form} below {{below}}"
+        true -> "#{form} not below #{special_symbol}{{below}}"
+        false -> "#{form} below #{special_symbol}{{below}}"
       end
 
-    kv = %{below: below, value: value}
+    kv = %{below: below, value: transform_fun.(value)}
     {template, kv}
   end
 
@@ -53,14 +68,19 @@ defmodule Sanbase.Signal.OperationText.KV do
 
   def to_template_kv(value, %{inside_channel: [lower, upper]}, opts) do
     form = Keyword.get(opts, :form, :singular) |> form_to_text()
+    special_symbol = Keyword.get(opts, :special_symbol, "")
+    transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
 
     template =
       case Keyword.get(opts, :negative, false) do
-        true -> "#{form} not inside the [{{lower}}, {{upper}}] interval"
-        false -> "#{form} inside the [{{lower}}, {{upper}}] interval"
+        true ->
+          "#{form} not inside the [#{special_symbol}{{lower}}, #{special_symbol}{{upper}}] interval"
+
+        false ->
+          "#{form} inside the [#{special_symbol}{{lower}}, #{special_symbol}{{upper}}] interval"
       end
 
-    kv = %{lower: lower, upper: upper, value: value}
+    kv = %{lower: lower, upper: upper, value: transform_fun.(value)}
     {template, kv}
   end
 
@@ -70,14 +90,19 @@ defmodule Sanbase.Signal.OperationText.KV do
 
   def to_template_kv(value, %{outside_channel: [lower, upper]}, opts) do
     form = Keyword.get(opts, :form, :singular) |> form_to_text()
+    special_symbol = Keyword.get(opts, :special_symbol, "")
+    transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
 
     template =
       case Keyword.get(opts, :negative, false) do
-        true -> "#{form} not outside the [{{lower}}, {{upper}}] interval"
-        false -> "#{form} outside the [{{lower}}, {{upper}}] interval"
+        true ->
+          "#{form} not outside the [#{special_symbol}{{lower}}, #{special_symbol}{{upper}}] interval"
+
+        false ->
+          "#{form} outside the [#{special_symbol}{{lower}}, #{special_symbol}{{upper}}] interval"
       end
 
-    kv = %{lower: lower, upper: upper, value: value}
+    kv = %{lower: lower, upper: upper, value: transform_fun.(value)}
     {template, kv}
   end
 
@@ -101,10 +126,12 @@ defmodule Sanbase.Signal.OperationText.KV do
     do: to_template_kv(value, op, opts)
 
   def to_template_kv(percent_change, %{percent_down: percent_down}, opts) do
+    special_symbol = Keyword.get(opts, :special_symbol, "")
+
     template =
       case Keyword.get(opts, :negative, false) do
-        true -> "did not decrease by {{percent_down_required}}%"
-        false -> "decreased by {{percent_down}}%"
+        true -> "did not decrease by #{special_symbol}{{percent_down_required}}%"
+        false -> "decreased by #{special_symbol}{{percent_down}}%"
       end
 
     kv = %{percent_down: abs(percent_change), percent_down_required: percent_down}
@@ -116,13 +143,16 @@ defmodule Sanbase.Signal.OperationText.KV do
     do: to_template_kv(value, op, opts)
 
   def to_template_kv(amount_change, %{amount_up: amount_up}, opts) do
+    special_symbol = Keyword.get(opts, :special_symbol, "")
+    transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
+
     template =
       case Keyword.get(opts, :negative, false) do
-        true -> "did not increase by {{amount_change_up_required}}"
-        false -> "increased by {{amount_change_up}}"
+        true -> "did not increase by #{special_symbol}{{amount_change_up_required}}"
+        false -> "increased by #{special_symbol}{{amount_change_up}}"
       end
 
-    kv = %{amount_change_up: amount_change, amount_change_up_required: amount_up}
+    kv = %{amount_change_up: transform_fun.(amount_change), amount_change_up_required: amount_up}
     {template, kv}
   end
 
@@ -131,13 +161,20 @@ defmodule Sanbase.Signal.OperationText.KV do
     do: to_template_kv(value, op, opts)
 
   def to_template_kv(amount_change, %{amount_down: amount_down}, opts) do
+    special_symbol = Keyword.get(opts, :special_symbol, "")
+    transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
+
     template =
       case Keyword.get(opts, :negative, false) do
-        true -> "did not decrease by {{amount_down_change_required}}"
-        false -> "decreased by {{amount_down_change}}"
+        true -> "did not decrease by #{special_symbol}{{amount_down_change_required}}"
+        false -> "decreased by #{special_symbol}{{amount_down_change}}"
       end
 
-    kv = %{amount_down_change: abs(amount_change), amount_down_change_required: amount_down}
+    kv = %{
+      amount_down_change: transform_fun.(amount_change) |> abs(),
+      amount_down_change_required: amount_down
+    }
+
     {template, kv}
   end
 

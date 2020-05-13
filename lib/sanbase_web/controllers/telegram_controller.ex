@@ -21,13 +21,13 @@ defmodule SanbaseWeb.TelegramController do
 
   defp welcome_message() do
     ~s"""
-    Beep boop! I’m a Santiment Telegram bot \u{1F916}
+    🤖Beep boop, Santiment Signals bot here!
 
-    This is where you’ll receive notifications for all your preset Santiment signals.
+    You've succesfully connected your Sanbase and Telegram accounts.
 
-    If you’re seeing this message, you already have a SANbase account which you can use to make changes to the configuration of your signals.
+    To receive alerts in this chat, enable the Telegram channel in a Sanbase signal.
 
-    Visit your signals here: #{SanbaseWeb.Endpoint.sonar_url()}
+    Haven’t created any signals yet? Start [here](https://app.santiment.net/sonar/my-signals).
     """
   end
 end

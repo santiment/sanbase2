@@ -191,7 +191,7 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       }
 
       template = """
-      Trending words at: {{datetime}}
+      🔔 Trending words at: {{datetime}}
 
       ```
       {{trending_words_str}}
@@ -212,7 +212,7 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       }
 
       template = """
-      The word {{trending_words_str}} is in the trending words.
+      🔔 The word {{trending_words_str}} is in the trending words.
 
       More info here: {{trending_words_url}}
       """
@@ -233,7 +233,7 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       }
 
       template = """
-      The words {{trending_words_str}} are in the trending words.
+      🔔 The words {{trending_words_str}} are in the trending words.
 
       More info here: {{trending_words_url}}
       """
@@ -246,12 +246,13 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
         type: TrendingWordsTriggerSettings.type(),
         operation: operation,
         project_name: project.name,
+        project_ticker: project.ticker,
         project_slug: project.slug,
         chart_url: chart_url(project, :volume)
       }
 
       template = """
-      The project **{{project_name}}** is in the trending words.
+      🔔 \#{{project_ticker}} | **{{project_name}}** is in the trending words.
 
       More info here: #{Project.sanbase_link(project)}
       ![Volume and OHLC price chart for the past 90 days]({{chart_url}})

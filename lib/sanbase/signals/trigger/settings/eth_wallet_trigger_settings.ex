@@ -199,11 +199,13 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
         balance_change_text: operation_text(settings.operation),
         balance_change: balance_data.balance_change,
         balance_change_abs: abs(balance_data.balance_change),
-        balance: balance_data.end_balance
+        balance: balance_data.end_balance,
+        previous_balance: balance_data.start_balance
       }
 
       template = """
-      The {{asset}} balance of {{project_name}} wallets has {{balance_change_text}} by {{balance_change}} since {{since}} and is now {{balance}}
+      🔔 \#{{project_ticker}} | **{{project_name}}**'s {{asset}} balance {{balance_change_text}} by {{balance_change}} since {{since}}.
+      was: {{previous_balance}}, now: {{balance}}.
 
       More info here: #{Project.sanbase_link(project)}
       """
@@ -224,11 +226,13 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
         since: DateTime.truncate(from, :second),
         balance_change: balance_data.balance_change,
         balance_change_abs: abs(balance_data.balance_change),
-        balance: balance_data.end_balance
+        balance: balance_data.end_balance,
+        previous_balance: balance_data.start_balance
       }
 
       template = """
-      The {{asset}} balance of the address {{address}} has #{operation_text(settings.operation)} by {{balance_change_abs}} since {{since}} and is now {{balance}}
+      🔔The address {{address}}'s {{asset}} balance #{operation_text(settings.operation)} by {{balance_change_abs}} since {{since}}.
+      was: {{previous_balance}, now: {{balance}}
 
       More info here: {{historical_balance_link}}
       """

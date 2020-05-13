@@ -28,9 +28,10 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         created_trigger = result["data"]["createTrigger"]["trigger"]
 
         # Telegram notification is sent when creation sucessful
-        assert_receive(
-          {:telegram_to_self, "Successfully created a new signal of type: Daily Active Addresses"}
-        )
+        assert_receive({:telegram_to_self, message})
+        assert message =~ "Successfully created a new signal of type: Daily Active Addresses"
+        assert message =~ "Title: Generic title"
+        assert message =~ "This bot will alert you when your signal triggers 🤖"
 
         assert created_trigger["settings"] == trigger_settings
         assert created_trigger["id"] != nil
@@ -50,9 +51,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       }
 
       # Telegram notification is not sent when creation is unsucessful
-      refute_receive(
-        {:telegram_to_self, "Successfully created a new signal of type: Daily Active Addresses"}
-      )
+      refute_receive({:telegram_to_self, _msg})
 
       assert capture_log(fn ->
                result = create_trigger(conn, title: "Some title", settings: trigger_settings)

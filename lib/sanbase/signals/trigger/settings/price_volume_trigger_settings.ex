@@ -146,13 +146,15 @@ defmodule Sanbase.Signal.Trigger.PriceVolumeDifferenceTriggerSettings do
         type: PriceVolumeDifferenceTriggerSettings.type(),
         threhsold: settings.threshold,
         project_name: project.name,
+        project_ticker: project.ticker,
         project_slug: project.slug,
         value: price_volume_diff,
         chart_url: chart_url(project, :volume)
       }
 
       template = """
-      The price and volume of **{{project_name}}** have diverged - the price is increasing while the volume is decreasing.
+      🔔 \#{{project_ticker}} | **{{project_name}}**'s price and trading volume have diverged.
+      The price is increasing while the volume is decreasing.
 
       More info here: #{Sanbase.Model.Project.sanbase_link(project)}
       ![PriceVolume chart over the past 90 days]({{chart_url}})

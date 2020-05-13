@@ -123,17 +123,20 @@ defmodule Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings do
     defp template_kv(slug, last_price_usd, operation) do
       project = Project.by_slug(slug)
       last_price_usd = round_price(last_price_usd)
+      opts = [special_symbol: "$"]
 
-      {operation_tempalte, template_kv} = OperationText.to_template_kv(last_price_usd, operation)
+      {operation_template, template_kv} =
+        OperationText.to_template_kv(last_price_usd, operation, opts)
 
       {curr_value_template, curr_value_kv} =
-        OperationText.current_value(%{current: last_price_usd}, operation)
+        OperationText.current_value(%{current: last_price_usd}, operation, opts)
 
       kv =
         %{
           type: PriceAbsoluteChangeSettings.type(),
           operation: operation,
           project_name: project.name,
+          project_ticker: project.ticker,
           project_slug: project.slug,
           chart_url: chart_url(project, :volume)
         }
@@ -141,7 +144,8 @@ defmodule Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings do
         |> Map.merge(curr_value_kv)
 
       template = """
-      **{{project_name}}**'s price #{operation_tempalte} and #{curr_value_template}
+      🔔 \#{{project_ticker}} | **{{project_name}}**'s USD price #{operation_template}.
+      #{curr_value_template}.
 
       More information for the project you can find here: #{Project.sanbase_link(project)}
 

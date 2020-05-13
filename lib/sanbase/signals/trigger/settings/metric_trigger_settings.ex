@@ -163,15 +163,20 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
 
     defp template_kv(values, settings) do
       %{identifier: slug} = values
-
       project = Project.by_slug(slug)
+
+      opts =
+        if String.contains?(settings.metric, "price_usd"),
+          do: [special_symbol: "$", value_transform: &Sanbase.Math.round_float/1],
+          else: []
+
       {:ok, human_readable_name} = Sanbase.Metric.human_readable_name(settings.metric)
 
       {operation_template, operation_kv} =
-        OperationText.to_template_kv(values, settings.operation)
+        OperationText.to_template_kv(values, settings.operation, opts)
 
       {curr_value_template, curr_value_kv} =
-        OperationText.current_value(values, settings.operation)
+        OperationText.current_value(values, settings.operation, opts)
 
       kv =
         %{
@@ -179,6 +184,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
           operation: settings.operation,
           project_name: project.name,
           project_slug: project.slug,
+          project_ticker: project.ticker,
           metric: settings.metric,
           metric_human_readable_name: human_readable_name,
           chart_url: chart_url(project, {:metric, settings.metric})
@@ -187,9 +193,10 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
         |> Map.merge(curr_value_kv)
 
       template = """
-      **{{project_name}}**'s {{metric_human_readable_name}} #{operation_template} and #{
-        curr_value_template
+      🔔 \#{{project_ticker}} | **{{project_name}}**'s {{metric_human_readable_name}} #{
+        operation_template
       }.
+      #{curr_value_template}.
       More info here: #{Project.sanbase_link(project)}
 
       ![#{human_readable_name} & OHLC for the past 90 days]({{chart_url}})

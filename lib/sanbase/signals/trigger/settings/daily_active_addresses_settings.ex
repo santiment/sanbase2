@@ -138,6 +138,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
           type: DailyActiveAddressesSettings.type(),
           operation: settings.operation,
           project_name: project.name,
+          project_ticker: project.ticker,
           project_slug: project.slug,
           average_value: values.previous_average,
           interval: interval,
@@ -147,9 +148,10 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
         |> Map.merge(curr_value_kv)
 
       template = """
-      **{{project_name}}**'s Active Addresses for the past 24 hours #{operation_template} and #{
-        curr_value_template
-      }
+       🔔 \#{{project_ticker}} | **{{project_name}}**'s Active Addresses for the past 24 hours #{
+        operation_template
+      }.
+      #{curr_value_template}.
 
       Average 24 hours Active Addresses for last **{{interval}}*: **{{average_value}}**.
       More info here: #{Project.sanbase_link(project)}

@@ -99,7 +99,7 @@ defmodule Sanbase.Billing.SubscriptionTest do
       end
     end
 
-    test "doesn't cancel when user has CC", context do
+    test "cancel even when user has CC", context do
       with_mocks([
         {Sanbase.StripeApi, [],
          retrieve_customer: fn _ -> {:ok, %Stripe.Customer{default_source: "card"}} end},
@@ -122,8 +122,8 @@ defmodule Sanbase.Billing.SubscriptionTest do
 
         Subscription.cancel_about_to_expire_trials()
 
-        refute called(Sanbase.StripeApi.delete_subscription(subscription.stripe_id))
-        refute called(Sanbase.MandrillApi.send("trial-finished-without-card", :_, :_, :_))
+        assert_called(Sanbase.StripeApi.delete_subscription(subscription.stripe_id))
+        assert_called(Sanbase.MandrillApi.send("trial-finished-without-card", :_, :_, :_))
       end
     end
 

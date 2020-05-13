@@ -485,13 +485,11 @@ defmodule Sanbase.Billing.Subscription do
          } = subscription
        )
        when plan_id in @free_trial_plans do
-    unless User.has_credit_card_in_stripe?(user_id) do
-      Logger.info("Deleting subscription with id: #{stripe_id} for user: #{user_id}")
+    Logger.info("Deleting subscription with id: #{stripe_id} for user: #{user_id}")
 
-      StripeApi.delete_subscription(stripe_id)
+    StripeApi.delete_subscription(stripe_id)
 
-      __MODULE__.SignUpTrial.maybe_send_trial_finished_email(subscription)
-    end
+    __MODULE__.SignUpTrial.maybe_send_trial_finished_email(subscription)
   end
 
   defp maybe_send_email_and_delete_subscription(%__MODULE__{stripe_id: stripe_id}) do

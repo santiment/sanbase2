@@ -230,7 +230,7 @@ defmodule Sanbase.Billing.StripeEvent do
          "id" => id,
          "data" => %{"object" => %{"total" => total, "starting_balance" => starting_balance}}
        })
-       when total == starting_balance do
+       when total == abs(starting_balance) do
     [
       "New 🔥 for $#{total / 100} received. Details: https://dashboard.stripe.com/events/#{id}"
     ]
@@ -255,7 +255,7 @@ defmodule Sanbase.Billing.StripeEvent do
          total,
          starting_balance
        )
-       when total == starting_balance do
+       when total == abs(starting_balance) do
     [
       "New 🔥 for $#{total / 100} for #{product_name} / #{plan_name} by #{mask_user(user)}"
     ]
@@ -288,7 +288,7 @@ defmodule Sanbase.Billing.StripeEvent do
     end
   end
 
-  defp payload_for_subscription(_, total, starting_balance) when total == starting_balance do
+  defp payload_for_subscription(_, total, starting_balance) when total == abs(starting_balance) do
     ["New 🔥 for $#{total / 100} received."]
   end
 

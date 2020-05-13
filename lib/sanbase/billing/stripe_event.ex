@@ -212,15 +212,34 @@ defmodule Sanbase.Billing.StripeEvent do
   end
 
   defp build_payload(%{
-         "data" => %{"object" => %{"total" => total, "subscription" => subscription}}
+         "data" => %{
+           "object" => %{
+             "total" => total,
+             "starting_balance" => starting_balance,
+             "subscription" => subscription
+           }
+         }
        })
        when is_binary(subscription) do
     Repo.get_by(Subscription, stripe_id: subscription)
     |> Repo.preload([:user, plan: [:product]])
-    |> payload_for_subscription(total)
+    |> payload_for_subscription(total, starting_balance)
   end
 
-  defp build_payload(%{"id" => id, "data" => %{"object" => %{"total" => total}}}) do
+  defp build_payload(%{
+         "id" => id,
+         "data" => %{"object" => %{"total" => total, "starting_balance" => starting_balance}}
+       })
+       when total == abs(starting_balance) do
+    [
+      "New 🔥 for $#{total / 100} received. Details: https://dashboard.stripe.com/events/#{id}"
+    ]
+  end
+
+  defp build_payload(%{
+         "id" => id,
+         "data" => %{"object" => %{"total" => total}}
+       }) do
     [
       "New payment for $#{total / 100} received. Details: https://dashboard.stripe.com/events/#{
         id
@@ -231,10 +250,25 @@ defmodule Sanbase.Billing.StripeEvent do
   defp payload_for_subscription(
          %Subscription{
            plan: %Plan{name: plan_name, product: %Product{name: product_name}},
+           user: user
+         },
+         total,
+         starting_balance
+       )
+       when total == abs(starting_balance) do
+    [
+      "New 🔥 for $#{total / 100} for #{product_name} / #{plan_name} by #{mask_user(user)}"
+    ]
+  end
+
+  defp payload_for_subscription(
+         %Subscription{
+           plan: %Plan{name: plan_name, product: %Product{name: product_name}},
            inserted_at: inserted_at,
            user: user
          },
-         total
+         total,
+         _
        ) do
     calculate_recurring_month(inserted_at)
     |> case do
@@ -254,7 +288,11 @@ defmodule Sanbase.Billing.StripeEvent do
     end
   end
 
-  defp payload_for_subscription(_, total) do
+  defp payload_for_subscription(_, total, starting_balance) when total == abs(starting_balance) do
+    ["New 🔥 for $#{total / 100} received."]
+  end
+
+  defp payload_for_subscription(_, total, _) do
     ["New payment for $#{total / 100} received."]
   end
 

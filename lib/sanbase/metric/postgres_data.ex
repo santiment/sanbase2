@@ -8,6 +8,7 @@ defmodule Sanbase.Metric.MetricPostgresData do
 
     many_to_many(:posts, Sanbase.Insight.Post,
       join_through: "posts_metrics",
+      join_keys: [post_id: :id, metric_id: :id],
       on_replace: :delete,
       on_delete: :delete_all
     )

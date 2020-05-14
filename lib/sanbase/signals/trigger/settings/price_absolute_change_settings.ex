@@ -137,8 +137,7 @@ defmodule Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings do
           operation: operation,
           project_name: project.name,
           project_ticker: project.ticker,
-          project_slug: project.slug,
-          chart_url: chart_url(project, :volume)
+          project_slug: project.slug
         }
         |> Map.merge(template_kv)
         |> Map.merge(curr_value_kv)
@@ -148,8 +147,6 @@ defmodule Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings do
       #{curr_value_template}.
 
       More information for the project you can find here: #{Project.sanbase_link(project)}
-
-      ![Price chart over the past 90 days]({{chart_url}})
       """
 
       {template, kv}

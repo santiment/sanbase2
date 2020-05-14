@@ -141,8 +141,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
           project_ticker: project.ticker,
           project_slug: project.slug,
           average_value: values.previous_average,
-          interval: interval,
-          chart_url: chart_url(project, {:metric, "daily_active_addresses"})
+          interval: interval
         }
         |> Map.merge(operation_kv)
         |> Map.merge(curr_value_kv)
@@ -155,8 +154,6 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
 
       Average 24 hours Active Addresses for last **{{interval}}*: **{{average_value}}**.
       More info here: #{Project.sanbase_link(project)}
-
-      ![Active Addresses chart and OHLC price chart for the past 90 days]({{chart_url}})
       """
 
       {template, kv}

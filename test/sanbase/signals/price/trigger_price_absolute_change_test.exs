@@ -36,9 +36,6 @@ defmodule Sanbase.Signal.TriggerPriceAbsoluteChangeTest do
         &Sanbase.Price.aggregated_metric_timeseries_data/5,
         {:ok, %{project.slug => price_usd}}
       )
-      |> Sanbase.Mock.prepare_mock2(&Sanbase.GoogleChart.build_embedded_chart/4, [
-        %{image: %{url: "url"}}
-      ])
       |> Sanbase.Mock.run_with_mocks(fn ->
         [triggered | rest] =
           PriceAbsoluteChangeSettings.type()
@@ -69,9 +66,6 @@ defmodule Sanbase.Signal.TriggerPriceAbsoluteChangeTest do
         &Sanbase.Price.aggregated_metric_timeseries_data/5,
         {:ok, %{project.slug => price_usd}}
       )
-      |> Sanbase.Mock.prepare_mock2(&Sanbase.GoogleChart.build_embedded_chart/4, [
-        %{image: %{url: "url"}}
-      ])
       |> Sanbase.Mock.run_with_mocks(fn ->
         triggered =
           PriceAbsoluteChangeSettings.type()
@@ -146,9 +140,6 @@ defmodule Sanbase.Signal.TriggerPriceAbsoluteChangeTest do
         &Sanbase.Price.aggregated_metric_timeseries_data/5,
         {:ok, %{project.slug => price_usd}}
       )
-      |> Sanbase.Mock.prepare_mock2(&Sanbase.GoogleChart.build_embedded_chart/4, [
-        %{image: %{url: "url"}}
-      ])
       |> Sanbase.Mock.run_with_mocks(fn ->
         assert capture_log(fn ->
                  Sanbase.Signal.Scheduler.run_signal(PriceAbsoluteChangeSettings)

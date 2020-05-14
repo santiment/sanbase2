@@ -8,7 +8,7 @@ defimpl Sanbase.Signal, for: Any do
   def send(%{
         trigger: %{settings: %{triggered?: false}}
       }) do
-    warn_msg = "Trying to send a signal that is not triggered."
+    warn_msg = "Trying to send an alert that is not triggered."
     Logger.warn(warn_msg)
     {:error, warn_msg}
   end
@@ -47,7 +47,7 @@ defimpl Sanbase.Signal, for: Any do
 
   def send_email(%{user: %Sanbase.Auth.User{id: id}}) do
     Logger.warn(
-      "User with id #{id} does not have an email linked or the email notifications are disabled, so a signal cannot be sent."
+      "User with id #{id} does not have an email linked or the email notifications are disabled, so an alert cannot be sent."
     )
 
     {:error, "No email linked for user with id #{id}"}
@@ -59,7 +59,7 @@ defimpl Sanbase.Signal, for: Any do
           user_settings: %{settings: %{has_telegram_connected: false}}
         }
       }) do
-    Logger.warn("User with id #{id} does not have a telegram linked, so a signal cannot be sent.")
+    Logger.warn("User with id #{id} does not have a telegram linked, so an alert cannot be sent.")
 
     {:error, "No telegram linked for user with #{id}"}
   end
@@ -81,7 +81,7 @@ defimpl Sanbase.Signal, for: Any do
   defp extend_payload(payload, user_trigger_id) do
     """
     #{payload}
-    The signal was triggered by #{SanbaseWeb.Endpoint.show_signal_url(user_trigger_id)}
+    The alert was triggered by #{SanbaseWeb.Endpoint.show_signal_url(user_trigger_id)}
     """
   end
 

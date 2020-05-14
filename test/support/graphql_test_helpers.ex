@@ -10,7 +10,6 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   def v2_restricted_metric_for_plan(position, product, plan_name) do
     (AccessChecker.get_available_metrics_for_plan(product, plan_name, :restricted) --
        AccessChecker.get_available_metrics_for_plan(product, plan_name, :custom))
-    |> Enum.sort()
     |> Stream.cycle()
     |> Enum.at(position)
   end

@@ -5,20 +5,23 @@ defmodule Sanbase.SocialData.SocialVolume do
   require Sanbase.Utils.Config, as: Config
 
   alias Sanbase.Model.Project
+  alias Sanbase.Model.Project.SocialVolumeQuery
 
   require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 25_000
-  @sources [:telegram, :professional_traders_chat, :reddit, :discord]
+  @sources [:telegram, :professional_traders_chat, :reddit, :discord, :twitter, :bitcointalk]
 
-  def social_volume(slug, from, to, interval, source)
+  def sources(), do: @sources
+
+  def social_volume(selector, from, to, interval, source)
       when source in [:all, "all", :total, "total"] do
     result =
       @sources
       |> Sanbase.Parallel.flat_map(
         fn source ->
-          {:ok, result} = social_volume(slug, from, to, interval, source)
+          {:ok, result} = social_volume(selector, from, to, interval, source)
           result
         end,
         max_concurrency: 4
@@ -28,19 +31,21 @@ defmodule Sanbase.SocialData.SocialVolume do
     {:ok, result}
   end
 
-  def social_volume(slug, from, to, interval, source) do
-    social_volume_request(slug, from, to, interval, source)
+  def social_volume(selector, from, to, interval, source) do
+    social_volume_request(selector, from, to, interval, source)
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, result} = Jason.decode(body)
         social_volume_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status}} ->
-        warn_result("Error status #{status} fetching social volume for project #{slug}")
+        warn_result("Error status #{status} fetching social volume for #{inspect(selector)}")
 
       {:error, %HTTPoison.Error{} = error} ->
         error_result(
-          "Cannot fetch social volume data for project #{slug}: #{HTTPoison.Error.message(error)}"
+          "Cannot fetch social volume data for #{inspect(selector)}: #{
+            HTTPoison.Error.message(error)
+          }"
         )
     end
   end
@@ -62,78 +67,60 @@ defmodule Sanbase.SocialData.SocialVolume do
     end
   end
 
-  def topic_search(search_text, from, to, interval, source)
-      when source in [:all, "all", :total, "total"] do
-    result =
-      @sources
-      |> Sanbase.Parallel.flat_map(
-        fn source ->
-          {:ok, result} = topic_search(search_text, from, to, interval, source)
-          result
-        end,
-        max_concurrency: 4
-      )
-      |> Sanbase.Utils.Transform.sum_by_datetime(:mentions_count)
-
-    {:ok, result}
-  end
-
-  def topic_search(search_text, from, to, interval, source) do
-    topic_search_request(search_text, from, to, interval, source)
+  defp social_volume_selector_handler(%{slug: slug}) do
+    slug
+    |> Project.by_slug(only_preload: [:social_volume_query])
     |> case do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Jason.decode(body)
-        topic_search_result(result)
+      %Project{social_volume_query: %{query: query_text}}
+      when not is_nil(query_text) ->
+        {"search_text", query_text}
 
-      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        error_result(
-          "Error status #{status} fetching results for search text \"#{search_text}\": #{body}"
-        )
+      %Project{} = project ->
+        {"search_text", SocialVolumeQuery.default_query(project)}
 
-      {:error, %HTTPoison.Error{} = error} ->
-        error_result(
-          "Cannot fetch results for search text \"#{search_text}\": #{
-            HTTPoison.Error.message(error)
-          }"
-        )
+      _ ->
+        {:error, "Invalid slug"}
     end
   end
 
-  defp source_to_indicator(<<"reddit", _::binary>>), do: "reddit_comments_overview"
-  defp source_to_indicator(<<"discord", _::binary>>), do: "discord_chats_overview"
-  defp source_to_indicator(<<"telegram", _::binary>>), do: "telegram_chats_overview"
+  defp social_volume_selector_handler(%{text: search_text}) do
+    {"search_text", search_text}
+  end
 
-  defp source_to_indicator(<<"professional_traders_chat", _::binary>>),
-    do: "professional_traders_chat_overview"
+  defp social_volume_selector_handler(_args) do
+    {:error, "Invalid argument for social_volume, please input a slug or search_text"}
+  end
 
-  defp social_volume_request(slug, from, to, interval, source) do
-    url = "#{tech_indicators_url()}/indicator/#{source_to_indicator(source |> to_string())}"
+  defp social_volume_request(selector, from, to, interval, source) do
+    {"search_text", search_text} = social_volume_selector_handler(selector)
+
+    url = "#{metrics_hub_url()}/social_volume"
 
     options = [
       recv_timeout: @recv_timeout,
       params: [
-        {"project", "#{Project.ticker_by_slug(slug)}_#{slug}"},
-        {"datetime_from", DateTime.to_unix(from)},
-        {"datetime_to", DateTime.to_unix(to)},
-        {"interval", interval}
+        {"search_text", search_text},
+        {"from_timestamp", from |> DateTime.to_iso8601()},
+        {"to_timestamp", to |> DateTime.to_iso8601()},
+        {"interval", interval},
+        {"source", source}
       ]
     ]
 
     http_client().get(url, [], options)
   end
 
-  defp social_volume_result(result) do
-    result =
-      result
-      |> Enum.map(fn
-        %{"timestamp" => timestamp, "mentions_count" => mentions_count} ->
-          %{
-            datetime: DateTime.from_unix!(timestamp),
-            mentions_count: mentions_count
-          }
+  defp social_volume_result(%{"data" => map}) do
+    map =
+      Enum.map(map, fn {datetime, value} ->
+        %{
+          datetime: Sanbase.DateTimeUtils.from_iso8601!(datetime),
+          mentions_count: value
+        }
       end)
+      |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
 
-    {:ok, result}
+    {:ok, map}
   end
 
   defp social_volume_projects_request() do
@@ -155,40 +142,11 @@ defmodule Sanbase.SocialData.SocialVolume do
     {:ok, result}
   end
 
-  defp topic_search_request(search_text, from, to, interval, source) do
-    url = "#{tech_indicators_url()}/indicator/topic_search"
-
-    options = [
-      recv_timeout: @recv_timeout,
-      params: [
-        {"source", source},
-        {"search_text", search_text},
-        {"from_timestamp", DateTime.to_unix(from)},
-        {"to_timestamp", DateTime.to_unix(to)},
-        {"interval", interval}
-      ]
-    ]
-
-    http_client().get(url, [], options)
-  end
-
-  defp topic_search_result(%{"chart_data" => chart_data}) do
-    chart_data = parse_topic_search_data(chart_data, :mentions_count)
-
-    {:ok, chart_data}
-  end
-
-  defp parse_topic_search_data(data, key) do
-    data
-    |> Enum.map(fn result ->
-      %{
-        :datetime => Map.get(result, "timestamp") |> DateTime.from_unix!(),
-        key => Map.get(result, to_string(key))
-      }
-    end)
-  end
-
   defp tech_indicators_url() do
     Config.module_get(Sanbase.TechIndicators, :url)
+  end
+
+  defp metrics_hub_url() do
+    Config.module_get(Sanbase.SocialData, :metricshub_url)
   end
 end

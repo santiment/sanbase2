@@ -16,10 +16,13 @@ defmodule Sanbase.SocialData do
   defdelegate social_dominance(selector, datetime_from, datetime_to, interval, source),
     to: SocialDominance
 
-  defdelegate social_volume(selector, from, to, interval, source),
+  defdelegate social_volume(slug, from, to, interval, source),
     to: SocialVolume
 
   defdelegate social_volume_projects(), to: SocialVolume
+
+  defdelegate topic_search(text, from, to, interval, source),
+    to: SocialVolume
 
   defdelegate community_messages_count(slug, from, to, interval, source),
     to: Community

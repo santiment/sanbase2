@@ -6,7 +6,6 @@ defmodule Sanbase.TechIndicatorsTest do
 
   alias Sanbase.TechIndicators
   alias Sanbase.SocialData.SocialVolume
-  alias Sanbase.SocialData.MetricAdapter
   import Sanbase.Factory
 
   setup do
@@ -182,6 +181,57 @@ defmodule Sanbase.TechIndicatorsTest do
               ]}
   end
 
+  describe "social_volume/5" do
+    test "response: success" do
+      from = ~U[2018-04-16 11:00:00Z]
+      to = ~U[2018-04-16 12:00:00Z]
+
+      mock(
+        HTTPoison,
+        :get,
+        {:ok,
+         %HTTPoison.Response{
+           body:
+             "[{\"mentions_count\": 5, \"timestamp\": 1523876400}, {\"mentions_count\": 15, \"timestamp\": 1523880000}]",
+           status_code: 200
+         }}
+      )
+
+      result = SocialVolume.social_volume("santiment", from, to, "1h", :telegram)
+
+      assert result ==
+               {:ok,
+                [
+                  %{mentions_count: 5, datetime: from},
+                  %{mentions_count: 15, datetime: to}
+                ]}
+    end
+
+    test "response: 404" do
+      from = ~U[2018-04-16 11:00:00Z]
+      to = ~U[2018-04-16 12:00:00Z]
+
+      mock(HTTPoison, :get, {:ok, %HTTPoison.Response{body: "Some message", status_code: 404}})
+
+      assert capture_log(fn ->
+               SocialVolume.social_volume("santiment", from, to, "1h", :telegram)
+             end) =~
+               "Error status 404 fetching social volume for project santiment"
+    end
+
+    test "response: error" do
+      from = ~U[2018-04-16 11:00:00Z]
+      to = ~U[2018-04-16 12:00:00Z]
+
+      mock(HTTPoison, :get, {:error, %HTTPoison.Error{reason: :econnrefused}})
+
+      assert capture_log(fn ->
+               SocialVolume.social_volume("santiment", from, to, "1h", :telegram)
+             end) =~
+               "Cannot fetch social volume data for project santiment: :econnrefused\n"
+    end
+  end
+
   describe "social_volume_projects/0" do
     test "response: success" do
       mock(
@@ -212,6 +262,57 @@ defmodule Sanbase.TechIndicatorsTest do
 
       assert capture_log(fn -> SocialVolume.social_volume_projects() end) =~
                "Cannot fetch social volume projects data: :econnrefused\n"
+    end
+  end
+
+  describe "topic_search/5" do
+    test "response: success" do
+      from = ~U[2018-04-16 11:00:00Z]
+      to = ~U[2018-04-16 12:00:00Z]
+
+      mock(
+        HTTPoison,
+        :get,
+        {:ok,
+         %HTTPoison.Response{
+           body:
+             "{\"messages\": [{\"text\": \"BTC moon\", \"timestamp\": 1533307652}, {\"text\": \"0.1c of usd won't make btc moon, you realize that?\", \"timestamp\": 1533694150}], \"chart_data\": [{\"mentions_count\": 1, \"timestamp\": 1533146400}, {\"mentions_count\": 0, \"timestamp\": 1533168000}]}",
+           status_code: 200
+         }}
+      )
+
+      result = SocialVolume.topic_search("btc moon", from, to, "6h", :telegram)
+
+      assert result ==
+               {:ok,
+                [
+                  %{datetime: DateTime.from_unix!(1_533_146_400), mentions_count: 1},
+                  %{datetime: DateTime.from_unix!(1_533_168_000), mentions_count: 0}
+                ]}
+    end
+
+    test "response: 404" do
+      from = ~U[2018-04-16 11:00:00Z]
+      to = ~U[2018-04-16 12:00:00Z]
+
+      mock(HTTPoison, :get, {:ok, %HTTPoison.Response{body: "Some message", status_code: 404}})
+
+      assert capture_log(fn ->
+               SocialVolume.topic_search("btc moon", from, to, "6h", :reddit)
+             end) =~
+               "Error status 404 fetching results for search text \"btc moon\": Some message\n"
+    end
+
+    test "response: error" do
+      from = ~U[2018-04-16 11:00:00Z]
+      to = ~U[2018-04-16 12:00:00Z]
+
+      mock(HTTPoison, :get, {:error, %HTTPoison.Error{reason: :econnrefused}})
+
+      assert capture_log(fn ->
+               SocialVolume.topic_search("btc moon", from, to, "6h", :discord)
+             end) =~
+               "Cannot fetch results for search text \"btc moon\": :econnrefused\n"
     end
   end
 end

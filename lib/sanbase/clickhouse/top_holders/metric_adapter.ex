@@ -46,7 +46,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   @access_map Enum.into(@metrics, %{}, fn metric -> {metric, :restricted} end)
   @min_plan_map Enum.into(@metrics, %{}, fn metric ->
-                  {metric, %{"SANAPI" => :pro, "SANBASE" => :free}}
+                  {metric, %{"SANAPI" => :free, "SANBASE" => :free}}
                 end)
 
   @free_metrics Enum.filter(@access_map, fn {_, level} -> level == :free end) |> Keyword.keys()

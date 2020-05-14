@@ -45,9 +45,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       %{infrastructure: "BNB"},
       %{infrastructure: "BNB", slug: "binance-coin"},
       %{infrastructure: "XRP"},
-      %{infrastructure: "XRP", currency: "BTC"},
-      %{infrastructure: "EOS"},
-      %{infrastructure: "EOS", slug: "eos"}
+      %{infrastructure: "XRP", currency: "BTC"}
     ]
 
     dt1 = ~U[2019-01-01 00:00:00Z]

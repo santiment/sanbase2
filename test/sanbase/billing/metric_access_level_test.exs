@@ -132,8 +132,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "social_volume_discord",
         "social_volume_professional_traders_chat",
         "social_volume_reddit",
-        "social_volume_twitter",
-        "social_volume_bitcointalk",
         "social_volume_telegram",
         "social_volume_total",
         # histogram metrics

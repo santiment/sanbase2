@@ -11,13 +11,13 @@ defmodule Sanbase.SocialData.Community do
   @recv_timeout 15_000
   @sources [:telegram]
 
-  def community_messages_count(selector, from, to, interval, source)
+  def community_messages_count(slug, from, to, interval, source)
       when source in [:all, "all", :total, "total"] do
     result =
       @sources
       |> Sanbase.Parallel.flat_map(
         fn source ->
-          {:ok, result} = community_messages_count(selector, from, to, interval, source)
+          {:ok, result} = community_messages_count(slug, from, to, interval, source)
           result
         end,
         max_concurrency: 4
@@ -27,7 +27,7 @@ defmodule Sanbase.SocialData.Community do
     {:ok, result}
   end
 
-  def community_messages_count(%{slug: slug}, from, to, interval, source) do
+  def community_messages_count(slug, from, to, interval, source) do
     community_messages_count_request(slug, from, to, interval, source |> to_string())
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
@@ -46,10 +46,6 @@ defmodule Sanbase.SocialData.Community do
           }"
         )
     end
-  end
-
-  def community_messages_count(argument) do
-    {:error, "Invalid argument for community_messages_count #{inspect(argument)}"}
   end
 
   defp source_to_indicator(<<"discord", _::binary>>), do: "discord_discussion_overview"

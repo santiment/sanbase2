@@ -46,7 +46,7 @@ defmodule Sanbase.Signal.WalletTriggerTest do
 
     trigger_settings2 = %{
       type: "wallet_movement",
-      selector: %{infrastructure: "EOS", slug: "some-weird-token"},
+      selector: %{infrastructure: "ETH", slug: "some-weird-token"},
       target: %{address: address},
       channel: "telegram",
       time_window: "1d",
@@ -146,7 +146,7 @@ defmodule Sanbase.Signal.WalletTriggerTest do
       assert Enum.at(sorted_messages, 0) =~ "was: 20, now: 300"
 
       assert Enum.at(sorted_messages, 1) =~
-               "The address #{context.address}'s some-weird-token balance on the EOS blockchain has increased by 280."
+               "The address #{context.address}'s some-weird-token balance on the Ethereum blockchain has increased by 280."
 
       assert Enum.at(sorted_messages, 1) =~ "was: 20, now: 300"
     end

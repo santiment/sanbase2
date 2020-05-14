@@ -248,7 +248,6 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
     defp asset_target_blockchain_kv(%{infrastructure: infrastructure} = selector) do
       case infrastructure do
         "ETH" -> %{asset: Map.get(selector, :slug, "ethereum"), target_blockchain: "Ethereum"}
-        "EOS" -> %{asset: Map.get(selector, :slug, "eos"), target_blockchain: "EOS"}
         "BNB" -> %{asset: Map.get(selector, :slug, "binance-coin"), target_blockchain: "Binance"}
         "XRP" -> %{asset: Map.get(selector, :currency, "XRP"), target_blockchain: "Ripple"}
         "BTC" -> %{asset: "bitcoin", target_blockchain: "Bitcoin"}

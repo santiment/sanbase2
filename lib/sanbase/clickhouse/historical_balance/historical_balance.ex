@@ -14,7 +14,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
     BchBalance,
     BnbBalance,
     BtcBalance,
-    EosBalance,
     Erc20Balance,
     EthBalance,
     LtcBalance,
@@ -26,8 +25,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
     "BNB" => BnbBalance,
     "BEP2" => BnbBalance,
     "BTC" => BtcBalance,
-    "EOS" => EosBalance,
-    "eosio.token/EOS" => EosBalance,
     "LTC" => LtcBalance,
     "XRP" => XrpBalance,
     "ETH" => [EthBalance, Erc20Balance]
@@ -117,10 +114,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
         with {:ok, contract, decimals} <- Project.contract_info_by_slug("litecoin"),
              do: LtcBalance.balance_change(address, contract, decimals, from, to)
 
-      {"EOS", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug || "eos"),
-             do: EosBalance.balance_change(address, contract, decimals, from, to)
-
       {"BNB", _} ->
         with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug || "binance-coin"),
              do: BnbBalance.balance_change(address, contract, decimals, from, to)
@@ -161,10 +154,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
       {"LTC", _} ->
         with {:ok, contract, decimals} <- Project.contract_info_by_slug("litecoin"),
              do: LtcBalance.historical_balance(address, contract, decimals, from, to, interval)
-
-      {"EOS", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug || "eos"),
-             do: EosBalance.historical_balance(address, contract, decimals, from, to, interval)
 
       {"BNB", _} ->
         with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug || "binance-coin"),

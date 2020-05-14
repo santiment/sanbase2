@@ -7,13 +7,10 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   # The default endpoint for testing
   @endpoint SanbaseWeb.Endpoint
 
-  @custom_access_metrics Sanbase.Billing.Plan.CustomAccess.get()
-                         |> Enum.filter(&match?({{:metric, _}, _}, &1))
-                         |> Enum.map(fn {{_, name}, _} -> name end)
-
   def v2_restricted_metric_for_plan(position, product, plan_name) do
     (AccessChecker.get_available_metrics_for_plan(product, plan_name, :restricted) --
        AccessChecker.get_available_metrics_for_plan(product, plan_name, :custom))
+    |> Enum.sort()
     |> Stream.cycle()
     |> Enum.at(position)
   end

@@ -1,20 +1,10 @@
 defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
-  alias Sanbase.Billing.Plan.AccessChecker
   alias Sanbase.Billing.{Subscription, Plan}
   alias Sanbase.Auth.User
 
   alias Sanbase.StripeApi
 
   require Logger
-
-  def get_available_metrics_for_plan(
-        _root,
-        %{product: product, plan: plan, restriction_type: restriction_type},
-        _resolution
-      ) do
-    product = product |> Atom.to_string() |> String.upcase()
-    {:ok, AccessChecker.get_available_metrics_for_plan(product, plan, restriction_type)}
-  end
 
   def products_with_plans(_root, _args, _resolution) do
     Plan.product_with_plans()

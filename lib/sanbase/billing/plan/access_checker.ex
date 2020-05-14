@@ -135,7 +135,6 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     |> Enum.filter(&match?({:metric, _}, &1))
     |> Enum.filter(&plan_has_access?(plan, product, &1))
     |> Enum.map(fn {_, name} -> name end)
-    |> Enum.sort()
   end
 
   def custom_access_queries_stats(), do: @custom_access_queries_stats

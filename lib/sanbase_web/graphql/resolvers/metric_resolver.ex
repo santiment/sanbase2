@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   alias Sanbase.Metric
   alias Sanbase.Billing.Plan.Restrictions
+  alias Sanbase.Billing.Plan.AccessChecker
 
   require Logger
 
@@ -15,6 +16,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
       true -> {:ok, %{metric: metric}}
       {:error, error} -> {:error, error}
     end
+  end
+
+  def get_available_metrics(
+        _root,
+        %{product: product, plan: plan},
+        _resolution
+      ) do
+    product = product |> Atom.to_string() |> String.upcase()
+    {:ok, AccessChecker.get_available_metrics_for_plan(product, plan)}
   end
 
   def get_available_metrics(_root, _args, _resolution), do: {:ok, Metric.available_metrics()}

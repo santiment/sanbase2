@@ -9,7 +9,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   @type restriction :: %{
           type: String.t(),
           name: String.t(),
-          is_available: boolean(),
+          is_accessible: boolean(),
           is_restricted: boolean(),
           restricted_from: DateTime.t(),
           restricted_to: DateTime.t()

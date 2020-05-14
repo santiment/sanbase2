@@ -46,7 +46,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
         %{
           type: type_str,
           name: name_str,
-          is_restricted: not (is_nil(restricted_from) or is_nil(restricted_to)),
+          is_restricted: not is_nil(restricted_from) or not is_nil(restricted_to),
           restricted_from: restricted_from,
           restricted_to: restricted_to
         }

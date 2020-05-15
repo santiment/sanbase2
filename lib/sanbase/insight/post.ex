@@ -39,7 +39,7 @@ defmodule Sanbase.Insight.Post do
     field(:ready_state, :string, default: @draft)
     field(:is_pulse, :boolean, default: false)
     field(:is_paywall_required, :boolean, default: false)
-    field(:prediction, :string, default: nil)
+    field(:prediction, :string, default: "unspecified")
 
     belongs_to(:price_chart_project, Project)
 
@@ -90,7 +90,11 @@ defmodule Sanbase.Insight.Post do
   end
 
   def update_changeset(%Post{} = post, attrs) do
+    preloads =
+      if(attrs[:tags], do: [:tags], else: []) ++ if attrs[:metrics], do: [:metrics], else: []
+
     post
+    |> Repo.preload(preloads)
     |> cast(attrs, [
       :title,
       :short_desc,
@@ -103,6 +107,7 @@ defmodule Sanbase.Insight.Post do
       :price_chart_project_id
     ])
     |> Tag.put_tags(attrs)
+    |> MetricPostgresData.put_metrics(attrs)
     |> images_cast(attrs)
     |> validate_length(:title, max: 140)
     |> validate_change(:prediction, &valid_prediction?/2)
@@ -463,13 +468,17 @@ defmodule Sanbase.Insight.Post do
     |> Enum.map(&Sanbase.FileStore.delete/1)
   end
 
-  defp maybe_drop_post_tags(post, %{tags: tags}) when is_list(tags) do
-    Tag.drop_tags(post)
-  end
-
+  defp maybe_drop_post_tags(post, %{tags: tags}) when is_list(tags), do: Tag.drop_tags(post)
   defp maybe_drop_post_tags(_, _), do: :ok
 
-  @predictions ["heavy_bullish", "semi_bullish", "neutral", "semi_bearish", "heavy_bearish"]
+  @predictions [
+    "heavy_bullish",
+    "semi_bullish",
+    "semi_bearish",
+    "heavy_bearish",
+    "unspecified",
+    "none"
+  ]
   defp valid_prediction?(_, nil), do: []
   defp valid_prediction?(_, prediction) when prediction in @predictions, do: []
 

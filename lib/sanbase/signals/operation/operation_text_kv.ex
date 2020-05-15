@@ -39,7 +39,7 @@ defmodule Sanbase.Signal.OperationText.KV do
         false -> "#{form} above #{special_symbol}{{above}}"
       end
 
-    kv = %{above: above, value: transform_fun.(value)}
+    kv = %{above: transform_fun.(above), value: transform_fun.(value)}
     {template, kv}
   end
 
@@ -58,7 +58,7 @@ defmodule Sanbase.Signal.OperationText.KV do
         false -> "#{form} below #{special_symbol}{{below}}"
       end
 
-    kv = %{below: below, value: transform_fun.(value)}
+    kv = %{below: transform_fun.(below), value: transform_fun.(value)}
     {template, kv}
   end
 
@@ -80,7 +80,12 @@ defmodule Sanbase.Signal.OperationText.KV do
           "#{form} inside the [#{special_symbol}{{lower}}, #{special_symbol}{{upper}}] interval"
       end
 
-    kv = %{lower: lower, upper: upper, value: transform_fun.(value)}
+    kv = %{
+      lower: transform_fun.(lower),
+      upper: transform_fun.(upper),
+      value: transform_fun.(value)
+    }
+
     {template, kv}
   end
 
@@ -102,7 +107,12 @@ defmodule Sanbase.Signal.OperationText.KV do
           "#{form} outside the [#{special_symbol}{{lower}}, #{special_symbol}{{upper}}] interval"
       end
 
-    kv = %{lower: lower, upper: upper, value: transform_fun.(value)}
+    kv = %{
+      lower: transform_fun.(lower),
+      upper: transform_fun.(upper),
+      value: transform_fun.(value)
+    }
+
     {template, kv}
   end
 
@@ -111,13 +121,19 @@ defmodule Sanbase.Signal.OperationText.KV do
     do: to_template_kv(value, op, opts)
 
   def to_template_kv(percent_change, %{percent_up: percent_up}, opts) do
+    transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
+
     template =
       case Keyword.get(opts, :negative, false) do
         true -> "did not increase by {{percent_up_required}}%"
         false -> "increased by {{percent_up}}%"
       end
 
-    kv = %{percent_up: percent_change, percent_up_required: percent_up}
+    kv = %{
+      percent_up: transform_fun.(percent_change),
+      percent_up_required: transform_fun.(percent_up)
+    }
+
     {template, kv}
   end
 
@@ -126,15 +142,19 @@ defmodule Sanbase.Signal.OperationText.KV do
     do: to_template_kv(value, op, opts)
 
   def to_template_kv(percent_change, %{percent_down: percent_down}, opts) do
-    special_symbol = Keyword.get(opts, :special_symbol, "")
+    transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
 
     template =
       case Keyword.get(opts, :negative, false) do
-        true -> "did not decrease by #{special_symbol}{{percent_down_required}}%"
-        false -> "decreased by #{special_symbol}{{percent_down}}%"
+        true -> "did not decrease by {{percent_down_required}}%"
+        false -> "decreased by {{percent_down}}%"
       end
 
-    kv = %{percent_down: abs(percent_change), percent_down_required: percent_down}
+    kv = %{
+      percent_down: transform_fun.(percent_change) |> abs(),
+      percent_down_required: transform_fun.(percent_down)
+    }
+
     {template, kv}
   end
 
@@ -152,7 +172,11 @@ defmodule Sanbase.Signal.OperationText.KV do
         false -> "increased by #{special_symbol}{{amount_change_up}}"
       end
 
-    kv = %{amount_change_up: transform_fun.(amount_change), amount_change_up_required: amount_up}
+    kv = %{
+      amount_change_up: transform_fun.(amount_change),
+      amount_change_up_required: transform_fun.(amount_up)
+    }
+
     {template, kv}
   end
 
@@ -172,7 +196,7 @@ defmodule Sanbase.Signal.OperationText.KV do
 
     kv = %{
       amount_down_change: transform_fun.(amount_change) |> abs(),
-      amount_down_change_required: amount_down
+      amount_down_change_required: transform_fun.(amount_down)
     }
 
     {template, kv}

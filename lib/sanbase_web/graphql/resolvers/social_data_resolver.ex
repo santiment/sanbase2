@@ -47,10 +47,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     # `getMetric(metric: "social_volume_*")`
     case type in [:telegram_discussion_overview, :discord_discussion_overview] do
       true ->
-        SocialData.community_messages_count(slug, from, to, interval, type)
+        SocialData.community_messages_count(%{slug: slug}, from, to, interval, type)
 
       false ->
-        SocialData.social_volume(slug, from, to, interval, type)
+        SocialData.social_volume(%{slug: slug}, from, to, interval, type)
     end
   end
 
@@ -63,7 +63,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
         %{source: source, search_text: search_text, from: from, to: to, interval: interval},
         _resolution
       ) do
-    case SocialData.topic_search(search_text, from, to, interval, source) do
+    case SocialData.social_volume(%{text: search_text}, from, to, interval, source) do
       {:ok, data} -> {:ok, %{chart_data: data}}
       {:error, error} -> {:error, error}
     end

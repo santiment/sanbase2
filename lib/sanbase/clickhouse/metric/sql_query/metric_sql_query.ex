@@ -26,6 +26,38 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     field(:computed_at, :utc_datetime)
   end
 
+  def timeseries_data_query(metric, slugs, from, to, interval, aggregation) when is_list(slugs) do
+    query = """
+    SELECT
+      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
+      #{aggregation(aggregation, "value", "dt")}
+    FROM(
+      SELECT
+        dt,
+        argMax(value, computed_at) AS value
+      FROM #{Map.get(@table_map, metric)}
+      PREWHERE
+        #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
+        #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
+        asset_id IN ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name IN (?5) ) AND
+        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 )
+      GROUP BY dt, asset_id
+    )
+    GROUP BY t
+    ORDER BY t
+    """
+
+    args = [
+      str_to_sec(interval),
+      Map.get(@name_to_metric_map, metric),
+      from |> DateTime.to_unix(),
+      to |> DateTime.to_unix(),
+      slugs
+    ]
+
+    {query, args}
+  end
+
   def timeseries_data_query(metric, slug, from, to, interval, aggregation) do
     query = """
     SELECT

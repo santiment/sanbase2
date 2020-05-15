@@ -73,6 +73,8 @@ defmodule Sanbase.Clickhouse.Metric do
   """
   @impl Sanbase.Metric.Behaviour
 
+  def timeseries_data(_metric, %{slug: []}, _from, _to, _interval, _aggregation), do: {:ok, []}
+
   def timeseries_data(metric, %{slug: slug}, from, to, interval, aggregation) do
     aggregation = aggregation || Map.get(@aggregation_map, metric)
     {query, args} = timeseries_data_query(metric, slug, from, to, interval, aggregation)

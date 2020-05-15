@@ -1161,10 +1161,7 @@
     "access": "restricted",
     "aggregation": "last",
     "min_interval": "5m",
-    "table": [
-      "distribution_deltas_5min",
-      "intraday_metrics"
-    ],
+    "table": ["distribution_deltas_5min", "intraday_metrics"],
     "has_incomplete_data": false,
     "data_type": "histogram"
   },
@@ -1176,10 +1173,7 @@
     "access": "restricted",
     "aggregation": "last",
     "min_interval": "5m",
-    "table": [
-      "distribution_deltas_5min",
-      "intraday_metrics"
-    ],
+    "table": ["distribution_deltas_5min", "intraday_metrics"],
     "has_incomplete_data": false,
     "data_type": "histogram"
   },
@@ -1191,10 +1185,7 @@
     "access": "restricted",
     "aggregation": "last",
     "min_interval": "5m",
-    "table": [
-      "distribution_deltas_5min",
-      "intraday_metrics"
-    ],
+    "table": ["distribution_deltas_5min", "intraday_metrics"],
     "has_incomplete_data": false,
     "data_type": "histogram"
   },

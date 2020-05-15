@@ -153,9 +153,8 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
         |> Map.merge(curr_value_kv)
 
       template = """
-      {{metric_human_readable_name}} of the search term '#{text}' #{operation_template} and #{
-        curr_value_template
-      }.
+      🔔 The search term '#{text}''s {{metric_human_readable_name}} #{operation_template}.
+      #{curr_value_template}.
       """
 
       {template, kv}

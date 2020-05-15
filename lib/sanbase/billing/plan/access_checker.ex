@@ -134,8 +134,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     end
     |> Stream.filter(&match?({:metric, _}, &1))
     |> Stream.filter(&plan_has_access?(plan, product, &1))
-    |> Stream.map(fn {_, name} -> name end)
-    |> Enum.sort()
+    |> Enum.map(fn {_, name} -> name end)
   end
 
   def custom_access_queries_stats(), do: @custom_access_queries_stats

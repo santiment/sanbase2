@@ -45,7 +45,6 @@ defmodule SanbaseWeb.Graphql.SocialData.PopularSearchTermApiTest do
     conn
     |> post("/graphql", query_skeleton(query, "popularSearchTerms"))
     |> json_response(200)
-    |> IO.inspect(label: "40", limit: :infinity)
     |> get_in(["data", "popularSearchTerms"])
   end
 end

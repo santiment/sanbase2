@@ -94,8 +94,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :chart_configuration,
           :chart_configurations,
           :show_promoter,
-          :popular_search_terms,
-          :get_available_metrics_for_plan
+          :popular_search_terms
         ]
         |> Enum.sort()
 

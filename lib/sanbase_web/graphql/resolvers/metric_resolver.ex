@@ -223,5 +223,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   defp to_selector(%{slug: slug}), do: %{slug: slug}
   defp to_selector(%{word: word}), do: %{word: word}
-  defp to_selector(%{selector: %{} = selector}), do: selector
+
+  defp to_selector(%{selector: %{} = selector}),
+    do: selector
 end

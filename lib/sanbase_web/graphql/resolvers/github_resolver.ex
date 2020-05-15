@@ -79,19 +79,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
         },
         _resolution
       ) do
+    args = %{
+      transform: %{type: transform, moving_average_base: moving_average_interval_base},
+      from: from,
+      to: to,
+      interval: interval,
+      selector: %{}
+    }
+
     with projects when is_list(projects) <-
            Project.List.by_market_segment_all_of(market_segments),
-         {:ok, organizations} <- github_organizations(projects),
+         slugs <- Enum.map(projects, & &1.slug),
          {:ok, result} <-
-           Sanbase.Clickhouse.Github.dev_activity(
-             organizations,
-             from,
-             to,
-             interval,
-             transform,
-             moving_average_interval_base
+           SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+             %{},
+             %{args | selector: %{slug: slugs}},
+             %{source: %{metric: "dev_activity_1d"}}
            ) do
       {:ok, result}
+      |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :activity)
     else
       {:error, error} ->
         {:error,
@@ -128,16 +134,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
         {:error,
          handle_graphql_error("dev_activity", organizations, error, description: "organizations")}
     end
-  end
-
-  defp github_organizations(projects) when is_list(projects) do
-    organizations =
-      Enum.map(projects, &Project.github_organizations/1)
-      |> Enum.filter(&match?({:ok, _}, &1))
-      |> Enum.map(fn {:ok, orgs} -> orgs end)
-      |> List.flatten()
-
-    {:ok, organizations}
   end
 
   def github_activity(

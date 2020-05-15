@@ -125,15 +125,16 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
 
   describe "dev activity for market segments" do
     test "one segment with multiple projects", context do
-      with_mock Github,
-        dev_activity: fn _, _, _, _, _, _ ->
-          {:ok,
-           [
-             %{datetime: context.dt1, activity: 100},
-             %{datetime: context.dt2, activity: 200},
-             %{datetime: context.dt3, activity: 300}
-           ]}
-        end do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Metric.timeseries_data/6,
+        {:ok,
+         [
+           %{datetime: context.dt1, activity: 100},
+           %{datetime: context.dt2, activity: 200},
+           %{datetime: context.dt3, activity: 300}
+         ]}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           dev_activity_by_market_segment_all_of(
             context.conn,
@@ -154,12 +155,15 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
         }
 
         assert result == expected
-      end
+      end)
     end
 
     test "multiple segments that no project has", context do
-      with_mock Github,
-        dev_activity: fn _, _, _, _, _, _ -> {:ok, []} end do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Metric.timeseries_data/5,
+        {:ok, []}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           dev_activity_by_market_segment_all_of(
             context.conn,
@@ -178,8 +182,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
         assert result == expected
 
         # Called without organizations as there were not projects matched
-        assert called(Github.dev_activity([], :_, :_, :_, :_, :_))
-      end
+        assert called(Sanbase.Metric.timeseries_data(:_, %{slug: []}, :_, :_, :_, :_))
+      end)
     end
   end
 

@@ -31,6 +31,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "social_dominance_telegram",
     "social_dominance_discord",
     "social_dominance_reddit",
+    "social_dominance_bitcointalk",
+    "social_dominance_twitter",
     "social_dominance_professional_traders_chat",
     "social_dominance_total"
   ]

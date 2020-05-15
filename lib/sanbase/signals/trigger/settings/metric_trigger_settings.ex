@@ -185,8 +185,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
           project_slug: project.slug,
           project_ticker: project.ticker,
           metric: settings.metric,
-          metric_human_readable_name: human_readable_name,
-          chart_url: chart_url(project, {:metric, settings.metric})
+          metric_human_readable_name: human_readable_name
         }
         |> Map.merge(operation_kv)
         |> Map.merge(curr_value_kv)
@@ -197,8 +196,6 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
       }.
       #{curr_value_template}.
       More info here: #{Project.sanbase_link(project)}
-
-      ![#{human_readable_name} & OHLC for the past 90 days]({{chart_url}})
       """
 
       {template, kv}

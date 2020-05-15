@@ -3,7 +3,6 @@ defmodule Sanbase.Signal.EthWalletTriggerTest do
 
   import Mock
   import Sanbase.Factory
-  import Sanbase.TestHelpers
 
   alias Sanbase.Model.Project
 
@@ -14,16 +13,6 @@ defmodule Sanbase.Signal.EthWalletTriggerTest do
   }
 
   alias Sanbase.Clickhouse.HistoricalBalance
-
-  setup_all_with_mocks([
-    {Sanbase.GoogleChart, [],
-     [
-       build_embedded_chart: fn _, _, _, _ -> [%{image: %{url: "somelink"}}] end,
-       build_embedded_chart: fn _, _, _ -> [%{image: %{url: "somelink"}}] end
-     ]}
-  ]) do
-    []
-  end
 
   setup do
     Sanbase.Signal.Evaluator.Cache.clear()

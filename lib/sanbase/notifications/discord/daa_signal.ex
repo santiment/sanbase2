@@ -82,9 +82,9 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   defp send_and_persist(projects_to_signal, notification_type) do
     projects_to_signal
     |> Enum.map(&create_notification_content/1)
-    |> Enum.each(fn {project, payload, embeds, current_daa} ->
+    |> Enum.each(fn {project, payload, current_daa} ->
       payload
-      |> Discord.encode!(publish_user(), embeds)
+      |> Discord.encode!(publish_user())
       |> publish("discord")
 
       Notification.insert_triggered(project, notification_type, "#{current_daa}")
@@ -152,15 +152,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     More info here: #{Project.sanbase_link(project)}
     """
 
-    embeds =
-      Sanbase.GoogleChart.build_embedded_chart(
-        project,
-        Timex.shift(Timex.now(), days: -90),
-        Timex.now(),
-        chart_type: {:metric, "daily_active_addresses"}
-      )
-
-    {project, content, embeds, current_daa}
+    {project, content, current_daa}
   end
 
   defp get_or_store_avg_daa(projects) do

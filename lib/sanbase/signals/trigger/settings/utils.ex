@@ -1,19 +1,6 @@
 defmodule Sanbase.Signal.Utils do
   alias Sanbase.Math
 
-  def chart_url(project, type) do
-    Sanbase.GoogleChart.build_embedded_chart(
-      project,
-      Timex.shift(Timex.now(), days: -90),
-      Timex.now(),
-      chart_type: type
-    )
-    |> case do
-      [%{image: %{url: chart_url}}] -> chart_url
-      _ -> nil
-    end
-  end
-
   @doc ~s"""
   Round the price to 6 digits if it's between 0 and 1.
   Round the price to 2 digits if it's above 1

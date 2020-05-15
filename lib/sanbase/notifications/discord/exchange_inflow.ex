@@ -42,9 +42,9 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
           payloads ->
             payloads
-            |> Enum.each(fn {project, payload, embeds, _percent_change} ->
+            |> Enum.each(fn {project, payload, _percent_change} ->
               payload
-              |> Discord.encode!(publish_user(), embeds)
+              |> Discord.encode!(publish_user())
               |> publish("discord")
 
               Notification.set_triggered(project, notification_type)
@@ -102,8 +102,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
         {false, _} ->
           content = notification_message(project, interval_days(), :day, inflow)
-          embeds = notification_embeds(project)
-          {project, content, embeds, percent_of_total_supply}
+          {project, content, percent_of_total_supply}
       end
     end
   end
@@ -131,8 +130,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
               new_inflow
             )
 
-          embeds = notification_embeds(project)
-          {project, content, embeds, new_percent_of_total_supply}
+          {project, content, new_percent_of_total_supply}
         end
 
       _ ->
@@ -189,15 +187,6 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     }
     #{Project.sanbase_link(project)}
     """
-  end
-
-  defp notification_embeds(project) do
-    Sanbase.GoogleChart.build_embedded_chart(
-      project,
-      Timex.shift(Timex.now(), days: -90),
-      Timex.now(),
-      chart_type: {:metric, "exchange_inflow"}
-    )
   end
 
   defp signal_trigger_percent(%Project{slug: "ethereum"}) do

@@ -4,7 +4,6 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
   import Mock
   import Sanbase.Factory
   import ExUnit.CaptureLog
-  import Sanbase.TestHelpers
 
   alias Sanbase.Signal.{UserTrigger, HistoricalActivity}
   alias Sanbase.Signal.Evaluator
@@ -12,15 +11,6 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
   alias Sanbase.Signal.Trigger.TrendingWordsTriggerSettings
 
   @moduletag capture_log: true
-  setup_all_with_mocks([
-    {Sanbase.GoogleChart, [],
-     [
-       build_embedded_chart: fn _, _, _, _ -> [%{image: %{url: "somelink"}}] end,
-       build_embedded_chart: fn _, _, _ -> [%{image: %{url: "somelink"}}] end
-     ]}
-  ]) do
-    []
-  end
 
   setup do
     Sanbase.Signal.Evaluator.Cache.clear()

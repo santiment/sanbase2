@@ -55,7 +55,6 @@ defmodule Sanbase.Signal.SchedulerTest do
     %{mock_fun: mock_fun, mock_chart: mock_chart, user: user, project: project} = context
 
     Sanbase.Mock.prepare_mock(Sanbase.Metric, :timeseries_data, mock_fun)
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.GoogleChart.build_embedded_chart/4, {:ok, mock_chart})
     |> Sanbase.Mock.run_with_mocks(fn ->
       Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
 
@@ -81,14 +80,12 @@ defmodule Sanbase.Signal.SchedulerTest do
   test "successfull signal is written in timeline_events", context do
     %{
       mock_fun: mock_fun,
-      mock_chart: mock_chart,
       user: user,
       trigger: trigger,
       project: project
     } = context
 
     Sanbase.Mock.prepare_mock(Sanbase.Metric, :timeseries_data, mock_fun)
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.GoogleChart.build_embedded_chart/4, {:ok, mock_chart})
     |> Sanbase.Mock.run_with_mocks(fn ->
       Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
 

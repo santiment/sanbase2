@@ -4,22 +4,11 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingWordTest do
   import Mock
   import Sanbase.Factory
   import ExUnit.CaptureLog
-  import Sanbase.TestHelpers
 
   alias Sanbase.Signal.UserTrigger
   alias Sanbase.Signal.Evaluator
 
   alias Sanbase.Signal.Trigger.TrendingWordsTriggerSettings
-
-  setup_all_with_mocks([
-    {Sanbase.GoogleChart, [],
-     [
-       build_embedded_chart: fn _, _, _, _ -> [%{image: %{url: "somelink"}}] end,
-       build_embedded_chart: fn _, _, _ -> [%{image: %{url: "somelink"}}] end
-     ]}
-  ]) do
-    []
-  end
 
   setup do
     Sanbase.Signal.Evaluator.Cache.clear()

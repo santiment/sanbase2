@@ -153,8 +153,7 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
           project_ticker: project.ticker,
           project_slug: project.slug,
           previous_value: round_price(first_price),
-          value: round_price(last_price),
-          chart_url: chart_url(project, :volume)
+          value: round_price(last_price)
         }
         |> Map.merge(operation_kv)
         |> Map.merge(curr_value_kv)
@@ -164,7 +163,6 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
       #{curr_value_template}.
 
       More info here: #{Project.sanbase_link(project)}
-      ![Price chart over the past 90 days]({{chart_url}})
       """
 
       {template, kv}

@@ -61,9 +61,6 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
     Sanbase.Mock.prepare_mock(Sanbase.Price, :aggregated_metric_timeseries_data, fn
       slug, :volume_usd, _, _ -> {:ok, %{slug => notification_volume_threshold()}}
     end)
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.GoogleChart.build_embedded_chart/4, [
-      %{image: %{url: "url"}}
-    ])
     |> Sanbase.Mock.run_with_mocks(fn ->
       PriceVolumeDiff.exec(context.project1, "USD")
 

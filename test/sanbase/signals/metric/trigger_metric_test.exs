@@ -12,11 +12,6 @@ defmodule Sanbase.Signal.TriggerMetricTest do
 
   @metrics_5m_min_interval Metric.available_metrics(min_interval_less_or_equal: "5m")
   setup_all_with_mocks([
-    {Sanbase.GoogleChart, [],
-     [
-       build_embedded_chart: fn _, _, _, _ -> [%{image: %{url: "somelink"}}] end,
-       build_embedded_chart: fn _, _, _ -> [%{image: %{url: "somelink"}}] end
-     ]},
     {
       Sanbase.Timeline.TimelineEvent,
       [:passthrough],

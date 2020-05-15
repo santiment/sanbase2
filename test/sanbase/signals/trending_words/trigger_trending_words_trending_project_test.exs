@@ -4,7 +4,6 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingProjectTest do
   import Mock
   import Sanbase.Factory
   import ExUnit.CaptureLog
-  import Sanbase.TestHelpers
 
   alias Sanbase.Signal.UserTrigger
   alias Sanbase.Signal.Evaluator
@@ -56,7 +55,6 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingProjectTest do
       assert context.trigger_trending_words.id == triggered.id
       payload = triggered.trigger.settings.payload |> Map.values() |> List.first()
       assert payload =~ "**#{context.project.name}** is in the trending words"
-      assert payload =~ "Volume and OHLC price chart for the past 90 days"
     end
   end
 

@@ -4,7 +4,6 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
   import Mock
   import Sanbase.Factory
   import ExUnit.CaptureLog
-  import Sanbase.TestHelpers
 
   alias Sanbase.Signal.{UserTrigger, HistoricalActivity}
   alias Sanbase.Signal.Evaluator

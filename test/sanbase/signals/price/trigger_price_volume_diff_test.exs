@@ -4,7 +4,6 @@ defmodule Sanbase.Signal.PriceVolumeDiffTest do
   import Mock
   import Sanbase.Factory
   import ExUnit.CaptureLog
-  import Sanbase.TestHelpers
 
   alias Sanbase.Signal.{Trigger, UserTrigger, Evaluator}
   alias Sanbase.Signal.Trigger.PriceVolumeDifferenceTriggerSettings

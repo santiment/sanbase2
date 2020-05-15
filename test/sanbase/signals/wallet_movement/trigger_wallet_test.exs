@@ -3,7 +3,6 @@ defmodule Sanbase.Signal.WalletTriggerTest do
 
   import Mock
   import Sanbase.Factory
-  import Sanbase.TestHelpers
 
   alias Sanbase.Model.Project
 

@@ -3,7 +3,6 @@ defmodule Sanbase.Signal.TriggerTrendingWordsWatchlistTargetTest do
 
   import Mock
   import Sanbase.Factory
-  import Sanbase.TestHelpers
 
   alias Sanbase.UserList
   alias Sanbase.Signal.UserTrigger

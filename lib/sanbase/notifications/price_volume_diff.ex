@@ -165,18 +165,8 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
         } Volume opposite trends (as of #{notification_date_string} UTC). #{
           Project.sanbase_link(project)
         } #{debug_info}",
-      username: "Price-Volume Difference",
-      embeds: notification_embeds(project)
+      username: "Price-Volume Difference"
     })
-  end
-
-  defp notification_embeds(project) do
-    Sanbase.GoogleChart.build_embedded_chart(
-      project,
-      Timex.shift(Timex.now(), days: -90),
-      Timex.shift(Timex.now(), days: -1),
-      chart_type: :volume
-    )
   end
 
   defp notification_emoji(value) do

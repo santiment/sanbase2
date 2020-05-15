@@ -80,7 +80,6 @@ defmodule Sanbase.Signal.SchedulerTest do
   test "successfull signal is written in timeline_events", context do
     %{
       mock_fun: mock_fun,
-      mock_chart: mock_chart,
       user: user,
       trigger: trigger,
       project: project

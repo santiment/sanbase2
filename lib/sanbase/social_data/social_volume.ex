@@ -79,7 +79,7 @@ defmodule Sanbase.SocialData.SocialVolume do
         {"search_text", SocialVolumeQuery.default_query(project)}
 
       _ ->
-        {:error, "Invalid slug"}
+        {:error, "Invalid slug for social volume. Got: #{inspect(slug)}"}
     end
   end
 

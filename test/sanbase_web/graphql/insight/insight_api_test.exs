@@ -414,6 +414,10 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   describe "create insight" do
     test "adding a new insight", %{user: user, conn: conn} do
       project = insert(:random_project)
+      # Insert the metrics otherwise they cannot be added to the post
+      insert(:metric_postgres, name: "daily_active_addresses")
+      insert(:metric_postgres, name: "price_usd")
+      insert(:metric_postgres, name: "volume_usd")
 
       query = """
       mutation {
@@ -449,11 +453,9 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       assert insight["state"] == Post.approved_state()
       assert insight["prediction"] == "heavy_bullish"
 
-      assert insight["metrics"] == [
-               %{"name" => "daily_active_addresses"},
-               %{"name" => "price_usd"},
-               %{"name" => "volume_usd"}
-             ]
+      assert %{"name" => "daily_active_addresses"} in insight["metrics"]
+      assert %{"name" => "price_usd"} in insight["metrics"]
+      assert %{"name" => "volume_usd"} in insight["metrics"]
 
       assert insight["priceChartProject"]["id"] |> String.to_integer() == project.id
       assert insight["user"]["id"] == user.id |> Integer.to_string()
@@ -582,7 +584,11 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
           user: user,
           ready_state: Post.draft(),
           tags: [tag1],
-          metrics: [build(:metric_postgres, name: "nvt")]
+          metrics: [
+            build(:metric_postgres, name: "nvt"),
+            build(:metric_postgres, name: "price_usd"),
+            build(:metric_postgres, name: "daily_active_addresses")
+          ]
         )
 
       mutation = """
@@ -593,7 +599,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
             text: "Example body2"
             tags: ["#{tag2.name}"]
             imageUrls: ["#{image_url}"]
-            metrics: ["nvt"]) {
+            metrics: ["nvt", "price_usd", "daily_active_addresses"]) {
               id
               title
               text

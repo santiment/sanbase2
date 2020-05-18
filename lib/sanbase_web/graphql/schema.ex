@@ -15,7 +15,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     > enterprise
   """
   use Absinthe.Schema
-  use Absinthe.Ecto, repo: Sanbase.Repo
 
   alias SanbaseWeb.Graphql
   alias SanbaseWeb.Graphql.Prometheus

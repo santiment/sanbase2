@@ -39,7 +39,6 @@ defmodule Sanbase.Mixfile do
 
   defp deps() do
     [
-      {:absinthe_ecto, "~> 0.1.0"},
       {:absinthe_metrics, "~> 1.0"},
       {:absinthe_phoenix, github: "absinthe-graphql/absinthe_phoenix", override: true},
       {:absinthe_plug, github: "absinthe-graphql/absinthe_plug", override: true},

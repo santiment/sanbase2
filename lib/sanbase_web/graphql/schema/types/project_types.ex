@@ -1,6 +1,5 @@
 defmodule SanbaseWeb.Graphql.ProjectTypes do
   use Absinthe.Schema.Notation
-  use Absinthe.Ecto, repo: Sanbase.Repo
 
   import Absinthe.Resolution.Helpers
 
@@ -464,7 +463,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve(&ProjectResolver.initial_ico/3, ttl: 600, max_ttl_offset: 600)
     end
 
-    field(:icos, list_of(:ico), resolve: assoc(:icos))
+    field(:icos, list_of(:ico), resolve: dataloader(SanbaseRepo))
 
     field :ico_price, :float do
       cache_resolve(&ProjectResolver.ico_price/3)

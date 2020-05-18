@@ -1,8 +1,10 @@
 defmodule SanbaseWeb.Graphql.UserTypes do
   use Absinthe.Schema.Notation
-  use Absinthe.Ecto, repo: Sanbase.Repo
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
+  import Absinthe.Resolution.Helpers
+
+  alias SanbaseWeb.Graphql.SanbaseRepo
 
   alias SanbaseWeb.Graphql.Resolvers.{
     ApikeyResolver,
@@ -83,7 +85,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     signed in order to be confirmed that the address belongs to the user.
     The combined SAN balance of the addresses is used for the `san_balance`
     """
-    field(:eth_accounts, list_of(:eth_account), resolve: assoc(:eth_accounts))
+    field(:eth_accounts, list_of(:eth_account), resolve: dataloader(SanbaseRepo))
 
     @desc ~s"""
     A list of api keys. They are used by providing `Authorization` header to the

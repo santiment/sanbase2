@@ -62,9 +62,8 @@ defmodule Sanbase.DateTimeUtils do
     str_to_sec(interval) |> Integer.floor_div(3600)
   end
 
-  def ecto_date_to_datetime(ecto_date) do
-    {:ok, datetime, _} =
-      (Ecto.Date.to_iso8601(ecto_date) <> "T00:00:00Z") |> DateTime.from_iso8601()
+  def date_to_datetime(date) do
+    {:ok, datetime, _} = (Date.to_iso8601(date) <> "T00:00:00Z") |> DateTime.from_iso8601()
 
     datetime
   end

@@ -1,7 +1,7 @@
 defmodule Sanbase.Insight.Post do
   use Ecto.Schema
 
-  use Timex.Ecto.Timestamps
+  # use Timex.Ecto.Timestamps
 
   import Ecto.Changeset
   import Ecto.Query

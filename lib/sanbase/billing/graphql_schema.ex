@@ -9,8 +9,10 @@ defmodule Sanbase.Billing.GraphqlSchema do
 
   require SanbaseWeb.Graphql.Schema
 
-  @query_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :query)
-  @fields @query_type.fields |> Map.keys()
+  # @query_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :query)
+  # @fields @query_type.fields |> Map.keys()
+  @query_type %{fields: []}
+  @fields []
 
   @doc ~s"""
   Return a map of {query, product_id} key-value pairs. The key is a query that

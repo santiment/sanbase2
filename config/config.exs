@@ -14,7 +14,7 @@ config :sanbase, ecto_repos: [Sanbase.Repo]
 
 config :phoenix, :json_library, Jason
 
-config :ecto, json_library: Jason
+config :postgrex, :json_library, Jason
 
 config :sanbase, Sanbase, environment: "#{Mix.env()}"
 
@@ -179,7 +179,6 @@ import_config "ex_admin_config.exs"
 import_config "influxdb_config.exs"
 import_config "scrapers_config.exs"
 import_config "notifications_config.exs"
-import_config "elasticsearch_config.exs"
 import_config "prometheus_config.exs"
 import_config "stripe_config.exs"
 import_config "scheduler_config.exs"

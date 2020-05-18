@@ -18,7 +18,7 @@ defmodule Sanbase.ExAdmin.Insight.Post do
       column(:user, link: true)
     end
 
-    show _post do
+    show post do
       attributes_table do
         row(:id)
         row(:is_featured, &is_featured(&1))

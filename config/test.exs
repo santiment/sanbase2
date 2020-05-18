@@ -60,10 +60,6 @@ config :arc,
   storage: Arc.Storage.Local,
   storage_dir: "/tmp/sanbase/filestore-test/"
 
-config :sanbase, Sanbase.Elasticsearch.Cluster, api: Sanbase.ElasticsearchMock
-
-config :sanbase, Sanbase.Elasticsearch, indices: "index1,index2,index3,index4"
-
 config :sanbase, SanbaseWeb.Plug.VerifyStripeWebhook, webhook_secret: "stripe_webhook_secret"
 
 config :sanbase, Sanbase.Signal, email_channel_enabled: {:system, "EMAIL_CHANNEL_ENABLED", "true"}

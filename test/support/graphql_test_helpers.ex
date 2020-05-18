@@ -2,25 +2,16 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
   use Phoenix.ConnTest
 
   alias SanbaseWeb.Graphql.ContextPlug
+  alias Sanbase.Billing.Plan.AccessChecker
 
   # The default endpoint for testing
   @endpoint SanbaseWeb.Endpoint
 
-  @custom_access_metrics Sanbase.Billing.Plan.CustomAccess.get()
-                         |> Enum.filter(&match?({{:metric, _}, _}, &1))
-                         |> Enum.map(fn {{_, name}, _} -> name end)
-
   def v2_restricted_metric_for_plan(position, product, plan_name) do
-    all_v2_restricted_metrics_for_plan(product, plan_name)
+    (AccessChecker.get_available_metrics_for_plan(product, plan_name, :restricted) --
+       AccessChecker.get_available_metrics_for_plan(product, plan_name, :custom))
     |> Stream.cycle()
     |> Enum.at(position)
-  end
-
-  def all_v2_restricted_metrics_for_plan(product, plan_name) do
-    (Sanbase.Metric.restricted_metrics() -- @custom_access_metrics)
-    |> Enum.filter(
-      &Sanbase.Billing.Plan.AccessChecker.plan_has_access?(plan_name, product, {:metric, &1})
-    )
   end
 
   def v2_free_metric(position),

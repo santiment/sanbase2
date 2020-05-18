@@ -124,6 +124,20 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     @min_plan_map[query_or_metric][product] || :free
   end
 
+  @spec get_available_metrics_for_plan(product, plan, restriction_type) :: list(binary())
+        when plan: atom(), product: binary(), restriction_type: atom()
+  def get_available_metrics_for_plan(product, plan, restriction_type \\ :all) do
+    case restriction_type do
+      :free -> @free_metrics
+      :restricted -> @restricted_metrics
+      :custom -> @custom_access_queries
+      :all -> @all_metrics
+    end
+    |> Stream.filter(&match?({:metric, _}, &1))
+    |> Stream.filter(&plan_has_access?(plan, product, &1))
+    |> Enum.map(fn {_, name} -> name end)
+  end
+
   def custom_access_queries_stats(), do: @custom_access_queries_stats
   def custom_access_queries(), do: @custom_access_queries
 

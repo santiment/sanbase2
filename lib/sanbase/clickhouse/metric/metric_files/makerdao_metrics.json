@@ -54,7 +54,7 @@
     "version": "2019-12-22",
     "access": "restricted",
     "min_plan": {
-      "SANAPI": "cistom",
+      "SANAPI": "custom",
       "SANBASE": "free"
     },
     "aggregation": "last",

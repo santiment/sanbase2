@@ -9,6 +9,18 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
 
+  enum :products_enum do
+    value(:sanapi)
+    value(:sanbase)
+  end
+
+  enum :plans_enum do
+    value(:free)
+    value(:basic)
+    value(:pro)
+    value(:custom)
+  end
+
   enum :selector_name do
     value(:slug)
     value(:text)

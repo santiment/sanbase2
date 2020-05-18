@@ -1,6 +1,13 @@
 defmodule SanbaseWeb.Graphql.Schema.BillingTypes do
   use Absinthe.Schema.Notation
 
+  enum :restriction_types_enum do
+    value(:free)
+    value(:restricted)
+    value(:custom)
+    value(:all)
+  end
+
   enum :billing_status do
     value(:initial)
     value(:incomplete)

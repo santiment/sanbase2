@@ -473,4 +473,30 @@ defmodule Sanbase.Signal.ValidationTest do
                {:error, "Not all operations are from the same type"}
     end
   end
+
+  describe "#valid_slug?" do
+    alias Sanbase.Model.Project
+
+    test "with binary slug, which is a project, returns :ok" do
+      project = Sanbase.Factory.insert(%Project{name: "santiment", slug: "santiment"})
+      project_slug = %{slug: "santiment"}
+
+      assert Validation.valid_slug?(project_slug) == :ok
+    end
+
+    test "with binary slug, but not a project, returns :error" do
+      slug = %{slug: "something incorrect"}
+
+      assert Validation.valid_slug?(slug) ==
+               {:error, "\"something incorrect\" is not a valid slug"}
+    end
+
+    test "with argument not a binary slug, returns :error" do
+      argument = "incorrect argument"
+
+      assert Validation.valid_slug?(argument) ==
+               {:error,
+                "\"incorrect argument\" is not a valid slug. A valid slug is a map with a single slug key and string value"}
+    end
+  end
 end

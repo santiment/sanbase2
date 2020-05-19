@@ -61,6 +61,7 @@ defmodule Sanbase.Notifications.Discord do
   def encode!(payload, publish_user) do
     payload =
       payload
+      |> List.wrap()
       |> Enum.join("\n")
 
     Jason.encode!(%{content: payload, username: publish_user})

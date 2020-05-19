@@ -47,6 +47,9 @@ defmodule Sanbase.SocialData.SocialVolume do
             HTTPoison.Error.message(error)
           }"
         )
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -73,18 +76,18 @@ defmodule Sanbase.SocialData.SocialVolume do
     |> case do
       %Project{social_volume_query: %{query: query_text}}
       when not is_nil(query_text) ->
-        {"search_text", query_text}
+        {:ok, query_text}
 
       %Project{} = project ->
-        {"search_text", SocialVolumeQuery.default_query(project)}
+        {:ok, SocialVolumeQuery.default_query(project)}
 
       _ ->
-        {:error, "Invalid slug for social volume. Got: #{inspect(slug)}"}
+        {:error, "Invalid slug for social volume"}
     end
   end
 
   defp social_volume_selector_handler(%{text: search_text}) do
-    {"search_text", search_text}
+    {:ok, search_text}
   end
 
   defp social_volume_selector_handler(_args) do
@@ -92,22 +95,22 @@ defmodule Sanbase.SocialData.SocialVolume do
   end
 
   defp social_volume_request(selector, from, to, interval, source) do
-    {"search_text", search_text} = social_volume_selector_handler(selector)
+    with {:ok, search_text} <- social_volume_selector_handler(selector) do
+      url = "#{metrics_hub_url()}/social_volume"
 
-    url = "#{metrics_hub_url()}/social_volume"
-
-    options = [
-      recv_timeout: @recv_timeout,
-      params: [
-        {"search_text", search_text},
-        {"from_timestamp", from |> DateTime.to_iso8601()},
-        {"to_timestamp", to |> DateTime.to_iso8601()},
-        {"interval", interval},
-        {"source", source}
+      options = [
+        recv_timeout: @recv_timeout,
+        params: [
+          {"search_text", search_text},
+          {"from_timestamp", from |> DateTime.to_iso8601()},
+          {"to_timestamp", to |> DateTime.to_iso8601()},
+          {"interval", interval},
+          {"source", source}
+        ]
       ]
-    ]
 
-    http_client().get(url, [], options)
+      http_client().get(url, [], options)
+    end
   end
 
   defp social_volume_result(%{"data" => map}) do

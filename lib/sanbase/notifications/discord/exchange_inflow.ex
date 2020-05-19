@@ -74,7 +74,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
       build_project_payload(project, notification_type, inflow)
     end)
     |> Enum.reject(&is_nil/1)
-    |> Enum.sort_by(fn {_, _, _, percent_change} -> percent_change end, &Kernel.>=/2)
+    |> Enum.sort_by(fn {_, _, percent_change} -> percent_change end, &Kernel.>=/2)
   end
 
   defp percent_of_total_supply(_, nil), do: nil

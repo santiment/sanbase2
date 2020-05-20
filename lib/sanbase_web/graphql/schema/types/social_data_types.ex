@@ -68,7 +68,7 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   end
 
   object :chart_data do
-    field(:mentions_count, :integer)
+    field(:mentions_count, :float)
     field(:datetime, non_null(:datetime))
   end
 

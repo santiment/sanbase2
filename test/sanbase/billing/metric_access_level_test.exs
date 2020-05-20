@@ -187,7 +187,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "mcd_stability_fee",
         "mcd_supply",
         "scd_collat_ratio",
-        "scd_locked_token"
+        "scd_locked_token",
+        "stock_to_flow"
       ]
       |> Enum.sort()
 

@@ -81,6 +81,8 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
           rank IS NOT NULL
       )
       GROUP BY dt, address
+      ORDER BY dt, value DESC
+      LIMIT ?3 BY dt
     )
     GLOBAL ANY INNER JOIN (
       SELECT address
@@ -88,8 +90,7 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
       PREWHERE blockchain = ?6 AND label IN ('centralized_exchange', 'decentralized_exchange')
     ) USING address
     GROUP BY dt
-    ORDER BY dt, value DESC
-    LIMIT ?3 BY dt
+    ORDER BY dt
     """
 
     args = [
@@ -137,10 +138,11 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
         dt < toDateTime(?5) AND
         rank IS NOT NULL
       GROUP BY dt, address
+      ORDER BY dt, value DESC
+      LIMIT ?3 BY dt
     )
     GROUP BY dt
-    ORDER BY dt, value DESC
-    LIMIT ?3 BY dt
+    ORDER BY dt
     """
 
     args = [

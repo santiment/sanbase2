@@ -138,7 +138,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def available_aggregations(), do: @aggregations
 
   @impl Sanbase.Metric.Behaviour
-  def available_slugs() do
+  def available_social_slugs() do
     # Providing a 2 element tuple `{any, integer}` will use that second element
     # as TTL for the cache key
     Sanbase.Cache.get_or_store({:social_metrics_available_slugs, 1800}, fn ->
@@ -147,7 +147,17 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def available_slugs(_metric), do: available_slugs()
+  def available_slugs(),
+    do: {:ok, Project.List.projects_slugs(preload?: false)}
+
+  @impl Sanbase.Metric.Behaviour
+  def available_slugs("social_volume_" <> _source),
+    do: {:ok, Project.List.projects_slugs(preload?: false)}
+
+  def available_slugs("social_dominance_" <> _source), do: available_social_slugs()
+
+  def available_slugs("community_messages_count_" <> _source),
+    do: {:ok, Project.List.projects_by_non_null_field(:telegram_link) |> Enum.map(& &1.slug)}
 
   @impl Sanbase.Metric.Behaviour
   def available_timeseries_metrics(), do: @timeseries_metrics
@@ -161,8 +171,12 @@ defmodule Sanbase.SocialData.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def available_metrics(%{slug: slug}) do
     with %Project{telegram_link: telegram_link} <- Project.by_slug(slug, preload?: false),
-         {:ok, slugs} <- available_slugs() do
-      metrics = if slug in slugs, do: @metrics, else: []
+         {:ok, social_slugs} <- available_social_slugs() do
+      # Currently social volume is fetched from metricshub and social dominance
+      # is fetched from tech_indicators. Social volume is available for all projects
+      # because if a social query is missing, it is automatically constructed.
+      # Social dominance is still available only for some projects
+      metrics = if slug in social_slugs, do: @metrics, else: @social_volume_timeseries_metrics
 
       # Add or remove community messages metrics based on the presence of telegram link
       # If community messages count metric is added twice, that would be comensated

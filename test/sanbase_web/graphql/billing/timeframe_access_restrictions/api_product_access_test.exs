@@ -377,6 +377,23 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
   end
 
+  describe "SanAPI product, user with CUSTOM plan" do
+    setup context do
+      insert(:subscription_custom, user: context.user)
+      :ok
+    end
+
+    test "can access holders distributions", context do
+      {from, to} = from_to(2500, 0)
+      metric = "holders_distribution_0.01_to_0.1"
+      slug = context.project.slug
+      query = metric_query(metric, slug, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+  end
+
   # Private functions
 
   defp metric_query(metric, slug, from, to) do

@@ -112,7 +112,6 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
       :basic -> plan != :free
       :pro -> plan not in [:free, :basic]
       :premium -> plan not in [:free, :basic, :pro]
-      :enterprise -> plan not in [:free, :eseential, :pro, :premium]
       :custom -> plan == :custom
       # extensions plans can be with other plan. They're handled separately
       _ -> true

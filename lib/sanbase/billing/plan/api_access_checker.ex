@@ -28,7 +28,7 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
     api_calls_month: 500_000
   }
 
-  @enterprise_plan_stats @premium_plan_stats
+  @custom_plan_stats @premium_plan_stats
 
   # Some queries/metrics are further restricted for basic/essential plan.
   # They are served with the free timeframe restriction.
@@ -52,7 +52,7 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
       :basic -> @basic_plan_stats[:historical_data_in_days]
       :pro -> @pro_plan_stats[:historical_data_in_days]
       :premium -> @premium_plan_stats[:historical_data_in_days]
-      :enterprise -> @enterprise_plan_stats[:historical_data_in_days]
+      :custom -> @custom_plan_stats[:historical_data_in_days]
     end
   end
 
@@ -67,7 +67,7 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
       :basic -> @basic_plan_stats[:realtime_data_cut_off_in_days]
       :pro -> @pro_plan_stats[:realtime_data_cut_off_in_days]
       :premium -> @premium_plan_stats[:realtime_data_cut_off_in_days]
-      :enterprise -> @premium_plan_stats[:realtime_data_cut_off_in_days]
+      :custom -> @premium_plan_stats[:realtime_data_cut_off_in_days]
     end
   end
 end

@@ -12,7 +12,7 @@ defmodule Sanbase.Billing.Plan do
   alias Sanbase.Repo
   alias Sanbase.Billing.{Product, Subscription}
 
-  @plans_order [free: 0, basic: 1, pro: 2, premium: 3, enterprise: 4]
+  @plans_order [free: 0, basic: 1, pro: 2, premium: 3, custom: 4]
   def plans_order(), do: @plans_order
   def sort_plans(plans), do: Enum.sort_by(plans, fn plan -> Keyword.get(@plans_order, plan) end)
 
@@ -52,8 +52,8 @@ defmodule Sanbase.Billing.Plan do
       %{name: "ESSENTIAL"} -> :basic
       %{name: "PRO"} -> :pro
       %{name: "PREMIUM"} -> :premium
-      %{name: "CUSTOM"} -> :enterprise
-      %{name: "ENTERPRISE"} -> :enterprise
+      %{name: "CUSTOM"} -> :custom
+      %{name: "ENTERPRISE"} -> :custom
       %{name: "EXTENSION"} -> :extension
       %{name: name} -> String.downcase(name) |> String.to_existing_atom()
     end

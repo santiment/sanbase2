@@ -21,7 +21,7 @@ defmodule Sanbase.Signal.EthWalletTriggerTest do
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     project = Sanbase.Factory.insert(:random_erc20_project)
-    eth_project = Sanbase.Factory.insert(%Project{name: "eth", slug: "ethereum"})
+    Sanbase.Factory.insert(%Project{name: "eth", slug: "ethereum"})
 
     {:ok, [eth_address]} = Project.eth_addresses(project)
 

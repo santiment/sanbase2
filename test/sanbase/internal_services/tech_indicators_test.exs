@@ -6,7 +6,6 @@ defmodule Sanbase.TechIndicatorsTest do
 
   alias Sanbase.TechIndicators
   alias Sanbase.SocialData.SocialVolume
-  alias Sanbase.SocialData.MetricAdapter
   import Sanbase.Factory
 
   setup do

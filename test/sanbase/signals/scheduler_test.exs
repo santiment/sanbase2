@@ -52,7 +52,7 @@ defmodule Sanbase.Signal.SchedulerTest do
   end
 
   test "successfull signal is written in signals_historical_activity", context do
-    %{mock_fun: mock_fun, mock_chart: mock_chart, user: user, project: project} = context
+    %{mock_fun: mock_fun, user: user, project: project} = context
 
     Sanbase.Mock.prepare_mock(Sanbase.Metric, :timeseries_data, mock_fun)
     |> Sanbase.Mock.run_with_mocks(fn ->

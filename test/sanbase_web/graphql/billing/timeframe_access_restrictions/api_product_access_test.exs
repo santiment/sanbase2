@@ -332,9 +332,9 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
   end
 
-  describe "SanAPI product, user with PREMIUM plan" do
+  describe "SanAPI product, user with CUSTOM plan" do
     setup context do
-      insert(:subscription_premium, user: context.user)
+      insert(:subscription_custom, user: context.user)
       :ok
     end
 
@@ -359,7 +359,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access RESTRICTED metrics for all time & realtime", context do
       {from, to} = from_to(2500, 0)
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :premium)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :custom)
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
@@ -375,15 +375,8 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert_called(Metric.timeseries_data("network_growth", :_, :_, :_, :_, :_))
       assert result != nil
     end
-  end
 
-  describe "SanAPI product, user with CUSTOM plan" do
-    setup context do
-      insert(:subscription_custom, user: context.user)
-      :ok
-    end
-
-    test "can access holders distributions", context do
+    test "can access holders distributions for all time & realtime", context do
       {from, to} = from_to(2500, 0)
       metric = "holders_distribution_0.01_to_0.1"
       slug = context.project.slug

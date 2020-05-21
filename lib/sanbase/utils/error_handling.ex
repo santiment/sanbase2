@@ -19,10 +19,21 @@ defmodule Sanbase.Utils.ErrorHandling do
   end
 
   def handle_graphql_error(metric, identifier, reason, opts \\ []) do
-    target = Keyword.get(opts, :description, "project with slug")
+    {target_description, identifier} =
+      case Keyword.get(opts, :description) do
+        nil ->
+          case identifier do
+            %{slug: slug} -> {"project with slug", slug}
+            %{text: text} -> {"search term", text}
+            slug when is_binary(slug) -> {"project with slug", slug}
+          end
+
+        description ->
+          {description, identifier}
+      end
 
     error_msg =
-      "[#{Ecto.UUID.generate()}] Can't fetch #{metric} for #{target}: #{
+      "[#{Ecto.UUID.generate()}] Can't fetch #{metric} for #{target_description}: #{
         identifier_to_string(identifier)
       }"
 

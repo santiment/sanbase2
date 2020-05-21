@@ -75,6 +75,10 @@ defmodule Sanbase.Application do
   def init(container_type) do
     # Common inits
 
+    # Increase the backtrace depth here and not in the phoenix config
+    # so it applies to all non-phoenix work, too
+    :erlang.system_flag(:backtrace_depth, 20)
+
     # Prometheus related
     Sanbase.Prometheus.EctoInstrumenter.setup()
 

@@ -482,6 +482,15 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def subscription_custom_factory() do
+    %Subscription{
+      stripe_id: rand_str(),
+      plan_id: 5,
+      current_period_end: Timex.shift(Timex.now(), days: 1),
+      status: "active"
+    }
+  end
+
   def subscription_basic_sanbase_factory() do
     %Subscription{
       plan_id: 12,
@@ -498,7 +507,7 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def subscription_pro_enterprise_factory() do
+  def subscription_pro_custom_factory() do
     %Subscription{
       plan_id: 24,
       current_period_end: Timex.shift(Timex.now(), days: 1),

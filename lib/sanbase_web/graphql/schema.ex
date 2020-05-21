@@ -12,7 +12,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     > basic
     > pro
     > premium
-    > enterprise
+    > custom
   """
   use Absinthe.Schema
 

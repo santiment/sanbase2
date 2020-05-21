@@ -36,7 +36,7 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
 
   @basic_plan_stats @pro_plan_stats
 
-  @enterprise_plan_stats @pro_plan_stats
+  @custom_plan_stats @pro_plan_stats
 
   def historical_data_in_days(plan, _query) do
     plan_stats(plan)
@@ -82,8 +82,8 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
       :free -> @free_plan_stats
       :basic -> @basic_plan_stats
       :pro -> @pro_plan_stats
-      :premium -> @enterprise_plan_stats
-      :enterprise -> @enterprise_plan_stats
+      :premium -> @custom_plan_stats
+      :custom -> @custom_plan_stats
     end
   end
 end

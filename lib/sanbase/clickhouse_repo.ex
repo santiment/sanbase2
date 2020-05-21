@@ -1,5 +1,7 @@
 defmodule Sanbase.ClickhouseRepo do
-  use Ecto.Repo, otp_app: :sanbase, adapter: ClickhouseEcto
+  # Clickhouse tests are done only through mocking the results.
+  @adapter if Mix.env() == :test, do: Ecto.Adapters.Postgres, else: ClickhouseEcto
+  use Ecto.Repo, otp_app: :sanbase, adapter: @adapter
 
   require Sanbase.Utils.Config, as: Config
 
@@ -54,7 +56,7 @@ defmodule Sanbase.ClickhouseRepo do
       ordered_params = order_params(query, args)
       sanitized_query = sanitize_query(query)
 
-      Ecto.Adapters.SQL.query(__MODULE__, sanitized_query, ordered_params)
+      __MODULE__.query(sanitized_query, ordered_params)
       |> case do
         {:ok, result} -> {:ok, Enum.map(result.rows, transform_fn)}
         {:error, error} -> {:error, error}

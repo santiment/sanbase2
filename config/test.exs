@@ -33,6 +33,11 @@ config :sanbase, Sanbase.Repo,
   database: "sanbase_test",
   pool_size: 5
 
+config :sanbase, Sanbase.ClickhouseRepo,
+  pool: Ecto.Adapters.SQL.Sandbox,
+  database: "sanbase_test",
+  pool_size: 5
+
 config :sanbase, Sanbase.Auth.Hmac, secret_key: "Non_empty_key_used_in_tests_only"
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap, sync_enabled: false

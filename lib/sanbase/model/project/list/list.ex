@@ -41,7 +41,11 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
   end
 
+  def projects_slugs(opts \\ [])
+
   def projects_slugs(opts) do
+    opts = Keyword.put(opts, :preload?, false)
+
     projects_query(opts)
     |> select([p], p.slug)
     |> Repo.all()
@@ -239,6 +243,17 @@ defmodule Sanbase.Model.Project.List do
     |> select([p], {field(p, ^field), p.slug})
     |> Repo.all()
     |> Map.new()
+  end
+
+  def projects_by_non_null_field(field, opts \\ [])
+
+  def projects_by_non_null_field(field, opts) do
+    # explicitly remove preloads as they are not going to be used
+    opts = Keyword.put(opts, :preload?, false)
+
+    projects_query(opts)
+    |> where([p], not is_nil(field(p, ^field)))
+    |> Repo.all()
   end
 
   @doc ~s"""

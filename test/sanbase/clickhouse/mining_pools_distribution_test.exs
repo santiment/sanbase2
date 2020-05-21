@@ -8,24 +8,21 @@ defmodule Sanbase.Clickhouse.MiningPoolsDistributionTest do
   setup do
     [
       slug: "ethereum",
-      from: from_iso8601!("2019-01-01T00:00:00Z"),
-      to: from_iso8601!("2019-01-03T00:00:00Z"),
+      from: ~U[2019-01-01T00:00:00Z],
+      to: ~U[2019-01-03T00:00:00Z],
       interval: "1d"
     ]
   end
 
   test "when requested interval fits the values interval", context do
-    with_mock Sanbase.ClickhouseRepo,
-      query: fn _, _ ->
-        {:ok,
-         %{
-           rows: [
-             [from_iso8601_to_unix!("2019-01-01T00:00:00Z"), 0.10, 0.40, 0.50],
-             [from_iso8601_to_unix!("2019-01-02T00:00:00Z"), 0.20, 0.30, 0.50],
-             [from_iso8601_to_unix!("2019-01-03T00:00:00Z"), 0.30, 0.20, 0.50]
-           ]
-         }}
-      end do
+    rows = [
+      [~U[2019-01-01T00:00:00Z] |> DateTime.to_unix(), 0.10, 0.40, 0.50],
+      [~U[2019-01-02T00:00:00Z] |> DateTime.to_unix(), 0.20, 0.30, 0.50],
+      [~U[2019-01-03T00:00:00Z] |> DateTime.to_unix(), 0.30, 0.20, 0.50]
+    ]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         MiningPoolsDistribution.distribution(
           context.slug,
@@ -37,76 +34,39 @@ defmodule Sanbase.Clickhouse.MiningPoolsDistributionTest do
       assert result ==
                {:ok,
                 [
-                  %{
-                    top3: 0.10,
-                    top10: 0.40,
-                    other: 0.50,
-                    datetime: from_iso8601!("2019-01-01T00:00:00Z")
-                  },
-                  %{
-                    top3: 0.20,
-                    top10: 0.30,
-                    other: 0.50,
-                    datetime: from_iso8601!("2019-01-02T00:00:00Z")
-                  },
-                  %{
-                    top3: 0.30,
-                    top10: 0.20,
-                    other: 0.50,
-                    datetime: from_iso8601!("2019-01-03T00:00:00Z")
-                  }
+                  %{top3: 0.10, top10: 0.40, other: 0.50, datetime: ~U[2019-01-01T00:00:00Z]},
+                  %{top3: 0.20, top10: 0.30, other: 0.50, datetime: ~U[2019-01-02T00:00:00Z]},
+                  %{top3: 0.30, top10: 0.20, other: 0.50, datetime: ~U[2019-01-03T00:00:00Z]}
                 ]}
-    end
+    end)
   end
 
   test "when requested interval is not full", context do
-    with_mock Sanbase.ClickhouseRepo,
-      query: fn _, _ ->
-        {:ok,
-         %{
-           rows: [
-             [from_iso8601_to_unix!("2019-01-01T00:00:00Z"), 0.10, 0.40, 0.50],
-             [from_iso8601_to_unix!("2019-01-02T00:00:00Z"), 0.20, 0.30, 0.50],
-             [from_iso8601_to_unix!("2019-01-03T00:00:00Z"), 0.30, 0.20, 0.50],
-             [from_iso8601_to_unix!("2019-01-04T00:00:00Z"), 0.40, 0.10, 0.50]
-           ]
-         }}
-      end do
+    rows = [
+      [~U[2019-01-01T00:00:00Z] |> DateTime.to_unix(), 0.10, 0.40, 0.50],
+      [~U[2019-01-02T00:00:00Z] |> DateTime.to_unix(), 0.20, 0.30, 0.50],
+      [~U[2019-01-03T00:00:00Z] |> DateTime.to_unix(), 0.30, 0.20, 0.50],
+      [~U[2019-01-04T00:00:00Z] |> DateTime.to_unix(), 0.40, 0.10, 0.50]
+    ]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       result = MiningPoolsDistribution.distribution(context.slug, context.from, context.to, "2d")
 
       assert result ==
                {:ok,
                 [
-                  %{
-                    top3: 0.10,
-                    top10: 0.40,
-                    other: 0.50,
-                    datetime: from_iso8601!("2019-01-01T00:00:00Z")
-                  },
-                  %{
-                    top3: 0.20,
-                    top10: 0.30,
-                    other: 0.50,
-                    datetime: from_iso8601!("2019-01-02T00:00:00Z")
-                  },
-                  %{
-                    top3: 0.30,
-                    top10: 0.20,
-                    other: 0.50,
-                    datetime: from_iso8601!("2019-01-03T00:00:00Z")
-                  },
-                  %{
-                    top3: 0.40,
-                    top10: 0.10,
-                    other: 0.50,
-                    datetime: from_iso8601!("2019-01-04T00:00:00Z")
-                  }
+                  %{top3: 0.10, top10: 0.40, other: 0.50, datetime: ~U[2019-01-01T00:00:00Z]},
+                  %{top3: 0.20, top10: 0.30, other: 0.50, datetime: ~U[2019-01-02T00:00:00Z]},
+                  %{top3: 0.30, top10: 0.20, other: 0.50, datetime: ~U[2019-01-03T00:00:00Z]},
+                  %{top3: 0.40, top10: 0.10, other: 0.50, datetime: ~U[2019-01-04T00:00:00Z]}
                 ]}
-    end
+    end)
   end
 
   test "returns empty array when query returns no rows", context do
-    with_mock Sanbase.ClickhouseRepo, query: fn _, _ -> {:ok, %{rows: []}} end do
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         MiningPoolsDistribution.distribution(
           context.slug,
@@ -116,11 +76,12 @@ defmodule Sanbase.Clickhouse.MiningPoolsDistributionTest do
         )
 
       assert result == {:ok, []}
-    end
+    end)
   end
 
   test "returns error when something except ethereum is requested", context do
-    with_mock Sanbase.ClickhouseRepo, query: fn _, _ -> {:ok, %{rows: []}} end do
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         MiningPoolsDistribution.distribution(
           "unsupported",
@@ -130,6 +91,6 @@ defmodule Sanbase.Clickhouse.MiningPoolsDistributionTest do
         )
 
       assert result == {:error, "Currently only ethereum is supported!"}
-    end
+    end)
   end
 end

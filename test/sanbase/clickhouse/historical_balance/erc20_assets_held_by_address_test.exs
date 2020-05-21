@@ -18,28 +18,16 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20AssetsHeldByAdderssTest do
   end
 
   test "clickhouse returns list of results", context do
-    with_mock Sanbase.ClickhouseRepo,
-      query: fn _, _ ->
-        {:ok,
-         %{
-           rows: [
-             [
-               context.p1.main_contract_address,
-               Sanbase.Math.ipow(10, context.p1.token_decimals) * 100
-             ],
-             [
-               context.p2.main_contract_address,
-               Sanbase.Math.ipow(10, context.p2.token_decimals) * 255
-             ],
-             [context.p3.main_contract_address, 0],
-             [
-               context.p4.main_contract_address,
-               Sanbase.Math.ipow(10, context.p4.token_decimals) * 1643
-             ],
-             [context.p5.main_contract_address, 0]
-           ]
-         }}
-      end do
+    rows = [
+      [context.p1.main_contract_address, Sanbase.Math.ipow(10, context.p1.token_decimals) * 100],
+      [context.p2.main_contract_address, Sanbase.Math.ipow(10, context.p2.token_decimals) * 255],
+      [context.p3.main_contract_address, 0],
+      [context.p4.main_contract_address, Sanbase.Math.ipow(10, context.p4.token_decimals) * 1643],
+      [context.p5.main_contract_address, 0]
+    ]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       assert Erc20Balance.assets_held_by_address("0x123") ==
                {:ok,
                 [
@@ -49,29 +37,20 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20AssetsHeldByAdderssTest do
                   %{balance: 1643, slug: context.p4.slug},
                   %{balance: 0.0, slug: context.p5.slug}
                 ]}
-    end
+    end)
   end
 
   test "clickhouse returns no results", _context do
-    with_mock Sanbase.ClickhouseRepo,
-      query: fn _, _ ->
-        {:ok,
-         %{
-           rows: []
-         }}
-      end do
-      assert Erc20Balance.assets_held_by_address("0x123") ==
-               {:ok, []}
-    end
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      assert Erc20Balance.assets_held_by_address("0x123") == {:ok, []}
+    end)
   end
 
   test "clickhouse returns error", _context do
-    with_mock Sanbase.ClickhouseRepo,
-      query: fn _, _ ->
-        {:error, "Cannot execute query due to error"}
-      end do
-      assert Erc20Balance.assets_held_by_address("0x123") ==
-               {:error, "Cannot execute query due to error"}
-    end
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      assert Erc20Balance.assets_held_by_address("0x123") == {:error, "error"}
+    end)
   end
 end

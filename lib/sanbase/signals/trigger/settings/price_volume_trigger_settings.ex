@@ -154,8 +154,6 @@ defmodule Sanbase.Signal.Trigger.PriceVolumeDifferenceTriggerSettings do
       template = """
       🔔 \#{{project_ticker}} | **{{project_name}}**'s price and trading volume have diverged.
       The price is increasing while the volume is decreasing.
-
-      More info here: #{Sanbase.Model.Project.sanbase_link(project)}
       """
 
       {template, kv}

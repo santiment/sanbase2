@@ -196,7 +196,6 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
       ```
       {{trending_words_str}}
       ```
-      More info: {{sonar_url}}
       """
 
       {template, kv}
@@ -213,8 +212,6 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
 
       template = """
       🔔 The word {{trending_words_str}} is in the trending words.
-
-      More info here: {{trending_words_url}}
       """
 
       {template, kv}
@@ -234,8 +231,6 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
 
       template = """
       🔔 The words {{trending_words_str}} are in the trending words.
-
-      More info here: {{trending_words_url}}
       """
 
       {template, kv}
@@ -252,8 +247,6 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
 
       template = """
       🔔 \#{{project_ticker}} | **{{project_name}}** is in the trending words.
-
-      More info here: #{Project.sanbase_link(project)}
       """
 
       {template, kv}

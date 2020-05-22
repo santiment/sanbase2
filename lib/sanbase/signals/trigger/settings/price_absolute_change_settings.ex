@@ -145,8 +145,6 @@ defmodule Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings do
       template = """
       🔔 \#{{project_ticker}} | **{{project_name}}**'s USD price #{operation_template}.
       #{curr_value_template}.
-
-      More information for the project you can find here: #{Project.sanbase_link(project)}
       """
 
       {template, kv}

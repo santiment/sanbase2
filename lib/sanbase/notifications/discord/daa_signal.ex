@@ -149,7 +149,6 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     }%** for the last **#{hours} hour(s)**.
     Daily Active Addresses for last **#{hours} hour(s)** : **#{current_daa - last_triggered_daa}**
     Average Daily Active Addresses for last **#{config_timeframe_from() - 1} days**: **#{avg_daa}**.
-    More info here: #{Project.sanbase_link(project)}
     """
 
     {project, content, current_daa}

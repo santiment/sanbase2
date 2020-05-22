@@ -19,7 +19,7 @@ defmodule Sanbase.SocialData do
   defdelegate social_volume(selector, from, to, interval, source),
     to: SocialVolume
 
-  defdelegate sentiment(selector, from, to, interval, source, column),
+  defdelegate sentiment(selector, from, to, interval, source, type),
     to: Sentiment
 
   defdelegate social_volume_projects(), to: SocialVolume

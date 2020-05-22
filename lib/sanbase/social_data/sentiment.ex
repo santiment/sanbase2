@@ -12,37 +12,44 @@ defmodule Sanbase.SocialData.Sentiment do
   @recv_timeout 25_000
   @sources [:telegram, :professional_traders_chat, :reddit, :discord, :twitter, :bitcointalk]
 
-  def sentiment(selector, from, to, interval, source, column)
-      when source in [:all, "all", :total, "total"] do
-    result =
-      @sources
-      |> Sanbase.Parallel.flat_map(
-        fn source ->
-          {:ok, result} = sentiment(selector, from, to, interval, source, column)
-          result
-        end,
-        max_concurency: 4
-      )
-      |> Sanbase.Utils.Transform.sum_by_datetime(:value)
+  def sources(), do: @sources
 
-    {:ok, result}
+  def sentiment(selector, from, to, interval, source, type)
+      when source in [:all, "all", :total, "total"] do
+    result_tuples =
+      @sources
+      |> Sanbase.Parallel.map(
+        fn source -> sentiment(selector, from, to, interval, source, type) end,
+        max_concurrency: 4
+      )
+
+    case Enum.find(result_tuples, &match?({:error, _}, &1)) do
+      error when not is_nil(error) ->
+        error
+
+      nil ->
+        result =
+          result_tuples
+          |> Enum.flat_map(fn {:ok, data} -> data end)
+          |> Sanbase.Utils.Transform.sum_by_datetime(:value)
+
+        {:ok, result}
+    end
   end
 
-  def sentiment(selector, from, to, interval, source, column) do
-    sentiment_request(selector, from, to, interval, source, column)
+  def sentiment(selector, from, to, interval, source, type) do
+    sentiment_request(selector, from, to, interval, source, type)
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, result} = Jason.decode(body)
         sentiment_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status}} ->
-        warn_result(
-          "Error status #{status} fetching sentiment #{column} for #{inspect(selector)}"
-        )
+        warn_result("Error status #{status} fetching sentiment #{type} for #{inspect(selector)}")
 
       {:error, %HTTPoison.Error{} = error} ->
         error_result(
-          "Cannot fetch sentiment #{column} data for #{inspect(selector)}: #{
+          "Cannot fetch sentiment #{type} data for #{inspect(selector)}: #{
             HTTPoison.Error.message(error)
           }"
         )
@@ -52,9 +59,9 @@ defmodule Sanbase.SocialData.Sentiment do
     end
   end
 
-  defp sentiment_request(selector, from, to, interval, source, column) do
+  defp sentiment_request(selector, from, to, interval, source, type) do
     with {:ok, search_text} <- SocialHelper.social_metrics_selector_handler(selector) do
-      url = "#{metrics_hub_url()}/sentiment_#{column}"
+      url = "#{metrics_hub_url()}/sentiment_#{type}"
 
       options = [
         recv_timeout: @recv_timeout,

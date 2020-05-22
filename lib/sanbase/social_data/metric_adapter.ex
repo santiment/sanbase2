@@ -35,53 +35,15 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "social_dominance_total"
   ]
 
-  @sentiment_positive_timeseries_metrics [
-    "sentiment_positive_telegram",
-    "sentiment_positive_discord",
-    "sentiment_positive_reddit",
-    "sentiment_positive_twitter",
-    "sentiment_positive_bitcointalk",
-    "sentiment_positive_professional_traders_chat",
-    "sentiment_positive_total"
-  ]
-
-  @sentiment_negative_timeseries_metrics [
-    "sentiment_negative_telegram",
-    "sentiment_negative_discord",
-    "sentiment_negative_reddit",
-    "sentiment_negative_twitter",
-    "sentiment_negative_bitcointalk",
-    "sentiment_negative_professional_traders_chat",
-    "sentiment_negative_total"
-  ]
-
-  @sentiment_balance_timeseries_metrics [
-    "sentiment_balance_telegram",
-    "sentiment_balance_discord",
-    "sentiment_balance_reddit",
-    "sentiment_balance_twitter",
-    "sentiment_balance_bitcointalk",
-    "sentiment_balance_professional_traders_chat",
-    "sentiment_balance_total"
-  ]
-
-  @sentiment_volume_consumed_timeseries_metrics [
-    "sentiment_volume_consumed_telegram",
-    "sentiment_volume_consumed_discord",
-    "sentiment_volume_consumed_reddit",
-    "sentiment_volume_consumed_twitter",
-    "sentiment_volume_consumed_bitcointalk",
-    "sentiment_volume_consumed_professional_traders_chat",
-    "sentiment_volume_consumed_total"
-  ]
+  @sentiment_timeseries_metrics for name <- ['sentiment'],
+                                    type <- ["positive", "negative", "balance", "volume_consumed"],
+                                    source <- ["total"] ++ Sanbase.SocialData.Sentiment.sources(),
+                                    do: "#{name}_#{type}_#{source}"
 
   @timeseries_metrics @social_dominance_timeseries_metrics ++
                         @social_volume_timeseries_metrics ++
                         @community_messages_count_timeseries_metrics ++
-                        @sentiment_positive_timeseries_metrics ++
-                        @sentiment_negative_timeseries_metrics ++
-                        @sentiment_balance_timeseries_metrics ++
-                        @sentiment_volume_consumed_timeseries_metrics
+                        @sentiment_timeseries_metrics
 
   @histogram_metrics []
 
@@ -131,34 +93,11 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   def timeseries_data(metric, %{} = selector, from, to, interval, _aggregation)
-      when metric in @sentiment_positive_timeseries_metrics do
-    "sentiment_positive_" <> source = metric
+      when metric in @sentiment_timeseries_metrics do
+    "sentiment_" <> type_source = metric
+    {type, source} = split_by_source(type_source)
 
-    Sanbase.SocialData.sentiment(selector, from, to, interval, source, "positive")
-    |> transform_to_value_pairs(:value)
-  end
-
-  def timeseries_data(metric, %{} = selector, from, to, interval, _aggregation)
-      when metric in @sentiment_negative_timeseries_metrics do
-    "sentiment_negative_" <> source = metric
-
-    Sanbase.SocialData.sentiment(selector, from, to, interval, source, "negative")
-    |> transform_to_value_pairs(:value)
-  end
-
-  def timeseries_data(metric, %{} = selector, from, to, interval, _aggregation)
-      when metric in @sentiment_balance_timeseries_metrics do
-    "sentiment_balance_" <> source = metric
-
-    Sanbase.SocialData.sentiment(selector, from, to, interval, source, "balance")
-    |> transform_to_value_pairs(:value)
-  end
-
-  def timeseries_data(metric, %{} = selector, from, to, interval, _aggregation)
-      when metric in @sentiment_volume_consumed_timeseries_metrics do
-    "sentiment_volume_consumed_" <> source = metric
-
-    Sanbase.SocialData.sentiment(selector, from, to, interval, source, "volume_consumed")
+    Sanbase.SocialData.sentiment(selector, from, to, interval, source, type)
     |> transform_to_value_pairs(:value)
   end
 
@@ -303,4 +242,33 @@ defmodule Sanbase.SocialData.MetricAdapter do
   defp metric_to_source("social_volume_" <> source), do: source
   defp metric_to_source("social_dominance_" <> source), do: source
   defp metric_to_source("community_messages_count_" <> source), do: source
+
+  defp split_by_source(str) do
+    get_first_part = fn binary, splitter ->
+      String.split(binary, splitter) |> hd |> String.trim_trailing("_")
+    end
+
+    cond do
+      String.ends_with?(str, "total") ->
+        {get_first_part.(str, "total"), "total"}
+
+      String.ends_with?(str, "telegram") ->
+        {get_first_part.(str, "telegram"), "telegram"}
+
+      String.ends_with?(str, "reddit") ->
+        {get_first_part.(str, "reddit"), "reddit"}
+
+      String.ends_with?(str, "discord") ->
+        {get_first_part.(str, "discord"), "discord"}
+
+      String.ends_with?(str, "twitter") ->
+        {get_first_part.(str, "twitter"), "twitter"}
+
+      String.ends_with?(str, "bitcointalk") ->
+        {get_first_part.(str, "bitcointalk"), "bitcointalk"}
+
+      String.ends_with?(str, "professional_traders_chat") ->
+        {get_first_part.(str, "professional_traders_chat"), "professional_traders_chat"}
+    end
+  end
 end

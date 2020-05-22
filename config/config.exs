@@ -51,7 +51,8 @@ config :sanbase, Sanbase.Repo,
   pool_size: {:system, "SANBASE_POOL_SIZE", "20"},
   max_overflow: 5,
   # because of pgbouncer
-  prepare: :unnamed
+  prepare: :unnamed,
+  migration_timestamps: [type: :naive_datetime_usec]
 
 config :sanbase, Sanbase.Auth.Hmac, secret_key: {:system, "APIKEY_HMAC_SECRET_KEY", nil}
 

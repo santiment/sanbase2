@@ -46,17 +46,14 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
   end
 
   test "test fetching volume for exchange", context do
-    with_mock Sanbase.ClickhouseRepo,
-      query: fn _, _ ->
-        {:ok,
-         %{
-           rows: [
-             [from_iso8601_to_unix!("2017-05-13T00:00:00Z"), 2000, 1000],
-             [from_iso8601_to_unix!("2017-05-15T00:00:00Z"), 1800, 1300],
-             [from_iso8601_to_unix!("2017-05-18T00:00:00Z"), 1000, 1100]
-           ]
-         }}
-      end do
+    rows = [
+      [from_iso8601_to_unix!("2017-05-13T00:00:00Z"), 2000, 1000],
+      [from_iso8601_to_unix!("2017-05-15T00:00:00Z"), 1800, 1300],
+      [from_iso8601_to_unix!("2017-05-18T00:00:00Z"), 1000, 1100]
+    ]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       query =
         exchange_volume_query(
           context.exchange,
@@ -88,7 +85,7 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
                  "exchange_outflow" => 1100
                }
              ]
-    end
+    end)
   end
 
   describe "#exchangeMarketPairToSlugs" do

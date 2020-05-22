@@ -24,23 +24,15 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
         market_segments: [market_segment]
       })
 
-    project3 =
-      insert(:random_project, %{
-        github_organizations: [],
-        market_segments: []
-      })
-
-    dt1 = "2019-01-01T00:00:00Z" |> from_iso8601!()
-    dt2 = "2019-01-02T00:00:00Z" |> from_iso8601!()
-    dt3 = "2019-01-03T00:00:00Z" |> from_iso8601!()
+    project3 = insert(:random_project, %{github_organizations: [], market_segments: []})
 
     %{
       project1: project1,
       project2: project2,
       project3: project3,
-      dt1: dt1,
-      dt2: dt2,
-      dt3: dt3,
+      dt1: ~U[2019-01-01T00:00:00Z],
+      dt2: ~U[2019-01-02T00:00:00Z],
+      dt3: ~U[2019-01-03T00:00:00Z],
       market_segment: market_segment,
       market_segment_without_projects: market_segment_without_projects
     }

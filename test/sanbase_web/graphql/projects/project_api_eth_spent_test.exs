@@ -3,6 +3,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
 
   import Mock
   import Sanbase.Factory
+  import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
 
   @eth_decimals 1_000_000_000_000_000_000
@@ -14,19 +15,12 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
 
     eth_infr = insert(:infrastructure, %{code: "ETH"})
 
-    p =
-      insert(:project, %{
-        name: "Santiment",
-        ticker: "SAN",
-        slug: "santiment",
-        infrastructure_id: eth_infr.id,
-        main_contract_address: "0x" <> rand_hex_str()
-      })
+    project = insert(:random_erc20_project)
 
     project_address = p.eth_addresses |> List.first()
 
     [
-      project: p,
+      project: project,
       project_address: project_address.address,
       dates_day_diff1: Timex.diff(datetime1, datetime3, :days) + 1,
       expected_sum1: 20_000,
@@ -38,20 +32,17 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
   end
 
   test "project total eth spent whole interval", context do
-    with_mock Sanbase.ClickhouseRepo, [:passthrough],
-      query: fn _, _ ->
-        {:ok,
-         %{
-           rows: [
-             [
-               context.project_address,
-               30_000 * @eth_decimals,
-               10_000 * @eth_decimals,
-               -20_000 * @eth_decimals
-             ]
-           ]
-         }}
-      end do
+    rows = [
+      [
+        context.project_address,
+        30_000 * @eth_decimals,
+        10_000 * @eth_decimals,
+        -20_000 * @eth_decimals
+      ]
+    ]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       query = """
       {
         project(id: #{context.project.id}) {
@@ -67,26 +58,23 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
       trx_sum = json_response(result, 200)["data"]["project"]
 
       assert trx_sum == %{"ethSpent" => context.expected_sum1}
-    end
+    end)
   end
 
   test "project total eth spent part of interval", context do
     eth_spent = 4500
 
-    with_mock Sanbase.ClickhouseRepo, [:passthrough],
-      query: fn _, _ ->
-        {:ok,
-         %{
-           rows: [
-             [
-               context.project_address,
-               20_000 * @eth_decimals,
-               15_500 * @eth_decimals,
-               -4500 * @eth_decimals
-             ]
-           ]
-         }}
-      end do
+    rows = [
+      [
+        context.project_address,
+        20_000 * @eth_decimals,
+        15_500 * @eth_decimals,
+        -4500 * @eth_decimals
+      ]
+    ]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       query = """
       {
         project(id: #{context.project.id}) {
@@ -102,26 +90,23 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
       trx_sum = json_response(result, 200)["data"]["project"]
 
       assert trx_sum == %{"ethSpent" => eth_spent}
-    end
+    end)
   end
 
   test "eth spent by erc20 projects", context do
     eth_spent = 30_000
 
-    with_mock Sanbase.ClickhouseRepo, [:passthrough],
-      query: fn _, _ ->
-        {:ok,
-         %{
-           rows: [
-             [
-               context.project_address,
-               100_000 * @eth_decimals,
-               70_000 * @eth_decimals,
-               -30_000 * @eth_decimals
-             ]
-           ]
-         }}
-      end do
+    rows = [
+      [
+        context.project_address,
+        100_000 * @eth_decimals,
+        70_000 * @eth_decimals,
+        -30_000 * @eth_decimals
+      ]
+    ]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       query = """
       {
         ethSpentByErc20Projects(
@@ -137,29 +122,24 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
       total_eth_spent = json_response(result, 200)["data"]["ethSpentByErc20Projects"]
 
       assert total_eth_spent == eth_spent
-    end
+    end)
   end
 
   test "eth spent over time by erc20 projects", context do
-    dt1 = Timex.now() |> DateTime.to_unix()
-    dt2 = Timex.shift(Timex.now(), days: -1) |> DateTime.to_unix()
-    dt3 = Timex.shift(Timex.now(), days: -2) |> DateTime.to_unix()
-    dt4 = Timex.shift(Timex.now(), days: -3) |> DateTime.to_unix()
-    dt5 = Timex.shift(Timex.now(), days: -4) |> DateTime.to_unix()
+    [dt1, dt2, dt3, dt4, dt5] =
+      generate_datetimes(Timex.shift(Timex.now(), days: -4), "1d", 5)
+      |> Enum.map(&DateTime.to_unix/1)
 
-    with_mock Sanbase.ClickhouseRepo, [:passthrough],
-      query: fn _, _ ->
-        {:ok,
-         %{
-           rows: [
-             [dt1, -16_500 * @eth_decimals],
-             [dt2, -5500 * @eth_decimals],
-             [dt3, -3500 * @eth_decimals],
-             [dt4, -2500 * @eth_decimals],
-             [dt5, -500 * @eth_decimals]
-           ]
-         }}
-      end do
+    rows = [
+      [dt1, -16_500 * @eth_decimals],
+      [dt2, -5500 * @eth_decimals],
+      [dt3, -3500 * @eth_decimals],
+      [dt4, -2500 * @eth_decimals],
+      [dt5, -500 * @eth_decimals]
+    ]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       query = """
       {
         ethSpentOverTimeByErc20Projects(
@@ -182,7 +162,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
       assert %{"ethSpent" => 3500.0} in total_spent
       assert %{"ethSpent" => 2500.0} in total_spent
       assert %{"ethSpent" => 500.0} in total_spent
-    end
+    end)
   end
 
   # Private functions

@@ -26,10 +26,10 @@ defmodule Sanbase.Comments.EntityComment do
     Ecto.Multi.new()
     |> Ecto.Multi.run(
       :create_comment,
-      fn _changes -> Comment.create(user_id, content, parent_id) end
+      fn _repo, _changes -> Comment.create(user_id, content, parent_id) end
     )
     |> Ecto.Multi.run(:link_comment_and_entity, fn
-      %{create_comment: comment} ->
+      _repo, %{create_comment: comment} ->
         link(entity, entity_id, comment.id)
     end)
     |> Repo.transaction()

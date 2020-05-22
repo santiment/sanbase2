@@ -1,5 +1,5 @@
 %{
-  "absinthe": {:git, "https://github.com/absinthe-graphql/absinthe.git", "9f5f9ea27f30e69e32ebcb81042f23ce3427d607", []},
+  "absinthe": {:git, "https://github.com/absinthe-graphql/absinthe.git", "d1485f728b0fe4cea90cfbc45e92864eeb1c07dd", []},
   "absinthe_metrics": {:hex, :absinthe_metrics, "1.0.0", "c4dd0444168a1d32a432cab2ced498069e58fd4b90aa9e1ec16b49557bee2cf1", [:mix], [{:absinthe, "~> 1.3", [hex: :absinthe, repo: "hexpm", optional: false]}, {:prometheus_ex, "~> 3.0", [hex: :prometheus_ex, repo: "hexpm", optional: true]}], "hexpm", "c21485a8d207c78c32040b9588c254c43362fbaf7dfaa50a7c7b016f015f5643"},
   "absinthe_phoenix": {:git, "https://github.com/absinthe-graphql/absinthe_phoenix.git", "1d832570ffdd031a209a9218c6fc54cde4488665", []},
   "absinthe_plug": {:git, "https://github.com/absinthe-graphql/absinthe_plug.git", "7c52e5d583252b8d44bed395f16a01b1c15fde10", []},

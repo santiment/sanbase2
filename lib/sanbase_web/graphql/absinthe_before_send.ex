@@ -102,7 +102,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
   # Create an API Call event for every query in a Document separately.
   defp export_api_call_data(queries, conn, blueprint) do
-    duration_ms = div(System.monotonic_time() - blueprint.telemetry.start_time_mono, 1_000_000)
+    now = DateTime.utc_now() |> DateTime.to_unix(:nanosecond)
+    duration_ms = div(now - blueprint.telemetry.start_time, 1_000_000)
 
     user_agent = Plug.Conn.get_req_header(conn, "user-agent") |> List.first()
 
@@ -121,7 +122,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
     Enum.map(queries, fn query ->
       %{
-        timestamp: DateTime.utc_now() |> DateTime.to_unix(:nanosecond),
+        timestamp: div(now, 1_000_000_000),
         id: id,
         query: query |> construct_query_name(),
         status_code: 200,

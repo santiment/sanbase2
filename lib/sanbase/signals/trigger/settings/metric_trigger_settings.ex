@@ -195,7 +195,6 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
         operation_template
       }.
       #{curr_value_template}.
-      More info here: #{Project.sanbase_link(project)}
       """
 
       {template, kv}

@@ -206,8 +206,6 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
       template = """
       🔔 \#{{project_ticker}} | **{{project_name}}**'s {{asset}} balance {{balance_change_text}} by {{balance_change}} since {{since}}.
       was: {{previous_balance}}, now: {{balance}}.
-
-      More info here: #{Project.sanbase_link(project)}
       """
 
       {template, kv}
@@ -233,8 +231,6 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
       template = """
       🔔The address {{address}}'s {{asset}} balance #{operation_text(settings.operation)} by {{balance_change_abs}} since {{since}}.
       was: {{previous_balance}, now: {{balance}}
-
-      More info here: {{historical_balance_link}}
       """
 
       {template, kv}

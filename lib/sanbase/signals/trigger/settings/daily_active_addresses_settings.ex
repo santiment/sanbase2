@@ -153,7 +153,6 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
       #{curr_value_template}.
 
       Average 24 hours Active Addresses for last **{{interval}}*: **{{average_value}}**.
-      More info here: #{Project.sanbase_link(project)}
       """
 
       {template, kv}

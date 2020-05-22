@@ -238,8 +238,6 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
         operation_template
       }.
       #{curr_value_template}
-
-      More information about the project can be found here: #{Project.sanbase_link(project)}
       """
 
       {template, kv}

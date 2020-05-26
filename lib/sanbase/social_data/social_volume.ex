@@ -10,14 +10,11 @@ defmodule Sanbase.SocialData.SocialVolume do
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 25_000
-  @sources [:telegram, :professional_traders_chat, :reddit, :discord, :twitter, :bitcointalk]
-
-  def sources(), do: @sources
 
   def social_volume(selector, from, to, interval, source)
       when source in [:all, "all", :total, "total"] do
     result_tuples =
-      @sources
+      SocialHelper.sources()
       |> Sanbase.Parallel.map(
         fn source -> social_volume(selector, from, to, interval, source) end,
         max_concurrency: 4

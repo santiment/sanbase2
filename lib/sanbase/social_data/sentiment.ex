@@ -10,14 +10,11 @@ defmodule Sanbase.SocialData.Sentiment do
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 25_000
-  @sources [:telegram, :professional_traders_chat, :reddit, :discord, :twitter, :bitcointalk]
-
-  def sources(), do: @sources
 
   def sentiment(selector, from, to, interval, source, type)
       when source in [:all, "all", :total, "total"] do
     result_tuples =
-      @sources
+      SocialHelper.sources()
       |> Sanbase.Parallel.map(
         fn source -> sentiment(selector, from, to, interval, source, type) end,
         max_concurrency: 4
@@ -38,8 +35,7 @@ defmodule Sanbase.SocialData.Sentiment do
   end
 
   def sentiment(selector, from, to, interval, source, type) do
-    sentiment_request(selector, from, to, interval, source, type)
-    |> case do
+    case sentiment_request(selector, from, to, interval, source, type) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, result} = Jason.decode(body)
         sentiment_result(result)

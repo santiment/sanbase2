@@ -3,6 +3,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   import Sanbase.Metric.Helper
 
+  alias Sanbase.SocialData.SocialHelper
   alias Sanbase.Model.Project
 
   @aggregations [:sum]
@@ -37,7 +38,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   @sentiment_timeseries_metrics for name <- ['sentiment'],
                                     type <- ["positive", "negative", "balance", "volume_consumed"],
-                                    source <- ["total"] ++ Sanbase.SocialData.Sentiment.sources(),
+                                    source <-
+                                      ["total"] ++ Sanbase.SocialData.SocialHelper.sources(),
                                     do: "#{name}_#{type}_#{source}"
 
   @timeseries_metrics @social_dominance_timeseries_metrics ++
@@ -95,7 +97,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def timeseries_data(metric, %{} = selector, from, to, interval, _aggregation)
       when metric in @sentiment_timeseries_metrics do
     "sentiment_" <> type_source = metric
-    {type, source} = split_by_source(type_source)
+    {type, source} = SocialHelper.split_by_source(type_source)
 
     Sanbase.SocialData.sentiment(selector, from, to, interval, source, type)
     |> transform_to_value_pairs(:value)
@@ -242,33 +244,4 @@ defmodule Sanbase.SocialData.MetricAdapter do
   defp metric_to_source("social_volume_" <> source), do: source
   defp metric_to_source("social_dominance_" <> source), do: source
   defp metric_to_source("community_messages_count_" <> source), do: source
-
-  defp split_by_source(str) do
-    get_first_part = fn binary, splitter ->
-      String.split(binary, splitter) |> hd |> String.trim_trailing("_")
-    end
-
-    cond do
-      String.ends_with?(str, "total") ->
-        {get_first_part.(str, "total"), "total"}
-
-      String.ends_with?(str, "telegram") ->
-        {get_first_part.(str, "telegram"), "telegram"}
-
-      String.ends_with?(str, "reddit") ->
-        {get_first_part.(str, "reddit"), "reddit"}
-
-      String.ends_with?(str, "discord") ->
-        {get_first_part.(str, "discord"), "discord"}
-
-      String.ends_with?(str, "twitter") ->
-        {get_first_part.(str, "twitter"), "twitter"}
-
-      String.ends_with?(str, "bitcointalk") ->
-        {get_first_part.(str, "bitcointalk"), "bitcointalk"}
-
-      String.ends_with?(str, "professional_traders_chat") ->
-        {get_first_part.(str, "professional_traders_chat"), "professional_traders_chat"}
-    end
-  end
 end

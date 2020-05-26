@@ -1,8 +1,6 @@
 defmodule Sanbase.Application do
   use Application
 
-  import Sanbase.ApplicationUtils
-
   require Logger
   require Sanbase.Utils.Config, as: Config
 

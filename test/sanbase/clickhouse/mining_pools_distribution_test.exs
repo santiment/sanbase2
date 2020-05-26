@@ -1,8 +1,8 @@
 defmodule Sanbase.Clickhouse.MiningPoolsDistributionTest do
   use Sanbase.DataCase
-  import Mock
-  import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
+
   alias Sanbase.Clickhouse.MiningPoolsDistribution
+
   require Sanbase.ClickhouseRepo
 
   setup do

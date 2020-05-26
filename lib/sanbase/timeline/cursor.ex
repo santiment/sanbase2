@@ -4,14 +4,14 @@ defmodule Sanbase.Timeline.Cursor do
   def filter_by_cursor(query, :before, datetime) do
     from(
       event in query,
-      where: event.inserted_at < ^datetime
+      where: event.inserted_at < ^DateTime.to_naive(datetime)
     )
   end
 
   def filter_by_cursor(query, :after, datetime) do
     from(
       event in query,
-      where: event.inserted_at > ^datetime
+      where: event.inserted_at > ^DateTime.to_naive(datetime)
     )
   end
 

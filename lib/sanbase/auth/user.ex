@@ -101,15 +101,17 @@ defmodule Sanbase.Auth.User do
     timestamps()
   end
 
-  def generate_salt do
+  def generate_salt() do
     :crypto.strong_rand_bytes(@salt_length) |> Base.url_encode64() |> binary_part(0, @salt_length)
   end
 
-  def generate_email_token do
+  def generate_email_token() do
     :crypto.strong_rand_bytes(@email_token_length) |> Base.url_encode64()
   end
 
   def changeset(%User{} = user, attrs \\ %{}) do
+    attrs = Sanbase.DateTimeUtils.truncate_datetimes(attrs)
+
     user
     |> cast(attrs, [
       :email,
@@ -189,15 +191,20 @@ defmodule Sanbase.Auth.User do
   def san_balance_cache_stale?(%User{san_balance_updated_at: nil}), do: true
 
   def san_balance_cache_stale?(%User{san_balance_updated_at: san_balance_updated_at}) do
-    Timex.diff(Timex.now(), san_balance_updated_at, :seconds) > @san_balance_cache_seconds
+    naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    Timex.diff(naive_now, san_balance_updated_at, :seconds) > @san_balance_cache_seconds
   end
 
   def update_san_balance_changeset(user) do
     user = Repo.preload(user, :eth_accounts)
     san_balance = san_balance_for_eth_accounts(user)
+    naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
     user
-    |> change(san_balance: san_balance, san_balance_updated_at: Timex.now())
+    |> change(
+      san_balance_updated_at: naive_now,
+      san_balance: san_balance
+    )
   end
 
   @spec san_balance(%User{}) :: {:ok, float()} | {:ok, nil} | {:error, String.t()}
@@ -274,7 +281,7 @@ defmodule Sanbase.Auth.User do
     user
     |> change(
       email_token: generate_email_token(),
-      email_token_generated_at: Timex.now(),
+      email_token_generated_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second),
       email_token_validated_at: nil,
       consent_id: consent
     )
@@ -286,44 +293,57 @@ defmodule Sanbase.Auth.User do
     |> changeset(%{
       email_candidate: email_candidate,
       email_candidate_token: generate_email_token(),
-      email_candidate_token_generated_at: Timex.now(),
+      email_candidate_token_generated_at:
+        NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second),
       email_candidate_token_validated_at: nil
     })
     |> Repo.update()
   end
 
   def mark_email_token_as_validated(user) do
+    validated_at =
+      (user.email_token_validated_at || Timex.now())
+      |> Timex.to_naive_datetime()
+      |> NaiveDateTime.truncate(:second)
+
     user
     |> change(
-      email_token_validated_at: user.email_token_validated_at || Timex.now(),
+      email_token_validated_at: validated_at,
       is_registered: true
     )
     |> Repo.update()
   end
 
   def update_email_from_email_candidate(user) do
+    validated_at =
+      (user.email_candidate_token_validated_at || Timex.now())
+      |> Timex.to_naive_datetime()
+      |> NaiveDateTime.truncate(:second)
+
     user
     |> changeset(%{
       email: user.email_candidate,
       email_candidate: nil,
-      email_candidate_token_validated_at: user.email_candidate_token_validated_at || Timex.now()
+      email_candidate_token_validated_at: validated_at
     })
     |> Repo.update()
   end
 
   def email_token_valid?(user, token) do
+    naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
     cond do
       user.email_token != token ->
         false
 
-      Timex.diff(Timex.now(), user.email_token_generated_at, :minutes) >
+      Timex.diff(naive_now, user.email_token_generated_at, :minutes) >
           @login_email_valid_minutes ->
         false
 
       user.email_token_validated_at == nil ->
         true
 
-      Timex.diff(Timex.now(), user.email_token_validated_at, :minutes) >
+      Timex.diff(naive_now, user.email_token_validated_at, :minutes) >
           @login_email_valid_after_validation_minutes ->
         false
 
@@ -333,18 +353,20 @@ defmodule Sanbase.Auth.User do
   end
 
   def email_candidate_token_valid?(user, email_candidate_token) do
+    naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
     cond do
       user.email_candidate_token != email_candidate_token ->
         false
 
-      Timex.diff(Timex.now(), user.email_candidate_token_generated_at, :minutes) >
+      Timex.diff(naive_now, user.email_candidate_token_generated_at, :minutes) >
           @login_email_valid_minutes ->
         false
 
       user.email_candidate_token_validated_at == nil ->
         true
 
-      Timex.diff(Timex.now(), user.email_candidate_token_validated_at, :minutes) >
+      Timex.diff(naive_now, user.email_candidate_token_validated_at, :minutes) >
           @login_email_valid_after_validation_minutes ->
         false
 

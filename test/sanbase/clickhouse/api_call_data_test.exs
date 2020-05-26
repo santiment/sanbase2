@@ -1,7 +1,6 @@
 defmodule Sanbase.Clickhouse.ApiCallDataTest do
   use Sanbase.DataCase
 
-  import Mock
   import Sanbase.Factory
   import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
 

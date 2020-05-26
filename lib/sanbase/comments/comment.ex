@@ -53,6 +53,8 @@ defmodule Sanbase.Comment do
   end
 
   def changeset(%__MODULE__{} = comment, attrs \\ %{}) do
+    attrs = Sanbase.DateTimeUtils.truncate_datetimes(attrs)
+
     comment
     |> cast(attrs, [:user_id, :parent_id, :root_parent_id, :content, :edited_at])
     |> validate_required([:user_id, :content])

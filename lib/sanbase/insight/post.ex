@@ -61,7 +61,7 @@ defmodule Sanbase.Insight.Post do
       on_delete: :delete_all
     )
 
-    field(:published_at, :naive_datetime)
+    field(:published_at, :naive_datetime_usec)
     timestamps()
   end
 

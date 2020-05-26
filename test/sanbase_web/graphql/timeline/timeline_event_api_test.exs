@@ -98,8 +98,10 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     assert result |> hd() |> Map.get("events") |> hd() |> Map.get("data") == nil
 
     assert result |> hd() |> Map.get("cursor") == %{
-             "after" => DateTime.to_iso8601(DateTime.truncate(event3.inserted_at, :second)),
-             "before" => DateTime.to_iso8601(DateTime.truncate(event1.inserted_at, :second))
+             "after" =>
+               DateTime.to_iso8601(event3.inserted_at |> DateTime.from_naive!("Etc/UTC")),
+             "before" =>
+               DateTime.to_iso8601(event1.inserted_at |> DateTime.from_naive!("Etc/UTC"))
            }
   end
 
@@ -502,29 +504,43 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
 
       {trigger1, trigger2, trigger3} = create_trigger(context)
 
-      insight_event =
-        insert(:timeline_event,
-          post: post,
-          user: context.user,
-          event_type: TimelineEvent.publish_insight_type()
-        )
-
       generic_setting_trigger_event = %{
         user_trigger: nil,
         user: context.user,
         event_type: TimelineEvent.trigger_fired(),
         payload: %{"default" => "some signal payload"},
-        data: %{"user_trigger_data" => %{"default" => %{"value" => 15}}}
+        data: %{"user_trigger_data" => %{"default" => %{"value" => 15}}},
+        inserted_at: NaiveDateTime.utc_now()
       }
 
+      insight_event =
+        insert(:timeline_event,
+          post: post,
+          user: context.user,
+          event_type: TimelineEvent.publish_insight_type(),
+          inserted_at: Timex.shift(NaiveDateTime.utc_now(), seconds: -4)
+        )
+
       trigger1_event =
-        insert(:timeline_event, %{generic_setting_trigger_event | user_trigger: trigger1})
+        insert(:timeline_event, %{
+          generic_setting_trigger_event
+          | user_trigger: trigger1,
+            inserted_at: Timex.shift(NaiveDateTime.utc_now(), seconds: -3)
+        })
 
       trigger2_event =
-        insert(:timeline_event, %{generic_setting_trigger_event | user_trigger: trigger2})
+        insert(:timeline_event, %{
+          generic_setting_trigger_event
+          | user_trigger: trigger2,
+            inserted_at: Timex.shift(NaiveDateTime.utc_now(), seconds: -2)
+        })
 
       trigger3_event =
-        insert(:timeline_event, %{generic_setting_trigger_event | user_trigger: trigger3})
+        insert(:timeline_event, %{
+          generic_setting_trigger_event
+          | user_trigger: trigger3,
+            inserted_at: Timex.shift(NaiveDateTime.utc_now(), seconds: -1)
+        })
 
       create_test_events(context)
 
@@ -668,28 +684,32 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       insert(:post,
         user: user_to_follow,
         state: Post.approved_state(),
-        ready_state: Post.published()
+        ready_state: Post.published(),
+        inserted_at: Timex.shift(NaiveDateTime.utc_now(), seconds: -10)
       )
 
     post2 =
       insert(:post,
         user: san_author2,
         state: Post.approved_state(),
-        ready_state: Post.published()
+        ready_state: Post.published(),
+        inserted_at: Timex.shift(NaiveDateTime.utc_now(), seconds: -9)
       )
 
     post3 =
       insert(:post,
         user: san_author2,
         state: Post.approved_state(),
-        ready_state: Post.published()
+        ready_state: Post.published(),
+        inserted_at: Timex.shift(NaiveDateTime.utc_now(), seconds: -8)
       )
 
     event_with_0_votes_and_1_comments_by_followed =
       insert(:timeline_event,
         post: post1,
         user: user_to_follow,
-        event_type: TimelineEvent.publish_insight_type()
+        event_type: TimelineEvent.publish_insight_type(),
+        inserted_at: Timex.shift(NaiveDateTime.utc_now(), seconds: -7)
       )
 
     EntityComment.create_and_link(
@@ -704,7 +724,8 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       insert(:timeline_event,
         post: post2,
         user: san_author2,
-        event_type: TimelineEvent.publish_insight_type()
+        event_type: TimelineEvent.publish_insight_type(),
+        inserted_at: Timex.shift(NaiveDateTime.utc_now(), seconds: -6)
       )
 
     Sanbase.Vote.create(%{
@@ -716,7 +737,8 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       insert(:timeline_event,
         post: post3,
         user: san_author2,
-        event_type: TimelineEvent.publish_insight_type()
+        event_type: TimelineEvent.publish_insight_type(),
+        inserted_at: Timex.shift(NaiveDateTime.utc_now(), seconds: -5)
       )
 
     %{

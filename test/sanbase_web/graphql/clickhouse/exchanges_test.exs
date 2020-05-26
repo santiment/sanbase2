@@ -1,10 +1,8 @@
 defmodule SanbaseWeb.Graphql.ExchangesTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1]
 
   setup do
     infr = insert(:infrastructure, %{code: "ETH"})
@@ -47,9 +45,9 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
 
   test "test fetching volume for exchange", context do
     rows = [
-      [from_iso8601_to_unix!("2017-05-13T00:00:00Z"), 2000, 1000],
-      [from_iso8601_to_unix!("2017-05-15T00:00:00Z"), 1800, 1300],
-      [from_iso8601_to_unix!("2017-05-18T00:00:00Z"), 1000, 1100]
+      [~U[2017-05-13T00:00:00Z] |> DateTime.to_unix(), 2000, 1000],
+      [~U[2017-05-15T00:00:00Z] |> DateTime.to_unix(), 1800, 1300],
+      [~U[2017-05-18T00:00:00Z] |> DateTime.to_unix(), 1000, 1100]
     ]
 
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})

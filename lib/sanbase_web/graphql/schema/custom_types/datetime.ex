@@ -16,7 +16,9 @@ defmodule SanbaseWeb.Graphql.CustomTypes.DateTime do
         |> DateTime.to_iso8601()
 
       %DateTime{} = dt ->
-        DateTime.truncate(dt, :second) |> DateTime.to_iso8601()
+        dt
+        |> DateTime.truncate(:second)
+        |> DateTime.to_iso8601()
     end)
 
     parse(&parse_datetime/1)

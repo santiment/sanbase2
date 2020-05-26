@@ -1,4 +1,12 @@
 defmodule Sanbase.DateTimeUtils do
+  def truncate_datetimes(%{} = map, precision \\ :second) do
+    Enum.into(map, %{}, fn
+      {k, %DateTime{} = dt} -> {k, DateTime.truncate(dt, precision)}
+      {k, %NaiveDateTime{} = dt} -> {k, NaiveDateTime.truncate(dt, precision)}
+      {k, v} -> {k, v}
+    end)
+  end
+
   def time_in_range?(%Time{} = time, %Time{} = from, %Time{} = to) do
     case Time.compare(from, to) do
       :eq ->

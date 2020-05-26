@@ -85,11 +85,11 @@ defmodule Sanbase.Comments.EntityComment do
   end
 
   defp apply_cursor(query, %{type: :before, datetime: datetime}) do
-    from(c in query, where: c.inserted_at < ^datetime)
+    from(c in query, where: c.inserted_at <= ^(datetime |> DateTime.to_naive()))
   end
 
   defp apply_cursor(query, %{type: :after, datetime: datetime}) do
-    from(c in query, where: c.inserted_at >= ^datetime)
+    from(c in query, where: c.inserted_at >= ^(datetime |> DateTime.to_naive()))
   end
 
   defp apply_cursor(query, nil), do: query

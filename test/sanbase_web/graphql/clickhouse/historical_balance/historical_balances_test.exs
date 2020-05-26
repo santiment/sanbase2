@@ -3,12 +3,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
 
   import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
-  import Mock
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
   import ExUnit.CaptureLog
   import Sanbase.Factory
-
-  alias Sanbase.DateTimeUtils
 
   require Sanbase.ClickhouseRepo
 
@@ -29,8 +25,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       project_with_contract: project_with_contract,
       project_without_contract: project_without_contract,
       address: "0x321321321",
-      from: from_iso8601!("2017-05-11T00:00:00Z"),
-      to: from_iso8601!("2017-05-20T00:00:00Z"),
+      from: ~U[2017-05-11T00:00:00Z],
+      to: ~U[2017-05-20T00:00:00Z],
       interval: "1d"
     ]
   end
@@ -54,19 +50,15 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
     dt3 = ~U[2019-01-03 00:00:00Z]
     dt4 = ~U[2019-01-04 00:00:00Z]
 
-    with_mock(Sanbase.ClickhouseRepo,
-      query: fn _, _ ->
-        {:ok,
-         %{
-           rows: [
-             [dt1 |> DateTime.to_unix(), :math.pow(10, 18) * 2000, 1],
-             [dt2 |> DateTime.to_unix(), 0, 0],
-             [dt3 |> DateTime.to_unix(), 0, 0],
-             [dt4 |> DateTime.to_unix(), :math.pow(10, 18) * 1800, 1]
-           ]
-         }}
-      end
-    ) do
+    rows = [
+      [dt1 |> DateTime.to_unix(), :math.pow(10, 18) * 2000, 1],
+      [dt2 |> DateTime.to_unix(), 0, 0],
+      [dt3 |> DateTime.to_unix(), 0, 0],
+      [dt4 |> DateTime.to_unix(), :math.pow(10, 18) * 1800, 1]
+    ]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       from = dt1
       to = dt4
 
@@ -84,7 +76,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
         historical_balance = result["data"]["historicalBalance"]
         assert length(historical_balance) == 4
       end
-    end
+    end)
   end
 
   test "historical balances when interval is bigger than balances values interval", context do

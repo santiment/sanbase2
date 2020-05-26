@@ -1,12 +1,9 @@
 defmodule SanbaseWeb.Graphql.ProjectApiEthSpentOverTimeTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Mock
   import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
-
-  alias Sanbase.DateTimeUtils
 
   @eth_decimals 1_000_000_000_000_000_000
 

@@ -1,8 +1,6 @@
 defmodule Sanbase.Clickhouse.Metric.HelperTest do
   use Sanbase.DataCase
 
-  import Mock
-
   test "metric id to name map" do
     rows = [
       [1, "daily_active_addresses"],

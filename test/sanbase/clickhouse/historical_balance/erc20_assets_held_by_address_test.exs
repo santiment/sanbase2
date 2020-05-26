@@ -1,7 +1,6 @@
 defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20AssetsHeldByAdderssTest do
   use Sanbase.DataCase
 
-  import Mock
   import Sanbase.Factory
 
   alias Sanbase.Clickhouse.HistoricalBalance.Erc20Balance

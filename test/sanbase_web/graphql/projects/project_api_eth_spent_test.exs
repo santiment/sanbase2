@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Mock
   import Sanbase.Factory
   import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
@@ -15,9 +14,9 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
 
     eth_infr = insert(:infrastructure, %{code: "ETH"})
 
-    project = insert(:random_erc20_project)
+    project = insert(:random_erc20_project, infrastructure: eth_infr)
 
-    project_address = p.eth_addresses |> List.first()
+    project_address = project.eth_addresses |> List.first()
 
     [
       project: project,

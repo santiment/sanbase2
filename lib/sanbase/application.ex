@@ -167,7 +167,7 @@ defmodule Sanbase.Application do
       Sanbase.Repo,
 
       # Start the Clickhouse Repo
-      start_in({Sanbase.ClickhouseRepo, []}, [:dev, :prod, :test]),
+      Sanbase.ClickhouseRepo,
 
       # Time series Prices DB connection
       Sanbase.Prices.Store.child_spec(),

@@ -1,5 +1,6 @@
 defmodule Sanbase.Price do
   use Ecto.Schema
+  use AsyncWith
 
   import Sanbase.Price.SqlQuery
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
@@ -9,7 +10,7 @@ defmodule Sanbase.Price do
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
   @default_source "coinmarketcap"
-  @metrics [:price_usd, :price_btc, :marketcap_usd, :volume_usd]
+  @metrics [:price_usd, :price_btc, :price_eth, :marketcap_usd, :volume_usd]
   @metrics @metrics ++ Enum.map(@metrics, &Atom.to_string/1)
   @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
 
@@ -159,6 +160,30 @@ defmodule Sanbase.Price do
   @spec timeseries_metric_data(slug, metric, DateTime.t(), DateTime.t(), interval, opts) ::
           timeseries_metric_data_result
   def timeseries_metric_data(slug, metric, from, to, interval, opts \\ [])
+
+  def timeseries_metric_data(slug, "price_eth", from, to, interval, opts) do
+    async with {:ok, prices_slug_usd} <- timeseries_data(slug, from, to, interval, opts),
+               {:ok, prices_ethereum_usd} <- timeseries_data("ethereum", from, to, interval, opts) do
+      transform_func = fn data1, data2, field ->
+        if data2[field] != 0, do: data1[field] / data2[field], else: 0
+      end
+
+      # Merge 2 lists by datetime transforming one of the fields by some formulae
+      merge_by_datetime = fn list1, list2, func, field ->
+        Enum.zip(list1, list2)
+        |> Enum.map(fn {item1, item2} ->
+          if item1.datetime == item2.datetime do
+            %{datetime: item1.datetime, value: func.(item1, item2, field)}
+          else
+            %{datetime: item1.datetime, value: 0}
+          end
+        end)
+        |> Enum.reject(&(&1.value == 0))
+      end
+
+      {:ok, merge_by_datetime.(prices_slug_usd, prices_ethereum_usd, transform_func, :price_usd)}
+    end
+  end
 
   def timeseries_metric_data("TOTAL_ERC20", metric, from, to, interval, opts) do
     Project.List.erc20_projects_slugs()

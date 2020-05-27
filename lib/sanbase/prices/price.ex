@@ -1,6 +1,7 @@
 defmodule Sanbase.Price do
   use Ecto.Schema
   use AsyncWith
+  @async_with_timeout 29_000
 
   import Sanbase.Price.SqlQuery
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
@@ -164,24 +165,11 @@ defmodule Sanbase.Price do
   def timeseries_metric_data(slug, "price_eth", from, to, interval, opts) do
     async with {:ok, prices_slug_usd} <- timeseries_data(slug, from, to, interval, opts),
                {:ok, prices_ethereum_usd} <- timeseries_data("ethereum", from, to, interval, opts) do
-      transform_func = fn data1, data2, field ->
-        if data2[field] != 0, do: data1[field] / data2[field], else: 0
+      transform_func = fn value1, value2 ->
+        if value2 != 0 && value2 != nil, do: value1 / value2, else: 0
       end
 
-      # Merge 2 lists by datetime transforming one of the fields by some formulae
-      merge_by_datetime = fn list1, list2, func, field ->
-        Enum.zip(list1, list2)
-        |> Enum.map(fn {item1, item2} ->
-          if item1.datetime == item2.datetime do
-            %{datetime: item1.datetime, value: func.(item1, item2, field)}
-          else
-            %{datetime: item1.datetime, value: 0}
-          end
-        end)
-        |> Enum.reject(&(&1.value == 0))
-      end
-
-      {:ok, merge_by_datetime.(prices_slug_usd, prices_ethereum_usd, transform_func, :price_usd)}
+      {:ok, merge_by_datetime(prices_slug_usd, prices_ethereum_usd, transform_func, :price_usd)}
     end
   end
 
@@ -617,4 +605,18 @@ defmodule Sanbase.Price do
   end
 
   defp maybe_add_percent_of_total_marketcap({:error, error}), do: {:error, error}
+
+  # Merge 2 lists by datetime transforming one of the fields by some formulae
+  defp merge_by_datetime(list1, list2, func, field) do
+    map = list2 |> Enum.into(%{}, fn %{datetime: dt} = item2 -> {dt, item2[field]} end)
+
+    list1
+    |> Enum.map(fn %{datetime: datetime} = item1 ->
+      value2 = Map.get(map, datetime, 0)
+      new_value = func.(item1[field], value2)
+
+      %{datetime: datetime, value: new_value}
+    end)
+    |> Enum.reject(&(&1.value == 0))
+  end
 end

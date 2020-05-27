@@ -19,8 +19,8 @@ defmodule Sanbase.ExAdmin.Auth.User do
 
           column("San balance", fn eth_account ->
             case EthAccount.san_balance(eth_account) do
-              nil -> ""
-              san_balance -> san_balance
+              :error -> ""
+              san_balance -> san_balance || ""
             end
           end)
         end

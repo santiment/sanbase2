@@ -64,7 +64,7 @@ defmodule Sanbase.Mixfile do
       {:ecto_sql, "~> 3.0"},
       {:envy, "~> 1.1.1", only: [:dev, :test]},
       {:erlex, "~> 0.2.6", override: true},
-      {:ex_admin, github: "IvanIvanoff/ex_admin", branch: "apply-changes"},
+      {:ex_admin, github: "IvanIvanoff/ex_admin"},
       {:ex_aws_s3, "~> 2.0"},
       {:ex_aws, "~> 2.0"},
       {:ex_machina, "~> 2.2", only: [:dev, :test]},

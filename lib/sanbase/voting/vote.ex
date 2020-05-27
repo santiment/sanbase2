@@ -4,8 +4,6 @@ defmodule Sanbase.Vote do
   """
   use Ecto.Schema
 
-  # use Timex.Ecto.Timestamps
-
   import Ecto.Changeset
 
   alias Sanbase.Repo

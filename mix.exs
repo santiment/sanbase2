@@ -141,7 +141,7 @@ defmodule Sanbase.Mixfile do
       test: [
         "load_dotenv",
         "ecto.create -r Sanbase.Repo --quiet",
-        "ecto.load -r Sanbase.Repo",
+        "ecto.load -r Sanbase.Repo --skip-if-loaded",
         "test"
       ],
 

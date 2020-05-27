@@ -1,8 +1,6 @@
 defmodule Sanbase.Auth.User do
   use Ecto.Schema
 
-  # use Timex.Ecto.Timestamps
-
   import Ecto.Changeset
   import Ecto.Query
 

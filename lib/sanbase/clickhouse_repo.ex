@@ -82,12 +82,22 @@ defmodule Sanbase.ClickhouseRepo do
     end
   end
 
+  @doc ~s"""
+  Replace positional params denoted as `?1`, `?2`, etc. with just `?` as they
+  are not supported by ClickHouse. A complex regex is used as such character
+  sequences can apear inside strings in which case they should not be removed.
+  """
   def sanitize_query(query) do
     query
     |> IO.iodata_to_binary()
     |> String.replace(~r/(\?([0-9]+))(?=(?:[^\\"']|[\\"'][^\\"']*[\\"'])*$)/, "?")
   end
 
+  @doc ~s"""
+  Add artificial support for positional paramters. Extract all occurences of `?1`,
+  `?2`, etc. in the query and reorder and duplicate the params so every param
+  in the list appears in order as if every positional param is just `?`
+  """
   def order_params(query, params) do
     sanitised =
       Regex.replace(~r/(([^\\]|^))["'].*?[^\\]['"]/, IO.iodata_to_binary(query), "\\g{1}")

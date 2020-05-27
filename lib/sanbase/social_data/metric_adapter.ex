@@ -138,15 +138,6 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def available_aggregations(), do: @aggregations
 
   @impl Sanbase.Metric.Behaviour
-  def available_social_slugs() do
-    # Providing a 2 element tuple `{any, integer}` will use that second element
-    # as TTL for the cache key
-    Sanbase.Cache.get_or_store({:social_metrics_available_slugs, 1800}, fn ->
-      Sanbase.SocialData.SocialVolume.social_volume_projects()
-    end)
-  end
-
-  @impl Sanbase.Metric.Behaviour
   def available_slugs(),
     do: {:ok, Project.List.projects_slugs(preload?: false)}
 
@@ -241,4 +232,12 @@ defmodule Sanbase.SocialData.MetricAdapter do
   defp metric_to_source("social_volume_" <> source), do: source
   defp metric_to_source("social_dominance_" <> source), do: source
   defp metric_to_source("community_messages_count_" <> source), do: source
+
+  defp available_social_slugs() do
+    # Providing a 2 element tuple `{any, integer}` will use that second element
+    # as TTL for the cache key
+    Sanbase.Cache.get_or_store({:social_metrics_available_slugs, 1800}, fn ->
+      Sanbase.SocialData.SocialVolume.social_volume_projects()
+    end)
+  end
 end

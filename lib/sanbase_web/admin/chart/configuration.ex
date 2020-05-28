@@ -6,6 +6,28 @@ defmodule Sanbase.ExAdmin.Chart.Configuration do
   register_resource Sanbase.Chart.Configuration do
     action_items(only: [:show, :edit, :delete])
 
+    scope(:all, default: true)
+
+    scope(:featured, [], fn query ->
+      from(
+        chart in query,
+        left_join: featured_item in Sanbase.FeaturedItem,
+        on: chart.id == featured_item.chart_configuration_id,
+        where: not is_nil(featured_item.id)
+      )
+      |> distinct(true)
+    end)
+
+    scope(:not_featured, [], fn query ->
+      from(
+        chart in query,
+        left_join: featured_item in Sanbase.FeaturedItem,
+        on: chart.id == featured_item.chart_configuration_id,
+        where: is_nil(featured_item.id)
+      )
+      |> distinct(true)
+    end)
+
     index do
       # Don't show description on overview page as it takes too much space
       column(:id)
@@ -52,9 +74,9 @@ defmodule Sanbase.ExAdmin.Chart.Configuration do
     end
   end
 
-  defp is_featured(%Configuration{} = ut) do
-    ut = Sanbase.Repo.preload(ut, [:featured_item])
-    (ut.featured_item != nil) |> Atom.to_string()
+  defp is_featured(%Configuration{} = config) do
+    config = Sanbase.Repo.preload(config, [:featured_item])
+    (config.featured_item != nil) |> Atom.to_string()
   end
 
   def set_featured(conn, params, resource, :update) do

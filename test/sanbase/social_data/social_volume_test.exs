@@ -4,6 +4,7 @@ defmodule Sanbase.SocialVolumeTest do
   import ExUnit.CaptureLog
 
   alias Sanbase.SocialData.SocialVolume
+  alias Sanbase.SocialData.SocialHelper
   alias Sanbase.SocialData.MetricAdapter
   import Sanbase.Factory
 
@@ -128,7 +129,7 @@ defmodule Sanbase.SocialVolumeTest do
         |> Enum.map(fn "social_volume_" <> source -> source end)
 
       expected_sources =
-        SocialVolume.sources()
+        SocialHelper.sources()
         |> Enum.map(fn
           source -> Atom.to_string(source)
         end)

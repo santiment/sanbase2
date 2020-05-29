@@ -32,7 +32,7 @@ defmodule Sanbase.ExAdmin.Billing.PromoTrial do
       end
     end
 
-    show promo_trial do
+    show _promo_trial do
       attributes_table(all: true)
     end
 

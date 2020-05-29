@@ -1,12 +1,4 @@
 defmodule Sanbase.DateTimeUtils do
-  def truncate_datetimes(%{} = map, precision \\ :second) do
-    Enum.into(map, %{}, fn
-      {k, %DateTime{} = dt} -> {k, DateTime.truncate(dt, precision)}
-      {k, %NaiveDateTime{} = dt} -> {k, NaiveDateTime.truncate(dt, precision)}
-      {k, v} -> {k, v}
-    end)
-  end
-
   def time_in_range?(%Time{} = time, %Time{} = from, %Time{} = to) do
     case Time.compare(from, to) do
       :eq ->
@@ -70,8 +62,9 @@ defmodule Sanbase.DateTimeUtils do
     str_to_sec(interval) |> Integer.floor_div(3600)
   end
 
-  def date_to_datetime(date) do
-    {:ok, datetime, _} = (Date.to_iso8601(date) <> "T00:00:00Z") |> DateTime.from_iso8601()
+  def ecto_date_to_datetime(ecto_date) do
+    {:ok, datetime, _} =
+      (Ecto.Date.to_iso8601(ecto_date) <> "T00:00:00Z") |> DateTime.from_iso8601()
 
     datetime
   end

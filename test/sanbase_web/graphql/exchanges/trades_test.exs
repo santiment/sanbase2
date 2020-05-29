@@ -1,28 +1,36 @@
 defmodule SanbaseWeb.Graphql.Exchanges.TradesTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import Mock
   import SanbaseWeb.Graphql.TestHelpers
   import ExUnit.CaptureLog
 
   test "#last_exchange_trades", context do
-    rows = [
-      [1_569_704_025, "Kraken", "ETH/EUR", "buy", 2.11604737, 159.63, 337.7846416731]
-    ]
-
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
-    |> Sanbase.Mock.run_with_mocks(fn ->
+    with_mock(Sanbase.ClickhouseRepo,
+      query: fn _, _ ->
+        {:ok,
+         %{
+           rows: [
+             [1_569_704_025, "Kraken", "ETH/EUR", "buy", 2.11604737, 159.63, 337.7846416731]
+           ]
+         }}
+      end
+    ) do
       query = last_trades_query()
       result = execute_query(context.conn, query, "lastExchangeTrades")
 
       assert hd(result) == expected_exchange_trade()
-    end)
+    end
   end
 
   test "#last_exchange_trades with error from clickhouse", context do
     error = "error description"
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, error})
-    |> Sanbase.Mock.run_with_mocks(fn ->
+    with_mock(Sanbase.ClickhouseRepo,
+      query: fn _, _ ->
+        {:error, error}
+      end
+    ) do
       query = last_trades_query()
 
       log =
@@ -34,28 +42,35 @@ defmodule SanbaseWeb.Graphql.Exchanges.TradesTest do
                ~s(Can't fetch Last exchange trades for exchange and ticker_pair: "Kraken" and "ETH/EUR", Reason: #{
                  inspect(error)
                })
-    end)
+    end
   end
 
   test "#exchange_trades", context do
-    rows = [
-      [1_569_704_025, "Kraken", "ETH/EUR", "buy", 2.11604737, 159.63, 337.7846416731]
-    ]
-
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
-    |> Sanbase.Mock.run_with_mocks(fn ->
+    with_mock(Sanbase.ClickhouseRepo,
+      query: fn _, _ ->
+        {:ok,
+         %{
+           rows: [
+             [1_569_704_025, "Kraken", "ETH/EUR", "buy", 2.11604737, 159.63, 337.7846416731]
+           ]
+         }}
+      end
+    ) do
       query = trades_query()
       result = execute_query(context.conn, query, "exchangeTrades")
 
       assert hd(result) == expected_exchange_trade()
-    end)
+    end
   end
 
   test "#exchange_trades with error from clickhouse", context do
     error = "error description"
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, error})
-    |> Sanbase.Mock.run_with_mocks(fn ->
+    with_mock(Sanbase.ClickhouseRepo,
+      query: fn _, _ ->
+        {:error, error}
+      end
+    ) do
       query = trades_query()
 
       log =
@@ -67,28 +82,35 @@ defmodule SanbaseWeb.Graphql.Exchanges.TradesTest do
                ~s(Can't fetch Exchange trades for exchange and ticker_pair: "Kraken" and "ETH/EUR", Reason: #{
                  inspect(error)
                })
-    end)
+    end
   end
 
   test "#aggregated exchange_trades", context do
-    rows = [
-      [1_569_704_025, 2.11604737, 159.63, 337.7846416731, "buy"]
-    ]
-
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
-    |> Sanbase.Mock.run_with_mocks(fn ->
+    with_mock(Sanbase.ClickhouseRepo,
+      query: fn _, _ ->
+        {:ok,
+         %{
+           rows: [
+             [1_569_704_025, 2.11604737, 159.63, 337.7846416731, "buy"]
+           ]
+         }}
+      end
+    ) do
       query = aggregated_trades_query()
       result = execute_query(context.conn, query, "exchangeTrades")
 
       assert hd(result) == expected_exchange_trade()
-    end)
+    end
   end
 
   test "#aggregated exchange_trades with error from clickhouse", context do
     error = "error description"
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, error})
-    |> Sanbase.Mock.run_with_mocks(fn ->
+    with_mock(Sanbase.ClickhouseRepo,
+      query: fn _, _ ->
+        {:error, error}
+      end
+    ) do
       query = aggregated_trades_query()
 
       log =
@@ -100,7 +122,7 @@ defmodule SanbaseWeb.Graphql.Exchanges.TradesTest do
                ~s(Can't fetch Aggregated exchange trades for exchange and ticker_pair: "Kraken" and "ETH/EUR", Reason: #{
                  inspect(error)
                })
-    end)
+    end
   end
 
   defp expected_exchange_trade() do

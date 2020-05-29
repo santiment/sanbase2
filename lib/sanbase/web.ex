@@ -21,6 +21,9 @@ defmodule Sanbase.Application.Web do
     children = [
       {Absinthe.Subscription, SanbaseWeb.Endpoint},
 
+      # Start the Elasticsearch Cluster connection
+      Sanbase.Elasticsearch.Cluster,
+
       # Start the graphQL in-memory cache
       Supervisor.child_spec(
         {ConCache,

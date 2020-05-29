@@ -40,7 +40,7 @@ defmodule Sanbase.ExAdmin.Chart.Configuration do
       column(:project, link: true)
     end
 
-    show configuration do
+    show _configuration do
       attributes_table do
         row(:id)
         row(:title)

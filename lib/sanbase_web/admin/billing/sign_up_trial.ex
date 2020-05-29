@@ -12,7 +12,7 @@ defmodule Sanbase.ExAdmin.Billing.SignUpTrial do
       column(:updated_at)
     end
 
-    show product do
+    show _product do
       attributes_table(all: true)
     end
   end

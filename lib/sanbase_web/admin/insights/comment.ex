@@ -12,7 +12,7 @@ defmodule Sanbase.ExAdmin.Insight.Comment do
       action_item_link("Delete Subtree (Danger)", href: "/admin2/delete_subcomment_tree/#{id}")
     end)
 
-    show comment do
+    show _ do
       attributes_table(all: true)
     end
   end

@@ -1,6 +1,8 @@
 defmodule Sanbase.Insight.Post do
   use Ecto.Schema
 
+  use Timex.Ecto.Timestamps
+
   import Ecto.Changeset
   import Ecto.Query
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_to_str: 1]
@@ -69,8 +71,6 @@ defmodule Sanbase.Insight.Post do
   end
 
   def create_changeset(%Post{} = post, attrs) do
-    attrs = Sanbase.DateTimeUtils.truncate_datetimes(attrs)
-
     post
     |> cast(attrs, [
       :title,
@@ -90,8 +90,6 @@ defmodule Sanbase.Insight.Post do
   end
 
   def update_changeset(%Post{} = post, attrs) do
-    attrs = Sanbase.DateTimeUtils.truncate_datetimes(attrs)
-
     preloads =
       if(attrs[:tags], do: [:tags], else: []) ++ if attrs[:metrics], do: [:metrics], else: []
 
@@ -116,12 +114,9 @@ defmodule Sanbase.Insight.Post do
   end
 
   def publish_changeset(%Post{} = post, attrs) do
-    attrs = Sanbase.DateTimeUtils.truncate_datetimes(attrs)
-    naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-
     post
     |> cast(attrs, [:ready_state, :published_at])
-    |> change(published_at: naive_now)
+    |> change(published_at: NaiveDateTime.utc_now())
   end
 
   def awaiting_approval_state(), do: @awaiting_approval

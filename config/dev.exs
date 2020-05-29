@@ -71,8 +71,7 @@ config :sanbase, Sanbase.ClickhouseRepo,
   password: "",
   pool_timeout: 60_000,
   timeout: 60_000,
-  pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "3"},
-  show_sensitive_data_on_connection_error: true
+  pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "3"}
 
 config :ex_admin,
   basic_auth: [

@@ -37,7 +37,7 @@ defmodule Sanbase.Clickhouse.Github do
   @table "github"
 
   @primary_key false
-  @timestamps_opts [updated_at: false]
+  @timestamps_opts updated_at: false
   schema @table do
     field(:datetime, :utc_datetime, source: :dt, primary_key: true)
     field(:repo, :string, primary_key: true)

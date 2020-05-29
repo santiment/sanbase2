@@ -21,7 +21,7 @@ defmodule Sanbase.Model.LatestCoinmarketcapData do
     field(:percent_change_7d, :decimal)
     field(:logo_hash, :string)
     field(:logo_updated_at, :naive_datetime)
-    field(:update_time, :naive_datetime)
+    field(:update_time, Ecto.DateTime)
   end
 
   @doc false

@@ -3,7 +3,6 @@ defmodule Sanbase.Vote do
   Module for voting for insights and timeline events.
   """
   use Ecto.Schema
-  use Timex.Ecto.Timestamps
 
   import Ecto.Changeset
 

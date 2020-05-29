@@ -21,7 +21,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :news,
           :project,
           :historical_balance,
-          :elasticsearch_stats,
           :historical_trigger_points,
           :price_volume_diff,
           :assets_held_by_address,

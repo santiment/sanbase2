@@ -12,7 +12,7 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
       %User{
         salt: User.generate_salt(),
         san_balance: Decimal.mult(Decimal.new(10), Sanbase.SantimentContract.decimals_expanded()),
-        san_balance_updated_at: Timex.now(),
+        san_balance_updated_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second),
         privacy_policy_accepted: true
       }
       |> Repo.insert!()

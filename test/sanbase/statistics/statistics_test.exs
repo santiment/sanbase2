@@ -129,8 +129,10 @@ defmodule Sanbase.StatisticsTest do
   end
 
   test "active users statistics" do
-    with_mock Sanbase.ClickhouseRepo,
-      query: fn _, _ -> {:ok, %{rows: [3]}} end do
+    rows = [3]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       statistics = Sanbase.Statistics.get_all()
 
       assert {"active_users",
@@ -140,7 +142,7 @@ defmodule Sanbase.StatisticsTest do
                 "active_users_in_last_7d" => 3,
                 "active_users_in_last_30d" => 3
               }} in statistics
-    end
+    end)
   end
 
   test "returns the number of users, which are subscribed" do

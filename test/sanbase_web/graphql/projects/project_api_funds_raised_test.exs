@@ -40,49 +40,45 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
   test "fetch project funds raised", context do
     %{conn: conn, project: project} = context
 
-    expected_result = %{
-      "name" => project.name,
-      "fundsRaisedBtcIcoEndPrice" => 72.5,
-      "fundsRaisedEthIcoEndPrice" => 390.0,
-      "fundsRaisedUsdIcoEndPrice" => 1950.0,
-      "icos" => [
-        %{
-          "endDate" => "2017-08-19",
-          "fundsRaisedBtcIcoEndPrice" => 32.5,
-          "fundsRaisedEthIcoEndPrice" => 190.0,
-          "fundsRaisedUsdIcoEndPrice" => 950.0
-        },
-        %{
-          "endDate" => "2017-10-17",
-          "fundsRaisedEthIcoEndPrice" => 200.0,
-          "fundsRaisedUsdIcoEndPrice" => 1.0e3,
-          "fundsRaisedBtcIcoEndPrice" => 40.0
-        }
-      ]
-    }
-
-    fn ->
+    Sanbase.Mock.prepare_mock(Sanbase.Price, :last_record_before, fn slug, datetime ->
+      if DateTime.compare(datetime, context.datetime) == :lt do
+        case slug do
+          "bitcoin" -> {:ok, %{price_usd: 2, price_btc: 0.1, marketcap: 100, volume: 100}}
+          "test" -> {:ok, %{price_usd: 4, price_btc: 0.05, marketcap: 100, volume: 100}}
+          "ethereum" -> {:ok, %{price_usd: 5, price_btc: 0.2, marketcap: nil, volume: nil}}
+        end
+      else
+        case slug do
+          "bitcoin" -> {:ok, %{price_usd: 5, price_btc: 0.2, marketcap: 100, volume: 100}}
+          "test" -> {:ok, %{price_usd: 4, price_btc: 0.03, marketcap: 100, volume: 100}}
+          "ethereum" -> {:ok, %{price_usd: 10, price_btc: 0.8, marketcap: 100, volume: 100}}
+        end
+      end
+    end)
+    |> Sanbase.Mock.run_with_mocks(fn ->
       result = get_funds_raised(conn, project) |> get_in(["data", "projectBySlug"])
-      assert result == expected_result
-    end
-    |> Sanbase.Mock.with_mock2(
-      {Sanbase.Price, :last_record_before,
-       fn slug, datetime ->
-         if DateTime.compare(datetime, context.datetime) == :lt do
-           case slug do
-             "bitcoin" -> {:ok, %{price_usd: 2, price_btc: 0.1, marketcap: 100, volume: 100}}
-             "test" -> {:ok, %{price_usd: 4, price_btc: 0.05, marketcap: 100, volume: 100}}
-             "ethereum" -> {:ok, %{price_usd: 5, price_btc: 0.2, marketcap: nil, volume: nil}}
-           end
-         else
-           case slug do
-             "bitcoin" -> {:ok, %{price_usd: 5, price_btc: 0.2, marketcap: 100, volume: 100}}
-             "test" -> {:ok, %{price_usd: 4, price_btc: 0.03, marketcap: 100, volume: 100}}
-             "ethereum" -> {:ok, %{price_usd: 10, price_btc: 0.8, marketcap: 100, volume: 100}}
-           end
-         end
-       end}
-    )
+
+      assert result == %{
+               "name" => project.name,
+               "fundsRaisedBtcIcoEndPrice" => 72.5,
+               "fundsRaisedEthIcoEndPrice" => 390.0,
+               "fundsRaisedUsdIcoEndPrice" => 1950.0,
+               "icos" => [
+                 %{
+                   "endDate" => "2017-08-19",
+                   "fundsRaisedBtcIcoEndPrice" => 32.5,
+                   "fundsRaisedEthIcoEndPrice" => 190.0,
+                   "fundsRaisedUsdIcoEndPrice" => 950.0
+                 },
+                 %{
+                   "endDate" => "2017-10-17",
+                   "fundsRaisedEthIcoEndPrice" => 200.0,
+                   "fundsRaisedUsdIcoEndPrice" => 1.0e3,
+                   "fundsRaisedBtcIcoEndPrice" => 40.0
+                 }
+               ]
+             }
+    end)
   end
 
   test "no ico does not break query", context do
@@ -92,15 +88,13 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
       get_funds_raised(conn, project)
       |> get_in(["data", "projectBySlug"])
 
-    expected_result = %{
-      "name" => project.name,
-      "fundsRaisedUsdIcoEndPrice" => nil,
-      "fundsRaisedEthIcoEndPrice" => nil,
-      "fundsRaisedBtcIcoEndPrice" => nil,
-      "icos" => []
-    }
-
-    assert result == expected_result
+    assert result == %{
+             "name" => project.name,
+             "fundsRaisedUsdIcoEndPrice" => nil,
+             "fundsRaisedEthIcoEndPrice" => nil,
+             "fundsRaisedBtcIcoEndPrice" => nil,
+             "icos" => []
+           }
   end
 
   # Private functions

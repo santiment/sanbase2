@@ -87,7 +87,7 @@ defmodule SanbaseWeb.Graphql.UserEthAccountApiTest do
              result = add_eth_address(context.conn, @address)
              %{"errors" => [error]} = result
              assert error["message"] == "Could not add an ethereum address."
-           end) =~ ~s/[address: {"has already been taken", []}]/
+           end) =~ ~s/[address: {"has already been taken"/
   end
 
   # Helper functions

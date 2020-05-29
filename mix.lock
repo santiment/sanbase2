@@ -13,7 +13,7 @@
   "castore": {:hex, :castore, "0.1.5", "591c763a637af2cc468a72f006878584bc6c306f8d111ef8ba1d4c10e0684010", [:mix], [], "hexpm", "6db356b2bc6cc22561e051ff545c20ad064af57647e436650aa24d7d06cd941a"},
   "certifi": {:git, "https://github.com/certifi/erlang-certifi", "e08b12e8993502240c25b78563993776f87ecd2a", [tag: "2.5.1"]},
   "clickhouse_ecto": {:git, "https://github.com/santiment/clickhouse_ecto.git", "9518142275534f040edb19c61646fc3aed889040", [branch: "migrate-ecto-3"]},
-  "clickhousex": {:git, "https://github.com/ivanivanoff/clickhousex.git", "d138f85c53a102059af1a682fc8dc4aabdf10b66", []},
+  "clickhousex": {:git, "https://github.com/ivanivanoff/clickhousex.git", "00fcfffae6c2326d3ed66afdd8bc1522464b8255", []},
   "combine": {:hex, :combine, "0.10.0", "eff8224eeb56498a2af13011d142c5e7997a80c8f5b97c499f84c841032e429f", [:mix], [], "hexpm", "1b1dbc1790073076580d0d1d64e42eae2366583e7aecd455d1215b0d16f2451b"},
   "con_cache": {:hex, :con_cache, "0.14.0", "863acb90fa08017be3129074993af944cf7a4b6c3ee7c06c5cd0ed6b94fbc223", [:mix], [], "hexpm", "50887a8949377d0b707a3c6653b7610de06074751b52d0f267f52135f391aece"},
   "connection": {:hex, :connection, "1.0.4", "a1cae72211f0eef17705aaededacac3eb30e6625b04a6117c1b2db6ace7d5976", [:mix], [], "hexpm", "4a0850c9be22a43af9920a71ab17c051f5f7d45c209e40269a1938832510e4d9"},

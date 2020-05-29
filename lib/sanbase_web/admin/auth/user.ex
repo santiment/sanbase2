@@ -4,6 +4,8 @@ defmodule Sanbase.ExAdmin.Auth.User do
   alias Sanbase.Auth.EthAccount
   alias Sanbase.Insight.Post
 
+  @environment Mix.env()
+
   register_resource Sanbase.Auth.User do
     controller do
       before_filter(:assign_all_user_insights_to_anonymous, only: [:destroy])
@@ -17,12 +19,14 @@ defmodule Sanbase.ExAdmin.Auth.User do
           column(:id, link: true)
           column(:address)
 
-          column("San balance", fn eth_account ->
-            case EthAccount.san_balance(eth_account) do
-              :error -> ""
-              san_balance -> san_balance || ""
-            end
-          end)
+          unless @environment == :dev do
+            column("San balance", fn eth_account ->
+              case EthAccount.san_balance(eth_account) do
+                nil -> ""
+                san_balance -> san_balance |> Decimal.to_string()
+              end
+            end)
+          end
         end
       end
     end

@@ -25,7 +25,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.AggregationTypes)
   import_types(Graphql.CustomTypes.Decimal)
   import_types(Graphql.CustomTypes.DateTime)
-  import_types(Graphql.CustomTypes.Date)
   import_types(Graphql.CustomTypes.JSON)
   import_types(Graphql.CustomTypes.Interval)
   import_types(Absinthe.Plug.Types)

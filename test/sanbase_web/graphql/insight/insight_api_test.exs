@@ -664,8 +664,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         insert(:post,
           user: user,
           ready_state: Post.published(),
-          updated_at:
-            Timex.shift(NaiveDateTime.utc_now(), seconds: -1) |> NaiveDateTime.truncate(:second)
+          updated_at: Timex.shift(Timex.now(), seconds: -1)
         )
 
       mutation = """
@@ -688,9 +687,8 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
       updated_at =
         Sanbase.DateTimeUtils.from_iso8601!(result["data"]["updateInsight"]["updatedAt"])
-        |> DateTime.to_naive()
 
-      assert NaiveDateTime.compare(updated_at, post.updated_at) == :gt
+      assert DateTime.compare(updated_at, post.updated_at) == :gt
     end
 
     test "can update tags for published insight", %{conn: conn, user: user} do

@@ -1,24 +1,34 @@
 defmodule SanbaseWeb.Graphql.Exchanges.MarketDepthTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import Mock
   import SanbaseWeb.Graphql.TestHelpers
   import ExUnit.CaptureLog
 
   test "#last_market_depth", context do
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows()}})
-    |> Sanbase.Mock.run_with_mocks(fn ->
+    with_mock(Sanbase.ClickhouseRepo,
+      query: fn _, _ ->
+        {:ok,
+         %{
+           rows: [result_row()]
+         }}
+      end
+    ) do
       query = last_market_depth_query()
       result = execute_query(context.conn, query, "lastExchangeMarketDepth")
 
-      assert List.first(result) == expected_exchange_market_depth()
-    end)
+      assert hd(result) == expected_exchange_market_depth()
+    end
   end
 
   test "#last_market_depth with error from clickhouse", context do
     error = "error description"
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, error})
-    |> Sanbase.Mock.run_with_mocks(fn ->
+    with_mock(Sanbase.ClickhouseRepo,
+      query: fn _, _ ->
+        {:error, error}
+      end
+    ) do
       query = last_market_depth_query()
 
       log =
@@ -30,7 +40,7 @@ defmodule SanbaseWeb.Graphql.Exchanges.MarketDepthTest do
                ~s(Can't fetch Last exchange market depth for exchange and ticker_pair: "Kraken" and "ZEC/BTC", Reason: #{
                  inspect(error)
                })
-    end)
+    end
   end
 
   defp expected_exchange_market_depth() do
@@ -65,51 +75,49 @@ defmodule SanbaseWeb.Graphql.Exchanges.MarketDepthTest do
     """
   end
 
-  defp rows() do
+  defp result_row() do
     [
-      [
-        1_571_417_428,
-        "Kraken",
-        "ZEC/BTC",
-        0.00455979,
-        0.0012996121796948,
-        0.28495291,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        0.00455005,
-        0.7868672411467281,
-        173.00153222999998,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil,
-        nil
-      ]
+      1_571_417_428,
+      "Kraken",
+      "ZEC/BTC",
+      0.00455979,
+      0.0012996121796948,
+      0.28495291,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      0.00455005,
+      0.7868672411467281,
+      173.00153222999998,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil,
+      nil
     ]
   end
 end

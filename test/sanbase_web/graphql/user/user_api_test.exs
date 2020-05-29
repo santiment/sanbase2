@@ -236,12 +236,11 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
       |> Repo.insert!()
       |> User.update_email_candidate("example+foo@santiment.net")
 
-    generated_at =
-      Timex.shift(NaiveDateTime.utc_now(), days: -2) |> NaiveDateTime.truncate(:second)
-
     user =
       user
-      |> Ecto.Changeset.change(email_candidate_token_generated_at: generated_at)
+      |> Ecto.Changeset.change(
+        email_candidate_token_generated_at: Timex.shift(Timex.now(), days: -2)
+      )
       |> Repo.update!()
 
     query = """
@@ -415,11 +414,9 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
       |> Repo.insert!()
       |> User.update_email_token()
 
-    generated_at = Timex.shift(Timex.now(), days: -2) |> NaiveDateTime.truncate(:second)
-
     user =
       user
-      |> Ecto.Changeset.change(email_token_generated_at: generated_at)
+      |> Ecto.Changeset.change(email_token_generated_at: Timex.shift(Timex.now(), days: -2))
       |> Repo.update!()
 
     query = """
@@ -450,13 +447,11 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
       |> Repo.insert!()
       |> User.update_email_token()
 
-    naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-
     user =
       user
       |> Ecto.Changeset.change(
-        email_token_generated_at: naive_now,
-        email_token_validated_at: naive_now
+        email_token_generated_at: Timex.now(),
+        email_token_validated_at: Timex.now()
       )
       |> Repo.update!()
 
@@ -493,13 +488,11 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
       |> Repo.insert!()
       |> User.update_email_token()
 
-    naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-
     user =
       user
       |> Ecto.Changeset.change(
-        email_token_generated_at: naive_now,
-        email_token_validated_at: Timex.shift(naive_now, minutes: -20)
+        email_token_generated_at: Timex.now(),
+        email_token_validated_at: Timex.shift(Timex.now(), minutes: -20)
       )
       |> Repo.update!()
 

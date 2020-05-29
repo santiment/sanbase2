@@ -268,7 +268,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
         is_registered: true
       })
     )
-    |> Multi.run(:add_eth_account, fn _repo, %{add_user: %User{id: id}} ->
+    |> Multi.run(:add_eth_account, fn %{add_user: %User{id: id}} ->
       eth_account =
         EthAccount.changeset(%EthAccount{}, %{user_id: id, address: address})
         |> Repo.insert()

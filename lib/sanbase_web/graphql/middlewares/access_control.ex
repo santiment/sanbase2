@@ -253,9 +253,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   defp check_from_to_params(%Resolution{} = resolution), do: resolution
   defp check_from_to_both_outside(%Resolution{state: :resolved} = resolution), do: resolution
 
-  defp check_from_to_both_outside(
-         %Resolution{arguments: %{from: from, to: to}, context: context} = resolution
-       ) do
+  defp check_from_to_both_outside(%Resolution{arguments: %{from: from, to: to}} = resolution) do
     case to_param_is_after_from(from, to) do
       true ->
         resolution
@@ -269,10 +267,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
           {:error,
            """
            Both `from` and `to` parameters are outside the allowed interval
-           you can query with your current subscription plan #{context[:auth][:plan] || :free}.
-
-           `from` resolved to: #{from}
-           `to` resolved to: #{to}
+           you can query with your current subscription plan.
            """}
         )
     end

@@ -109,13 +109,13 @@ defmodule Sanbase.ExAdmin.Model.Ico do
   defp set_cap_currency_default(%Ico{} = ico), do: ico
 
   defp set_start_date_default(%Ico{start_date: nil} = ico) do
-    Map.put(ico, :start_date, Date.utc_today())
+    Map.put(ico, :start_date, Ecto.Date.utc())
   end
 
   defp set_start_date_default(%Ico{} = ico), do: ico
 
   defp set_end_date_default(%Ico{end_date: nil} = ico) do
-    Map.put(ico, :end_date, Date.utc_today())
+    Map.put(ico, :end_date, Ecto.Date.utc())
   end
 
   defp set_end_date_default(%Ico{} = ico), do: ico

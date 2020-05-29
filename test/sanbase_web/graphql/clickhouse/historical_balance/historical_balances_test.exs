@@ -1,10 +1,13 @@
 defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
+  import Mock
+  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
   import ExUnit.CaptureLog
   import Sanbase.Factory
+
+  alias Sanbase.DateTimeUtils
 
   require Sanbase.ClickhouseRepo
 
@@ -25,8 +28,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       project_with_contract: project_with_contract,
       project_without_contract: project_without_contract,
       address: "0x321321321",
-      from: ~U[2017-05-11T00:00:00Z],
-      to: ~U[2017-05-20T00:00:00Z],
+      from: from_iso8601!("2017-05-11T00:00:00Z"),
+      to: from_iso8601!("2017-05-20T00:00:00Z"),
       interval: "1d"
     ]
   end
@@ -50,15 +53,19 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
     dt3 = ~U[2019-01-03 00:00:00Z]
     dt4 = ~U[2019-01-04 00:00:00Z]
 
-    rows = [
-      [dt1 |> DateTime.to_unix(), :math.pow(10, 18) * 2000, 1],
-      [dt2 |> DateTime.to_unix(), 0, 0],
-      [dt3 |> DateTime.to_unix(), 0, 0],
-      [dt4 |> DateTime.to_unix(), :math.pow(10, 18) * 1800, 1]
-    ]
-
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
-    |> Sanbase.Mock.run_with_mocks(fn ->
+    with_mock(Sanbase.ClickhouseRepo,
+      query: fn _, _ ->
+        {:ok,
+         %{
+           rows: [
+             [dt1 |> DateTime.to_unix(), :math.pow(10, 18) * 2000, 1],
+             [dt2 |> DateTime.to_unix(), 0, 0],
+             [dt3 |> DateTime.to_unix(), 0, 0],
+             [dt4 |> DateTime.to_unix(), :math.pow(10, 18) * 1800, 1]
+           ]
+         }}
+      end
+    ) do
       from = dt1
       to = dt4
 
@@ -76,29 +83,39 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
         historical_balance = result["data"]["historicalBalance"]
         assert length(historical_balance) == 4
       end
-    end)
+    end
   end
 
   test "historical balances when interval is bigger than balances values interval", context do
-    [dt1, dt2, dt3, dt4, dt5, dt6, dt7, dt8, dt9, dt10] =
-      generate_datetimes(~U[2017-05-11T00:00:00Z], "1d", 10)
-      |> Enum.map(&DateTime.to_unix/1)
+    dt1 = DateTimeUtils.from_iso8601!("2017-05-11T00:00:00Z") |> DateTime.to_unix()
+    dt2 = DateTimeUtils.from_iso8601!("2017-05-12T00:00:00Z") |> DateTime.to_unix()
+    dt3 = DateTimeUtils.from_iso8601!("2017-05-13T00:00:00Z") |> DateTime.to_unix()
+    dt4 = DateTimeUtils.from_iso8601!("2017-05-14T00:00:00Z") |> DateTime.to_unix()
+    dt5 = DateTimeUtils.from_iso8601!("2017-05-15T00:00:00Z") |> DateTime.to_unix()
+    dt6 = DateTimeUtils.from_iso8601!("2017-05-16T00:00:00Z") |> DateTime.to_unix()
+    dt7 = DateTimeUtils.from_iso8601!("2017-05-17T00:00:00Z") |> DateTime.to_unix()
+    dt8 = DateTimeUtils.from_iso8601!("2017-05-18T00:00:00Z") |> DateTime.to_unix()
+    dt9 = DateTimeUtils.from_iso8601!("2017-05-19T00:00:00Z") |> DateTime.to_unix()
+    dt10 = DateTimeUtils.from_iso8601!("2017-05-20T00:00:00Z") |> DateTime.to_unix()
 
-    rows = [
-      [dt1, 0, 1],
-      [dt2, 0, 1],
-      [dt3, 2000 * @eth_decimals, 1],
-      [dt4, 1800 * @eth_decimals, 1],
-      [dt5, 0, 0],
-      [dt6, 1500 * @eth_decimals, 1],
-      [dt7, 1900 * @eth_decimals, 1],
-      [dt8, 1000 * @eth_decimals, 1],
-      [dt9, 0, 0],
-      [dt10, 0, 0]
-    ]
-
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
-    |> Sanbase.Mock.run_with_mocks(fn ->
+    with_mock Sanbase.ClickhouseRepo, [:passthrough],
+      query: fn _, _ ->
+        {:ok,
+         %{
+           rows: [
+             [dt1, 0, 1],
+             [dt2, 0, 1],
+             [dt3, 2000 * @eth_decimals, 1],
+             [dt4, 1800 * @eth_decimals, 1],
+             [dt5, 0, 0],
+             [dt6, 1500 * @eth_decimals, 1],
+             [dt7, 1900 * @eth_decimals, 1],
+             [dt8, 1000 * @eth_decimals, 1],
+             [dt9, 0, 0],
+             [dt10, 0, 0]
+           ]
+         }}
+      end do
       selector = %{infrastructure: "ETH", slug: "ethereum"}
 
       query =
@@ -128,24 +145,27 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
                %{"balance" => 1000.0, "datetime" => "2017-05-19T00:00:00Z"},
                %{"balance" => 1000.0, "datetime" => "2017-05-20T00:00:00Z"}
              ]
-    end)
+    end
   end
 
   test "historical balances when last interval is not full", context do
-    [dt1, dt2, dt3] =
-      generate_datetimes(~U[2017-05-13T00:00:00Z], "2d", 3)
-      |> Enum.map(&DateTime.to_unix/1)
+    dt1 = DateTimeUtils.from_iso8601!("2017-05-13T00:00:00Z") |> DateTime.to_unix()
+    dt2 = DateTimeUtils.from_iso8601!("2017-05-15T00:00:00Z") |> DateTime.to_unix()
+    dt3 = DateTimeUtils.from_iso8601!("2017-05-17T00:00:00Z") |> DateTime.to_unix()
 
-    rows = [
-      [dt1, 2000 * @eth_decimals, 1],
-      [dt2, 1800 * @eth_decimals, 1],
-      [dt3, 1400 * @eth_decimals, 1]
-    ]
-
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      from = ~U[2017-05-13T00:00:00Z]
-      to = ~U[2017-05-18T00:00:00Z]
+    with_mock Sanbase.ClickhouseRepo, [:passthrough],
+      query: fn _, _ ->
+        {:ok,
+         %{
+           rows: [
+             [dt1, 2000 * @eth_decimals, 1],
+             [dt2, 1800 * @eth_decimals, 1],
+             [dt3, 1400 * @eth_decimals, 1]
+           ]
+         }}
+      end do
+      from = from_iso8601!("2017-05-13T00:00:00Z")
+      to = from_iso8601!("2017-05-18T00:00:00Z")
       selector = %{infrastructure: "ETH", slug: "ethereum"}
       query = historical_balances_query(selector, context.address, from, to, "2d")
 
@@ -161,14 +181,14 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
                %{"balance" => 1800.0, "datetime" => "2017-05-15T00:00:00Z"},
                %{"balance" => 1400.0, "datetime" => "2017-05-17T00:00:00Z"}
              ]
-    end)
+    end
   end
 
   test "historical balances when query returns error", context do
-    error = "Something went wrong"
+    error = "Some error description here"
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, error})
-    |> Sanbase.Mock.run_with_mocks(fn ->
+    with_mock Sanbase.ClickhouseRepo,
+      query: fn _, _ -> {:error, error} end do
       selector = %{infrastructure: "ETH", slug: "ethereum"}
 
       query =
@@ -195,12 +215,11 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
                "Can't fetch Historical Balances for selector: #{inspect(selector)}, Reason: #{
                  inspect(error)
                }"
-    end)
+    end
   end
 
   test "historical balances when query returns no rows", context do
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
-    |> Sanbase.Mock.run_with_mocks(fn ->
+    with_mock Sanbase.ClickhouseRepo, query: fn _, _ -> {:ok, %{rows: []}} end do
       selector = %{infrastructure: "ETH", slug: "ethereum"}
 
       query =
@@ -218,29 +237,28 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
 
       historical_balance = json_response(result, 200)["data"]["historicalBalance"]
       assert historical_balance == []
-    end)
+    end
   end
 
   test "historical balances with project with contract", context do
-    [dt1, dt2, dt3, dt4, dt5, dt6, dt7, dt8, dt9, dt10] =
-      generate_datetimes(~U[2017-05-11T00:00:00Z], "1d", 10)
-      |> Enum.map(&DateTime.to_unix/1)
-
-    rows = [
-      [dt1, 0, 1],
-      [dt2, 0, 1],
-      [dt3, :math.pow(10, 18) * 2000, 1],
-      [dt4, :math.pow(10, 18) * 1800, 1],
-      [dt5, 0, 0],
-      [dt6, :math.pow(10, 18) * 1500, 1],
-      [dt7, :math.pow(10, 18) * 1900, 1],
-      [dt8, :math.pow(10, 18) * 1000, 1],
-      [dt9, 0, 0],
-      [dt10, 0, 0]
-    ]
-
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
-    |> Sanbase.Mock.run_with_mocks(fn ->
+    with_mock Sanbase.ClickhouseRepo,
+      query: fn _, _ ->
+        {:ok,
+         %{
+           rows: [
+             [~U[2017-05-11 00:00:00Z] |> DateTime.to_unix(), 0, 1],
+             [~U[2017-05-12 00:00:00Z] |> DateTime.to_unix(), 0, 1],
+             [~U[2017-05-13 00:00:00Z] |> DateTime.to_unix(), :math.pow(10, 18) * 2000, 1],
+             [~U[2017-05-14 00:00:00Z] |> DateTime.to_unix(), :math.pow(10, 18) * 1800, 1],
+             [~U[2017-05-15 00:00:00Z] |> DateTime.to_unix(), 0, 0],
+             [~U[2017-05-16 00:00:00Z] |> DateTime.to_unix(), :math.pow(10, 18) * 1500, 1],
+             [~U[2017-05-17 00:00:00Z] |> DateTime.to_unix(), :math.pow(10, 18) * 1900, 1],
+             [~U[2017-05-18 00:00:00Z] |> DateTime.to_unix(), :math.pow(10, 18) * 1000, 1],
+             [~U[2017-05-19 00:00:00Z] |> DateTime.to_unix(), 0, 0],
+             [~U[2017-05-20 00:00:00Z] |> DateTime.to_unix(), 0, 0]
+           ]
+         }}
+      end do
       selector = %{infrastructure: "ETH", slug: context.project_with_contract.slug}
 
       query =
@@ -271,7 +289,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
                %{"balance" => 1000.0, "datetime" => "2017-05-19T00:00:00Z"},
                %{"balance" => 1000.0, "datetime" => "2017-05-20T00:00:00Z"}
              ]
-    end)
+    end
   end
 
   test "historical balances with project without contract", context do
@@ -308,8 +326,10 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
   test "historical balances when clickhouse returns error", context do
     error = "Something bad happened"
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, error})
-    |> Sanbase.Mock.run_with_mocks(fn ->
+    with_mock Sanbase.ClickhouseRepo,
+      query: fn _, _ ->
+        {:error, error}
+      end do
       selector = %{infrastructure: "ETH", slug: context.project_with_contract.slug}
 
       query =
@@ -335,7 +355,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
         end)
 
       assert log =~ "Can't fetch Historical Balances for selector"
-    end)
+    end
   end
 
   defp historical_balances_query(selector, address, from, to, interval) do

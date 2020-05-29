@@ -4,7 +4,7 @@ defmodule Sanbase.ExAdmin.Billing.Product do
   register_resource Sanbase.Billing.Product do
     action_items(only: [:show])
 
-    show product do
+    show _product do
       attributes_table(all: true)
     end
   end

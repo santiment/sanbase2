@@ -3,15 +3,18 @@ defmodule SanbaseWeb.Graphql.Complexity do
 
   @compile :inline_list_funcs
   @compile inline: [calculate_complexity: 2, interval_seconds: 1, years_difference_weighted: 2]
+
   @doc ~S"""
   Internal services use basic authentication. Return complexity = 0 to allow them
   to access everything without limits.
   """
-  def from_to_interval(_, _, %Absinthe.Complexity{context: %{auth: %{auth_method: :basic}}}) do
+  def from_to_interval(_, _, %{context: %{auth: %{auth_method: :basic}}} = struct) do
+    # Does not pattern match on `%Absinthe.Complexity{}` so `%Absinthe.Resolution{}`
+    # can be passed. This is possible because only the context is used
     0
   end
 
-  def from_to_interval(args, child_complexity, %Absinthe.Complexity{
+  def from_to_interval(args, child_complexity, %{
         context: %{auth: %{subscription: subscription}}
       })
       when not is_nil(subscription) do

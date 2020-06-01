@@ -95,7 +95,7 @@ defmodule Sanbase.Billing.SubscriptionTest do
         Subscription.cancel_about_to_expire_trials()
 
         assert_called(Sanbase.StripeApi.delete_subscription(subscription.stripe_id))
-        assert_called(Sanbase.MandrillApi.send("trial-finished-without-card", :_, :_))
+        assert_called(Sanbase.MandrillApi.send("trial-finished-without-card2", :_, :_))
       end
     end
 
@@ -123,7 +123,7 @@ defmodule Sanbase.Billing.SubscriptionTest do
         Subscription.cancel_about_to_expire_trials()
 
         assert_called(Sanbase.StripeApi.delete_subscription(subscription.stripe_id))
-        assert_called(Sanbase.MandrillApi.send("trial-finished-without-card", :_, :_))
+        assert_called(Sanbase.MandrillApi.send("trial-finished-without-card2", :_, :_))
       end
     end
 
@@ -151,7 +151,7 @@ defmodule Sanbase.Billing.SubscriptionTest do
         Subscription.cancel_about_to_expire_trials()
 
         assert_called(Sanbase.StripeApi.delete_subscription(subscription.stripe_id))
-        refute called(Sanbase.MandrillApi.send("trial-finished-without-card", :_, :_))
+        refute called(Sanbase.MandrillApi.send("trial-finished-without-card2", :_, :_))
       end
     end
   end

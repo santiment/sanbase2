@@ -38,17 +38,17 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
 
   @templates %{
     # immediately after sign up
-    sent_welcome_email: "sanbase-post-registration",
+    sent_welcome_email: "sanbase-post-registration2",
     # on the 4th day
-    sent_first_education_email: "first-edu-email",
+    sent_first_education_email: "first-edu-email2",
     # on the 7th day
-    sent_second_education_email: "second-edu-email",
+    sent_second_education_email: "second-edu-email2",
     # 3 days before end with coupon code
-    sent_trial_will_end_email: "trial-three-days-before-end",
+    sent_trial_will_end_email: "trial-three-days-before-end2",
     # 1 day before end on customers with credit card
-    sent_cc_will_be_charged: "trial-finished",
+    sent_cc_will_be_charged: "trial-finished2",
     # when we cancel - ~ 2 hours before end
-    sent_trial_finished_without_cc: "trial-finished-without-card"
+    sent_trial_finished_without_cc: "trial-finished-without-card2"
   }
 
   schema "sign_up_trials" do

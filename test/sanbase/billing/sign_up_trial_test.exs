@@ -25,7 +25,7 @@ defmodule Sanbase.Billing.SignUpTrialTest do
 
       sign_up_trial = SignUpTrial |> Repo.all() |> hd()
 
-      assert_called(Sanbase.MandrillApi.send("first-edu-email", :_, :_))
+      assert_called(Sanbase.MandrillApi.send("first-edu-email2", :_, :_))
       assert sign_up_trial.sent_first_education_email
     end
 
@@ -34,7 +34,7 @@ defmodule Sanbase.Billing.SignUpTrialTest do
 
       SignUpTrial.send_email_on_trial_day()
 
-      refute called(Sanbase.MandrillApi.send("first-edu-email", :_, :_, :_))
+      refute called(Sanbase.MandrillApi.send("first-edu-email2", :_, :_))
     end
 
     test "day 7 email is sent successfully and marked as sent", context do
@@ -43,7 +43,7 @@ defmodule Sanbase.Billing.SignUpTrialTest do
 
       sign_up_trial = SignUpTrial |> Repo.all() |> hd()
 
-      assert_called(Sanbase.MandrillApi.send("second-edu-email", :_, :_))
+      assert_called(Sanbase.MandrillApi.send("second-edu-email2", :_, :_))
       assert sign_up_trial.sent_second_education_email
     end
 
@@ -57,7 +57,7 @@ defmodule Sanbase.Billing.SignUpTrialTest do
 
         sign_up_trial = SignUpTrial |> Repo.all() |> hd()
 
-        assert_called(Sanbase.MandrillApi.send("trial-finished", :_, :_))
+        assert_called(Sanbase.MandrillApi.send("trial-finished2", :_, :_))
         assert sign_up_trial.sent_cc_will_be_charged
       end
     end
@@ -72,7 +72,7 @@ defmodule Sanbase.Billing.SignUpTrialTest do
 
         sign_up_trial = SignUpTrial |> Repo.all() |> hd()
 
-        refute called(Sanbase.MandrillApi.send("trial-finished", :_, :_, :_))
+        refute called(Sanbase.MandrillApi.send("trial-finished2", :_, :_))
         refute sign_up_trial.sent_cc_will_be_charged
       end
     end

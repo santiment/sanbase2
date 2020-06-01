@@ -14,11 +14,14 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
     conn = setup_jwt_auth(build_conn(), user)
     conn2 = setup_jwt_auth(build_conn(), user2)
 
+    post = insert(:post, user: user, title: "Title")
+
     settings = %{
       title: "My config",
       description: "some description",
       is_public: false,
       anomalies: ["daily_active_addesses_anomaly"],
+      post_id: post.id,
       metrics: [
         "price_usd",
         "daily_active_addresses",
@@ -43,6 +46,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       conn_no_user: conn_no_user,
       user: user,
       user2: user2,
+      post: post,
       project: project,
       project2: project2,
       settings: settings
@@ -51,7 +55,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
 
   describe "chart configuration mutations" do
     test "create", context do
-      %{user: user, conn: conn, project: project, settings: settings} = context
+      %{user: user, conn: conn, project: project, post: post, settings: settings} = context
 
       config =
         create_chart_configuration(conn, settings)
@@ -68,14 +72,18 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["project"]["slug"] == project.slug
       assert config["user"]["id"] |> String.to_integer() == user.id
       assert config["user"]["email"] == user.email
+      assert config["post"]["id"] |> String.to_integer() == post.id
+      assert config["post"]["title"] == post.title
     end
 
     test "update", context do
-      %{conn: conn, settings: settings} = context
+      %{conn: conn, settings: settings, user: user} = context
 
       config_id =
         create_chart_configuration(conn, settings)
         |> get_in(["data", "createChartConfiguration", "id"])
+
+      new_post = insert(:post, user: user, title: "New Title")
 
       new_settings = %{
         title: "New Title",
@@ -83,6 +91,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         is_public: true,
         metrics: ["getMetric|nvt"],
         anomalies: [],
+        post_id: new_post.id,
         drawings: %{
           "circles" => [
             %{"cx" => 50, "cy" => 50, "r" => 20}
@@ -106,6 +115,8 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["metrics"] == new_settings.metrics
       assert config["drawings"] == new_settings.drawings
       assert config["options"] == new_settings.options
+      assert config["post"]["id"] |> String.to_integer() == new_settings.post_id
+      assert config["post"]["title"] == new_post.title
     end
 
     test "cannot update other user's configuration", context do
@@ -174,7 +185,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
     end
 
     test "can get all fields", context do
-      %{user: user, conn: conn, project: project, settings: settings} = context
+      %{user: user, conn: conn, project: project, post: post, settings: settings} = context
 
       config_id =
         create_chart_configuration(conn, settings)
@@ -193,6 +204,8 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       assert config["project"]["slug"] == project.slug
       assert config["user"]["id"] |> String.to_integer() == user.id
       assert config["user"]["email"] == user.email
+      assert config["post"]["id"] |> String.to_integer() == post.id
+      assert config["post"]["title"] == post.title
     end
 
     test "get own public configuration", context do
@@ -426,6 +439,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         description
         user{ id email }
         project{ id slug }
+        post{ id title }
         metrics
         anomalies
         drawings
@@ -449,6 +463,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         description
         user{ id email }
         project{ id slug }
+        post{ id title }
         metrics
         anomalies
         drawings
@@ -472,6 +487,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         description
         user{ id email }
         project{ id slug }
+        post{ id title }
         metrics
         anomalies
         drawings
@@ -495,6 +511,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         description
         user{ id email }
         project{ id slug }
+        post{ id title }
         metrics
         anomalies
         drawings
@@ -517,6 +534,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         description
         user{ id email }
         project{ id slug }
+        post{ id title }
         metrics
         anomalies
         drawings
@@ -542,6 +560,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         description
         user{ id email }
         project{ id slug }
+        post{ id title }
         metrics
         anomalies
         drawings

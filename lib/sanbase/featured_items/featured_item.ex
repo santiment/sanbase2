@@ -83,20 +83,32 @@ defmodule Sanbase.FeaturedItem do
   """
   @spec update_item(%Post{} | %UserList{} | %UserTrigger{} | %Configuration{}, boolean) ::
           :ok | {:error, Ecto.Changeset.t()}
-  def update_item(%Post{id: id}, featured?) do
-    update_item(:post_id, id, featured?)
+  def update_item(%Post{} = post, featured?) do
+    case Post.is_published?(post) || featured? == false do
+      true -> update_item(:post_id, post.id, featured?)
+      false -> {:error, "Not published post cannot be made featured."}
+    end
   end
 
-  def update_item(%UserList{id: id}, featured?) do
-    update_item(:user_list_id, id, featured?)
+  def update_item(%UserList{} = user_list, featured?) do
+    case UserList.is_public?(user_list) || featured? == false do
+      true -> update_item(:user_list_id, user_list.id, featured?)
+      false -> {:error, "Private watchlists cannot be made featured."}
+    end
   end
 
-  def update_item(%UserTrigger{id: id}, featured?) do
-    update_item(:user_trigger_id, id, featured?)
+  def update_item(%UserTrigger{} = user_trigger, featured?) do
+    case UserTrigger.is_public?(user_trigger) || featured? == false do
+      true -> update_item(:user_trigger_id, user_trigger.id, featured?)
+      false -> {:error, "Private user triggers cannot be made featured."}
+    end
   end
 
-  def update_item(%Configuration{id: id}, featured?) do
-    update_item(:chart_configuration_id, id, featured?)
+  def update_item(%Configuration{} = configuration, featured?) do
+    case Configuration.is_public?(configuration) || featured? == false do
+      true -> update_item(:chart_configuration_id, configuration.id, featured?)
+      false -> {:error, "Private chart configurations cannot be made featured."}
+    end
   end
 
   # Private functions
@@ -109,8 +121,14 @@ defmodule Sanbase.FeaturedItem do
   defp update_item(type, id, true) do
     Repo.get_by(__MODULE__, [{type, id}])
     |> case do
-      nil -> %__MODULE__{} |> changeset(%{type => id}) |> Repo.insert()
-      _result -> :ok
+      nil ->
+        case %__MODULE__{} |> changeset(%{type => id}) |> Repo.insert() do
+          {:ok, _} -> :ok
+          error -> error
+        end
+
+      _result ->
+        :ok
     end
   end
 

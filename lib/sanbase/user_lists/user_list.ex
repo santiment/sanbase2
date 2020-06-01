@@ -72,6 +72,8 @@ defmodule Sanbase.UserList do
     |> Repo.one()
   end
 
+  def is_public?(%__MODULE__{is_public: is_public}), do: is_public
+
   @doc ~s"""
   Return a list of all projects in a watchlist.
   """

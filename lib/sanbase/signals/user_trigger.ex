@@ -48,6 +48,8 @@ defmodule Sanbase.Signal.UserTrigger do
     ut |> cast(attrs, [])
   end
 
+  def is_public?(%__MODULE__{trigger: %{is_public: is_public}}), do: is_public
+
   @doc false
   @spec create_changeset(%UserTrigger{}, map()) :: Ecto.Changeset.t()
   def create_changeset(%UserTrigger{} = user_triggers, attrs \\ %{}) do

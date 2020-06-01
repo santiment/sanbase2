@@ -128,6 +128,8 @@ defmodule Sanbase.Insight.Post do
   def draft(), do: @draft
   def preloads(), do: @preloads
 
+  def is_published?(%Post{ready_state: ready_state}), do: ready_state == @published
+
   def by_id(post_id) do
     from(p in __MODULE__, preload: ^@preloads)
     |> Repo.get(post_id)

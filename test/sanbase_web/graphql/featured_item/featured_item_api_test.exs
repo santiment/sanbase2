@@ -15,9 +15,9 @@ defmodule Sanbase.FeaturedItemApiTest do
     end
 
     test "marking watchlists as featured", context do
-      chart_configuration = insert(:chart_configuration)
+      chart_configuration = insert(:chart_configuration, is_public: true)
 
-      FeaturedItem.update_item(chart_configuration, true)
+      :ok = FeaturedItem.update_item(chart_configuration, true)
 
       assert chart_configurations(context.conn) == %{
                "data" => %{
@@ -32,9 +32,9 @@ defmodule Sanbase.FeaturedItemApiTest do
     end
 
     test "unmarking chart configurations as featured", context do
-      chart_configuration = insert(:chart_configuration)
-      FeaturedItem.update_item(chart_configuration, true)
-      FeaturedItem.update_item(chart_configuration, false)
+      chart_configuration = insert(:chart_configuration, is_public: true)
+      :ok = FeaturedItem.update_item(chart_configuration, true)
+      :ok = FeaturedItem.update_item(chart_configuration, false)
 
       assert chart_configurations(context.conn) == %{
                "data" => %{"featuredChartConfigurations" => []}
@@ -42,10 +42,10 @@ defmodule Sanbase.FeaturedItemApiTest do
     end
 
     test "marking chart configuration as featured is idempotent", context do
-      chart_configuration = insert(:chart_configuration)
-      FeaturedItem.update_item(chart_configuration, true)
-      FeaturedItem.update_item(chart_configuration, true)
-      FeaturedItem.update_item(chart_configuration, true)
+      chart_configuration = insert(:chart_configuration, is_public: true)
+      :ok = FeaturedItem.update_item(chart_configuration, true)
+      :ok = FeaturedItem.update_item(chart_configuration, true)
+      :ok = FeaturedItem.update_item(chart_configuration, true)
 
       assert chart_configurations(context.conn) == %{
                "data" => %{
@@ -84,7 +84,7 @@ defmodule Sanbase.FeaturedItemApiTest do
       insight = insert(:post, state: Post.approved_state(), ready_state: Post.published())
       tags = insight.tags |> Enum.map(fn %{name: name} -> %{"name" => name} end)
 
-      FeaturedItem.update_item(insight, true)
+      :ok = FeaturedItem.update_item(insight, true)
 
       assert fetch_insights(context.conn) == %{
                "data" => %{
@@ -95,17 +95,17 @@ defmodule Sanbase.FeaturedItemApiTest do
              }
     end
 
-    test "Only approved and published insights can be featured", context do
+    test "Not published insight cannot be featured", context do
       insight = insert(:post)
-      FeaturedItem.update_item(insight, true)
+      {:error, _} = FeaturedItem.update_item(insight, true)
 
       assert fetch_insights(context.conn) == %{"data" => %{"featuredInsights" => []}}
     end
 
     test "unmarking insights as featured", context do
       insight = insert(:post, state: Post.approved_state(), ready_state: Post.published())
-      FeaturedItem.update_item(insight, true)
-      FeaturedItem.update_item(insight, false)
+      :ok = FeaturedItem.update_item(insight, true)
+      :ok = FeaturedItem.update_item(insight, false)
       assert fetch_insights(context.conn) == %{"data" => %{"featuredInsights" => []}}
     end
 
@@ -152,8 +152,8 @@ defmodule Sanbase.FeaturedItemApiTest do
     end
 
     test "marking watchlists as featured", context do
-      watchlist = insert(:watchlist)
-      FeaturedItem.update_item(watchlist, true)
+      watchlist = insert(:watchlist, is_public: true)
+      :ok = FeaturedItem.update_item(watchlist, true)
 
       assert fetch_watchlists(context.conn) == %{
                "data" => %{
@@ -165,17 +165,17 @@ defmodule Sanbase.FeaturedItemApiTest do
     end
 
     test "unmarking watchlists as featured", context do
-      watchlist = insert(:watchlist)
-      FeaturedItem.update_item(watchlist, true)
-      FeaturedItem.update_item(watchlist, false)
+      watchlist = insert(:watchlist, is_public: true)
+      :ok = FeaturedItem.update_item(watchlist, true)
+      :ok = FeaturedItem.update_item(watchlist, false)
       assert fetch_watchlists(context.conn) == %{"data" => %{"featuredWatchlists" => []}}
     end
 
     test "marking watchlist as featured is idempotent", context do
-      watchlist = insert(:watchlist)
-      FeaturedItem.update_item(watchlist, true)
-      FeaturedItem.update_item(watchlist, true)
-      FeaturedItem.update_item(watchlist, true)
+      watchlist = insert(:watchlist, is_public: true)
+      :ok = FeaturedItem.update_item(watchlist, true)
+      :ok = FeaturedItem.update_item(watchlist, true)
+      :ok = FeaturedItem.update_item(watchlist, true)
 
       assert fetch_watchlists(context.conn) == %{
                "data" => %{
@@ -208,8 +208,8 @@ defmodule Sanbase.FeaturedItemApiTest do
     end
 
     test "marking user_triggers as featured", context do
-      user_trigger = insert(:user_trigger)
-      FeaturedItem.update_item(user_trigger, true)
+      user_trigger = insert(:user_trigger, is_public: true)
+      :ok = FeaturedItem.update_item(user_trigger, true)
 
       assert fetch_user_triggers(context.conn) == %{
                "data" => %{
@@ -226,17 +226,17 @@ defmodule Sanbase.FeaturedItemApiTest do
     end
 
     test "unmarking user_triggers as featured", context do
-      user_trigger = insert(:user_trigger)
-      FeaturedItem.update_item(user_trigger, true)
-      FeaturedItem.update_item(user_trigger, false)
+      user_trigger = insert(:user_trigger, is_public: true)
+      :ok = FeaturedItem.update_item(user_trigger, true)
+      :ok = FeaturedItem.update_item(user_trigger, false)
       assert fetch_user_triggers(context.conn) == %{"data" => %{"featuredUserTriggers" => []}}
     end
 
     test "marking user_trigger as featured is idempotent", context do
-      user_trigger = insert(:user_trigger)
-      FeaturedItem.update_item(user_trigger, true)
-      FeaturedItem.update_item(user_trigger, true)
-      FeaturedItem.update_item(user_trigger, true)
+      user_trigger = insert(:user_trigger, is_public: true)
+      :ok = FeaturedItem.update_item(user_trigger, true)
+      :ok = FeaturedItem.update_item(user_trigger, true)
+      :ok = FeaturedItem.update_item(user_trigger, true)
 
       assert fetch_user_triggers(context.conn) == %{
                "data" => %{

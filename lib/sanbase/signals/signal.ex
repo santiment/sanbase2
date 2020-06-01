@@ -35,7 +35,7 @@ defimpl Sanbase.Signal, for: Any do
           user_settings: %{settings: %{signal_notify_email: true}}
         },
         trigger: %{
-          settings: %{triggered?: true, payload: payload_map}
+          settings: %{payload: payload_map}
         }
       })
       when is_binary(email) and is_map(payload_map) do
@@ -45,36 +45,43 @@ defimpl Sanbase.Signal, for: Any do
     end)
   end
 
-  def send_email(%{user: %Sanbase.Auth.User{id: id}}) do
+  def send_email(%{
+        user: %Sanbase.Auth.User{id: id},
+        trigger: %{settings: %{payload: payload_map}}
+      }) do
     Logger.warn(
       "User with id #{id} does not have an email linked or the email notifications are disabled, so an alert cannot be sent."
     )
 
-    {:error, "No email linked for user with id #{id}"}
-  end
-
-  def send_telegram(%{
-        user: %Sanbase.Auth.User{
-          id: id,
-          user_settings: %{settings: %{has_telegram_connected: false}}
-        }
-      }) do
-    Logger.warn("User with id #{id} does not have a telegram linked, so an alert cannot be sent.")
-
-    {:error, "No telegram linked for user with #{id}"}
+    payload_map
+    |> Enum.map(fn {identifier, _} ->
+      {identifier, {:error, "No email linked for user with id #{id}"}}
+    end)
   end
 
   def send_telegram(%{
         id: id,
-        user: user,
+        user: %{user_settings: %{settings: %{telegram_chat_id: telegram_chat_id}}} = user,
         trigger: %{
-          settings: %{triggered?: true, payload: payload_map}
+          settings: %{payload: payload_map}
         }
       })
-      when is_map(payload_map) do
+      when is_integer(telegram_chat_id) and telegram_chat_id > 0 and is_map(payload_map) do
     payload_map
     |> Enum.map(fn {identifier, payload} ->
       {identifier, Sanbase.Telegram.send_message(user, extend_payload(payload, id))}
+    end)
+  end
+
+  def send_telegram(%{
+        user: %Sanbase.Auth.User{id: id} = user,
+        trigger: %{settings: %{payload: payload_map}}
+      }) do
+    Logger.warn("User with id #{id} does not have a telegram linked, so an alert cannot be sent.")
+
+    payload_map
+    |> Enum.map(fn {identifier, _payload} ->
+      {identifier, {:error, "No telegram linked for user with #{id}"}}
     end)
   end
 

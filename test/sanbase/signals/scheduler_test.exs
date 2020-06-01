@@ -116,4 +116,42 @@ defmodule Sanbase.Signal.SchedulerTest do
       assert kv["value"] == 5000
     end)
   end
+
+  test "email channel for user without email", context do
+    %{mock_fun: mock_fun, project: project} = context
+
+    user_no_email = insert(:user, email: nil)
+
+    trigger_settings = %{
+      type: "metric_signal",
+      metric: Sanbase.Metric.available_metrics() |> hd(),
+      target: %{slug: project.slug},
+      channel: "email",
+      operation: %{above: 300}
+    }
+
+    {:ok, trigger} =
+      UserTrigger.create_user_trigger(user_no_email, %{
+        title: "Generic title",
+        is_public: true,
+        cooldown: "12h",
+        settings: trigger_settings
+      })
+
+    Sanbase.Mock.prepare_mock(Sanbase.Metric, :timeseries_data, mock_fun)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
+      ut = Sanbase.Repo.get(UserTrigger, trigger.id)
+
+      # Previously "error" was put as the identifier instead the project's slug
+      # In case of email/telegram sending fails the last_triggered still needs
+      # to be updated properly as next run will trigger the signal again and
+      # appear multiple times in user's feed
+      assert Map.get(ut.trigger.last_triggered, "error") == nil
+
+      assert %DateTime{} =
+               Map.get(ut.trigger.last_triggered, project.slug)
+               |> Sanbase.DateTimeUtils.from_iso8601!()
+    end)
+  end
 end

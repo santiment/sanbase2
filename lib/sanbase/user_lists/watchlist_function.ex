@@ -1,11 +1,11 @@
 defmodule Sanbase.WatchlistFunction do
-  use Vex.Struct
+  use Ecto.Type
 
   defstruct name: "empty", args: []
 
   alias Sanbase.Model.Project
 
-  @behaviour Ecto.Type
+  @impl Ecto.Type
   def type, do: :map
 
   def evaluate(%__MODULE__{name: "market_segment", args: args}) do
@@ -50,10 +50,12 @@ defmodule Sanbase.WatchlistFunction do
 
   def empty(), do: %__MODULE__{name: "empty", args: []}
 
+  @impl Ecto.Type
   def cast(function) when is_binary(function) do
     parse(function)
   end
 
+  @impl Ecto.Type
   def cast(%__MODULE__{} = function), do: {:ok, function}
 
   def cast(%{} = function) do
@@ -67,6 +69,7 @@ defmodule Sanbase.WatchlistFunction do
 
   def cast(_), do: :error
 
+  @impl Ecto.Type
   def load(function) when is_map(function) do
     function =
       for {key, val} <- function do
@@ -76,6 +79,7 @@ defmodule Sanbase.WatchlistFunction do
     {:ok, struct!(__MODULE__, function)}
   end
 
+  @impl Ecto.Type
   def dump(%__MODULE__{} = function), do: {:ok, Map.from_struct(function)}
   def dump(_), do: :error
 

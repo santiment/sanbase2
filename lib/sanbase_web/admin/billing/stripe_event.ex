@@ -11,7 +11,7 @@ defmodule Sanbase.ExAdmin.Billing.StripeEvent do
       column(:inserted_at)
     end
 
-    show _plan do
+    show plan do
       attributes_table(all: true)
     end
   end

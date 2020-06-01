@@ -39,7 +39,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   @eth_decimals 1_000_000_000_000_000_000
 
   @primary_key false
-  @timestamps_opts updated_at: false
+  @timestamps_opts [updated_at: false]
   schema @table do
     field(:datetime, :utc_datetime, source: :dt)
     field(:from_address, :string, primary_key: true, source: :from)

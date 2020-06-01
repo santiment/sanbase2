@@ -24,7 +24,7 @@ defmodule Sanbase.ExAdmin.Billing.Plan do
       end
     end
 
-    show _plan do
+    show plan do
       attributes_table(all: true)
     end
   end

@@ -53,6 +53,8 @@ defmodule Sanbase.Comment do
   end
 
   def changeset(%__MODULE__{} = comment, attrs \\ %{}) do
+    attrs = Sanbase.DateTimeUtils.truncate_datetimes(attrs)
+
     comment
     |> cast(attrs, [:user_id, :parent_id, :root_parent_id, :content, :edited_at])
     |> validate_required([:user_id, :content])
@@ -194,7 +196,7 @@ defmodule Sanbase.Comment do
 
   defp multi_run(multi, :select_root_parent_id, %{parent_id: parent_id}) do
     multi
-    |> Ecto.Multi.run(:select_root_parent_id, fn _ ->
+    |> Ecto.Multi.run(:select_root_parent_id, fn _repo, _changes ->
       root_parent_id =
         from(c in __MODULE__, where: c.id == ^parent_id, select: c.root_parent_id)
         |> Repo.one()
@@ -211,7 +213,7 @@ defmodule Sanbase.Comment do
     multi
     |> Ecto.Multi.run(
       :create_new_comment,
-      fn %{select_root_parent_id: parent_root_parent_id} ->
+      fn _repo, %{select_root_parent_id: parent_root_parent_id} ->
         # Handle all case: If the parent has a parent_root_id - inherit it
         # If the parent does not have it - then the parent is a top level comment
         # and the current parent_root_id should be se to parent_id
@@ -233,7 +235,7 @@ defmodule Sanbase.Comment do
     multi
     |> Ecto.Multi.run(
       :update_subcomments_count,
-      fn %{create_new_comment: %__MODULE__{root_parent_id: root_id}} ->
+      fn _repo, %{create_new_comment: %__MODULE__{root_parent_id: root_id}} ->
         {:ok, _} = update_subcomments_counts(root_id)
         {:ok, "Updated all subcomment counts in the tree"}
       end

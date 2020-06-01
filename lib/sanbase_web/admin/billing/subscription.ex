@@ -28,7 +28,7 @@ defmodule Sanbase.ExAdmin.Billing.Subscription do
       column(:updated_at)
     end
 
-    show _subscription do
+    show subscription do
       attributes_table do
         row(:id)
         row(:stripe_id)

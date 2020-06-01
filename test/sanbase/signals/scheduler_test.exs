@@ -46,8 +46,7 @@ defmodule Sanbase.Signal.SchedulerTest do
       project: project,
       price_usd: 62,
       user: user,
-      mock_fun: mock_fun,
-      mock_chart: [%{image: %{url: "somelink"}}]
+      mock_fun: mock_fun
     ]
   end
 

@@ -17,7 +17,7 @@ defmodule Sanbase.ExAdmin.Signal.UserTrigger do
       column(:user)
     end
 
-    show _user_trigger do
+    show user_trigger do
       attributes_table do
         row(:id)
         row(:title, & &1.trigger.title)

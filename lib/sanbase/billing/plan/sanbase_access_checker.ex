@@ -24,7 +24,6 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
   }
 
   @pro_plan_stats %{
-    historical_data_in_days: 5 * 365,
     realtime_data_cut_off_in_days: 0,
     signals: %{
       limit: :no_limit

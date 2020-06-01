@@ -260,9 +260,7 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
         }"
       )
 
-      Sanbase.MandrillApi.send(template, user.email, %{name: user.username || user.email}, %{
-        merge_language: "handlebars"
-      })
+      Sanbase.MandrillApi.send(template, user.email, %{name: user.username || user.email})
 
       update_trial(sign_up_trial, %{email_type => true})
     end

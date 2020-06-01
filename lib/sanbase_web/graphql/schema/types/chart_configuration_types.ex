@@ -13,6 +13,7 @@ defmodule SanbaseWeb.Graphql.ProjectChartTypes do
     field(:drawings, :json)
     field(:options, :json)
     field(:project_id, :integer)
+    field(:post_id, :integer)
   end
 
   object :chart_configuration do
@@ -27,6 +28,7 @@ defmodule SanbaseWeb.Graphql.ProjectChartTypes do
 
     field(:user, :user, resolve: dataloader(SanbaseRepo))
     field(:project, :project, resolve: dataloader(SanbaseRepo))
+    field(:post, :post, resolve: dataloader(SanbaseRepo))
 
     field(:inserted_at, :datetime)
     field(:updated_at, :datetime)

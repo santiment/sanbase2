@@ -20,6 +20,7 @@ defmodule Sanbase.Chart.Configuration do
       foreign_key: :chart_configuration_id
     )
 
+    belongs_to(:post, Sanbase.Insight.Post)
     belongs_to(:user, Sanbase.Auth.User)
     belongs_to(:project, Sanbase.Model.Project)
 
@@ -37,7 +38,8 @@ defmodule Sanbase.Chart.Configuration do
       :drawings,
       :options,
       :user_id,
-      :project_id
+      :project_id,
+      :post_id
     ])
     |> validate_required([:user_id, :project_id])
   end

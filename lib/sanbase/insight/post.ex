@@ -44,6 +44,8 @@ defmodule Sanbase.Insight.Post do
     belongs_to(:price_chart_project, Project)
 
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
+
+    has_many(:chart_configurations, Sanbase.Chart.Configuration)
     has_many(:images, PostImage, on_delete: :delete_all)
     has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
     has_many(:votes, Vote, on_delete: :delete_all)

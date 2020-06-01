@@ -40,7 +40,7 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     # immediately after sign up
     sent_welcome_email: "sanbase-post-registration2",
     # on the 4th day
-    sent_first_education_email: "first-edu-email",
+    sent_first_education_email: "first-edu-email2",
     # on the 7th day
     sent_second_education_email: "second-edu-email2",
     # 3 days before end with coupon code

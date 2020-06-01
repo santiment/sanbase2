@@ -67,6 +67,7 @@ defmodule Sanbase.Signal.Scheduler do
           [] ->
             {user_trigger, []}
 
+          # Trying to send not triggered signal
           {:error, _} ->
             {user_trigger, []}
 
@@ -90,11 +91,7 @@ defmodule Sanbase.Signal.Scheduler do
   end
 
   defp update_last_triggered(
-         %{
-           user: user,
-           id: trigger_id,
-           trigger: %{last_triggered: last_triggered}
-         },
+         %{user: user, id: trigger_id, trigger: %{last_triggered: last_triggered}},
          send_results_list
        ) do
     # Round the datetimes to minutes because the `last_triggered` is used as
@@ -112,8 +109,8 @@ defmodule Sanbase.Signal.Scheduler do
             Map.put(inner_acc, elem, now)
           end)
 
-        {slug, _}, acc ->
-          Map.put(acc, slug, now)
+        {identifier, _}, acc ->
+          Map.put(acc, identifier, now)
       end)
 
     UserTrigger.update_user_trigger(user, %{

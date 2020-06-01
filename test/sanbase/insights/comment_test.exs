@@ -43,11 +43,11 @@ defmodule Sanbase.Insight.CommentTest do
     {:ok, comment} =
       EntityComment.create_and_link(@entity_type, post.id, post.user_id, nil, content)
 
-    naive_dt_before_update = NaiveDateTime.utc_now()
+    naive_dt_before_update = Timex.shift(NaiveDateTime.utc_now(), seconds: -1)
 
     {:ok, updated_comment} = Comment.update(comment.id, comment.user_id, updated_content)
 
-    naive_dt_after_update = NaiveDateTime.utc_now()
+    naive_dt_after_update = Timex.shift(NaiveDateTime.utc_now(), seconds: 1)
 
     assert comment.edited_at == nil
     assert comment.content == content

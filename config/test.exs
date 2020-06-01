@@ -33,6 +33,11 @@ config :sanbase, Sanbase.Repo,
   database: "sanbase_test",
   pool_size: 5
 
+config :sanbase, Sanbase.ClickhouseRepo,
+  pool: Ecto.Adapters.SQL.Sandbox,
+  database: "sanbase_test",
+  pool_size: 5
+
 config :sanbase, Sanbase.Auth.Hmac, secret_key: "Non_empty_key_used_in_tests_only"
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap, sync_enabled: false
@@ -59,10 +64,6 @@ config :sanbase, Sanbase.Prices.Store, database: "prices_test"
 config :arc,
   storage: Arc.Storage.Local,
   storage_dir: "/tmp/sanbase/filestore-test/"
-
-config :sanbase, Sanbase.Elasticsearch.Cluster, api: Sanbase.ElasticsearchMock
-
-config :sanbase, Sanbase.Elasticsearch, indices: "index1,index2,index3,index4"
 
 config :sanbase, SanbaseWeb.Plug.VerifyStripeWebhook, webhook_secret: "stripe_webhook_secret"
 

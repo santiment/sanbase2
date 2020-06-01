@@ -7,14 +7,12 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
   alias SanbaseWeb.Graphql.Resolvers.{
     SocialDataResolver,
-    TwitterResolver,
-    ElasticsearchResolver
+    TwitterResolver
   }
 
   alias SanbaseWeb.Graphql.Complexity
 
   import_types(SanbaseWeb.Graphql.SocialDataTypes)
-  import_types(SanbaseWeb.Graphql.ElasticsearchTypes)
 
   object :social_data_queries do
     field :popular_search_terms, list_of(:popular_search_term) do
@@ -352,17 +350,6 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       middleware(AccessControl)
 
       cache_resolve(&SocialDataResolver.news/3)
-    end
-
-    @desc "Returns statistics for the data stored in elasticsearch"
-    field :elasticsearch_stats, :elasticsearch_stats do
-      meta(access: :free)
-
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-
-      middleware(AccessControl)
-      cache_resolve(&ElasticsearchResolver.stats/3)
     end
 
     @desc """

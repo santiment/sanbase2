@@ -81,11 +81,11 @@ defmodule SanbaseWeb.Graphql.WatchlistHistoricalStatsApiTest do
       }
     }
 
-    fn ->
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: data}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       result = get_watchlist_historical_stats(conn, from, to, watchlist)
       assert result == expected_result
-    end
-    |> Sanbase.Mock.with_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: data}})
+    end)
   end
 
   test "empty watchlist", context do
@@ -100,11 +100,11 @@ defmodule SanbaseWeb.Graphql.WatchlistHistoricalStatsApiTest do
   test "the database returns an errors", context do
     %{conn: conn, from: from, to: to, watchlist: watchlist} = context
 
-    fn ->
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "Clickhouse error"})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       %{"errors" => [error]} = get_watchlist_historical_stats(conn, from, to, watchlist)
       assert error["message"] =~ "Can't fetch historical stats for a watchlist."
-    end
-    |> Sanbase.Mock.with_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "Clickhouse error"})
+    end)
   end
 
   defp get_watchlist_historical_stats(conn, from, to, watchlist) do

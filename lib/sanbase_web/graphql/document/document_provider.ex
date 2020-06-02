@@ -189,8 +189,11 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do
       |> Enum.reject(&is_nil/1)
     end)
     |> case do
-      [metric] -> Process.put(:__metric_name_from_get_metric_api__, metric)
-      _ -> :ok
+      [_ | _] = metrics ->
+        Process.put(:__metric_name_from_get_metric_api__, metrics)
+
+      _ ->
+        :ok
     end
 
     {:ok, bp_root}

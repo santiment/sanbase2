@@ -12,6 +12,7 @@ defmodule SanbaseWeb.Graphql.Complexity do
   Internal services use basic authentication. Return complexity = 0 to allow them
   to access everything without limits.
   """
+
   def from_to_interval(_, _, %{context: %{auth: %{auth_method: :basic}}}) do
     # Does not pattern match on `%Absinthe.Complexity{}` so `%Absinthe.Resolution{}`
     # can be passed. This is possible because only the context is used
@@ -67,10 +68,26 @@ defmodule SanbaseWeb.Graphql.Complexity do
     |> Sanbase.Math.to_integer()
   end
 
+  # This case is important as here the flow comes from `timeseries_data_complexity`
+  # and it will be handled by extracting the name from the %Absinthe.Resolution{}
+  # struct manually passed. This is done because otherwise the same `getMetric`
+  # resolution flow could pass twice through this code and remove 2 metrics instead
+  # of just one. This happens if both timeseries_data and timeseries_data_complexity
+  # are queried
   defp get_metric_name(%{source: %{metric: metric}}), do: metric
 
   defp get_metric_name(_) do
-    Process.get(:__metric_name_from_get_metric_api__)
+    case Process.get(:__metric_name_from_get_metric_api__) do
+      [metric | rest] ->
+        # If there are batched requests they will be resolved in the same order
+        # as their are in the list. When computing complexity for a metric put back
+        # the list without this one metric so the next one can be properly fetched.
+        Process.put(:__metric_name_from_get_metric_api__, rest)
+        metric
+
+      _ ->
+        nil
+    end
   end
 
   defp interval_seconds(args) do

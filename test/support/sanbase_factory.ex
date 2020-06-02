@@ -107,9 +107,11 @@ defmodule Sanbase.Factory do
 
   def popular_search_term_factory() do
     %Sanbase.SocialData.PopularSearchTerm{
+      title: "Some Title",
       datetime: Timex.now(),
       selector_type: "text",
-      search_term: rand_str(3) <> " OR " <> rand_str(6)
+      search_term: rand_str(3) <> " OR " <> rand_str(6),
+      options: %{interval: "1h", width: "60d"}
     }
   end
 

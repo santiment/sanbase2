@@ -3,6 +3,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   import Sanbase.Metric.Helper
 
+  alias Sanbase.SocialData.SocialHelper
   alias Sanbase.Model.Project
 
   @aggregations [:sum]
@@ -35,9 +36,16 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "social_dominance_total"
   ]
 
+  @sentiment_timeseries_metrics for name <- ['sentiment'],
+                                    type <- ["positive", "negative", "balance", "volume_consumed"],
+                                    source <-
+                                      ["total"] ++ Sanbase.SocialData.SocialHelper.sources(),
+                                    do: "#{name}_#{type}_#{source}"
+
   @timeseries_metrics @social_dominance_timeseries_metrics ++
                         @social_volume_timeseries_metrics ++
-                        @community_messages_count_timeseries_metrics
+                        @community_messages_count_timeseries_metrics ++
+                        @sentiment_timeseries_metrics
 
   @histogram_metrics []
 
@@ -84,6 +92,15 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
     Sanbase.SocialData.social_volume(selector, from, to, interval, source)
     |> transform_to_value_pairs(:mentions_count)
+  end
+
+  def timeseries_data(metric, %{} = selector, from, to, interval, _aggregation)
+      when metric in @sentiment_timeseries_metrics do
+    "sentiment_" <> type_source = metric
+    {type, source} = SocialHelper.split_by_source(type_source)
+
+    Sanbase.SocialData.sentiment(selector, from, to, interval, source, type)
+    |> transform_to_value_pairs(:value)
   end
 
   @impl Sanbase.Metric.Behaviour

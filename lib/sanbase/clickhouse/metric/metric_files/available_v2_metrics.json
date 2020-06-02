@@ -1177,10 +1177,7 @@
     "access": "restricted",
     "aggregation": "last",
     "min_interval": "5m",
-    "table": [
-      "distribution_deltas_5min",
-      "intraday_metrics"
-    ],
+    "table": ["distribution_deltas_5min", "intraday_metrics"],
     "has_incomplete_data": false,
     "data_type": "histogram"
   },
@@ -1192,10 +1189,7 @@
     "access": "restricted",
     "aggregation": "last",
     "min_interval": "5m",
-    "table": [
-      "distribution_deltas_5min",
-      "intraday_metrics"
-    ],
+    "table": ["distribution_deltas_5min", "intraday_metrics"],
     "has_incomplete_data": false,
     "data_type": "histogram"
   },
@@ -1207,10 +1201,7 @@
     "access": "restricted",
     "aggregation": "last",
     "min_interval": "5m",
-    "table": [
-      "distribution_deltas_5min",
-      "intraday_metrics"
-    ],
+    "table": ["distribution_deltas_5min", "intraday_metrics"],
     "has_incomplete_data": false,
     "data_type": "histogram"
   },
@@ -1499,6 +1490,71 @@
     "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Bitmex Perpetual Funding Rate",
+    "name": "bitmex_perpetual_funding_rate",
+    "metric": "bitmex_perpetual_funding_rate",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "8h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+
+  {
+    "human_readable_name": "Bitmex Perpetual Basis",
+    "name": "bitmex_perpetual_basis",
+    "metric": "bitmex_perpetual_basis",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Bitmex Perpetual Open Interest",
+    "name": "bitmex_perpetual_open_interest",
+    "metric": "bitmex_perpetual_open_interest",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Bitmex Perpetual Open Value",
+    "name": "bitmex_perpetual_open_value",
+    "metric": "bitmex_perpetual_open_value",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1h",
+    "table": "intraday_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
   }

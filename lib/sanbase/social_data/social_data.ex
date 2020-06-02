@@ -2,7 +2,7 @@ defmodule Sanbase.SocialData do
   import Sanbase.Utils.ErrorHandling, only: [error_result: 1]
 
   alias Sanbase.DateTimeUtils
-  alias Sanbase.SocialData.{SocialVolume, SocialDominance, Community}
+  alias Sanbase.SocialData.{SocialVolume, SocialDominance, Community, Sentiment}
   alias Sanbase.SocialData.News
 
   require Logger
@@ -18,6 +18,9 @@ defmodule Sanbase.SocialData do
 
   defdelegate social_volume(selector, from, to, interval, source),
     to: SocialVolume
+
+  defdelegate sentiment(selector, from, to, interval, source, type),
+    to: Sentiment
 
   defdelegate social_volume_projects(), to: SocialVolume
 

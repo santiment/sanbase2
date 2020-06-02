@@ -20,6 +20,7 @@ defmodule Sanbase.Chart.Configuration do
       foreign_key: :chart_configuration_id
     )
 
+    belongs_to(:post, Sanbase.Insight.Post)
     belongs_to(:user, Sanbase.Auth.User)
     belongs_to(:project, Sanbase.Model.Project)
 
@@ -37,7 +38,8 @@ defmodule Sanbase.Chart.Configuration do
       :drawings,
       :options,
       :user_id,
-      :project_id
+      :project_id,
+      :post_id
     ])
     |> validate_required([:user_id, :project_id])
   end
@@ -45,6 +47,8 @@ defmodule Sanbase.Chart.Configuration do
   def by_id(config_id, querying_user_id \\ nil) do
     get_chart_configuration(config_id, querying_user_id)
   end
+
+  def is_public?(%__MODULE__{is_public: is_public}), do: is_public
 
   def user_configurations(user_id, querying_user_id, project_id \\ nil) do
     user_chart_configurations_query(user_id, querying_user_id, project_id)

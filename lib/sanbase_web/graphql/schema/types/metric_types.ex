@@ -250,6 +250,19 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     end
 
     @desc ~s"""
+    Returns the complexity that the metric would have given the timerange
+    arguments. The complexity is computed as if both `value` and `datetime` fields
+    are queried.
+    """
+    field :timeseries_data_complexity, :integer do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :interval, default_value: "1d")
+
+      resolve(&MetricResolver.timeseries_data_complexity/3)
+    end
+
+    @desc ~s"""
     A histogram is an approximate representation of the distribution of numerical or
     categorical data.
 

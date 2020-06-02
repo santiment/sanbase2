@@ -11,29 +11,35 @@ defmodule Sanbase.FeaturedItemTest do
       assert FeaturedItem.insights() == []
     end
 
-    test "marking chart configurations as featured" do
-      chart_config = insert(:chart_configuration)
+    test "cannot make private chart configuration featured" do
+      chart_config = insert(:chart_configuration, is_public: false)
+      {:error, error_msg} = FeaturedItem.update_item(chart_config, true)
+      assert error_msg =~ "cannot be made featured"
+    end
 
-      FeaturedItem.update_item(chart_config, true)
+    test "marking chart configurations as featured" do
+      chart_config = insert(:chart_configuration, is_public: true)
+
+      :ok = FeaturedItem.update_item(chart_config, true)
       [featured_chart_config] = FeaturedItem.chart_configurations()
 
       assert featured_chart_config.id == chart_config.id
     end
 
     test "unmarking chart configurations as featured" do
-      chart_config = insert(:chart_configuration)
+      chart_config = insert(:chart_configuration, is_public: true)
 
-      FeaturedItem.update_item(chart_config, true)
-      FeaturedItem.update_item(chart_config, false)
+      :ok = FeaturedItem.update_item(chart_config, true)
+      :ok = FeaturedItem.update_item(chart_config, false)
       assert FeaturedItem.chart_configurations() == []
     end
 
     test "marking chart configuration as featured is idempotent" do
-      chart_config = insert(:chart_configuration)
+      chart_config = insert(:chart_configuration, is_public: true)
 
-      FeaturedItem.update_item(chart_config, true)
-      FeaturedItem.update_item(chart_config, true)
-      FeaturedItem.update_item(chart_config, true)
+      :ok = FeaturedItem.update_item(chart_config, true)
+      :ok = FeaturedItem.update_item(chart_config, true)
+      :ok = FeaturedItem.update_item(chart_config, true)
       [featured_chart_config] = FeaturedItem.chart_configurations()
       assert featured_chart_config.id == chart_config.id
     end
@@ -44,9 +50,15 @@ defmodule Sanbase.FeaturedItemTest do
       assert FeaturedItem.insights() == []
     end
 
+    test "cannot make not published insights featured" do
+      insight = insert(:post, state: Post.approved_state(), ready_state: Post.draft())
+      {:error, error_msg} = FeaturedItem.update_item(insight, true)
+      assert error_msg =~ "cannot be made featured"
+    end
+
     test "marking insights as featured" do
       insight = insert(:post, state: Post.approved_state(), ready_state: Post.published())
-      FeaturedItem.update_item(insight, true)
+      :ok = FeaturedItem.update_item(insight, true)
       [featured_insight] = FeaturedItem.insights()
 
       assert featured_insight.id == insight.id
@@ -54,17 +66,17 @@ defmodule Sanbase.FeaturedItemTest do
 
     test "unmarking insights as featured" do
       insight = insert(:post, state: Post.approved_state(), ready_state: Post.published())
-      FeaturedItem.update_item(insight, true)
-      FeaturedItem.update_item(insight, false)
+      :ok = FeaturedItem.update_item(insight, true)
+      :ok = FeaturedItem.update_item(insight, false)
       assert FeaturedItem.insights() == []
     end
 
     test "marking insight as featured is idempotent" do
       insight = insert(:post, state: Post.approved_state(), ready_state: Post.published())
 
-      FeaturedItem.update_item(insight, true)
-      FeaturedItem.update_item(insight, true)
-      FeaturedItem.update_item(insight, true)
+      :ok = FeaturedItem.update_item(insight, true)
+      :ok = FeaturedItem.update_item(insight, true)
+      :ok = FeaturedItem.update_item(insight, true)
       [featured_insight] = FeaturedItem.insights()
       assert featured_insight.id == insight.id
     end
@@ -75,24 +87,30 @@ defmodule Sanbase.FeaturedItemTest do
       assert FeaturedItem.watchlists() == []
     end
 
+    test "cannot make private watchlist featured" do
+      watchlist = insert(:watchlist, is_public: false)
+      {:error, error_msg} = FeaturedItem.update_item(watchlist, true)
+      assert error_msg =~ "cannot be made featured"
+    end
+
     test "marking watchlists as featured" do
-      watchlist = insert(:watchlist) |> Sanbase.Repo.preload([:list_items])
-      FeaturedItem.update_item(watchlist, true)
+      watchlist = insert(:watchlist, is_public: true) |> Sanbase.Repo.preload([:list_items])
+      :ok = FeaturedItem.update_item(watchlist, true)
       assert FeaturedItem.watchlists() == [watchlist]
     end
 
     test "unmarking watchlists as featured" do
-      watchlist = insert(:watchlist)
+      watchlist = insert(:watchlist, is_public: true)
       FeaturedItem.update_item(watchlist, true)
       FeaturedItem.update_item(watchlist, false)
       assert FeaturedItem.watchlists() == []
     end
 
     test "marking watchlist as featured is idempotent" do
-      watchlist = insert(:watchlist) |> Sanbase.Repo.preload([:list_items])
-      FeaturedItem.update_item(watchlist, true)
-      FeaturedItem.update_item(watchlist, true)
-      FeaturedItem.update_item(watchlist, true)
+      watchlist = insert(:watchlist, is_public: true) |> Sanbase.Repo.preload([:list_items])
+      :ok = FeaturedItem.update_item(watchlist, true)
+      :ok = FeaturedItem.update_item(watchlist, true)
+      :ok = FeaturedItem.update_item(watchlist, true)
 
       assert FeaturedItem.watchlists() == [watchlist]
     end
@@ -103,24 +121,30 @@ defmodule Sanbase.FeaturedItemTest do
       assert FeaturedItem.user_triggers() == []
     end
 
+    test "cannot make private user_trigger featured" do
+      user_trigger = insert(:user_trigger, is_public: false)
+      {:error, error_msg} = FeaturedItem.update_item(user_trigger, true)
+      assert error_msg =~ "cannot be made featured"
+    end
+
     test "marking user_triggers as featured" do
-      user_trigger = insert(:user_trigger) |> Sanbase.Repo.preload([:tags])
-      FeaturedItem.update_item(user_trigger, true)
+      user_trigger = insert(:user_trigger, is_public: true) |> Sanbase.Repo.preload([:tags])
+      :ok = FeaturedItem.update_item(user_trigger, true)
       assert FeaturedItem.user_triggers() == [user_trigger]
     end
 
     test "unmarking user_triggers as featured" do
-      user_trigger = insert(:user_trigger)
-      FeaturedItem.update_item(user_trigger, true)
-      FeaturedItem.update_item(user_trigger, false)
+      user_trigger = insert(:user_trigger, is_public: true)
+      :ok = FeaturedItem.update_item(user_trigger, true)
+      :ok = FeaturedItem.update_item(user_trigger, false)
       assert FeaturedItem.user_triggers() == []
     end
 
     test "marking user_trigger as featured is idempotent" do
-      user_trigger = insert(:user_trigger) |> Sanbase.Repo.preload([:tags])
-      FeaturedItem.update_item(user_trigger, true)
-      FeaturedItem.update_item(user_trigger, true)
-      FeaturedItem.update_item(user_trigger, true)
+      user_trigger = insert(:user_trigger, is_public: true) |> Sanbase.Repo.preload([:tags])
+      :ok = FeaturedItem.update_item(user_trigger, true)
+      :ok = FeaturedItem.update_item(user_trigger, true)
+      :ok = FeaturedItem.update_item(user_trigger, true)
 
       assert FeaturedItem.user_triggers() == [user_trigger]
     end

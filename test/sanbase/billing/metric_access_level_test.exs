@@ -216,7 +216,12 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "mcd_supply",
         "scd_collat_ratio",
         "scd_locked_token",
-        "stock_to_flow"
+        "stock_to_flow",
+        # derivatives
+        "bitmex_perpetual_funding_rate",
+        "bitmex_perpetual_basis",
+        "bitmex_perpetual_open_interest",
+        "bitmex_perpetual_open_value"
       ]
       |> Enum.sort()
 

@@ -20,6 +20,7 @@ defmodule Sanbase.Clickhouse.Metric do
   @metrics_file "metric_files/available_v2_metrics.json"
   @holders_file "metric_files/holders_metrics.json"
   @makerdao_file "metric_files/makerdao_metrics.json"
+
   @external_resource Path.join(__DIR__, @metrics_file)
   @external_resource Path.join(__DIR__, @holders_file)
   @external_resource Path.join(__DIR__, @makerdao_file)

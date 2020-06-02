@@ -5,9 +5,13 @@ defmodule Sanbase.SocialData.PopularSearchTerm do
   import Ecto.Changeset
 
   schema "popular_search_terms" do
+    field(:title, :string)
     field(:search_term, :string)
     field(:selector_type, :string)
     field(:datetime, :utc_datetime)
+    field(:options, :map, default: %{})
+
+    timestamps()
   end
 
   def changeset(%__MODULE__{} = term, attrs \\ %{}) do

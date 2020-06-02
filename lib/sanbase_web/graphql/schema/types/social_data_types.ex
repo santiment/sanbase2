@@ -43,9 +43,18 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   end
 
   object :popular_search_term do
+    field(:title, non_null(:string))
+    field(:options, :json)
     field(:datetime, non_null(:datetime))
     field(:search_term, non_null(:string))
     field(:selector_type, non_null(:string))
+    field(:updated_at, :datetime)
+
+    field :created_at, non_null(:datetime) do
+      resolve(fn %{inserted_at: inserted_at}, _, _ ->
+        {:ok, inserted_at}
+      end)
+    end
   end
 
   object :twitter_mention_count do

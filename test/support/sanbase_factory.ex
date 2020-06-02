@@ -115,6 +115,16 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def active_widget_factory() do
+    %Sanbase.Widget.ActiveWidget{
+      title: "Some Title",
+      description: "Some Description",
+      image_link: "https://image.png",
+      video_link: "https://youtube.com/video_id",
+      is_active: true
+    }
+  end
+
   def random_erc20_project_factory(attrs) do
     slug = Map.get(attrs, :slug, rand_str())
 

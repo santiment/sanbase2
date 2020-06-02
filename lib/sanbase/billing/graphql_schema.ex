@@ -9,6 +9,11 @@ defmodule Sanbase.Billing.GraphqlSchema do
 
   require SanbaseWeb.Graphql.Schema
 
+  # NOTE: In case of compile time error for reasons like wrong import_typesa and
+  # similar, the error will be not include the right place where it errored. In this
+  # case replace the @query type with the commented one - it has high chances for the
+  # proper error location to be revealed
+  # @query_type %{fields: %{}}
   @query_type Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :query)
   @fields @query_type.fields |> Map.keys()
 

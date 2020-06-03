@@ -377,6 +377,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.price_btc/3)
     end
 
+    field :price_eth, :float do
+      resolve(&ProjectResolver.price_eth/3)
+    end
+
     field :volume_usd, :float do
       resolve(&ProjectResolver.volume_usd/3)
     end

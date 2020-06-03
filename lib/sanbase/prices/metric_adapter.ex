@@ -5,7 +5,7 @@ defmodule Sanbase.Price.MetricAdapter do
   @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median]
   @default_aggregation :last
 
-  @timeseries_metrics ["price_usd", "price_btc", "volume_usd", "marketcap_usd"]
+  @timeseries_metrics ["price_usd", "price_btc", "price_eth", "volume_usd", "marketcap_usd"]
   @histogram_metrics []
 
   @metrics @histogram_metrics ++ @timeseries_metrics
@@ -78,6 +78,7 @@ defmodule Sanbase.Price.MetricAdapter do
     case metric do
       "price_usd" -> {:ok, "Price in USD"}
       "price_btc" -> {:ok, "Price in BTC"}
+      "price_eth" -> {:ok, "Price in ETH"}
       "marketcap_usd" -> {:ok, "Marketcap in USD"}
       "volume_usd" -> {:ok, "Volume in USd"}
     end

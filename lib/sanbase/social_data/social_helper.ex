@@ -7,19 +7,24 @@ defmodule Sanbase.SocialData.SocialHelper do
   def sources(), do: @sources
 
   def social_metrics_selector_handler(%{slug: slug}) do
-    slug
-    |> Project.by_slug(only_preload: [:social_volume_query])
-    |> case do
-      %Project{social_volume_query: %{query: query_text}}
-      when not is_nil(query_text) ->
-        {:ok, query_text}
+    Sanbase.Cache.get_or_store(
+      {__MODULE__, :social_metrics_selector_handler, slug} |> Sanbase.Cache.hash(),
+      fn ->
+        slug
+        |> Project.by_slug(only_preload: [:social_volume_query])
+        |> case do
+          %Project{social_volume_query: %{query: query_text}}
+          when not is_nil(query_text) ->
+            {:ok, query_text}
 
-      %Project{} = project ->
-        {:ok, SocialVolumeQuery.default_query(project)}
+          %Project{} = project ->
+            {:ok, SocialVolumeQuery.default_query(project)}
 
-      _ ->
-        {:error, "Invalid slug"}
-    end
+          _ ->
+            {:error, "Invalid slug"}
+        end
+      end
+    )
   end
 
   def social_metrics_selector_handler(%{text: search_text}) do

@@ -399,10 +399,13 @@ defmodule Sanbase.Model.Project.List do
   def by_name_ticker_slug(values, opts) do
     values = List.wrap(values)
 
-    projects_query(opts)
-    |> where([p], fragment("lower(?)", p.name) in ^values)
-    |> or_where([p], fragment("lower(?)", p.ticker) in ^values)
-    |> or_where([p], fragment("lower(?)", p.slug) in ^values)
+    from(
+      p in projects_query(opts),
+      where:
+        fragment("lower(?)", p.name) in ^values or
+          fragment("lower(?)", p.ticker) in ^values or
+          fragment("lower(?)", p.slug) in ^values
+    )
     |> Repo.all()
   end
 

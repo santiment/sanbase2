@@ -308,6 +308,12 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:interval, :interval, default_value: "1d")
       arg(:limit, :integer, default_value: 20)
 
+      # Complexity disabled due to not required `from` param. If at some point
+      # the complexity is re-enabled, the document provider need to be updated
+      # so `histogram_data` is inlcuded in the list of selections for which
+      # the metric name is stored in process dictionary for complexity computation
+      # complexity(&Complexity.from_to_interval/3)
+
       middleware(AccessControl)
 
       cache_resolve(&MetricResolver.histogram_data/3)

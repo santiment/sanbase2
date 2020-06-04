@@ -1478,6 +1478,22 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Development Activity 30 Days Change",
+    "name": "dev_activity_change_30d",
+    "metric": "dev_activity_change_30d",
+    "version": "2019-01-01",
+    "access": "free",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Stock to Flow",
     "name": "stock_to_flow",
     "metric": "stock_to_flow_ratio",

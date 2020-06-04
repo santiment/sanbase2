@@ -90,14 +90,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
     with projects when is_list(projects) <-
            Project.List.by_market_segment_all_of(market_segments),
          slugs <- Enum.map(projects, & &1.slug),
-         {:ok, result} <-
-           SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
-             %{},
-             %{args | selector: %{slug: slugs}},
-             %{source: %{metric: "dev_activity_1d"}}
-           ) do
+         {:ok, result} <- get_dev_activity_many_slugs(slugs, args) do
       {:ok, result}
-      |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :activity)
     else
       {:error, error} ->
         {:error,
@@ -176,5 +170,36 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
 
   def available_repos(_root, _args, _resolution) do
     {:ok, Project.List.project_slugs_with_organization()}
+  end
+
+  # Private functions
+  defp get_dev_activity_many_slugs(slugs, args) do
+    result =
+      slugs
+      |> Enum.chunk_every(500)
+      |> Enum.map(fn slugs ->
+        SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+          %{},
+          %{args | selector: %{slug: slugs}},
+          %{source: %{metric: "dev_activity_1d"}}
+        )
+      end)
+
+    case Enum.find(result, &match?({:error, _}, &1)) do
+      nil ->
+        result =
+          result
+          |> Enum.flat_map(fn {:ok, data} -> data end)
+          |> Enum.group_by(fn %{datetime: dt} -> dt end, fn %{value: value} -> value end)
+          |> Enum.map(fn {datetime, values} ->
+            %{datetime: datetime, activity: Enum.sum(values)}
+          end)
+          |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
+
+        {:ok, result}
+
+      error ->
+        error
+    end
   end
 end

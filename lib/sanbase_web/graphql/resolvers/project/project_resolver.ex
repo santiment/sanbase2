@@ -115,6 +115,34 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def price_btc(_parent, _args, _resolution), do: {:ok, nil}
 
+  def price_eth(
+        %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{price_usd: price_usd}},
+        _args,
+        _resolution
+      ) do
+    project_ethereum =
+      Sanbase.Cache.get_or_store(
+        {__MODULE__, :project, "ethereum"} |> Sanbase.Cache.hash(),
+        fn -> Project.by_slug("ethereum") end
+      )
+
+    case project_ethereum do
+      %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{price_usd: price_eth_in_usd}} ->
+        price_eth_in_usd = Sanbase.Math.to_float(price_eth_in_usd, nil)
+
+        if price_eth_in_usd != nil && price_eth_in_usd != 0 do
+          {:ok, Sanbase.Math.to_float(price_usd) / Sanbase.Math.to_float(price_eth_in_usd)}
+        else
+          {:ok, nil}
+        end
+
+      _ ->
+        {:ok, nil}
+    end
+  end
+
+  def price_eth(_parent, _args, _resolution), do: {:ok, nil}
+
   def volume_usd(
         %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{volume_usd: volume_usd}},
         _args,

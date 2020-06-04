@@ -37,6 +37,16 @@ defmodule Sanbase.Model.ProjectListTest do
   end
 
   describe "no projects" do
+    test "currently trending projects" do
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.SocialData.TrendingWords.get_currently_trending_words/0,
+        {:ok, [%{word: "btc"}]}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert Project.List.currently_trending_projects() == []
+      end)
+    end
+
     test "all projects" do
       assert Project.List.projects() == []
     end
@@ -119,7 +129,9 @@ defmodule Sanbase.Model.ProjectListTest do
         total_count: length(projects) - length(hidden_projects),
         total_erc20_count: length(erc20_projects),
         total_currency_count: length(currency_projects),
-        total_hidden_count: length(hidden_projects)
+        total_hidden_count: length(hidden_projects),
+        hidden_projects: hidden_projects,
+        non_hidden_projects: erc20_projects ++ currency_projects
       ] ++ projects
     end
 
@@ -161,6 +173,7 @@ defmodule Sanbase.Model.ProjectListTest do
       projects = Project.List.projects(include_hidden_projects?: true)
 
       assert length(projects) == context.total_count + context.total_hidden_count
+
       assert context.p7.id in Enum.map(projects, & &1.id)
       assert context.p8.id in Enum.map(projects, & &1.id)
     end
@@ -191,6 +204,26 @@ defmodule Sanbase.Model.ProjectListTest do
 
       assert length(projects) == 5
       assert context.p4.id not in Enum.map(projects, & &1.id)
+    end
+
+    test "currently trending projects", context do
+      %{hidden_projects: [{_, hidden_project} | _], non_hidden_projects: [{_, project} | _]} =
+        context
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.SocialData.TrendingWords.get_currently_trending_words/0,
+        {:ok,
+         [
+           %{word: hidden_project.slug},
+           %{word: project.slug}
+         ]}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        currently_trending_projects = Project.List.currently_trending_projects()
+
+        assert currently_trending_projects |> length() == 1
+        assert currently_trending_projects |> hd |> Map.get(:slug) == project.slug
+      end)
     end
   end
 

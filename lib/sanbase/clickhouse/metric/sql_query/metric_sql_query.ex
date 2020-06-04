@@ -207,6 +207,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
       SELECT asset_id
       FROM #{Map.get(@table_map, metric)}
       PREWHERE metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = ?1 )
+      AND value != 0 AND NOT isNaN(value)
     )
     """
 

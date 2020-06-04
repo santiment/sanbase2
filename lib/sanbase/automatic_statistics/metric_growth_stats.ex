@@ -1,21 +1,24 @@
-defmodule MetricGrowthStats do
+defmodule Sanbase.MetricGrowthStats do
   @moduledoc """
   Module for calculating growth/consecutive changes stats for metrics returning top performers.
   """
 
+  @social_metrics Sanbase.SocialData.MetricAdapter.available_metrics()
+
   @doc """
-  * current_to: End datetime till which we should measure the growth, default: start of today
-  * interval_days: Interval in days for measuring the growth, default: 7 days
-  * aggregation: All available agregations for metric, default: :avg
-  * limit: number of max elements, default: 10
+  * end_datetime: End datetime till which we should measure the growth, default: Timex.now()
+  * interval_days: Interval in days for measuring the growth, default: "7d"
+  * aggregation: All available agregations for metric, default: nil
+  * limit: Number of assets, default: 10
   * max_by: :change | :percent_change, default: :percent_change
-  * threshold: Threshold for previous and current value, default: 0
+  * threshold: Previous and current value should be bigger than provided threshold, default: 0
   """
 
   def max_growth(metric, slugs, opts \\ []) do
-    current_to = Keyword.get(opts, :current_to_datetime, Timex.beginning_of_day(Timex.now()))
-    interval_days = Keyword.get(opts, :interval, 7)
-    aggregation = Keyword.get(opts, :aggregation, :avg)
+    current_to = Keyword.get(opts, :end_datetime, Timex.now())
+    interval = Keyword.get(opts, :interval, "7d")
+    interval_days = Sanbase.DateTimeUtils.str_to_days(interval)
+    aggregation = Keyword.get(opts, :aggregation, nil)
     limit = Keyword.get(opts, :limit, 10)
     max_by = Keyword.get(opts, :max_by, :percent_change)
     threshold = Keyword.get(opts, :threshold, 0)
@@ -31,7 +34,7 @@ defmodule MetricGrowthStats do
       prev_to: prev_to,
       current_from: current_from,
       current_to: current_to,
-      interval_days: interval_days,
+      interval: interval,
       aggregation: aggregation
     })
     |> Enum.reduce(%{}, &Map.merge(&1, &2))
@@ -40,37 +43,38 @@ defmodule MetricGrowthStats do
     |> Enum.take(limit)
   end
 
-  defp calculate_growth("social_volume_total" = metric, slugs, %{
+  defp calculate_growth(metric, slugs, %{
          prev_from: prev_from,
          prev_to: prev_to,
          current_from: current_from,
          current_to: current_to,
-         interval_days: interval_days
-       }) do
+         interval: interval
+       })
+       when metric in @social_metrics do
     slugs
     |> Enum.map(fn slug ->
-      with {:ok, [%{value: p} | _]} when is_number(p) <-
+      with {:ok, [%{value: previous_value} | _]} when is_number(previous_value) <-
              Sanbase.Metric.timeseries_data(
                metric,
                %{slug: slug},
                prev_from,
                prev_to,
-               "#{interval_days}d"
+               interval
              ),
-           {:ok, [%{value: c} | _]} when is_number(c) <-
+           {:ok, [%{value: current_value} | _]} when is_number(current_value) <-
              Sanbase.Metric.timeseries_data(
                metric,
                %{slug: slug},
                current_from,
                current_to,
-               "#{interval_days}d"
+               interval
              ) do
         %{
           slug => %{
-            previous: p,
-            current: c,
-            change: c - p,
-            percent_change: Sanbase.Math.percent_change(p, c)
+            previous: previous_value,
+            current: current_value,
+            change: current_value - previous_value,
+            percent_change: Sanbase.Math.percent_change(previous_value, current_value)
           }
         }
       else
@@ -86,7 +90,7 @@ defmodule MetricGrowthStats do
          current_to: current_to,
          aggregation: aggregation
        }) do
-    {:ok, previous} =
+    {:ok, previous_data} =
       Sanbase.Metric.aggregated_timeseries_data(
         metric,
         %{slug: slugs},
@@ -95,7 +99,7 @@ defmodule MetricGrowthStats do
         aggregation
       )
 
-    {:ok, current} =
+    {:ok, current_data} =
       Sanbase.Metric.aggregated_timeseries_data(
         metric,
         %{slug: slugs},
@@ -104,17 +108,17 @@ defmodule MetricGrowthStats do
         aggregation
       )
 
-    current
-    |> Enum.map(fn {slug, c} ->
-      p = previous[slug]
+    current_data
+    |> Enum.map(fn {slug, current_value} ->
+      previous_value = previous_data[slug]
 
-      if c && p do
+      if current_value && previous_value do
         %{
           slug => %{
-            previous: p,
-            current: c,
-            change: c - p,
-            percent_change: Sanbase.Math.percent_change(p, c)
+            previous: previous_value,
+            current: current_value,
+            change: current_value - previous_value,
+            percent_change: Sanbase.Math.percent_change(previous_value, current_value)
           }
         }
       else

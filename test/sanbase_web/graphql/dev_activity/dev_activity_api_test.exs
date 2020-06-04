@@ -129,9 +129,9 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
         &Sanbase.Metric.timeseries_data/6,
         {:ok,
          [
-           %{datetime: context.dt1, activity: 100},
-           %{datetime: context.dt2, activity: 200},
-           %{datetime: context.dt3, activity: 300}
+           %{datetime: context.dt1, value: 100},
+           %{datetime: context.dt2, value: 200},
+           %{datetime: context.dt3, value: 300}
          ]}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -159,10 +159,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
     end
 
     test "multiple segments that no project has", context do
-      Sanbase.Mock.prepare_mock2(
-        &Sanbase.Metric.timeseries_data/5,
-        {:ok, []}
-      )
+      Sanbase.Mock.prepare_mock2(&Sanbase.Metric.timeseries_data/5, {:ok, []})
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           dev_activity_by_market_segment_all_of(
@@ -181,8 +178,9 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
 
         assert result == expected
 
-        # Called without organizations as there were not projects matched
-        assert called(Sanbase.Metric.timeseries_data(:_, %{slug: []}, :_, :_, :_, :_))
+        # No call is made as the function call is now inside Enum.map/2 and if
+        # there are no slugs, the map function is never executed
+        refute called(Sanbase.Metric.timeseries_data(:_, :_, :_, :_, :_))
       end)
     end
   end

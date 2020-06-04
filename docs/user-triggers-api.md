@@ -557,6 +557,24 @@ All `social_volume_*` metrics also support the `text` target.
 - "dev_activity"
 - "github_activity"
 
+##### Intraday MVRV
+
+These metrics are not available for all assets for which daily MVRV is available.
+For full list check [here](<https://api.santiment.net/graphiql?variables=&query=%7B%0A%20%20getMetric(metric%3A%20%22mvrv_usd_intraday%22)%20%7B%0A%20%20%20%20metadata%20%7B%0A%20%20%20%20%20%20availableSlugs%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A>)
+
+- "mvrv_usd_intraday"
+- "mvrv_usd_intraday_10y"
+- "mvrv_usd_intraday_5y"
+- "mvrv_usd_intraday_3y"
+- "mvrv_usd_intraday_2y"
+- "mvrv_usd_intraday_365d"
+- "mvrv_usd_intraday_180d"
+- "mvrv_usd_intraday_90d"
+- "mvrv_usd_intraday_60d"
+- "mvrv_usd_intraday_30d"
+- "mvrv_usd_intraday_7d"
+- "mvrv_usd_intraday_1d"
+
 ```json
 // The social volume (mentions) of a random word or any correct Lucene query is above 300
 {

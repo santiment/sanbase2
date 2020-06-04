@@ -187,7 +187,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
 
   def available_slugs_in_table_query(table) do
     query = """
-    SELECT name
+    SELECT DISTINCT(name)
     FROM asset_metadata
     PREWHERE asset_id GLOBAL IN (
       SELECT DISTINCT(asset_id) FROM #{table}
@@ -201,13 +201,13 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
 
   def available_slugs_for_metric_query(metric) do
     query = """
-    SELECT name
+    SELECT DISTINCT(name)
     FROM asset_metadata
     PREWHERE asset_id in (
-      SELECT asset_id
+      SELECT DISTINCT(asset_id)
       FROM #{Map.get(@table_map, metric)}
-      PREWHERE metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = ?1 )
-      AND value != 0 AND NOT isNaN(value)
+      PREWHERE metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = ?1 ) AND
+      value != 0 AND NOT isNaN(value)
     )
     """
 
@@ -236,7 +236,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     FROM #{Map.get(@table_map, metric)}
     PREWHERE
       metric_id = ( SELECT argMax(metric_id, computed_at) AS metric_id FROM metric_metadata PREWHERE name = ?1 ) AND
-      value > 0
+      value != 0 AND NOT isNaN(value)
     """
 
     args = [Map.get(@name_to_metric_map, metric)]
@@ -252,7 +252,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     PREWHERE
       asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
       metric_id = ( SELECT argMax(metric_id, computed_at) AS metric_id FROM metric_metadata PREWHERE name = ?2 ) AND
-      value > 0
+      value != 0 AND NOT isNaN(value)
     """
 
     args = [slug, Map.get(@name_to_metric_map, metric)]

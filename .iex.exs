@@ -102,7 +102,6 @@ alias SanbaseWeb.Graphql.Resolvers.{
   UserResolver,
   ApikeyResolver,
   EthAccountResolver,
-  ElasticsearchResolver,
   EtherbiResolver,
   FileResolver,
   GithubResolver,

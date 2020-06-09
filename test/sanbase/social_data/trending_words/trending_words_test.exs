@@ -1,7 +1,6 @@
 defmodule Sanbase.SocialData.TrendingWordsTest do
   use Sanbase.DataCase
 
-  import Mock
   import Sanbase.Factory
   import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
 
@@ -18,11 +17,10 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
   describe "get trending words for time interval" do
     test "clickhouse returns data", context do
       %{dt1_str: dt1_str, dt2_str: dt2_str, dt3_str: dt3_str} = context
+      rows = trending_words_rows(dt1_str, dt2_str, dt3_str)
 
-      with_mock Sanbase.ClickhouseRepo,
-        query: fn _, _ ->
-          {:ok, %{rows: trending_words_rows(dt1_str, dt2_str, dt3_str)}}
-        end do
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           TrendingWords.get_trending_words(
             from_iso8601!(dt1_str),
@@ -47,14 +45,14 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                       %{score: 1, word: "eth"}
                     ]
                   }}
-      end
+      end)
     end
 
     test "clickhouse returns error", context do
       %{dt1_str: dt1_str, dt3_str: dt3_str} = context
 
-      with_mock Sanbase.ClickhouseRepo,
-        query: fn _, _ -> {:error, "Something went wrong"} end do
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
+      |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           TrendingWords.get_trending_words(
             from_iso8601!(dt1_str),
@@ -63,43 +61,41 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
             2
           )
 
-        assert result == {:error, "Something went wrong"}
-      end
+        assert result == {:error, "error"}
+      end)
     end
   end
 
   describe "get currently trending words" do
     test "clickhouse returns data", context do
       %{dt1_str: dt1_str, dt2_str: dt2_str, dt3_str: dt3_str} = context
+      rows = trending_words_rows(dt1_str, dt2_str, dt3_str)
 
-      with_mock Sanbase.ClickhouseRepo,
-        query: fn _, _ ->
-          {:ok, %{rows: trending_words_rows(dt1_str, dt2_str, dt3_str)}}
-        end do
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
         result = TrendingWords.get_currently_trending_words()
 
         assert result == {:ok, [%{score: 2, word: "xrp"}, %{score: 1, word: "eth"}]}
-      end
+      end)
     end
 
     test "clickhouse returns error", _context do
-      with_mock Sanbase.ClickhouseRepo,
-        query: fn _, _ -> {:error, "Something went wrong"} end do
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
+      |> Sanbase.Mock.run_with_mocks(fn ->
         result = TrendingWords.get_currently_trending_words()
 
-        assert result == {:error, "Something went wrong"}
-      end
+        assert result == {:error, "error"}
+      end)
     end
   end
 
   describe "get word trending history stats" do
     test "clickhouse returns data", context do
       %{dt1_str: dt1_str, dt2_str: dt2_str, dt3_str: dt3_str} = context
+      rows = word_trending_history_rows(dt1_str, dt2_str, dt3_str)
 
-      with_mock Sanbase.ClickhouseRepo,
-        query: fn _, _ ->
-          {:ok, %{rows: word_trending_history_rows(dt1_str, dt2_str, dt3_str)}}
-        end do
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           TrendingWords.get_word_trending_history(
             "word",
@@ -115,14 +111,14 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                     %{datetime: from_iso8601!(dt1_str), position: 10},
                     %{datetime: from_iso8601!(dt2_str), position: 1}
                   ]}
-      end
+      end)
     end
 
     test "clickhouse returns error", context do
       %{dt1_str: dt1_str, dt2_str: dt2_str} = context
 
-      with_mock Sanbase.ClickhouseRepo,
-        query: fn _, _ -> {:error, "Something went wrong"} end do
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
+      |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           TrendingWords.get_word_trending_history(
             "word",
@@ -132,8 +128,8 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
             10
           )
 
-        assert result == {:error, "Something went wrong"}
-      end
+        assert result == {:error, "error"}
+      end)
     end
   end
 
@@ -142,11 +138,10 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
       %{dt1_str: dt1_str, dt2_str: dt2_str, dt3_str: dt3_str} = context
 
       project = insert(:random_project)
+      rows = project_trending_history_rows(dt1_str, dt2_str, dt3_str)
 
-      with_mock Sanbase.ClickhouseRepo,
-        query: fn _, _ ->
-          {:ok, %{rows: project_trending_history_rows(dt1_str, dt2_str, dt3_str)}}
-        end do
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           TrendingWords.get_project_trending_history(
             project.slug,
@@ -162,15 +157,15 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
                     %{datetime: from_iso8601!(dt1_str), position: 5},
                     %{datetime: from_iso8601!(dt3_str), position: 10}
                   ]}
-      end
+      end)
     end
 
     test "clickhouse returns error", context do
       %{dt1_str: dt1_str, dt2_str: dt2_str} = context
       project = insert(:random_project)
 
-      with_mock Sanbase.ClickhouseRepo,
-        query: fn _, _ -> {:error, "Something went wrong"} end do
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
+      |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           TrendingWords.get_project_trending_history(
             project.slug,
@@ -180,8 +175,8 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
             10
           )
 
-        assert result == {:error, "Something went wrong"}
-      end
+        assert result == {:error, "error"}
+      end)
     end
   end
 

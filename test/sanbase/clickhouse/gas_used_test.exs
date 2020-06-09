@@ -1,6 +1,5 @@
 defmodule Sanbase.Clickhouse.GasUsedTest do
   use Sanbase.DataCase
-  import Mock
   import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
 
   alias Sanbase.Clickhouse.GasUsed
@@ -16,17 +15,14 @@ defmodule Sanbase.Clickhouse.GasUsedTest do
   end
 
   test "when requested interval fits the values interval", context do
-    with_mock Sanbase.ClickhouseRepo,
-      query: fn _, _ ->
-        {:ok,
-         %{
-           rows: [
-             [from_iso8601_to_unix!("2019-01-01T00:00:00Z"), 101],
-             [from_iso8601_to_unix!("2019-01-02T00:00:00Z"), 102],
-             [from_iso8601_to_unix!("2019-01-03T00:00:00Z"), 103]
-           ]
-         }}
-      end do
+    rows = [
+      [from_iso8601_to_unix!("2019-01-01T00:00:00Z"), 101],
+      [from_iso8601_to_unix!("2019-01-02T00:00:00Z"), 102],
+      [from_iso8601_to_unix!("2019-01-03T00:00:00Z"), 103]
+    ]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       result = GasUsed.gas_used(context.slug, context.from, context.to, context.interval)
 
       assert result ==
@@ -48,22 +44,19 @@ defmodule Sanbase.Clickhouse.GasUsedTest do
                     datetime: from_iso8601!("2019-01-03T00:00:00Z")
                   }
                 ]}
-    end
+    end)
   end
 
   test "when requested interval is not full", context do
-    with_mock Sanbase.ClickhouseRepo,
-      query: fn _, _ ->
-        {:ok,
-         %{
-           rows: [
-             [from_iso8601_to_unix!("2019-01-01T00:00:00Z"), 101],
-             [from_iso8601_to_unix!("2019-01-02T00:00:00Z"), 102],
-             [from_iso8601_to_unix!("2019-01-03T00:00:00Z"), 103],
-             [from_iso8601_to_unix!("2019-01-04T00:00:00Z"), 104]
-           ]
-         }}
-      end do
+    rows = [
+      [from_iso8601_to_unix!("2019-01-01T00:00:00Z"), 101],
+      [from_iso8601_to_unix!("2019-01-02T00:00:00Z"), 102],
+      [from_iso8601_to_unix!("2019-01-03T00:00:00Z"), 103],
+      [from_iso8601_to_unix!("2019-01-04T00:00:00Z"), 104]
+    ]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       result = GasUsed.gas_used(context.slug, context.from, context.to, "2d")
 
       assert result ==
@@ -90,19 +83,21 @@ defmodule Sanbase.Clickhouse.GasUsedTest do
                     datetime: from_iso8601!("2019-01-04T00:00:00Z")
                   }
                 ]}
-    end
+    end)
   end
 
   test "returns empty array when query returns no rows", context do
-    with_mock Sanbase.ClickhouseRepo, query: fn _, _ -> {:ok, %{rows: []}} end do
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       result = GasUsed.gas_used(context.slug, context.from, context.to, context.interval)
 
       assert result == {:ok, []}
-    end
+    end)
   end
 
   test "returns error when something except ethereum is requested", context do
-    with_mock Sanbase.ClickhouseRepo, query: fn _, _ -> {:ok, %{rows: []}} end do
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         GasUsed.gas_used(
           "unsupported",
@@ -112,6 +107,6 @@ defmodule Sanbase.Clickhouse.GasUsedTest do
         )
 
       assert result == {:error, "Currently only ethereum is supported!"}
-    end
+    end)
   end
 end

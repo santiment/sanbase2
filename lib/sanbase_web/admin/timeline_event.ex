@@ -20,7 +20,7 @@ defmodule Sanbase.ExAdmin.TimelineEvent do
       actions()
     end
 
-    show _event do
+    show event do
       attributes_table(all: true)
     end
   end

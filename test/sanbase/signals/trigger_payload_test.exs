@@ -45,21 +45,67 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
 
     self_pid = self()
 
-    with_mocks([
-      {DailyActiveAddressesSettings, [:passthrough],
-       get_data: fn _ -> [{project.slug, daily_active_addresses}] end},
-      {Sanbase.Telegram, [:passthrough],
-       send_message: fn _user, text ->
-         send(self_pid, {:telegram_to_self, text})
-         :ok
-       end},
-      {Sanbase.MandrillApi, [:passthrough], send: fn _, _, _ -> {:ok, %{"status" => "sent"}} end}
-    ]) do
+    Sanbase.Mock.prepare_mock2(&DailyActiveAddressesSettings.get_data/1, [
+      {project.slug, daily_active_addresses}
+    ])
+    |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
+      send(self_pid, {:telegram_to_self, text})
+      :ok
+    end)
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.MandrillApi.send/3, {:ok, %{"status" => "sent"}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       Scheduler.run_signal(DailyActiveAddressesSettings)
 
       assert_receive({:telegram_to_self, message}, 1000)
       assert message =~ SanbaseWeb.Endpoint.show_signal_url(trigger.id)
       assert_called(Sanbase.MandrillApi.send("signals", "test@example.com", :_))
-    end
+    end)
+  end
+
+  test "send to a webhook", context do
+    %{user: user, project: project, datetimes: datetimes} = context
+
+    daily_active_addresses =
+      Enum.zip(datetimes, [100, 120, 100, 80, 20, 10, 5])
+      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
+
+    trigger_settings = %{
+      type: "daily_active_addresses",
+      target: %{slug: project.slug},
+      channel: [%{"webhook" => "url"}],
+      time_window: "1d",
+      operation: %{above: 5}
+    }
+
+    {:ok, trigger} =
+      UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
+        is_public: true,
+        cooldown: "12h",
+        settings: trigger_settings
+      })
+
+    Sanbase.Mock.prepare_mock2(&DailyActiveAddressesSettings.get_data/1, [
+      {project.slug, daily_active_addresses}
+    ])
+    |> Sanbase.Mock.prepare_mock2(
+      &HTTPoison.post/2,
+      {:ok, %HTTPoison.Response{status_code: 200}}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      Scheduler.run_signal(DailyActiveAddressesSettings)
+
+      trigger = trigger |> Sanbase.Repo.preload([:user])
+
+      {:ok, user_trigger} = Sanbase.Signal.UserTrigger.get_trigger_by_id(trigger.user, trigger.id)
+
+      last_triggered_dt =
+        user_trigger.trigger.last_triggered
+        |> Map.get(project.slug)
+        |> Sanbase.DateTimeUtils.from_iso8601!()
+
+      # Last triggered is rounded to minutes
+      assert Sanbase.TestUtils.datetime_close_to(Timex.now(), last_triggered_dt, 60, :seconds)
+    end)
   end
 end

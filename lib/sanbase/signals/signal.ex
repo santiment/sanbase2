@@ -74,7 +74,7 @@ defimpl Sanbase.Signal, for: Any do
   end
 
   def send_telegram(%{
-        user: %Sanbase.Auth.User{id: id} = user,
+        user: %Sanbase.Auth.User{id: id},
         trigger: %{settings: %{payload: payload_map}}
       }) do
     Logger.warn("User with id #{id} does not have a telegram linked, so an alert cannot be sent.")

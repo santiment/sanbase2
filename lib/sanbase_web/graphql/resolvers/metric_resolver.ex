@@ -27,11 +27,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     {:ok, AccessChecker.get_available_metrics_for_plan(product, plan)}
   end
 
-  def timeseries_data_complexity(_root, args, resolution) do
-    complexity = SanbaseWeb.Graphql.Complexity.from_to_interval(args, 2, resolution)
-    {:ok, complexity |> Sanbase.Math.to_integer()}
-  end
-
   def get_available_metrics(_root, _args, _resolution), do: {:ok, Metric.available_metrics()}
 
   def get_available_slugs(_root, _args, %{source: %{metric: metric}}),
@@ -51,6 +46,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
       {:error, error} ->
         {:error, handle_graphql_error("metadata", metric, error, description: "metric")}
     end
+  end
+
+  def timeseries_data_complexity(_root, args, resolution) do
+    complexity = SanbaseWeb.Graphql.Complexity.from_to_interval(args, 2, resolution)
+    {:ok, complexity |> Sanbase.Math.to_integer()}
   end
 
   def available_since(_root, args, %{source: %{metric: metric}}),

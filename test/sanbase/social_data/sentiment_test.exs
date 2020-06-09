@@ -4,7 +4,6 @@ defmodule Sanbase.SentimentTest do
   import ExUnit.CaptureLog
 
   alias Sanbase.SocialData.Sentiment
-  alias Sanbase.SocialData.MetricAdapter
   import Sanbase.Factory
 
   setup do

@@ -478,10 +478,8 @@ defmodule Sanbase.Signal.ValidationTest do
     alias Sanbase.Model.Project
 
     test "with binary slug, which is a project, returns :ok" do
-      project = Sanbase.Factory.insert(%Project{name: "santiment", slug: "santiment"})
-      project_slug = %{slug: "santiment"}
-
-      assert Validation.valid_slug?(project_slug) == :ok
+      project = Sanbase.Factory.insert(:random_project)
+      assert Validation.valid_slug?(%{slug: project.slug}) == :ok
     end
 
     test "with binary slug, but not a project, returns :error" do

@@ -34,7 +34,9 @@ config :sanbase, Sanbase.ClickhouseRepo,
   pool_timeout: 60_000,
   timeout: 60_000,
   pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "30"},
-  pool_overflow: 5
+  pool_overflow: 5,
+  # Temporary to help debug ecto 3 migration.
+  show_sensitive_data_on_connection_error: true
 
 # Do not print debug messages in production
 config :logger, level: :info

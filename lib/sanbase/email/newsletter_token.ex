@@ -14,7 +14,7 @@ defmodule Sanbase.Email.NewsletterToken do
     field(:email_token_validated_at, :naive_datetime)
     field(:token, :string)
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

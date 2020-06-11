@@ -5,8 +5,8 @@ defmodule Sanbase.Repo.Migrations.CreateNewsletterTokens do
     create table(:newsletter_tokens) do
       add(:token, :string)
       add(:email, :string)
-      add(:email_token_generated_at, :naive_datetime)
-      add(:email_token_validated_at, :naive_datetime)
+      add(:email_token_generated_at, :utc_datetime)
+      add(:email_token_validated_at, :utc_datetime)
 
       timestamps()
     end

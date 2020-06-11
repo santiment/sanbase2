@@ -139,7 +139,7 @@ defmodule Sanbase.Signal.Scheduler do
           user_trigger_id: id,
           user_id: user_id,
           payload: payload,
-          triggered_at: max_last_triggered(last_triggered),
+          triggered_at: max_last_triggered(last_triggered) |> DateTime.to_naive(),
           data: %{user_trigger_data: identifier_kv_map}
         }
 

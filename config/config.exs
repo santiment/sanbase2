@@ -14,7 +14,7 @@ config :sanbase, ecto_repos: [Sanbase.Repo]
 
 config :phoenix, :json_library, Jason
 
-config :ecto, json_library: Jason
+config :postgrex, :json_library, Jason
 
 config :sanbase, Sanbase, environment: "#{Mix.env()}"
 
@@ -43,15 +43,21 @@ config :kaffe,
 config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
   implementation_module: Sanbase.ExternalServices.RateLimiting.WaitServer
 
-config :sanbase, Sanbase.ClickhouseRepo, adapter: Ecto.Adapters.Postgres
+config :sanbase, Sanbase.ClickhouseRepo,
+  adapter: Ecto.Adapters.Postgres,
+  queue_target: 1000,
+  queue_interval: 1000
 
 config :sanbase, Sanbase.Repo,
   loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
   adapter: Ecto.Adapters.Postgres,
   pool_size: {:system, "SANBASE_POOL_SIZE", "20"},
   max_overflow: 5,
+  queue_target: 500,
+  queue_interval: 1000,
   # because of pgbouncer
-  prepare: :unnamed
+  prepare: :unnamed,
+  migration_timestamps: [type: :naive_datetime_usec]
 
 config :sanbase, Sanbase.Auth.Hmac, secret_key: {:system, "APIKEY_HMAC_SECRET_KEY", nil}
 
@@ -179,7 +185,6 @@ import_config "ex_admin_config.exs"
 import_config "influxdb_config.exs"
 import_config "scrapers_config.exs"
 import_config "notifications_config.exs"
-import_config "elasticsearch_config.exs"
 import_config "prometheus_config.exs"
 import_config "stripe_config.exs"
 import_config "scheduler_config.exs"

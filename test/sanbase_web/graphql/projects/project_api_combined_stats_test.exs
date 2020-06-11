@@ -34,37 +34,47 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
     fn ->
       result = get_history_stats(conn, from, to, slugs)
 
-      assert result == %{
-               "data" => %{
-                 "projectsListHistoryStats" => [
-                   %{"datetime" => "2017-05-13T00:00:00Z", "marketcap" => 545, "volume" => 220},
-                   %{"datetime" => "2017-05-14T00:00:00Z", "marketcap" => 2000, "volume" => 1400},
-                   %{"datetime" => "2017-05-15T00:00:00Z", "marketcap" => 2600, "volume" => 1600}
-                 ]
+      Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: data}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        assert result == %{
+                 "data" => %{
+                   "projectsListHistoryStats" => [
+                     %{"datetime" => "2017-05-13T00:00:00Z", "marketcap" => 545, "volume" => 220},
+                     %{
+                       "datetime" => "2017-05-14T00:00:00Z",
+                       "marketcap" => 2000,
+                       "volume" => 1400
+                     },
+                     %{
+                       "datetime" => "2017-05-15T00:00:00Z",
+                       "marketcap" => 2600,
+                       "volume" => 1600
+                     }
+                   ]
+                 }
                }
-             }
+      end)
     end
-    |> Sanbase.Mock.with_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: data}})
   end
 
   test "the database returns no data", context do
     %{conn: conn, from: from, to: to, slugs: slugs} = context
 
-    fn ->
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       result = get_history_stats(conn, from, to, slugs)
       assert result == %{"data" => %{"projectsListHistoryStats" => []}}
-    end
-    |> Sanbase.Mock.with_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
+    end)
   end
 
   test "the database returns an error", context do
     %{conn: conn, from: from, to: to, slugs: slugs} = context
 
-    fn ->
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "Database error"})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       %{"errors" => [error]} = get_history_stats(conn, from, to, slugs)
       assert error["message"] =~ "Cannot get combined history stats for a list of slugs."
-    end
-    |> Sanbase.Mock.with_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "Database error"})
+    end)
   end
 
   defp get_history_stats(conn, from, to, slugs) do

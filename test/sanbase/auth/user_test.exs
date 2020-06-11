@@ -39,17 +39,17 @@ defmodule Sanbase.Auth.UserTest do
 
     user =
       insert(:user,
-        san_balance: 0,
         eth_accounts: [%EthAccount{address: "0x000000000001"}],
-        privacy_policy_accepted: true
+        san_balance: 100,
+        san_balance_updated_at: ~N[2020-01-01 00:00:00]
       )
 
     changeset = User.update_san_balance_changeset(user)
 
     assert changeset.changes[:san_balance] == 5.0
-    #
+
     assert Sanbase.TestUtils.datetime_close_to(
-             Timex.now(),
+             NaiveDateTime.utc_now(),
              changeset.changes[:san_balance_updated_at],
              2,
              :seconds

@@ -260,7 +260,7 @@ defmodule Sanbase.Comments.Notification do
       where:
         p.post_id == ^post_comment.post.id and
           p.comment_id != ^post_comment.comment.id and
-          p.inserted_at < ^post_comment.inserted_at,
+          p.inserted_at <= ^post_comment.inserted_at,
       preload: [comment: :user]
     )
   end
@@ -270,7 +270,7 @@ defmodule Sanbase.Comments.Notification do
       where:
         t.timeline_event_id == ^timeline_event_comment.timeline_event.id and
           t.comment_id != ^timeline_event_comment.comment.id and
-          t.inserted_at < ^timeline_event_comment.inserted_at,
+          t.inserted_at <= ^timeline_event_comment.inserted_at,
       preload: [comment: :user]
     )
   end

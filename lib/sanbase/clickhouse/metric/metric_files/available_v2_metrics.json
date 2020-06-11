@@ -16,22 +16,6 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "ETH Price",
-    "name": "price_eth",
-    "metric": "price_eth",
-    "version": "2019-01-01",
-    "access": "free",
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
     "human_readable_name": "Daily Average USD Marketcap",
     "name": "daily_avg_marketcap_usd",
     "metric": "daily_avg_marketcap_usd",
@@ -591,6 +575,200 @@
     "has_incomplete_data": true,
     "data_type": "timeseries"
   },
+
+  {
+    "human_readable_name": "MVRV",
+    "name": "mvrv_usd_intraday",
+    "metric": "mvrv_usd_intraday_20y",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "MVRV for coins that moved in the past 10 years",
+    "name": "mvrv_usd_intraday_10y",
+    "metric": "mvrv_usd_intraday_10y",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "MVRV for coins that moved in the past 5 years",
+    "name": "mvrv_usd_intraday_5y",
+    "metric": "mvrv_usd_intraday_5y",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "MVRV for coins that moved in the past 3 years",
+    "name": "mvrv_usd_intraday_3y",
+    "metric": "mvrv_usd_intraday_3y",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "MVRV for coins that moved in the past 2 years",
+    "name": "mvrv_usd_intraday_2y",
+    "metric": "mvrv_usd_intraday_2y",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "MVRV for coins that moved in the past 1 year",
+    "name": "mvrv_usd_intraday_365d",
+    "metric": "mvrv_usd_intraday_365d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "MVRV for coins that moved in the past 180 days",
+    "name": "mvrv_usd_intraday_180d",
+    "metric": "mvrv_usd_intraday_180d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "MVRV for coins that moved in the past 90 days",
+    "name": "mvrv_usd_intraday_90d",
+    "metric": "mvrv_usd_intraday_90d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "MVRV for coins that moved in the past 60 days",
+    "name": "mvrv_usd_intraday_60d",
+    "metric": "mvrv_usd_intraday_60d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "MVRV for coins that moved in the past 30 days",
+    "name": "mvrv_usd_intraday_30d",
+    "metric": "mvrv_usd_intraday_30d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "MVRV for coins that moved in the past 7 days",
+    "name": "mvrv_usd_intraday_7d",
+    "metric": "mvrv_usd_intraday_7d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "MVRV for coins that moved in the past 1 day",
+    "name": "mvrv_usd_intraday_1d",
+    "metric": "mvrv_usd_intraday_1d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+
   {
     "human_readable_name": "Circulation",
     "name": "circulation",
@@ -1472,6 +1650,22 @@
       "SANBASE": "free"
     },
     "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Development Activity 30 Days Change",
+    "name": "dev_activity_change_30d",
+    "metric": "dev_activity_change_30d",
+    "version": "2019-01-01",
+    "access": "free",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
     "min_interval": "1d",
     "table": "intraday_metrics",
     "has_incomplete_data": true,

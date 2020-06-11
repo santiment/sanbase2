@@ -1,11 +1,6 @@
 defmodule SanbaseWeb.Graphql.CustomTypes.DateTime do
   use Absinthe.Schema.Notation
 
-  scalar :ecto_date, name: "EctoDate" do
-    serialize(&Ecto.Date.to_iso8601/1)
-    parse(&parse_ecto_date/1)
-  end
-
   scalar :datetime, name: "DateTime" do
     description("""
     The `DateTime` scalar type represents a date and time in the UTC
@@ -21,7 +16,9 @@ defmodule SanbaseWeb.Graphql.CustomTypes.DateTime do
         |> DateTime.to_iso8601()
 
       %DateTime{} = dt ->
-        DateTime.truncate(dt, :second) |> DateTime.to_iso8601()
+        dt
+        |> DateTime.truncate(:second)
+        |> DateTime.to_iso8601()
     end)
 
     parse(&parse_datetime/1)
@@ -38,16 +35,6 @@ defmodule SanbaseWeb.Graphql.CustomTypes.DateTime do
     parse(&parse_naive_datetime/1)
   end
 
-  scalar :date do
-    description("""
-    The `Date` scalar type represents a date. The Date appears in a JSON
-    response as an ISO8601 formatted string, without a time component.
-    """)
-
-    serialize(&Date.to_iso8601/1)
-    parse(&parse_date/1)
-  end
-
   scalar :time do
     description("""
     The `Time` scalar type represents a time. The Time appears in a JSON
@@ -56,23 +43,6 @@ defmodule SanbaseWeb.Graphql.CustomTypes.DateTime do
 
     serialize(&Time.to_iso8601/1)
     parse(&parse_time/1)
-  end
-
-  @spec parse_ecto_date(Absinthe.Blueprint.Input.String.t()) :: {:ok, Ecto.Date.type()} | :error
-  @spec parse_ecto_date(Absinthe.Blueprint.Input.Null.t()) :: {:ok, nil}
-  defp parse_ecto_date(%Absinthe.Blueprint.Input.String{value: value}) do
-    case Ecto.Date.cast(value) do
-      {:ok, ecto_date} -> {:ok, ecto_date}
-      _error -> :error
-    end
-  end
-
-  defp parse_ecto_date(%Absinthe.Blueprint.Input.Null{}) do
-    {:ok, nil}
-  end
-
-  defp parse_ecto_date(_) do
-    :error
   end
 
   @spec parse_datetime(Absinthe.Blueprint.Input.String.t()) :: {:ok, DateTime.t()} | :error
@@ -108,23 +78,6 @@ defmodule SanbaseWeb.Graphql.CustomTypes.DateTime do
   end
 
   defp parse_naive_datetime(_) do
-    :error
-  end
-
-  @spec parse_date(Absinthe.Blueprint.Input.String.t()) :: {:ok, Date.t()} | :error
-  @spec parse_date(Absinthe.Blueprint.Input.Null.t()) :: {:ok, nil}
-  defp parse_date(%Absinthe.Blueprint.Input.String{value: value}) do
-    case Date.from_iso8601(value) do
-      {:ok, date} -> {:ok, date}
-      _error -> :error
-    end
-  end
-
-  defp parse_date(%Absinthe.Blueprint.Input.Null{}) do
-    {:ok, nil}
-  end
-
-  defp parse_date(_) do
     :error
   end
 

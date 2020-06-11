@@ -25,7 +25,6 @@ defmodule Sanbase.Factory do
   alias Sanbase.Billing.Subscription.SignUpTrial
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Chart
-  alias Sanbase.Email.NewsletterToken
 
   def user_factory() do
     %User{
@@ -577,14 +576,6 @@ defmodule Sanbase.Factory do
 
   def exchange_market_pair_mappings_factory do
     %Sanbase.Exchanges.MarketPairMapping{}
-  end
-
-  def newsletter_token_factory do
-    %NewsletterToken{
-      token: :crypto.strong_rand_bytes(64) |> Base.encode64(),
-      email: (:crypto.strong_rand_bytes(16) |> Base.encode16()) <> "@santiment.net",
-      email_token_generated_at: DateTime.utc_now()
-    }
   end
 
   def rand_str(length \\ 10) do

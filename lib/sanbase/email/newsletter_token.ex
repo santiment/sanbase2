@@ -10,8 +10,8 @@ defmodule Sanbase.Email.NewsletterToken do
 
   schema "newsletter_tokens" do
     field(:email, :string)
-    field(:email_token_generated_at, :naive_datetime)
-    field(:email_token_validated_at, :naive_datetime)
+    field(:email_token_generated_at, :utc_datetime)
+    field(:email_token_validated_at, :utc_datetime)
     field(:token, :string)
 
     timestamps(type: :utc_datetime)
@@ -34,7 +34,7 @@ defmodule Sanbase.Email.NewsletterToken do
     |> change(
       email: email,
       token: generate_email_token(),
-      email_token_generated_at: Timex.now(),
+      email_token_generated_at: DateTime.utc_now() |> DateTime.truncate(:second),
       email_token_validated_at: nil
     )
     |> Repo.insert()
@@ -42,7 +42,7 @@ defmodule Sanbase.Email.NewsletterToken do
 
   def mark_email_token_as_validated(newsletter_token) do
     newsletter_token
-    |> change(email_token_validated_at: Timex.now())
+    |> change(email_token_validated_at: DateTime.utc_now() |> DateTime.truncate(:second))
     |> Repo.update()
   end
 

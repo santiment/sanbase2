@@ -72,6 +72,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.ChartConfigurationQueries)
   import_types(Graphql.Schema.PromoterQueries)
   import_types(Graphql.Schema.WidgetQueries)
+  import_types(Graphql.Schema.EmailQueries)
 
   def dataloader() do
     Dataloader.new(timeout: :timer.seconds(20), get_policy: :return_nil_on_error)
@@ -142,6 +143,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:comment_mutations)
     import_fields(:project_chart_mutations)
     import_fields(:promoter_mutations)
+    import_fields(:email_mutations)
   end
 
   subscription do

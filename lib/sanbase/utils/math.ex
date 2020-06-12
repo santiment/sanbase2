@@ -136,7 +136,16 @@ defmodule Sanbase.Math do
   def to_integer(x, _) when is_integer(x), do: x
   def to_integer(f, _) when is_float(f), do: f |> round() |> trunc()
   def to_integer(%Decimal{} = d, _), do: d |> Decimal.round() |> Decimal.to_integer()
-  def to_integer(str, _) when is_binary(str), do: String.trim(str) |> String.to_integer()
+
+  def to_integer(str, _) when is_binary(str) do
+    case String.trim(str) |> Integer.parse() do
+      {integer, _} ->
+        integer
+
+      :error ->
+        {:error, "Cannot parse an integer from #{str}"}
+    end
+  end
 
   @doc ~S"""
   Convert a string that potentially contains trailing non-digit symbols to an integer

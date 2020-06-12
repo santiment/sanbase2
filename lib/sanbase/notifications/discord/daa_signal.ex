@@ -131,7 +131,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
         {0, diff_in_hours(start_of_day, now)}
 
       %Notification{data: data, inserted_at: inserted_at} when is_binary(data) ->
-        {String.to_integer(data), diff_in_hours(inserted_at, now)}
+        {Sanbase.Math.to_integer(data), diff_in_hours(inserted_at, now)}
     end
   end
 
@@ -242,16 +242,16 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   end
 
   defp threshold() do
-    Config.get(:trading_volume_threshold) |> String.to_integer()
+    Config.get(:trading_volume_threshold) |> Sanbase.Math.to_integer()
   end
 
   # cooldown for project in seconds
   defp project_cooldown() do
-    Config.get(:project_cooldown) |> String.to_integer()
+    Config.get(:project_cooldown) |> Sanbase.Math.to_integer()
   end
 
   defp timeframe_from(), do: Timex.shift(Timex.now(), days: -1 * config_timeframe_from())
   defp timeframe_to(), do: Timex.shift(Timex.now(), days: -1 * config_timeframe_to())
-  defp config_timeframe_from(), do: Config.get(:timeframe_from) |> String.to_integer()
-  defp config_timeframe_to(), do: Config.get(:timeframe_to) |> String.to_integer()
+  defp config_timeframe_from(), do: Config.get(:timeframe_from) |> Sanbase.Math.to_integer()
+  defp config_timeframe_to(), do: Config.get(:timeframe_to) |> Sanbase.Math.to_integer()
 end

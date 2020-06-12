@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.TimelineEvent do
+defmodule SanbaseWeb.ExAdmin.TimelineEvent do
   use ExAdmin.Register
 
   register_resource Sanbase.Timeline.TimelineEvent do

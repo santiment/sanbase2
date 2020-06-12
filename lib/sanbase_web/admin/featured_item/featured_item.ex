@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.FeaturedItem do
+defmodule SanbaseWeb.ExAdmin.FeaturedItem do
   use ExAdmin.Register
 
   alias Sanbase.FeaturedItem

@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Model.Ico do
+defmodule SanbaseWeb.ExAdmin.Model.Ico do
   use ExAdmin.Register
 
   import Ecto.Query, warn: false

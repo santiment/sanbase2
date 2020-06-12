@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Model.Infrastructure do
+defmodule SanbaseWeb.ExAdmin.Model.Infrastructure do
   use ExAdmin.Register
 
   alias Sanbase.Model.Project

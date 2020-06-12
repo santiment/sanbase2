@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Chart.Configuration do
+defmodule SanbaseWeb.ExAdmin.Chart.Configuration do
   use ExAdmin.Register
 
   alias Sanbase.Chart.Configuration

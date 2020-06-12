@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Model.ProjectMarketSegment do
+defmodule SanbaseWeb.ExAdmin.Model.ProjectMarketSegment do
   use ExAdmin.Register
 
   alias Sanbase.Model.{Project, MarketSegment}

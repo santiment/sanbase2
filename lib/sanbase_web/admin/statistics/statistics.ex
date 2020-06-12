@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Statistics do
+defmodule SanbaseWeb.ExAdmin.Statistics do
   use ExAdmin.Register
 
   register_page "Statistics" do

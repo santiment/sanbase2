@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Auth.UserApikeyToken do
+defmodule SanbaseWeb.ExAdmin.Auth.UserApikeyToken do
   use ExAdmin.Register
 
   register_resource Sanbase.Auth.UserApikeyToken do

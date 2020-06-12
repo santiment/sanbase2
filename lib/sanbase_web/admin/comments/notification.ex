@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Comments.Notification do
+defmodule SanbaseWeb.ExAdmin.Comments.Notification do
   use ExAdmin.Register
 
   register_resource Sanbase.Comments.Notification do

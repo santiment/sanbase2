@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Billing.Subscription do
+defmodule SanbaseWeb.ExAdmin.Billing.Subscription do
   use ExAdmin.Register
 
   register_resource Sanbase.Billing.Subscription do

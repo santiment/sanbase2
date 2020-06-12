@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Model.Project.SourceSlugMapping do
+defmodule SanbaseWeb.ExAdmin.Model.Project.SourceSlugMapping do
   use ExAdmin.Register
 
   register_resource Sanbase.Model.Project.SourceSlugMapping do

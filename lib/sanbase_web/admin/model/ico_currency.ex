@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Model.IcoCurrency do
+defmodule SanbaseWeb.ExAdmin.Model.IcoCurrency do
   use ExAdmin.Register
 
   import Ecto.Query, warn: false

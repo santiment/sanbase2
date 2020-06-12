@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.UserList do
+defmodule SanbaseWeb.ExAdmin.UserList do
   use ExAdmin.Register
 
   alias Sanbase.UserList

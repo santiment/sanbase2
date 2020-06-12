@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Model.ProjectEthAddress do
+defmodule SanbaseWeb.ExAdmin.Model.ProjectEthAddress do
   use ExAdmin.Register
 
   import Ecto.Query, warn: false

@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Model.Project.GithubOrganization do
+defmodule SanbaseWeb.ExAdmin.Model.Project.GithubOrganization do
   use ExAdmin.Register
 
   register_resource Sanbase.Model.Project.GithubOrganization do

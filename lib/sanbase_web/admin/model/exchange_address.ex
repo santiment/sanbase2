@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Model.ExchangeAddress do
+defmodule SanbaseWeb.ExAdmin.Model.ExchangeAddress do
   use ExAdmin.Register
 
   alias Sanbase.Repo

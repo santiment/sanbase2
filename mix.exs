@@ -86,7 +86,6 @@ defmodule Sanbase.Mixfile do
       {:kafka_protocol, github: "qzhuyan/kafka_protocol", branch: "lz4-nif", override: true},
       {:libcluster, "~> 3.0"},
       {:lz4b, "0.0.4"},
-      {:mint, "~> 1.0"},
       {:mix_test_watch, "~> 0.5", only: :dev, runtime: false},
       {:mock, "~> 0.3"},
       {:mockery, "~> 2.2"},

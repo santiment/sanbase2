@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Signal.UserTrigger do
+defmodule SanbaseWeb.ExAdmin.Signal.UserTrigger do
   use ExAdmin.Register
 
   import Ecto.Query, warn: false

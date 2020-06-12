@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Billing.SignUpTrial do
+defmodule SanbaseWeb.ExAdmin.Billing.SignUpTrial do
   use ExAdmin.Register
 
   register_resource Sanbase.Billing.Subscription.SignUpTrial do

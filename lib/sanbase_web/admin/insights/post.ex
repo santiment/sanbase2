@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Insight.Post do
+defmodule SanbaseWeb.ExAdmin.Insight.Post do
   use ExAdmin.Register
 
   alias Sanbase.Insight.Post

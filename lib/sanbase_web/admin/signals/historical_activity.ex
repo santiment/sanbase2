@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Signal.HistoricalActivity do
+defmodule SanbaseWeb.ExAdmin.Signal.HistoricalActivity do
   use ExAdmin.Register
 
   register_resource Sanbase.Signal.HistoricalActivity do

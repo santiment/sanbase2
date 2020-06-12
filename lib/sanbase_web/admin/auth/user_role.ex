@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Auth.UserRole do
+defmodule SanbaseWeb.ExAdmin.Auth.UserRole do
   use ExAdmin.Register
 
   register_resource Sanbase.Auth.UserRole do

@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Billing.Product do
+defmodule SanbaseWeb.ExAdmin.Billing.Product do
   use ExAdmin.Register
 
   register_resource Sanbase.Billing.Product do

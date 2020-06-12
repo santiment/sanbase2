@@ -21,7 +21,7 @@ defmodule Sanbase.Model.Kafka.KafkaLabelRecord do
   end
 end
 
-defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
+defmodule SanbaseWeb.ExAdmin.Kafka.KafkaLabelRecord do
   use ExAdmin.Register
   require Sanbase.Utils.Config, as: Config
   @producer Config.module_get(Sanbase.KafkaExporter, :producer)
@@ -71,6 +71,7 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
 
     data =
       csv
+      |> String.trim()
       |> String.split("\n")
       |> Enum.map(fn row_str ->
         case String.split(row_str, ",", parts: 4) do
@@ -175,7 +176,8 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
           blockchain: blockchain,
           label: label,
           metadata: metadata |> Jason.encode!(),
-          datetime: timestamp |> to_dt_struct()
+          datetime:
+            timestamp |> to_dt_struct() |> DateTime.truncate(:second) |> DateTime.to_naive()
         }
       end)
 

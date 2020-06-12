@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Statistics.UsersWithWatchlist do
+defmodule SanbaseWeb.ExAdmin.Statistics.UsersWithWatchlist do
   use ExAdmin.Register
 
   register_page "UsersWithWatchlist" do

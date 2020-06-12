@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Model.MarketSegment do
+defmodule SanbaseWeb.ExAdmin.Model.MarketSegment do
   use ExAdmin.Register
 
   import Ecto.Query

@@ -81,8 +81,8 @@ defmodule Sanbase.SocialData.SocialVolume do
         recv_timeout: @recv_timeout,
         params: [
           {"search_text", search_text},
-          {"from_timestamp", from |> DateTime.to_iso8601()},
-          {"to_timestamp", to |> DateTime.to_iso8601()},
+          {"from_timestamp", from |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
+          {"to_timestamp", to |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
           {"interval", interval},
           {"source", source}
         ]

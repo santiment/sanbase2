@@ -210,7 +210,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
       SELECT DISTINCT(asset_id)
       FROM #{Map.get(@table_map, metric)}
       PREWHERE metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = ?1 ) AND
-      value != 0 AND NOT isNaN(value)
+      value != 0 AND isNotNull(value) AND NOT isNaN(toFloat64(value))
     )
     """
 
@@ -239,7 +239,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     FROM #{Map.get(@table_map, metric)}
     PREWHERE
       metric_id = ( SELECT argMax(metric_id, computed_at) AS metric_id FROM metric_metadata PREWHERE name = ?1 ) AND
-      value != 0 AND NOT isNaN(value)
+      value != 0 AND isNotNull(value) AND NOT isNaN(toFloat64(value))
     """
 
     args = [Map.get(@name_to_metric_map, metric)]
@@ -255,7 +255,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     PREWHERE
       asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
       metric_id = ( SELECT argMax(metric_id, computed_at) AS metric_id FROM metric_metadata PREWHERE name = ?2 ) AND
-      value != 0 AND NOT isNaN(value)
+      value != 0 AND isNotNull(value) AND NOT isNaN(toFloat64(value))
     """
 
     args = [slug, Map.get(@name_to_metric_map, metric)]
@@ -269,7 +269,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     FROM #{table}
     PREWHERE
       asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
-      dt > toDateTime(?2)
+      dt > toDateTime(?2) AND
+      value != 0 AND isNotNull(value) AND NOT isNaN(toFloat64(value))
     """
 
     # artifical boundary so the query checks less results

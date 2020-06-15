@@ -55,8 +55,8 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
       ]
     } = result
 
-    assert error_message ==
-             "The `to` datetime parameter must be after the `from` datetime parameter\n"
+    assert error_message =~
+             "The `to` datetime parameter must be after the `from` datetime parameter"
   end
 
   test "returns error when `from` param is before 2009 year", context do
@@ -80,7 +80,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
     error = List.first(json_response(result, 200)["errors"])["message"]
 
     assert error ==
-             "Cryptocurrencies didn't exist before 2009-01-01 00:00:00Z.\nPlease check `from` and/or `to` param values.\n"
+             "Cryptocurrencies didn't exist before 2009-01-01 00:00:00Z.\nPlease check `from` and/or `to` parameters values.\n"
   end
 
   test "returns error when `from` and `to` params are both before 2009 year", context do
@@ -104,6 +104,6 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
     error = List.first(json_response(result, 200)["errors"])["message"]
 
     assert error ==
-             "Cryptocurrencies didn't exist before 2009-01-01 00:00:00Z.\nPlease check `from` and/or `to` param values.\n"
+             "Cryptocurrencies didn't exist before 2009-01-01 00:00:00Z.\nPlease check `from` and/or `to` parameters values.\n"
   end
 end

@@ -269,7 +269,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     FROM #{table}
     PREWHERE
       asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
-      dt > toDateTime(?2)
+      dt > toDateTime(?2) AND
+      value != 0 AND NOT isNaN(toFloat64(value))
     """
 
     # artifical boundary so the query checks less results

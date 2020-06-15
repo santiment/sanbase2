@@ -221,7 +221,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     else
       {:error,
        """
-       The `to` datetime parameter must be after the `from` datetime parameter
+       The `to` datetime parameter must be after the `from` datetime parameter.
        """}
     end
   end
@@ -234,7 +234,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
       {:error,
        """
        Cryptocurrencies didn't exist before #{@minimal_datetime_param}.
-       Please check `from` and/or `to` param values.
+       Please check `from` and/or `to` parameters values.
        """}
     end
   end
@@ -264,15 +264,26 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         # If we reach here the first time we checked to < from was not true
         # This means that the middleware rewrote the params in a way that this is
         # now true. If that happens - both from and to are outside the allowed interval
+        %{restricted_from: restricted_from, restricted_to: restricted_to} =
+          Sanbase.Billing.Plan.Restrictions.get(
+            context[:__query_or_metric_atom_name__],
+            context[:auth][:subscription],
+            context[:product_id]
+          )
+
         resolution
         |> Resolution.put_result(
           {:error,
            """
-           Both `from` and `to` parameters are outside the allowed interval
-           you can query with your current subscription plan #{context[:auth][:plan] || :free}.
+           Both `from` and `to` parameters are outside the allowed interval you can query #{
+             context[:__query_or_metric_atom_name__] |> elem(1)
+           } with your current subscription #{context[:product_id] |> Product.code_by_id()} #{
+             context[:auth][:plan] || :free
+           }. Upgrade to a higher tier in order to access more data.
 
-           `from` resolved to: #{from}
-           `to` resolved to: #{to}
+           Allowed time restrictions:
+             - `from` - #{restricted_from || "unrestricted"}
+             - `to` - #{restricted_to || "unrestricted"}
            """}
         )
     end

@@ -167,6 +167,9 @@ defmodule Sanbase.Application do
       # Start the Postgres Ecto repository
       Sanbase.Repo,
 
+      # Telemetry metrics
+      SanbaseWeb.Telemetry,
+
       # Start the Clickhouse Repo
       Sanbase.ClickhouseRepo,
 

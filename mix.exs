@@ -112,6 +112,8 @@ defmodule Sanbase.Mixfile do
       {:stream_data, "~> 0.4.2", only: :test},
       {:stripity_stripe, git: "https://github.com/code-corps/stripity_stripe"},
       {:sweet_xml, "~> 0.6"},
+      {:telemetry_metrics, "~> 0.5"},
+      {:telemetry_poller, "~> 0.4"},
       {:temp, "~> 0.4"},
       {:tesla, "~> 1.0"},
       {:timex, "~> 3.5.0"},

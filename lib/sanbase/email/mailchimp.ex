@@ -143,10 +143,14 @@ defmodule Sanbase.Email.Mailchimp do
           "Error adding email to Mailchimp: #{inspect(body_json)}}. Response: #{inspect(response)}"
         )
 
+        {:error, response.body}
+
       {:error, reason} ->
         Logger.error(
           "Error adding email to Mailchimp : #{body_json}}. Reason: #{inspect(reason)}"
         )
+
+        {:error, reason}
     end
   end
 

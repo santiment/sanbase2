@@ -3,7 +3,8 @@ defmodule Sanbase.ReleaseTasks.Migrate do
     :crypto,
     :ssl,
     :postgrex,
-    :ecto
+    :ecto,
+    :ecto_sql
   ]
 
   def repos, do: Application.get_env(:sanbase, :ecto_repos, [])

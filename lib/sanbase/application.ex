@@ -110,6 +110,9 @@ defmodule Sanbase.Application do
   """
   def prepended_children(container_type) when container_type in ["all", "scrapers"] do
     [
+      # Start the PubSub
+      {Phoenix.PubSub, name: Sanbase.PubSub},
+
       # Start the Kafka Exporter
       {SanExporterEx,
        [

@@ -27,7 +27,7 @@ defmodule Sanbase.Mixfile do
   def application do
     [
       mod: {Sanbase.Application, []},
-      extra_applications: [:logger, :runtime_tools, :sasl, :clickhousex],
+      extra_applications: [:logger, :runtime_tools, :sasl, :clickhousex, :os_mon],
       included_applications: [:oauther, :brod, :kaffe]
     ]
   end
@@ -40,7 +40,7 @@ defmodule Sanbase.Mixfile do
   defp deps() do
     [
       {:absinthe_metrics, "~> 1.0"},
-      {:absinthe_phoenix, github: "absinthe-graphql/absinthe_phoenix", override: true},
+      {:absinthe_phoenix, "~> 2.0"},
       {:absinthe_plug, github: "absinthe-graphql/absinthe_plug", override: true},
       {:absinthe, github: "absinthe-graphql/absinthe", override: true},
       {:arc, git: "https://github.com/marinho10/arc"},
@@ -94,9 +94,11 @@ defmodule Sanbase.Mixfile do
       {:number, "~> 1.0"},
       {:observer_cli, "~> 1.3"},
       {:phoenix_ecto, "~> 4.1"},
+      {:phoenix_live_view, "~> 0.13.2"},
+      {:phoenix_live_dashboard, "~> 0.1"},
       {:phoenix_live_reload, "~> 1.1", only: :dev},
-      {:phoenix_pubsub, "~> 1.1"},
-      {:phoenix, "~> 1.4.3"},
+      {:phoenix_pubsub, "~> 2.0"},
+      {:phoenix, "~> 1.5.3"},
       {:plug_cowboy, "~> 2.0"},
       {:postgrex, "~> 0.15.0", override: true},
       {:prometheus_ecto, "~> 1.3"},

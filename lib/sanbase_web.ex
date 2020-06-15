@@ -20,9 +20,11 @@ defmodule SanbaseWeb do
   def controller do
     quote do
       use Phoenix.Controller, namespace: SanbaseWeb
+
       import Plug.Conn
       import SanbaseWeb.Router.Helpers
       import SanbaseWeb.Gettext
+      import Phoenix.LiveView.Controller
     end
   end
 
@@ -35,18 +37,21 @@ defmodule SanbaseWeb do
       # Import convenience functions from controllers
       import Phoenix.Controller, only: [get_flash: 2, view_module: 1]
       import Phoenix.HTML
-
-      alias SanbaseWeb.Router.Helpers, as: Routes
       import SanbaseWeb.ErrorHelpers
       import SanbaseWeb.Gettext
+      import Phoenix.LiveView.Helpers
+
+      alias SanbaseWeb.Router.Helpers, as: Routes
     end
   end
 
   def router do
     quote do
       use Phoenix.Router
+
       import Plug.Conn
       import Phoenix.Controller
+      import Phoenix.LiveView.Router
     end
   end
 

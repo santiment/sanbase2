@@ -67,13 +67,13 @@ config :sanbase, SanbaseWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "Vq7Rfo0T4EfiLX2/ryYal3O0l9ebBNhyh58cfWdTAUHxEJGu2p9u1WTQ31Ki4Phj",
   render_errors: [view: SanbaseWeb.ErrorView, accepts: ~w(json)],
-  pubsub: [name: Sanbase.PubSub, adapter: Phoenix.PubSub.PG2],
   # should be removed after app.santiment.net migration
   website_url: {:system, "WEBSITE_URL", "http://localhost:4000"},
   backend_url: {:system, "BACKEND_URL", "http://localhost:4000"},
   frontend_url: {:system, "FRONTEND_URL", "http://localhost:4000"},
   insights_url: {:system, "INSIGHTS_URL", "https://insights.santiment.net"},
-  pubsub: [name: Sanbase.PubSub, adapter: Phoenix.PubSub.PG2]
+  pubsub_server: Sanbase.PubSub,
+  live_view: [signing_salt: "FkOgrxfW5aw3HjLOoxCVMvB0py5+Uk5+"]
 
 # Do not log SASL crash reports
 config :sasl, sasl_error_logger: false

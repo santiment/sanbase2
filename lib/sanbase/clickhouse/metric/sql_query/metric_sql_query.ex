@@ -209,7 +209,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     PREWHERE asset_id in (
       SELECT DISTINCT(asset_id)
       FROM #{Map.get(@table_map, metric)}
-      PREWHERE metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = ?1 ) AND
+      PREWHERE metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?1 ) AND
       value != 0 AND isNotNull(value) AND NOT isNaN(toFloat64(value))
     )
     """
@@ -224,8 +224,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     SELECT toUnixTimestamp(argMax(computed_at, dt))
     FROM #{Map.get(@table_map, metric)} FINAL
     PREWHERE
-      metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = ?1 ) AND
-      asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?2 )
+      metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?1 ) AND
+      asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?2 )
     """
 
     args = [Map.get(@name_to_metric_map, metric), slug]
@@ -238,7 +238,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
       toUnixTimestamp(toDateTime(min(dt)))
     FROM #{Map.get(@table_map, metric)}
     PREWHERE
-      metric_id = ( SELECT argMax(metric_id, computed_at) AS metric_id FROM metric_metadata PREWHERE name = ?1 ) AND
+      metric_id = ( SELECT metric_id AS metric_id FROM metric_metadata FINAL PREWHERE name = ?1 ) AND
       value != 0 AND isNotNull(value) AND NOT isNaN(toFloat64(value))
     """
 
@@ -253,8 +253,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
       toUnixTimestamp(toDateTime(min(dt)))
     FROM #{Map.get(@table_map, metric)}
     PREWHERE
-      asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
-      metric_id = ( SELECT argMax(metric_id, computed_at) AS metric_id FROM metric_metadata PREWHERE name = ?2 ) AND
+      asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 ) AND
+      metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 ) AND
       value != 0 AND isNotNull(value) AND NOT isNaN(toFloat64(value))
     """
 
@@ -268,7 +268,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     SELECT distinct(metric_id)
     FROM #{table}
     PREWHERE
-      asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
+      asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 ) AND
       dt > toDateTime(?2) AND
       value != 0 AND isNotNull(value) AND NOT isNaN(toFloat64(value))
     """

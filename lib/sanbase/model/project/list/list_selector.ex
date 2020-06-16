@@ -3,15 +3,46 @@ defmodule Sanbase.Model.Project.ListSelector do
 
   alias Sanbase.Model.Project
 
+  @doc ~s"""
+  Return a list of projects described by the selector object.
+
+  See `args_to_opts/1` for description of the argument format.
+  """
   def projects(args) do
     opts = args_to_opts(args)
 
-    projects = Project.List.projects(opts)
-
-    {:ok, projects}
+    {:ok, Project.List.projects(opts)}
   end
 
-  defp args_to_opts(args) do
+  @doc ~s"""
+  Transform a selector to a keyword list that can be passed to the functions
+  in the `Project.List` module to apply filtering/ordering/pagination.
+
+  The argument is a map in the following format:
+  %{
+    selector: %{
+      filters: [
+        %{
+          metric: "daily_active_addresses",
+          from: ~U[2020-04-22 00:00:00Z],
+          to: ~U[2020-04-29 00:00:00Z],
+          aggregation: :avg,
+          operator: :greater_than,
+          threshold: 10
+        }
+      ],
+      order_by: %{
+        metric: "circulation",
+        from: ~U[2020-04-25 00:00:00Z],
+        to: ~U[2020-04-29 00:00:00Z],
+        aggregation: :last
+        direction: :desc
+      },
+      pagination: %{page: 1, page_size: 10}
+    }
+  }
+  """
+  def args_to_opts(args) do
     filters = get_in(args, [:selector, :filters])
     order_by = get_in(args, [:selector, :order_by])
     pagination = get_in(args, [:selector, :pagination])

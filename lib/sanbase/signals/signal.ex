@@ -34,8 +34,7 @@ defimpl Sanbase.Signal, for: Any do
           id: user_trigger_id,
           trigger: %{
             settings: %{
-              payload: payload_map,
-              template_kv: template_kv
+              payload: payload_map
             }
           }
         },

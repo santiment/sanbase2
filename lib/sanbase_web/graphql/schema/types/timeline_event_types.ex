@@ -10,6 +10,15 @@ defmodule SanbaseWeb.Graphql.TimelineEventTypes do
     value(:author)
   end
 
+  enum :tag_enum do
+    value(:by_me)
+    value(:by_sanfam)
+    value(:by_followed)
+    value(:insight)
+    value(:pulse)
+    value(:alert)
+  end
+
   enum(:author_filter, values: [:all, :own, :followed, :sanfam])
 
   input_object :timeline_events_filter_input do
@@ -34,6 +43,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventTypes do
     field(:payload, :json)
     field(:data, :json)
     field(:votes, list_of(:upvote))
+    field(:tags, list_of(:tag_enum))
 
     field :comments_count, :integer do
       resolve(&TimelineEventResolver.comments_count/3)

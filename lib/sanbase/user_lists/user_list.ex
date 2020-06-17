@@ -78,9 +78,18 @@ defmodule Sanbase.UserList do
   Return a list of all projects in a watchlist.
   """
   def get_projects(%__MODULE__{function: fun} = user_list) do
-    (WatchlistFunction.evaluate(fun) ++ ListItem.get_projects(user_list))
-    |> Enum.reject(&is_nil(&1.slug))
-    |> Enum.uniq_by(& &1.id)
+    case WatchlistFunction.evaluate(fun) do
+      {:error, error} ->
+        {:error, error}
+
+      projects ->
+        result =
+          (projects ++ ListItem.get_projects(user_list))
+          |> Enum.reject(&is_nil(&1.slug))
+          |> Enum.uniq_by(& &1.id)
+
+        {:ok, result}
+    end
   end
 
   def create_user_list(%User{id: user_id} = _user, params \\ %{}) do

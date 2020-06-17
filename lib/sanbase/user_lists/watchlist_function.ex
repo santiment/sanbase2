@@ -8,13 +8,27 @@ defmodule Sanbase.WatchlistFunction do
   @impl Ecto.Type
   def type, do: :map
 
+  def evaluate(%__MODULE__{name: "selector", args: args}) do
+    case Map.split(args, ["filters", "order", "pagination"]) do
+      {selector, empty_map} when map_size(empty_map) == 0 ->
+        {:ok, projects} = Project.ListSelector.projects(%{selector: selector})
+        projects
+
+      {_selector, unsupported_keys_map} ->
+        {:error,
+         "Dynamic watchlist 'selector' has unsupported fields: #{
+           inspect(Map.keys(unsupported_keys_map))
+         }"}
+    end
+  end
+
   def evaluate(%__MODULE__{name: "market_segment", args: args}) do
-    market_segment = Map.get(args, "market_segment") || Map.get(args, :market_segment)
+    market_segment = Map.get(args, "market_segment") || Map.fetch!(args, :market_segment)
     Project.List.by_market_segment_any_of(market_segment)
   end
 
   def evaluate(%__MODULE__{name: "market_segments", args: args}) do
-    market_segments = Map.get(args, "market_segments") || Map.get(args, :market_segments)
+    market_segments = Map.get(args, "market_segments") || Map.fetch!(args, :market_segments)
     Project.List.by_market_segment_all_of(market_segments)
   end
 

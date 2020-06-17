@@ -23,9 +23,45 @@ defimpl Sanbase.Signal, for: Any do
     |> Enum.map(fn
       "telegram" -> send_telegram(user_trigger)
       "email" -> send_email(user_trigger)
+      %{webhook: webhook_url} -> send_webhook(user_trigger, webhook_url)
       "web_push" -> []
     end)
     |> List.flatten()
+  end
+
+  def send_webhook(
+        %{
+          id: user_trigger_id,
+          trigger: %{
+            settings: %{
+              payload: payload_map
+            }
+          }
+        },
+        webhook_url
+      ) do
+    Enum.map(payload_map, fn {identifier, payload} ->
+      payload =
+        %{
+          timestamp: DateTime.utc_now() |> DateTime.to_unix(),
+          identifier: identifier,
+          payload: payload,
+          trigger_id: user_trigger_id,
+          trigger_url: SanbaseWeb.Endpoint.show_signal_url(user_trigger_id)
+        }
+        |> Jason.encode!()
+
+      case HTTPoison.post(webhook_url, payload) do
+        {:ok, %HTTPoison.Response{status_code: 200}} ->
+          {identifier, :ok}
+
+        {:ok, %HTTPoison.Response{status_code: code}} ->
+          {identifier, {:error, "Error sending webhook alert. Status code: #{code}"}}
+
+        {:error, reason} ->
+          {identifier, {:error, "Error sending webhook alert. Reason: #{inspect(reason)}"}}
+      end
+    end)
   end
 
   def send_email(%{
@@ -54,7 +90,7 @@ defimpl Sanbase.Signal, for: Any do
     )
 
     payload_map
-    |> Enum.map(fn {identifier, _} ->
+    |> Enum.map(fn {identifier, _payload} ->
       {identifier, {:error, "No email linked for user with id #{id}"}}
     end)
   end

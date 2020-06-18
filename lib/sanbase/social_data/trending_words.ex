@@ -54,7 +54,7 @@ defmodule Sanbase.SocialData.TrendingWords do
   # of computing the latest data
   @hours_back_ensure_has_data 3
 
-  @table "trending_words_top_500"
+  @table "trending_words_v3_top_500"
   schema @table do
     field(:dt, :utc_datetime)
     field(:word, :string)
@@ -112,6 +112,9 @@ defmodule Sanbase.SocialData.TrendingWords do
            "1h",
            size
          ) do
+      {:ok, []} ->
+        {:ok, []}
+
       {:ok, stats} ->
         {_, words} =
           stats
@@ -203,7 +206,7 @@ defmodule Sanbase.SocialData.TrendingWords do
            word,
            any(project) AS project,
            SUM(score) / 4 AS total_score
-        FROM trending_words
+        FROM #{@table}
         PREWHERE
           dt >= toDateTime(?2) AND
           dt < toDateTime(?3) AND

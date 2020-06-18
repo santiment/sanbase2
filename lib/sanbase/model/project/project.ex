@@ -137,6 +137,8 @@ defmodule Sanbase.Model.Project do
 
   defdelegate contract_address(project), to: Project.ContractData
 
+  defdelegate has_contract_address?(project), to: Project.ContractData
+
   defdelegate twitter_handle(project), to: Project.TwitterData
 
   def coinmarketcap_id(%Project{source_slug_mappings: []}), do: nil

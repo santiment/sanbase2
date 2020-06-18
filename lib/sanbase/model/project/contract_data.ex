@@ -20,6 +20,10 @@ defmodule Sanbase.Model.Project.ContractData do
 
   def special_cases(), do: @special_cases
 
+  def has_contract_address?(%Project{main_contract_address: contract}) do
+    is_binary(contract)
+  end
+
   @spec contract_info_by_slug(String.t()) :: {:ok, contract, decimals} | {:error, String.t()}
         when contract: String.t(), decimals: non_neg_integer()
   def contract_info_by_slug(slug)

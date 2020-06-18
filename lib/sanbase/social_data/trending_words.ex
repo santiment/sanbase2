@@ -56,8 +56,7 @@ defmodule Sanbase.SocialData.TrendingWords do
 
   require Sanbase.Utils.Config, as: Config
 
-  @table Config.compile_get(:trending_words_table)
-  schema @table do
+  schema Config.get(:trending_words_table) do
     field(:dt, :utc_datetime)
     field(:word, :string)
     field(:volume, :float)
@@ -208,7 +207,7 @@ defmodule Sanbase.SocialData.TrendingWords do
            word,
            any(project) AS project,
            SUM(score) / 4 AS total_score
-        FROM #{@table}
+        FROM #{Config.get(:trending_words_table)}
         PREWHERE
           dt >= toDateTime(?2) AND
           dt < toDateTime(?3) AND

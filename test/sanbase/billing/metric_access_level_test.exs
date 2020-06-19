@@ -129,6 +129,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "exchange_inflow",
         "exchange_outflow",
         "exchange_balance",
+        "age_consumed",
         "age_destroyed",
         "nvt",
         "nvt_transaction_volume",

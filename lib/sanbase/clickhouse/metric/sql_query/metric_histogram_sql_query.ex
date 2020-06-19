@@ -39,8 +39,8 @@ defmodule Sanbase.Clickhouse.Metric.HistogramSqlQuery do
           avg(value) AS price
         FROM intraday_metrics FINAL
         PREWHERE
-          asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1) AND
-          metric_id = (SELECT metric_id FROM metric_metadata FINAL PREWHERE name = 'price_usd')
+          asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 LIMIT 1) AND
+          metric_id = (SELECT metric_id FROM metric_metadata FINAL PREWHERE name = 'price_usd' LIMIT 1)
         GROUP BY t
       ) USING (t)
     )
@@ -95,8 +95,8 @@ defmodule Sanbase.Clickhouse.Metric.HistogramSqlQuery do
           avg(value) AS price
         FROM intraday_metrics FINAL
         PREWHERE
-          asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1) AND
-          metric_id = (SELECT metric_id FROM metric_metadata FINAL PREWHERE name = 'price_usd')
+          asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 LIMIT 1) AND
+          metric_id = (SELECT metric_id FROM metric_metadata FINAL PREWHERE name = 'price_usd' LIMIT 1)
         GROUP BY t
       ) USING (t)
     )

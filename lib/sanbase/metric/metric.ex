@@ -398,17 +398,26 @@ defmodule Sanbase.Metric do
       metrics_in_modules
       |> Enum.any?(&(not match?({:ok, _}, &1)))
 
+    available_metrics = remove_metrics_manually(selector, available_metrics)
+
     case has_errors? do
       true -> {:nocache, {:ok, available_metrics}}
       false -> {:ok, available_metrics}
     end
   end
 
-  def available_timeseries_metrics_for_slug(slug) do
+  # Temporary remove bitcoin exchange metrics from the lists of available metrics
+  defp remove_metrics_manually(%{slug: "bitcoin"}, metrics) do
+    metrics |> Enum.reject(&String.contains?(&1, "exchange"))
+  end
+
+  defp remove_metrics_manually(_selector, metrics), do: metrics
+
+  def available_timeseries_metrics_for_slug(selector) do
     available_metrics =
       Sanbase.Cache.get_or_store(
-        {__MODULE__, :available_metrics_for_slug, slug} |> Sanbase.Cache.hash(),
-        fn -> available_metrics_for_slug(slug) end
+        {__MODULE__, :available_metrics_for_slug, selector} |> Sanbase.Cache.hash(),
+        fn -> available_metrics_for_slug(selector) end
       )
 
     case available_metrics do
@@ -420,11 +429,11 @@ defmodule Sanbase.Metric do
     end
   end
 
-  def available_histogram_metrics_for_slug(slug) do
+  def available_histogram_metrics_for_slug(selector) do
     available_metrics =
       Sanbase.Cache.get_or_store(
-        {__MODULE__, :available_metrics_for_slug, slug} |> Sanbase.Cache.hash(),
-        fn -> available_metrics_for_slug(slug) end
+        {__MODULE__, :available_metrics_for_slug, selector} |> Sanbase.Cache.hash(),
+        fn -> available_metrics_for_slug(selector) end
       )
 
     case available_metrics do

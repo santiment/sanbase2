@@ -3,7 +3,7 @@
 --
 
 -- Dumped from database version 11.2
--- Dumped by pg_dump version 11.2
+-- Dumped by pg_dump version 12.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -12,6 +12,7 @@ SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
 SET check_function_bodies = false;
+SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
@@ -71,8 +72,6 @@ CREATE TYPE public.status AS ENUM (
 
 
 SET default_tablespace = '';
-
-SET default_with_oids = false;
 
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
@@ -1931,6 +1930,38 @@ CREATE TABLE public.user_followers (
 
 
 --
+-- Name: user_intercom_attributes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_intercom_attributes (
+    id bigint NOT NULL,
+    properties jsonb,
+    user_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: user_intercom_attributes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_intercom_attributes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_intercom_attributes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_intercom_attributes_id_seq OWNED BY public.user_intercom_attributes.id;
+
+
+--
 -- Name: user_lists; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2541,6 +2572,13 @@ ALTER TABLE ONLY public.user_api_key_tokens ALTER COLUMN id SET DEFAULT nextval(
 
 
 --
+-- Name: user_intercom_attributes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_intercom_attributes ALTER COLUMN id SET DEFAULT nextval('public.user_intercom_attributes_id_seq'::regclass);
+
+
+--
 -- Name: user_lists id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3047,6 +3085,14 @@ ALTER TABLE ONLY public.user_followers
 
 
 --
+-- Name: user_intercom_attributes user_intercom_attributes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_intercom_attributes
+    ADD CONSTRAINT user_intercom_attributes_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: user_lists user_lists_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3521,6 +3567,13 @@ CREATE UNIQUE INDEX user_api_key_tokens_token_index ON public.user_api_key_token
 --
 
 CREATE UNIQUE INDEX user_followers_user_id_follower_id_index ON public.user_followers USING btree (user_id, follower_id);
+
+
+--
+-- Name: user_intercom_attributes_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_intercom_attributes_user_id_index ON public.user_intercom_attributes USING btree (user_id);
 
 
 --
@@ -4105,6 +4158,14 @@ ALTER TABLE ONLY public.user_followers
 
 
 --
+-- Name: user_intercom_attributes user_intercom_attributes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_intercom_attributes
+    ADD CONSTRAINT user_intercom_attributes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: user_lists user_lists_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4450,3 +4511,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200601122422);
 INSERT INTO public."schema_migrations" (version) VALUES (20200601142229);
 INSERT INTO public."schema_migrations" (version) VALUES (20200602101130);
 INSERT INTO public."schema_migrations" (version) VALUES (20200611093359);
+INSERT INTO public."schema_migrations" (version) VALUES (20200622132624);

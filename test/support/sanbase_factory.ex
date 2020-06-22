@@ -25,6 +25,7 @@ defmodule Sanbase.Factory do
   alias Sanbase.Billing.Subscription.SignUpTrial
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Chart
+  alias Sanbase.TableConfiguration
   alias Sanbase.Email.NewsletterToken
 
   def user_factory() do
@@ -82,6 +83,13 @@ defmodule Sanbase.Factory do
     %Chart.Configuration{
       title: "chart configuration",
       project: insert(:random_project),
+      user: insert(:user)
+    }
+  end
+
+  def table_configuration_factory() do
+    %TableConfiguration{
+      title: "table configuration",
       user: insert(:user)
     }
   end

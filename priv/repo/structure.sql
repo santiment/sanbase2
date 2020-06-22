@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 11.2
--- Dumped by pg_dump version 12.3
+-- Dumped from database version 10.13
+-- Dumped by pg_dump version 11.6
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -373,7 +373,8 @@ CREATE TABLE public.featured_items (
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     chart_configuration_id bigint,
-    CONSTRAINT only_one_fk CHECK (((((
+    table_configuration_id bigint,
+    CONSTRAINT only_one_fk CHECK ((((((
 CASE
     WHEN (post_id IS NULL) THEN 0
     ELSE 1
@@ -388,6 +389,10 @@ CASE
 END) +
 CASE
     WHEN (chart_configuration_id IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (table_configuration_id IS NULL) THEN 0
     ELSE 1
 END) = 1))
 );
@@ -1764,6 +1769,42 @@ ALTER SEQUENCE public.subscriptions_id_seq OWNED BY public.subscriptions.id;
 
 
 --
+-- Name: table_configurations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.table_configurations (
+    id bigint NOT NULL,
+    user_id bigint,
+    title character varying(255) NOT NULL,
+    description text,
+    is_public boolean DEFAULT false NOT NULL,
+    page_size integer DEFAULT 50,
+    columns jsonb,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: table_configurations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.table_configurations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: table_configurations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.table_configurations_id_seq OWNED BY public.table_configurations.id;
+
+
+--
 -- Name: tags; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1975,7 +2016,8 @@ CREATE TABLE public.user_lists (
     updated_at timestamp without time zone NOT NULL,
     function jsonb DEFAULT '{"args": [], "name": "empty"}'::jsonb,
     slug character varying(255),
-    is_monitored boolean DEFAULT false
+    is_monitored boolean DEFAULT false,
+    table_configuration_id bigint
 );
 
 
@@ -2544,6 +2586,13 @@ ALTER TABLE ONLY public.subscriptions ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: table_configurations id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.table_configurations ALTER COLUMN id SET DEFAULT nextval('public.table_configurations_id_seq'::regclass);
+
+
+--
 -- Name: tags id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3037,6 +3086,14 @@ ALTER TABLE ONLY public.subscriptions
 
 
 --
+-- Name: table_configurations table_configurations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.table_configurations
+    ADD CONSTRAINT table_configurations_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: tags tags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3217,6 +3274,13 @@ CREATE UNIQUE INDEX featured_items_chart_configuration_id_index ON public.featur
 --
 
 CREATE UNIQUE INDEX featured_items_post_id_index ON public.featured_items USING btree (post_id);
+
+
+--
+-- Name: featured_items_table_configuration_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX featured_items_table_configuration_id_index ON public.featured_items USING btree (table_configuration_id);
 
 
 --
@@ -3734,6 +3798,14 @@ ALTER TABLE ONLY public.featured_items
 
 
 --
+-- Name: featured_items featured_items_table_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.featured_items
+    ADD CONSTRAINT featured_items_table_configuration_id_fkey FOREIGN KEY (table_configuration_id) REFERENCES public.table_configurations(id);
+
+
+--
 -- Name: featured_items featured_items_user_list_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4075,6 +4147,14 @@ ALTER TABLE ONLY public.subscriptions
 
 ALTER TABLE ONLY public.subscriptions
     ADD CONSTRAINT subscriptions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: table_configurations table_configurations_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.table_configurations
+    ADD CONSTRAINT table_configurations_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -4512,3 +4592,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200601142229);
 INSERT INTO public."schema_migrations" (version) VALUES (20200602101130);
 INSERT INTO public."schema_migrations" (version) VALUES (20200611093359);
 INSERT INTO public."schema_migrations" (version) VALUES (20200622132624);
+INSERT INTO public."schema_migrations" (version) VALUES (20200618135228);
+INSERT INTO public."schema_migrations" (version) VALUES (20200619102126);
+INSERT INTO public."schema_migrations" (version) VALUES (20200622084937);

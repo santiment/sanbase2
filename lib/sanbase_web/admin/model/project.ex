@@ -36,6 +36,20 @@ defmodule SanbaseWeb.ExAdmin.Model.Project do
     show project do
       attributes_table(all: true)
 
+      panel "Contract Addresses" do
+        markup_contents do
+          a ".btn .btn-primary",
+            href: "/admin/contract_addresses/new?project_id=" <> to_string(project.id) do
+            "New Contract Address"
+          end
+        end
+
+        table_for Sanbase.Repo.preload(project, [:contract_addresses]).contract_addresses do
+          column(:address, link: true)
+          column(:label)
+        end
+      end
+
       panel "Market Segments" do
         markup_contents do
           a ".btn .btn-primary",

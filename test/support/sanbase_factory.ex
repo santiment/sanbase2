@@ -195,6 +195,14 @@ defmodule Sanbase.Factory do
     |> merge_attributes(attrs)
   end
 
+  def contract_address_factory() do
+    %Project.ContractAddress{
+      address: "0x" <> rand_hex_str(16),
+      label: rand_str(6),
+      description: "Some description."
+    }
+  end
+
   def source_slug_mapping_factory() do
     %Project.SourceSlugMapping{}
   end

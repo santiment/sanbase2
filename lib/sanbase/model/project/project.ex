@@ -48,6 +48,7 @@ defmodule Sanbase.Model.Project do
 
     has_one(:social_volume_query, Project.SocialVolumeQuery)
 
+    has_many(:contract_addresses, Project.ContractAddress)
     has_many(:source_slug_mappings, Project.SourceSlugMapping)
     has_many(:icos, Ico)
     has_many(:github_organizations, Project.GithubOrganization)

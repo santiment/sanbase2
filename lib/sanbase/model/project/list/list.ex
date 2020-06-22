@@ -440,6 +440,7 @@ defmodule Sanbase.Model.Project.List do
 
     data =
       projects_query(opts)
+      |> preload([:contract_addresses])
       |> select([p], {p.slug, p.main_contract_address, p.token_decimals})
       |> Repo.all()
 

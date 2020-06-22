@@ -33,14 +33,17 @@ defmodule Sanbase.Model.Project.ContractData do
   end
 
   def contract_info_by_slug(slug) do
-    from(p in Project,
-      where: p.slug == ^slug,
-      select: {p.main_contract_address, p.token_decimals}
+    from(
+      contract in Project.ContractAddress,
+      inner_join: p in Project,
+      on: contract.project_id == p.id,
+      where: p.slug == ^slug
     )
-    |> Repo.one()
+    |> Repo.all()
     |> case do
-      {contract, token_decimals} when is_binary(contract) ->
-        {:ok, String.downcase(contract), token_decimals || 0}
+      [_ | _] = list ->
+        contract = Enum.find(list, &(&1.label == "main")) || List.first(list)
+        {:ok, {String.downcase(contract.address), contract.decimals || 0}}
 
       _ ->
         {:error, {:missing_contract, "Can't find contract address of project with slug: #{slug}"}}
@@ -64,18 +67,21 @@ defmodule Sanbase.Model.Project.ContractData do
   end
 
   def contract_info_infrastructure_by_slug(slug) do
-    from(p in Project,
+    from(
+      p in Project,
       where: p.slug == ^slug,
-      inner_join: infr in assoc(p, :infrastructure),
-      select: {p.main_contract_address, p.token_decimals, infr.code}
+      preload: [:infrastructure, :contract_addresses]
     )
     |> Repo.one()
     |> case do
-      {contract, token_decimals, infr} when is_binary(contract) ->
-        {:ok, String.downcase(contract), token_decimals || 0, infr}
+      %Project{contract_addresses: [_ | _] = list, infrastructure: %{code: infr_code}} ->
+        contract = Enum.find(list, &(&1.label == "main")) || List.first(list)
+        {:ok, String.downcase(contract.address), contract.decimals || 0, infr_code}
 
       _ ->
-        {:error, {:missing_contract, "Can't find contract address of project with slug: #{slug}"}}
+        {:error,
+         {:missing_contract,
+          "Can't find contract address or infrastructure of project with slug: #{slug}"}}
     end
   end
 
@@ -100,16 +106,16 @@ defmodule Sanbase.Model.Project.ContractData do
     end
   end
 
-  def contract_info(%Project{
-        main_contract_address: main_contract_address,
-        token_decimals: token_decimals
-      })
-      when not is_nil(main_contract_address) do
-    {:ok, String.downcase(main_contract_address), token_decimals || 0}
-  end
-
   def contract_info(%Project{} = project) do
-    {:error, {:missing_contract, "Can't find contract address of #{Project.describe(project)}"}}
+    case Repo.preload(project, [:contract_addresses]) do
+      %Project{contract_addresses: [_ | _] = list} ->
+        contract = Enum.find(list, &(&1.label == "main")) || List.first(list)
+        {:ok, String.downcase(contract.address), contract.decimals || 0}
+
+      _ ->
+        {:error,
+         {:missing_contract, "Can't find contract address of #{Project.describe(project)}"}}
+    end
   end
 
   def contract_info(data) do

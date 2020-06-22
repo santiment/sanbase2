@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 11.2
--- Dumped by pg_dump version 12.3
+-- Dumped from database version 10.13
+-- Dumped by pg_dump version 11.6
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -72,6 +72,8 @@ CREATE TYPE public.status AS ENUM (
 
 
 SET default_tablespace = '';
+
+SET default_with_oids = false;
 
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
@@ -215,6 +217,41 @@ CREATE SEQUENCE public.comments_id_seq
 --
 
 ALTER SEQUENCE public.comments_id_seq OWNED BY public.comments.id;
+
+
+--
+-- Name: contract_addresses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.contract_addresses (
+    id bigint NOT NULL,
+    address character varying(255) NOT NULL,
+    decimals integer DEFAULT 0,
+    label character varying(255),
+    description text,
+    project_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: contract_addresses_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.contract_addresses_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: contract_addresses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.contract_addresses_id_seq OWNED BY public.contract_addresses.id;
 
 
 --
@@ -2236,6 +2273,13 @@ ALTER TABLE ONLY public.comments ALTER COLUMN id SET DEFAULT nextval('public.com
 
 
 --
+-- Name: contract_addresses id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.contract_addresses ALTER COLUMN id SET DEFAULT nextval('public.contract_addresses_id_seq'::regclass);
+
+
+--
 -- Name: currencies id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2650,6 +2694,14 @@ ALTER TABLE ONLY public.comment_notifications
 
 ALTER TABLE ONLY public.comments
     ADD CONSTRAINT comments_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: contract_addresses contract_addresses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.contract_addresses
+    ADD CONSTRAINT contract_addresses_pkey PRIMARY KEY (id);
 
 
 --
@@ -3168,6 +3220,13 @@ CREATE INDEX chart_configurations_project_id_index ON public.chart_configuration
 --
 
 CREATE INDEX chart_configurations_user_id_index ON public.chart_configurations USING btree (user_id);
+
+
+--
+-- Name: contract_addresses_project_id_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX contract_addresses_project_id_address_index ON public.contract_addresses USING btree (project_id, address);
 
 
 --
@@ -3699,6 +3758,14 @@ ALTER TABLE ONLY public.comments
 
 ALTER TABLE ONLY public.comments
     ADD CONSTRAINT comments_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: contract_addresses contract_addresses_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.contract_addresses
+    ADD CONSTRAINT contract_addresses_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id);
 
 
 --
@@ -4511,4 +4578,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200601122422);
 INSERT INTO public."schema_migrations" (version) VALUES (20200601142229);
 INSERT INTO public."schema_migrations" (version) VALUES (20200602101130);
 INSERT INTO public."schema_migrations" (version) VALUES (20200611093359);
+INSERT INTO public."schema_migrations" (version) VALUES (20200622093455);
+INSERT INTO public."schema_migrations" (version) VALUES (20200622095648);
 INSERT INTO public."schema_migrations" (version) VALUES (20200622132624);

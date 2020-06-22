@@ -11,29 +11,6 @@ defmodule Sanbase.SocialData.Sentiment do
 
   @recv_timeout 25_000
 
-  def sentiment(selector, from, to, interval, source, type)
-      when source in [:all, "all", :total, "total"] do
-    result_tuples =
-      SocialHelper.sources()
-      |> Sanbase.Parallel.map(
-        fn source -> sentiment(selector, from, to, interval, source, type) end,
-        max_concurrency: 4
-      )
-
-    case Enum.find(result_tuples, &match?({:error, _}, &1)) do
-      error when not is_nil(error) ->
-        error
-
-      nil ->
-        result =
-          result_tuples
-          |> Enum.flat_map(fn {:ok, data} -> data end)
-          |> Sanbase.Utils.Transform.sum_by_datetime(:value)
-
-        {:ok, result}
-    end
-  end
-
   def sentiment(selector, from, to, interval, source, type) do
     case sentiment_request(selector, from, to, interval, source, type) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->

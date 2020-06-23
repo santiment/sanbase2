@@ -1,6 +1,4 @@
 defmodule Sanbase.Utils.Config do
-  alias __MODULE__, as: Config
-
   def parse_config_value({:system, env_key, default}) do
     System.get_env(env_key) || default
   end
@@ -13,11 +11,19 @@ defmodule Sanbase.Utils.Config do
     value
   end
 
+  defmacro compile_get(key) do
+    quote bind_quoted: [key: key] do
+      Application.compile_env!(:sanbase, __MODULE__)
+      |> Keyword.get(key)
+      |> Sanbase.Utils.Config.parse_config_value()
+    end
+  end
+
   defmacro get(key) do
     quote bind_quoted: [key: key] do
       Application.fetch_env!(:sanbase, __MODULE__)
       |> Keyword.get(key)
-      |> Config.parse_config_value()
+      |> Sanbase.Utils.Config.parse_config_value()
     end
   end
 
@@ -28,7 +34,7 @@ defmodule Sanbase.Utils.Config do
         {:ok, env} -> env |> Keyword.get(key, default)
         _ -> default
       end
-      |> Config.parse_config_value()
+      |> Sanbase.Utils.Config.parse_config_value()
     end
   end
 
@@ -36,7 +42,7 @@ defmodule Sanbase.Utils.Config do
     quote bind_quoted: [module: module, key: key] do
       Application.fetch_env!(:sanbase, module)
       |> Keyword.get(key)
-      |> Config.parse_config_value()
+      |> Sanbase.Utils.Config.parse_config_value()
     end
   end
 
@@ -47,7 +53,7 @@ defmodule Sanbase.Utils.Config do
         {:ok, env} -> env |> Keyword.get(key, default)
         _ -> default
       end
-      |> Config.parse_config_value()
+      |> Sanbase.Utils.Config.parse_config_value()
     end
   end
 end

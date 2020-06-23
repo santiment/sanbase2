@@ -43,7 +43,7 @@ These are the fields describing a trigger.
 
 - **type** Defines the type of the trigger. Can be one of: `["daily_active_addresses", "price_absolute_change", "price_percent_change", "trending_words", "price_volume_difference", "metric_signal"]`
 - **target**: Slug or list of slugs or watchlist or ethereum addresses or list of ethereum addresses - `{"slug": "naga"} | {"slug": ["ethereum", "santiment"]} | {"watchlist_id": watchlsit_id} | {"eth_address": "0x123"} | {"eth_address": ["0x123", "0x234"]}`.
-- **channel**: A channel where the signal is sent. Can be one of `"telegram" | "email"` or a list of both.
+- **channel**: A channel where the signal is sent. Can be one of `"telegram" | "email" | "web_push" | {"webhook": <webhook_url>}` or a list of any combination.
 - **time_window**: `1d`, `4w`, `1h` - Time string we use throughout the API for `interval`
 - **operation** - A map describing the operation that triggers the signal. Check the examples.
 - **threshold** - Float threshold used in `price_volume_difference`
@@ -58,7 +58,7 @@ These are the fields describing a trigger.
 {
   "type": "price_absolute_change",
   "target": { "slug": "santiment" },
-  "channel": "telegram",
+  "channel": ["telegram", { "webhook": "http://mywebhook.com/signal" }],
   "operation": { "above": 0.51 }
 }
 ```

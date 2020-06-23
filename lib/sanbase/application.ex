@@ -164,6 +164,12 @@ defmodule Sanbase.Application do
       # Start the Postgres Ecto repository
       Sanbase.Repo,
 
+      # Start the PubSub
+      {Phoenix.PubSub, name: Sanbase.PubSub},
+
+      # Telemetry metrics
+      SanbaseWeb.Telemetry,
+
       # Start the Clickhouse Repo
       Sanbase.ClickhouseRepo,
 

@@ -45,7 +45,7 @@ config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
 
 config :sanbase, Sanbase.ClickhouseRepo,
   adapter: Ecto.Adapters.Postgres,
-  queue_target: 1000,
+  queue_target: 5000,
   queue_interval: 1000
 
 config :sanbase, Sanbase.Repo,
@@ -53,7 +53,7 @@ config :sanbase, Sanbase.Repo,
   adapter: Ecto.Adapters.Postgres,
   pool_size: {:system, "SANBASE_POOL_SIZE", "20"},
   max_overflow: 5,
-  queue_target: 500,
+  queue_target: 5000,
   queue_interval: 1000,
   # because of pgbouncer
   prepare: :unnamed,
@@ -67,13 +67,13 @@ config :sanbase, SanbaseWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "Vq7Rfo0T4EfiLX2/ryYal3O0l9ebBNhyh58cfWdTAUHxEJGu2p9u1WTQ31Ki4Phj",
   render_errors: [view: SanbaseWeb.ErrorView, accepts: ~w(json)],
-  pubsub: [name: Sanbase.PubSub, adapter: Phoenix.PubSub.PG2],
   # should be removed after app.santiment.net migration
   website_url: {:system, "WEBSITE_URL", "http://localhost:4000"},
   backend_url: {:system, "BACKEND_URL", "http://localhost:4000"},
   frontend_url: {:system, "FRONTEND_URL", "http://localhost:4000"},
   insights_url: {:system, "INSIGHTS_URL", "https://insights.santiment.net"},
-  pubsub: [name: Sanbase.PubSub, adapter: Phoenix.PubSub.PG2]
+  pubsub_server: Sanbase.PubSub,
+  live_view: [signing_salt: "FkOgrxfW5aw3HjLOoxCVMvB0py5+Uk5+"]
 
 # Do not log SASL crash reports
 config :sasl, sasl_error_logger: false
@@ -128,6 +128,9 @@ config :sanbase, Sanbase.MandrillApi,
 config :sanbase, Sanbase.TechIndicators, url: {:system, "TECH_INDICATORS_URL"}
 
 config :sanbase, Sanbase.SocialData, metricshub_url: {:system, "METRICS_HUB_URL"}
+
+config :sanbase, Sanbase.SocialData.TrendingWords,
+  trending_words_table: {:system, "TRENDING_WORDS_TABLE", "trending_words_top_500"}
 
 config :arc,
   storage: Arc.Storage.S3,

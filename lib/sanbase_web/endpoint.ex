@@ -5,9 +5,26 @@ defmodule SanbaseWeb.Endpoint do
 
   require Sanbase.Utils.Config, as: Config
 
+  @session_options [
+    store: :cookie,
+    # 30 days
+    max_age: 24 * 60 * 60 * 30,
+    # Doesn't need to be a secret. Session cookies are signed by both secret_key_base and signing_salt
+    # For reference: https://github.com/phoenixframework/phoenix/issues/2146
+    signing_salt: "grT-As16"
+  ]
+
   socket("/socket", SanbaseWeb.UserSocket,
     # or list of options
     websocket: true
+  )
+
+  socket("/live", Phoenix.LiveView.Socket,
+    websocket: [
+      connect_info: [
+        session: {SanbaseWeb.LiveViewUtils, :session_options, [@session_options]}
+      ]
+    ]
   )
 
   # Serve at "/" the static files from "priv/static" directory.
@@ -40,14 +57,7 @@ defmodule SanbaseWeb.Endpoint do
   plug(Plug.Head)
 
   # Some things are configured at runtime in SanbaseWeb.Plug.SessionPlug.call
-  plug(SanbaseWeb.Plug.SessionPlug,
-    store: :cookie,
-    # 30 days
-    max_age: 24 * 60 * 60 * 30,
-    # Doesn't need to be a secret. Session cookies are signed by both secret_key_base and signing_salt
-    # For reference: https://github.com/phoenixframework/phoenix/issues/2146
-    signing_salt: "grT-As16"
-  )
+  plug(SanbaseWeb.Plug.SessionPlug, @session_options)
 
   # makes the /metrics URL happen
   plug(Sanbase.Prometheus.Exporter)

@@ -36,7 +36,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "social_dominance_total"
   ]
 
-  @sentiment_timeseries_metrics for name <- ['sentiment'],
+  @sentiment_timeseries_metrics for name <- ["sentiment"],
                                     type <- ["positive", "negative", "balance", "volume_consumed"],
                                     source <-
                                       ["total"] ++ Sanbase.SocialData.SocialHelper.sources(),
@@ -231,7 +231,10 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime(metric, _selector), do: metric |> metric_to_source |> source_first_datetime()
+  def first_datetime(metric, _selector) do
+    {_metric, source} = SocialHelper.split_by_source(metric)
+    source |> source_first_datetime()
+  end
 
   @impl Sanbase.Metric.Behaviour
   def last_datetime_computed_at(_metric, _selector), do: {:ok, Timex.now()}
@@ -253,16 +256,4 @@ defmodule Sanbase.SocialData.MetricAdapter do
   defp source_first_datetime("reddit"), do: {:ok, ~U[2016-01-01 00:00:00Z]}
   defp source_first_datetime("discord"), do: {:ok, ~U[2016-05-21 00:00:00Z]}
   defp source_first_datetime("professional_traders_chat"), do: {:ok, ~U[2018-02-09 00:00:00Z]}
-
-  defp metric_to_source("social_volume_" <> source), do: source
-  defp metric_to_source("social_dominance_" <> source), do: source
-  defp metric_to_source("community_messages_count_" <> source), do: source
-
-  defp available_social_slugs() do
-    # Providing a 2 element tuple `{any, integer}` will use that second element
-    # as TTL for the cache key
-    Sanbase.Cache.get_or_store({:social_metrics_available_slugs, 1800}, fn ->
-      Sanbase.SocialData.SocialVolume.social_volume_projects()
-    end)
-  end
 end

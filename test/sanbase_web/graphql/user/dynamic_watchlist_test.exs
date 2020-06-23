@@ -61,6 +61,42 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
     {:ok, conn: conn, user: user}
   end
 
+  test "dynamic watchlist for selector", %{conn: conn, user: user} do
+    function = %{
+      "name" => "selector",
+      "args" => %{
+        "filters" => [
+          %{
+            "metric" => "daily_active_addresses",
+            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
+            "to" => "#{Timex.now()}",
+            "aggregation" => "#{:last}",
+            "operator" => "#{:greater_than_or_equal_to}",
+            "threshold" => 10
+          }
+        ]
+      }
+    }
+
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Metric.slugs_by_filter/6,
+      {:ok, ["ethereum", "dai", "bitcoin"]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result = execute_mutation(conn, query(function))
+      user_list = result["data"]["createWatchlist"]
+
+      assert user_list["name"] == "My list"
+      assert user_list["color"] == "BLACK"
+      assert user_list["isPublic"] == false
+      assert user_list["user"]["id"] == user.id |> to_string()
+
+      assert %{"project" => %{"slug" => "dai"}} in user_list["listItems"]
+      assert %{"project" => %{"slug" => "bitcoin"}} in user_list["listItems"]
+      assert %{"project" => %{"slug" => "ethereum"}} in user_list["listItems"]
+    end)
+  end
+
   test "dynamic watchlist for market segments", %{conn: conn, user: user} do
     function = %{"name" => "market_segment", "args" => %{"market_segment" => "stablecoin"}}
 

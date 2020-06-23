@@ -1,5 +1,6 @@
 defmodule SanbaseWeb.Graphql.TestHelpers do
-  use Phoenix.ConnTest
+  import Plug.Conn
+  import Phoenix.ConnTest
 
   alias SanbaseWeb.Graphql.ContextPlug
   alias Sanbase.Billing.Plan.AccessChecker

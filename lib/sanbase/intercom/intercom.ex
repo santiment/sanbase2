@@ -40,7 +40,6 @@ defmodule Sanbase.Intercom do
       |> Stream.map(fn user ->
         fetch_stats_for_user(user, all_users_stats)
       end)
-      |> Stream.map(&Jason.encode!/1)
       |> Enum.each(&send_user_stats_to_intercom/1)
     else
       :ok
@@ -83,7 +82,7 @@ defmodule Sanbase.Intercom do
       user_id: id,
       email: email,
       name: username,
-      signed_up_at: DateTime.to_unix(inserted_at),
+      signed_up_at: DateTime.from_naive!(inserted_at, "Etc/UTC") |> DateTime.to_unix(),
       custom_attributes:
         %{
           all_watchlists_count: Map.get(watchlists_map, id, 0),
@@ -111,8 +110,6 @@ defmodule Sanbase.Intercom do
       else
         stats
       end
-
-    UserAttributes.save(%{user_id: id, properties: stats})
 
     stats
   end
@@ -148,7 +145,9 @@ defmodule Sanbase.Intercom do
     end
   end
 
-  def send_user_stats_to_intercom(stats_json) do
+  def send_user_stats_to_intercom(stats) do
+    stats_json = Jason.encode!(stats)
+
     headers = [
       {"Content-Type", "application/json"},
       {"Accept", "application/json"},
@@ -159,6 +158,9 @@ defmodule Sanbase.Intercom do
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200}} ->
         Logger.info("Stats sent: #{inspect(stats_json |> Jason.decode!())}}")
+
+        UserAttributes.save(%{user_id: stats.id, properties: stats})
+
         :ok
 
       {:ok, %HTTPoison.Response{} = response} ->
@@ -178,7 +180,7 @@ defmodule Sanbase.Intercom do
   end
 
   # %{"cus_HQ1vCgehxitRJU" => "fiat" | "san", ...}
-  defp customer_payment_type_map() do
+  def customer_payment_type_map() do
     do_list([], nil)
     |> filter_only_payments()
     |> classify_payments_by_type()

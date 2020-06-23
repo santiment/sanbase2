@@ -29,20 +29,15 @@ defmodule Sanbase.ClickhouseRepo do
 
       __MODULE__.query(sanitized_query, ordered_params)
       |> case do
-        {:ok, result} -> {:ok, Enum.map(result.rows, transform_fn)}
-        {:error, error} -> {:error, error}
+        {:ok, result} ->
+          {:ok, Enum.map(result.rows, transform_fn)}
+
+        {:error, error} ->
+          log_and_return_error(inspect(error), "query_transform/3")
       end
     rescue
       e ->
-        log_id = Ecto.UUID.generate()
-
-        Logger.warn(
-          "[#{log_id}] Cannot execute ClickHouse query_transform/3. Reason: #{
-            Exception.message(e)
-          }"
-        )
-
-        {:error, "[#{log_id}] #{@error_message}"}
+        log_and_return_error(Exception.message(e), "query_transform/3")
     end
   end
 
@@ -54,18 +49,22 @@ defmodule Sanbase.ClickhouseRepo do
       __MODULE__.query(sanitized_query, ordered_params)
       |> case do
         {:ok, result} -> {:ok, Enum.reduce(result.rows, init, reducer)}
-        {:error, error} -> {:error, error}
+        {:error, error} -> log_and_return_error(inspect(error), "query_reduce/4")
       end
     rescue
       e ->
-        log_id = Ecto.UUID.generate()
-
-        Logger.warn(
-          "[#{log_id}] Cannot execute ClickHouse query_reduce/4. Reason: #{Exception.message(e)}"
-        )
-
-        {:error, "[#{log_id}] #{@error_message}"}
+        log_and_return_error(Exception.message(e), "query_reduce/4")
     end
+  end
+
+  defp log_and_return_error(error_str, function_executed) do
+    log_id = Ecto.UUID.generate()
+
+    Logger.warn(
+      "[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error_str}"
+    )
+
+    {:error, "[#{log_id}] #{@error_message}"}
   end
 
   @doc ~s"""

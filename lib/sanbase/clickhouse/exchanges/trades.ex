@@ -3,7 +3,7 @@ defmodule Sanbase.Clickhouse.Exchanges.Trades do
 
   @exchanges ["Binance", "Bitfinex", "Kraken", "Poloniex", "Bitrex"]
 
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @table "exchange_trades"
   schema @table do

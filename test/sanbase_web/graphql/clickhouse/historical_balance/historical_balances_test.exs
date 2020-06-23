@@ -6,8 +6,6 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
   import ExUnit.CaptureLog
   import Sanbase.Factory
 
-  require Sanbase.ClickhouseRepo
-
   @eth_decimals 1_000_000_000_000_000_000
   setup do
     project_without_contract = insert(:project, %{slug: "someid1"})

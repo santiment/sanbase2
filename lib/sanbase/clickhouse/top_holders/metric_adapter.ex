@@ -9,7 +9,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
 
   alias Sanbase.Model.Project
 
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @supported_infrastructures ["ETH", "BNB", "BEP2"]
 

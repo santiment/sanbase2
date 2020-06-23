@@ -4,7 +4,7 @@ defmodule Sanbase.Clickhouse.MetadataHelper do
   anomalies metadata from ClickHouse
   """
 
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   # Map from the names used in ClickHouse to the publicly exposed ones.
   # Example: stack_circulation_20y -> circulation

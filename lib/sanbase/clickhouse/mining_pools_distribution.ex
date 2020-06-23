@@ -5,7 +5,7 @@ defmodule Sanbase.Clickhouse.MiningPoolsDistribution do
   """
 
   alias Sanbase.DateTimeUtils
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @type distribution :: %{
           datetime: DateTime.t(),

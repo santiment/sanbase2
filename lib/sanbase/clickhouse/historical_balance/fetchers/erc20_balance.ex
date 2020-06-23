@@ -8,7 +8,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
 
   import Sanbase.Clickhouse.HistoricalBalance.Utils
 
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @table "erc20_balances"
   schema @table do

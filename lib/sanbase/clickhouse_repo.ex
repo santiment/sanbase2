@@ -21,46 +21,7 @@ defmodule Sanbase.ClickhouseRepo do
     {:ok, opts}
   end
 
-  defmacro query_transform(query, args) do
-    quote bind_quoted: [query: query, args: args] do
-      try do
-        require Sanbase.ClickhouseRepo, as: ClickhouseRepo
-
-        ordered_params = ClickhouseRepo.order_params(query, args)
-        sanitized_query = ClickhouseRepo.sanitize_query(query)
-
-        ClickhouseRepo.query(query, args)
-        |> case do
-          {:ok, result} ->
-            transform_fn = &ClickhouseRepo.load(__MODULE__, {result.columns, &1})
-
-            result =
-              Enum.map(
-                result.rows,
-                transform_fn
-              )
-
-            {:ok, result}
-
-          {:error, error} ->
-            {:error, error}
-        end
-      rescue
-        e ->
-          log_id = Ecto.UUID.generate()
-
-          Logger.warn(
-            "[#{log_id}] Cannot execute ClickHouse query_transform/2. Reason: #{
-              Exception.message(e)
-            }"
-          )
-
-          {:error,
-           "[#{log_id}] Cannot execute database query. If issue persist please contact Santiment Support."}
-      end
-    end
-  end
-
+  @error_message "Cannot execute database query. If issue persist please contact Santiment Support."
   def query_transform(query, args, transform_fn) do
     try do
       ordered_params = order_params(query, args)
@@ -81,8 +42,7 @@ defmodule Sanbase.ClickhouseRepo do
           }"
         )
 
-        {:error,
-         "[#{log_id}] Cannot execute database query. If issue persist please contact Santiment Support."}
+        {:error, "[#{log_id}] #{@error_message}"}
     end
   end
 
@@ -104,8 +64,7 @@ defmodule Sanbase.ClickhouseRepo do
           "[#{log_id}] Cannot execute ClickHouse query_reduce/4. Reason: #{Exception.message(e)}"
         )
 
-        {:error,
-         "[#{log_id}] Cannot execute database query. If issue persist please contact Santiment Support."}
+        {:error, "[#{log_id}] #{@error_message}"}
     end
   end
 

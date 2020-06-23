@@ -4,7 +4,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.MinersBalance do
   """
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @table "eth_miners_metrics"
   @miners_balance_id 102

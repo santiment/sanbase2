@@ -5,7 +5,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
 
   alias Sanbase.DateTimeUtils
 
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @type percent_of_total_supply :: %{
           datetime: DateTime.t(),

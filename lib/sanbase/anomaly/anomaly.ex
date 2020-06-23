@@ -4,7 +4,7 @@ defmodule Sanbase.Anomaly do
 
   alias Sanbase.Anomaly.FileHandler
 
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @aggregations FileHandler.aggregations()
   @aggregation_map FileHandler.aggregation_map()

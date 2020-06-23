@@ -5,8 +5,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.MinersBalanceTest do
 
   alias Sanbase.Clickhouse.HistoricalBalance.MinersBalance
 
-  require Sanbase.ClickhouseRepo
-
   setup do
     [
       slug: "ethereum",

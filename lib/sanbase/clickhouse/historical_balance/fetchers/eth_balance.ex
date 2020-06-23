@@ -8,7 +8,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
 
   import Sanbase.Clickhouse.HistoricalBalance.Utils
 
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @eth_decimals 1_000_000_000_000_000_000
 

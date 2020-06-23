@@ -21,7 +21,7 @@ defmodule Sanbase.SocialData.TrendingWords do
   use Ecto.Schema
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @type word :: String.t()
   @type slug :: String.t()

@@ -385,6 +385,19 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
   end
 
+  def by_contracts(contracts, opts \\ [])
+
+  def by_contracts(contracts, opts) when is_list(contracts) do
+    contracts = Enum.map(contracts, &String.downcase/1)
+
+    from(
+      p in projects_query(opts),
+      inner_join: contract in assoc(p, :contract_addresses),
+      where: contract.address in ^contracts
+    )
+    |> Repo.all()
+  end
+
   @doc ~s"""
   Returns a list of projects that have their ticker, name and/or slug in the list of
   values. This function is used when deciding what is the list of trending

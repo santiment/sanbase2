@@ -16,7 +16,6 @@ defmodule SanbaseWeb.ExAdmin.Model.Project do
       :slug,
       :website_link,
       :token_decimals,
-      :main_contract_address,
       :infrastructure,
       :is_hidden
     ])
@@ -29,7 +28,6 @@ defmodule SanbaseWeb.ExAdmin.Model.Project do
       column(:website_link)
       column(:infrastructure)
       column(:token_decimals)
-      column(:main_contract_address)
       column(:is_hidden)
     end
 
@@ -162,7 +160,6 @@ defmodule SanbaseWeb.ExAdmin.Model.Project do
         input(project, :slack_link)
         input(project, :linkedin_link)
         input(project, :telegram_link)
-        input(project, :main_contract_address)
 
         input(project, :email)
 

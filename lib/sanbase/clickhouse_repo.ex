@@ -4,6 +4,7 @@ defmodule Sanbase.ClickhouseRepo do
   use Ecto.Repo, otp_app: :sanbase, adapter: @adapter
 
   require Sanbase.Utils.Config, as: Config
+  require Logger
 
   @doc """
   Dynamically loads the repository url from the
@@ -46,7 +47,16 @@ defmodule Sanbase.ClickhouseRepo do
         end
       rescue
         e ->
-          {:error, "Cannot execute ClickHouse query. Reason: #{Exception.message(e)}"}
+          log_id = Ecto.UUID.generate()
+
+          Logger.warn(
+            "[#{log_id}] Cannot execute ClickHouse query_transform/2. Reason: #{
+              Exception.message(e)
+            }"
+          )
+
+          {:error,
+           "[#{log_id}] Cannot execute database query. If issue persist please contact Santiment Support."}
       end
     end
   end
@@ -62,7 +72,17 @@ defmodule Sanbase.ClickhouseRepo do
         {:error, error} -> {:error, error}
       end
     rescue
-      e -> {:error, "Cannot execute ClickHouse query. Reason: #{Exception.message(e)}"}
+      e ->
+        log_id = Ecto.UUID.generate()
+
+        Logger.warn(
+          "[#{log_id}] Cannot execute ClickHouse query_transform/3. Reason: #{
+            Exception.message(e)
+          }"
+        )
+
+        {:error,
+         "[#{log_id}] Cannot execute database query. If issue persist please contact Santiment Support."}
     end
   end
 
@@ -78,7 +98,14 @@ defmodule Sanbase.ClickhouseRepo do
       end
     rescue
       e ->
-        {:error, "Cannot execute ClickHouse query. Reason: #{Exception.message(e)}"}
+        log_id = Ecto.UUID.generate()
+
+        Logger.warn(
+          "[#{log_id}] Cannot execute ClickHouse query_reduce/4. Reason: #{Exception.message(e)}"
+        )
+
+        {:error,
+         "[#{log_id}] Cannot execute database query. If issue persist please contact Santiment Support."}
     end
   end
 

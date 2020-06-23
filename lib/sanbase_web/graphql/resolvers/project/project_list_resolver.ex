@@ -1,8 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectListResolver do
   require Logger
 
-  import Sanbase.DateTimeUtils
-
   alias Sanbase.Model.Project
 
   @spec all_projects(any, map, any) :: {:ok, any}

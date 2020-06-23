@@ -113,7 +113,7 @@ defmodule Sanbase.Model.Project.ContractData do
   # contract address is used to identify projects. In case of ethereum
   # the contract address contains simply 'ETH'
 
-  for {slug, %{contract_address: contract, decimals: decimals}} <- @special_cases do
+  for {slug, %{contract_address: contract, token_decimals: decimals}} <- @special_cases do
     def contract_info(%Project{slug: unquote(slug)}) do
       {:ok, unquote(contract), unquote(decimals)}
     end

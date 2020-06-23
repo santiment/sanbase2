@@ -12,14 +12,6 @@ config :sanbase, Sanbase.Signals.Scheduler,
   global: true,
   timeout: 30_000,
   jobs: [
-    daa_discord_signal: [
-      schedule: "*/5 * * * *",
-      task: {Sanbase.Notifications.Discord.DaaSignal, :run, []}
-    ],
-    exchange_inflow_discord_signal: [
-      schedule: "1-59/5 * * * *",
-      task: {Sanbase.Notifications.Discord.ExchangeInflow, :run, []}
-    ],
     price_volume_difference_sonar_signal: [
       schedule: "1-59/5 * * * *",
       task:

@@ -18,8 +18,8 @@ defmodule Sanbase.Project.AvailableQueriesTest do
     project =
       insert(:project, %{
         slug: "ethereum",
-        github_link: "https://github.com/ethereum",
-        eth_addresses: [build(:project_eth_address)]
+        eth_addresses: [build(:project_eth_address)],
+        github_organizations: [build(:github_organization)]
       })
 
     available_queries = AvailableQueries.get(project)
@@ -32,7 +32,7 @@ defmodule Sanbase.Project.AvailableQueriesTest do
     project =
       insert(:project, %{
         slug: "bitcoin",
-        github_link: "https://github.com/bitcoin"
+        github_organizations: [build(:github_organization)]
       })
 
     available_queries = AvailableQueries.get(project)
@@ -48,9 +48,9 @@ defmodule Sanbase.Project.AvailableQueriesTest do
     project =
       insert(:project, %{
         slug: "santiment",
-        github_link: nil,
+        github_organizations: [],
         infrastructure: nil,
-        main_contract_address: nil,
+        contract_addresses: [],
         twitter_link: nil,
         eth_addresses: [],
         github_organizations: []
@@ -63,7 +63,8 @@ defmodule Sanbase.Project.AvailableQueriesTest do
     project =
       insert(:project, %{
         infrastructure: build(:infrastructure, %{code: "ETH"}),
-        main_contract_address: "0x" <> rand_hex_str(),
+        github_organizations: [build(:github_organization)],
+        contract_addresss: [build(:contract_address)],
         eth_addresses: [build(:project_eth_address)]
       })
 

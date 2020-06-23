@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mock
+  import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
   require Sanbase.Utils.Config
@@ -10,26 +11,10 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
   alias Sanbase.Model.Project
 
   setup do
-    project =
-      %Project{}
-      |> Project.changeset(%{
-        name: "Santiment",
-        main_contract_address: "0x123",
-        slug: "santiment",
-        token_decimals: 18
-      })
-      |> Repo.insert!()
-
-    project_no_contract =
-      %Project{}
-      |> Project.changeset(%{
-        name: "Bantiment",
-        slug: "bantiment",
-        token_decimals: 18
-      })
-      |> Repo.insert!()
-
-    %{project: project, project_no_contract: project_no_contract}
+    %{
+      project: insert(:random_erc20_project),
+      project_no_contract: insert(:random_erc20_project, contract_addresses: [])
+    }
   end
 
   test "top token transactons for a project", %{conn: conn, project: project} do

@@ -21,8 +21,7 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
       ticker: "DAI",
       slug: "dai",
       market_segment: stablecoin,
-      infrastructure: infr_eth,
-      main_contract_address: "0x" <> Sanbase.TestUtils.random_string()
+      infrastructure: infr_eth
     })
 
     insert(:latest_cmc_data, %{coinmarketcap_id: "dai", rank: 40, volume_usd: 15_000_000})
@@ -40,8 +39,7 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
       ticker: "MKR",
       slug: "maker",
       market_segment: coin,
-      infrastructure: infr_eth,
-      main_contract_address: "0x" <> Sanbase.TestUtils.random_string()
+      infrastructure: infr_eth
     })
 
     insert(:latest_cmc_data, %{coinmarketcap_id: "maker", rank: 20, volume_usd: 150_000_000})
@@ -50,8 +48,7 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
       ticker: "SAN",
       slug: "santiment",
       market_segment: coin,
-      infrastructure: infr_eth,
-      main_contract_address: "0x" <> Sanbase.TestUtils.random_string()
+      infrastructure: infr_eth
     })
 
     insert(:latest_cmc_data, %{coinmarketcap_id: "santiment", rank: 95, volume_usd: 100_000})

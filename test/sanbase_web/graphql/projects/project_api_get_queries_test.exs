@@ -8,40 +8,16 @@ defmodule SanbaseWeb.Graphql.ProjectApiGetQueriesTest do
 
   setup do
     infr_eth = insert(:infrastructure, %{code: "ETH"})
-
     infr_btc = insert(:infrastructure, %{code: "BTC"})
 
-    p1 =
-      insert(:project, %{
-        name: rand_str(),
-        slug: rand_str(),
-        ticker: "BTC",
-        main_contract_address: "0x123123",
-        infrastructure_id: infr_eth.id
-      })
-
+    p1 = insert(:random_project, %{ticker: "BTC", infrastructure_id: infr_eth.id})
     insert(:ico, %{project_id: p1.id})
 
-    p2 =
-      insert(:project, %{
-        name: rand_str(),
-        slug: rand_str(),
-        ticker: "BTC",
-        infrastructure_id: infr_eth.id
-      })
-
+    p2 = insert(:random_project, %{ticker: "BTC", infrastructure_id: infr_eth.id})
     insert(:ico, %{project_id: p2.id})
 
     # Should be classified as currency despite having main contract address
-    p3 =
-      insert(:project, %{
-        name: rand_str(),
-        slug: rand_str(),
-        infrastructure_id: infr_btc.id,
-        ticker: rand_str(4),
-        main_contract_address: "0x1234567890"
-      })
-
+    p3 = insert(:random_project, %{infrastructure_id: infr_btc.id, ticker: rand_str(4)})
     insert(:ico, %{project_id: p3.id})
 
     {:ok, project1: p1, project2: p2, project3: p3}

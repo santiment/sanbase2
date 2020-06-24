@@ -156,7 +156,7 @@ defmodule SanbaseWeb.ExAdmin.Kafka.KafkaLabelRecord do
           address: address,
           blockchain: blockchain,
           label: label,
-          metadata: metadata,
+          metadata: metadata |> Jason.encode!(),
           timestamp: timestamp
         }
       end)

@@ -37,7 +37,7 @@ defmodule Sanbase.ClickhouseRepo do
       end
     rescue
       e ->
-        log_and_return_error(Exception.message(e), "query_transform/3")
+        log_and_return_error(e, "query_transform/3")
     end
   end
 
@@ -53,8 +53,21 @@ defmodule Sanbase.ClickhouseRepo do
       end
     rescue
       e ->
-        log_and_return_error(Exception.message(e), "query_reduce/4")
+        log_and_return_error(e, "query_reduce/4")
     end
+  end
+
+  defp log_and_return_error(%{} = e, function_executed) do
+    log_id = Ecto.UUID.generate()
+
+    Logger.warn("""
+    [#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{Exception.message(e)}
+
+    Stacktrace:
+    #{Exception.format_stacktrace()}
+    """)
+
+    {:error, "[#{log_id}] #{@error_message}"}
   end
 
   defp log_and_return_error(error_str, function_executed) do

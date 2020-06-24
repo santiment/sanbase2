@@ -189,10 +189,10 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
           assert historical_balance == nil
         end)
 
+      assert log =~ inspect(error)
+
       assert log =~
-               "Can't fetch Historical Balances for selector: #{inspect(selector)}, Reason: #{
-                 inspect(error)
-               }"
+               ~s|Can't fetch Historical Balances for selector: #{inspect(selector)}|
     end)
   end
 

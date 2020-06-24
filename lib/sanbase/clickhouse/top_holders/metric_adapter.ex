@@ -195,8 +195,12 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
         Project.List.projects(preload: [:infrastructure])
         |> Enum.filter(fn project ->
           case Project.infrastructure_real_code(project) do
-            {:ok, infr_code} -> infr_code in @supported_infrastructures
-            _ -> false
+            {:ok, infr_code} ->
+              infr_code in @supported_infrastructures and
+                Project.has_contract_address?(project)
+
+            _ ->
+              false
           end
         end)
         |> Enum.map(& &1.slug)

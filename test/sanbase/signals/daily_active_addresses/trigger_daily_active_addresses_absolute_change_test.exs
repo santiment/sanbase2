@@ -16,11 +16,10 @@ defmodule Sanbase.Signal.DailyActiveAddresseAbsoluetChangeTest do
     user = insert(:user)
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
-    Sanbase.Factory.insert(:project, %{
+    Sanbase.Factory.insert(:random_erc20_project, %{
       name: "Santiment",
       ticker: "SAN",
-      slug: "santiment",
-      main_contract_address: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
+      slug: "santiment"
     })
 
     trigger_settings1 = %{

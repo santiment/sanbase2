@@ -16,16 +16,11 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentUpChangeTest do
     user = insert(:user)
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
-    Sanbase.Factory.insert(:project, %{
-      name: "Santiment",
-      ticker: "SAN",
-      slug: "santiment",
-      main_contract_address: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
-    })
+    project = insert(:random_erc20_project)
 
     trigger_settings1 = %{
       type: "daily_active_addresses",
-      target: %{slug: "santiment"},
+      target: %{slug: project.slug},
       channel: "telegram",
       time_window: "7d",
       operation: %{percent_up: 300.0}
@@ -33,7 +28,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentUpChangeTest do
 
     trigger_settings2 = %{
       type: "daily_active_addresses",
-      target: %{slug: "santiment"},
+      target: %{slug: project.slug},
       channel: "telegram",
       time_window: "7d",
       operation: %{percent_up: 200.0}
@@ -59,6 +54,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentUpChangeTest do
 
     [
       user: user,
+      project: project,
       trigger1: trigger1,
       trigger2: trigger2,
       datetimes: datetimes
@@ -72,7 +68,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentUpChangeTest do
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
-        [{"santiment", data}]
+        [{context.project.slug, data}]
       end do
       [triggered1, triggered2 | rest] =
         DailyActiveAddressesSettings.type()
@@ -95,7 +91,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentUpChangeTest do
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
-        [{"santiment", data}]
+        [{context.project.slug, data}]
       end do
       [triggered | rest] =
         DailyActiveAddressesSettings.type()
@@ -115,7 +111,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentUpChangeTest do
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
-        [{"santiment", data}]
+        [{context.project.slug, data}]
       end do
       triggered =
         DailyActiveAddressesSettings.type()
@@ -136,11 +132,11 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentUpChangeTest do
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
-        [{"santiment", data}]
+        [{context.project.slug, data}]
       end do
       trigger_settings1 = %{
         type: "daily_active_addresses",
-        target: %{slug: "santiment"},
+        target: %{slug: context.project.slug},
         channel: "telegram",
         time_window: "1d",
         operation: %{percent_up: 100.0}
@@ -187,11 +183,11 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentUpChangeTest do
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
-        [{"santiment", data}]
+        [{context.project.slug, data}]
       end do
       trigger_settings1 = %{
         type: "daily_active_addresses",
-        target: %{slug: "santiment"},
+        target: %{slug: context.project.slug},
         channel: "telegram",
         time_window: "1d",
         operation: %{percent_up: 100.0}
@@ -220,7 +216,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentUpChangeTest do
 
       UserTrigger.update_user_trigger(context.user, %{
         id: trigger2.id,
-        last_triggered: %{"santiment" => Timex.shift(Timex.now(), days: -2)}
+        last_triggered: %{context.project.slug => Timex.shift(Timex.now(), days: -2)}
       })
 
       type = DailyActiveAddressesSettings.type()
@@ -243,11 +239,11 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentUpChangeTest do
 
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
-        [{"santiment", data}]
+        [{context.project.slug, data}]
       end do
       trigger_settings1 = %{
         type: "daily_active_addresses",
-        target: %{slug: "santiment"},
+        target: %{slug: context.project.slug},
         channel: "telegram",
         time_window: "1d",
         operation: %{percent_up: 100.0}

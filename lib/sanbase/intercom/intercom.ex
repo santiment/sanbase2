@@ -159,7 +159,7 @@ defmodule Sanbase.Intercom do
       {:ok, %HTTPoison.Response{status_code: 200}} ->
         Logger.info("Stats sent: #{inspect(stats_json |> Jason.decode!())}}")
 
-        UserAttributes.save(%{user_id: stats.id, properties: stats})
+        UserAttributes.save(%{user_id: stats.user_id, properties: stats})
 
         :ok
 

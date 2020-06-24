@@ -120,6 +120,8 @@ defmodule Sanbase.Billing.Subscription do
   def cancel_subscription(subscription) do
     with {:ok, stripe_subscription} <- StripeApi.cancel_subscription(subscription.stripe_id),
          {:ok, _} <- sync_with_stripe_subscription(stripe_subscription, subscription) do
+      Sanbase.Billing.StripeEvent.send_cancel_event_to_discord(subscription)
+
       {:ok,
        %{
          is_scheduled_for_cancellation: true,

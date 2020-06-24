@@ -12,6 +12,7 @@ defmodule SanbaseWeb.ExAdmin.Insight.Post do
       column(:id)
       column(:title)
       column(:is_featured, &is_featured(&1))
+      column(:is_pulse)
       column(:state)
       column(:ready_state)
       column(:moderation_comment)
@@ -21,15 +22,24 @@ defmodule SanbaseWeb.ExAdmin.Insight.Post do
     show post do
       attributes_table do
         row(:id)
-        row(:is_featured, &is_featured(&1))
         row(:title)
         row(:short_desc)
-        row(:text)
+        row(:prediction)
+        row(:is_featured, &is_featured(&1))
+        row(:is_pulse)
+        row(:is_paywall_required)
         row(:state)
         row(:ready_state)
         row(:moderation_comment)
-        row(:link)
         row(:user, link: true)
+
+        row(:text)
+      end
+
+      panel "Metrics Used" do
+        table_for Sanbase.Repo.preload(post, [:metrics]).metrics do
+          column(:name, link: true)
+        end
       end
     end
 
@@ -40,6 +50,25 @@ defmodule SanbaseWeb.ExAdmin.Insight.Post do
           :is_featured,
           collection: ~w[true false],
           selected: true
+        )
+
+        input(
+          post,
+          :is_pulse,
+          collection: ~w[true false],
+          selected: true
+        )
+
+        input(
+          post,
+          :is_paywall_required,
+          collection: ~w[true false],
+          selected: true
+        )
+
+        input(
+          post,
+          :prediction
         )
 
         input(post, :state,
@@ -65,8 +94,15 @@ defmodule SanbaseWeb.ExAdmin.Insight.Post do
   end
 
   def set_featured(conn, params, resource, :update) do
-    is_featured = params.post.is_featured |> String.to_existing_atom()
-    Sanbase.FeaturedItem.update_item(resource, is_featured)
+    case params.post.is_featured do
+      str when str in ["true", "false"] ->
+        is_featured = str |> String.to_existing_atom()
+        Sanbase.FeaturedItem.update_item(resource, is_featured)
+
+      nil ->
+        :ok
+    end
+
     {conn, params, resource}
   end
 end

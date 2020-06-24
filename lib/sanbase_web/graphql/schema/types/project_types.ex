@@ -272,17 +272,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
           callback: fn contract_addresses, _project, _args ->
             case contract_addresses do
               [_ | _] ->
-                main_address =
-                  contract_addresses |> Enum.find(&(&1.label == "main")) ||
-                    List.first(contract_addresses)
-
-                {:ok, main_address.address}
+                main = Project.ContractAddress.list_to_main_contract_address(contract_addresses)
+                {:ok, main.address}
 
               _ ->
                 {:ok, nil}
             end
           end
-        )
+        ),
+        fun_name: :project_main_contract_address
       )
     end
 

@@ -7,9 +7,6 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
 
   require Sanbase.Utils.Config
 
-  alias Sanbase.Repo
-  alias Sanbase.Model.Project
-
   setup do
     %{
       project: insert(:random_erc20_project),

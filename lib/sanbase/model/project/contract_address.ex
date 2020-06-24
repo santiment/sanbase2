@@ -20,4 +20,8 @@ defmodule Sanbase.Model.Project.ContractAddress do
     contract
     |> cast(attrs, [:address, :decimals, :label, :description, :project_id])
   end
+
+  def list_to_main_contract_address(list) when is_list(list) do
+    Enum.find(list, &(&1.label == "main")) || List.first(list)
+  end
 end

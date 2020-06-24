@@ -142,11 +142,11 @@ defmodule Sanbase.Factory do
       twitter_link: "https://twitter.com/#{rand_hex_str()}",
       telegram_link: "https://telegram.com/#{rand_hex_str()}",
       github_organizations: [build(:github_organization)],
+      contract_addresses: [build(:contract_address)],
       market_segments: [build(:market_segment)],
       infrastructure:
         Sanbase.Repo.get_by(Infrastructure, code: "ETH") || build(:infrastructure, %{code: "ETH"}),
-      eth_addresses: [build(:project_eth_address)],
-      contract_addresses: [build(:contract_address)]
+      eth_addresses: [build(:project_eth_address)]
     }
     |> merge_attributes(attrs)
   end
@@ -189,6 +189,7 @@ defmodule Sanbase.Factory do
       total_supply: :rand.uniform(50_000_000) + 10_000_000,
       twitter_link: "https://twitter.com/#{rand_hex_str()}",
       github_organizations: [build(:github_organization)],
+      contract_addresses: [build(:contract_address)],
       market_segments: [build(:market_segment)],
       infrastructure: nil,
       eth_addresses: [build(:project_eth_address)]

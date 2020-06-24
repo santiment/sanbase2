@@ -52,8 +52,7 @@ defmodule Sanbase.Project.AvailableQueriesTest do
         infrastructure: nil,
         contract_addresses: [],
         twitter_link: nil,
-        eth_addresses: [],
-        github_organizations: []
+        eth_addresses: []
       })
 
     assert AvailableQueries.get(project) == @slug_metrics
@@ -64,7 +63,7 @@ defmodule Sanbase.Project.AvailableQueriesTest do
       insert(:project, %{
         infrastructure: build(:infrastructure, %{code: "ETH"}),
         github_organizations: [build(:github_organization)],
-        contract_addresss: [build(:contract_address)],
+        contract_addresses: [build(:contract_address)],
         eth_addresses: [build(:project_eth_address)]
       })
 

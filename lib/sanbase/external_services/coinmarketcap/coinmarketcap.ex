@@ -233,7 +233,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
           WebApi.fetch_and_store_prices(project, datetime)
 
-          process_notifications(project)
           Registry.unregister(Sanbase.Registry, key)
           :ok
 
@@ -252,10 +251,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
   defp price_scraping_registry_key(project) do
     {:cmc_fetch_history_price, project.id}
-  end
-
-  defp process_notifications(%Project{} = project) do
-    Sanbase.Notifications.PriceVolumeDiff.exec(project, "USD")
   end
 
   defp last_price_datetime(%Project{} = project) do

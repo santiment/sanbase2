@@ -10,10 +10,18 @@ defmodule SanbaseWeb.Graphql.ProjectApiGetQueriesTest do
     infr_eth = insert(:infrastructure, %{code: "ETH"})
     infr_btc = insert(:infrastructure, %{code: "BTC"})
 
+    # ERC20
     p1 = insert(:random_project, %{ticker: "BTC", infrastructure_id: infr_eth.id})
     insert(:ico, %{project_id: p1.id})
 
-    p2 = insert(:random_project, %{ticker: "BTC", infrastructure_id: infr_eth.id})
+    # Not ERC20 because of no contract
+    p2 =
+      insert(:random_project, %{
+        ticker: "BTC",
+        infrastructure_id: infr_eth.id,
+        contract_addresses: []
+      })
+
     insert(:ico, %{project_id: p2.id})
 
     # Should be classified as currency despite having main contract address
@@ -39,9 +47,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGetQueriesTest do
     projects = json_response(result, 200)["data"]["allProjects"]
 
     assert %{"name" => context.project1.name} in projects
-
     assert %{"name" => context.project2.name} in projects
-
     assert %{"name" => context.project3.name} in projects
   end
 

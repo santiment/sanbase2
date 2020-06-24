@@ -42,8 +42,8 @@ defmodule Sanbase.Model.Project.ContractData do
     |> Repo.all()
     |> case do
       [_ | _] = list ->
-        contract = Enum.find(list, &(&1.label == "main")) || List.first(list)
-        {:ok, {String.downcase(contract.address), contract.decimals || 0}}
+        contract = Project.ContractAddress.list_to_main_contract_address(list)
+        {:ok, String.downcase(contract.address), contract.decimals || 0}
 
       _ ->
         {:error, {:missing_contract, "Can't find contract address of project with slug: #{slug}"}}
@@ -75,7 +75,7 @@ defmodule Sanbase.Model.Project.ContractData do
     |> Repo.one()
     |> case do
       %Project{contract_addresses: [_ | _] = list, infrastructure: %{code: infr_code}} ->
-        contract = Enum.find(list, &(&1.label == "main")) || List.first(list)
+        contract = Project.ContractAddress.list_to_main_contract_address(list)
         {:ok, String.downcase(contract.address), contract.decimals || 0, infr_code}
 
       _ ->
@@ -122,7 +122,7 @@ defmodule Sanbase.Model.Project.ContractData do
   def contract_info(%Project{} = project) do
     case Repo.preload(project, [:contract_addresses]) do
       %Project{contract_addresses: [_ | _] = list} ->
-        contract = Enum.find(list, &(&1.label == "main")) || List.first(list)
+        contract = Project.ContractAddress.list_to_main_contract_address(list)
         {:ok, String.downcase(contract.address), contract.decimals || 0}
 
       _ ->

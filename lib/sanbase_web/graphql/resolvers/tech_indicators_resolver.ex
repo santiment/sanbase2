@@ -50,21 +50,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
   end
 
   defp price_volume_diff_window_type(),
-    do: Config.module_get(Sanbase.Notifications.PriceVolumeDiff, :window_type)
+    do: Config.module_get(Sanbase.TechIndicators, :price_volume_diff_window_type)
 
   defp price_volume_diff_approximation_window() do
-    {res, _} =
-      Config.module_get(Sanbase.Notifications.PriceVolumeDiff, :approximation_window)
-      |> Integer.parse()
-
-    res
+    Config.module_get(Sanbase.TechIndicators, :price_volume_diff_approximation_window)
+    |> Sanbase.Math.to_integer()
   end
 
   defp price_volume_diff_comparison_window() do
-    {res, _} =
-      Config.module_get(Sanbase.Notifications.PriceVolumeDiff, :comparison_window)
-      |> Integer.parse()
-
-    res
+    Config.module_get(Sanbase.TechIndicators, :price_volume_diff_comparison_window)
+    |> Sanbase.Math.to_integer()
   end
 end

@@ -49,7 +49,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
                 {:ok, _contract, decimals} = Project.contract_info(project)
 
                 %{
-                  slug: projet.slug,
+                  slug: project.slug,
                   balance: value / Sanbase.Math.ipow(10, decimals || 0)
                 }
             end

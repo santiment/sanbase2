@@ -11,11 +11,13 @@ defmodule Sanbase.Intercom do
   alias Sanbase.Billing.Product
   alias Sanbase.Signal.UserTrigger
   alias Sanbase.Clickhouse.ApiCallData
+  alias Sanbase.Intercom.UserAttributes
 
   @intercom_url "https://api.intercom.io/users"
 
   def all_users_stats do
     %{
+      customer_payment_type_map: customer_payment_type_map(),
       triggers_map: User.resource_user_count_map(Sanbase.Signal.UserTrigger),
       insights_map: User.resource_user_count_map(Sanbase.Insight.Post),
       watchlists_map: User.resource_user_count_map(Sanbase.UserList),
@@ -38,7 +40,6 @@ defmodule Sanbase.Intercom do
       |> Stream.map(fn user ->
         fetch_stats_for_user(user, all_users_stats)
       end)
-      |> Stream.map(&Jason.encode!/1)
       |> Enum.each(&send_user_stats_to_intercom/1)
     else
       :ok
@@ -67,7 +68,8 @@ defmodule Sanbase.Intercom do
            users_used_api_list: users_used_api_list,
            users_used_sansheets_list: users_used_sansheets_list,
            api_calls_per_user_count: api_calls_per_user_count,
-           users_with_monitored_watchlist: users_with_monitored_watchlist
+           users_with_monitored_watchlist: users_with_monitored_watchlist,
+           customer_payment_type_map: customer_payment_type_map
          }
        ) do
     {sanbase_subscription_current_status, sanbase_trial_created_at} =
@@ -80,7 +82,7 @@ defmodule Sanbase.Intercom do
       user_id: id,
       email: email,
       name: username,
-      signed_up_at: DateTime.to_unix(inserted_at),
+      signed_up_at: DateTime.from_naive!(inserted_at, "Etc/UTC") |> DateTime.to_unix(),
       custom_attributes:
         %{
           all_watchlists_count: Map.get(watchlists_map, id, 0),
@@ -90,6 +92,7 @@ defmodule Sanbase.Intercom do
           sanbase_subscription_current_status: sanbase_subscription_current_status,
           sanbase_trial_created_at: sanbase_trial_created_at,
           user_paid_after_trial: user_paid_after_trial,
+          user_paid_with: Map.get(customer_payment_type_map, stripe_customer_id, "not_paid"),
           weekly_digest:
             Sanbase.Auth.UserSettings.settings_for(user).newsletter_subscription |> to_string(),
           used_sanapi: id in users_used_api_list,
@@ -142,7 +145,9 @@ defmodule Sanbase.Intercom do
     end
   end
 
-  def send_user_stats_to_intercom(stats_json) do
+  def send_user_stats_to_intercom(stats) do
+    stats_json = Jason.encode!(stats)
+
     headers = [
       {"Content-Type", "application/json"},
       {"Accept", "application/json"},
@@ -153,6 +158,9 @@ defmodule Sanbase.Intercom do
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200}} ->
         Logger.info("Stats sent: #{inspect(stats_json |> Jason.decode!())}}")
+
+        UserAttributes.save(%{user_id: stats.id, properties: stats})
+
         :ok
 
       {:ok, %HTTPoison.Response{} = response} ->
@@ -169,6 +177,56 @@ defmodule Sanbase.Intercom do
           }"
         )
     end
+  end
+
+  # %{"cus_HQ1vCgehxitRJU" => "fiat" | "san", ...}
+  def customer_payment_type_map() do
+    do_list([], nil)
+    |> filter_only_payments()
+    |> classify_payments_by_type()
+  end
+
+  defp filter_only_payments(invoices) do
+    invoices
+    |> Enum.filter(&(&1.status == "paid" && &1.total > 0))
+    |> Enum.dedup_by(fn %{customer: customer} -> customer end)
+  end
+
+  def classify_payments_by_type(invoices) do
+    Enum.reduce(invoices, %{}, fn invoice, acc ->
+      cond do
+        invoice.starting_balance == 0 ->
+          Map.put(acc, invoice.customer, "fiat")
+
+        invoice.total == abs(invoice.starting_balance) ->
+          Map.put(acc, invoice.customer, "san")
+
+        true ->
+          acc
+      end
+    end)
+  end
+
+  def do_list([], nil) do
+    list = list_invoices(%{limit: 100})
+    do_list(list, Enum.at(list, -1) |> Map.get(:id))
+  end
+
+  def do_list(acc, next) do
+    case list_invoices(%{limit: 100, starting_after: next}) do
+      [] -> acc
+      list -> do_list(acc ++ list, Enum.at(list, -1) |> Map.get(:id))
+    end
+  end
+
+  defp list_invoices(params) do
+    Stripe.Invoice.list(params)
+    |> elem(1)
+    |> Map.get(:data)
+    |> Enum.map(fn invoice ->
+      Map.split(invoice, [:id, :customer, :total, :starting_balance, :status, :created])
+      |> elem(0)
+    end)
   end
 
   defp format_balance(nil), do: 0.0

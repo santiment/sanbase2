@@ -14,7 +14,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   alias Sanbase.UserList
   alias Sanbase.Signal.UserTrigger
   alias Sanbase.Vote
-  alias Sanbase.Timeline.{Query, Filter, Order, Cursor, Type}
+  alias Sanbase.Timeline.{Query, Filter, Order, Cursor, Type, PostProcess}
 
   alias __MODULE__
 
@@ -38,6 +38,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     field(:event_type, :string)
     field(:payload, :map)
     field(:data, :map)
+    field(:tags, {:array, :string}, default: [], virtual: true)
 
     belongs_to(:user, User)
     belongs_to(:post, Post)
@@ -99,6 +100,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> Query.events_with_event_type([@publish_insight_type, @trigger_fired])
     |> Order.events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
     |> Repo.all()
+    |> PostProcess.tag()
     |> Cursor.wrap_events_with_cursor()
   end
 
@@ -109,6 +111,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> Query.events_with_event_type([@publish_insight_type, @trigger_fired])
     |> Order.events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
     |> Repo.all()
+    |> PostProcess.tag()
     |> Cursor.wrap_events_with_cursor()
   end
 
@@ -134,6 +137,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> Query.events_with_event_type([@publish_insight_type, @trigger_fired])
     |> Order.events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
     |> Repo.all()
+    |> PostProcess.tag(user_id)
     |> Cursor.wrap_events_with_cursor()
   end
 
@@ -144,6 +148,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> Query.events_with_event_type([@publish_insight_type, @trigger_fired])
     |> Order.events_order_limit_preload_query(order_by, min(limit, @max_events_returned))
     |> Repo.all()
+    |> PostProcess.tag(user_id)
     |> Cursor.wrap_events_with_cursor()
   end
 

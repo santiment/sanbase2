@@ -5,8 +5,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthAssetsHeldByAdderssTest do
 
   alias Sanbase.Clickhouse.HistoricalBalance.EthBalance
 
-  require Sanbase.ClickhouseRepo
-
   setup do
     project = insert(:project, %{name: "Ethereum", slug: "ethereum", ticker: "ETH"})
 
@@ -33,7 +31,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthAssetsHeldByAdderssTest do
   test "clickhouse returns error", _context do
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      assert EthBalance.assets_held_by_address("0x123") == {:error, "error"}
+      {:error, error} = EthBalance.assets_held_by_address("0x123")
+      assert error =~ "Cannot execute database query."
     end)
   end
 end

@@ -6,8 +6,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.AssetsHeldByAdderssTest do
 
   alias Sanbase.Clickhouse.HistoricalBalance
 
-  require Sanbase.ClickhouseRepo
-
   setup do
     p1 = insert(:random_erc20_project)
     p2 = insert(:random_erc20_project)

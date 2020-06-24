@@ -15,7 +15,7 @@ defmodule Sanbase.Clickhouse.Metric do
 
   alias __MODULE__.{HistogramMetric, FileHandler}
 
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @metrics_file "metric_files/available_v2_metrics.json"
   @holders_file "metric_files/holders_metrics.json"

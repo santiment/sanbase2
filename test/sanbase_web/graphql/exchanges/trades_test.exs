@@ -30,10 +30,10 @@ defmodule SanbaseWeb.Graphql.Exchanges.TradesTest do
           execute_query_with_error(context.conn, query, "lastExchangeTrades")
         end)
 
+      assert log =~ inspect(error)
+
       assert log =~
-               ~s(Can't fetch Last exchange trades for exchange and ticker_pair: "Kraken" and "ETH/EUR", Reason: #{
-                 inspect(error)
-               })
+               ~s(Can't fetch Last exchange trades for exchange and ticker_pair: "Kraken" and "ETH/EUR")
     end)
   end
 
@@ -63,10 +63,10 @@ defmodule SanbaseWeb.Graphql.Exchanges.TradesTest do
           execute_query_with_error(context.conn, query, "exchangeTrades")
         end)
 
+      assert log =~ inspect(error)
+
       assert log =~
-               ~s(Can't fetch Exchange trades for exchange and ticker_pair: "Kraken" and "ETH/EUR", Reason: #{
-                 inspect(error)
-               })
+               ~s(Can't fetch Exchange trades for exchange and ticker_pair: "Kraken" and "ETH/EUR")
     end)
   end
 
@@ -96,10 +96,10 @@ defmodule SanbaseWeb.Graphql.Exchanges.TradesTest do
           execute_query_with_error(context.conn, query, "exchangeTrades")
         end)
 
+      assert log =~ inspect(error)
+
       assert log =~
-               ~s(Can't fetch Aggregated exchange trades for exchange and ticker_pair: "Kraken" and "ETH/EUR", Reason: #{
-                 inspect(error)
-               })
+               ~s(Can't fetch Aggregated exchange trades for exchange and ticker_pair: "Kraken" and "ETH/EUR")
     end)
   end
 

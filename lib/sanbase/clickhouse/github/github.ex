@@ -18,7 +18,7 @@ defmodule Sanbase.Clickhouse.Github do
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
 
   require Logger
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @non_dev_events [
     "IssueCommentEvent",

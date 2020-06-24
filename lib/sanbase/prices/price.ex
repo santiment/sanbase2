@@ -8,7 +8,7 @@ defmodule Sanbase.Price do
   import Sanbase.Metric.Helper, only: [maybe_nullify_values: 1, remove_missing_values: 1]
   alias Sanbase.Model.Project
 
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @default_source "coinmarketcap"
   @metrics [:price_usd, :price_btc, :price_eth, :marketcap_usd, :volume_usd]

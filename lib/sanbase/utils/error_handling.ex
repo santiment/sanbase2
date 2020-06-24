@@ -32,12 +32,22 @@ defmodule Sanbase.Utils.ErrorHandling do
           {description, identifier}
       end
 
+    # Detect if reason already contains UUID and use it.
+    {uuid, message} =
+      case reason do
+        <<"["::utf8, uuid::binary-size(36), "]"::utf8, message::binary>> ->
+          {uuid, message |> String.trim()}
+
+        _ ->
+          {Ecto.UUID.generate(), reason}
+      end
+
     error_msg =
-      "[#{Ecto.UUID.generate()}] Can't fetch #{metric} for #{target_description}: #{
+      "[#{uuid}] Can't fetch #{metric} for #{target_description}: #{
         identifier_to_string(identifier)
       }"
 
-    error_msg_with_reason = error_msg <> ", Reason: #{inspect(reason)}"
+    error_msg_with_reason = error_msg <> ", Reason: #{inspect(message)}"
 
     Logger.warn(error_msg_with_reason)
 

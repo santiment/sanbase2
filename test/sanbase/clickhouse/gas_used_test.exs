@@ -3,7 +3,6 @@ defmodule Sanbase.Clickhouse.GasUsedTest do
   import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
 
   alias Sanbase.Clickhouse.GasUsed
-  require Sanbase.ClickhouseRepo
 
   setup do
     [

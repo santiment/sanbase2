@@ -8,7 +8,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
 
   import Sanbase.Clickhouse.HistoricalBalance.Utils
 
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @table "xrp_balances_orderby_currency"
   schema @table do

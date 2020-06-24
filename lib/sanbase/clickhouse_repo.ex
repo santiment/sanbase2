@@ -4,6 +4,7 @@ defmodule Sanbase.ClickhouseRepo do
   use Ecto.Repo, otp_app: :sanbase, adapter: @adapter
 
   require Sanbase.Utils.Config, as: Config
+  require Logger
 
   @doc """
   Dynamically loads the repository url from the
@@ -20,37 +21,7 @@ defmodule Sanbase.ClickhouseRepo do
     {:ok, opts}
   end
 
-  defmacro query_transform(query, args) do
-    quote bind_quoted: [query: query, args: args] do
-      try do
-        require Sanbase.ClickhouseRepo, as: ClickhouseRepo
-
-        ordered_params = ClickhouseRepo.order_params(query, args)
-        sanitized_query = ClickhouseRepo.sanitize_query(query)
-
-        ClickhouseRepo.query(query, args)
-        |> case do
-          {:ok, result} ->
-            transform_fn = &ClickhouseRepo.load(__MODULE__, {result.columns, &1})
-
-            result =
-              Enum.map(
-                result.rows,
-                transform_fn
-              )
-
-            {:ok, result}
-
-          {:error, error} ->
-            {:error, error}
-        end
-      rescue
-        e ->
-          {:error, "Cannot execute ClickHouse query. Reason: #{Exception.message(e)}"}
-      end
-    end
-  end
-
+  @error_message "Cannot execute database query. If issue persist please contact Santiment Support."
   def query_transform(query, args, transform_fn) do
     try do
       ordered_params = order_params(query, args)
@@ -58,11 +29,15 @@ defmodule Sanbase.ClickhouseRepo do
 
       __MODULE__.query(sanitized_query, ordered_params)
       |> case do
-        {:ok, result} -> {:ok, Enum.map(result.rows, transform_fn)}
-        {:error, error} -> {:error, error}
+        {:ok, result} ->
+          {:ok, Enum.map(result.rows, transform_fn)}
+
+        {:error, error} ->
+          log_and_return_error(inspect(error), "query_transform/3")
       end
     rescue
-      e -> {:error, "Cannot execute ClickHouse query. Reason: #{Exception.message(e)}"}
+      e ->
+        log_and_return_error(e, "query_transform/3")
     end
   end
 
@@ -74,12 +49,35 @@ defmodule Sanbase.ClickhouseRepo do
       __MODULE__.query(sanitized_query, ordered_params)
       |> case do
         {:ok, result} -> {:ok, Enum.reduce(result.rows, init, reducer)}
-        {:error, error} -> {:error, error}
+        {:error, error} -> log_and_return_error(inspect(error), "query_reduce/4")
       end
     rescue
       e ->
-        {:error, "Cannot execute ClickHouse query. Reason: #{Exception.message(e)}"}
+        log_and_return_error(e, "query_reduce/4")
     end
+  end
+
+  defp log_and_return_error(%{} = e, function_executed) do
+    log_id = Ecto.UUID.generate()
+
+    Logger.warn("""
+    [#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{Exception.message(e)}
+
+    Stacktrace:
+    #{Exception.format_stacktrace()}
+    """)
+
+    {:error, "[#{log_id}] #{@error_message}"}
+  end
+
+  defp log_and_return_error(error_str, function_executed) do
+    log_id = Ecto.UUID.generate()
+
+    Logger.warn(
+      "[#{log_id}] Cannot execute ClickHouse #{function_executed}. Reason: #{error_str}"
+    )
+
+    {:error, "[#{log_id}] #{@error_message}"}
   end
 
   @doc ~s"""

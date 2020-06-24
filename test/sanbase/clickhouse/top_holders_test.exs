@@ -6,8 +6,6 @@ defmodule Sanbase.Clickhouse.TopHoldersTest do
 
   alias Sanbase.Clickhouse.TopHolders
 
-  require Sanbase.ClickhouseRepo
-
   setup do
     project = insert(:project, %{slug: "ethereum", ticker: "ETH"})
 

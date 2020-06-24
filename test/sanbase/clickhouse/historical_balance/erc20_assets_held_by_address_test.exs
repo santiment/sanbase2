@@ -5,8 +5,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20AssetsHeldByAdderssTest do
 
   alias Sanbase.Clickhouse.HistoricalBalance.Erc20Balance
 
-  require Sanbase.ClickhouseRepo
-
   setup do
     p1 = insert(:random_erc20_project)
     p2 = insert(:random_erc20_project)
@@ -49,7 +47,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20AssetsHeldByAdderssTest do
   test "clickhouse returns error", _context do
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      assert Erc20Balance.assets_held_by_address("0x123") == {:error, "error"}
+      {:error, error} = Erc20Balance.assets_held_by_address("0x123")
+      assert error =~ "Cannot execute database query."
     end)
   end
 end

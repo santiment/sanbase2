@@ -8,7 +8,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.BnbBalance do
 
   import Sanbase.Clickhouse.HistoricalBalance.Utils
 
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @table "bnb_balances"
   schema @table do

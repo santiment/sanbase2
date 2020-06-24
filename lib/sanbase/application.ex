@@ -1,6 +1,8 @@
 defmodule Sanbase.Application do
   use Application
 
+  import Sanbase.ApplicationUtils
+
   require Logger
   require Sanbase.Utils.Config, as: Config
 
@@ -171,7 +173,7 @@ defmodule Sanbase.Application do
       SanbaseWeb.Telemetry,
 
       # Start the Clickhouse Repo
-      Sanbase.ClickhouseRepo,
+      start_in(Sanbase.ClickhouseRepo, [:prod, :dev]),
 
       # Time series Prices DB connection
       Sanbase.Prices.Store.child_spec(),

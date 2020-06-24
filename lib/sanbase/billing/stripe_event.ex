@@ -77,6 +77,31 @@ defmodule Sanbase.Billing.StripeEvent do
     end)
   end
 
+  def send_cancel_event_to_discord(subscription) do
+    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+      subscription = subscription |> Repo.preload(:user)
+
+      message = """
+      😿 New cancellation scheduled for `#{subscription.current_period_end}` from `#{
+        mask_user(subscription.user)
+      }` | #{subscription.user.stripe_customer_id}.
+      Subscription status before cancellation: `#{subscription.status}`.
+      """
+
+      do_send_to_discord(message)
+    end)
+  end
+
+  defp do_send_to_discord(message) do
+    payload = [message] |> Discord.encode!(publish_user())
+
+    Discord.send_notification(
+      webhook_url(),
+      "Stripe Cancellation",
+      payload
+    )
+  end
+
   defp handle_discord_notification(
          %{
            "type" => "invoice.payment_succeeded",
@@ -153,7 +178,11 @@ defmodule Sanbase.Billing.StripeEvent do
          "type" => "customer.subscription.created",
          "data" => %{"object" => %{"id" => subscription_id}}
        }) do
-    handle_subscription_created(id, "customer.subscription.created", subscription_id)
+    handle_subscription_created(
+      id,
+      "customer.subscription.created",
+      subscription_id
+    )
   end
 
   defp handle_event(%{
@@ -167,7 +196,8 @@ defmodule Sanbase.Billing.StripeEvent do
   defp handle_event(_), do: :ok
 
   defp handle_subscription_created(id, type, subscription_id) do
-    with {:ok, stripe_subscription} <- StripeApi.retrieve_subscription(subscription_id),
+    with {:ok, stripe_subscription} <-
+           StripeApi.retrieve_subscription(subscription_id),
          {:user_nil?, %User{} = user} <-
            {:user_nil?, Repo.get_by(User, stripe_customer_id: stripe_subscription.customer)},
          {:plan_nil?, %Plan{} = plan} <-
@@ -178,6 +208,7 @@ defmodule Sanbase.Billing.StripeEvent do
     else
       {:user_nil?, _} ->
         error_msg = "Customer for subscription_id #{subscription_id} does not exist"
+
         Logger.error(error_msg)
         {:error, error_msg}
 
@@ -193,15 +224,20 @@ defmodule Sanbase.Billing.StripeEvent do
   end
 
   defp handle_event_common(id, type, subscription_id) do
-    with {:ok, stripe_subscription} <- StripeApi.retrieve_subscription(subscription_id),
+    with {:ok, stripe_subscription} <-
+           StripeApi.retrieve_subscription(subscription_id),
          {:nil?, %Subscription{} = subscription} <-
            {:nil?, Repo.get_by(Subscription, stripe_id: stripe_subscription.id)},
          {:ok, _subscription} <-
-           Subscription.sync_with_stripe_subscription(stripe_subscription, subscription) do
+           Subscription.sync_with_stripe_subscription(
+             stripe_subscription,
+             subscription
+           ) do
       update(id, %{is_processed: true})
     else
       {:nil?, _} ->
         error_msg = "Subscription with stripe_id: #{subscription_id} does not exist"
+
         Logger.error(error_msg)
         {:error, error_msg}
 
@@ -228,7 +264,12 @@ defmodule Sanbase.Billing.StripeEvent do
 
   defp build_payload(%{
          "id" => id,
-         "data" => %{"object" => %{"total" => total, "starting_balance" => starting_balance}}
+         "data" => %{
+           "object" => %{
+             "total" => total,
+             "starting_balance" => starting_balance
+           }
+         }
        })
        when total == abs(starting_balance) do
     [
@@ -288,7 +329,8 @@ defmodule Sanbase.Billing.StripeEvent do
     end
   end
 
-  defp payload_for_subscription(_, total, starting_balance) when total == abs(starting_balance) do
+  defp payload_for_subscription(_, total, starting_balance)
+       when total == abs(starting_balance) do
     ["New 🔥 for $#{total / 100} received."]
   end
 
@@ -314,6 +356,7 @@ defmodule Sanbase.Billing.StripeEvent do
   # checks which month of recurring subscription it is by the subscription creation date
   defp calculate_recurring_month(inserted_at) do
     now_unix = Timex.now() |> DateTime.to_unix()
+
     created_at_unix = inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
 
     ((now_unix - created_at_unix) / (29 * 86400))

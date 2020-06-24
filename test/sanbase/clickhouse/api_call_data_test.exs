@@ -67,7 +67,7 @@ defmodule Sanbase.Clickhouse.ApiCallDataTest do
 
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "Something went wrong"})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      result =
+      {:error, error} =
         ApiCallData.api_call_history(
           context.user.id,
           from_iso8601!(dt1_str),
@@ -75,8 +75,7 @@ defmodule Sanbase.Clickhouse.ApiCallDataTest do
           "1d"
         )
 
-      assert result ==
-               {:error, "Something went wrong"}
+      assert error =~ "Cannot execute database query."
     end)
   end
 end

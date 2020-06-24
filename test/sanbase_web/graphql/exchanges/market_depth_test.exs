@@ -26,10 +26,10 @@ defmodule SanbaseWeb.Graphql.Exchanges.MarketDepthTest do
           execute_query_with_error(context.conn, query, "lastExchangeMarketDepth")
         end)
 
+      assert log =~ inspect(error)
+
       assert log =~
-               ~s(Can't fetch Last exchange market depth for exchange and ticker_pair: "Kraken" and "ZEC/BTC", Reason: #{
-                 inspect(error)
-               })
+               ~s(Can't fetch Last exchange market depth for exchange and ticker_pair: "Kraken" and "ZEC/BTC")
     end)
   end
 

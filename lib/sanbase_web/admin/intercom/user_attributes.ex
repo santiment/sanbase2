@@ -14,12 +14,5 @@ defmodule SanbaseWeb.ExAdmin.Intercom.UserAttributes do
         row(:properties)
       end
     end
-
-    defimpl ExAdmin.Render, for: Map do
-      def to_string(data) do
-        data
-        |> Jason.encode!(pretty: true)
-      end
-    end
   end
 end

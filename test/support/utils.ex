@@ -1,4 +1,5 @@
 defmodule Sanbase.TestUtils do
+  @moduledoc false
   @doc ~s"""
     Return `true` if the distance between the two numbers `a` and `b` is less than
     or equal to `distance`. Return `false` otherwise.

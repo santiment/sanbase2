@@ -454,7 +454,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
          price_usd: 20,
          price_btc: 0.2,
          marketcap: 20_000,
-         marketcap_usd: 20000,
+         marketcap_usd: 20_000,
          volume: 2500,
          volume_usd: 2500
        }

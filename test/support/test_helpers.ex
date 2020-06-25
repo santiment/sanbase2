@@ -1,4 +1,5 @@
 defmodule Sanbase.TestHelpers do
+  @moduledoc false
   defmacro setup_all_with_mocks(mocks, do: setup_block) do
     quote do
       setup_all do

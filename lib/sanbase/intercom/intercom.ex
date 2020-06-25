@@ -104,12 +104,7 @@ defmodule Sanbase.Intercom do
     }
 
     # email must be dropped if nil so user still can be created in Intercom if doesn't exist
-    stats =
-      unless email do
-        Map.delete(stats, :email)
-      else
-        stats
-      end
+    stats = if email, do: stats, else: Map.delete(stats, :email)
 
     stats
   end

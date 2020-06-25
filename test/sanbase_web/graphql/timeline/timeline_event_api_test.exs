@@ -588,7 +588,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
         |> hd()
         |> Map.get("events")
 
-      assert length(events2) == 0
+      assert events2 == []
     end
 
     test "cursor after", context do
@@ -605,7 +605,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
         |> hd()
         |> Map.get("events")
 
-      assert length(events1) == 0
+      assert events1 == []
 
       args_str =
         "cursor: " <>

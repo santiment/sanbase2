@@ -104,11 +104,14 @@ defmodule Sanbase.Anomaly do
     {query, args} = available_anomalies_query()
 
     ClickhouseRepo.query_reduce(query, args, %{}, fn [model_name, asset_id, metric_id], acc ->
-      key = %{"metric" => Map.get(metric_map, metric_id), "model_name" => model_name}
+      metric = Map.get(metric_map, metric_id)
+      key = %{"metric" => metric, "model_name" => model_name}
 
       with anomaly when not is_nil(anomaly) <- Map.get(@metric_and_model_to_anomaly_map, key),
            slug when not is_nil(slug) <- Map.get(asset_map, asset_id) do
-        Map.update(acc, slug, [anomaly], fn list -> [anomaly | list] end)
+        Map.update(acc, slug, [%{metric: metric, anomalies: [anomaly]}], fn list ->
+          [%{metric: metric, anomalies: [anomaly]} | list]
+        end)
       else
         _ -> acc
       end

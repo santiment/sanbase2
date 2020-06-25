@@ -17,7 +17,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
 
   use Ecto.Schema
 
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @table "erc20_transfers"
 

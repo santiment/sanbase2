@@ -17,6 +17,7 @@ config :sanbase, SanbaseWeb.Endpoint,
   version: Application.spec(:sanbase, :vsn),
   load_from_system_env: true,
   secret_key_base: "${SECRET_KEY_BASE}",
+  live_view: [signing_salt: "${PHOENIX_LIVE_VIEW_SIGNING_SALT}"],
   check_origin: ["//*.santiment.net"]
 
 config :sanbase, ecto_repos: [Sanbase.Repo]
@@ -33,9 +34,7 @@ config :sanbase, Sanbase.ClickhouseRepo,
   password: "",
   timeout: 60_000,
   pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "30"},
-  pool_overflow: 5,
-  # Temporary to help debug ecto 3 migration.
-  show_sensitive_data_on_connection_error: true
+  pool_overflow: 5
 
 # Do not print debug messages in production
 config :logger, level: :info

@@ -4,7 +4,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
   Get data about the API Calls that were made by users
   """
 
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @doc ~s"""
   Get a timeseries with the total number of api calls made by a user in a given interval

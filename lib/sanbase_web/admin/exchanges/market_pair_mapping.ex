@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Exchanges.MarketPairMapping do
+defmodule SanbaseWeb.ExAdmin.Exchanges.MarketPairMapping do
   use ExAdmin.Register
 
   register_resource Sanbase.Exchanges.MarketPairMapping do

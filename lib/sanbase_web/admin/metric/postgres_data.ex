@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Metric.MetricPostgresData do
+defmodule SanbaseWeb.ExAdmin.Metric.MetricPostgresData do
   use ExAdmin.Register
 
   alias Sanbase.Metric.MetricPostgresData

@@ -265,7 +265,31 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:description, :string)
     field(:long_description, :string)
     field(:token_decimals, :integer)
-    field(:main_contract_address, :string)
+
+    field :main_contract_address, :string do
+      cache_resolve(
+        dataloader(SanbaseRepo, :contract_addresses,
+          callback: fn contract_addresses, _project, _args ->
+            case contract_addresses do
+              [_ | _] ->
+                main = Project.ContractAddress.list_to_main_contract_address(contract_addresses)
+                {:ok, main.address}
+
+              _ ->
+                {:ok, nil}
+            end
+          end
+        ),
+        fun_name: :project_main_contract_address
+      )
+    end
+
+    field :contract_addresses, list_of(:contract_address) do
+      cache_resolve(
+        dataloader(SanbaseRepo),
+        fun_name: :project_contract_addresses
+      )
+    end
 
     field :eth_addresses, list_of(:eth_address) do
       cache_resolve(
@@ -532,6 +556,14 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
         max_ttl_offset: 600
       )
     end
+  end
+
+  object :contract_address do
+    field(:address, non_null(:string))
+    field(:label, :string)
+    field(:description, :string)
+    field(:inserted_at, :datetime)
+    field(:updated_at, :datetime)
   end
 
   object :source_slug_mapping do

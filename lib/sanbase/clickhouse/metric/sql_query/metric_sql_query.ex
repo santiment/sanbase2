@@ -40,8 +40,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
         NOT isNaN(value) AND
-        asset_id IN ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name IN (?5) ) AND
-        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 )
+        asset_id IN ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name IN (?5) LIMIT 1 ) AND
+        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 )
       GROUP BY dt, asset_id
     )
     GROUP BY t
@@ -73,8 +73,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
         NOT isNaN(value) AND
-        asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?5 ) AND
-        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 )
+        asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?5 LIMIT 1 ) AND
+        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 )
       GROUP BY dt
     )
     GROUP BY t
@@ -105,7 +105,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
       FROM #{Map.get(@table_map, metric)}
       PREWHERE
         asset_id IN (?1) AND
-        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 ) AND
+        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 ) AND
         NOT isNaN(value) AND
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")}
@@ -164,7 +164,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
           argMax(value, computed_at) AS value
         FROM #{Map.get(@table_map, metric)}
         PREWHERE
-          metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?1 ) AND
+          metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
           #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?2)")} AND
           #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?3)")}
         GROUP BY dt, asset_id
@@ -209,8 +209,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     PREWHERE asset_id in (
       SELECT DISTINCT(asset_id)
       FROM #{Map.get(@table_map, metric)}
-      PREWHERE metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = ?1 ) AND
-      value != 0 AND NOT isNaN(value)
+      PREWHERE metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
+      value != 0 AND isNotNull(value) AND NOT isNaN(toFloat64(value))
     )
     """
 
@@ -224,8 +224,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     SELECT toUnixTimestamp(argMax(computed_at, dt))
     FROM #{Map.get(@table_map, metric)} FINAL
     PREWHERE
-      metric_id = ( SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = ?1 ) AND
-      asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?2 )
+      metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
+      asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?2 LIMIT 1 )
     """
 
     args = [Map.get(@name_to_metric_map, metric), slug]
@@ -238,8 +238,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
       toUnixTimestamp(toDateTime(min(dt)))
     FROM #{Map.get(@table_map, metric)}
     PREWHERE
-      metric_id = ( SELECT argMax(metric_id, computed_at) AS metric_id FROM metric_metadata PREWHERE name = ?1 ) AND
-      value != 0 AND NOT isNaN(value)
+      metric_id = ( SELECT metric_id AS metric_id FROM metric_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
+      value != 0 AND isNotNull(value) AND NOT isNaN(toFloat64(value))
     """
 
     args = [Map.get(@name_to_metric_map, metric)]
@@ -253,9 +253,9 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
       toUnixTimestamp(toDateTime(min(dt)))
     FROM #{Map.get(@table_map, metric)}
     PREWHERE
-      asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
-      metric_id = ( SELECT argMax(metric_id, computed_at) AS metric_id FROM metric_metadata PREWHERE name = ?2 ) AND
-      value != 0 AND NOT isNaN(value)
+      asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
+      metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 ) AND
+      value != 0 AND isNotNull(value) AND NOT isNaN(toFloat64(value))
     """
 
     args = [slug, Map.get(@name_to_metric_map, metric)]
@@ -268,8 +268,9 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     SELECT distinct(metric_id)
     FROM #{table}
     PREWHERE
-      asset_id = ( SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name = ?1 ) AND
-      dt > toDateTime(?2)
+      asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
+      dt > toDateTime(?2) AND
+      value != 0 AND isNotNull(value) AND NOT isNaN(toFloat64(value))
     """
 
     # artifical boundary so the query checks less results

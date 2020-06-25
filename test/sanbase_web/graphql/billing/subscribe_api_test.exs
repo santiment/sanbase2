@@ -41,6 +41,10 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
        cancel_subscription: fn _ ->
          StripeApiTestReponse.update_subscription_resp()
        end
+     ]},
+    {Sanbase.Billing.StripeEvent, [:passthrough],
+     [
+       send_cancel_event_to_discord: fn _ -> :ok end
      ]}
   ]) do
     # Needs to be staked to apply the discount

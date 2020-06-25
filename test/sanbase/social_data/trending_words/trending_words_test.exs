@@ -53,7 +53,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
       |> Sanbase.Mock.run_with_mocks(fn ->
-        result =
+        {:error, error} =
           TrendingWords.get_trending_words(
             from_iso8601!(dt1_str),
             from_iso8601!(dt3_str),
@@ -61,7 +61,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
             2
           )
 
-        assert result == {:error, "error"}
+        assert error =~ "Cannot execute database query."
       end)
     end
   end
@@ -82,9 +82,9 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
     test "clickhouse returns error", _context do
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
       |> Sanbase.Mock.run_with_mocks(fn ->
-        result = TrendingWords.get_currently_trending_words()
+        {:error, error} = TrendingWords.get_currently_trending_words()
 
-        assert result == {:error, "error"}
+        assert error =~ "Cannot execute database query."
       end)
     end
   end
@@ -119,7 +119,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
       |> Sanbase.Mock.run_with_mocks(fn ->
-        result =
+        {:error, error} =
           TrendingWords.get_word_trending_history(
             "word",
             from_iso8601!(dt1_str),
@@ -128,7 +128,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
             10
           )
 
-        assert result == {:error, "error"}
+        assert error =~ "Cannot execute database query."
       end)
     end
   end
@@ -166,7 +166,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
 
       Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "error"})
       |> Sanbase.Mock.run_with_mocks(fn ->
-        result =
+        {:error, error} =
           TrendingWords.get_project_trending_history(
             project.slug,
             from_iso8601!(dt1_str),
@@ -175,7 +175,7 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
             10
           )
 
-        assert result == {:error, "error"}
+        assert error =~ "Cannot execute database query."
       end)
     end
   end

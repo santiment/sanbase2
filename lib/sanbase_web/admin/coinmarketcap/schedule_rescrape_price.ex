@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.ScheduleRescrapePrice do
+defmodule SanbaseWeb.ExAdmin.ScheduleRescrapePrice do
   use ExAdmin.Register
 
   register_resource Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do

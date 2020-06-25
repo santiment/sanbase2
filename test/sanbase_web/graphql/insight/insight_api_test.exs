@@ -406,9 +406,10 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       )
 
     query = insights_by_tags_query([tag1.name, tag2.name])
-    result = execute_query(build_conn(), query, "allInsights")
+    result = execute_query(build_conn(), query, "allInsights") |> Enum.sort_by(& &1["id"])
 
-    assert result == [%{"id" => "#{post.id}"}, %{"id" => "#{post3.id}"}]
+    assert result ==
+             [%{"id" => "#{post.id}"}, %{"id" => "#{post3.id}"}] |> Enum.sort_by(& &1["id"])
   end
 
   describe "create insight" do

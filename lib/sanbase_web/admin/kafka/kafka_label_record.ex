@@ -21,7 +21,7 @@ defmodule Sanbase.Model.Kafka.KafkaLabelRecord do
   end
 end
 
-defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
+defmodule SanbaseWeb.ExAdmin.Kafka.KafkaLabelRecord do
   use ExAdmin.Register
   require Sanbase.Utils.Config, as: Config
   @producer Config.module_get(Sanbase.KafkaExporter, :producer)
@@ -31,13 +31,14 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
       inputs do
         content do
           """
-          Example: 0x123, bitcoin, centralized_exchange, {"owner": "Binance", "isDex": false}
+          Example: 0x123, bitcoin, centralized_exchange, {"owner": "Binance", "isDex": false}, <optional iso8601 datetime>
           """
         end
 
         input(label, :csv,
           type: :text,
-          label: "CSV Format: address, blockchain, label, metadata"
+          label:
+            "CSV Format: address, blockchain, label, metadata ({} for empty), <optional iso8601 datetime>"
         )
       end
     end
@@ -71,17 +72,26 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
 
     data =
       csv
+      |> String.trim()
       |> String.split("\n")
       |> Enum.map(fn row_str ->
         case String.split(row_str, ",", parts: 4) do
-          [_, _, _] = list ->
-            (list |> Enum.map(&String.trim/1)) ++ [timestamp]
+          [addr, chain, label, trailing] ->
+            # Trailing is either metadata or metadata and datetime
+            list = String.split(trailing, ",")
 
-          [addr, chain, label, metadata] ->
-            [addr, chain, label, metadata]
+            {ts, metadata} =
+              case List.last(list) |> String.trim() |> DateTime.from_iso8601() do
+                {:ok, %DateTime{} = datetime, _} ->
+                  {_, metadata} = list |> List.pop_at(-1)
+                  {datetime |> DateTime.to_unix(), metadata |> Enum.join(",")}
+
+                _ ->
+                  {timestamp, trailing}
+              end
 
             ([addr, chain, label] |> Enum.map(&String.trim/1)) ++
-              [Jason.decode!(metadata), timestamp]
+              [Jason.decode!(metadata), ts]
 
           [] ->
             []
@@ -146,7 +156,7 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
           address: address,
           blockchain: blockchain,
           label: label,
-          metadata: metadata,
+          metadata: metadata |> Jason.encode!(),
           timestamp: timestamp
         }
       end)
@@ -175,7 +185,8 @@ defmodule Sanbase.ExAdmin.Kafka.KafkaLabelRecord do
           blockchain: blockchain,
           label: label,
           metadata: metadata |> Jason.encode!(),
-          datetime: timestamp |> to_dt_struct()
+          datetime:
+            timestamp |> to_dt_struct() |> DateTime.truncate(:second) |> DateTime.to_naive()
         }
       end)
 

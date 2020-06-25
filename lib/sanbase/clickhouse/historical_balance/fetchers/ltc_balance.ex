@@ -9,7 +9,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.LtcBalance do
   import Sanbase.Clickhouse.HistoricalBalance.Utils
   import Sanbase.Clickhouse.HistoricalBalance.UtxoSqlQueries
 
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @table "ltc_balances"
   schema @table do

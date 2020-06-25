@@ -2,7 +2,7 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
   import Sanbase.Clickhouse.Metric.HistogramSqlQuery
 
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @spent_coins_cost_histograms ["price_histogram", "spent_coins_cost", "all_spent_coins_cost"]
 

@@ -9,7 +9,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.BtcBalance do
   import Sanbase.Clickhouse.HistoricalBalance.Utils
   import Sanbase.Clickhouse.HistoricalBalance.UtxoSqlQueries
 
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @table "btc_balances"
   schema @table do

@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Auth.User do
+defmodule SanbaseWeb.ExAdmin.Auth.User do
   use ExAdmin.Register
 
   alias Sanbase.Auth.EthAccount

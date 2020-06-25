@@ -14,45 +14,27 @@ defmodule SanbaseWeb.Graphql.ProjectApiMinVolumeTest do
     infr_btc = insert(:infrastructure, %{code: "BTC"})
 
     project1 =
-      insert(:random_project, %{
-        infrastructure_id: infr_eth.id,
-        main_contract_address: "0x" <> rand_hex_str()
-      })
+      insert(:random_project, %{infrastructure_id: infr_eth.id})
       |> update_latest_coinmarketcap_data(%{volume_usd: 1000, rank: 10})
 
     project2 =
-      insert(:random_project, %{
-        infrastructure_id: infr_eth.id,
-        main_contract_address: "0x" <> rand_hex_str()
-      })
+      insert(:random_project, %{infrastructure_id: infr_eth.id})
       |> update_latest_coinmarketcap_data(%{volume_usd: 2000, rank: 9})
 
     project3 =
-      insert(:random_project, %{
-        infrastructure_id: infr_btc.id,
-        main_contract_address: "0x" <> rand_hex_str()
-      })
+      insert(:random_project, %{infrastructure_id: infr_btc.id})
       |> update_latest_coinmarketcap_data(%{volume_usd: 3000, rank: 5})
 
     project4 =
-      insert(:random_project, %{
-        infrastructure_id: infr_btc.id,
-        main_contract_address: "0x" <> rand_hex_str()
-      })
+      insert(:random_project, %{infrastructure_id: infr_btc.id})
       |> update_latest_coinmarketcap_data(%{volume_usd: 4000, rank: 3})
 
     project5 =
-      insert(:random_project, %{
-        infrastructure_id: infr_eth.id,
-        main_contract_address: "0x" <> rand_hex_str()
-      })
+      insert(:random_project, %{infrastructure_id: infr_eth.id})
       |> update_latest_coinmarketcap_data(%{rank: 50})
 
     project6 =
-      insert(:random_project, %{
-        infrastructure_id: infr_btc.id,
-        main_contract_address: "0x" <> rand_hex_str()
-      })
+      insert(:random_project, %{infrastructure_id: infr_btc.id})
       |> update_latest_coinmarketcap_data(%{rank: 100})
 
     [

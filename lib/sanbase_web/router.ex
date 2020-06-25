@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Router do
   pipeline :browser do
     plug(:accepts, ["html"])
     plug(:fetch_session)
-    plug(:fetch_flash)
+    plug(:fetch_live_flash)
     plug(:protect_from_forgery)
     plug(:put_secure_browser_headers)
   end
@@ -38,6 +38,9 @@ defmodule SanbaseWeb.Router do
 
   scope "/admin2", SanbaseWeb do
     pipe_through([:browser, :basic_auth])
+    import Phoenix.LiveDashboard.Router
+
+    live_dashboard("/dashboard", metrics: SanbaseWeb.Telemetry)
 
     get("/anonymize_comment/:id", CommentModerationController, :anonymize_comment)
     get("/delete_subcomment_tree/:id", CommentModerationController, :delete_subcomment_tree)

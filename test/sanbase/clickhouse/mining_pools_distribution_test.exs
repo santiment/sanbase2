@@ -3,8 +3,6 @@ defmodule Sanbase.Clickhouse.MiningPoolsDistributionTest do
 
   alias Sanbase.Clickhouse.MiningPoolsDistribution
 
-  require Sanbase.ClickhouseRepo
-
   setup do
     [
       slug: "ethereum",

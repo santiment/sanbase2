@@ -1,6 +1,6 @@
 defmodule Sanbase.Signal.Type do
   @type trigger_type :: String.t()
-  @type channel :: String.t() | list(String.t())
+  @type channel :: String.t() | list(String.t() | {String.t(), String.t()})
   @type target :: String.t()
   @type metric :: String.t()
   @type complex_target :: target | list(target) | map()

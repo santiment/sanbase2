@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Insight.Comment do
+defmodule SanbaseWeb.ExAdmin.Insight.Comment do
   use ExAdmin.Register
 
   register_resource Sanbase.Comment do

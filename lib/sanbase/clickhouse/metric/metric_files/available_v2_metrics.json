@@ -1268,8 +1268,24 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Age Destroyed",
+    "human_readable_name": "Age Consumed",
     "name": "age_destroyed",
+    "metric": "stack_age_consumed_5min",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Age Consumed",
+    "name": "age_consumed",
     "metric": "stack_age_consumed_5min",
     "version": "2019-01-01",
     "access": "restricted",
@@ -1700,7 +1716,7 @@
     "aggregation": "avg",
     "min_interval": "8h",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries"
   },
 
@@ -1717,7 +1733,7 @@
     "aggregation": "avg",
     "min_interval": "1m",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries"
   },
   {
@@ -1733,7 +1749,7 @@
     "aggregation": "avg",
     "min_interval": "1h",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries"
   },
   {
@@ -1749,7 +1765,7 @@
     "aggregation": "avg",
     "min_interval": "1h",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries"
   }
 ]

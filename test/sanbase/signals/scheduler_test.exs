@@ -3,6 +3,7 @@ defmodule Sanbase.Signal.SchedulerTest do
 
   import Sanbase.Factory
   import Sanbase.TestHelpers
+  import ExUnit.CaptureLog
 
   alias Sanbase.Signal.{UserTrigger, HistoricalActivity}
   alias Sanbase.Signal.Trigger.MetricTriggerSettings
@@ -48,6 +49,53 @@ defmodule Sanbase.Signal.SchedulerTest do
       user: user,
       mock_fun: mock_fun
     ]
+  end
+
+  test "active is_repeating: false triggers again", context do
+    %{user: user, trigger: trigger} = context
+
+    UserTrigger.update_user_trigger(user, %{
+      id: trigger.id,
+      cooldown: "0s",
+      is_repeating: false
+    })
+
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Metric.timeseries_data/5,
+      {:ok, [%{datetime: Timex.now(), value: 5000}]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      ut = Sanbase.Repo.get(UserTrigger, trigger.id)
+      assert ut.trigger.is_repeating == false
+      assert ut.trigger.is_active == true
+
+      assert capture_log(fn ->
+               Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
+             end) =~ "In total 1/1 metric_signal signals were sent successfully"
+
+      ut = Sanbase.Repo.get(UserTrigger, trigger.id)
+      assert ut.trigger.is_repeating == false
+      assert ut.trigger.is_active == false
+
+      # Once triggered because of is_repeating: false, is_active
+      # has been changed to false
+      UserTrigger.update_user_trigger(user, %{
+        id: trigger.id,
+        is_active: true
+      })
+
+      ut = Sanbase.Repo.get(UserTrigger, trigger.id)
+      assert ut.trigger.is_repeating == false
+      assert ut.trigger.is_active == true
+
+      assert capture_log(fn ->
+               Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
+             end) =~ "In total 1/1 metric_signal signals were sent successfully"
+
+      ut = Sanbase.Repo.get(UserTrigger, trigger.id)
+      assert ut.trigger.is_repeating == false
+      assert ut.trigger.is_active == false
+    end)
   end
 
   test "successfull signal is written in signals_historical_activity", context do

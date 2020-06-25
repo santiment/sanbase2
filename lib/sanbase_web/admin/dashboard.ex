@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Dashboard do
+defmodule SanbaseWeb.ExAdmin.Dashboard do
   use ExAdmin.Register
 
   register_page "Dashboard" do

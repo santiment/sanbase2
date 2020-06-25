@@ -168,11 +168,16 @@ defmodule Sanbase.Signal.Trigger do
       nil ->
         %{list: [], type: :slug}
 
-      %Sanbase.UserList{} = ul ->
-        ul
-        |> Sanbase.UserList.get_projects()
-        |> Enum.map(& &1.slug)
-        |> remove_targets_on_cooldown(trigger, :slug)
+      %Sanbase.UserList{} = user_list ->
+        case Sanbase.UserList.get_projects(user_list) do
+          {:ok, projects} ->
+            projects
+            |> Enum.map(& &1.slug)
+            |> remove_targets_on_cooldown(trigger, :slug)
+
+          {:error, _error} ->
+            []
+        end
     end
   end
 

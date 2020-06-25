@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Model.ProjectBtcAddress do
+defmodule SanbaseWeb.ExAdmin.Model.ProjectBtcAddress do
   use ExAdmin.Register
 
   import Ecto.Query, warn: false

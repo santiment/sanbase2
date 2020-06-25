@@ -21,7 +21,7 @@ defmodule Sanbase.SocialData.TrendingWords do
   use Ecto.Schema
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @type word :: String.t()
   @type slug :: String.t()
@@ -54,8 +54,9 @@ defmodule Sanbase.SocialData.TrendingWords do
   # of computing the latest data
   @hours_back_ensure_has_data 3
 
-  @table "trending_words_top_500"
-  schema @table do
+  require Sanbase.Utils.Config, as: Config
+
+  schema Config.get(:trending_words_table) do
     field(:dt, :utc_datetime)
     field(:word, :string)
     field(:volume, :float)
@@ -112,6 +113,9 @@ defmodule Sanbase.SocialData.TrendingWords do
            "1h",
            size
          ) do
+      {:ok, []} ->
+        {:ok, []}
+
       {:ok, stats} ->
         {_, words} =
           stats
@@ -203,7 +207,7 @@ defmodule Sanbase.SocialData.TrendingWords do
            word,
            any(project) AS project,
            SUM(score) / 4 AS total_score
-        FROM trending_words
+        FROM #{Config.get(:trending_words_table)}
         PREWHERE
           dt >= toDateTime(?2) AND
           dt < toDateTime(?3) AND

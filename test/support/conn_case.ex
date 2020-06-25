@@ -18,7 +18,8 @@ defmodule SanbaseWeb.ConnCase do
   using do
     quote do
       # Import conveniences for testing with connections
-      use Phoenix.ConnTest
+      import Plug.Conn
+      import Phoenix.ConnTest
       import SanbaseWeb.Router.Helpers
 
       # The default endpoint for testing
@@ -30,6 +31,7 @@ defmodule SanbaseWeb.ConnCase do
     require Sanbase.CaseHelpers
 
     SanbaseWeb.Graphql.Cache.clear_all()
+    Sanbase.Cache.clear_all()
 
     Sanbase.CaseHelpers.checkout_shared(tags)
 

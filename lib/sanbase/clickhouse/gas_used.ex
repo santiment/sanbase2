@@ -5,7 +5,7 @@ defmodule Sanbase.Clickhouse.GasUsed do
 
   import Sanbase.Math, only: [to_integer: 1]
   alias Sanbase.DateTimeUtils
-  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @type gas_used :: %{
           datetime: DateTime.t(),

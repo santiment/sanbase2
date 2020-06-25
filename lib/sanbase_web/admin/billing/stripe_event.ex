@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Billing.StripeEvent do
+defmodule SanbaseWeb.ExAdmin.Billing.StripeEvent do
   use ExAdmin.Register
 
   register_resource Sanbase.Billing.StripeEvent do

@@ -9,15 +9,8 @@ defmodule Sanbase.TechIndicatorsTest do
   import Sanbase.Factory
 
   setup do
-    project =
-      insert(:project, %{
-        slug: "santiment",
-        ticker: "SAN",
-        main_contract_address: "0x123"
-      })
-
     [
-      project: project
+      project: insert(:random_erc20_project)
     ]
   end
 

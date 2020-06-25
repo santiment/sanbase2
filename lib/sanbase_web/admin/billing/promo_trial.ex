@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Billing.PromoTrial do
+defmodule SanbaseWeb.ExAdmin.Billing.PromoTrial do
   use ExAdmin.Register
 
   alias Sanbase.Repo

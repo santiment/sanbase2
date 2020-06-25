@@ -623,6 +623,38 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     end
   end
 
+  test "tags", context do
+    {trigger1, _, _} = create_trigger(context)
+
+    generic_setting_trigger_event = %{
+      user_trigger: nil,
+      user: context.user,
+      event_type: TimelineEvent.trigger_fired(),
+      payload: %{"default" => "some signal payload"},
+      data: %{"user_trigger_data" => %{"default" => %{"value" => 15}}},
+      inserted_at: NaiveDateTime.utc_now()
+    }
+
+    insert(:timeline_event, %{
+      generic_setting_trigger_event
+      | user_trigger: trigger1,
+        inserted_at: Timex.shift(NaiveDateTime.utc_now(), seconds: -3)
+    })
+
+    create_test_events(context)
+
+    result = get_timeline_events(context.conn, "limit: 4")
+
+    events = result |> hd() |> Map.get("events")
+
+    assert Enum.map(events, fn event -> event |> Map.get("tags") end) == [
+             ["BY_ME", "ALERT"],
+             ["BY_SANFAM", "INSIGHT"],
+             ["BY_SANFAM", "INSIGHT"],
+             ["BY_FOLLOWED", "INSIGHT", "PULSE"]
+           ]
+  end
+
   defp get_timeline_events(conn, args_str) do
     query = ~s|
     {
@@ -633,6 +665,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
         }
         events {
           id
+          tags
           votes {
             userId
           }
@@ -749,7 +782,8 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
         user: user_to_follow,
         state: Post.approved_state(),
         ready_state: Post.published(),
-        inserted_at: Timex.shift(NaiveDateTime.utc_now(), seconds: -10)
+        inserted_at: Timex.shift(NaiveDateTime.utc_now(), seconds: -10),
+        is_pulse: true
       )
 
     post2 =

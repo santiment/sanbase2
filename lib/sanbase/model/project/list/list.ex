@@ -385,6 +385,19 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
   end
 
+  def by_contracts(contracts, opts \\ [])
+
+  def by_contracts(contracts, opts) when is_list(contracts) do
+    contracts = Enum.map(contracts, &String.downcase/1)
+
+    from(
+      p in projects_query(opts),
+      inner_join: contract in assoc(p, :contract_addresses),
+      where: contract.address in ^contracts
+    )
+    |> Repo.all()
+  end
+
   @doc ~s"""
   Returns a list of projects that have their ticker, name and/or slug in the list of
   values. This function is used when deciding what is the list of trending
@@ -426,34 +439,6 @@ defmodule Sanbase.Model.Project.List do
     |> by_name_ticker_slug(opts)
   end
 
-  @doc ~s"""
-  Returns a map where the key is the slug and the value is tuple {contract, decimals}
-  Filtering out projects based on some conditions can be controled by the options.
-
-  See the "Shared options" section at the module documentation for more options.
-  """
-  def contract_info_map(opts \\ [])
-
-  def contract_info_map(opts) do
-    # explicitly remove preloads as they are not going to be used
-    opts = Keyword.put(opts, :preload?, false)
-
-    data =
-      projects_query(opts)
-      |> select([p], {p.slug, p.main_contract_address, p.token_decimals})
-      |> Repo.all()
-
-    special_case_data =
-      Sanbase.Model.Project.ContractData.special_case_slugs()
-      |> Enum.map(fn slug ->
-        {:ok, contract, decimals} = Project.contract_info_by_slug(slug)
-        {slug, contract, decimals}
-      end)
-
-    (special_case_data ++ data)
-    |> Map.new(fn {slug, contract, decimals} -> {slug, {contract, decimals}} end)
-  end
-
   # Private functions
 
   ## Fetch list of projects
@@ -474,7 +459,8 @@ defmodule Sanbase.Model.Project.List do
     from(
       p in projects_query(opts),
       inner_join: infr in assoc(p, :infrastructure),
-      where: not is_nil(p.main_contract_address) and infr.code == "ETH"
+      inner_join: contract in assoc(p, :contract_addresses),
+      where: not is_nil(contract.id) and infr.code == "ETH"
     )
   end
 
@@ -482,7 +468,8 @@ defmodule Sanbase.Model.Project.List do
     from(
       p in projects_query(opts),
       left_join: infr in assoc(p, :infrastructure),
-      where: is_nil(p.main_contract_address) or is_nil(p.infrastructure_id) or infr.code != "ETH"
+      left_join: contract in assoc(p, :contract_addresses),
+      where: is_nil(contract.id) or is_nil(p.infrastructure_id) or infr.code != "ETH"
     )
   end
 

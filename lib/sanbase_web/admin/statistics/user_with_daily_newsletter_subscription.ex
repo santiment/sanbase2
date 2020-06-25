@@ -1,4 +1,4 @@
-defmodule Sanbase.ExAdmin.Statistics.UsersWithDailyNewsletterSubscription do
+defmodule SanbaseWeb.ExAdmin.Statistics.UsersWithDailyNewsletterSubscription do
   use ExAdmin.Register
 
   register_page "UsersWithDailyNewsletterSubscription" do

@@ -16,7 +16,7 @@ defmodule SanbaseWeb.ProjectDataController do
     data =
       Project.List.projects(
         preload?: true,
-        preload: [:infrastructure, :github_organizations]
+        preload: [:infrastructure, :github_organizations, :contract_addresses]
       )
       |> Enum.map(fn project ->
         infr_code =

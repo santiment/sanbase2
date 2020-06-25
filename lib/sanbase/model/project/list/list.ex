@@ -1,5 +1,10 @@
 defmodule Sanbase.Model.Project.List do
-  @preloads [:eth_addresses, :latest_coinmarketcap_data, :github_organizations]
+  @preloads [
+    :eth_addresses,
+    :latest_coinmarketcap_data,
+    :github_organizations,
+    :contract_addresses
+  ]
 
   @moduledoc ~s"""
   Provide functions for fetching different subsets of projects.

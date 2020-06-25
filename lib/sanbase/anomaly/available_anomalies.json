@@ -22,7 +22,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Development Activity Anomaly",
+    "human_readable_name": "Exchange Balance Anomaly",
     "model_name": "prophet_v1",
     "name": "exchange_balance_anomaly",
     "metric": "exchange_balance",

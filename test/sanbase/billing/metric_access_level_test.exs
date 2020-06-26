@@ -110,6 +110,15 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "circulation_30d",
         "circulation_7d",
         "circulation_1d",
+        # dormant ciruclation
+        "dormant_circulation_10y",
+        "dormant_circulation_5y",
+        "dormant_circulation_3y",
+        "dormant_circulation_2y",
+        "dormant_circulation_365d",
+        "dormant_circulation_180d",
+        "dormant_circulation_90d",
+        # other
         "mean_age",
         "mean_dollar_invested_age",
         "realized_value_usd",

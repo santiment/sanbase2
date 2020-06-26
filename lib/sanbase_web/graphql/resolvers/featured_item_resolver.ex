@@ -20,4 +20,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.FeaturedItemResolver do
   def chart_configurations(_root, _args, _context) do
     {:ok, FeaturedItem.chart_configurations()}
   end
+
+  def table_configurations(_root, _args, _context) do
+    {:ok, FeaturedItem.table_configurations()}
+  end
 end

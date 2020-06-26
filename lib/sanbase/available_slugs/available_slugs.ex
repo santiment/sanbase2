@@ -1,4 +1,5 @@
 defmodule Sanbase.AvailableSlugs do
+  @behaviour Sanbase.AvailableSlugs.Behaviour
   @moduledoc ~s"""
   Module for fast checking if a slug is existing.
 
@@ -10,6 +11,7 @@ defmodule Sanbase.AvailableSlugs do
   @ets_table :available_projects_slugs_ets_table
   use GenServer
 
+  @impl Sanbase.AvailableSlugs.Behaviour
   def valid_slug?(slug) do
     case :ets.lookup(@ets_table, slug) do
       [] -> false

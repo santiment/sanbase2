@@ -10,11 +10,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
 
   setup do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
+    project = insert(:random_project)
     conn = setup_jwt_auth(build_conn(), user)
 
     [
       conn: conn,
-      slug: "ethereum",
+      slug: project.slug,
       from: from_iso8601!("2019-01-01T00:00:00Z"),
       to: from_iso8601!("2019-01-02T00:00:00Z"),
       interval: "1d"

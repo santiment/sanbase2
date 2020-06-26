@@ -10,6 +10,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   require Logger
 
   @datapoints 300
+  @available_slugs_module if Mix.env() == :test,
+                            do: Sanbase.DirectAvailableSlugs,
+                            else: Sanbase.AvailableSlugs
 
   def get_metric(_root, %{metric: metric}, _resolution) do
     case Metric.has_metric?(metric) do
@@ -110,7 +113,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         value when is_number(value) ->
           {:ok, value}
 
-        %{value: value} = result ->
+        [%{value: value}] ->
           {:ok, value}
 
         %{} = map ->
@@ -235,21 +238,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   # All histogram metrics except "all_spent_coins_cost" require `from` argument
   defp valid_histogram_args?(metric, args) do
-    if metric != "all_spent_coins_cost" && not Map.get(args, :from) do
+    if metric != "all_spent_coins_cost" && !Map.get(args, :from) do
       {:error, "Missing required `from` argument"}
     else
       true
     end
   end
 
-  defp valid_selector?(%{slug: slug}) do
-    case Sanbase.AvailableSlugs.valid_slug?(slug) do
+  defp valid_selector?(%{slug: slug}) when is_binary(slug) do
+    case @available_slugs_module.valid_slug?(slug) do
       true -> true
-      false -> {:error, "The slug #{inspect(slug)} is not an existign slug."}
+      false -> {:error, "The slug #{inspect(slug)} is not an existing slug."}
     end
   end
 
-  defp valid_selector(_), do: true
+  defp valid_selector?(_), do: true
   defp to_selector(%{slug: slug}), do: %{slug: slug}
   defp to_selector(%{word: word}), do: %{word: word}
 

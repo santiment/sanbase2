@@ -199,7 +199,8 @@ defmodule Sanbase.Application do
            acquire_lock_timeout: 30_000
          ]},
         id: :sanbase_generic_cache
-      )
+      ),
+      Sanbase.AvailableSlugs
     ]
   end
 

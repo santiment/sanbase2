@@ -6,7 +6,11 @@ defmodule Sanbase.SocialData.SocialHelper do
 
   def sources(), do: @sources
 
-  def social_metrics_selector_handler(%{slug: slug}) do
+  def social_metrics_selector_handler(%{slug: slugs}) when is_list(slugs) do
+    {:error, "Social Metrics cannot work with list of slugs."}
+  end
+
+  def social_metrics_selector_handler(%{slug: slug}) when is_binary(slug) do
     slug
     |> Project.by_slug(only_preload: [:social_volume_query])
     |> case do

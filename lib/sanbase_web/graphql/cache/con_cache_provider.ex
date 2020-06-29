@@ -1,10 +1,13 @@
 defmodule SanbaseWeb.Graphql.ConCacheProvider do
+  @moduledoc ~s"""
+  Implements Sanbase.Cache.Behaviour for con_cache
+  """
   @behaviour Sanbase.Cache.Behaviour
 
   @compile :inline_list_funcs
   @compile {:inline, get: 2, store: 3, get_or_store: 4, cache_item: 3}
 
-  @max_cache_ttl 86400
+  @max_cache_ttl 86_400
 
   @impl true
   def size(cache, :megabytes) do

@@ -1,6 +1,13 @@
 defmodule Sanbase.Utils.ErrorHandling do
+  @moduledoc ~s"""
+
+  """
   require Logger
 
+  @compile :inline_list_funcs
+  @compile inline: [
+             description_and_identifier: 2
+           ]
   def changeset_errors_to_str(%Ecto.Changeset{} = changeset) do
     changeset
     |> Ecto.Changeset.traverse_errors(&format_error/1)
@@ -19,19 +26,7 @@ defmodule Sanbase.Utils.ErrorHandling do
   end
 
   def handle_graphql_error(metric, identifier, reason, opts \\ []) do
-    {target_description, identifier} =
-      case Keyword.get(opts, :description) do
-        nil ->
-          case identifier do
-            %{slug: slug} -> {"project with slug", slug}
-            %{text: text} -> {"search term", text}
-            slug when is_binary(slug) -> {"project with slug", slug}
-          end
-
-        description ->
-          {description, identifier}
-      end
-
+    {target_description, identifier} = description_and_identifier(identifier, opts)
     # Detect if reason already contains UUID and use it.
     {uuid, message} =
       case reason do
@@ -65,6 +60,20 @@ defmodule Sanbase.Utils.ErrorHandling do
   end
 
   # Private functions
+
+  defp description_and_identifier(identifier, opts) do
+    case Keyword.get(opts, :description) do
+      nil ->
+        case identifier do
+          %{slug: slug} -> {"project with slug", slug}
+          %{text: text} -> {"search term", text}
+          slug when is_binary(slug) -> {"project with slug", slug}
+        end
+
+      description ->
+        {description, identifier}
+    end
+  end
 
   defp identifier_to_string(str) when is_binary(str), do: str
   defp identifier_to_string(data), do: inspect(data)

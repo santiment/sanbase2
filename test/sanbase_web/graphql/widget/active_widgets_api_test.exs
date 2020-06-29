@@ -28,7 +28,7 @@ defmodule SanbaseWeb.Graphql.ActiveWidgetsApiTest do
       |> json_response(200)
       |> get_in(["data", "activeWidgets"])
 
-    assert length(rest) == 0
+    assert rest == []
     assert result["title"] == widget.title
     assert result["description"] == widget.description
     assert result["videoLink"] == widget.video_link

@@ -9,7 +9,7 @@ defmodule Sanbase.Clickhouse.Metric.HistogramSqlQuery do
     interval_sec = interval |> str_to_sec()
 
     metric =
-      case rem(interval_sec, 86400) do
+      case rem(interval_sec, 86_400) do
         0 -> "age_distribution_1day_delta"
         _ -> "age_distribution_5min_delta"
       end
@@ -62,7 +62,7 @@ defmodule Sanbase.Clickhouse.Metric.HistogramSqlQuery do
     interval_sec = interval |> str_to_sec()
 
     metric =
-      case rem(interval_sec, 86400) do
+      case rem(interval_sec, 86_400) do
         0 -> "age_distribution_1day_delta"
         _ -> "age_distribution_5min_delta"
       end

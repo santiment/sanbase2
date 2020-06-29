@@ -13,6 +13,19 @@ defmodule Sanbase.Timeline.Filter do
     |> filter_by_author_query(filter_by, user_id)
     |> filter_by_watchlists_query(filter_by)
     |> filter_by_assets_query(filter_by, user_id)
+    |> filter_by_insights_query(filter_by)
+  end
+
+  defp filter_by_insights_query(query, %{insight: :not_pulse}) do
+    from(event in query, join: p in assoc(event, :post), where: not p.is_pulse)
+  end
+
+  defp filter_by_insights_query(query, %{insight: :pulse}) do
+    from(event in query, join: p in assoc(event, :post), where: p.is_pulse)
+  end
+
+  defp filter_by_insights_query(query, %{insight: nil}) do
+    query
   end
 
   defp filter_by_author_query(query, %{author: :all}, user_id) do

@@ -1,5 +1,5 @@
 defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
-  @doc ~s"""
+  @moduledoc ~s"""
   Module for working with historical ERC20 balances.
   """
 

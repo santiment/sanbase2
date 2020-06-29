@@ -10,6 +10,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   require Logger
 
   @datapoints 300
+  @available_slugs_module if Mix.env() == :test,
+                            do: Sanbase.DirectAvailableSlugs,
+                            else: Sanbase.AvailableSlugs
 
   def get_metric(_root, %{metric: metric}, _resolution) do
     case Metric.has_metric?(metric) do
@@ -73,7 +76,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     selector = to_selector(args)
     metric = maybe_replace_metric(metric, selector)
 
-    with {:ok, from, to, interval} <-
+    with true <- valid_selector?(selector),
+         {:ok, from, to, interval} <-
            calibrate_interval(Metric, metric, selector, from, to, interval, 86_400, @datapoints),
          {:ok, from, to} <-
            calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
@@ -89,6 +93,65 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         {:error, handle_graphql_error(metric, selector, error)}
     end
   end
+
+  def aggregated_timeseries_data(
+        _root,
+        %{from: from, to: to} = args,
+        %{source: %{metric: metric}}
+      ) do
+    include_incomplete_data = Map.get(args, :include_incomplete_data, false)
+    aggregation = Map.get(args, :aggregation, nil)
+    selector = to_selector(args)
+
+    with true <- valid_selector?(selector),
+         {:ok, from, to} <-
+           calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
+         {:ok, result} <-
+           Metric.aggregated_timeseries_data(metric, selector, from, to, aggregation) do
+      # This requires internal rework - all aggregated_timeseries_data queries must return the same format
+      case result do
+        value when is_number(value) ->
+          {:ok, value}
+
+        [%{value: value}] ->
+          {:ok, value}
+
+        %{} = map ->
+          value = Map.values(map) |> hd
+          {:ok, value}
+
+        _ ->
+          {:ok, nil}
+      end
+    else
+      {:error, error} ->
+        {:error, handle_graphql_error(metric, selector, error)}
+    end
+  end
+
+  def histogram_data(
+        _root,
+        args,
+        %{source: %{metric: metric}}
+      ) do
+    %{to: to, interval: interval, limit: limit} = args
+    # from datetime arg is not required for `all_spent_coins_cost` metric which calculates
+    # the histogram for all time.
+    from = Map.get(args, :from, nil)
+    interval = transform_interval(metric, interval)
+    selector = to_selector(args)
+
+    with true <- valid_selector?(selector),
+         true <- valid_histogram_args?(metric, args),
+         {:ok, data} <- Metric.histogram_data(metric, selector, from, to, interval, limit) do
+      {:ok, %{values: %{data: data}}}
+    else
+      {:error, error} ->
+        {:error, handle_graphql_error(metric, selector, error)}
+    end
+  end
+
+  # Private functions
 
   # gold and s-and-p-500 are present only in the intrday metrics table, not in asset_prices
   defp maybe_replace_metric("price_usd", %{slug: slug})
@@ -165,60 +228,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     apply_transform(%{type: "percent_change"}, cumsum)
   end
 
-  def aggregated_timeseries_data(
-        _root,
-        %{from: from, to: to} = args,
-        %{source: %{metric: metric}}
-      ) do
-    include_incomplete_data = Map.get(args, :include_incomplete_data, false)
-    aggregation = Map.get(args, :aggregation, nil)
-
-    with {:ok, from, to} <-
-           calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
-         {:ok, result} <-
-           Metric.aggregated_timeseries_data(metric, to_selector(args), from, to, aggregation) do
-      # This requires internal rework - all aggregated_timeseries_data queries must return the same format
-      case result do
-        value when is_number(value) ->
-          {:ok, value}
-
-        [%{value: value}] ->
-          {:ok, value}
-
-        %{} = map ->
-          value = Map.values(map) |> hd
-          {:ok, value}
-
-        _ ->
-          {:ok, nil}
-      end
-    else
-      {:error, error} ->
-        {:error, handle_graphql_error(metric, to_selector(args), error)}
-    end
-  end
-
-  def histogram_data(
-        _root,
-        args,
-        %{source: %{metric: metric}}
-      ) do
-    %{to: to, interval: interval, limit: limit} = args
-    # from datetime arg is not required for `all_spent_coins_cost` metric which calculates
-    # the histogram for all time.
-    from = Map.get(args, :from, nil)
-    interval = transform_interval(metric, interval)
-
-    with :ok <- valid_histogram_args?(metric, args),
-         {:ok, data} <-
-           Metric.histogram_data(metric, to_selector(args), from, to, interval, limit) do
-      {:ok, %{values: %{data: data}}}
-    else
-      {:error, error} ->
-        {:error, handle_graphql_error(metric, to_selector(args), error)}
-    end
-  end
-
   defp transform_interval("all_spent_coins_cost", interval) do
     Enum.max([Sanbase.DateTimeUtils.str_to_days(interval), 1])
     |> to_string
@@ -228,14 +237,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   defp transform_interval(_, interval), do: interval
 
   # All histogram metrics except "all_spent_coins_cost" require `from` argument
-  def valid_histogram_args?(metric, args) do
-    if metric != "all_spent_coins_cost" && !Map.get(args, :from, false) do
+  defp valid_histogram_args?(metric, args) do
+    if metric != "all_spent_coins_cost" && !Map.get(args, :from) do
       {:error, "Missing required `from` argument"}
     else
-      :ok
+      true
     end
   end
 
+  defp valid_selector?(%{slug: slug}) when is_binary(slug) do
+    case @available_slugs_module.valid_slug?(slug) do
+      true -> true
+      false -> {:error, "The slug #{inspect(slug)} is not an existing slug."}
+    end
+  end
+
+  defp valid_selector?(_), do: true
   defp to_selector(%{slug: slug}), do: %{slug: slug}
   defp to_selector(%{word: word}), do: %{word: word}
 

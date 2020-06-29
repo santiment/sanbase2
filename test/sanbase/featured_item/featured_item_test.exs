@@ -8,7 +8,7 @@ defmodule Sanbase.FeaturedItemTest do
 
   describe "chart configuration featured items" do
     test "no chart configurations are featured" do
-      assert FeaturedItem.insights() == []
+      assert FeaturedItem.chart_configurations() == []
     end
 
     test "cannot make private chart configuration featured" do
@@ -42,6 +42,45 @@ defmodule Sanbase.FeaturedItemTest do
       :ok = FeaturedItem.update_item(chart_config, true)
       [featured_chart_config] = FeaturedItem.chart_configurations()
       assert featured_chart_config.id == chart_config.id
+    end
+  end
+
+  describe "table configuration featured items" do
+    test "no table configurations are featured" do
+      assert FeaturedItem.table_configurations() == []
+    end
+
+    test "cannot make private table configuration featured" do
+      table_config = insert(:table_configuration, is_public: false)
+      {:error, error_msg} = FeaturedItem.update_item(table_config, true)
+      assert error_msg =~ "cannot be made featured"
+    end
+
+    test "marking table configurations as featured" do
+      table_config = insert(:table_configuration, is_public: true)
+
+      :ok = FeaturedItem.update_item(table_config, true)
+      [featured_table_config] = FeaturedItem.table_configurations()
+
+      assert featured_table_config.id == table_config.id
+    end
+
+    test "unmarking table configurations as featured" do
+      table_config = insert(:table_configuration, is_public: true)
+
+      :ok = FeaturedItem.update_item(table_config, true)
+      :ok = FeaturedItem.update_item(table_config, false)
+      assert FeaturedItem.table_configurations() == []
+    end
+
+    test "marking table configuration as featured is idempotent" do
+      table_config = insert(:table_configuration, is_public: true)
+
+      :ok = FeaturedItem.update_item(table_config, true)
+      :ok = FeaturedItem.update_item(table_config, true)
+      :ok = FeaturedItem.update_item(table_config, true)
+      [featured_table_config] = FeaturedItem.table_configurations()
+      assert featured_table_config.id == table_config.id
     end
   end
 

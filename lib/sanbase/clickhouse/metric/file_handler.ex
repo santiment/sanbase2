@@ -95,13 +95,13 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   def metrics_with_access(level) when level in [:free, :restricted] do
     @access_map
     |> Enum.filter(fn {_metric, access_level} -> access_level == level end)
-    |> Keyword.keys()
+    |> Enum.map(&elem(&1, 0))
   end
 
   def metrics_with_data_type(type) do
     @metrics_data_type_map
     |> Enum.filter(fn {_metric, data_type} -> data_type == type end)
-    |> Keyword.keys()
+    |> Enum.map(&elem(&1, 0))
   end
 
   # Private functions

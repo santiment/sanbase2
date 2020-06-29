@@ -1,12 +1,15 @@
 defmodule Sanbase.Clickhouse.GasUsedTest do
   use Sanbase.DataCase
+  import Sanbase.Factory
   import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
 
   alias Sanbase.Clickhouse.GasUsed
 
   setup do
+    project = insert(:project, slug: "ethereum")
+
     [
-      slug: "ethereum",
+      slug: project.slug,
       from: from_iso8601!("2019-01-01T00:00:00Z"),
       to: from_iso8601!("2019-01-03T00:00:00Z"),
       interval: "1d"

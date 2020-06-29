@@ -73,6 +73,6 @@ defmodule Sanbase.Anomaly.FileHandler do
   def anomalies_with_access(level) when level in [:free, :restricted] do
     @access_map
     |> Enum.filter(fn {_anomaly, access_level} -> access_level == level end)
-    |> Keyword.keys()
+    |> Enum.map(&elem(&1, 0))
   end
 end

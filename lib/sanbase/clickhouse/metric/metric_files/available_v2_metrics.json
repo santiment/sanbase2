@@ -961,6 +961,120 @@
     "has_incomplete_data": true,
     "data_type": "timeseries"
   },
+
+  {
+    "human_readable_name": "Circulation for coins that have not moved in the past 10 years",
+    "name": "dormant_circulation_10y",
+    "metric": "dormant_circulation_10y",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Circulation for coins that have not moved in the past 5 years",
+    "name": "dormant_circulation_5y",
+    "metric": "dormant_circulation_5y",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Circulation for coins that have not moved in the past 3 years",
+    "name": "dormant_circulation_3y",
+    "metric": "dormant_circulation_3y",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Circulation for coins that have not moved in the past 2 years",
+    "name": "dormant_circulation_2y",
+    "metric": "dormant_circulation_2y",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Circulation for coins that have not moved in the past 1 year",
+    "name": "dormant_circulation_365d",
+    "metric": "dormant_circulation_365d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Circulation for coins that have not moved in the past 180 days",
+    "name": "dormant_circulation_180d",
+    "metric": "dormant_circulation_180d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Circulation for coins that have not moved in the past 90 days",
+    "name": "dormant_circulation_90d",
+    "metric": "dormant_circulation_90d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+
   {
     "human_readable_name": "Mean Age in days",
     "name": "mean_age",

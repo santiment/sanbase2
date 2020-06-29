@@ -51,6 +51,8 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
       resolve(&UserListResolver.list_items/3)
     end
 
+    field(:table_configuration, :table_configuration, resolve: dataloader(SanbaseRepo))
+
     field(:inserted_at, non_null(:naive_datetime))
     field(:updated_at, non_null(:naive_datetime))
 

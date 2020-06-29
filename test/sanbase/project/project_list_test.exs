@@ -31,8 +31,8 @@ defmodule Sanbase.Model.ProjectListTest do
       assert Project.List.projects_page(1, 2) == Project.List.projects_page(1, 2, min_volume: 0)
       assert Project.List.projects_page(2, 2) == Project.List.projects_page(2, 2, min_volume: 0)
       assert Project.List.projects_page(3, 2) == Project.List.projects_page(3, 2, min_volume: 0)
-      assert length(Project.List.projects_page(1, 6, min_volume: 5000)) == 1
-      assert length(Project.List.projects_page(2, 1, min_volume: 5000)) == 0
+      assert [_] = Project.List.projects_page(1, 6, min_volume: 5000)
+      assert Project.List.projects_page(2, 1, min_volume: 5000) == []
     end
   end
 

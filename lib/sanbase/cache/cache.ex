@@ -1,7 +1,7 @@
 defmodule Sanbase.Cache do
   @behaviour Sanbase.Cache.Behaviour
   @cache_name :sanbase_cache
-  @max_cache_ttl 86400
+  @max_cache_ttl 86_400
 
   def hash(data) do
     :crypto.hash(:sha256, data |> :erlang.term_to_binary())

@@ -124,9 +124,10 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
 
       if subscription && subscription.id != sign_up_trial.subscription_id &&
            subscription.status == :active do
-        with {:ok, _} <- StripeApi.delete_subscription(sign_up_trial.subscription.stripe_id) do
-          update_trial(sign_up_trial, %{is_finished: true})
-        else
+        case StripeApi.delete_subscription(sign_up_trial.subscription.stripe_id) do
+          {:ok, _} ->
+            update_trial(sign_up_trial, %{is_finished: true})
+
           {:error, reason} ->
             Logger.error(
               "Can't delete the subscription for: #{inspect(sign_up_trial)}, reason: #{

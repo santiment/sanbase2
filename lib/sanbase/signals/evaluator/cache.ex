@@ -43,7 +43,6 @@ defmodule Sanbase.Signal.Evaluator.Cache do
       end
 
     if error_if_any != nil do
-      Logger.info("Error while evaluating a signal: #{inspect(error_if_any)}")
       error_if_any
     else
       result

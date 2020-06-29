@@ -9,9 +9,10 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTransformTest do
 
   setup do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
+    project = insert(:random_project)
     conn = setup_jwt_auth(build_conn(), user)
 
-    [conn: conn, slug: "ethereum"]
+    [conn: conn, slug: project.slug]
   end
 
   test "moving average transform", context do

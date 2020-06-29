@@ -123,7 +123,7 @@ defmodule Sanbase.Application do
          [
            name: :prices_exporter,
            topic: kafka_prices_data_topic(),
-           buffering_max_messages: 10000,
+           buffering_max_messages: 10_000,
            can_send_after_interval: 200
          ]},
         id: :prices_exporter
@@ -199,7 +199,8 @@ defmodule Sanbase.Application do
            acquire_lock_timeout: 30_000
          ]},
         id: :sanbase_generic_cache
-      )
+      ),
+      Sanbase.AvailableSlugs
     ]
   end
 

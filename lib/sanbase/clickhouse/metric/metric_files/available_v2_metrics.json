@@ -972,7 +972,7 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "sum",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
@@ -988,7 +988,7 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "sum",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
@@ -1004,7 +1004,7 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "sum",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
@@ -1020,7 +1020,7 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "sum",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
@@ -1036,7 +1036,7 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "sum",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
@@ -1052,7 +1052,7 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "sum",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
@@ -1068,7 +1068,7 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "sum",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,

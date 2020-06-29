@@ -1,9 +1,10 @@
 defmodule Sanbase.WatchlistFunction do
   use Ecto.Type
-
   defstruct name: "empty", args: []
 
   alias Sanbase.Model.Project
+
+  @derive Jason.Encoder
 
   @impl Ecto.Type
   def type, do: :map

@@ -19,12 +19,12 @@ defmodule SanbaseWeb.Graphql.TimelineEventTypes do
     value(:alert)
   end
 
-  enum(:insight_filter, values: [:not_pulse, :pulse])
   enum(:author_filter, values: [:all, :own, :followed, :sanfam])
+  enum(:type_filter, values: [:insight, :pulse, :alert])
 
   input_object :timeline_events_filter_input do
     field(:author, :author_filter, default_value: :all)
-    field(:insight, :insight_filter, default_value: nil)
+    field(:type, :type_filter)
     field(:watchlists, list_of(:integer), default_value: nil)
     field(:assets, list_of(:integer), default_value: nil)
   end

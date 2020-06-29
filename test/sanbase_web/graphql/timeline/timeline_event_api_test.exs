@@ -557,6 +557,73 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
                insight_event.id
              ]
     end
+
+    test "by insight or pulse", context do
+      pulse = create_insight(context, %{is_pulse: true, tags: []})
+      not_pulse = create_insight(context, %{is_pulse: false, tags: []})
+
+      pulse_event =
+        insert(:timeline_event,
+          post: pulse,
+          user: context.user,
+          event_type: TimelineEvent.publish_insight_type(),
+          inserted_at: Timex.shift(NaiveDateTime.utc_now(), seconds: -4)
+        )
+
+      insight_event =
+        insert(:timeline_event,
+          post: not_pulse,
+          user: context.user,
+          event_type: TimelineEvent.publish_insight_type(),
+          inserted_at: Timex.shift(NaiveDateTime.utc_now(), seconds: -3)
+        )
+
+      {trigger1, _trigger2, _trigger3} = create_trigger(context)
+
+      generic_setting_trigger_event = %{
+        user_trigger: nil,
+        user: context.user,
+        event_type: TimelineEvent.trigger_fired(),
+        payload: %{"default" => "some signal payload"},
+        data: %{"user_trigger_data" => %{"default" => %{"value" => 15}}},
+        inserted_at: Timex.shift(NaiveDateTime.utc_now(), seconds: -2)
+      }
+
+      trigger1_event =
+        insert(:timeline_event, %{generic_setting_trigger_event | user_trigger: trigger1})
+
+      result =
+        get_timeline_events(
+          context.conn,
+          "filterBy: {author: ALL, type: PULSE}, limit: 10"
+        )
+
+      assert event_ids(result) == [pulse_event.id]
+
+      result =
+        get_timeline_events(
+          context.conn,
+          "filterBy: {author: ALL, type: INSIGHT}, limit: 10"
+        )
+
+      assert event_ids(result) == [insight_event.id]
+
+      result =
+        get_timeline_events(
+          context.conn,
+          "filterBy: {author: ALL, type: ALERT}, limit: 10"
+        )
+
+      assert event_ids(result) == [trigger1_event.id]
+
+      result =
+        get_timeline_events(
+          context.conn,
+          "filterBy: {author: ALL}, limit: 10"
+        )
+
+      assert event_ids(result) == [trigger1_event.id, insight_event.id, pulse_event.id]
+    end
   end
 
   describe "cursor filtered events" do

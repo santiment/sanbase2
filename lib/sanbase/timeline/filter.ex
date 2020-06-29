@@ -16,17 +16,19 @@ defmodule Sanbase.Timeline.Filter do
     |> filter_by_insights_query(filter_by)
   end
 
-  defp filter_by_insights_query(query, %{insight: :not_pulse}) do
+  defp filter_by_insights_query(query, %{type: :insight}) do
     from(event in query, join: p in assoc(event, :post), where: not p.is_pulse)
   end
 
-  defp filter_by_insights_query(query, %{insight: :pulse}) do
+  defp filter_by_insights_query(query, %{type: :pulse}) do
     from(event in query, join: p in assoc(event, :post), where: p.is_pulse)
   end
 
-  defp filter_by_insights_query(query, %{insight: nil}) do
-    query
+  defp filter_by_insights_query(query, %{type: :alert}) do
+    from(event in query, join: p in assoc(event, :user_trigger))
   end
+
+  defp filter_by_insights_query(query, _), do: query
 
   defp filter_by_author_query(query, %{author: :all}, user_id) do
     Query.events_by_sanfamily_or_followed_users_or_own_query(query, user_id)

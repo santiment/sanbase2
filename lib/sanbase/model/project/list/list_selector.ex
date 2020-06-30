@@ -43,8 +43,18 @@ defmodule Sanbase.Model.Project.ListSelector do
   }
   """
   def args_to_opts(args) do
-    filters = get_in(args, [:selector, :filters])
-    order_by = get_in(args, [:selector, :order_by])
+    filters =
+      (get_in(args, [:selector, :filters]) || [])
+      |> Enum.map(&transform_from_to/1)
+      |> Enum.map(&update_dynamic_datetimes/1)
+      |> Enum.map(&atomize_values/1)
+
+    order_by =
+      get_in(args, [:selector, :order_by])
+      |> transform_from_to()
+      |> update_dynamic_datetimes()
+      |> atomize_values()
+
     pagination = get_in(args, [:selector, :pagination])
 
     included_slugs = filters |> included_slugs_by_filters()
@@ -60,6 +70,65 @@ defmodule Sanbase.Model.Project.ListSelector do
       included_slugs: included_slugs,
       ordered_slugs: ordered_slugs
     ]
+  end
+
+  defp atomize_values(nil), do: nil
+
+  defp atomize_values(map) do
+    {to_atomize, rest} = Map.split(map, [:operator, :aggregation, :direction])
+
+    to_atomize
+    |> Enum.into(%{}, fn {k, v} ->
+      v = if is_binary(v), do: String.to_existing_atom(v), else: v
+      {k, v}
+    end)
+    |> Map.merge(rest)
+  end
+
+  defp transform_from_to(%{from: from, to: to} = map) do
+    %{
+      map
+      | from: if(is_binary(from), do: from_iso8601!(from), else: from),
+        to: if(is_binary(to), do: from_iso8601!(to), else: to)
+    }
+  end
+
+  defp transform_from_to(map), do: map
+
+  defp update_dynamic_datetimes(nil), do: nil
+
+  defp update_dynamic_datetimes(filter) do
+    dynamic_from = Map.get(filter, :dynamic_from)
+    dynamic_to = Map.get(filter, :dynamic_to)
+
+    case {dynamic_from, dynamic_to} do
+      {nil, nil} ->
+        filter
+
+      {nil, _} ->
+        {:error, "Cannot use 'dynamic_to' without 'dynamic_from'."}
+
+      {_, nil} ->
+        {:error, "Cannot use 'dynamic_from' without 'dynamic_to'."}
+
+      _ ->
+        now = Timex.now()
+
+        from = Timex.shift(now, seconds: -Sanbase.DateTimeUtils.str_to_sec(dynamic_from))
+
+        to =
+          case dynamic_to do
+            "now" ->
+              now
+
+            _ ->
+              Timex.shift(now, seconds: -Sanbase.DateTimeUtils.str_to_sec(dynamic_to))
+          end
+
+        filter
+        |> Map.put(:from, from)
+        |> Map.put(:to, to)
+    end
   end
 
   defp included_slugs_by_filters(nil), do: :all

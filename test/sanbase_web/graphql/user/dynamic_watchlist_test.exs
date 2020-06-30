@@ -59,6 +59,9 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
   end
 
   test "dynamic watchlist for selector", %{conn: conn, user: user} do
+    # Have at least 1 project that is not included in the result
+    insert(:random_erc20_project)
+
     function = %{
       "name" => "selector",
       "args" => %{
@@ -88,6 +91,47 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
       assert user_list["isPublic"] == false
       assert user_list["user"]["id"] == user.id |> to_string()
 
+      assert length(user_list["listItems"]) == 3
+      assert %{"project" => %{"slug" => "dai"}} in user_list["listItems"]
+      assert %{"project" => %{"slug" => "bitcoin"}} in user_list["listItems"]
+      assert %{"project" => %{"slug" => "ethereum"}} in user_list["listItems"]
+    end)
+  end
+
+  test "dynamic watchlist for selector - dynamic datetimes", %{conn: conn, user: user} do
+    # Have at least 1 project that is not included in the result
+    insert(:random_erc20_project)
+
+    function = %{
+      "name" => "selector",
+      "args" => %{
+        "filters" => [
+          %{
+            "metric" => "daily_active_addresses",
+            "dynamicFrom" => "7d",
+            "dynamicTo" => "now",
+            "aggregation" => "#{:last}",
+            "operator" => "#{:greater_than_or_equal_to}",
+            "threshold" => 10
+          }
+        ]
+      }
+    }
+
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Metric.slugs_by_filter/6,
+      {:ok, ["ethereum", "dai", "bitcoin"]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result = execute_mutation(conn, query(function))
+      user_list = result["data"]["createWatchlist"]
+
+      assert user_list["name"] == "My list"
+      assert user_list["color"] == "BLACK"
+      assert user_list["isPublic"] == false
+      assert user_list["user"]["id"] == user.id |> to_string()
+
+      assert length(user_list["listItems"]) == 3
       assert %{"project" => %{"slug" => "dai"}} in user_list["listItems"]
       assert %{"project" => %{"slug" => "bitcoin"}} in user_list["listItems"]
       assert %{"project" => %{"slug" => "ethereum"}} in user_list["listItems"]

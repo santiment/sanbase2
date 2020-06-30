@@ -144,7 +144,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     query =
       query <>
         """
-        ORDER BY value #{direction |> Atom.to_string() |> String.upcase()}
+        ORDER BY a.value #{direction |> Atom.to_string() |> String.upcase()}
         """
 
     {query, args}
@@ -170,12 +170,12 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
         GROUP BY dt, asset_id
       )
       GROUP BY asset_id
-    )
+    ) AS a
     ALL LEFT JOIN
     (
       SELECT asset_id, name
       FROM asset_metadata FINAL
-    ) USING (asset_id)
+    ) AS b USING (asset_id)
     """
 
     args = [

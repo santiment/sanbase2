@@ -47,13 +47,52 @@ defmodule Sanbase.MapUtils do
 
     iex> %{a: %{b: [%{"name" => ""}]}} |> Sanbase.MapUtils.find_pair_path("not_existing", "ivan")
     []
-
   """
   def find_pair_path(map, key, value) when is_map(map) do
     do_find_pair_path(map, key, value, [])
     |> Enum.map(&(&1 |> List.flatten() |> Enum.reverse()))
     |> Enum.reject(&(&1 == nil || &1 == []))
   end
+
+  @doc ~s"""
+  Atomize the string keys of a map or list of maps.
+
+  #### Examples:
+    iex> %{"a" => %{"b" => %{"name" => "ivan"}}} |> Sanbase.MapUtils.atomize_keys()
+    %{a: %{b: %{name: "ivan"}}}
+
+    iex> [%{"a" => 1}, %{"b" => [%{"c" => %{"d" => 12}}]}] |> Sanbase.MapUtils.atomize_keys()
+    [%{a: 1}, %{b: [%{c: %{d: 12}}]}]
+
+    iex> %{} |> Sanbase.MapUtils.atomize_keys()
+    %{}
+
+    iex> [%{}, %{}] |> Sanbase.MapUtils.atomize_keys()
+    [%{}, %{}]
+
+
+    iex> %{already: %{atom: :atom}} |> Sanbase.MapUtils.atomize_keys()
+    %{already: %{atom: :atom}}
+  """
+  def atomize_keys(list) when is_list(list) do
+    Enum.map(list, fn elem -> atomize_keys(elem) end)
+  end
+
+  def atomize_keys(map) when is_map(map) and not is_struct(map) do
+    Enum.reduce(map, %{}, fn {key, val}, acc ->
+      Map.put(acc, atomize(key), atomize_keys(val))
+    end)
+  end
+
+  def atomize_keys(data), do: data
+
+  # Private functions
+
+  @compile {:inline, atomize: 1}
+  defp atomize(atom) when is_atom(atom), do: atom
+
+  defp atomize(str) when is_binary(str),
+    do: str |> Inflex.underscore() |> String.to_existing_atom()
 
   defp do_find_pair_path(map, key, value, path) when is_map(map) do
     keys = Map.keys(map)

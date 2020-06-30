@@ -40,8 +40,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
   input_object :project_filter_input_object do
     field(:metric, non_null(:string))
-    field(:from, non_null(:datetime))
-    field(:to, non_null(:datetime))
+    field(:from, :datetime)
+    field(:to, :datetime)
+    field(:dynamic_from, :interval_or_now)
+    field(:dynamic_to, :interval_or_now)
     field(:aggregation, :aggregation, default_value: nil)
     field(:operator, non_null(:operator_name))
     field(:threshold, non_null(:float))

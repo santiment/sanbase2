@@ -28,6 +28,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.CustomTypes.Date)
   import_types(Graphql.CustomTypes.JSON)
   import_types(Graphql.CustomTypes.Interval)
+  import_types(Graphql.CustomTypes.IntervalOrNow)
   import_types(Absinthe.Plug.Types)
   import_types(Graphql.TagTypes)
   import_types(Graphql.UserTypes)

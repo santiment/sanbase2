@@ -1833,12 +1833,59 @@
     "has_incomplete_data": false,
     "data_type": "timeseries"
   },
-
   {
     "human_readable_name": "Bitmex Perpetual Basis",
     "name": "bitmex_perpetual_basis",
     "metric": "bitmex_perpetual_basis",
     "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Bitmex Perpetual Basis Ratio",
+    "name": "bitmex_perpetual_basis_ratio",
+    "metric": "bitmex_perpetual_basis_ratio",
+    "version": "2020-06-09",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Bitmex Perpetual Price",
+    "name": "bitmex_perpetual_price",
+    "metric": "bitmex_perpetual_price",
+    "version": "2020-05-13",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Bitmex Price Index",
+    "name": "bitmex_composite_price_index",
+    "metric": "bitmex_composite_price_index",
+    "version": "2020-05-13",
     "access": "restricted",
     "min_plan": {
       "SANAPI": "free",

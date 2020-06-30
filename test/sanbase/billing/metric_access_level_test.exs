@@ -247,7 +247,10 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "bitmex_perpetual_funding_rate",
         "bitmex_perpetual_basis",
         "bitmex_perpetual_open_interest",
-        "bitmex_perpetual_open_value"
+        "bitmex_perpetual_open_value",
+        "bitmex_perpetual_basis_ratio",
+        "bitmex_perpetual_price",
+        "bitmex_composite_price_index"
       ]
       |> Enum.sort()
 

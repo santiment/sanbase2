@@ -27,6 +27,7 @@ defmodule Sanbase.DataCase do
     require Sanbase.CaseHelpers
 
     SanbaseWeb.Graphql.Cache.clear_all()
+    Sanbase.Cache.clear_all()
 
     Sanbase.CaseHelpers.checkout_shared(tags)
     Sanbase.Billing.TestSeed.seed_products_and_plans()

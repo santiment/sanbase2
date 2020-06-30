@@ -90,11 +90,13 @@ defmodule Sanbase.Timeline.TimelineEvent do
   """
   def events(%{
         order_by: order_by,
+        filter_by: filter_by,
         limit: limit,
         cursor: %{type: cursor_type, datetime: cursor_datetime}
       }) do
     TimelineEvent
     |> Cursor.filter_by_cursor(cursor_type, cursor_datetime)
+    |> Filter.filter_by_query(filter_by)
     |> Query.events_by_sanfamily_query()
     |> Query.events_with_public_entities_query()
     |> Query.events_with_event_type([@publish_insight_type, @trigger_fired])
@@ -104,8 +106,9 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> Cursor.wrap_events_with_cursor()
   end
 
-  def events(%{order_by: order_by, limit: limit}) do
+  def events(%{order_by: order_by, filter_by: filter_by, limit: limit}) do
     TimelineEvent
+    |> Filter.filter_by_query(filter_by)
     |> Query.events_by_sanfamily_query()
     |> Query.events_with_public_entities_query()
     |> Query.events_with_event_type([@publish_insight_type, @trigger_fired])

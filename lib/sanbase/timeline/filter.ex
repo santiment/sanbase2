@@ -8,6 +8,11 @@ defmodule Sanbase.Timeline.Filter do
   alias Sanbase.Insight.Post
   alias Sanbase.Repo
 
+  def filter_by_query(query, filter_by) do
+    query
+    |> filter_by_type_query(filter_by)
+  end
+
   def filter_by_query(query, filter_by, user_id) do
     query
     |> filter_by_author_query(filter_by, user_id)

@@ -715,10 +715,10 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     events = result |> hd() |> Map.get("events")
 
     assert Enum.map(events, fn event -> event |> Map.get("tags") end) == [
-             ["BY_ME", "ALERT"],
-             ["BY_SANFAM", "INSIGHT"],
-             ["BY_SANFAM", "INSIGHT"],
-             ["BY_FOLLOWED", "INSIGHT", "PULSE"]
+             ["OWN", "ALERT"],
+             ["SANFAM", "INSIGHT"],
+             ["SANFAM", "INSIGHT"],
+             ["FOLLOWED", "INSIGHT", "PULSE"]
            ]
   end
 

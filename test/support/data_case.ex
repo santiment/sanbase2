@@ -25,6 +25,9 @@ defmodule Sanbase.DataCase do
 
   setup tags do
     require Sanbase.CaseHelpers
+
+    SanbaseWeb.Graphql.Cache.clear_all()
+
     Sanbase.CaseHelpers.checkout_shared(tags)
     Sanbase.Billing.TestSeed.seed_products_and_plans()
 

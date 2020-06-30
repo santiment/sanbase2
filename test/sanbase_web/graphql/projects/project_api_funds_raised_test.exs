@@ -40,7 +40,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
   test "fetch project funds raised", context do
     %{conn: conn, project: project} = context
 
-    Sanbase.Mock.prepare_mock(Sanbase.Price, :last_record_before, fn slug, datetime ->
+    Sanbase.Mock.prepare_mock(Sanbase.Cache, :get_or_store, fn {_, slug, datetime}, _ ->
       if DateTime.compare(datetime, context.datetime) == :lt do
         case slug do
           "bitcoin" -> {:ok, %{price_usd: 2, price_btc: 0.1, marketcap: 100, volume: 100}}

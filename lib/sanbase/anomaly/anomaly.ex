@@ -24,25 +24,21 @@ defmodule Sanbase.Anomaly do
 
   def available_anomalies(), do: @anomalies
 
-  @doc """
-  The result is in the form:
-  `{:ok, ["daily_active_addresses_anomaly", "exchange_balance_anomaly"]}`
-
-  If you pass `anomalies_per_metric: true` opt - the result is in the form:
-  ```
-  {:ok, [
-    %{
-      anomalies: ["daily_active_addresses_anomaly"],
-      metric: "daily_active_addresses"
-    },
-    %{anomalies: ["exchange_balance_anomaly"], metric: "exchange_balance"}
-  ]}
-  ```
-  """
-  def available_anomalies(slug, opts \\ []) do
+  def available_anomalies(slug) do
     Sanbase.Cache.get_or_store(
-      {__MODULE__, :slug_to_anomalies_map, opts} |> Sanbase.Cache.hash(),
-      fn -> slug_to_anomalies_map(opts) end
+      {__MODULE__, :slug_to_anomalies_map} |> Sanbase.Cache.hash(),
+      fn -> slug_to_anomalies_map() end
+    )
+    |> case do
+      {:ok, map} -> {:ok, Map.get(map, slug, [])}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  def available_anomalies_per_metric(slug) do
+    Sanbase.Cache.get_or_store(
+      {__MODULE__, :available_anomalies_per_metric} |> Sanbase.Cache.hash(),
+      fn -> slug_to_anomalies_map(anomalies_per_metric: true) end
     )
     |> case do
       {:ok, map} -> {:ok, Map.get(map, slug, [])}

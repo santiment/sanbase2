@@ -9,6 +9,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectAnomaliesResolver do
   end
 
   def available_anomalies_per_metric(%Project{slug: slug}, _args, _resolution) do
-    Anomaly.available_anomalies(slug, anomalies_per_metric: true)
+    Anomaly.available_anomalies_per_metric(slug)
   end
 end

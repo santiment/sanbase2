@@ -45,10 +45,13 @@ defmodule Sanbase.Project.AvailableMetricsApiTest do
 
       assert available_anomalies2 == ["exchange_balance_anomaly"]
 
-      result = get_available_anomalies(project, anomalies_per_metric: true)
+      result = get_available_anomalies_per_metric(project)
 
-      %{"data" => %{"projectBySlug" => %{"availableAnomaliesPerMetric" => available_anomalies3}}} =
-        result
+      %{
+        "data" => %{
+          "projectBySlug" => %{"availableAnomaliesPerMetric" => available_anomalies3}
+        }
+      } = result
 
       assert available_anomalies3 |> Enum.sort_by(fn %{"metric" => metric} -> metric end) == [
                %{
@@ -61,27 +64,32 @@ defmodule Sanbase.Project.AvailableMetricsApiTest do
     end)
   end
 
-  defp get_available_anomalies(project, opts \\ []) do
-    field =
-      if Keyword.get(opts, :anomalies_per_metric) do
-        """
-          availableAnomaliesPerMetric {
-            metric
-            anomalies
-          }
-        """
-      else
-        "availableAnomalies"
-      end
-
-    query = """
+  defp get_available_anomalies(project) do
+    """
     {
       projectBySlug(slug: "#{project.slug}"){
-        #{field}
+        availableAnomalies
       }
     }
     """
+    |> execute()
+  end
 
+  defp get_available_anomalies_per_metric(project) do
+    """
+    {
+      projectBySlug(slug: "#{project.slug}"){
+        availableAnomaliesPerMetric {
+          metric
+          anomalies
+        }
+      }
+    }
+    """
+    |> execute()
+  end
+
+  defp execute(query) do
     build_conn()
     |> post("/graphql", query_skeleton(query))
     |> json_response(200)

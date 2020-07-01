@@ -25,18 +25,21 @@ defmodule Sanbase.AvailableSlugs do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name, __MODULE__))
   end
 
-  def init(opts) do
+  @impl true
+  def init(_opts) do
     ets_table = :ets.new(@ets_table, [:set, :protected, :named_table, read_concurrency: true])
     initial_state = %{ets_table: ets_table}
 
     {:ok, initial_state, {:continue, :initialize}}
   end
 
+  @impl true
   def handle_continue(:initialize, state) do
     Process.send_after(self(), :refill_slugs, 10 * 60 * 1000)
     {:noreply, refill_slugs(state)}
   end
 
+  @impl true
   def handle_info(:refill_slugs, state) do
     Process.send_after(self(), :refill_slugs, 10 * 60 * 1000)
     {:noreply, refill_slugs(state)}

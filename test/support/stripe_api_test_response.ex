@@ -1,4 +1,4 @@
-defmodule Sanbase.StripeApiTestReponse do
+defmodule Sanbase.StripeApiTestResponse do
   def create_coupon_resp() do
     {:ok,
      %Stripe.Coupon{

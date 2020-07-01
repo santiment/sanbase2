@@ -615,7 +615,7 @@ defmodule Sanbase.Factory do
   end
 
   defp plan_stripe_id do
-    {:ok, plan} = Sanbase.StripeApiTestReponse.create_plan_resp()
+    {:ok, plan} = Sanbase.StripeApiTestResponse.create_plan_resp()
     plan.id
   end
 end

@@ -8,24 +8,24 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
   alias Sanbase.Auth.User
   alias Sanbase.StripeApi
-  alias Sanbase.StripeApiTestReponse
+  alias Sanbase.StripeApiTestResponse
   alias Sanbase.Billing.Subscription
 
   @coupon_code "test_coupon"
 
   setup_with_mocks([
     {StripeApi, [:passthrough],
-     [create_product: fn _ -> StripeApiTestReponse.create_product_resp() end]},
+     [create_product: fn _ -> StripeApiTestResponse.create_product_resp() end]},
     {StripeApi, [:passthrough],
-     [create_plan: fn _ -> StripeApiTestReponse.create_plan_resp() end]},
+     [create_plan: fn _ -> StripeApiTestResponse.create_plan_resp() end]},
     {StripeApi, [:passthrough],
-     [create_customer: fn _, _ -> StripeApiTestReponse.create_or_update_customer_resp() end]},
+     [create_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
     {StripeApi, [:passthrough],
-     [update_customer: fn _, _ -> StripeApiTestReponse.create_or_update_customer_resp() end]},
+     [update_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
     {StripeApi, [:passthrough],
-     [create_coupon: fn _ -> StripeApiTestReponse.create_coupon_resp() end]},
+     [create_coupon: fn _ -> StripeApiTestResponse.create_coupon_resp() end]},
     {StripeApi, [:passthrough],
-     [create_subscription: fn _ -> StripeApiTestReponse.create_subscription_resp() end]},
+     [create_subscription: fn _ -> StripeApiTestResponse.create_subscription_resp() end]},
     {StripeApi, [:passthrough],
      [retrieve_coupon: fn _ -> {:ok, %Stripe.Coupon{id: @coupon_code}} end]},
     {Sanbase.StripeApi, [:passthrough],
@@ -33,13 +33,13 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     {Sanbase.StripeApi, [:passthrough],
      [
        update_subscription: fn _, _ ->
-         StripeApiTestReponse.update_subscription_resp()
+         StripeApiTestResponse.update_subscription_resp()
        end
      ]},
     {Sanbase.StripeApi, [:passthrough],
      [
        cancel_subscription: fn _ ->
-         StripeApiTestReponse.update_subscription_resp()
+         StripeApiTestResponse.update_subscription_resp()
        end
      ]},
     {Sanbase.Billing.StripeEvent, [:passthrough],
@@ -167,7 +167,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     test "when creating coupon fails - logs the error and returns generic error", context do
       with_mocks([
         {StripeApi, [:passthrough],
-         [create_customer: fn _, _ -> StripeApiTestReponse.create_or_update_customer_resp() end]},
+         [create_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
         {StripeApi, [:passthrough],
          [
            create_coupon: fn _ ->
@@ -189,9 +189,9 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
          context do
       with_mocks([
         {StripeApi, [:passthrough],
-         [create_customer: fn _, _ -> StripeApiTestReponse.create_or_update_customer_resp() end]},
+         [create_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
         {StripeApi, [:passthrough],
-         [create_coupon: fn _ -> StripeApiTestReponse.create_coupon_resp() end]},
+         [create_coupon: fn _ -> StripeApiTestResponse.create_coupon_resp() end]},
         {StripeApi, [:passthrough],
          [
            create_subscription: fn _ ->

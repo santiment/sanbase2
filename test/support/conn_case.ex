@@ -31,6 +31,7 @@ defmodule SanbaseWeb.ConnCase do
     require Sanbase.CaseHelpers
 
     SanbaseWeb.Graphql.Cache.clear_all()
+    Sanbase.Cache.clear_all()
 
     Sanbase.CaseHelpers.checkout_shared(tags)
 

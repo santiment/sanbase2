@@ -13,25 +13,9 @@ defmodule Sanbase.SocialData.SocialVolume do
 
   def social_volume(selector, from, to, interval, source)
       when source in [:all, "all", :total, "total"] do
-    result_tuples =
-      SocialHelper.sources()
-      |> Sanbase.Parallel.map(
-        fn source -> social_volume(selector, from, to, interval, source) end,
-        max_concurrency: 4
-      )
+    sources_string = SocialHelper.sources() |> Enum.join(',')
 
-    case Enum.find(result_tuples, &match?({:error, _}, &1)) do
-      error when not is_nil(error) ->
-        error
-
-      nil ->
-        result =
-          result_tuples
-          |> Enum.flat_map(fn {:ok, data} -> data end)
-          |> Sanbase.Utils.Transform.sum_by_datetime(:mentions_count)
-
-        {:ok, result}
-    end
+    social_volume(selector, from, to, interval, sources_string)
   end
 
   def social_volume(selector, from, to, interval, source) do

@@ -14,12 +14,7 @@ defmodule Sanbase.Signal.TriggerDailyActiveAddressesHistoryTest do
   end
 
   setup do
-    project =
-      insert(:project, %{
-        ticker: "SAN",
-        slug: "santiment",
-        main_contract_address: "0x123"
-      })
+    project = insert(:random_erc20_project, %{ticker: "SAN", slug: "santiment"})
 
     [project: project]
   end

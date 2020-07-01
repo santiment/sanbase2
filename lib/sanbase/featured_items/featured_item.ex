@@ -13,14 +13,16 @@ defmodule Sanbase.FeaturedItem do
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
   alias Sanbase.Signal.UserTrigger
-  alias Sanbase.Chart.Configuration
+  alias Sanbase.Chart.Configuration, as: ChartConfiguration
+  alias Sanbase.TableConfiguration
 
   @table "featured_items"
   schema @table do
     belongs_to(:post, Post)
     belongs_to(:user_list, UserList)
     belongs_to(:user_trigger, UserTrigger)
-    belongs_to(:chart_configuration, Configuration)
+    belongs_to(:chart_configuration, ChartConfiguration)
+    belongs_to(:table_configuration, TableConfiguration)
 
     timestamps()
   end
@@ -32,11 +34,19 @@ defmodule Sanbase.FeaturedItem do
   """
   def changeset(%__MODULE__{} = featured_items, attrs \\ %{}) do
     featured_items
-    |> cast(attrs, [:post_id, :user_list_id, :user_trigger_id, :chart_configuration_id])
+    |> cast(attrs, [
+      :post_id,
+      :user_list_id,
+      :user_trigger_id,
+      :chart_configuration_id,
+      :table_configuration_id
+    ])
     |> unique_constraint(:post_id)
     |> unique_constraint(:user_list_id)
     |> unique_constraint(:user_trigger_id)
     |> unique_constraint(:chart_configuration_id)
+    |> unique_constraint(:table_configuration_id)
+    |> check_constraint(:one_featured_item_per_row, name: :only_one_fk)
   end
 
   def insights() do
@@ -70,7 +80,14 @@ defmodule Sanbase.FeaturedItem do
   def chart_configurations() do
     chart_configurations_query()
     |> join(:inner, [fi], fi in assoc(fi, :chart_configuration))
-    |> select([_fi, trigger], trigger)
+    |> select([_fi, config], config)
+    |> Repo.all()
+  end
+
+  def table_configurations() do
+    table_configurations_query()
+    |> join(:inner, [fi], fi in assoc(fi, :table_configuration))
+    |> select([_fi, config], config)
     |> Repo.all()
   end
 
@@ -81,7 +98,10 @@ defmodule Sanbase.FeaturedItem do
   present record will be deleted. If the second argument is `true` a new record
   will be created if it does not exist
   """
-  @spec update_item(%Post{} | %UserList{} | %UserTrigger{} | %Configuration{}, boolean) ::
+  @spec update_item(
+          %Post{} | %UserList{} | %UserTrigger{} | %ChartConfiguration{} | %TableConfiguration{},
+          boolean
+        ) ::
           :ok | {:error, Ecto.Changeset.t()}
   def update_item(%Post{} = post, featured?) do
     case Post.is_published?(post) || featured? == false do
@@ -104,10 +124,17 @@ defmodule Sanbase.FeaturedItem do
     end
   end
 
-  def update_item(%Configuration{} = configuration, featured?) do
-    case Configuration.is_public?(configuration) || featured? == false do
+  def update_item(%ChartConfiguration{} = configuration, featured?) do
+    case ChartConfiguration.is_public?(configuration) || featured? == false do
       true -> update_item(:chart_configuration_id, configuration.id, featured?)
       false -> {:error, "Private chart configurations cannot be made featured."}
+    end
+  end
+
+  def update_item(%TableConfiguration{} = configuration, featured?) do
+    case TableConfiguration.is_public?(configuration) || featured? == false do
+      true -> update_item(:table_configuration_id, configuration.id, featured?)
+      false -> {:error, "Private table configurations cannot be made featured."}
     end
   end
 
@@ -138,4 +165,7 @@ defmodule Sanbase.FeaturedItem do
 
   defp chart_configurations_query(),
     do: from(fi in __MODULE__, where: not is_nil(fi.chart_configuration_id))
+
+  defp table_configurations_query(),
+    do: from(fi in __MODULE__, where: not is_nil(fi.table_configuration_id))
 end

@@ -359,7 +359,7 @@ defmodule Sanbase.Billing.StripeEvent do
 
     created_at_unix = inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
 
-    ((now_unix - created_at_unix) / (29 * 86400))
+    ((now_unix - created_at_unix) / (29 * 86_400))
     |> floor()
     |> Kernel.+(1)
   end

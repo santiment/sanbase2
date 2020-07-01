@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
 
   @eth_decimals 1_000_000_000_000_000_000
   setup do
-    project_without_contract = insert(:project, %{slug: "someid1"})
+    project_without_contract = insert(:project, %{slug: "someid1", contract_addresses: []})
 
     project_with_contract =
       insert(:project, %{

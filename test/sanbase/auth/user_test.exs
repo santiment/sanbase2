@@ -5,7 +5,7 @@ defmodule Sanbase.Auth.UserTest do
   import Sanbase.Factory
   import ExUnit.CaptureLog
 
-  alias Sanbase.Auth.{User, EthAccount}
+  alias Sanbase.Auth.{EthAccount, User}
   alias Sanbase.Repo
 
   test "san balance cache is stale when the cache is never updated" do
@@ -396,13 +396,13 @@ defmodule Sanbase.Auth.UserTest do
     test "user without email - returns 0 records" do
       user = insert(:user, email: nil)
       Sanbase.UserList.create_user_list(user, %{name: "test", is_monitored: true})
-      assert length(User.users_with_monitored_watchlist_and_email()) == 0
+      assert User.users_with_monitored_watchlist_and_email() == []
     end
 
     test "user's watchlist is not monitored" do
       user = insert(:user)
       Sanbase.UserList.create_user_list(user, %{name: "test"})
-      assert length(User.users_with_monitored_watchlist_and_email()) == 0
+      assert User.users_with_monitored_watchlist_and_email() == []
     end
   end
 
@@ -412,7 +412,7 @@ defmodule Sanbase.Auth.UserTest do
 
     {:ok, user} =
       insert(:user)
-      |> Sanbase.Auth.User.update_avatar_url(avatar_url)
+      |> User.update_avatar_url(avatar_url)
 
     assert user.avatar_url == avatar_url
   end
@@ -422,7 +422,7 @@ defmodule Sanbase.Auth.UserTest do
 
     {:error, changeset} =
       insert(:user)
-      |> Sanbase.Auth.User.update_avatar_url(avatar_url)
+      |> User.update_avatar_url(avatar_url)
 
     assert errors_on(changeset)[:avatar_url] ==
              [

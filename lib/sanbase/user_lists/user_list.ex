@@ -34,8 +34,10 @@ defmodule Sanbase.UserList do
     field(:is_monitored, :boolean, default: false)
 
     belongs_to(:user, User)
+    belongs_to(:table_configuration, Sanbase.TableConfiguration)
 
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
+
     has_many(:list_items, ListItem, on_delete: :delete_all, on_replace: :delete)
     has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
 
@@ -49,16 +51,32 @@ defmodule Sanbase.UserList do
 
   def create_changeset(%__MODULE__{} = user_list, attrs \\ %{}) do
     user_list
-    |> cast(attrs, [:user_id, :name, :slug, :is_public, :color, :function, :is_monitored])
+    |> cast(attrs, [
+      :user_id,
+      :name,
+      :slug,
+      :is_public,
+      :color,
+      :function,
+      :is_monitored,
+      :table_configuration_id
+    ])
     |> validate_required([:name, :user_id])
     |> unique_constraint(:slug)
   end
 
   def update_changeset(%__MODULE__{id: _id} = user_list, attrs \\ %{}) do
     user_list
-    |> cast(attrs, [:name, :slug, :is_public, :color, :function, :is_monitored])
+    |> cast(attrs, [
+      :name,
+      :slug,
+      :is_public,
+      :color,
+      :function,
+      :is_monitored,
+      :table_configuration_id
+    ])
     |> cast_assoc(:list_items)
-    |> validate_required([:name])
     |> unique_constraint(:slug)
   end
 

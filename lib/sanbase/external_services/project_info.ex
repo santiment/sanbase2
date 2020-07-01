@@ -44,27 +44,28 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
 
   require Logger
 
-  def project_info_missing?(%Project{
-        website_link: website_link,
-        email: email,
-        reddit_link: reddit_link,
-        twitter_link: twitter_link,
-        btt_link: btt_link,
-        blog_link: blog_link,
-        github_link: github_link,
-        telegram_link: telegram_link,
-        slack_link: slack_link,
-        facebook_link: facebook_link,
-        whitepaper_link: whitepaper_link,
-        ticker: ticker,
-        name: name,
-        token_decimals: token_decimals,
-        total_supply: total_supply,
-        main_contract_address: main_contract_address
-      }) do
+  def project_info_missing?(
+        %Project{
+          website_link: website_link,
+          email: email,
+          reddit_link: reddit_link,
+          twitter_link: twitter_link,
+          btt_link: btt_link,
+          blog_link: blog_link,
+          github_link: github_link,
+          telegram_link: telegram_link,
+          slack_link: slack_link,
+          facebook_link: facebook_link,
+          whitepaper_link: whitepaper_link,
+          ticker: ticker,
+          name: name,
+          total_supply: total_supply
+        } = project
+      ) do
     !website_link or !email or !reddit_link or !twitter_link or !btt_link or !blog_link or
       !github_link or !telegram_link or !slack_link or !facebook_link or !whitepaper_link or
-      !ticker or !name or !main_contract_address or !token_decimals or !total_supply
+      !ticker or !name or !Project.has_contract_address?(project) or
+      !total_supply
   end
 
   def from_project(project) do
@@ -121,13 +122,22 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
 
   def update_project(project_info, project) do
     Repo.transaction(fn ->
+      project_info_map = Map.from_struct(project_info)
+
       project
       |> find_or_create_initial_ico()
-      |> Ico.changeset(Map.from_struct(project_info))
+      |> Ico.changeset(project_info_map)
       |> Repo.insert_or_update!()
 
       project
-      |> Project.changeset(Map.from_struct(project_info))
+      |> Project.ContractAddress.add_contract(
+        project_info_map
+        |> Map.put(:address, project_info_map.main_contract_address)
+        |> Map.put(:decimals, project_info_map.token_decimals)
+      )
+
+      project
+      |> Project.changeset(project_info_map)
       |> Repo.update!()
     end)
     |> insert_tag(project_info)

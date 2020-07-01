@@ -28,6 +28,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.CustomTypes.Date)
   import_types(Graphql.CustomTypes.JSON)
   import_types(Graphql.CustomTypes.Interval)
+  import_types(Graphql.CustomTypes.IntervalOrNow)
   import_types(Absinthe.Plug.Types)
   import_types(Graphql.TagTypes)
   import_types(Graphql.UserTypes)
@@ -73,6 +74,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.PromoterQueries)
   import_types(Graphql.Schema.WidgetQueries)
   import_types(Graphql.Schema.EmailQueries)
+  import_types(Graphql.Schema.TableConfigurationQueries)
 
   def dataloader() do
     Dataloader.new(timeout: :timer.seconds(20), get_policy: :return_nil_on_error)
@@ -131,6 +133,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:project_chart_queries)
     import_fields(:promoter_queries)
     import_fields(:widget_queries)
+    import_fields(:table_configuration_queries)
   end
 
   mutation do
@@ -144,6 +147,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:project_chart_mutations)
     import_fields(:promoter_mutations)
     import_fields(:email_mutations)
+    import_fields(:table_configuration_mutations)
   end
 
   subscription do

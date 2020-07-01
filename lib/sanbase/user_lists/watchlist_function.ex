@@ -1,6 +1,6 @@
 defmodule Sanbase.WatchlistFunction do
   use Ecto.Type
-
+  @derive Jason.Encoder
   defstruct name: "empty", args: []
 
   alias Sanbase.Model.Project
@@ -11,6 +11,7 @@ defmodule Sanbase.WatchlistFunction do
   def evaluate(%__MODULE__{name: "selector", args: args}) do
     case Map.split(args, ["filters", "order", "pagination"]) do
       {selector, empty_map} when map_size(empty_map) == 0 ->
+        selector = Sanbase.MapUtils.atomize_keys(selector)
         {:ok, projects} = Project.ListSelector.projects(%{selector: selector})
         projects
 

@@ -110,6 +110,15 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "circulation_30d",
         "circulation_7d",
         "circulation_1d",
+        # dormant ciruclation
+        "dormant_circulation_10y",
+        "dormant_circulation_5y",
+        "dormant_circulation_3y",
+        "dormant_circulation_2y",
+        "dormant_circulation_365d",
+        "dormant_circulation_180d",
+        "dormant_circulation_90d",
+        # other
         "mean_age",
         "mean_dollar_invested_age",
         "realized_value_usd",
@@ -238,7 +247,10 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "bitmex_perpetual_funding_rate",
         "bitmex_perpetual_basis",
         "bitmex_perpetual_open_interest",
-        "bitmex_perpetual_open_value"
+        "bitmex_perpetual_open_value",
+        "bitmex_perpetual_basis_ratio",
+        "bitmex_perpetual_price",
+        "bitmex_composite_price_index"
       ]
       |> Enum.sort()
 

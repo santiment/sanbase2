@@ -1,5 +1,5 @@
 defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
-  @doc ~s"""
+  @moduledoc ~s"""
   Module for working with historical ERC20 balances.
   """
 
@@ -9,6 +9,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
   import Sanbase.Clickhouse.HistoricalBalance.Utils
 
   alias Sanbase.ClickhouseRepo
+  alias Sanbase.Model.Project
 
   @table "erc20_balances"
   schema @table do
@@ -33,20 +34,23 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
         projects =
           contract_value_pairs
           |> Enum.map(fn [contract, _] -> contract end)
-          |> Sanbase.Model.Project.List.by_field(:main_contract_address)
+          |> Project.List.by_contracts(preload?: true, preload: [:contract_addresses])
 
         result =
           Enum.map(contract_value_pairs, fn [contract, value] ->
-            case Enum.find(projects, fn %{main_contract_address: project_contract} ->
-                   String.downcase(project_contract) == contract
-                 end) do
+            Enum.find(projects, fn project ->
+              String.downcase(contract) == String.downcase(Project.contract_address(project))
+            end)
+            |> case do
               nil ->
                 nil
 
-              %_{token_decimals: token_decimals, slug: slug} ->
+              %Project{} = project ->
+                {:ok, _contract, decimals} = Project.contract_info(project)
+
                 %{
-                  slug: slug,
-                  balance: value / Sanbase.Math.ipow(10, token_decimals || 0)
+                  slug: project.slug,
+                  balance: value / Sanbase.Math.ipow(10, decimals || 0)
                 }
             end
           end)

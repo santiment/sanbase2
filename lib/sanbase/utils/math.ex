@@ -35,11 +35,11 @@ defmodule Sanbase.Math do
       iex> Sanbase.Math.percent_change(10.0, 10.0)
       0.0
   """
-  def percent_change(0, _current_daa), do: 0.0
-  def percent_change(nil, _current_daa), do: 0.0
+  def percent_change(0, _current), do: 0.0
+  def percent_change(nil, _current), do: 0.0
   def percent_change(_previous, nil), do: 0.0
 
-  def percent_change(previous, _current_daa)
+  def percent_change(previous, _current)
       when is_number(previous) and previous <= @epsilon,
       do: 0.0
 

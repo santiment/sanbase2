@@ -45,9 +45,10 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
                   {metric, %{"SANAPI" => :free, "SANBASE" => :free}}
                 end)
 
-  @free_metrics Enum.filter(@access_map, fn {_, level} -> level == :free end) |> Keyword.keys()
+  @free_metrics Enum.filter(@access_map, fn {_, level} -> level == :free end)
+                |> Enum.map(&elem(&1, 0))
   @restricted_metrics Enum.filter(@access_map, fn {_, level} -> level == :restricted end)
-                      |> Keyword.keys()
+                      |> Enum.map(&elem(&1, 0))
 
   @default_holders_count 10
 

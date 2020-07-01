@@ -10,11 +10,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
 
   setup do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
+    project = insert(:random_project)
     conn = setup_jwt_auth(build_conn(), user)
 
     [
       conn: conn,
-      slug: "ethereum",
+      slug: project.slug,
       from: from_iso8601!("2019-01-01T00:00:00Z"),
       to: from_iso8601!("2019-01-02T00:00:00Z")
     ]
@@ -47,8 +48,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
     metrics = Metric.available_timeseries_metrics()
 
     with_mock Metric, [:passthrough],
-      aggregated_timeseries_data: fn _, slug, _, _, _ ->
-        {:ok, [%{slug: slug, value: 100}]}
+      aggregated_timeseries_data: fn _, slug_arg, _, _, _ ->
+        {:ok, [%{slug: slug_arg, value: 100}]}
       end do
       for metric <- metrics do
         result =

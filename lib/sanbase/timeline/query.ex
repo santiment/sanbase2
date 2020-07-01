@@ -23,7 +23,7 @@ defmodule Sanbase.Timeline.Query do
       where:
         not is_nil(event.post_id) or
           ul.is_public == true or
-          fragment("trigger->>'is_public' = 'true'")
+          fragment("?.trigger->>'is_public' = 'true'", ut)
     )
   end
 
@@ -39,7 +39,7 @@ defmodule Sanbase.Timeline.Query do
           (event.user_id != ^user_id and
              (not is_nil(event.post_id) or
                 ul.is_public == true or
-                fragment("trigger->>'is_public' = 'true'")))
+                fragment("?.trigger->>'is_public' = 'true'", ut)))
     )
   end
 

@@ -25,6 +25,7 @@ defmodule Sanbase.Factory do
   alias Sanbase.Billing.Subscription.SignUpTrial
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Chart
+  alias Sanbase.TableConfiguration
   alias Sanbase.Email.NewsletterToken
 
   def user_factory() do
@@ -86,6 +87,13 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def table_configuration_factory() do
+    %TableConfiguration{
+      title: "table configuration",
+      user: insert(:user)
+    }
+  end
+
   def comment_factory() do
     %Comment{
       content: "some default comment"
@@ -142,11 +150,11 @@ defmodule Sanbase.Factory do
       twitter_link: "https://twitter.com/#{rand_hex_str()}",
       telegram_link: "https://telegram.com/#{rand_hex_str()}",
       github_organizations: [build(:github_organization)],
+      contract_addresses: [build(:contract_address)],
       market_segments: [build(:market_segment)],
       infrastructure:
         Sanbase.Repo.get_by(Infrastructure, code: "ETH") || build(:infrastructure, %{code: "ETH"}),
-      eth_addresses: [build(:project_eth_address)],
-      main_contract_address: "0x" <> rand_hex_str()
+      eth_addresses: [build(:project_eth_address)]
     }
     |> merge_attributes(attrs)
   end
@@ -166,6 +174,7 @@ defmodule Sanbase.Factory do
       total_supply: 83_000_000,
       twitter_link: "https://twitter.com/#{rand_hex_str()}",
       github_organizations: [build(:github_organization)],
+      contract_addresses: [build(:contract_address)],
       market_segments: [build(:market_segment)],
       infrastructure: nil,
       eth_addresses: [build(:project_eth_address)]
@@ -188,11 +197,21 @@ defmodule Sanbase.Factory do
       total_supply: :rand.uniform(50_000_000) + 10_000_000,
       twitter_link: "https://twitter.com/#{rand_hex_str()}",
       github_organizations: [build(:github_organization)],
+      contract_addresses: [build(:contract_address)],
       market_segments: [build(:market_segment)],
       infrastructure: nil,
       eth_addresses: [build(:project_eth_address)]
     }
     |> merge_attributes(attrs)
+  end
+
+  def contract_address_factory() do
+    %Project.ContractAddress{
+      address: "0x" <> rand_hex_str(16),
+      decimals: 18,
+      label: rand_str(6),
+      description: "Some description."
+    }
   end
 
   def source_slug_mapping_factory() do
@@ -452,7 +471,7 @@ defmodule Sanbase.Factory do
     %Plan{
       id: 42,
       name: "PRO",
-      amount: 14000,
+      amount: 14_000,
       currency: "USD",
       interval: "month"
     }

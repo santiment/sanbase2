@@ -36,7 +36,7 @@ defmodule Sanbase.Etherbi.AverageTokenAgeConsumedInDaysApiTest do
               [
                 %{datetime: Enum.at(datetimes, 0), value: 1000},
                 %{datetime: Enum.at(datetimes, 1), value: 4000},
-                %{datetime: Enum.at(datetimes, 2), value: 10000}
+                %{datetime: Enum.at(datetimes, 2), value: 10_000}
               ]}
 
            "transaction_volume", _, _, _, _, _ ->

@@ -104,12 +104,7 @@ defmodule Sanbase.Intercom do
     }
 
     # email must be dropped if nil so user still can be created in Intercom if doesn't exist
-    stats =
-      unless email do
-        Map.delete(stats, :email)
-      else
-        stats
-      end
+    stats = if email, do: stats, else: Map.delete(stats, :email)
 
     stats
   end
@@ -159,7 +154,7 @@ defmodule Sanbase.Intercom do
       {:ok, %HTTPoison.Response{status_code: 200}} ->
         Logger.info("Stats sent: #{inspect(stats_json |> Jason.decode!())}}")
 
-        UserAttributes.save(%{user_id: stats.id, properties: stats})
+        UserAttributes.save(%{user_id: stats.user_id, properties: stats})
 
         :ok
 

@@ -48,6 +48,7 @@ defmodule Sanbase.Model.Project do
 
     has_one(:social_volume_query, Project.SocialVolumeQuery)
 
+    has_many(:contract_addresses, Project.ContractAddress)
     has_many(:source_slug_mappings, Project.SourceSlugMapping)
     has_many(:icos, Ico)
     has_many(:github_organizations, Project.GithubOrganization)
@@ -136,6 +137,7 @@ defmodule Sanbase.Model.Project do
   defdelegate contract_info(project), to: Project.ContractData
 
   defdelegate contract_address(project), to: Project.ContractData
+  defdelegate contract_addresses(project), to: Project.ContractData
 
   defdelegate has_contract_address?(project), to: Project.ContractData
 
@@ -336,10 +338,9 @@ defmodule Sanbase.Model.Project do
 
   def is_erc20?(%Project{} = project) do
     project
-    |> Repo.preload(:infrastructure)
+    |> Repo.preload([:infrastructure, :contract_addresses])
     |> case do
-      %Project{main_contract_address: contract, infrastructure: %Infrastructure{code: "ETH"}}
-      when not is_nil(contract) ->
+      %Project{contract_addresses: [_ | _], infrastructure: %Infrastructure{code: "ETH"}} ->
         true
 
       _ ->

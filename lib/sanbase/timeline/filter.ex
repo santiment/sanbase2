@@ -8,12 +8,32 @@ defmodule Sanbase.Timeline.Filter do
   alias Sanbase.Insight.Post
   alias Sanbase.Repo
 
+  def filter_by_query(query, filter_by) do
+    query
+    |> filter_by_type_query(filter_by)
+  end
+
   def filter_by_query(query, filter_by, user_id) do
     query
     |> filter_by_author_query(filter_by, user_id)
     |> filter_by_watchlists_query(filter_by)
     |> filter_by_assets_query(filter_by, user_id)
+    |> filter_by_type_query(filter_by)
   end
+
+  defp filter_by_type_query(query, %{type: :insight}) do
+    from(event in query, join: p in assoc(event, :post), where: not p.is_pulse)
+  end
+
+  defp filter_by_type_query(query, %{type: :pulse}) do
+    from(event in query, join: p in assoc(event, :post), where: p.is_pulse)
+  end
+
+  defp filter_by_type_query(query, %{type: :alert}) do
+    from(event in query, join: p in assoc(event, :user_trigger))
+  end
+
+  defp filter_by_type_query(query, _), do: query
 
   defp filter_by_author_query(query, %{author: :all}, user_id) do
     Query.events_by_sanfamily_or_followed_users_or_own_query(query, user_id)

@@ -13,7 +13,7 @@ defmodule Sanbase.SocialData.Sentiment do
 
   def sentiment(selector, from, to, interval, source, type)
       when source in [:all, "all", :total, "total"] do
-    sources_string = SocialHelper.sources() |> Enum.join(',')
+    sources_string = SocialHelper.sources() |> Enum.join(",")
 
     sentiment(selector, from, to, interval, sources_string, type)
   end

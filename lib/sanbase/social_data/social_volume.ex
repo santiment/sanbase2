@@ -13,7 +13,7 @@ defmodule Sanbase.SocialData.SocialVolume do
 
   def social_volume(selector, from, to, interval, source)
       when source in [:all, "all", :total, "total"] do
-    sources_string = SocialHelper.sources() |> Enum.join(',')
+    sources_string = SocialHelper.sources() |> Enum.join(",")
 
     social_volume(selector, from, to, interval, sources_string)
   end

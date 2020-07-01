@@ -24,10 +24,25 @@ defmodule Sanbase.Anomaly do
 
   def available_anomalies(), do: @anomalies
 
-  def available_anomalies(slug) do
+  @doc """
+  The result is in the form:
+  `{:ok, ["daily_active_addresses_anomaly", "exchange_balance_anomaly"]}`
+
+  If you pass `anomalies_per_metric: true` opt - the result is in the form:
+  ```
+  {:ok, [
+    %{
+      anomalies: ["daily_active_addresses_anomaly"],
+      metric: "daily_active_addresses"
+    },
+    %{anomalies: ["exchange_balance_anomaly"], metric: "exchange_balance"}
+  ]}
+  ```
+  """
+  def available_anomalies(slug, opts \\ []) do
     Sanbase.Cache.get_or_store(
-      {__MODULE__, :slug_to_anomalies_map} |> Sanbase.Cache.hash(),
-      fn -> slug_to_anomalies_map() end
+      {__MODULE__, :slug_to_anomalies_map, opts} |> Sanbase.Cache.hash(),
+      fn -> slug_to_anomalies_map(opts) end
     )
     |> case do
       {:ok, map} -> {:ok, Map.get(map, slug, [])}
@@ -97,7 +112,7 @@ defmodule Sanbase.Anomaly do
 
   # Private functions
 
-  defp slug_to_anomalies_map() do
+  defp slug_to_anomalies_map(opts \\ []) do
     {:ok, asset_map} = asset_id_to_slug_map()
     {:ok, metric_map} = metric_id_to_metric_name_map()
 
@@ -109,9 +124,13 @@ defmodule Sanbase.Anomaly do
 
       with anomaly when not is_nil(anomaly) <- Map.get(@metric_and_model_to_anomaly_map, key),
            slug when not is_nil(slug) <- Map.get(asset_map, asset_id) do
-        Map.update(acc, slug, [%{metric: metric, anomalies: [anomaly]}], fn list ->
-          [%{metric: metric, anomalies: [anomaly]} | list]
-        end)
+        if Keyword.get(opts, :anomalies_per_metric) do
+          Map.update(acc, slug, [%{metric: metric, anomalies: [anomaly]}], fn list ->
+            [%{metric: metric, anomalies: [anomaly]} | list]
+          end)
+        else
+          Map.update(acc, slug, [anomaly], fn list -> [anomaly | list] end)
+        end
       else
         _ -> acc
       end

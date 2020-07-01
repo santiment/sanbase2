@@ -11,8 +11,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
   setup do
     insert(:project, %{slug: "ethereum", ticker: "ETH"})
 
-    dt1 = ~U[2017-08-20 00:00:00Z]
-    dt2 = ~U[2017-10-18 00:00:00Z]
+    dt1 = ~U[2017-08-19 00:00:00Z]
+    dt2 = ~U[2017-10-17 00:00:00Z]
 
     project = insert(:random_project)
 

@@ -9,7 +9,13 @@ defmodule Sanbase.Signal.OperationText.KV do
     transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
 
     template = "was: #{special_symbol}{{previous}}, now: #{special_symbol}{{value}}"
-    kv = %{value: transform_fun.(value), previous: transform_fun.(previous)}
+
+    kv = %{
+      value: transform_fun.(value),
+      previous: transform_fun.(previous),
+      human_readable: [:value, :previous]
+    }
+
     {template, kv}
   end
 
@@ -18,7 +24,7 @@ defmodule Sanbase.Signal.OperationText.KV do
     transform_fun = Keyword.get(opts, :value_transform, fn x -> x end)
 
     template = "now: #{special_symbol}{{value}}"
-    kv = %{value: transform_fun.(value)}
+    kv = %{value: transform_fun.(value), human_readable: [:value]}
     {template, kv}
   end
 
@@ -39,7 +45,12 @@ defmodule Sanbase.Signal.OperationText.KV do
         false -> "#{form} above #{special_symbol}{{above}}"
       end
 
-    kv = %{above: transform_fun.(above), value: transform_fun.(value)}
+    kv = %{
+      above: transform_fun.(above),
+      value: transform_fun.(value),
+      human_readable: [:above, :value]
+    }
+
     {template, kv}
   end
 
@@ -58,7 +69,12 @@ defmodule Sanbase.Signal.OperationText.KV do
         false -> "#{form} below #{special_symbol}{{below}}"
       end
 
-    kv = %{below: transform_fun.(below), value: transform_fun.(value)}
+    kv = %{
+      below: transform_fun.(below),
+      value: transform_fun.(value),
+      human_readable: [:below, :value]
+    }
+
     {template, kv}
   end
 
@@ -83,7 +99,8 @@ defmodule Sanbase.Signal.OperationText.KV do
     kv = %{
       lower: transform_fun.(lower),
       upper: transform_fun.(upper),
-      value: transform_fun.(value)
+      value: transform_fun.(value),
+      human_readable: [:lower, :upper, :value]
     }
 
     {template, kv}
@@ -110,7 +127,8 @@ defmodule Sanbase.Signal.OperationText.KV do
     kv = %{
       lower: transform_fun.(lower),
       upper: transform_fun.(upper),
-      value: transform_fun.(value)
+      value: transform_fun.(value),
+      human_readable: [:lower, :upper, :value]
     }
 
     {template, kv}
@@ -174,7 +192,8 @@ defmodule Sanbase.Signal.OperationText.KV do
 
     kv = %{
       amount_change_up: transform_fun.(amount_change),
-      amount_change_up_required: transform_fun.(amount_up)
+      amount_change_up_required: transform_fun.(amount_up),
+      human_readable: [:amount_change_up, :amount_change_up_required]
     }
 
     {template, kv}
@@ -196,7 +215,8 @@ defmodule Sanbase.Signal.OperationText.KV do
 
     kv = %{
       amount_down_change: transform_fun.(amount_change) |> abs(),
-      amount_down_change_required: transform_fun.(amount_down)
+      amount_down_change_required: transform_fun.(amount_down),
+      human_readable: [:amount_down_change, :amount_down_change_required]
     }
 
     {template, kv}

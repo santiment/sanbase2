@@ -20,6 +20,90 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
     [user: user, project: project, datetimes: datetimes]
   end
 
+  test "human readable numbers between 1000 and 1,000,000", context do
+    %{user: user, project: project, datetimes: datetimes} = context
+
+    daily_active_addresses =
+      Enum.zip(datetimes, [100, 120, 100, 80, 20, 10, 10_456])
+      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
+
+    trigger_settings = %{
+      type: "daily_active_addresses",
+      target: %{slug: project.slug},
+      channel: ["telegram", "email"],
+      time_window: "1d",
+      operation: %{above: 10_000}
+    }
+
+    {:ok, _trigger} =
+      UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
+        is_public: true,
+        cooldown: "12h",
+        settings: trigger_settings
+      })
+
+    self_pid = self()
+
+    Sanbase.Mock.prepare_mock2(&DailyActiveAddressesSettings.get_data/1, [
+      {project.slug, daily_active_addresses}
+    ])
+    |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
+      send(self_pid, {:telegram_to_self, text})
+      :ok
+    end)
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.MandrillApi.send/3, {:ok, %{"status" => "sent"}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      Scheduler.run_signal(DailyActiveAddressesSettings)
+
+      assert_receive({:telegram_to_self, message}, 1000)
+      assert message =~ "10,456.00"
+      assert_called(Sanbase.MandrillApi.send("signals", "test@example.com", :_))
+    end)
+  end
+
+  test "human readable numbers above 1,000,000", context do
+    %{user: user, project: project, datetimes: datetimes} = context
+
+    daily_active_addresses =
+      Enum.zip(datetimes, [100, 120, 100, 80, 20, 10, 9_231_100_456])
+      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
+
+    trigger_settings = %{
+      type: "daily_active_addresses",
+      target: %{slug: project.slug},
+      channel: ["telegram", "email"],
+      time_window: "1d",
+      operation: %{above: 10_000}
+    }
+
+    {:ok, _trigger} =
+      UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
+        is_public: true,
+        cooldown: "12h",
+        settings: trigger_settings
+      })
+
+    self_pid = self()
+
+    Sanbase.Mock.prepare_mock2(&DailyActiveAddressesSettings.get_data/1, [
+      {project.slug, daily_active_addresses}
+    ])
+    |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
+      send(self_pid, {:telegram_to_self, text})
+      :ok
+    end)
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.MandrillApi.send/3, {:ok, %{"status" => "sent"}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      Scheduler.run_signal(DailyActiveAddressesSettings)
+
+      assert_receive({:telegram_to_self, message}, 1000)
+      assert message =~ "9.23 Billion"
+      assert_called(Sanbase.MandrillApi.send("signals", "test@example.com", :_))
+    end)
+  end
+
   test "payload is extended", context do
     %{user: user, project: project, datetimes: datetimes} = context
 

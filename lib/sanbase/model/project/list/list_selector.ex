@@ -14,6 +14,11 @@ defmodule Sanbase.Model.Project.ListSelector do
     {:ok, Project.List.projects(opts)}
   end
 
+  def slugs(args) do
+    opts = args_to_opts(args)
+    {:ok, Project.List.projects_slugs()}
+  end
+
   @doc ~s"""
   Transform a selector to a keyword list that can be passed to the functions
   in the `Project.List` module to apply filtering/ordering/pagination.

@@ -145,12 +145,19 @@ defmodule Sanbase.Signal.UserTrigger do
   @spec create_user_trigger(%User{}, map()) ::
           {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, %Ecto.Changeset{}}
   def create_user_trigger(%User{id: user_id} = _user, %{settings: settings} = params) do
-    with {:nil?, false} <- {:nil?, is_nil(settings)},
+    with {_, false} <- {:nil?, is_nil(settings)},
          :ok <- valid?(settings) do
       changeset = %UserTrigger{} |> create_changeset(%{user_id: user_id, trigger: params})
 
-      Repo.insert(changeset)
-      |> maybe_create_event(changeset, TimelineEvent.create_public_trigger_type())
+      case Repo.insert(changeset) do
+        {:ok, ut} ->
+          {:ok, _} = create_event(ut, changeset, TimelineEvent.create_public_trigger_type())
+          {:ok, ut} = post_create_process(ut)
+          {:ok, ut}
+
+        {:error, error} ->
+          {:error, error}
+      end
     else
       {:nil?, true} ->
         {:error, "Trigger structure is invalid. Key `settings` is empty."}
@@ -173,12 +180,16 @@ defmodule Sanbase.Signal.UserTrigger do
   def update_user_trigger(%User{} = user, %{id: trigger_id} = params) do
     settings = Map.get(params, :settings)
 
-    with {:valid?, :ok} <- {:valid?, valid_or_nil?(settings)},
-         {:get_trigger, {:ok, struct}} when not is_nil(struct) <-
+    with {_, :ok} <- {:valid?, valid_or_nil?(settings)},
+         {_, {:ok, struct}} when not is_nil(struct) <-
            {:get_trigger, get_trigger_by_id(user, trigger_id)} do
       struct
       |> update_changeset(%{trigger: clean_params(params)})
       |> Repo.update()
+      |> case do
+        {:ok, ut} -> post_update_process(ut)
+        {:error, error} -> {:error, error}
+      end
     else
       {:get_trigger, _} ->
         {:error,
@@ -223,6 +234,40 @@ defmodule Sanbase.Signal.UserTrigger do
 
   # Private functions
 
+  defp post_create_process(%__MODULE__{} = user_trigger) do
+    %{trigger: trigger} = user_trigger
+
+    with {:ok, %settings_module{}} <- load_in_struct_if_valid(trigger.settings) do
+      trigger = settings_module.post_create_process(trigger)
+
+      case settings_module.post_update_process(trigger) do
+        :nochange ->
+          {:ok, user_trigger}
+
+        trigger ->
+          user_trigger
+          |> update_changeset(%{trigger: trigger |> Map.from_struct() |> clean_params()})
+          |> Repo.update()
+      end
+    end
+  end
+
+  defp post_update_process(%__MODULE__{} = user_trigger) do
+    %{trigger: trigger} = user_trigger
+
+    with {:ok, %settings_module{}} <- load_in_struct_if_valid(trigger.settings) do
+      case settings_module.post_update_process(trigger) do
+        :nochange ->
+          {:ok, user_trigger}
+
+        trigger ->
+          user_trigger
+          |> update_changeset(%{trigger: trigger |> Map.from_struct() |> clean_params()})
+          |> Repo.update()
+      end
+    end
+  end
+
   defp get_trigger_by_id_query(nil, trigger_id) do
     from(
       ut in UserTrigger,
@@ -258,14 +303,12 @@ defmodule Sanbase.Signal.UserTrigger do
   defp valid_or_nil?(trigger), do: valid?(trigger)
 
   defp valid?(trigger) do
-    with {:load_in_struct_if_valid, {:ok, trigger_struct}} <-
-           {:load_in_struct_if_valid, load_in_struct_if_valid(trigger)},
-         {:valid?, true} <- {:valid?, Vex.valid?(trigger_struct)},
-         {:map_from_struct, {:ok, _trigger_map}} <-
-           {:map_from_struct, map_from_struct(trigger_struct)} do
+    with {_, {:ok, trigger_struct}} <- {:load_in_struct?, load_in_struct_if_valid(trigger)},
+         {_, true} <- {:valid?, Vex.valid?(trigger_struct)},
+         {_, {:ok, _trigger_map}} <- {:map_from_struct, map_from_struct(trigger_struct)} do
       :ok
     else
-      {:load_in_struct_if_valid, {:error, error}} ->
+      {:load_in_struct?, {:error, error}} ->
         Logger.warn("UserTrigger struct is not valid. Reason: #{inspect(error)}")
         {:error, error}
 
@@ -289,12 +332,10 @@ defmodule Sanbase.Signal.UserTrigger do
     end
   end
 
-  defp maybe_create_event({:ok, user_trigger}, changeset, event_type) do
+  defp create_event(user_trigger, changeset, event_type) do
     TimelineEvent.maybe_create_event_async(event_type, user_trigger, changeset)
     {:ok, user_trigger}
   end
-
-  defp maybe_create_event(error_result, _, _), do: error_result
 
   defp clean_params(params) do
     params

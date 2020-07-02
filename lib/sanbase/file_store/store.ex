@@ -1,5 +1,5 @@
 defmodule Sanbase.FileStore do
-  use Arc.Definition
+  use Waffle.Definition
 
   @versions [:original]
   @acl :public_read

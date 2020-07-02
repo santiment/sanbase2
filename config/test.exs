@@ -61,9 +61,11 @@ config :sanbase, SanbaseWeb.Graphql.ContextPlug,
 
 config :sanbase, Sanbase.Prices.Store, database: "prices_test"
 
-config :arc,
-  storage: Arc.Storage.Local,
-  storage_dir: "/tmp/sanbase/filestore-test/"
+config :waffle,
+  storage: Waffle.Storage.Local,
+  storage_dir: "/tmp/sanbase/filestore-test/",
+  # Note: without using storage_dir_prefix: "/", a local "tmp/..." dir is used instead of "/tmp/..."
+  storage_dir_prefix: "/"
 
 config :sanbase, SanbaseWeb.Plug.VerifyStripeWebhook, webhook_secret: "stripe_webhook_secret"
 

@@ -132,5 +132,6 @@
   "uri_query": {:hex, :uri_query, "0.1.2", "ae35b83b472f3568c2c159eee3f3ccf585375d8a94fb5382db1ea3589e75c3b4", [:mix], [], "hexpm", "e3bc81816c98502c36498b9b2f239b89c71ce5eadfff7ceb2d6c0a2e6ae2ea0c"},
   "uuid": {:hex, :uuid, "1.1.8", "e22fc04499de0de3ed1116b770c7737779f226ceefa0badb3592e64d5cfb4eb9", [:mix], [], "hexpm", "c790593b4c3b601f5dc2378baae7efaf5b3d73c4c6456ba85759905be792f2ac"},
   "vex": {:hex, :vex, "0.8.0", "0a04e3aebe5ec443525c88f3833b4481d97de272f891243b62b18efbda85b121", [:mix], [], "hexpm", "36a37f264b36fe4b0430c9f174d71c59845cf56d9e2ae32960038432b16961ea"},
+  "waffle": {:hex, :waffle, "1.1.0", "7a7b8620d1d43cdea5221910508710504ad718f681f463e0b75974c7d15608b7", [:mix], [{:ex_aws, "~> 2.1.2", [hex: :ex_aws, repo: "hexpm", optional: true]}, {:ex_aws_s3, "~> 2.0", [hex: :ex_aws_s3, repo: "hexpm", optional: true]}, {:hackney, "~> 1.9", [hex: :hackney, repo: "hexpm", optional: false]}, {:sweet_xml, "~> 0.6", [hex: :sweet_xml, repo: "hexpm", optional: true]}], "hexpm", "f0488aeea4987d044c74f8ba7c6829154b778c498463a9db68492c7073ebee9e"},
   "xain": {:hex, :xain, "0.6.2", "c43e3f30dc500ee4ed1146e1d6ec2440652d8e7b076f23dd5599fc251b0d84b2", [:mix], [{:phoenix_html, "~> 2.12", [hex: :phoenix_html, repo: "hexpm", optional: false]}], "hexpm", "c67435ac8ca90e242cc44e97be1631f9e920e5c4ca64db60cf97eda441aca58e"},
 }

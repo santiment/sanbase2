@@ -63,6 +63,11 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:pagination, :project_pagination_input_object)
   end
 
+  object :metric_anomalies do
+    field(:metric, :string)
+    field(:anomalies, list_of(:string))
+  end
+
   # Includes all available fields
   @desc ~s"""
   A type fully describing a project.
@@ -93,8 +98,23 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       }
     ```
     """
+
     field :available_anomalies, list_of(:string) do
       cache_resolve(&ProjectAnomaliesResolver.available_anomalies/3, ttl: 600)
+    end
+
+    @desc ~s"""
+    Convenience query to get a list of anomalies objects. Each object contains a metric
+    and a list of anomalies based on this metric.
+    ```
+    {
+      projectBySlug(slug: "ethereum"){ availableAnomaliesPerMetric }
+    }
+    ```
+    """
+
+    field :available_anomalies_per_metric, list_of(:metric_anomalies) do
+      cache_resolve(&ProjectAnomaliesResolver.available_anomalies_per_metric/3, ttl: 600)
     end
 
     @desc ~s"""

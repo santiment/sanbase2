@@ -7,7 +7,7 @@ defmodule Sanbase.Billing.PlanTest do
   alias Sanbase.Billing.TestSeed
   alias Sanbase.Repo
   alias Sanbase.StripeApi
-  alias Sanbase.StripeApiTestReponse
+  alias Sanbase.StripeApiTestResponse
 
   setup do
     plans = TestSeed.seed_products_and_plans()
@@ -30,7 +30,7 @@ defmodule Sanbase.Billing.PlanTest do
 
     test "with plan without stripe_id - creates plan in stripe and updates local plan", context do
       with_mock StripeApi,
-        create_plan: fn _ -> StripeApiTestReponse.create_plan_resp() end do
+        create_plan: fn _ -> StripeApiTestResponse.create_plan_resp() end do
         product = context.plans.product
         product |> Product.changeset(%{stripe_id: "stripe_id"}) |> Repo.update!()
         {:ok, plan} = Plan.maybe_create_plan_in_stripe(context.plans.plan_pro)

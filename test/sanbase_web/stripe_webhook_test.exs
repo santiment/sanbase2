@@ -9,7 +9,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
 
   alias Sanbase.Billing.{StripeEvent, Plan, Subscription}
   alias Sanbase.Repo
-  alias Sanbase.StripeApiTestReponse
+  alias Sanbase.StripeApiTestResponse
   alias Sanbase.StripeApi
 
   @stripe_id "sub_1234567891"
@@ -18,7 +18,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
     {StripeApi, [],
      [
        retrieve_subscription: fn _ ->
-         StripeApiTestReponse.retrieve_subscription_resp(stripe_id: @stripe_id)
+         StripeApiTestResponse.retrieve_subscription_resp(stripe_id: @stripe_id)
        end
      ]},
     {Sanbase.Notifications.Discord, [],
@@ -37,7 +37,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
     test "when event with this id doesn't exist - create and process event successfully",
          context do
       {:ok, %Stripe.Subscription{id: _stripe_id}} =
-        StripeApiTestReponse.retrieve_subscription_resp()
+        StripeApiTestResponse.retrieve_subscription_resp()
 
       insert(:subscription_essential,
         user: context.user,
@@ -61,7 +61,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
       StripeEvent.create(Jason.decode!(payload))
 
       {:ok, %Stripe.Subscription{id: stripe_id}} =
-        StripeApiTestReponse.retrieve_subscription_resp()
+        StripeApiTestResponse.retrieve_subscription_resp()
 
       insert(:subscription_essential,
         user: context.user,
@@ -114,7 +114,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
       {:ok,
        %Stripe.Subscription{
          customer: stripe_customer_id
-       }} = StripeApiTestReponse.retrieve_subscription_resp()
+       }} = StripeApiTestResponse.retrieve_subscription_resp()
 
       user = insert(:user, stripe_customer_id: stripe_customer_id)
       response = post_stripe_webhook(:subscription_created)
@@ -128,7 +128,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
       {:ok,
        %Stripe.Subscription{
          customer: stripe_customer_id
-       }} = StripeApiTestReponse.retrieve_subscription_resp()
+       }} = StripeApiTestResponse.retrieve_subscription_resp()
 
       user = insert(:user, stripe_customer_id: stripe_customer_id)
 
@@ -165,7 +165,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
          id: _stripe_id,
          customer: stripe_customer_id,
          plan: %Stripe.Plan{id: stripe_plan_id}
-       }} = StripeApiTestReponse.retrieve_subscription_resp()
+       }} = StripeApiTestResponse.retrieve_subscription_resp()
 
       Plan.by_stripe_id(stripe_plan_id)
       |> Plan.changeset(%{stripe_id: "non_existing"})

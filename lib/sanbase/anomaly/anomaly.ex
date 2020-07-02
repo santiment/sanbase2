@@ -35,6 +35,17 @@ defmodule Sanbase.Anomaly do
     end
   end
 
+  def available_anomalies_per_metric(slug) do
+    Sanbase.Cache.get_or_store(
+      {__MODULE__, :available_anomalies_per_metric} |> Sanbase.Cache.hash(),
+      fn -> slug_to_anomalies_map(anomalies_per_metric: true) end
+    )
+    |> case do
+      {:ok, map} -> {:ok, Map.get(map, slug, [])}
+      {:error, error} -> {:error, error}
+    end
+  end
+
   def available_slugs(anomaly) do
     {query, args} = available_slugs_query(anomaly)
 
@@ -97,18 +108,25 @@ defmodule Sanbase.Anomaly do
 
   # Private functions
 
-  defp slug_to_anomalies_map() do
+  defp slug_to_anomalies_map(opts \\ []) do
     {:ok, asset_map} = asset_id_to_slug_map()
     {:ok, metric_map} = metric_id_to_metric_name_map()
 
     {query, args} = available_anomalies_query()
 
     ClickhouseRepo.query_reduce(query, args, %{}, fn [model_name, asset_id, metric_id], acc ->
-      key = %{"metric" => Map.get(metric_map, metric_id), "model_name" => model_name}
+      metric = Map.get(metric_map, metric_id)
+      key = %{"metric" => metric, "model_name" => model_name}
 
       with anomaly when not is_nil(anomaly) <- Map.get(@metric_and_model_to_anomaly_map, key),
            slug when not is_nil(slug) <- Map.get(asset_map, asset_id) do
-        Map.update(acc, slug, [anomaly], fn list -> [anomaly | list] end)
+        if Keyword.get(opts, :anomalies_per_metric) do
+          Map.update(acc, slug, [%{metric: metric, anomalies: [anomaly]}], fn list ->
+            [%{metric: metric, anomalies: [anomaly]} | list]
+          end)
+        else
+          Map.update(acc, slug, [anomaly], fn list -> [anomaly | list] end)
+        end
       else
         _ -> acc
       end

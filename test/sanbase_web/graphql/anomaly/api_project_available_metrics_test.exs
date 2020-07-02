@@ -30,9 +30,9 @@ defmodule Sanbase.Project.AvailableMetricsApiTest do
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = get_available_anomalies(project)
-      %{"data" => %{"projectBySlug" => %{"availableAnomalies" => available_metrics}}} = result
+      %{"data" => %{"projectBySlug" => %{"availableAnomalies" => available_anomalies}}} = result
 
-      assert available_metrics |> Enum.sort() ==
+      assert available_anomalies |> Enum.sort() ==
                [
                  "dev_activity_anomaly",
                  "daily_active_addresses_anomaly",
@@ -41,21 +41,55 @@ defmodule Sanbase.Project.AvailableMetricsApiTest do
                |> Enum.sort()
 
       result2 = get_available_anomalies(project2)
-      %{"data" => %{"projectBySlug" => %{"availableAnomalies" => available_metrics2}}} = result2
+      %{"data" => %{"projectBySlug" => %{"availableAnomalies" => available_anomalies2}}} = result2
 
-      assert available_metrics2 == ["exchange_balance_anomaly"]
+      assert available_anomalies2 == ["exchange_balance_anomaly"]
+
+      result = get_available_anomalies_per_metric(project)
+
+      %{
+        "data" => %{
+          "projectBySlug" => %{"availableAnomaliesPerMetric" => available_anomalies3}
+        }
+      } = result
+
+      assert available_anomalies3 |> Enum.sort_by(fn %{"metric" => metric} -> metric end) == [
+               %{
+                 "anomalies" => ["daily_active_addresses_anomaly"],
+                 "metric" => "daily_active_addresses"
+               },
+               %{"anomalies" => ["dev_activity_anomaly"], "metric" => "dev_activity"},
+               %{"anomalies" => ["exchange_balance_anomaly"], "metric" => "exchange_balance"}
+             ]
     end)
   end
 
   defp get_available_anomalies(project) do
-    query = """
+    """
     {
       projectBySlug(slug: "#{project.slug}"){
         availableAnomalies
       }
     }
     """
+    |> execute()
+  end
 
+  defp get_available_anomalies_per_metric(project) do
+    """
+    {
+      projectBySlug(slug: "#{project.slug}"){
+        availableAnomaliesPerMetric {
+          metric
+          anomalies
+        }
+      }
+    }
+    """
+    |> execute()
+  end
+
+  defp execute(query) do
     build_conn()
     |> post("/graphql", query_skeleton(query))
     |> json_response(200)

@@ -91,9 +91,11 @@ config :sanbase, SanbaseWeb.Graphql.ContextPlug,
   basic_auth_username: "admin",
   basic_auth_password: "admin"
 
-config :arc,
-  storage: Arc.Storage.Local,
-  storage_dir: "/tmp/sanbase/filestore/"
+config :waffle,
+  storage: Waffle.Storage.Local,
+  storage_dir: "/tmp/sanbase/filestore/",
+  # Note: without using storage_dir_prefix: "/", a local "tmp/..." dir is used instead of "/tmp/..."
+  storage_dir_prefix: "/"
 
 if File.exists?("config/dev.secret.exs") do
   import_config "dev.secret.exs"

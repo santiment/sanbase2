@@ -258,4 +258,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   defp to_selector(%{selector: %{} = selector}),
     do: selector
+
+  defp to_selector(_) do
+    {:error, "Missing required slug, word or selector argument"}
+  end
 end

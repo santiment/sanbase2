@@ -314,7 +314,10 @@ defmodule Sanbase.Metric do
 
   for %{metric: metric, module: module} <- @metric_module_mapping do
     def first_datetime(unquote(metric), slug) do
-      unquote(module).first_datetime(unquote(metric), slug)
+      case slug do
+        %{} -> unquote(module).first_datetime(unquote(metric), slug)
+        {:error, msg} -> {:error, msg}
+      end
     end
   end
 

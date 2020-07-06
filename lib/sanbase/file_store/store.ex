@@ -3,7 +3,7 @@ defmodule Sanbase.FileStore do
 
   @versions [:original]
   @acl :public_read
-  @extension_whitelist ~w(.jpg .jpeg .gif .png)
+  @extension_whitelist ~w(.jpg .jpeg .gif .png .pdf .csv)
   @max_file_size 5 * 1024 * 1024
 
   @doc ~s"""

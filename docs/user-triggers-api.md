@@ -648,7 +648,7 @@ the same way with the same syntax in this signal
 ```json
 // All projects with DAA > 500.
 {
-  "type": "metric_signal",
+  "type": "screener_signal",
   "metric": "social_volume_total",
   "channel": "telegram",
   "operation": {
@@ -671,7 +671,7 @@ the same way with the same syntax in this signal
 ```json
 // Follow projects entering/exiting a dynamic watchlist.
 {
-  "type": "metric_signal",
+  "type": "screener_signal",
   "metric": "social_volume_total",
   "channel": "telegram",
   "operation": {

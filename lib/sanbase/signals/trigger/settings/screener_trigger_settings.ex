@@ -82,17 +82,17 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
     def triggered?(%ScreenerTriggerSettings{triggered?: triggered}), do: triggered
 
     @spec evaluate(ScreenerTriggerSettings.t(), any) :: ScreenerTriggerSettings.t()
-    def evaluate(%ScreenerTriggerSettings{} = settings, _trigger) do
+    def evaluate(%ScreenerTriggerSettings{} = settings, trigger) do
       case ScreenerTriggerSettings.get_data(settings) do
         data when is_list(data) and data != [] ->
-          build_result(data, settings)
+          build_result(data, settings, trigger)
 
         _ ->
           %ScreenerTriggerSettings{settings | triggered?: false}
       end
     end
 
-    def build_result(current_slugs, settings) do
+    def build_result(current_slugs, settings, trigger) do
       %{state: %{slugs_in_screener: previous_slugs}} = settings
       added_slugs = current_slugs -- previous_slugs
       removed_slugs = previous_slugs -- current_slugs
@@ -100,7 +100,11 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
       case added_slugs != [] or removed_slugs != [] do
         true ->
           template_kv =
-            template_kv(%{added_slugs: added_slugs, removed_slugs: removed_slugs}, settings)
+            template_kv(
+              %{added_slugs: added_slugs, removed_slugs: removed_slugs},
+              settings,
+              trigger
+            )
 
           %ScreenerTriggerSettings{
             settings
@@ -119,7 +123,7 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
       :nocache
     end
 
-    defp template_kv(values, settings) do
+    defp template_kv(values, settings, trigger) do
       %{added_slugs: added_slugs, removed_slugs: removed_slugs} = values
 
       kv = %{
@@ -130,7 +134,7 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
       }
 
       template = """
-      🔔Projects' changes in the screener "Title goes here".
+      🔔Projects' changes in the screener "#{trigger.title}".
       #{format_enter_exit_slugs(added_slugs, removed_slugs)}
       """
 

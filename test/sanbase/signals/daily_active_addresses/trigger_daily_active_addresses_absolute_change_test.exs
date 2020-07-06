@@ -11,7 +11,7 @@ defmodule Sanbase.Signal.DailyActiveAddresseAbsoluetChangeTest do
   alias Sanbase.Signal.Trigger.DailyActiveAddressesSettings
 
   setup do
-    Sanbase.Signal.Evaluator.Cache.clear()
+    Sanbase.Signal.Evaluator.Cache.clear_all()
 
     user = insert(:user)
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)

@@ -253,6 +253,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   defp valid_selector?(_), do: true
+
   defp to_selector(%{slug: slug}), do: %{slug: slug}
   defp to_selector(%{word: word}), do: %{word: word}
 

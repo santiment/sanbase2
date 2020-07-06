@@ -8,20 +8,18 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
   """
   use Vex.Struct
 
-  import Sanbase.{Validation, Signal.Validation}
-  import Sanbase.Signal.Utils
-  import Sanbase.DateTimeUtils
+  import Sanbase.Signal.Validation
 
   alias __MODULE__
   alias Sanbase.Signal.Type
   alias Sanbase.Model.Project
-  alias Sanbase.Metric
-  alias Sanbase.Signal.Evaluator.Cache
 
   @trigger_type "screener_signal"
   @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
   @enforce_keys [:type, :channel, :operation]
+
   defstruct type: @trigger_type,
+            target: "default",
             channel: nil,
             operation: nil,
             state: nil,
@@ -35,6 +33,7 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
+          target: Type.target(),
           channel: Type.channel(),
           operation: Type.operation(),
           state: Map.t(),
@@ -49,9 +48,10 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
   def type(), do: @trigger_type
 
   def post_create_process(trigger) do
-    %{settings: %__MODULE__{} = settings} = trigger
+    %{settings: settings} = trigger
     slugs = get_data(settings)
     settings = %{settings | state: %{slugs_in_screener: slugs}}
+
     %{trigger | settings: settings}
   end
 
@@ -61,14 +61,22 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
   Return a list of the `settings.metric` values for the necessary time range
   """
   @spec get_data(ScreenerTriggerSettings.t()) :: list(String.t())
-  def get_data(%__MODULE__{} = settings) do
-    %{operation: %{selector: selector}} = settings
+
+  def get_data(%__MODULE__{operation: %{selector: %{watchlist_id: watchlist_id}}}) do
+    {:ok, slugs} =
+      watchlist_id
+      |> Sanbase.UserList.by_id()
+      |> Sanbase.UserList.get_slugs()
+
+    slugs
+  end
+
+  def get_data(%__MODULE__{operation: %{selector: _} = selector}) do
     {:ok, slugs} = Project.ListSelector.slugs(selector)
     slugs
   end
 
   defimpl Sanbase.Signal.Settings, for: ScreenerTriggerSettings do
-    alias Sanbase.Signal.OperationText
     alias Sanbase.Signal.Trigger.ScreenerTriggerSettings
 
     def triggered?(%ScreenerTriggerSettings{triggered?: triggered}), do: triggered
@@ -96,7 +104,8 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
 
           %ScreenerTriggerSettings{
             settings
-            | template_kv: %{"screener" => template_kv},
+            | template_kv: %{"default" => template_kv},
+              state: %{slugs_in_screener: current_slugs},
               triggered?: true
           }
 
@@ -121,7 +130,7 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
       }
 
       template = """
-      🔔Projects' changes in your screener.
+      🔔Projects' changes in the screener "Title goes here".
       #{format_enter_exit_slugs(added_slugs, removed_slugs)}
       """
 
@@ -139,9 +148,18 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
           "[##{project.ticker} | #{project.name}]("
         end)
 
+      exiting =
+        Enum.map(removed_slugs, fn slug ->
+          project = Map.get(projects_map, slug)
+          "[##{project.ticker} | #{project.name}]("
+        end)
+
       """
       Entering projects:
-
+      #{entering}
+      ---
+      Exiting projects:
+      #{exiting}
       """
     end
   end

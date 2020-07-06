@@ -237,10 +237,8 @@ defmodule Sanbase.Signal.UserTrigger do
   defp post_create_process(%__MODULE__{} = user_trigger) do
     %{trigger: trigger} = user_trigger
 
-    with {:ok, %settings_module{}} <- load_in_struct_if_valid(trigger.settings) do
-      trigger = settings_module.post_create_process(trigger)
-
-      case settings_module.post_update_process(trigger) do
+    with {:ok, %settings_module{} = settings} <- load_in_struct_if_valid(trigger.settings) do
+      case settings_module.post_create_process(%{trigger | settings: settings}) do
         :nochange ->
           {:ok, user_trigger}
 
@@ -255,8 +253,8 @@ defmodule Sanbase.Signal.UserTrigger do
   defp post_update_process(%__MODULE__{} = user_trigger) do
     %{trigger: trigger} = user_trigger
 
-    with {:ok, %settings_module{}} <- load_in_struct_if_valid(trigger.settings) do
-      case settings_module.post_update_process(trigger) do
+    with {:ok, %settings_module{} = settings} <- load_in_struct_if_valid(trigger.settings) do
+      case settings_module.post_update_process(%{trigger | settings: settings}) do
         :nochange ->
           {:ok, user_trigger}
 

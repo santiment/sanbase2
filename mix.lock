@@ -81,6 +81,7 @@
   "mockery": {:hex, :mockery, "2.3.1", "a02fd60b10ac9ed37a7a2ecf6786c1f1dd5c75d2b079a60594b089fba32dc087", [:mix], [], "hexpm", "1d0971d88ebf084e962da3f2cfee16f0ea8e04ff73a7710428500d4500b947fa"},
   "mogrify": {:hex, :mogrify, "0.7.3", "1494ee739f6e90de158dec4d4edee2d854d2f2d06a522e943f996ae176bca53d", [:mix], [], "hexpm", "b3e90a87171c23efa6b5910d735dd44f3fda15ba07a57cdb89cdb8ecaf83988d"},
   "nimble_parsec": {:hex, :nimble_parsec, "0.5.0", "90e2eca3d0266e5c53f8fbe0079694740b9c91b6747f2b7e3c5d21966bba8300", [:mix], [], "hexpm", "5c040b8469c1ff1b10093d3186e2e10dbe483cd73d79ec017993fb3985b8a9b3"},
+  "norm": {:hex, :norm, "0.12.0", "b27a629fea9aaf7757604e9d4ed06cd815c2c5fb335f38b33c1bf17db9b217b0", [:mix], [], "hexpm", "aecd53df72219966d9493e3426a32d83490c822ef618ef442721b1ae68cb6f0c"},
   "number": {:hex, :number, "1.0.1", "a1017dc867a9860b0c261bf9f3ac4990f64589dbbe50260724190c78a0b92104", [:mix], [{:decimal, "~> 1.5", [hex: :decimal, repo: "hexpm", optional: false]}], "hexpm", "149c62771306451198b2a044b4f077520c9acf6e69304723b17385257c683b52"},
   "oauther": {:hex, :oauther, "1.1.1", "7d8b16167bb587ecbcddd3f8792beb9ec3e7b65c1f8ebd86b8dd25318d535752", [:mix], [], "hexpm", "9374f4302045321874cccdc57eb975893643bd69c3b22bf1312dab5f06e5788e"},
   "observer_cli": {:hex, :observer_cli, "1.5.4", "e8489b3a7c77c2155c0b67fa9f90d9afa76bf15c24fb7b312addcc117771d154", [:mix, :rebar3], [{:recon, "~>2.5.1", [hex: :recon, repo: "hexpm", optional: false]}], "hexpm", "f4825d374b22f258ad114a74796b79b86e20a03611051719f6062353c05389cb"},

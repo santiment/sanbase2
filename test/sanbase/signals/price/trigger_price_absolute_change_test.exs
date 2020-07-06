@@ -8,7 +8,7 @@ defmodule Sanbase.Signal.TriggerPriceAbsoluteChangeTest do
   alias Sanbase.Signal.Trigger.PriceAbsoluteChangeSettings
 
   setup do
-    Sanbase.Signal.Evaluator.Cache.clear()
+    Sanbase.Signal.Evaluator.Cache.clear_all()
 
     Tesla.Mock.mock(fn %{method: :post} -> %Tesla.Env{status: 200, body: "ok"} end)
 
@@ -145,7 +145,7 @@ defmodule Sanbase.Signal.TriggerPriceAbsoluteChangeTest do
                  Sanbase.Signal.Scheduler.run_signal(PriceAbsoluteChangeSettings)
                end) =~ "In total 1/1 price_absolute_change signals were sent successfully"
 
-        Sanbase.Signal.Evaluator.Cache.clear()
+        Sanbase.Signal.Evaluator.Cache.clear_all()
 
         assert capture_log(fn ->
                  Sanbase.Signal.Scheduler.run_signal(PriceAbsoluteChangeSettings)

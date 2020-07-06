@@ -91,6 +91,7 @@ defmodule Sanbase.Mixfile do
       {:mock, "~> 0.3"},
       {:mockery, "~> 2.2"},
       {:mogrify, "~> 0.7.2"},
+      {:norm, "~> 0.12"},
       {:number, "~> 1.0"},
       {:observer_cli, "~> 1.3"},
       {:phoenix_ecto, "~> 4.1"},

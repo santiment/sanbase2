@@ -13,7 +13,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
   @moduletag capture_log: true
 
   setup do
-    Sanbase.Signal.Evaluator.Cache.clear()
+    Sanbase.Signal.Evaluator.Cache.clear_all()
 
     user = insert(:user)
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
@@ -91,7 +91,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
       payload = user_signal.payload |> Map.values() |> List.first()
       assert String.contains?(payload, "coinbase")
 
-      Sanbase.Signal.Evaluator.Cache.clear()
+      Sanbase.Signal.Evaluator.Cache.clear_all()
 
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)

@@ -9,7 +9,7 @@ defmodule Sanbase.Signal.EthWalletTriggerHistoryTest do
   alias Sanbase.Clickhouse.HistoricalBalance
 
   setup do
-    Sanbase.Signal.Evaluator.Cache.clear()
+    Sanbase.Signal.Evaluator.Cache.clear_all()
 
     project = Sanbase.Factory.insert(:random_erc20_project)
 

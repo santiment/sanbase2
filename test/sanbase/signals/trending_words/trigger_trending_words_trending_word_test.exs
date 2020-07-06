@@ -11,7 +11,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingWordTest do
   alias Sanbase.Signal.Trigger.TrendingWordsTriggerSettings
 
   setup do
-    Sanbase.Signal.Evaluator.Cache.clear()
+    Sanbase.Signal.Evaluator.Cache.clear_all()
 
     user = insert(:user)
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
@@ -67,7 +67,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingWordTest do
                Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
              end) =~ "In total 1/1 trending_words signals were sent successfully"
 
-      Sanbase.Signal.Evaluator.Cache.clear()
+      Sanbase.Signal.Evaluator.Cache.clear_all()
 
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
@@ -89,7 +89,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingWordTest do
                Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
              end) =~ "In total 1/1 trending_words signals were sent successfully"
 
-      Sanbase.Signal.Evaluator.Cache.clear()
+      Sanbase.Signal.Evaluator.Cache.clear_all()
 
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)

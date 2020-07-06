@@ -11,7 +11,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingProjectTest do
   alias Sanbase.Signal.Trigger.TrendingWordsTriggerSettings
 
   setup do
-    Sanbase.Signal.Evaluator.Cache.clear()
+    Sanbase.Signal.Evaluator.Cache.clear_all()
 
     user = insert(:user)
     project = insert(:project)
@@ -72,7 +72,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingProjectTest do
                Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
              end) =~ "In total 1/1 trending_words signals were sent successfully"
 
-      Sanbase.Signal.Evaluator.Cache.clear()
+      Sanbase.Signal.Evaluator.Cache.clear_all()
 
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)

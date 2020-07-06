@@ -135,6 +135,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:promoter_queries)
     import_fields(:widget_queries)
     import_fields(:table_configuration_queries)
+    import_fields(:report_queries)
   end
 
   mutation do

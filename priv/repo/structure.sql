@@ -73,8 +73,6 @@ CREATE TYPE public.status AS ENUM (
 
 SET default_tablespace = '';
 
-SET default_table_access_method = heap;
-
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
 --

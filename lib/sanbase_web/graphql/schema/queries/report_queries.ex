@@ -1,21 +1,16 @@
 defmodule SanbaseWeb.Graphql.Schema.ReportQueries do
   use Absinthe.Schema.Notation
   alias SanbaseWeb.Graphql.Resolvers.ReportResolver
+  alias SanbaseWeb.Graphql.Middlewares.{BasicAuth, JWTAuth}
 
-  # import_types(SanbaseWeb.Graphql.Schema.ReportTypes)
-
-  object :report_data do
-    field(:url, :string)
-    field(:name, :string)
-    field(:descrption, :string)
-  end
+  import_types(SanbaseWeb.Graphql.ReportTypes)
 
   object :report_queries do
     @desc ~s"""
-
+    List all reports.
     """
-    field :list_reports, :report_data do
-      # middleware(JWTAuth)
+    field :list_reports, list_of(:report) do
+      middleware(JWTAuth)
 
       resolve(&ReportResolver.list_reports/3)
     end
@@ -23,14 +18,12 @@ defmodule SanbaseWeb.Graphql.Schema.ReportQueries do
 
   object :report_mutations do
     @desc ~s"""
-
+    Upload a report file.
     """
     field :upload_report, :string do
       arg(:report, non_null(:upload))
       arg(:name, :string)
-      arg(:descrption, :string)
-
-      # arg :metadata, :upload
+      arg(:description, :string)
 
       middleware(BasicAuth)
 

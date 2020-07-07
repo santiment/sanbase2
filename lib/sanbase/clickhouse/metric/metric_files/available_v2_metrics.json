@@ -1930,8 +1930,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Payment count",
-    "name": "payment_count",
+    "human_readable_name": "Number of Non-Zero Transfers Moving ",
+    "name": "payments_count",
     "metric": "payment_count",
     "version": "2019-01-01",
     "access": "restricted",
@@ -1946,8 +1946,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Transaction count",
-    "name": "transaction_count",
+    "human_readable_name": "Number of Payments for a Given Day",
+    "name": "transactions_count",
     "metric": "transaction_count",
     "version": "2019-01-01",
     "access": "restricted",
@@ -1962,7 +1962,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Fees",
+    "human_readable_name": "Fees paid in ETH",
     "name": "fees",
     "metric": "fees",
     "version": "2019-01-01",
@@ -1978,7 +1978,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Daily network circulation in usd",
+    "human_readable_name": "Daily Network Circulation in USD",
     "name": "network_circulation_usd_1d",
     "metric": "network_circulation_usd_1d",
     "version": "2019-01-01",
@@ -1994,7 +1994,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Fees in usd to daily network circulation in usd",
+    "human_readable_name": "Fees in USD to Daily Network Circulation in USD",
     "name": "fees_to_network_circulation_usd_1d",
     "metric": "fees_to_network_circulation_usd_1d",
     "version": "2019-01-01",

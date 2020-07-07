@@ -399,7 +399,7 @@ defmodule Sanbase.Auth.User do
   end
 
   def all() do
-    from(u in User, order_by: u.id)
+    from(u in User, order_by: u.id, preload: [:eth_accounts])
     |> Sanbase.Repo.all()
   end
 

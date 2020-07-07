@@ -230,9 +230,6 @@ defmodule Sanbase.Intercom do
     end)
   end
 
-  defp format_balance(nil), do: 0.0
-  defp format_balance(balance), do: Decimal.to_float(balance)
-
   defp format_dt(nil), do: nil
 
   defp format_dt(unix_dt) do

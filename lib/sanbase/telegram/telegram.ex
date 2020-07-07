@@ -85,7 +85,8 @@ defmodule Sanbase.Telegram do
       %{
         parse_mode: "markdown",
         chat_id: chat_id,
-        text: text
+        text: text,
+        disable_web_page_preview: true
       }
       |> Jason.encode!()
 

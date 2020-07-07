@@ -72,7 +72,7 @@ defmodule Sanbase.Signal.Scheduler do
             {user_trigger, []}
 
           list when is_list(list) ->
-            {:ok, updated_user_trigger} = update_last_triggered(user_trigger, list)
+            {:ok, updated_user_trigger} = update_triggered(user_trigger, list)
 
             user_trigger =
               put_in(
@@ -90,8 +90,12 @@ defmodule Sanbase.Signal.Scheduler do
     |> Enum.unzip()
   end
 
-  defp update_last_triggered(
-         %{user: user, id: trigger_id, trigger: %{last_triggered: last_triggered}},
+  defp update_triggered(
+         %{
+           user: user,
+           id: trigger_id,
+           trigger: %{last_triggered: last_triggered, settings: settings}
+         },
          send_results_list
        ) do
     # Round the datetimes to minutes because the `last_triggered` is used as
@@ -115,7 +119,8 @@ defmodule Sanbase.Signal.Scheduler do
 
     UserTrigger.update_user_trigger(user, %{
       id: trigger_id,
-      last_triggered: last_triggered
+      last_triggered: last_triggered,
+      settings: settings
     })
   end
 

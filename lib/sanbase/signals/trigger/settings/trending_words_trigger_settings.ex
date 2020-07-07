@@ -55,6 +55,9 @@ defmodule Sanbase.Signal.Trigger.TrendingWordsTriggerSettings do
   @spec type() :: String.t()
   def type(), do: @trigger_type
 
+  def post_create_process(_trigger), do: :nochange
+  def post_update_process(_trigger), do: :nochange
+
   @spec get_data(%__MODULE__{}) :: TrendingWords.result()
   def get_data(%__MODULE__{}) do
     TrendingWords.get_currently_trending_words(@trending_words_size)

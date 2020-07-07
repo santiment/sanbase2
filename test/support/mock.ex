@@ -62,7 +62,7 @@ defmodule Sanbase.Mock do
         when is_function(captured_fun, unquote(arity)) do
       {:name, name} = Function.info(captured_fun, :name)
       {:module, module} = Function.info(captured_fun, :module)
-      passthrough = if Keyword.get(opts, :passthrough, true) == true, do: [:passthrough], else: []
+      passthrough = if Keyword.get(opts, :passthrough, true), do: [:passthrough], else: []
 
       fun = fn unquote_splicing(Macro.generate_arguments(@arity, __MODULE__)) ->
         data

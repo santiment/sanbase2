@@ -60,6 +60,17 @@ defmodule Sanbase.Signal.Evaluator do
       [Access.key!(:trigger), Access.key!(:settings), Access.key!(:triggered?)],
       evaluated_trigger.settings.triggered?
     )
+    |> case do
+      %{trigger: %{settings: %{state: _}}} = user_trigger ->
+        user_trigger
+        |> put_in(
+          [Access.key!(:trigger), Access.key!(:settings), Access.key!(:state)],
+          evaluated_trigger.settings.state
+        )
+
+      user_trigger ->
+        user_trigger
+    end
   end
 
   defp filter_triggered(triggers, type) do

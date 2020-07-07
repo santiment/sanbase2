@@ -4,13 +4,14 @@ defmodule Sanbase.Signal.List do
   def get() do
     [
       Trigger.DailyActiveAddressesSettings,
-      Trigger.PricePercentChangeSettings,
-      Trigger.PriceAbsoluteChangeSettings,
-      Trigger.PriceVolumeDifferenceTriggerSettings,
-      Trigger.TrendingWordsTriggerSettings,
       Trigger.EthWalletTriggerSettings,
-      Trigger.WalletTriggerSettings,
-      Trigger.MetricTriggerSettings
+      Trigger.MetricTriggerSettings,
+      Trigger.PriceAbsoluteChangeSettings,
+      Trigger.PricePercentChangeSettings,
+      Trigger.PriceVolumeDifferenceTriggerSettings,
+      Trigger.ScreenerTriggerSettings,
+      Trigger.TrendingWordsTriggerSettings,
+      Trigger.WalletTriggerSettings
     ]
   end
 end

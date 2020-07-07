@@ -57,6 +57,9 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
   @spec type() :: String.t()
   def type(), do: @trigger_type
 
+  def post_create_process(_trigger), do: :nochange
+  def post_update_process(_trigger), do: :nochange
+
   @doc ~s"""
   Return a list of the `settings.metric` values for the necessary time range
   """

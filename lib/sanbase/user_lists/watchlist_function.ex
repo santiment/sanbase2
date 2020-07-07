@@ -11,7 +11,6 @@ defmodule Sanbase.WatchlistFunction do
   def evaluate(%__MODULE__{name: "selector", args: args}) do
     case Map.split(args, ["filters", "order", "pagination"]) do
       {selector, empty_map} when map_size(empty_map) == 0 ->
-        selector = Sanbase.MapUtils.atomize_keys(selector)
         {:ok, projects} = Project.ListSelector.projects(%{selector: selector})
         projects
 
@@ -76,7 +75,11 @@ defmodule Sanbase.WatchlistFunction do
   def cast(%{} = function) do
     atomized_fun =
       for {key, val} <- function, into: %{} do
-        {String.to_existing_atom(key), val}
+        if is_binary(key) do
+          {String.to_existing_atom(key), val}
+        else
+          {key, val}
+        end
       end
 
     {:ok, struct!(__MODULE__, atomized_fun)}

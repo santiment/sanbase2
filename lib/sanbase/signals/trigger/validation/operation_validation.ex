@@ -90,6 +90,16 @@ defmodule Sanbase.Signal.Validation.Operation do
   def valid_operation?(%{amount_up: value}) when is_number(value), do: :ok
   def valid_operation?(%{amount_down: value}) when is_number(value), do: :ok
 
+  # Validate screener signal
+  def valid_operation?(%{selector: %{watchlist_id: id}}) when is_integer(id) and id > 0, do: :ok
+
+  def valid_operation?(%{selector: _} = selector) do
+    case Sanbase.Model.Project.ListSelector.valid_selector?(selector) do
+      true -> :ok
+      false -> {:error, "The provided selector is not valid."}
+    end
+  end
+
   # All else is invalid operation
   def valid_operation?(op), do: {:error, "#{inspect(op)} is not a valid operation"}
 

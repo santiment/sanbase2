@@ -51,6 +51,9 @@ defmodule Sanbase.Signal.Trigger.PricePercentChangeSettings do
   @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type
 
+  def post_create_process(_trigger), do: :nochange
+  def post_update_process(_trigger), do: :nochange
+
   @spec get_data(__MODULE__.t()) :: list({Type.target(), any()})
   def get_data(%__MODULE__{filtered_target: %{list: target_list}} = settings)
       when is_list(target_list) do

@@ -49,7 +49,7 @@ defmodule Sanbase.Signal.Evaluator.Cache do
     end
   end
 
-  def clear() do
+  def clear_all() do
     @cache_name
     |> ConCache.ets()
     |> :ets.tab2list()

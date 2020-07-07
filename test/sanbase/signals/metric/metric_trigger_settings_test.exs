@@ -1,4 +1,4 @@
-defmodule Sanbase.Signal.TriggerMetricTest do
+defmodule Sanbase.Signal.MetricTriggerSettingsTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
@@ -26,7 +26,7 @@ defmodule Sanbase.Signal.TriggerMetricTest do
     setup do
       # Clean children on exit, otherwise DB calls from async tasks can be attempted
       clean_task_supervisor_children()
-      Sanbase.Signal.Evaluator.Cache.clear()
+      Sanbase.Signal.Evaluator.Cache.clear_all()
       datetimes = generate_datetimes(~U[2019-01-01 00:00:00Z], "1d", 7)
 
       user = insert(:user)
@@ -79,7 +79,7 @@ defmodule Sanbase.Signal.TriggerMetricTest do
       # Clean children on exit, otherwise DB calls from async tasks can be attempted
       clean_task_supervisor_children()
 
-      Sanbase.Signal.Evaluator.Cache.clear()
+      Sanbase.Signal.Evaluator.Cache.clear_all()
 
       user = insert(:user)
       Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)

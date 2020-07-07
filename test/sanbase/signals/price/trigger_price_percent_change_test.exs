@@ -7,7 +7,7 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
   alias Sanbase.Signal.Trigger.PricePercentChangeSettings
 
   setup do
-    Sanbase.Signal.Evaluator.Cache.clear()
+    Sanbase.Signal.Evaluator.Cache.clear_all()
 
     Tesla.Mock.mock(fn %{method: :post} -> %Tesla.Env{status: 200, body: "ok"} end)
 

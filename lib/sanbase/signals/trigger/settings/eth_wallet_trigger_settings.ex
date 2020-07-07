@@ -60,6 +60,9 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
   @spec type() :: String.t()
   def type(), do: @trigger_type
 
+  def post_create_process(_trigger), do: :nochange
+  def post_update_process(_trigger), do: :nochange
+
   def get_data(
         %__MODULE__{
           filtered_target: %{list: target_list, type: :eth_address}

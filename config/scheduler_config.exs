@@ -17,6 +17,10 @@ config :sanbase, Sanbase.Signals.Scheduler,
       task:
         {Sanbase.Signal.Scheduler, :run_signal, [Trigger.PriceVolumeDifferenceTriggerSettings]}
     ],
+    screener_sonar_signal: [
+      schedule: "1-59/5 * * * *",
+      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.ScreenerTriggerSettings]}
+    ],
     daily_active_addresses_sonar_signal: [
       schedule: "2-59/5 * * * *",
       task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.DailyActiveAddressesSettings]}

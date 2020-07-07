@@ -19,6 +19,8 @@ defmodule Sanbase.Signal.StructMapTransformation do
     %{trigger | settings: settings}
   end
 
+  def load_in_struct_if_valid(struct) when is_struct(struct), do: {:ok, struct}
+
   def load_in_struct_if_valid(map) when is_map(map) do
     atomized_map =
       map

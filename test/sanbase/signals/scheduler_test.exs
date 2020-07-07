@@ -9,7 +9,7 @@ defmodule Sanbase.Signal.SchedulerTest do
   alias Sanbase.Signal.Trigger.MetricTriggerSettings
 
   setup do
-    Sanbase.Signal.Evaluator.Cache.clear()
+    Sanbase.Signal.Evaluator.Cache.clear_all()
 
     Tesla.Mock.mock_global(fn %{method: :post} -> %Tesla.Env{status: 200, body: "ok"} end)
 

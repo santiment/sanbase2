@@ -1,7 +1,66 @@
 defmodule Sanbase.Model.Project.ListSelector do
+  import Norm
   import Sanbase.DateTimeUtils
 
   alias Sanbase.Model.Project
+
+  def valid_selector?(args) do
+    args = Sanbase.MapUtils.atomize_keys(args)
+
+    order_by_schema =
+      schema(%{
+        metric: spec(is_binary()),
+        from: spec(&match?(%DateTime{}, &1)),
+        to: spec(&match?(%DateTime{}, &1)),
+        direction: spec(is_atom())
+      })
+
+    pagination_schema =
+      schema(%{
+        page: spec(&(is_integer(&1) and &1 > 0)),
+        page_size: spec(&(is_integer(&1) and &1 > 0))
+      })
+
+    filters = args_to_filters(args)
+    order_by = args_to_order_by(args) || %{}
+    pagination = args_to_pagination(args) || %{}
+
+    with true <- check_filters(filters),
+         {:ok, _} <- conform(order_by, order_by_schema),
+         {:ok, _} <- conform(pagination, pagination_schema) do
+      true
+    end
+  end
+
+  defp check_filters(filters) do
+    filter_schema =
+      schema(%{
+        metric: spec(is_binary()),
+        from: spec(&match?(%DateTime{}, &1)),
+        to: spec(&match?(%DateTime{}, &1)),
+        operator: spec(is_atom()),
+        threshold: spec(is_number()),
+        aggregation: spec(is_atom())
+      })
+
+    Enum.map(filters, &conform(&1, filter_schema))
+    |> Enum.find(&match?({:error, _}, &1))
+    |> case do
+      nil ->
+        Enum.map(
+          filters,
+          &([:metric, :from, :to, :operator, :threshold, :aggregation] -- Map.keys(&1))
+        )
+        |> Enum.find(&(&1 != []))
+        |> case do
+          nil -> true
+          fields -> {:error, "A filter has missing fields: #{inspect(fields)}."}
+        end
+
+      error ->
+        error
+    end
+  end
 
   @doc ~s"""
   Return a list of projects described by the selector object.
@@ -12,6 +71,11 @@ defmodule Sanbase.Model.Project.ListSelector do
     opts = args_to_opts(args)
 
     {:ok, Project.List.projects(opts)}
+  end
+
+  def slugs(args) do
+    opts = args_to_opts(args)
+    {:ok, Project.List.projects_slugs(opts)}
   end
 
   @doc ~s"""
@@ -43,19 +107,11 @@ defmodule Sanbase.Model.Project.ListSelector do
   }
   """
   def args_to_opts(args) do
-    filters =
-      (get_in(args, [:selector, :filters]) || [])
-      |> Enum.map(&transform_from_to/1)
-      |> Enum.map(&update_dynamic_datetimes/1)
-      |> Enum.map(&atomize_values/1)
+    args = Sanbase.MapUtils.atomize_keys(args)
 
-    order_by =
-      get_in(args, [:selector, :order_by])
-      |> transform_from_to()
-      |> update_dynamic_datetimes()
-      |> atomize_values()
-
-    pagination = get_in(args, [:selector, :pagination])
+    filters = args_to_filters(args)
+    order_by = args_to_order_by(args)
+    pagination = args_to_pagination(args)
 
     included_slugs = filters |> included_slugs_by_filters()
     ordered_slugs = order_by |> ordered_slugs_by_order_by(included_slugs)
@@ -63,13 +119,30 @@ defmodule Sanbase.Model.Project.ListSelector do
     [
       has_selector?: not is_nil(args[:selector]),
       has_order?: not is_nil(order_by),
-      has_filters?: not is_nil(filters),
       has_pagination?: not is_nil(pagination),
       pagination: pagination,
       min_volume: Map.get(args, :min_volume),
       included_slugs: included_slugs,
       ordered_slugs: ordered_slugs
     ]
+  end
+
+  defp args_to_filters(args) do
+    (get_in(args, [:selector, :filters]) || [])
+    |> Enum.map(&transform_from_to/1)
+    |> Enum.map(&update_dynamic_datetimes/1)
+    |> Enum.map(&atomize_values/1)
+  end
+
+  defp args_to_order_by(args) do
+    get_in(args, [:selector, :order_by])
+    |> transform_from_to()
+    |> update_dynamic_datetimes()
+    |> atomize_values()
+  end
+
+  defp args_to_pagination(args) do
+    get_in(args, [:selector, :pagination])
   end
 
   defp atomize_values(nil), do: nil

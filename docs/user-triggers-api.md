@@ -12,6 +12,7 @@
     - [Example settings structure for `eth_wallet`](#example-settings-structure-for-eth_wallet)
     - [Example settings structure for `wallet_movement`](#example-settings-structure-for-wallet_movement)
     - [Example settings structure for `metric_signal`](#example-settings-structure-for-metric_signal)
+    - [Example settings structure for `screener_signal`](#example-settings-structure-for-metric_signal)
   - [Create trigger](#create-trigger)
   - [Get all triggers for current user](#get-all-triggers-for-current-user)
   - [Update trigger by id](#update-trigger-by-id)
@@ -630,6 +631,52 @@ For full list check [here](<https://api.santiment.net/graphiql?variables=&query=
   "channel": "telegram",
   "target": { "slug": "santiment" },
   "operation": { "some_of": [{ "percent_up": 10 }, { "above": 10000 }] }
+}
+```
+
+#### Example settings structure for `screener_signal`
+
+Receive a notification every `cooldown` the entering/exiting projects. Entering
+projects are projects that previously did not satisfy the filters, but now do.
+Exiting projects are projects that previously did satisfy the filters, but now
+do not.
+
+All metrics and fields (`"filters"`, `"orderBy"` and `"pagination"`) supported
+in dynamic watchlsits and in the `allProjects` selector are supported in exactly
+the same way with the same syntax in this signal
+
+```json
+// All projects with DAA > 500.
+{
+  "type": "screener_signal",
+  "metric": "social_volume_total",
+  "channel": "telegram",
+  "operation": {
+    "selector": {
+      "filters": [
+        {
+          "metric": "daily_active_addresse",
+          "dynamicFrom": "1d",
+          "dynamicTo": "now",
+          "aggregation": "last",
+          "operation": "greater_than",
+          "threshold": 500
+        }
+      ]
+    }
+  }
+}
+```
+
+```json
+// Follow projects entering/exiting a dynamic watchlist.
+{
+  "type": "screener_signal",
+  "metric": "social_volume_total",
+  "channel": "telegram",
+  "operation": {
+    "selector": { "watchlist_id": 12 }
+  }
 }
 ```
 

@@ -179,7 +179,7 @@ defmodule Sanbase.Signal.TriggersTest do
       })
 
     assert trigger_settings.target == created_trigger.trigger.settings |> Map.get(:target)
-    assert title = created_trigger.trigger.title
+    assert title == created_trigger.trigger.title
   end
 
   test "create trigger with icon and description" do
@@ -209,9 +209,9 @@ defmodule Sanbase.Signal.TriggersTest do
       })
 
     assert trigger_settings.target == created_trigger.trigger.settings |> Map.get(:target)
-    assert title = created_trigger.trigger.title
-    assert description = created_trigger.trigger.description
-    assert icon_url = created_trigger.trigger.icon_url
+    assert title == created_trigger.trigger.title
+    assert description == created_trigger.trigger.description
+    assert icon_url == created_trigger.trigger.icon_url
   end
 
   test "create trigger when there is existing one" do

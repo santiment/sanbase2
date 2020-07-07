@@ -41,22 +41,24 @@ defimpl Sanbase.Signal, for: Any do
         webhook_url
       ) do
     Enum.map(payload_map, fn {identifier, payload} ->
-      payload =
+      encoded_json_payload =
         %{
           timestamp: DateTime.utc_now() |> DateTime.to_unix(),
           identifier: identifier,
-          payload: payload,
+          content: payload,
           trigger_id: user_trigger_id,
           trigger_url: SanbaseWeb.Endpoint.show_signal_url(user_trigger_id)
         }
         |> Jason.encode!()
 
-      case HTTPoison.post(webhook_url, payload) do
-        {:ok, %HTTPoison.Response{status_code: 200}} ->
+      case HTTPoison.post(webhook_url, encoded_json_payload, [
+             {"Content-Type", "application/json"}
+           ]) do
+        {:ok, %HTTPoison.Response{status_code: status_code}} when status_code in 200..299 ->
           {identifier, :ok}
 
         {:ok, %HTTPoison.Response{status_code: code}} ->
-          {identifier, {:error, "Error sending webhook alert. Status code: #{code}"}}
+          {identifier, {:error, "Error sending webhook alert. Status code: #{code}."}}
 
         {:error, reason} ->
           {identifier, {:error, "Error sending webhook alert. Reason: #{inspect(reason)}"}}

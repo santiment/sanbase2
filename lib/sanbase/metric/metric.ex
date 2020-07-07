@@ -398,20 +398,11 @@ defmodule Sanbase.Metric do
       metrics_in_modules
       |> Enum.any?(&(not match?({:ok, _}, &1)))
 
-    available_metrics = remove_metrics_manually(selector, available_metrics)
-
     case has_errors? do
       true -> {:nocache, {:ok, available_metrics}}
       false -> {:ok, available_metrics}
     end
   end
-
-  # Temporary remove bitcoin exchange metrics from the lists of available metrics
-  defp remove_metrics_manually(%{slug: "bitcoin"}, metrics) do
-    metrics |> Enum.reject(&String.contains?(&1, "exchange"))
-  end
-
-  defp remove_metrics_manually(_selector, metrics), do: metrics
 
   def available_timeseries_metrics_for_slug(selector) do
     available_metrics =

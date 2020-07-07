@@ -243,7 +243,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "holders_distribution_over_1M",
         "holders_distribution_combined_balance_over_1",
         "holders_distribution_combined_balance_over_10",
-        "holders_distribution_combined_balance_over_10",
+        "holders_distribution_combined_balance_over_100",
         "holders_distribution_combined_balance_over_1k",
         "holders_distribution_combined_balance_over_10k",
         "holders_distribution_combined_balance_over_100k",

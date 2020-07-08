@@ -12,7 +12,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
   """
   def upload_image(_root, %{images: images}, _resolution) do
     # In S3 there are no folders so the file name just contains some random text
-    # and a slash in it. Locally (in test and dev mode) the files are treaded as if
+    # and a slash in it. Locally (in test and dev mode) the files are treated as if
     # they are located in a folder called `scope`
 
     image_data =

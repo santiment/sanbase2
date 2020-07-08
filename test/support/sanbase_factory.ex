@@ -27,6 +27,7 @@ defmodule Sanbase.Factory do
   alias Sanbase.Chart
   alias Sanbase.TableConfiguration
   alias Sanbase.Email.NewsletterToken
+  alias Sanbase.Report
 
   def user_factory() do
     %User{
@@ -603,6 +604,13 @@ defmodule Sanbase.Factory do
       token: :crypto.strong_rand_bytes(64) |> Base.encode64(),
       email: (:crypto.strong_rand_bytes(16) |> Base.encode16()) <> "@santiment.net",
       email_token_generated_at: DateTime.utc_now()
+    }
+  end
+
+  def report_factory do
+    %Report{
+      url: "https://example.com/#{rand_hex_str()}_report.pdf",
+      name: "Alpha Report"
     }
   end
 

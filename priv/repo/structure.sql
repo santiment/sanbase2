@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.13
--- Dumped by pg_dump version 11.6
+-- Dumped from database version 12.3
+-- Dumped by pg_dump version 12.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -72,8 +72,6 @@ CREATE TYPE public.status AS ENUM (
 
 
 SET default_tablespace = '';
-
-SET default_with_oids = false;
 
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
@@ -1577,6 +1575,41 @@ ALTER SEQUENCE public.promo_trials_id_seq OWNED BY public.promo_trials.id;
 
 
 --
+-- Name: reports; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.reports (
+    id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    description text,
+    url character varying(255) NOT NULL,
+    is_published boolean DEFAULT false NOT NULL,
+    is_pro boolean DEFAULT false NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: reports_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.reports_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: reports_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.reports_id_seq OWNED BY public.reports.id;
+
+
+--
 -- Name: roles; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2588,6 +2621,13 @@ ALTER TABLE ONLY public.promo_trials ALTER COLUMN id SET DEFAULT nextval('public
 
 
 --
+-- Name: reports id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.reports ALTER COLUMN id SET DEFAULT nextval('public.reports_id_seq'::regclass);
+
+
+--
 -- Name: roles id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3071,6 +3111,14 @@ ALTER TABLE ONLY public.promo_coupons
 
 ALTER TABLE ONLY public.promo_trials
     ADD CONSTRAINT promo_trials_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: reports reports_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.reports
+    ADD CONSTRAINT reports_pkey PRIMARY KEY (id);
 
 
 --
@@ -4313,6 +4361,14 @@ ALTER TABLE ONLY public.user_intercom_attributes
 
 
 --
+-- Name: user_lists user_lists_table_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_lists
+    ADD CONSTRAINT user_lists_table_configuration_id_fkey FOREIGN KEY (table_configuration_id) REFERENCES public.table_configurations(id);
+
+
+--
 -- Name: user_lists user_lists_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4658,9 +4714,10 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200601122422);
 INSERT INTO public."schema_migrations" (version) VALUES (20200601142229);
 INSERT INTO public."schema_migrations" (version) VALUES (20200602101130);
 INSERT INTO public."schema_migrations" (version) VALUES (20200611093359);
-INSERT INTO public."schema_migrations" (version) VALUES (20200622093455);
-INSERT INTO public."schema_migrations" (version) VALUES (20200622095648);
-INSERT INTO public."schema_migrations" (version) VALUES (20200622132624);
 INSERT INTO public."schema_migrations" (version) VALUES (20200618135228);
 INSERT INTO public."schema_migrations" (version) VALUES (20200619102126);
 INSERT INTO public."schema_migrations" (version) VALUES (20200622084937);
+INSERT INTO public."schema_migrations" (version) VALUES (20200622093455);
+INSERT INTO public."schema_migrations" (version) VALUES (20200622095648);
+INSERT INTO public."schema_migrations" (version) VALUES (20200622132624);
+INSERT INTO public."schema_migrations" (version) VALUES (20200706070758);

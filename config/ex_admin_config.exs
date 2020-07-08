@@ -64,7 +64,8 @@ config :ex_admin,
     SanbaseWeb.ExAdmin.Exchanges.MarketPairMapping,
     SanbaseWeb.ExAdmin.Billing.SignUpTrial,
     SanbaseWeb.ExAdmin.Comments.Notification,
-    SanbaseWeb.ExAdmin.Intercom.UserAttributes
+    SanbaseWeb.ExAdmin.Intercom.UserAttributes,
+    SanbaseWeb.ExAdmin.Report
   ],
   basic_auth: [
     username: {:system, "ADMIN_BASIC_AUTH_USERNAME"},

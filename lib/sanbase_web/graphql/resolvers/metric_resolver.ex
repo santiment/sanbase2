@@ -57,16 +57,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   def available_since(_root, args, %{source: %{metric: metric}}) do
-    case valid_selector?(args) do
-      true -> Metric.first_datetime(metric, to_selector(args))
-      false -> {:error, "Please input a slug, word or selector"}
+    selector = to_selector(args)
+
+    case valid_selector?(selector) do
+      true -> Metric.first_datetime(metric, selector)
+      {:error, error} -> {:error, error}
     end
   end
 
   def last_datetime_computed_at(_root, args, %{source: %{metric: metric}}) do
-    case valid_selector?(args) do
-      true -> Metric.last_datetime_computed_at(metric, to_selector(args))
-      false -> {:error, "Please input a slug, word or selector"}
+    selector = to_selector(args)
+
+    case valid_selector?(selector) do
+      true -> Metric.last_datetime_computed_at(metric, selector)
+      {:error, error} -> {:error, error}
     end
   end
 
@@ -97,9 +101,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          {:ok, result} <- fit_from_datetime(result, args) do
       {:ok, result |> Enum.reject(&is_nil/1)}
     else
-      false ->
-        {:error, "The provided selector is not valid."}
-
       {:error, error} ->
         {:error, handle_graphql_error(metric, selector, error)}
     end
@@ -135,9 +136,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
           {:ok, nil}
       end
     else
-      false ->
-        {:error, "The provided selector is not valid."}
-
       {:error, error} ->
         {:error, handle_graphql_error(metric, selector, error)}
     end
@@ -160,9 +158,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          {:ok, data} <- Metric.histogram_data(metric, selector, from, to, interval, limit) do
       {:ok, %{values: %{data: data}}}
     else
-      false ->
-        {:error, "The provided selector is not valid."}
-
       {:error, error} ->
         {:error, handle_graphql_error(metric, selector, error)}
     end
@@ -269,11 +264,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
-  defp valid_selector?(%{} = map) when map_size(map) == 0, do: false
+  defp valid_selector?(%{} = map) when map_size(map) == 0,
+    do:
+      {:error,
+       "The selector must have at least one field provided." <>
+         "The available selector fields for a metric are listed in the metadata's availableSelectors field."}
+
   defp valid_selector?(_), do: true
   defp to_selector(%{slug: slug}), do: %{slug: slug}
   defp to_selector(%{word: word}), do: %{word: word}
 
   defp to_selector(%{selector: %{} = selector}),
     do: selector
+
+  defp to_selector(_), do: %{}
 end

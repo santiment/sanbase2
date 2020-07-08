@@ -118,10 +118,32 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
     end
   end
 
+  test "returns error when slug is not given", context do
+    %{conn: conn, from: from, to: to} = context
+    aggregation = :avg
+    [metric | _] = Metric.available_timeseries_metrics()
+
+    # Do not mock the `timeseries_data` function because it's the one that rejects
+    %{"errors" => [%{"message" => error_message}]} =
+      get_aggregated_timeseries_metric(conn, metric, from, to, aggregation)
+
+    assert error_message =~
+             "Can't fetch #{metric} for an empty selector: , Reason: \"The selector must have at least one field provided." <>
+               "The available selector fields for a metric are listed in the metadata's availableSelectors field.\""
+  end
+
   # Private functions
 
   defp get_aggregated_timeseries_metric(conn, metric, slug, from, to, aggregation) do
     query = get_aggregated_timeseries_query(metric, slug, from, to, aggregation)
+
+    conn
+    |> post("/graphql", query_skeleton(query, "getMetric"))
+    |> json_response(200)
+  end
+
+  defp get_aggregated_timeseries_metric(conn, metric, from, to, aggregation) do
+    query = get_aggregated_timeseries_query_without_slug(metric, from, to, aggregation)
 
     conn
     |> post("/graphql", query_skeleton(query, "getMetric"))
@@ -139,6 +161,19 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
         getMetric(metric: "#{metric}"){
           aggregatedTimeseriesData(
             slug: "#{slug}"
+            from: "#{from}"
+            to: "#{to}"
+            aggregation: #{Atom.to_string(aggregation) |> String.upcase()})
+        }
+      }
+    """
+  end
+
+  defp get_aggregated_timeseries_query_without_slug(metric, from, to, aggregation) do
+    """
+      {
+        getMetric(metric: "#{metric}"){
+          aggregatedTimeseriesData(
             from: "#{from}"
             to: "#{to}"
             aggregation: #{Atom.to_string(aggregation) |> String.upcase()})

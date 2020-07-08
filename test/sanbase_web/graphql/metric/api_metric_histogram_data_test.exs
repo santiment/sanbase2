@@ -94,6 +94,21 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
     end
   end
 
+  test "returns error when slug is not given", context do
+    %{conn: conn, from: from, to: to} = context
+    limit = 3
+    interval = "1d"
+    [metric | _] = Metric.available_histogram_metrics()
+
+    # Do not mock the `timeseries_data` function because it's the one that rejects
+    %{"errors" => [%{"message" => error_message}]} =
+      get_histogram_metric_without_slug(conn, metric, from, to, interval, limit)
+
+    assert error_message =~
+             "Can't fetch #{metric} for an empty selector: , Reason: \"The selector must have at least one field provided." <>
+               "The available selector fields for a metric are listed in the metadata's availableSelectors field.\""
+  end
+
   test "all_spent_coins_cost histogram - converts interval to full days and successfully returns",
        context do
     %{conn: conn, slug: slug, to: to} = context
@@ -163,12 +178,51 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
     |> json_response(200)
   end
 
+  defp get_histogram_metric_without_slug(conn, metric, from, to, interval \\ "1d", limit \\ 100) do
+    query = get_histogram_query_without_slug(metric, from, to, interval, limit)
+
+    conn
+    |> post("/graphql", query_skeleton(query, "getMetric"))
+    |> json_response(200)
+  end
+
   defp get_histogram_query(metric, slug, from, to, interval, limit) do
     """
       {
         getMetric(metric: "#{metric}"){
           histogramData(
             slug: "#{slug}"
+            #{if from, do: "from: \"#{from}\""}
+            to: "#{to}"
+            interval: "#{interval}"
+            limit: #{limit})
+            {
+              values {
+                ... on DatetimeRangeFloatValueList{
+                  data{
+                    range
+                    value
+                  }
+                }
+
+                ... on FloatRangeFloatValueList {
+                  data {
+                    range
+                    value
+                  }
+                }
+              }
+            }
+        }
+      }
+    """
+  end
+
+  defp get_histogram_query_without_slug(metric, from, to, interval, limit) do
+    """
+      {
+        getMetric(metric: "#{metric}"){
+          histogramData(
             #{if from, do: "from: \"#{from}\""}
             to: "#{to}"
             interval: "#{interval}"

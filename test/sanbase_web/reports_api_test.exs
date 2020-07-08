@@ -54,31 +54,31 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
     end
 
     test "with free sanbase user, list only free published reports", context do
-      res = list_reports(context.free_conn)
+      res = get_reports(context.free_conn)
 
-      assert Enum.map(res["data"]["listReports"], & &1["url"]) == [context.free_report.url]
+      assert Enum.map(res["data"]["getReports"], & &1["url"]) == [context.free_report.url]
     end
 
     test "with pro sanbase user list all published reports", context do
-      res = list_reports(context.pro_conn)
+      res = get_reports(context.pro_conn)
 
-      assert Enum.map(res["data"]["listReports"], & &1["url"]) == [
+      assert Enum.map(res["data"]["getReports"], & &1["url"]) == [
                context.free_report.url,
                context.pro_report.url
              ]
     end
 
     test "with user without auth returns unauthorized" do
-      %{"errors" => [error]} = list_reports(build_conn())
+      %{"errors" => [error]} = get_reports(build_conn())
 
       assert error["message"] =~ "unauthorized"
     end
   end
 
-  def list_reports(conn) do
+  def get_reports(conn) do
     query = """
     {
-      listReports
+      getReports
       {
         url
         name
@@ -95,7 +95,7 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
   defp upload_report(conn) do
     mutation = """
       mutation {
-        uploadReport(report: "report")
+        uploadReport(report: "report", name: "New Alpha Report")
       }
     """
 

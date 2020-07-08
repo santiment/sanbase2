@@ -6,14 +6,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ReportResolver do
 
   @product_sanbase Product.product_sanbase()
 
-  def upload_report(_root, %{report: report}, _resolution) do
-    Report.save_report(report)
+  def upload_report(_root, %{report: report} = args, _resolution) do
+    {params, _} = Map.split(args, [:name, :description])
+    Report.save_report(report, params)
   end
 
-  def list_reports(_root, _args, %{context: %{auth: %{current_user: user}}}) do
+  def get_reports(_root, _args, %{context: %{auth: %{current_user: user}}}) do
     reports =
       Subscription.current_subscription(user, @product_sanbase)
-      |> Report.list_published_reports()
+      |> Report.get_published_reports()
 
     {:ok, reports}
   end

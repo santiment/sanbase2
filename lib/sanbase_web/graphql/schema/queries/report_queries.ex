@@ -9,10 +9,10 @@ defmodule SanbaseWeb.Graphql.Schema.ReportQueries do
     @desc ~s"""
     List all reports.
     """
-    field :list_reports, list_of(:report) do
+    field :get_reports, list_of(:report) do
       middleware(JWTAuth)
 
-      resolve(&ReportResolver.list_reports/3)
+      resolve(&ReportResolver.get_reports/3)
     end
   end
 
@@ -22,7 +22,7 @@ defmodule SanbaseWeb.Graphql.Schema.ReportQueries do
     """
     field :upload_report, :string do
       arg(:report, non_null(:upload))
-      arg(:name, :string)
+      arg(:name, non_null(:string))
       arg(:description, :string)
 
       middleware(BasicAuth)

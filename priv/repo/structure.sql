@@ -1580,9 +1580,9 @@ ALTER SEQUENCE public.promo_trials_id_seq OWNED BY public.promo_trials.id;
 
 CREATE TABLE public.reports (
     id bigint NOT NULL,
-    name character varying(255),
+    name character varying(255) NOT NULL,
     description text,
-    url character varying(255),
+    url character varying(255) NOT NULL,
     is_published boolean DEFAULT false NOT NULL,
     is_pro boolean DEFAULT false NOT NULL,
     inserted_at timestamp without time zone NOT NULL,

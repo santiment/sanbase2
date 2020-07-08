@@ -15,11 +15,11 @@ defmodule Sanbase.Report do
   alias Sanbase.Utils.FileHash
 
   schema "reports" do
-    field(:name, :string, null: true)
+    field(:name, :string, null: false)
     field(:description, :string, null: true)
+    field(:url, :string, null: false)
     field(:is_pro, :boolean, default: false)
     field(:is_published, :boolean, default: false)
-    field(:url, :string)
 
     timestamps()
   end
@@ -28,42 +28,42 @@ defmodule Sanbase.Report do
   def changeset(report, attrs) do
     report
     |> cast(attrs, [:name, :description, :url, :is_published, :is_pro])
-    |> validate_required([:url, :is_published, :is_pro])
+    |> validate_required([:url, :name, :is_published, :is_pro])
   end
 
-  def save(params) do
+  def create(params) do
     %__MODULE__{}
     |> changeset(params)
     |> Repo.insert()
   end
 
-  def save_report(%Plug.Upload{filename: filename} = report) do
+  def save_report(%Plug.Upload{filename: filename} = report, params) do
     %{report | filename: milliseconds_str() <> "_" <> filename}
-    |> do_save_report()
+    |> do_save_report(params)
   end
 
-  def list_published_reports(nil) do
+  def get_published_reports(nil) do
     from(r in __MODULE__, where: r.is_published == true and r.is_pro == false)
     |> Repo.all()
   end
 
-  def list_published_reports(%{plan: %{name: "FREE"}}) do
+  def get_published_reports(%{plan: %{name: "FREE"}}) do
     from(r in __MODULE__, where: r.is_published == true and r.is_pro == false)
     |> Repo.all()
   end
 
-  def list_published_reports(%{plan: %{name: "PRO"}}) do
+  def get_published_reports(%{plan: %{name: "PRO"}}) do
     from(r in __MODULE__, where: r.is_published == true)
     |> Repo.all()
   end
 
   # Helpers
 
-  defp do_save_report(%{filename: filename, path: filepath} = report) do
+  defp do_save_report(%{filename: filename, path: filepath} = report, params) do
     with {:ok, content_hash} <- FileHash.calculate(filepath),
          {:ok, local_filepath} <- FileStore.store({report, content_hash}),
          file_url <- FileStore.url({local_filepath, content_hash}),
-         {:ok, report} <- save(%{url: file_url}) do
+         {:ok, report} <- Map.merge(params, %{url: file_url}) |> create() do
       {:ok, report.url}
     else
       {:error, reason} ->

@@ -12,6 +12,7 @@ defmodule Sanbase.Intercom do
   alias Sanbase.Signal.UserTrigger
   alias Sanbase.Clickhouse.ApiCallData
   alias Sanbase.Intercom.UserAttributes
+  alias Sanbase.Auth.EthAccount
 
   @intercom_url "https://api.intercom.io/users"
 
@@ -46,18 +47,13 @@ defmodule Sanbase.Intercom do
     end
   end
 
-  def get_data_for_user(user_id) do
-    Repo.get(User, user_id)
-    |> fetch_stats_for_user(all_users_stats())
-    |> Jason.encode!()
-  end
-
   defp fetch_stats_for_user(
          %User{
            id: id,
            email: email,
            username: username,
            san_balance: san_balance,
+           eth_accounts: eth_accounts,
            stripe_customer_id: stripe_customer_id,
            inserted_at: inserted_at
          } = user,
@@ -78,6 +74,15 @@ defmodule Sanbase.Intercom do
     user_paid_after_trial =
       sanbase_trial_created_at && sanbase_subscription_current_status == "active"
 
+    address_balance_map =
+      eth_accounts
+      |> Enum.into(%{}, fn eth_account ->
+        case EthAccount.san_balance(eth_account) do
+          :error -> {eth_account.address, 0.0}
+          balance -> {eth_account.address, Sanbase.Math.to_float(balance)}
+        end
+      end)
+
     stats = %{
       user_id: id,
       email: email,
@@ -88,7 +93,8 @@ defmodule Sanbase.Intercom do
           all_watchlists_count: Map.get(watchlists_map, id, 0),
           all_triggers_count: Map.get(triggers_map, id, 0),
           all_insights_count: Map.get(insights_map, id, 0),
-          staked_san_tokens: format_balance(san_balance),
+          staked_san_tokens: Sanbase.Math.to_float(san_balance),
+          address_balance_map: address_balance_map,
           sanbase_subscription_current_status: sanbase_subscription_current_status,
           sanbase_trial_created_at: sanbase_trial_created_at,
           user_paid_after_trial: user_paid_after_trial,
@@ -223,9 +229,6 @@ defmodule Sanbase.Intercom do
       |> elem(0)
     end)
   end
-
-  defp format_balance(nil), do: 0.0
-  defp format_balance(balance), do: Decimal.to_float(balance)
 
   defp format_dt(nil), do: nil
 

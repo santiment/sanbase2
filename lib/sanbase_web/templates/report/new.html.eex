@@ -1,0 +1,5 @@
+<h1 class="text-4xl font-black mb-4">New Report</h1>
+
+<%= render "form.html", Map.put(assigns, :action, Routes.report_path(@conn, :create)) %>
+
+<span><%= link "Back", to: Routes.report_path(@conn, :index), class: "flex-shrink-0 border-4 text-teal-500 hover:text-teal-800 py-1 px-2 rounded", type: "button" %></span>

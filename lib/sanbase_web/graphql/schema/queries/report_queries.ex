@@ -20,7 +20,7 @@ defmodule SanbaseWeb.Graphql.Schema.ReportQueries do
     @desc ~s"""
     Upload a report file.
     """
-    field :upload_report, :string do
+    field :upload_report, :report do
       arg(:report, non_null(:upload))
       arg(:name, non_null(:string))
       arg(:description, :string)

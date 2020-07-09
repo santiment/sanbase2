@@ -8,7 +8,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ReportResolver do
 
   def upload_report(_root, %{report: report} = args, _resolution) do
     {params, _} = Map.split(args, [:name, :description])
-    Report.save_report(report, params)
+
+    case Report.save_report(report, params) do
+      {:ok, report} -> {:ok, report}
+      {:error, _reason} -> {:error, "Can't save report!"}
+    end
   end
 
   def get_reports(_root, _args, %{context: %{auth: %{current_user: user}}}) do

@@ -45,12 +45,17 @@ defmodule Sanbase.AvailableSlugs do
     {:noreply, refill_slugs(state)}
   end
 
+  @non_project_slugs ["gold", "s-and-p-500", "crude-oil"]
   defp refill_slugs(state) do
     %{ets_table: ets_table} = state
-    project_slugs = Sanbase.Model.Project.List.projects_slugs(include_hidden_projects?: true)
+
+    slugs =
+      @non_project_slugs ++
+        Sanbase.Model.Project.List.projects_slugs(include_hidden_projects?: true)
+
     ets_slugs = :ets.tab2list(ets_table) |> Enum.map(&elem(&1, 0))
-    slugs_to_remove = ets_slugs -- project_slugs
-    slugs_to_add = project_slugs -- ets_slugs
+    slugs_to_remove = ets_slugs -- slugs
+    slugs_to_add = slugs -- ets_slugs
 
     slugs_to_remove |> Enum.each(fn slug -> :ets.delete(ets_table, slug) end)
     slugs_to_add |> Enum.each(fn slug -> :ets.insert(ets_table, {slug, true}) end)

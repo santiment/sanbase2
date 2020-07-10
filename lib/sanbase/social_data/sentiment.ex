@@ -13,9 +13,25 @@ defmodule Sanbase.SocialData.Sentiment do
 
   def sentiment(selector, from, to, interval, source, type)
       when source in [:all, "all", :total, "total"] do
-    sources_string = SocialHelper.sources() |> Enum.join(",")
+    result_tuples =
+      SocialHelper.sources()
+      |> Sanbase.Parallel.map(
+        fn source -> sentiment(selector, from, to, interval, source, type) end,
+        max_concurrency: 4
+      )
 
-    sentiment(selector, from, to, interval, sources_string, type)
+    case Enum.find(result_tuples, &match?({:error, _}, &1)) do
+      error when not is_nil(error) ->
+        error
+
+      nil ->
+        result =
+          result_tuples
+          |> Enum.flat_map(fn {:ok, data} -> data end)
+          |> Sanbase.Utils.Transform.sum_by_datetime(:value)
+
+        {:ok, result}
+    end
   end
 
   def sentiment(selector, from, to, interval, source, type) do

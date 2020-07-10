@@ -8,6 +8,54 @@ defmodule Sanbase.WatchlistFunction do
   @impl Ecto.Type
   def type, do: :map
 
+  def valid_function?(%__MODULE__{name: "selector", args: args}) do
+    with {selector, empty_map} when map_size(empty_map) == 0 <-
+           Map.split(args, ["filters", "order", "pagination"]),
+         true <- Project.ListSelector.valid_selector?(%{selector: selector}) do
+      true
+    else
+      _ ->
+        false
+    end
+  end
+
+  def valid_function?(%__MODULE__{name: "market_segment", args: args}) do
+    market_segment = Map.get(args, "market_segment") || Map.fetch!(args, :market_segment)
+    is_binary(market_segment)
+  end
+
+  def valid_function?(%__MODULE__{name: "market_segments", args: args}) do
+    market_segment = Map.get(args, "market_segments") || Map.fetch!(args, :market_segments)
+    is_list(market_segment) and market_segment != []
+  end
+
+  def valid_function?(%__MODULE__{name: "top_erc20_projects", args: args}) do
+    size = Map.get(args, "size") || Map.fetch!(args, :size)
+    ignored_projects = Map.get(args, "ignored_projects") || Map.get(args, :ignored_projects) || []
+    is_list(ignored_projects) and is_integer(size) and size > 0
+  end
+
+  def valid_function?(%__MODULE__{name: "top_all_projects", args: args}) do
+    size = Map.get(args, "size") || Map.fetch!(args, :size)
+    ignored_projects = Map.get(args, "ignored_projects") || Map.get(args, :ignored_projects) || []
+
+    is_list(ignored_projects) and is_integer(size) and size > 0
+  end
+
+  def valid_function?(%__MODULE__{name: "min_volume", args: args}) do
+    min_volume = Map.get(args, "min_volume") || Map.fetch!(args, :min_volume)
+    is_number(min_volume) and min_volume >= 0
+  end
+
+  def valid_function?(%__MODULE__{name: "slugs", args: args}) do
+    slugs = Map.get(args, "slugs") || Map.fetch!(args, :slugs)
+    is_list(slugs)
+  end
+
+  def valid_function?(%__MODULE__{name: "trending_projects"}), do: true
+
+  def valid_function?(%__MODULE__{name: "empty"}), do: true
+
   def evaluate(%__MODULE__{name: "selector", args: args}) do
     case Map.split(args, ["filters", "order", "pagination"]) do
       {selector, empty_map} when map_size(empty_map) == 0 ->
@@ -35,15 +83,21 @@ defmodule Sanbase.WatchlistFunction do
   def evaluate(%__MODULE__{name: "top_erc20_projects", args: args}) do
     size = Map.get(args, "size") || Map.fetch!(args, :size)
     ignored_projects = Map.get(args, "ignored_projects") || Map.get(args, :ignored_projects) || []
+    ignored_projects_mapset = MapSet.new(ignored_projects)
 
     Project.List.erc20_projects_page(1, size + length(ignored_projects))
-    |> Enum.reject(fn %Project{slug: slug} -> Enum.member?(ignored_projects, slug) end)
+    |> Enum.reject(fn %Project{slug: slug} -> slug in ignored_projects_mapset end)
     |> Enum.take(size)
   end
 
   def evaluate(%__MODULE__{name: "top_all_projects", args: args}) do
     size = Map.get(args, "size") || Map.fetch!(args, :size)
-    Project.List.projects_page(1, size)
+    ignored_projects = Map.get(args, "ignored_projects") || Map.get(args, :ignored_projects) || []
+    ignored_projects_mapset = MapSet.new(ignored_projects)
+
+    Project.List.projects_page(1, size + length(ignored_projects))
+    |> Enum.reject(fn %Project{slug: slug} -> slug in ignored_projects_mapset end)
+    |> Enum.take(size)
   end
 
   def evaluate(%__MODULE__{name: "min_volume", args: args}) do

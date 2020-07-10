@@ -54,11 +54,9 @@ defmodule Sanbase.Price.Utils do
     end
   end
 
-  @doc ~s"""
-  We need the next 4 cases when calling from `convert_amount`. There we get
-  a currency code (a ticker that has to be unique) and we get the project from that
-  code so we can construct the `ticker_slug` slug name.
-  """
+  # We need the next 4 cases when calling from `convert_amount`. There we get
+  # a currency code (a ticker that has to be unique) and we get the project from that
+  # code so we can construct the `ticker_slug` slug name.
   def fetch_last_price_before(slug, "USD", timestamp) do
     {price_usd, _price_btc} = fetch_last_prices_before(slug, timestamp)
 

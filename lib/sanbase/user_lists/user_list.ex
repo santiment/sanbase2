@@ -123,7 +123,7 @@ defmodule Sanbase.UserList do
     end
   end
 
-  def get_slugs(%__MODULE__{function: fun} = watchlist) do
+  def get_slugs(%__MODULE__{function: _} = watchlist) do
     case get_projects(watchlist) do
       {:ok, projects} ->
         {:ok, Enum.map(projects, & &1.slug)}

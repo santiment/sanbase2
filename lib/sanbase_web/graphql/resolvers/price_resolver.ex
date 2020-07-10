@@ -23,10 +23,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     end
   end
 
-  @doc """
-  Returns a list of price points for the given ticker. Optimizes the number of queries
-  to the DB by inspecting the requested fields.
-  """
   def history_price(root, %{ticker: @total_market} = args, resolution) do
     args = args |> Map.delete(:ticker) |> Map.put(:slug, @total_market)
     history_price(root, args, resolution)
@@ -42,10 +38,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     end
   end
 
-  @doc """
-  Returns a list of price points for the given ticker. Optimizes the number of queries
-  to the DB by inspecting the requested fields.
-  """
   def history_price(root, %{ticker: @total_erc20} = args, resolution) do
     args = args |> Map.delete(:ticker) |> Map.put(:slug, @total_erc20)
     history_price(root, args, resolution)

@@ -85,9 +85,6 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
     |> Enum.reject(&match?({:error, _}, &1))
   end
 
-  @doc ~s"""
-  Return a list of the `settings.metric` values for the necessary time range
-  """
   def get_data(
         %__MODULE__{
           filtered_target: %{list: target_list, type: :slug},

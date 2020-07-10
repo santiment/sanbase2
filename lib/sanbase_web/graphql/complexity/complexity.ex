@@ -9,8 +9,18 @@ defmodule SanbaseWeb.Graphql.Complexity do
              get_metric_name: 1
            ]
   @doc ~S"""
-  Internal services use basic authentication. Return complexity = 0 to allow them
-  to access everything without limits.
+  Returns the complexity as a real number.
+
+  For basic authorization:
+    Internal services use basic authentication. Return complexity = 0 to allow them
+    to access everything without limits.
+
+  For apikey/jwt/anon authorized users:
+    Returns the complexity of the query. It is the number of intervals in the period
+    'from-to' multiplied by the child complexity. The child complexity is the number
+    of fields that will be returned for a single price point. The calculation is done
+    based only on the supplied arguments and avoids accessing the DB if the query
+    is rejected.
   """
 
   def from_to_interval(_, _, %{context: %{auth: %{auth_method: :basic}}}) do
@@ -36,13 +46,6 @@ defmodule SanbaseWeb.Graphql.Complexity do
     end
   end
 
-  @doc ~S"""
-  Returns the complexity of the query. It is the number of intervals in the period
-  'from-to' multiplied by the child complexity. The child complexity is the number
-  of fields that will be returned for a single price point. The calculation is done
-  based only on the supplied arguments and avoids accessing the DB if the query
-  is rejected.
-  """
   def from_to_interval(%{} = args, child_complexity, struct) do
     calculate_complexity(args, child_complexity, struct)
   end

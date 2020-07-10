@@ -35,8 +35,10 @@ defmodule SanbaseWeb do
         namespace: SanbaseWeb
 
       # Import convenience functions from controllers
-      import Phoenix.Controller, only: [get_flash: 2, view_module: 1]
-      import Phoenix.HTML
+      import Phoenix.Controller, only: [get_flash: 1, get_flash: 2, view_module: 1]
+
+      use Phoenix.HTML
+      import Phoenix.View
       import SanbaseWeb.ErrorHelpers
       import SanbaseWeb.Gettext
       import Phoenix.LiveView.Helpers

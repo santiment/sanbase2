@@ -25,6 +25,11 @@ defmodule Sanbase.Report do
   end
 
   @doc false
+  def new_changeset(report, params \\ %{}) do
+    report
+    |> cast(params, [:name, :description, :url, :is_published, :is_pro])
+  end
+
   def changeset(report, attrs) do
     report
     |> cast(attrs, [:name, :description, :url, :is_published, :is_pro])
@@ -37,9 +42,27 @@ defmodule Sanbase.Report do
     |> Repo.insert()
   end
 
+  def update(report, params) do
+    report
+    |> changeset(params)
+    |> Repo.update()
+  end
+
+  def delete(report) do
+    report |> Repo.delete()
+  end
+
   def save_report(%Plug.Upload{filename: filename} = report, params) do
     %{report | filename: milliseconds_str() <> "_" <> filename}
     |> do_save_report(params)
+  end
+
+  def by_id(id) do
+    Repo.get(__MODULE__, id)
+  end
+
+  def list_reports() do
+    Repo.all(__MODULE__)
   end
 
   def get_published_reports(nil) do
@@ -64,11 +87,11 @@ defmodule Sanbase.Report do
          {:ok, local_filepath} <- FileStore.store({report, content_hash}),
          file_url <- FileStore.url({local_filepath, content_hash}),
          {:ok, report} <- Map.merge(params, %{url: file_url}) |> create() do
-      {:ok, report.url}
+      {:ok, report}
     else
       {:error, reason} ->
         Logger.error("Could not save file: #{filename}. Reason: #{inspect(reason)}")
-        {:error, "Could not save file: #{filename}."}
+        {:error, reason}
     end
   end
 

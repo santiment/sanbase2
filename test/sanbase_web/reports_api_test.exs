@@ -16,7 +16,7 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
   describe "upload a report" do
     test "succeeds with basic auth", context do
       res = upload_report(context.basic_auth_conn)
-      assert res["data"]["uploadReport"] =~ "image.png"
+      assert res["data"]["uploadReport"]["url"] =~ "image.png"
     end
 
     test "unauthorized with no auth" do
@@ -95,7 +95,10 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
   defp upload_report(conn) do
     mutation = """
       mutation {
-        uploadReport(report: "report", name: "New Alpha Report")
+        uploadReport(report: "report", name: "New Alpha Report") {
+          name
+          url
+        }
       }
     """
 

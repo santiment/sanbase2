@@ -102,7 +102,7 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
 
     test "subscribe to given exchange - doesn't receive other exchanges", %{socket: socket} do
       ref = push_doc(socket, @exchange_trades_sub, variables: %{"exchange" => "Poloniex"})
-      assert_reply(ref, :ok, %{subscriptionId: subscription_id})
+      assert_reply(ref, :ok, %{subscriptionId: _subscription_id})
 
       message = ExchangeTrade.format_message(@exchange_trade_example)
 
@@ -136,7 +136,7 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
           variables: %{"exchange" => "Kraken", "tickerPair" => "ETH/USDT"}
         )
 
-      assert_reply(ref, :ok, %{subscriptionId: subscription_id})
+      assert_reply(ref, :ok, %{subscriptionId: _subscription_id})
 
       message = ExchangeTrade.format_message(@exchange_trade_example)
 
@@ -193,7 +193,7 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
           variables: %{"exchange" => "Kraken", "tickerPair" => "ETH/USDT"}
         )
 
-      assert_reply(ref, :ok, %{subscriptionId: subscription_id})
+      assert_reply(ref, :ok, %{subscriptionId: _subscription_id})
 
       message = ExchangeMarketDepth.format_message(@exchange_market_depth_example)
       Subscription.publish(message, "exchange_market_depth")

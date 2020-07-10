@@ -105,6 +105,7 @@ defmodule Sanbase.Insight.Post do
       :text,
       :moderation_comment,
       :state,
+      :ready_state,
       :is_pulse,
       :is_paywall_required,
       :prediction,
@@ -115,6 +116,7 @@ defmodule Sanbase.Insight.Post do
     |> images_cast(attrs)
     |> validate_length(:title, max: 140)
     |> validate_change(:prediction, &valid_prediction?/2)
+    |> maybe_add_updated_at()
   end
 
   def publish_changeset(%Post{} = post, attrs) do
@@ -144,12 +146,14 @@ defmodule Sanbase.Insight.Post do
     end
   end
 
+  @spec create(%User{}, map()) :: {:ok, %__MODULE__{}} | {:error, Keyword.t()}
   def create(%User{id: user_id}, args) do
     %__MODULE__{user_id: user_id}
     |> create_changeset(args)
     |> Repo.insert()
     |> case do
       {:ok, post} ->
+        :ok = Sanbase.Insight.Search.update_document_tokens(post.id)
         {:ok, post |> Tag.Preloader.order_tags()}
 
       {:error, changeset} ->
@@ -160,6 +164,8 @@ defmodule Sanbase.Insight.Post do
     end
   end
 
+  @spec update(non_neg_integer(), %User{}, map()) ::
+          {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, Keyword.t()}
   def update(post_id, %User{id: user_id}, args) do
     case Repo.get(__MODULE__, post_id) do
       %__MODULE__{user_id: ^user_id} = post ->
@@ -173,6 +179,7 @@ defmodule Sanbase.Insight.Post do
         |> Repo.update()
         |> case do
           {:ok, post} ->
+            :ok = Sanbase.Insight.Search.update_document_tokens(post.id)
             {:ok, post |> Tag.Preloader.order_tags()}
 
           {:error, error} ->
@@ -193,6 +200,8 @@ defmodule Sanbase.Insight.Post do
     end
   end
 
+  @spec delete(non_neg_integer(), %User{}) ::
+          {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, Keyword.t()}
   def delete(post_id, %User{id: user_id}) do
     case Repo.get(Post, post_id) do
       %__MODULE__{user_id: ^user_id} = post ->
@@ -221,9 +230,9 @@ defmodule Sanbase.Insight.Post do
     post_id = Sanbase.Math.to_integer(post_id)
     post = Repo.get(Post, post_id)
 
-    with {:nil?, %Post{id: ^post_id}} <- {:nil?, post},
-         {:own_post?, %Post{user_id: ^user_id}} <- {:own_post?, post},
-         {:draft?, %Post{ready_state: @draft}} <- {:draft?, post},
+    with {_, %Post{id: ^post_id}} <- {:nil?, post},
+         {_, %Post{user_id: ^user_id}} <- {:own_post?, post},
+         {_, %Post{ready_state: @draft}} <- {:draft?, post},
          {:ok, post} <- publish_post(post) do
       {:ok, post |> Tag.Preloader.order_tags()}
     else
@@ -238,7 +247,7 @@ defmodule Sanbase.Insight.Post do
 
       {:error, error} ->
         error_message = "Cannot publish insight with id #{post_id}"
-        Logger.error("#{error_message}, #{inspect(error)}")
+        Logger.error("#{error_message}. Reason: #{inspect(error)}")
         {:error, error_message}
     end
   end
@@ -247,7 +256,7 @@ defmodule Sanbase.Insight.Post do
     tags =
       post
       |> Repo.preload([:tags])
-      |> Map.get(:tags)
+      |> Map.get(:tags, [])
       |> Enum.map(& &1.name)
 
     projects = Project.List.by_field(tags, :ticker)
@@ -263,8 +272,8 @@ defmodule Sanbase.Insight.Post do
     |> by_user(user_id)
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
+    |> preload(^@preloads)
     |> Repo.all()
-    |> Repo.preload(@preloads)
     |> Tag.Preloader.order_tags()
   end
 
@@ -276,8 +285,8 @@ defmodule Sanbase.Insight.Post do
     |> by_user(user_id)
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
+    |> preload(^@preloads)
     |> Repo.all()
-    |> Repo.preload(@preloads)
     |> Tag.Preloader.order_tags()
   end
 
@@ -285,14 +294,18 @@ defmodule Sanbase.Insight.Post do
   All public (published and approved) insights paginated
   """
   def public_insights(page, page_size, opts \\ []) do
+    public_insights_query(opts)
+    |> order_by_published_at()
+    |> page(page, page_size)
+    |> preload(^@preloads)
+    |> Repo.all()
+    |> Tag.Preloader.order_tags()
+  end
+
+  def public_insights_query(opts \\ []) do
     published_and_approved_insights()
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
-    |> order_by_published_at()
-    |> page(page, page_size)
-    |> Repo.all()
-    |> Repo.preload(@preloads)
-    |> Tag.Preloader.order_tags()
   end
 
   @doc """
@@ -315,8 +328,8 @@ defmodule Sanbase.Insight.Post do
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
     |> distinct(true)
     |> order_by_published_at()
+    |> preload(^@preloads)
     |> Repo.all()
-    |> Repo.preload(@preloads)
   end
 
   def public_insights_by_tags(tags, page, page_size, opts \\ []) when is_list(tags) do
@@ -327,8 +340,8 @@ defmodule Sanbase.Insight.Post do
     |> distinct(true)
     |> order_by_published_at()
     |> page(page, page_size)
+    |> preload(^@preloads)
     |> Repo.all()
-    |> Repo.preload(@preloads)
   end
 
   @doc """
@@ -339,8 +352,8 @@ defmodule Sanbase.Insight.Post do
     |> user_has_voted_for(user_id)
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
+    |> preload(^@preloads)
     |> Repo.all()
-    |> Repo.preload(@preloads)
   end
 
   @doc """
@@ -446,6 +459,20 @@ defmodule Sanbase.Insight.Post do
     query
     |> offset(^((page - 1) * page_size))
     |> limit(^page_size)
+  end
+
+  # If only the tags or images change, then the `updated_at` is not changed.
+  # The post should be considered as changed in this case as well. This will
+  # also trigger the after update changes as well
+  defp maybe_add_updated_at(%Ecto.Changeset{} = changeset) do
+    case map_size(changeset.changes) do
+      0 ->
+        changeset
+
+      _ ->
+        changeset
+        |> change(%{updated_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)})
+    end
   end
 
   defp images_cast(changeset, %{image_urls: image_urls}) do

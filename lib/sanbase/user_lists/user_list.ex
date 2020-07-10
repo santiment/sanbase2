@@ -62,6 +62,7 @@ defmodule Sanbase.UserList do
       :table_configuration_id
     ])
     |> validate_required([:name, :user_id])
+    |> validate_change(:function, &validate_function/2)
     |> unique_constraint(:slug)
   end
 
@@ -77,7 +78,19 @@ defmodule Sanbase.UserList do
       :table_configuration_id
     ])
     |> cast_assoc(:list_items)
+    |> validate_change(:function, &validate_function/2)
     |> unique_constraint(:slug)
+  end
+
+  defp validate_function(_changeset, nil), do: []
+
+  defp validate_function(_changeset, function) do
+    {:ok, function} = function |> WatchlistFunction.cast()
+
+    case function |> WatchlistFunction.valid_function?() do
+      true -> []
+      false -> [function: "Provided watchlist function is not valid."]
+    end
   end
 
   def by_id(id) do

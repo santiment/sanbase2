@@ -58,6 +58,35 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
     {:ok, conn: conn, user: user}
   end
 
+  test "wrongly configured function fails", %{conn: conn} do
+    function = %{
+      "name" => "selector",
+      "args" => %{
+        # mistyped
+        "filterss" => [
+          %{
+            "metric" => "daily_active_addresses",
+            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
+            "to" => "#{Timex.now()}",
+            "aggregation" => "#{:last}",
+            "operator" => "#{:greater_than_or_equal_to}",
+            "threshold" => 10
+          }
+        ]
+      }
+    }
+
+    error =
+      execute_mutation(conn, query(function))
+      |> Map.get("errors")
+      |> hd()
+
+    assert %{
+             "details" => %{"function" => ["Provided watchlist function is not valid."]},
+             "message" => "Cannot create user list"
+           } = error
+  end
+
   test "dynamic watchlist for selector", %{conn: conn, user: user} do
     # Have at least 1 project that is not included in the result
     insert(:random_erc20_project)

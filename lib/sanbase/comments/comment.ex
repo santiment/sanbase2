@@ -84,7 +84,7 @@ defmodule Sanbase.Comment do
   end
 
   @doc ~s"""
-  Createa a (top-level) comment.
+  Create a (top-level) comment.
 
   When the parent id is nil:
   There is no need to set the parent_id and the root_parent_id - they both should be nil.

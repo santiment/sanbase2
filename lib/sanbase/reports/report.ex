@@ -25,6 +25,11 @@ defmodule Sanbase.Report do
   end
 
   @doc false
+  def new_changeset(report, params \\ %{}) do
+    report
+    |> cast(params, [:name, :description, :url, :is_published, :is_pro])
+  end
+
   def changeset(report, attrs) do
     report
     |> cast(attrs, [:name, :description, :url, :is_published, :is_pro])

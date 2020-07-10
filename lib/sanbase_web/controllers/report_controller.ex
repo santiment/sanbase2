@@ -10,7 +10,7 @@ defmodule SanbaseWeb.ReportController do
   end
 
   def new(conn, _params) do
-    changeset = Report.changeset(%Report{}, %{})
+    changeset = Report.new_changeset(%Report{})
     render(conn, "new.html", changeset: changeset)
   end
 
@@ -29,6 +29,14 @@ defmodule SanbaseWeb.ReportController do
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html", changeset: changeset)
     end
+  end
+
+  def create(conn, %{"report" => params}) do
+    changeset =
+      Report.changeset(%Report{}, params)
+      |> Ecto.Changeset.add_error(:report, "No file uploaded!")
+
+    render(conn, "new.html", changeset: changeset, errors: [report: "No file uploaded!"])
   end
 
   def show(conn, %{"id" => id}) do

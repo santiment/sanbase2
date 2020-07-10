@@ -2,6 +2,13 @@ defmodule SanbaseWeb.ErrorHelpers do
   @moduledoc """
   Conveniences for translating and building error messages.
   """
+  def error_tag(form, field) do
+    if error = form.source.errors[field] do
+      Phoenix.HTML.Tag.content_tag(:div, translate_error(error),
+        class: "text-red-500 text-xs italic"
+      )
+    end
+  end
 
   @doc """
   Translates an error message using gettext.

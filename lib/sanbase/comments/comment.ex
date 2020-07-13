@@ -84,8 +84,15 @@ defmodule Sanbase.Comment do
   end
 
   @doc ~s"""
-  Createa a (top-level) comment. When the parent id is nil there is no need to set
-  the parent_id and the root_parent_id - they both should be nil.
+  Create a (top-level) comment.
+
+  When the parent id is nil:
+  There is no need to set the parent_id and the root_parent_id - they both should be nil.
+
+  When the parent id is not nil:
+  1. In order to properly set the root_parent_id it must be inherited from the parent
+  2. Create the new comment
+  3. Update the parent's `subcomments_count` field
   """
   @spec create(
           user_id :: non_neg_integer(),
@@ -99,12 +106,6 @@ defmodule Sanbase.Comment do
     |> Repo.insert()
   end
 
-  @doc ~s"""
-  Create a subcomment. A subcomment is created by a transaction with 3 steps:
-    1. In order to properly set the root_parent_id it must be inherited from the parent
-    2. Create the new comment
-    3. Update the parent's `subcomments_count` field
-  """
   def create(user_id, content, parent_id) do
     args = %{user_id: user_id, content: content, parent_id: parent_id}
 

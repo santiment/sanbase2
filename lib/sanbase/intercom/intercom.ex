@@ -7,7 +7,6 @@ defmodule Sanbase.Intercom do
   require Logger
 
   alias Sanbase.Auth.User
-  alias Sanbase.Repo
   alias Sanbase.Billing.Product
   alias Sanbase.Signal.UserTrigger
   alias Sanbase.Clickhouse.ApiCallData

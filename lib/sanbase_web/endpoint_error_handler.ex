@@ -34,7 +34,7 @@ defmodule SanbaseWeb.Endpoint.ErrorHandler do
         catch
           kind, reason ->
             export_api_call_data(conn, kind, reason)
-            :erlang.raise(kind, reason, System.stacktrace())
+            :erlang.raise(kind, reason, __STACKTRACE__)
         end
       end
 

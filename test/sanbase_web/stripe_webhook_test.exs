@@ -17,8 +17,8 @@ defmodule SanbaseWeb.StripeWebhookTest do
   setup_with_mocks([
     {StripeApi, [],
      [
-       retrieve_subscription: fn _ ->
-         StripeApiTestResponse.retrieve_subscription_resp(stripe_id: @stripe_id)
+       retrieve_subscription: fn stripe_id ->
+         StripeApiTestResponse.retrieve_subscription_resp(stripe_id: stripe_id)
        end
      ]},
     {Sanbase.Notifications.Discord, [],
@@ -147,14 +147,15 @@ defmodule SanbaseWeb.StripeWebhookTest do
     test "when customer does not exist - subscription is not created" do
       user = insert(:user)
 
-      expected_error_msq = "Customer for subscription_id #{@stripe_id} does not exist"
+      expected_error_msg = "Customer for subscription_id #{@stripe_id} does not exist"
 
       capture_log(fn ->
         response = post_stripe_webhook(:subscription_created)
 
-        assert_receive({_, {:error, expected_error_msq}})
+        assert_receive({_, {:error, error_msg}})
+        assert error_msg =~ expected_error_msg
         assert response.status == 200
-      end) =~ expected_error_msq
+      end) =~ expected_error_msg
 
       assert from(s in Subscription, where: s.user_id == ^user.id) |> Repo.all() |> length() == 0
     end
@@ -173,14 +174,15 @@ defmodule SanbaseWeb.StripeWebhookTest do
 
       user = insert(:user, stripe_customer_id: stripe_customer_id)
 
-      expected_error_msq = "Plan for subscription_id #{@stripe_id} does not exist"
+      expected_error_msg = "Plan for subscription_id #{@stripe_id} does not exist"
 
       capture_log(fn ->
         response = post_stripe_webhook(:subscription_created)
 
-        assert_receive({_, {:error, expected_error_msq}})
+        assert_receive({_, {:error, error_msg}})
+        assert error_msg =~ expected_error_msg
         assert response.status == 200
-      end) =~ expected_error_msq
+      end) =~ expected_error_msg
 
       assert from(s in Subscription, where: s.user_id == ^user.id) |> Repo.all() |> length() == 0
     end
@@ -235,7 +237,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
       },
       "data": {
         "object": {
-          "id": "sub_FUN4OEvs92vfLC",
+          "id": "#{@stripe_id}",
           "object": "subscription",
           "application_fee_percent": null,
           "billing": "charge_automatically",
@@ -277,7 +279,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
             "customer": "cus_FSmndgjh0wSz24",
             "end": null,
             "start": 1563889630,
-            "subscription": "sub_FUN4OEvs92vfLC"
+            "subscription": "#{@stripe_id}"
           },
           "ended_at": null,
           "items": {
@@ -313,14 +315,14 @@ defmodule SanbaseWeb.StripeWebhookTest do
                   "usage_type": "licensed"
                 },
                 "quantity": 1,
-                "subscription": "sub_FUN4OEvs92vfLC",
+                "subscription": "#{@stripe_id}",
                 "tax_rates": [
                 ]
               }
             ],
             "has_more": false,
             "total_count": 1,
-            "url": "/v1/subscription_items?subscription=sub_FUN4OEvs92vfLC"
+            "url": "/v1/subscription_items?subscription=#{@stripe_id}"
           },
           "latest_invoice": "in_1EzOKgCA0hGU8IEVn1Gyk4yL",
           "livemode": false,
@@ -428,7 +430,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
             "customer": "cus_FPRuty3TVaGwlW",
             "end": null,
             "start": 1562754419,
-            "subscription": "sub_FPRuTYbI28tACT"
+            "subscription": "#{@stripe_id}"
           },
           "due_date": null,
           "ending_balance": 0,
@@ -477,7 +479,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
                 },
                 "proration": false,
                 "quantity": 1,
-                "subscription": "sub_FPRuTYbI28tACT",
+                "subscription": "#{@stripe_id}",
                 "subscription_item": "si_FPRupE2T9mzCfW",
                 "tax_amounts": [
                 ],
@@ -511,7 +513,7 @@ defmodule SanbaseWeb.StripeWebhookTest do
             "paid_at": 1562754419,
             "voided_at": null
           },
-          "subscription": "sub_FPRuTYbI28tACT",
+          "subscription": "#{@stripe_id}",
           "subtotal": 11900,
           "tax": null,
           "tax_percent": null,

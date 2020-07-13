@@ -56,11 +56,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     {:ok, complexity |> Sanbase.Math.to_integer()}
   end
 
-  def available_since(_root, args, %{source: %{metric: metric}}),
-    do: Metric.first_datetime(metric, to_selector(args))
+  def available_since(_root, args, %{source: %{metric: metric}}) do
+    selector = to_selector(args)
 
-  def last_datetime_computed_at(_root, args, %{source: %{metric: metric}}),
-    do: Metric.last_datetime_computed_at(metric, to_selector(args))
+    case valid_selector?(selector) do
+      true -> Metric.first_datetime(metric, selector)
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  def last_datetime_computed_at(_root, args, %{source: %{metric: metric}}) do
+    selector = to_selector(args)
+
+    case valid_selector?(selector) do
+      true -> Metric.last_datetime_computed_at(metric, selector)
+      {:error, error} -> {:error, error}
+    end
+  end
 
   def timeseries_data(
         _root,
@@ -252,6 +264,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
+  defp valid_selector?(%{} = map) when map_size(map) == 0,
+    do:
+      {:error,
+       "The selector must have at least one field provided." <>
+         "The available selector fields for a metric are listed in the metadata's availableSelectors field."}
+
   defp valid_selector?(_), do: true
 
   defp to_selector(%{slug: slug}), do: %{slug: slug}
@@ -259,4 +277,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   defp to_selector(%{selector: %{} = selector}),
     do: selector
+
+  defp to_selector(_), do: %{}
 end

@@ -140,6 +140,20 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     end
   end
 
+  test "returns error when slug is not given", context do
+    %{conn: conn, from: from, to: to, interval: interval} = context
+    aggregation = :avg
+    [metric | _] = Metric.available_timeseries_metrics()
+
+    # Do not mock the `timeseries_data` function because it's the one that rejects
+    %{"errors" => [%{"message" => error_message}]} =
+      get_timeseries_metric_without_slug(conn, metric, from, to, interval, aggregation)
+
+    assert error_message =~
+             "Can't fetch #{metric} for an empty selector: , Reason: \"The selector must have at least one field provided." <>
+               "The available selector fields for a metric are listed in the metadata's availableSelectors field.\""
+  end
+
   test "complexity for clickhouse metrics is smaller", context do
     slug = "ethereum"
     to = ~U[2020-05-01 00:00:00Z]
@@ -191,6 +205,14 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     |> json_response(200)
   end
 
+  defp get_timeseries_metric_without_slug(conn, metric, from, to, interval, aggregation) do
+    query = get_timeseries_query_without_slug(metric, from, to, interval, aggregation)
+
+    conn
+    |> post("/graphql", query_skeleton(query, "getMetric"))
+    |> json_response(200)
+  end
+
   defp extract_timeseries_data(result) do
     %{"data" => %{"getMetric" => %{"timeseriesData" => timeseries_data}}} = result
     timeseries_data
@@ -202,6 +224,23 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
         getMetric(metric: "#{metric}"){
           timeseriesData(
             slug: "#{slug}",
+            from: "#{from}",
+            to: "#{to}",
+            interval: "#{interval}",
+            aggregation: #{Atom.to_string(aggregation) |> String.upcase()}){
+              datetime
+              value
+            }
+        }
+      }
+    """
+  end
+
+  defp get_timeseries_query_without_slug(metric, from, to, interval, aggregation) do
+    """
+      {
+        getMetric(metric: "#{metric}"){
+          timeseriesData(
             from: "#{from}",
             to: "#{to}",
             interval: "#{interval}",

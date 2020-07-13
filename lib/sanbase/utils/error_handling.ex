@@ -68,6 +68,7 @@ defmodule Sanbase.Utils.ErrorHandling do
           %{slug: slug} -> {"project with slug", slug}
           %{text: text} -> {"search term", text}
           slug when is_binary(slug) -> {"project with slug", slug}
+          %{} -> {"an empty selector", ""}
         end
 
       description ->

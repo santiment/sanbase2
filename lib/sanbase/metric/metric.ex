@@ -313,8 +313,8 @@ defmodule Sanbase.Metric do
   def first_datetime(metric, slug)
 
   for %{metric: metric, module: module} <- @metric_module_mapping do
-    def first_datetime(unquote(metric), slug) do
-      unquote(module).first_datetime(unquote(metric), slug)
+    def first_datetime(unquote(metric), selector) do
+      unquote(module).first_datetime(unquote(metric), selector)
     end
   end
 

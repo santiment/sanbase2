@@ -6,6 +6,7 @@ defmodule Sanbase.SocialData.SocialDominance do
   alias Sanbase.SocialData.SocialHelper
 
   require Mockery.Macro
+  defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   require Sanbase.Utils.Config, as: Config
   require SanbaseWeb.Graphql.Schema
@@ -70,10 +71,6 @@ defmodule Sanbase.SocialData.SocialDominance do
   end
 
   defp social_dominance_request(%{slug: slug}, from, to, interval, source) do
-    cache_key =
-      {:social_dominance_api_request, round_datetime(from), round_datetime(to), interval, source}
-      |> Sanbase.Cache.hash()
-
     url = "#{metrics_hub_url()}/social_dominance"
 
     options = [
@@ -87,7 +84,7 @@ defmodule Sanbase.SocialData.SocialDominance do
       ]
     ]
 
-    Cache.get_or_store(cache_key, fn -> HTTPoison.get(url, [], options) end)
+    http_client().get(url, [], options)
   end
 
   defp social_dominance_result(%{"data" => map}) do
@@ -107,3 +104,4 @@ defmodule Sanbase.SocialData.SocialDominance do
     Config.module_get(Sanbase.SocialData, :metricshub_url)
   end
 end
+

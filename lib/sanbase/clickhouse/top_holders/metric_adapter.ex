@@ -29,6 +29,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
     "BEP2" => "binance-coin"
   }
 
+  @default_aggregation :last
   @aggregations [:last, :min, :max, :first]
 
   @timeseries_metrics [
@@ -59,9 +60,9 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
         from,
         to,
         interval,
-        aggregation
+        opts
       ) do
-    aggregation = aggregation || :last
+    aggregation = Keyword.get(opts, :aggregation, nil) || :last
     count = Map.get(selector, :holders_count, @default_holders_count)
 
     with {:ok, contract, decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug),
@@ -90,17 +91,17 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def aggregated_timeseries_data(_, %{slug: _slug}, _from, _to, _aggregation) do
+  def aggregated_timeseries_data(_, %{slug: _slug}, _from, _to, _opts) do
     {:error, "Aggregated timeseries data is not implemented for Top Holders."}
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_by_filter(_metric, _from, _to, _operator, _threshold, _aggregation) do
+  def slugs_by_filter(_metric, _from, _to, _operator, _threshold, _opts) do
     {:error, "Slugs filtering is not implemented for Top Holders."}
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_order(_metric, _from, _to, _direction, _aggregation) do
+  def slugs_order(_metric, _from, _to, _direction, _opts) do
     {:error, "Slugs ordering is not implemented for Top Holders."}
   end
 
@@ -112,7 +113,7 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
      %{
        metric: metric,
        min_interval: "1d",
-       default_aggregation: :last,
+       default_aggregation: @default_aggregation,
        available_aggregations: @aggregations,
        available_selectors: [:slug, :holders_count],
        data_type: data_type,

@@ -1,7 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   require Logger
 
-  alias Sanbase.Model.{Infrastructure, ExchangeAddress}
+  alias Sanbase.Model.Infrastructure
+  alias Sanbase.Clickhouse.ExchangeAddress
+  alias SanbaseWeb.Graphql.Resolvers.MetricResolver
 
   @doc ~S"""
   Return the token age consumed for the given slug and time period.
@@ -11,7 +13,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         %{slug: _slug, from: _from, to: _to, interval: _interval} = args,
         _resolution
       ) do
-    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+    MetricResolver.timeseries_data(
       %{},
       args,
       %{source: %{metric: "age_destroyed"}}
@@ -49,7 +51,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         %{slug: _slug, from: _from, to: _to, interval: _interval} = args,
         _resolution
       ) do
-    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+    MetricResolver.timeseries_data(
       %{},
       args,
       %{source: %{metric: "transaction_volume"}}
@@ -66,7 +68,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         %{slug: _slug, from: _from, to: _to, interval: _interval} = args,
         _resolution
       ) do
-    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+    MetricResolver.timeseries_data(
       %{},
       args,
       %{source: %{metric: "exchange_balance"}}
@@ -79,7 +81,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         %{slug: _slug, from: _from, to: _to, interval: _interval} = args,
         _resolution
       ) do
-    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+    MetricResolver.timeseries_data(
       %{},
       args,
       %{source: %{metric: "velocity"}}
@@ -87,22 +89,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :token_velocity)
   end
 
-  def all_exchange_wallets(_root, _args, _resolution) do
-    {:ok, ExchangeAddress.all_exchange_wallets()}
+  def exchange_wallets(_root, %{slug: slug}, _resolution) do
+    ExchangeAddress.exchange_addresses(slug)
   end
 
-  def exchange_wallets(_root, %{slug: "ethereum"}, _resolution) do
-    {:ok, ExchangeAddress.exchange_wallets_by_infrastructure(Infrastructure.get("ETH"))}
-  end
-
-  def exchange_wallets(_root, %{slug: "bitcoin"}, _resolution) do
-    {:ok, ExchangeAddress.exchange_wallets_by_infrastructure(Infrastructure.get("BTC"))}
-  end
-
-  def exchange_wallets(_, _, _) do
-    {:error, "Currently only ethereum and bitcoin exchanges are supported"}
-  end
-
+  # Private functions
   defp token_age_in_days(token_age_consumed, trx_volume)
        when token_age_consumed <= 0.1 or trx_volume <= 0.1 do
     0

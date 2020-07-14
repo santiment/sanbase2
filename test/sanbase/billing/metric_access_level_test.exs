@@ -269,7 +269,19 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "bitmex_perpetual_open_value",
         "bitmex_perpetual_basis_ratio",
         "bitmex_perpetual_price",
-        "bitmex_composite_price_index"
+        "bitmex_composite_price_index",
+        # label metrics
+        "active_deposits_per_exchange",
+        "active_withdrawals_per_exchange",
+        "deposit_transactions_per_exchange",
+        "exchange_balance_per_exchange",
+        "exchange_inflow_per_exchange",
+        "exchange_outflow_per_exchange",
+        "holders_distribution_0.01_to_0.1_per_exchange",
+        "holders_distribution_0.1_to_1_per_exchange",
+        "holders_distribution_1_to_10_per_exchange",
+        "holders_distribution_10_100_per_exchange",
+        "withdrawal_transactions_per_exchange"
       ]
       |> Enum.sort()
 

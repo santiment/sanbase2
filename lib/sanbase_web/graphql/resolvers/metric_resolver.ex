@@ -84,9 +84,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     transform =
       Map.get(args, :transform, %{type: "none"}) |> Map.update!(:type, &Inflex.underscore/1)
 
-    aggregation = Map.get(args, :aggregation, nil)
     selector = to_selector(args)
     metric = maybe_replace_metric(metric, selector)
+    opts = args_to_opts(args)
 
     with true <- valid_selector?(selector),
          {:ok, from, to, interval} <-
@@ -96,7 +96,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          {:ok, from} <-
            calibrate_transform_params(transform, from, to, interval),
          {:ok, result} <-
-           Metric.timeseries_data(metric, selector, from, to, interval, aggregation),
+           Metric.timeseries_data(metric, selector, from, to, interval, opts),
          {:ok, result} <- apply_transform(transform, result),
          {:ok, result} <- fit_from_datetime(result, args) do
       {:ok, result |> Enum.reject(&is_nil/1)}
@@ -112,14 +112,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         %{source: %{metric: metric}}
       ) do
     include_incomplete_data = Map.get(args, :include_incomplete_data, false)
-    aggregation = Map.get(args, :aggregation, nil)
     selector = to_selector(args)
+    opts = args_to_opts(args)
 
     with true <- valid_selector?(selector),
          {:ok, from, to} <-
            calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
          {:ok, result} <-
-           Metric.aggregated_timeseries_data(metric, selector, from, to, aggregation) do
+           Metric.aggregated_timeseries_data(metric, selector, from, to, opts) do
       # This requires internal rework - all aggregated_timeseries_data queries must return the same format
       case result do
         value when is_number(value) ->
@@ -274,9 +274,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   defp to_selector(%{slug: slug}), do: %{slug: slug}
   defp to_selector(%{word: word}), do: %{word: word}
-
-  defp to_selector(%{selector: %{} = selector}),
-    do: selector
-
+  defp to_selector(%{selector: %{} = selector}), do: selector
   defp to_selector(_), do: %{}
+
+  # Convert the args to opts that the Metric module recognizes
+  defp args_to_opts(args) when is_map(args) do
+    opts = [aggregation: Map.get(args, :aggregation, nil)]
+
+    with selector when is_map(selector) <- args[:selector],
+         {map, _rest} when map_size(map) > 0 <- Map.split(selector, [:owner, :label]) do
+      [additional_filters: Keyword.new(map)] ++ opts
+    else
+      _ ->
+        opts
+    end
+  end
 end

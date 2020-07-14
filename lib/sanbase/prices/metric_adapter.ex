@@ -27,26 +27,26 @@ defmodule Sanbase.Price.MetricAdapter do
   def complexity_weight(_), do: @default_complexity_weight
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data(metric, %{slug: slug}, from, to, interval, aggregation) do
-    aggregation = aggregation || @default_aggregation
+  def timeseries_data(metric, %{slug: slug}, from, to, interval, opts) do
+    aggregation = Keyword.get(opts, :aggregation, nil) || @default_aggregation
     Price.timeseries_metric_data(slug, metric, from, to, interval, aggregation: aggregation)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def aggregated_timeseries_data(metric, %{slug: slug}, from, to, aggregation) do
-    aggregation = aggregation || @default_aggregation
+  def aggregated_timeseries_data(metric, %{slug: slug}, from, to, opts) do
+    aggregation = Keyword.get(opts, :aggregation, nil) || @default_aggregation
     Price.aggregated_metric_timeseries_data(slug, metric, from, to, aggregation: aggregation)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_by_filter(metric, from, to, operator, threshold, aggregation) do
-    aggregation = aggregation || @default_aggregation
+  def slugs_by_filter(metric, from, to, operator, threshold, opts) do
+    aggregation = Keyword.get(opts, :aggregation, nil) || @default_aggregation
     Price.slugs_by_filter(metric, from, to, operator, threshold, aggregation)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_order(metric, from, to, direction, aggregation) do
-    aggregation = aggregation || @default_aggregation
+  def slugs_order(metric, from, to, direction, opts) do
+    aggregation = Keyword.get(opts, :aggregation, nil) || @default_aggregation
     Price.slugs_order(metric, from, to, direction, aggregation)
   end
 

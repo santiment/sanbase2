@@ -61,7 +61,7 @@ defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
         Timex.shift(to, days: -shift),
         to,
         @historical_days_interval,
-        :avg
+        aggregation: :avg
       )
     end
   end

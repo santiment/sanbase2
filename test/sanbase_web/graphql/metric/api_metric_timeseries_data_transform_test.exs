@@ -61,7 +61,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTransformTest do
           ~U[2019-01-01T00:00:00Z],
           ~U[2019-01-08T00:00:00Z],
           "1d",
-          :avg
+          :_
         )
       )
     end

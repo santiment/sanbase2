@@ -93,7 +93,9 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
     # Get the average price for the queried. time range. It will break the [X,Y]
     # price interval containing that price into [X, price_break] and [price_break, Y]
     {:ok, %{^slug => price_break}} =
-      Sanbase.Metric.aggregated_timeseries_data("price_usd", %{slug: slug}, from, to, :avg)
+      Sanbase.Metric.aggregated_timeseries_data("price_usd", %{slug: slug}, from, to,
+        aggregation: :avg
+      )
 
     price_break = price_break |> Sanbase.Math.round_float()
     price_break_range = price_to_range.(price_break)

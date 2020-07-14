@@ -50,9 +50,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
                }
              ]
 
-      assert_called(
-        Metric.timeseries_data(metric, %{slug: slug}, from, to, interval, aggregation)
-      )
+      assert_called(Metric.timeseries_data(metric, %{slug: slug}, from, to, interval, :_))
     end
   end
 

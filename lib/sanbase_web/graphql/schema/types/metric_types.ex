@@ -24,12 +24,16 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   enum :selector_name do
     value(:slug)
     value(:text)
+    value(:owner)
+    value(:label)
     value(:holders_count)
   end
 
   input_object :metric_target_selector_input_object do
     field(:slug, :string)
     field(:text, :string)
+    field(:owner, :string)
+    field(:label, :string)
     field(:holders_count, :integer)
   end
 

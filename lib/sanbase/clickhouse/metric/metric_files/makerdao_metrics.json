@@ -5,6 +5,7 @@
     "metric": "mcd_locked_token",
     "version": "2019-12-22",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -21,6 +22,7 @@
     "metric": "daily_sai_locked",
     "version": "2019-12-09",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -37,6 +39,7 @@
     "metric": "mcd_total_supply",
     "version": "2019-01-01",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -53,6 +56,7 @@
     "metric": "mcd_debt",
     "version": "2019-12-22",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -69,6 +73,7 @@
     "metric": "daily_dai_collat_ratio",
     "version": "2019-12-22",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -85,6 +90,7 @@
     "metric": "daily_dai_collat_ratio_weth",
     "version": "2019-12-22",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -101,6 +107,7 @@
     "metric": "daily_dai_collat_ratio_sai",
     "version": "2019-12-22",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -117,6 +124,7 @@
     "metric": "daily_sai_collat_ratio",
     "version": "2019-12-09",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -133,6 +141,7 @@
     "metric": "mcd_dsr",
     "version": "2019-12-09",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -149,6 +158,7 @@
     "metric": "mcd_stability_fee",
     "version": "2019-12-09",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -165,6 +175,7 @@
     "metric": "mcd_debt_created_5m",
     "version": "2019-12-09",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -181,6 +192,7 @@
     "metric": "mcd_debt_repaid_5m",
     "version": "2019-12-09",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"

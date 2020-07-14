@@ -36,9 +36,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
 
       assert result == 100
 
-      assert_called(
-        Metric.aggregated_timeseries_data(metric, %{slug: slug}, from, to, aggregation)
-      )
+      assert_called(Metric.aggregated_timeseries_data(metric, %{slug: slug}, from, to, :_))
     end
   end
 

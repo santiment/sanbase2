@@ -5,16 +5,11 @@ defmodule Sanbase.Model.Infrastructure do
 
   alias Sanbase.Repo
 
-  alias Sanbase.Model.{
-    Infrastructure,
-    Project,
-    ExchangeAddress
-  }
+  alias Sanbase.Model.{Infrastructure, Project}
 
   schema "infrastructures" do
     field(:code, :string)
     has_many(:projects, Project)
-    has_many(:exchange_addresses, ExchangeAddress)
   end
 
   @doc false

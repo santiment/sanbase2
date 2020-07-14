@@ -321,7 +321,8 @@ defmodule Sanbase.Model.Project.ListSelector do
     %{metric: metric, from: from, to: to, direction: direction} = order_by
     aggregation = Map.get(order_by, :aggregation)
 
-    {:ok, ordered_slugs} = Sanbase.Metric.slugs_order(metric, from, to, direction, aggregation)
+    {:ok, ordered_slugs} =
+      Sanbase.Metric.slugs_order(metric, from, to, direction, aggregation: aggregation)
 
     case slugs do
       :all ->

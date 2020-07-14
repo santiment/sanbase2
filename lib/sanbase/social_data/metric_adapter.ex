@@ -62,7 +62,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def complexity_weight(_), do: @default_complexity_weight
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data(metric, %{slug: _slug} = selector, from, to, interval, _aggregation)
+  def timeseries_data(metric, %{slug: _slug} = selector, from, to, interval, _opts)
       when metric in @social_volume_timeseries_metrics do
     "social_volume_" <> source = metric
 
@@ -70,7 +70,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     |> transform_to_value_pairs(:mentions_count)
   end
 
-  def timeseries_data(metric, %{} = selector, from, to, interval, _aggregation)
+  def timeseries_data(metric, %{} = selector, from, to, interval, _opts)
       when metric in @social_dominance_timeseries_metrics do
     "social_dominance_" <> source = metric
 
@@ -78,7 +78,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     |> transform_to_value_pairs(:dominance)
   end
 
-  def timeseries_data(metric, %{slug: _slug} = selector, from, to, interval, _aggregation)
+  def timeseries_data(metric, %{slug: _slug} = selector, from, to, interval, _opts)
       when metric in @community_messages_count_timeseries_metrics do
     "community_messages_count_" <> source = metric
 
@@ -86,7 +86,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     |> transform_to_value_pairs(:mentions_count)
   end
 
-  def timeseries_data(metric, %{text: _text} = selector, from, to, interval, _aggregation)
+  def timeseries_data(metric, %{text: _text} = selector, from, to, interval, _opts)
       when metric in @social_volume_timeseries_metrics do
     "social_volume_" <> source = metric
 
@@ -94,7 +94,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     |> transform_to_value_pairs(:mentions_count)
   end
 
-  def timeseries_data(metric, %{} = selector, from, to, interval, _aggregation)
+  def timeseries_data(metric, %{} = selector, from, to, interval, _opts)
       when metric in @sentiment_timeseries_metrics do
     "sentiment_" <> type_source = metric
     {type, source} = SocialHelper.split_by_source(type_source)
@@ -104,10 +104,10 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def aggregated_timeseries_data(metric, selector, from, to, aggregation)
+  def aggregated_timeseries_data(metric, selector, from, to, opts)
       when metric in @social_volume_timeseries_metrics or
              metric in @community_messages_count_timeseries_metrics do
-    case timeseries_data(metric, selector, from, to, "1h", aggregation) do
+    case timeseries_data(metric, selector, from, to, "1h", opts) do
       {:ok, result} ->
         {:ok, Enum.reduce(result, 0, &(&1.value + &2))}
 
@@ -116,9 +116,9 @@ defmodule Sanbase.SocialData.MetricAdapter do
     end
   end
 
-  def aggregated_timeseries_data(metric, selector, from, to, aggregation)
+  def aggregated_timeseries_data(metric, selector, from, to, opts)
       when metric in @social_dominance_timeseries_metrics do
-    case timeseries_data(metric, selector, from, to, "1h", aggregation) do
+    case timeseries_data(metric, selector, from, to, "1h", opts) do
       {:ok, result} ->
         result =
           Enum.reduce(result, 0, &(&1.value + &2))
@@ -132,12 +132,12 @@ defmodule Sanbase.SocialData.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_by_filter(_metric, _from, _to, _operator, _threshold, _aggregation) do
+  def slugs_by_filter(_metric, _from, _to, _operator, _threshold, _opts) do
     {:error, "Slugs filtering is not implemented for Social Data."}
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_order(_metric, _from, _to, _direction, _aggregation) do
+  def slugs_order(_metric, _from, _to, _direction, _opts) do
     {:error, "Slugs ordering is not implemented for Social Data."}
   end
 

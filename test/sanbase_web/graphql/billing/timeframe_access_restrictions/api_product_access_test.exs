@@ -222,8 +222,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert result != nil
     end
 
-    test "some metrics can't be accessed with basic timeframe",
-         context do
+    test "some metrics can't be accessed with basic timeframe", context do
       {from, to} = from_to(2 * 365 - 1, 2 * 365 - 2)
       metric = "active_deposits"
       slug = context.project.slug

@@ -2,17 +2,31 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
+  import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
 
+  setup_all_with_mocks([
+    {Sanbase.Clickhouse.ExchangeAddress, [:passthrough],
+     exchange_addresses: fn _ ->
+       {:ok,
+        [
+          %{address: "0x234", name: "Binance", is_dex: false},
+          %{address: "0x789", name: "Binance", is_dex: false},
+          %{address: "0x567", name: "Bitfinex", is_dex: false}
+        ]}
+     end},
+    {
+      Sanbase.Clickhouse.ExchangeAddress,
+      [:passthrough],
+      exchange_names: fn _ -> {:ok, ["Binance", "Bitfinex"]} end
+    }
+  ]) do
+    []
+  end
+
   setup do
-    infr = insert(:infrastructure, %{code: "ETH"})
-
-    %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
+    user = insert(:user)
     conn = setup_jwt_auth(build_conn(), user)
-
-    insert(:exchange_address, %{address: "0x234", name: "Binance", infrastructure_id: infr.id})
-    insert(:exchange_address, %{address: "0x567", name: "Bitfinex", infrastructure_id: infr.id})
-    insert(:exchange_address, %{address: "0x789", name: "Binance", infrastructure_id: infr.id})
 
     insert(:exchange_market_pair_mappings, %{
       exchange: "Bitfinex",
@@ -33,57 +47,17 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
   end
 
   test "test all exchanges", context do
-    query = "{ allExchanges }"
+    query = ~s/{ allExchanges(slug: "ethereum") }/
 
     response =
       context.conn
       |> post("/graphql", query_skeleton(query, "allExchanges"))
 
-    exchanges = json_response(response, 200)["data"]["allExchanges"]
+    exchanges =
+      json_response(response, 200)
+      |> get_in(["data", "allExchanges"])
+
     assert Enum.sort(exchanges) == Enum.sort(["Binance", "Bitfinex"])
-  end
-
-  test "test fetching volume for exchange", context do
-    rows = [
-      [~U[2017-05-13T00:00:00Z] |> DateTime.to_unix(), 2000, 1000],
-      [~U[2017-05-15T00:00:00Z] |> DateTime.to_unix(), 1800, 1300],
-      [~U[2017-05-18T00:00:00Z] |> DateTime.to_unix(), 1000, 1100]
-    ]
-
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      query =
-        exchange_volume_query(
-          context.exchange,
-          context.from,
-          context.to
-        )
-
-      result =
-        context.conn
-        |> post("/graphql", query_skeleton(query, "exchangeVolume"))
-        |> json_response(200)
-
-      exchanges = result["data"]["exchangeVolume"]
-
-      assert exchanges == [
-               %{
-                 "datetime" => "2017-05-13T00:00:00Z",
-                 "exchange_inflow" => 2000,
-                 "exchange_outflow" => 1000
-               },
-               %{
-                 "datetime" => "2017-05-15T00:00:00Z",
-                 "exchange_inflow" => 1800,
-                 "exchange_outflow" => 1300
-               },
-               %{
-                 "datetime" => "2017-05-18T00:00:00Z",
-                 "exchange_inflow" => 1000,
-                 "exchange_outflow" => 1100
-               }
-             ]
-    end)
   end
 
   describe "#exchangeMarketPairToSlugs" do
@@ -117,22 +91,6 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
       result = execute_query(build_conn(), query, "slugsToExchangeMarketPair")
       assert result == %{"fromTicker" => nil, "marketPair" => nil, "toTicker" => nil}
     end
-  end
-
-  defp exchange_volume_query(exchange, from, to) do
-    """
-      {
-        exchangeVolume(
-            exchange: "#{exchange}",
-            from: "#{from}",
-            to: "#{to}",
-        ){
-            datetime,
-            exchange_inflow,
-            exchange_outflow
-        }
-      }
-    """
   end
 
   defp exchange_market_pair_to_slugs(exchange, ticker_pair) do

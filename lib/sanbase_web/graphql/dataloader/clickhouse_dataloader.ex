@@ -17,7 +17,9 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
       slugs = Enum.map(group, & &1.slug)
 
       data =
-        case Metric.aggregated_timeseries_data(metric, %{slug: slugs}, from, to, aggregation) do
+        case Metric.aggregated_timeseries_data(metric, %{slug: slugs}, from, to,
+               aggregation: aggregation
+             ) do
           {:ok, result} -> result
           {:error, error} -> {:error, error}
         end
@@ -93,7 +95,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
       %{slug: slugs},
       from,
       to,
-      :avg
+      aggregation: :avg
     )
     |> case do
       {:ok, result} ->

@@ -26,7 +26,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     field(:computed_at, :utc_datetime)
   end
 
-  def timeseries_data_query(metric, slugs, from, to, interval, aggregation) when is_list(slugs) do
+  def timeseries_data_query(metric, slugs, from, to, interval, aggregation, filters)
+      when is_list(slugs) do
     query = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
@@ -37,6 +38,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
         argMax(value, computed_at) AS value2
       FROM #{Map.get(@table_map, metric)}
       PREWHERE
+        #{additional_filters(filters)}
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
         NOT isNaN(value) AND
@@ -59,7 +61,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     {query, args}
   end
 
-  def timeseries_data_query(metric, slug, from, to, interval, aggregation) do
+  def timeseries_data_query(metric, slug, from, to, interval, aggregation, filters) do
     query = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
@@ -70,6 +72,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
         argMax(value, computed_at) AS value2
       FROM #{Map.get(@table_map, metric)}
       PREWHERE
+        #{additional_filters(filters)}
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
         NOT isNaN(value) AND
@@ -92,7 +95,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     {query, args}
   end
 
-  def aggregated_timeseries_data_query(metric, asset_ids, from, to, aggregation) do
+  def aggregated_timeseries_data_query(metric, asset_ids, from, to, aggregation, filters) do
     query = """
     SELECT
       toUInt32(asset_id),
@@ -104,6 +107,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
         argMax(value, computed_at) AS value2
       FROM #{Map.get(@table_map, metric)}
       PREWHERE
+        #{additional_filters(filters)}
         asset_id IN (?1) AND
         metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 ) AND
         NOT isNaN(value) AND
@@ -125,8 +129,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     {query, args}
   end
 
-  def slugs_by_filter_query(metric, from, to, operation, threshold, aggregation) do
-    {query, args} = aggregated_slugs_base_query(metric, from, to, aggregation)
+  def slugs_by_filter_query(metric, from, to, operation, threshold, aggregation, filters) do
+    {query, args} = aggregated_slugs_base_query(metric, from, to, aggregation, filters)
 
     query =
       query <>
@@ -137,9 +141,9 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     {query, args}
   end
 
-  def slugs_order_query(metric, from, to, direction, aggregation)
+  def slugs_order_query(metric, from, to, direction, aggregation, filters)
       when direction in [:asc, :desc] do
-    {query, args} = aggregated_slugs_base_query(metric, from, to, aggregation)
+    {query, args} = aggregated_slugs_base_query(metric, from, to, aggregation, filters)
 
     query =
       query <>
@@ -150,7 +154,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     {query, args}
   end
 
-  defp aggregated_slugs_base_query(metric, from, to, aggregation) do
+  defp aggregated_slugs_base_query(metric, from, to, aggregation, filters) do
     query = """
     SELECT name AS slug, value
     FROM (
@@ -164,6 +168,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
           argMax(value, computed_at) AS value
         FROM #{Map.get(@table_map, metric)}
         PREWHERE
+          #{additional_filters(filters)}
           metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
           #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?2)")} AND
           #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?3)")}
@@ -279,16 +284,37 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     {query, args}
   end
 
+  # Private functions
+
+  # Add additional `=` filters to the query. This is mostly used with labeled
+  # metrics where additional column filters must be applied.
+  defp additional_filters([]), do: []
+
+  defp additional_filters(filters) do
+    filters_string =
+      filters
+      |> Enum.map(fn
+        {column, value} when is_binary(value) ->
+          "#{column} = '#{value}'"
+
+        {column, value} when is_number(value) ->
+          "#{column} = #{value}"
+      end)
+      |> Enum.join(" AND\n")
+
+    filters_string <> " AND"
+  end
+
   defp maybe_convert_to_date(:after, metric, dt_column, code) do
     case Map.get(@table_map, metric) do
-      "daily_metrics_v2" -> "#{dt_column} >= toDate(#{code})"
+      "daily_" <> _rest_of_table -> "#{dt_column} >= toDate(#{code})"
       _ -> "#{dt_column} >= #{code}"
     end
   end
 
   defp maybe_convert_to_date(:before, metric, dt_column, code) do
     case Map.get(@table_map, metric) do
-      "daily_metrics_v2" -> "#{dt_column} <= toDate(#{code})"
+      "daily_" <> _rest_of_table -> "#{dt_column} <= toDate(#{code})"
       _ -> "#{dt_column} <= #{code}"
     end
   end

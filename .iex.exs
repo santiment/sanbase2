@@ -5,7 +5,6 @@ alias Sanbase.Model.{
   ModelUtils,
   ProjectBtcAddress,
   Currency,
-  ExchangeAddress,
   Ico,
   IcoCurrency,
   ProjectEthAddress,

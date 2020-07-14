@@ -70,7 +70,7 @@ defmodule Sanbase.SocialData.TrendingWords do
   end
 
   @spec get_trending_words(DateTime.t(), DateTime.t(), interval, non_neg_integer) ::
-          {:ok, list(trending_word)} | {:error, String.t()}
+          {:ok, map()} | {:error, String.t()}
   def get_trending_words(from, to, interval, size) do
     {query, args} = get_trending_words_query(from, to, interval, size)
 
@@ -113,7 +113,7 @@ defmodule Sanbase.SocialData.TrendingWords do
            "1h",
            size
          ) do
-      {:ok, []} ->
+      {:ok, %{} = empty_map} when map_size(empty_map) == 0 ->
         {:ok, []}
 
       {:ok, stats} ->

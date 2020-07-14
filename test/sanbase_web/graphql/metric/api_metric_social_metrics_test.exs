@@ -105,7 +105,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
 
     test "social volume test", context do
       %{conn: conn, project: project, from: from, to: to, interval: interval} = context
-      metrics = social_volume_metrics()
+      [single_source_metrics, combined_metrics] = social_volume_metrics()
 
       resp = """
       {"data":{"#{from}":100,"#{to}":200}}
@@ -116,7 +116,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
         {:ok, %HTTPoison.Response{body: resp, status_code: 200}}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
-        for metric <- metrics do
+        for metric <- single_source_metrics do
           result =
             get_timeseries_metric(conn, metric, :slug, project.slug, from, to, interval)
             |> extract_timeseries_data()
@@ -126,6 +126,17 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
                    %{"value" => 200.0, "datetime" => to |> DateTime.to_iso8601()}
                  ]
         end
+
+        for metric <- combined_metrics do
+          result =
+            get_timeseries_metric(conn, metric, :slug, project.slug, from, to, interval)
+            |> extract_timeseries_data()
+
+          assert result == [
+                   %{"value" => 600.0, "datetime" => from |> DateTime.to_iso8601()},
+                   %{"value" => 1200.0, "datetime" => to |> DateTime.to_iso8601()}
+                 ]
+        end
       end)
     end
 
@@ -133,7 +144,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
       %{conn: conn, project: project, from: from, to: to, interval: interval, after_to: after_to} =
         context
 
-      metrics = social_volume_metrics()
+      [_, combined_metrics] = social_volume_metrics()
 
       resp1 = """
         {"data":{"#{from}":100,"#{to}":200,"#{after_to}":300}}
@@ -155,35 +166,34 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
         end
       end)
       |> Sanbase.Mock.run_with_mocks(fn ->
-        for metric <- metrics do
+        for metric <- combined_metrics do
           result =
             get_timeseries_metric(conn, metric, :slug, project.slug, from, to, interval)
             |> extract_timeseries_data()
 
-          case metric do
-            "social_volume_telegram" ->
-              assert result == [
-                       %{"value" => 100.0, "datetime" => from |> DateTime.to_iso8601()},
-                       %{"value" => 200.0, "datetime" => to |> DateTime.to_iso8601()},
-                       %{"value" => 300.0, "datetime" => after_to |> DateTime.to_iso8601()}
-                     ]
-
-            _ ->
-              assert result == [
-                       %{"value" => 100.0, "datetime" => from |> DateTime.to_iso8601()},
-                       %{"value" => 200.0, "datetime" => to |> DateTime.to_iso8601()}
-                     ]
-          end
+          assert result == [
+                   %{"value" => 600.0, "datetime" => from |> DateTime.to_iso8601()},
+                   %{"value" => 1200.0, "datetime" => to |> DateTime.to_iso8601()},
+                   %{"value" => 300.0, "datetime" => after_to |> DateTime.to_iso8601()}
+                 ]
         end
       end)
     end
 
     test "social dominance test", context do
       %{conn: conn, project: project, from: from, to: to, interval: interval} = context
-      metrics = social_dominance_metrics()
+      [single_source_metrics, combined_metrics] = social_dominance_metrics()
+      ticker_slug = "#{project.ticker}_#{project.slug}"
 
       resp = """
-      {"data":{"#{from}":15,"#{to}":20}}
+      [
+        {"#{ticker_slug}": 10, "ETH_ethereum": 12, "BTC_bitcoin": 102, "datetime": #{
+        DateTime.to_unix(from)
+      }},
+        {"#{ticker_slug}": 20, "ETH_ethereum": 12, "BTC_bitcoin": 102, "datetime": #{
+        DateTime.to_unix(to)
+      }}
+      ]
       """
 
       Sanbase.Mock.prepare_mock2(
@@ -191,14 +201,25 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
         {:ok, %HTTPoison.Response{body: resp, status_code: 200}}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
-        for metric <- metrics do
+        for metric <- single_source_metrics do
           result =
             get_timeseries_metric(conn, metric, :slug, project.slug, from, to, interval)
             |> extract_timeseries_data()
 
           assert result == [
-                   %{"value" => 15.0, "datetime" => from |> DateTime.to_iso8601()},
-                   %{"value" => 20.0, "datetime" => to |> DateTime.to_iso8601()}
+                   %{"value" => 8.06, "datetime" => from |> DateTime.to_iso8601()},
+                   %{"value" => 14.93, "datetime" => to |> DateTime.to_iso8601()}
+                 ]
+        end
+
+        for metric <- combined_metrics do
+          result =
+            get_timeseries_metric(conn, metric, :slug, project.slug, from, to, interval)
+            |> extract_timeseries_data()
+
+          assert result == [
+                   %{"value" => 8.06, "datetime" => from |> DateTime.to_iso8601()},
+                   %{"value" => 14.93, "datetime" => to |> DateTime.to_iso8601()}
                  ]
         end
       end)
@@ -208,10 +229,10 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
   describe "metrics by text selector" do
     test "social volume test", context do
       %{conn: conn, from: from, to: to, interval: interval} = context
-      metrics = social_volume_metrics()
+      [single_source_metrics, combined_metrics] = social_volume_metrics()
 
       resp = """
-      {"data":{"#{from}":12,"#{to}":18}}
+      {"data":{"#{from}":12,"#{to}": 18}}
       """
 
       Sanbase.Mock.prepare_mock2(
@@ -219,7 +240,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
         {:ok, %HTTPoison.Response{body: resp, status_code: 200}}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
-        for metric <- metrics do
+        for metric <- single_source_metrics do
           result =
             get_timeseries_metric(conn, metric, :text, "buy OR sell", from, to, interval)
             |> extract_timeseries_data()
@@ -229,12 +250,24 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
                    %{"value" => 18.0, "datetime" => to |> DateTime.to_iso8601()}
                  ]
         end
+
+        for metric <- combined_metrics do
+          result =
+            get_timeseries_metric(conn, metric, :text, "12k OR 14k", from, to, interval)
+            |> extract_timeseries_data()
+
+          assert result == [
+                   %{"value" => 72.0, "datetime" => from |> DateTime.to_iso8601()},
+                   %{"value" => 108.0, "datetime" => to |> DateTime.to_iso8601()}
+                 ]
+        end
       end)
     end
 
     test "social_volume - one source returns more data", context do
       %{conn: conn, from: from, to: to, interval: interval, after_to: after_to} = context
-      metrics = social_volume_metrics()
+
+      [_, combined_metrics] = social_volume_metrics()
 
       resp1 = """
       {"data":{"#{from}":12,"#{to}":18,"#{after_to}":10}}
@@ -256,33 +289,23 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
         end
       end)
       |> Sanbase.Mock.run_with_mocks(fn ->
-        for metric <- metrics do
+        for metric <- combined_metrics do
           result =
             get_timeseries_metric(conn, metric, :text, "12k OR 14k", from, to, interval)
             |> extract_timeseries_data()
 
-          case metric do
-            "social_volume_telegram" ->
-              assert result == [
-                       %{"value" => 12.0, "datetime" => from |> DateTime.to_iso8601()},
-                       %{"value" => 18.0, "datetime" => to |> DateTime.to_iso8601()},
-                       %{"value" => 10.0, "datetime" => after_to |> DateTime.to_iso8601()}
-                     ]
-
-            _ ->
-              assert result == [
-                       %{"value" => 12.0, "datetime" => from |> DateTime.to_iso8601()},
-                       %{"value" => 18.0, "datetime" => to |> DateTime.to_iso8601()}
-                     ]
-          end
+          assert result == [
+                   %{"value" => 72.0, "datetime" => from |> DateTime.to_iso8601()},
+                   %{"value" => 108.0, "datetime" => to |> DateTime.to_iso8601()},
+                   %{"value" => 10.0, "datetime" => after_to |> DateTime.to_iso8601()}
+                 ]
         end
       end)
     end
 
     test "social dominance test", context do
       %{conn: conn, from: from, to: to, interval: interval} = context
-
-      metrics = social_dominance_metrics()
+      [single_source_metrics, combined_metrics] = social_dominance_metrics()
 
       text_mentions = [
         %{mentions_count: 48, datetime: from},
@@ -302,7 +325,18 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
           end
       end)
       |> Sanbase.Mock.run_with_mocks(fn ->
-        for metric <- metrics do
+        for metric <- single_source_metrics do
+          result =
+            get_timeseries_metric(conn, metric, :text, "text", from, to, interval)
+            |> extract_timeseries_data()
+
+          assert result == [
+                   %{"value" => 2.17, "datetime" => from |> DateTime.to_iso8601()},
+                   %{"value" => 5.99, "datetime" => to |> DateTime.to_iso8601()}
+                 ]
+        end
+
+        for metric <- combined_metrics do
           result =
             get_timeseries_metric(conn, metric, :text, "text", from, to, interval)
             |> extract_timeseries_data()
@@ -363,6 +397,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
       "social_volume" <> _ -> true
       _ -> false
     end)
+    |> split_single_combined()
   end
 
   defp social_dominance_metrics() do
@@ -371,6 +406,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
       "social_dominance" <> _ -> true
       _ -> false
     end)
+    |> split_single_combined()
   end
 
   defp split_single_combined(metrics) do

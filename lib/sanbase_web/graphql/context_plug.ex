@@ -37,8 +37,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   @auth_methods [
     &ContextPlug.bearer_auth_token_authentication/1,
     &ContextPlug.bearer_auth_header_authentication/1,
-    &ContextPlug.basic_authentication/1,
-    &ContextPlug.apikey_authentication/1
+    &ContextPlug.apikey_authentication/1,
+    &ContextPlug.basic_authentication/1
   ]
 
   @product_id_api Product.product_api()
@@ -98,11 +98,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   defp build_context(conn, []) do
     case get_req_header(conn, "authorization") do
       header when no_auth_header(header) ->
-        product_id =
-          get_req_header(conn, "origin")
-          |> get_no_auth_product_id()
-
-        {conn, Map.put(@anon_user_base_context, :product_id, product_id)}
+        {conn, anon_user_base_context(conn)}
 
       [header] ->
         Logger.warn("Unsupported authorization header value: #{inspect(header)}")
@@ -156,8 +152,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   def bearer_auth_token_authentication(_), do: :try_next
 
   def bearer_auth_header_authentication(%Plug.Conn{} = conn) do
-    with {:has_header?, ["Bearer " <> token]} <-
-           {:has_header?, get_req_header(conn, "authorization")},
+    with {_, ["Bearer " <> token]} <- {:has_header?, get_req_header(conn, "authorization")},
          {:ok, current_user} <- bearer_authorize(token) do
       subscription =
         Subscription.current_subscription(current_user, @product_id_sanbase) ||
@@ -182,29 +177,36 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   end
 
   def basic_authentication(%Plug.Conn{} = conn) do
-    with {:has_header?, ["Basic " <> auth_attempt]} <-
-           {:has_header?, get_req_header(conn, "authorization")},
-         {:ok, current_user} <- basic_authorize(auth_attempt) do
-      %{
-        permissions: User.Permissions.full_permissions(),
-        auth: %{
-          auth_method: :basic,
-          current_user: current_user,
-          san_balance: 0,
-          subscription: nil,
-          plan: nil
-        },
-        product_id: @product_id_api
-      }
-    else
-      {:has_header?, _} -> :try_next
-      error -> error
+    case get_req_header(conn, "authorization") do
+      ["Basic " <> auth_attempt] ->
+        case basic_authorize(auth_attempt) do
+          {:ok, current_user} ->
+            %{
+              permissions: User.Permissions.full_permissions(),
+              auth: %{
+                auth_method: :basic,
+                current_user: current_user,
+                san_balance: 0,
+                subscription: nil,
+                plan: nil
+              },
+              product_id: @product_id_api
+            }
+
+          _ ->
+            # Do not error on wrong basic auth. This prevents issues when developing
+            # locally. It is also not a used user-flow in produciton, so not
+            # returning an error here won't hurt much.
+            anon_user_base_context(conn)
+        end
+
+      _ ->
+        :try_next
     end
   end
 
   def apikey_authentication(%Plug.Conn{} = conn) do
-    with {:has_header?, ["Apikey " <> apikey]} <-
-           {:has_header?, get_req_header(conn, "authorization")},
+    with {_, ["Apikey " <> apikey]} <- {:has_header?, get_req_header(conn, "authorization")},
          {:ok, current_user} <- apikey_authorize(apikey),
          {:ok, {token, _apikey}} <- Sanbase.Auth.Hmac.split_apikey(apikey) do
       product_id =
@@ -231,6 +233,14 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       {:has_header?, _} -> :try_next
       error -> error
     end
+  end
+
+  defp anon_user_base_context(conn) do
+    product_id =
+      get_req_header(conn, "origin")
+      |> get_no_auth_product_id()
+
+    Map.put(@anon_user_base_context, :product_id, product_id)
   end
 
   defp bearer_authorize(token) do

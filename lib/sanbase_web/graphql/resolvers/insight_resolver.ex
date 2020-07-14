@@ -95,6 +95,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     {:ok, posts}
   end
 
+  def all_insights_by_search_term(_root, %{search_term: search_term} = args, _context) do
+    opts = [
+      is_pulse: Map.get(args, :is_pulse),
+      is_paywall_required: Map.get(args, :is_paywall_required)
+    ]
+
+    # Search is done only on the publicly visible (published) insights.
+    search_result_insights =
+      Post.public_insights_query(opts)
+      |> Sanbase.Insight.Search.run(search_term)
+
+    {:ok, search_result_insights}
+  end
+
   def create_post(_root, args, %{context: %{auth: %{current_user: user}}}) do
     Post.create(user, args)
   end

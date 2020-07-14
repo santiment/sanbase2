@@ -66,19 +66,19 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
     assert result["errors"]["details"] == "Bad authorization header: Invalid JSON Web Token (JWT)"
   end
 
-  test "invalid basic auth returns error" do
+  test "invalid basic auth does not return error but uses anon user" do
     conn =
       build_conn()
       |> put_req_header("authorization", "Basic gibberish")
 
     conn = ContextPlug.call(conn, %{})
+    conn_context = conn.private.absinthe.context
 
-    {:ok, result} = conn.resp_body |> Jason.decode()
-
-    assert conn.status == 400
-
-    assert result["errors"]["details"] ==
-             "Bad authorization header: Invalid basic authorization header credentials"
+    assert Map.has_key?(conn_context, :auth)
+    assert conn_context.auth.auth_method == :none
+    assert conn_context.auth.plan == :free
+    assert conn_context.remote_ip == {127, 0, 0, 1}
+    assert conn_context.permissions == User.Permissions.no_permissions()
   end
 
   test "not existing apikey returns error" do

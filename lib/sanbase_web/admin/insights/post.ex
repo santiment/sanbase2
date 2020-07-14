@@ -68,6 +68,13 @@ defmodule SanbaseWeb.ExAdmin.Insight.Post do
 
         input(
           post,
+          :ready_state,
+          collection: ~w[published draft],
+          selected: true
+        )
+
+        input(
+          post,
           :prediction
         )
 
@@ -85,6 +92,7 @@ defmodule SanbaseWeb.ExAdmin.Insight.Post do
 
     controller do
       after_filter(:set_featured, only: [:update])
+      after_filter(:update_document_tokens, only: [:update, :create])
     end
   end
 
@@ -102,6 +110,12 @@ defmodule SanbaseWeb.ExAdmin.Insight.Post do
       nil ->
         :ok
     end
+
+    {conn, params, resource}
+  end
+
+  def update_document_tokens(conn, params, resource, _type) do
+    :ok = Sanbase.Insight.Search.update_document_tokens(resource.id)
 
     {conn, params, resource}
   end

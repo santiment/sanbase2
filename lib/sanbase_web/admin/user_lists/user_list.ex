@@ -7,6 +7,28 @@ defmodule SanbaseWeb.ExAdmin.UserList do
     update_changeset(:update_changeset)
     action_items(only: [:show, :edit, :delete])
 
+    scope(:all, default: true)
+
+    scope(:featured, [], fn query ->
+      from(
+        user_list in query,
+        left_join: featured_item in Sanbase.FeaturedItem,
+        on: user_list.id == featured_item.user_list_id,
+        where: not is_nil(featured_item.id)
+      )
+      |> distinct(true)
+    end)
+
+    scope(:not_featured, [], fn query ->
+      from(
+        user_list in query,
+        left_join: featured_item in Sanbase.FeaturedItem,
+        on: user_list.id == featured_item.user_list_id,
+        where: is_nil(featured_item.id)
+      )
+      |> distinct(true)
+    end)
+
     index do
       column(:id)
       column(:name)

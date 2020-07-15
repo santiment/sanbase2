@@ -8,6 +8,28 @@ defmodule SanbaseWeb.ExAdmin.Insight.Post do
     update_changeset(:update_changeset)
     action_items(only: [:show, :edit, :delete])
 
+    scope(:all, default: true)
+
+    scope(:featured, [], fn query ->
+      from(
+        post in query,
+        left_join: featured_item in Sanbase.FeaturedItem,
+        on: post.id == featured_item.post_id,
+        where: not is_nil(featured_item.id)
+      )
+      |> distinct(true)
+    end)
+
+    scope(:not_featured, [], fn query ->
+      from(
+        post in query,
+        left_join: featured_item in Sanbase.FeaturedItem,
+        on: post.id == featured_item.post_id,
+        where: is_nil(featured_item.id)
+      )
+      |> distinct(true)
+    end)
+
     index do
       column(:id)
       column(:title)

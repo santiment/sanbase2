@@ -16,7 +16,7 @@ defmodule SanbaseWeb.Graphql.Schema.ReportQueries do
     end
 
     @desc ~s"""
-    List all reports.
+    Get all reports by asset tags.
     """
     field :get_reports_by_tags, list_of(:report) do
       arg(:tags, non_null(list_of(:string)))

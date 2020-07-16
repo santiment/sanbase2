@@ -121,6 +121,7 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
       {
         url
         name
+        tags
       }
     }
     """

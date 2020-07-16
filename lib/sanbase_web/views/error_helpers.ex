@@ -10,6 +10,10 @@ defmodule SanbaseWeb.ErrorHelpers do
     end
   end
 
+  #  def input_array(form, field, opts \\ []) do
+
+  #   end
+
   @doc """
   Translates an error message using gettext.
   """

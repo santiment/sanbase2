@@ -7,6 +7,7 @@
       <th class="px-4 py-2">Name</th>
       <th class="px-4 py-2">Published?</th>
       <th class="px-4 py-2">PRO?</th>
+      <th class="px-4 py-2">Tags</th>
       <th class="px-4 py-2">Inserted At</th>
       <th class="px-4 py-2">Actions</th>
     </tr>
@@ -18,6 +19,13 @@
         <td class="border px-4 py-2"><%= report.name %></td>
         <td class="border px-4 py-2"><%= report.is_published %></td>
         <td class="border px-4 py-2"><%= report.is_pro %></td>
+        <td class="border px-4 py-2">
+          <%= for tag <- report.tags do %>
+            <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-indigo-600 bg-indigo-200 uppercase last:mr-0 mr-1">
+              <%= tag %>
+            </span>
+          <% end %>
+        </td>
         <td class="border px-4 py-2"><%= report.inserted_at %></td>
         <td class="border px-4 py-2">
           <span><%= link "Show", to: Routes.report_path(@conn, :show, report) %></span> |

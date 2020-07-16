@@ -8,6 +8,15 @@
     <tr><td class="border px-4 py-2">URL</td> <td class="border px-4 py-2"><%= @report.url %></td></tr>
     <tr><td class="border px-4 py-2">Published?</td> <td class="border px-4 py-2"><%= @report.is_published %></td></tr>
     <tr><td class="border px-4 py-2">PRO?</td> <td class="border px-4 py-2"><%= @report.is_pro %></td></tr>
+    <tr><td class="border px-4 py-2">Tags</td> <td class="border px-4 py-2">
+      <%= for tag <- @report.tags do %>
+          <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-indigo-600 bg-indigo-200 uppercase last:mr-0 mr-1">
+            <%= tag %>
+          </span>
+      <% end %>
+    </td></tr>
+
+
   </tbody>
 </table>
 

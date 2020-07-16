@@ -22,4 +22,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ReportResolver do
 
     {:ok, reports}
   end
+
+  def get_reports_by_tags(_root, %{tags: tags}, %{context: %{auth: %{current_user: user}}}) do
+    subscription = Subscription.current_subscription(user, @product_sanbase)
+    reports = Report.get_by_tags(tags, subscription)
+
+    {:ok, reports}
+  end
 end

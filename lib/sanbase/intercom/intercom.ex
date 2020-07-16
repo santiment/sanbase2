@@ -75,12 +75,13 @@ defmodule Sanbase.Intercom do
 
     address_balance_map =
       eth_accounts
-      |> Enum.into(%{}, fn eth_account ->
+      |> Enum.map(fn eth_account ->
         case EthAccount.san_balance(eth_account) do
-          :error -> {eth_account.address, 0.0}
-          balance -> {eth_account.address, Sanbase.Math.to_float(balance)}
+          :error -> "#{eth_account.address}=0.0"
+          balance -> "#{eth_account.address}=#{Sanbase.Math.to_float(balance)}"
         end
       end)
+      |> Enum.join(" | ")
 
     stats = %{
       user_id: id,

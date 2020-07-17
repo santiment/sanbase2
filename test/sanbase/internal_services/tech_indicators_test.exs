@@ -173,37 +173,4 @@ defmodule Sanbase.TechIndicatorsTest do
                 }
               ]}
   end
-
-  describe "social_volume_projects/0" do
-    test "response: success" do
-      mock(
-        HTTPoison,
-        :get,
-        {:ok,
-         %HTTPoison.Response{
-           body:
-             "[\"ADA_cardano\", \"BCH_bitcoin-cash\", \"BTC_bitcoin\", \"DRGN_dragonchain\", \"EOS_eos\"]",
-           status_code: 200
-         }}
-      )
-
-      result = SocialVolume.social_volume_projects()
-
-      assert result == {:ok, ["cardano", "bitcoin-cash", "bitcoin", "dragonchain", "eos"]}
-    end
-
-    test "response: 404" do
-      mock(HTTPoison, :get, {:ok, %HTTPoison.Response{body: "Some message", status_code: 404}})
-
-      assert capture_log(fn -> SocialVolume.social_volume_projects() end) =~
-               "Error status 404 fetching social volume projects"
-    end
-
-    test "response: error" do
-      mock(HTTPoison, :get, {:error, %HTTPoison.Error{reason: :econnrefused}})
-
-      assert capture_log(fn -> SocialVolume.social_volume_projects() end) =~
-               "Cannot fetch social volume projects data: :econnrefused\n"
-    end
-  end
 end

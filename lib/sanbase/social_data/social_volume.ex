@@ -5,6 +5,7 @@ defmodule Sanbase.SocialData.SocialVolume do
   require Sanbase.Utils.Config, as: Config
 
   alias Sanbase.SocialData.SocialHelper
+  alias Sanbase.Model.Project
 
   require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
@@ -41,20 +42,7 @@ defmodule Sanbase.SocialData.SocialVolume do
   end
 
   def social_volume_projects() do
-    social_volume_projects_request()
-    |> case do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Jason.decode(body)
-        social_volume_projects_result(result)
-
-      {:ok, %HTTPoison.Response{status_code: status}} ->
-        warn_result("Error status #{status} fetching social volume projects.")
-
-      {:error, %HTTPoison.Error{} = error} ->
-        error_result(
-          "Cannot fetch social volume projects data: #{HTTPoison.Error.message(error)}"
-        )
-    end
+    {:ok, Project.List.projects()}
   end
 
   defp social_volume_request(selector, from, to, interval, source) do
@@ -87,29 +75,6 @@ defmodule Sanbase.SocialData.SocialVolume do
       |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
 
     {:ok, map}
-  end
-
-  defp social_volume_projects_request() do
-    url = "#{tech_indicators_url()}/indicator/social_volume_projects"
-
-    options = [recv_timeout: @recv_timeout]
-
-    http_client().get(url, [], options)
-  end
-
-  defp social_volume_projects_result(result) do
-    result =
-      result
-      |> Enum.map(fn ticker_slug ->
-        [_ticker, slug] = String.split(ticker_slug, "_", parts: 2)
-        slug
-      end)
-
-    {:ok, result}
-  end
-
-  defp tech_indicators_url() do
-    Config.module_get(Sanbase.TechIndicators, :url)
   end
 
   defp metrics_hub_url() do

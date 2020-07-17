@@ -162,7 +162,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def available_slugs("social_volume_" <> _source),
     do: {:ok, Project.List.projects_slugs(preload?: false)}
 
-  def available_slugs("social_dominance_" <> _source), do: available_social_slugs()
+  def available_slugs("social_dominance_" <> _source),
+    do: {:ok, Project.List.projects_slugs(preload?: false)}
 
   def available_slugs("community_messages_count_" <> _source),
     do: {:ok, Project.List.projects_by_non_null_field(:telegram_link) |> Enum.map(& &1.slug)}
@@ -178,21 +179,12 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_metrics(%{slug: slug}) do
-    with %Project{telegram_link: telegram_link} <- Project.by_slug(slug, preload?: false),
-         {:ok, social_slugs} <- available_social_slugs() do
-      # Currently social volume is fetched from metricshub and social dominance
-      # is fetched from tech_indicators. Social volume is available for all projects
-      # because if a social query is missing, it is automatically constructed.
-      # Social dominance is still available only for some projects
-      metrics = if slug in social_slugs, do: @metrics, else: @social_volume_timeseries_metrics
-
-      # Add or remove community messages metrics based on the presence of telegram link
-      # If community messages count metric is added twice, that would be comensated
-      # by the uniq()
+    with %Project{telegram_link: telegram_link} <- Project.by_slug(slug, preload?: false) do
       metrics =
-        if is_binary(telegram_link),
-          do: (metrics ++ @community_messages_count_timeseries_metrics) |> Enum.uniq(),
-          else: metrics -- @community_messages_count_timeseries_metrics
+        case is_binary(telegram_link) do
+          true -> @metrics
+          false -> @metrics -- @community_messages_count_timeseries_metrics
+        end
 
       {:ok, metrics}
     end
@@ -240,15 +232,6 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def last_datetime_computed_at(_metric, _selector), do: {:ok, Timex.now()}
 
   # Private functions
-
-  defp available_social_slugs() do
-    # Providing a 2 element tuple `{any, integer}` will use that second element
-    # as TTL for the cache key
-    Sanbase.Cache.get_or_store({:social_metrics_available_slugs, 1800}, fn ->
-      Sanbase.SocialData.SocialVolume.social_volume_projects()
-    end)
-  end
-
   # total has the datetime of the earliest of all - bitcointalk
   defp source_first_datetime("total"), do: {:ok, ~U[2016-01-01 00:00:00Z]}
   defp source_first_datetime("telegram"), do: {:ok, ~U[2016-03-29 00:00:00Z]}

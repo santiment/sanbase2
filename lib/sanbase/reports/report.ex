@@ -20,19 +20,24 @@ defmodule Sanbase.Report do
     field(:url, :string, null: false)
     field(:is_pro, :boolean, default: false)
     field(:is_published, :boolean, default: false)
+    field(:tags, {:array, :string}, default: [])
 
     timestamps()
   end
 
   @doc false
-  def new_changeset(report, params \\ %{}) do
+  def new_changeset(report, attrs \\ %{}) do
+    attrs = normalize_tags(attrs)
+
     report
-    |> cast(params, [:name, :description, :url, :is_published, :is_pro])
+    |> cast(attrs, [:name, :description, :url, :is_published, :is_pro, :tags])
   end
 
   def changeset(report, attrs) do
+    attrs = normalize_tags(attrs)
+
     report
-    |> cast(attrs, [:name, :description, :url, :is_published, :is_pro])
+    |> cast(attrs, [:name, :description, :url, :is_published, :is_pro, :tags])
     |> validate_required([:url, :name, :is_published, :is_pro])
   end
 
@@ -52,6 +57,13 @@ defmodule Sanbase.Report do
     report |> Repo.delete()
   end
 
+  def get_by_tags(tags, plan_atom_name) do
+    __MODULE__
+    |> get_by_tags_query(tags)
+    |> get_published_reports_query(plan_atom_name)
+    |> Repo.all()
+  end
+
   def save_report(%Plug.Upload{filename: filename} = report, params) do
     %{report | filename: milliseconds_str() <> "_" <> filename}
     |> do_save_report(params)
@@ -65,22 +77,43 @@ defmodule Sanbase.Report do
     Repo.all(__MODULE__)
   end
 
-  def get_published_reports(nil) do
-    from(r in __MODULE__, where: r.is_published == true and r.is_pro == false)
-    |> Repo.all()
-  end
-
-  def get_published_reports(%{plan: %{name: "FREE"}}) do
-    from(r in __MODULE__, where: r.is_published == true and r.is_pro == false)
-    |> Repo.all()
-  end
-
-  def get_published_reports(%{plan: %{name: "PRO"}}) do
-    from(r in __MODULE__, where: r.is_published == true)
+  def get_published_reports(plan_atom_name) do
+    __MODULE__
+    |> get_published_reports_query(plan_atom_name)
     |> Repo.all()
   end
 
   # Helpers
+
+  defp normalize_tags(%{"tags" => tags} = attrs) when is_binary(tags) do
+    Map.put(attrs, "tags", String.split(tags, ~r{\s*,\s*}) |> Enum.map(&String.downcase/1))
+  end
+
+  defp normalize_tags(%{"tags" => tags} = attrs) when is_list(tags) do
+    Map.put(attrs, "tags", Enum.map(tags, &String.downcase/1))
+  end
+
+  defp normalize_tags(%{tags: tags} = attrs) when is_binary(tags) do
+    Map.put(attrs, :tags, String.split(tags, ~r{\s*,\s*}) |> Enum.map(&String.downcase/1))
+  end
+
+  defp normalize_tags(%{tags: tags} = attrs) when is_list(tags) do
+    Map.put(attrs, :tags, Enum.map(tags, &String.downcase/1))
+  end
+
+  defp normalize_tags(attrs), do: attrs
+
+  defp get_by_tags_query(query, tags) do
+    from(r in query, where: fragment("select ? && ?", r.tags, ^tags))
+  end
+
+  defp get_published_reports_query(query, :free) do
+    from(r in query, where: r.is_published == true and r.is_pro == false)
+  end
+
+  defp get_published_reports_query(query, :pro) do
+    from(r in query, where: r.is_published == true)
+  end
 
   defp do_save_report(%{filename: filename, path: filepath} = report, params) do
     with {:ok, content_hash} <- FileHash.calculate(filepath),

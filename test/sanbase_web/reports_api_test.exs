@@ -30,7 +30,7 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
     end
   end
 
-  describe "list all reports" do
+  describe "get reports" do
     setup do
       not_published = insert(:report, is_published: false)
       free_report = insert(:report, is_pro: false, is_published: true)
@@ -75,6 +75,29 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
     end
   end
 
+  describe "get reports by tags" do
+    setup do
+      insert(:report, is_pro: false, is_published: true)
+      r1 = insert(:report, is_pro: false, is_published: true, tags: ~w(t1 t2))
+      r2 = insert(:report, is_pro: false, is_published: true, tags: ~w(t3 t4))
+      insert(:report, is_pro: false, is_published: true, tags: ~w(t5 t6))
+
+      user = insert(:user)
+      conn = setup_jwt_auth(build_conn(), user)
+
+      {:ok, conn: conn, r1: r1, r2: r2}
+    end
+
+    test "fetch only reports with intersecting tags", context do
+      res = get_reports_by_tags(context.conn, ["t2", "t3"])
+
+      assert Enum.map(res["data"]["getReportsByTags"], & &1["url"]) == [
+               context.r1.url,
+               context.r2.url
+             ]
+    end
+  end
+
   def get_reports(conn) do
     query = """
     {
@@ -82,6 +105,23 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
       {
         url
         name
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", %{"query" => query})
+    |> json_response(200)
+  end
+
+  def get_reports_by_tags(conn, tags) do
+    query = """
+    {
+      getReportsByTags(tags: #{tags |> Jason.encode!()})
+      {
+        url
+        name
+        tags
       }
     }
     """

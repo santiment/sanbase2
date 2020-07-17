@@ -17,7 +17,7 @@ defmodule SanbaseWeb.ReportController do
   def create(conn, %{
         "report" => %{"report" => report} = params
       }) do
-    {params, _} = Map.split(params, ~w(name description is_published is_pro))
+    {params, _} = Map.split(params, ~w(name description is_published is_pro tags))
     params = Sanbase.MapUtils.atomize_keys(params)
 
     case Report.save_report(report, params) do
@@ -45,7 +45,7 @@ defmodule SanbaseWeb.ReportController do
   end
 
   def edit(conn, %{"id" => id}) do
-    report = Report.by_id(id)
+    report = Report.by_id(id) |> stringify_tags()
     changeset = Report.changeset(report, %{})
     render(conn, "edit.html", report: report, changeset: changeset)
   end
@@ -71,5 +71,9 @@ defmodule SanbaseWeb.ReportController do
     conn
     |> put_flash(:info, "Report deleted successfully.")
     |> redirect(to: Routes.report_path(conn, :index))
+  end
+
+  defp stringify_tags(%Report{tags: tags} = report) do
+    %Report{report | tags: tags |> Enum.join(", ")}
   end
 end

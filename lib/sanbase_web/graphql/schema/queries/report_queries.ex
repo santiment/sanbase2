@@ -14,6 +14,17 @@ defmodule SanbaseWeb.Graphql.Schema.ReportQueries do
 
       resolve(&ReportResolver.get_reports/3)
     end
+
+    @desc ~s"""
+    Get all reports by asset tags.
+    """
+    field :get_reports_by_tags, list_of(:report) do
+      arg(:tags, non_null(list_of(:string)))
+
+      middleware(JWTAuth)
+
+      resolve(&ReportResolver.get_reports_by_tags/3)
+    end
   end
 
   object :report_mutations do

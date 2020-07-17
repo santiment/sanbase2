@@ -26,6 +26,7 @@ defmodule Sanbase.Model.Project.ListSelector do
     pagination = args_to_pagination(args) || %{}
 
     with true <- check_filters(filters),
+         true <- valid_filters_combinator?(args),
          {:ok, _} <- conform(order_by, order_by_schema),
          {:ok, _} <- conform(pagination, pagination_schema) do
       true
@@ -104,8 +105,9 @@ defmodule Sanbase.Model.Project.ListSelector do
     filters = args_to_filters(args)
     order_by = args_to_order_by(args)
     pagination = args_to_pagination(args)
+    filters_combinator = args_to_filters_combinator(args)
 
-    included_slugs = filters |> included_slugs_by_filters()
+    included_slugs = filters |> included_slugs_by_filters(filters_combinator)
     ordered_slugs = order_by |> ordered_slugs_by_order_by(included_slugs)
 
     [
@@ -166,6 +168,31 @@ defmodule Sanbase.Model.Project.ListSelector do
       error ->
         error
     end
+  end
+
+  defp valid_filters_combinator?(args) do
+    filters_combinator =
+      (get_in(args, [:selector, :filters_combinator]) || "and")
+      |> to_string()
+      |> String.downcase()
+
+    case filters_combinator in ["and", "or"] do
+      true ->
+        true
+
+      false ->
+        {:error,
+         """
+         Unsupported filter combinator #{inspect(filters_combinator)}.
+         Supported filter combinators are 'and' and 'or'
+         """}
+    end
+  end
+
+  defp args_to_filters_combinator(args) do
+    (get_in(args, [:selector, :filters_combinator]) || "and")
+    |> to_string()
+    |> String.downcase()
   end
 
   defp args_to_filters(args) do
@@ -245,37 +272,47 @@ defmodule Sanbase.Model.Project.ListSelector do
     end
   end
 
-  defp included_slugs_by_filters(nil), do: :all
-  defp included_slugs_by_filters([]), do: :all
+  defp included_slugs_by_filters([], _filters_combinator), do: :all
 
-  defp included_slugs_by_filters(filters) when is_list(filters) do
-    filters
-    |> Sanbase.Parallel.map(
-      fn filter ->
-        cache_key =
-          {:included_slugs_by_filters,
-           %{filter | from: round_datetime(filter.from), to: round_datetime(filter.to)}}
-          |> Sanbase.Cache.hash()
+  defp included_slugs_by_filters(filters, filters_combinator) when is_list(filters) do
+    slug_mapsets =
+      filters
+      |> Sanbase.Parallel.map(
+        fn filter ->
+          cache_key =
+            {:included_slugs_by_filters,
+             %{filter | from: round_datetime(filter.from), to: round_datetime(filter.to)}}
+            |> Sanbase.Cache.hash()
 
-        {:ok, slugs} =
-          Sanbase.Cache.get_or_store(cache_key, fn ->
-            Sanbase.Metric.slugs_by_filter(
-              filter.metric,
-              filter.from,
-              filter.to,
-              filter.operator,
-              filter.threshold,
-              filter.aggregation
-            )
-          end)
+          {:ok, slugs} =
+            Sanbase.Cache.get_or_store(cache_key, fn ->
+              Sanbase.Metric.slugs_by_filter(
+                filter.metric,
+                filter.from,
+                filter.to,
+                filter.operator,
+                filter.threshold,
+                filter.aggregation
+              )
+            end)
 
-        slugs |> MapSet.new()
-      end,
-      ordered: false,
-      max_concurrency: 8
-    )
-    |> Enum.reduce(&MapSet.intersection(&1, &2))
-    |> Enum.to_list()
+          slugs |> MapSet.new()
+        end,
+        ordered: false,
+        max_concurrency: 8
+      )
+
+    case filters_combinator do
+      "and" ->
+        slug_mapsets
+        |> Enum.reduce(&MapSet.intersection(&1, &2))
+        |> Enum.to_list()
+
+      "or" ->
+        slug_mapsets
+        |> Enum.reduce(&MapSet.union(&1, &2))
+        |> Enum.to_list()
+    end
   end
 
   defp ordered_slugs_by_order_by(nil, slugs), do: slugs

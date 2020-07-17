@@ -89,7 +89,7 @@ defmodule Sanbase.UserList do
 
     case function |> WatchlistFunction.valid_function?() do
       true -> []
-      false -> [function: "Provided watchlist function is not valid."]
+      {:error, error} -> [function: "Provided watchlist function is not valid. Reason: #{error}"]
     end
   end
 

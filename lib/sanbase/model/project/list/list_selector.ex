@@ -33,32 +33,11 @@ defmodule Sanbase.Model.Project.ListSelector do
   end
 
   defp check_filters(filters) do
-    filter_schema =
-      schema(%{
-        metric: spec(is_binary()),
-        from: spec(&match?(%DateTime{}, &1)),
-        to: spec(&match?(%DateTime{}, &1)),
-        operator: spec(is_atom()),
-        threshold: spec(is_number()),
-        aggregation: spec(is_atom())
-      })
-
-    Enum.map(filters, &conform(&1, filter_schema))
-    |> Enum.find(&match?({:error, _}, &1))
-    |> case do
-      nil ->
-        Enum.map(
-          filters,
-          &([:metric, :from, :to, :operator, :threshold, :aggregation] -- Map.keys(&1))
-        )
-        |> Enum.find(&(&1 != []))
-        |> case do
-          nil -> true
-          fields -> {:error, "A filter has missing fields: #{inspect(fields)}."}
-        end
-
-      error ->
-        error
+    with true <- filters_structure_valid?(filters),
+         true <- filters_metrics_valid?(filters) do
+      true
+    else
+      error -> error
     end
   end
 
@@ -69,13 +48,26 @@ defmodule Sanbase.Model.Project.ListSelector do
   """
   def projects(args) do
     opts = args_to_opts(args)
+    projects = Project.List.projects(opts)
 
-    {:ok, Project.List.projects(opts)}
+    {:ok,
+     %{
+       projects: Project.List.projects(opts),
+       total_projects_count: total_projects_count(projects, opts),
+       has_pagination?: Keyword.get(opts, :has_pagination?),
+       all_included_slugs: Keyword.get(opts, :included_slugs)
+     }}
   end
 
   def slugs(args) do
     opts = args_to_opts(args)
-    {:ok, Project.List.projects_slugs(opts)}
+    slugs = Project.List.projects_slugs(opts)
+
+    {:ok,
+     %{
+       slugs: slugs,
+       total_projects_count: total_projects_count(slugs, opts)
+     }}
   end
 
   @doc ~s"""
@@ -125,6 +117,55 @@ defmodule Sanbase.Model.Project.ListSelector do
       included_slugs: included_slugs,
       ordered_slugs: ordered_slugs
     ]
+  end
+
+  defp total_projects_count(list, opts) do
+    with true <- Keyword.get(opts, :has_pagination?),
+         slugs when is_list(slugs) <- Keyword.get(opts, :included_slugs) do
+      length(slugs)
+    else
+      _ -> length(list)
+    end
+  end
+
+  defp filters_metrics_valid?(filters) do
+    Enum.find(filters, fn %{metric: metric} ->
+      not Sanbase.Metric.has_metric?(metric)
+    end)
+    |> case do
+      nil -> true
+      metric -> {:error, "The metric #{metric} is mistyped or not supported."}
+    end
+  end
+
+  defp filters_structure_valid?(filters) do
+    filter_schema =
+      schema(%{
+        metric: spec(is_binary()),
+        from: spec(&match?(%DateTime{}, &1)),
+        to: spec(&match?(%DateTime{}, &1)),
+        operator: spec(is_atom()),
+        threshold: spec(is_number()),
+        aggregation: spec(is_atom())
+      })
+
+    Enum.map(filters, &conform(&1, filter_schema))
+    |> Enum.find(&match?({:error, _}, &1))
+    |> case do
+      nil ->
+        Enum.map(
+          filters,
+          &([:metric, :from, :to, :operator, :threshold, :aggregation] -- Map.keys(&1))
+        )
+        |> Enum.find(&(&1 != []))
+        |> case do
+          nil -> true
+          fields -> {:error, "A filter has missing fields: #{inspect(fields)}."}
+        end
+
+      error ->
+        error
+    end
   end
 
   defp args_to_filters(args) do

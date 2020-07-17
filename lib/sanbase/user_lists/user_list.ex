@@ -113,19 +113,39 @@ defmodule Sanbase.UserList do
       {:error, error} ->
         {:error, error}
 
-      projects ->
-        result =
-          (projects ++ ListItem.get_projects(watchlist))
+      # If there is pagination, the total number of projects cannot be properly
+      # defined without having all the slugs, including the ones from the other pages
+      {:ok, %{projects: projects, has_pagination?: true, all_included_slugs: all_included_slugs}} ->
+        list_item_projects = ListItem.get_projects(watchlist)
+
+        unique_projects =
+          (projects ++ list_item_projects)
           |> Enum.reject(&is_nil(&1.slug))
           |> Enum.uniq_by(& &1.id)
 
-        {:ok, result}
+        total_projects_count =
+          (Enum.map(list_item_projects, & &1.slug) ++ all_included_slugs)
+          |> Enum.reject(&is_nil(&1.slug))
+          |> Enum.uniq_by(& &1.id)
+          |> length()
+
+        {:ok, %{projects: unique_projects, total_projects_count: total_projects_count}}
+
+      {:ok, %{projects: projects}} ->
+        list_item_projects = ListItem.get_projects(watchlist)
+
+        unique_projects =
+          (projects ++ list_item_projects)
+          |> Enum.reject(&is_nil(&1.slug))
+          |> Enum.uniq_by(& &1.id)
+
+        {:ok, %{projects: unique_projects, total_projects_count: length(unique_projects)}}
     end
   end
 
   def get_slugs(%__MODULE__{function: _} = watchlist) do
     case get_projects(watchlist) do
-      {:ok, projects} ->
+      {:ok, %{projects: projects}} ->
         {:ok, Enum.map(projects, & &1.slug)}
 
       {:error, error} ->

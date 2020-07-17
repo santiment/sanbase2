@@ -170,7 +170,7 @@ defmodule Sanbase.Signal.Trigger do
 
       %Sanbase.UserList{} = user_list ->
         case Sanbase.UserList.get_projects(user_list) do
-          {:ok, projects} ->
+          {:ok, %{projects: projects}} ->
             projects
             |> Enum.map(& &1.slug)
             |> remove_targets_on_cooldown(trigger, :slug)

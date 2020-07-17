@@ -305,6 +305,7 @@ defmodule Sanbase.Billing.Subscription do
     |> AccessChecker.realtime_data_cut_off_in_days(query_or_metric, product_id)
   end
 
+  def plan_name(nil), do: :free
   def plan_name(%__MODULE__{plan: plan}), do: plan |> Plan.plan_atom_name()
 
   def create_or_update_stripe_customer(_, _card_token \\ nil)

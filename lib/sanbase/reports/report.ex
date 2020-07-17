@@ -57,10 +57,10 @@ defmodule Sanbase.Report do
     report |> Repo.delete()
   end
 
-  def get_by_tags(tags, subscription) do
+  def get_by_tags(tags, plan_atom_name) do
     __MODULE__
     |> get_by_tags_query(tags)
-    |> get_published_reports_query(subscription)
+    |> get_published_reports_query(plan_atom_name)
     |> Repo.all()
   end
 
@@ -77,9 +77,9 @@ defmodule Sanbase.Report do
     Repo.all(__MODULE__)
   end
 
-  def get_published_reports(subscription) do
+  def get_published_reports(plan_atom_name) do
     __MODULE__
-    |> get_published_reports_query(subscription)
+    |> get_published_reports_query(plan_atom_name)
     |> Repo.all()
   end
 
@@ -107,15 +107,11 @@ defmodule Sanbase.Report do
     from(r in query, where: fragment("select ? && ?", r.tags, ^tags))
   end
 
-  defp get_published_reports_query(query, nil) do
+  defp get_published_reports_query(query, :free) do
     from(r in query, where: r.is_published == true and r.is_pro == false)
   end
 
-  defp get_published_reports_query(query, %{plan: %{name: "FREE"}}) do
-    from(r in query, where: r.is_published == true and r.is_pro == false)
-  end
-
-  defp get_published_reports_query(query, %{plan: %{name: "PRO"}}) do
+  defp get_published_reports_query(query, :pro) do
     from(r in query, where: r.is_published == true)
   end
 

@@ -18,14 +18,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.ReportResolver do
   def get_reports(_root, _args, %{context: %{auth: %{current_user: user}}}) do
     reports =
       Subscription.current_subscription(user, @product_sanbase)
+      |> Subscription.plan_name()
       |> Report.get_published_reports()
 
     {:ok, reports}
   end
 
   def get_reports_by_tags(_root, %{tags: tags}, %{context: %{auth: %{current_user: user}}}) do
-    subscription = Subscription.current_subscription(user, @product_sanbase)
-    reports = Report.get_by_tags(tags, subscription)
+    plan =
+      Subscription.current_subscription(user, @product_sanbase)
+      |> Subscription.plan_name()
+
+    reports = Report.get_by_tags(tags, plan)
 
     {:ok, reports}
   end

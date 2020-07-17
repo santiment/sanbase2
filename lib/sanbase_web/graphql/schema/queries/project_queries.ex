@@ -59,7 +59,7 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       cache_resolve(&ProjectListResolver.all_currency_projects/3)
     end
 
-    field :all_projects_by_function, list_of(:project) do
+    field :all_projects_by_function, :projects_object do
       meta(access: :free)
 
       arg(:function, :json)

@@ -68,6 +68,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:anomalies, list_of(:string))
   end
 
+  object :projects_object_stats do
+    field(:projects_count, non_null(:integer))
+  end
+
+  object :projects_object do
+    field(:projects, list_of(:project))
+    field(:stats, :projects_object_stats)
+  end
+
   # Includes all available fields
   @desc ~s"""
   A type fully describing a project.

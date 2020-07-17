@@ -28,7 +28,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
         _args,
         resolution
       ) do
-    with {:ok, projects} <- UserList.get_projects(user_list) do
+    with {:ok, %{projects: projects}} <- UserList.get_projects(user_list) do
       trending_words_stats = trending_words_stats(projects, resolution)
       result = Map.merge(trending_words_stats, %{projects_count: length(projects)})
       {:ok, result}
@@ -97,7 +97,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
         %{from: from, to: to, interval: interval},
         _resolution
       ) do
-    with {:ok, projects} <- UserList.get_projects(user_list),
+    with {:ok, %{projects: projects}} <- UserList.get_projects(user_list),
          slugs when is_list(slugs) <- Enum.map(projects, & &1.slug),
          {:ok, result} <- Sanbase.Price.combined_marketcap_and_volume(slugs, from, to, interval) do
       {:ok, result}
@@ -112,7 +112,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
 
   def list_items(%UserList{} = user_list, _args, _resolution) do
     case UserList.get_projects(user_list) do
-      {:ok, projects} ->
+      {:ok, %{projects: projects}} ->
         result =
           projects
           |> Project.preload_assocs()

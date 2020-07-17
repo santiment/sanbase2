@@ -72,7 +72,8 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
   end
 
   def get_data(%__MODULE__{operation: %{selector: _} = selector}) do
-    {:ok, slugs} = Project.ListSelector.slugs(selector)
+    {:ok, %{slugs: slugs}} = Project.ListSelector.slugs(selector)
+
     slugs
   end
 

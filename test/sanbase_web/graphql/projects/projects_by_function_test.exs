@@ -106,6 +106,54 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionTest do
     end)
   end
 
+  test "projects by function for selector with filersCombinator OR", context do
+    %{conn: conn, p1: p1, p2: p2, p3: p3, p4: p4} = context
+
+    function = %{
+      "name" => "selector",
+      "args" => %{
+        "filtersCombinator" => :or,
+        "filters" => [
+          %{
+            "metric" => "daily_active_addresses",
+            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
+            "to" => "#{Timex.now()}",
+            "aggregation" => "#{:last}",
+            "operator" => "#{:greater_than_or_equal_to}",
+            "threshold" => 100
+          },
+          %{
+            "metric" => "price_usd",
+            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
+            "to" => "#{Timex.now()}",
+            "aggregation" => "#{:last}",
+            "operator" => "#{:greater_than}",
+            "threshold" => 10
+          }
+        ]
+      }
+    }
+
+    Sanbase.Mock.prepare_mock(Sanbase.Metric, :slugs_by_filter, fn
+      "daily_active_addresses", _, _, _, _, _ -> {:ok, [p1.slug, p2.slug, p3.slug]}
+      "price_usd", _, _, _, _, _ -> {:ok, [p2.slug, p3.slug, p4.slug]}
+    end)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        execute_query(conn, query(function))
+        |> get_in(["data", "allProjectsByFunction"])
+
+      projects = result["projects"]
+      stats = result["stats"]
+
+      assert stats == %{"projectsCount" => 4}
+      assert length(projects) == 4
+
+      slugs = Enum.map(projects, & &1["slug"]) |> Enum.sort()
+      assert slugs == [p1.slug, p2.slug, p3.slug, p4.slug] |> Enum.sort()
+    end)
+  end
+
   test "projects by function for market segments", %{conn: conn} do
     function = %{"name" => "market_segment", "args" => %{"market_segment" => "stablecoin"}}
 

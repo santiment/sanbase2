@@ -33,6 +33,11 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     value(:desc)
   end
 
+  enum :filters_combinator do
+    value(:and)
+    value(:or)
+  end
+
   input_object :project_pagination_input_object do
     field(:page, non_null(:integer))
     field(:page_size, non_null(:integer))
@@ -59,6 +64,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
   input_object :projects_selector_input_object do
     field(:filters, list_of(:project_filter_input_object))
+    field(:filters_combinator, :filters_combinator, default_value: :and)
     field(:order_by, :project_order_input_object)
     field(:pagination, :project_pagination_input_object)
   end

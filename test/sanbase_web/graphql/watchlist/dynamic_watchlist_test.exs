@@ -14,48 +14,51 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
     coin = insert(:market_segment, %{name: "coin"})
     mineable = insert(:market_segment, %{name: "mineable"})
 
-    insert(:project, %{ticker: "TUSD", slug: "tether", market_segment: stablecoin})
+    p1 = insert(:project, %{ticker: "TUSD", slug: "tether", market_segment: stablecoin})
     insert(:latest_cmc_data, %{coinmarketcap_id: "tether", rank: 4, volume_usd: 3_000_000_000})
 
-    insert(:project, %{
-      ticker: "DAI",
-      slug: "dai",
-      market_segment: stablecoin,
-      infrastructure: infr_eth
-    })
+    p2 =
+      insert(:project, %{
+        ticker: "DAI",
+        slug: "dai",
+        market_segment: stablecoin,
+        infrastructure: infr_eth
+      })
 
     insert(:latest_cmc_data, %{coinmarketcap_id: "dai", rank: 40, volume_usd: 15_000_000})
 
-    insert(:project, %{ticker: "ETH", slug: "ethereum", market_segment: mineable})
+    p3 = insert(:project, %{ticker: "ETH", slug: "ethereum", market_segment: mineable})
     insert(:latest_cmc_data, %{coinmarketcap_id: "ethereum", rank: 2, volume_usd: 3_000_000_000})
 
-    insert(:project, %{ticker: "BTC", slug: "bitcoin", market_segment: mineable})
+    p4 = insert(:project, %{ticker: "BTC", slug: "bitcoin", market_segment: mineable})
     insert(:latest_cmc_data, %{coinmarketcap_id: "bitcoin", rank: 1, volume_usd: 15_000_000_000})
 
-    insert(:project, %{ticker: "XRP", slug: "ripple", market_segment: mineable})
+    p5 = insert(:project, %{ticker: "XRP", slug: "ripple", market_segment: mineable})
     insert(:latest_cmc_data, %{coinmarketcap_id: "ripple", rank: 3, volume_usd: 1_000_000_000})
 
-    insert(:project, %{
-      ticker: "MKR",
-      slug: "maker",
-      market_segment: coin,
-      infrastructure: infr_eth
-    })
+    p6 =
+      insert(:project, %{
+        ticker: "MKR",
+        slug: "maker",
+        market_segment: coin,
+        infrastructure: infr_eth
+      })
 
     insert(:latest_cmc_data, %{coinmarketcap_id: "maker", rank: 20, volume_usd: 150_000_000})
 
-    insert(:project, %{
-      ticker: "SAN",
-      slug: "santiment",
-      market_segment: coin,
-      infrastructure: infr_eth
-    })
+    p7 =
+      insert(:project, %{
+        ticker: "SAN",
+        slug: "santiment",
+        market_segment: coin,
+        infrastructure: infr_eth
+      })
 
     insert(:latest_cmc_data, %{coinmarketcap_id: "santiment", rank: 95, volume_usd: 100_000})
 
     conn = setup_jwt_auth(build_conn(), user)
 
-    {:ok, conn: conn, user: user}
+    {:ok, conn: conn, user: user, p1: p1, p2: p2, p3: p3, p4: p4, p5: p5, p6: p6, p7: p7}
   end
 
   test "wrongly configured function fails on create", %{conn: conn} do
@@ -82,7 +85,11 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
       |> hd()
 
     assert %{
-             "details" => %{"function" => ["Provided watchlist function is not valid."]},
+             "details" => %{
+               "function" => [
+                 "Provided watchlist function is not valid. Reason: Dynamic watchlist 'selector' has unsupported fields: [\"filterss\"]"
+               ]
+             },
              "message" => "Cannot create user list"
            } = error
   end
@@ -113,7 +120,11 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
       |> hd()
 
     assert %{
-             "details" => %{"function" => ["Provided watchlist function is not valid."]},
+             "details" => %{
+               "function" => [
+                 "Provided watchlist function is not valid. Reason: Dynamic watchlist 'selector' has unsupported fields: [\"filterss\"]"
+               ]
+             },
              "message" => "Cannot update user list"
            } = error
   end
@@ -155,6 +166,54 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
       assert %{"project" => %{"slug" => "dai"}} in user_list["listItems"]
       assert %{"project" => %{"slug" => "bitcoin"}} in user_list["listItems"]
       assert %{"project" => %{"slug" => "ethereum"}} in user_list["listItems"]
+    end)
+  end
+
+  test "dynamic watchlist for selector with filtersCombinator OR", context do
+    %{conn: conn, p1: p1, p2: p2, p3: p3, p4: p4, p5: p5} = context
+    # Have at least 1 project that is not included in the result
+    insert(:random_erc20_project)
+
+    function = %{
+      "name" => "selector",
+      "args" => %{
+        "filters_combinator" => :or,
+        "filters" => [
+          %{
+            "metric" => "daily_active_addresses",
+            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
+            "to" => "#{Timex.now()}",
+            "aggregation" => "#{:last}",
+            "operator" => "#{:greater_than_or_equal_to}",
+            "threshold" => 100
+          },
+          %{
+            "metric" => "price_usd",
+            "from" => "#{Timex.shift(Timex.now(), days: -7)}",
+            "to" => "#{Timex.now()}",
+            "aggregation" => "#{:last}",
+            "operator" => "#{:less_than}",
+            "threshold" => 10
+          }
+        ]
+      }
+    }
+
+    Sanbase.Mock.prepare_mock(Sanbase.Metric, :slugs_by_filter, fn
+      "daily_active_addresses", _, _, _, _, _ -> {:ok, [p1.slug, p2.slug, p3.slug]}
+      "price_usd", _, _, _, _, _ -> {:ok, [p3.slug, p4.slug, p5.slug]}
+    end)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result = execute_mutation(conn, create_watchlist_query(function: function))
+
+      user_list = result["data"]["createWatchlist"]
+
+      assert length(user_list["listItems"]) == 5
+      assert %{"project" => %{"slug" => p1.slug}} in user_list["listItems"]
+      assert %{"project" => %{"slug" => p2.slug}} in user_list["listItems"]
+      assert %{"project" => %{"slug" => p3.slug}} in user_list["listItems"]
+      assert %{"project" => %{"slug" => p4.slug}} in user_list["listItems"]
+      assert %{"project" => %{"slug" => p5.slug}} in user_list["listItems"]
     end)
   end
 

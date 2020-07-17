@@ -21,9 +21,11 @@ COPY mix.exs /app/mix.exs
 RUN mix deps.get
 RUN mix deps.compile
 
-COPY ./assets /app/assets
-RUN cd assets && npm install
-RUN cd assets && npm run build:prod
+COPY ./assets/package.json /app/assets/package.json
+COPY ./assets/yarn.lock /app/assets/yarn.lock
+
+RUN cd assets && yarn
+RUN cd assets && yarn build:production
 
 # Copy all files only before compile so we can cache the deps fetching layer
 COPY . /app
@@ -38,8 +40,7 @@ FROM elixir:1.10.3-alpine
 
 ENV MIX_ENV prod
 
-RUN apk add --no-cache bash \
-  imagemagick
+RUN apk add --no-cache bash imagemagick
 
 WORKDIR /app
 

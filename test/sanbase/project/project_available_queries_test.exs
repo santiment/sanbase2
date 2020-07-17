@@ -7,12 +7,6 @@ defmodule Sanbase.Project.AvailableQueriesTest do
   alias Sanbase.Model.Project.AvailableQueries
 
   @slug_metrics ["priceVolumeDiff", "socialGainersLosersStatus"] |> Enum.sort()
-  setup_all_with_mocks([
-    {Sanbase.SocialData.SocialVolume, [:passthrough],
-     [social_volume_projects: fn -> {:ok, ["bitcoin", "ethereum", "santiment"]} end]}
-  ]) do
-    []
-  end
 
   test "ethereum has specific metrics" do
     project =

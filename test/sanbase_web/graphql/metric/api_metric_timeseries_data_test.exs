@@ -22,6 +22,39 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     ]
   end
 
+  test "returns data for labeled metrics", context do
+    %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
+
+    label_metrics =
+      Metric.available_timeseries_metrics()
+      |> Enum.filter(fn metric ->
+        {:ok, %{available_selectors: selectors}} = Metric.metadata(metric)
+        :label in selectors and :owner in selectors
+      end)
+
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Metric.timeseries_data/6,
+      {:ok, [%{datetime: ~U[2020-01-01 00:00:00Z], value: 1.0}]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      for metric <- label_metrics do
+        result =
+          get_timeseries_metric(
+            conn,
+            metric,
+            %{slug: slug, owner: "Binance", label: "centralized_exchange"},
+            from,
+            to,
+            interval,
+            :avg
+          )
+          |> extract_timeseries_data()
+
+        assert result == [%{"value" => 1.0, "datetime" => "2020-01-01T00:00:00Z"}]
+      end
+    end)
+  end
+
   test "returns data for an available metric", context do
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
     aggregation = :avg
@@ -36,7 +69,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
          ]}
       end do
       result =
-        get_timeseries_metric(conn, metric, slug, from, to, interval, aggregation)
+        get_timeseries_metric(conn, metric, %{slug: slug}, from, to, interval, aggregation)
         |> extract_timeseries_data()
 
       assert result == [
@@ -69,7 +102,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
       end do
       result =
         for metric <- metrics do
-          get_timeseries_metric(conn, metric, slug, from, to, interval, aggregation)
+          get_timeseries_metric(conn, metric, %{slug: slug}, from, to, interval, aggregation)
           |> extract_timeseries_data()
         end
 
@@ -95,7 +128,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
       end do
       result =
         for aggregation <- aggregations do
-          get_timeseries_metric(conn, metric, slug, from, to, interval, aggregation)
+          get_timeseries_metric(conn, metric, %{slug: slug}, from, to, interval, aggregation)
           |> extract_timeseries_data()
         end
 
@@ -116,7 +149,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     # aggregation is an enum with available values
     result =
       for aggregation <- rand_aggregations do
-        get_timeseries_metric(conn, metric, slug, from, to, interval, aggregation)
+        get_timeseries_metric(conn, metric, %{slug: slug}, from, to, interval, aggregation)
       end
 
     # Assert that all results are lists where we have a map with values
@@ -132,7 +165,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     # Do not mock the `timeseries_data` function because it's the one that rejects
     for metric <- rand_metrics do
       %{"errors" => [%{"message" => error_message}]} =
-        get_timeseries_metric(conn, metric, slug, from, to, interval, aggregation)
+        get_timeseries_metric(conn, metric, %{slug: slug}, from, to, interval, aggregation)
 
       assert error_message == "The metric '#{metric}' is not supported or is mistyped."
     end
@@ -159,7 +192,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     interval = "1h"
 
     ch_metric_error =
-      get_timeseries_metric(context.conn, "mvrv_usd", slug, from, to, interval, :last)
+      get_timeseries_metric(context.conn, "mvrv_usd", %{slug: slug}, from, to, interval, :last)
       |> get_in(["errors"])
       |> List.first()
       |> get_in(["message"])
@@ -168,7 +201,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
       get_timeseries_metric(
         context.conn,
         "social_volume_telegram",
-        slug,
+        %{slug: slug},
         from,
         to,
         interval,
@@ -195,8 +228,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     |> String.to_integer()
   end
 
-  defp get_timeseries_metric(conn, metric, slug, from, to, interval, aggregation) do
-    query = get_timeseries_query(metric, slug, from, to, interval, aggregation)
+  defp get_timeseries_metric(conn, metric, selector, from, to, interval, aggregation) do
+    query = get_timeseries_query(metric, selector, from, to, interval, aggregation)
 
     conn
     |> post("/graphql", query_skeleton(query, "getMetric"))
@@ -216,12 +249,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     timeseries_data
   end
 
-  defp get_timeseries_query(metric, slug, from, to, interval, aggregation) do
+  defp get_timeseries_query(metric, selector, from, to, interval, aggregation) do
     """
       {
         getMetric(metric: "#{metric}"){
           timeseriesData(
-            slug: "#{slug}",
+            selector: #{map_to_input_object_str(selector)},
             from: "#{from}",
             to: "#{to}",
             interval: "#{interval}",

@@ -1,11 +1,8 @@
 defmodule Sanbase.SocialDominanceTest do
   use SanbaseWeb.ConnCase, async: false
-  import Mockery
   import ExUnit.CaptureLog
 
   alias Sanbase.SocialData.SocialDominance
-  alias Sanbase.SocialData.SocialHelper
-  alias Sanbase.SocialData.MetricAdapter
   import Sanbase.Factory
 
   setup do

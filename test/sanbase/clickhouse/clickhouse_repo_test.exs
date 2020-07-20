@@ -4,7 +4,7 @@ defmodule Sanbase.Clickhouse.ClickhouseRepoTest do
   import ExUnit.CaptureLog
   alias Sanbase.ClickhouseRepo
 
-  test "error handlign when clickhouse repo returns error" do
+  test "error handling when clickhouse repo returns error" do
     error_msg = "something went wrong with the connection"
 
     Sanbase.Mock.prepare_mock2(&ClickhouseRepo.query/2, {:error, error_msg})
@@ -20,7 +20,7 @@ defmodule Sanbase.Clickhouse.ClickhouseRepoTest do
           refute error =~ error_msg
 
           # assert error starts with UUID
-          assert <<"["::utf8, uuid::binary-size(36), "]"::utf8, message::binary>> = error
+          assert <<"["::utf8, _uuid::binary-size(36), "]"::utf8, _message::binary>> = error
         end)
 
       # Only the log contains the internal error returned from CH
@@ -28,7 +28,7 @@ defmodule Sanbase.Clickhouse.ClickhouseRepoTest do
     end)
   end
 
-  test "error handlign when clickhouse throws exception" do
+  test "error handling when clickhouse throws exception" do
     error_msg = "something went wrong with the connection"
 
     Sanbase.Mock.prepare_mock(ClickhouseRepo, :query, fn _, _ -> raise(error_msg) end)
@@ -44,7 +44,7 @@ defmodule Sanbase.Clickhouse.ClickhouseRepoTest do
           refute error =~ error_msg
 
           # assert error starts with UUID
-          assert <<"["::utf8, uuid::binary-size(36), "]"::utf8, message::binary>> = error
+          assert <<"["::utf8, _uuid::binary-size(36), "]"::utf8, _message::binary>> = error
         end)
 
       # Only the log contains the internal error returned from CH

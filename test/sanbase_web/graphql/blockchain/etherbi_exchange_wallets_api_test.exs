@@ -2,7 +2,6 @@ defmodule Sanbase.Etherbi.ExchangeWalletsApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.Factory
 
   setup do
     [
@@ -13,7 +12,7 @@ defmodule Sanbase.Etherbi.ExchangeWalletsApiTest do
   test "returning an error when there is no basic auth" do
     query = """
     {
-      exchangeWallets{
+      exchangeWallets(slug: "ethereum"){
         address
         name
         isDex

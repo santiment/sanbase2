@@ -1,13 +1,7 @@
 defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Model.{
-    Project,
-    ProjectEthAddress,
-    ExchangeAddress
-  }
-
-  alias Sanbase.Repo
+  alias Sanbase.Model.Project
 
   import Mock
   import SanbaseWeb.Graphql.TestHelpers

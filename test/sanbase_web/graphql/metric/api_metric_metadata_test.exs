@@ -28,6 +28,16 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
       assert metadata["dataType"] in ["TIMESERIES", "HISTOGRAM"]
       assert metadata["isRestricted"] in [true, false]
 
+      assert Enum.all?(
+               metadata["availableSelectors"],
+               &Enum.member?(["SLUG", "TEXT", "LABEL", "OWNER", "HOLDERS_COUNT"], &1)
+             )
+
+      assert Enum.all?(
+               metadata["availableAggregations"],
+               &Enum.member?(aggregations, &1)
+             )
+
       assert is_nil(metadata["restrictedFrom"]) or
                match?(
                  %DateTime{},
@@ -65,6 +75,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
         metadata{
           minInterval
           defaultAggregation
+          availableAggregations
+          availableSelectors
           dataType
           metric
           humanReadableName

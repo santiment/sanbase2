@@ -110,20 +110,27 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
     GenServer.call(@name, {:add_exchange_wallets, wallets})
   end
 
-  defp fill_state() do
-    case ExchangeAddress.exchange_addresses("ethereum") do
-      {:ok, addresses} ->
-        mapset = addresses |> MapSet.new(&String.downcase/1)
+  # This is running every time the app is started, so it would require a
+  # global mock across all test suites. In the only test where it is used,
+  # the state is filled with the explicit add_exchange_wallets/1 call
+  if Mix.env() == :test do
+    defp fill_state(), do: %{exchange_wallets_set: MapSet.new(), updated_at: Timex.now()}
+  else
+    defp fill_state() do
+      case ExchangeAddress.exchange_addresses("ethereum") do
+        {:ok, addresses} ->
+          mapset = addresses |> MapSet.new(&String.downcase/1)
 
-        Map.put(%{}, :exchange_wallets_set, mapset)
-        |> Map.put(:updated_at, Timex.now())
+          Map.put(%{}, :exchange_wallets_set, mapset)
+          |> Map.put(:updated_at, Timex.now())
 
-      _ ->
-        # Try to fill the state after 5 seconds
-        Process.send_after(self(), :set_state, 5_000)
+        _ ->
+          # Try to fill the state after 5 seconds
+          Process.send_after(self(), :set_state, 5_000)
 
-        Map.put(%{}, :exchange_wallets_set, MapSet.new())
-        |> Map.put(:updated_at, Timex.now())
+          Map.put(%{}, :exchange_wallets_set, MapSet.new())
+          |> Map.put(:updated_at, Timex.now())
+      end
     end
   end
 end

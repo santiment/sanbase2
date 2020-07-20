@@ -161,7 +161,7 @@ defmodule SanbaseWeb.Graphql.Kafka.SubscriptionTest do
 
     test "subscribe to given exchange - doesn't receive other sources", %{socket: socket} do
       ref = push_doc(socket, @exchange_market_depth_sub, variables: %{"exchange" => "Poloniex"})
-      assert_reply(ref, :ok, %{subscriptionId: subscription_id})
+      assert_reply(ref, :ok, %{subscriptionId: _subscription_id})
 
       message = ExchangeMarketDepth.format_message(@exchange_market_depth_example)
       Subscription.publish(message, "exchange_market_depth")

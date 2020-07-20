@@ -62,7 +62,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
       end do
       result =
         for metric <- metrics do
-          get_histogram_metric(conn, metric, slug, from, to)
+          get_histogram_metric(conn, metric, slug, from, to, "1d", 100)
           |> get_in(["data", "getMetric", "histogramData"])
         end
 
@@ -88,7 +88,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
         "errors" => [
           %{"message" => error_message}
         ]
-      } = get_histogram_metric(conn, metric, slug, from, to)
+      } = get_histogram_metric(conn, metric, slug, from, to, "1d", 100)
 
       assert error_message == "The metric '#{metric}' is not supported or is mistyped."
     end
@@ -170,7 +170,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
     end
   end
 
-  defp get_histogram_metric(conn, metric, slug, from, to, interval \\ "1d", limit \\ 100) do
+  defp get_histogram_metric(conn, metric, slug, from, to, interval, limit) do
     query = get_histogram_query(metric, slug, from, to, interval, limit)
 
     conn
@@ -178,7 +178,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
     |> json_response(200)
   end
 
-  defp get_histogram_metric_without_slug(conn, metric, from, to, interval \\ "1d", limit \\ 100) do
+  defp get_histogram_metric_without_slug(conn, metric, from, to, interval, limit) do
     query = get_histogram_query_without_slug(metric, from, to, interval, limit)
 
     conn

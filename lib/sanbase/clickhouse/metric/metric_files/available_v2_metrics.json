@@ -1928,5 +1928,85 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Number of Non-Zero Transfers Moving ",
+    "name": "payments_count",
+    "metric": "payment_count",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Number of Payments for a Given Day",
+    "name": "transactions_count",
+    "metric": "transaction_count",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Fees paid in ETH",
+    "name": "fees",
+    "metric": "fees",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Daily Network Circulation in USD",
+    "name": "network_circulation_usd_1d",
+    "metric": "network_circulation_usd_1d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Fees in USD to Daily Network Circulation in USD",
+    "name": "fees_to_network_circulation_usd_1d",
+    "metric": "fees_to_network_circulation_usd_1d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
   }
 ]

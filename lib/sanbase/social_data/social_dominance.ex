@@ -1,8 +1,6 @@
 defmodule Sanbase.SocialData.SocialDominance do
   import Sanbase.Utils.ErrorHandling
-  import Sanbase.DateTimeUtils, only: [round_datetime: 1]
 
-  alias Sanbase.Cache
   alias Sanbase.SocialData.SocialHelper
 
   require Mockery.Macro

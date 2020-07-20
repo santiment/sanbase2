@@ -28,8 +28,6 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
 
   use GenServer
 
-  alias Sanbase.Clickhouse.ExchangeAddress
-
   @refresh_interval_min 10
   @name :mark_exchange_wallets_gen_server
 
@@ -117,7 +115,7 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
     defp fill_state(), do: %{exchange_wallets_set: MapSet.new(), updated_at: Timex.now()}
   else
     defp fill_state() do
-      case ExchangeAddress.exchange_addresses("ethereum") do
+      case Sanbase.Clickhouse.ExchangeAddress.exchange_addresses("ethereum") do
         {:ok, addresses} ->
           mapset = addresses |> MapSet.new(&String.downcase/1)
 

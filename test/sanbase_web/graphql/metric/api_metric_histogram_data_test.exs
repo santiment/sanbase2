@@ -100,13 +100,15 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
     interval = "1d"
     [metric | _] = Metric.available_histogram_metrics()
 
-    # Do not mock the `timeseries_data` function because it's the one that rejects
-    %{"errors" => [%{"message" => error_message}]} =
-      get_histogram_metric_without_slug(conn, metric, from, to, interval, limit)
+    assert capture_log(fn ->
+             # Do not mock the `timeseries_data` function because it's the one that rejects
+             %{"errors" => [%{"message" => error_message}]} =
+               get_histogram_metric_without_slug(conn, metric, from, to, interval, limit)
 
-    assert error_message =~
-             "Can't fetch #{metric} for an empty selector: , Reason: \"The selector must have at least one field provided." <>
-               "The available selector fields for a metric are listed in the metadata's availableSelectors field.\""
+             assert error_message =~
+                      "Can't fetch #{metric} for an empty selector: , Reason: \"The selector must have at least one field provided." <>
+                        "The available selector fields for a metric are listed in the metadata's availableSelectors field.\""
+           end) =~ "Can't fetch #{metric} for an empty selector"
   end
 
   test "all_spent_coins_cost histogram - converts interval to full days and successfully returns",

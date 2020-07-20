@@ -430,6 +430,7 @@
     "metric": "holders_distribution_more_than_1",
     "version": "2019-01-01",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -446,6 +447,7 @@
     "metric": "holders_distribution_more_than_1e1",
     "version": "2019-01-01",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -462,6 +464,7 @@
     "metric": "holders_distribution_more_than_1e2",
     "version": "2019-01-01",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -478,6 +481,7 @@
     "metric": "holders_distribution_more_than_1e3",
     "version": "2019-01-01",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -494,6 +498,7 @@
     "metric": "holders_distribution_more_than_1e4",
     "version": "2019-01-01",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -510,6 +515,7 @@
     "metric": "holders_distribution_more_than_1e5",
     "version": "2019-01-01",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -526,6 +532,7 @@
     "metric": "holders_distribution_more_than_1e6",
     "version": "2019-01-01",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -542,6 +549,7 @@
     "metric": "holders_distribution_amount_more_than_1",
     "version": "2019-01-01",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -558,6 +566,7 @@
     "metric": "holders_distribution_amount_more_than_1e1",
     "version": "2019-01-01",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -574,6 +583,7 @@
     "metric": "holders_distribution_amount_more_than_1e2",
     "version": "2019-01-01",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -590,6 +600,7 @@
     "metric": "holders_distribution_amount_more_than_1e3",
     "version": "2019-01-01",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -606,6 +617,7 @@
     "metric": "holders_distribution_amount_more_than_1e4",
     "version": "2019-01-01",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -622,6 +634,7 @@
     "metric": "holders_distribution_amount_more_than_1e5",
     "version": "2019-01-01",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -638,6 +651,7 @@
     "metric": "holders_distribution_amount_more_than_1e6",
     "version": "2019-01-01",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"

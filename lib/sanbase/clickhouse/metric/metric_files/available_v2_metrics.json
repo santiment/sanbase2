@@ -2056,6 +2056,7 @@
     "metric": "payment_count",
     "version": "2019-01-01",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -2072,6 +2073,7 @@
     "metric": "transaction_count",
     "version": "2019-01-01",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -2088,6 +2090,7 @@
     "metric": "fees",
     "version": "2019-01-01",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -2104,6 +2107,7 @@
     "metric": "network_circulation_usd_1d",
     "version": "2019-01-01",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"
@@ -2120,6 +2124,7 @@
     "metric": "fees_to_network_circulation_usd_1d",
     "version": "2019-01-01",
     "access": "restricted",
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "free",
       "SANBASE": "free"

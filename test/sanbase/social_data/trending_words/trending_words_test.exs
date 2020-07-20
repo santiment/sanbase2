@@ -6,6 +6,8 @@ defmodule Sanbase.SocialData.TrendingWordsTest do
 
   alias Sanbase.SocialData.TrendingWords
 
+  @moduletag capture_log: true
+
   setup do
     [
       dt1_str: "2019-01-01T00:00:00Z",

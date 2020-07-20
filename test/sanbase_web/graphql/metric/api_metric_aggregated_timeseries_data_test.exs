@@ -3,6 +3,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
 
   import Mock
   import Sanbase.Factory
+  import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
@@ -121,13 +122,15 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
     aggregation = :avg
     [metric | _] = Metric.available_timeseries_metrics()
 
-    # Do not mock the `timeseries_data` function because it's the one that rejects
-    %{"errors" => [%{"message" => error_message}]} =
-      get_aggregated_timeseries_metric(conn, metric, from, to, aggregation)
+    assert capture_log(fn ->
+             # Do not mock the `timeseries_data` function because it's the one that rejects
+             %{"errors" => [%{"message" => error_message}]} =
+               get_aggregated_timeseries_metric(conn, metric, from, to, aggregation)
 
-    assert error_message =~
-             "Can't fetch #{metric} for an empty selector: , Reason: \"The selector must have at least one field provided." <>
-               "The available selector fields for a metric are listed in the metadata's availableSelectors field.\""
+             assert error_message =~
+                      "Can't fetch #{metric} for an empty selector: , Reason: \"The selector must have at least one field provided." <>
+                        "The available selector fields for a metric are listed in the metadata's availableSelectors field.\""
+           end) =~ "Can't fetch #{metric} for an empty selector"
   end
 
   # Private functions

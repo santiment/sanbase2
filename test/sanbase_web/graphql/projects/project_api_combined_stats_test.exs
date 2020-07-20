@@ -2,14 +2,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
+  import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.InfluxdbHelpers
 
   require Sanbase.Mock
 
   setup do
-    setup_prices_influxdb()
-
     p1 = insert(:random_erc20_project)
     p2 = insert(:random_erc20_project)
 
@@ -70,10 +68,14 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
   test "the database returns an error", context do
     %{conn: conn, from: from, to: to, slugs: slugs} = context
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "Database error"})
+    error_msg = "Database error"
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, error_msg})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      %{"errors" => [error]} = get_history_stats(conn, from, to, slugs)
-      assert error["message"] =~ "Cannot get combined history stats for a list of slugs."
+      assert capture_log(fn ->
+               %{"errors" => [error]} = get_history_stats(conn, from, to, slugs)
+               assert error["message"] =~ "Cannot get combined history stats for a list of slugs."
+             end) =~ error_msg
     end)
   end
 

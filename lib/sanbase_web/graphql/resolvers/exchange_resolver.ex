@@ -5,7 +5,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
     only: [maybe_handle_graphql_error: 2, handle_graphql_error: 4]
 
   alias Sanbase.Clickhouse.ExchangeAddress
-  alias Sanbase.Clickhouse.EthTransfers
   alias Sanbase.Clickhouse.Exchanges
 
   @doc ~s"List all exchanges"

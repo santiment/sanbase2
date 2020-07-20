@@ -6,13 +6,14 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
 
   setup do
     user = insert(:user)
+    project = insert(:random_project)
     insert(:subscription_premium, user: user)
     conn = setup_jwt_auth(build_conn(), user)
-    {:ok, conn: conn}
+    %{conn: conn, project: project}
   end
 
   test "export get_metric api calls with the metric as argument", context do
-    %{conn: conn} = context
+    %{conn: conn, project: project} = context
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Metric.timeseries_data/6, {:ok, []})
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -20,9 +21,9 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
       to = ~U[2019-01-06 00:00:00Z]
 
       Sanbase.InMemoryKafka.Producer.clear_state()
-      get_metric(conn, "price_usd", "santiment", from, to, "1d")
-      get_metric(conn, "nvt", "santiment", from, to, "1d")
-      get_metric(conn, "daily_active_addresses", "santiment", from, to, "1d")
+      get_metric(conn, "price_usd", project.slug, from, to, "1d")
+      get_metric(conn, "nvt", project.slug, from, to, "1d")
+      get_metric(conn, "daily_active_addresses", project.slug, from, to, "1d")
 
       # force the sending
       Sanbase.KafkaExporter.flush(:api_call_exporter)

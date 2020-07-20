@@ -1,7 +1,7 @@
-defmodule Sanbase.Clickhouse.V2ClickhouseMetadataTest do
+defmodule Sanbase.MetricMetadataTest do
   use Sanbase.DataCase, async: true
 
-  import Sanbase.Factory
+  import Sanbase.Factory, only: [rand_str: 0]
 
   alias Sanbase.Metric
 

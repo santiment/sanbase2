@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   require Logger
 
-  alias Sanbase.Model.Infrastructure
   alias Sanbase.Clickhouse.ExchangeAddress
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
 

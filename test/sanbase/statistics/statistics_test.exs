@@ -9,7 +9,13 @@ defmodule Sanbase.StatisticsTest do
 
   setup_all_with_mocks([
     {Sanbase.Email.Mailchimp, [:passthrough], [unsubscribe_email: fn _ -> :ok end]},
-    {Sanbase.Email.Mailchimp, [:passthrough], [subscribe_email: fn _ -> :ok end]}
+    {Sanbase.Email.Mailchimp, [:passthrough], [subscribe_email: fn _ -> :ok end]},
+    {Sanbase.ClickhouseRepo, [:passthrough],
+     [
+       query: fn _, _ ->
+         {:ok, %{rows: [10]}} |> IO.inspect(label: "CALL MOCKED FUN", limit: :infinity)
+       end
+     ]}
   ]) do
     []
   end

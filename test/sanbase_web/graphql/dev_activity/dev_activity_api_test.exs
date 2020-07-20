@@ -103,11 +103,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
         end do
         result = dev_activity_by_slug(context.conn, project.slug, context.dt1, context.dt3, "1d")
 
-        expected = %{
-          "data" => %{
-            "devActivity" => []
-          }
-        }
+        expected = %{"data" => %{"devActivity" => []}}
 
         assert result == expected
       end

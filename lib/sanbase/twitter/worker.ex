@@ -83,10 +83,12 @@ defmodule Sanbase.Twitter.Worker do
     rescue
       _e in ExTwitter.RateLimitExceededError ->
         Logger.info("Rate limit to twitter exceeded.")
+        fetch_twitter_user_data(twitter_name)
         nil
 
       e in ExTwitter.ConnectionError ->
         Logger.warn("Connection error while trying to fetch twitter user data: #{e.reason}")
+        fetch_twitter_user_data(twitter_name)
         nil
 
       e in ExTwitter.Error ->
@@ -97,6 +99,8 @@ defmodule Sanbase.Twitter.Worker do
         nil
     end
   end
+
+  defp fetch_and_store("http://" <> rest), do: fetch_and_store("https://" <> rest)
 
   defp fetch_and_store("https://twitter.com/" <> twitter_name) do
     # Ignore trailing slash and everything after it

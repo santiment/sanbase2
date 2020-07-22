@@ -56,14 +56,6 @@ defmodule Sanbase.Application.Scrapers do
         time_between_requests: 10
       ),
 
-      # Twittercounter API rate limiter
-      Sanbase.ExternalServices.RateLimiting.Server.child_spec(
-        :twittercounter_api_rate_limiter,
-        scale: 60 * 60 * 1000,
-        limit: 100,
-        time_between_requests: 100
-      ),
-
       # Price fetcher
       Sanbase.ExternalServices.Coinmarketcap,
 
@@ -72,9 +64,6 @@ defmodule Sanbase.Application.Scrapers do
 
       # Twitter account data tracking worker
       Sanbase.Twitter.Worker,
-
-      # Twitter account historical data
-      Sanbase.Twitter.HistoricalData,
 
       # Quantum Scheduler
       start_if(

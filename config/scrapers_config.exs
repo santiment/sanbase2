@@ -25,9 +25,3 @@ config :sanbase, Sanbase.Twitter.Worker,
   # 6 hours
   update_interval: 1000 * 60 * 60 * 6,
   sync_enabled: {:system, "TWITTER_SCRAPER_ENABLED", false}
-
-config :sanbase, Sanbase.Twitter.HistoricalData,
-  apikey: {:system, "TWITTERCOUNTER_API_KEY"},
-  # 1 day
-  update_interval: 1000 * 60 * 60 * 24,
-  sync_enabled: {:system, "TWITTERCOUNTER_SCRAPER_ENABLED", false}

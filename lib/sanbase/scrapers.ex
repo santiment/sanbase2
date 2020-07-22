@@ -65,9 +65,6 @@ defmodule Sanbase.Application.Scrapers do
       # Twitter account data tracking worker
       Sanbase.Twitter.Worker,
 
-      # Twitter account historical data
-      Sanbase.Twitter.HistoricalData,
-
       # Quantum Scheduler
       start_if(
         fn -> {Sanbase.Scrapers.Scheduler, []} end,

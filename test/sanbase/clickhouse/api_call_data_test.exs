@@ -3,7 +3,6 @@ defmodule Sanbase.Clickhouse.ApiCallDataTest do
 
   import Sanbase.Factory
   import ExUnit.CaptureLog
-  import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
 
   alias Sanbase.Clickhouse.ApiCallData
 

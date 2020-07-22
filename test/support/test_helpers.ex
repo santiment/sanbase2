@@ -8,6 +8,9 @@ defmodule Sanbase.TestHelpers do
 
         # The mocks are linked to the process that setup all the tests and are
         # automatically unloaded when that process shuts down
+        on_exit(fn ->
+          :meck.unload()
+        end)
 
         unquote(setup_block)
       end

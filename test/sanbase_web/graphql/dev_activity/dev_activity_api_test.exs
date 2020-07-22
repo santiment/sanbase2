@@ -117,7 +117,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
   describe "dev activity for market segments" do
     test "one segment with multiple projects", context do
       Sanbase.Mock.prepare_mock2(
-        &Sanbase.Metric.timeseries_data/6,
+        &Sanbase.Clickhouse.Metric.timeseries_data/6,
         {:ok,
          [
            %{datetime: context.dt1, value: 100},
@@ -150,7 +150,10 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
     end
 
     test "multiple segments that no project has", context do
-      Sanbase.Mock.prepare_mock2(&Sanbase.Metric.timeseries_data/5, {:ok, []})
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Clickhouse.Github.MetricAdapter.timeseries_data/6,
+        {:ok, []}
+      )
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
           dev_activity_by_market_segment_all_of(
@@ -168,10 +171,6 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
         }
 
         assert result == expected
-
-        # No call is made as the function call is now inside Enum.map/2 and if
-        # there are no slugs, the map function is never executed
-        refute called(Sanbase.Metric.timeseries_data(:_, :_, :_, :_, :_))
       end)
     end
   end

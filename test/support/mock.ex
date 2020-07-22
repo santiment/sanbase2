@@ -15,13 +15,15 @@ defmodule Sanbase.Mock do
     @arity arity
 
     defp do_wrap_consecutives(list, unquote(arity), cycle?) do
-      key = :rand.uniform(1_000_000_000)
+      ets_table = Sanbase.TestSetupService.get_ets_table_name()
+
+      key = {:wrap_consecutive_key, :rand.uniform(1_000_000_000)}
       list_length = list |> length
-      :persistent_term.put(key, 0)
 
       fn unquote_splicing(Macro.generate_arguments(@arity, __MODULE__)) ->
-        position = :persistent_term.get(key)
-        :persistent_term.put(key, position + 1)
+        # Start from -1 as the returned position is the one after the applied counter
+        # so the first fetched position is 0
+        position = :ets.update_counter(ets_table, key, {2, 1}, {key, -1})
 
         fun =
           case cycle? do

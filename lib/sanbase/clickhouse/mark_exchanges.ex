@@ -117,7 +117,7 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
     defp fill_state() do
       case Sanbase.Clickhouse.ExchangeAddress.exchange_addresses("ethereum") do
         {:ok, addresses} ->
-          mapset = addresses |> MapSet.new(&String.downcase/1)
+          mapset = addresses |> Enum.map(& &1.address) |> MapSet.new(&String.downcase/1)
 
           Map.put(%{}, :exchange_wallets_set, mapset)
           |> Map.put(:updated_at, Timex.now())

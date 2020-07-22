@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiAnomalyTimeseriesDataTest do
   import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Sanbase.Anomaly
 
@@ -15,8 +14,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiAnomalyTimeseriesDataTest do
     [
       conn: conn,
       slug: "ethereum",
-      from: from_iso8601!("2019-01-01T00:00:00Z"),
-      to: from_iso8601!("2019-01-02T00:00:00Z"),
+      from: ~U[2019-01-01 00:00:00Z],
+      to: ~U[2019-01-02 00:00:00Z],
       interval: "1d"
     ]
   end
@@ -30,8 +29,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiAnomalyTimeseriesDataTest do
       timeseries_data: fn _, _, _, _, _, _ ->
         {:ok,
          [
-           %{value: 100.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
-           %{value: 200.0, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
+           %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z]},
+           %{value: 200.0, datetime: ~U[2019-01-02 00:00:00Z]}
          ]}
       end do
       result =
@@ -58,14 +57,15 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiAnomalyTimeseriesDataTest do
     aggregation = :avg
     anomalies = Anomaly.available_anomalies()
 
-    with_mock Anomaly, [:passthrough],
-      timeseries_data: fn _, _, _, _, _, _ ->
-        {:ok,
-         [
-           %{value: 100.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
-           %{value: 200.0, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
-         ]}
-      end do
+    Sanbase.Mock.prepare_mock2(
+      &Anomaly.timeseries_data/6,
+      {:ok,
+       [
+         %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z]},
+         %{value: 200.0, datetime: ~U[2019-01-02 00:00:00Z]}
+       ]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         for anomaly <- anomalies do
           get_timeseries_anomaly(conn, anomaly, slug, from, to, interval, aggregation)
@@ -74,24 +74,25 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiAnomalyTimeseriesDataTest do
 
       # Assert that all results are lists where we have a map with values
       assert Enum.all?(result, &match?([%{"datetime" => _, "value" => _} | _], &1))
-    end
+    end)
   end
 
   test "returns data for all available aggregations", context do
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
     aggregations = Anomaly.available_aggregations()
     # nil means aggregation is not passed, we should not explicitly pass it
-    aggregations = aggregations -- [nil]
-    [anomaly | _] = Anomaly.available_anomalies()
+    anomaly = Anomaly.available_anomalies() |> Enum.random()
+    {:ok, %{available_aggregations: aggregations}} = Anomaly.metadata(anomaly)
 
-    with_mock Anomaly, [:passthrough],
-      timeseries_data: fn _, _, _, _, _, _ ->
-        {:ok,
-         [
-           %{value: 100.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
-           %{value: 200.0, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
-         ]}
-      end do
+    Sanbase.Mock.prepare_mock2(
+      &Anomaly.timeseries_data/6,
+      {:ok,
+       [
+         %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z]},
+         %{value: 200.0, datetime: ~U[2019-01-02 00:00:00Z]}
+       ]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         for aggregation <- aggregations do
           get_timeseries_anomaly(conn, anomaly, slug, from, to, interval, aggregation)
@@ -100,7 +101,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiAnomalyTimeseriesDataTest do
 
       # Assert that all results are lists where we have a map with values
       assert Enum.all?(result, &match?([%{"datetime" => _, "value" => _} | _], &1))
-    end
+    end)
   end
 
   test "returns error for unavailable aggregations", context do

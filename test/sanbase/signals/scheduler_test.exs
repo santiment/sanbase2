@@ -19,7 +19,7 @@ defmodule Sanbase.Signal.SchedulerTest do
 
     trigger_settings = %{
       type: "metric_signal",
-      metric: Sanbase.Metric.available_metrics() |> hd(),
+      metric: "active_addresses_24h",
       target: %{slug: project.slug},
       channel: "telegram",
       operation: %{above: 300}
@@ -40,7 +40,7 @@ defmodule Sanbase.Signal.SchedulerTest do
         fn -> {:ok, [%{datetime: datetimes |> List.first(), value: 100}]} end,
         fn -> {:ok, [%{datetiem: datetimes |> List.last(), value: 5000}]} end
       ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 5)
+      |> Sanbase.Mock.wrap_consecutives(arity: 6)
 
     [
       trigger: trigger,
@@ -61,7 +61,7 @@ defmodule Sanbase.Signal.SchedulerTest do
     })
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Metric.timeseries_data/5,
+      &Sanbase.Clickhouse.Metric.timeseries_data/6,
       {:ok, [%{datetime: Timex.now(), value: 5000}]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -98,10 +98,10 @@ defmodule Sanbase.Signal.SchedulerTest do
     end)
   end
 
-  test "successfull signal is written in signals_historical_activity", context do
+  test "successful signal is written in signals_historical_activity", context do
     %{mock_fun: mock_fun, user: user, project: project} = context
 
-    Sanbase.Mock.prepare_mock(Sanbase.Metric, :timeseries_data, mock_fun)
+    Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.Metric, :timeseries_data, mock_fun)
     |> Sanbase.Mock.run_with_mocks(fn ->
       Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
 
@@ -124,7 +124,7 @@ defmodule Sanbase.Signal.SchedulerTest do
     end)
   end
 
-  test "successfull signal is written in timeline_events", context do
+  test "successful signal is written in timeline_events", context do
     %{
       mock_fun: mock_fun,
       user: user,
@@ -132,7 +132,7 @@ defmodule Sanbase.Signal.SchedulerTest do
       project: project
     } = context
 
-    Sanbase.Mock.prepare_mock(Sanbase.Metric, :timeseries_data, mock_fun)
+    Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.Metric, :timeseries_data, mock_fun)
     |> Sanbase.Mock.run_with_mocks(fn ->
       Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
 
@@ -171,7 +171,7 @@ defmodule Sanbase.Signal.SchedulerTest do
 
     trigger_settings = %{
       type: "metric_signal",
-      metric: Sanbase.Metric.available_metrics() |> hd(),
+      metric: "active_addresses_24h",
       target: %{slug: project.slug},
       channel: "email",
       operation: %{above: 300}
@@ -185,7 +185,7 @@ defmodule Sanbase.Signal.SchedulerTest do
         settings: trigger_settings
       })
 
-    Sanbase.Mock.prepare_mock(Sanbase.Metric, :timeseries_data, mock_fun)
+    Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.Metric, :timeseries_data, mock_fun)
     |> Sanbase.Mock.run_with_mocks(fn ->
       Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
       ut = Sanbase.Repo.get(UserTrigger, trigger.id)

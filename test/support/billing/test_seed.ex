@@ -4,6 +4,8 @@ defmodule Sanbase.Billing.TestSeed do
   @key :product_and_plans_map_for_tests
 
   def seed_products_and_plans() do
+    ets_table = Sanbase.TestSetupService.get_ets_table_name()
+
     case Sanbase.Repo.get(Sanbase.Billing.Product, 1) do
       nil ->
         product_api = insert(:product_api)
@@ -30,11 +32,12 @@ defmodule Sanbase.Billing.TestSeed do
             insert(:plan_exchange_wallets_extension, product: product_exchange_wallets)
         }
 
-        :persistent_term.put(@key, data)
+        true = :ets.insert(ets_table, {@key, data})
         data
 
       _ ->
-        :persistent_term.get(@key)
+        [{@key, data}] = :ets.lookup(ets_table, @key)
+        data
     end
   end
 end

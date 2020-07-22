@@ -121,7 +121,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   end
 
   describe "subscribe mutation" do
-    test "successfull subscribe returns subscription", context do
+    test "successful subscribe returns subscription", context do
       query = subscribe_mutation(context.plans.plan_essential.id)
       response = execute_mutation(context.conn, query, "subscribe")
 
@@ -129,7 +129,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       assert response["plan"]["name"] == context.plans.plan_essential.name
     end
 
-    test "successfull subscribe when user has stripe_customer_id", context do
+    test "successful subscribe when user has stripe_customer_id", context do
       context.user |> User.changeset(%{stripe_customer_id: "alabala"}) |> Sanbase.Repo.update!()
 
       query = subscribe_mutation(context.plans.plan_essential.id)

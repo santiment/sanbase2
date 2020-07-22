@@ -98,6 +98,8 @@ defmodule Sanbase.Twitter.Worker do
     end
   end
 
+  defp fetch_and_store("http://" <> rest), do: fetch_and_store("https://" <> rest)
+
   defp fetch_and_store("https://twitter.com/" <> twitter_name) do
     # Ignore trailing slash and everything after it
     twitter_name = String.split(twitter_name, "/") |> hd

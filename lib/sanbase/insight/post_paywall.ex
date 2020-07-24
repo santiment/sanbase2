@@ -29,23 +29,13 @@ defmodule Sanbase.Insight.PostPaywall do
     end
   end
 
-  defp maybe_filter(%Post{} = insight, querying_user_id) do
-    do_filter(insight, querying_user_id)
-  end
-
   defp maybe_filter(insights, querying_user_id) when is_list(insights) do
     Enum.map(insights, &do_filter(&1, querying_user_id))
   end
 
   defp do_filter(%Post{is_paywall_required: false} = insight, _), do: insight
 
-  defp do_filter(%Post{user_id: user_id} = insight, querying_user_id)
-       when not is_nil(querying_user_id) and user_id == querying_user_id,
-       do: insight
-
-  defp do_filter(%Post{short_desc: short_desc} = insight, _) when is_binary(short_desc) do
-    Map.put(insight, :text, short_desc)
-  end
+  defp do_filter(%Post{user_id: user_id} = insight, user_id), do: insight
 
   defp do_filter(insight, _) do
     Map.put(insight, :text, truncate(insight))

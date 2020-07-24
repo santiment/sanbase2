@@ -93,6 +93,7 @@ defmodule Sanbase.Metric do
     end
   end
 
+  @impl Sanbase.Metric.Behaviour
   def has_incomplete_data?(metric) do
     module = Map.get(@metric_to_module_map, metric)
 
@@ -105,6 +106,7 @@ defmodule Sanbase.Metric do
   aggregations are #{inspect(@aggregations)}. If no aggregation is provided,
   a default one (based on the metric) will be used.
   """
+  @impl Sanbase.Metric.Behaviour
   def timeseries_data(metric, identifier, from, to, interval, opts \\ [])
 
   for %{metric: metric, module: module} <- @timeseries_metric_module_mapping do
@@ -140,6 +142,7 @@ defmodule Sanbase.Metric do
   The available aggregations are #{inspect(@aggregations)}. If no aggregation is
   provided, a default one (based on the metric) will be used.
   """
+  @impl Sanbase.Metric.Behaviour
   def aggregated_timeseries_data(metric, identifier, from, to, opts \\ [])
 
   for %{metric: metric, module: module} <- @timeseries_metric_module_mapping do

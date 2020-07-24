@@ -15,6 +15,8 @@ defmodule Sanbase.Signal.History.MetricHistory do
         }
 
   defimpl Sanbase.Signal.History, for: MetricTriggerSettings do
+    @metric_module Application.compile_env(:sanbase, :metric_module)
+
     import Sanbase.DateTimeUtils, only: [str_to_days: 1]
 
     alias Sanbase.Signal.History.ResultBuilder
@@ -51,7 +53,7 @@ defmodule Sanbase.Signal.History.MetricHistory do
       to = Timex.now()
       shift = @historical_days_from + str_to_days(time_window) - 1
 
-      Sanbase.Metric.timeseries_data(
+      @metric_module.timeseries_data(
         metric,
         target,
         Timex.shift(to, days: -shift),

@@ -4,6 +4,8 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
 
   The metric we're following is configured via the 'metric' parameter
   """
+
+  @metric_module Application.compile_env(:sanbase, :metric_module)
   use Vex.Struct
 
   import Sanbase.{Validation, Signal.Validation}
@@ -13,7 +15,6 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
   alias __MODULE__
   alias Sanbase.Signal.Type
   alias Sanbase.Model.Project
-  alias Sanbase.Metric
   alias Sanbase.Signal.Evaluator.Cache
 
   @trigger_type "metric_signal"
@@ -92,9 +93,9 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
 
     Cache.get_or_store(cache_key, fn ->
       with {:ok, [_ | _] = first} <-
-             Metric.timeseries_data(metric, selector, first, middle, time_window),
+             @metric_module.timeseries_data(metric, selector, first, middle, time_window),
            {:ok, [_ | _] = second} <-
-             Metric.timeseries_data(metric, selector, middle, last, time_window) do
+             @metric_module.timeseries_data(metric, selector, middle, last, time_window) do
         [first |> List.last(), second |> List.last()]
       else
         _ -> {:error, "Cannot fetch #{metric} for #{inspect(selector)}"}
@@ -103,6 +104,8 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
   end
 
   defimpl Sanbase.Signal.Settings, for: MetricTriggerSettings do
+    @metric_module Application.compile_env(:sanbase, :metric_module)
+
     alias Sanbase.Signal.Trigger.MetricTriggerSettings
     alias Sanbase.Signal.{OperationText, ResultBuilder, Trigger.MetricTriggerSettings}
 
@@ -136,7 +139,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
     defp template_kv(values, %{target: %{text: _}} = settings) do
       %{identifier: text} = values
 
-      {:ok, human_readable_name} = Sanbase.Metric.human_readable_name(settings.metric)
+      {:ok, human_readable_name} = @metric_module.human_readable_name(settings.metric)
 
       {operation_template, operation_kv} =
         OperationText.to_template_kv(values, settings.operation)
@@ -172,7 +175,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
           do: [special_symbol: "$", value_transform: &Sanbase.Math.round_float/1],
           else: []
 
-      {:ok, human_readable_name} = Sanbase.Metric.human_readable_name(settings.metric)
+      {:ok, human_readable_name} = @metric_module.human_readable_name(settings.metric)
 
       {operation_template, operation_kv} =
         OperationText.to_template_kv(values, settings.operation, opts)

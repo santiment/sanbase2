@@ -1,4 +1,6 @@
 defmodule SanbaseWeb.Graphql.PriceDataloader do
+  @metric_module Application.compile_env(:sanbase, :metric_module)
+
   alias SanbaseWeb.Graphql.Cache
 
   require Logger
@@ -46,14 +48,14 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
 
   defp do_volume_change(slugs, latest_dt, middle_dt, earliest_dt) do
     with {:ok, volumes_last_24h_map} <-
-           Sanbase.Metric.aggregated_timeseries_data(
+           @metric_module.aggregated_timeseries_data(
              "volume_usd",
              %{slug: slugs},
              middle_dt,
              latest_dt
            ),
          {:ok, volumes_previous_24h_map} <-
-           Sanbase.Metric.aggregated_timeseries_data(
+           @metric_module.aggregated_timeseries_data(
              "volume_usd",
              %{slug: slugs},
              earliest_dt,

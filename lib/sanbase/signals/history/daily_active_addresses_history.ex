@@ -16,6 +16,7 @@ defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
         }
 
   defimpl Sanbase.Signal.History, for: DailyActiveAddressesSettings do
+    @metric_module Application.compile_env(:sanbase, :metric_module)
     import Sanbase.DateTimeUtils, only: [str_to_days: 1]
 
     alias Sanbase.Signal.History.ResultBuilder
@@ -55,7 +56,7 @@ defmodule Sanbase.Signal.History.DailyActiveAddressesHistory do
       to = Timex.now()
       shift = @historical_days_from + str_to_days(time_window) - 1
 
-      Sanbase.Metric.timeseries_data(
+      @metric_module.timeseries_data(
         "daily_active_addresses",
         %{slug: slug},
         Timex.shift(to, days: -shift),

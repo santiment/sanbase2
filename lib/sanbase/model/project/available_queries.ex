@@ -2,6 +2,7 @@ defmodule Sanbase.Model.Project.AvailableQueries do
   @moduledoc ~s"""
   Module for determining what metrics are available for a given project
   """
+  @metric_module Application.compile_env(:sanbase, :metric_module)
 
   alias Sanbase.Model.Project
   require SanbaseWeb.Graphql.Schema
@@ -48,7 +49,7 @@ defmodule Sanbase.Model.Project.AvailableQueries do
   end
 
   defp get_metric_queries(%Project{slug: slug}) do
-    case Sanbase.Metric.available_slugs() do
+    case @metric_module.available_slugs() do
       {:ok, list} -> if slug in list, do: ["getMetric"], else: []
       _ -> []
     end

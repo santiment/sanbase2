@@ -1,4 +1,6 @@
 defmodule Sanbase.Model.Project.ListSelector do
+  @metric_module Application.compile_env(:sanbase, :metric_module)
+
   import Norm
   import Sanbase.DateTimeUtils
 
@@ -132,7 +134,7 @@ defmodule Sanbase.Model.Project.ListSelector do
 
   defp filters_metrics_valid?(filters) do
     Enum.map(filters, fn %{metric: metric} ->
-      Sanbase.Metric.has_metric?(metric)
+      @metric_module.has_metric?(metric)
     end)
     |> Enum.find(&match?({:error, _}, &1))
     |> case do
@@ -287,7 +289,7 @@ defmodule Sanbase.Model.Project.ListSelector do
 
           {:ok, slugs} =
             Sanbase.Cache.get_or_store(cache_key, fn ->
-              Sanbase.Metric.slugs_by_filter(
+              @metric_module.slugs_by_filter(
                 filter.metric,
                 filter.from,
                 filter.to,
@@ -323,7 +325,7 @@ defmodule Sanbase.Model.Project.ListSelector do
     aggregation = Map.get(order_by, :aggregation)
 
     {:ok, ordered_slugs} =
-      Sanbase.Metric.slugs_order(metric, from, to, direction, aggregation: aggregation)
+      @metric_module.slugs_order(metric, from, to, direction, aggregation: aggregation)
 
     case slugs do
       :all ->

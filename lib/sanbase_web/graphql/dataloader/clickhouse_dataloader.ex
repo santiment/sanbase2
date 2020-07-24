@@ -1,7 +1,8 @@
 defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
+  @metric_module Application.compile_env(:sanbase, :metric_module)
+
   alias Sanbase.Clickhouse
   alias Sanbase.Model.Project
-  alias Sanbase.Metric
 
   def data(), do: Dataloader.KV.new(&query/2)
 
@@ -17,7 +18,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
       slugs = Enum.map(group, & &1.slug)
 
       data =
-        case Metric.aggregated_timeseries_data(metric, %{slug: slugs}, from, to,
+        case @metric_module.aggregated_timeseries_data(metric, %{slug: slugs}, from, to,
                aggregation: aggregation
              ) do
           {:ok, result} -> result
@@ -90,7 +91,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
       |> Enum.map(fn %{project: project} -> project.slug end)
       |> Enum.reject(&is_nil/1)
 
-    Sanbase.Metric.aggregated_timeseries_data(
+    @metric_module.aggregated_timeseries_data(
       "daily_active_addresses",
       %{slug: slugs},
       from,
@@ -117,7 +118,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
         organizations
       end)
 
-    Sanbase.Metric.aggregated_timeseries_data(
+    @metric_module.aggregated_timeseries_data(
       "dev_activity",
       %{organizations: organizations},
       from,

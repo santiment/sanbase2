@@ -3,6 +3,9 @@ import Config
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 
+config :sanbase,
+  metric_module: Sanbase.Metric
+
 config :sanbase, Sanbase, url: {:system, "SANBASE_URL", ""}
 
 config :sanbase, SanbaseWeb.Endpoint,

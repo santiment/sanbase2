@@ -10,7 +10,9 @@ import Config
 config :tzdata, :autoupdate, :disabled
 
 # General application configuration
-config :sanbase, ecto_repos: [Sanbase.Repo]
+config :sanbase,
+  metric_module: Sanbase.Metric,
+  ecto_repos: [Sanbase.Repo]
 
 config :phoenix, :json_library, Jason
 

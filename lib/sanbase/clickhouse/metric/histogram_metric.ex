@@ -1,4 +1,6 @@
 defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
+  @metric_module Application.compile_env(:sanbase, :metric_module)
+
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
   import Sanbase.Clickhouse.Metric.HistogramSqlQuery
 
@@ -38,16 +40,16 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
 
   def first_datetime(metric, %{slug: _} = selector)
       when metric in @spent_coins_cost_histograms do
-    with {:ok, dt1} <- Sanbase.Metric.first_datetime("price_usd", selector),
-         {:ok, dt2} <- Sanbase.Metric.first_datetime("age_distribution", selector) do
+    with {:ok, dt1} <- @metric_module.first_datetime("price_usd", selector),
+         {:ok, dt2} <- @metric_module.first_datetime("age_distribution", selector) do
       {:ok, Enum.max_by([dt1, dt2], &DateTime.to_unix/1)}
     end
   end
 
   def last_datetime_computed_at(metric, %{slug: _} = selector)
       when metric in ["price_histogram", "spent_coins_cost", "all_spent_coins_cost"] do
-    with {:ok, dt1} <- Sanbase.Metric.last_datetime_computed_at("price_usd", selector),
-         {:ok, dt2} <- Sanbase.Metric.last_datetime_computed_at("age_distribution", selector) do
+    with {:ok, dt1} <- @metric_module.last_datetime_computed_at("price_usd", selector),
+         {:ok, dt2} <- @metric_module.last_datetime_computed_at("age_distribution", selector) do
       {:ok, Enum.min_by([dt1, dt2], &DateTime.to_unix/1)}
     end
   end
@@ -93,7 +95,7 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
     # Get the average price for the queried. time range. It will break the [X,Y]
     # price interval containing that price into [X, price_break] and [price_break, Y]
     {:ok, %{^slug => price_break}} =
-      Sanbase.Metric.aggregated_timeseries_data("price_usd", %{slug: slug}, from, to,
+      @metric_module.aggregated_timeseries_data("price_usd", %{slug: slug}, from, to,
         aggregation: :avg
       )
 

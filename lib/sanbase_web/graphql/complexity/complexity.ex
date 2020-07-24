@@ -1,4 +1,6 @@
 defmodule SanbaseWeb.Graphql.Complexity do
+  @metric_module Application.compile_env(:sanbase, :metric_module)
+
   require Logger
 
   @compile :inline_list_funcs
@@ -60,7 +62,7 @@ defmodule SanbaseWeb.Graphql.Complexity do
 
     complexity_weight =
       with metric when is_binary(metric) <- metric,
-           weight when is_number(weight) <- Sanbase.Metric.complexity_weight(metric) do
+           weight when is_number(weight) <- @metric_module.complexity_weight(metric) do
         weight
       else
         _ -> 1

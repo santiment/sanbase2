@@ -1,4 +1,6 @@
 defmodule Sanbase.Repo.Migrations.AddMetricsTable do
+  @metric_module Application.compile_env(:sanbase, :metric_module)
+
   use Ecto.Migration
 
   def up() do
@@ -6,12 +8,12 @@ defmodule Sanbase.Repo.Migrations.AddMetricsTable do
     now = Timex.now()
 
     metrics =
-      Sanbase.Metric.available_metrics()
+      @metric_module.available_metrics()
       |> Enum.map(fn metric ->
         %{name: metric, inserted_at: now, updated_at: now}
       end)
 
-    Sanbase.Repo.insert_all(Sanbase.Metric.MetricPostgresData, metrics)
+    Sanbase.Repo.insert_all(@metric_module.MetricPostgresData, metrics)
   end
 
   def down(), do: :ok

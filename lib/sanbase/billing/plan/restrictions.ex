@@ -5,7 +5,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   """
 
   alias Sanbase.Billing.{Product, Subscription, Plan.AccessChecker}
-  defp metric_module(), do: Application.get_env(:sanbase, :metric_module)
+  @metric_module Application.compile_env(:sanbase, :metric_module)
 
   @type restriction :: %{
           type: String.t(),
@@ -84,7 +84,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   """
   @spec get_all(%Subscription{}, non_neg_integer()) :: list(restriction)
   def get_all(subscription, product_id) do
-    metrics = metric_module().available_metrics() |> Enum.map(&{:metric, &1})
+    metrics = @metric_module.available_metrics() |> Enum.map(&{:metric, &1})
 
     queries =
       Sanbase.Model.Project.AvailableQueries.all_atom_names()

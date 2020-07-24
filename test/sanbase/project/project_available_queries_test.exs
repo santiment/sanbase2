@@ -11,8 +11,8 @@ defmodule Sanbase.Project.AvailableQueriesTest do
   setup :verify_on_exit!
 
   test "ethereum has specific metrics" do
-    Sanbase.MetricMock
-    |> expect(:available_slugs, fn _ -> ["ethereum"] end)
+    # Sanbase.MetricMock
+    # |> expect(:available_slugs, fn _ -> ["ethereum"] end)
 
     project =
       insert(:project, %{

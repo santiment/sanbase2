@@ -1,9 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
-  import SanbaseWeb.Graphql.Helpers.Utils
+  @metric_module Application.compile_env(:sanbase, :metric_module)
 
+  import SanbaseWeb.Graphql.Helpers.Utils
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3, handle_graphql_error: 4]
 
-  alias Sanbase.Metric
   alias Sanbase.Billing.Plan.Restrictions
   alias Sanbase.Billing.Plan.AccessChecker
 
@@ -15,7 +15,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
                             else: Sanbase.AvailableSlugs
 
   def get_metric(_root, %{metric: metric}, _resolution) do
-    case Metric.has_metric?(metric) do
+    case @metric_module.has_metric?(metric) do
       true -> {:ok, %{metric: metric}}
       {:error, error} -> {:error, error}
     end
@@ -30,18 +30,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     {:ok, AccessChecker.get_available_metrics_for_plan(product, plan)}
   end
 
-  def get_available_metrics(_root, _args, _resolution), do: {:ok, Metric.available_metrics()}
+  def get_available_metrics(_root, _args, _resolution),
+    do: {:ok, @metric_module.available_metrics()}
 
   def get_available_slugs(_root, _args, %{source: %{metric: metric}}),
-    do: Metric.available_slugs(metric)
+    do: @metric_module.available_slugs(metric)
 
   def get_human_readable_name(_root, _args, %{source: %{metric: metric}}),
-    do: Metric.human_readable_name(metric)
+    do: @metric_module.human_readable_name(metric)
 
   def get_metadata(%{}, _args, %{source: %{metric: metric}} = resolution) do
     %{context: %{product_id: product_id, auth: %{subscription: subscription}}} = resolution
 
-    case Metric.metadata(metric) do
+    case @metric_module.metadata(metric) do
       {:ok, metadata} ->
         access_restrictions = Restrictions.get({:metric, metric}, subscription, product_id)
         {:ok, Map.merge(access_restrictions, metadata)}
@@ -60,7 +61,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     selector = to_selector(args)
 
     case valid_selector?(selector) do
-      true -> Metric.first_datetime(metric, selector)
+      true -> @metric_module.first_datetime(metric, selector)
       {:error, error} -> {:error, error}
     end
   end
@@ -69,7 +70,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     selector = to_selector(args)
 
     case valid_selector?(selector) do
-      true -> Metric.last_datetime_computed_at(metric, selector)
+      true -> @metric_module.last_datetime_computed_at(metric, selector)
       {:error, error} -> {:error, error}
     end
   end
@@ -90,13 +91,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
     with true <- valid_selector?(selector),
          {:ok, from, to, interval} <-
-           calibrate_interval(Metric, metric, selector, from, to, interval, 86_400, @datapoints),
+           calibrate_interval(
+             @metric_module,
+             metric,
+             selector,
+             from,
+             to,
+             interval,
+             86_400,
+             @datapoints
+           ),
          {:ok, from, to} <-
            calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
          {:ok, from} <-
            calibrate_transform_params(transform, from, to, interval),
          {:ok, result} <-
-           Metric.timeseries_data(metric, selector, from, to, interval, opts),
+           @metric_module.timeseries_data(metric, selector, from, to, interval, opts),
          {:ok, result} <- apply_transform(transform, result),
          {:ok, result} <- fit_from_datetime(result, args) do
       {:ok, result |> Enum.reject(&is_nil/1)}
@@ -117,9 +127,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
     with true <- valid_selector?(selector),
          {:ok, from, to} <-
-           calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
+           calibrate_incomplete_data_params(
+             include_incomplete_data,
+             @metric_module,
+             metric,
+             from,
+             to
+           ),
          {:ok, result} <-
-           Metric.aggregated_timeseries_data(metric, selector, from, to, opts) do
+           @metric_module.aggregated_timeseries_data(metric, selector, from, to, opts) do
       # This requires internal rework - all aggregated_timeseries_data queries must return the same format
       case result do
         value when is_number(value) ->
@@ -155,7 +171,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
     with true <- valid_selector?(selector),
          true <- valid_histogram_args?(metric, args),
-         {:ok, data} <- Metric.histogram_data(metric, selector, from, to, interval, limit) do
+         {:ok, data} <- @metric_module.histogram_data(metric, selector, from, to, interval, limit) do
       {:ok, %{values: %{data: data}}}
     else
       {:error, error} ->

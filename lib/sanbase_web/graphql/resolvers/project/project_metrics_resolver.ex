@@ -1,10 +1,11 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
+  @metric_module Application.compile_env(:sanbase, :metric_module)
+
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
   import Absinthe.Resolution.Helpers
   import SanbaseWeb.Graphql.Helpers.Utils
 
   alias Sanbase.Model.Project
-  alias Sanbase.Metric
   alias Sanbase.Cache.RehydratingCache
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
@@ -16,7 +17,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   def available_metrics(%Project{slug: slug}, _args, _resolution) do
     query = :available_metrics
     cache_key = {__MODULE__, query, slug} |> Sanbase.Cache.hash()
-    fun = fn -> Metric.available_metrics_for_slug(%{slug: slug}) end
+    fun = fn -> @metric_module.available_metrics_for_slug(%{slug: slug}) end
 
     maybe_register_and_get(cache_key, fun, slug, query)
   end
@@ -24,27 +25,33 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   def available_timeseries_metrics(%Project{slug: slug}, _args, _resolution) do
     query = :available_timeseries_metrics
     cache_key = {__MODULE__, query, slug} |> Sanbase.Cache.hash()
-    fun = fn -> Metric.available_timeseries_metrics_for_slug(%{slug: slug}) end
+    fun = fn -> @metric_module.available_timeseries_metrics_for_slug(%{slug: slug}) end
     maybe_register_and_get(cache_key, fun, slug, query)
   end
 
   def available_histogram_metrics(%Project{slug: slug}, _args, _resolution) do
     query = :available_histogram_metrics
     cache_key = {__MODULE__, query, slug} |> Sanbase.Cache.hash()
-    fun = fn -> Metric.available_histogram_metrics_for_slug(%{slug: slug}) end
+    fun = fn -> @metric_module.available_histogram_metrics_for_slug(%{slug: slug}) end
     maybe_register_and_get(cache_key, fun, slug, query)
   end
 
   def aggregated_timeseries_data(%Project{slug: slug}, %{metric: metric} = args, %{
         context: %{loader: loader}
       }) do
-    case Metric.has_metric?(metric) do
+    case @metric_module.has_metric?(metric) do
       true ->
         %{from: from, to: to} = args
         include_incomplete_data = Map.get(args, :include_incomplete_data, false)
 
         {:ok, from, to} =
-          calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to)
+          calibrate_incomplete_data_params(
+            include_incomplete_data,
+            @metric_module,
+            metric,
+            from,
+            to
+          )
 
         from = from |> Sanbase.DateTimeUtils.round_datetime(300)
         to = to |> Sanbase.DateTimeUtils.round_datetime(300)
@@ -78,7 +85,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
       |> Sanbase.Cache.hash()
 
     {:ok, slugs_for_metric} =
-      Sanbase.Cache.get_or_store({cache_key, 1800}, fn -> Metric.available_slugs(metric) end)
+      Sanbase.Cache.get_or_store({cache_key, 1800}, fn ->
+        @metric_module.available_slugs(metric)
+      end)
 
     loader
     |> Dataloader.get(SanbaseDataloader, :aggregated_metric, selector)
@@ -89,7 +98,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
             {:ok, value}
 
           :error ->
-            if slug in slugs_for_metric, do: {:nocache, {:ok, nil}}, else: {:ok, nil}
+            case slug in slugs_for_metric do
+              true -> {:nocache, {:ok, nil}}
+              false -> {:ok, nil}
+            end
         end
 
       _ ->

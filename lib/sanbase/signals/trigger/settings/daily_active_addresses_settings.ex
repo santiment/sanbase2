@@ -7,6 +7,8 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
   2. Daily Active Addresses change by a given percent compared to the average
      number of daily active addresses over a given time window
   """
+  @metric_module Application.compile_env(:sanbase, :metric_module)
+
   use Vex.Struct
 
   import Sanbase.{Validation, Signal.Validation}
@@ -84,7 +86,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
       |> Sanbase.Cache.hash()
 
     Sanbase.Cache.get_or_store(cache_key, fn ->
-      case Sanbase.Metric.timeseries_data(
+      case @metric_module.timeseries_data(
              "active_addresses_24h",
              %{slug: slug},
              from,

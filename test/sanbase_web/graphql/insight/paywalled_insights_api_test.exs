@@ -80,16 +80,6 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
       refute insight["isPaywallRequired"]
       assert insight["text"] == context.post.text
     end
-
-    test "when there short_desc - use it as text preview", context do
-      insight = create_insight(context, %{short_desc: "short description"})
-      query = insight_by_id_query(insight.id)
-      insight = execute_query(context.conn, query, "insight")
-
-      assert insight["isPaywallRequired"]
-      assert insight["shortDesc"] == "short description"
-      assert insight["text"] == "short description"
-    end
   end
 
   describe "filter paywalled when fetching all insights and timeline events" do

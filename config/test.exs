@@ -31,12 +31,18 @@ config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
 config :sanbase, Sanbase.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   database: "sanbase_test#{System.get_env("MIX_TEST_PARTITION")}",
-  pool_size: 5
+  username: "postgres",
+  password: "postgres",
+  pool_size: 5,
+  show_sensitive_data_on_connection_error: true
 
 config :sanbase, Sanbase.ClickhouseRepo,
   pool: Ecto.Adapters.SQL.Sandbox,
   database: "sanbase_test#{System.get_env("MIX_TEST_PARTITION")}",
-  pool_size: 5
+  username: "postgres",
+  password: "postgres",
+  pool_size: 5,
+  show_sensitive_data_on_connection_error: true
 
 config :sanbase, Sanbase.Auth.Hmac,
   secret_key: "Non_empty_key_used_in_tests_only#{System.get_env("MIX_TEST_PARTITION")}"

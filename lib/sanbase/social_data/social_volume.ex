@@ -42,7 +42,9 @@ defmodule Sanbase.SocialData.SocialVolume do
   end
 
   def social_volume_projects() do
-    {:ok, Project.List.projects()}
+    projects = Enum.map(Project.List.projects(), fn %Project{slug: slug} -> slug end)
+
+    {:ok, projects}
   end
 
   defp social_volume_request(selector, from, to, interval, source) do

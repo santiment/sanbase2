@@ -6,7 +6,7 @@ defmodule Sanbase.Metric.Behaviour do
   @type slug :: String.t()
   @type metric :: String.t()
   @type interval :: String.t()
-  @type options :: Keyword.t()
+  @type opts :: Keyword.t()
   @type available_data_types :: :timeseries | :histogram
   @type direction :: :asc | :desc
   @type operator ::
@@ -44,7 +44,7 @@ defmodule Sanbase.Metric.Behaviour do
               from :: DatetTime.t(),
               to :: DateTime.t(),
               interval :: interval(),
-              aggregation :: aggregation
+              opts :: opts
             ) ::
               {:ok, list(timeseries_data_point)} | {:error, String.t()}
 
@@ -62,7 +62,7 @@ defmodule Sanbase.Metric.Behaviour do
               selector :: selector,
               from :: DatetTime.t(),
               to :: DateTime.t(),
-              aggregation :: aggregation
+              opts :: opts
             ) :: {:ok, map()} | {:error, String.t()}
 
   @callback slugs_by_filter(
@@ -71,7 +71,7 @@ defmodule Sanbase.Metric.Behaviour do
               to :: DateTime.t(),
               operator :: operator,
               threshold :: number(),
-              aggregation :: aggregation
+              opts :: opts
             ) :: {:ok, list(slug())} | {:error, String.t()}
 
   @callback slugs_order(
@@ -79,7 +79,7 @@ defmodule Sanbase.Metric.Behaviour do
               from :: DateTime.t(),
               to :: DateTime.t(),
               direction :: direction,
-              aggregation :: aggregation()
+              opts :: opts
             ) :: {:ok, list(slug())} | {:error, String.t()}
 
   @callback has_incomplete_data?(metric :: metric) :: true | false

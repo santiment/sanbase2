@@ -2,7 +2,6 @@ defmodule Sanbase.Etherbi.ExchangeWalletsApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.Factory
 
   setup do
     [
@@ -13,9 +12,10 @@ defmodule Sanbase.Etherbi.ExchangeWalletsApiTest do
   test "returning an error when there is no basic auth" do
     query = """
     {
-      exchangeWallets{
-        address,
+      exchangeWallets(slug: "ethereum"){
+        address
         name
+        isDex
       }
     }
     """
@@ -29,90 +29,57 @@ defmodule Sanbase.Etherbi.ExchangeWalletsApiTest do
     assert error["message"] == "unauthorized"
   end
 
-  test "returning an empty list of wallets if there are none in the DB", context do
-    query = """
-    {
-      exchangeWallets{
-        address,
-        name
-      }
-    }
-    """
-
-    result =
-      context.conn
-      |> post("/graphql", query_skeleton(query, "exchangeWallets"))
-
-    exchange_wallets = json_response(result, 200)["data"]["exchangeWallets"]
-
-    assert exchange_wallets == []
-  end
-
   test "returning a list of wallets from the DB", context do
-    infr = insert(:infrastructure, %{code: "ETH"})
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Clickhouse.ExchangeAddress.exchange_addresses/1,
+      {:ok,
+       [
+         %{address: "0x12345", name: "Binance", is_dex: false},
+         %{address: "0x54321", name: "Kraken", is_dex: false}
+       ]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      wallets =
+        get_exchange_wallets(context.conn, "ethereum")
+        |> get_in(["data", "exchangeWallets"])
 
-    insert(:exchange_address, %{address: "0x12345", name: "Binance", infrastructure_id: infr.id})
-    insert(:exchange_address, %{address: "0x54321", name: "Kraken", infrastructure_id: infr.id})
-
-    query = """
-    {
-      exchangeWallets{
-        address
-        name
-        infrastructure{
-          code
-        }
-      }
-    }
-    """
-
-    result =
-      context.conn
-      |> post("/graphql", query_skeleton(query, "exchangeWallets"))
-
-    exchange_wallets = json_response(result, 200)["data"]["exchangeWallets"]
-
-    assert %{"name" => "Binance", "address" => "0x12345", "infrastructure" => %{"code" => "ETH"}} in exchange_wallets
-
-    assert %{"name" => "Kraken", "address" => "0x54321", "infrastructure" => %{"code" => "ETH"}} in exchange_wallets
+      assert %{"name" => "Binance", "address" => "0x12345", "isDex" => false} in wallets
+      assert %{"name" => "Kraken", "address" => "0x54321", "isDex" => false} in wallets
+    end)
   end
 
   test "returning a list of all wallets from the DB", context do
-    infr_eth = insert(:infrastructure, %{code: "ETH"})
-    infr_xrp = insert(:infrastructure, %{code: "XRP"})
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Clickhouse.ExchangeAddress.exchange_addresses/1,
+      {:ok,
+       [
+         %{address: "0x12345", name: "Binance", is_dex: true},
+         %{address: "0x54321", name: "Kraken", is_dex: false}
+       ]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      wallets =
+        get_exchange_wallets(context.conn, "ethereum")
+        |> get_in(["data", "exchangeWallets"])
 
-    insert(:exchange_address, %{
-      address: "0x12345",
-      name: "Binance",
-      infrastructure_id: infr_eth.id
-    })
+      assert %{"name" => "Binance", "address" => "0x12345", "isDex" => true} in wallets
+      assert %{"name" => "Kraken", "address" => "0x54321", "isDex" => false} in wallets
+    end)
+  end
 
-    insert(:exchange_address, %{
-      address: "0x54321",
-      name: "Kraken",
-      infrastructure_id: infr_xrp.id
-    })
-
+  defp get_exchange_wallets(conn, slug) do
     query = """
     {
-      allExchangeWallets{
+      exchangeWallets(slug: "#{slug}"){
         address
         name
-        infrastructure{
-          code
-        }
+        isDex
       }
     }
     """
 
-    result =
-      context.conn
-      |> post("/graphql", query_skeleton(query, "allExchangeWallets"))
-
-    exchange_wallets = json_response(result, 200)["data"]["allExchangeWallets"]
-
-    assert %{"name" => "Binance", "address" => "0x12345", "infrastructure" => %{"code" => "ETH"}} in exchange_wallets
-
-    assert %{"name" => "Kraken", "address" => "0x54321", "infrastructure" => %{"code" => "XRP"}} in exchange_wallets
+    conn
+    |> post("/graphql", query_skeleton(query, "exchangeWallets"))
+    |> json_response(200)
   end
 end

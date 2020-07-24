@@ -1,8 +1,8 @@
 defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Mock
   import Sanbase.Factory
+  import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
@@ -23,55 +23,49 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
 
   test "returns data for an available metric", context do
     %{conn: conn, slug: slug, from: from, to: to} = context
-    aggregation = :avg
-    [metric | _] = Metric.available_timeseries_metrics()
 
-    with_mock Metric, [:passthrough],
-      aggregated_timeseries_data: fn _, slug, _, _, _ ->
-        {:ok, [%{slug: slug, value: 100}]}
-      end do
+    Sanbase.Mock.prepare_mock(
+      Sanbase.Clickhouse.Metric,
+      :aggregated_timeseries_data,
+      fn _, slug, _, _, _ -> {:ok, [%{slug: slug, value: 100}]} end
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_aggregated_timeseries_metric(conn, metric, slug, from, to, aggregation)
+        get_aggregated_timeseries_metric(conn, "daily_active_addresses", slug, from, to, nil)
         |> extract_aggregated_timeseries_data()
 
       assert result == 100
-
-      assert_called(
-        Metric.aggregated_timeseries_data(metric, %{slug: slug}, from, to, aggregation)
-      )
-    end
+    end)
   end
 
   test "returns data for all available metrics", context do
     %{conn: conn, slug: slug, from: from, to: to} = context
-    aggregation = :avg
     metrics = Metric.available_timeseries_metrics()
 
-    with_mock Metric, [:passthrough],
-      aggregated_timeseries_data: fn _, slug_arg, _, _, _ ->
-        {:ok, [%{slug: slug_arg, value: 100}]}
-      end do
+    Sanbase.Mock.prepare_mock(Metric, :aggregated_timeseries_data, fn _, slug_arg, _, _, _ ->
+      {:ok, [%{slug: slug_arg, value: 100}]}
+    end)
+    |> Sanbase.Mock.run_with_mocks(fn ->
       for metric <- metrics do
         result =
-          get_aggregated_timeseries_metric(conn, metric, slug, from, to, aggregation)
+          get_aggregated_timeseries_metric(conn, metric, slug, from, to, nil)
           |> extract_aggregated_timeseries_data()
 
         assert result == 100
       end
-    end
+    end)
   end
 
   test "returns data for all available aggregations", context do
     %{conn: conn, slug: slug, from: from, to: to} = context
-    aggregations = Metric.available_aggregations()
     # nil means aggregation is not passed, we should not explicitly pass it
-    aggregations = aggregations -- [nil]
-    [metric | _] = Metric.available_timeseries_metrics()
+    metric = Metric.available_timeseries_metrics() |> Enum.random()
+    {:ok, %{available_aggregations: aggregations}} = Metric.metadata(metric)
 
-    with_mock Metric, [:passthrough],
-      aggregated_timeseries_data: fn _, slug, _, _, _ ->
-        {:ok, [%{slug: slug, value: 100}]}
-      end do
+    Sanbase.Mock.prepare_mock(Metric, :aggregated_timeseries_data, fn _, slug, _, _, _ ->
+      {:ok, [%{slug: slug, value: 100}]}
+    end)
+    |> Sanbase.Mock.run_with_mocks(fn ->
       for aggregation <- aggregations do
         result =
           get_aggregated_timeseries_metric(conn, metric, slug, from, to, aggregation)
@@ -79,9 +73,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
 
         assert result == 100
       end
-
-      # Assert that all results are lists where we have a map with values
-    end
+    end)
   end
 
   test "returns error for unavailable aggregations", context do
@@ -123,13 +115,15 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
     aggregation = :avg
     [metric | _] = Metric.available_timeseries_metrics()
 
-    # Do not mock the `timeseries_data` function because it's the one that rejects
-    %{"errors" => [%{"message" => error_message}]} =
-      get_aggregated_timeseries_metric(conn, metric, from, to, aggregation)
+    assert capture_log(fn ->
+             # Do not mock the `timeseries_data` function because it's the one that rejects
+             %{"errors" => [%{"message" => error_message}]} =
+               get_aggregated_timeseries_metric(conn, metric, from, to, aggregation)
 
-    assert error_message =~
-             "Can't fetch #{metric} for an empty selector: , Reason: \"The selector must have at least one field provided." <>
-               "The available selector fields for a metric are listed in the metadata's availableSelectors field.\""
+             assert error_message =~
+                      "Can't fetch #{metric} for an empty selector: , Reason: \"The selector must have at least one field provided." <>
+                        "The available selector fields for a metric are listed in the metadata's availableSelectors field.\""
+           end) =~ "Can't fetch #{metric} for an empty selector"
   end
 
   # Private functions
@@ -163,7 +157,9 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
             slug: "#{slug}"
             from: "#{from}"
             to: "#{to}"
-            aggregation: #{Atom.to_string(aggregation) |> String.upcase()})
+            #{
+      if aggregation, do: "aggregation: #{Atom.to_string(aggregation) |> String.upcase()}"
+    })
         }
       }
     """

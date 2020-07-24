@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
@@ -24,13 +23,12 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
 
   test "returns data for an available metric", context do
     %{conn: conn, slug: slug, from: from, to: to} = context
-    [metric | _] = Metric.available_histogram_metrics()
-    interval = "1d"
-    limit = 3
+    metric = Metric.available_histogram_metrics() |> Enum.random()
 
-    with_mock Metric, [:passthrough], histogram_data: success_result() do
+    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.Metric.histogram_data/6, success_result())
+    |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_histogram_metric(conn, metric, slug, from, to, interval, limit)
+        get_histogram_metric(conn, metric, slug, from, to, "1d", 3)
         |> get_in(["data", "getMetric", "histogramData"])
 
       assert result == %{
@@ -41,28 +39,21 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
                  ]
                }
              }
-
-      assert_called(Metric.histogram_data(metric, %{slug: slug}, from, to, "1d", 3))
-    end
+    end)
   end
 
   test "returns data for all available metrics", context do
     %{conn: conn, slug: slug, from: from, to: to} = context
     metrics = Metric.available_histogram_metrics()
 
-    with_mock Metric, [:passthrough],
-      histogram_data: fn _, _, _, _, _, _ ->
-        {:ok,
-         [
-           %{
-             range: [2.0, 3.0],
-             value: 15.0
-           }
-         ]}
-      end do
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Clickhouse.Metric.histogram_data/6,
+      {:ok, [%{range: [2.0, 3.0], value: 15.0}]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         for metric <- metrics do
-          get_histogram_metric(conn, metric, slug, from, to)
+          get_histogram_metric(conn, metric, slug, from, to, "1d", 100)
           |> get_in(["data", "getMetric", "histogramData"])
         end
 
@@ -74,7 +65,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
                  &1
                )
              )
-    end
+    end)
   end
 
   test "returns error for unavailable metrics", context do
@@ -88,7 +79,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
         "errors" => [
           %{"message" => error_message}
         ]
-      } = get_histogram_metric(conn, metric, slug, from, to)
+      } = get_histogram_metric(conn, metric, slug, from, to, "1d", 100)
 
       assert error_message == "The metric '#{metric}' is not supported or is mistyped."
     end
@@ -100,25 +91,26 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
     interval = "1d"
     [metric | _] = Metric.available_histogram_metrics()
 
-    # Do not mock the `timeseries_data` function because it's the one that rejects
-    %{"errors" => [%{"message" => error_message}]} =
-      get_histogram_metric_without_slug(conn, metric, from, to, interval, limit)
+    assert capture_log(fn ->
+             # Do not mock the `timeseries_data` function because it's the one that rejects
+             %{"errors" => [%{"message" => error_message}]} =
+               get_histogram_metric_without_slug(conn, metric, from, to, interval, limit)
 
-    assert error_message =~
-             "Can't fetch #{metric} for an empty selector: , Reason: \"The selector must have at least one field provided." <>
-               "The available selector fields for a metric are listed in the metadata's availableSelectors field.\""
+             assert error_message =~
+                      "Can't fetch #{metric} for an empty selector: , Reason: \"The selector must have at least one field provided." <>
+                        "The available selector fields for a metric are listed in the metadata's availableSelectors field.\""
+           end) =~ "Can't fetch #{metric} for an empty selector"
   end
 
   test "all_spent_coins_cost histogram - converts interval to full days and successfully returns",
        context do
     %{conn: conn, slug: slug, to: to} = context
     metric = "all_spent_coins_cost"
-    interval = "47h"
-    limit = 3
 
-    with_mock Metric, [:passthrough], histogram_data: success_result() do
+    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.Metric.histogram_data/6, success_result())
+    |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        get_histogram_metric(conn, metric, slug, nil, to, interval, limit)
+        get_histogram_metric(conn, metric, slug, nil, to, "47h", 3)
         |> get_in(["data", "getMetric", "histogramData"])
 
       assert result == %{
@@ -129,48 +121,36 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
                  ]
                }
              }
-
-      assert_called(Metric.histogram_data(metric, %{slug: slug}, nil, to, "1d", 3))
-    end
+    end)
   end
 
   test "histogram metric different than all_spent_coins_cost without from datetime - returns proper error",
        context do
     %{conn: conn, slug: slug, to: to} = context
     metric = "spent_coins_cost"
-    interval = "1d"
-    limit = 3
 
-    with_mock Metric, [:passthrough], histogram_data: success_result() do
+    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.Metric.histogram_data/6, success_result())
+    |> Sanbase.Mock.run_with_mocks(fn ->
       capture_log(fn ->
-        result = get_histogram_metric(conn, metric, slug, nil, to, interval, limit)
+        result = get_histogram_metric(conn, metric, slug, nil, to, "1d", 3)
         error_msg = hd(result["errors"]) |> Map.get("message")
 
         assert error_msg =~ "Missing required `from` argument"
-        refute called(Metric.histogram_data(metric, %{slug: slug}, nil, to, "1d", 3))
       end)
-    end
+    end)
   end
 
   # Private functions
 
   defp success_result() do
-    fn _, _, _, _, _, _ ->
-      {:ok,
-       [
-         %{
-           range: [2.0, 3.0],
-           value: 15.0
-         },
-         %{
-           range: [3.0, 4.0],
-           value: 22.2
-         }
-       ]}
-    end
+    {:ok,
+     [
+       %{range: [2.0, 3.0], value: 15.0},
+       %{range: [3.0, 4.0], value: 22.2}
+     ]}
   end
 
-  defp get_histogram_metric(conn, metric, slug, from, to, interval \\ "1d", limit \\ 100) do
+  defp get_histogram_metric(conn, metric, slug, from, to, interval, limit) do
     query = get_histogram_query(metric, slug, from, to, interval, limit)
 
     conn
@@ -178,7 +158,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
     |> json_response(200)
   end
 
-  defp get_histogram_metric_without_slug(conn, metric, from, to, interval \\ "1d", limit \\ 100) do
+  defp get_histogram_metric_without_slug(conn, metric, from, to, interval, limit) do
     query = get_histogram_query_without_slug(metric, from, to, interval, limit)
 
     conn

@@ -75,7 +75,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentDownChangeTest do
          %{datetime: ~U[2020-01-04 00:00:00Z], value: 1500}
        ]}
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.timeseries_data/6, data)
+    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.Metric.timeseries_data/6, data)
     |> Sanbase.Mock.run_with_mocks(fn ->
       # Works without crashing
       DailyActiveAddressesSettings.type()

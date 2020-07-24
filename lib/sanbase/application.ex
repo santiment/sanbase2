@@ -200,7 +200,12 @@ defmodule Sanbase.Application do
          ]},
         id: :sanbase_generic_cache
       ),
-      Sanbase.AvailableSlugs
+
+      # Service for fast checking if a slug is valid
+      Sanbase.AvailableSlugs,
+
+      # Process that starts test-only deps
+      start_in(Sanbase.TestSetupService, [:test])
     ]
   end
 

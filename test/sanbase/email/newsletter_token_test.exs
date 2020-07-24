@@ -7,7 +7,7 @@ defmodule Sanbase.Email.NewsletterTokenTest do
   alias Sanbase.Email.NewsletterToken
 
   describe "#verify_token" do
-    test "successfull validation" do
+    test "successful validation" do
       nt = insert(:newsletter_token)
 
       {:ok, nt2} = NewsletterToken.verify_token(nt.email, nt.token)

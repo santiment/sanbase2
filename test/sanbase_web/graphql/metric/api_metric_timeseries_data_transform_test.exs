@@ -1,11 +1,8 @@
 defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTransformTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-
-  alias Sanbase.Metric
 
   setup do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
@@ -17,26 +14,24 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTransformTest do
 
   test "moving average transform", context do
     %{conn: conn, slug: slug} = context
-    [metric | _] = Metric.available_timeseries_metrics()
 
-    with_mock Metric, [:passthrough],
-      timeseries_data: fn _, _, _, _, _, _ ->
-        {:ok,
-         [
-           %{datetime: ~U[2019-01-01T00:00:00Z], value: 100.0},
-           %{datetime: ~U[2019-01-02T00:00:00Z], value: 200.0},
-           %{datetime: ~U[2019-01-03T00:00:00Z], value: 50.0},
-           %{datetime: ~U[2019-01-04T00:00:00Z], value: 400.0},
-           %{datetime: ~U[2019-01-05T00:00:00Z], value: 300.0},
-           %{datetime: ~U[2019-01-06T00:00:00Z], value: 10.0},
-           %{datetime: ~U[2019-01-07T00:00:00Z], value: 200.0},
-           %{datetime: ~U[2019-01-08T00:00:00Z], value: 320.0}
-         ]}
-      end do
+    data = [
+      %{datetime: ~U[2019-01-01T00:00:00Z], value: 100.0},
+      %{datetime: ~U[2019-01-02T00:00:00Z], value: 200.0},
+      %{datetime: ~U[2019-01-03T00:00:00Z], value: 50.0},
+      %{datetime: ~U[2019-01-04T00:00:00Z], value: 400.0},
+      %{datetime: ~U[2019-01-05T00:00:00Z], value: 300.0},
+      %{datetime: ~U[2019-01-06T00:00:00Z], value: 10.0},
+      %{datetime: ~U[2019-01-07T00:00:00Z], value: 200.0},
+      %{datetime: ~U[2019-01-08T00:00:00Z], value: 320.0}
+    ]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.Metric.timeseries_data/6, {:ok, data})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         get_timeseries_metric(
           conn,
-          metric,
+          "daily_active_addresses",
           slug,
           ~U[2019-01-04T00:00:00Z],
           ~U[2019-01-08T00:00:00Z],
@@ -53,18 +48,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTransformTest do
                %{"datetime" => "2019-01-07T00:00:00Z", "value" => 170.0},
                %{"datetime" => "2019-01-08T00:00:00Z", "value" => 176.67}
              ]
-
-      assert_called(
-        Metric.timeseries_data(
-          metric,
-          %{slug: slug},
-          ~U[2019-01-01T00:00:00Z],
-          ~U[2019-01-08T00:00:00Z],
-          "1d",
-          :avg
-        )
-      )
-    end
+    end)
   end
 
   # Private functions

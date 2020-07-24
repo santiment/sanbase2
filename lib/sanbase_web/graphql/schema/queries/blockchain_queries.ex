@@ -177,21 +177,6 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       cache_resolve(&EtherbiResolver.exchange_funds_flow/3)
     end
 
-    @desc ~s"""
-    Calculates the exchange inflow and outflow volume in usd for a given exchange in a time interval.
-    """
-    field :exchange_volume, list_of(:exchange_volume) do
-      meta(access: :restricted)
-
-      arg(:exchange, non_null(:string))
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-
-      complexity(&Complexity.from_to_interval/3)
-      middleware(AccessControl)
-      cache_resolve(&ExchangeResolver.exchange_volume/3)
-    end
-
     @desc "Network growth returns the newly created addresses for a project in a given timeframe"
     field :network_growth, list_of(:network_growth) do
       deprecate(~s/Use getMetric(metric: "network_growth") instead/)
@@ -341,24 +326,13 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     end
 
     @desc """
-    Fetch a list of all exchange wallets.
-    This query requires you to have a plan extension or basic authentication.
-    """
-    field :all_exchange_wallets, list_of(:wallet) do
-      meta(access: :extension, product: Product.product_exchange_wallets())
-
-      middleware(AccessControl)
-      cache_resolve(&EtherbiResolver.all_exchange_wallets/3)
-    end
-
-    @desc """
     Fetch a list of all exchange wallets on a given blockchain.
     This query requires you to have a plan extension or basic authentication.
     """
     field :exchange_wallets, list_of(:wallet) do
       meta(access: :extension, product: Product.product_exchange_wallets())
 
-      arg(:slug, :string, default_value: "ethereum")
+      arg(:slug, non_null(:string))
 
       middleware(AccessControl)
       cache_resolve(&EtherbiResolver.exchange_wallets/3)
@@ -368,7 +342,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
     field :all_exchanges, list_of(:string) do
       meta(access: :free)
 
-      arg(:slug, :string, default_value: "ethereum")
+      arg(:slug, non_null(:string))
 
       cache_resolve(&ExchangeResolver.all_exchanges/3)
     end

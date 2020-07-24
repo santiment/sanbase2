@@ -1,13 +1,7 @@
 defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Model.{
-    Project,
-    ProjectEthAddress,
-    ExchangeAddress
-  }
-
-  alias Sanbase.Repo
+  alias Sanbase.Model.Project
 
   import Mock
   import SanbaseWeb.Graphql.TestHelpers
@@ -23,33 +17,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   @exchange_wallet "0xe1e1e1e1e1e1e1"
 
   setup do
-    slug = "santiment" <> Sanbase.TestUtils.random_string()
-
-    p =
-      %Project{}
-      |> Project.changeset(%{name: "Santiment", slug: slug})
-      |> Repo.insert!()
-
-    %ProjectEthAddress{}
-    |> ProjectEthAddress.changeset(%{
-      project_id: p.id,
-      address: "0x" <> Sanbase.TestUtils.random_string()
-    })
-    |> Repo.insert!()
-
-    %ProjectEthAddress{}
-    |> ProjectEthAddress.changeset(%{
-      project_id: p.id,
-      address: "0x" <> Sanbase.TestUtils.random_string()
-    })
-    |> Repo.insert!()
-
-    %ExchangeAddress{}
-    |> ExchangeAddress.changeset(%{
-      address: @exchange_wallet,
-      name: "Test exchange wallet"
-    })
-    |> Repo.insert!()
+    project = insert(:random_project)
 
     # MarkExchanges GenServer is started by the top-level supervisor and not this process.
     # Due to the SQL Sandbox the added exchange address is not seen from the genserver.
@@ -57,7 +25,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
     Sanbase.Clickhouse.MarkExchanges.add_exchange_wallets([@exchange_wallet])
 
     [
-      slug: slug,
+      slug: project.slug,
       datetime_from: @datetime1,
       datetime_to: @datetime6
     ]
@@ -205,11 +173,11 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
       }
       """
 
-      result =
+      trx_all =
         context.conn
         |> post("/graphql", query_skeleton(query, "projectBySlug"))
-
-      trx_all = json_response(result, 200)["data"]["projectBySlug"]["ethTopTransactions"]
+        |> json_response(200)
+        |> get_in(["data", "projectBySlug", "ethTopTransactions"])
 
       assert %{
                "datetime" => "2017-05-13T15:00:00Z",

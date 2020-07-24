@@ -6,23 +6,24 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
 
   setup do
     user = insert(:user)
+    project = insert(:random_project)
     insert(:subscription_premium, user: user)
     conn = setup_jwt_auth(build_conn(), user)
-    {:ok, conn: conn}
+    %{conn: conn, project: project}
   end
 
   test "export get_metric api calls with the metric as argument", context do
-    %{conn: conn} = context
+    %{conn: conn, project: project} = context
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.timeseries_data/6, {:ok, []})
+    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.Metric.timeseries_data/6, {:ok, []})
     |> Sanbase.Mock.run_with_mocks(fn ->
       from = ~U[2019-01-05 00:00:00Z]
       to = ~U[2019-01-06 00:00:00Z]
 
       Sanbase.InMemoryKafka.Producer.clear_state()
-      get_metric(conn, "price_usd", "santiment", from, to, "1d")
-      get_metric(conn, "nvt", "santiment", from, to, "1d")
-      get_metric(conn, "daily_active_addresses", "santiment", from, to, "1d")
+      get_metric(conn, "mvrv_usd", project.slug, from, to, "1d")
+      get_metric(conn, "nvt", project.slug, from, to, "1d")
+      get_metric(conn, "daily_active_addresses", project.slug, from, to, "1d")
 
       # force the sending
       Sanbase.KafkaExporter.flush(:api_call_exporter)
@@ -35,8 +36,8 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
       # There could be some test that exported api calls data and that happens async
       # so something could happend even after the `clear_state` is called
       assert length(api_calls_queries) >= 3
+      assert "getMetric|mvrv_usd" in api_calls_queries
       assert "getMetric|nvt" in api_calls_queries
-      assert "getMetric|price_usd" in api_calls_queries
       assert "getMetric|daily_active_addresses" in api_calls_queries
     end)
   end

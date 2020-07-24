@@ -9,7 +9,6 @@ defmodule Sanbase.Factory do
 
   alias Sanbase.Model.{
     Project,
-    ExchangeAddress,
     ProjectEthAddress,
     ProjectBtcAddress,
     Infrastructure,
@@ -276,13 +275,6 @@ defmodule Sanbase.Factory do
       address: :crypto.strong_rand_bytes(16) |> Base.encode16(),
       source: "",
       comments: ""
-    }
-  end
-
-  def exchange_address_factory() do
-    %ExchangeAddress{
-      address: "0x123",
-      name: "Binance"
     }
   end
 

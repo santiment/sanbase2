@@ -104,30 +104,33 @@ defmodule Sanbase.Metric do
   aggregations are #{inspect(@aggregations)}. If no aggregation is provided,
   a default one (based on the metric) will be used.
   """
-  def timeseries_data(metric, identifier, from, to, interval, aggregation \\ nil)
+  def timeseries_data(metric, identifier, from, to, interval, opts \\ [])
 
   for %{metric: metric, module: module} <- @timeseries_metric_module_mapping do
-    def timeseries_data(unquote(metric), identifier, from, to, interval, aggregation)
-        when aggregation in unquote(Map.get(@aggregations_per_metric, metric)) do
-      unquote(module).timeseries_data(
-        unquote(metric),
-        identifier,
-        from,
-        to,
-        interval,
-        aggregation
-      )
+    def timeseries_data(unquote(metric), identifier, from, to, interval, opts) do
+      aggregation = Keyword.get(opts, :aggregation, nil)
+      aggregation_valid? = aggregation in Map.get(@aggregations_per_metric, unquote(metric))
+
+      case aggregation_valid? do
+        true ->
+          unquote(module).timeseries_data(
+            unquote(metric),
+            identifier,
+            from,
+            to,
+            interval,
+            opts
+          )
+
+        false ->
+          {:error,
+           "The aggregation #{aggregation} is not supported for the metric #{unquote(metric)}"}
+      end
     end
   end
 
-  def timeseries_data(metric, _, _, _, _, aggregation) do
-    cond do
-      metric not in @metrics_mapset ->
-        metric_not_available_error(metric, type: :timeseries)
-
-      aggregation not in Map.get(@aggregations_per_metric, metric) ->
-        {:error, "The aggregation #{aggregation} is not supported for the metric #{metric}"}
-    end
+  def timeseries_data(metric, _, _, _, _, _) do
+    metric_not_available_error(metric, type: :timeseries)
   end
 
   @doc ~s"""
@@ -136,32 +139,32 @@ defmodule Sanbase.Metric do
   The available aggregations are #{inspect(@aggregations)}. If no aggregation is
   provided, a default one (based on the metric) will be used.
   """
-  def aggregated_timeseries_data(metric, identifier, from, to, aggregation \\ nil)
+  def aggregated_timeseries_data(metric, identifier, from, to, opts \\ [])
 
   for %{metric: metric, module: module} <- @timeseries_metric_module_mapping do
-    def aggregated_timeseries_data(unquote(metric), identifier, from, to, aggregation)
-        when aggregation in unquote(Map.get(@aggregations_per_metric, metric)) do
-      unquote(module).aggregated_timeseries_data(
-        unquote(metric),
-        identifier,
-        from,
-        to,
-        aggregation
-      )
+    def aggregated_timeseries_data(unquote(metric), identifier, from, to, opts) do
+      aggregation = Keyword.get(opts, :aggregation, nil)
+      aggregation_valid? = aggregation in Map.get(@aggregations_per_metric, unquote(metric))
+
+      case aggregation_valid? do
+        true ->
+          unquote(module).aggregated_timeseries_data(
+            unquote(metric),
+            identifier,
+            from,
+            to,
+            aggregation
+          )
+
+        false ->
+          {:error,
+           "The aggregation #{aggregation} is not supported for the metric #{unquote(metric)}"}
+      end
     end
   end
 
-  def aggregated_timeseries_data(metric, _, _, _, aggregation) do
-    cond do
-      metric not in @metrics_mapset ->
-        metric_not_available_error(metric, type: :timeseries)
-
-      aggregation not in Map.get(@aggregations_per_metric, metric) ->
-        {:error, "The aggregation #{aggregation} is not supported for the metric #{metric}"}
-
-      true ->
-        {:error, "Error fetching metric #{metric} with aggregation #{aggregation}"}
-    end
+  def aggregated_timeseries_data(metric, _, _, _, _) do
+    metric_not_available_error(metric, type: :timeseries)
   end
 
   @doc ~s"""
@@ -174,33 +177,33 @@ defmodule Sanbase.Metric do
 
   If no aggregation is provided, a default one (based on the metric) will be used.
   """
-  def slugs_by_filter(metric, from, to, operation, threshold, aggregation \\ nil)
+  def slugs_by_filter(metric, from, to, operation, threshold, opts \\ [])
 
   for %{metric: metric, module: module} <- @timeseries_metric_module_mapping do
-    def slugs_by_filter(unquote(metric), from, to, operation, threshold, aggregation)
-        when aggregation in unquote(Map.get(@aggregations_per_metric, metric)) do
-      unquote(module).slugs_by_filter(
-        unquote(metric),
-        from,
-        to,
-        operation,
-        threshold,
-        aggregation
-      )
+    def slugs_by_filter(unquote(metric), from, to, operation, threshold, opts) do
+      aggregation = Keyword.get(opts, :aggregation, nil)
+      aggregation_valid? = aggregation in Map.get(@aggregations_per_metric, unquote(metric))
+
+      case aggregation_valid? do
+        true ->
+          unquote(module).slugs_by_filter(
+            unquote(metric),
+            from,
+            to,
+            operation,
+            threshold,
+            opts
+          )
+
+        false ->
+          {:error,
+           "The aggregation #{aggregation} is not supported for the metric #{unquote(metric)}"}
+      end
     end
   end
 
-  def slugs_by_filter(metric, _from, _to, _operation, _threshold, aggregation) do
-    cond do
-      metric not in @metrics_mapset ->
-        metric_not_available_error(metric, type: :timeseries)
-
-      aggregation not in Map.get(@aggregations_per_metric, metric) ->
-        {:error, "The aggregation #{aggregation} is not supported for the metric #{metric}"}
-
-      true ->
-        {:error, "Error fetching slugs by filter for #{metric}"}
-    end
+  def slugs_by_filter(metric, _from, _to, _operation, _threshold, _opts) do
+    metric_not_available_error(metric, type: :timeseries)
   end
 
   @doc ~s"""
@@ -212,32 +215,32 @@ defmodule Sanbase.Metric do
   argument with two values - :asc and :desc
   If no aggregation is provided, a default one (based on the metric) will be used.
   """
-  def slugs_order(metric, from, to, direction, aggregation \\ nil)
+  def slugs_order(metric, from, to, direction, opts \\ [])
 
   for %{metric: metric, module: module} <- @timeseries_metric_module_mapping do
-    def slugs_order(unquote(metric), from, to, direction, aggregation)
-        when aggregation in unquote(Map.get(@aggregations_per_metric, metric)) do
-      unquote(module).slugs_order(
-        unquote(metric),
-        from,
-        to,
-        direction,
-        aggregation
-      )
+    def slugs_order(unquote(metric), from, to, direction, opts) do
+      aggregation = Keyword.get(opts, :aggregation, nil)
+      aggregation_valid? = aggregation in Map.get(@aggregations_per_metric, unquote(metric))
+
+      case aggregation_valid? do
+        true ->
+          unquote(module).slugs_order(
+            unquote(metric),
+            from,
+            to,
+            direction,
+            aggregation
+          )
+
+        false ->
+          {:error,
+           "The aggregation #{aggregation} is not supported for the metric #{unquote(metric)}"}
+      end
     end
   end
 
-  def slugs_order(metric, _from, _to, _direction, aggregation) do
-    cond do
-      metric not in @metrics_mapset ->
-        metric_not_available_error(metric, type: :timeseries)
-
-      aggregation not in Map.get(@aggregations_per_metric, metric) ->
-        {:error, "The aggregation #{aggregation} is not supported for the metric #{metric}"}
-
-      true ->
-        {:error, "Error fetching slugs order for #{metric}"}
-    end
+  def slugs_order(metric, _from, _to, _direction, _opts) do
+    metric_not_available_error(metric, type: :timeseries)
   end
 
   @doc ~s"""

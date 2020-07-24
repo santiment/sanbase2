@@ -28,8 +28,6 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
 
   use GenServer
 
-  alias Sanbase.Model.{ExchangeAddress, Infrastructure}
-
   @refresh_interval_min 10
   @name :mark_exchange_wallets_gen_server
 
@@ -42,18 +40,7 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
   end
 
   def handle_continue(:set_state, _) do
-    exchanges =
-      Infrastructure.get("ETH")
-      |> ExchangeAddress.list_all_by_infrastructure()
-      |> Enum.map(fn %ExchangeAddress{address: address} ->
-        address |> String.downcase()
-      end)
-      |> MapSet.new()
-
-    new_state = Map.put(%{}, :exchange_wallets_set, exchanges)
-    new_state = Map.put(new_state, :updated_at, Timex.now())
-
-    {:noreply, new_state}
+    {:noreply, fill_state()}
   end
 
   @doc ~s"""
@@ -111,9 +98,37 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
     {:reply, :ok, new_state}
   end
 
+  def handle_info(:set_state, _) do
+    {:noreply, fill_state()}
+  end
+
   @doc false
   def add_exchange_wallets(wallets) when is_list(wallets) do
     # Used to add new exchange wallet addresses. Used only from within tests
     GenServer.call(@name, {:add_exchange_wallets, wallets})
+  end
+
+  # This is running every time the app is started, so it would require a
+  # global mock across all test suites. In the only test where it is used,
+  # the state is filled with the explicit add_exchange_wallets/1 call
+  if Mix.env() == :test do
+    defp fill_state(), do: %{exchange_wallets_set: MapSet.new(), updated_at: Timex.now()}
+  else
+    defp fill_state() do
+      case Sanbase.Clickhouse.ExchangeAddress.exchange_addresses("ethereum") do
+        {:ok, addresses} ->
+          mapset = addresses |> Enum.map(& &1.address) |> MapSet.new(&String.downcase/1)
+
+          Map.put(%{}, :exchange_wallets_set, mapset)
+          |> Map.put(:updated_at, Timex.now())
+
+        _ ->
+          # Try to fill the state after 5 seconds
+          Process.send_after(self(), :set_state, 5_000)
+
+          Map.put(%{}, :exchange_wallets_set, MapSet.new())
+          |> Map.put(:updated_at, Timex.now())
+      end
+    end
   end
 end

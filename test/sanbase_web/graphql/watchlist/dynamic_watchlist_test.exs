@@ -150,11 +150,12 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
     }
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Metric.slugs_by_filter/6,
+      &Sanbase.Clickhouse.Metric.slugs_by_filter/6,
       {:ok, ["ethereum", "dai", "bitcoin"]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = execute_mutation(conn, create_watchlist_query(function: function))
+
       user_list = result["data"]["createWatchlist"]
 
       assert user_list["name"] == "My list"
@@ -188,7 +189,7 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
             "threshold" => 100
           },
           %{
-            "metric" => "price_usd",
+            "metric" => "nvt",
             "from" => "#{Timex.shift(Timex.now(), days: -7)}",
             "to" => "#{Timex.now()}",
             "aggregation" => "#{:last}",
@@ -199,9 +200,9 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
       }
     }
 
-    Sanbase.Mock.prepare_mock(Sanbase.Metric, :slugs_by_filter, fn
+    Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.Metric, :slugs_by_filter, fn
       "daily_active_addresses", _, _, _, _, _ -> {:ok, [p1.slug, p2.slug, p3.slug]}
-      "price_usd", _, _, _, _, _ -> {:ok, [p3.slug, p4.slug, p5.slug]}
+      "nvt", _, _, _, _, _ -> {:ok, [p3.slug, p4.slug, p5.slug]}
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = execute_mutation(conn, create_watchlist_query(function: function))
@@ -238,7 +239,7 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
     }
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Metric.slugs_by_filter/6,
+      &Sanbase.Clickhouse.Metric.slugs_by_filter/6,
       {:ok, ["ethereum", "dai", "bitcoin"]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->

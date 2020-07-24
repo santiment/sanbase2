@@ -25,7 +25,6 @@ defmodule SanbaseWeb.Graphql.EtherbiTypes do
     field(:name, non_null(:string))
     field(:address, non_null(:string))
     field(:is_dex, :boolean)
-    field(:infrastructure, :infrastructure)
   end
 
   object :infrastructure do

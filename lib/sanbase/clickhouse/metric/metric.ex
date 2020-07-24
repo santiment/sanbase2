@@ -20,10 +20,12 @@ defmodule Sanbase.Clickhouse.Metric do
   @metrics_file "metric_files/available_v2_metrics.json"
   @holders_file "metric_files/holders_metrics.json"
   @makerdao_file "metric_files/makerdao_metrics.json"
+  @label_file "metric_files/label_metrics.json"
 
   @external_resource Path.join(__DIR__, @metrics_file)
   @external_resource Path.join(__DIR__, @holders_file)
   @external_resource Path.join(__DIR__, @makerdao_file)
+  @external_resource Path.join(__DIR__, @label_file)
 
   @plain_aggregations FileHandler.aggregations()
   @aggregations [nil] ++ @plain_aggregations
@@ -41,6 +43,7 @@ defmodule Sanbase.Clickhouse.Metric do
                      |> Enum.uniq()
   @metrics_mapset @metrics_name_list |> MapSet.new()
   @incomplete_data_map FileHandler.incomplete_data_map()
+  @selectors_map FileHandler.selectors_map()
   @tables_list FileHandler.table_map() |> Map.values() |> List.flatten() |> Enum.uniq()
 
   @default_complexity_weight 0.3
@@ -74,11 +77,13 @@ defmodule Sanbase.Clickhouse.Metric do
   """
   @impl Sanbase.Metric.Behaviour
 
-  def timeseries_data(_metric, %{slug: []}, _from, _to, _interval, _aggregation), do: {:ok, []}
+  def timeseries_data(_metric, %{slug: []}, _from, _to, _interval, _opts), do: {:ok, []}
 
-  def timeseries_data(metric, %{slug: slug}, from, to, interval, aggregation) do
-    aggregation = aggregation || Map.get(@aggregation_map, metric)
-    {query, args} = timeseries_data_query(metric, slug, from, to, interval, aggregation)
+  def timeseries_data(metric, %{slug: slug}, from, to, interval, opts) do
+    aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
+    filters = Keyword.get(opts, :additional_filters, [])
+
+    {query, args} = timeseries_data_query(metric, slug, from, to, interval, aggregation, filters)
 
     ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
       %{
@@ -92,28 +97,36 @@ defmodule Sanbase.Clickhouse.Metric do
   defdelegate histogram_data(metric, slug, from, to, interval, limit), to: HistogramMetric
 
   @impl Sanbase.Metric.Behaviour
-  def aggregated_timeseries_data(metric, selector, from, to, aggregation \\ nil)
+  def aggregated_timeseries_data(metric, selector, from, to, opts)
 
-  def aggregated_timeseries_data(_metric, nil, _from, _to, _aggregation), do: {:ok, %{}}
-  def aggregated_timeseries_data(_metric, [], _from, _to, _aggregation), do: {:ok, %{}}
+  def aggregated_timeseries_data(_metric, nil, _from, _to, _opts), do: {:ok, %{}}
+  def aggregated_timeseries_data(_metric, [], _from, _to, _opts), do: {:ok, %{}}
 
-  def aggregated_timeseries_data(metric, %{slug: slug_or_slugs}, from, to, aggregation)
+  def aggregated_timeseries_data(metric, %{slug: slug_or_slugs}, from, to, opts)
       when is_binary(slug_or_slugs) or is_list(slug_or_slugs) do
-    aggregation = aggregation || Map.get(@aggregation_map, metric)
-    get_aggregated_timeseries_data(metric, slug_or_slugs |> List.wrap(), from, to, aggregation)
+    aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
+    filters = Keyword.get(opts, :additional_filters, [])
+    slugs = List.wrap(slug_or_slugs)
+    get_aggregated_timeseries_data(metric, slugs, from, to, aggregation, filters)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_by_filter(metric, from, to, operator, threshold, aggregation) do
-    aggregation = aggregation || Map.get(@aggregation_map, metric)
-    {query, args} = slugs_by_filter_query(metric, from, to, operator, threshold, aggregation)
+  def slugs_by_filter(metric, from, to, operator, threshold, opts) do
+    aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
+    filters = Keyword.get(opts, :additional_filters, [])
+
+    {query, args} =
+      slugs_by_filter_query(metric, from, to, operator, threshold, aggregation, filters)
+
     ClickhouseRepo.query_transform(query, args, fn [slug, _value] -> slug end)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_order(metric, from, to, direction, aggregation) do
-    aggregation = aggregation || Map.get(@aggregation_map, metric)
-    {query, args} = slugs_order_query(metric, from, to, direction, aggregation)
+  def slugs_order(metric, from, to, direction, opts) do
+    aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
+    filters = Keyword.get(opts, :additional_filters, [])
+
+    {query, args} = slugs_order_query(metric, from, to, direction, aggregation, filters)
     ClickhouseRepo.query_transform(query, args, fn [slug, _value] -> slug end)
   end
 
@@ -128,7 +141,7 @@ defmodule Sanbase.Clickhouse.Metric do
        min_interval: min_interval,
        default_aggregation: default_aggregation,
        available_aggregations: @plain_aggregations,
-       available_selectors: [:slug],
+       available_selectors: Map.get(@selectors_map, metric),
        data_type: Map.get(@metrics_data_type_map, metric),
        complexity_weight: @default_complexity_weight
      }}
@@ -225,11 +238,12 @@ defmodule Sanbase.Clickhouse.Metric do
     ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
   end
 
-  defp get_aggregated_timeseries_data(metric, slugs, from, to, aggregation)
+  defp get_aggregated_timeseries_data(metric, slugs, from, to, aggregation, filters)
        when is_list(slugs) and length(slugs) > 50 do
     result =
       Enum.chunk_every(slugs, 50)
-      |> Sanbase.Parallel.map(&get_aggregated_timeseries_data(metric, &1, from, to, aggregation),
+      |> Sanbase.Parallel.map(
+        &get_aggregated_timeseries_data(metric, &1, from, to, aggregation, filters),
         timeout: 25_000,
         max_concurrency: 8,
         ordered: false,
@@ -242,7 +256,8 @@ defmodule Sanbase.Clickhouse.Metric do
     {:ok, result}
   end
 
-  defp get_aggregated_timeseries_data(metric, slugs, from, to, aggregation) when is_list(slugs) do
+  defp get_aggregated_timeseries_data(metric, slugs, from, to, aggregation, filters)
+       when is_list(slugs) do
     {:ok, asset_map} = slug_to_asset_id_map()
 
     case Map.take(asset_map, slugs) |> Map.values() do
@@ -252,7 +267,8 @@ defmodule Sanbase.Clickhouse.Metric do
       asset_ids ->
         {:ok, asset_id_map} = asset_id_to_slug_map()
 
-        {query, args} = aggregated_timeseries_data_query(metric, asset_ids, from, to, aggregation)
+        {query, args} =
+          aggregated_timeseries_data_query(metric, asset_ids, from, to, aggregation, filters)
 
         ClickhouseRepo.query_reduce(query, args, %{}, fn [asset_id, value], acc ->
           slug = Map.get(asset_id_map, asset_id)

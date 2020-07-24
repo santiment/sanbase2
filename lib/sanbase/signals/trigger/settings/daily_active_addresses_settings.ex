@@ -90,7 +90,7 @@ defmodule Sanbase.Signal.Trigger.DailyActiveAddressesSettings do
              from,
              to,
              interval,
-             :last
+             aggregation: :last
            ) do
         {:ok, result} -> result
         _ -> []

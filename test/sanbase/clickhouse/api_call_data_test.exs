@@ -2,7 +2,7 @@ defmodule Sanbase.Clickhouse.ApiCallDataTest do
   use Sanbase.DataCase
 
   import Sanbase.Factory
-  import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
+  import ExUnit.CaptureLog
 
   alias Sanbase.Clickhouse.ApiCallData
 
@@ -13,69 +13,55 @@ defmodule Sanbase.Clickhouse.ApiCallDataTest do
   end
 
   test "clickhouse returns data", context do
-    dt1_str = "2019-01-01T00:00:00Z"
-    dt2_str = "2019-01-02T00:00:00Z"
-    dt3_str = "2019-01-03T00:00:00Z"
+    dt1 = ~U[2019-01-01 00:00:00Z]
+    dt2 = ~U[2019-01-02 00:00:00Z]
+    dt3 = ~U[2019-01-03 00:00:00Z]
 
     rows = [
-      [from_iso8601_to_unix!(dt1_str), 400],
-      [from_iso8601_to_unix!(dt2_str), 100],
-      [from_iso8601_to_unix!(dt3_str), 200]
+      [DateTime.to_unix(dt1), 400],
+      [DateTime.to_unix(dt2), 100],
+      [DateTime.to_unix(dt3), 200]
     ]
 
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      result =
-        ApiCallData.api_call_history(
-          context.user.id,
-          from_iso8601!(dt1_str),
-          from_iso8601!(dt3_str),
-          "1d"
-        )
+      result = ApiCallData.api_call_history(context.user.id, dt1, dt3, "1d")
 
       assert result ==
                {:ok,
                 [
-                  %{api_calls_count: 400, datetime: from_iso8601!(dt1_str)},
-                  %{api_calls_count: 100, datetime: from_iso8601!(dt2_str)},
-                  %{api_calls_count: 200, datetime: from_iso8601!(dt3_str)}
+                  %{api_calls_count: 400, datetime: dt1},
+                  %{api_calls_count: 100, datetime: dt2},
+                  %{api_calls_count: 200, datetime: dt3}
                 ]}
     end)
   end
 
   test "clickhouse returns empty list", context do
-    dt1_str = "2019-01-01T00:00:00Z"
-    dt2_str = "2019-01-03T00:00:00Z"
+    dt1 = ~U[2019-01-01 00:00:00Z]
+    dt2 = ~U[2019-01-03 00:00:00Z]
 
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      result =
-        ApiCallData.api_call_history(
-          context.user.id,
-          from_iso8601!(dt1_str),
-          from_iso8601!(dt2_str),
-          "1d"
-        )
+      result = ApiCallData.api_call_history(context.user.id, dt1, dt2, "1d")
 
       assert result == {:ok, []}
     end)
   end
 
   test "clickhouse returns error", context do
-    dt1_str = "2019-01-01T00:00:00Z"
-    dt3_str = "2019-01-03T00:00:00Z"
+    dt1 = ~U[2019-01-01 00:00:00Z]
+    dt3 = ~U[2019-01-03 00:00:00Z]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "Something went wrong"})
+    error_msg = "Something went wrong"
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, error_msg})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      {:error, error} =
-        ApiCallData.api_call_history(
-          context.user.id,
-          from_iso8601!(dt1_str),
-          from_iso8601!(dt3_str),
-          "1d"
-        )
+      assert capture_log(fn ->
+               {:error, error} = ApiCallData.api_call_history(context.user.id, dt1, dt3, "1d")
 
-      assert error =~ "Cannot execute database query."
+               assert error =~ "Cannot execute database query."
+             end) =~ error_msg
     end)
   end
 end

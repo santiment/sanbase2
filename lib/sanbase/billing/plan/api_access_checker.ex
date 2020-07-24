@@ -38,8 +38,7 @@ defmodule Sanbase.Billing.Plan.ApiAccessChecker do
     {:metric, "exchange_token_supply"},
     {:metric, "exchange_inflow"},
     {:metric, "exchange_outflow"},
-    {:metric, "exchange_balance"},
-    {:query, :exchange_volume}
+    {:metric, "exchange_balance"}
   ]
 
   def historical_data_in_days(:basic, metric) when metric in @restricted_in_basic_plan_queries do

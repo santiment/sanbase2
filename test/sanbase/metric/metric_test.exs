@@ -54,7 +54,7 @@ defmodule Sanbase.MetricTest do
 
       results =
         for metric <- rand_metrics do
-          Metric.timeseries_data(metric, "santiment", @from, @to, "1d", :avg)
+          Metric.timeseries_data(metric, "santiment", @from, @to, "1d", aggregation: :avg)
         end
 
       assert Enum.all?(results, &match?({:error, _}, &1))
@@ -69,7 +69,9 @@ defmodule Sanbase.MetricTest do
 
         results =
           for aggregation <- aggregations do
-            Metric.timeseries_data(metric, %{slug: project.slug}, @from, @to, "1d", aggregation)
+            Metric.timeseries_data(metric, %{slug: project.slug}, @from, @to, "1d",
+              aggregation: aggregation
+            )
           end
 
         assert Enum.all?(results, &match?({:ok, _}, &1))
@@ -85,7 +87,9 @@ defmodule Sanbase.MetricTest do
 
       results =
         for aggregation <- rand_aggregations do
-          Metric.timeseries_data(metric, %{slug: project.slug}, @from, @to, "1d", aggregation)
+          Metric.timeseries_data(metric, %{slug: project.slug}, @from, @to, "1d",
+            aggregation: aggregation
+          )
         end
 
       assert Enum.all?(results, &match?({:error, _}, &1))

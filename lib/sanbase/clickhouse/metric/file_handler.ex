@@ -35,14 +35,17 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   @metrics_file "metric_files/available_v2_metrics.json"
   @holders_file "metric_files/holders_metrics.json"
   @makerdao_file "metric_files/makerdao_metrics.json"
+  @label_file "metric_files/label_metrics.json"
 
   @external_resource metrics_file = Path.join(__DIR__, @metrics_file)
   @external_resource holders_file = Path.join(__DIR__, @holders_file)
   @external_resource makerdao_file = Path.join(__DIR__, @makerdao_file)
+  @external_resource label_file = Path.join(__DIR__, @label_file)
 
   @metrics_json (File.read!(metrics_file) |> Jason.decode!()) ++
                   (File.read!(holders_file) |> Jason.decode!()) ++
-                  (File.read!(makerdao_file) |> Jason.decode!())
+                  (File.read!(makerdao_file) |> Jason.decode!()) ++
+                  (File.read!(label_file) |> Jason.decode!())
 
   @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
 
@@ -60,6 +63,9 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   @metric_version_map Helper.name_to_field_map(@metrics_json, "version")
   @metrics_label_map Helper.name_to_field_map(@metrics_json, "label")
   @incomplete_data_map Helper.name_to_field_map(@metrics_json, "has_incomplete_data")
+  @selectors_map Helper.name_to_field_map(@metrics_json, "selectors", fn list ->
+                   Enum.map(list, &String.to_atom/1)
+                 end)
 
   @metrics_list @metrics_json |> Enum.map(fn %{"name" => name} -> name end)
   @metrics_mapset MapSet.new(@metrics_list)
@@ -89,6 +95,7 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   def metric_version_map(), do: @metric_version_map
   def metrics_data_type_map(), do: @metrics_data_type_map
   def incomplete_data_map(), do: @incomplete_data_map
+  def selectors_map(), do: @selectors_map
 
   def metrics_label_map(), do: @metrics_label_map
 

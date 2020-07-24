@@ -117,7 +117,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :daily_active_deposits,
           :emojis_sentiment,
           :exchange_funds_flow,
-          :exchange_volume,
           :gas_used,
           :get_project_trending_history,
           :get_word_trending_history,
@@ -166,7 +165,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         |> Enum.sort()
 
       expected_pro_queries =
-        [:exchange_wallets, :all_exchange_wallets]
+        [:exchange_wallets]
         |> Enum.sort()
 
       assert pro_queries == expected_pro_queries

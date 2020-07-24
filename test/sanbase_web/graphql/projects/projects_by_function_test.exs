@@ -83,11 +83,11 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionTest do
     }
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Metric.slugs_by_filter/6,
+      &Sanbase.Clickhouse.Metric.slugs_by_filter/6,
       {:ok, [p1.slug, p2.slug, p3.slug, p4.slug]}
     )
     |> Sanbase.Mock.prepare_mock2(
-      &Sanbase.Metric.slugs_order/5,
+      &Sanbase.Clickhouse.Metric.slugs_order/5,
       {:ok, [p1.slug, p2.slug, p3.slug, p4.slug]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -123,7 +123,7 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionTest do
             "threshold" => 100
           },
           %{
-            "metric" => "price_usd",
+            "metric" => "nvt",
             "from" => "#{Timex.shift(Timex.now(), days: -7)}",
             "to" => "#{Timex.now()}",
             "aggregation" => "#{:last}",
@@ -134,9 +134,9 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionTest do
       }
     }
 
-    Sanbase.Mock.prepare_mock(Sanbase.Metric, :slugs_by_filter, fn
+    Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.Metric, :slugs_by_filter, fn
       "daily_active_addresses", _, _, _, _, _ -> {:ok, [p1.slug, p2.slug, p3.slug]}
-      "price_usd", _, _, _, _, _ -> {:ok, [p2.slug, p3.slug, p4.slug]}
+      "nvt", _, _, _, _, _ -> {:ok, [p2.slug, p3.slug, p4.slug]}
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =

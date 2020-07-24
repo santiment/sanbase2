@@ -2,11 +2,9 @@ defmodule Sanbase.TechIndicatorsTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mockery
-  import ExUnit.CaptureLog
+  import Sanbase.Factory
 
   alias Sanbase.TechIndicators
-  alias Sanbase.SocialData.SocialVolume
-  import Sanbase.Factory
 
   setup do
     [

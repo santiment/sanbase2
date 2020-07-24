@@ -12,17 +12,11 @@ defmodule Sanbase.Billing.ExtensionPlanAccessTest do
     [user: user, conn: conn]
   end
 
-  setup do
-    eth_infr = insert(:infrastructure, %{code: "ETH"})
-    exchange_address = insert(:exchange_address, %{infrastructure: eth_infr})
-    %{exchange_address: exchange_address}
-  end
-
   test "cannot fetch by free plan", context do
-    result = get_all_exchange_wallets(context.conn)
+    result = exchange_wallets(context.conn)
 
     assert %{
-             "data" => %{"allExchangeWallets" => nil},
+             "data" => %{"exchangeWallets" => nil},
              "errors" => [
                %{
                  "message" => "unauthorized"
@@ -33,10 +27,10 @@ defmodule Sanbase.Billing.ExtensionPlanAccessTest do
 
   test "cannot fetch by pro plan", context do
     insert(:subscription_pro, user: context.user)
-    result = get_all_exchange_wallets(context.conn)
+    result = exchange_wallets(context.conn)
 
     assert %{
-             "data" => %{"allExchangeWallets" => nil},
+             "data" => %{"exchangeWallets" => nil},
              "errors" => [
                %{
                  "message" => "unauthorized"
@@ -48,18 +42,24 @@ defmodule Sanbase.Billing.ExtensionPlanAccessTest do
   test "can fetch by having plan extension", context do
     insert(:subscription_exchange_wallets_extension, user: context.user)
 
-    %{"data" => %{"allExchangeWallets" => [exchange_address]}} =
-      get_all_exchange_wallets(context.conn)
+    address = "0x127319871293912"
 
-    assert exchange_address["address"] == context.exchange_address.address
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Clickhouse.ExchangeAddress.exchange_addresses/1,
+      {:ok, [%{name: "Binance", address: address, is_dex: false}]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      %{"data" => %{"exchangeWallets" => [exchange_address]}} = exchange_wallets(context.conn)
+
+      assert exchange_address["address"] == address
+    end)
   end
 
-  defp get_all_exchange_wallets(conn) do
+  defp exchange_wallets(conn) do
     query = """
     {
-      allExchangeWallets {
+      exchangeWallets(slug: "ethereum") {
         address
-        infrastructure { code }
         isDex
       }
     }

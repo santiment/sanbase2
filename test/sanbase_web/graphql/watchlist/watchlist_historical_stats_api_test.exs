@@ -1,12 +1,12 @@
 defmodule SanbaseWeb.Graphql.WatchlistHistoricalStatsApiTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import Sanbase.Factory
+  import ExUnit.CaptureLog
   import Sanbase.TestHelpers
+  import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.UserList
-
-  import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.Factory
 
   setup do
     clean_task_supervisor_children()
@@ -100,10 +100,14 @@ defmodule SanbaseWeb.Graphql.WatchlistHistoricalStatsApiTest do
   test "the database returns an errors", context do
     %{conn: conn, from: from, to: to, watchlist: watchlist} = context
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, "Clickhouse error"})
+    error_msg = "Clickhouse error"
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, error_msg})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      %{"errors" => [error]} = get_watchlist_historical_stats(conn, from, to, watchlist)
-      assert error["message"] =~ "Can't fetch historical stats for a watchlist."
+      assert capture_log(fn ->
+               %{"errors" => [error]} = get_watchlist_historical_stats(conn, from, to, watchlist)
+               assert error["message"] =~ "Can't fetch historical stats for a watchlist."
+             end) =~ error_msg
     end)
   end
 

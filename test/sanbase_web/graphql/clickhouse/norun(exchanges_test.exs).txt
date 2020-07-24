@@ -1,12 +1,11 @@
 defmodule SanbaseWeb.Graphql.ExchangesTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Mock
   import Sanbase.Factory
   import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
 
-  setup_with_mocks([
+  setup_all_with_mocks([
     {Sanbase.Clickhouse.ExchangeAddress, [:passthrough],
      exchange_addresses: fn _ ->
        {:ok,

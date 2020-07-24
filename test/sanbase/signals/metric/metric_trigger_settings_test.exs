@@ -16,8 +16,7 @@ defmodule Sanbase.Signal.MetricTriggerSettingsTest do
       Sanbase.Timeline.TimelineEvent,
       [:passthrough],
       maybe_create_event_async: fn user_trigger_tuple, _, _ -> user_trigger_tuple end
-    },
-    {Metric, [:passthrough], timeseries_data: fn _, _, _, _, _ -> {:ok, []} end}
+    }
   ]) do
     []
   end
@@ -60,9 +59,9 @@ defmodule Sanbase.Signal.MetricTriggerSettingsTest do
           fn -> {:ok, [%{datetime: datetimes |> List.first(), value: 100}]} end,
           fn -> {:ok, [%{datetiem: datetimes |> List.last(), value: 5000}]} end
         ]
-        |> Sanbase.Mock.wrap_consecutives(arity: 5)
+        |> Sanbase.Mock.wrap_consecutives(arity: 6)
 
-      Sanbase.Mock.prepare_mock(Metric, :timeseries_data, mock_fun)
+      Sanbase.Mock.prepare_mock(Sanbase.SocialData.MetricAdapter, :timeseries_data, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         [triggered] =
           MetricTriggerSettings.type()
@@ -91,12 +90,12 @@ defmodule Sanbase.Signal.MetricTriggerSettingsTest do
       %{user: user, project: project, datetimes: datetimes}
     end
 
-    test "signal with random metric works - above operation", context do
+    test "signal with a metric works - above operation", context do
       %{project: project, user: user, datetimes: datetimes} = context
 
       trigger_settings = %{
         type: "metric_signal",
-        metric: random_metric(),
+        metric: "active_addresses_24h",
         target: %{slug: project.slug},
         channel: "telegram",
         operation: %{above: 300}
@@ -117,9 +116,9 @@ defmodule Sanbase.Signal.MetricTriggerSettingsTest do
           fn -> {:ok, [%{datetime: datetimes |> List.first(), value: 100}]} end,
           fn -> {:ok, [%{datetiem: datetimes |> List.last(), value: 5000}]} end
         ]
-        |> Sanbase.Mock.wrap_consecutives(arity: 5)
+        |> Sanbase.Mock.wrap_consecutives(arity: 6)
 
-      Sanbase.Mock.prepare_mock(Metric, :timeseries_data, mock_fun)
+      Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.Metric, :timeseries_data, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         [triggered] =
           MetricTriggerSettings.type()
@@ -130,12 +129,12 @@ defmodule Sanbase.Signal.MetricTriggerSettingsTest do
       end)
     end
 
-    test "signal with random metric works - percent change operation", context do
+    test "signal with metric works - percent change operation", context do
       %{project: project, user: user, datetimes: datetimes} = context
 
       trigger_settings = %{
         type: "metric_signal",
-        metric: random_metric(),
+        metric: "active_addresses_24h",
         target: %{slug: project.slug},
         channel: "telegram",
         operation: %{percent_up: 100}
@@ -154,9 +153,9 @@ defmodule Sanbase.Signal.MetricTriggerSettingsTest do
           fn -> {:ok, [%{datetime: datetimes |> List.first(), value: 100}]} end,
           fn -> {:ok, [%{datetiem: datetimes |> List.last(), value: 500}]} end
         ]
-        |> Sanbase.Mock.wrap_consecutives(arity: 5)
+        |> Sanbase.Mock.wrap_consecutives(arity: 6)
 
-      Sanbase.Mock.prepare_mock(Metric, :timeseries_data, mock_fun)
+      Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.Metric, :timeseries_data, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         [triggered] =
           MetricTriggerSettings.type()

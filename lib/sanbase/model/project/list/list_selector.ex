@@ -131,12 +131,13 @@ defmodule Sanbase.Model.Project.ListSelector do
   end
 
   defp filters_metrics_valid?(filters) do
-    Enum.find(filters, fn %{metric: metric} ->
-      not Sanbase.Metric.has_metric?(metric)
+    Enum.map(filters, fn %{metric: metric} ->
+      Sanbase.Metric.has_metric?(metric)
     end)
+    |> Enum.find(&match?({:error, _}, &1))
     |> case do
       nil -> true
-      metric -> {:error, "The metric #{metric} is mistyped or not supported."}
+      {:error, error} -> {:error, error}
     end
   end
 
@@ -292,7 +293,7 @@ defmodule Sanbase.Model.Project.ListSelector do
                 filter.to,
                 filter.operator,
                 filter.threshold,
-                filter.aggregation
+                aggregation: filter.aggregation
               )
             end)
 
@@ -321,7 +322,8 @@ defmodule Sanbase.Model.Project.ListSelector do
     %{metric: metric, from: from, to: to, direction: direction} = order_by
     aggregation = Map.get(order_by, :aggregation)
 
-    {:ok, ordered_slugs} = Sanbase.Metric.slugs_order(metric, from, to, direction, aggregation)
+    {:ok, ordered_slugs} =
+      Sanbase.Metric.slugs_order(metric, from, to, direction, aggregation: aggregation)
 
     case slugs do
       :all ->

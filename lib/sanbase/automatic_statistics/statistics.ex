@@ -226,11 +226,8 @@ defmodule Sanbase.Statistics do
     now = Timex.now()
 
     active_users_in_last_12h = ApiCallData.active_users_count(Timex.shift(now, hours: -12), now)
-
     active_users_in_last_24h = ApiCallData.active_users_count(Timex.shift(now, days: -1), now)
-
     active_users_in_last_7d = ApiCallData.active_users_count(Timex.shift(now, days: -7), now)
-
     active_users_in_last_30d = ApiCallData.active_users_count(Timex.shift(now, days: -30), now)
 
     %{

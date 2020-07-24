@@ -1,7 +1,6 @@
 defmodule Sanbase.Etherbi.AverageTokenAgeConsumedInDaysApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Mock
   import Sanbase.Factory
   import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
@@ -27,28 +26,24 @@ defmodule Sanbase.Etherbi.AverageTokenAgeConsumedInDaysApiTest do
   test "fetch token age consumed in days", context do
     %{datetimes: datetimes} = context
 
-    with_mocks([
-      {Sanbase.Metric, [:passthrough],
-       [
-         timeseries_data: fn
-           "age_destroyed", _, _, _, _, _ ->
-             {:ok,
-              [
-                %{datetime: Enum.at(datetimes, 0), value: 1000},
-                %{datetime: Enum.at(datetimes, 1), value: 4000},
-                %{datetime: Enum.at(datetimes, 2), value: 10_000}
-              ]}
+    Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.Metric, :timeseries_data, fn
+      "age_destroyed", _, _, _, _, _ ->
+        {:ok,
+         [
+           %{datetime: Enum.at(datetimes, 0), value: 1000},
+           %{datetime: Enum.at(datetimes, 1), value: 4000},
+           %{datetime: Enum.at(datetimes, 2), value: 10_000}
+         ]}
 
-           "transaction_volume", _, _, _, _, _ ->
-             {:ok,
-              [
-                %{datetime: Enum.at(datetimes, 0), value: 100},
-                %{datetime: Enum.at(datetimes, 1), value: 200},
-                %{datetime: Enum.at(datetimes, 2), value: 250}
-              ]}
-         end
-       ]}
-    ]) do
+      "transaction_volume", _, _, _, _, _ ->
+        {:ok,
+         [
+           %{datetime: Enum.at(datetimes, 0), value: 100},
+           %{datetime: Enum.at(datetimes, 1), value: 200},
+           %{datetime: Enum.at(datetimes, 2), value: 250}
+         ]}
+    end)
+    |> Sanbase.Mock.run_with_mocks(fn ->
       query = """
       {
         averageTokenAgeConsumedInDays(
@@ -74,6 +69,6 @@ defmodule Sanbase.Etherbi.AverageTokenAgeConsumedInDaysApiTest do
                %{"datetime" => "2017-05-14T21:45:00Z", "tokenAge" => 20.0},
                %{"datetime" => "2017-05-15T21:45:00Z", "tokenAge" => 40.0}
              ]
-    end
+    end)
   end
 end

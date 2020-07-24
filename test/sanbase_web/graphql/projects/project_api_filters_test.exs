@@ -20,7 +20,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFiltersTest do
     %{conn: conn, from: from, to: to} = context
 
     filter = %{
-      metric: "price_usd",
+      metric: "daily_active_addresses",
       from: from,
       to: to,
       aggregation: :last,
@@ -30,7 +30,10 @@ defmodule SanbaseWeb.Graphql.ProjectApiFiltersTest do
 
     %{p1: p1, p2: p2, p3: p3, p4: p4, p5: p5} = context
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Metric.slugs_by_filter/6, {:ok, [p1.slug, p2.slug]})
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Clickhouse.Metric.slugs_by_filter/6,
+      {:ok, [p1.slug, p2.slug]}
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       slugs =
         filtered_projects(conn, [filter])

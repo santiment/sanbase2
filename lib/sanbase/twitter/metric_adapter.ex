@@ -28,7 +28,7 @@ defmodule Sanbase.Twitter.MetricAdapter do
   def complexity_weight(_), do: @default_complexity_weight
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data("twitter_followers", %{slug: slug}, from, to, interval, _aggregation) do
+  def timeseries_data("twitter_followers", %{slug: slug}, from, to, interval, _opts) do
     with %Project{} = project <- Project.by_slug(slug),
          {:ok, twitter_name} <- Project.twitter_handle(project),
          {:ok, data} <- Store.all_records_for_measurement(twitter_name, from, to, interval) do
@@ -49,17 +49,17 @@ defmodule Sanbase.Twitter.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def aggregated_timeseries_data("twitter_followers", %{slug: _slug}, _from, _to, _aggregation) do
+  def aggregated_timeseries_data("twitter_followers", %{slug: _slug}, _from, _to, _opts) do
     {:error, "not_implemented"}
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_by_filter(_metric, _from, _to, _operator, _threshold, _aggregation) do
+  def slugs_by_filter(_metric, _from, _to, _operator, _threshold, _opts) do
     {:error, "Slugs filtering is not implemented for twitter data."}
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_order(_metric, _from, _to, _direction, _aggregation) do
+  def slugs_order(_metric, _from, _to, _direction, _opts) do
     {:error, "Slugs ordering is not implemented for twitter data."}
   end
 

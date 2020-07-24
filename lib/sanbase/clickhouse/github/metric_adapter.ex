@@ -5,6 +5,8 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.Github
 
+  @aggregations [:sum]
+
   @timeseries_metrics_function_mapping %{
     "dev_activity" => :dev_activity,
     "github_activity" => :github_activity,
@@ -37,7 +39,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   def complexity_weight(_), do: @default_complexity_weight
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data(metric, %{slug: slug}, from, to, interval, _aggregation) do
+  def timeseries_data(metric, %{slug: slug}, from, to, interval, _opts) do
     case Project.github_organizations(slug) do
       {:ok, []} ->
         {:ok, []}
@@ -56,7 +58,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def aggregated_timeseries_data(metric, %{organizations: organizations}, from, to, _aggregation)
+  def aggregated_timeseries_data(metric, %{organizations: organizations}, from, to, _opts)
       when is_binary(organizations) or is_list(organizations) do
     apply(
       Github,
@@ -69,7 +71,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
     )
   end
 
-  def aggregated_timeseries_data(metric, %{slug: slug_or_slugs}, from, to, aggregation) do
+  def aggregated_timeseries_data(metric, %{slug: slug_or_slugs}, from, to, opts) do
     slugs = slug_or_slugs |> List.wrap()
 
     organizations =
@@ -80,16 +82,16 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
       |> Enum.map(&elem(&1, 1))
       |> List.flatten()
 
-    aggregated_timeseries_data(metric, %{organizations: organizations}, from, to, aggregation)
+    aggregated_timeseries_data(metric, %{organizations: organizations}, from, to, opts)
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_by_filter(_metric, _from, _to, _operator, _threshold, _aggregation) do
+  def slugs_by_filter(_metric, _from, _to, _operator, _threshold, _opts) do
     {:error, "Slugs filtering is not implemented for github data. Use `dev_activity_1d` instead"}
   end
 
   @impl Sanbase.Metric.Behaviour
-  def slugs_order(_metric, _from, _to, _direction, _aggregation) do
+  def slugs_order(_metric, _from, _to, _direction, _opts) do
     {:error, "Slugs ordering is not implemented for github data. Use `dev_activity_1d` instead"}
   end
 
@@ -150,7 +152,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
        metric: metric,
        min_interval: "1m",
        default_aggregation: :sum,
-       available_aggregations: [:sum],
+       available_aggregations: @aggregations,
        available_selectors: [:slug],
        data_type: :timeseries,
        complexity_weight: @default_complexity_weight
@@ -175,7 +177,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def available_aggregations(), do: [:sum]
+  def available_aggregations(), do: @aggregations
 
   @impl Sanbase.Metric.Behaviour
   def available_timeseries_metrics(), do: @timeseries_metrics

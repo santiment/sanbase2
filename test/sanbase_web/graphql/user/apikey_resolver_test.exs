@@ -5,11 +5,9 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
   import Sanbase.Factory
 
   alias Sanbase.Repo
+  alias Sanbase.Auth.{UserApikeyToken, Hmac}
 
-  alias Sanbase.Auth.{
-    UserApikeyToken,
-    Hmac
-  }
+  @moduletag capture_log: true
 
   setup do
     user = insert(:user)

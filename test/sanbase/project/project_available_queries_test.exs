@@ -2,7 +2,6 @@ defmodule Sanbase.Project.AvailableQueriesTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
-  import Sanbase.TestHelpers
 
   alias Sanbase.Model.Project.AvailableQueries
 

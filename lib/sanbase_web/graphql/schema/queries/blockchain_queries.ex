@@ -343,6 +343,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       meta(access: :free)
 
       arg(:slug, non_null(:string))
+      arg(:is_dex, :boolean)
 
       cache_resolve(&ExchangeResolver.all_exchanges/3)
     end

@@ -70,21 +70,18 @@ defmodule SanbaseWeb.ExAdmin.Insight.Post do
         input(
           post,
           :is_featured,
-          collection: ~w[true false],
-          selected: true
+          collection: ~w[true false]
         )
 
         input(
           post,
           :is_pulse,
-          collection: ~w[true false],
           selected: true
         )
 
         input(
           post,
           :is_paywall_required,
-          collection: ~w[true false],
           selected: true
         )
 

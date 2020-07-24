@@ -3,13 +3,15 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
 
   def supported_blockchains(), do: @supported_blockchains
 
-  def exchange_names(blockchain) when blockchain in @supported_blockchains do
-    {query, args} = exchange_names_query(blockchain)
+  def exchange_names(blockchain, is_dex \\ nil)
+
+  def exchange_names(blockchain, is_dex) when blockchain in @supported_blockchains do
+    {query, args} = exchange_names_query(blockchain, is_dex)
 
     Sanbase.ClickhouseRepo.query_transform(query, args, fn [owner] -> owner end)
   end
 
-  def exchange_names(blockchain), do: not_supported_blockchain_error(blockchain)
+  def exchange_names(blockchain, _), do: not_supported_blockchain_error(blockchain)
 
   def exchange_addresses(blockchain, limit \\ 1000)
 
@@ -49,11 +51,13 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
      """}
   end
 
-  defp exchange_names_query(blockchain) do
+  defp exchange_names_query(blockchain, is_dex) do
     query = """
     SELECT DISTINCT JSONExtractString(metadata, 'owner')
     FROM blockchain_address_labels
-    PREWHERE blockchain = ?1
+    PREWHERE
+      blockchain = ?1 AND
+      #{maybe_is_dex(is_dex)}
     """
 
     args = [blockchain |> String.downcase()]
@@ -66,7 +70,7 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
     SELECT DISTINCT(address), label, JSONExtractString(metadata, 'owner')
     FROM blockchain_address_labels
     PREWHERE blockchain = 'ethereum' AND label in ('centralized_exchange', 'decentralized_exchange')
-    LIMIT 1000
+    LIMIT ?2
     """
 
     args = [blockchain |> String.downcase(), limit]
@@ -89,4 +93,8 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
 
     {query, args}
   end
+
+  defp maybe_is_dex(nil), do: "label IN ('centralized_exchange', 'decentralized_exchange')"
+  defp maybe_is_dex(true), do: "label = 'decentralized_exchange'"
+  defp maybe_is_dex(false), do: "label = 'centralized_exchange'"
 end

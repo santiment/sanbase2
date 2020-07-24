@@ -19,7 +19,7 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
     {
       Sanbase.Clickhouse.ExchangeAddress,
       [:passthrough],
-      exchange_names: fn _ -> {:ok, ["Binance", "Bitfinex"]} end
+      exchange_names: fn _, _ -> {:ok, ["Binance", "Bitfinex"]} end
     }
   ]) do
     []

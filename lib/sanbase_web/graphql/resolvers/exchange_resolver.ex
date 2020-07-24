@@ -8,8 +8,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
   alias Sanbase.Clickhouse.Exchanges
 
   @doc ~s"List all exchanges"
-  def all_exchanges(_root, %{slug: slug}, _resolution) do
-    ExchangeAddress.exchange_names(slug)
+  def all_exchanges(_root, %{slug: slug} = args, _resolution) do
+    ExchangeAddress.exchange_names(slug, Map.get(args, :is_dex, nil))
   end
 
   def last_exchange_market_depth(

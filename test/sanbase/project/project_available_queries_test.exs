@@ -1,13 +1,19 @@
 defmodule Sanbase.Project.AvailableQueriesTest do
   use Sanbase.DataCase, async: false
 
+  import Mox
   import Sanbase.Factory
 
   alias Sanbase.Model.Project.AvailableQueries
 
   @slug_metrics ["priceVolumeDiff", "socialGainersLosersStatus"] |> Enum.sort()
 
+  setup :verify_on_exit!
+
   test "ethereum has specific metrics" do
+    Sanbase.MetricMock
+    |> expect(:available_slugs, fn _ -> ["ethereum"] end)
+
     project =
       insert(:project, %{
         slug: "ethereum",

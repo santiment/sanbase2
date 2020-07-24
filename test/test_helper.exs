@@ -4,3 +4,5 @@ ExUnit.start()
 Faker.start()
 
 Ecto.Adapters.SQL.Sandbox.mode(Sanbase.Repo, :manual)
+
+Mox.defmock(Sanbase.MetricMock, for: Sanbase.Metric.Behaviour)

@@ -80,6 +80,7 @@
   "mock": {:hex, :mock, "0.3.4", "c5862eb3b8c64237f45f586cf00c9d892ba07bb48305a43319d428ce3c2897dd", [:mix], [{:meck, "~> 0.8.13", [hex: :meck, repo: "hexpm", optional: false]}], "hexpm", "e6d886252f1a41f4ba06ecf2b4c8d38760b34b1c08a11c28f7397b2e03995964"},
   "mockery": {:hex, :mockery, "2.3.1", "a02fd60b10ac9ed37a7a2ecf6786c1f1dd5c75d2b079a60594b089fba32dc087", [:mix], [], "hexpm", "1d0971d88ebf084e962da3f2cfee16f0ea8e04ff73a7710428500d4500b947fa"},
   "mogrify": {:hex, :mogrify, "0.7.3", "1494ee739f6e90de158dec4d4edee2d854d2f2d06a522e943f996ae176bca53d", [:mix], [], "hexpm", "b3e90a87171c23efa6b5910d735dd44f3fda15ba07a57cdb89cdb8ecaf83988d"},
+  "mox": {:hex, :mox, "0.5.2", "55a0a5ba9ccc671518d068c8dddd20eeb436909ea79d1799e2209df7eaa98b6c", [:mix], [], "hexpm", "df4310628cd628ee181df93f50ddfd07be3e5ecc30232d3b6aadf30bdfe6092b"},
   "nimble_parsec": {:hex, :nimble_parsec, "0.5.0", "90e2eca3d0266e5c53f8fbe0079694740b9c91b6747f2b7e3c5d21966bba8300", [:mix], [], "hexpm", "5c040b8469c1ff1b10093d3186e2e10dbe483cd73d79ec017993fb3985b8a9b3"},
   "norm": {:hex, :norm, "0.12.0", "b27a629fea9aaf7757604e9d4ed06cd815c2c5fb335f38b33c1bf17db9b217b0", [:mix], [], "hexpm", "aecd53df72219966d9493e3426a32d83490c822ef618ef442721b1ae68cb6f0c"},
   "number": {:hex, :number, "1.0.1", "a1017dc867a9860b0c261bf9f3ac4990f64589dbbe50260724190c78a0b92104", [:mix], [{:decimal, "~> 1.5", [hex: :decimal, repo: "hexpm", optional: false]}], "hexpm", "149c62771306451198b2a044b4f077520c9acf6e69304723b17385257c683b52"},

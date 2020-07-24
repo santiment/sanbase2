@@ -6,6 +6,7 @@ defmodule Sanbase.Metric do
   `Sanbase.Metric.Behaviour` behaviour. Such modules are added to the
   @metric_modules list and everything else happens automatically.
   """
+  @behaviour Sanbase.Metric.Behaviour
 
   alias Sanbase.Clickhouse
 
@@ -336,6 +337,7 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Get all available slugs for a given metric
   """
+  @impl Sanbase.Metric.Behaviour
   def available_slugs(metric)
 
   for %{metric: metric, module: module} <- @metric_module_mapping do
@@ -349,6 +351,7 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Get all available aggregations
   """
+  @impl Sanbase.Metric.Behaviour
   def available_aggregations(), do: @aggregations
 
   @doc ~s"""
@@ -358,6 +361,7 @@ defmodule Sanbase.Metric do
   - min_interval_less_or_equal - return all metrics with min interval that is
   less or equal than a given amount (expessed as a string - 5m, 1h, etc.)
   """
+  @impl Sanbase.Metric.Behaviour
   def available_metrics(opts \\ [])
 
   def available_metrics(opts) do
@@ -380,6 +384,7 @@ defmodule Sanbase.Metric do
     end
   end
 
+  @impl Sanbase.Metric.Behaviour
   @spec available_metrics_for_slug(any) ::
           {:ok, list(String.t())} | {:nocache, {:ok, list(String.t())}}
   def available_metrics_for_slug(selector) do
@@ -439,13 +444,16 @@ defmodule Sanbase.Metric do
     end
   end
 
+  @impl Sanbase.Metric.Behaviour
   def available_timeseries_metrics(), do: @timeseries_metrics
 
+  @impl Sanbase.Metric.Behaviour
   def available_histogram_metrics(), do: @histogram_metrics
 
   @doc ~s"""
   Get all slugs for which at least one of the metrics is available
   """
+  @impl Sanbase.Metric.Behaviour
   def available_slugs() do
     # Providing a 2 element tuple `{any, integer}` will use that second element
     # as TTL for the cache key
@@ -465,49 +473,29 @@ defmodule Sanbase.Metric do
     end)
   end
 
-  def available_slugs_per_module() do
-    Sanbase.Cache.get_or_store({:available_slugs_per_module, 1800}, fn ->
-      {result, errors} =
-        Enum.reduce(@metric_modules, {%{}, []}, fn module, {acc, errors} ->
-          case module.available_slugs() do
-            {:ok, slugs} -> {Map.put(acc, module, slugs), errors}
-            {:error, error} -> {acc, [error | errors]}
-          end
-        end)
-
-      case errors do
-        [] -> {:ok, result}
-        _ -> {:error, "Cannot fetch all available slugs per module. Errors: #{inspect(errors)}"}
-      end
-    end)
-  end
-
-  def available_slugs_mapset() do
-    case available_slugs() do
-      {:ok, list} -> {:ok, MapSet.new(list)}
-      {:error, error} -> {:error, error}
-    end
-  end
-
   @doc ~s"""
   Get all free metrics
   """
+  @impl Sanbase.Metric.Behaviour
   def free_metrics(), do: @free_metrics
 
   @doc ~s"""
   Get all restricted metrics
   """
+  @impl Sanbase.Metric.Behaviour
   def restricted_metrics(), do: @restricted_metrics
 
   @doc ~s"""
   Get a map where the key is a metric and the value is the access level
   """
+  @impl Sanbase.Metric.Behaviour
   def access_map(), do: @access_map
 
   @doc ~s"""
   Get a map where the key is a metric and the value is the min plan it is
   accessible in.
   """
+  @impl Sanbase.Metric.Behaviour
   def min_plan_map(), do: @min_plan_map
 
   # Private functions

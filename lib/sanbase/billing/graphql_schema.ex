@@ -5,7 +5,8 @@ defmodule Sanbase.Billing.GraphqlSchema do
   """
 
   alias Sanbase.Billing.Product
-  alias Sanbase.Metric
+
+  defp metric_module(), do: Application.get_env(:sanbase, :metric_module)
 
   require SanbaseWeb.Graphql.Schema
 
@@ -60,7 +61,7 @@ defmodule Sanbase.Billing.GraphqlSchema do
           {{:query, query}, %{"SANAPI" => :free, "SANBASE" => :free}}
       end)
 
-    Metric.min_plan_map()
+    metric_module().min_plan_map()
     |> Enum.into(query_min_plan_map, fn
       {metric, product_plan_map} when is_map(product_plan_map) ->
         {{:metric, metric}, product_plan_map}
@@ -98,7 +99,7 @@ defmodule Sanbase.Billing.GraphqlSchema do
   end
 
   def get_metrics_with_access_level(level) do
-    Enum.filter(Metric.access_map(), fn {_metric, metric_level} ->
+    Enum.filter(metric_module().access_map(), fn {_metric, metric_level} ->
       level == metric_level
     end)
     |> Enum.map(fn {metric, _access} -> metric end)

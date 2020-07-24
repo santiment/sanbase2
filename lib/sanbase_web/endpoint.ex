@@ -74,23 +74,24 @@ defmodule SanbaseWeb.Endpoint do
   configuration should be loaded from the system environment.
   """
   def init(_key, config) do
-    if config[:load_from_system_env] do
-      port = System.get_env("PORT") || raise "expected the PORT environment variable to be set"
+    port =
+      if config[:load_from_system_env] do
+        System.get_env("PORT") || raise "expected the PORT environment variable to be set"
+      else
+        System.get_env("PORT") || 4000
+      end
 
-      {:ok,
-       Keyword.put(config, :http, [
-         :inet6,
-         port: port,
-         protocol_options: [
-           max_header_name_length: 64,
-           max_header_value_length: 8192,
-           max_request_line_length: 16_384,
-           max_headers: 100
-         ]
-       ])}
-    else
-      {:ok, config}
-    end
+    {:ok,
+     Keyword.put(config, :http, [
+       :inet6,
+       port: port,
+       protocol_options: [
+         max_header_name_length: 64,
+         max_header_value_length: 8192,
+         max_request_line_length: 16_384,
+         max_headers: 100
+       ]
+     ])}
   end
 
   def website_url() do

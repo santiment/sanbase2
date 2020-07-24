@@ -6,7 +6,7 @@ import Config
 config :sanbase, Sanbase, url: {:system, "SANBASE_URL", ""}
 
 config :sanbase, SanbaseWeb.Endpoint,
-  http: [port: 4001],
+  http: [port: 4000],
   server: true
 
 # Print only warnings and errors during test. Do not log JSON in tests.
@@ -30,15 +30,16 @@ config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
 # Configure postgres database
 config :sanbase, Sanbase.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
-  database: "sanbase_test",
+  database: "sanbase_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool_size: 5
 
 config :sanbase, Sanbase.ClickhouseRepo,
   pool: Ecto.Adapters.SQL.Sandbox,
-  database: "sanbase_test",
+  database: "sanbase_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool_size: 5
 
-config :sanbase, Sanbase.Auth.Hmac, secret_key: "Non_empty_key_used_in_tests_only"
+config :sanbase, Sanbase.Auth.Hmac,
+  secret_key: "Non_empty_key_used_in_tests_only#{System.get_env("MIX_TEST_PARTITION")}"
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap, sync_enabled: false
 
@@ -53,17 +54,19 @@ config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
   webhook_url: "http://example.com/webhook_url",
   notifications_enabled: true
 
-config :sanbase, Sanbase.Twitter.Store, database: "twitter_followers_data_test"
+config :sanbase, Sanbase.Twitter.Store,
+  database: "twitter_followers_data_test#{System.get_env("MIX_TEST_PARTITION")}"
 
 config :sanbase, SanbaseWeb.Graphql.ContextPlug,
   basic_auth_username: "user",
   basic_auth_password: "pass"
 
-config :sanbase, Sanbase.Prices.Store, database: "prices_test"
+config :sanbase, Sanbase.Prices.Store,
+  database: "prices_test#{System.get_env("MIX_TEST_PARTITION")}"
 
 config :waffle,
   storage: Waffle.Storage.Local,
-  storage_dir: "/tmp/sanbase/filestore-test/",
+  storage_dir: "/tmp/sanbase/filestore-test#{System.get_env("MIX_TEST_PARTITION")}/",
   # Note: without using storage_dir_prefix: "/", a local "tmp/..." dir is used instead of "/tmp/..."
   storage_dir_prefix: "/"
 

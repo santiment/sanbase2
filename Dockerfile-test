@@ -24,4 +24,4 @@ RUN mix deps.compile
 COPY . /app
 RUN mix format --check-formatted
 
-CMD mix test --formatter Sanbase.FailedTestFormatter --formatter ExUnit.CLIFormatter --slowest 20
+CMD mix parallel_test --concurrency=8 --slowest=20

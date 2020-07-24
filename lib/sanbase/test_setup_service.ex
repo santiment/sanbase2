@@ -1,5 +1,4 @@
 defmodule Sanbase.TestSetupService do
-  @behaviour Sanbase.AvailableSlugs.Behaviour
   @moduledoc ~s"""
   Module for fast checking if a slug is existing.
 

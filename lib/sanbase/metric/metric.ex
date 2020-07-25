@@ -153,7 +153,7 @@ defmodule Sanbase.Metric do
             identifier,
             from,
             to,
-            aggregation
+            opts
           )
 
         false ->

@@ -270,5 +270,18 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       middleware(JWTAuth)
       resolve(&InsightResolver.unvote/3)
     end
+
+    @desc """
+    Create and insight connected to particular chart configuration
+    """
+    field :create_chart_event, :post do
+      arg(:chart_configuration_id, non_null(:id))
+      arg(:chart_event_datetime, non_null(:datetime))
+      arg(:title, non_null(:string))
+      arg(:text, non_null(:string))
+
+      middleware(JWTAuth)
+      resolve(&InsightResolver.create_chart_event/3)
+    end
   end
 end

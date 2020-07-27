@@ -1899,7 +1899,7 @@
   },
   {
     "human_readable_name": "30 Days Moving Average Of Development Activity 1 Day Change",
-    "name": "30_day_moving_avg_dev_activity_change_1d",
+    "name": "30d_moving_avg_dev_activity_change_1d",
     "metric": "30_day_moving_avg_dev_activity_change_1d",
     "version": "2019-01-01",
     "access": "free",

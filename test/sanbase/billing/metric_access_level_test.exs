@@ -25,7 +25,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "daily_trading_volume_usd",
         "dev_activity",
         "dev_activity_1d",
-        "30_day_moving_avg_dev_activity_change_1d",
+        "30d_moving_avg_dev_activity_change_1d",
         "github_activity",
         "dev_activity_contributors_count",
         "github_activity_contributors_count",

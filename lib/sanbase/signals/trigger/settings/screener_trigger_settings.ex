@@ -150,20 +150,22 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
       entering =
         Enum.map(added_slugs, fn slug ->
           project = Map.get(projects_map, slug)
-          "[##{project.ticker} | #{project.name}]("
+          "[##{project.ticker} | #{project.name}](#{Project.sanbase_link(project)})"
         end)
 
       exiting =
         Enum.map(removed_slugs, fn slug ->
           project = Map.get(projects_map, slug)
-          "[##{project.ticker} | #{project.name}]("
+          "[##{project.ticker} | #{project.name}](#{Project.sanbase_link(project)})"
         end)
 
       """
       Entering projects:
+      #{length(entering)} projects entered the screener
       #{entering}
       ---
       Exiting projects:
+      #{length(exiting)} projects exited the screener
       #{exiting}
       """
     end

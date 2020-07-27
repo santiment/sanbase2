@@ -52,7 +52,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "marketcap_usd_change_1d",
         "marketcap_usd_change_7d",
         "marketcap_usd_change_30d"
-
       ]
       |> Enum.sort()
 

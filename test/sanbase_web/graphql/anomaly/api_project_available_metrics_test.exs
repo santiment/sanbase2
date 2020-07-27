@@ -26,10 +26,11 @@ defmodule Sanbase.Project.AvailableMetricsApiTest do
     )
     |> Sanbase.Mock.prepare_mock2(
       &Sanbase.Clickhouse.MetadataHelper.metric_id_to_metric_name_map/0,
-      {:ok, %{1 => "dev_activity", 2 => "daily_active_addresses", 3 => "exchange_balance"}}
+      {:ok, %{1 => ["dev_activity"], 2 => ["daily_active_addresses"], 3 => ["exchange_balance"]}}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result = get_available_anomalies(project)
+
       %{"data" => %{"projectBySlug" => %{"availableAnomalies" => available_anomalies}}} = result
 
       assert available_anomalies |> Enum.sort() ==

@@ -38,7 +38,7 @@ defmodule Sanbase.Anomaly do
   def available_anomalies_per_metric(slug) do
     Sanbase.Cache.get_or_store(
       {__MODULE__, :available_anomalies_per_metric} |> Sanbase.Cache.hash(),
-      fn -> slug_to_anomalies_map(anomalies_per_metric: true) end
+      fn -> slug_to_anomalies_per_metric_map() end
     )
     |> case do
       {:ok, map} -> {:ok, Map.get(map, slug, [])}
@@ -108,29 +108,47 @@ defmodule Sanbase.Anomaly do
 
   # Private functions
 
-  defp slug_to_anomalies_map(opts \\ []) do
+  defp slug_to_anomalies_per_metric_map() do
     {:ok, asset_map} = asset_id_to_slug_map()
     {:ok, metric_map} = metric_id_to_metric_name_map()
 
     {query, args} = available_anomalies_query()
 
     ClickhouseRepo.query_reduce(query, args, %{}, fn [model_name, asset_id, metric_id], acc ->
-      metric = Map.get(metric_map, metric_id)
-      key = %{"metric" => metric, "model_name" => model_name}
+      metrics = Map.get(metric_map, metric_id)
+      slug = Map.get(asset_map, asset_id)
 
-      with anomaly when not is_nil(anomaly) <- Map.get(@metric_and_model_to_anomaly_map, key),
-           slug when not is_nil(slug) <- Map.get(asset_map, asset_id) do
-        if Keyword.get(opts, :anomalies_per_metric) do
-          Map.update(acc, slug, [%{metric: metric, anomalies: [anomaly]}], fn list ->
-            [%{metric: metric, anomalies: [anomaly]} | list]
-          end)
-        else
-          Map.update(acc, slug, [anomaly], fn list -> [anomaly | list] end)
+      Enum.reduce(metrics, acc, fn metric, inner_acc ->
+        key = %{"metric" => metric, "model_name" => model_name}
+        anomaly = Map.get(@metric_and_model_to_anomaly_map, key)
+
+        case not is_nil(anomaly) and not is_nil(slug) do
+          true ->
+            elem = %{metric: metric, anomalies: [anomaly]}
+            Map.update(inner_acc, slug, [elem], &[elem | &1])
+
+          false ->
+            inner_acc
         end
-      else
-        _ -> acc
-      end
+      end)
     end)
+  end
+
+  defp slug_to_anomalies_map() do
+    case slug_to_anomalies_per_metric_map() do
+      {:ok, data} ->
+        result =
+          data
+          |> Enum.into(%{}, fn {slug, list} ->
+            anomalies = Enum.flat_map(list, & &1.anomalies) |> List.flatten() |> Enum.uniq()
+            {slug, anomalies}
+          end)
+
+        {:ok, result}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   defp get_aggregated_timeseries_data(anomaly, slugs, from, to, aggr)

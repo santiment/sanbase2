@@ -283,11 +283,15 @@ defmodule Sanbase.Clickhouse.Metric do
     {:ok, metric_map} = metric_id_to_metric_name_map()
 
     ClickhouseRepo.query_reduce(query, args, [], fn [metric_id], acc ->
-      metric = Map.get(metric_map, metric_id |> Sanbase.Math.to_integer())
+      metrics = Map.get(metric_map, metric_id |> Sanbase.Math.to_integer())
 
-      case is_nil(metric) or metric not in @metrics_mapset do
-        true -> acc
-        false -> [metric | acc]
+      case metrics != nil and metrics != [] do
+        true ->
+          metrics = Enum.filter(metrics, &(&1 in @metrics_mapset))
+          metrics ++ acc
+
+        false ->
+          acc
       end
     end)
   end

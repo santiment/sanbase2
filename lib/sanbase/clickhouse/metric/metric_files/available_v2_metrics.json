@@ -2149,7 +2149,7 @@
     "aggregation": "last",
     "min_interval": "1d",
     "table": "intraday_metrics",
-    "has_incomplete_data": false,
+    "has_incomplete_data": true,
     "data_type": "timeseries"
   },
   {
@@ -2166,7 +2166,7 @@
     "aggregation": "last",
     "min_interval": "1d",
     "table": "intraday_metrics",
-    "has_incomplete_data": false,
+    "has_incomplete_data": true,
     "data_type": "timeseries"
   },
   {
@@ -2183,7 +2183,7 @@
     "aggregation": "last",
     "min_interval": "1d",
     "table": "intraday_metrics",
-    "has_incomplete_data": false,
+    "has_incomplete_data": true,
     "data_type": "timeseries"
   },
   {

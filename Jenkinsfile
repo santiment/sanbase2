@@ -24,6 +24,7 @@ slaveTemplates.dockerTemplate { label ->
           sh "docker run --rm \
             --link test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID}:test-db \
             --link test-influxdb-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID}:test-influxdb \
+            --env DATABASE_URL=postgres://postgres:postgres@test-db:5432/postgres \
             --env INFLUXDB_HOST=test-influxdb \
             -t sanbase-test:${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID}"
         } finally {

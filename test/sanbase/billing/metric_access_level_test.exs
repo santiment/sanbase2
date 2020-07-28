@@ -25,7 +25,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "daily_trading_volume_usd",
         "dev_activity",
         "dev_activity_1d",
-        "dev_activity_change_30d",
+        "30d_moving_avg_dev_activity_change_1d",
         "github_activity",
         "dev_activity_contributors_count",
         "github_activity_contributors_count",
@@ -45,7 +45,13 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "price_usd_change_30d",
         "active_addresses_24h_change_1d",
         "active_addresses_24h_change_7d",
-        "active_addresses_24h_change_30d"
+        "active_addresses_24h_change_30d",
+        "dev_activity_change_1d",
+        "dev_activity_change_7d",
+        "dev_activity_change_30d",
+        "marketcap_usd_change_1d",
+        "marketcap_usd_change_7d",
+        "marketcap_usd_change_30d"
       ]
       |> Enum.sort()
 

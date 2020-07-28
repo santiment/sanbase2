@@ -1,4 +1,5 @@
 defmodule Sanbase.Clickhouse.ExchangeAddress do
+  import Sanbase.Utils.Transform
   @supported_blockchains ["bitcoin", "ethereum", "ripple"]
 
   def supported_blockchains(), do: @supported_blockchains
@@ -8,7 +9,13 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
   def exchange_names(blockchain, is_dex) when blockchain in @supported_blockchains do
     {query, args} = exchange_names_query(blockchain, is_dex)
 
-    Sanbase.ClickhouseRepo.query_transform(query, args, fn [owner] -> owner end)
+    Sanbase.ClickhouseRepo.query_reduce(query, args, [], fn [owner], acc ->
+      case is_binary(owner) and owner != "" do
+        true -> [owner | acc]
+        false -> acc
+      end
+    end)
+    |> maybe_apply_function(&Enum.sort/1)
   end
 
   def exchange_names(blockchain, _), do: not_supported_blockchain_error(blockchain)

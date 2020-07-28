@@ -393,6 +393,10 @@ defmodule Sanbase.Insight.Post do
           })
         )
         |> Repo.insert()
+        |> case do
+          {:ok, post} -> {:ok, post |> Repo.preload(@preloads)}
+          {:error, changeset} -> {:error, changeset}
+        end
 
       {:error, reason} ->
         {:error, reason}

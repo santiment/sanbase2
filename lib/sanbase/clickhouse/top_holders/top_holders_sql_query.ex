@@ -86,8 +86,9 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
     )
     GLOBAL ANY INNER JOIN (
       SELECT address
-      FROM blockchain_address_labels
+      FROM blockchain_address_labels FINAL
       PREWHERE blockchain = ?6 AND label IN ('centralized_exchange', 'decentralized_exchange')
+      HAVING sign = 1
     ) USING address
     GROUP BY dt
     ORDER BY dt
@@ -130,8 +131,9 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
       PREWHERE
         address GLOBAL NOT IN (
           SELECT address
-          FROM blockchain_address_labels
+          FROM blockchain_address_labels FINAL
           PREWHERE blockchain = ?6 AND label IN ('centralized_exchange', 'decentralized_exchange')
+          HAVING sign = 1
         ) AND
         contract = ?2 AND
         dt >= toDateTime(?4) AND

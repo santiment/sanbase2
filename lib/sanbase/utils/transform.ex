@@ -80,6 +80,11 @@ defmodule Sanbase.Utils.Transform do
   def maybe_unwrap_ok_value({:ok, []}), do: {:ok, nil}
   def maybe_unwrap_ok_value({:error, error}), do: {:error, error}
 
+  def maybe_apply_function({:ok, list}, fun) when is_list(list) and is_function(fun, 1),
+    do: {:ok, fun.(list)}
+
+  def maybe_apply_function({:error, error}), do: {:error, error}
+
   @doc ~s"""
   Sums the values of all keys with the same datetime
 

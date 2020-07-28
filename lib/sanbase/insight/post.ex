@@ -118,9 +118,9 @@ defmodule Sanbase.Insight.Post do
       :ready_state,
       :is_pulse,
       :is_paywall_required,
-      :is_chart_event,
       :prediction,
       :price_chart_project_id,
+      :is_chart_event,
       :chart_event_datetime
     ])
     |> Tag.put_tags(attrs)
@@ -382,15 +382,21 @@ defmodule Sanbase.Insight.Post do
         user_id,
         %{chart_configuration_id: chart_configuration_for_event_id} = args
       ) do
-    %__MODULE__{user_id: user_id}
-    |> create_changeset(
-      Map.merge(args, %{
-        chart_configuration_for_event_id: chart_configuration_for_event_id,
-        is_chart_event: true,
-        ready_state: @published
-      })
-    )
-    |> Repo.insert()
+    case Configuration.by_id(chart_configuration_for_event_id, user_id) do
+      {:ok, conf} ->
+        %__MODULE__{user_id: user_id}
+        |> create_changeset(
+          Map.merge(args, %{
+            chart_configuration_for_event_id: conf.id,
+            is_chart_event: true,
+            ready_state: @published
+          })
+        )
+        |> Repo.insert()
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   # Helper functions

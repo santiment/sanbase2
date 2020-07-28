@@ -272,7 +272,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
     end
 
     @desc """
-    Create and insight connected to particular chart configuration
+    Create an insight connected to particular chart configuration
     """
     field :create_chart_event, :post do
       arg(:chart_configuration_id, non_null(:id))

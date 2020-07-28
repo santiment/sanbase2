@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.3
--- Dumped by pg_dump version 12.3
+-- Dumped from database version 10.13
+-- Dumped by pg_dump version 11.6
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -72,6 +72,8 @@ CREATE TYPE public.status AS ENUM (
 
 
 SET default_tablespace = '';
+
+SET default_with_oids = false;
 
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
@@ -2282,6 +2284,7 @@ CREATE TABLE public.votes (
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     timeline_event_id bigint,
+    count integer DEFAULT 1,
     CONSTRAINT only_one_fk CHECK (((
 CASE
     WHEN (post_id IS NULL) THEN 0
@@ -4744,4 +4747,9 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200706070758);
 INSERT INTO public."schema_migrations" (version) VALUES (20200707142725);
 INSERT INTO public."schema_migrations" (version) VALUES (20200707155254);
 INSERT INTO public."schema_migrations" (version) VALUES (20200716074754);
+<<<<<<< HEAD
 INSERT INTO public."schema_migrations" (version) VALUES (20200727113432);
+=======
+INSERT INTO public."schema_migrations" (version) VALUES (20200728103633);
+INSERT INTO public."schema_migrations" (version) VALUES (20200728105033);
+>>>>>>> Votes now can stack up to 20

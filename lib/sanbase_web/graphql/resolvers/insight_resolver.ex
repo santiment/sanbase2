@@ -8,7 +8,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   alias Sanbase.Vote
   alias Sanbase.Insight.Post
   alias Sanbase.Comments.EntityComment
-  alias Sanbase.Repo
   alias SanbaseWeb.Graphql.Helpers.Utils
 
   require Logger
@@ -142,34 +141,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     equal to the san balance of the voter
   """
   def votes(%Post{} = post, _args, _context) do
-    {total_votes, total_san_votes} =
-      post
-      |> Repo.preload(votes: [user: :eth_accounts])
-      |> Map.get(:votes)
-      |> Stream.map(&Map.get(&1, :user))
-      |> Stream.map(&User.san_balance!/1)
-      |> Enum.reduce({0, 0}, fn san_balance, {votes, san_token_votes} ->
-        {votes + 1, san_token_votes + san_balance}
-      end)
-
-    {:ok,
-     %{
-       total_votes: total_votes,
-       total_san_votes: total_san_votes |> Sanbase.Math.to_integer()
-     }}
+    {:ok, %{total_votes: Vote.total_votes(post)}}
   end
 
-  def voted_at(%Post{} = post, _args, %{
-        context: %{auth: %{current_user: user}}
-      }) do
-    post
-    |> Repo.preload([:votes])
-    |> Map.get(:votes, [])
-    |> Enum.find(&(&1.user_id == user.id))
-    |> case do
-      nil -> {:ok, nil}
-      vote -> {:ok, vote.inserted_at}
-    end
+  def voted_at(%Post{} = post, _args, %{context: %{auth: %{current_user: user}}}) do
+    {:ok, Vote.voted_at(post, user)}
   end
 
   def voted_at(%Post{}, _args, _context), do: {:ok, nil}
@@ -204,9 +180,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   end
 
   # Note: deprecated - should be removed if not used by frontend
-  def insight_comments(_root, %{insight_id: post_id} = args, _resolution) do
+  def insight_comments(_root, %{insight_id: insight_id} = args, _resolution) do
     comments =
-      EntityComment.get_comments(:insight, post_id, args)
+      EntityComment.get_comments(:insight, insight_id, args)
       |> Enum.map(& &1.comment)
 
     {:ok, comments}

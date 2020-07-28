@@ -17,7 +17,7 @@ defmodule Sanbase.Insight.Post do
 
   require Logger
 
-  @preloads [:votes, :user, :images, :tags, :chart_configuration_for_event]
+  @preloads [:user, :images, :tags, :chart_configuration_for_event]
   # state
   @awaiting_approval "awaiting_approval"
   @approved "approved"

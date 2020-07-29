@@ -69,4 +69,14 @@ defmodule Sanbase.Auth.UserFollower do
     )
     |> Repo.all()
   end
+
+  def user_id_to_followers_count() do
+    from(
+      uf in __MODULE__,
+      select: {uf.user_id, count(uf.follower_id)},
+      group_by: uf.user_id
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
 end

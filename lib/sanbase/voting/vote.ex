@@ -146,6 +146,17 @@ defmodule Sanbase.Vote do
     }
   end
 
+  @spec post_id_to_votes() :: map()
+  def post_id_to_votes() do
+    from(
+      v in __MODULE__,
+      group_by: v.post_id,
+      select: {v.post_id, count(v.id)}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
   @spec get_by_opts(vote_kw_list_params) :: %__MODULE__{} | nil
   def get_by_opts(opts) when is_list(opts) do
     Repo.get_by(__MODULE__, opts)

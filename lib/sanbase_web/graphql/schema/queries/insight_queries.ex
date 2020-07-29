@@ -15,6 +15,12 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
   alias SanbaseWeb.Graphql.Middlewares.PostPaywallFilter
 
   object :insight_queries do
+    field :popular_insight_authors, list_of(:user) do
+      meta(access: :free)
+
+      cache_resolve(&InsightResolver.popular_insight_authors/3)
+    end
+
     @desc ~s"""
     Fetch the post with the given ID.
     The user must be logged in to access all fields for the post/insight.

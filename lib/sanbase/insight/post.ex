@@ -401,6 +401,14 @@ defmodule Sanbase.Insight.Post do
       {:error, reason} ->
         {:error, reason}
     end
+
+    def user_id_to_post_ids_list() do
+    from(
+      p in Post,
+      select: {p.user_id, fragment("array_agg(?)", p.id)},
+      group_by: p.user_id
+    )
+    |> Repo.all()
   end
 
   # Helper functions

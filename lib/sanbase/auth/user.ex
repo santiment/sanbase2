@@ -413,6 +413,11 @@ defmodule Sanbase.Auth.User do
     end
   end
 
+  def by_id(user_ids) when is_list(user_ids) do
+    users = from(u in __MODULE__, where: u.id in ^user_ids) |> Repo.all()
+    {:ok, users}
+  end
+
   def by_email(email) when is_binary(email) do
     Sanbase.Repo.get_by(User, email: email)
   end

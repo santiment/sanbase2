@@ -54,20 +54,31 @@ defmodule Sanbase.Vote do
   @spec create(vote_params) ::
           {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
   def create(attrs) do
-    case get_by_opts(attrs |> Keyword.new()) do
-      nil ->
-        attrs = Map.put(attrs, :count, 1)
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:select_if_exists, fn _repo, _changes ->
+      {:ok, get_by_opts(attrs |> Keyword.new())}
+    end)
+    |> Ecto.Multi.run(:create_or_increase_count, fn _repo, %{select_if_exists: vote} ->
+      case vote do
+        nil ->
+          attrs = Map.put(attrs, :count, 1)
 
-        %__MODULE__{}
-        |> changeset(attrs)
-        |> Repo.insert()
+          %__MODULE__{}
+          |> changeset(attrs)
+          |> Repo.insert()
 
-      %__MODULE__{count: @max_votes} = vote ->
-        {:ok, vote}
+        %__MODULE__{count: @max_votes} = vote ->
+          {:ok, vote}
 
-      %__MODULE__{count: count} = vote ->
-        changeset(vote, %{count: count + 1})
-        |> Repo.update()
+        %__MODULE__{count: count} = vote ->
+          changeset(vote, %{count: count + 1})
+          |> Repo.update()
+      end
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{create_or_increase_count: vote}} -> {:ok, vote}
+      {:error, _name, error, _} -> {:error, error}
     end
   end
 
@@ -75,16 +86,27 @@ defmodule Sanbase.Vote do
   Decreases the votes count for an entityt. If the votes count drops to 0, the vote
   entity is destroyed.
   """
-  @spec remove(%__MODULE__{}) ::
+  @spec downvote(%__MODULE__{}) ::
           {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
-  def remove(%__MODULE__{} = vote) do
-    case vote do
-      %__MODULE__{count: 1} ->
-        Repo.delete(vote)
+  def downvote(attrs) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:select_if_exists, fn _repo, _changes ->
+      {:ok, get_by_opts(attrs |> Keyword.new())}
+    end)
+    |> Ecto.Multi.run(:decrease_count_or_destroy, fn _repo, %{select_if_exists: vote} ->
+      case vote do
+        %__MODULE__{count: 1} ->
+          Repo.delete(vote)
 
-      %__MODULE__{count: count} ->
-        changeset(vote, %{count: count - 1})
-        |> Repo.update()
+        %__MODULE__{count: count} ->
+          changeset(vote, %{count: count - 1})
+          |> Repo.update()
+      end
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{decrease_count_or_destroy: vote}} -> {:ok, vote}
+      {:error, _name, error, _} -> {:error, error}
     end
   end
 

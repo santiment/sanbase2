@@ -174,12 +174,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   def unvote(_root, args, %{context: %{auth: %{current_user: user}}}) do
     insight_id = Map.get(args, :insight_id) || Map.fetch!(args, :post_id)
 
-    with %Vote{} = vote <- Vote.get_by_opts(post_id: insight_id, user_id: user.id),
-         {:ok, _vote} <- Vote.remove(vote) do
-      Post.by_id(insight_id)
-    else
-      _error ->
-        {:error, "Can't remove vote for post with id #{insight_id}"}
+    case Vote.downvote(%{post_id: insight_id, user_id: user.id}) do
+      {:ok, _vote} -> Post.by_id(insight_id)
+      {:error, _error} -> {:error, "Can't remove vote for post with id #{insight_id}"}
     end
   end
 

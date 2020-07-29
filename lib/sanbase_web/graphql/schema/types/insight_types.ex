@@ -8,6 +8,7 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
 
   object :vote do
     field(:total_votes, non_null(:integer))
+    field(:total_voters, non_null(:integer))
     field(:current_user_votes, :integer)
   end
 

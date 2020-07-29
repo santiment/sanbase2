@@ -141,19 +141,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     equal to the san balance of the voter
   """
   def votes(%Post{} = post, _args, %{context: %{auth: %{current_user: user}}}) do
-    {:ok,
-     %{
-       total_votes: Vote.total_votes(post),
-       current_user_votes: Vote.total_votes_of_user(post, user)
-     }}
+    {:ok, Vote.total_votes(post, user)}
   end
 
   def votes(%Post{} = post, _args, _context) do
-    {:ok,
-     %{
-       total_votes: Vote.total_votes(post),
-       current_user_votes: nil
-     }}
+    {:ok, Vote.total_votes(post)}
   end
 
   def voted_at(%Post{} = post, _args, %{context: %{auth: %{current_user: user}}}) do

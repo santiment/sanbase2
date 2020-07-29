@@ -61,6 +61,16 @@ defmodule Sanbase.InsihgtVotingApiTest do
     assert user_votes_2 == 2
   end
 
+  test "total voters", context do
+    %{conn: conn, conn2: conn2, insight: insight} = context
+    for _ <- 1..2, do: vote(conn, insight)
+    for _ <- 1..3, do: vote(conn2, insight)
+
+    %{"votes" => %{"totalVoters" => total_voters}} = vote(conn, insight)
+
+    assert total_voters == 2
+  end
+
   test "downvoting an insight", context do
     %{conn: conn, insight: insight} = context
 
@@ -78,7 +88,7 @@ defmodule Sanbase.InsihgtVotingApiTest do
     mutation = """
     mutation {
       vote(insightId: #{insight_id}){
-        votes{ totalVotes currentUserVotes }
+        votes{ totalVotes currentUserVotes totalVoters }
         votedAt
       }
     }
@@ -94,7 +104,7 @@ defmodule Sanbase.InsihgtVotingApiTest do
     mutation = """
     mutation {
       unvote(insightId: #{insight_id}){
-        votes{ totalVotes currentUserVotes }
+        votes{ totalVotes currentUserVotes totalVoters }
         votedAt
       }
     }

@@ -89,20 +89,38 @@ defmodule Sanbase.Vote do
   end
 
   def voted_at(entity, %User{id: user_id}) do
-    entity_user_pair_query(entity, user_id)
+    entity_query(entity)
+    |> by_user_query(user_id)
     |> select([v], v.inserted_at)
     |> Repo.one()
   end
 
-  def total_votes(entity) do
-    total_votes_query(entity)
-    |> Repo.one()
+  def total_votes(entity, user \\ nil)
+
+  def total_votes(entity, nil) do
+    {total_votes, total_voters} =
+      total_votes_query(entity)
+      |> Repo.one()
+
+    %{
+      total_votes: total_votes,
+      total_voters: total_voters,
+      current_user_votes: nil
+    }
   end
 
-  def total_votes_of_user(entity, %User{id: user_id}) do
-    total_votes_query(entity)
-    |> by_user_query(user_id)
-    |> Repo.one()
+  def total_votes(entity, %User{id: user_id}) do
+    {total_votes, total_voters} =
+      total_votes_query(entity)
+      |> Repo.one()
+
+    current_user_votes = total_votes_of_user_query(entity, user_id) |> Repo.one()
+
+    %{
+      total_votes: total_votes,
+      total_voters: total_voters,
+      current_user_votes: current_user_votes
+    }
   end
 
   @spec get_by_opts(vote_kw_list_params) :: %__MODULE__{} | nil
@@ -112,20 +130,15 @@ defmodule Sanbase.Vote do
 
   # Private functions
 
-  defp total_votes_query(%Post{id: post_id}) do
-    from(
-      v in __MODULE__,
-      select: coalesce(sum(v.count), 0),
-      where: v.post_id == ^post_id
-    )
+  defp total_votes_query(entity) do
+    entity_query(entity)
+    |> select([v], {coalesce(sum(v.count), 0), count(fragment("DISTINCT ?", v.user_id))})
   end
 
-  defp total_votes_query(%TimelineEvent{id: timeline_event_id}) do
-    from(
-      v in __MODULE__,
-      select: coalesce(sum(v.count), 0),
-      where: v.timeline_event_id == ^timeline_event_id
-    )
+  defp total_votes_of_user_query(entity, user_id) do
+    entity_query(entity)
+    |> by_user_query(user_id)
+    |> select([v], coalesce(sum(v.count), 0))
   end
 
   defp by_user_query(query, user_id) do
@@ -135,17 +148,8 @@ defmodule Sanbase.Vote do
     )
   end
 
-  defp entity_user_pair_query(%Post{id: post_id}, user_id) do
-    from(
-      v in __MODULE__,
-      where: v.post_id == ^post_id and v.user_id == ^user_id
-    )
-  end
+  defp entity_query(%Post{id: post_id}), do: from(v in __MODULE__, where: v.post_id == ^post_id)
 
-  defp entity_user_pair_query(%TimelineEvent{id: timeline_event_id}, user_id) do
-    from(
-      v in __MODULE__,
-      where: v.timeline_event_id == ^timeline_event_id and v.user_id == ^user_id
-    )
-  end
+  defp entity_query(%TimelineEvent{id: timeline_event_id}),
+    do: from(v in __MODULE__, where: v.timeline_event_id == ^timeline_event_id)
 end

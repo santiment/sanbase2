@@ -140,8 +140,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     - `total_san_votes` represents the number of votes where each vote's weight is
     equal to the san balance of the voter
   """
+  def votes(%Post{} = post, _args, %{context: %{auth: %{current_user: user}}}) do
+    {:ok,
+     %{
+       total_votes: Vote.total_votes(post),
+       current_user_votes: Vote.total_votes_of_user(post, user)
+     }}
+  end
+
   def votes(%Post{} = post, _args, _context) do
-    {:ok, %{total_votes: Vote.total_votes(post)}}
+    {:ok,
+     %{
+       total_votes: Vote.total_votes(post),
+       current_user_votes: nil
+     }}
   end
 
   def voted_at(%Post{} = post, _args, %{context: %{auth: %{current_user: user}}}) do

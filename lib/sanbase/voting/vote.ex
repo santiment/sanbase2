@@ -88,44 +88,64 @@ defmodule Sanbase.Vote do
     end
   end
 
-  def voted_at(%Post{id: post_id}, %User{id: user_id}) do
-    from(
-      v in __MODULE__,
-      select: v.inserted_at,
-      where: v.post_id == ^post_id and v.user_id == ^user_id
-    )
+  def voted_at(entity, %User{id: user_id}) do
+    entity_user_pair_query(entity, user_id)
+    |> select([v], v.inserted_at)
     |> Repo.one()
   end
 
-  def voted_at(%TimelineEvent{id: timeline_event_id}, %User{id: user_id}) do
-    from(
-      v in __MODULE__,
-      select: v.inserted_at,
-      where: v.timeline_event_id == ^timeline_event_id and v.user_id == ^user_id
-    )
+  def total_votes(entity) do
+    total_votes_query(entity)
     |> Repo.one()
   end
 
-  def total_votes(%Post{id: post_id}) do
-    from(
-      v in __MODULE__,
-      select: coalesce(sum(v.count), 0),
-      where: v.post_id == ^post_id
-    )
-    |> Repo.one()
-  end
-
-  def total_votes(%TimelineEvent{id: timeline_event_id}) do
-    from(
-      v in __MODULE__,
-      select: coalesce(sum(v.count), 0),
-      where: v.timeline_event_id == ^timeline_event_id
-    )
+  def total_votes_of_user(entity, %User{id: user_id}) do
+    total_votes_query(entity)
+    |> by_user_query(user_id)
     |> Repo.one()
   end
 
   @spec get_by_opts(vote_kw_list_params) :: %__MODULE__{} | nil
   def get_by_opts(opts) when is_list(opts) do
     Repo.get_by(__MODULE__, opts)
+  end
+
+  # Private functions
+
+  defp total_votes_query(%Post{id: post_id}) do
+    from(
+      v in __MODULE__,
+      select: coalesce(sum(v.count), 0),
+      where: v.post_id == ^post_id
+    )
+  end
+
+  defp total_votes_query(%TimelineEvent{id: timeline_event_id}) do
+    from(
+      v in __MODULE__,
+      select: coalesce(sum(v.count), 0),
+      where: v.timeline_event_id == ^timeline_event_id
+    )
+  end
+
+  defp by_user_query(query, user_id) do
+    from(
+      v in query,
+      where: v.user_id == ^user_id
+    )
+  end
+
+  defp entity_user_pair_query(%Post{id: post_id}, user_id) do
+    from(
+      v in __MODULE__,
+      where: v.post_id == ^post_id and v.user_id == ^user_id
+    )
+  end
+
+  defp entity_user_pair_query(%TimelineEvent{id: timeline_event_id}, user_id) do
+    from(
+      v in __MODULE__,
+      where: v.timeline_event_id == ^timeline_event_id and v.user_id == ^user_id
+    )
   end
 end

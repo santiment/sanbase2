@@ -9,10 +9,13 @@ defmodule Sanbase.InsihgtVotingApiTest do
   setup do
     insight = insert(:post, state: Post.approved_state(), ready_state: Post.published())
 
-    %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
-    conn = setup_jwt_auth(build_conn(), user)
+    user = insert(:user)
+    user2 = insert(:user)
 
-    {:ok, %{insight: insight, user: user, conn: conn}}
+    conn = setup_jwt_auth(build_conn(), user)
+    conn2 = setup_jwt_auth(build_conn(), user2)
+
+    {:ok, %{insight: insight, user: user, conn: conn, conn2: conn2}}
   end
 
   test "voting for an insight", context do
@@ -26,7 +29,7 @@ defmodule Sanbase.InsihgtVotingApiTest do
 
     for _ <- 1..5, do: vote(conn, insight)
 
-    # This is over the 20th vote but the vote cannot be bumped to more than 20
+    # This is over the 20th vote for this user but the vote cannot be bumped to more than 20
     %{"votedAt" => voted_at, "votes" => %{"totalVotes" => total_votes_20}} = vote(conn, insight)
 
     assert total_votes_1 == 1
@@ -39,6 +42,23 @@ defmodule Sanbase.InsihgtVotingApiTest do
              5,
              :seconds
            )
+  end
+
+  test "current user votes for an insight", context do
+    %{conn: conn, conn2: conn2, insight: insight} = context
+    for _ <- 1..5, do: vote(conn2, insight)
+
+    %{"votes" => %{"totalVotes" => total_votes_1, "currentUserVotes" => user_votes_1}} =
+      vote(conn, insight)
+
+    %{"votes" => %{"totalVotes" => total_votes_2, "currentUserVotes" => user_votes_2}} =
+      vote(conn, insight)
+
+    assert total_votes_1 == 6
+    assert user_votes_1 == 1
+
+    assert total_votes_2 == 7
+    assert user_votes_2 == 2
   end
 
   test "downvoting an insight", context do
@@ -58,7 +78,7 @@ defmodule Sanbase.InsihgtVotingApiTest do
     mutation = """
     mutation {
       vote(insightId: #{insight_id}){
-        votes{ totalVotes }
+        votes{ totalVotes currentUserVotes }
         votedAt
       }
     }
@@ -74,7 +94,7 @@ defmodule Sanbase.InsihgtVotingApiTest do
     mutation = """
     mutation {
       unvote(insightId: #{insight_id}){
-        votes{ totalVotes }
+        votes{ totalVotes currentUserVotes }
         votedAt
       }
     }

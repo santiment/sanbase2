@@ -112,9 +112,9 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         user {
           id,
           username
-        },
+        }
         votes{
-          totalSanVotes
+          totalVotes
         }
       }
     }
@@ -270,11 +270,9 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         state: Post.approved_state()
       )
 
-    %Vote{post_id: post.id, user_id: user.id}
-    |> Repo.insert!()
+    Vote.create(%{post_id: post.id, user_id: user.id})
 
-    %Vote{post_id: post2.id, user_id: staked_user.id}
-    |> Repo.insert!()
+    Vote.create(%{post_id: post2.id, user_id: staked_user.id})
 
     query = """
     {
@@ -308,9 +306,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         published_at: Timex.now() |> Timex.shift(seconds: -10)
       )
 
-    %Vote{}
-    |> Vote.changeset(%{post_id: post.id, user_id: user.id})
-    |> Repo.insert!()
+    Vote.create(%{post_id: post.id, user_id: user.id})
 
     post2 =
       insert(:post,
@@ -319,11 +315,9 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         state: Post.approved_state()
       )
 
-    %Vote{post_id: post2.id, user_id: user.id}
-    |> Repo.insert!()
+    Vote.create(%{post_id: post2.id, user_id: user.id})
 
-    %Vote{post_id: post2.id, user_id: staked_user.id}
-    |> Repo.insert!()
+    Vote.create(%{post_id: post2.id, user_id: staked_user.id})
 
     query = """
     {
@@ -432,7 +426,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
             title
             text
             user { id }
-            votes{ totalSanVotes }
+            votes{ totalVotes }
             state
             prediction
             priceChartProject{ id slug }
@@ -460,7 +454,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
       assert insight["priceChartProject"]["id"] |> String.to_integer() == project.id
       assert insight["user"]["id"] == user.id |> Integer.to_string()
-      assert insight["votes"]["totalSanVotes"] == 0
+      assert insight["votes"]["totalVotes"] == 0
       assert insight["publishedAt"] == nil
 
       created_at = Timex.parse!(insight["createdAt"], "{ISO:Extended}")
@@ -730,8 +724,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     test "deleting a post", %{user: user, conn: conn} do
       sanbase_post = insert(:post, user: user, state: Post.approved_state())
 
-      %Vote{post_id: sanbase_post.id, user_id: user.id}
-      |> Repo.insert!()
+      Vote.create(%{post_id: sanbase_post.id, user_id: user.id})
 
       query = """
       mutation {
@@ -912,7 +905,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       vote(postId: #{sanbase_post.id}) {
         id
         votes{
-          totalSanVotes
+          totalVotes
         }
       }
     }
@@ -926,7 +919,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     result_post = result["data"]["vote"]
 
     assert result_post["id"] == Integer.to_string(sanbase_post.id)
-    assert result_post["votes"]["totalSanVotes"] == Decimal.to_integer(user.san_balance)
+    assert result_post["votes"]["totalVotes"] == 1
   end
 
   test "unvoting an insight", %{conn: conn, user: user} do
@@ -939,15 +932,14 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       }
       |> Repo.insert!()
 
-    %Vote{post_id: sanbase_post.id, user_id: user.id}
-    |> Repo.insert!()
+    Vote.create(%{post_id: sanbase_post.id, user_id: user.id})
 
     query = """
     mutation {
       unvote(insightId: #{sanbase_post.id}) {
         id
         votes{
-          totalSanVotes
+          totalVotes
         }
       }
     }
@@ -960,7 +952,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     result_post = json_response(result, 200)["data"]["unvote"]
 
     assert result_post["id"] == Integer.to_string(sanbase_post.id)
-    assert result_post["votes"]["totalSanVotes"] == 0
+    assert result_post["votes"]["totalVotes"] == 0
   end
 
   test "voting is idempotent", context do

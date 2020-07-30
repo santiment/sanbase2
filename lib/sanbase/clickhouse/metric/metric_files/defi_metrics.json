@@ -1,0 +1,40 @@
+[
+  {
+    "human_readable_name": "Total value locked in DeFi projects in ETH",
+    "name": "defi_total_value_locked_eth",
+    "metric": "defipulse_total_value_locked_eth",
+    "version": "2020-05-27",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Total value locked in DeFi projects in USD",
+    "name": "defi_total_value_locked_usd",
+    "metric": "defipulse_total_value_locked_usd",
+    "version": "2020-05-27",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1h",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  }
+]

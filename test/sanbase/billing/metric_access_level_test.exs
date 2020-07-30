@@ -287,7 +287,10 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "holders_distribution_0.1_to_1_per_exchange",
         "holders_distribution_1_to_10_per_exchange",
         "holders_distribution_10_100_per_exchange",
-        "withdrawal_transactions_per_exchange"
+        "withdrawal_transactions_per_exchange",
+        # Defi
+        "defi_total_value_locked_eth",
+        "defi_total_value_locked_usd"
       ]
       |> Enum.sort()
 

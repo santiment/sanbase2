@@ -66,7 +66,10 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
     {:ok, slugs} =
       watchlist_id
       |> Sanbase.UserList.by_id()
-      |> Sanbase.UserList.get_slugs()
+      |> case do
+        nil -> {:ok, []}
+        watchlist -> watchlist |> Sanbase.UserList.get_slugs()
+      end
 
     slugs
   end

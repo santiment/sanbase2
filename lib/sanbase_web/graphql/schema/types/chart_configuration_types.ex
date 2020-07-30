@@ -30,6 +30,8 @@ defmodule SanbaseWeb.Graphql.ProjectChartTypes do
     field(:project, :project, resolve: dataloader(SanbaseRepo))
     field(:post, :post, resolve: dataloader(SanbaseRepo))
 
+    field(:chart_events, list_of(:post))
+
     field(:inserted_at, :datetime)
     field(:updated_at, :datetime)
   end

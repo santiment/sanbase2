@@ -31,6 +31,9 @@ defmodule SanbaseWeb.Graphql.InsightTypes do
     field(:prediction, :string)
     field(:is_pulse, :boolean)
     field(:is_paywall_required, :boolean)
+    field(:is_chart_event, :boolean)
+    field(:chart_event_datetime, :datetime)
+    field(:chart_configuration_for_event, :chart_configuration)
 
     field :comments_count, :integer do
       resolve(&InsightResolver.comments_count/3)

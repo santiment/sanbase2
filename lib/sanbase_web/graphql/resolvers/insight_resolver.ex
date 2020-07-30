@@ -227,4 +227,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
       {:ok, Dataloader.get(loader, SanbaseDataloader, :insights_comments_count, id) || 0}
     end)
   end
+
+  def create_chart_event(_root, args, %{context: %{auth: %{current_user: user}}}) do
+    Post.create_chart_event(user.id, args)
+  end
 end

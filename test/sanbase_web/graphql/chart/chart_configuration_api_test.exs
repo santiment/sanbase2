@@ -427,6 +427,23 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
     end
   end
 
+  test "get chart events", context do
+    conf = insert(:chart_configuration, is_public: true)
+
+    args = %{
+      is_chart_event: true,
+      chart_configuration_for_event_id: conf.id,
+      chart_event_datetime: DateTime.utc_now(),
+      title: "chart event"
+    }
+
+    insert(:post, args)
+    insert(:post, args)
+
+    res = get_chart_configuration(context.conn, conf.id) |> get_in(["data", "chartConfiguration"])
+    assert length(res["chartEvents"]) == 2
+  end
+
   # Private functions
 
   defp create_chart_configuration(conn, settings) do
@@ -515,6 +532,12 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
         metrics
         anomalies
         drawings
+        chartEvents {
+          id
+          isChartEvent
+          chartEventDatetime
+          title
+        }
       }
     }
     """

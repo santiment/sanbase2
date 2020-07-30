@@ -13,10 +13,11 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Insight.{Post, PostImage}
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Metric.MetricPostgresData
+  alias Sanbase.Chart.Configuration
 
   require Logger
 
-  @preloads [:votes, :user, :images, :tags]
+  @preloads [:votes, :user, :images, :tags, :chart_configuration_for_event]
   # state
   @awaiting_approval "awaiting_approval"
   @approved "approved"
@@ -39,11 +40,16 @@ defmodule Sanbase.Insight.Post do
     field(:is_paywall_required, :boolean, default: false)
     field(:prediction, :string, default: "unspecified")
 
+    # Chart events are insights connected to specific chart configuration and datetime
+    field(:is_chart_event, :boolean, default: false)
+    field(:chart_event_datetime, :utc_datetime)
+    belongs_to(:chart_configuration_for_event, Configuration)
+
     belongs_to(:price_chart_project, Project)
 
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
 
-    has_many(:chart_configurations, Sanbase.Chart.Configuration)
+    has_many(:chart_configurations, Configuration)
     has_many(:images, PostImage, on_delete: :delete_all)
     has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
     has_many(:votes, Vote, on_delete: :delete_all)
@@ -82,7 +88,11 @@ defmodule Sanbase.Insight.Post do
       :is_pulse,
       :is_paywall_required,
       :prediction,
-      :price_chart_project_id
+      :price_chart_project_id,
+      :is_chart_event,
+      :chart_event_datetime,
+      :chart_configuration_for_event_id,
+      :ready_state
     ])
     |> Tag.put_tags(attrs)
     |> MetricPostgresData.put_metrics(attrs)
@@ -109,7 +119,9 @@ defmodule Sanbase.Insight.Post do
       :is_pulse,
       :is_paywall_required,
       :prediction,
-      :price_chart_project_id
+      :price_chart_project_id,
+      :is_chart_event,
+      :chart_event_datetime
     ])
     |> Tag.put_tags(attrs)
     |> MetricPostgresData.put_metrics(attrs)
@@ -364,6 +376,31 @@ defmodule Sanbase.Insight.Post do
 
     from(p in Post, where: p.user_id == ^user_id)
     |> Repo.update_all(set: [user_id: anon_user_id])
+  end
+
+  def create_chart_event(
+        user_id,
+        %{chart_configuration_id: chart_configuration_for_event_id} = args
+      ) do
+    case Configuration.by_id(chart_configuration_for_event_id, user_id) do
+      {:ok, conf} ->
+        %__MODULE__{user_id: user_id}
+        |> create_changeset(
+          Map.merge(args, %{
+            chart_configuration_for_event_id: conf.id,
+            is_chart_event: true,
+            ready_state: @published
+          })
+        )
+        |> Repo.insert()
+        |> case do
+          {:ok, post} -> {:ok, post |> Repo.preload(@preloads)}
+          {:error, changeset} -> {:error, changeset}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   # Helper functions

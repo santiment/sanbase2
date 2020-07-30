@@ -1055,7 +1055,10 @@ CREATE TABLE public.posts (
     metrics character varying(255)[] DEFAULT ARRAY[]::character varying[],
     prediction character varying(255) DEFAULT NULL::character varying,
     price_chart_project_id bigint,
-    document_tokens tsvector
+    document_tokens tsvector,
+    is_chart_event boolean DEFAULT false,
+    chart_event_datetime timestamp(0) without time zone,
+    chart_configuration_for_event_id bigint
 );
 
 
@@ -4066,6 +4069,14 @@ ALTER TABLE ONLY public.post_images
 
 
 --
+-- Name: posts posts_chart_configuration_for_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.posts
+    ADD CONSTRAINT posts_chart_configuration_for_event_id_fkey FOREIGN KEY (chart_configuration_for_event_id) REFERENCES public.chart_configurations(id);
+
+
+--
 -- Name: posts_metrics posts_metrics_metric_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4733,3 +4744,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200706070758);
 INSERT INTO public."schema_migrations" (version) VALUES (20200707142725);
 INSERT INTO public."schema_migrations" (version) VALUES (20200707155254);
 INSERT INTO public."schema_migrations" (version) VALUES (20200716074754);
+INSERT INTO public."schema_migrations" (version) VALUES (20200727113432);

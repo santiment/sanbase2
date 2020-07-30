@@ -983,7 +983,65 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
            )
   end
 
+  describe "create chart event" do
+    test "successfully creates chart event", context do
+      conf = insert(:chart_configuration, is_public: true)
+
+      args = %{
+        title: "test chart event title",
+        text: "test chart event text",
+        chart_event_datetime: DateTime.utc_now() |> DateTime.to_iso8601(),
+        chart_configuration_id: conf.id
+      }
+
+      query = create_chart_event(args)
+
+      res = execute_mutation_with_success(query, "createChartEvent", context.conn)
+
+      assert res["isChartEvent"]
+      assert res["chartEventDatetime"] != nil
+      assert res["chartConfigurationForEvent"]["id"] == conf.id
+
+      {:ok, new_conf} = Sanbase.Chart.Configuration.by_id(conf.id, context.user)
+
+      assert length(new_conf.chart_events) == 1
+    end
+
+    test "chart configuration doesn't exist", context do
+      query =
+        create_chart_event(%{
+          title: "test chart event title",
+          text: "test chart event text",
+          chart_event_datetime: DateTime.utc_now() |> DateTime.to_iso8601(),
+          chart_configuration_id: 123
+        })
+
+      res = execute_mutation_with_errors(query, context.conn)
+      assert res["message"] == "Chart configuration with id 123 does not exist."
+    end
+  end
+
   # Helper functions
+
+  defp create_chart_event(args) do
+    """
+    mutation {
+      createChartEvent(
+        title: "#{args.title}",
+        text: "#{args.text}",
+        chartConfigurationId: #{args.chart_configuration_id},
+        chartEventDatetime: "#{args.chart_event_datetime}"
+      ) {
+        id
+        isChartEvent
+        chartEventDatetime
+        chartConfigurationForEvent {
+          id
+        }
+      }
+    }
+    """
+  end
 
   defp publish_insight_mutation(post) do
     """

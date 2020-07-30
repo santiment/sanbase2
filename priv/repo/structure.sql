@@ -4747,9 +4747,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200706070758);
 INSERT INTO public."schema_migrations" (version) VALUES (20200707142725);
 INSERT INTO public."schema_migrations" (version) VALUES (20200707155254);
 INSERT INTO public."schema_migrations" (version) VALUES (20200716074754);
-<<<<<<< HEAD
 INSERT INTO public."schema_migrations" (version) VALUES (20200727113432);
-=======
 INSERT INTO public."schema_migrations" (version) VALUES (20200728103633);
 INSERT INTO public."schema_migrations" (version) VALUES (20200728105033);
->>>>>>> Votes now can stack up to 20

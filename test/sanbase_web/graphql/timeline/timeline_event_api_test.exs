@@ -356,12 +356,12 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
       assert result2["votes"] == []
     end
 
-    test "when user has not upvoted, he can't downvote", context do
+    test "when user has not upvoted, downvoting does nothing", context do
       user = insert(:user)
       {timeline_event, _user_trigger} = create_timeline_event(user)
       mutation = downvote_timeline_event_mutation(timeline_event.id)
-      error = execute_mutation_with_error(context.conn, mutation)
-      assert error == "Can't remove vote for event with id #{timeline_event.id}"
+      result = execute_mutation(context.conn, mutation, "downvoteTimelineEvent")
+      assert result["votes"] == []
     end
   end
 

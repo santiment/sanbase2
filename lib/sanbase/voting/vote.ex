@@ -51,8 +51,7 @@ defmodule Sanbase.Vote do
   @doc ~s"""
   Create a new vote entity or increases the votes count up to #{@max_votes}.
   """
-  @spec create(vote_params) ::
-          {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
+  @spec create(vote_params) :: {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
   def create(attrs) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:select_if_exists, fn _repo, _changes ->
@@ -86,8 +85,7 @@ defmodule Sanbase.Vote do
   Decreases the votes count for an entityt. If the votes count drops to 0, the vote
   entity is destroyed.
   """
-  @spec downvote(%__MODULE__{}) ::
-          {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
+  @spec downvote(vote_params) :: {:ok, %__MODULE__{}} | {:error, Ecto.Changeset.t()}
   def downvote(attrs) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:select_if_exists, fn _repo, _changes ->
@@ -95,6 +93,9 @@ defmodule Sanbase.Vote do
     end)
     |> Ecto.Multi.run(:decrease_count_or_destroy, fn _repo, %{select_if_exists: vote} ->
       case vote do
+        nil ->
+          {:ok, %__MODULE__{}}
+
         %__MODULE__{count: 1} ->
           Repo.delete(vote)
 
@@ -117,9 +118,9 @@ defmodule Sanbase.Vote do
     |> Repo.one()
   end
 
-  def total_votes(entity, user \\ nil)
+  def vote_stats(entity, user \\ nil)
 
-  def total_votes(entity, nil) do
+  def vote_stats(entity, nil) do
     {total_votes, total_voters} =
       total_votes_query(entity)
       |> Repo.one()
@@ -131,7 +132,7 @@ defmodule Sanbase.Vote do
     }
   end
 
-  def total_votes(entity, %User{id: user_id}) do
+  def vote_stats(entity, %User{id: user_id}) do
     {total_votes, total_voters} =
       total_votes_query(entity)
       |> Repo.one()

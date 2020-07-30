@@ -10,7 +10,9 @@ import Config
 config :tzdata, :autoupdate, :disabled
 
 # General application configuration
-config :sanbase, ecto_repos: [Sanbase.Repo]
+config :sanbase,
+  ecto_repos: [Sanbase.Repo],
+  available_slugs_module: Sanbase.AvailableSlugs
 
 config :phoenix, :json_library, Jason
 

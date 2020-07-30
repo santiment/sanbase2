@@ -202,7 +202,9 @@ defmodule Sanbase.Application do
       ),
 
       # Service for fast checking if a slug is valid
-      Sanbase.AvailableSlugs,
+      # `:available_slugs_module` option changes the module
+      # used in test env to another one, this one is unused
+      start_in(Sanbase.AvailableSlugs, [:dev, :prod]),
 
       # Process that starts test-only deps
       start_in(Sanbase.TestSetupService, [:test])

@@ -10,9 +10,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   require Logger
 
   @datapoints 300
-  @available_slugs_module if Mix.env() == :test,
-                            do: Sanbase.DirectAvailableSlugs,
-                            else: Sanbase.AvailableSlugs
+  @available_slugs_module Application.compile_env(:sanbase, :available_slugs_module)
 
   def get_metric(_root, %{metric: metric}, _resolution) do
     case Metric.has_metric?(metric) do

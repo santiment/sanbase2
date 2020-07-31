@@ -26,7 +26,7 @@ defmodule Sanbase.Model.ProjectListTest do
       insert(:random_project) |> update_latest_cmc_data(%{rank: 3, volume_usd: 1200})
       insert(:random_project) |> update_latest_cmc_data(%{rank: 4, volume_usd: 2000})
       insert(:random_project) |> update_latest_cmc_data(%{rank: 5, volume_usd: 200})
-      insert(:random_project) |> update_latest_cmc_data(%{rank: 6, volume_usd: 10000})
+      insert(:random_project) |> update_latest_cmc_data(%{rank: 6, volume_usd: 10_000})
 
       assert Project.List.projects_page(1, 2) == Project.List.projects_page(1, 2, min_volume: 0)
       assert Project.List.projects_page(2, 2) == Project.List.projects_page(2, 2, min_volume: 0)

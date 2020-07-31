@@ -27,7 +27,7 @@ defmodule Sanbase.Model.Project.ListSelector.Transform do
 
   def atomize_values(nil), do: nil
 
-  def atomize_values(map) do
+  def atomize_values(map) when is_map(map) do
     {to_atomize, rest} = Map.split(map, [:operator, :aggregation, :direction])
 
     to_atomize
@@ -37,6 +37,8 @@ defmodule Sanbase.Model.Project.ListSelector.Transform do
     end)
     |> Map.merge(rest)
   end
+
+  def atomize_values(data), do: data
 
   def transform_from_to(%{from: from, to: to} = map) do
     %{
@@ -50,7 +52,7 @@ defmodule Sanbase.Model.Project.ListSelector.Transform do
 
   def update_dynamic_datetimes(nil), do: nil
 
-  def update_dynamic_datetimes(filter) do
+  def update_dynamic_datetimes(%{} = filter) do
     dynamic_from = Map.get(filter, :dynamic_from)
     dynamic_to = Map.get(filter, :dynamic_to)
 
@@ -83,4 +85,6 @@ defmodule Sanbase.Model.Project.ListSelector.Transform do
         |> Map.put(:to, to)
     end
   end
+
+  def update_dynamic_datetimes(filter), do: filter
 end

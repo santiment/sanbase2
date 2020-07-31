@@ -5,16 +5,24 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
 
   def valid_selector?(args) do
     args = Sanbase.MapUtils.atomize_keys(args)
-
     filters = Transform.args_to_filters(args)
+
     order_by = Transform.args_to_order_by(args) || %{}
     pagination = Transform.args_to_pagination(args) || %{}
 
-    with true <- check_filters(filters),
+    with true <- valid_args?(args),
          true <- valid_filters_combinator?(args),
-         true <- check_order_by(order_by),
-         true <- check_pagination(pagination) do
+         true <- valid_filters?(filters),
+         true <- valid_order_by?(order_by),
+         true <- valid_pagination?(pagination) do
       true
+    end
+  end
+
+  defp valid_args?(args) do
+    case args do
+      %{selector: %{}} -> true
+      _ -> {:error, "Invalid selector - it must have a 'selector' top key."}
     end
   end
 
@@ -37,16 +45,7 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
     end
   end
 
-  defp check_filters(filters) do
-    with true <- filters_structure_valid?(filters),
-         true <- filters_metrics_valid?(filters) do
-      true
-    else
-      error -> error
-    end
-  end
-
-  defp check_order_by(order_by) do
+  defp valid_order_by?(order_by) do
     order_by_schema =
       schema(%{
         metric: spec(is_binary()),
@@ -60,7 +59,7 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
     end
   end
 
-  defp check_pagination(pagination) do
+  defp valid_pagination?(pagination) do
     pagination_schema =
       schema(%{
         page: spec(&(is_integer(&1) and &1 > 0)),
@@ -72,21 +71,37 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
     end
   end
 
-  defp filters_metrics_valid?(filters) do
-    Enum.map(filters, fn %{metric: metric} ->
-      Sanbase.Metric.has_metric?(metric)
-    end)
-    |> Enum.find(&match?({:error, _}, &1))
-    |> case do
-      nil -> true
-      {:error, error} -> {:error, error}
+  defp valid_filters?(filters) do
+    case Enum.all?(filters, &is_map/1) do
+      true ->
+        filters
+        |> Enum.map(&valid_filter?/1)
+        |> Enum.find(&(&1 != true))
+        |> case do
+          nil -> true
+          error -> error |> IO.inspect(label: "FOUND THIS")
+        end
+
+      false ->
+        {:error, "Individual filters inside the filters list must be a map."}
     end
   end
 
-  @allowed_filter_keys [:metric, :from, :to, :operator, :threshold, :aggregation]
-  defp filters_structure_valid?(filters) do
+  defp valid_filter?(%{name: "market_segments", args: %{market_segments: list}}) do
+    case is_list(list) and list != [] do
+      true ->
+        true
+
+      false ->
+        {:error, "Market segments filter must provide a non-empty list of market segments."}
+    end
+  end
+
+  # Could be reworked to `name: "metric"` after the FE starts using this
+  defp valid_filter?(%{metric: metric} = filter) do
     filter_schema =
       schema(%{
+        name: spec(is_binary()),
         metric: spec(is_binary()),
         from: spec(&match?(%DateTime{}, &1)),
         to: spec(&match?(%DateTime{}, &1)),
@@ -95,22 +110,18 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
         aggregation: spec(is_atom())
       })
 
-    filter_does_not_conform = fn filter ->
-      match?({:error, _}, conform(filter, filter_schema))
-    end
+    with {:ok, _} <- conform(filter, filter_schema) |> IO.inspect(label: "111", limit: :infinity),
+         true <- Sanbase.Metric.has_metric?(metric) do
+      missing_fields =
+        [:metric, :from, :to, :operator, :threshold, :aggregation] -- Map.keys(filter)
 
-    Enum.find(filters, filter_does_not_conform)
-    |> case do
-      nil ->
-        Enum.map(filters, &(@allowed_filter_keys -- Map.keys(&1)))
-        |> Enum.find(&(&1 != []))
-        |> case do
-          nil -> true
-          fields -> {:error, "A filter has missing fields: #{inspect(fields)}."}
-        end
-
-      error ->
-        error
+      case missing_fields do
+        [] -> true
+        _ -> {:error, "A metric filter has missing fields: #{inspect(missing_fields)}."}
+      end
     end
+    |> IO.inspect(label: "VALID IFLER")
   end
+
+  defp valid_filter?(_), do: {:error, "Filter is wrongly configured."}
 end

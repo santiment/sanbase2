@@ -202,10 +202,7 @@ defmodule Sanbase.Insight.Post do
         {:error, "Cannot update not owned insight: #{post_id}"}
 
       {:error, changeset} ->
-        {
-          :error,
-          message: "Cannot update insight", details: changeset_errors_to_str(changeset)
-        }
+        {:error, message: "Cannot update insight", details: changeset_errors_to_str(changeset)}
 
       _post ->
         {:error, "Cannot update insight with id: #{post_id}"}
@@ -226,11 +223,9 @@ defmodule Sanbase.Insight.Post do
             {:ok, post |> Tag.Preloader.order_tags()}
 
           {:error, changeset} ->
-            {
-              :error,
-              message: "Cannot delete post with id #{post_id}",
-              details: changeset_errors_to_str(changeset)
-            }
+            {:error,
+             message: "Cannot delete post with id #{post_id}",
+             details: changeset_errors_to_str(changeset)}
         end
 
       _post ->
@@ -401,6 +396,15 @@ defmodule Sanbase.Insight.Post do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  def user_id_to_post_ids_list() do
+    from(
+      p in Post,
+      select: {p.user_id, fragment("array_agg(?)", p.id)},
+      group_by: p.user_id
+    )
+    |> Repo.all()
   end
 
   # Helper functions

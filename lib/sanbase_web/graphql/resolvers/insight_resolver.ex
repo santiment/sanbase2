@@ -6,11 +6,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Auth.User
   alias Sanbase.Vote
-  alias Sanbase.Insight.Post
+  alias Sanbase.Insight.{Post, PopularAuthor}
   alias Sanbase.Comments.EntityComment
   alias SanbaseWeb.Graphql.Helpers.Utils
 
   require Logger
+
+  def popular_insight_authors(_root, _args, _resolution) do
+    PopularAuthor.get()
+  end
 
   def insights(%User{} = user, args, _resolution) do
     opts = [

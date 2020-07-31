@@ -76,6 +76,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :news,
           :ohlc,
           :payments,
+          :popular_insight_authors,
           :popular_search_terms,
           :post,
           :price_volume_diff,

@@ -3,7 +3,6 @@ defmodule SanbaseWeb.Graphql.ExchangesTest do
 
   import Mock
   import Sanbase.Factory
-  import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
 
   setup_with_mocks([

@@ -216,9 +216,5 @@ defmodule Sanbase.Signal.MetricTriggerSettingsTest do
                end)
       end)
     end
-
-    defp random_metric() do
-      @metrics_5m_min_interval |> Enum.random()
-    end
   end
 end

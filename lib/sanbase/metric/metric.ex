@@ -229,7 +229,7 @@ defmodule Sanbase.Metric do
             from,
             to,
             direction,
-            aggregation
+            opts
           )
 
         false ->

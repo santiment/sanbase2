@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Mock
   import Sanbase.Factory
   import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers

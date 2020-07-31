@@ -414,7 +414,14 @@ defmodule Sanbase.Auth.User do
   end
 
   def by_id(user_ids) when is_list(user_ids) do
-    users = from(u in __MODULE__, where: u.id in ^user_ids) |> Repo.all()
+    users =
+      from(
+        u in __MODULE__,
+        where: u.id in ^user_ids,
+        order_by: fragment("array_position(?, ?::int)", ^user_ids, u.id)
+      )
+      |> Repo.all()
+
     {:ok, users}
   end
 

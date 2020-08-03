@@ -1,4 +1,4 @@
-defmodule Sanbase.Clickhouse.Labels do
+defmodule Sanbase.Clickhouse.Label do
   @moduledoc """
   Labeling transaction addresses
   """
@@ -46,15 +46,15 @@ defmodule Sanbase.Clickhouse.Labels do
     {query, args} = addresses_labels_query(addresses)
 
     Sanbase.ClickhouseRepo.query_reduce(query, args, %{}, fn [address, label, metadata], acc ->
-      Map.update(acc, address, [], fn labels ->
-        metadata =
-          case Jason.decode(metadata) do
-            {:ok, _} -> metadata
-            {:error, _} -> ~s|""|
-          end
+      metadata =
+        case Jason.decode(metadata) do
+          {:ok, _} -> metadata
+          {:error, reason} -> ~s|""|
+        end
 
+      Map.update(acc, address, [%{name: label, metadata: metadata}], fn labels ->
         label = %{name: label, metadata: metadata}
-        Enum.uniq_by(labels ++ [label], fn %{name: name} -> name end)
+        labels ++ [label]
       end)
     end)
     |> case do

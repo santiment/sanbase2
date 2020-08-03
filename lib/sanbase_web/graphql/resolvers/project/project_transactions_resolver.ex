@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   alias Sanbase.Clickhouse
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.SanbaseDataloader
-  alias Sanbase.Clickhouse.Labels
+  alias Sanbase.Clickhouse.Label
 
   @max_concurrency 100
 
@@ -35,7 +35,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
            ),
          {:ok, token_transactions} <-
            Clickhouse.MarkExchanges.mark_exchange_wallets(token_transactions),
-         {:ok, token_transactions} <- Labels.add_labels(token_transactions) do
+         {:ok, token_transactions} <- Label.add_labels(token_transactions) do
       {:ok, token_transactions}
     else
       {:error, {:missing_contract, _}} ->
@@ -185,7 +185,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
            ),
          {:ok, eth_transactions} <-
            Clickhouse.MarkExchanges.mark_exchange_wallets(eth_transactions),
-         {:ok, eth_transactions} <- Labels.add_labels(eth_transactions) do
+         {:ok, eth_transactions} <- Label.add_labels(eth_transactions) do
       {:ok, eth_transactions}
     else
       error ->

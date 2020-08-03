@@ -7,6 +7,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
   import ExUnit.CaptureLog
+  import Sanbase.TestHelpers
 
   @datetime1 DateTime.from_naive!(~N[2017-05-13 15:00:00], "Etc/UTC")
   @datetime2 DateTime.from_naive!(~N[2017-05-14 16:00:00], "Etc/UTC")
@@ -15,6 +16,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   @datetime5 DateTime.from_naive!(~N[2017-05-17 19:00:00], "Etc/UTC")
   @datetime6 DateTime.from_naive!(~N[2017-05-18 20:00:00], "Etc/UTC")
   @exchange_wallet "0xe1e1e1e1e1e1e1"
+
+  setup_all_with_mocks([
+    {Sanbase.ClickhouseRepo, [:passthrough], [query: fn _, _ -> {:ok, %{rows: []}} end]}
+  ]) do
+    []
+  end
 
   setup do
     project = insert(:random_project)
@@ -45,8 +52,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
             transaction_type: IN){
               datetime,
               trxValue,
-              fromAddress{ address, isExchange },
-              toAddress{ address, isExchange }
+              fromAddress{ address, isExchange, labels { name, metadata } },
+              toAddress{ address, isExchange, labels { name, metadata } }
           }
         }
       }
@@ -60,29 +67,29 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
 
       assert %{
                "datetime" => "2017-05-16T18:00:00Z",
-               "fromAddress" => %{"address" => "0x2", "isExchange" => false},
-               "toAddress" => %{"address" => "0x1", "isExchange" => false},
+               "fromAddress" => %{"address" => "0x2", "isExchange" => false, "labels" => []},
+               "toAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
                "trxValue" => 20_000.0
              } in trx_in
 
       assert %{
                "datetime" => "2017-05-17T19:00:00Z",
-               "fromAddress" => %{"address" => "0x2", "isExchange" => false},
-               "toAddress" => %{"address" => "0x1", "isExchange" => false},
+               "fromAddress" => %{"address" => "0x2", "isExchange" => false, "labels" => []},
+               "toAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
                "trxValue" => 45_000.0
              } in trx_in
 
       assert %{
                "datetime" => "2017-05-13T15:00:00Z",
-               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
-               "toAddress" => %{"address" => "0x2", "isExchange" => false},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
+               "toAddress" => %{"address" => "0x2", "isExchange" => false, "labels" => []},
                "trxValue" => 500.0
              } not in trx_in
 
       assert %{
                "datetime" => "2017-05-14T16:00:00Z",
-               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
-               "toAddress" => %{"address" => "0x2", "isExchange" => false},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
+               "toAddress" => %{"address" => "0x2", "isExchange" => false, "labels" => []},
                "trxValue" => 1500.0
              } not in trx_in
     end
@@ -102,8 +109,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
             transaction_type: OUT){
               datetime,
               trxValue,
-              fromAddress{ address, isExchange },
-              toAddress{ address, isExchange }
+              fromAddress{ address, isExchange, labels { name, metadata } },
+              toAddress{ address, isExchange, labels { name, metadata } }
           }
         }
       }
@@ -117,36 +124,44 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
 
       assert %{
                "datetime" => "2017-05-13T15:00:00Z",
-               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
-               "toAddress" => %{"address" => "0x2", "isExchange" => false},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
+               "toAddress" => %{"address" => "0x2", "isExchange" => false, "labels" => []},
                "trxValue" => 500.0
              } in trx_out
 
       assert %{
                "datetime" => "2017-05-14T16:00:00Z",
-               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
-               "toAddress" => %{"address" => "0x2", "isExchange" => false},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
+               "toAddress" => %{"address" => "0x2", "isExchange" => false, "labels" => []},
                "trxValue" => 1500.0
              } in trx_out
 
       assert %{
                "datetime" => "2017-05-15T17:00:00Z",
-               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
-               "toAddress" => %{"address" => "0x2", "isExchange" => false},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
+               "toAddress" => %{"address" => "0x2", "isExchange" => false, "labels" => []},
                "trxValue" => 2500.0
              } in trx_out
 
       assert %{
                "datetime" => "2017-05-17T19:00:00Z",
-               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
-               "toAddress" => %{"address" => @exchange_wallet, "isExchange" => true},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
+               "toAddress" => %{
+                 "address" => @exchange_wallet,
+                 "isExchange" => true,
+                 "labels" => []
+               },
                "trxValue" => 5500.0
              } in trx_out
 
       assert %{
                "datetime" => "2017-05-18T20:00:00Z",
-               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
-               "toAddress" => %{"address" => @exchange_wallet, "isExchange" => true},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
+               "toAddress" => %{
+                 "address" => @exchange_wallet,
+                 "isExchange" => true,
+                 "labels" => []
+               },
                "trxValue" => 6500.0
              } in trx_out
     end
@@ -166,8 +181,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
             transaction_type: ALL){
               datetime,
               trxValue,
-              fromAddress{ address, isExchange },
-              toAddress{ address, isExchange }
+              fromAddress{ address, isExchange, labels { name, metadata } },
+              toAddress{ address, isExchange, labels { name, metadata } }
           }
         }
       }
@@ -181,57 +196,65 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
 
       assert %{
                "datetime" => "2017-05-13T15:00:00Z",
-               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
-               "toAddress" => %{"address" => "0x2", "isExchange" => false},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
+               "toAddress" => %{"address" => "0x2", "isExchange" => false, "labels" => []},
                "trxValue" => 500.0
              } in trx_all
 
       assert %{
                "datetime" => "2017-05-14T16:00:00Z",
-               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
-               "toAddress" => %{"address" => "0x2", "isExchange" => false},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
+               "toAddress" => %{"address" => "0x2", "isExchange" => false, "labels" => []},
                "trxValue" => 1500.0
              } in trx_all
 
       assert %{
                "datetime" => "2017-05-15T17:00:00Z",
-               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
-               "toAddress" => %{"address" => "0x2", "isExchange" => false},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
+               "toAddress" => %{"address" => "0x2", "isExchange" => false, "labels" => []},
                "trxValue" => 2500.0
              } in trx_all
 
       assert %{
                "datetime" => "2017-05-16T18:00:00Z",
-               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
-               "toAddress" => %{"address" => "0x2", "isExchange" => false},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
+               "toAddress" => %{"address" => "0x2", "isExchange" => false, "labels" => []},
                "trxValue" => 3500.0
              } in trx_all
 
       assert %{
                "datetime" => "2017-05-17T19:00:00Z",
-               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
-               "toAddress" => %{"address" => @exchange_wallet, "isExchange" => true},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
+               "toAddress" => %{
+                 "address" => @exchange_wallet,
+                 "isExchange" => true,
+                 "labels" => []
+               },
                "trxValue" => 5500.0
              } in trx_all
 
       assert %{
                "datetime" => "2017-05-18T20:00:00Z",
-               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
-               "toAddress" => %{"address" => @exchange_wallet, "isExchange" => true},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
+               "toAddress" => %{
+                 "address" => @exchange_wallet,
+                 "isExchange" => true,
+                 "labels" => []
+               },
                "trxValue" => 6500.0
              } in trx_all
 
       assert %{
                "datetime" => "2017-05-16T18:00:00Z",
-               "fromAddress" => %{"address" => "0x2", "isExchange" => false},
-               "toAddress" => %{"address" => "0x1", "isExchange" => false},
+               "fromAddress" => %{"address" => "0x2", "isExchange" => false, "labels" => []},
+               "toAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
                "trxValue" => 20_000.0
              } in trx_all
 
       assert %{
                "datetime" => "2017-05-17T19:00:00Z",
-               "fromAddress" => %{"address" => "0x2", "isExchange" => false},
-               "toAddress" => %{"address" => "0x1", "isExchange" => false},
+               "fromAddress" => %{"address" => "0x2", "isExchange" => false, "labels" => []},
+               "toAddress" => %{"address" => "0x1", "isExchange" => false, "labels" => []},
                "trxValue" => 45_000.0
              } in trx_all
     end

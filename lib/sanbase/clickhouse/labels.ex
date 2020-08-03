@@ -46,8 +46,6 @@ defmodule Sanbase.Clickhouse.Labels do
     {query, args} = addresses_labels_query(addresses)
 
     Sanbase.ClickhouseRepo.query_reduce(query, args, %{}, fn [address, label, metadata], acc ->
-      address = String.downcase(address)
-
       Map.update(acc, address, [], fn labels ->
         metadata =
           case Jason.decode(metadata) do
@@ -71,9 +69,9 @@ defmodule Sanbase.Clickhouse.Labels do
   # helpers
   defp addresses_labels_query(addresses) do
     query = """
-    SELECT address, label, metadata
+    SELECT lower(address) as address, label, metadata
     FROM blockchain_address_labels FINAL
-    PREWHERE address IN (?1) and sign = 1
+    PREWHERE lower(address) IN (?1) and sign = 1
     """
 
     {query, [addresses]}
@@ -90,14 +88,15 @@ defmodule Sanbase.Clickhouse.Labels do
     |> List.flatten()
     |> Enum.uniq()
     |> Enum.reject(&is_nil/1)
-    |> Enum.map(&String.downcase/1)
   end
 
   defp do_add_labels(transactions, address_labels_map) do
     transactions
     |> Enum.map(fn %{from_address: from, to_address: to} = transaction ->
-      from = Map.put(from, :labels, Map.get(address_labels_map, from.address, []))
-      to = Map.put(to, :labels, Map.get(address_labels_map, to.address, []))
+      from =
+        Map.put(from, :labels, Map.get(address_labels_map, String.downcase(from.address), []))
+
+      to = Map.put(to, :labels, Map.get(address_labels_map, String.downcase(to.address), []))
 
       %{transaction | from_address: from, to_address: to}
     end)

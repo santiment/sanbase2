@@ -138,7 +138,7 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
       }
 
       template = """
-      🔔Projects' changes in the screener "#{trigger.title}".
+      🔔Screener "#{trigger.title}" changes:
       #{format_enter_exit_slugs(added_slugs, removed_slugs)}
       """
 
@@ -163,12 +163,10 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
         end)
 
       """
-      Entering projects:
-      #{length(entering)} projects entered the screener
+      #{length(entering)} Newcomers:
       #{entering}
       ---
-      Exiting projects:
-      #{length(exiting)} projects exited the screener
+      #{length(exiting)} Leavers:
       #{exiting}
       """
     end

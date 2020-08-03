@@ -1,6 +1,4 @@
 defmodule Sanbase.Model.Project.ListSelector do
-  import Sanbase.DateTimeUtils
-
   alias Sanbase.Model.Project
   alias __MODULE__.{Transform, Validator}
 
@@ -106,22 +104,8 @@ defmodule Sanbase.Model.Project.ListSelector do
       filters
       |> Sanbase.Parallel.map(
         fn filter ->
-          cache_key =
-            {:included_slugs_by_filters,
-             %{filter | from: round_datetime(filter.from), to: round_datetime(filter.to)}}
-            |> Sanbase.Cache.hash()
-
-          {:ok, slugs} =
-            Sanbase.Cache.get_or_store(cache_key, fn ->
-              Sanbase.Metric.slugs_by_filter(
-                filter.metric,
-                filter.from,
-                filter.to,
-                filter.operator,
-                filter.threshold,
-                aggregation: filter.aggregation
-              )
-            end)
+          cache_key = {:included_slugs_by_filter, filter}
+          {:ok, slugs} = Sanbase.Cache.get_or_store(cache_key, fn -> slugs_by_filter(filter) end)
 
           slugs |> MapSet.new()
         end,
@@ -140,6 +124,34 @@ defmodule Sanbase.Model.Project.ListSelector do
         |> Enum.reduce(&MapSet.union(&1, &2))
         |> Enum.to_list()
     end
+  end
+
+  defp slugs_by_filter(%{name: "market_segments", args: args}) do
+    projects = Project.List.by_market_segment_any_of(args.market_segments)
+    slugs = Enum.map(projects, & &1.slug)
+    {:ok, slugs}
+  end
+
+  defp slugs_by_filter(%{name: "metric", args: args}) do
+    Sanbase.Metric.slugs_by_filter(
+      args.metric,
+      args.from,
+      args.to,
+      args.operator,
+      args.threshold,
+      aggregation: args.aggregation
+    )
+  end
+
+  defp slugs_by_filter(%{metric: _} = filter) do
+    Sanbase.Metric.slugs_by_filter(
+      filter.metric,
+      filter.from,
+      filter.to,
+      filter.operator,
+      filter.threshold,
+      aggregation: filter.aggregation
+    )
   end
 
   defp ordered_slugs_by_order_by(nil, slugs), do: slugs

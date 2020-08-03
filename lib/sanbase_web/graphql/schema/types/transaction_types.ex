@@ -10,6 +10,12 @@ defmodule SanbaseWeb.Graphql.TransactionTypes do
   object :address do
     field(:address, non_null(:string))
     field(:is_exchange, non_null(:boolean))
+    field(:labels, non_null(list_of(:label)), default_value: [])
+  end
+
+  object :label do
+    field(:name, :string)
+    field(:metadata, :json, default_value: %{})
   end
 
   object :transaction do

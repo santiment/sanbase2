@@ -14,33 +14,33 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
     coin = insert(:market_segment, %{name: "coin"})
     mineable = insert(:market_segment, %{name: "mineable"})
 
-    p1 = insert(:project, %{ticker: "TUSD", slug: "tether", market_segment: stablecoin})
+    p1 = insert(:project, %{ticker: "TUSD", slug: "tether", market_segments: [stablecoin]})
     insert(:latest_cmc_data, %{coinmarketcap_id: "tether", rank: 4, volume_usd: 3_000_000_000})
 
     p2 =
       insert(:project, %{
         ticker: "DAI",
         slug: "dai",
-        market_segment: stablecoin,
+        market_segments: [stablecoin],
         infrastructure: infr_eth
       })
 
     insert(:latest_cmc_data, %{coinmarketcap_id: "dai", rank: 40, volume_usd: 15_000_000})
 
-    p3 = insert(:project, %{ticker: "ETH", slug: "ethereum", market_segment: mineable})
+    p3 = insert(:project, %{ticker: "ETH", slug: "ethereum", market_segments: [mineable]})
     insert(:latest_cmc_data, %{coinmarketcap_id: "ethereum", rank: 2, volume_usd: 3_000_000_000})
 
-    p4 = insert(:project, %{ticker: "BTC", slug: "bitcoin", market_segment: mineable})
+    p4 = insert(:project, %{ticker: "BTC", slug: "bitcoin", market_segments: [mineable]})
     insert(:latest_cmc_data, %{coinmarketcap_id: "bitcoin", rank: 1, volume_usd: 15_000_000_000})
 
-    p5 = insert(:project, %{ticker: "XRP", slug: "ripple", market_segment: mineable})
+    p5 = insert(:project, %{ticker: "XRP", slug: "ripple", market_segments: [mineable]})
     insert(:latest_cmc_data, %{coinmarketcap_id: "ripple", rank: 3, volume_usd: 1_000_000_000})
 
     p6 =
       insert(:project, %{
         ticker: "MKR",
         slug: "maker",
-        market_segment: coin,
+        market_segments: [coin],
         infrastructure: infr_eth
       })
 
@@ -50,7 +50,7 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
       insert(:project, %{
         ticker: "SAN",
         slug: "santiment",
-        market_segment: coin,
+        market_segments: [coin],
         infrastructure: infr_eth
       })
 

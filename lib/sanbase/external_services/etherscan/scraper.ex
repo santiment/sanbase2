@@ -56,12 +56,16 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   def parse_address_page!(nil, project_info), do: project_info
 
   def parse_address_page!(html, project_info) do
+    {:ok, html} = Floki.parse_document(html)
+
     %ProjectInfo{project_info | creation_transaction: creation_transaction(html)}
   end
 
   def parse_token_page!(nil, project_info), do: project_info
 
   def parse_token_page!(html, project_info) do
+    {:ok, html} = Floki.parse_document(html)
+
     %ProjectInfo{
       project_info
       | # We want to override the currently stored total_supply and that's the reason why the order is different than the rest of the fields

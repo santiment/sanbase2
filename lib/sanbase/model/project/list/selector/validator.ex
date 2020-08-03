@@ -79,7 +79,7 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
         |> Enum.find(&(&1 != true))
         |> case do
           nil -> true
-          error -> error |> IO.inspect(label: "FOUND THIS")
+          error -> error
         end
 
       false ->
@@ -110,7 +110,7 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
         aggregation: spec(is_atom())
       })
 
-    with {:ok, _} <- conform(filter, filter_schema) |> IO.inspect(label: "111", limit: :infinity),
+    with {:ok, _} <- conform(filter, filter_schema),
          true <- Sanbase.Metric.has_metric?(metric) do
       missing_fields =
         [:metric, :from, :to, :operator, :threshold, :aggregation] -- Map.keys(filter)
@@ -120,7 +120,6 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
         _ -> {:error, "A metric filter has missing fields: #{inspect(missing_fields)}."}
       end
     end
-    |> IO.inspect(label: "VALID IFLER")
   end
 
   defp valid_filter?(_), do: {:error, "Filter is wrongly configured."}

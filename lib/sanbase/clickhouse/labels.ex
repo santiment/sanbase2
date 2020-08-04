@@ -71,13 +71,12 @@ defmodule Sanbase.Clickhouse.Label do
 
   defp get_list_of_addresses(transactions) do
     transactions
-    |> Enum.map(fn transaction ->
+    |> Enum.flat_map(fn transaction ->
       [
         transaction.from_address.address,
         transaction.to_address.address
       ]
     end)
-    |> List.flatten()
     |> Enum.uniq()
     |> Enum.reject(&is_nil/1)
   end
@@ -85,10 +84,11 @@ defmodule Sanbase.Clickhouse.Label do
   defp do_add_labels(transactions, address_labels_map) do
     transactions
     |> Enum.map(fn %{from_address: from, to_address: to} = transaction ->
-      from =
-        Map.put(from, :labels, Map.get(address_labels_map, String.downcase(from.address), []))
+      from_labels = Map.get(address_labels_map, String.downcase(from.address), [])
+      from = Map.put(from, :labels, from_labels)
 
-      to = Map.put(to, :labels, Map.get(address_labels_map, String.downcase(to.address), []))
+      to_labels = Map.get(address_labels_map, String.downcase(to.address), [])
+      to = Map.put(to, :labels, to_labels)
 
       %{transaction | from_address: from, to_address: to}
     end)

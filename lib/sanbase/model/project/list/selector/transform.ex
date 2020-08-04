@@ -43,22 +43,36 @@ defmodule Sanbase.Model.Project.ListSelector.Transform do
   def transform_from_to(%{from: from, to: to} = map) do
     %{
       map
-      | from: if(is_binary(from), do: from_iso8601!(from), else: from),
-        to: if(is_binary(to), do: from_iso8601!(to), else: to)
+      | from: if(is_binary(from), do: from_iso8601!(from) |> round_datetime(), else: from),
+        to: if(is_binary(to), do: from_iso8601!(to) |> round_datetime(), else: to)
     }
+  end
+
+  def transform_from_to(%{args: %{} = args} = map) do
+    %{map | args: transform_from_to(args)}
   end
 
   def transform_from_to(map), do: map
 
   def update_dynamic_datetimes(nil), do: nil
 
-  def update_dynamic_datetimes(%{} = filter) do
-    dynamic_from = Map.get(filter, :dynamic_from)
-    dynamic_to = Map.get(filter, :dynamic_to)
+  def update_dynamic_datetimes(%{args: args} = filter) do
+    case update_dynamic_datetimes(args) do
+      %{} = updated_args ->
+        %{filter | args: updated_args}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  def update_dynamic_datetimes(%{} = map) do
+    dynamic_from = Map.get(map, :dynamic_from)
+    dynamic_to = Map.get(map, :dynamic_to)
 
     case {dynamic_from, dynamic_to} do
       {nil, nil} ->
-        filter
+        map
 
       {nil, _} ->
         {:error, "Cannot use 'dynamic_to' without 'dynamic_from'."}
@@ -68,21 +82,14 @@ defmodule Sanbase.Model.Project.ListSelector.Transform do
 
       _ ->
         now = Timex.now()
+        shift_to_by = if dynamic_to == "now", do: 0, else: str_to_sec(dynamic_to)
 
         from = Timex.shift(now, seconds: -str_to_sec(dynamic_from))
+        to = Timex.shift(now, seconds: -shift_to_by)
 
-        to =
-          case dynamic_to do
-            "now" ->
-              now
-
-            _ ->
-              Timex.shift(now, seconds: -str_to_sec(dynamic_to))
-          end
-
-        filter
-        |> Map.put(:from, from)
-        |> Map.put(:to, to)
+        map
+        |> Map.put(:from, from |> round_datetime())
+        |> Map.put(:to, to |> round_datetime())
     end
   end
 

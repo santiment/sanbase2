@@ -46,16 +46,8 @@ defmodule Sanbase.Clickhouse.Label do
     {query, args} = addresses_labels_query(addresses)
 
     Sanbase.ClickhouseRepo.query_reduce(query, args, %{}, fn [address, label, metadata], acc ->
-      metadata =
-        case Jason.decode(metadata) do
-          {:ok, _} -> metadata
-          {:error, reason} -> ~s|""|
-        end
-
-      Map.update(acc, address, [%{name: label, metadata: metadata}], fn labels ->
-        label = %{name: label, metadata: metadata}
-        labels ++ [label]
-      end)
+      label = %{name: label, metadata: metadata}
+      Map.update(acc, address, [label], &[label | &1])
     end)
     |> case do
       {:ok, address_labels_map} ->
@@ -71,7 +63,7 @@ defmodule Sanbase.Clickhouse.Label do
     query = """
     SELECT lower(address) as address, label, metadata
     FROM blockchain_address_labels FINAL
-    PREWHERE lower(address) IN (?1) and sign = 1
+    PREWHERE blockchain = 'ethereum' and lower(address) IN (?1) and sign = 1
     """
 
     {query, [addresses]}

@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
@@ -249,13 +248,13 @@ defmodule SanbaseWeb.Graphql.ProjectApiTokenTopTransactionsTest do
     [
       [
         "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8",
-        "whale",
-        ~s|{"rank": 58, "value": 1.1438690681177702e+24}|
+        "centralized_exchange",
+        ~s|{"comment":"Poloniex GNT","is_dex":false,"owner":"Poloniex","source":""}|
       ],
       [
         "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8",
-        "centralized_exchange",
-        ~s|{"comment":"Poloniex GNT","is_dex":false,"owner":"Poloniex","source":""}|
+        "whale",
+        ~s|{"rank": 58, "value": 1.1438690681177702e+24}|
       ]
     ]
   end

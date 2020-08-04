@@ -106,6 +106,7 @@ defmodule SanbaseWeb.Graphql.Schema.WatchlistQueries do
     """
     field :create_watchlist, :user_list do
       arg(:name, non_null(:string))
+      arg(:description, :string)
       arg(:is_public, :boolean)
       arg(:color, :color_enum)
       arg(:function, :json)
@@ -138,6 +139,7 @@ defmodule SanbaseWeb.Graphql.Schema.WatchlistQueries do
     field :update_watchlist, :user_list do
       arg(:id, non_null(:integer))
       arg(:name, :string)
+      arg(:description, :string)
       arg(:is_public, :boolean)
       arg(:color, :color_enum)
       arg(:function, :json)

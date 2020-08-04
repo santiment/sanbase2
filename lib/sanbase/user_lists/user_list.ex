@@ -28,6 +28,7 @@ defmodule Sanbase.UserList do
   schema "user_lists" do
     field(:name, :string)
     field(:slug, :string)
+    field(:description, :string)
     field(:is_public, :boolean, default: false)
     field(:color, ColorEnum, default: :none)
     field(:function, WatchlistFunction, default: %WatchlistFunction{})
@@ -55,6 +56,7 @@ defmodule Sanbase.UserList do
       :user_id,
       :name,
       :slug,
+      :description,
       :is_public,
       :color,
       :function,
@@ -71,6 +73,7 @@ defmodule Sanbase.UserList do
     |> cast(attrs, [
       :name,
       :slug,
+      :description,
       :is_public,
       :color,
       :function,

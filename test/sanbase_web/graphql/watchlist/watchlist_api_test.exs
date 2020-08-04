@@ -24,21 +24,16 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
   test "create watchlist", %{user: user, conn: conn} do
     query = """
     mutation {
-      createWatchlist(name: "My list", color: BLACK) {
-        id,
-        name,
-        color,
-        is_public,
-        user {
-          id
-        },
+      createWatchlist(name: "My list", description: "Description", color: BLACK) {
+        id
+        name
+        description
+        color
+        is_public
+        user { id }
         listItems {
-          project {
-            id
-          }
-        },
-        inserted_at,
-        updated_at
+          project { id }
+        }
       }
     }
     """
@@ -50,9 +45,11 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
     watchlist = json_response(result, 200)["data"]["createWatchlist"]
 
     assert watchlist["name"] == "My list"
+    assert watchlist["description"] == "Description"
     assert watchlist["color"] == "BLACK"
     assert watchlist["is_public"] == false
     assert watchlist["user"]["id"] == user.id |> to_string()
+    assert watchlist["listItems"] == []
   end
 
   test "update watchlist", %{user: user, conn: conn} do
@@ -62,40 +59,39 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
     insert(:latest_cmc_data, %{coinmarketcap_id: project.slug, price_usd: 0.5})
 
     update_name = "My updated list"
+    update_description = "My updated description"
 
     query = """
     mutation {
       updateWatchlist(
-        id: #{watchlist.id},
-        name: "#{update_name}",
-        color: BLACK,
-        listItems: [{project_id: #{project.id}}],
+        id: #{watchlist.id}
+        name: "#{update_name}"
+        description: "#{update_description}"
+        color: BLACK
+        listItems: [{project_id: #{project.id}}]
         isMonitored: true
       ) {
         name
+        description
         color
         isPublic
         isMonitored
-        user {
-          id
-        }
+        user { id }
         listItems {
-          project {
-            id
-            priceUsd
-          }
+          project { id priceUsd }
         }
       }
     }
     """
 
-    result =
+    watchlist =
       conn
       |> post("/graphql", mutation_skeleton(query))
       |> json_response(200)
+      |> get_in(["data", "updateWatchlist"])
 
-    watchlist = result["data"]["updateWatchlist"]
     assert watchlist["name"] == update_name
+    assert watchlist["description"] == update_description
     assert watchlist["color"] == "BLACK"
     assert watchlist["isPublic"] == false
     assert watchlist["isMonitored"] == true

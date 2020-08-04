@@ -1,11 +1,11 @@
-defmodule SanbaseWeb.Graphql.UserListTypes do
+defmodule SanbaseWeb.Graphql.WatchlistTypes do
   use Absinthe.Schema.Notation
 
   import Absinthe.Resolution.Helpers
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
   alias SanbaseWeb.Graphql.SanbaseRepo
-  alias SanbaseWeb.Graphql.Resolvers.UserListResolver
+  alias SanbaseWeb.Graphql.Resolvers.WatchlistResolver
 
   enum(:color_enum, values: [:none, :blue, :red, :green, :yellow, :grey, :black])
 
@@ -49,7 +49,7 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
     field(:is_monitored, :boolean)
 
     field :list_items, list_of(:list_item) do
-      resolve(&UserListResolver.list_items/3)
+      resolve(&WatchlistResolver.list_items/3)
     end
 
     field(:table_configuration, :table_configuration, resolve: dataloader(SanbaseRepo))
@@ -58,7 +58,7 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
     field(:updated_at, non_null(:naive_datetime))
 
     field(:stats, :watchlist_stats) do
-      cache_resolve(&UserListResolver.stats/3)
+      cache_resolve(&WatchlistResolver.stats/3)
     end
 
     field(:historical_stats, list_of(:combined_projects_stats)) do
@@ -66,11 +66,11 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
       arg(:to, non_null(:datetime))
       arg(:interval, :interval, default_value: "1d")
 
-      cache_resolve(&UserListResolver.historical_stats/3)
+      cache_resolve(&WatchlistResolver.historical_stats/3)
     end
 
     field(:settings, :watchlist_settings) do
-      cache_resolve(&UserListResolver.settings/3)
+      cache_resolve(&WatchlistResolver.settings/3)
     end
   end
 end

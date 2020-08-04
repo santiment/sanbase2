@@ -6,8 +6,11 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   import Sanbase.Factory
   import Sanbase.TestHelpers
 
+  alias Sanbase.Tag
   alias Sanbase.Vote
   alias Sanbase.Insight.Post
+  alias Sanbase.Model.Project
+  alias Sanbase.Repo
   alias Sanbase.Timeline.TimelineEvent
 
   setup do
@@ -268,6 +271,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       )
 
     Vote.create(%{post_id: post.id, user_id: user.id})
+
     Vote.create(%{post_id: post2.id, user_id: staked_user.id})
 
     query = """
@@ -326,6 +330,8 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     result =
       conn
       |> post("/graphql", query_skeleton(query, "allInsights"))
+
+    Repo.all(Post)
 
     assert json_response(result, 200)["data"]["allInsights"] ==
              [%{"id" => "#{post2.id}"}, %{"id" => "#{post.id}"}]
@@ -477,14 +483,18 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     end
 
     test "create insight with tags", %{conn: conn} do
-      project = insert(:random_project)
-      tag = insert(:tag, name: project.ticker)
+      Repo.insert!(%Project{name: "Santiment", ticker: "SAN", slug: "santiment"})
+      tag = Repo.insert!(%Tag{name: "SAN"})
 
       mutation = """
       mutation {
         createInsight(title: "Awesome post", text: "Example body", tags: ["#{tag.name}"]) {
-          tags{ name }
-          relatedProjects { ticker }
+          tags{
+            name
+          }
+          relatedProjects {
+            ticker
+          }
           readyState
         }
       }
@@ -493,12 +503,14 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       result =
         conn
         |> post("/graphql", mutation_skeleton(mutation))
-        |> json_response(200)
-        |> get_in(["data", "createInsight"])
 
-      assert result["tags"] == [%{"name" => tag.name}]
-      assert result["relatedProjects"] == [%{"ticker" => project.ticker}]
-      assert result["readyState"] == Post.draft()
+      [tag] = json_response(result, 200)["data"]["createInsight"]["tags"]
+      [related_projects] = json_response(result, 200)["data"]["createInsight"]["relatedProjects"]
+      ready_state = json_response(result, 200)["data"]["createInsight"]["readyState"]
+
+      assert tag == %{"name" => "SAN"}
+      assert related_projects == %{"ticker" => "SAN"}
+      assert ready_state == Post.draft()
     end
 
     @test_file_hash "15e9f3c52e8c7f2444c5074f3db2049707d4c9ff927a00ddb8609bfae5925399"
@@ -559,8 +571,8 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   describe "update post" do
     test "update post", %{conn: conn, user: user} do
       image_url = upload_image(conn)
-      tag1 = insert(:tag, name: "PRJ1")
-      tag2 = insert(:tag, name: "PRJ2")
+      tag1 = %Tag{name: "PRJ1"} |> Repo.insert!()
+      tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
 
       post =
         insert(:post,
@@ -603,8 +615,8 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     test "cannot update not owned insight", %{conn: conn, staked_user: staked_user} do
       image_url = upload_image(conn)
-      tag1 = insert(:tag, name: "PRJ1")
-      tag2 = insert(:tag, name: "PRJ2")
+      tag1 = %Tag{name: "PRJ1"} |> Repo.insert!()
+      tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
 
       post =
         insert(:post,
@@ -644,8 +656,9 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       upload_image(conn)
 
       post =
-        insert(:published_post,
+        insert(:post,
           user: user,
+          ready_state: Post.published(),
           updated_at:
             Timex.shift(NaiveDateTime.utc_now(), seconds: -1) |> NaiveDateTime.truncate(:second)
         )
@@ -679,7 +692,12 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       tag1 = insert(:tag, name: "PRJ1")
       tag2 = insert(:tag, name: "PRJ2")
 
-      post = insert(:published_post, user: user, tags: [tag1])
+      post =
+        insert(:post,
+          user: user,
+          ready_state: Post.published(),
+          tags: [tag1]
+        )
 
       mutation = """
         mutation {
@@ -704,11 +722,13 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
   describe "delete post" do
     test "deleting a post", %{user: user, conn: conn} do
-      post = insert(:published_post, user: user)
+      sanbase_post = insert(:post, user: user, state: Post.approved_state())
+
+      Vote.create(%{post_id: sanbase_post.id, user_id: user.id})
 
       query = """
       mutation {
-        deleteInsight(id: #{post.id}) {
+        deleteInsight(id: #{sanbase_post.id}) {
           id
         }
       }
@@ -721,18 +741,18 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
       result_post = result["data"]["deleteInsight"]
 
-      assert result_post["id"] == Integer.to_string(post.id)
+      assert result_post["id"] == Integer.to_string(sanbase_post.id)
     end
 
     test "deleting an insight which does not belong to the user - returns error", %{
       conn: conn,
       staked_user: staked_user
     } do
-      post = insert(:post, user: staked_user, state: Post.approved_state())
+      sanbase_post = insert(:post, user: staked_user, state: Post.approved_state())
 
       query = """
       mutation {
-        deleteInsight(id: #{post.id}) {
+        deleteInsight(id: #{sanbase_post.id}) {
           id
         }
       }
@@ -772,8 +792,10 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         assert_receive({_, {:ok, %TimelineEvent{}}})
 
         assert result["readyState"] == Post.published()
+
         assert result["publishedAt"] != nil
-        assert Sanbase.Repo.all(Sanbase.Timeline.TimelineEvent) |> length() == 1
+
+        assert Sanbase.Timeline.TimelineEvent |> Repo.all() |> length() == 1
       end
     end
 
@@ -828,8 +850,16 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       assert String.contains?(result["message"], "Cannot publish not own insight")
     end
 
-    test "returns error when insight is already published", %{conn: conn, user: user} do
-      post = insert(:published_post, user: user)
+    test "returns error when insight is already published", %{
+      conn: conn,
+      user: user
+    } do
+      post =
+        insert(:post,
+          user: user,
+          state: Post.approved_state(),
+          ready_state: Post.published()
+        )
 
       result =
         post
@@ -841,8 +871,8 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   end
 
   test "get all tags", %{conn: conn} do
-    tag1 = insert(:tag, name: "PRJ1")
-    tag2 = insert(:tag, name: "PRJ2")
+    tag1 = %Tag{name: "PRJ1"} |> Repo.insert!()
+    tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
 
     query = """
     {
@@ -861,11 +891,18 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
   end
 
   test "voting for a post", %{conn: conn, user: user} do
-    post = insert(:published_post, user: user)
+    sanbase_post =
+      %Post{
+        user_id: user.id,
+        title: "Awesome analysis",
+        text: "Example MD text of the analysis",
+        state: Post.approved_state()
+      }
+      |> Repo.insert!()
 
     query = """
     mutation {
-      vote(insightId: #{post.id}) {
+      vote(postId: #{sanbase_post.id}) {
         id
         votes{
           totalVotes
@@ -881,17 +918,25 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     result_post = result["data"]["vote"]
 
-    assert result_post["id"] == Integer.to_string(post.id)
+    assert result_post["id"] == Integer.to_string(sanbase_post.id)
     assert result_post["votes"]["totalVotes"] == 1
   end
 
   test "unvoting an insight", %{conn: conn, user: user} do
-    post = insert(:published_post, user: user)
-    Vote.create(%{post_id: post.id, user_id: user.id})
+    sanbase_post =
+      %Post{
+        user_id: user.id,
+        title: "Awesome analysis",
+        text: "Some text here",
+        state: Post.approved_state()
+      }
+      |> Repo.insert!()
+
+    Vote.create(%{post_id: sanbase_post.id, user_id: user.id})
 
     query = """
     mutation {
-      unvote(insightId: #{post.id}) {
+      unvote(insightId: #{sanbase_post.id}) {
         id
         votes{
           totalVotes
@@ -906,7 +951,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     result_post = json_response(result, 200)["data"]["unvote"]
 
-    assert result_post["id"] == Integer.to_string(post.id)
+    assert result_post["id"] == Integer.to_string(sanbase_post.id)
     assert result_post["votes"]["totalVotes"] == 0
   end
 

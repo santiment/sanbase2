@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     EthAccountResolver,
     UserSettingsResolver,
     UserTriggerResolver,
-    WatchlistResolver,
+    UserListResolver,
     InsightResolver,
     BillingResolver
   }
@@ -57,7 +57,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     end
 
     field :watchlists, list_of(:user_list) do
-      cache_resolve(&WatchlistResolver.public_watchlists/3, ttl: 60)
+      cache_resolve(&UserListResolver.public_watchlists/3, ttl: 60)
     end
   end
 
@@ -126,7 +126,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     end
 
     field :watchlists, list_of(:user_list) do
-      cache_resolve(&WatchlistResolver.watchlists/3, ttl: 60)
+      cache_resolve(&UserListResolver.watchlists/3, ttl: 60)
     end
 
     field :subscriptions, list_of(:subscription_plan) do

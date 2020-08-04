@@ -22,6 +22,20 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
     end
 
     @desc ~s"""
+    Fetch the post with the given ID.
+    The user must be logged in to access all fields for the post/insight.
+    """
+    field :post, :post do
+      meta(access: :free)
+
+      deprecate("Use `insight` instead")
+      arg(:id, non_null(:integer))
+
+      resolve(&InsightResolver.post/3)
+      middleware(PostPaywallFilter)
+    end
+
+    @desc ~s"""
     Fetch the insight with the given ID.
     The user must be logged in to access all fields for the post/insight.
     """
@@ -123,6 +137,26 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
 
   object :insight_mutations do
     @desc """
+    Create a post. After creation the post is not visible to anyone but the author.
+    To be visible to anyone, the post must be published. By publishing it also becomes
+    immutable and can no longer be updated.
+    """
+    field :create_post, :post do
+      deprecate("Use `createInsight` instead")
+      arg(:title, non_null(:string))
+      arg(:short_desc, :string)
+      arg(:link, :string)
+      arg(:text, :string)
+      arg(:image_urls, list_of(:string))
+      arg(:tags, list_of(:string))
+      arg(:is_pulse, :boolean)
+      arg(:is_paywall_required, :boolean)
+
+      middleware(JWTAuth)
+      resolve(&InsightResolver.create_post/3)
+    end
+
+    @desc """
     Create an insight. After creation the insight is not visible to anyone but the author.
     To be visible to anyone, the insight must be published. By publishing it also becomes
     immutable and can no longer be updated.
@@ -145,6 +179,26 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
     end
 
     @desc """
+    Update a post if and only if the currently logged in user is the creator of the post
+    A post can be updated if it is not yet published.
+    """
+    field :update_post, :post do
+      deprecate("Use `updateInsight` instead")
+      arg(:id, non_null(:id))
+      arg(:title, :string)
+      arg(:short_desc, :string)
+      arg(:link, :string)
+      arg(:text, :string)
+      arg(:image_urls, list_of(:string))
+      arg(:tags, list_of(:string))
+      arg(:is_pulse, :boolean)
+      arg(:is_paywall_required, :boolean)
+
+      middleware(JWTAuth)
+      resolve(&InsightResolver.update_post/3)
+    end
+
+    @desc """
     Update an insight if and only if the currently logged in user is the creator of the insight
     An insight can be updated if it is not yet published.
     """
@@ -164,6 +218,16 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
 
       middleware(JWTAuth)
       resolve(&InsightResolver.update_post/3)
+    end
+
+    @desc "Delete a post. The post must be owned by the user currently logged in."
+    field :delete_post, :post do
+      deprecate("Use `deleteInsight` instead")
+
+      arg(:id, non_null(:id))
+
+      middleware(JWTAuth)
+      resolve(&InsightResolver.delete_post/3)
     end
 
     @desc "Delete an insight. The insight must be owned by the user currently logged in."
@@ -197,7 +261,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
     Vote for an insight. The user must logged in.
     """
     field :vote, :post do
-      arg(:post_id, :integer)
+      arg(:post_id, :integer, deprecate: "Use `insightId` instead")
       arg(:insight_id, :integer)
       middleware(JWTAuth)
       resolve(&InsightResolver.vote/3)
@@ -207,7 +271,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
     Remove your vote for an insight. The user must logged in.
     """
     field :unvote, :post do
-      arg(:post_id, :integer)
+      arg(:post_id, :integer, deprecate: "Use `insightId` instead")
       arg(:insight_id, :integer)
       middleware(JWTAuth)
       resolve(&InsightResolver.unvote/3)

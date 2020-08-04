@@ -108,7 +108,7 @@ alias SanbaseWeb.Graphql.Resolvers.{
   ProjectTransactionsResolver,
   TechIndicatorsResolver,
   TwitterResolver,
-  UserListResolver,
+  WatchlistResolver,
   InsightResolver,
   ClickhouseResolver
 }

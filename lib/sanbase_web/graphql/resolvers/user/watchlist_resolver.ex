@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
+defmodule SanbaseWeb.Graphql.Resolvers.WatchlistResolver do
   require Logger
 
   alias Sanbase.Auth.User

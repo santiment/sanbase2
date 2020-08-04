@@ -48,11 +48,8 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :featured_table_configurations,
           :featured_user_triggers,
           :featured_watchlists,
-          :fetch_all_public_user_lists,
           :fetch_all_public_watchlists,
-          :fetch_public_user_lists,
           :fetch_public_watchlists,
-          :fetch_user_lists,
           :fetch_watchlists,
           :get_access_restrictions,
           :get_anomaly,
@@ -78,7 +75,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :payments,
           :popular_insight_authors,
           :popular_search_terms,
-          :post,
           :price_volume_diff,
           :products_with_plans,
           :project_by_slug,
@@ -97,7 +93,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :timeline_events,
           :twitter_data,
           :twitter_mention_count,
-          :user_list,
           :watchlist_by_slug,
           :watchlist
         ]

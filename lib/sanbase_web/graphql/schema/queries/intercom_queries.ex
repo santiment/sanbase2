@@ -6,7 +6,7 @@ defmodule SanbaseWeb.Graphql.Schema.IntercomQueries do
   object :user_attributes do
     field(:user_id, :id)
     field(:inserted_at, :datetime)
-    field(:attributes, :json)
+    field(:properties, :json)
   end
 
   object :intercom_queries do

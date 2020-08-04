@@ -33,12 +33,5 @@ defmodule Sanbase.Intercom.UserAttributes do
           ua.inserted_at <= ^to
     )
     |> Repo.all()
-    |> Enum.map(fn ua ->
-      %{
-        user_id: ua.user_id,
-        inserted_at: ua.inserted_at,
-        attributes: ua.properties
-      }
-    end)
   end
 end

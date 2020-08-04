@@ -6,6 +6,33 @@ defmodule Sanbase.Model.ProjectListSelectorTest do
   alias Sanbase.Model.Project.ListSelector
 
   describe "validation caughts errors" do
+    test "invalid filters_combinator" do
+      selector = %{
+        filters_combinator: "orr",
+        filters: [
+          %{
+            metric: "nvt",
+            dynamic_from: "1d",
+            dynamic_to: "now",
+            aggregation: :last,
+            operator: :greater_than,
+            threshold: 10
+          },
+          %{
+            metric: "daily_active_addresses",
+            dynamic_from: "1d",
+            dynamic_to: "now",
+            aggregation: :last,
+            operator: :greater_than,
+            threshold: 10
+          }
+        ]
+      }
+
+      {:error, error_msg} = ListSelector.valid_selector?(%{selector: selector})
+      assert error_msg =~ "Unsupported filter_combinator"
+    end
+
     test "filters must be a list of maps" do
       selector = %{
         filters: [
@@ -110,6 +137,62 @@ defmodule Sanbase.Model.ProjectListSelectorTest do
         assert p3.slug in slugs
         assert p4.slug in slugs
       end)
+    end
+
+    test "combine market segments with 'or'" do
+      defi_segment = insert(:market_segment, name: "DeFi")
+      mineable_segment = insert(:market_segment, name: "Mineable")
+
+      p1 = insert(:random_project, market_segments: [defi_segment])
+      p2 = insert(:random_project, market_segments: [mineable_segment])
+      p3 = insert(:random_project, market_segments: [mineable_segment, defi_segment])
+
+      selector = %{
+        filters: [
+          %{
+            name: "market_segments",
+            args: %{
+              market_segments: [defi_segment.name, mineable_segment.name],
+              market_segments_combinator: "or"
+            }
+          }
+        ]
+      }
+
+      {:ok, %{slugs: slugs, total_projects_count: total_projects_count}} =
+        ListSelector.slugs(%{selector: selector})
+
+      assert total_projects_count == 3
+      assert p1.slug in slugs
+      assert p2.slug in slugs
+      assert p3.slug in slugs
+    end
+
+    test "combine market segments with 'and'" do
+      defi_segment = insert(:market_segment, name: "DeFi")
+      mineable_segment = insert(:market_segment, name: "Mineable")
+
+      _p1 = insert(:random_project, market_segments: [defi_segment])
+      _p2 = insert(:random_project, market_segments: [mineable_segment])
+      p3 = insert(:random_project, market_segments: [mineable_segment, defi_segment])
+
+      selector = %{
+        filters: [
+          %{
+            name: "market_segments",
+            args: %{
+              market_segments: [defi_segment.name, mineable_segment.name],
+              market_segments_combinator: "and"
+            }
+          }
+        ]
+      }
+
+      {:ok, %{slugs: slugs, total_projects_count: total_projects_count}} =
+        ListSelector.slugs(%{selector: selector})
+
+      assert total_projects_count == 1
+      assert p3.slug in slugs
     end
 
     test "fetch by metric and market segments" do

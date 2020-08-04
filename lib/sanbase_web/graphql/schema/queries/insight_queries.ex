@@ -197,6 +197,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
     Vote for an insight. The user must logged in.
     """
     field :vote, :post do
+      arg(:post_id, :integer)
       arg(:insight_id, :integer)
       middleware(JWTAuth)
       resolve(&InsightResolver.vote/3)
@@ -206,6 +207,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
     Remove your vote for an insight. The user must logged in.
     """
     field :unvote, :post do
+      arg(:post_id, :integer)
       arg(:insight_id, :integer)
       middleware(JWTAuth)
       resolve(&InsightResolver.unvote/3)

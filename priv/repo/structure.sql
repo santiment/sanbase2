@@ -2094,7 +2094,8 @@ CREATE TABLE public.user_lists (
     function jsonb DEFAULT '{"args": [], "name": "empty"}'::jsonb,
     slug character varying(255),
     is_monitored boolean DEFAULT false,
-    table_configuration_id bigint
+    table_configuration_id bigint,
+    description text
 );
 
 
@@ -4750,3 +4751,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200716074754);
 INSERT INTO public."schema_migrations" (version) VALUES (20200727113432);
 INSERT INTO public."schema_migrations" (version) VALUES (20200728103633);
 INSERT INTO public."schema_migrations" (version) VALUES (20200728105033);
+INSERT INTO public."schema_migrations" (version) VALUES (20200804093238);

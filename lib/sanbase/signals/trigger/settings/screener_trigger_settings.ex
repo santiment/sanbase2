@@ -47,15 +47,8 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
   @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type
 
-  def post_create_process(trigger) do
-    %{settings: settings} = trigger
-    slugs = get_data(settings)
-    settings = %{settings | state: %{slugs_in_screener: slugs}}
-
-    %{trigger | settings: settings}
-  end
-
-  def post_update_process(_trigger), do: :nochange
+  def post_create_process(trigger), do: fill_current_state(trigger)
+  def post_update_process(trigger), do: fill_current_state(trigger)
 
   @doc ~s"""
   Return a list of the `settings.metric` values for the necessary time range
@@ -78,6 +71,14 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
     {:ok, %{slugs: slugs}} = Project.ListSelector.slugs(selector)
 
     slugs
+  end
+
+  defp fill_current_state(trigger) do
+    %{settings: settings} = trigger
+    slugs = get_data(settings)
+    settings = %{settings | state: %{slugs_in_screener: slugs}}
+
+    %{trigger | settings: settings}
   end
 
   defimpl Sanbase.Signal.Settings, for: ScreenerTriggerSettings do

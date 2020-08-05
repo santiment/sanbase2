@@ -187,8 +187,12 @@ defmodule Sanbase.Signal.UserTrigger do
       |> update_changeset(%{trigger: clean_params(params)})
       |> Repo.update()
       |> case do
-        {:ok, ut} -> post_update_process(ut)
-        {:error, error} -> {:error, error}
+        {:ok, ut} ->
+          # Trigger a post-update process only if the settings changed
+          if settings != ut.trigger.settings, do: post_update_process(ut), else: {:ok, ut}
+
+        {:error, error} ->
+          {:error, error}
       end
     else
       {:get_trigger, _} ->

@@ -38,12 +38,12 @@ defmodule Sanbase.Clickhouse.Label do
           datetime: Datetime.t()
         }
 
-  @spec add_labels(list(input_transaction)) :: {:ok, list(output_transaction)}
-  def add_labels([]), do: {:ok, []}
+  @spec add_labels(String.t(), list(input_transaction)) :: {:ok, list(output_transaction)}
+  def add_labels(_, []), do: {:ok, []}
 
-  def add_labels(transactions) when is_list(transactions) do
+  def add_labels(slug, transactions) when is_list(transactions) do
     addresses = get_list_of_addresses(transactions)
-    {query, args} = addresses_labels_query(addresses)
+    {query, args} = addresses_labels_query(slug, addresses)
 
     Sanbase.ClickhouseRepo.query_reduce(query, args, %{}, fn [address, label, metadata], acc ->
       label = %{name: label, metadata: metadata}
@@ -59,14 +59,18 @@ defmodule Sanbase.Clickhouse.Label do
   end
 
   # helpers
-  defp addresses_labels_query(addresses) do
+  defp addresses_labels_query(slug, addresses) do
     query = """
     SELECT lower(address) as address, label, metadata
     FROM blockchain_address_labels FINAL
-    PREWHERE blockchain = 'ethereum' and lower(address) IN (?1) and sign = 1
+    PREWHERE
+      blockchain = 'ethereum' AND
+      asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 LIMIT 1) AND
+      lower(address) IN (?2)
+    HAVING sign = 1
     """
 
-    {query, [addresses]}
+    {query, [slug, addresses]}
   end
 
   defp get_list_of_addresses(transactions) do

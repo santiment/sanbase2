@@ -127,7 +127,14 @@ defmodule Sanbase.Model.Project.ListSelector do
   end
 
   defp slugs_by_filter(%{name: "market_segments", args: args}) do
-    projects = Project.List.by_market_segment_any_of(args.market_segments)
+    combinator = Map.get(args, :market_segments_combinator, "and")
+
+    projects =
+      case combinator do
+        "and" -> Project.List.by_market_segment_all_of(args.market_segments)
+        "or" -> Project.List.by_market_segment_any_of(args.market_segments)
+      end
+
     slugs = Enum.map(projects, & &1.slug)
     {:ok, slugs}
   end

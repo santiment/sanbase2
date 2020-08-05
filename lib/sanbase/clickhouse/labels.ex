@@ -65,7 +65,8 @@ defmodule Sanbase.Clickhouse.Label do
     FROM blockchain_address_labels FINAL
     PREWHERE
       blockchain = 'ethereum' AND
-      asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 LIMIT 1) AND
+      ((label = 'whale' and asset_id = (SELECT argMax(asset_id, computed_at) FROM asset_metadata FINAL PREWHERE name = ?1))
+        OR (label != 'whale' and asset_id = 0)) AND
       lower(address) IN (?2)
     HAVING sign = 1
     """

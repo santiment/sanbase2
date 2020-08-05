@@ -283,10 +283,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "exchange_balance_per_exchange",
         "exchange_inflow_per_exchange",
         "exchange_outflow_per_exchange",
-        "holders_distribution_0.01_to_0.1_per_exchange",
-        "holders_distribution_0.1_to_1_per_exchange",
-        "holders_distribution_1_to_10_per_exchange",
-        "holders_distribution_10_100_per_exchange",
         "withdrawal_transactions_per_exchange",
         # Defi
         "defi_total_value_locked_eth",

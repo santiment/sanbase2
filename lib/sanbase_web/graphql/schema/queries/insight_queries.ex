@@ -61,6 +61,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:tags, list_of(:string))
       arg(:is_pulse, :boolean)
       arg(:is_paywall_required, :boolean)
+      arg(:from, :datetime)
+      arg(:to, :datetime)
 
       resolve(&InsightResolver.all_insights/3)
       middleware(PostPaywallFilter)
@@ -73,6 +75,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:user_id, non_null(:integer))
       arg(:is_pulse, :boolean)
       arg(:is_paywall_required, :boolean)
+      arg(:from, :datetime)
+      arg(:to, :datetime)
 
       resolve(&InsightResolver.all_insights_for_user/3)
       middleware(PostPaywallFilter)
@@ -85,6 +89,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:user_id, non_null(:integer))
       arg(:is_pulse, :boolean)
       arg(:is_paywall_required, :boolean)
+      arg(:from, :datetime)
+      arg(:to, :datetime)
 
       resolve(&InsightResolver.all_insights_user_voted_for/3)
       middleware(PostPaywallFilter)
@@ -100,6 +106,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:tag, non_null(:string))
       arg(:is_pulse, :boolean)
       arg(:is_paywall_required, :boolean)
+      arg(:from, :datetime)
+      arg(:to, :datetime)
 
       resolve(&InsightResolver.all_insights_by_tag/3)
       middleware(PostPaywallFilter)

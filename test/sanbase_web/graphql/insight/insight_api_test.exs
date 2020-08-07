@@ -1013,6 +1013,38 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     end
   end
 
+  test "getting all insights filtered by from/to", %{
+    user: user,
+    conn: conn
+  } do
+    datetime_inside1 = Timex.now() |> Timex.shift(days: -10)
+    datetime_inside2 = Timex.now() |> Timex.shift(days: -20)
+    datetime_outside1 = Timex.now()
+    datetime_outside2 = Timex.now() |> Timex.shift(days: -30)
+    from = Timex.now() |> Timex.shift(days: -25) |> DateTime.to_iso8601()
+    to = Timex.now() |> Timex.shift(days: -5) |> DateTime.to_iso8601()
+
+    common_args = %{user: user, ready_state: Post.published(), state: Post.approved_state()}
+
+    post1 = insert(:post, Map.put(common_args, :published_at, datetime_inside1))
+    post2 = insert(:post, Map.put(common_args, :published_at, datetime_inside2))
+    insert(:post, Map.put(common_args, :published_at, datetime_outside1))
+    insert(:post, Map.put(common_args, :published_at, datetime_outside2))
+
+    query = """
+    {
+      allInsights(from: "#{from}", to: "#{to}") {
+        id
+      }
+    }
+    """
+
+    result = conn |> post("/graphql", query_skeleton(query, "allInsights"))
+
+    assert json_response(result, 200)["data"]["allInsights"] ==
+             [%{"id" => "#{post1.id}"}, %{"id" => "#{post2.id}"}]
+  end
+
   # Helper functions
 
   defp create_chart_event(args) do

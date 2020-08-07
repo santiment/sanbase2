@@ -2242,7 +2242,7 @@
     "name": "network_growth_change_1d",
     "metric": "network_growth_change_1d",
     "version": "2019-01-01",
-    "access": "free",
+    "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "free",
@@ -2259,7 +2259,7 @@
     "name": "network_growth_change_7d",
     "metric": "network_growth_change_7d",
     "version": "2019-01-01",
-    "access": "free",
+    "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "free",
@@ -2276,7 +2276,7 @@
     "name": "network_growth_change_30d",
     "metric": "network_growth_change_30d",
     "version": "2019-01-01",
-    "access": "free",
+    "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "free",

@@ -286,7 +286,11 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "withdrawal_transactions_per_exchange",
         # Defi
         "defi_total_value_locked_eth",
-        "defi_total_value_locked_usd"
+        "defi_total_value_locked_usd",
+        # Change metrics
+        "network_growth_change_1d",
+        "network_growth_change_7d",
+        "network_growth_change_30d"
       ]
       |> Enum.sort()
 

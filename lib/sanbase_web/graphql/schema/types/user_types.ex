@@ -53,6 +53,9 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     field :insights, list_of(:post) do
       arg(:is_pulse, :boolean)
       arg(:is_paywall_required, :boolean)
+      arg(:from, :datetime)
+      arg(:to, :datetime)
+
       cache_resolve(&InsightResolver.public_insights/3, ttl: 60)
     end
 

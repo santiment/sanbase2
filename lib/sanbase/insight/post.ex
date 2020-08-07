@@ -292,6 +292,7 @@ defmodule Sanbase.Insight.Post do
     |> by_user(user_id)
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
+    |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
     |> preload(^@preloads)
     |> Repo.all()
     |> Tag.Preloader.order_tags()
@@ -313,6 +314,7 @@ defmodule Sanbase.Insight.Post do
     published_and_approved_insights()
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
+    |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
   end
 
   @doc """
@@ -333,6 +335,7 @@ defmodule Sanbase.Insight.Post do
     |> by_tags(tags)
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
+    |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
     |> distinct(true)
     |> order_by_published_at()
     |> preload(^@preloads)
@@ -344,6 +347,7 @@ defmodule Sanbase.Insight.Post do
     |> by_tags(tags)
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
+    |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
     |> distinct(true)
     |> order_by_published_at()
     |> page(page, page_size)
@@ -359,6 +363,7 @@ defmodule Sanbase.Insight.Post do
     |> user_has_voted_for(user_id)
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
+    |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
     |> preload(^@preloads)
     |> Repo.all()
   end
@@ -458,6 +463,15 @@ defmodule Sanbase.Insight.Post do
       where: p.is_paywall_required == ^is_paywall_required
     )
   end
+
+  defp by_from_to_datetime(query, from, to) when not is_nil(from) and not is_nil(to) do
+    from(
+      p in query,
+      where: p.published_at >= ^from and p.published_at <= ^to
+    )
+  end
+
+  defp by_from_to_datetime(query, _, _), do: query
 
   defp by_tags(query, tags) do
     query

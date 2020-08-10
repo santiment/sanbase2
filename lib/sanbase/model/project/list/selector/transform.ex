@@ -27,6 +27,10 @@ defmodule Sanbase.Model.Project.ListSelector.Transform do
 
   def atomize_values(nil), do: nil
 
+  def atomize_values(%{args: args} = map) do
+    %{map | args: atomize_values(args)}
+  end
+
   def atomize_values(map) when is_map(map) do
     {to_atomize, rest} = Map.split(map, [:operator, :aggregation, :direction])
 

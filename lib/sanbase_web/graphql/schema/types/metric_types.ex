@@ -27,6 +27,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:owner)
     value(:label)
     value(:holders_count)
+    value(:market_segments)
   end
 
   input_object :metric_target_selector_input_object do
@@ -35,6 +36,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:owner, :string)
     field(:label, :string)
     field(:holders_count, :integer)
+    field(:market_segments, list_of(:string))
   end
 
   input_object :timeseries_metric_transform_input_object do

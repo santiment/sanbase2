@@ -42,7 +42,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
         NOT isNaN(value) AND
-        #{asset_id_filter(slug_or_slugs)} AND
+        #{asset_id_filter(slug_or_slugs, argument_position: 5)} AND
         metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 )
       GROUP BY dt, asset_id
     )
@@ -61,15 +61,21 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     {query, args}
   end
 
-  defp asset_id_filter(slug) when is_binary(slug) do
+  defp asset_id_filter(slug, opts) when is_binary(slug) do
+    arg_position = Keyword.fetch!(opts, :argument_position)
+
     """
-    asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?5 LIMIT 1 )
+    asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?#{arg_position} LIMIT 1 )
     """
   end
 
-  defp asset_id_filter(slugs) when is_list(slugs) do
+  defp asset_id_filter(slugs, opts) when is_list(slugs) do
+    arg_position = Keyword.fetch!(opts, :argument_position)
+
     """
-    asset_id IN ( SELECT DISTINCT(asset_id) FROM asset_metadata FINAL PREWHERE name IN (?5) )
+    asset_id IN ( SELECT DISTINCT(asset_id) FROM asset_metadata FINAL PREWHERE name IN (?#{
+      arg_position
+    }) )
     """
   end
 

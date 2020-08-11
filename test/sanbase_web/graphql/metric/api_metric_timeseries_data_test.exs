@@ -70,6 +70,53 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     end)
   end
 
+  test "market segments selector with ignored slugs", context do
+    %{conn: conn, from: from, to: to, interval: interval} = context
+
+    market_segment = insert(:market_segment, name: "Stablecoin")
+    p1 = insert(:random_project, market_segments: [market_segment])
+    p2 = insert(:random_project, market_segments: [market_segment])
+    p3 = insert(:random_project, market_segments: [market_segment])
+
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Clickhouse.Metric.timeseries_data/6,
+      {:ok,
+       [
+         %{value: 100.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
+         %{value: 200.0, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
+       ]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        get_timeseries_metric(
+          conn,
+          "holders_distribution_0.1_to_1",
+          %{market_segments: [market_segment.name], ignored_slugs: [p3.slug]},
+          from,
+          to,
+          interval,
+          :sum
+        )
+        |> extract_timeseries_data()
+
+      assert result == [
+               %{"value" => 100.0, "datetime" => "2019-01-01T00:00:00Z"},
+               %{"value" => 200.0, "datetime" => "2019-01-02T00:00:00Z"}
+             ]
+
+      assert_called(
+        Sanbase.Clickhouse.Metric.timeseries_data(
+          "holders_distribution_0.1_to_1",
+          %{slug: [p1.slug, p2.slug]},
+          from,
+          to,
+          interval,
+          :_
+        )
+      )
+    end)
+  end
+
   test "returns data for labeled metrics", context do
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
 

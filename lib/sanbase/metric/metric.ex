@@ -551,11 +551,13 @@ defmodule Sanbase.Metric do
     }
   end
 
-  defp transform_identifier(%{market_segments: market_segments}) do
+  defp transform_identifier(%{market_segments: market_segments} = selector) do
     slugs =
       Sanbase.Model.Project.List.by_market_segment_all_of(market_segments) |> Enum.map(& &1.slug)
 
-    %{slug: slugs}
+    ignored_slugs = Map.get(selector, :ignored_slugs, [])
+
+    %{slug: slugs -- ignored_slugs}
   end
 
   defp transform_identifier(identifier), do: identifier

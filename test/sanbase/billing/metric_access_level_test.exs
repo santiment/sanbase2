@@ -141,6 +141,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "realized_value_usd_1d",
         "velocity",
         "transaction_volume",
+        "transaction_volume_usd",
         "exchange_inflow",
         "exchange_outflow",
         "exchange_balance",

@@ -120,7 +120,7 @@ defmodule Sanbase.Price do
   Return timeseries data for the given time period where every point consists
   of price in USD, price in BTC, marketcap in USD and volume in USD
   """
-  @spec timeseries_data(slug, DateTime.t(), DateTime.t(), interval, opts) ::
+  @spec timeseries_data(slug | list(slug), DateTime.t(), DateTime.t(), interval, opts) ::
           timeseries_data_result
   def timeseries_data(slug, from, to, interval, opts \\ [])
 
@@ -129,10 +129,10 @@ defmodule Sanbase.Price do
     |> combined_marketcap_and_volume(from, to, interval, opts)
   end
 
-  def timeseries_data(slug, from, to, interval, opts) when is_binary(slug) do
+  def timeseries_data(slug_or_slugs, from, to, interval, opts) do
     source = Keyword.get(opts, :source) || @default_source
     aggregation = Keyword.get(opts, :aggregation) || :last
-    {query, args} = timeseries_data_query(slug, from, to, interval, source, aggregation)
+    {query, args} = timeseries_data_query(slug_or_slugs, from, to, interval, source, aggregation)
 
     ClickhouseRepo.query_transform(
       query,
@@ -158,12 +158,19 @@ defmodule Sanbase.Price do
   Return timeseries data for the given time period where every point consists
   of price in USD, price in BTC, marketcap in USD and volume in USD
   """
-  @spec timeseries_metric_data(slug, metric, DateTime.t(), DateTime.t(), interval, opts) ::
+  @spec timeseries_metric_data(
+          slug | list(slug),
+          metric,
+          DateTime.t(),
+          DateTime.t(),
+          interval,
+          opts
+        ) ::
           timeseries_metric_data_result
-  def timeseries_metric_data(slug, metric, from, to, interval, opts \\ [])
+  def timeseries_metric_data(slug_or_slugs, metric, from, to, interval, opts \\ [])
 
-  def timeseries_metric_data(slug, "price_eth", from, to, interval, opts) do
-    async with {:ok, prices_slug_usd} <- timeseries_data(slug, from, to, interval, opts),
+  def timeseries_metric_data(slug_or_slugs, "price_eth", from, to, interval, opts) do
+    async with {:ok, prices_slug_usd} <- timeseries_data(slug_or_slugs, from, to, interval, opts),
                {:ok, prices_ethereum_usd} <- timeseries_data("ethereum", from, to, interval, opts) do
       transform_func = fn value1, value2 ->
         if value2 != 0 && value2 != nil, do: value1 / value2, else: 0
@@ -193,12 +200,12 @@ defmodule Sanbase.Price do
     end
   end
 
-  def timeseries_metric_data(slug, metric, from, to, interval, opts) when is_binary(slug) do
+  def timeseries_metric_data(slug_or_slugs, metric, from, to, interval, opts) do
     source = Keyword.get(opts, :source) || @default_source
     aggregation = Keyword.get(opts, :aggregation) || :last
 
     {query, args} =
-      timeseries_metric_data_query(slug, metric, from, to, interval, source, aggregation)
+      timeseries_metric_data_query(slug_or_slugs, metric, from, to, interval, source, aggregation)
 
     ClickhouseRepo.query_transform(
       query,

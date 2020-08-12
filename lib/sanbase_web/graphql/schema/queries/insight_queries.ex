@@ -15,6 +15,12 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
   alias SanbaseWeb.Graphql.Middlewares.PostPaywallFilter
 
   object :insight_queries do
+    field :popular_insight_authors, list_of(:user) do
+      meta(access: :free)
+
+      cache_resolve(&InsightResolver.popular_insight_authors/3)
+    end
+
     @desc ~s"""
     Fetch the post with the given ID.
     The user must be logged in to access all fields for the post/insight.
@@ -55,6 +61,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:tags, list_of(:string))
       arg(:is_pulse, :boolean)
       arg(:is_paywall_required, :boolean)
+      arg(:from, :datetime)
+      arg(:to, :datetime)
 
       resolve(&InsightResolver.all_insights/3)
       middleware(PostPaywallFilter)
@@ -67,6 +75,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:user_id, non_null(:integer))
       arg(:is_pulse, :boolean)
       arg(:is_paywall_required, :boolean)
+      arg(:from, :datetime)
+      arg(:to, :datetime)
 
       resolve(&InsightResolver.all_insights_for_user/3)
       middleware(PostPaywallFilter)
@@ -79,6 +89,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:user_id, non_null(:integer))
       arg(:is_pulse, :boolean)
       arg(:is_paywall_required, :boolean)
+      arg(:from, :datetime)
+      arg(:to, :datetime)
 
       resolve(&InsightResolver.all_insights_user_voted_for/3)
       middleware(PostPaywallFilter)
@@ -94,6 +106,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:tag, non_null(:string))
       arg(:is_pulse, :boolean)
       arg(:is_paywall_required, :boolean)
+      arg(:from, :datetime)
+      arg(:to, :datetime)
 
       resolve(&InsightResolver.all_insights_by_tag/3)
       middleware(PostPaywallFilter)
@@ -269,6 +283,19 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:insight_id, :integer)
       middleware(JWTAuth)
       resolve(&InsightResolver.unvote/3)
+    end
+
+    @desc """
+    Create an insight connected to particular chart configuration
+    """
+    field :create_chart_event, :post do
+      arg(:chart_configuration_id, non_null(:id))
+      arg(:chart_event_datetime, non_null(:datetime))
+      arg(:title, non_null(:string))
+      arg(:text, non_null(:string))
+
+      middleware(JWTAuth)
+      resolve(&InsightResolver.create_chart_event/3)
     end
   end
 end

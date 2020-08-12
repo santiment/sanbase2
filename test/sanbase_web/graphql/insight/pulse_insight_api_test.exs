@@ -270,11 +270,8 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
         state: Post.approved_state()
       )
 
-    %Vote{post_id: post.id, user_id: user.id}
-    |> Repo.insert!()
-
-    %Vote{post_id: post2.id, user_id: staked_user.id}
-    |> Repo.insert!()
+    Vote.create(%{post_id: post.id, user_id: user.id})
+    Vote.create(%{post_id: post2.id, user_id: staked_user.id})
 
     query = """
     {
@@ -339,7 +336,7 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
           title
           text
           user { id }
-          votes{ totalSanVotes }
+          votes{ totalVotes }
           state
           createdAt
           publishedAt
@@ -357,7 +354,7 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
       assert insight["title"] == "Awesome post"
       assert insight["state"] == Post.approved_state()
       assert insight["user"]["id"] == user.id |> Integer.to_string()
-      assert insight["votes"]["totalSanVotes"] == 0
+      assert insight["votes"]["totalVotes"] == 0
       assert insight["publishedAt"] == nil
 
       created_at = Timex.parse!(insight["createdAt"], "{ISO:Extended}")

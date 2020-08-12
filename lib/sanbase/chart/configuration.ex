@@ -24,6 +24,11 @@ defmodule Sanbase.Chart.Configuration do
     belongs_to(:user, Sanbase.Auth.User)
     belongs_to(:project, Sanbase.Model.Project)
 
+    has_many(:chart_events, Sanbase.Insight.Post,
+      foreign_key: :chart_configuration_for_event_id,
+      where: [is_chart_event: true]
+    )
+
     timestamps()
   end
 
@@ -96,7 +101,7 @@ defmodule Sanbase.Chart.Configuration do
   end
 
   defp get_chart_configuration(config_id, querying_user_id) do
-    case Repo.get(__MODULE__, config_id) do
+    case Repo.one(from(conf in __MODULE__, where: conf.id == ^config_id, preload: :chart_events)) do
       %__MODULE__{user_id: user_id, is_public: is_public} = conf
       when user_id == querying_user_id or is_public == true ->
         {:ok, conf}

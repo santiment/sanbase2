@@ -79,7 +79,6 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiAnomalyTimeseriesDataTest do
 
   test "returns data for all available aggregations", context do
     %{conn: conn, slug: slug, from: from, to: to, interval: interval} = context
-    aggregations = Anomaly.available_aggregations()
     # nil means aggregation is not passed, we should not explicitly pass it
     anomaly = Anomaly.available_anomalies() |> Enum.random()
     {:ok, %{available_aggregations: aggregations}} = Anomaly.metadata(anomaly)

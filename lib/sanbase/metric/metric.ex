@@ -110,6 +110,7 @@ defmodule Sanbase.Metric do
     def timeseries_data(unquote(metric), identifier, from, to, interval, opts) do
       aggregation = Keyword.get(opts, :aggregation, nil)
       aggregation_valid? = aggregation in Map.get(@aggregations_per_metric, unquote(metric))
+      identifier = transform_identifier(identifier)
 
       case aggregation_valid? do
         true ->
@@ -145,6 +146,7 @@ defmodule Sanbase.Metric do
     def aggregated_timeseries_data(unquote(metric), identifier, from, to, opts) do
       aggregation = Keyword.get(opts, :aggregation, nil)
       aggregation_valid? = aggregation in Map.get(@aggregations_per_metric, unquote(metric))
+      identifier = transform_identifier(identifier)
 
       case aggregation_valid? do
         true ->
@@ -229,7 +231,7 @@ defmodule Sanbase.Metric do
             from,
             to,
             direction,
-            aggregation
+            opts
           )
 
         false ->
@@ -250,6 +252,8 @@ defmodule Sanbase.Metric do
 
   for %{metric: metric, module: module} <- @histogram_metric_module_mapping do
     def histogram_data(unquote(metric), identifier, from, to, interval, limit) do
+      identifier = transform_identifier(identifier)
+
       unquote(module).histogram_data(
         unquote(metric),
         identifier,
@@ -546,4 +550,15 @@ defmodule Sanbase.Metric do
       error_msg: "The histogram metric '#{metric}' is not supported or is mistyped."
     }
   end
+
+  defp transform_identifier(%{market_segments: market_segments} = selector) do
+    slugs =
+      Sanbase.Model.Project.List.by_market_segment_all_of(market_segments) |> Enum.map(& &1.slug)
+
+    ignored_slugs = Map.get(selector, :ignored_slugs, [])
+
+    %{slug: slugs -- ignored_slugs}
+  end
+
+  defp transform_identifier(identifier), do: identifier
 end

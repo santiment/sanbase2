@@ -13,10 +13,11 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Insight.{Post, PostImage}
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Metric.MetricPostgresData
+  alias Sanbase.Chart.Configuration
 
   require Logger
 
-  @preloads [:votes, :user, :images, :tags]
+  @preloads [:user, :images, :tags, :chart_configuration_for_event]
   # state
   @awaiting_approval "awaiting_approval"
   @approved "approved"
@@ -39,11 +40,16 @@ defmodule Sanbase.Insight.Post do
     field(:is_paywall_required, :boolean, default: false)
     field(:prediction, :string, default: "unspecified")
 
+    # Chart events are insights connected to specific chart configuration and datetime
+    field(:is_chart_event, :boolean, default: false)
+    field(:chart_event_datetime, :utc_datetime)
+    belongs_to(:chart_configuration_for_event, Configuration)
+
     belongs_to(:price_chart_project, Project)
 
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
 
-    has_many(:chart_configurations, Sanbase.Chart.Configuration)
+    has_many(:chart_configurations, Configuration)
     has_many(:images, PostImage, on_delete: :delete_all)
     has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
     has_many(:votes, Vote, on_delete: :delete_all)
@@ -82,7 +88,11 @@ defmodule Sanbase.Insight.Post do
       :is_pulse,
       :is_paywall_required,
       :prediction,
-      :price_chart_project_id
+      :price_chart_project_id,
+      :is_chart_event,
+      :chart_event_datetime,
+      :chart_configuration_for_event_id,
+      :ready_state
     ])
     |> Tag.put_tags(attrs)
     |> MetricPostgresData.put_metrics(attrs)
@@ -109,7 +119,9 @@ defmodule Sanbase.Insight.Post do
       :is_pulse,
       :is_paywall_required,
       :prediction,
-      :price_chart_project_id
+      :price_chart_project_id,
+      :is_chart_event,
+      :chart_event_datetime
     ])
     |> Tag.put_tags(attrs)
     |> MetricPostgresData.put_metrics(attrs)
@@ -190,10 +202,7 @@ defmodule Sanbase.Insight.Post do
         {:error, "Cannot update not owned insight: #{post_id}"}
 
       {:error, changeset} ->
-        {
-          :error,
-          message: "Cannot update insight", details: changeset_errors_to_str(changeset)
-        }
+        {:error, message: "Cannot update insight", details: changeset_errors_to_str(changeset)}
 
       _post ->
         {:error, "Cannot update insight with id: #{post_id}"}
@@ -214,11 +223,9 @@ defmodule Sanbase.Insight.Post do
             {:ok, post |> Tag.Preloader.order_tags()}
 
           {:error, changeset} ->
-            {
-              :error,
-              message: "Cannot delete post with id #{post_id}",
-              details: changeset_errors_to_str(changeset)
-            }
+            {:error,
+             message: "Cannot delete post with id #{post_id}",
+             details: changeset_errors_to_str(changeset)}
         end
 
       _post ->
@@ -285,6 +292,7 @@ defmodule Sanbase.Insight.Post do
     |> by_user(user_id)
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
+    |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
     |> preload(^@preloads)
     |> Repo.all()
     |> Tag.Preloader.order_tags()
@@ -306,6 +314,7 @@ defmodule Sanbase.Insight.Post do
     published_and_approved_insights()
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
+    |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
   end
 
   @doc """
@@ -326,6 +335,7 @@ defmodule Sanbase.Insight.Post do
     |> by_tags(tags)
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
+    |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
     |> distinct(true)
     |> order_by_published_at()
     |> preload(^@preloads)
@@ -337,6 +347,7 @@ defmodule Sanbase.Insight.Post do
     |> by_tags(tags)
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
+    |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
     |> distinct(true)
     |> order_by_published_at()
     |> page(page, page_size)
@@ -352,6 +363,7 @@ defmodule Sanbase.Insight.Post do
     |> user_has_voted_for(user_id)
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
+    |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
     |> preload(^@preloads)
     |> Repo.all()
   end
@@ -364,6 +376,40 @@ defmodule Sanbase.Insight.Post do
 
     from(p in Post, where: p.user_id == ^user_id)
     |> Repo.update_all(set: [user_id: anon_user_id])
+  end
+
+  def create_chart_event(
+        user_id,
+        %{chart_configuration_id: chart_configuration_for_event_id} = args
+      ) do
+    case Configuration.by_id(chart_configuration_for_event_id, user_id) do
+      {:ok, conf} ->
+        %__MODULE__{user_id: user_id}
+        |> create_changeset(
+          Map.merge(args, %{
+            chart_configuration_for_event_id: conf.id,
+            is_chart_event: true,
+            ready_state: @published
+          })
+        )
+        |> Repo.insert()
+        |> case do
+          {:ok, post} -> {:ok, post |> Repo.preload(@preloads)}
+          {:error, changeset} -> {:error, changeset}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  def user_id_to_post_ids_list() do
+    from(
+      p in Post,
+      select: {p.user_id, fragment("array_agg(?)", p.id)},
+      group_by: p.user_id
+    )
+    |> Repo.all()
   end
 
   # Helper functions
@@ -417,6 +463,15 @@ defmodule Sanbase.Insight.Post do
       where: p.is_paywall_required == ^is_paywall_required
     )
   end
+
+  defp by_from_to_datetime(query, from, to) when not is_nil(from) and not is_nil(to) do
+    from(
+      p in query,
+      where: p.published_at >= ^from and p.published_at <= ^to
+    )
+  end
+
+  defp by_from_to_datetime(query, _, _), do: query
 
   defp by_tags(query, tags) do
     query

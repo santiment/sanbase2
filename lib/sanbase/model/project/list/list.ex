@@ -316,8 +316,10 @@ defmodule Sanbase.Model.Project.List do
 
     from(
       p in projects_query(opts),
-      inner_join: m in assoc(p, :market_segment),
-      where: m.name in ^segments
+      preload: [:market_segments],
+      left_join: ms in assoc(p, :market_segments),
+      where: ms.name in ^segments,
+      distinct: true
     )
     |> Repo.all()
   end
@@ -332,7 +334,8 @@ defmodule Sanbase.Model.Project.List do
   def by_market_segment_all_of(segments, opts \\ [])
 
   def by_market_segment_all_of(segments, opts) when is_list(segments) do
-    from(p in projects_query(opts),
+    from(
+      p in projects_query(opts),
       preload: [:market_segments],
       left_join: ms in assoc(p, :market_segments),
       where: ms.name in ^segments,

@@ -6,17 +6,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Auth.User
   alias Sanbase.Vote
-  alias Sanbase.Insight.Post
+  alias Sanbase.Insight.{Post, PopularAuthor}
   alias Sanbase.Comments.EntityComment
-  alias Sanbase.Repo
   alias SanbaseWeb.Graphql.Helpers.Utils
 
   require Logger
 
+  def popular_insight_authors(_root, _args, _resolution) do
+    PopularAuthor.get()
+  end
+
   def insights(%User{} = user, args, _resolution) do
     opts = [
       is_pulse: Map.get(args, :is_pulse),
-      is_paywall_required: Map.get(args, :is_paywall_required)
+      is_paywall_required: Map.get(args, :is_paywall_required),
+      from: Map.get(args, :from),
+      to: Map.get(args, :to)
     ]
 
     {:ok, Post.user_insights(user.id, opts)}
@@ -25,7 +30,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   def public_insights(%User{} = user, args, _resolution) do
     opts = [
       is_pulse: Map.get(args, :is_pulse),
-      is_paywall_required: Map.get(args, :is_paywall_required)
+      is_paywall_required: Map.get(args, :is_paywall_required),
+      from: Map.get(args, :from),
+      to: Map.get(args, :to)
     ]
 
     {:ok, Post.user_public_insights(user.id, opts)}
@@ -43,7 +50,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
       when is_list(tags) do
     opts = [
       is_pulse: Map.get(args, :is_pulse),
-      is_paywall_required: Map.get(args, :is_paywall_required)
+      is_paywall_required: Map.get(args, :is_paywall_required),
+      from: Map.get(args, :from),
+      to: Map.get(args, :to)
     ]
 
     posts = Post.public_insights_by_tags(tags, page, page_size, opts)
@@ -54,7 +63,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   def all_insights(_root, %{page: page, page_size: page_size} = args, _resolution) do
     opts = [
       is_pulse: Map.get(args, :is_pulse),
-      is_paywall_required: Map.get(args, :is_paywall_required)
+      is_paywall_required: Map.get(args, :is_paywall_required),
+      from: Map.get(args, :from),
+      to: Map.get(args, :to)
     ]
 
     posts = Post.public_insights(page, page_size, opts)
@@ -65,7 +76,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   def all_insights_for_user(_root, %{user_id: user_id} = args, _context) do
     opts = [
       is_pulse: Map.get(args, :is_pulse),
-      is_paywall_required: Map.get(args, :is_paywall_required)
+      is_paywall_required: Map.get(args, :is_paywall_required),
+      from: Map.get(args, :from),
+      to: Map.get(args, :to)
     ]
 
     posts = Post.user_public_insights(user_id, opts)
@@ -76,7 +89,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   def all_insights_user_voted_for(_root, %{user_id: user_id} = args, _context) do
     opts = [
       is_pulse: Map.get(args, :is_pulse),
-      is_paywall_required: Map.get(args, :is_paywall_required)
+      is_paywall_required: Map.get(args, :is_paywall_required),
+      from: Map.get(args, :from),
+      to: Map.get(args, :to)
     ]
 
     posts = Post.all_insights_user_voted_for(user_id, opts)
@@ -87,7 +102,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   def all_insights_by_tag(_root, %{tag: tag} = args, _context) do
     opts = [
       is_pulse: Map.get(args, :is_pulse),
-      is_paywall_required: Map.get(args, :is_paywall_required)
+      is_paywall_required: Map.get(args, :is_paywall_required),
+      from: Map.get(args, :from),
+      to: Map.get(args, :to)
     ]
 
     posts = Post.public_insights_by_tags([tag], opts)
@@ -98,7 +115,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   def all_insights_by_search_term(_root, %{search_term: search_term} = args, _context) do
     opts = [
       is_pulse: Map.get(args, :is_pulse),
-      is_paywall_required: Map.get(args, :is_paywall_required)
+      is_paywall_required: Map.get(args, :is_paywall_required),
+      from: Map.get(args, :from),
+      to: Map.get(args, :to)
     ]
 
     # Search is done only on the publicly visible (published) insights.
@@ -141,35 +160,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     - `total_san_votes` represents the number of votes where each vote's weight is
     equal to the san balance of the voter
   """
-  def votes(%Post{} = post, _args, _context) do
-    {total_votes, total_san_votes} =
-      post
-      |> Repo.preload(votes: [user: :eth_accounts])
-      |> Map.get(:votes)
-      |> Stream.map(&Map.get(&1, :user))
-      |> Stream.map(&User.san_balance!/1)
-      |> Enum.reduce({0, 0}, fn san_balance, {votes, san_token_votes} ->
-        {votes + 1, san_token_votes + san_balance}
-      end)
-
-    {:ok,
-     %{
-       total_votes: total_votes,
-       total_san_votes: total_san_votes |> Sanbase.Math.to_integer()
-     }}
+  def votes(%Post{} = post, _args, %{context: %{auth: %{current_user: user}}}) do
+    {:ok, Vote.vote_stats(post, user)}
   end
 
-  def voted_at(%Post{} = post, _args, %{
-        context: %{auth: %{current_user: user}}
-      }) do
-    post
-    |> Repo.preload([:votes])
-    |> Map.get(:votes, [])
-    |> Enum.find(&(&1.user_id == user.id))
-    |> case do
-      nil -> {:ok, nil}
-      vote -> {:ok, vote.inserted_at}
-    end
+  def votes(%Post{} = post, _args, _context) do
+    {:ok, Vote.vote_stats(post)}
+  end
+
+  def voted_at(%Post{} = post, _args, %{context: %{auth: %{current_user: user}}}) do
+    {:ok, Vote.voted_at(post, user)}
   end
 
   def voted_at(%Post{}, _args, _context), do: {:ok, nil}
@@ -194,19 +194,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   def unvote(_root, args, %{context: %{auth: %{current_user: user}}}) do
     insight_id = Map.get(args, :insight_id) || Map.fetch!(args, :post_id)
 
-    with %Vote{} = vote <- Vote.get_by_opts(post_id: insight_id, user_id: user.id),
-         {:ok, _vote} <- Vote.remove(vote) do
-      Post.by_id(insight_id)
-    else
-      _error ->
-        {:error, "Can't remove vote for post with id #{insight_id}"}
+    case Vote.downvote(%{post_id: insight_id, user_id: user.id}) do
+      {:ok, _vote} -> Post.by_id(insight_id)
+      {:error, _error} -> {:error, "Can't remove vote for post with id #{insight_id}"}
     end
   end
 
   # Note: deprecated - should be removed if not used by frontend
-  def insight_comments(_root, %{insight_id: post_id} = args, _resolution) do
+  def insight_comments(_root, %{insight_id: insight_id} = args, _resolution) do
     comments =
-      EntityComment.get_comments(:insight, post_id, args)
+      EntityComment.get_comments(:insight, insight_id, args)
       |> Enum.map(& &1.comment)
 
     {:ok, comments}
@@ -226,5 +223,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     |> on_load(fn loader ->
       {:ok, Dataloader.get(loader, SanbaseDataloader, :insights_comments_count, id) || 0}
     end)
+  end
+
+  def create_chart_event(_root, args, %{context: %{auth: %{current_user: user}}}) do
+    Post.create_chart_event(user.id, args)
   end
 end

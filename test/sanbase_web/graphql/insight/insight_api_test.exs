@@ -112,9 +112,9 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         user {
           id,
           username
-        },
+        }
         votes{
-          totalSanVotes
+          totalVotes
         }
       }
     }
@@ -270,11 +270,9 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         state: Post.approved_state()
       )
 
-    %Vote{post_id: post.id, user_id: user.id}
-    |> Repo.insert!()
+    Vote.create(%{post_id: post.id, user_id: user.id})
 
-    %Vote{post_id: post2.id, user_id: staked_user.id}
-    |> Repo.insert!()
+    Vote.create(%{post_id: post2.id, user_id: staked_user.id})
 
     query = """
     {
@@ -308,9 +306,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         published_at: Timex.now() |> Timex.shift(seconds: -10)
       )
 
-    %Vote{}
-    |> Vote.changeset(%{post_id: post.id, user_id: user.id})
-    |> Repo.insert!()
+    Vote.create(%{post_id: post.id, user_id: user.id})
 
     post2 =
       insert(:post,
@@ -319,11 +315,9 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         state: Post.approved_state()
       )
 
-    %Vote{post_id: post2.id, user_id: user.id}
-    |> Repo.insert!()
+    Vote.create(%{post_id: post2.id, user_id: user.id})
 
-    %Vote{post_id: post2.id, user_id: staked_user.id}
-    |> Repo.insert!()
+    Vote.create(%{post_id: post2.id, user_id: staked_user.id})
 
     query = """
     {
@@ -432,7 +426,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
             title
             text
             user { id }
-            votes{ totalSanVotes }
+            votes{ totalVotes }
             state
             prediction
             priceChartProject{ id slug }
@@ -460,7 +454,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
       assert insight["priceChartProject"]["id"] |> String.to_integer() == project.id
       assert insight["user"]["id"] == user.id |> Integer.to_string()
-      assert insight["votes"]["totalSanVotes"] == 0
+      assert insight["votes"]["totalVotes"] == 0
       assert insight["publishedAt"] == nil
 
       created_at = Timex.parse!(insight["createdAt"], "{ISO:Extended}")
@@ -730,8 +724,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     test "deleting a post", %{user: user, conn: conn} do
       sanbase_post = insert(:post, user: user, state: Post.approved_state())
 
-      %Vote{post_id: sanbase_post.id, user_id: user.id}
-      |> Repo.insert!()
+      Vote.create(%{post_id: sanbase_post.id, user_id: user.id})
 
       query = """
       mutation {
@@ -912,7 +905,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       vote(postId: #{sanbase_post.id}) {
         id
         votes{
-          totalSanVotes
+          totalVotes
         }
       }
     }
@@ -926,7 +919,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     result_post = result["data"]["vote"]
 
     assert result_post["id"] == Integer.to_string(sanbase_post.id)
-    assert result_post["votes"]["totalSanVotes"] == Decimal.to_integer(user.san_balance)
+    assert result_post["votes"]["totalVotes"] == 1
   end
 
   test "unvoting an insight", %{conn: conn, user: user} do
@@ -939,15 +932,14 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       }
       |> Repo.insert!()
 
-    %Vote{post_id: sanbase_post.id, user_id: user.id}
-    |> Repo.insert!()
+    Vote.create(%{post_id: sanbase_post.id, user_id: user.id})
 
     query = """
     mutation {
       unvote(insightId: #{sanbase_post.id}) {
         id
         votes{
-          totalSanVotes
+          totalVotes
         }
       }
     }
@@ -960,7 +952,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     result_post = json_response(result, 200)["data"]["unvote"]
 
     assert result_post["id"] == Integer.to_string(sanbase_post.id)
-    assert result_post["votes"]["totalSanVotes"] == 0
+    assert result_post["votes"]["totalVotes"] == 0
   end
 
   test "voting is idempotent", context do
@@ -983,7 +975,97 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
            )
   end
 
+  describe "create chart event" do
+    test "successfully creates chart event", context do
+      conf = insert(:chart_configuration, is_public: true)
+
+      args = %{
+        title: "test chart event title",
+        text: "test chart event text",
+        chart_event_datetime: DateTime.utc_now() |> DateTime.to_iso8601(),
+        chart_configuration_id: conf.id
+      }
+
+      query = create_chart_event(args)
+
+      res = execute_mutation_with_success(query, "createChartEvent", context.conn)
+
+      assert res["isChartEvent"]
+      assert res["chartEventDatetime"] != nil
+      assert res["chartConfigurationForEvent"]["id"] == conf.id
+
+      {:ok, new_conf} = Sanbase.Chart.Configuration.by_id(conf.id, context.user)
+
+      assert length(new_conf.chart_events) == 1
+    end
+
+    test "chart configuration doesn't exist", context do
+      query =
+        create_chart_event(%{
+          title: "test chart event title",
+          text: "test chart event text",
+          chart_event_datetime: DateTime.utc_now() |> DateTime.to_iso8601(),
+          chart_configuration_id: 123
+        })
+
+      res = execute_mutation_with_errors(query, context.conn)
+      assert res["message"] == "Chart configuration with id 123 does not exist."
+    end
+  end
+
+  test "getting all insights filtered by from/to", %{
+    user: user,
+    conn: conn
+  } do
+    datetime_inside1 = Timex.now() |> Timex.shift(days: -10)
+    datetime_inside2 = Timex.now() |> Timex.shift(days: -20)
+    datetime_outside1 = Timex.now()
+    datetime_outside2 = Timex.now() |> Timex.shift(days: -30)
+    from = Timex.now() |> Timex.shift(days: -25) |> DateTime.to_iso8601()
+    to = Timex.now() |> Timex.shift(days: -5) |> DateTime.to_iso8601()
+
+    common_args = %{user: user, ready_state: Post.published(), state: Post.approved_state()}
+
+    post1 = insert(:post, Map.put(common_args, :published_at, datetime_inside1))
+    post2 = insert(:post, Map.put(common_args, :published_at, datetime_inside2))
+    insert(:post, Map.put(common_args, :published_at, datetime_outside1))
+    insert(:post, Map.put(common_args, :published_at, datetime_outside2))
+
+    query = """
+    {
+      allInsights(from: "#{from}", to: "#{to}") {
+        id
+      }
+    }
+    """
+
+    result = conn |> post("/graphql", query_skeleton(query, "allInsights"))
+
+    assert json_response(result, 200)["data"]["allInsights"] ==
+             [%{"id" => "#{post1.id}"}, %{"id" => "#{post2.id}"}]
+  end
+
   # Helper functions
+
+  defp create_chart_event(args) do
+    """
+    mutation {
+      createChartEvent(
+        title: "#{args.title}",
+        text: "#{args.text}",
+        chartConfigurationId: #{args.chart_configuration_id},
+        chartEventDatetime: "#{args.chart_event_datetime}"
+      ) {
+        id
+        isChartEvent
+        chartEventDatetime
+        chartConfigurationForEvent {
+          id
+        }
+      }
+    }
+    """
+  end
 
   defp publish_insight_mutation(post) do
     """

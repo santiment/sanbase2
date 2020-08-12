@@ -183,7 +183,7 @@
     "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries"
   },
   {
@@ -1417,6 +1417,23 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "On-Chain Transaction Volume in USD",
+    "name": "transaction_volume_usd",
+    "metric": "transaction_volume_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Exchange Inflow",
     "name": "exchange_inflow",
     "metric": "exchange_inflow",
@@ -1898,9 +1915,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Development Activity 30 Days Change",
-    "name": "dev_activity_change_30d",
-    "metric": "dev_activity_change_30d",
+    "human_readable_name": "30 Days Moving Average Of Development Activity 1 Day Change",
+    "name": "30d_moving_avg_dev_activity_change_1d",
+    "metric": "30_day_moving_avg_dev_activity_change_1d",
     "version": "2019-01-01",
     "access": "free",
     "selectors": ["slug"],
@@ -2135,6 +2152,160 @@
     "has_incomplete_data": true,
     "data_type": "timeseries"
   },
+  {
+    "human_readable_name": "Development activity Change (1d)",
+    "name": "dev_activity_change_1d",
+    "metric": "dev_activity_change_1d",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Development activity Change (7d)",
+    "name": "dev_activity_change_7d",
+    "metric": "dev_activity_change_7d",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Development activity Change (30d)",
+    "name": "dev_activity_change_30d",
+    "metric": "dev_activity_change_30d",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Market Capitalization Change (1d)",
+    "name": "marketcap_usd_change_1d",
+    "metric": "marketcap_usd_change_1d",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Market Capitalization Change (7d)",
+    "name": "marketcap_usd_change_7d",
+    "metric": "marketcap_usd_change_7d",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Market Capitalization Change (30d)",
+    "name": "marketcap_usd_change_30d",
+    "metric": "marketcap_usd_change_30d",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Network Growth Change (1d)",
+    "name": "network_growth_change_1d",
+    "metric": "network_growth_change_1d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Network Growth Change (7d)",
+    "name": "network_growth_change_7d",
+    "metric": "network_growth_change_7d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Network Growth Change (30d)",
+    "name": "network_growth_change_30d",
+    "metric": "network_growth_change_30d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+    },
   {
     "human_readable_name": "On-Chain Transaction Volume in USD",
     "name": "transaction_volume_usd",

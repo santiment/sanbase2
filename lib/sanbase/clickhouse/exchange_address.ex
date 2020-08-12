@@ -1,4 +1,5 @@
 defmodule Sanbase.Clickhouse.ExchangeAddress do
+  import Sanbase.Utils.Transform
   @supported_blockchains ["bitcoin", "ethereum", "ripple"]
 
   def supported_blockchains(), do: @supported_blockchains
@@ -8,7 +9,13 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
   def exchange_names(blockchain, is_dex) when blockchain in @supported_blockchains do
     {query, args} = exchange_names_query(blockchain, is_dex)
 
-    Sanbase.ClickhouseRepo.query_transform(query, args, fn [owner] -> owner end)
+    Sanbase.ClickhouseRepo.query_reduce(query, args, [], fn [owner], acc ->
+      case is_binary(owner) and owner != "" do
+        true -> [owner | acc]
+        false -> acc
+      end
+    end)
+    |> maybe_apply_function(&Enum.sort/1)
   end
 
   def exchange_names(blockchain, _), do: not_supported_blockchain_error(blockchain)
@@ -54,10 +61,11 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
   defp exchange_names_query(blockchain, is_dex) do
     query = """
     SELECT DISTINCT JSONExtractString(metadata, 'owner')
-    FROM blockchain_address_labels
+    FROM blockchain_address_labels FINAL
     PREWHERE
       blockchain = ?1 AND
       #{maybe_is_dex(is_dex)}
+    HAVING sign = 1
     """
 
     args = [blockchain |> String.downcase()]
@@ -68,8 +76,9 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
   defp exchange_addresses_query(blockchain, limit) do
     query = """
     SELECT DISTINCT(address), label, JSONExtractString(metadata, 'owner')
-    FROM blockchain_address_labels
+    FROM blockchain_address_labels FINAL
     PREWHERE blockchain = 'ethereum' AND label in ('centralized_exchange', 'decentralized_exchange')
+    HAVING sign = 1
     LIMIT ?2
     """
 
@@ -81,11 +90,12 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
   defp exchange_addresses_for_exchange_query(blockchain, owner, limit) do
     query = """
     SELECT DISTINCT(address), label, JSONExtractString(metadata, 'owner')
-    FROM blockchain_address_labels
+    FROM blockchain_address_labels FINAL
     PREWHERE
       blockchain = ?1 AND
       lower(JSONExtractString(metadata, 'owner')) = ?2 AND
       label in ('centralized_exchange', 'decentralized_exchange')
+    HAVING sign = 1
     LIMIT ?3
     """
 

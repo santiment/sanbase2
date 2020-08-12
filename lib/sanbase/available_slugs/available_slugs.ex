@@ -1,5 +1,4 @@
 defmodule Sanbase.AvailableSlugs do
-  @behaviour Sanbase.AvailableSlugs.Behaviour
   @moduledoc ~s"""
   Module for fast checking if a slug is existing.
 
@@ -7,6 +6,7 @@ defmodule Sanbase.AvailableSlugs do
   This is faster than caching all slugs, retrieving them in the caller process and
   checking if the slug is in the list.
   """
+  @behaviour Sanbase.AvailableSlugs.Behaviour
 
   @ets_table :available_projects_slugs_ets_table
   use GenServer

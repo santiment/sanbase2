@@ -232,7 +232,7 @@ defmodule Sanbase.WatchlistFunction do
     atomized_fun =
       for {key, val} <- function, into: %{} do
         if is_binary(key) do
-          {String.to_existing_atom(key), val}
+          {key |> Inflex.underscore() |> String.to_existing_atom(), val}
         else
           {key, val}
         end

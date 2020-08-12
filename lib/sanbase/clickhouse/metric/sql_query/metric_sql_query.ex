@@ -26,14 +26,14 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     field(:computed_at, :utc_datetime)
   end
 
-  def timeseries_data_query(metric, slugs, from, to, interval, aggregation, filters)
-      when is_list(slugs) do
+  def timeseries_data_query(metric, slug_or_slugs, from, to, interval, aggregation, filters) do
     query = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
       #{aggregation(aggregation, "value2", "dt")}
     FROM(
       SELECT
+        asset_id,
         dt,
         argMax(value, computed_at) AS value2
       FROM #{Map.get(@table_map, metric)}
@@ -42,7 +42,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
         NOT isNaN(value) AND
-        asset_id IN ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name IN (?5) LIMIT 1 ) AND
+        #{asset_id_filter(slug_or_slugs, argument_position: 5)} AND
         metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 )
       GROUP BY dt, asset_id
     )
@@ -55,44 +55,28 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
       Map.get(@name_to_metric_map, metric),
       from |> DateTime.to_unix(),
       to |> DateTime.to_unix(),
-      slugs
+      slug_or_slugs
     ]
 
     {query, args}
   end
 
-  def timeseries_data_query(metric, slug, from, to, interval, aggregation, filters) do
-    query = """
-    SELECT
-      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
-      #{aggregation(aggregation, "value2", "dt")}
-    FROM(
-      SELECT
-        dt,
-        argMax(value, computed_at) AS value2
-      FROM #{Map.get(@table_map, metric)}
-      PREWHERE
-        #{additional_filters(filters)}
-        #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
-        #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
-        NOT isNaN(value) AND
-        asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?5 LIMIT 1 ) AND
-        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 )
-      GROUP BY dt
-    )
-    GROUP BY t
-    ORDER BY t
+  defp asset_id_filter(slug, opts) when is_binary(slug) do
+    arg_position = Keyword.fetch!(opts, :argument_position)
+
     """
+    asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?#{arg_position} LIMIT 1 )
+    """
+  end
 
-    args = [
-      str_to_sec(interval),
-      Map.get(@name_to_metric_map, metric),
-      from |> DateTime.to_unix(),
-      to |> DateTime.to_unix(),
-      slug
-    ]
+  defp asset_id_filter(slugs, opts) when is_list(slugs) do
+    arg_position = Keyword.fetch!(opts, :argument_position)
 
-    {query, args}
+    """
+    asset_id IN ( SELECT DISTINCT(asset_id) FROM asset_metadata FINAL PREWHERE name IN (?#{
+      arg_position
+    }) )
+    """
   end
 
   def aggregated_timeseries_data_query(metric, asset_ids, from, to, aggregation, filters) do

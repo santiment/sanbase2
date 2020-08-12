@@ -1,6 +1,7 @@
 defmodule Sanbase.Intercom.UserAttributes do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
 
   alias Sanbase.Repo
 
@@ -22,5 +23,15 @@ defmodule Sanbase.Intercom.UserAttributes do
     %__MODULE__{}
     |> changeset(params)
     |> Repo.insert()
+  end
+
+  def get_attributes_for_users(user_ids, from, to) do
+    from(ua in __MODULE__,
+      where:
+        ua.user_id in ^user_ids and
+          ua.inserted_at >= ^from and
+          ua.inserted_at <= ^to
+    )
+    |> Repo.all()
   end
 end

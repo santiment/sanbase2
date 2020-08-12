@@ -47,15 +47,8 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
   @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type
 
-  def post_create_process(trigger) do
-    %{settings: settings} = trigger
-    slugs = get_data(settings)
-    settings = %{settings | state: %{slugs_in_screener: slugs}}
-
-    %{trigger | settings: settings}
-  end
-
-  def post_update_process(_trigger), do: :nochange
+  def post_create_process(trigger), do: fill_current_state(trigger)
+  def post_update_process(trigger), do: fill_current_state(trigger)
 
   @doc ~s"""
   Return a list of the `settings.metric` values for the necessary time range
@@ -66,7 +59,10 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
     {:ok, slugs} =
       watchlist_id
       |> Sanbase.UserList.by_id()
-      |> Sanbase.UserList.get_slugs()
+      |> case do
+        nil -> {:ok, []}
+        watchlist -> watchlist |> Sanbase.UserList.get_slugs()
+      end
 
     slugs
   end
@@ -75,6 +71,14 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
     {:ok, %{slugs: slugs}} = Project.ListSelector.slugs(selector)
 
     slugs
+  end
+
+  defp fill_current_state(trigger) do
+    %{settings: settings} = trigger
+    slugs = get_data(settings)
+    settings = %{settings | state: %{slugs_in_screener: slugs}}
+
+    %{trigger | settings: settings}
   end
 
   defimpl Sanbase.Signal.Settings, for: ScreenerTriggerSettings do
@@ -135,7 +139,7 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
       }
 
       template = """
-      🔔Projects' changes in the screener "#{trigger.title}".
+      🔔Screener "#{trigger.title}" changes:
       #{format_enter_exit_slugs(added_slugs, removed_slugs)}
       """
 
@@ -150,20 +154,20 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
       entering =
         Enum.map(added_slugs, fn slug ->
           project = Map.get(projects_map, slug)
-          "[##{project.ticker} | #{project.name}]("
+          "[##{project.ticker} | #{project.name}](#{Project.sanbase_link(project)})"
         end)
 
       exiting =
         Enum.map(removed_slugs, fn slug ->
           project = Map.get(projects_map, slug)
-          "[##{project.ticker} | #{project.name}]("
+          "[##{project.ticker} | #{project.name}](#{Project.sanbase_link(project)})"
         end)
 
       """
-      Entering projects:
+      #{length(entering)} Newcomers:
       #{entering}
       ---
-      Exiting projects:
+      #{length(exiting)} Leavers:
       #{exiting}
       """
     end

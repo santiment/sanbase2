@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.3
--- Dumped by pg_dump version 12.3
+-- Dumped from database version 10.13
+-- Dumped by pg_dump version 11.6
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -72,6 +72,8 @@ CREATE TYPE public.status AS ENUM (
 
 
 SET default_tablespace = '';
+
+SET default_with_oids = false;
 
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
@@ -1055,7 +1057,10 @@ CREATE TABLE public.posts (
     metrics character varying(255)[] DEFAULT ARRAY[]::character varying[],
     prediction character varying(255) DEFAULT NULL::character varying,
     price_chart_project_id bigint,
-    document_tokens tsvector
+    document_tokens tsvector,
+    is_chart_event boolean DEFAULT false,
+    chart_event_datetime timestamp(0) without time zone,
+    chart_configuration_for_event_id bigint
 );
 
 
@@ -2089,7 +2094,8 @@ CREATE TABLE public.user_lists (
     function jsonb DEFAULT '{"args": [], "name": "empty"}'::jsonb,
     slug character varying(255),
     is_monitored boolean DEFAULT false,
-    table_configuration_id bigint
+    table_configuration_id bigint,
+    description text
 );
 
 
@@ -2279,6 +2285,7 @@ CREATE TABLE public.votes (
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     timeline_event_id bigint,
+    count integer DEFAULT 1,
     CONSTRAINT only_one_fk CHECK (((
 CASE
     WHEN (post_id IS NULL) THEN 0
@@ -4066,6 +4073,14 @@ ALTER TABLE ONLY public.post_images
 
 
 --
+-- Name: posts posts_chart_configuration_for_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.posts
+    ADD CONSTRAINT posts_chart_configuration_for_event_id_fkey FOREIGN KEY (chart_configuration_for_event_id) REFERENCES public.chart_configurations(id);
+
+
+--
 -- Name: posts_metrics posts_metrics_metric_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4733,3 +4748,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200706070758);
 INSERT INTO public."schema_migrations" (version) VALUES (20200707142725);
 INSERT INTO public."schema_migrations" (version) VALUES (20200707155254);
 INSERT INTO public."schema_migrations" (version) VALUES (20200716074754);
+INSERT INTO public."schema_migrations" (version) VALUES (20200727113432);
+INSERT INTO public."schema_migrations" (version) VALUES (20200728103633);
+INSERT INTO public."schema_migrations" (version) VALUES (20200728105033);
+INSERT INTO public."schema_migrations" (version) VALUES (20200804093238);

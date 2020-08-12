@@ -8,6 +8,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   alias Sanbase.Clickhouse
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.SanbaseDataloader
+  alias Sanbase.Clickhouse.Label
 
   @max_concurrency 100
 
@@ -19,7 +20,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     async(fn -> calculate_token_top_transactions(project, args) end)
   end
 
-  defp calculate_token_top_transactions(%Project{} = project, args) do
+  defp calculate_token_top_transactions(%Project{slug: slug} = project, args) do
     %{from: from, to: to, limit: limit} = args
     limit = Enum.min([limit, 100])
 
@@ -33,7 +34,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
              token_decimals
            ),
          {:ok, token_transactions} <-
-           Clickhouse.MarkExchanges.mark_exchange_wallets(token_transactions) do
+           Clickhouse.MarkExchanges.mark_exchange_wallets(token_transactions),
+         {:ok, token_transactions} <- Label.add_labels(slug, token_transactions) do
       {:ok, token_transactions}
     else
       {:error, {:missing_contract, _}} ->
@@ -168,7 +170,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     async(fn -> calculate_eth_top_transactions(project, args) end)
   end
 
-  defp calculate_eth_top_transactions(%Project{} = project, args) do
+  defp calculate_eth_top_transactions(%Project{slug: slug} = project, args) do
     %{from: from, to: to, transaction_type: trx_type, limit: limit} = args
     limit = Enum.min([limit, 100])
 
@@ -182,7 +184,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
              trx_type
            ),
          {:ok, eth_transactions} <-
-           Clickhouse.MarkExchanges.mark_exchange_wallets(eth_transactions) do
+           Clickhouse.MarkExchanges.mark_exchange_wallets(eth_transactions),
+         {:ok, eth_transactions} <- Label.add_labels(slug, eth_transactions) do
       {:ok, eth_transactions}
     else
       error ->

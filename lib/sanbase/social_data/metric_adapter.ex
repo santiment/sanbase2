@@ -188,8 +188,16 @@ defmodule Sanbase.SocialData.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def available_metrics(%{slug: slug}) do
     with %Project{telegram_link: telegram_link} <- Project.by_slug(slug, preload?: false) do
+      telegram_server = telegram_link |> String.split("/") |> List.last()
+
+      telegram_servers =
+        case telegram_channels_followed() do
+          {:ok, servers} -> servers
+          _ -> []
+        end
+
       metrics =
-        case is_binary(telegram_link) do
+        case telegram_server in telegram_servers do
           true -> @metrics
           false -> @metrics -- @community_messages_count_timeseries_metrics
         end
@@ -249,4 +257,24 @@ defmodule Sanbase.SocialData.MetricAdapter do
   defp source_first_datetime("discord"), do: {:ok, ~U[2016-05-21 00:00:00Z]}
   defp source_first_datetime("bitcointalk"), do: {:ok, ~U[2011-06-01 00:00:00Z]}
   defp source_first_datetime("professional_traders_chat"), do: {:ok, ~U[2018-02-09 00:00:00Z]}
+
+  require Sanbase.Utils.Config, as: Config
+  require Mockery.Macro
+  defp http_client, do: Mockery.Macro.mockable(HTTPoison)
+
+  def telegram_channels_followed() do
+    metrics_hub_url = Config.module_get(Sanbase.SocialData, :metricshub_url)
+    url = "#{metrics_hub_url}/telegram_chats_names"
+
+    options = [
+      recv_timeout: 15_000,
+      params: []
+    ]
+
+    cache_key = {__MODULE__, :telegram_channels_followed}
+
+    Sanbase.Cache.get_or_store(cache_key, fn ->
+      http_client().get(url, [], options)
+    end)
+  end
 end

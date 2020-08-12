@@ -2305,7 +2305,6 @@
     "has_incomplete_data": false,
     "data_type": "timeseries"
   },
-    },
   {
     "human_readable_name": "On-Chain Transaction Volume in USD",
     "name": "transaction_volume_usd",

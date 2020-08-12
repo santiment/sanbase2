@@ -3,7 +3,7 @@ defmodule Sanbase.Price.SqlQuery do
 
   import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3, generate_comparison_string: 2]
 
-  def timeseries_data_query(slug, from, to, interval, source, aggregation) do
+  def timeseries_data_query(slug_or_slugs, from, to, interval, source, aggregation) do
     {from, to, interval, span} = timerange_parameters(from, to, interval)
 
     query = """
@@ -29,6 +29,7 @@ defmodule Sanbase.Price.SqlQuery do
         toUInt32(1) AS has_changed
       FROM #{@table}
       PREWHERE
+        #{slug_filter(slug_or_slugs, argument_position: 3)} AND
         slug = cast(?3, 'LowCardinality(String)') AND
         source = cast(?4, 'LowCardinality(String)') AND
         dt >= toDateTime(?5) AND
@@ -39,12 +40,12 @@ defmodule Sanbase.Price.SqlQuery do
     ORDER BY time
     """
 
-    args = [interval, span, slug, source, from, to]
+    args = [interval, span, slug_or_slugs, source, from, to]
 
     {query, args}
   end
 
-  def timeseries_metric_data_query(slug, metric, from, to, interval, source, aggregation) do
+  def timeseries_metric_data_query(slug_or_slugs, metric, from, to, interval, source, aggregation) do
     {from, to, interval, span} = timerange_parameters(from, to, interval)
 
     query = """
@@ -53,7 +54,7 @@ defmodule Sanbase.Price.SqlQuery do
       #{aggregation(aggregation, "#{metric}", "dt")}
     FROM #{@table}
     PREWHERE
-      slug = cast(?3, 'LowCardinality(String)') AND
+      #{slug_filter(slug_or_slugs, argument_position: 3)} AND
       source = cast(?4, 'LowCardinality(String)') AND
       dt >= toDateTime(?5) AND
       dt < toDateTime(?6)
@@ -61,7 +62,7 @@ defmodule Sanbase.Price.SqlQuery do
     ORDER BY time
     """
 
-    args = [interval, span, slug, source, from, to]
+    args = [interval, span, slug_or_slugs, source, from, to]
 
     {query, args}
   end
@@ -461,5 +462,21 @@ defmodule Sanbase.Price.SqlQuery do
     span = div(to_unix - from_unix, interval_sec) |> max(1)
 
     {from_unix, to_unix, interval_sec, span}
+  end
+
+  defp slug_filter(slug, opts) when is_binary(slug) do
+    arg_position = Keyword.fetch!(opts, :argument_position)
+
+    """
+    slug = cast(?#{arg_position}, 'LowCardinality(String)')
+    """
+  end
+
+  defp slug_filter(slugs, opts) when is_list(slugs) do
+    arg_position = Keyword.fetch!(opts, :argument_position)
+
+    """
+    slug IN (?#{arg_position})
+    """
   end
 end

@@ -88,8 +88,8 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
       SELECT
         dt,
         asset_id,
-        value
-      FROM #{Map.get(@table_map, metric)} FINAL
+        argMax(value, computed_at) AS value2
+      FROM #{Map.get(@table_map, metric)}
       PREWHERE
         #{additional_filters(filters)}
         asset_id IN (?1) AND

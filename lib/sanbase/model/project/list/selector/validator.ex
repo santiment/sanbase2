@@ -134,5 +134,5 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
     end
   end
 
-  defp valid_filter?(_), do: {:error, "Filter is wrongly configured."}
+  defp valid_filter?(_), do: {:error, "Filter is not supported or has mistyped fields."}
 end

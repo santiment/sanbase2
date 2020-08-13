@@ -81,9 +81,9 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
       value / ?1
     FROM #{@table} FINAL
     PREWHERE
-      contract = ?2
-      AND dt >= toDateTime(?3)
-      AND dt <= toDateTime(?4)
+      assetRefId = cityHash64('ETH_' || ?2) AND
+      dt >= toDateTime(?3) AND
+      dt <= toDateTime(?4)
     ORDER BY value DESC
     LIMIT ?5
     """

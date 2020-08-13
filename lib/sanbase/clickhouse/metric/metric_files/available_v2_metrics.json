@@ -2304,22 +2304,5 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "On-Chain Transaction Volume in USD",
-    "name": "transaction_volume_usd",
-    "metric": "transaction_volume_usd",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "avg",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
   }
 ]

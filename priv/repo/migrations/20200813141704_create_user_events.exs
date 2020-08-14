@@ -13,6 +13,6 @@ defmodule Sanbase.Repo.Migrations.CreateUserEvents do
     end
 
     create(index(:user_events, [:user_id]))
-    #create(unique_index(:user_events), [:remote_id])
+    # create(unique_index(:user_events), [:remote_id])
   end
 end

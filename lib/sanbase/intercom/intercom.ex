@@ -14,6 +14,7 @@ defmodule Sanbase.Intercom do
   alias Sanbase.Auth.EthAccount
 
   @intercom_url "https://api.intercom.io/users"
+  @user_events_url "https://api.intercom.io/events?type=user"
 
   def all_users_stats do
     %{
@@ -149,13 +150,7 @@ defmodule Sanbase.Intercom do
   def send_user_stats_to_intercom(stats) do
     stats_json = Jason.encode!(stats)
 
-    headers = [
-      {"Content-Type", "application/json"},
-      {"Accept", "application/json"},
-      {"Authorization", "Bearer #{intercom_api_key()}"}
-    ]
-
-    HTTPoison.post(@intercom_url, stats_json, headers)
+    HTTPoison.post(@intercom_url, stats_json, intercom_headers())
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200}} ->
         Logger.info("Stats sent: #{inspect(stats_json |> Jason.decode!())}}")
@@ -177,6 +172,51 @@ defmodule Sanbase.Intercom do
             inspect(reason)
           }"
         )
+    end
+  end
+
+  def get_events_for_user(user_id, since \\ nil) do
+    url = "#{@user_events_url}&user_id=#{user_id}"
+    url = if since, do: "#{url}&since=#{since}", else: url
+
+    fetch_all_events(url)
+  end
+
+  defp fetch_all_events(url, all_events \\ []) do
+    IO.inspect(url)
+    IO.inspect(length(all_events))
+
+    case fetch_events(url) do
+      {:ok, %{"events" => []}} ->
+        all_events
+
+      {:ok, %{"events" => events, "pages" => %{"next" => next}}} ->
+        fetch_all_events(next, all_events ++ events)
+
+      {:ok, %{"events" => events}} ->
+        all_events ++ events
+
+      {:error, _} ->
+        all_events
+    end
+  end
+
+  def fetch_events(url) do
+    HTTPoison.get(url, intercom_headers())
+    |> case do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        Jason.decode(body)
+
+      {:ok, %HTTPoison.Response{} = response} ->
+        Logger.error(
+          "Error fetching intercom events for url: #{url}. Response: #{inspect(response)}"
+        )
+
+        {:error, response}
+
+      {:error, reason} ->
+        Logger.error("Error fetching intercom events for url: #{url}. Reason: #{inspect(reason)}")
+        {:error, reason}
     end
   end
 
@@ -239,5 +279,13 @@ defmodule Sanbase.Intercom do
 
   defp intercom_api_key() do
     Config.get(:api_key)
+  end
+
+  defp intercom_headers() do
+    [
+      {"Content-Type", "application/json"},
+      {"Accept", "application/json"},
+      {"Authorization", "Bearer #{intercom_api_key()}"}
+    ]
   end
 end

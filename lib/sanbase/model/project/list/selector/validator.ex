@@ -111,12 +111,24 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
 
   # Could be reworked to `name: "metric"` after the FE starts using this
   defp valid_filter?(%{metric: metric} = filter) do
+    metric_filter(metric, filter)
+  end
+
+  defp valid_filter?(%{name: "metric", args: %{metric: metric} = filter}) do
+    metric_filter(metric, filter)
+  end
+
+  defp valid_filter?(_), do: {:error, "Filter is not supported or has mistyped fields."}
+
+  defp metric_filter(metric, filter) do
     filter_schema =
       schema(%{
         name: spec(is_binary()),
         metric: spec(is_binary()),
         from: spec(&match?(%DateTime{}, &1)),
         to: spec(&match?(%DateTime{}, &1)),
+        dynamic_from: spec(is_binary()),
+        dynamic_to: spec(is_binary()),
         operator: spec(is_atom()),
         threshold: spec(is_number()),
         aggregation: spec(is_atom())
@@ -133,6 +145,4 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
       end
     end
   end
-
-  defp valid_filter?(_), do: {:error, "Filter is not supported or has mistyped fields."}
 end

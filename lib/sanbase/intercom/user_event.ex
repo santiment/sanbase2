@@ -1,8 +1,10 @@
 defmodule Sanbase.Intercom.UserEvent do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
 
   alias Sanbase.Repo
+  alias Sanbase.Auth.User
 
   schema "user_events" do
     field(:created_at, :utc_datetime)
@@ -27,8 +29,33 @@ defmodule Sanbase.Intercom.UserEvent do
     Repo.insert_all(__MODULE__, events, on_conflict: :nothing)
   end
 
-  def sync_with_intercom(user_id) do
-    Sanbase.Intercom.get_events_for_user(user_id)
+  def get_last_intercom_event_timestamp(user_id) do
+    from(
+      ue in __MODULE__,
+      where: ue.user_id == ^user_id and not is_nil(ue.remote_id),
+      order_by: [desc: ue.created_at],
+      limit: 1,
+      select: ue.created_at
+    )
+    |> Repo.one()
+    |> case do
+      %DateTime{} = created_at -> DateTime.to_unix(created_at, :millisecond)
+      nil -> nil
+    end
+  end
+
+  def sync_events_from_intercom() do
+    User
+    |> Repo.all()
+    |> Enum.map(& &1.id)
+    |> Enum.each(fn user_id ->
+      since = get_last_intercom_event_timestamp(user_id)
+      sync_with_intercom(user_id, since)
+    end)
+  end
+
+  def sync_with_intercom(user_id, since \\ nil) do
+    Sanbase.Intercom.get_events_for_user(user_id, since)
     |> Enum.map(fn %{
                      "created_at" => created_at,
                      "event_name" => event_name,

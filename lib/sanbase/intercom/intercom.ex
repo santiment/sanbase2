@@ -183,9 +183,6 @@ defmodule Sanbase.Intercom do
   end
 
   defp fetch_all_events(url, all_events \\ []) do
-    IO.inspect(url)
-    IO.inspect(length(all_events))
-
     case fetch_events(url) do
       {:ok, %{"events" => []}} ->
         all_events

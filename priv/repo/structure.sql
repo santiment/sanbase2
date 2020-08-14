@@ -73,8 +73,6 @@ CREATE TYPE public.status AS ENUM (
 
 SET default_tablespace = '';
 
-SET default_table_access_method = heap;
-
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
 --
@@ -3797,6 +3795,13 @@ CREATE INDEX timeline_events_user_id_inserted_at_index ON public.timeline_events
 --
 
 CREATE UNIQUE INDEX user_api_key_tokens_token_index ON public.user_api_key_tokens USING btree (token);
+
+
+--
+-- Name: user_events_remote_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX user_events_remote_id_index ON public.user_events USING btree (remote_id);
 
 
 --

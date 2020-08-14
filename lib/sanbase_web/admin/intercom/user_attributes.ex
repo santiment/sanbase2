@@ -9,7 +9,7 @@ defmodule SanbaseWeb.ExAdmin.Intercom.UserAttributes do
       column(:inserted_at)
     end
 
-    show configuration do
+    show user_attributes do
       attributes_table do
         row(:user, link: true)
         row(:inserted_at)

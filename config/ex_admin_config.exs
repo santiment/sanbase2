@@ -64,6 +64,7 @@ config :ex_admin,
     SanbaseWeb.ExAdmin.Billing.SignUpTrial,
     SanbaseWeb.ExAdmin.Comments.Notification,
     SanbaseWeb.ExAdmin.Intercom.UserAttributes,
+    SanbaseWeb.ExAdmin.Intercom.UserEvent,
     SanbaseWeb.ExAdmin.Report
   ],
   basic_auth: [

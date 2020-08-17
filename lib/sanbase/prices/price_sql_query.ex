@@ -30,7 +30,6 @@ defmodule Sanbase.Price.SqlQuery do
       FROM #{@table}
       PREWHERE
         #{slug_filter(slug_or_slugs, argument_position: 3)} AND
-        slug = cast(?3, 'LowCardinality(String)') AND
         source = cast(?4, 'LowCardinality(String)') AND
         dt >= toDateTime(?5) AND
         dt < toDateTime(?6)

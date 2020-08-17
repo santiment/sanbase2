@@ -12,13 +12,14 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
   alias Sanbase.Repo
 
   @plan_id_name_map %{
-    "3" => "Neuro by Santiment / PRO",
-    "13" => "Sanbase by Santiment / PRO",
+    "3" => "SanAPI by Santiment / PRO",
+    "5" => "SanAPI by Santiment / PRO",
+    "201" => "Sanbase by Santiment / PRO",
     "43" => "Sandata by Santiment / PREMIUM"
   }
 
-  # API Pro, Sanbase Pro and Grafana Premium
-  @promo_trial_plans [3, 13, 43]
+  # API Pro, API custom, Sanbase Pro and Grafana Premium
+  @promo_trial_plans [3, 5, 201, 43]
 
   schema "promo_trials" do
     field(:trial_days, :integer)

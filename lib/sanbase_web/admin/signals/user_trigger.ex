@@ -6,7 +6,7 @@ defmodule SanbaseWeb.ExAdmin.Signal.UserTrigger do
 
   register_resource Sanbase.Signal.UserTrigger do
     update_changeset(:update_changeset)
-    action_items(only: [:show, :edit])
+    action_items(only: [:show, :edit, :delete])
 
     scope(:all, default: true)
 

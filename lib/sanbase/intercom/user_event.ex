@@ -3,6 +3,8 @@ defmodule Sanbase.Intercom.UserEvent do
   import Ecto.Changeset
   import Ecto.Query
 
+  require Logger
+
   alias Sanbase.Repo
   alias Sanbase.Auth.User
 
@@ -45,13 +47,22 @@ defmodule Sanbase.Intercom.UserEvent do
   end
 
   def sync_events_from_intercom() do
-    User
-    |> Repo.all()
-    |> Enum.map(& &1.id)
-    |> Enum.each(fn user_id ->
-      since = get_last_intercom_event_timestamp(user_id)
-      sync_with_intercom(user_id, since)
-    end)
+    Logger.info("Start sync_events_from_intercom")
+
+    # Skip if api key not present in env. (Run only on production)
+    if Sanbase.Intercom.intercom_api_key() do
+      User
+      |> Repo.all()
+      |> Enum.map(& &1.id)
+      |> Enum.each(fn user_id ->
+        since = get_last_intercom_event_timestamp(user_id)
+        sync_with_intercom(user_id, since)
+      end)
+
+      Logger.info("Finish sync_events_from_intercom")
+    else
+      :ok
+    end
   end
 
   def sync_with_intercom(user_id, since \\ nil) do

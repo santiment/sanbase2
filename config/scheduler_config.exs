@@ -93,7 +93,7 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       task: {Sanbase.Intercom, :sync_users, []}
     ],
     sync_events_from_intercom: [
-      schedule: "00 22 * * *",
+      schedule: "00 10 * * *",
       task: {Sanbase.Intercom.UserEvent, :sync_events_from_intercom, []}
     ],
     sync_newsletter_subscribers_to_mailchimp: [

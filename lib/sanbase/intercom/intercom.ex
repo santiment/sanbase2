@@ -33,6 +33,8 @@ defmodule Sanbase.Intercom do
   end
 
   def sync_users do
+    Logger.info("Start sync_users to Intercom")
+
     # Skip if api key not present in env. (Run only on production)
     all_users_stats = all_users_stats()
 
@@ -42,10 +44,25 @@ defmodule Sanbase.Intercom do
         fetch_stats_for_user(user, all_users_stats)
       end)
       |> Enum.each(&send_user_stats_to_intercom/1)
+
+      Logger.info("Finish sync_users to Intercom")
     else
       :ok
     end
   end
+
+  def get_events_for_user(user_id, since \\ nil) do
+    url = "#{@user_events_url}&user_id=#{user_id}"
+    url = if since, do: "#{url}&since=#{since}", else: url
+
+    fetch_all_events(url)
+  end
+
+  def intercom_api_key() do
+    Config.get(:api_key)
+  end
+
+  # helpers
 
   defp fetch_stats_for_user(
          %User{
@@ -147,7 +164,7 @@ defmodule Sanbase.Intercom do
     end
   end
 
-  def send_user_stats_to_intercom(stats) do
+  defp send_user_stats_to_intercom(stats) do
     stats_json = Jason.encode!(stats)
 
     HTTPoison.post(@intercom_url, stats_json, intercom_headers())
@@ -175,13 +192,6 @@ defmodule Sanbase.Intercom do
     end
   end
 
-  def get_events_for_user(user_id, since \\ nil) do
-    url = "#{@user_events_url}&user_id=#{user_id}"
-    url = if since, do: "#{url}&since=#{since}", else: url
-
-    fetch_all_events(url)
-  end
-
   defp fetch_all_events(url, all_events \\ []) do
     case fetch_events(url) do
       {:ok, %{"events" => []}} ->
@@ -198,7 +208,7 @@ defmodule Sanbase.Intercom do
     end
   end
 
-  def fetch_events(url) do
+  defp fetch_events(url) do
     HTTPoison.get(url, intercom_headers())
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
@@ -272,10 +282,6 @@ defmodule Sanbase.Intercom do
   defp format_dt(unix_dt) do
     DateTime.from_unix!(unix_dt)
     |> DateTime.to_iso8601()
-  end
-
-  defp intercom_api_key() do
-    Config.get(:api_key)
   end
 
   defp intercom_headers() do

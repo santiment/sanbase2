@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.13
--- Dumped by pg_dump version 11.6
+-- Dumped from database version 12.3
+-- Dumped by pg_dump version 12.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -72,8 +72,6 @@ CREATE TYPE public.status AS ENUM (
 
 
 SET default_tablespace = '';
-
-SET default_with_oids = false;
 
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
@@ -2036,6 +2034,41 @@ ALTER SEQUENCE public.user_api_key_tokens_id_seq OWNED BY public.user_api_key_to
 
 
 --
+-- Name: user_events; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_events (
+    id bigint NOT NULL,
+    event_name character varying(255) NOT NULL,
+    created_at timestamp(0) without time zone NOT NULL,
+    metadata jsonb,
+    remote_id character varying(255),
+    user_id bigint NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: user_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_events_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_events_id_seq OWNED BY public.user_events.id;
+
+
+--
 -- Name: user_followers; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2714,6 +2747,13 @@ ALTER TABLE ONLY public.user_api_key_tokens ALTER COLUMN id SET DEFAULT nextval(
 
 
 --
+-- Name: user_events id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_events ALTER COLUMN id SET DEFAULT nextval('public.user_events_id_seq'::regclass);
+
+
+--
 -- Name: user_intercom_attributes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3243,6 +3283,14 @@ ALTER TABLE ONLY public.user_api_key_tokens
 
 
 --
+-- Name: user_events user_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_events
+    ADD CONSTRAINT user_events_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: user_followers user_followers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3747,6 +3795,20 @@ CREATE INDEX timeline_events_user_id_inserted_at_index ON public.timeline_events
 --
 
 CREATE UNIQUE INDEX user_api_key_tokens_token_index ON public.user_api_key_tokens USING btree (token);
+
+
+--
+-- Name: user_events_remote_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX user_events_remote_id_index ON public.user_events USING btree (remote_id);
+
+
+--
+-- Name: user_events_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_events_user_id_index ON public.user_events USING btree (user_id);
 
 
 --
@@ -4361,6 +4423,14 @@ ALTER TABLE ONLY public.user_api_key_tokens
 
 
 --
+-- Name: user_events user_events_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_events
+    ADD CONSTRAINT user_events_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: user_followers user_followers_follower_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4752,3 +4822,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200727113432);
 INSERT INTO public."schema_migrations" (version) VALUES (20200728103633);
 INSERT INTO public."schema_migrations" (version) VALUES (20200728105033);
 INSERT INTO public."schema_migrations" (version) VALUES (20200804093238);
+INSERT INTO public."schema_migrations" (version) VALUES (20200813141704);

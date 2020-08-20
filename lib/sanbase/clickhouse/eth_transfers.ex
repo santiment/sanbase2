@@ -74,6 +74,23 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     end)
   end
 
+  @spec eth_top_transactions(%DateTime{}, %DateTime{}, integer) ::
+          {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
+  def eth_top_transactions(from, to, limit) do
+    {query, args} = eth_top_transactions_query(from, to, limit)
+
+    ClickhouseRepo.query_transform(query, args, fn
+      [timestamp, from_address, to_address, trx_hash, trx_value] ->
+        %{
+          datetime: DateTime.from_unix!(timestamp),
+          from_address: from_address,
+          to_address: to_address,
+          trx_hash: trx_hash,
+          trx_value: trx_value / @eth_decimals
+        }
+    end)
+  end
+
   @doc ~s"""
   The total ETH spent in the `from` - `to` interval
   """
@@ -284,6 +301,31 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       wallets,
       from_unix,
       to_unix
+    ]
+
+    {query, args}
+  end
+
+  defp eth_top_transactions_query(from, to, limit) do
+    from_unix = DateTime.to_unix(from)
+    to_unix = DateTime.to_unix(to)
+
+    query = """
+    SELECT
+      toUnixTimestamp(dt), from, to, transactionHash, value
+    FROM #{@table} FINAL
+    PREWHERE
+      type = 'call' AND
+      dt >= toDateTime(?1) AND
+      dt <= toDateTime(?2)
+    ORDER BY value DESC
+    LIMIT ?3
+    """
+
+    args = [
+      from_unix,
+      to_unix,
+      limit
     ]
 
     {query, args}

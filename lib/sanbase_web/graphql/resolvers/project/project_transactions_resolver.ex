@@ -170,6 +170,28 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     async(fn -> calculate_eth_top_transactions(project, args) end)
   end
 
+  defp calculate_eth_top_transactions(%Project{slug: "ethereum"} = project, args) do
+    %{from: from, to: to, transaction_type: trx_type, limit: limit} = args
+    limit = Enum.min([limit, 100])
+
+    with {:ok, eth_transactions} <-
+           Clickhouse.EthTransfers.eth_top_transactions(from, to, limit),
+         {:ok, eth_transactions} <-
+           Clickhouse.MarkExchanges.mark_exchange_wallets(eth_transactions),
+         {:ok, eth_transactions} <- Label.add_labels("ethereum", eth_transactions) do
+      {:ok, eth_transactions}
+    else
+      error ->
+        Logger.warn(
+          "Cannot fetch top ETH transactions for #{Project.describe(project)}. Reason: #{
+            inspect(error)
+          }"
+        )
+
+        {:nocache, {:ok, []}}
+    end
+  end
+
   defp calculate_eth_top_transactions(%Project{slug: slug} = project, args) do
     %{from: from, to: to, transaction_type: trx_type, limit: limit} = args
     limit = Enum.min([limit, 100])

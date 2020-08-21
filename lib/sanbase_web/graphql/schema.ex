@@ -153,6 +153,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:email_mutations)
     import_fields(:table_configuration_mutations)
     import_fields(:report_mutations)
+    import_fields(:intercom_mutations)
   end
 
   subscription do

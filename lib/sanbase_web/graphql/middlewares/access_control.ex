@@ -34,6 +34,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     # First call `check_from_to_params` and then pass the execution to do_call/2
     resolution
     |> transform_resolution()
+    |> restrict_if_sansheets()
     |> check_plan()
     |> check_from_to_params()
     |> do_call(opts)
@@ -290,6 +291,23 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   end
 
   defp check_from_to_both_outside(%Resolution{} = resolution), do: resolution
+
+  # Requests from sansheets return `unauthorized` for free users.
+  defp restrict_if_sansheets(
+         %Resolution{
+           context: %{
+             auth: %{subscription: %{plan: %{name: "FREE"}}},
+             is_sansheets_request: true
+           }
+         } = resolution
+       ) do
+    Resolution.put_result(
+      resolution,
+      {:error, "You need to upgrade to Sanbase Pro in order to use SanSheets."}
+    )
+  end
+
+  defp restrict_if_sansheets(resolution), do: resolution
 
   defp update_resolution_from_to(
          %Resolution{arguments: %{from: _from, to: _to} = args} = resolution,

@@ -33,6 +33,8 @@ defmodule Sanbase.Insight.PostPaywall do
     Enum.map(insights, &do_filter(&1, querying_user_id))
   end
 
+  defp do_filter(nil, _), do: nil
+
   defp do_filter(%Post{is_paywall_required: false} = insight, _), do: insight
 
   defp do_filter(%Post{user_id: user_id} = insight, user_id), do: insight

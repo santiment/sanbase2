@@ -45,11 +45,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
 
   def valid_event?(event) do
     event_schema =
-      schema(%{
-        "event_name" => spec(is_binary()),
-        "created_at" => spec(&match?(%DateTime{}, &1)),
-        "metadata" => spec(is_map())
-      })
+      selection(
+        schema(%{
+          "event_name" => spec(is_binary()),
+          "created_at" => spec(is_binary()),
+          "metadata" => spec(is_map())
+        }),
+        ["event_name", "created_at"]
+      )
 
     valid?(event, event_schema)
   end

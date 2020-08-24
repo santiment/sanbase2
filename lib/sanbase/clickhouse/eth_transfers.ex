@@ -311,7 +311,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     to_unix = DateTime.to_unix(to)
 
     # only > 10K ETH transfers if range is > 1 week, otherwise only bigger than 1K
-    value_filter = if Timex.diff(to, from, :days) < 7, do: 10_000, else: 1_000
+    value_filter = if Timex.diff(to, from, :days) > 7, do: 10_000, else: 1_000
 
     query = """
     SELECT

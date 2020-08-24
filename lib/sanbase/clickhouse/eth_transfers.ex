@@ -310,19 +310,24 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
 
+    # only > 10K ETH transfers if range is > 1 week, otherwise only bigger than 1K
+    value_filter = if Timex.diff(to, from, :days) > 7, do: 10_000, else: 1_000
+
     query = """
     SELECT
       toUnixTimestamp(dt), from, to, transactionHash, value
     FROM #{@table} FINAL
     PREWHERE
+      value > ?1 AND
       type = 'call' AND
-      dt >= toDateTime(?1) AND
-      dt <= toDateTime(?2)
+      dt >= toDateTime(?2) AND
+      dt <= toDateTime(?3)
     ORDER BY value DESC
-    LIMIT ?3
+    LIMIT ?4
     """
 
     args = [
+      value_filter,
       from_unix,
       to_unix,
       limit

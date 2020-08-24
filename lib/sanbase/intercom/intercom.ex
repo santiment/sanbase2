@@ -247,7 +247,7 @@ defmodule Sanbase.Intercom do
           Map.put(acc, invoice.customer, "fiat")
 
         invoice.total == abs(invoice.starting_balance) ->
-          Map.put(acc, invoice.customer, "san")
+          Map.put(acc, invoice.customer, "san/crypto")
 
         true ->
           acc

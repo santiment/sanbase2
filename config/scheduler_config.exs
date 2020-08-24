@@ -99,5 +99,9 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     sync_newsletter_subscribers_to_mailchimp: [
       schedule: "@daily",
       task: {Sanbase.Email.Mailchimp, :run, []}
+    ],
+    sync_paid_with: [
+      schedule: "20 * * * *",
+      task: {Sanbase.Auth.UserSettings, :sync_paid_with, []}
     ]
   ]

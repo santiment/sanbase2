@@ -18,6 +18,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:signal_notify_telegram, :boolean)
     field(:signal_notify_email, :boolean)
     field(:newsletter_subscription, :newsletter_subscription_type)
+    field(:paid_with, :string)
   end
 
   input_object :user_settings_input_object do

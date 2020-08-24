@@ -65,7 +65,19 @@ defmodule Sanbase.Intercom.UserEvent do
     end
   end
 
-  def sync_with_intercom(user_id, since \\ nil) do
+  def get_events_for_users(user_ids, from, to) do
+    from(ue in __MODULE__,
+      where:
+        ue.user_id in ^user_ids and
+          ue.created_at >= ^from and
+          ue.created_at <= ^to
+    )
+    |> Repo.all()
+  end
+
+  # helpers
+
+  defp sync_with_intercom(user_id, since \\ nil) do
     Sanbase.Intercom.get_events_for_user(user_id, since)
     |> Enum.map(fn %{
                      "created_at" => created_at,

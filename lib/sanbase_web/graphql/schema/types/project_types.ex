@@ -26,6 +26,11 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     value(:greater_than)
     value(:greater_than_or_equal_to)
     value(:less_than_or_equal_to)
+    value(:inside_channel)
+    value(:inside_channel_inclusive)
+    value(:inside_channel_exclusive)
+    value(:outside_channel_inclusive)
+    value(:outside_channel_exclusive)
   end
 
   enum :direction_type do

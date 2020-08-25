@@ -11,7 +11,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
   use Ecto.Schema
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
-  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3, generate_comparison_string: 2]
+  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3, generate_comparison_string: 3]
 
   alias Sanbase.Clickhouse.Metric.FileHandler
 
@@ -119,7 +119,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     query =
       query <>
         """
-        WHERE value #{generate_comparison_string(operation, threshold)}
+        WHERE #{generate_comparison_string("value", operation, threshold)}
         """
 
     {query, args}

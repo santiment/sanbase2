@@ -1,7 +1,7 @@
 defmodule Sanbase.Price.SqlQuery do
   @table "asset_prices"
 
-  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3, generate_comparison_string: 2]
+  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3, generate_comparison_string: 3]
 
   def timeseries_data_query(slug_or_slugs, from, to, interval, source, aggregation) do
     {from, to, interval, span} = timerange_parameters(from, to, interval)
@@ -191,7 +191,7 @@ defmodule Sanbase.Price.SqlQuery do
     query =
       query <>
         """
-        WHERE value #{generate_comparison_string(operation, threshold)}
+        WHERE #{generate_comparison_string("value", operation, threshold)}
         """
 
     {query, args}

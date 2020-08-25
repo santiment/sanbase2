@@ -111,6 +111,7 @@ defmodule SanbaseWeb.Graphql.Schema.WatchlistQueries do
       arg(:color, :color_enum)
       arg(:function, :json)
       arg(:table_configuration_id, :integer)
+      arg(:list_items, list_of(:input_list_item))
 
       middleware(JWTAuth)
       resolve(&UserListResolver.create_user_list/3)
@@ -130,7 +131,7 @@ defmodule SanbaseWeb.Graphql.Schema.WatchlistQueries do
       arg(:is_monitored, :boolean)
 
       middleware(JWTAuth)
-      resolve(&UserListResolver.update_user_list/3)
+      resolve(&UserListResolver.update_watchlist/3)
     end
 
     @desc """
@@ -148,7 +149,7 @@ defmodule SanbaseWeb.Graphql.Schema.WatchlistQueries do
       arg(:table_configuration_id, :integer)
 
       middleware(JWTAuth)
-      resolve(&UserListResolver.update_user_list/3)
+      resolve(&UserListResolver.update_watchlist/3)
     end
 
     field :update_watchlist_settings, :watchlist_settings do

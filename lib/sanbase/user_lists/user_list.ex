@@ -156,10 +156,22 @@ defmodule Sanbase.UserList do
     end
   end
 
-  def create_user_list(%User{id: user_id} = _user, params \\ %{}) do
+  def create_user_list(%User{id: user_id}, params \\ %{}) do
+    params = params |> Map.put(:user_id, user_id)
+
     %__MODULE__{}
-    |> create_changeset(Map.merge(params, %{user_id: user_id}))
+    |> create_changeset(params)
     |> Repo.insert()
+    |> case do
+      {:ok, user_list} ->
+        case Map.has_key?(params, :list_items) do
+          true -> update_user_list(%{id: user_list.id, list_items: params[:list_items]})
+          false -> {:ok, user_list}
+        end
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   def update_user_list(%{id: id} = params) do

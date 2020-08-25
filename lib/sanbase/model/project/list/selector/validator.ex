@@ -130,7 +130,7 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
         dynamic_from: spec(is_binary()),
         dynamic_to: spec(is_binary()),
         operator: spec(is_atom()),
-        threshold: spec(is_number()),
+        threshold: spec(is_number() or is_list()),
         aggregation: spec(is_atom())
       })
 

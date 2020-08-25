@@ -138,7 +138,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     end
   end
 
-  def update_user_list(_root, %{id: id} = args, %{context: %{auth: %{current_user: current_user}}}) do
+  def update_watchlist(_root, %{id: id} = args, %{context: %{auth: %{current_user: current_user}}}) do
     if has_permissions?(id, current_user) do
       case UserList.update_user_list(args) do
         {:ok, user_list} ->

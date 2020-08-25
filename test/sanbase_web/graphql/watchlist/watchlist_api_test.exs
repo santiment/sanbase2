@@ -22,18 +22,24 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
   end
 
   test "create watchlist", %{user: user, conn: conn} do
+    project = insert(:project)
+
     query = """
     mutation {
-      createWatchlist(name: "My list", description: "Description", color: BLACK) {
-        id
-        name
-        description
-        color
-        is_public
-        user { id }
-        listItems {
-          project { id }
-        }
+      createWatchlist(
+        name: "My list"
+        description: "Description"
+        listItems: [{project_id: #{project.id}}]
+        color: BLACK) {
+          id
+          name
+          description
+          color
+          is_public
+          user { id }
+          listItems {
+            project { id }
+          }
       }
     }
     """
@@ -41,15 +47,16 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
     result =
       conn
       |> post("/graphql", mutation_skeleton(query))
+      |> json_response(200)
 
-    watchlist = json_response(result, 200)["data"]["createWatchlist"]
+    watchlist = result["data"]["createWatchlist"]
 
     assert watchlist["name"] == "My list"
     assert watchlist["description"] == "Description"
     assert watchlist["color"] == "BLACK"
     assert watchlist["is_public"] == false
     assert watchlist["user"]["id"] == user.id |> to_string()
-    assert watchlist["listItems"] == []
+    assert watchlist["listItems"] == [%{"project" => %{"id" => "#{project.id}"}}]
   end
 
   test "update watchlist", %{user: user, conn: conn} do

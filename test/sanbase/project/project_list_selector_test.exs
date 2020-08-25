@@ -236,5 +236,42 @@ defmodule Sanbase.Model.ProjectListSelectorTest do
         assert p3.slug in slugs
       end)
     end
+
+    test "complex operator-threshold pair" do
+      p1 = insert(:random_project)
+      _p2 = insert(:random_project)
+      p3 = insert(:random_project)
+      p4 = insert(:random_project)
+
+      selector = %{
+        filters: [
+          %{
+            name: "metric",
+            args: %{
+              metric: "active_addresses_24h",
+              dynamic_from: "1d",
+              dynamic_to: "now",
+              aggregation: :last,
+              operator: :inside_channel_inclusive,
+              threshold: [100, 200]
+            }
+          }
+        ]
+      }
+
+      Sanbase.Mock.prepare_mock2(
+        &Sanbase.Clickhouse.Metric.slugs_by_filter/6,
+        {:ok, [p1.slug, p3.slug, p4.slug]}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        {:ok, %{slugs: slugs, total_projects_count: total_projects_count}} =
+          ListSelector.slugs(%{selector: selector})
+
+        assert total_projects_count == 3
+        assert p1.slug in slugs
+        assert p3.slug in slugs
+        assert p4.slug in slugs
+      end)
+    end
   end
 end

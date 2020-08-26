@@ -233,10 +233,11 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   # Private functions
   # total has the datetime of the earliest of all - bitcointalk
-  defp source_first_datetime("total"), do: {:ok, ~U[2016-01-01 00:00:00Z]}
+  defp source_first_datetime("total"), do: source_first_datetime("bitcointalk")
   defp source_first_datetime("telegram"), do: {:ok, ~U[2016-03-29 00:00:00Z]}
   defp source_first_datetime("twitter"), do: {:ok, ~U[2018-02-13 00:00:00Z]}
   defp source_first_datetime("reddit"), do: {:ok, ~U[2016-01-01 00:00:00Z]}
   defp source_first_datetime("discord"), do: {:ok, ~U[2016-05-21 00:00:00Z]}
+  defp source_first_datetime("bitcointalk"), do: {:ok, ~U[2011-06-01 00:00:00Z]}
   defp source_first_datetime("professional_traders_chat"), do: {:ok, ~U[2018-02-09 00:00:00Z]}
 end

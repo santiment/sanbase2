@@ -62,6 +62,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       context
       |> Map.put(:remote_ip, conn.remote_ip)
       |> Map.put(:origin_url, Plug.Conn.get_req_header(conn, "origin") |> List.first())
+      |> Map.put(:is_sansheets_request, is_sansheets_request(conn))
 
     conn
     |> put_private(:absinthe, %{context: context})
@@ -292,6 +293,13 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   end
 
   defp get_no_auth_product_id(_), do: @product_id_api
+
+  defp is_sansheets_request(conn) do
+    case Plug.Conn.get_req_header(conn, "user-agent") do
+      [user_agent] -> String.contains?(user_agent, "Google-Apps-Script")
+      _ -> false
+    end
+  end
 
   defp get_apikey_product_id([user_agent]) do
     case String.contains?(user_agent, "Google-Apps-Script") do

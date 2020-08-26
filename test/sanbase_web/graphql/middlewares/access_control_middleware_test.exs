@@ -3,7 +3,9 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
+  import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
+
+  alias Sanbase.Auth.Apikey
 
   setup do
     contract = "0x132123"
@@ -105,5 +107,124 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
 
     assert error ==
              "Cryptocurrencies didn't exist before 2009-01-01 00:00:00Z.\nPlease check `from` and/or `to` parameters values.\n"
+  end
+
+  test "returns success when sansheets user with API key is Pro" do
+    %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
+    {:ok, apikey} = Apikey.generate_apikey(user)
+
+    conn =
+      setup_apikey_auth(build_conn(), apikey)
+      |> put_req_header(
+        "user-agent",
+        "Mozilla/5.0 (compatible; Google-Apps-Script)"
+      )
+
+    from = from_iso8601!("2019-01-01T00:00:00Z")
+    to = from_iso8601!("2019-01-02T00:00:00Z")
+
+    result = %{
+      rows: [
+        [from_iso8601_to_unix!("2019-01-01T00:00:00Z"), 100],
+        [from_iso8601_to_unix!("2019-01-02T00:00:00Z"), 150]
+      ]
+    }
+
+    query = """
+     {
+      getMetric(metric: "daily_active_addresses") {
+        timeseriesData(
+          slug: "santiment",
+          from: "#{from}",
+          to: "#{to}",
+          interval: "1d") {
+          datetime
+          value
+        }
+      }
+    }
+    """
+
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.ClickhouseRepo.query/2,
+      {:ok, result}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        conn
+        |> post("/graphql", query_skeleton(query))
+        |> json_response(200)
+
+      assert Map.has_key?(result, "data") && !Map.has_key?(result, "error")
+    end)
+  end
+
+  test "returns error when sansheets user with API key is not Pro" do
+    user = insert(:user)
+    {:ok, apikey} = Apikey.generate_apikey(user)
+
+    conn =
+      setup_apikey_auth(build_conn(), apikey)
+      |> put_req_header(
+        "user-agent",
+        "Mozilla/5.0 (compatible; Google-Apps-Script)"
+      )
+
+    query = """
+     {
+      getMetric(metric: "social_volume_telegram") {
+        timeseriesData(
+          slug: "santiment",
+          from: "#{Timex.shift(Timex.now(), days: -10)}",
+          to: "#{Timex.now()}",
+          interval: "1d") {
+          datetime
+          value
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
+
+    error_msg = result["errors"] |> hd() |> Map.get("message")
+    assert error_msg == "You need to upgrade to Sanbase Pro in order to use SanSheets."
+  end
+
+  test "returns error when sansheets user without API key is not Pro" do
+    insert(:user)
+
+    conn =
+      build_conn()
+      |> put_req_header(
+        "user-agent",
+        "Mozilla/5.0 (compatible; Google-Apps-Script)"
+      )
+
+    query = """
+    {
+      getMetric(metric: "social_volume_telegram") {
+        timeseriesData(
+          slug: "santiment",
+          from: "#{Timex.shift(Timex.now(), days: -10)}",
+          to: "#{Timex.now()}",
+          interval: "1d") {
+          datetime
+          value
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
+
+    error_msg = result["errors"] |> hd() |> Map.get("message")
+    assert error_msg == "You need to upgrade to Sanbase Pro in order to use SanSheets."
   end
 end

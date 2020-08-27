@@ -6,6 +6,7 @@ defmodule Sanbase.Model.MarketSegment do
 
   schema "market_segments" do
     field(:name, :string)
+    field(:type, :string)
 
     many_to_many(
       :projects,
@@ -19,7 +20,7 @@ defmodule Sanbase.Model.MarketSegment do
   @doc false
   def changeset(%MarketSegment{} = market_segment, attrs \\ %{}) do
     market_segment
-    |> cast(attrs, [:name])
+    |> cast(attrs, [:name, :type])
     |> validate_required([:name])
     |> unique_constraint(:name)
   end

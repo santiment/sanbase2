@@ -81,6 +81,11 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:anomalies, list_of(:string))
   end
 
+  object :project_tag do
+    field(:name, non_null(:string))
+    field(:type, :string)
+  end
+
   object :projects_object_stats do
     field(:projects_count, non_null(:integer))
   end
@@ -383,6 +388,17 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
           end
         ),
         fun_name: :market_segments
+      )
+    end
+
+    field :tags, list_of(:project_tag) do
+      cache_resolve(
+        dataloader(SanbaseRepo, :market_segments,
+          callback: fn query, _project, _args ->
+            {:ok, query}
+          end,
+          fun_name: :project_market_segment_tags
+        )
       )
     end
 

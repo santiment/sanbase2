@@ -290,7 +290,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:include_incomplete_data, :boolean, default_value: false)
 
       complexity(&Complexity.from_to_interval/3)
-      # middleware(AccessControl)
+      middleware(AccessControl)
 
       cache_resolve(&ProjectMetricsResolver.aggregated_timeseries_data/3,
         ttl: 600,

@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   import SanbaseWeb.Graphql.Helpers.Utils
 
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3, handle_graphql_error: 4]
+  import SanbaseWeb.Graphql.Helpers.Utils
 
   alias Sanbase.Metric
   alias Sanbase.Billing.Plan.Restrictions
@@ -84,7 +85,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
     selector = to_selector(args)
     metric = maybe_replace_metric(metric, selector)
-    opts = args_to_opts(args)
+    opts = selector_args_to_opts(args)
 
     with true <- valid_selector?(selector),
          {:ok, from, to, interval} <-
@@ -111,7 +112,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
       ) do
     include_incomplete_data = Map.get(args, :include_incomplete_data, false)
     selector = to_selector(args)
-    opts = args_to_opts(args)
+    opts = selector_args_to_opts(args)
 
     with true <- valid_selector?(selector),
          {:ok, from, to} <-
@@ -274,17 +275,4 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   defp to_selector(%{word: word}), do: %{word: word}
   defp to_selector(%{selector: %{} = selector}), do: selector
   defp to_selector(_), do: %{}
-
-  # Convert the args to opts that the Metric module recognizes
-  defp args_to_opts(args) when is_map(args) do
-    opts = [aggregation: Map.get(args, :aggregation, nil)]
-
-    with selector when is_map(selector) <- args[:selector],
-         {map, _rest} when map_size(map) > 0 <- Map.split(selector, [:owner, :label]) do
-      [additional_filters: Keyword.new(map)] ++ opts
-    else
-      _ ->
-        opts
-    end
-  end
 end

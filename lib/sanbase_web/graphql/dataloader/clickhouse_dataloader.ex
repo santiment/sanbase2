@@ -9,9 +9,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     args_list = args |> Enum.to_list()
 
     args_list
-    |> Enum.group_by(fn %{metric: metric, from: from, to: to, opts: opts} ->
-      {metric, from, to, opts}
-    end)
+    |> Enum.group_by(fn %{selector: selector} -> selector end)
     |> Sanbase.Parallel.map(fn {selector, group} ->
       {metric, from, to, opts} = selector
       slugs = Enum.map(group, & &1.slug)

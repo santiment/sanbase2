@@ -48,13 +48,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
 
         from = from |> Sanbase.DateTimeUtils.round_datetime(300)
         to = to |> Sanbase.DateTimeUtils.round_datetime(300)
-        aggregation = Map.get(args, :aggregation)
         opts = selector_args_to_opts(args)
 
         data = %{
           slug: slug,
           metric: metric,
-          aggregation: aggregation,
           selector: {metric, from, to, opts}
         }
 

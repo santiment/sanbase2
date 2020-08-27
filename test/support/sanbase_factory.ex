@@ -260,7 +260,7 @@ defmodule Sanbase.Factory do
   end
 
   def market_segment_factory() do
-    %MarketSegment{name: rand_str()}
+    %MarketSegment{name: rand_str(), type: rand_str()}
   end
 
   def currency_factory() do

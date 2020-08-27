@@ -60,7 +60,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
       assert_called(
         Sanbase.Clickhouse.Metric.timeseries_data(
           "holders_distribution_0.1_to_1",
-          %{slug: [p1.slug, p2.slug, p3.slug]},
+          %{slug: [:_, :_, :_]},
           from,
           to,
           interval,
@@ -107,7 +107,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
       assert_called(
         Sanbase.Clickhouse.Metric.timeseries_data(
           "holders_distribution_0.1_to_1",
-          %{slug: [p1.slug, p2.slug]},
+          %{slug: [:_, :_]},
           from,
           to,
           interval,

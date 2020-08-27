@@ -9,6 +9,48 @@ defmodule SanbaseWeb.Graphql.ProjectApiTest do
 
   alias Sanbase.Model.Project
 
+  test "fetch market segments and tags for projects", context do
+    ms1 = insert(:market_segment, name: "Ethereum", type: "Infrastructure")
+    ms2 = insert(:market_segment, name: "DeFi", type: "Financial")
+    p1 = insert(:random_project, market_segments: [ms1])
+    p2 = insert(:random_project, market_segments: [ms1])
+    p3 = insert(:random_project, market_segments: [ms2])
+
+    query = """
+    {
+      allProjects{
+        slug
+        marketSegments
+        tags { name type }
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
+      |> get_in(["data", "allProjects"])
+
+    assert %{
+             "marketSegments" => ["Ethereum"],
+             "slug" => p1.slug,
+             "tags" => [%{"name" => "Ethereum", "type" => "Infrastructure"}]
+           } in result
+
+    assert %{
+             "marketSegments" => ["Ethereum"],
+             "slug" => p2.slug,
+             "tags" => [%{"name" => "Ethereum", "type" => "Infrastructure"}]
+           } in result
+
+    assert %{
+             "marketSegments" => ["DeFi"],
+             "slug" => p3.slug,
+             "tags" => [%{"name" => "DeFi", "type" => "Financial"}]
+           } in result
+  end
+
   test "fetch funds raised from icos", context do
     currency_eth = insert(:currency, %{code: "ETH"})
     currency_btc = insert(:currency, %{code: "BTC"})

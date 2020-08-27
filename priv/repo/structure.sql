@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.3
--- Dumped by pg_dump version 12.3
+-- Dumped from database version 10.13
+-- Dumped by pg_dump version 11.6
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -72,6 +72,8 @@ CREATE TYPE public.status AS ENUM (
 
 
 SET default_tablespace = '';
+
+SET default_with_oids = false;
 
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
@@ -711,7 +713,8 @@ CREATE TABLE public.list_items (
 
 CREATE TABLE public.market_segments (
     id bigint NOT NULL,
-    name character varying(255) NOT NULL
+    name character varying(255) NOT NULL,
+    type character varying(255)
 );
 
 
@@ -4823,3 +4826,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200728103633);
 INSERT INTO public."schema_migrations" (version) VALUES (20200728105033);
 INSERT INTO public."schema_migrations" (version) VALUES (20200804093238);
 INSERT INTO public."schema_migrations" (version) VALUES (20200813141704);
+INSERT INTO public."schema_migrations" (version) VALUES (20200826101751);

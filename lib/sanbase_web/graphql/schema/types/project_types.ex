@@ -76,6 +76,12 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:pagination, :project_pagination_input_object)
   end
 
+  input_object :aggregated_timeseries_data_selector_input_object do
+    field(:label, :string)
+    field(:owner, :string)
+    field(:holders_count, :integer)
+  end
+
   object :metric_anomalies do
     field(:metric, :string)
     field(:anomalies, list_of(:string))
@@ -276,6 +282,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field :aggregated_timeseries_data, :float do
+      arg(:selector, :aggregated_timeseries_data_selector_input_object)
       arg(:metric, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -283,7 +290,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:include_incomplete_data, :boolean, default_value: false)
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(AccessControl)
+      # middleware(AccessControl)
 
       cache_resolve(&ProjectMetricsResolver.aggregated_timeseries_data/3,
         ttl: 600,

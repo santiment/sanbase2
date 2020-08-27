@@ -154,6 +154,18 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
     |> Ecto.Changeset.traverse_errors(&format_error/1)
   end
 
+  def selector_args_to_opts(args) when is_map(args) do
+    opts = [aggregation: Map.get(args, :aggregation, nil)]
+
+    with selector when is_map(selector) <- args[:selector],
+         {map, _rest} when map_size(map) > 0 <- Map.split(selector, [:owner, :label]) do
+      [additional_filters: Keyword.new(map)] ++ opts
+    else
+      _ ->
+        opts
+    end
+  end
+
   @doc ~s"""
   Works when the result is a list of elements that contain a datetime and the query arguments
   have a `from` argument. In that case the first element's `datetime` is update to be

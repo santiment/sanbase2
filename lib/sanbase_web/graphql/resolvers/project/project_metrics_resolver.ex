@@ -49,14 +49,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
         from = from |> Sanbase.DateTimeUtils.round_datetime(300)
         to = to |> Sanbase.DateTimeUtils.round_datetime(300)
         aggregation = Map.get(args, :aggregation)
+        opts = selector_args_to_opts(args)
 
         data = %{
-          metric: metric,
           slug: slug,
-          from: from,
-          to: to,
+          metric: metric,
           aggregation: aggregation,
-          selector: {metric, from, to, aggregation}
+          selector: {metric, from, to, opts}
         }
 
         loader
@@ -73,13 +72,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
   defp aggregated_metric_from_loader(loader, data) do
     %{selector: selector, slug: slug, metric: metric} = data
 
-    cache_key =
-      {__MODULE__, :available_slugs_for_metric, metric}
-      |> Sanbase.Cache.hash()
-
-    {:ok, slugs_for_metric} =
-      Sanbase.Cache.get_or_store({cache_key, 1800}, fn -> Metric.available_slugs(metric) end)
-
     loader
     |> Dataloader.get(SanbaseDataloader, :aggregated_metric, selector)
     |> case do
@@ -89,7 +81,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
             {:ok, value}
 
           :error ->
-            if slug in slugs_for_metric, do: {:nocache, {:ok, nil}}, else: {:ok, nil}
+            cache_key =
+              {__MODULE__, :available_slugs_for_metric, metric}
+              |> Sanbase.Cache.hash()
+
+            {:ok, slugs_for_metric} =
+              Sanbase.Cache.get_or_store({cache_key, 1800}, fn ->
+                Metric.available_slugs(metric)
+              end)
+
+            case slug in slugs_for_metric do
+              true -> {:nocache, {:ok, nil}}
+              false -> {:ok, nil}
+            end
         end
 
       _ ->

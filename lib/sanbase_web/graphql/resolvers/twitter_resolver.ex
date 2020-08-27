@@ -1,9 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
+  import SanbaseWeb.Graphql.Helpers.Async
+  import SanbaseWeb.Graphql.Helpers.CalibrateInterval
+
   alias Sanbase.Model.Project
   alias Sanbase.Twitter.Store
-  alias SanbaseWeb.Graphql.Helpers.Utils
-
-  import SanbaseWeb.Graphql.Helpers.Async
 
   def twitter_data(_root, %{slug: slug}, _resolution) do
     calculate_twitter_data(slug)
@@ -51,7 +51,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
     with %Project{} = project <- Project.by_slug(slug),
          {:ok, twitter_name} <- Project.twitter_handle(project),
          {:ok, from, to, interval} <-
-           Utils.calibrate_interval(Store, twitter_name, from, to, interval, 60 * 60),
+           calibrate(Store, twitter_name, from, to, interval, 60 * 60),
          twitter_historical_data <-
            Store.all_records_for_measurement!(twitter_name, from, to, interval) do
       result =

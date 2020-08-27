@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
   require Logger
 
+  import SanbaseWeb.Graphql.Helpers.CalibrateInterval
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3, handle_graphql_error: 4]
 
   alias SanbaseWeb.Graphql.Helpers.Utils
@@ -144,7 +145,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
       ) do
     with {:ok, github_organizations} <- Project.github_organizations(slug),
          {:ok, from, to, interval} <-
-           Utils.calibrate_interval(
+           calibrate(
              Sanbase.Clickhouse.Github,
              github_organizations,
              from,

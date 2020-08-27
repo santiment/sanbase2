@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.AnomalyResolver do
-  import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 8]
+  import SanbaseWeb.Graphql.Helpers.CalibrateInterval, only: [calibrate: 8]
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
 
   alias Sanbase.Anomaly
@@ -31,7 +31,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AnomalyResolver do
         %{source: %{anomaly: anomaly}}
       ) do
     with {:ok, from, to, interval} <-
-           calibrate_interval(Anomaly, anomaly, slug, from, to, interval, 86_400, @datapoints),
+           calibrate(Anomaly, anomaly, slug, from, to, interval, 86_400, @datapoints),
          {:ok, result} <-
            Anomaly.timeseries_data(anomaly, slug, from, to, interval, args[:aggregation]) do
       {:ok, result |> Enum.reject(&is_nil/1)}

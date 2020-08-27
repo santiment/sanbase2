@@ -27,9 +27,9 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     %{conn: conn, from: from, to: to, interval: interval} = context
 
     market_segment = insert(:market_segment, name: "Stablecoin")
-    p1 = insert(:random_project, market_segments: [market_segment])
-    p2 = insert(:random_project, market_segments: [market_segment])
-    p3 = insert(:random_project, market_segments: [market_segment])
+    insert(:random_project, market_segments: [market_segment])
+    insert(:random_project, market_segments: [market_segment])
+    insert(:random_project, market_segments: [market_segment])
 
     Sanbase.Mock.prepare_mock2(
       &Sanbase.Clickhouse.Metric.timeseries_data/6,
@@ -74,9 +74,9 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     %{conn: conn, from: from, to: to, interval: interval} = context
 
     market_segment = insert(:market_segment, name: "Stablecoin")
-    p1 = insert(:random_project, market_segments: [market_segment])
-    p2 = insert(:random_project, market_segments: [market_segment])
-    p3 = insert(:random_project, market_segments: [market_segment])
+    insert(:random_project, market_segments: [market_segment])
+    insert(:random_project, market_segments: [market_segment])
+    insert(:random_project, market_segments: [market_segment])
 
     Sanbase.Mock.prepare_mock2(
       &Sanbase.Clickhouse.Metric.timeseries_data/6,

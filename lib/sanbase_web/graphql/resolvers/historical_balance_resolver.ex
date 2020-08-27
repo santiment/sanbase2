@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
   import Sanbase.Utils.ErrorHandling,
     only: [maybe_handle_graphql_error: 2, handle_graphql_error: 3, handle_graphql_error: 4]
 
-  import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 7]
+  import SanbaseWeb.Graphql.Helpers.CalibrateInterval, only: [calibrate: 7]
 
   alias Sanbase.Clickhouse.HistoricalBalance
 
@@ -83,7 +83,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
         _resolution
       ) do
     with {:ok, from, to, interval} <-
-           calibrate_interval(
+           calibrate(
              HistoricalBalance.MinersBalance,
              slug,
              from,

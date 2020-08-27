@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Helpers.UtilsTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias SanbaseWeb.Graphql.Helpers.Utils
+  alias SanbaseWeb.Graphql.Helpers.CalibrateInterval
 
   defmodule StoreMock do
     def first_datetime(_measurement) do
@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.Helpers.UtilsTest do
 
   describe "#calibrate_interval/7" do
     test "returns original data if interval is specified", context do
-      assert Utils.calibrate_interval(
+      assert CalibrateInterval.calibrate(
                StoreMock,
                "some_measurement",
                context.from,
@@ -31,7 +31,7 @@ defmodule SanbaseWeb.Graphql.Helpers.UtilsTest do
     test "returns first date_time from the module and calculates the interval", context do
       {:ok, first_datetime} = StoreMock.first_datetime("")
 
-      assert Utils.calibrate_interval(
+      assert CalibrateInterval.calibrate(
                StoreMock,
                "some_measurement",
                context.from,
@@ -45,7 +45,7 @@ defmodule SanbaseWeb.Graphql.Helpers.UtilsTest do
          context do
       from = DateTime.from_naive!(~N[2017-05-20 18:00:00], "Etc/UTC")
 
-      assert Utils.calibrate_interval(
+      assert CalibrateInterval.calibrate(
                StoreMock,
                "some_measurement",
                from,
@@ -60,7 +60,7 @@ defmodule SanbaseWeb.Graphql.Helpers.UtilsTest do
     test "returns 2 ma_interval when ma_base/interval is less then 2", context do
       {:ok, first_datetime} = StoreMock.first_datetime("")
 
-      assert Utils.calibrate_interval_with_ma_interval(
+      assert CalibrateInterval.calibrate_moving_average(
                StoreMock,
                "some_measurement",
                context.from,
@@ -74,7 +74,7 @@ defmodule SanbaseWeb.Graphql.Helpers.UtilsTest do
     test "calculates ma_interval when ma_base/interval is more then 2", context do
       {:ok, first_datetime} = StoreMock.first_datetime("")
 
-      assert Utils.calibrate_interval_with_ma_interval(
+      assert CalibrateInterval.calibrate_moving_average(
                StoreMock,
                "some_measurement",
                context.from,

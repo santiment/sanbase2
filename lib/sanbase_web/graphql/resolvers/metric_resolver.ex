@@ -1,5 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   import SanbaseWeb.Graphql.Helpers.Utils
+  import SanbaseWeb.Graphql.Helpers.CalibrateInterval
 
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3, handle_graphql_error: 4]
 
@@ -88,7 +89,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
     with true <- valid_selector?(selector),
          {:ok, from, to, interval} <-
-           calibrate_interval(Metric, metric, selector, from, to, interval, 86_400, @datapoints),
+           calibrate(Metric, metric, selector, from, to, interval, 86_400, @datapoints),
          {:ok, from, to} <-
            calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
          {:ok, from} <-

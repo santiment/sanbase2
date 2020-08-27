@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   require Logger
 
-  import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 6]
+  import SanbaseWeb.Graphql.Helpers.CalibrateInterval, only: [calibrate: 6]
 
   alias Sanbase.Price
   alias Sanbase.Model.Project
@@ -17,7 +17,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     %{from: from, to: to, interval: interval} = args
 
     with {:ok, from, to, interval} <-
-           calibrate_interval(Price, @total_market, from, to, interval, 300),
+           calibrate(Price, @total_market, from, to, interval, 300),
          {:ok, result} <- Price.timeseries_data(@total_market, from, to, interval) do
       {:ok, result}
     end
@@ -32,7 +32,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     %{from: from, to: to, interval: interval} = args
 
     with {:ok, from, to, interval} <-
-           calibrate_interval(Price, @total_erc20, from, to, interval, 300),
+           calibrate(Price, @total_erc20, from, to, interval, 300),
          {:ok, result} <- Price.timeseries_data(@total_erc20, from, to, interval) do
       {:ok, result}
     end
@@ -47,7 +47,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     %{from: from, to: to, interval: interval} = args
 
     with {:get_slug, slug} when not is_nil(slug) <- {:get_slug, Project.slug_by_ticker(ticker)},
-         {:ok, from, to, interval} <- calibrate_interval(Price, slug, from, to, interval, 300),
+         {:ok, from, to, interval} <- calibrate(Price, slug, from, to, interval, 300),
          {:ok, result} <- Price.timeseries_data(slug, from, to, interval) do
       {:ok, result}
     else
@@ -63,7 +63,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   def history_price(_root, %{slug: slug} = args, _resolution) do
     %{from: from, to: to, interval: interval} = args
 
-    with {:ok, from, to, interval} <- calibrate_interval(Price, slug, from, to, interval, 300),
+    with {:ok, from, to, interval} <- calibrate(Price, slug, from, to, interval, 300),
          {:ok, result} <- Price.timeseries_data(slug, from, to, interval) do
       {:ok, result}
     else

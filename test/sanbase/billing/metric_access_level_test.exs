@@ -322,12 +322,12 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "dormant_circulation_365d_change_1d",
         "dormant_circulation_365d_change_7d",
         "dormant_circulation_365d_change_30d",
-        "stack_circulation_180d_change_1d",
-        "stack_circulation_180d_change_7d",
-        "stack_circulation_180d_change_30d",
-        "stack_circulation_20y_change_1d",
-        "stack_circulation_20y_change_7d",
-        "stack_circulation_20y_change_30d",
+        "circulation_180d_change_1d",
+        "circulation_180d_change_7d",
+        "circulation_180d_change_30d",
+        "circulation_change_1d",
+        "circulation_change_7d",
+        "circulation_change_30d",
         "bitmex_perpetual_funding_rate_change_1d",
         "bitmex_perpetual_funding_rate_change_7d",
         "bitmex_perpetual_funding_rate_change_30d",
@@ -340,9 +340,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "mvrv_usd_365d_change_1d",
         "mvrv_usd_365d_change_7d",
         "mvrv_usd_365d_change_30d",
-        "mvrv_usd_20y_change_1d",
-        "mvrv_usd_20y_change_7d",
-        "mvrv_usd_20y_change_30d"
+        "mvrv_usd_change_1d",
+        "mvrv_usd_change_7d",
+        "mvrv_usd_change_30d"
       ]
       |> Enum.sort()
 

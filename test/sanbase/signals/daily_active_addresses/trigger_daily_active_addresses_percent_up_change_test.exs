@@ -86,7 +86,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentUpChangeTest do
 
   test "only some of daily active addresses signals triggered", context do
     data =
-      Enum.zip(context.datetimes, [100, 120, 100, 80, 200, 200, 400])
+      Enum.zip(context.datetimes, [100, 120, 100, 80, 200, 200, 600])
       |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
 
     with_mock DailyActiveAddressesSettings, [:passthrough],

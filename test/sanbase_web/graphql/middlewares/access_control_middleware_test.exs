@@ -188,10 +188,10 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
     result =
       conn
       |> post("/graphql", query_skeleton(query))
-      |> json_response(200)
+      |> json_response(401)
 
-    error_msg = result["errors"] |> hd() |> Map.get("message")
-    assert error_msg == "You need to upgrade to Sanbase Pro in order to use SanSheets."
+    assert result["errors"]["details"] ==
+             "You need to upgrade to Sanbase Pro in order to use SanSheets."
   end
 
   test "returns error when sansheets user without API key is not Pro" do
@@ -222,9 +222,9 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
     result =
       conn
       |> post("/graphql", query_skeleton(query))
-      |> json_response(200)
+      |> json_response(401)
 
-    error_msg = result["errors"] |> hd() |> Map.get("message")
-    assert error_msg == "You need to upgrade to Sanbase Pro in order to use SanSheets."
+    assert result["errors"]["details"] ==
+             "You need to upgrade to Sanbase Pro in order to use SanSheets."
   end
 end

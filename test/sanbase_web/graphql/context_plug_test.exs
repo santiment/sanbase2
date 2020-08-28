@@ -227,6 +227,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
     test "when Apikey and User-Agent is from sheets - product is sanbase" do
       user = insert(:user)
+      insert(:subscription_pro_sanbase, user: user)
       {:ok, apikey} = Apikey.generate_apikey(user)
 
       conn =

@@ -62,11 +62,40 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       context
       |> Map.put(:remote_ip, conn.remote_ip)
       |> Map.put(:origin_url, Plug.Conn.get_req_header(conn, "origin") |> List.first())
-      |> Map.put(:is_sansheets_request, is_sansheets_request(conn))
 
-    conn
-    |> put_private(:absinthe, %{context: context})
+    conn =
+      conn
+      |> put_private(:absinthe, %{context: context})
+
+    case should_halt?(conn, context) do
+      false ->
+        conn
+
+      %{
+        error_msg: error_msg,
+        error_code: error_code
+      } ->
+        conn
+        |> put_resp_content_type("application/json", "charset=utf-8")
+        |> send_resp(error_code, build_error_msg(error_msg))
+        |> halt()
+    end
   end
+
+  defp should_halt?(conn, %{auth: %{subscription: %{plan: %{name: plan_name}}}}) do
+    case is_sansheets_request(conn) and plan_name == "FREE" do
+      true ->
+        %{
+          error_msg: "You need to upgrade to Sanbase Pro in order to use SanSheets.",
+          error_code: 401
+        }
+
+      false ->
+        false
+    end
+  end
+
+  defp should_halt?(_conn, _context), do: false
 
   defp build_error_msg(msg) do
     %{errors: %{details: msg}} |> Jason.encode!()

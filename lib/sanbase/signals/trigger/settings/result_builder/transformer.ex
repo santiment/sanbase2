@@ -22,13 +22,13 @@ defmodule Sanbase.Signal.ResultBuilder.Transformer do
       iex> data = [{"eos", [%{value: 1}, %{value: 2}, %{value: 5}]}]
       ...> Sanbase.Signal.ResultBuilder.Transformer.transform(data, :value)
       [%Sanbase.Signal.ResultBuilder.Transformer.Data{
-        identifier: "eos", absolute_change: 3, current: 5, previous: 2, percent_change: 233.33, previous_average: 1.5
+        identifier: "eos", absolute_change: 3, current: 5, previous: 2, percent_change: 150.0, previous_average: 1.5
       }]
 
       iex> data = [{"eos", [%{value: 2}, %{value: 2}, %{value: 3}, %{value: 4}]}]
       ...> Sanbase.Signal.ResultBuilder.Transformer.transform(data, :value)
       [%Sanbase.Signal.ResultBuilder.Transformer.Data{
-        absolute_change: 1, current: 4, previous: 3, identifier: "eos", percent_change: 71.67, previous_average: 2.33
+        absolute_change: 1, current: 4, previous: 3, identifier: "eos", percent_change: 33.33, previous_average: 2.33
       }]
 
       iex> data = []
@@ -51,7 +51,7 @@ defmodule Sanbase.Signal.ResultBuilder.Transformer do
           previous: previous,
           previous_average: previous_average,
           absolute_change: current - previous,
-          percent_change: percent_change(previous_average, current)
+          percent_change: percent_change(previous, current)
         }
 
       {identifier, [value]} ->

@@ -340,6 +340,40 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Unlabeled Balance",
+    "name": "unlabeled_balance",
+    "metric": "unlabeled_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "All Known Balance",
+    "name": "all_known_balance",
+    "metric": "all_known_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Miners To Exchanges Flow",
     "name": "miners_to_exchanges_flow",
     "metric": "miners_to_exchanges_flow",
@@ -765,7 +799,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Exchange to Other Flow",
+    "human_readable_name": "Exchanges to Other Flow",
     "name": "exchanges_to_other_flow",
     "metric": "exchanges_to_other_flow",
     "version": "2019-01-01",

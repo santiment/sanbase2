@@ -124,7 +124,7 @@
     "metric": "miners_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -141,7 +141,7 @@
     "metric": "genesis_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -158,7 +158,7 @@
     "metric": "dex_trader_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -175,7 +175,7 @@
     "metric": "defi_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -192,7 +192,7 @@
     "metric": "dex_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -209,7 +209,7 @@
     "metric": "cex_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -226,7 +226,7 @@
     "metric": "withdrawal_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -243,7 +243,7 @@
     "metric": "deposit_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -260,7 +260,7 @@
     "metric": "proxy_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -277,7 +277,7 @@
     "metric": "whale_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -294,7 +294,7 @@
     "metric": "makerdao_bite_keeper_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -311,7 +311,7 @@
     "metric": "makerdao_cdp_owner_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -328,7 +328,7 @@
     "metric": "proxy_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -345,7 +345,7 @@
     "metric": "miners_exchange_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -362,7 +362,7 @@
     "metric": "whales_exchange_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -379,7 +379,7 @@
     "metric": "dex_traders_exchange_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -396,7 +396,7 @@
     "metric": "defi_exchange_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -413,7 +413,7 @@
     "metric": "dex_traders_dex_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -430,7 +430,7 @@
     "metric": "dex_traders_cex_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -447,7 +447,7 @@
     "metric": "dex_traders_defi_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"
@@ -464,7 +464,7 @@
     "metric": "genesis_exchange_balance",
     "version": "2019-01-01",
     "access": "restricted",
-    "selectors": ["slug", "owner", "label"],
+    "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "custom",
       "SANBASE": "free"

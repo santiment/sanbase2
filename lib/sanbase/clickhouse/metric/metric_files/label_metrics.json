@@ -340,6 +340,40 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Miners To Exchanges Flow",
+    "name": "miners_to_exchanges_flow",
+    "metric": "miners_to_exchanges_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Exchange to Miners Flow",
+    "name": "exchanges_to_miners_flow",
+    "metric": "exchanges_to_miners_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Miners Exchange Balance",
     "name": "miners_exchange_balance",
     "metric": "miners_exchange_balance",
@@ -351,6 +385,40 @@
       "SANBASE": "free"
     },
     "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Whales to Exchanges Flow",
+    "name": "whales_to_exchanges_flow",
+    "metric": "whales_to_exchanges_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Exchanges to Whales Flow",
+    "name": "exchanges_to_whales_flow",
+    "metric": "exchanges_to_whales_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -374,6 +442,40 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "DEX Traders to Exchanges Flow",
+    "name": "dex_traders_to_exchanges_flow",
+    "metric": "dex_traders_to_exchanges_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Exchanges to DEX Traders Flow",
+    "name": "exchanges_to_dex_traders_flow",
+    "metric": "exchanges_to_dex_traders_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "DEX Traders Exchange Balance",
     "name": "dex_traders_exchange_balance",
     "metric": "dex_traders_exchange_balance",
@@ -385,6 +487,40 @@
       "SANBASE": "free"
     },
     "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DeFi to Exchanges Flow",
+    "name": "defi_to_exchanges_flow",
+    "metric": "defi_to_exchanges_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Exchanges to DeFi Flow",
+    "name": "exchanges_to_defi_flow",
+    "metric": "exchanges_to_defi_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -408,6 +544,40 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "DEX Traders to DEXes Flow",
+    "name": "dex_traders_to_dexes_flow",
+    "metric": "dex_traders_to_dexes_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DEXes to DEX Traders Flow",
+    "name": "dexes_to_dex_traders_flow",
+    "metric": "dexes_to_dex_traders_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "DEX Traders DEX Balance",
     "name": "dex_traders_dex_balance",
     "metric": "dex_traders_dex_balance",
@@ -425,7 +595,41 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "DEX Traders DEX Balance",
+    "human_readable_name": "DEX Traders to CEXes Flow",
+    "name": "dex_traders_to_cexes_flow",
+    "metric": "dex_traders_to_cexes_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "CEXes to DEX Traders Flow",
+    "name": "cexes_to_dex_traders_flow",
+    "metric": "cexes_to_dex_traders_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DEX Traders CEX Balance",
     "name": "dex_traders_cex_balance",
     "metric": "dex_traders_cex_balance",
     "version": "2019-01-01",
@@ -436,6 +640,40 @@
       "SANBASE": "free"
     },
     "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DEX Traders to DeFi Flow",
+    "name": "dex_traders_to_defi_flow",
+    "metric": "dex_traders_to_defi_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DeFi to DEX Traders Flow",
+    "name": "defi_to_dex_traders_flow",
+    "metric": "defi_to_dex_traders_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -459,6 +697,40 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Genesis to Exchanges Flow",
+    "name": "genesis_to_exchanges_flow",
+    "metric": "genesis_to_exchanges_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
+  {
+    "human_readable_name": "Exchanges to Genesis Flow",
+    "name": "exchanges_to_genesis_flow",
+    "metric": "exchanges_to_genesis_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
+  {
     "human_readable_name": "Genesis Exchange Balance",
     "name": "genesis_exchange_balance",
     "metric": "genesis_exchange_balance",
@@ -470,6 +742,125 @@
       "SANBASE": "free"
     },
     "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Other To Exchanges Flow",
+    "name": "other_to_exchanges_flow",
+    "metric": "other_to_exchanges_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Exchange to Other Flow",
+    "name": "exchanges_to_other_flow",
+    "metric": "exchanges_to_other_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Other Exchange Balance",
+    "name": "other_exchange_balance",
+    "metric": "other_exchange_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Unlabeled to Labeled Flow",
+    "name": "unlabeled_to_labeled_flow",
+    "metric": "unlabeled_to_labeled_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Labeled to Unlabeled Flow",
+    "name": "labeled_to_unlabeled_flow",
+    "metric": "labeled_to_unlabeled_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Unlabeled to Unlabeled Flow",
+    "name": "unlabeled_to_unlabeled_flow",
+    "metric": "unlabeled_to_unlabeled_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Labeled to Labeled Flow",
+    "name": "labeled_to_labeled_flow",
+    "metric": "labeled_to_labeled_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "custom",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,

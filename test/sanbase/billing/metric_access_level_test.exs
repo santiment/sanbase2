@@ -341,6 +341,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "labeled_to_unlabeled_flow",
         "unlabeled_to_unlabeled_flow",
         "labeled_to_labeled_flow",
+        "unlabeled_balance",
+        "all_known_balance",
         # Defi
         "defi_total_value_locked_eth",
         "defi_total_value_locked_usd",

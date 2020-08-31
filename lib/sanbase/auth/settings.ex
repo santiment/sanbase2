@@ -18,6 +18,8 @@ defmodule Sanbase.Auth.Settings do
     field(:newsletter_subscription_updated_at_unix, :integer, default: nil)
     field(:is_promoter, :boolean, default: false)
     field(:paid_with, :string, default: nil)
+    field(:signals_per_day, :integer, default: 100)
+    field(:signals_fired, :map, default: %{})
   end
 
   def changeset(schema, params) do
@@ -32,7 +34,8 @@ defmodule Sanbase.Auth.Settings do
       :telegram_chat_id,
       :hide_privacy_data,
       :is_promoter,
-      :paid_with
+      :paid_with,
+      :signals_per_day
     ])
     |> normalize_newsletter_subscription(
       :newsletter_subscription,

@@ -712,7 +712,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
+  },
   {
     "human_readable_name": "Exchanges to Genesis Flow",
     "name": "exchanges_to_genesis_flow",
@@ -729,7 +729,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
+  },
   {
     "human_readable_name": "Genesis Exchange Balance",
     "name": "genesis_exchange_balance",

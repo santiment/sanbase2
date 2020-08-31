@@ -384,7 +384,7 @@
       "SANAPI": "custom",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "sum",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -435,7 +435,7 @@
       "SANAPI": "custom",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "sum",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -486,7 +486,7 @@
       "SANAPI": "custom",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "sum",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -537,7 +537,7 @@
       "SANAPI": "custom",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "sum",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -588,7 +588,7 @@
       "SANAPI": "custom",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "sum",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -639,7 +639,7 @@
       "SANAPI": "custom",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "sum",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -690,7 +690,7 @@
       "SANAPI": "custom",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "sum",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -741,7 +741,7 @@
       "SANAPI": "custom",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "sum",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
@@ -792,7 +792,7 @@
       "SANAPI": "custom",
       "SANBASE": "free"
     },
-    "aggregation": "last",
+    "aggregation": "sum",
     "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,

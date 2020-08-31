@@ -376,6 +376,10 @@ defmodule Sanbase.Model.Project do
     end
   end
 
+  def has_main_contract_addresses(project) do
+    project.contract_addresses |> Enum.findby(&(&1.label == "main"))
+  end
+
   defp preload_query(query, opts) do
     case Keyword.get(opts, :preload?, true) do
       false ->

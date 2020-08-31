@@ -129,9 +129,18 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
       |> Ico.changeset(project_info_map)
       |> Repo.insert_or_update!()
 
+      label =
+        project
+        |> Project.has_main_contract_addresses()
+        |> case do
+          nil -> "main"
+          _ -> nil
+        end
+
       project
       |> Project.ContractAddress.add_contract(
         project_info_map
+        |> Map.put(:label, label)
         |> Map.put(:address, project_info_map.main_contract_address)
         |> Map.put(:decimals, project_info_map.token_decimals)
       )

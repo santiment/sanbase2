@@ -297,6 +297,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "exchange_inflow_per_exchange",
         "exchange_outflow_per_exchange",
         "withdrawal_transactions_per_exchange",
+        # balance and flow labeled metrics
         "miners_balance",
         "genesis_balance",
         "dex_trader_balance",

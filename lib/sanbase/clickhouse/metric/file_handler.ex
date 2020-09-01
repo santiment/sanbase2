@@ -44,7 +44,8 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   @external_resource makerdao_file = Path.join(__DIR__, @makerdao_file)
   @external_resource label_file = Path.join(__DIR__, @label_file)
   @external_resource defi_file = Path.join(__DIR__, @defi_file)
-  @external_resource balance_and_flow_label_file = Path.join(__DIR__, @balance_and_flow_label_file)
+  @external_resource balance_and_flow_label_file =
+                       Path.join(__DIR__, @balance_and_flow_label_file)
 
   @metrics_json (File.read!(metrics_file) |> Jason.decode!()) ++
                   (File.read!(holders_file) |> Jason.decode!()) ++

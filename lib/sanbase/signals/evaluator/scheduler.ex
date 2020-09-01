@@ -82,22 +82,12 @@ defmodule Sanbase.Signal.Scheduler do
             {user_trigger, []}
 
           list when is_list(list) ->
-            {:ok, %{last_triggered: last_triggered}} =
+            {:ok,
+             %{last_triggered: last_triggered, total_sent_succesfully: total_sent_succesfully}} =
               handle_send_results_list(user_trigger, list)
 
-            {:ok, updated_user_trigger} =
-              UserTrigger.update_user_trigger(user_trigger.user, %{
-                id: user_trigger.id,
-                last_triggered: last_triggered,
-                settings: user_trigger.trigger.settings
-              })
-
-            user_trigger =
-              put_in(
-                user_trigger.trigger.last_triggered,
-                updated_user_trigger.trigger.last_triggered
-              )
-
+            update_user_signals_sent_per_day(user_trigger.user, total_sent_succesfully)
+            user_trigger = update_trigger_last_triggered(user_trigger, last_triggered)
             {user_trigger, list}
         end
       end,
@@ -108,10 +98,31 @@ defmodule Sanbase.Signal.Scheduler do
     |> Enum.unzip()
   end
 
+  defp update_user_signals_sent_per_day(user, count) do
+    %{signals_fired: signals_fired} = Sanbase.Auth.UserSettings.settings_for(user)
+    signals_fired = Map.update(signals_fired, Date.utc_today(), count, &(&1 + count))
+    Sanbase.Auth.UserSettings.update_settings(user, %{signals_fired: signals_fired})
+  end
+
+  # Note that the `user_trigger` that came as an argument is returned with
+  # modofied `last_triggered`.
+  # TODO: Research if this is really needed
+  defp update_trigger_last_triggered(user_trigger, last_triggered) do
+    {:ok, updated_user_trigger} =
+      UserTrigger.update_user_trigger(user_trigger.user, %{
+        id: user_trigger.id,
+        last_triggered: last_triggered,
+        settings: user_trigger.trigger.settings
+      })
+
+    put_in(
+      user_trigger.trigger.last_triggered,
+      updated_user_trigger.trigger.last_triggered
+    )
+  end
+
   defp handle_send_results_list(
-         %{
-           trigger: %{last_triggered: last_triggered}
-         },
+         %{trigger: %{last_triggered: last_triggered}},
          send_results_list
        ) do
     # Round the datetimes to minutes because the `last_triggered` is used as
@@ -126,29 +137,27 @@ defmodule Sanbase.Signal.Scheduler do
     # - missing email/telegram linked when such channel is chosen;
     # - webhook failed to be sent;
     # - daily signals limit is reached;
+    failed_count = fn failed, result ->
+      failed + if result == :ok, do: 0, else: 1
+    end
+
     {last_triggered, total_triggered, total_failed} =
       send_results_list
       |> Enum.reduce({last_triggered, _total = 0, _failed = 0}, fn
         {list, result}, {acc, total, failed} when is_list(list) ->
           # Example: {["elem1", "elem2"], :ok}.
-          # This case happens when multiple identifiers (for example words entering)
+          # This case happens when multiple identifiers (for example emerging words)
           # are handled in one notification.
-          acc =
-            Enum.reduce(list, acc, fn elem, inner_acc ->
-              Map.put(inner_acc, elem, now)
-            end)
+          acc = Enum.reduce(list, acc, &Map.put(&2, &1, now))
 
-          new_failed = if result == :ok, do: 0, else: 1
-
-          {acc, total + 1, failed + new_failed}
+          {acc, total + 1, failed_count.(failed, result)}
 
         {identifier, result}, {acc, total, failed} ->
-          # Example: {"santiment", :ok}. This is the most common case - one
-          # notification per identificator.
+          # Example: {"santiment", :ok}.
+          # This is the most common case - one notification per identificator.
 
-          new_failed = if result == :ok, do: 0, else: 1
           acc = Map.put(acc, identifier, now)
-          {acc, total + 1, failed + new_failed}
+          {acc, total + 1, failed_count.(failed, result)}
       end)
 
     {:ok,

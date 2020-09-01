@@ -20,6 +20,20 @@ defmodule Sanbase.Signal.Scheduler do
 
   defguard is_non_empty_map(map) when is_map(map) and map != %{}
 
+  @doc ~s"""
+  Processfor all active signals with the given type. The processing
+   includes the following steps:
+   1. Fetch the active signals with the given type.
+   2. Evaluate the signals
+   3. Send the evaluated signals to the proper channels
+      Note: A user can receive only a limited number of signals per day, so
+      if this limit is reached only one more notification will be send about
+      the limit reached with a CTA to increase the number of signal per day
+      or just look at the events on the sanbase feed.
+    4. Update the signals and users records appropriately.
+  """
+  def run_signal(module)
+
   for module <- @signal_modules do
     def run_signal(unquote(module)) do
       unquote(module).type() |> run()
@@ -67,12 +81,16 @@ defmodule Sanbase.Signal.Scheduler do
           [] ->
             {user_trigger, []}
 
-          # Trying to send not triggered signal
-          {:error, _} ->
-            {user_trigger, []}
-
           list when is_list(list) ->
-            {:ok, updated_user_trigger} = update_triggered(user_trigger, list)
+            {:ok, %{last_triggered: last_triggered}} =
+              handle_send_results_list(user_trigger, list)
+
+            {:ok, updated_user_trigger} =
+              UserTrigger.update_user_trigger(user_trigger.user, %{
+                id: user_trigger.id,
+                last_triggered: last_triggered,
+                settings: user_trigger.trigger.settings
+              })
 
             user_trigger =
               put_in(
@@ -90,11 +108,9 @@ defmodule Sanbase.Signal.Scheduler do
     |> Enum.unzip()
   end
 
-  defp update_triggered(
+  defp handle_send_results_list(
          %{
-           user: user,
-           id: trigger_id,
-           trigger: %{last_triggered: last_triggered, settings: settings}
+           trigger: %{last_triggered: last_triggered}
          },
          send_results_list
        ) do
@@ -105,23 +121,43 @@ defmodule Sanbase.Signal.Scheduler do
 
     # Update all triggered_at regardless if the send to the channel succeed
     # because the signal will be stored in the timeline events.
-    last_triggered =
+    # Keep count of the total signals triggered and the number of signals
+    # that were not sent succesfully. Reasons can be:
+    # - missing email/telegram linked when such channel is chosen;
+    # - webhook failed to be sent;
+    # - daily signals limit is reached;
+    {last_triggered, total_triggered, total_failed} =
       send_results_list
-      |> Enum.reduce(last_triggered, fn
-        {list, _}, acc when is_list(list) ->
-          Enum.reduce(list, acc, fn elem, inner_acc ->
-            Map.put(inner_acc, elem, now)
-          end)
+      |> Enum.reduce({last_triggered, _total = 0, _failed = 0}, fn
+        {list, result}, {acc, total, failed} when is_list(list) ->
+          # Example: {["elem1", "elem2"], :ok}.
+          # This case happens when multiple identifiers (for example words entering)
+          # are handled in one notification.
+          acc =
+            Enum.reduce(list, acc, fn elem, inner_acc ->
+              Map.put(inner_acc, elem, now)
+            end)
 
-        {identifier, _}, acc ->
-          Map.put(acc, identifier, now)
+          new_failed = if result == :ok, do: 0, else: 1
+
+          {acc, total + 1, failed + new_failed}
+
+        {identifier, result}, {acc, total, failed} ->
+          # Example: {"santiment", :ok}. This is the most common case - one
+          # notification per identificator.
+
+          new_failed = if result == :ok, do: 0, else: 1
+          acc = Map.put(acc, identifier, now)
+          {acc, total + 1, failed + new_failed}
       end)
 
-    UserTrigger.update_user_trigger(user, %{
-      id: trigger_id,
-      last_triggered: last_triggered,
-      settings: settings
-    })
+    {:ok,
+     %{
+       last_triggered: last_triggered,
+       total_triggered: total_triggered,
+       total_sent_succesfully: total_triggered - total_failed,
+       total_sent_failed: total_failed
+     }}
   end
 
   defp get_fired_signals_data(user_triggers) do

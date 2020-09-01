@@ -5,12 +5,6 @@ end
 defimpl Sanbase.Signal, for: Any do
   require Logger
 
-  def send(%{trigger: %{settings: %{triggered?: false}}}) do
-    warn_msg = "Trying to send an alert that is not triggered."
-    Logger.warn(warn_msg)
-    {:error, warn_msg}
-  end
-
   def send(%{trigger: %{settings: %{channel: channel}}} = user_trigger) do
     max_signals_to_send = max_signals_to_send(user_trigger)
 
@@ -64,20 +58,14 @@ defimpl Sanbase.Signal, for: Any do
   end
 
   defp send_email(
-         %{
-           user: %Sanbase.Auth.User{id: user_id},
-           trigger: %{settings: %{payload: payload_map}}
-         },
+         %{user: %Sanbase.Auth.User{id: user_id}, trigger: %{settings: %{payload: payload_map}}},
          _max_signals_to_send
        ) do
     Logger.warn(
       "User with id #{user_id} does not have an email linked or the email notifications are disabled, so an alert cannot be sent."
     )
 
-    payload_map
-    |> Enum.map(fn {identifier, _payload} ->
-      {identifier, {:error, "No email linked for user with id #{user_id}"}}
-    end)
+    Enum.map(payload_map, fn {identifier, _payload} -> {identifier, {:error, :no_email}} end)
   end
 
   defp send_telegram(
@@ -99,17 +87,13 @@ defimpl Sanbase.Signal, for: Any do
   end
 
   defp send_telegram(
-         %{
-           user: %Sanbase.Auth.User{id: id},
-           trigger: %{settings: %{payload: payload_map}}
-         },
+         %{user: %{id: id}, trigger: %{settings: %{payload: payload_map}}},
          _max_signals_to_send
        ) do
     Logger.warn("User with id #{id} does not have a telegram linked, so an alert cannot be sent.")
 
-    payload_map
-    |> Enum.map(fn {identifier, _payload} ->
-      {identifier, {:error, "No telegram linked for user with #{id}"}}
+    Enum.map(payload_map, fn {identifier, _payload} ->
+      {identifier, {:error, :no_telegram}}
     end)
   end
 

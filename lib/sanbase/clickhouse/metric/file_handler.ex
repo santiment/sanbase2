@@ -37,18 +37,21 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   @makerdao_file "metric_files/makerdao_metrics.json"
   @label_file "metric_files/label_metrics.json"
   @defi_file "metric_files/defi_metrics.json"
+  @balance_and_flow_label_file "metric_files/balance_and_flow_labeled_metrics.json"
 
   @external_resource metrics_file = Path.join(__DIR__, @metrics_file)
   @external_resource holders_file = Path.join(__DIR__, @holders_file)
   @external_resource makerdao_file = Path.join(__DIR__, @makerdao_file)
   @external_resource label_file = Path.join(__DIR__, @label_file)
   @external_resource defi_file = Path.join(__DIR__, @defi_file)
+  @external_resource balance_and_flow_label_file = Path.join(__DIR__, @balance_and_flow_label_file)
 
   @metrics_json (File.read!(metrics_file) |> Jason.decode!()) ++
                   (File.read!(holders_file) |> Jason.decode!()) ++
                   (File.read!(makerdao_file) |> Jason.decode!()) ++
                   (File.read!(label_file) |> Jason.decode!()) ++
-                  (File.read!(defi_file) |> Jason.decode!())
+                  (File.read!(defi_file) |> Jason.decode!()) ++
+                  (File.read!(balance_and_flow_label_file) |> Jason.decode!())
 
   @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
 

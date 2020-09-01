@@ -131,10 +131,10 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
 
       label =
         project
-        |> Project.has_main_contract_addresses()
+        |> Project.has_main_contract_addresses?()
         |> case do
-          nil -> "main"
-          _ -> nil
+          true -> nil
+          false -> "main"
         end
 
       project

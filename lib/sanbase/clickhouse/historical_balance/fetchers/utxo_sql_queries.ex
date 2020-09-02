@@ -126,4 +126,27 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.UtxoSqlQueries do
     args = [interval, span, addresses, from_unix, to_unix]
     {query, args}
   end
+
+  # type: :received | :send
+  def btc_top_transactions_query(from, to, limit, opts \\ []) do
+    to_unix = DateTime.to_unix(to)
+    from_unix = DateTime.to_unix(from)
+
+    balance_change_expr =
+      case Keyword.get(opts, :type, :funds_recv) do
+        :funds_recv -> "balance - oldBalance"
+        :funds_sent -> "-(balance - oldBalance)"
+      end
+
+    query = """
+    SELECT toUnixTimestamp(dt), address, #{balance_change_expr} as amount, txID
+    FROM btc_balances
+    PREWHERE  amount > 1000 AND dt >= toDateTime(?1) AND dt < toDateTime(?2)
+    ORDER BY amount DESC
+    LIMIT ?3
+    """
+
+    args = [from_unix, to_unix, limit]
+    {query, args}
+  end
 end

@@ -15,19 +15,6 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
   import_types(SanbaseWeb.Graphql.SocialDataTypes)
 
   object :social_data_queries do
-    @desc "Fetch social daily active users in twitter and telegram"
-    field :social_active_users, list_of(:active_users) do
-      meta(access: :free)
-
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-      arg(:interval, :interval, default_value: "1d")
-      arg(:source, non_null(:active_users_sources))
-
-      complexity(&Complexity.from_to_interval/3)
-      cache_resolve(&SocialDataResolver.social_active_users/3)
-    end
-
     field :popular_search_terms, list_of(:popular_search_term) do
       meta(access: :free)
 

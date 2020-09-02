@@ -316,6 +316,67 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
     end
   end
 
+  describe "metrics by source selector" do
+    test "social active users test with success response", context do
+      %{conn: conn, from: from, to: to, interval: interval} = context
+
+      resp = """
+      {"data":{"#{from}":12,"#{to}":18}}
+      """
+
+      Sanbase.Mock.prepare_mock2(
+        &HTTPoison.get/3,
+        {:ok, %HTTPoison.Response{body: resp, status_code: 200}}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          get_timeseries_metric(
+            conn,
+            "social_active_users",
+            :source,
+            "telegram",
+            from,
+            to,
+            interval
+          )
+          |> extract_timeseries_data()
+
+        assert result == [
+                 %{"value" => 12.0, "datetime" => from |> DateTime.to_iso8601()},
+                 %{"value" => 18.0, "datetime" => to |> DateTime.to_iso8601()}
+               ]
+      end)
+    end
+
+    test "social active users test with empty response", context do
+      %{conn: conn, from: from, to: to, interval: interval} = context
+
+      resp = """
+      {"data":{}}
+      """
+
+      Sanbase.Mock.prepare_mock2(
+        &HTTPoison.get/3,
+        {:ok, %HTTPoison.Response{body: resp, status_code: 200}}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        result =
+          get_timeseries_metric(
+            conn,
+            "social_active_users",
+            :source,
+            "telegram",
+            from,
+            to,
+            interval
+          )
+          |> extract_timeseries_data()
+
+        assert result == []
+      end)
+    end
+  end
+
   # Private functions
 
   defp get_timeseries_metric(conn, metric, selector_key, selector_value, from, to, interval) do

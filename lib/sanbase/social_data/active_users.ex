@@ -9,7 +9,8 @@ defmodule Sanbase.SocialData.ActiveUsers do
 
   @recv_timeout 25_000
 
-  def social_active_users(from, to, interval, source) do
+  def social_active_users(%{source: source}, from, to, interval)
+      when source in ["telegram", "twitter_crypto"] do
     case active_users_request(from, to, interval, source) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, result} = Jason.decode(body)
@@ -23,6 +24,15 @@ defmodule Sanbase.SocialData.ActiveUsers do
     end
   end
 
+  def social_active_users(%{source: source}, _from, _to, _interval)
+      when source not in ["telegram", "twitter_crypto"] do
+    error_result("Invalid source argument. Source should be one of telegram or twitter_crypto")
+  end
+
+  def social_active_users(_, _, _, _) do
+    error_result("Invalid arguments.")
+  end
+
   defp active_users_request(from, to, interval, source) do
     url = "#{metrics_hub_url()}/social_active_users"
 
@@ -32,7 +42,7 @@ defmodule Sanbase.SocialData.ActiveUsers do
         {"from_timestamp", from |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
         {"to_timestamp", to |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
         {"interval", interval},
-        {"source", source |> Atom.to_string()}
+        {"source", source}
       ]
     ]
 

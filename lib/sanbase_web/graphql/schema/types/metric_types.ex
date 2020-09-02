@@ -36,6 +36,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:text, :string)
     field(:owner, :string)
     field(:label, :string)
+    field(:source, :string)
     field(:holders_count, :integer)
     field(:market_segments, list_of(:string))
     field(:ignored_slugs, list_of(:string))

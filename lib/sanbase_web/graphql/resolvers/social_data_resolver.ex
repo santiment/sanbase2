@@ -9,6 +9,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
 
   @context_words_default_size 10
 
+  def social_active_users(
+        _root,
+        %{from: from, to: to, source: source, interval: interval},
+        _
+      ) do
+    Sanbase.SocialData.ActiveUsers.social_active_users(from, to, interval, source)
+  end
+
   def popular_search_terms(_root, %{from: from, to: to}, _) do
     Sanbase.SocialData.PopularSearchTerm.get(from, to)
   end

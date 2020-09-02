@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
   import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
+  import Mockery
 
   alias Sanbase.SocialData
   alias Sanbase.DateTimeUtils
@@ -378,6 +379,87 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
         assert error =~ @error_response
       end
     end
+  end
+
+  describe "#social_active_users" do
+    test "when response is success", context do
+      success_response =
+        %{
+          "data" => %{
+            "2020-08-23T00:00:00Z" => 11794,
+            "2020-08-24T00:00:00Z" => 18748,
+            "2020-08-25T00:00:00Z" => 20154,
+            "2020-08-26T00:00:00Z" => 23537,
+            "2020-08-27T00:00:00Z" => 24085,
+            "2020-08-28T00:00:00Z" => 18121,
+            "2020-08-29T00:00:00Z" => 14383,
+            "2020-08-30T00:00:00Z" => 13149,
+            "2020-08-31T00:00:00Z" => 15294,
+            "2020-09-01T00:00:00Z" => 22666,
+            "2020-09-02T00:00:00Z" => 11981
+          }
+        }
+        |> Jason.encode!()
+
+      mock(HTTPoison, :get, {:ok, %HTTPoison.Response{body: success_response, status_code: 200}})
+
+      args = %{
+        source: "TELEGRAM",
+        from: "2020-08-23T00:00:00Z",
+        to: "2020-09-02T00:00:00Z"
+      }
+
+      query = social_active_users_query(args)
+      res = execute_and_parse_success_response(context.conn, query, "socialActiveUsers")
+
+      assert res == %{
+               "data" => %{
+                 "socialActiveUsers" => [
+                   %{"datetime" => "2020-08-23T00:00:00Z", "value" => 11794},
+                   %{"datetime" => "2020-08-24T00:00:00Z", "value" => 18748},
+                   %{"datetime" => "2020-08-25T00:00:00Z", "value" => 20154},
+                   %{"datetime" => "2020-08-26T00:00:00Z", "value" => 23537},
+                   %{"datetime" => "2020-08-27T00:00:00Z", "value" => 24085},
+                   %{"datetime" => "2020-08-28T00:00:00Z", "value" => 18121},
+                   %{"datetime" => "2020-08-29T00:00:00Z", "value" => 14383},
+                   %{"datetime" => "2020-08-30T00:00:00Z", "value" => 13149},
+                   %{"datetime" => "2020-08-31T00:00:00Z", "value" => 15294},
+                   %{"datetime" => "2020-09-01T00:00:00Z", "value" => 22666},
+                   %{"datetime" => "2020-09-02T00:00:00Z", "value" => 11981}
+                 ]
+               }
+             }
+    end
+
+    test "when empty response", context do
+      resp = %{"data" => %{}} |> Jason.encode!()
+      mock(HTTPoison, :get, {:ok, %HTTPoison.Response{body: resp, status_code: 200}})
+
+      args = %{
+        source: "TELEGRAM",
+        from: "2020-08-23T00:00:00Z",
+        to: "2020-09-02T00:00:00Z"
+      }
+
+      query = social_active_users_query(args)
+      res = execute_and_parse_success_response(context.conn, query, "socialActiveUsers")
+      assert res == %{"data" => %{"socialActiveUsers" => []}}
+    end
+  end
+
+  defp social_active_users_query(args) do
+    """
+    {
+      socialActiveUsers(
+        source: #{args.source},
+        from: "#{args.from}",
+        to: "#{args.to}"
+        ){
+          datetime
+          value
+        }
+      }
+    """
   end
 
   defp trending_words_query(args) do

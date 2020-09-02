@@ -4,6 +4,11 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   alias SanbaseWeb.Graphql.Resolvers.SocialDataResolver
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
+  enum :active_users_sources do
+    value(:telegram)
+    value(:twitter_crypto)
+  end
+
   enum :trending_words_sources do
     value(:telegram)
     value(:professional_traders_chat)
@@ -55,6 +60,11 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
         {:ok, inserted_at}
       end)
     end
+  end
+
+  object :active_users do
+    field(:datetime, non_null(:datetime))
+    field(:value, non_null(:integer))
   end
 
   object :twitter_mention_count do

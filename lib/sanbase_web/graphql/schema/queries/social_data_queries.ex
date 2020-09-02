@@ -15,6 +15,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
   import_types(SanbaseWeb.Graphql.SocialDataTypes)
 
   object :social_data_queries do
+    @desc "Fetch social daily active users in twitter and telegram"
     field :social_active_users, list_of(:active_users) do
       meta(access: :free)
 

@@ -42,10 +42,13 @@ defmodule Sanbase.SocialData.MetricAdapter do
                                       ["total"] ++ Sanbase.SocialData.SocialHelper.sources(),
                                     do: "#{name}_#{type}_#{source}"
 
+  @active_users_timeseries_metrics ["social_active_users"]
+
   @timeseries_metrics @social_dominance_timeseries_metrics ++
                         @social_volume_timeseries_metrics ++
                         @community_messages_count_timeseries_metrics ++
-                        @sentiment_timeseries_metrics
+                        @sentiment_timeseries_metrics ++
+                        @active_users_timeseries_metrics
 
   @histogram_metrics []
 
@@ -101,6 +104,11 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
     Sanbase.SocialData.sentiment(selector, from, to, interval, source, type)
     |> transform_to_value_pairs(:value)
+  end
+
+  def timeseries_data(metric, %{source: _source} = selector, from, to, interval, _opts)
+      when metric in @active_users_timeseries_metrics do
+    Sanbase.SocialData.social_active_users(selector, from, to, interval)
   end
 
   @impl Sanbase.Metric.Behaviour

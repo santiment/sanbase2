@@ -279,7 +279,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
       filters
       |> Enum.map(fn
         {column, value} when is_binary(value) ->
-          "#{column} = '#{value}'"
+          "lower(#{column}) = '#{value |> String.downcase()}'"
 
         {column, value} when is_number(value) ->
           "#{column} = #{value}"

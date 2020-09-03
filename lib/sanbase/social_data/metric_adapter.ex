@@ -215,6 +215,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     selectors =
       case metric do
         "community_messages_count" <> _ -> [:slug]
+        "social_active_users" -> [:source]
         _ -> [:slug, :text]
       end
 

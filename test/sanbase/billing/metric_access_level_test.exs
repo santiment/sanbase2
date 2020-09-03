@@ -342,7 +342,31 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "mvrv_usd_365d_change_30d",
         "mvrv_usd_change_1d",
         "mvrv_usd_change_7d",
-        "mvrv_usd_change_30d"
+        "mvrv_usd_change_30d",
+        "mean_dollar_invested_age_change_1d",
+        "mean_dollar_invested_age_change_7d",
+        "mean_dollar_invested_age_change_30d",
+        "age_destroyed_5min_change_1d",
+        "age_destroyed_5min_change_7d",
+        "age_destroyed_5min_change_30d",
+        "percent_of_total_supply_on_exchanges_change_1d",
+        "percent_of_total_supply_on_exchanges_change_7d",
+        "percent_of_total_supply_on_exchanges_change_30d",
+        "circulation_usd_180d_change_1d",
+        "circulation_usd_180d_change_7d",
+        "circulation_usd_180d_change_30d",
+        "dormant_circulation_usd_180d_change_1d",
+        "dormant_circulation_usd_180d_change_7d",
+        "dormant_circulation_usd_180d_change_30d",
+        "exchange_inflow_usd_change_1d",
+        "exchange_inflow_usd_change_7d",
+        "exchange_inflow_usd_change_30d",
+        "exchange_outflow_usd_change_1d",
+        "exchange_outflow_usd_change_7d",
+        "exchange_outflow_usd_change_30d",
+        "social_volume_change_1d",
+        "social_volume_change_7d",
+        "social_volume_change_30d"
       ]
       |> Enum.sort()
 

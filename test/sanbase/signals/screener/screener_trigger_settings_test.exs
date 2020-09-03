@@ -100,7 +100,7 @@ defmodule Sanbase.Signal.ScreenerTriggerSettingsTest do
       # Second run
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(ScreenerTriggerSettings)
-             end) =~ "There were no signals triggered of type screener_signal"
+             end) =~ "There were no screener_signal signals triggered"
     end)
   end
 
@@ -149,7 +149,7 @@ defmodule Sanbase.Signal.ScreenerTriggerSettingsTest do
       # Second run
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(ScreenerTriggerSettings)
-             end) =~ "There were no signals triggered of type screener_signal"
+             end) =~ "There were no screener_signal signals triggered"
     end)
   end
 end

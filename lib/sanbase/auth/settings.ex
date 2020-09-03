@@ -35,7 +35,8 @@ defmodule Sanbase.Auth.Settings do
       :hide_privacy_data,
       :is_promoter,
       :paid_with,
-      :signals_per_day
+      :signals_per_day,
+      :signals_fired
     ])
     |> normalize_newsletter_subscription(
       :newsletter_subscription,

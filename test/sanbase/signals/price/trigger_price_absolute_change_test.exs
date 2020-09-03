@@ -149,7 +149,7 @@ defmodule Sanbase.Signal.TriggerPriceAbsoluteChangeTest do
 
         assert capture_log(fn ->
                  Sanbase.Signal.Scheduler.run_signal(PriceAbsoluteChangeSettings)
-               end) =~ "There were no signals triggered of type"
+               end) =~ "There were no price_absolute_change signals triggered"
       end)
     end
   end

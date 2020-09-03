@@ -95,7 +95,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
 
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
-             end) =~ "There were no signals triggered of type"
+             end) =~ "There were no trending_words signals triggered"
     end
   end
 
@@ -107,7 +107,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
 
     assert capture_log(fn ->
              Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
-           end) =~ "There were no signals triggered of type"
+           end) =~ "There were no trending_words signals triggered"
   end
 
   test "Non repeating signals are deactivated", context do

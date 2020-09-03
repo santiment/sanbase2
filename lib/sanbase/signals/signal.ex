@@ -3,24 +3,36 @@ defprotocol Sanbase.Signal do
 end
 
 defimpl Sanbase.Signal, for: Any do
-  require Logger
+  def send(%{user: user, trigger: %{settings: %{channel: channel}}} = user_trigger) do
+    # Mutex is needed, so the `max_signals_to_send` can be properly counted and
+    # updated. This can happen because the sending of signals happens with a
+    # concurrency of 20, so 2+ processes can be sending notifications to a user
+    # at the same time and compute the same `max_signals_to_send` which would
+    # lead to exceeded the given limit. Without the lock the notification for
+    # exceeded the limit can be sent more than once as well.
+    lock = Mutex.await(Sanbase.SignalMutex, {:user, user.id}, 30_000)
 
-  def send(%{trigger: %{settings: %{channel: channel}}} = user_trigger) do
     max_signals_to_send = max_signals_to_send(user_trigger)
 
-    # This will return a list of `{identifier, telegram_sent_status}` or `{:error, error}`
-    # If a signal is sent to more than 1 channel this is handled properly by
-    # the caller that puts the triggered identifiers in a map, so duplicates
-    # disappear
-    channel
-    |> List.wrap()
-    |> Enum.map(fn
-      "telegram" -> send_telegram(user_trigger, max_signals_to_send)
-      "email" -> send_email(user_trigger, max_signals_to_send)
-      %{webhook: webhook_url} -> send_webhook(user_trigger, webhook_url, max_signals_to_send)
-      "web_push" -> []
-    end)
-    |> List.flatten()
+    # This will return a list of `{identifier, telegram_sent_status}` or
+    # `{identifier, {:error, error}}`. If a signal is sent to more than 1 channel
+    # this is handled properly by the caller that puts the triggered identifiers
+    # in a map, so duplicates disappear.
+    result =
+      channel
+      |> List.wrap()
+      |> Enum.map(fn
+        "telegram" -> send_telegram(user_trigger, max_signals_to_send)
+        "email" -> send_email(user_trigger, max_signals_to_send)
+        %{webhook: webhook_url} -> send_webhook(user_trigger, webhook_url, max_signals_to_send)
+        "web_push" -> []
+      end)
+      |> List.flatten()
+
+    update_user_signals_sent_per_day(user, result)
+    Mutex.release(Sanbase.SignalMutex, lock)
+
+    result
   end
 
   defp send_webhook(
@@ -58,14 +70,12 @@ defimpl Sanbase.Signal, for: Any do
   end
 
   defp send_email(
-         %{user: %Sanbase.Auth.User{id: user_id}, trigger: %{settings: %{payload: payload_map}}},
+         %{user: %{id: user_id}, trigger: %{settings: %{payload: payload_map}}},
          _max_signals_to_send
        ) do
-    Logger.warn(
-      "User with id #{user_id} does not have an email linked or the email notifications are disabled, so an alert cannot be sent."
-    )
-
-    Enum.map(payload_map, fn {identifier, _payload} -> {identifier, {:error, :no_email}} end)
+    Enum.map(payload_map, fn {identifier, _payload} ->
+      {identifier, {:error, %{reason: :no_email, user_id: user_id}}}
+    end)
   end
 
   defp send_telegram(
@@ -87,13 +97,11 @@ defimpl Sanbase.Signal, for: Any do
   end
 
   defp send_telegram(
-         %{user: %{id: id}, trigger: %{settings: %{payload: payload_map}}},
+         %{user: %{id: user_id}, trigger: %{settings: %{payload: payload_map}}},
          _max_signals_to_send
        ) do
-    Logger.warn("User with id #{id} does not have a telegram linked, so an alert cannot be sent.")
-
     Enum.map(payload_map, fn {identifier, _payload} ->
-      {identifier, {:error, :no_telegram}}
+      {identifier, {:error, %{reason: :no_telegram, user_id: user_id}}}
     end)
   end
 
@@ -105,14 +113,17 @@ defimpl Sanbase.Signal, for: Any do
   end
 
   defp max_signals_to_send(%{user: user}) do
-    user_settings = Sanbase.Auth.UserSettings.settings_for(user)
+    # Force the settings to be fetched and not taken from the user struct
+    # This is done so while evaluating signals, the signals fired will be properly
+    # updated
+    user_settings = Sanbase.Auth.UserSettings.settings_for(%Sanbase.Auth.User{id: user.id})
 
     %{
       signals_fired: signals_fired,
       signals_per_day: signals_per_day
     } = user_settings
 
-    notifications_sent_today = Map.get(signals_fired, Date.utc_today(), 0)
+    notifications_sent_today = Map.get(signals_fired, Date.utc_today() |> to_string(), 0)
     Enum.max([signals_per_day - notifications_sent_today, 0])
   end
 
@@ -167,5 +178,40 @@ defimpl Sanbase.Signal, for: Any do
       end)
 
     result
+  end
+
+  defp update_user_signals_sent_per_day(user, sent_list) do
+    %{signals_fired: signals_fired, signals_per_day: signals_per_day} =
+      Sanbase.Auth.UserSettings.settings_for(%Sanbase.Auth.User{id: user.id})
+
+    map_key = Date.utc_today() |> to_string()
+    count = Enum.count(sent_list, fn {_, result} -> result == :ok end)
+    signals_fired_today = Map.get(signals_fired, map_key, 0)
+
+    # If this trigger is the one that went over the allowed signals per day
+    # send a message to the user. Only one such notification per day should be sent
+    # TODO: Rework by finding all channels used by the user and sending the notificaiton
+    # to them - it could be only telegram, only email or both.
+    case signals_fired_today < signals_per_day and signals_fired_today + count >= signals_per_day do
+      false ->
+        :ok
+
+      true ->
+        Sanbase.Telegram.send_message(
+          user,
+          """
+          The allowed number of signal notifications per day has been reached.
+          To see the full list of fired signals, please check your [feed on Sanbase](#{
+            SanbaseWeb.Endpoint.feed_url()
+          }).
+          If you want to receive more notifications per day, please visit your
+          [account settings on Sanbase](#{SanbaseWeb.Endpoint.user_account_url()})
+          """
+        )
+    end
+
+    signals_fired = Map.put(signals_fired, map_key, count + signals_fired_today)
+
+    Sanbase.Auth.UserSettings.update_settings(user, %{signals_fired: signals_fired})
   end
 end

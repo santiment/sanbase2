@@ -82,11 +82,9 @@ defmodule Sanbase.Signal.Scheduler do
             {user_trigger, []}
 
           list when is_list(list) ->
-            {:ok,
-             %{last_triggered: last_triggered, total_sent_succesfully: total_sent_succesfully}} =
+            {:ok, %{last_triggered: last_triggered}} =
               handle_send_results_list(user_trigger, list)
 
-            update_user_signals_sent_per_day(user_trigger.user, total_sent_succesfully)
             user_trigger = update_trigger_last_triggered(user_trigger, last_triggered)
             {user_trigger, list}
         end
@@ -96,12 +94,6 @@ defmodule Sanbase.Signal.Scheduler do
       map_type: :map
     )
     |> Enum.unzip()
-  end
-
-  defp update_user_signals_sent_per_day(user, count) do
-    %{signals_fired: signals_fired} = Sanbase.Auth.UserSettings.settings_for(user)
-    signals_fired = Map.update(signals_fired, Date.utc_today(), count, &(&1 + count))
-    Sanbase.Auth.UserSettings.update_settings(user, %{signals_fired: signals_fired})
   end
 
   # Note that the `user_trigger` that came as an argument is returned with
@@ -214,18 +206,18 @@ defmodule Sanbase.Signal.Scheduler do
   end
 
   defp log_sent_messages_stats([], type) do
-    Logger.info("There were no signals triggered of type #{type}")
+    Logger.info("There were no #{type} signals triggered.")
   end
 
   defp log_sent_messages_stats(list, type) do
-    successful_messages = list |> Enum.count(fn {_elem, status} -> status == :ok end)
+    successful_messages_count = list |> Enum.count(fn {_elem, status} -> status == :ok end)
 
     for {_, {:error, error}} <- list do
-      Logger.warn("Cannot send a signal. Reason: #{inspect(error)}")
+      Logger.warn("Cannot send a #{type} signal. Reason: #{inspect(error)}")
     end
 
     Logger.info(
-      "In total #{successful_messages}/#{length(list)} #{type} signals were sent successfully"
+      "In total #{successful_messages_count}/#{length(list)} #{type} signals were sent successfully."
     )
   end
 

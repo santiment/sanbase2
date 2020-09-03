@@ -1,9 +1,9 @@
 #!/bin/bash
 
 if [ $# -eq 0 ]; then
-  tests_to_execute="test_all"
+  tests_to_execute="test"
 else
-  tests_to_execute="test_all $@"
+  tests_to_execute="test $@"
 fi
 
 test_command="mix $tests_to_execute"

@@ -30,7 +30,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
 
       assert Enum.all?(
                metadata["availableSelectors"],
-               &Enum.member?(["SLUG", "TEXT", "LABEL", "OWNER", "HOLDERS_COUNT"], &1)
+               &Enum.member?(["SLUG", "TEXT", "LABEL", "OWNER", "HOLDERS_COUNT", "SOURCE"], &1)
              )
 
       assert Enum.all?(

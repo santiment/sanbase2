@@ -13,7 +13,7 @@ RUN apk add --no-cache make \
 
 RUN mix local.hex --force
 RUN mix local.rebar --force
-RUN mix archive.install --force https://github.com/phoenixframework/archives/raw/master/phx_new.ez
+RUN mix archive.install hex phx_new 1.5.3
 
 #RUN mix format --check-formatted
 

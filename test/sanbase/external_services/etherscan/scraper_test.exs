@@ -1,6 +1,8 @@
 defmodule Sanbase.ExternalServices.Etherscan.ScraperTest do
   use Sanbase.DataCase, async: false
 
+  import Sanbase.Factory
+
   alias Sanbase.ExternalServices.Etherscan.Scraper
   alias Sanbase.ExternalServices.ProjectInfo
 
@@ -34,5 +36,26 @@ defmodule Sanbase.ExternalServices.Etherscan.ScraperTest do
              facebook_link: "https://www.facebook.com/ethstatus",
              whitepaper_link: "https://status.im/whitepaper.pdf"
            }
+  end
+
+  test "scraping a project with a main contract doesn't make the new contract main" do
+    main_contract = build(:contract_address, label: "main")
+    ordinary_contract = build(:contract_address)
+    third_contract = build(:contract_address)
+
+    project =
+      insert(:random_project,
+        contract_addresses: [main_contract, ordinary_contract]
+      )
+
+    project_info_map = %ProjectInfo{
+      slug: "santiment",
+      main_contract_address: third_contract.address
+    }
+
+    File.read!(Path.join(__DIR__, "token_summary_page.html"))
+    |> Scraper.parse_token_page!(project_info_map)
+
+    assert Enum.find(project.contract_addresses, &(&1.address == third_contract.label != "main"))
   end
 end

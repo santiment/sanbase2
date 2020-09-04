@@ -1295,7 +1295,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Dex Traders to Whale Flow",
+    "human_readable_name": "DEX Traders to Whale Flow",
     "name": "dex_traders_to_whale_flow",
     "metric": "dex_traders_to_whale_flow",
     "version": "2019-01-01",
@@ -1314,7 +1314,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Whale to Dex Traders Flow",
+    "human_readable_name": "Whale to DEX Traders Flow",
     "name": "whale_to_dex_traders_flow",
     "metric": "whale_to_dex_traders_flow",
     "version": "2019-01-01",
@@ -1409,7 +1409,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Other to Dex Traders Flow",
+    "human_readable_name": "Other to DEX Traders Flow",
     "name": "other_to_dex_traders_flow",
     "metric": "other_to_dex_traders_flow",
     "version": "2019-01-01",
@@ -1428,7 +1428,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Dex Traders to Other Flow",
+    "human_readable_name": "DEX Traders to Other Flow",
     "name": "dex_traders_to_other_flow",
     "metric": "dex_traders_to_other_flow",
     "version": "2019-01-01",

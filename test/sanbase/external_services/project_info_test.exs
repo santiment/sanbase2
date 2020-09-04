@@ -2,6 +2,7 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
   use Sanbase.DataCase, async: false
 
   import ExUnit.CaptureLog
+  import Sanbase.Factory
 
   alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.Model.{Project, Ico}
@@ -150,5 +151,31 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
                project
              )
            end) =~ "has already been taken"
+  end
+
+  test "updating the project info of a project with a contract address" do
+    curr_contract = build(:contract_address)
+    contract = build(:contract_address)
+
+    project =
+      %Project{
+        slug: "santiment",
+        name: "Santiment",
+        main_contract_address: curr_contract.address,
+        contract_addresses: [curr_contract]
+      }
+      |> Repo.insert!()
+
+    {:ok, project} =
+      ProjectInfo.update_project(
+        %ProjectInfo{
+          name: "Santiment",
+          slug: "santiment",
+          main_contract_address: contract.address
+        },
+        project
+      )
+
+    assert Enum.find(project.contract_addresses, &(&1.address == contract.label != "main"))
   end
 end

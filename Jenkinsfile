@@ -15,7 +15,7 @@ slaveTemplates = new podTemplates()
 
 slaveTemplates.dockerTemplate { label ->
   node(label) {
-    stage('Run Tests') {
+    stage('Build with test env') {
       container('docker') {
         def scmVars = checkout scm
         def gitHead = scmVars.GIT_COMMIT.substring(0, 7)
@@ -24,6 +24,13 @@ slaveTemplates.dockerTemplate { label ->
           -t sanbase-test:${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID} \
           -f Dockerfile-test . \
           --progress plain"
+      }
+    }
+
+    stage('Run Tests') {
+      container('docker') {
+        def scmVars = checkout scm
+        def gitHead = scmVars.GIT_COMMIT.substring(0, 7)
 
         sh "docker run -e POSTGRES_PASSWORD=password \
            --rm --name test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID} \
@@ -48,7 +55,7 @@ slaveTemplates.dockerTemplate { label ->
     }
 
     if (env.BRANCH_NAME == 'master') {
-      stage('Publish') {
+      stage('Build with prod env & Publish') {
           withCredentials([
             string(
               credentialsId: 'SECRET_KEY_BASE',

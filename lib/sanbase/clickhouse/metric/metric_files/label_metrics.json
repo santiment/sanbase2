@@ -7,7 +7,7 @@
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -24,7 +24,7 @@
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -41,7 +41,7 @@
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -58,7 +58,7 @@
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -75,7 +75,7 @@
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -92,7 +92,7 @@
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -109,7 +109,7 @@
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",

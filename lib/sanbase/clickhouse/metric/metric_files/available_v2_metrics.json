@@ -1939,7 +1939,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",

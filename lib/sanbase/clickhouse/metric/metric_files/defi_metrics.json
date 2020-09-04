@@ -5,11 +5,9 @@
     "metric": "defipulse_total_value_locked_eth",
     "version": "2020-05-27",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -24,11 +22,9 @@
     "metric": "defipulse_total_value_locked_usd",
     "version": "2020-05-27",
     "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
+    "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",

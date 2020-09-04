@@ -349,7 +349,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
   end
 
   defp community_messages_count_metrics() do
-    Sanbase.Metric.available_metrics()
+    Sanbase.SocialData.MetricAdapter.available_metrics()
     |> Enum.filter(fn
       "community_messages_count" <> _ -> true
       _ -> false
@@ -358,7 +358,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
   end
 
   defp social_volume_metrics() do
-    Sanbase.Metric.available_metrics()
+    Sanbase.SocialData.MetricAdapter.available_metrics()
     |> Enum.filter(fn
       "social_volume" <> _ -> true
       _ -> false
@@ -366,7 +366,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
   end
 
   defp social_dominance_metrics() do
-    Sanbase.Metric.available_metrics()
+    Sanbase.SocialData.MetricAdapter.available_metrics()
     |> Enum.filter(fn
       "social_dominance" <> _ -> true
       _ -> false

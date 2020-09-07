@@ -116,6 +116,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "circulation_30d",
         "circulation_7d",
         "circulation_1d",
+        "circulation_usd_180d",
         # dormant ciruclation
         "dormant_circulation_10y",
         "dormant_circulation_5y",
@@ -124,6 +125,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "dormant_circulation_365d",
         "dormant_circulation_180d",
         "dormant_circulation_90d",
+        "dormant_circulation_usd_180d",
         # other
         "mean_age",
         "mean_dollar_invested_age",
@@ -145,6 +147,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "exchange_inflow",
         "exchange_outflow",
         "exchange_balance",
+        "exchange_inflow_usd",
+        "exchange_outflow_usd",
         "age_consumed",
         "age_destroyed",
         "nvt",

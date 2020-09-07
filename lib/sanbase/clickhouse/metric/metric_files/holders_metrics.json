@@ -1054,7 +1054,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Percent Of Holders With Balance Over 10M",
+    "human_readable_name": "Percent Of Combined Balance Of Holders With Balance Over 10M",
     "name": "percent_of_holders_distribution_combined_balance_10M_to_inf",
     "metric": "percent_of_holders_distribution_amount_inf",
     "version": "2019-01-01",

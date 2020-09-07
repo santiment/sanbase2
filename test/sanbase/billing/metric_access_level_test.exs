@@ -161,8 +161,12 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "payments_count",
         "transactions_count",
         "fees",
+        "fees_usd",
+        "average_fees_usd",
+        "median_fees_usd",
         "network_circulation_usd_1d",
         "fees_to_network_circulation_usd_1d",
+        "total_supply",
         # social metrics
         "community_messages_count_telegram",
         "community_messages_count_total",

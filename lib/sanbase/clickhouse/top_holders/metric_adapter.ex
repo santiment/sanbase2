@@ -161,6 +161,9 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
       else
         {:ok, []}
       end
+    else
+      {:error, {:missing_contract, _}} -> {:ok, []}
+      error -> error
     end
   end
 

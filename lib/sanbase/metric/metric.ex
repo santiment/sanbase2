@@ -387,12 +387,16 @@ defmodule Sanbase.Metric do
   @spec available_metrics_for_slug(any) ::
           {:ok, list(String.t())} | {:nocache, {:ok, list(String.t())}}
   def available_metrics_for_slug(selector) do
-    metrics_in_modules =
-      Sanbase.Parallel.map(@metric_modules, fn module -> module.available_metrics(selector) end,
-        ordered: false,
-        max_concurrency: 8,
-        timeout: 60_000
-      )
+    parallel_opts = [ordered: false, max_concurrency: 8, timeout: 60_000]
+
+    parallel_fun = fn module ->
+      cache_key =
+        {__MODULE__, :available_metrics_for_slug, module, selector} |> Sanbase.Cache.hash()
+
+      Sanbase.Cache.get_or_store(cache_key, fn -> module.available_metrics(selector) end)
+    end
+
+    metrics_in_modules = Sanbase.Parallel.map(@metric_modules, parallel_fun, parallel_opts)
 
     available_metrics =
       Enum.flat_map(metrics_in_modules, fn

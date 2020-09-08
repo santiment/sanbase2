@@ -14,7 +14,7 @@ config :sanbase,
   ecto_repos: [Sanbase.Repo],
   available_slugs_module: Sanbase.AvailableSlugs
 
-config :phoenix, :json_library, Jason
+config :phoenix, json_library: Jason, plug_init_mode: :runtime
 
 config :postgrex, :json_library, Jason
 

@@ -19,11 +19,16 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
             restrict_to: 3,
             check_from_to_both_outside: 1}
 
+  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
+
   alias Absinthe.Resolution
   alias Sanbase.Billing.{Subscription, GraphqlSchema, Plan, Product}
 
   @freely_available_slugs ["santiment"]
-  @minimal_datetime_param ~U[2009-01-01 00:00:00Z]
+  @minimal_datetime_param from_iso8601!("2009-01-01T00:00:00Z")
+  @free_subscription Subscription.free_subscription()
+  @extension_metrics Plan.AccessChecker.extension_metrics()
+  @extension_metric_product_map GraphqlSchema.extension_metric_product_map()
 
   def call(resolution, opts) do
     # First call `check_from_to_params` and then pass the execution to do_call/2
@@ -67,7 +72,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
            resolution
        ) do
     plan = context[:auth][:plan] || :free
-    subscription = context[:auth][:subscription] || Subscription.free_subscription()
+    subscription = context[:auth][:subscription] || @free_subscription
     product_id = subscription.plan.product_id || context.product_id
     product = Product.code_by_id(product_id)
 
@@ -119,12 +124,12 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   # Some specific queries/metrics are available only when a special extension is
   # present.
   defp do_call(%Resolution{context: %{__query_or_metric_atom_name__: query}} = resolution, _)
-       when query == {:query, :exchange_wallets} do
+       when query in @extension_metrics do
     case resolution.context[:auth][:current_user] do
       %Sanbase.Auth.User{} = user ->
         product_ids = Subscription.user_subscriptions_product_ids(user)
 
-        if Map.get(GraphqlSchema.extension_metric_product_map(), query) in product_ids do
+        if Map.get(@extension_metric_product_map, query) in product_ids do
           resolution
         else
           Resolution.put_result(resolution, {:error, :unauthorized})
@@ -172,7 +177,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
          middleware_args,
          query
        ) do
-    subscription = context[:auth][:subscription] || Subscription.free_subscription()
+    subscription = context[:auth][:subscription] || @free_subscription
     product_id = subscription.plan.product_id || context.product_id
 
     historical_data_in_days =

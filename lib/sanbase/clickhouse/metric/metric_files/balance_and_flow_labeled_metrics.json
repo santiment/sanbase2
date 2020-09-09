@@ -7,7 +7,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -24,7 +24,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -41,7 +41,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -58,7 +58,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -75,7 +75,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -92,7 +92,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -109,7 +109,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -126,7 +126,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -143,7 +143,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -160,7 +160,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -177,7 +177,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -194,7 +194,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -211,7 +211,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -228,7 +228,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -245,7 +245,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -262,7 +262,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -279,7 +279,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -296,7 +296,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -313,7 +313,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -330,7 +330,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -347,7 +347,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -364,7 +364,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -381,7 +381,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -398,7 +398,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -415,7 +415,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -432,7 +432,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -449,7 +449,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -466,7 +466,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -483,7 +483,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -500,7 +500,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -517,7 +517,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -534,7 +534,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -551,7 +551,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -568,7 +568,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -585,7 +585,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -602,7 +602,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -619,7 +619,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -636,7 +636,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -653,7 +653,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -670,7 +670,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -687,7 +687,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -704,7 +704,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -721,7 +721,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -738,7 +738,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -755,7 +755,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -772,7 +772,691 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DeFi to CEXes Flow",
+    "name": "defi_to_cexes_flow",
+    "metric": "defi_to_cexes_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "CEXes to DeFi Flow",
+    "name": "cexes_to_defi_flow",
+    "metric": "cexes_to_defi_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DeFi CEX Balance",
+    "name": "defi_cex_balance",
+    "metric": "defi_cex_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Whale to CEXes Flow",
+    "name": "whale_to_cexes_flow",
+    "metric": "whale_to_cexes_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "CEXes to Whale Flow",
+    "name": "cexes_to_whale_flow",
+    "metric": "cexes_to_whale_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Whale CEX Balance",
+    "name": "whale_cex_balance",
+    "metric": "whale_cex_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DEX to CEXes Flow",
+    "name": "dex_to_cexes_flow",
+    "metric": "dex_to_cexes_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "CEXes to DEX Flow",
+    "name": "cexes_to_dex_flow",
+    "metric": "cexes_to_dex_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DEX CEX Balance",
+    "name": "dex_cex_balance",
+    "metric": "dex_cex_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Other to CEXes Flow",
+    "name": "other_to_cexes_flow",
+    "metric": "other_to_cexes_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "CEXes to Other Flow",
+    "name": "cexes_to_other_flow",
+    "metric": "cexes_to_other_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Other CEX Balance",
+    "name": "other_cex_balance",
+    "metric": "other_cex_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DeFi to DEXes Flow",
+    "name": "defi_to_dexes_flow",
+    "metric": "defi_to_dexes_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DEXes to DeFi Flow",
+    "name": "dexes_to_defi_flow",
+    "metric": "dexes_to_defi_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DeFi DEX Balance",
+    "name": "defi_dex_balance",
+    "metric": "defi_dex_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Whale to DEXes Flow",
+    "name": "whale_to_dexes_flow",
+    "metric": "whale_to_dexes_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DEXes to Whale Flow",
+    "name": "dexes_to_whale_flow",
+    "metric": "dexes_to_whale_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Whale DEX Balance",
+    "name": "whale_dex_balance",
+    "metric": "whale_dex_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Other to DEXes Flow",
+    "name": "other_to_dexes_flow",
+    "metric": "other_to_dexes_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DEXes to Other Flow",
+    "name": "dexes_to_other_flow",
+    "metric": "dexes_to_other_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Other DEX Balance",
+    "name": "other_dex_balance",
+    "metric": "other_dex_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Whale to DeFi Flow",
+    "name": "whale_to_defi_flow",
+    "metric": "whale_to_defi_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DeFi to Whale Flow",
+    "name": "defi_to_whale_flow",
+    "metric": "defi_to_whale_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Whale DeFi Balance",
+    "name": "whale_defi_balance",
+    "metric": "whale_defi_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Other to DeFi Flow",
+    "name": "other_to_defi_flow",
+    "metric": "other_to_defi_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DeFi to Other Flow",
+    "name": "defi_to_other_flow",
+    "metric": "defi_to_other_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Other DeFi Balance",
+    "name": "other_defi_balance",
+    "metric": "other_defi_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DEX Traders to Whale Flow",
+    "name": "dex_traders_to_whale_flow",
+    "metric": "dex_traders_to_whale_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Whale to DEX Traders Flow",
+    "name": "whale_to_dex_traders_flow",
+    "metric": "whale_to_dex_traders_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DEX Traders Whale Balance",
+    "name": "dex_traders_whale_balance",
+    "metric": "dex_traders_whale_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Other to Whales Flow",
+    "name": "other_to_whale_flow",
+    "metric": "other_to_whale_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Whales to Other Flow",
+    "name": "whale_to_other_flow",
+    "metric": "whale_to_other_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Other Whale Balance",
+    "name": "other_whale_balance",
+    "metric": "other_whale_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Other to DEX Traders Flow",
+    "name": "other_to_dex_traders_flow",
+    "metric": "other_to_dex_traders_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DEX Traders to Other Flow",
+    "name": "dex_traders_to_other_flow",
+    "metric": "dex_traders_to_other_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Other DEX Traders Balance",
+    "name": "other_dex_traders_balance",
+    "metric": "other_dex_traders_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",

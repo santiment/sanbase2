@@ -3,8 +3,6 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
-  alias Sanbase.Metric
-
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
@@ -149,15 +147,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     contains two or more data points, the data must be aggregated into a single
     data point. The default aggregation that is applied is this `default_aggregation`.
     The default aggregation can be changed by the `aggregation` parameter of
-    the `timeseriesData` field. Available aggregations are:
-    [
-    #{
-      (Metric.available_aggregations() -- [nil])
-      |> Enum.map(&Atom.to_string/1)
-      |> Enum.map(&String.upcase/1)
-      |> Enum.join(",")
-    }
-    ]
+    the `timeseriesData` field.
     """
     field(:default_aggregation, :aggregation)
 

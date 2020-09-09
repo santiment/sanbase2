@@ -7,83 +7,22 @@ defmodule Sanbase.Metric do
   @metric_modules list and everything else happens automatically.
   """
 
-  alias Sanbase.Clickhouse
-
-  @metric_modules [
-    Clickhouse.Github.MetricAdapter,
-    Clickhouse.Metric,
-    Sanbase.SocialData.MetricAdapter,
-    Sanbase.Price.MetricAdapter,
-    Sanbase.Twitter.MetricAdapter,
-    Sanbase.Clickhouse.TopHolders.MetricAdapter
-  ]
-
-  Module.register_attribute(__MODULE__, :aggregations_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :aggregations_per_metric_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :free_metrics_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :restricted_metrics_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :access_map_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :min_plan_map_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :timeseries_metric_module_mapping_acc, accumulate: true)
-  Module.register_attribute(__MODULE__, :histogram_metric_module_mapping_acc, accumulate: true)
-
-  for module <- @metric_modules do
-    @aggregations_acc module.available_aggregations()
-    @free_metrics_acc module.free_metrics()
-    @restricted_metrics_acc module.restricted_metrics()
-    @access_map_acc module.access_map()
-    @min_plan_map_acc module.min_plan_map()
-
-    @aggregations_per_metric_acc Enum.into(
-                                   module.available_metrics(),
-                                   %{},
-                                   fn metric ->
-                                     {:ok, %{available_aggregations: aggr}} =
-                                       module.metadata(metric)
-
-                                     {metric, [nil] ++ aggr}
-                                   end
-                                 )
-
-    @timeseries_metric_module_mapping_acc Enum.map(
-                                            module.available_timeseries_metrics(),
-                                            fn metric -> %{metric: metric, module: module} end
-                                          )
-
-    @histogram_metric_module_mapping_acc Enum.map(
-                                           module.available_histogram_metrics(),
-                                           fn metric -> %{metric: metric, module: module} end
-                                         )
-  end
-
-  @aggregations List.flatten(@aggregations_acc) |> Enum.uniq()
-  @free_metrics List.flatten(@free_metrics_acc) |> Enum.uniq()
-  @restricted_metrics List.flatten(@restricted_metrics_acc) |> Enum.uniq()
-  @timeseries_metric_module_mapping List.flatten(@timeseries_metric_module_mapping_acc)
-                                    |> Enum.uniq()
-
-  @histogram_metric_module_mapping List.flatten(@histogram_metric_module_mapping_acc)
-                                   |> Enum.uniq()
-
-  @metric_module_mapping (@histogram_metric_module_mapping ++ @timeseries_metric_module_mapping)
-                         |> Enum.uniq()
-
-  @metric_to_module_map @metric_module_mapping
-                        |> Enum.into(%{}, fn %{metric: metric, module: module} ->
-                          {metric, module}
-                        end)
-
-  @aggregations_per_metric Enum.reduce(@aggregations_per_metric_acc, %{}, &Map.merge(&1, &2))
-  @access_map Enum.reduce(@access_map_acc, %{}, &Map.merge(&1, &2))
-  @min_plan_map Enum.reduce(@min_plan_map_acc, %{}, &Map.merge(&1, &2))
-
-  @metrics Enum.map(@metric_module_mapping, & &1.metric)
-  @timeseries_metrics Enum.map(@timeseries_metric_module_mapping, & &1.metric)
-  @histogram_metrics Enum.map(@histogram_metric_module_mapping, & &1.metric)
-
-  @metrics_mapset MapSet.new(@metrics)
-  @timeseries_metrics_mapset MapSet.new(@timeseries_metrics)
-  @histogram_metrics_mapset MapSet.new(@histogram_metrics)
+  @access_map Sanbase.Metric.Helper.access_map()
+  @aggregations Sanbase.Metric.Helper.aggregations()
+  @aggregations_per_metric Sanbase.Metric.Helper.aggregations_per_metric()
+  @free_metrics Sanbase.Metric.Helper.free_metrics()
+  @histogram_metric_module_mapping Sanbase.Metric.Helper.histogram_metric_module_mapping()
+  @histogram_metrics Sanbase.Metric.Helper.histogram_metrics()
+  @histogram_metrics_mapset Sanbase.Metric.Helper.histogram_metrics_mapset()
+  @metric_module_mapping Sanbase.Metric.Helper.metric_module_mapping()
+  @metric_modules Sanbase.Metric.Helper.metric_modules()
+  @metrics Sanbase.Metric.Helper.metrics()
+  @metrics_mapset Sanbase.Metric.Helper.metrics_mapset()
+  @min_plan_map Sanbase.Metric.Helper.min_plan_map()
+  @restricted_metrics Sanbase.Metric.Helper.restricted_metrics()
+  @timeseries_metric_module_mapping Sanbase.Metric.Helper.timeseries_metric_module_mapping()
+  @timeseries_metrics Sanbase.Metric.Helper.timeseries_metrics()
+  @timeseries_metrics_mapset Sanbase.Metric.Helper.timeseries_metrics_mapset()
 
   def has_metric?(metric) do
     case metric in @metrics_mapset do

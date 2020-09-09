@@ -1693,6 +1693,39 @@ CREATE TABLE public.schema_migrations (
 
 
 --
+-- Name: short_urls; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.short_urls (
+    id bigint NOT NULL,
+    short_url character varying(255) NOT NULL,
+    full_url text NOT NULL,
+    user_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: short_urls_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.short_urls_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: short_urls_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.short_urls_id_seq OWNED BY public.short_urls.id;
+
+
+--
 -- Name: sign_up_trials; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2687,6 +2720,13 @@ ALTER TABLE ONLY public.schedule_rescrape_prices ALTER COLUMN id SET DEFAULT nex
 
 
 --
+-- Name: short_urls id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.short_urls ALTER COLUMN id SET DEFAULT nextval('public.short_urls_id_seq'::regclass);
+
+
+--
 -- Name: sign_up_trials id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3195,6 +3235,14 @@ ALTER TABLE ONLY public.schedule_rescrape_prices
 
 ALTER TABLE ONLY public.schema_migrations
     ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+
+
+--
+-- Name: short_urls short_urls_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.short_urls
+    ADD CONSTRAINT short_urls_pkey PRIMARY KEY (id);
 
 
 --
@@ -3721,6 +3769,13 @@ CREATE UNIQUE INDEX promo_coupons_email_index ON public.promo_coupons USING btre
 --
 
 CREATE INDEX schedule_rescrape_prices_project_id_index ON public.schedule_rescrape_prices USING btree (project_id);
+
+
+--
+-- Name: short_urls_short_url_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX short_urls_short_url_index ON public.short_urls USING btree (short_url);
 
 
 --
@@ -4298,6 +4353,14 @@ ALTER TABLE ONLY public.schedule_rescrape_prices
 
 
 --
+-- Name: short_urls short_urls_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.short_urls
+    ADD CONSTRAINT short_urls_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: sign_up_trials sign_up_trials_subscription_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4827,3 +4890,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200728105033);
 INSERT INTO public."schema_migrations" (version) VALUES (20200804093238);
 INSERT INTO public."schema_migrations" (version) VALUES (20200813141704);
 INSERT INTO public."schema_migrations" (version) VALUES (20200826101751);
+INSERT INTO public."schema_migrations" (version) VALUES (20200826114101);
+INSERT INTO public."schema_migrations" (version) VALUES (20200908092849);

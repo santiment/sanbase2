@@ -41,6 +41,14 @@ defmodule Sanbase.Report do
     |> validate_required([:url, :name, :is_published, :is_pro])
   end
 
+  def by_id(id) do
+    Repo.get(__MODULE__, id)
+  end
+
+  def list_reports() do
+    Repo.all(__MODULE__)
+  end
+
   def create(params) do
     %__MODULE__{}
     |> changeset(params)
@@ -57,30 +65,24 @@ defmodule Sanbase.Report do
     report |> Repo.delete()
   end
 
+  def get_published_reports(plan_atom_name) do
+    __MODULE__
+    |> get_published_reports_query()
+    |> Repo.all()
+    |> show_only_preview_fields?(plan_atom_name)
+  end
+
   def get_by_tags(tags, plan_atom_name) do
     __MODULE__
     |> get_by_tags_query(tags)
-    |> get_published_reports_query(plan_atom_name)
+    |> get_published_reports_query()
     |> Repo.all()
+    |> show_only_preview_fields?(plan_atom_name)
   end
 
   def save_report(%Plug.Upload{filename: filename} = report, params) do
     %{report | filename: milliseconds_str() <> "_" <> filename}
     |> do_save_report(params)
-  end
-
-  def by_id(id) do
-    Repo.get(__MODULE__, id)
-  end
-
-  def list_reports() do
-    Repo.all(__MODULE__)
-  end
-
-  def get_published_reports(plan_atom_name) do
-    __MODULE__
-    |> get_published_reports_query(plan_atom_name)
-    |> Repo.all()
   end
 
   # Helpers
@@ -107,13 +109,25 @@ defmodule Sanbase.Report do
     from(r in query, where: fragment("select ? && ?", r.tags, ^tags))
   end
 
-  defp get_published_reports_query(query, :free) do
-    from(r in query, where: r.is_published == true and r.is_pro == false)
-  end
-
-  defp get_published_reports_query(query, :pro) do
+  defp get_published_reports_query(query) do
     from(r in query, where: r.is_published == true)
   end
+
+  defp show_only_preview_fields?(reports, plan_atom_name) when plan_atom_name in [nil, :free] do
+    reports
+    |> Enum.map(fn
+      %__MODULE__{is_pro: true} = report ->
+        %{report | url: nil}
+
+      %__MODULE__{is_pro: false} = report ->
+        case plan_atom_name do
+          nil -> %{report | url: nil}
+          :free -> report
+        end
+    end)
+  end
+
+  defp show_only_preview_fields?(reports, :pro), do: reports
 
   defp do_save_report(%{filename: filename, path: filepath} = report, params) do
     with {:ok, content_hash} <- FileHash.calculate(filepath),

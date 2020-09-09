@@ -53,25 +53,41 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
       }
     end
 
-    test "with free sanbase user, list only free published reports", context do
+    test "not logged in user - gets only report preview fields", context do
+      res = get_reports(build_conn())
+
+      assert Enum.map(res["data"]["getReports"], & &1["name"]) == [
+               context.free_report.name,
+               context.pro_report.name
+             ]
+
+      assert Enum.map(res["data"]["getReports"], & &1["url"]) == [nil, nil]
+    end
+
+    test "logged in, free user - gets all fields for free reports and preview fields for pro reports",
+         context do
       res = get_reports(context.free_conn)
 
-      assert Enum.map(res["data"]["getReports"], & &1["url"]) == [context.free_report.url]
+      assert Enum.map(res["data"]["getReports"], & &1["name"]) == [
+               context.free_report.name,
+               context.pro_report.name
+             ]
+
+      assert Enum.map(res["data"]["getReports"], & &1["url"]) == [context.free_report.url, nil]
     end
 
     test "with pro sanbase user list all published reports", context do
       res = get_reports(context.pro_conn)
 
+      assert Enum.map(res["data"]["getReports"], & &1["name"]) == [
+               context.free_report.name,
+               context.pro_report.name
+             ]
+
       assert Enum.map(res["data"]["getReports"], & &1["url"]) == [
                context.free_report.url,
                context.pro_report.url
              ]
-    end
-
-    test "with user without auth returns unauthorized" do
-      %{"errors" => [error]} = get_reports(build_conn())
-
-      assert error["message"] =~ "unauthorized"
     end
   end
 
@@ -89,6 +105,7 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
     end
 
     test "fetch only reports with intersecting tags", context do
+      get_reports(context.conn)
       res = get_reports_by_tags(context.conn, ["t2", "t3"])
 
       assert Enum.map(res["data"]["getReportsByTags"], & &1["url"]) == [
@@ -105,6 +122,9 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
       {
         url
         name
+        description
+        isPro
+        tags
       }
     }
     """

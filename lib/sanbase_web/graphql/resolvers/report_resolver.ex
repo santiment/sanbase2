@@ -24,6 +24,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ReportResolver do
     {:ok, reports}
   end
 
+  def get_reports(_root, _args, _resolution) do
+    {:ok, Report.get_published_reports(nil)}
+  end
+
   def get_reports_by_tags(_root, %{tags: tags}, %{context: %{auth: %{current_user: user}}}) do
     plan =
       Subscription.current_subscription(user, @product_sanbase)
@@ -32,5 +36,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ReportResolver do
     reports = Report.get_by_tags(tags, plan)
 
     {:ok, reports}
+  end
+
+  def get_reports_by_tags(_root, %{tags: tags}, _resolution) do
+    {:ok, Report.get_by_tags(tags, nil)}
   end
 end

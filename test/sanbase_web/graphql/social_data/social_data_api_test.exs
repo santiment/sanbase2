@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
   import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Mockery
 
   alias Sanbase.SocialData
   alias Sanbase.DateTimeUtils

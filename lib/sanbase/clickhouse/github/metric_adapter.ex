@@ -33,7 +33,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   @default_complexity_weight 0.3
 
   @impl Sanbase.Metric.Behaviour
-  def has_incomplete_data?(_), do: false
+  def has_incomplete_data?(_), do: true
 
   @impl Sanbase.Metric.Behaviour
   def complexity_weight(_), do: @default_complexity_weight

@@ -46,32 +46,28 @@ defmodule Sanbase.Metric do
   """
   def timeseries_data(metric, identifier, from, to, interval, opts \\ [])
 
-  for %{metric: metric, module: module} <- @timeseries_metric_module_mapping do
-    def timeseries_data(unquote(metric), identifier, from, to, interval, opts) do
-      aggregation = Keyword.get(opts, :aggregation, nil)
-      aggregation_valid? = aggregation in Map.get(@aggregations_per_metric, unquote(metric))
-      identifier = transform_identifier(identifier)
+  def timeseries_data(metric, identifier, from, to, interval, opts) do
+    case Map.get(@metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric, type: :timeseries)
 
-      case aggregation_valid? do
-        true ->
-          unquote(module).timeseries_data(
-            unquote(metric),
+      module when is_atom(module) ->
+        aggregation = Keyword.get(opts, :aggregation, nil)
+        identifier = transform_identifier(identifier)
+
+        fun = fn ->
+          module.timeseries_data(
+            metric,
             identifier,
             from,
             to,
             interval,
             opts
           )
+        end
 
-        false ->
-          {:error,
-           "The aggregation #{aggregation} is not supported for the metric #{unquote(metric)}"}
-      end
+        execute_if_aggregation_valid(fun, metric, aggregation)
     end
-  end
-
-  def timeseries_data(metric, _, _, _, _, _) do
-    metric_not_available_error(metric, type: :timeseries)
   end
 
   @doc ~s"""
@@ -82,31 +78,27 @@ defmodule Sanbase.Metric do
   """
   def aggregated_timeseries_data(metric, identifier, from, to, opts \\ [])
 
-  for %{metric: metric, module: module} <- @timeseries_metric_module_mapping do
-    def aggregated_timeseries_data(unquote(metric), identifier, from, to, opts) do
-      aggregation = Keyword.get(opts, :aggregation, nil)
-      aggregation_valid? = aggregation in Map.get(@aggregations_per_metric, unquote(metric))
-      identifier = transform_identifier(identifier)
+  def aggregated_timeseries_data(metric, identifier, from, to, opts) do
+    case Map.get(@metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric, type: :timeseries)
 
-      case aggregation_valid? do
-        true ->
-          unquote(module).aggregated_timeseries_data(
-            unquote(metric),
+      module when is_atom(module) ->
+        aggregation = Keyword.get(opts, :aggregation, nil)
+        identifier = transform_identifier(identifier)
+
+        fun = fn ->
+          module.aggregated_timeseries_data(
+            metric,
             identifier,
             from,
             to,
             opts
           )
+        end
 
-        false ->
-          {:error,
-           "The aggregation #{aggregation} is not supported for the metric #{unquote(metric)}"}
-      end
+        execute_if_aggregation_valid(fun, metric, aggregation)
     end
-  end
-
-  def aggregated_timeseries_data(metric, _, _, _, _) do
-    metric_not_available_error(metric, type: :timeseries)
   end
 
   @doc ~s"""
@@ -121,31 +113,27 @@ defmodule Sanbase.Metric do
   """
   def slugs_by_filter(metric, from, to, operation, threshold, opts \\ [])
 
-  for %{metric: metric, module: module} <- @timeseries_metric_module_mapping do
-    def slugs_by_filter(unquote(metric), from, to, operation, threshold, opts) do
-      aggregation = Keyword.get(opts, :aggregation, nil)
-      aggregation_valid? = aggregation in Map.get(@aggregations_per_metric, unquote(metric))
+  def slugs_by_filter(metric, from, to, operation, threshold, opts) do
+    case Map.get(@metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric, type: :timeseries)
 
-      case aggregation_valid? do
-        true ->
-          unquote(module).slugs_by_filter(
-            unquote(metric),
+      module when is_atom(module) ->
+        aggregation = Keyword.get(opts, :aggregation, nil)
+
+        fun = fn ->
+          module.slugs_by_filter(
+            metric,
             from,
             to,
             operation,
             threshold,
             opts
           )
+        end
 
-        false ->
-          {:error,
-           "The aggregation #{aggregation} is not supported for the metric #{unquote(metric)}"}
-      end
+        execute_if_aggregation_valid(fun, metric, aggregation)
     end
-  end
-
-  def slugs_by_filter(metric, _from, _to, _operation, _threshold, _opts) do
-    metric_not_available_error(metric, type: :timeseries)
   end
 
   @doc ~s"""
@@ -159,30 +147,26 @@ defmodule Sanbase.Metric do
   """
   def slugs_order(metric, from, to, direction, opts \\ [])
 
-  for %{metric: metric, module: module} <- @timeseries_metric_module_mapping do
-    def slugs_order(unquote(metric), from, to, direction, opts) do
-      aggregation = Keyword.get(opts, :aggregation, nil)
-      aggregation_valid? = aggregation in Map.get(@aggregations_per_metric, unquote(metric))
+  def slugs_order(metric, from, to, direction, opts) do
+    case Map.get(@metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric, type: :timeseries)
 
-      case aggregation_valid? do
-        true ->
-          unquote(module).slugs_order(
-            unquote(metric),
+      module when is_atom(module) ->
+        aggregation = Keyword.get(opts, :aggregation, nil)
+
+        fun = fn ->
+          module.slugs_order(
+            metric,
             from,
             to,
             direction,
             opts
           )
+        end
 
-        false ->
-          {:error,
-           "The aggregation #{aggregation} is not supported for the metric #{unquote(metric)}"}
-      end
+        execute_if_aggregation_valid(fun, metric, aggregation)
     end
-  end
-
-  def slugs_order(metric, _from, _to, _direction, _opts) do
-    metric_not_available_error(metric, type: :timeseries)
   end
 
   @doc ~s"""
@@ -190,23 +174,24 @@ defmodule Sanbase.Metric do
   """
   def histogram_data(metric, identifier, from, to, interval, limit \\ 100)
 
-  for %{metric: metric, module: module} <- @histogram_metric_module_mapping do
-    def histogram_data(unquote(metric), identifier, from, to, interval, limit) do
-      identifier = transform_identifier(identifier)
+  def histogram_data(metric, identifier, from, to, interval, limit) do
+    case Map.get(@metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric, type: :timeseries)
 
-      unquote(module).histogram_data(
-        unquote(metric),
-        identifier,
-        from,
-        to,
-        interval,
-        limit
-      )
+      module when is_atom(module) ->
+        identifier = transform_identifier(identifier)
+
+        module.histogram_data(
+          metric,
+          identifier,
+          from,
+          to,
+          interval,
+          limit
+        )
     end
   end
-
-  def histogram_data(metric, _, _, _, _, _),
-    do: metric_not_available_error(metric, type: :histogram)
 
   @doc ~s"""
   Get the human readable name representation of a given metric
@@ -228,13 +213,15 @@ defmodule Sanbase.Metric do
   """
   def complexity_weight(metric)
 
-  for %{metric: metric, module: module} <- @metric_module_mapping do
-    def complexity_weight(unquote(metric)) do
-      unquote(module).complexity_weight(unquote(metric))
+  def complexity_weight(metric) do
+    case Map.get(@metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric, type: :timeseries)
+
+      module when is_atom(module) ->
+        module.complexity_weight(metric)
     end
   end
-
-  def complexity_weight(metric), do: metric_not_available_error(metric)
 
   @doc ~s"""
   Get metadata for a given metric. This includes:
@@ -246,49 +233,55 @@ defmodule Sanbase.Metric do
   """
   def metadata(metric)
 
-  for %{metric: metric, module: module} <- @metric_module_mapping do
-    def metadata(unquote(metric)) do
-      unquote(module).metadata(unquote(metric))
+  def metadata(metric) do
+    case Map.get(@metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric, type: :timeseries)
+
+      module when is_atom(module) ->
+        module.metadata(metric)
     end
   end
-
-  def metadata(metric), do: metric_not_available_error(metric)
 
   @doc ~s"""
   Get the first datetime for which a given metric is available for a given slug
   """
-  def first_datetime(metric, slug)
+  def first_datetime(metric, slug) do
+    case Map.get(@metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric, type: :timeseries)
 
-  for %{metric: metric, module: module} <- @metric_module_mapping do
-    def first_datetime(unquote(metric), selector) do
-      unquote(module).first_datetime(unquote(metric), selector)
+      module when is_atom(module) ->
+        module.first_datetime(metric, slug)
     end
   end
 
-  def first_datetime(metric, _), do: metric_not_available_error(metric)
+  @doc ~s"""
+  Get the datetime for which the data point with latest dt for the given metric/slug
+  pair is computed.
+  """
+  def last_datetime_computed_at(metric, slug) do
+    case Map.get(@metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric, type: :timeseries)
 
-  def last_datetime_computed_at(metric, slug)
-
-  for %{metric: metric, module: module} <- @metric_module_mapping do
-    def last_datetime_computed_at(unquote(metric), slug) do
-      unquote(module).last_datetime_computed_at(unquote(metric), slug)
+      module when is_atom(module) ->
+        module.last_datetime_computed_at(metric, slug)
     end
   end
-
-  def last_datetime_computed_at(metric, _), do: metric_not_available_error(metric)
 
   @doc ~s"""
   Get all available slugs for a given metric
   """
-  def available_slugs(metric)
+  def available_slugs(metric) do
+    case Map.get(@metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric, type: :timeseries)
 
-  for %{metric: metric, module: module} <- @metric_module_mapping do
-    def available_slugs(unquote(metric)) do
-      unquote(module).available_slugs(unquote(metric))
+      module when is_atom(module) ->
+        module.available_slugs(metric)
     end
   end
-
-  def available_slugs(metric), do: metric_not_available_error(metric)
 
   @doc ~s"""
   Get all available aggregations
@@ -505,4 +498,16 @@ defmodule Sanbase.Metric do
   end
 
   defp transform_identifier(identifier), do: identifier
+
+  defp execute_if_aggregation_valid(fun, metric, aggregation) do
+    aggregation_valid? = aggregation in Map.get(@aggregations_per_metric, metric)
+
+    case aggregation_valid? do
+      true ->
+        fun.()
+
+      false ->
+        {:error, "The aggregation #{aggregation} is not supported for the metric #{metric}"}
+    end
+  end
 end

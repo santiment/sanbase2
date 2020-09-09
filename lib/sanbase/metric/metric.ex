@@ -16,6 +16,7 @@ defmodule Sanbase.Metric do
   @histogram_metrics_mapset Sanbase.Metric.Helper.histogram_metrics_mapset()
   @metric_module_mapping Sanbase.Metric.Helper.metric_module_mapping()
   @metric_modules Sanbase.Metric.Helper.metric_modules()
+  @metric_to_module_map Sanbase.Metric.Helper.metric_to_module_map()
   @metrics Sanbase.Metric.Helper.metrics()
   @metrics_mapset Sanbase.Metric.Helper.metrics_mapset()
   @min_plan_map Sanbase.Metric.Helper.min_plan_map()

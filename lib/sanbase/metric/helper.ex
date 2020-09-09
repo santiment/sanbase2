@@ -84,6 +84,7 @@ defmodule Sanbase.Metric.Helper do
   def histogram_metrics(), do: @histogram_metrics
   def metric_module_mapping(), do: @metric_module_mapping
   def metric_modules(), do: @metric_modules
+  def metric_to_module_map(), do: @metric_to_module_map
   def metrics_mapset(), do: @metrics_mapset
   def metrics(), do: @metrics
   def min_plan_map(), do: @min_plan_map

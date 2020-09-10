@@ -11,6 +11,8 @@ defmodule Sanbase.Metric do
   @aggregations Sanbase.Metric.Helper.aggregations()
   @aggregations_per_metric Sanbase.Metric.Helper.aggregations_per_metric()
   @free_metrics Sanbase.Metric.Helper.free_metrics()
+  @histogram_metric_module_mapping Sanbase.Metric.Helper.histogram_metric_module_mapping()
+  @histogram_metric_to_module_map Sanbase.Metric.Helper.histogram_metric_to_module_map()
   @histogram_metrics Sanbase.Metric.Helper.histogram_metrics()
   @histogram_metrics_mapset Sanbase.Metric.Helper.histogram_metrics_mapset()
   @metric_module_mapping Sanbase.Metric.Helper.metric_module_mapping()
@@ -20,6 +22,8 @@ defmodule Sanbase.Metric do
   @metrics_mapset Sanbase.Metric.Helper.metrics_mapset()
   @min_plan_map Sanbase.Metric.Helper.min_plan_map()
   @restricted_metrics Sanbase.Metric.Helper.restricted_metrics()
+  @timeseries_metric_module_mapping Sanbase.Metric.Helper.timeseries_metric_module_mapping()
+  @timeseries_metric_to_module_map Sanbase.Metric.Helper.timeseries_metric_to_module_map()
   @timeseries_metrics Sanbase.Metric.Helper.timeseries_metrics()
   @timeseries_metrics_mapset Sanbase.Metric.Helper.timeseries_metrics_mapset()
 
@@ -45,7 +49,7 @@ defmodule Sanbase.Metric do
   def timeseries_data(metric, identifier, from, to, interval, opts \\ [])
 
   def timeseries_data(metric, identifier, from, to, interval, opts) do
-    case Map.get(@metric_to_module_map, metric) do
+    case Map.get(@timeseries_metric_to_module_map, metric) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
@@ -77,7 +81,7 @@ defmodule Sanbase.Metric do
   def aggregated_timeseries_data(metric, identifier, from, to, opts \\ [])
 
   def aggregated_timeseries_data(metric, identifier, from, to, opts) do
-    case Map.get(@metric_to_module_map, metric) do
+    case Map.get(@timeseries_metric_to_module_map, metric) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
@@ -112,7 +116,7 @@ defmodule Sanbase.Metric do
   def slugs_by_filter(metric, from, to, operation, threshold, opts \\ [])
 
   def slugs_by_filter(metric, from, to, operation, threshold, opts) do
-    case Map.get(@metric_to_module_map, metric) do
+    case Map.get(@timeseries_metric_to_module_map, metric) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
@@ -173,7 +177,7 @@ defmodule Sanbase.Metric do
   def histogram_data(metric, identifier, from, to, interval, limit \\ 100)
 
   def histogram_data(metric, identifier, from, to, interval, limit) do
-    case Map.get(@metric_to_module_map, metric) do
+    case Map.get(@histogram_metric_to_module_map, metric) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 

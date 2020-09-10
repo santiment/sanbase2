@@ -25,22 +25,34 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScraperTest do
 
   test "scraping a project with a main contract doesn't make the new contract main" do
     main_contract = build(:contract_address, label: "main")
-    ordinary_contract = build(:contract_address)
-    third_contract = build(:contract_address)
+    second_contract = build(:contract_address)
 
     project =
       insert(:random_project,
-        contract_addresses: [main_contract, ordinary_contract]
+        contract_addresses: [main_contract]
       )
 
     project_info_map = %ProjectInfo{
-      slug: "santiment",
-      main_contract_address: third_contract.address
+      slug: project.slug,
+      main_contract_address: second_contract.address
     }
 
-    File.read!(Path.join(__DIR__, "data/project_page.html"))
-    |> Scraper.parse_project_page(project_info_map)
+    project_info =
+      File.read!(Path.join(__DIR__, "data/project_page.html"))
+      |> Scraper.parse_project_page(project_info_map)
 
-    assert Enum.find(project.contract_addresses, &(&1.address == third_contract.label != "main"))
+    {:ok, project} =
+      ProjectInfo.update_project(
+        project_info,
+        project
+      )
+
+    assert length(project.contract_addresses) == 2
+
+    contract1 = Enum.find(project.contract_addresses, &(&1.address == main_contract.address))
+    contract2 = Enum.find(project.contract_addresses, &(&1.address == second_contract.address))
+
+    assert contract1.label == "main"
+    assert contract2.label != "main"
   end
 end

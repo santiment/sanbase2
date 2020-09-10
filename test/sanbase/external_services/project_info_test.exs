@@ -154,28 +154,27 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
   end
 
   test "updating the project info of a project with a contract address" do
-    curr_contract = build(:contract_address)
-    contract = build(:contract_address)
+    first_contract = build(:contract_address, address: "0xCURRENT", label: "main")
+    second_contract = build(:contract_address, address: "0xNEW")
 
-    project =
-      %Project{
-        slug: "santiment",
-        name: "Santiment",
-        main_contract_address: curr_contract.address,
-        contract_addresses: [curr_contract]
-      }
-      |> Repo.insert!()
+    project = insert(:random_project, contract_addresses: [first_contract])
 
     {:ok, project} =
       ProjectInfo.update_project(
         %ProjectInfo{
           name: "Santiment",
           slug: "santiment",
-          main_contract_address: contract.address
+          main_contract_address: second_contract.address
         },
         project
       )
 
-    assert Enum.find(project.contract_addresses, &(&1.address == contract.label != "main"))
+    assert length(project.contract_addresses) == 2
+
+    contract1 = Enum.find(project.contract_addresses, &(&1.address == first_contract.address))
+    contract2 = Enum.find(project.contract_addresses, &(&1.address == second_contract.address))
+
+    assert contract1.label == "main"
+    assert contract2.label != "main"
   end
 end

@@ -14,6 +14,11 @@ defmodule Sanbase.Report do
   alias Sanbase.FileStore
   alias Sanbase.Utils.FileHash
 
+  @type get_reports_opts :: %{
+          required(:is_logged_in) => boolean(),
+          optional(:plan_atom_name) => atom()
+        }
+
   schema "reports" do
     field(:name, :string, null: false)
     field(:description, :string, null: true)
@@ -41,6 +46,14 @@ defmodule Sanbase.Report do
     |> validate_required([:url, :name, :is_published, :is_pro])
   end
 
+  def by_id(id) do
+    Repo.get(__MODULE__, id)
+  end
+
+  def list_reports() do
+    Repo.all(__MODULE__)
+  end
+
   def create(params) do
     %__MODULE__{}
     |> changeset(params)
@@ -57,30 +70,26 @@ defmodule Sanbase.Report do
     report |> Repo.delete()
   end
 
-  def get_by_tags(tags, plan_atom_name) do
+  @spec get_published_reports(get_reports_opts()) :: list(%__MODULE__{})
+  def get_published_reports(opts) do
+    __MODULE__
+    |> get_published_reports_query()
+    |> Repo.all()
+    |> show_only_preview_fields?(opts)
+  end
+
+  @spec get_by_tags(list(String.t()), get_reports_opts()) :: list(%__MODULE__{})
+  def get_by_tags(tags, opts) do
     __MODULE__
     |> get_by_tags_query(tags)
-    |> get_published_reports_query(plan_atom_name)
+    |> get_published_reports_query()
     |> Repo.all()
+    |> show_only_preview_fields?(opts)
   end
 
   def save_report(%Plug.Upload{filename: filename} = report, params) do
     %{report | filename: milliseconds_str() <> "_" <> filename}
     |> do_save_report(params)
-  end
-
-  def by_id(id) do
-    Repo.get(__MODULE__, id)
-  end
-
-  def list_reports() do
-    Repo.all(__MODULE__)
-  end
-
-  def get_published_reports(plan_atom_name) do
-    __MODULE__
-    |> get_published_reports_query(plan_atom_name)
-    |> Repo.all()
   end
 
   # Helpers
@@ -107,13 +116,27 @@ defmodule Sanbase.Report do
     from(r in query, where: fragment("select ? && ?", r.tags, ^tags))
   end
 
-  defp get_published_reports_query(query, :free) do
-    from(r in query, where: r.is_published == true and r.is_pro == false)
-  end
-
-  defp get_published_reports_query(query, :pro) do
+  defp get_published_reports_query(query) do
     from(r in query, where: r.is_published == true)
   end
+
+  defp show_only_preview_fields?(reports, %{is_logged_in: false}) do
+    Enum.map(reports, fn report -> %{report | url: nil} end)
+  end
+
+  defp show_only_preview_fields?(reports, %{is_logged_in: true, plan_atom_name: :free}) do
+    reports
+    |> Enum.map(fn
+      %__MODULE__{is_pro: true} = report ->
+        %{report | url: nil}
+
+      %__MODULE__{is_pro: false} = report ->
+        report
+    end)
+  end
+
+  defp show_only_preview_fields?(reports, %{is_logged_in: true, plan_atom_name: :pro}),
+    do: reports
 
   defp do_save_report(%{filename: filename, path: filepath} = report, params) do
     with {:ok, content_hash} <- FileHash.calculate(filepath),

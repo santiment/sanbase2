@@ -10,8 +10,6 @@ defmodule SanbaseWeb.Graphql.Schema.ReportQueries do
     List all reports.
     """
     field :get_reports, list_of(:report) do
-      middleware(JWTAuth)
-
       resolve(&ReportResolver.get_reports/3)
     end
 
@@ -20,8 +18,6 @@ defmodule SanbaseWeb.Graphql.Schema.ReportQueries do
     """
     field :get_reports_by_tags, list_of(:report) do
       arg(:tags, non_null(list_of(:string)))
-
-      middleware(JWTAuth)
 
       resolve(&ReportResolver.get_reports_by_tags/3)
     end

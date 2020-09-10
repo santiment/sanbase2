@@ -6,5 +6,6 @@ defmodule SanbaseWeb.Graphql.ReportTypes do
     field(:name, :string)
     field(:description, :string)
     field(:tags, list_of(:string))
+    field(:is_pro, :boolean)
   end
 end

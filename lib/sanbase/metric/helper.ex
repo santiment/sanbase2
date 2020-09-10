@@ -80,6 +80,10 @@ defmodule Sanbase.Metric.Helper do
   def aggregations(), do: @aggregations
   def free_metrics(), do: @free_metrics
   def histogram_metric_module_mapping(), do: @histogram_metric_module_mapping
+
+  def histogram_metric_to_module_map(),
+    do: @histogram_metric_module_mapping |> Enum.into(%{}, &{&1.metric, &1.module})
+
   def histogram_metrics_mapset(), do: @histogram_metrics_mapset
   def histogram_metrics(), do: @histogram_metrics
   def metric_module_mapping(), do: @metric_module_mapping
@@ -90,6 +94,10 @@ defmodule Sanbase.Metric.Helper do
   def min_plan_map(), do: @min_plan_map
   def restricted_metrics(), do: @restricted_metrics
   def timeseries_metric_module_mapping(), do: @timeseries_metric_module_mapping
+
+  def timeseries_metric_to_module_map(),
+    do: @timeseries_metric_module_mapping |> Enum.into(%{}, &{&1.metric, &1.module})
+
   def timeseries_metrics_mapset(), do: @timeseries_metrics_mapset
   def timeseries_metrics(), do: @timeseries_metrics
 end

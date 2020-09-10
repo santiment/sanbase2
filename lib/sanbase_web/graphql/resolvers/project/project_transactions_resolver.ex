@@ -171,7 +171,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   end
 
   defp calculate_eth_top_transactions(%Project{slug: "ethereum"} = project, args) do
-    %{from: from, to: to, transaction_type: trx_type, limit: limit} = args
+    %{from: from, to: to, transaction_type: _trx_type, limit: limit} = args
     limit = Enum.min([limit, 100])
 
     with {:ok, eth_transactions} <-

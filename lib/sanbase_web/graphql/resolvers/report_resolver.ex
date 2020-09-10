@@ -16,16 +16,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.ReportResolver do
   end
 
   def get_reports(_root, _args, %{context: %{auth: %{current_user: user}}}) do
-    reports =
+    plan =
       Subscription.current_subscription(user, @product_sanbase)
       |> Subscription.plan_name()
-      |> Report.get_published_reports()
+
+    reports = Report.get_published_reports(%{is_logged_in: true, plan_atom_name: plan})
 
     {:ok, reports}
   end
 
   def get_reports(_root, _args, _resolution) do
-    {:ok, Report.get_published_reports(nil)}
+    {:ok, Report.get_published_reports(%{is_logged_in: false})}
   end
 
   def get_reports_by_tags(_root, %{tags: tags}, %{context: %{auth: %{current_user: user}}}) do
@@ -33,12 +34,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ReportResolver do
       Subscription.current_subscription(user, @product_sanbase)
       |> Subscription.plan_name()
 
-    reports = Report.get_by_tags(tags, plan)
+    reports = Report.get_by_tags(tags, %{is_logged_in: true, plan_atom_name: plan})
 
     {:ok, reports}
   end
 
   def get_reports_by_tags(_root, %{tags: tags}, _resolution) do
-    {:ok, Report.get_by_tags(tags, nil)}
+    {:ok, Report.get_by_tags(tags, %{is_logged_in: false})}
   end
 end

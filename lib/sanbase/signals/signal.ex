@@ -3,6 +3,9 @@ defprotocol Sanbase.Signal do
 end
 
 defimpl Sanbase.Signal, for: Any do
+  @default_limit_per_day 100
+  @channels ["email", "telegram", "webhook", "webpush"]
+
   def send(%{user: user, trigger: %{settings: %{channel: channel}}} = user_trigger) do
     # Mutex is needed, so the `max_signals_to_send` can be properly counted and
     # updated. This can happen because the sending of signals happens with a
@@ -14,7 +17,8 @@ defimpl Sanbase.Signal, for: Any do
 
     max_signals_to_send = max_signals_to_send(user_trigger)
 
-    # This will return a list of `{identifier, telegram_sent_status}` or
+    # Returns a list of 2-element tuples where the first element is the channel
+    # and the second element is a list of `{identifier, telegram_sent_status}` or
     # `{identifier, {:error, error}}`. If a signal is sent to more than 1 channel
     # this is handled properly by the caller that puts the triggered identifiers
     # in a map, so duplicates disappear.
@@ -22,17 +26,23 @@ defimpl Sanbase.Signal, for: Any do
       channel
       |> List.wrap()
       |> Enum.map(fn
-        "telegram" -> send_telegram(user_trigger, max_signals_to_send)
-        "email" -> send_email(user_trigger, max_signals_to_send)
-        %{webhook: webhook_url} -> send_webhook(user_trigger, webhook_url, max_signals_to_send)
-        "web_push" -> []
+        "telegram" ->
+          {"telegram", send_telegram(user_trigger, max_signals_to_send)}
+
+        "email" ->
+          {"email", send_email(user_trigger, max_signals_to_send)}
+
+        %{webhook: webhook_url} ->
+          {"webhook", send_webhook(user_trigger, webhook_url, max_signals_to_send)}
+
+        "web_push" ->
+          {"web_push", []}
       end)
-      |> List.flatten()
 
     update_user_signals_sent_per_day(user, result)
     Mutex.release(Sanbase.SignalMutex, lock)
 
-    result
+    result |> Enum.flat_map(fn {_type, list} -> list end)
   end
 
   defp send_webhook(
@@ -41,7 +51,7 @@ defimpl Sanbase.Signal, for: Any do
            trigger: %{settings: %{payload: payload_map}}
          },
          webhook_url,
-         max_signals_to_send
+         %{"webhook" => max_signals_to_send}
        ) do
     fun = fn identifier, payload ->
       do_send_webhook(webhook_url, identifier, payload, user_trigger_id)
@@ -59,7 +69,7 @@ defimpl Sanbase.Signal, for: Any do
            },
            trigger: %{settings: %{payload: payload_map}}
          },
-         max_signals_to_send
+         %{"email" => max_signals_to_send}
        )
        when is_binary(email) and is_map(payload_map) do
     fun = fn _identifier, payload ->
@@ -86,7 +96,7 @@ defimpl Sanbase.Signal, for: Any do
              settings: %{payload: payload_map}
            }
          },
-         max_signals_to_send
+         %{"telegram" => max_signals_to_send}
        )
        when is_integer(telegram_chat_id) and telegram_chat_id > 0 and is_map(payload_map) do
     fun = fn _identifier, payload ->
@@ -114,17 +124,25 @@ defimpl Sanbase.Signal, for: Any do
 
   defp max_signals_to_send(%{user: user}) do
     # Force the settings to be fetched and not taken from the user struct
-    # This is done so while evaluating signals, the signals fired will be properly
-    # updated
+    # This is done so while evaluating signals, the signals fired count is
+    # properly reflected here.
     user_settings = Sanbase.Auth.UserSettings.settings_for(%Sanbase.Auth.User{id: user.id})
 
     %{
       signals_fired: signals_fired,
-      signals_per_day: signals_per_day
+      signals_per_day_limit: signals_per_day_limit
     } = user_settings
 
-    notifications_sent_today = Map.get(signals_fired, Date.utc_today() |> to_string(), 0)
-    Enum.max([signals_per_day - notifications_sent_today, 0])
+    # A map of "channel" => list pairs
+    notifications_sent_today = Map.get(signals_fired, Date.utc_today() |> to_string(), %{})
+
+    Enum.reduce(@channels, %{}, fn channel, map ->
+      channel_limit = Map.get(signals_per_day_limit, channel, @default_limit_per_day)
+      channel_sent_today = Map.get(notifications_sent_today, channel, 0)
+      left_to_send = Enum.max([channel_limit - channel_sent_today, 0])
+
+      Map.put(map, channel, left_to_send)
+    end)
   end
 
   defp do_send_email(email, payload, trigger_id) do
@@ -180,38 +198,87 @@ defimpl Sanbase.Signal, for: Any do
     result
   end
 
-  defp update_user_signals_sent_per_day(user, sent_list) do
-    %{signals_fired: signals_fired, signals_per_day: signals_per_day} =
+  defp update_user_signals_sent_per_day(user, sent_list_per_channel) do
+    %{signals_fired: signals_fired, signals_per_day_limit: signals_per_day_limit} =
       Sanbase.Auth.UserSettings.settings_for(%Sanbase.Auth.User{id: user.id})
 
     map_key = Date.utc_today() |> to_string()
-    count = Enum.count(sent_list, fn {_, result} -> result == :ok end)
-    signals_fired_today = Map.get(signals_fired, map_key, 0)
 
-    # If this trigger is the one that went over the allowed signals per day
-    # send a message to the user. Only one such notification per day should be sent
-    # TODO: Rework by finding all channels used by the user and sending the notificaiton
-    # to them - it could be only telegram, only email or both.
-    case signals_fired_today < signals_per_day and signals_fired_today + count >= signals_per_day do
-      false ->
-        :ok
+    signals_fired_now =
+      Enum.into(sent_list_per_channel, %{}, fn {channel, sent_list} ->
+        count = Enum.count(sent_list, fn {_, result} -> result == :ok end)
+        {channel, count}
+      end)
 
-      true ->
-        Sanbase.Telegram.send_message(
-          user,
-          """
-          The allowed number of signal notifications per day has been reached.
-          To see the full list of fired signals, please check your [feed on Sanbase](#{
-            SanbaseWeb.Endpoint.feed_url()
-          }).
-          If you want to receive more notifications per day, please visit your
-          [account settings on Sanbase](#{SanbaseWeb.Endpoint.user_account_url()})
-          """
-        )
-    end
+    signals_fired_today = Map.get(signals_fired, map_key, %{})
 
-    signals_fired = Map.put(signals_fired, map_key, count + signals_fired_today)
+    maybe_send_limit_reached_notification(
+      user,
+      signals_fired_today,
+      signals_fired_now,
+      signals_per_day_limit
+    )
+
+    signals_fired_today_updated =
+      Enum.into(@channels, %{}, fn channel ->
+        count = Map.get(signals_fired_today, channel, 0) + Map.get(signals_fired_now, channel, 0)
+
+        {channel, count}
+      end)
+
+    signals_fired = Map.put(signals_fired, map_key, signals_fired_today_updated)
 
     Sanbase.Auth.UserSettings.update_settings(user, %{signals_fired: signals_fired})
+  end
+
+  defp maybe_send_limit_reached_notification(
+         user,
+         signals_fired_today,
+         signals_fired_now,
+         signal_per_day_limit
+       ) do
+    Enum.each(@channels, fn channel ->
+      sent_today = Map.get(signals_fired_today, channel, 0)
+      sent_now = Map.get(signals_fired_now, channel, 0)
+      limit = Map.get(signal_per_day_limit, channel, @default_limit_per_day)
+
+      case sent_today < limit and sent_today + sent_now >= limit do
+        false -> :ok
+        true -> send_limit_reached_notification(channel, user)
+      end
+    end)
+  end
+
+  defp send_limit_reached_notification("telegram", user) do
+    Sanbase.Telegram.send_message(
+      user,
+      limit_reached_payload("telegram", user)
+    )
+  end
+
+  defp send_limit_reached_notification("email", user) do
+    Sanbase.MandrillApi.send("signals", user.email, %{
+      payload: limit_reached_payload("email", user) |> Earmark.as_html!(breaks: true)
+    })
+    |> case do
+      {:ok, _} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp send_limit_reached_notification(_channel, _user), do: :ok
+
+  defp limit_reached_payload(channel, user) do
+    """
+    Your maximum amount of #{channel} alert notifications per day has been reached.
+
+    To see a full list of triggered signals today, please visit your [Sanbase Feed](#{
+      SanbaseWeb.Endpoint.feed_url()
+    }).
+
+    If you’d like to raise your daily notification limit, you can do so anytime in your [Sanbase Account Settings](#{
+      SanbaseWeb.Endpoint.user_account_url()
+    }).
+    """
   end
 end

@@ -18,7 +18,7 @@ defmodule Sanbase.Auth.Settings do
     field(:newsletter_subscription_updated_at_unix, :integer, default: nil)
     field(:is_promoter, :boolean, default: false)
     field(:paid_with, :string, default: nil)
-    field(:signals_per_day, :integer, default: 100)
+    field(:signals_per_day_limit, :map, default: %{})
     field(:signals_fired, :map, default: %{})
   end
 
@@ -35,7 +35,7 @@ defmodule Sanbase.Auth.Settings do
       :hide_privacy_data,
       :is_promoter,
       :paid_with,
-      :signals_per_day,
+      :signals_per_day_limit,
       :signals_fired
     ])
     |> normalize_newsletter_subscription(

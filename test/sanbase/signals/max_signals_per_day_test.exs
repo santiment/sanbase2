@@ -53,7 +53,10 @@ defmodule Sanbase.Signal.MaxSignalsPerDayTest do
 
   test "does not send notifications after limit is reached", context do
     %{user: user, mock_fun: mock_fun} = context
-    Sanbase.Auth.UserSettings.update_settings(user, %{signals_per_day: 1})
+
+    Sanbase.Auth.UserSettings.update_settings(user, %{
+      signals_per_day_limit: %{"email" => 1, "telegram" => 1}
+    })
 
     self_pid = self()
 
@@ -76,7 +79,7 @@ defmodule Sanbase.Signal.MaxSignalsPerDayTest do
       assert_receive({:telegram_to_self, limit_reached_msg})
 
       assert limit_reached_msg =~
-               "The allowed number of signal notifications per day has been reached"
+               "Your maximum amount of telegram alert notifications per day has been reached"
 
       refute_receive({:telegram_to_self, _}, 1000)
     end)

@@ -21,7 +21,7 @@ defmodule Sanbase.Signal.Scheduler do
   defguard is_non_empty_map(map) when is_map(map) and map != %{}
 
   @doc ~s"""
-  Processfor all active signals with the given type. The processing
+  Process for all active signals with the given type. The processing
    includes the following steps:
    1. Fetch the active signals with the given type.
    2. Evaluate the signals
@@ -97,7 +97,7 @@ defmodule Sanbase.Signal.Scheduler do
   end
 
   # Note that the `user_trigger` that came as an argument is returned with
-  # modofied `last_triggered`.
+  # modified `last_triggered`.
   # TODO: Research if this is really needed
   defp update_trigger_last_triggered(user_trigger, last_triggered) do
     {:ok, updated_user_trigger} =

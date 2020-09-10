@@ -153,10 +153,17 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
     with %Project{} = project <- Project.by_slug(slug, only_preload: [:infrastructure]),
          {:ok, infr} <- Project.infrastructure_real_code(project) do
       if infr in @supported_infrastructures and Project.has_contract_address?(project) do
-        {:ok, @metrics}
+        # Until we have Binance exchange addresses remove exchange metrics for it.
+        case infr in ["BNB", "BEP2"] do
+          true -> {:ok, @metrics |> Enum.reject(&String.contains?(&1, "exchange"))}
+          false -> {:ok, @metrics}
+        end
       else
         {:ok, []}
       end
+    else
+      {:error, {:missing_contract, _}} -> {:ok, []}
+      error -> error
     end
   end
 

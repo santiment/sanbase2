@@ -101,7 +101,10 @@ defmodule Sanbase.Price.MetricAdapter do
   def available_metrics(%{slug: "TOTAL_ERC20"}), do: @metrics
 
   def available_metrics(%{slug: slug}) do
-    case Price.has_data?(slug) do
+    cache_key = {__MODULE__, :has_price_data?, slug} |> Sanbase.Cache.hash()
+    cache_key_with_ttl = {cache_key, 600}
+
+    case Sanbase.Cache.get_or_store(cache_key_with_ttl, fn -> Price.has_data?(slug) end) do
       {:ok, true} -> {:ok, @metrics}
       {:ok, false} -> {:ok, []}
       {:error, error} -> {:error, error}

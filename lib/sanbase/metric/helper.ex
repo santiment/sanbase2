@@ -1,70 +1,95 @@
 defmodule Sanbase.Metric.Helper do
-  def transform_to_value_pairs(data, key_name \\ nil)
+  @metric_modules [
+    Sanbase.Clickhouse.Github.MetricAdapter,
+    Sanbase.Clickhouse.Metric,
+    Sanbase.SocialData.MetricAdapter,
+    Sanbase.Price.MetricAdapter,
+    Sanbase.Twitter.MetricAdapter,
+    Sanbase.Clickhouse.TopHolders.MetricAdapter
+  ]
 
-  def transform_to_value_pairs({:ok, []}, _), do: {:ok, []}
+  Module.register_attribute(__MODULE__, :aggregations_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :aggregations_per_metric_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :free_metrics_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :restricted_metrics_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :access_map_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :min_plan_map_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :timeseries_metric_module_mapping_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :histogram_metric_module_mapping_acc, accumulate: true)
 
-  def transform_to_value_pairs({:ok, result}, nil) do
-    # deduce the key name. It is the key other than the :datetime
-    # If there are more than 1 key different than :datetime then this will
-    # fail. In such cases an explicit key name should be passed
-    [key_name] = (result |> hd() |> Map.keys()) -- [:datetime]
+  for module <- @metric_modules do
+    @aggregations_acc module.available_aggregations()
+    @free_metrics_acc module.free_metrics()
+    @restricted_metrics_acc module.restricted_metrics()
+    @access_map_acc module.access_map()
+    @min_plan_map_acc module.min_plan_map()
 
-    result =
-      result
-      |> Enum.map(fn %{^key_name => value, datetime: datetime} ->
-        %{value: value, datetime: datetime}
-      end)
+    @aggregations_per_metric_acc Enum.into(
+                                   module.available_metrics(),
+                                   %{},
+                                   fn metric ->
+                                     {:ok, %{available_aggregations: aggr}} =
+                                       module.metadata(metric)
 
-    {:ok, result}
+                                     {metric, [nil] ++ aggr}
+                                   end
+                                 )
+
+    @timeseries_metric_module_mapping_acc Enum.map(
+                                            module.available_timeseries_metrics(),
+                                            fn metric -> %{metric: metric, module: module} end
+                                          )
+
+    @histogram_metric_module_mapping_acc Enum.map(
+                                           module.available_histogram_metrics(),
+                                           fn metric -> %{metric: metric, module: module} end
+                                         )
   end
 
-  def transform_to_value_pairs({:ok, result}, key_name) do
-    result =
-      result
-      |> Enum.map(fn %{^key_name => value, datetime: datetime} ->
-        %{value: value, datetime: datetime}
-      end)
+  @aggregations List.flatten(@aggregations_acc) |> Enum.uniq()
+  @free_metrics List.flatten(@free_metrics_acc) |> Enum.uniq()
+  @restricted_metrics List.flatten(@restricted_metrics_acc) |> Enum.uniq()
+  @timeseries_metric_module_mapping List.flatten(@timeseries_metric_module_mapping_acc)
+                                    |> Enum.uniq()
 
-    {:ok, result}
-  end
+  @histogram_metric_module_mapping List.flatten(@histogram_metric_module_mapping_acc)
+                                   |> Enum.uniq()
 
-  def transform_to_value_pairs({:error, error}, _), do: {:error, error}
+  @metric_module_mapping (@histogram_metric_module_mapping ++ @timeseries_metric_module_mapping)
+                         |> Enum.uniq()
 
-  @doc ~s"""
-  Replace all values except :slug and :datetime in every element with `nil`
-  if :has_changed is 0
-  """
-  def maybe_nullify_values({:ok, data}) do
-    result =
-      Enum.map(
-        data,
-        fn
-          %{has_changed: 0} = elem ->
-            # use :maps.map/2 instead of Enum.map/2 to avoid unnecessary Map.new/1
-            :maps.map(
-              fn
-                key, value when key in [:slug, :datetime] -> value
-                _, _ -> nil
-              end,
-              Map.delete(elem, :has_changed)
-            )
+  @metric_to_module_map @metric_module_mapping
+                        |> Enum.into(%{}, fn %{metric: metric, module: module} ->
+                          {metric, module}
+                        end)
 
-          elem ->
-            Map.delete(elem, :has_changed)
-        end
-      )
+  @aggregations_per_metric Enum.reduce(@aggregations_per_metric_acc, %{}, &Map.merge(&1, &2))
+  @access_map Enum.reduce(@access_map_acc, %{}, &Map.merge(&1, &2))
+  @min_plan_map Enum.reduce(@min_plan_map_acc, %{}, &Map.merge(&1, &2))
 
-    {:ok, result}
-  end
+  @metrics Enum.map(@metric_module_mapping, & &1.metric)
+  @timeseries_metrics Enum.map(@timeseries_metric_module_mapping, & &1.metric)
+  @histogram_metrics Enum.map(@histogram_metric_module_mapping, & &1.metric)
 
-  def maybe_nullify_values({:error, error}), do: {:error, error}
+  @metrics_mapset MapSet.new(@metrics)
+  @timeseries_metrics_mapset MapSet.new(@timeseries_metrics)
+  @histogram_metrics_mapset MapSet.new(@histogram_metrics)
 
-  @doc ~s"""
-  Remove all elements for which :has_changed is 0
-  """
-  def remove_missing_values({:ok, data}) do
-    {:ok, Enum.reject(data, &(&1.has_changed == 0))}
-  end
-
-  def remove_missing_values({:error, error}), do: {:error, error}
+  def access_map(), do: @access_map
+  def aggregations_per_metric(), do: @aggregations_per_metric
+  def aggregations(), do: @aggregations
+  def free_metrics(), do: @free_metrics
+  def histogram_metric_module_mapping(), do: @histogram_metric_module_mapping
+  def histogram_metrics_mapset(), do: @histogram_metrics_mapset
+  def histogram_metrics(), do: @histogram_metrics
+  def metric_module_mapping(), do: @metric_module_mapping
+  def metric_modules(), do: @metric_modules
+  def metric_to_module_map(), do: @metric_to_module_map
+  def metrics_mapset(), do: @metrics_mapset
+  def metrics(), do: @metrics
+  def min_plan_map(), do: @min_plan_map
+  def restricted_metrics(), do: @restricted_metrics
+  def timeseries_metric_module_mapping(), do: @timeseries_metric_module_mapping
+  def timeseries_metrics_mapset(), do: @timeseries_metrics_mapset
+  def timeseries_metrics(), do: @timeseries_metrics
 end

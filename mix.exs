@@ -105,7 +105,7 @@ defmodule Sanbase.Mixfile do
       {:prometheus_ecto, "~> 1.3"},
       {:prometheus_ex, "~> 3.0", override: true},
       {:prometheus_plugs, "~> 1.0"},
-      {:quantum, "~> 2.3"},
+      {:quantum, "~> 3.0"},
       {:remote_ip, "~> 0.1"},
       {:rexbug, ">= 1.0.0"},
       {:san_exporter_ex, github: "santiment/san-exporter-ex"},

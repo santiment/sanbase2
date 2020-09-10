@@ -1,7 +1,7 @@
 defmodule Sanbase.SocialData.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
 
-  import Sanbase.Metric.Helper
+  import Sanbase.Metric.Transform
 
   alias Sanbase.SocialData.SocialHelper
   alias Sanbase.Model.Project

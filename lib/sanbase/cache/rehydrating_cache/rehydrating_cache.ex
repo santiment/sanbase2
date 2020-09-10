@@ -22,7 +22,7 @@ defmodule Sanbase.Cache.RehydratingCache do
 
   def name(), do: @name
 
-  @run_interval 10_000
+  @run_interval 20_000
   @purge_timeout_interval 30_000
   @function_runtime_timeout 5 * 1000 * 60
 

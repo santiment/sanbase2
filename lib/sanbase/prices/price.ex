@@ -5,7 +5,7 @@ defmodule Sanbase.Price do
 
   import Sanbase.Price.SqlQuery
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
-  import Sanbase.Metric.Helper, only: [maybe_nullify_values: 1, remove_missing_values: 1]
+  import Sanbase.Metric.Transform, only: [maybe_nullify_values: 1, remove_missing_values: 1]
   alias Sanbase.Model.Project
 
   alias Sanbase.ClickhouseRepo

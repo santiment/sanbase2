@@ -3,6 +3,12 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   Uses ClickHouse to work with ETH transfers.
   """
 
+  use Ecto.Schema
+
+  alias Sanbase.ClickhouseRepo
+
+  require Logger
+
   @type t :: %__MODULE__{
           datetime: %DateTime{},
           from_address: String.t(),
@@ -14,20 +20,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
           type: String.t()
         }
 
-  @type spent_over_time_type :: %{
-          eth_spent: float,
-          datetime: %DateTime{}
-        }
-
   @type wallets :: list(String.t())
-
-  use Ecto.Schema
-
-  require Logger
-  alias Sanbase.ClickhouseRepo
-
-  alias Sanbase.Model.Project
-  alias Sanbase.DateTimeUtils
 
   @table "eth_transfers"
   @eth_decimals 1_000_000_000_000_000_000
@@ -88,53 +81,6 @@ defmodule Sanbase.Clickhouse.EthTransfers do
           trx_hash: trx_hash,
           trx_value: trx_value / @eth_decimals
         }
-    end)
-  end
-
-  @doc ~s"""
-  The total ETH spent in the `from` - `to` interval
-  """
-  @spec eth_spent(wallets, %DateTime{}, %DateTime{}) ::
-          {:ok, []} | {:ok, [{String.t(), float()}]} | {:error, String.t()}
-  def eth_spent([], _, _), do: {:ok, []}
-
-  def eth_spent(wallets, from, to) do
-    {query, args} = eth_spent_query(wallets, from, to)
-
-    ClickhouseRepo.query_transform(query, args, fn [from, value] ->
-      {from, value / @eth_decimals}
-    end)
-    |> case do
-      {:ok, result} ->
-        {:ok, result}
-
-      {:error, error} ->
-        {:error, error}
-    end
-  end
-
-  @doc ~s"""
-  Return a list of maps `%{datetime: datetime, eth_spent: ethspent}` that shows
-  how much ETH has been spent for the list of `wallets` for each `interval` in the
-  time period [`from`, `to`]
-  """
-  @spec eth_spent_over_time(%Project{} | wallets, %DateTime{}, %DateTime{}, String.t()) ::
-          {:ok, list(spent_over_time_type)} | {:error, String.t()}
-  def eth_spent_over_time(%Project{} = project, from, to, interval) do
-    {:ok, eth_addresses} = Project.eth_addresses(project)
-    eth_spent_over_time(eth_addresses, from, to, interval)
-  end
-
-  def eth_spent_over_time([], _, _, _), do: {:ok, []}
-
-  def eth_spent_over_time(wallets, from, to, interval) when is_list(wallets) do
-    {query, args} = eth_spent_over_time_query(wallets, from, to, interval)
-
-    ClickhouseRepo.query_transform(query, args, fn [value, datetime_str] ->
-      %{
-        datetime: datetime_str |> DateTimeUtils.from_erl!(),
-        eth_spent: value / @eth_decimals
-      }
     end)
   end
 
@@ -224,83 +170,6 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       from |> DateTime.to_unix(),
       to |> DateTime.to_unix(),
       limit
-    ]
-
-    {query, args}
-  end
-
-  defp eth_spent_query(wallets, from, to) do
-    from_unix = DateTime.to_unix(from)
-    to_unix = DateTime.to_unix(to)
-
-    prewhere_clause =
-      wallets
-      |> Enum.map(fn list ->
-        list = list |> Enum.map(fn x -> ~s/'#{x}'/ end) |> Enum.join(", ")
-        "(from IN (#{list}) AND NOT to IN (#{list}))"
-      end)
-      |> Enum.join(" OR ")
-
-    query = """
-    SELECT from, SUM(value)
-    FROM (
-      SELECT any(value) as value, from
-      FROM #{@table}
-      PREWHERE (#{prewhere_clause})
-      AND dt >= toDateTime(?1)
-      AND dt <= toDateTime(?2)
-      AND type == 'call'
-      GROUP BY from, type, to, dt, transactionHash
-    )
-    GROUP BY from
-    """
-
-    args = [
-      from_unix,
-      to_unix
-    ]
-
-    {query, args}
-  end
-
-  defp eth_spent_over_time_query(wallets, from, to, interval) do
-    from_unix = DateTime.to_unix(from)
-    to_unix = DateTime.to_unix(to)
-    interval = DateTimeUtils.str_to_sec(interval)
-    span = div(to_unix - from_unix, interval) |> max(1)
-
-    query = """
-    SELECT SUM(value), time
-      FROM (
-        SELECT
-          toDateTime(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) as time,
-          toFloat64(0) AS value
-        FROM numbers(?2)
-
-        UNION ALL
-
-        SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, sum(value) as value
-          FROM (
-            SELECT any(value) as value, dt
-            FROM #{@table}
-            PREWHERE from IN (?3) AND NOT to IN (?3)
-            AND dt >= toDateTime(?4)
-            AND dt <= toDateTime(?5)
-            AND type == 'call'
-            GROUP BY from, type, to, dt, transactionHash
-          )
-        GROUP BY time
-      )
-    GROUP BY time
-    ORDER BY time
-    """
-
-    args = [
-      interval,
-      span,
-      wallets,
-      from_unix,
-      to_unix
     ]
 
     {query, args}

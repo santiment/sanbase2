@@ -1694,6 +1694,23 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Total Supply",
+    "name": "total_supply",
+    "metric": "total_supply",
+    "version": "2020-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Tokens/Coins On Exchanges",
     "name": "supply_on_exchanges",
     "metric": "exchange_token_supply",
@@ -1939,7 +1956,7 @@
     "access": "restricted",
     "selectors": ["slug"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -2102,7 +2119,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Fees paid in ETH",
+    "human_readable_name": "Fees Paid in ETH",
     "name": "fees",
     "metric": "fees",
     "version": "2019-01-01",
@@ -2113,6 +2130,57 @@
       "SANBASE": "free"
     },
     "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Fees Paid in USD",
+    "name": "fees_usd",
+    "metric": "fees_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Average Fees Paid in USD",
+    "name": "average_fees_usd",
+    "metric": "avg_fees_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Median Fees Paid in USD",
+    "name": "median_fees_usd",
+    "metric": "median_fees_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
@@ -3122,6 +3190,23 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Circulation for coins that moved in the past 180 days in USD",
+    "name": "circulation_usd_180d",
+    "metric": "stack_circulation_usd_180d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Circulation for coins that moved in the past 180 days in USD Change (1d)",
     "name": "circulation_usd_180d_change_1d",
     "metric": "stack_circulation_usd_180d_change_1d",
@@ -3135,7 +3220,7 @@
     "aggregation": "last",
     "min_interval": "1d",
     "table": "intraday_metrics",
-    "has_incomplete_data": false,
+    "has_incomplete_data": true,
     "data_type": "timeseries"
   },
   {
@@ -3152,7 +3237,7 @@
     "aggregation": "last",
     "min_interval": "1d",
     "table": "intraday_metrics",
-    "has_incomplete_data": false,
+    "has_incomplete_data": true,
     "data_type": "timeseries"
   },
   {
@@ -3169,7 +3254,24 @@
     "aggregation": "last",
     "min_interval": "1d",
     "table": "intraday_metrics",
-    "has_incomplete_data": false,
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Circulation for coins that have not moved in the past 180 days in USD",
+    "name": "dormant_circulation_usd_180d",
+    "metric": "dormant_circulation_usd_180d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
     "data_type": "timeseries"
   },
   {
@@ -3186,7 +3288,7 @@
     "aggregation": "last",
     "min_interval": "1d",
     "table": "intraday_metrics",
-    "has_incomplete_data": false,
+    "has_incomplete_data": true,
     "data_type": "timeseries"
   },
   {
@@ -3203,7 +3305,7 @@
     "aggregation": "last",
     "min_interval": "1d",
     "table": "intraday_metrics",
-    "has_incomplete_data": false,
+    "has_incomplete_data": true,
     "data_type": "timeseries"
   },
   {
@@ -3219,6 +3321,23 @@
     },
     "aggregation": "last",
     "min_interval": "1d",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Exchange Inflow in USD",
+    "name": "exchange_inflow_usd",
+    "metric": "exchange_inflow_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
@@ -3261,6 +3380,23 @@
     "human_readable_name": "Exchange Inflow in USD Change (30d)",
     "name": "exchange_inflow_usd_change_30d",
     "metric": "exchange_inflow_usd_change_30d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Exchange Outflow in USD",
+    "name": "exchange_outflow_usd",
+    "metric": "exchange_outflow_usd",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug"],

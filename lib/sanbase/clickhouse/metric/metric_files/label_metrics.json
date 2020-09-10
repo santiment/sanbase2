@@ -7,7 +7,7 @@
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -24,7 +24,7 @@
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -41,7 +41,7 @@
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -58,7 +58,7 @@
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "last",
@@ -75,7 +75,7 @@
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -92,7 +92,7 @@
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",
@@ -109,7 +109,143 @@
     "access": "restricted",
     "selectors": ["slug", "owner", "label"],
     "min_plan": {
-      "SANAPI": "custom",
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Total Trade Volume by DEX",
+    "name": "total_trade_volume_by_dex",
+    "metric": "total_trade_volume_by_dex",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "ETH-Based Tokens Trade Volume by DEX",
+    "name": "eth_based_trade_volume_by_dex",
+    "metric": "eth_based_trade_volume_by_dex",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Stablecoin Trade Volume by DEX",
+    "name": "stablecoin_trade_volume_by_dex",
+    "metric": "stablecoin_trade_volume_by_dex",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Other Token Trade Volume by DEX",
+    "name": "other_trade_volume_by_dex",
+    "metric": "other_trade_volume_by_dex",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Total Trade Amount by DEX",
+    "name": "total_trade_amount_by_dex",
+    "metric": "total_trade_amount_by_dex",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "ETH-Based Tokens Trade Amount by DEX",
+    "name": "eth_based_trade_amount_by_dex",
+    "metric": "eth_based_trade_amount_by_dex",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Stablecoin Trade Amount by DEX",
+    "name": "stablecoin_trade_amount_by_dex",
+    "metric": "stablecoin_trade_amount_by_dex",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Other Token Trade Amount by DEX",
+    "name": "other_trade_amount_by_dex",
+    "metric": "other_trade_amount_by_dex",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
       "SANBASE": "free"
     },
     "aggregation": "sum",

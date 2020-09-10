@@ -1,6 +1,6 @@
 defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
-  import Sanbase.Metric.Helper
+  import Sanbase.Metric.Transform
 
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.Github

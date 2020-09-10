@@ -22,9 +22,10 @@ defmodule SanbaseWeb do
       use Phoenix.Controller, namespace: SanbaseWeb
 
       import Plug.Conn
-      import SanbaseWeb.Router.Helpers
       import SanbaseWeb.Gettext
       import Phoenix.LiveView.Controller
+
+      alias SanbaseWeb.Router.Helpers, as: Routes
     end
   end
 
@@ -39,11 +40,8 @@ defmodule SanbaseWeb do
 
       use Phoenix.HTML
       import Phoenix.View
-      import SanbaseWeb.ErrorHelpers
-      import SanbaseWeb.Gettext
-      import Phoenix.LiveView.Helpers
 
-      alias SanbaseWeb.Router.Helpers, as: Routes
+      unquote(view_helpers())
     end
   end
 
@@ -61,6 +59,20 @@ defmodule SanbaseWeb do
     quote do
       use Phoenix.Channel
       import SanbaseWeb.Gettext
+    end
+  end
+
+  defp view_helpers do
+    quote do
+      # Use all HTML functionality (forms, tags, etc)
+      use Phoenix.HTML
+
+      # Import basic rendering functionality (render, render_layout, etc)
+      import Phoenix.View
+
+      import SanbaseWeb.ErrorHelpers
+      import SanbaseWeb.Gettext
+      alias SanbaseWeb.Router.Helpers, as: Routes
     end
   end
 

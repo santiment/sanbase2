@@ -9,7 +9,6 @@ alias Sanbase.Signal.Trigger
 
 config :sanbase, Sanbase.Signals.Scheduler,
   scheduler_enabled: {:system, "QUANTUM_SCHEDULER_ENABLED", false},
-  global: true,
   timeout: 30_000,
   jobs: [
     price_volume_difference_sonar_signal: [
@@ -49,7 +48,6 @@ config :sanbase, Sanbase.Signals.Scheduler,
 
 config :sanbase, Sanbase.Scrapers.Scheduler,
   scheduler_enabled: {:system, "QUANTUM_SCHEDULER_ENABLED", false},
-  global: true,
   timeout: 30_000,
   jobs: [
     notify_users_for_comments: [

@@ -11,7 +11,6 @@ defmodule Sanbase.Metric do
   @aggregations Sanbase.Metric.Helper.aggregations()
   @aggregations_per_metric Sanbase.Metric.Helper.aggregations_per_metric()
   @free_metrics Sanbase.Metric.Helper.free_metrics()
-  @histogram_metric_module_mapping Sanbase.Metric.Helper.histogram_metric_module_mapping()
   @histogram_metrics Sanbase.Metric.Helper.histogram_metrics()
   @histogram_metrics_mapset Sanbase.Metric.Helper.histogram_metrics_mapset()
   @metric_module_mapping Sanbase.Metric.Helper.metric_module_mapping()
@@ -21,7 +20,6 @@ defmodule Sanbase.Metric do
   @metrics_mapset Sanbase.Metric.Helper.metrics_mapset()
   @min_plan_map Sanbase.Metric.Helper.min_plan_map()
   @restricted_metrics Sanbase.Metric.Helper.restricted_metrics()
-  @timeseries_metric_module_mapping Sanbase.Metric.Helper.timeseries_metric_module_mapping()
   @timeseries_metrics Sanbase.Metric.Helper.timeseries_metrics()
   @timeseries_metrics_mapset Sanbase.Metric.Helper.timeseries_metrics_mapset()
 

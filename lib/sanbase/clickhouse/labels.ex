@@ -42,7 +42,6 @@ defmodule Sanbase.Clickhouse.Label do
   def add_labels(_, []), do: {:ok, []}
 
   def add_labels(slug, transactions) when is_list(transactions) do
-    IO.inspect(transactions)
     addresses = get_list_of_addresses(transactions)
     {query, args} = addresses_labels_query(slug, addresses)
 

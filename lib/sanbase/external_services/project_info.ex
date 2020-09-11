@@ -130,18 +130,33 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
       |> Repo.insert_or_update!()
 
       project
-      |> Project.ContractAddress.add_contract(
-        project_info_map
-        |> Map.put(:address, project_info_map.main_contract_address)
-        |> Map.put(:decimals, project_info_map.token_decimals)
-      )
-
-      project
+      |> maybe_add_contract_address(project_info_map)
       |> Project.changeset(project_info_map)
       |> Repo.update!()
     end)
     |> insert_tag(project_info)
   end
+
+  defp maybe_add_contract_address(
+         project,
+         %{main_contract_address: contract_address} = project_info_map
+       )
+       when is_binary(contract_address) do
+    label = if not Project.has_main_contract_addresses?(project), do: "main"
+
+    project
+    |> Project.ContractAddress.add_contract(
+      project_info_map
+      |> Map.put(:label, label)
+      |> Map.put(:address, contract_address)
+      |> Map.put(:decimals, project_info_map.token_decimals)
+    )
+
+    # The `project` won't have an up-to date list of contracts otherwise
+    Repo.preload(project, [:contract_addresses], force: true)
+  end
+
+  defp maybe_add_contract_address(project, _project_info_map), do: project
 
   defp insert_tag({:ok, project}, project_info) do
     do_insert_tag(project, project_info)

@@ -17,18 +17,6 @@ defmodule Sanbase.Clickhouse.Metric do
 
   alias Sanbase.ClickhouseRepo
 
-  @metrics_file "metric_files/available_v2_metrics.json"
-  @holders_file "metric_files/holders_metrics.json"
-  @makerdao_file "metric_files/makerdao_metrics.json"
-  @label_file "metric_files/label_metrics.json"
-  @balance_and_flow_label_file "metric_files/balance_and_flow_labeled_metrics.json"
-
-  @external_resource Path.join(__DIR__, @metrics_file)
-  @external_resource Path.join(__DIR__, @holders_file)
-  @external_resource Path.join(__DIR__, @makerdao_file)
-  @external_resource Path.join(__DIR__, @label_file)
-  @external_resource Path.join(__DIR__, @balance_and_flow_label_file)
-
   @plain_aggregations FileHandler.aggregations()
   @aggregations [nil] ++ @plain_aggregations
   @timeseries_metrics_name_list FileHandler.metrics_with_data_type(:timeseries)

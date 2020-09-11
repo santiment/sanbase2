@@ -32,27 +32,17 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   #  `time-bound` means that the metric is calculated by taking into account
   #  only the coins/tokens that moved in the past N days/years
 
-  @metrics_file "metric_files/available_v2_metrics.json"
-  @holders_file "metric_files/holders_metrics.json"
-  @makerdao_file "metric_files/makerdao_metrics.json"
-  @label_file "metric_files/label_metrics.json"
-  @defi_file "metric_files/defi_metrics.json"
-  @balance_and_flow_label_file "metric_files/balance_and_flow_labeled_metrics.json"
+  # @external_resource is registered with `accumulate: true`, so it holds all files
+  @external_resource Path.join(__DIR__, "metric_files/available_v2_metrics.json")
+  @external_resource Path.join(__DIR__, "metric_files/holders_metrics.json")
+  @external_resource Path.join(__DIR__, "metric_files/makerdao_metrics.json")
+  @external_resource Path.join(__DIR__, "metric_files/label_metrics.json")
+  @external_resource Path.join(__DIR__, "metric_files/defi_metrics.json")
+  @external_resource Path.join(__DIR__, "metric_files/balance_and_flow_labeled_metrics.json")
 
-  @external_resource metrics_file = Path.join(__DIR__, @metrics_file)
-  @external_resource holders_file = Path.join(__DIR__, @holders_file)
-  @external_resource makerdao_file = Path.join(__DIR__, @makerdao_file)
-  @external_resource label_file = Path.join(__DIR__, @label_file)
-  @external_resource defi_file = Path.join(__DIR__, @defi_file)
-  @external_resource balance_and_flow_label_file =
-                       Path.join(__DIR__, @balance_and_flow_label_file)
-
-  @metrics_json (File.read!(metrics_file) |> Jason.decode!()) ++
-                  (File.read!(holders_file) |> Jason.decode!()) ++
-                  (File.read!(makerdao_file) |> Jason.decode!()) ++
-                  (File.read!(label_file) |> Jason.decode!()) ++
-                  (File.read!(defi_file) |> Jason.decode!()) ++
-                  (File.read!(balance_and_flow_label_file) |> Jason.decode!())
+  @metrics_json Enum.reduce(@external_resource, [], fn file, acc ->
+                  (File.read!(file) |> Jason.decode!()) ++ acc
+                end)
 
   @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
 
@@ -85,7 +75,7 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
       require(Sanbase.Break, as: Break)
 
       Break.break("""
-      There are metrics defined in the #{@metrics_file} that have not supported aggregation.
+      There are metrics defined in the metric files that have not supported aggregation.
       These metrics are: #{inspect(metrics)}
       """)
   end

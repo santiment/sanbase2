@@ -3,6 +3,8 @@ defprotocol Sanbase.Signal do
 end
 
 defimpl Sanbase.Signal, for: Any do
+  alias Sanbase.Auth.User
+
   @default_limit_per_day 100
   @channels ["email", "telegram", "webhook", "webpush"]
 
@@ -48,6 +50,7 @@ defimpl Sanbase.Signal, for: Any do
   defp send_webhook(
          %{
            id: user_trigger_id,
+           user: %User{} = user,
            trigger: %{settings: %{payload: payload_map}}
          },
          webhook_url,
@@ -57,16 +60,17 @@ defimpl Sanbase.Signal, for: Any do
       do_send_webhook(webhook_url, identifier, payload, user_trigger_id)
     end
 
-    send_or_limit(payload_map, max_signals_to_send, fun)
+    send_or_limit("webhook", user, payload_map, max_signals_to_send, fun)
   end
 
   defp send_email(
          %{
            id: id,
-           user: %Sanbase.Auth.User{
-             email: email,
-             user_settings: %{settings: %{signal_notify_email: true}}
-           },
+           user:
+             %User{
+               email: email,
+               user_settings: %{settings: %{signal_notify_email: true}}
+             } = user,
            trigger: %{settings: %{payload: payload_map}}
          },
          %{"email" => max_signals_to_send}
@@ -76,11 +80,11 @@ defimpl Sanbase.Signal, for: Any do
       do_send_email(email, payload, id)
     end
 
-    send_or_limit(payload_map, max_signals_to_send, fun)
+    send_or_limit("email", user, payload_map, max_signals_to_send, fun)
   end
 
   defp send_email(
-         %{user: %{id: user_id}, trigger: %{settings: %{payload: payload_map}}},
+         %{user: %User{id: user_id} = user, trigger: %{settings: %{payload: payload_map}}},
          _max_signals_to_send
        ) do
     Enum.map(payload_map, fn {identifier, _payload} ->
@@ -91,7 +95,7 @@ defimpl Sanbase.Signal, for: Any do
   defp send_telegram(
          %{
            id: user_trigger_id,
-           user: %{user_settings: %{settings: %{telegram_chat_id: telegram_chat_id}}} = user,
+           user: %User{user_settings: %{settings: %{telegram_chat_id: telegram_chat_id}}} = user,
            trigger: %{
              settings: %{payload: payload_map}
            }
@@ -103,11 +107,11 @@ defimpl Sanbase.Signal, for: Any do
       Sanbase.Telegram.send_message(user, extend_payload(payload, user_trigger_id))
     end
 
-    send_or_limit(payload_map, max_signals_to_send, fun)
+    send_or_limit("telegram", user, payload_map, max_signals_to_send, fun)
   end
 
   defp send_telegram(
-         %{user: %{id: user_id}, trigger: %{settings: %{payload: payload_map}}},
+         %{user: %User{id: user_id}, trigger: %{settings: %{payload: payload_map}}},
          _max_signals_to_send
        ) do
     Enum.map(payload_map, fn {identifier, _payload} ->
@@ -180,8 +184,8 @@ defimpl Sanbase.Signal, for: Any do
     end
   end
 
-  defp send_or_limit(payload_map, limit, fun) when is_function(fun, 2) do
-    {result, _} =
+  defp send_or_limit(channel, user, payload_map, limit, fun) when is_function(fun, 2) do
+    {result, remaining_to_send} =
       payload_map
       |> Enum.reduce({[], limit}, fn {identifier, payload}, {list, remaining} ->
         case remaining do
@@ -194,6 +198,11 @@ defimpl Sanbase.Signal, for: Any do
             {[elem | list], remaining - 1}
         end
       end)
+
+    if remaining_to_send == 0 and limit != 0 do
+      # The limit has been reached during this call
+      send_limit_reached_notification(channel, user)
+    end
 
     result
   end
@@ -212,13 +221,6 @@ defimpl Sanbase.Signal, for: Any do
 
     signals_fired_today = Map.get(signals_fired, map_key, %{})
 
-    maybe_send_limit_reached_notification(
-      user,
-      signals_fired_today,
-      signals_fired_now,
-      signals_per_day_limit
-    )
-
     signals_fired_today_updated =
       Enum.into(@channels, %{}, fn channel ->
         count = Map.get(signals_fired_today, channel, 0) + Map.get(signals_fired_now, channel, 0)
@@ -229,24 +231,6 @@ defimpl Sanbase.Signal, for: Any do
     signals_fired = Map.put(signals_fired, map_key, signals_fired_today_updated)
 
     Sanbase.Auth.UserSettings.update_settings(user, %{signals_fired: signals_fired})
-  end
-
-  defp maybe_send_limit_reached_notification(
-         user,
-         signals_fired_today,
-         signals_fired_now,
-         signal_per_day_limit
-       ) do
-    Enum.each(@channels, fn channel ->
-      sent_today = Map.get(signals_fired_today, channel, 0)
-      sent_now = Map.get(signals_fired_now, channel, 0)
-      limit = Map.get(signal_per_day_limit, channel, @default_limit_per_day)
-
-      case sent_today < limit and sent_today + sent_now >= limit do
-        false -> :ok
-        true -> send_limit_reached_notification(channel, user)
-      end
-    end)
   end
 
   defp send_limit_reached_notification("telegram", user) do

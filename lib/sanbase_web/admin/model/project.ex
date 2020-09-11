@@ -160,6 +160,7 @@ defmodule SanbaseWeb.ExAdmin.Model.Project do
         input(project, :slack_link)
         input(project, :linkedin_link)
         input(project, :telegram_link)
+        input(project, :telegram_chat_id)
 
         input(project, :email)
 

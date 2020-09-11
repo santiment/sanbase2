@@ -99,8 +99,8 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
 
     def build_result(current_slugs, settings, trigger) do
       %{state: %{slugs_in_screener: previous_slugs}} = settings
-      added_slugs = current_slugs -- previous_slugs
-      removed_slugs = previous_slugs -- current_slugs
+      added_slugs = (current_slugs -- previous_slugs) |> Enum.reject(&is_nil/1)
+      removed_slugs = (previous_slugs -- current_slugs) |> Enum.reject(&is_nil/1)
 
       case added_slugs != [] or removed_slugs != [] do
         true ->

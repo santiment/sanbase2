@@ -63,6 +63,19 @@ defmodule SanbaseWeb.ExAdmin.Insight.Post do
           column(:name, link: true)
         end
       end
+
+      panel "Tags" do
+        markup_contents do
+          a ".btn .btn-primary",
+            href: "/admin/post_tags/new?post_id=" <> to_string(post.id) do
+            "New Tag"
+          end
+        end
+
+        table_for Sanbase.Repo.preload(post, [:tags]).tags do
+          column(:name)
+        end
+      end
     end
 
     form post do

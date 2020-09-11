@@ -478,7 +478,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "exchange_outflow_usd_change_30d",
         "social_volume_change_1d",
         "social_volume_change_7d",
-        "social_volume_change_30d"
+        "social_volume_change_30d",
+        "price_daa_divergence",
+        "adjusted_price_daa_divergence"
       ]
       |> Enum.sort()
 

@@ -3463,7 +3463,7 @@
   },
   {
     "human_readable_name": "Social Volume Change (1d)",
-    "name": "social_volume_change_1d",
+    "name": "social_volume_total_change_1d",
     "metric": "social_volume_change_1d",
     "version": "2019-01-01",
     "access": "restricted",
@@ -3480,7 +3480,7 @@
   },
   {
     "human_readable_name": "Social Volume Change (7d)",
-    "name": "social_volume_change_7d",
+    "name": "social_volume_total_change_7d",
     "metric": "social_volume_change_7d",
     "version": "2019-01-01",
     "access": "restricted",
@@ -3497,7 +3497,7 @@
   },
   {
     "human_readable_name": "Social Volume Change (30d)",
-    "name": "social_volume_change_30d",
+    "name": "social_volume_total_change_30d",
     "metric": "social_volume_change_30d",
     "version": "2019-01-01",
     "access": "restricted",
@@ -3530,6 +3530,23 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Sentiment Balance Total Change (1d)",
+    "name": "sentiment_balance_total_change_1d",
+    "metric": "sentiment_balance_change_1d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Adjusted Price - DAA divergence",
     "name": "adjusted_price_daa_divergence",
     "metric": "adjusted_daa_divergence",
@@ -3543,6 +3560,91 @@
     "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Total Change (7d)",
+    "name": "sentiment_balance_total_change_7d",
+    "metric": "sentiment_balance_change_7d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Total Change (30d)",
+    "name": "sentiment_balance_total_change_30d",
+    "metric": "sentiment_balance_change_30d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Social Dominance Change (1d)",
+    "name": "social_dominance_total_change_1d",
+    "metric": "social_dominance_change_1d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Social Dominance Change (7d)",
+    "name": "social_dominance_total_change_7d",
+    "metric": "social_dominance_change_7d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Social Dominance Change (30d)",
+    "name": "social_dominance_total_change_30d",
+    "metric": "social_dominance_change_30d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
   }

@@ -9,6 +9,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Clickhouse.Label
+  alias Sanbase.Clickhouse.HistoricalBalance.BtcBalance
 
   @max_concurrency 100
 
@@ -18,6 +19,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
         _resolution
       ) do
     async(fn -> calculate_token_top_transactions(project, args) end)
+  end
+
+  defp calculate_token_top_transactions(%Project{slug: "bitcoin"} = project, args) do
+    %{from: from, to: to, limit: limit} = args
+    limit = Enum.min([limit, 100])
+
+    with {:ok, token_transactions} <- BtcBalance.top_transactions(from, to, limit),
+         {:ok, token_transactions} <-
+           Clickhouse.MarkExchanges.mark_exchange_wallets(token_transactions),
+         {:ok, token_transactions} <- Label.add_labels("bitcoin", token_transactions) do
+      {:ok, token_transactions}
+    else
+      error ->
+        Logger.warn(
+          "Cannot fetch top token transactions for project with id #{project.id}. Reason: #{
+            inspect(error)
+          }"
+        )
+
+        {:nocache, {:ok, []}}
+    end
   end
 
   defp calculate_token_top_transactions(%Project{slug: slug} = project, args) do

@@ -42,6 +42,7 @@ defmodule Sanbase.Clickhouse.Label do
   def add_labels(_, []), do: {:ok, []}
 
   def add_labels(slug, transactions) when is_list(transactions) do
+    IO.inspect(transactions)
     addresses = get_list_of_addresses(transactions)
     {query, args} = addresses_labels_query(slug, addresses)
 
@@ -89,7 +90,15 @@ defmodule Sanbase.Clickhouse.Label do
   defp do_add_labels(transactions, address_labels_map) do
     transactions
     |> Enum.map(fn %{from_address: from, to_address: to} = transaction ->
-      from_labels = Map.get(address_labels_map, String.downcase(from.address), [])
+      from_labels =
+        case from.address do
+          nil ->
+            []
+
+          from_address when is_binary(from_address) ->
+            Map.get(address_labels_map, String.downcase(from.address), [])
+        end
+
       from = Map.put(from, :labels, from_labels)
 
       to_labels = Map.get(address_labels_map, String.downcase(to.address), [])

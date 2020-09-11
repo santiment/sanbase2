@@ -115,55 +115,20 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.BtcBalance do
   @spec top_transactions(%DateTime{}, %DateTime{}, integer) ::
           {:ok, nil} | {:ok, list(transaction)} | {:error, String.t()}
   def top_transactions(from, to, limit) do
-    with {:ok, recv_top_trxs_map} <- recv_top_transactions(from, to, limit),
-         {:ok, merged_trxs_map} <- merge_sent_top_transaction(recv_top_trxs_map, from, to, limit) do
-      Map.values(merged_trxs_map)
-      |> Enum.reject(&is_nil(&1[:from_address]))
-      |> Enum.sort_by(& &1.trx_value, :desc)
-    end
-  end
+    {query, args} = btc_top_transactions_query(from, to, limit)
 
-  # helpers
-  defp recv_top_transactions(from, to, limit) do
-    {recv_query, recv_args} = btc_top_transactions_query(from, to, limit, type: :funds_recv)
-
-    ClickhouseRepo.query_reduce(
-      recv_query,
-      recv_args,
-      %{},
-      fn [dt, to_address, value, trx_id], acc ->
-        Map.put(acc, trx_id, %{
+    ClickhouseRepo.query_transform(
+      query,
+      args,
+      fn [dt, to_address, value, trx_id] ->
+        %{
           datetime: DateTime.from_unix!(dt),
           to_address: to_address,
+          from_address: nil,
           trx_hash: trx_id,
           trx_value: value
-        })
+        }
       end
     )
-    |> IO.inspect()
-  end
-
-  defp merge_sent_top_transaction(recv_top_trxs_map, from, to, limit) do
-    {sent_query, sent_args} = btc_top_transactions_query(from, to, limit, type: :funds_sent)
-
-    ClickhouseRepo.query_reduce(
-      sent_query,
-      sent_args,
-      recv_top_trxs_map,
-      fn [dt, from_address, value, trx_id], acc ->
-        case Map.get(acc, trx_id) do
-          nil ->
-            acc
-
-          %{from_address: _from_address} ->
-            acc
-
-          %{} = trx_map ->
-            trx = Map.put(trx_map, :from_address, from_address)
-            Map.put(acc, trx_id, trx)
-        end
-      end
-    )
-    |> IO.inspect()
   end
 end

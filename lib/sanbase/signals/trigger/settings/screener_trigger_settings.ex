@@ -151,25 +151,23 @@ defmodule Sanbase.Signal.Trigger.ScreenerTriggerSettings do
         Project.List.by_slugs(added_slugs ++ removed_slugs, preload?: false)
         |> Enum.into(%{}, fn %{slug: slug} = project -> {slug, project} end)
 
-      entering =
-        Enum.map(added_slugs, fn slug ->
-          project = Map.get(projects_map, slug)
-          "[##{project.ticker} | #{project.name}](#{Project.sanbase_link(project)})"
-        end)
-
-      exiting =
-        Enum.map(removed_slugs, fn slug ->
-          project = Map.get(projects_map, slug)
-          "[##{project.ticker} | #{project.name}](#{Project.sanbase_link(project)})"
-        end)
+      newcomers = slugs_to_projects_string_list(added_slugs, projects_map)
+      leavers = slugs_to_projects_string_list(removed_slugs, projects_map)
 
       """
-      #{length(entering)} Newcomers:
-      #{entering}
+      #{length(newcomers)} Newcomers:
+      #{newcomers |> Enum.join("\n")}
       ---
-      #{length(exiting)} Leavers:
-      #{exiting}
+      #{length(leavers)} Leavers:
+      #{leavers |> Enum.join("\n")}
       """
+    end
+
+    defp slugs_to_projects_string_list(slugs, projects_map) do
+      slugs
+      |> Enum.map(&Map.get(projects_map, &1))
+      |> Enum.reject(&is_nil/1)
+      |> Enum.map(&"[##{&1.ticker} | #{&1.name}](#{Project.sanbase_link(&1)})")
     end
   end
 end

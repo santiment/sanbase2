@@ -72,7 +72,7 @@ defmodule Sanbase.Clickhouse.Label do
 
   defp addresses_labels_query(slug, addresses) do
     query = """
-    SELECT address as address, label, metadata
+    SELECT lower(address) as address, label, metadata
     FROM blockchain_address_labels FINAL
     PREWHERE
       blockchain = 'ethereum' AND

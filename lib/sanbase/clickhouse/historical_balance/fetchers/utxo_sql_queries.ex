@@ -126,4 +126,23 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.UtxoSqlQueries do
     args = [interval, span, addresses, from_unix, to_unix]
     {query, args}
   end
+
+  def btc_top_transactions_query(from, to, limit) do
+    to_unix = DateTime.to_unix(to)
+    from_unix = DateTime.to_unix(from)
+
+    # only > 100 BTC transfers if range is > 1 week, otherwise only bigger than 20
+    amount_filter = if Timex.diff(to, from, :days) > 7, do: 100, else: 20
+
+    query = """
+    SELECT toUnixTimestamp(dt), address, balance - oldBalance as amount, txID
+    FROM btc_balances FINAL
+    PREWHERE  amount > ?1 AND dt >= toDateTime(?2) AND dt < toDateTime(?3)
+    ORDER BY amount DESC
+    LIMIT ?4
+    """
+
+    args = [amount_filter, from_unix, to_unix, limit]
+    {query, args}
+  end
 end

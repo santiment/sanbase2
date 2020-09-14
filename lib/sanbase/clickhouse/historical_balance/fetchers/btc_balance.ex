@@ -19,6 +19,14 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.BtcBalance do
     field(:address, :string)
   end
 
+  @type transaction :: %{
+          from_address: String.t(),
+          to_address: String.t(),
+          trx_value: float,
+          trx_hash: String.t(),
+          datetime: Datetime.t()
+        }
+
   @doc false
   @spec changeset(any(), any()) :: no_return()
   def changeset(_, _),
@@ -101,5 +109,26 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.BtcBalance do
       {:ok, []} -> {:ok, 0}
       {:error, error} -> {:error, error}
     end
+  end
+
+  @doc false
+  @spec top_transactions(%DateTime{}, %DateTime{}, integer) ::
+          {:ok, nil} | {:ok, list(transaction)} | {:error, String.t()}
+  def top_transactions(from, to, limit) do
+    {query, args} = btc_top_transactions_query(from, to, limit)
+
+    ClickhouseRepo.query_transform(
+      query,
+      args,
+      fn [dt, to_address, value, trx_id] ->
+        %{
+          datetime: DateTime.from_unix!(dt),
+          to_address: to_address,
+          from_address: nil,
+          trx_hash: trx_id,
+          trx_value: value
+        }
+      end
+    )
   end
 end

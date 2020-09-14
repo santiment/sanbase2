@@ -51,7 +51,7 @@ defmodule Sanbase.Clickhouse.Label do
     end)
     |> case do
       {:ok, address_labels_map} ->
-        {:ok, do_add_labels(transactions, address_labels_map)}
+        {:ok, do_add_labels(slug, transactions, address_labels_map)}
 
       {:error, reason} ->
         {:error, reason}
@@ -59,6 +59,17 @@ defmodule Sanbase.Clickhouse.Label do
   end
 
   # helpers
+  defp addresses_labels_query("bitcoin", addresses) do
+    query = """
+    SELECT address, label, metadata
+    FROM blockchain_address_labels FINAL
+    PREWHERE blockchain = 'bitcoin' AND address IN (?1)
+    HAVING sign = 1
+    """
+
+    {query, [addresses]}
+  end
+
   defp addresses_labels_query(slug, addresses) do
     query = """
     SELECT lower(address) as address, label, metadata
@@ -78,7 +89,7 @@ defmodule Sanbase.Clickhouse.Label do
     transactions
     |> Enum.flat_map(fn transaction ->
       [
-        transaction.from_address.address,
+        transaction.from_address && transaction.from_address.address,
         transaction.to_address.address
       ]
     end)
@@ -86,7 +97,17 @@ defmodule Sanbase.Clickhouse.Label do
     |> Enum.reject(&is_nil/1)
   end
 
-  defp do_add_labels(transactions, address_labels_map) do
+  defp do_add_labels("bitcoin", transactions, address_labels_map) do
+    transactions
+    |> Enum.map(fn %{to_address: to} = transaction ->
+      to_labels = Map.get(address_labels_map, to.address, [])
+      to = Map.put(to, :labels, to_labels)
+
+      %{transaction | to_address: to}
+    end)
+  end
+
+  defp do_add_labels(_slug, transactions, address_labels_map) do
     transactions
     |> Enum.map(fn %{from_address: from, to_address: to} = transaction ->
       from_labels = Map.get(address_labels_map, String.downcase(from.address), [])

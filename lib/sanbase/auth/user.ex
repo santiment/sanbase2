@@ -474,14 +474,35 @@ defmodule Sanbase.Auth.User do
   end
 
   # Resource coud be watchlist, insight, user_trigger struct or any other struct which belongs to User
-  def resource_user_count_map(resource) do
-    from(
-      r in resource,
-      group_by: r.user_id,
-      select: {r.user_id, count(r.user_id)}
-    )
+  # By passing queries: [list_of_queries] you can apply list of filters to the main query
+  def resource_user_count_map(resource, opts \\ []) do
+    queries = Keyword.get(opts, :queries, [])
+
+    resource_query =
+      from(
+        r in resource,
+        group_by: r.user_id,
+        select: {r.user_id, count(r.user_id)}
+      )
+
+    query =
+      Enum.reduce(queries, resource_query, fn query_func, acc ->
+        query_func.(acc)
+      end)
+
+    query
     |> Repo.all()
     |> Enum.into(%{})
+  end
+
+  def screeners_user_count_map do
+    resource_user_count_map(UserList,
+      queries: [
+        fn query ->
+          from(r in query, where: fragment("?.function->>'name' != 'empty'", r))
+        end
+      ]
+    )
   end
 
   def anonymous_user_username, do: @anonymous_user_username

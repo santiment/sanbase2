@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.TransactionTypes do
   end
 
   object :address do
-    field(:address, :string)
+    field(:address, non_null(:string))
     field(:is_exchange, non_null(:boolean))
     field(:labels, non_null(list_of(:label)), default_value: [])
   end
@@ -22,7 +22,7 @@ defmodule SanbaseWeb.Graphql.TransactionTypes do
     field(:datetime, non_null(:datetime))
     field(:trx_hash, non_null(:string))
     field(:trx_value, non_null(:float))
-    field(:from_address, non_null(:address))
+    field(:from_address, :address)
     field(:to_address, non_null(:address))
   end
 

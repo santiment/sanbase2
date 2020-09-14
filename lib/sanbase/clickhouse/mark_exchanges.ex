@@ -63,18 +63,28 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
       ) do
     marked_exchange_transactions =
       transactions
-      |> Enum.map(fn %{from_address: from, to_address: to} = transaction ->
-        %{
-          transaction
-          | from_address: %{
-              address: from,
-              is_exchange: MapSet.member?(exchanges, from)
-            },
-            to_address: %{
-              address: to,
-              is_exchange: MapSet.member?(exchanges, to)
-            }
-        }
+      |> Enum.map(fn
+        %{from_address: nil, to_address: to} = transaction ->
+          %{
+            transaction
+            | to_address: %{
+                address: to,
+                is_exchange: MapSet.member?(exchanges, to)
+              }
+          }
+
+        %{from_address: from, to_address: to} = transaction ->
+          %{
+            transaction
+            | from_address: %{
+                address: from,
+                is_exchange: MapSet.member?(exchanges, from)
+              },
+              to_address: %{
+                address: to,
+                is_exchange: MapSet.member?(exchanges, to)
+              }
+          }
       end)
 
     {:reply, {:ok, marked_exchange_transactions}, state}

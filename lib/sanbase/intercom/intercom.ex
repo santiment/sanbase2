@@ -172,11 +172,10 @@ defmodule Sanbase.Intercom do
 
     HTTPoison.post(@intercom_url, stats_json, intercom_headers())
     |> case do
-      {:ok, %HTTPoison.Response{status_code: 200}} ->
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         Logger.info("Stats sent: #{inspect(stats_json |> Jason.decode!())}}")
-
+        stats = merge_intercom_attributes(stats, body)
         UserAttributes.save(%{user_id: stats.user_id, properties: stats})
-
         :ok
 
       {:ok, %HTTPoison.Response{} = response} ->
@@ -192,6 +191,17 @@ defmodule Sanbase.Intercom do
             inspect(reason)
           }"
         )
+    end
+  end
+
+  defp merge_intercom_attributes(stats, intercom_resp) do
+    res = Jason.decode!(intercom_resp)
+    app_version = get_in(res, ["custom_attributes", "app_version"])
+
+    if app_version do
+      put_in(stats, [:custom_attributes, :app_version], app_version)
+    else
+      stats
     end
   end
 

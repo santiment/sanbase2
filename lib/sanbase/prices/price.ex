@@ -558,6 +558,7 @@ defmodule Sanbase.Price do
     result =
       results
       |> Enum.map(fn {:ok, data} -> data end)
+      |> Enum.reject(&(&1 == []))
       |> Enum.zip()
       |> Enum.map(&Tuple.to_list/1)
       |> Enum.map(fn list ->

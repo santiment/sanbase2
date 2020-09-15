@@ -38,6 +38,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     maybe_register_and_get(cache_key, fun, slug, query)
   end
 
+  def available_table_metrics(%Project{slug: slug}, _args, _resolution) do
+    query = :available_table_metrics
+    cache_key = {__MODULE__, query, slug} |> Sanbase.Cache.hash()
+    fun = fn -> Metric.available_table_metrics_for_slug(%{slug: slug}) end
+    maybe_register_and_get(cache_key, fun, slug, query)
+  end
+
   def aggregated_timeseries_data(%Project{slug: slug}, %{metric: metric} = args, %{
         context: %{loader: loader}
       }) do

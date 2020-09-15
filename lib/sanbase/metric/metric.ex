@@ -24,6 +24,9 @@ defmodule Sanbase.Metric do
   @timeseries_metric_to_module_map Sanbase.Metric.Helper.timeseries_metric_to_module_map()
   @timeseries_metrics Sanbase.Metric.Helper.timeseries_metrics()
   @timeseries_metrics_mapset Sanbase.Metric.Helper.timeseries_metrics_mapset()
+  @table_metrics Sanbase.Metric.Helper.table_metrics()
+  @table_metrics_mapset Sanbase.Metric.Helper.table_metrics_mapset()
+  @table_metric_to_module_map Sanbase.Metric.Helper.table_metric_to_module_map()
 
   def has_metric?(metric) do
     case metric in @metrics_mapset do
@@ -189,6 +192,29 @@ defmodule Sanbase.Metric do
           to,
           interval,
           limit
+        )
+    end
+  end
+
+  @doc ~s"""
+  Get a table for a given metric
+  """
+
+  def table_data(metric, identifier, from, to)
+
+  def table_data(metric, identifier, from, to) do
+    case Map.get(@table_metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric, type: :timeseries)
+
+      module when is_atom(module) ->
+        identifier = transform_identifier(identifier)
+
+        module.table_data(
+          metric,
+          identifier,
+          from,
+          to
         )
     end
   end
@@ -383,6 +409,8 @@ defmodule Sanbase.Metric do
   def available_timeseries_metrics(), do: @timeseries_metrics
 
   def available_histogram_metrics(), do: @histogram_metrics
+
+  def available_table_metrics(), do: @table_metrics
 
   @doc ~s"""
   Get all slugs for which at least one of the metrics is available

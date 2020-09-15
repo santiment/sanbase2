@@ -7,8 +7,9 @@ defmodule Sanbase.Price.MetricAdapter do
 
   @timeseries_metrics ["price_usd", "price_btc", "price_eth", "volume_usd", "marketcap_usd"]
   @histogram_metrics []
+  @table_metrics []
 
-  @metrics @histogram_metrics ++ @timeseries_metrics
+  @metrics @histogram_metrics ++ @timeseries_metrics ++ @table_metrics
 
   @access_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
   @min_plan_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
@@ -93,6 +94,9 @@ defmodule Sanbase.Price.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_histogram_metrics(), do: @histogram_metrics
+
+  @impl Sanbase.Metric.Behaviour
+  def available_table_metrics(), do: @table_metrics
 
   @impl Sanbase.Metric.Behaviour
   def available_metrics(), do: @metrics

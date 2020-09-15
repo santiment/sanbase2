@@ -45,6 +45,13 @@ defmodule Sanbase.Metric.Helper do
                                            module.available_histogram_metrics(),
                                            fn metric -> %{metric: metric, module: module} end
                                          )
+
+    @table_metric_module_mapping_acc Enum.map(
+                                       module.available_table_metrics(),
+                                       fn metric ->
+                                         %{metric: metric, module: module}
+                                       end
+                                     )
   end
 
   @aggregations List.flatten(@aggregations_acc) |> Enum.uniq()
@@ -52,6 +59,9 @@ defmodule Sanbase.Metric.Helper do
   @restricted_metrics List.flatten(@restricted_metrics_acc) |> Enum.uniq()
   @timeseries_metric_module_mapping List.flatten(@timeseries_metric_module_mapping_acc)
                                     |> Enum.uniq()
+
+  @table_metric_module_mapping List.flatten(@table_metric_module_mapping_acc)
+                               |> Enum.uniq()
 
   @histogram_metric_module_mapping List.flatten(@histogram_metric_module_mapping_acc)
                                    |> Enum.uniq()
@@ -76,6 +86,9 @@ defmodule Sanbase.Metric.Helper do
   @timeseries_metrics_mapset MapSet.new(@timeseries_metrics)
   @histogram_metrics_mapset MapSet.new(@histogram_metrics)
 
+  @table_metrics Enum.map(@table_metric_module_mapping, & &1.metric)
+  @table_metrics_mapset MapSet.new(@table_metrics)
+
   def access_map(), do: @access_map
   def aggregations_per_metric(), do: @aggregations_per_metric
   def aggregations(), do: @aggregations
@@ -94,6 +107,14 @@ defmodule Sanbase.Metric.Helper do
   def metrics(), do: @metrics
   def min_plan_map(), do: @min_plan_map
   def restricted_metrics(), do: @restricted_metrics
+
+  def table_metrics(), do: @table_metrics
+  def table_metrics_mapset(), do: @table_metrics_mapset
+  def table_metric_module_mapping(), do: @table_metric_module_mapping
+
+  def table_metric_to_module_map(),
+    do: @table_metric_module_mapping |> Enum.into(%{}, &{&1.metric, &1.module})
+
   def timeseries_metric_module_mapping(), do: @timeseries_metric_module_mapping
 
   def timeseries_metric_to_module_map(),

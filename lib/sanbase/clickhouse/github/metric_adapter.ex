@@ -21,8 +21,9 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
 
   @timeseries_metrics Map.keys(@timeseries_metrics_function_mapping)
   @histogram_metrics []
+  @table_metrics []
 
-  @metrics @histogram_metrics ++ @timeseries_metrics
+  @metrics @histogram_metrics ++ @timeseries_metrics ++ @table_metrics
 
   @access_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
   @min_plan_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
@@ -184,6 +185,9 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_histogram_metrics(), do: @histogram_metrics
+
+  @impl Sanbase.Metric.Behaviour
+  def available_table_metrics(), do: @table_metrics
 
   @impl Sanbase.Metric.Behaviour
   def available_metrics(), do: @metrics

@@ -51,8 +51,9 @@ defmodule Sanbase.SocialData.MetricAdapter do
                         @active_users_timeseries_metrics
 
   @histogram_metrics []
+  @table_metrics []
 
-  @metrics @histogram_metrics ++ @timeseries_metrics
+  @metrics @histogram_metrics ++ @timeseries_metrics ++ @table_metrics
   @access_map Enum.reduce(@metrics, %{}, fn metric, acc -> Map.put(acc, metric, :restricted) end)
   @min_plan_map Enum.reduce(@metrics, %{}, fn metric, acc -> Map.put(acc, metric, :free) end)
 
@@ -181,6 +182,9 @@ defmodule Sanbase.SocialData.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_histogram_metrics(), do: @histogram_metrics
+
+  @impl Sanbase.Metric.Behaviour
+  def available_table_metrics(), do: @table_metrics
 
   @impl Sanbase.Metric.Behaviour
   def available_metrics(), do: @metrics

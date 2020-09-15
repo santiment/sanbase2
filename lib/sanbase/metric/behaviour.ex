@@ -7,7 +7,7 @@ defmodule Sanbase.Metric.Behaviour do
   @type metric :: String.t()
   @type interval :: String.t()
   @type opts :: Keyword.t()
-  @type available_data_types :: :timeseries | :histogram
+  @type available_data_types :: :timeseries | :histogram | :table
   @type direction :: :asc | :desc
   @type operator ::
           :greater_than | :less_than | :greater_than_or_equal_to | :less_than_or_equal_to
@@ -34,6 +34,12 @@ defmodule Sanbase.Metric.Behaviour do
 
   @type histogram_data :: list(histogram_data_map())
 
+  @type table_data :: %{
+          columns: list(String.t()),
+          rows: list(String.t()),
+          values: list(list(number()))
+        }
+
   @type aggregation :: nil | :any | :sum | :avg | :min | :max | :last | :first | :median
 
   @type timeseries_data_point :: %{datetime: Datetime.t(), value: float()}
@@ -56,6 +62,14 @@ defmodule Sanbase.Metric.Behaviour do
               interval :: interval(),
               limit :: non_neg_integer()
             ) :: {:ok, histogram_data} | {:error, String.t()}
+
+  @callback table_data(
+              metric :: metric(),
+              selector :: selector,
+              from :: DateTime.t(),
+              to :: DateTime.t(),
+              limit :: non_neg_integer()
+            ) :: {:ok, table_data} | {:error, String.t()}
 
   @callback aggregated_timeseries_data(
               metric :: metric,
@@ -109,6 +123,8 @@ defmodule Sanbase.Metric.Behaviour do
   @callback available_timeseries_metrics() :: list(metric)
 
   @callback available_histogram_metrics() :: list(metric)
+
+  @callback available_table_metrics() :: list(metric)
 
   @callback free_metrics() :: list(metric)
 

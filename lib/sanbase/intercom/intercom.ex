@@ -22,6 +22,7 @@ defmodule Sanbase.Intercom do
       triggers_map: User.resource_user_count_map(Sanbase.Signal.UserTrigger),
       insights_map: User.resource_user_count_map(Sanbase.Insight.Post),
       watchlists_map: User.resource_user_count_map(Sanbase.UserList),
+      screeners_count: User.screeners_user_count_map(),
       users_used_api_list: ApiCallData.users_used_api(),
       users_used_sansheets_list: ApiCallData.users_used_sansheets(),
       api_calls_per_user_count: ApiCallData.api_calls_count_per_user(),
@@ -78,6 +79,7 @@ defmodule Sanbase.Intercom do
            triggers_map: triggers_map,
            insights_map: insights_map,
            watchlists_map: watchlists_map,
+           screeners_map: screeners_map,
            users_used_api_list: users_used_api_list,
            users_used_sansheets_list: users_used_sansheets_list,
            api_calls_per_user_count: api_calls_per_user_count,
@@ -111,6 +113,7 @@ defmodule Sanbase.Intercom do
           all_watchlists_count: Map.get(watchlists_map, id, 0),
           all_triggers_count: Map.get(triggers_map, id, 0),
           all_insights_count: Map.get(insights_map, id, 0),
+          all_screeners_count: Map.get(screeners_map, id, 0),
           staked_san_tokens: Sanbase.Math.to_float(san_balance),
           address_balance_map: address_balance_map,
           sanbase_subscription_current_status: sanbase_subscription_current_status,
@@ -169,11 +172,10 @@ defmodule Sanbase.Intercom do
 
     HTTPoison.post(@intercom_url, stats_json, intercom_headers())
     |> case do
-      {:ok, %HTTPoison.Response{status_code: 200}} ->
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         Logger.info("Stats sent: #{inspect(stats_json |> Jason.decode!())}}")
-
+        stats = merge_intercom_attributes(stats, body)
         UserAttributes.save(%{user_id: stats.user_id, properties: stats})
-
         :ok
 
       {:ok, %HTTPoison.Response{} = response} ->
@@ -189,6 +191,17 @@ defmodule Sanbase.Intercom do
             inspect(reason)
           }"
         )
+    end
+  end
+
+  defp merge_intercom_attributes(stats, intercom_resp) do
+    res = Jason.decode!(intercom_resp)
+    app_version = get_in(res, ["custom_attributes", "app_version"])
+
+    if app_version do
+      put_in(stats, [:custom_attributes, :app_version], app_version)
+    else
+      stats
     end
   end
 

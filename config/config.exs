@@ -93,6 +93,10 @@ config :sentry,
   included_environments: [:prod],
   environment_name: Mix.env()
 
+config :earmark,
+  # disable using parallel map die to timeout errors
+  mapper: &Enum.map/2
+
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
 

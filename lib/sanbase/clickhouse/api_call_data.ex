@@ -57,7 +57,7 @@ defmodule Sanbase.Clickhouse.ApiCallData do
     {query, args} = api_calls_count_per_user_query()
 
     ClickhouseRepo.query_reduce(query, args, %{}, fn [user_id, count], acc ->
-      Map.put(acc, user_id, String.to_integer(count))
+      Map.put(acc, user_id, count)
     end)
     |> case do
       {:ok, result} -> result

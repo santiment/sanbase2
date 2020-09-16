@@ -95,6 +95,7 @@ config :sentry,
 
 config :earmark,
   # disable using parallel map die to timeout errors
+  timeout: nil,
   mapper: &Enum.map/2
 
 config :hammer,

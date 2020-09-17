@@ -365,5 +365,15 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
       middleware(AccessControl)
       cache_resolve(&ClickhouseResolver.mining_pools_distribution/3)
     end
+
+    field :eth_fees_distribution, list_of(:fees_distribution) do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:limit, :integer, default_value: 20)
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(AccessControl)
+      cache_resolve(&ClickhouseResolver.eth_fees_distribution/3)
+    end
   end
 end

@@ -251,4 +251,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     )
     |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :percent_on_exchanges)
   end
+
+  def eth_fees_distribution(_root, %{from: from, to: to, limit: limit}, _res) do
+    case Sanbase.Clickhouse.Fees.eth_fees_distribution(from, to, limit) do
+      {:ok, fees} ->
+        {:ok, fees}
+
+      {:error, error} ->
+        {:error, handle_graphql_error("ETH Fees Distribution", "ethereum", error)}
+    end
+  end
 end

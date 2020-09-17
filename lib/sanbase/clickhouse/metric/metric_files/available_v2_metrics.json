@@ -2170,6 +2170,40 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Fees Paid in ETH",
+    "name": "fees_intraday",
+    "metric": "fees_intraday",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Fees Paid in USD",
+    "name": "fees_usd_intraday",
+    "metric": "fees_usd_intraday",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Average Fees Paid in USD",
     "name": "average_fees_usd",
     "metric": "avg_fees_usd",

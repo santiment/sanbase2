@@ -2,7 +2,9 @@ defmodule SanbaseWeb.Graphql.ClickhouseTypes do
   use Absinthe.Schema.Notation
 
   object :fees_distribution do
-    field(:asset, non_null(:string))
+    field(:slug, :string)
+    field(:ticker, :string)
+    field(:address, :string)
     field(:fees, non_null(:float))
   end
 

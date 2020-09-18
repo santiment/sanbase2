@@ -4,11 +4,24 @@ defmodule Sanbase.Clickhouse.Fees do
   def eth_fees_distribution(from, to, limit) do
     {query, args} = eth_fees_distribution_query(from, to, limit)
 
-    ClickhouseRepo.query_transform(query, args, fn [asset, fees] ->
-      %{
-        asset: asset,
-        fees: fees
-      }
+    ClickhouseRepo.query_transform(query, args, fn [slug_or_address, fees] ->
+      project = Sanbase.Model.Project.by_slug(slug_or_address)
+
+      if project do
+        %{
+          slug: project.slug,
+          ticker: project.ticker,
+          address: nil,
+          fees: fees
+        }
+      else
+        %{
+          slug: nil,
+          ticker: nil,
+          address: slug_or_address,
+          fees: fees
+        }
+      end
     end)
   end
 

@@ -73,6 +73,15 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:value, :float)
   end
 
+  object :string_address_float_value do
+    field(:address, :string)
+    field(:value, :float)
+  end
+
+  object :string_address_float_value_list do
+    field(:data, list_of(:string_address_float_value))
+  end
+
   object :datetime_range_float_value_list do
     field(:data, list_of(:datetime_range_float_value))
   end
@@ -89,7 +98,8 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       :string_list,
       :float_list,
       :float_range_float_value_list,
-      :datetime_range_float_value_list
+      :datetime_range_float_value_list,
+      :string_address_float_value_list
     ])
 
     resolve_type(fn
@@ -104,6 +114,10 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
       %{data: [%{range: [%DateTime{} | _], value: value} | _]}, _ when is_number(value) ->
         :datetime_range_float_value_list
+
+      %{data: [%{address: address, value: value} | _]}, _
+      when is_binary(address) and is_number(value) ->
+        :string_address_float_value_list
 
       %{data: []}, _ ->
         :float_list

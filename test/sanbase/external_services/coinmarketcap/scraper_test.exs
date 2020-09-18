@@ -5,7 +5,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ScraperTest do
 
   alias Sanbase.ExternalServices.Coinmarketcap.Scraper
   alias Sanbase.ExternalServices.ProjectInfo
-  alias Sanbase.Model.Project
 
   test "parsing the project page" do
     project_info =

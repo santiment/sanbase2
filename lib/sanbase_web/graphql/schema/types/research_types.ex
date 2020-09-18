@@ -8,4 +8,10 @@ defmodule SanbaseWeb.Graphql.ResearchTypes do
     field(:other_transfers, :float)
     field(:dex_trader, :float)
   end
+
+  object :uniswap_who_claimed do
+    field(:centralized_exchanges, :float)
+    field(:decentralized_exchanges, :float)
+    field(:other_addresses, :float)
+  end
 end

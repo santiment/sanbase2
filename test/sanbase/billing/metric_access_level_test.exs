@@ -489,7 +489,21 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "sentiment_balance_total_change_30d",
         "social_dominance_total_change_1d",
         "social_dominance_total_change_7d",
-        "social_dominance_total_change_30d"
+        "social_dominance_total_change_30d",
+        # Uniswap
+        "uniswap_total_claims_amount",
+        "uniswap_claims_amount",
+        "uniswap_claims_count",
+        "uniswap_claims",
+        "uniswap_lp_claims_amount",
+        "uniswap_lp_claims_count",
+        "uniswap_total_claims_percent",
+        "uniswap_total_lp_claims_amount",
+        "uniswap_total_lp_claims_count",
+        "uniswap_total_user_claims_amount",
+        "uniswap_total_user_claims_count",
+        "uniswap_user_claims_amount",
+        "uniswap_user_claims_count"
       ]
       |> Enum.sort()
 

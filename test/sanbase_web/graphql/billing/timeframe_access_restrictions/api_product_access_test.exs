@@ -30,7 +30,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
   describe "SanAPI product, No subscription" do
     test "can access FREE metrics for all time", context do
       {from, to} = from_to(2500, 0)
-      metric = v2_free_metric(context.next_integer.())
+      metric = v2_free_timeseries_metric(context.next_integer.(), "SANAPI")
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
@@ -106,7 +106,9 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access FREE metrics for all time", context do
       {from, to} = from_to(2500, 0)
-      metric = v2_free_metric(context.next_integer.())
+
+      metric = v2_free_timeseries_metric(context.next_integer.(), "SANAPI")
+
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
@@ -242,7 +244,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access FREE metrics for all time", context do
       {from, to} = from_to(2500, 0)
-      metric = v2_free_metric(context.next_integer.())
+      metric = v2_free_timeseries_metric(context.next_integer.(), "SANAPI")
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")
@@ -339,7 +341,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
 
     test "can access FREE metrics for all time", context do
       {from, to} = from_to(2500, 0)
-      metric = v2_free_metric(context.next_integer.())
+      metric = v2_free_timeseries_metric(context.next_integer.(), "SANAPI")
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
       result = execute_query(context.conn, query, "getMetric")

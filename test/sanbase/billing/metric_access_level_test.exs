@@ -495,7 +495,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "uniswap_total_claims_amount",
         "uniswap_claims_amount",
         "uniswap_claims_count",
-        "uniswap_claims",
+        "uniswap_total_claims_count",
         "uniswap_lp_claims_amount",
         "uniswap_lp_claims_count",
         "uniswap_total_claims_percent",

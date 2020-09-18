@@ -18,8 +18,8 @@
   },
   {
     "human_readable_name": "Uniswap Total Claims Count",
-    "name": "uniswap_claims",
-    "metric": "uniswap_total_claims_count",
+    "name": "uniswap_total_claims_count",
+    "metric": "uniswap_claims",
     "version": "2019-12-22",
     "access": "restricted",
     "selectors": ["slug"],

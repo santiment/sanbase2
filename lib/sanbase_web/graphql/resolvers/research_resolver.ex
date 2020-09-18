@@ -10,4 +10,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ResearchResolver do
         {:error, handle_graphql_error("Uniswap value distribution", "", error)}
     end
   end
+
+  def uniswap_who_claimed(_root, _args, _res) do
+    case Sanbase.Clickhouse.Research.Uniswap.who_claimed() do
+      {:ok, who_claimed} ->
+        {:ok, who_claimed}
+
+      {:error, error} ->
+        {:error, handle_graphql_error("Uniswap who claimed", "", error)}
+    end
+  end
 end

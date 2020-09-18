@@ -11,5 +11,9 @@ defmodule SanbaseWeb.Graphql.Schema.ResearchQueries do
     field :uniswap_value_distribution, :uniswap_value_distribution do
       cache_resolve(&ResearchResolver.uniswap_value_distribution/3)
     end
+
+    field :uniswap_who_claimed, :uniswap_who_claimed do
+      cache_resolve(&ResearchResolver.uniswap_who_claimed/3)
+    end
   end
 end

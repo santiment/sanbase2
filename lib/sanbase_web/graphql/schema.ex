@@ -77,6 +77,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.TableConfigurationQueries)
   import_types(Graphql.Schema.ReportQueries)
   import_types(Graphql.Schema.IntercomQueries)
+  import_types(Graphql.Schema.ResearchQueries)
 
   def dataloader() do
     Dataloader.new(timeout: :timer.seconds(20), get_policy: :return_nil_on_error)
@@ -138,6 +139,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:table_configuration_queries)
     import_fields(:report_queries)
     import_fields(:intercom_queries)
+    import_fields(:research_queries)
   end
 
   mutation do

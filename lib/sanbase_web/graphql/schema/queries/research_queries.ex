@@ -1,0 +1,15 @@
+defmodule SanbaseWeb.Graphql.Schema.ResearchQueries do
+  use Absinthe.Schema.Notation
+
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
+
+  alias SanbaseWeb.Graphql.Resolvers.ResearchResolver
+
+  import_types(SanbaseWeb.Graphql.ResearchTypes)
+
+  object :research_queries do
+    field :uniswap_value_distribution, :uniswap_value_distribution do
+      cache_resolve(&ResearchResolver.uniswap_value_distribution/3)
+    end
+  end
+end

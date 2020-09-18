@@ -47,7 +47,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   defp get_first_datetime(nil), do: {:error, "Project does not have coinmarketcap integer id"}
 
   defp get_first_datetime(id) do
-    "/v1/cryptocurrency/quotes/historical?format=chart_crypto_details&id=#{id}&time_start=2009-01-01"
+    "/v1.1/cryptocurrency/quotes/historical?format=chart_crypto_details&id=#{id}&time_start=2009-01-01"
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
@@ -232,8 +232,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
                 volume_usd: volume_usd |> Sanbase.Math.to_integer(),
                 datetime: Sanbase.DateTimeUtils.from_iso8601!(datetime_iso8601)
               }
+
+            {_, _} ->
+              nil
           end
         )
+        |> Enum.reject(&is_nil/1)
 
       {:ok, result, interval}
     else
@@ -251,7 +255,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     } - #{DateTime.from_unix!(to_unix)}]
     """)
 
-    "/v1/global-metrics/quotes/historical?format=chart&interval=5m&time_start=#{from_unix}&time_end=#{
+    "/v1.1/global-metrics/quotes/historical?format=chart&interval=5m&time_start=#{from_unix}&time_end=#{
       to_unix
     }"
     |> get()
@@ -283,7 +287,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     } - #{DateTime.from_unix!(to_unix)}]
     """)
 
-    "/v1/cryptocurrency/quotes/historical?convert=USD,BTC&format=chart_crypto_details&id=#{id}&time_start=#{
+    "/v1.1/cryptocurrency/quotes/historical?convert=USD,BTC&format=chart_crypto_details&id=#{id}&time_start=#{
       from_unix
     }&time_end=#{to_unix}"
     |> get()

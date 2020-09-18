@@ -34,7 +34,8 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "can access FREE metrics for all time", context do
       {from, to} = from_to(2500, 0)
       slug = context.project.slug
-      metric = v2_free_metric(context.next_integer.())
+
+      metric = v2_free_timeseries_metric(context.next_integer.(), "SANBASE")
       query = metric_query(metric, slug, from, to)
 
       result = execute_query(context.conn, query, "getMetric")
@@ -185,7 +186,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "can access FREE metrics for all time", context do
       {from, to} = from_to(4000, 0)
       slug = context.project.slug
-      metric = v2_free_metric(context.next_integer.())
+      metric = v2_free_timeseries_metric(context.next_integer.(), "SANBASE")
       query = metric_query(metric, slug, from, to)
 
       result = execute_query(context.conn, query, "getMetric")

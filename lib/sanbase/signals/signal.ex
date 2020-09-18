@@ -5,8 +5,14 @@ end
 defimpl Sanbase.Signal, for: Any do
   alias Sanbase.Auth.User
 
-  @default_limit_per_day 100
-  @channels ["email", "telegram", "webhook", "webpush"]
+  @default_limit_per_day %{
+    "email" => 50,
+    "telegram" => 100,
+    "webhook" => 1000,
+    "webpush" => 1000
+  }
+
+  @channels Map.keys(@default_limit_per_day)
 
   def send(%{user: user, trigger: %{settings: %{channel: channel}}} = user_trigger) do
     # Mutex is needed, so the `max_signals_to_send` can be properly counted and
@@ -141,7 +147,9 @@ defimpl Sanbase.Signal, for: Any do
     notifications_sent_today = Map.get(signals_fired, Date.utc_today() |> to_string(), %{})
 
     Enum.reduce(@channels, %{}, fn channel, map ->
-      channel_limit = Map.get(signals_per_day_limit, channel, @default_limit_per_day)
+      channel_limit =
+        Map.get(signals_per_day_limit, channel) || Map.get(@default_limit_per_day, channel)
+
       channel_sent_today = Map.get(notifications_sent_today, channel, 0)
       left_to_send = Enum.max([channel_limit - channel_sent_today, 0])
 

@@ -219,6 +219,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "price_histogram",
         "spent_coins_cost",
         "all_spent_coins_cost",
+        "uniswap_top_claimers",
         # exchange supply metrics
         "supply_on_exchanges",
         "supply_outside_exchanges",

@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
 
   setup do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
+    # So it will work with uniswap metrics as well
     project = insert(:random_project)
     conn = setup_jwt_auth(build_conn(), user)
 
@@ -23,7 +24,11 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
 
   test "returns data for an available metric", context do
     %{conn: conn, slug: slug, from: from, to: to} = context
-    metric = Metric.available_histogram_metrics() |> Enum.random()
+
+    metric =
+      Metric.available_histogram_metrics()
+      |> Enum.reject(&String.contains?(&1, "uniswap"))
+      |> Enum.random()
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.Metric.histogram_data/6, success_result())
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -44,7 +49,9 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
 
   test "returns data for all available metrics", context do
     %{conn: conn, slug: slug, from: from, to: to} = context
-    metrics = Metric.available_histogram_metrics()
+
+    metrics =
+      Metric.available_histogram_metrics() |> Enum.reject(&String.contains?(&1, "uniswap"))
 
     Sanbase.Mock.prepare_mock2(
       &Sanbase.Clickhouse.Metric.histogram_data/6,

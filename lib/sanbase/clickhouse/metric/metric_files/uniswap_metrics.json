@@ -4,7 +4,7 @@
     "name": "uniswap_total_claims_amount",
     "metric": "uniswap_amount_claimed",
     "version": "2019-12-22",
-    "access": "restricted",
+    "access": "free",
     "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
@@ -21,7 +21,7 @@
     "name": "uniswap_total_claims_count",
     "metric": "uniswap_claims",
     "version": "2019-12-22",
-    "access": "restricted",
+    "access": "free",
     "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
@@ -38,7 +38,7 @@
     "name": "uniswap_total_user_claims_amount",
     "metric": "uniswap_amount_user_claimed",
     "version": "2019-12-22",
-    "access": "restricted",
+    "access": "free",
     "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
@@ -55,7 +55,7 @@
     "name": "uniswap_total_user_claims_count",
     "metric": "uniswap_user_claims",
     "version": "2019-12-22",
-    "access": "restricted",
+    "access": "free",
     "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
@@ -72,7 +72,7 @@
     "name": "uniswap_total_lp_claims_amount",
     "metric": "uniswap_amount_lp_claimed",
     "version": "2019-12-22",
-    "access": "restricted",
+    "access": "free",
     "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
@@ -89,7 +89,7 @@
     "name": "uniswap_total_lp_claims_count",
     "metric": "uniswap_lp_claims",
     "version": "2019-12-22",
-    "access": "restricted",
+    "access": "free",
     "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
@@ -106,7 +106,7 @@
     "name": "uniswap_total_claims_percent",
     "metric": "uniswap_percent_claimed",
     "version": "2019-12-22",
-    "access": "restricted",
+    "access": "free",
     "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
@@ -123,7 +123,7 @@
     "name": "uniswap_claims_count",
     "metric": "uniswap_claims_delta",
     "version": "2019-12-22",
-    "access": "restricted",
+    "access": "free",
     "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
@@ -140,7 +140,7 @@
     "name": "uniswap_lp_claims_count",
     "metric": "uniswap_lp_claims_delta",
     "version": "2019-12-22",
-    "access": "restricted",
+    "access": "free",
     "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
@@ -157,7 +157,7 @@
     "name": "uniswap_user_claims_count",
     "metric": "uniswap_user_claims_delta",
     "version": "2019-12-22",
-    "access": "restricted",
+    "access": "free",
     "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
@@ -174,7 +174,7 @@
     "name": "uniswap_claims_amount",
     "metric": "uniswap_amount_claimed_delta",
     "version": "2019-12-22",
-    "access": "restricted",
+    "access": "free",
     "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
@@ -191,7 +191,7 @@
     "name": "uniswap_lp_claims_amount",
     "metric": "uniswap_amount_lp_claimed_delta",
     "version": "2019-12-22",
-    "access": "restricted",
+    "access": "free",
     "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",
@@ -208,7 +208,7 @@
     "name": "uniswap_user_claims_amount",
     "metric": "uniswap_amount_user_claimed_delta",
     "version": "2019-12-22",
-    "access": "restricted",
+    "access": "free",
     "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "pro",

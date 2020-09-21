@@ -200,12 +200,10 @@ defmodule Sanbase.Metric do
   Get a table for a given metric
   """
 
-  def table_data(metric, identifier, from, to)
-
   def table_data(metric, identifier, from, to) do
     case Map.get(@table_metric_to_module_map, metric) do
       nil ->
-        metric_not_available_error(metric, type: :timeseries)
+        metric_not_available_error(metric, type: :table)
 
       module when is_atom(module) ->
         identifier = transform_identifier(identifier)
@@ -383,7 +381,7 @@ defmodule Sanbase.Metric do
 
     case available_metrics do
       {:nocache, {:ok, metrics}} ->
-        {:nocache, {:ok, metrics -- @histogram_metrics}}
+        {:nocache, {:ok, metrics -- (@histogram_metrics ++ @table_metrics)}}
 
       {:ok, metrics} ->
         {:ok, metrics -- @histogram_metrics}
@@ -399,10 +397,26 @@ defmodule Sanbase.Metric do
 
     case available_metrics do
       {:nocache, {:ok, metrics}} ->
-        {:nocache, {:ok, metrics -- @timeseries_metrics}}
+        {:nocache, {:ok, metrics -- (@timeseries_metrics ++ @table_metrics)}}
 
       {:ok, metrics} ->
-        {:ok, metrics -- @timeseries_metrics}
+        {:ok, metrics -- (@timeseries_metrics ++ @table_metrics)}
+    end
+  end
+
+  def available_table_metrics_for_slug(selector) do
+    available_metrics =
+      Sanbase.Cache.get_or_store(
+        {__MODULE__, :available_metrics_for_slug, selector} |> Sanbase.Cache.hash(),
+        fn -> available_metrics_for_slug(selector) end
+      )
+
+    case available_metrics do
+      {:nocache, {:ok, metrics}} ->
+        {:nocache, {:ok, metrics -- (@timeseries_metrics ++ @histogram_metrics)}}
+
+      {:ok, metrics} ->
+        {:ok, metrics -- (@timeseries_metrics ++ @histogram_metrics)}
     end
   end
 
@@ -505,6 +519,13 @@ defmodule Sanbase.Metric do
       close:
         Enum.find(@timeseries_metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.8 end),
       error_msg: "The timeseries metric '#{metric}' is not supported or is mistyped."
+    }
+  end
+
+  defp metric_not_available_error_details(metric, :table) do
+    %{
+      close: Enum.find(@table_metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.8 end),
+      error_msg: "The table metric '#{metric}' is not supported or is mistyped."
     }
   end
 

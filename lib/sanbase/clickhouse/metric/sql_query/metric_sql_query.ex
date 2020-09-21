@@ -111,6 +111,77 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     {query, args}
   end
 
+  def table_data_query("labelled_exchange_balance_sum", slug_or_slugs, from, to) do
+    slugs = List.wrap(slug_or_slugs)
+
+    sum_if_argument =
+      slugs
+      |> Enum.with_index(4)
+      |> Enum.map(fn {_slug, index} ->
+        ~s/sumIf(value, name=?#{index}) AS slugNum#{index}/
+      end)
+      |> Enum.join(",\n")
+
+    query = """
+    SELECT
+      label,
+      owner,
+      #{sum_if_argument}
+    FROM (
+      SELECT label, owner, name, value
+      FROM (
+        SELECT dt, label, owner, asset_id, value
+        FROM intraday_label_based_metrics FINAL
+        PREWHERE
+          dt >= toDateTime(?1) AND
+          dt < toDateTime(?2) AND
+          asset_id IN (SELECT asset_id FROM asset_metadata FINAL PREWHERE name IN (?3)) AND
+          metric_id = (SELECT metric_id FROM metric_metadata PREWHERE (name = 'labelled_exchange_balance_sum'))
+      )
+      GLOBAL ANY LEFT JOIN (SELECT asset_id, argMax(name, computed_at) AS name FROM asset_metadata FINAL GROUP BY asset_id)
+      USING asset_id
+      )
+    GROUP BY label, owner
+    """
+
+    # `++ slugs` will add `length(slugs)` number of arguments and not a single
+    # list to the end. This is done so the every sumIf in `sum_if_argument` could
+    # properly add the proper index for every slug and not interpolate user-inputs
+    args =
+      [
+        from |> DateTime.to_unix(),
+        to |> DateTime.to_unix(),
+        slugs
+      ] ++ slugs
+
+    {query, args}
+  end
+
+  def table_data_query("stablecoin_net_exchange_flow", slug, from, to) do
+    query = """
+    SELECT
+        dt,
+        sum(value) as value_sum
+    FROM intraday_label_based_metrics
+    PREWHERE
+      asset_id = (SELECT argMax(asset_id, computed_at) FROM asset_metadata PREWHERE name in (?3)) AND
+      metric_id = (SELECT argMax(metric_id, computed_at) FROM metric_metadata PREWHERE name = 'labelled_exchange_balance_sum') AND
+      dt >= toDateTime(?1) AND
+      dt < toDateTime(?2)
+    GROUP BY dt
+    ORDER BY dt
+    LIMIT 500
+    """
+
+    args = [
+      from |> DateTime.to_unix(),
+      to |> DateTime.to_unix(),
+      slug
+    ]
+
+    {query, args}
+  end
+
   def slugs_by_filter_query(metric, from, to, operation, threshold, aggregation, filters) do
     {query, args} = aggregated_slugs_base_query(metric, from, to, aggregation, filters)
 

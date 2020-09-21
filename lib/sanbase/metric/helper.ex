@@ -17,6 +17,7 @@ defmodule Sanbase.Metric.Helper do
   Module.register_attribute(__MODULE__, :min_plan_map_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :timeseries_metric_module_mapping_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :histogram_metric_module_mapping_acc, accumulate: true)
+  Module.register_attribute(__MODULE__, :table_metric_module_mapping_acc, accumulate: true)
 
   for module <- @metric_modules do
     @aggregations_acc module.available_aggregations()
@@ -60,7 +61,8 @@ defmodule Sanbase.Metric.Helper do
   @timeseries_metric_module_mapping List.flatten(@timeseries_metric_module_mapping_acc)
                                     |> Enum.uniq()
 
-  @table_metric_module_mapping List.flatten(@table_metric_module_mapping_acc)
+  @table_metric_module_mapping @table_metric_module_mapping_acc
+                               |> List.flatten()
                                |> Enum.uniq()
 
   @histogram_metric_module_mapping List.flatten(@histogram_metric_module_mapping_acc)

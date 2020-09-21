@@ -34,7 +34,7 @@ defmodule Sanbase.Metric.Behaviour do
 
   @type histogram_data :: list(histogram_data_map())
 
-  @type table_data :: %{
+  @type table_data_point :: %{
           columns: list(String.t()),
           rows: list(String.t()),
           values: list(list(number()))
@@ -67,9 +67,8 @@ defmodule Sanbase.Metric.Behaviour do
               metric :: metric(),
               selector :: selector,
               from :: DateTime.t(),
-              to :: DateTime.t(),
-              limit :: non_neg_integer()
-            ) :: {:ok, table_data} | {:error, String.t()}
+              to :: DateTime.t()
+            ) :: {:ok, table_data_point} | {:error, String.t()}
 
   @callback aggregated_timeseries_data(
               metric :: metric,
@@ -134,5 +133,5 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback min_plan_map() :: map()
 
-  @optional_callbacks [histogram_data: 6]
+  @optional_callbacks [histogram_data: 6, table_data: 4]
 end

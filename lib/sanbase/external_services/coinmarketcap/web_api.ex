@@ -83,7 +83,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
       project
       |> Project.coinmarketcap_id()
       |> Sanbase.Model.LatestCoinmarketcapData.by_coinmarketcap_id()
-      |> Map.get(:coinmarketcap_integer_id)
+      |> case do
+        %{coinmarketcap_integer_id: id} -> id
+        _ -> nil
+      end
 
     case coinmarketcap_integer_id do
       nil ->

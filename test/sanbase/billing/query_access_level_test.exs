@@ -59,6 +59,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :get_available_anomalies,
           :get_available_metrics,
           :get_coupon,
+          :get_full_url,
           :get_metric,
           :get_telegram_deep_link,
           :get_trigger_by_id,
@@ -98,8 +99,8 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :twitter_data,
           :twitter_mention_count,
           :user_list,
-          :watchlist_by_slug,
-          :watchlist
+          :watchlist,
+          :watchlist_by_slug
         ]
         |> Enum.sort()
 

@@ -27,6 +27,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     query = :available_timeseries_metrics
     cache_key = {__MODULE__, query, slug} |> Sanbase.Cache.hash()
     fun = fn -> Metric.available_timeseries_metrics_for_slug(%{slug: slug}) end
+
     maybe_register_and_get(cache_key, fun, slug, query)
   end
 

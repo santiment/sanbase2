@@ -83,7 +83,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
       project
       |> Project.coinmarketcap_id()
       |> Sanbase.Model.LatestCoinmarketcapData.by_coinmarketcap_id()
-      |> Map.get(:coinmarketcap_integer_id)
+      |> case do
+        %{coinmarketcap_integer_id: id} -> id
+        _ -> nil
+      end
 
     case coinmarketcap_integer_id do
       nil ->
@@ -130,12 +133,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   # because in case of gaps the scraper can get stuck and rescrape the same
   # interval over and over again.
   defp store_price_points(%Project{slug: slug}, [], {_, to}) do
-    to = Enum.max_by([to, DateTime.utc_now()], &DateTime.to_unix/1)
+    to = max_dt_or_now(to)
     PriceScrapingProgress.store_progress(slug, @source, DateTime.from_unix!(to))
   end
 
   defp store_price_points("TOTAL_MARKET", [], {_, to}) do
-    to = Enum.max_by([to, DateTime.utc_now()], &DateTime.to_unix/1)
+    to = max_dt_or_now(to)
     PriceScrapingProgress.store_progress("TOTAL_MARKET", @source, DateTime.from_unix!(to))
   end
 
@@ -352,5 +355,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
     wait_until = Timex.shift(Timex.now(), seconds: wait_period)
     Sanbase.ExternalServices.RateLimiting.Server.wait_until(@rate_limiting_server, wait_until)
+  end
+
+  defp max_dt_or_now(%DateTime{} = dt) do
+    Enum.max_by([dt, DateTime.utc_now()], &DateTime.to_unix/1)
+  end
+
+  defp max_dt_or_now(seconds) when is_integer(seconds) do
+    now_unix = DateTime.utc_now() |> DateTime.to_unix()
+    Enum.max([seconds, now_unix])
   end
 end

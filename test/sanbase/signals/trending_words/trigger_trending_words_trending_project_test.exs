@@ -76,7 +76,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingProjectTest do
 
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
-             end) =~ "There were no signals triggered of type"
+             end) =~ "There were no trending_words signals triggered"
     end
   end
 

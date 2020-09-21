@@ -34,8 +34,7 @@ config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
 config :sanbase, Sanbase.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   database: "sanbase_test",
-  pool_size: 5,
-  ownership_timeout: 200_000
+  pool_size: 5
 
 config :sanbase, Sanbase.ClickhouseRepo,
   pool: Ecto.Adapters.SQL.Sandbox,

@@ -19,6 +19,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:signal_notify_email, :boolean)
     field(:newsletter_subscription, :newsletter_subscription_type)
     field(:paid_with, :string)
+    field(:signals_per_day_limit, :json)
   end
 
   input_object :user_settings_input_object do
@@ -31,5 +32,6 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:signal_notify_telegram, :boolean)
     field(:signal_notify_email, :boolean)
     field(:newsletter_subscription, :newsletter_subscription_type)
+    field(:signals_per_day_limit, :json)
   end
 end

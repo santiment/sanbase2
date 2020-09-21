@@ -126,6 +126,11 @@ defmodule SanbaseWeb.Endpoint do
     frontend_url() <> "/labs/balance?address=#{address}&assets[]=#{asset}"
   end
 
+  def feed_url() do
+    Config.get(:website_url)
+    |> Path.join("feed")
+  end
+
   def user_account_url() do
     Config.get(:website_url)
     |> Path.join("account")

@@ -110,6 +110,7 @@ defmodule Sanbase.Mixfile do
       {:rexbug, ">= 1.0.0"},
       {:san_exporter_ex, github: "santiment/san-exporter-ex"},
       {:sentry, "~> 7.0"},
+      {:mutex, "~> 1.1"},
       {:stream_data, "~> 0.4.2", only: :test},
       {:stripity_stripe, git: "https://github.com/code-corps/stripity_stripe"},
       {:sweet_xml, "~> 0.6"},

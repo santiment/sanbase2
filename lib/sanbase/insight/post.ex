@@ -340,6 +340,7 @@ defmodule Sanbase.Insight.Post do
     |> order_by_published_at()
     |> preload(^@preloads)
     |> Repo.all()
+    |> Tag.Preloader.order_tags()
   end
 
   def public_insights_by_tags(tags, page, page_size, opts \\ []) when is_list(tags) do
@@ -353,6 +354,7 @@ defmodule Sanbase.Insight.Post do
     |> page(page, page_size)
     |> preload(^@preloads)
     |> Repo.all()
+    |> Tag.Preloader.order_tags()
   end
 
   @doc """
@@ -366,6 +368,7 @@ defmodule Sanbase.Insight.Post do
     |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
     |> preload(^@preloads)
     |> Repo.all()
+    |> Tag.Preloader.order_tags()
   end
 
   @doc """

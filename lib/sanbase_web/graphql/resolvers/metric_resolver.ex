@@ -155,7 +155,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
     with true <- valid_selector?(selector),
          true <- valid_histogram_args?(metric, args),
-         {:ok, data} <- Metric.histogram_data(metric, selector, from, to, interval, limit) do
+         {:ok, data} <- Metric.histogram_data(metric, selector, from, to, interval, limit),
+         {:ok, data} <- maybe_enrich_with_labels(metric, data) do
       {:ok, %{values: %{data: data}}}
     else
       {:error, error} ->
@@ -166,6 +167,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   # Private functions
 
   # gold and s-and-p-500 are present only in the intrday metrics table, not in asset_prices
+
+  defp maybe_enrich_with_labels(_metric, [%{address: address} | _] = data)
+       when is_binary(address) do
+    addresses = Enum.map(data, & &1.address) |> Enum.uniq()
+    {:ok, labels} = Sanbase.Clickhouse.Label.get_address_labels("ethereum", addresses)
+
+    labeled_data =
+      Enum.map(data, fn %{address: address} = elem ->
+        address_labels = Map.get(labels, address, []) |> Enum.map(& &1.name)
+        Map.put(elem, :labels, address_labels)
+      end)
+
+    {:ok, labeled_data}
+  end
+
+  defp maybe_enrich_with_labels(_metric, data), do: {:ok, data}
+
   defp maybe_replace_metric("price_usd", %{slug: slug})
        when slug in ["gold", "s-and-p-500", "crude-oil"],
        do: "price_usd_5m"

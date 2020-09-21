@@ -58,6 +58,15 @@ defmodule Sanbase.Clickhouse.Label do
     end
   end
 
+  def get_address_labels(slug, addresses) when is_list(addresses) do
+    {query, args} = addresses_labels_query(slug, addresses)
+
+    Sanbase.ClickhouseRepo.query_reduce(query, args, %{}, fn [address, label, metadata], acc ->
+      label = %{name: label, metadata: metadata}
+      Map.update(acc, address, [label], &[label | &1])
+    end)
+  end
+
   # helpers
   defp addresses_labels_query("bitcoin", addresses) do
     query = """

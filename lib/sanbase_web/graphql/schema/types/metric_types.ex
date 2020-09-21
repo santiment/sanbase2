@@ -73,12 +73,22 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:value, :float)
   end
 
+  object :object_address_float_value do
+    field(:address, :address)
+    field(:value, :float)
+  end
+
   object :string_address_float_value do
     field(:address, :string)
+    field(:labels, list_of(:string))
     field(:value, :float)
   end
 
   object :string_address_float_value_list do
+    field(:data, list_of(:string_address_float_value))
+  end
+
+  object :object_address_float_value_list do
     field(:data, list_of(:string_address_float_value))
   end
 

@@ -555,38 +555,37 @@ defmodule Sanbase.Price do
   # Private functions
 
   defp combine_marketcap_and_volume_results(results) do
+    # Combine 2 price points. If `map` is empty then this is a new/initial price point
+    build_result = fn map, price_point ->
+      initial = %{
+        marketcap: (map[:marketcap] || 0) + (price_point[:marketcap] || 0),
+        marketcap_usd: (map[:marketcap_usd] || 0) + (price_point[:marketcap_usd] || 0),
+        volume: (map[:volume] || 0) + (price_point[:volume] || 0),
+        volume_usd: (map[:volume_usd] || 0) + (price_point[:volume_usd] || 0)
+      }
+    end
+
     result =
       results
-      |> Enum.map(fn {:ok, data} -> data end)
-      |> Enum.reject(&(&1 == []))
-      |> Enum.zip()
-      |> Enum.map(&Tuple.to_list/1)
-      |> Enum.map(fn list ->
-        case Enum.any?(list, &(&1.has_changed != 0)) do
-          true ->
-            %{datetime: datetime} = List.last(list)
+      |> Enum.reduce(%{}, fn {:ok, data}, acc ->
+        Enum.reduce(data, acc, fn price_point, inner_acc ->
+          %{datetime: datetime} = price_point
 
-            data =
-              Enum.reduce(
-                list,
-                %{volume: 0, volume_usd: 0, marketcap: 0, marketcap_usd: 0},
-                fn elem, acc ->
-                  %{
-                    marketcap: acc.marketcap + (elem.marketcap || 0),
-                    marketcap_usd: acc.marketcap_usd + (elem.marketcap_usd || 0),
-                    volume: acc.volume + (elem.volume || 0),
-                    volume_usd: acc.volume_usd + (elem.volume_usd || 0)
-                  }
-                end
-              )
+          initial = build_result.(%{}, price_point)
 
-            Map.put(data, :datetime, datetime)
+          Map.update(inner_acc, datetime, initial, fn elem ->
+            case elem do
+              %{has_changed: 0} ->
+                elem
 
-          false ->
-            nil
-        end
+              _ ->
+                build_result.(elem, price_point)
+            end
+          end)
+        end)
       end)
-      |> Enum.reject(&is_nil/1)
+      |> Enum.map(fn {datetime, data} -> Map.put(data, :datetime, datetime) end)
+      |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
 
     {:ok, result}
   end

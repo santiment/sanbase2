@@ -6,7 +6,8 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
 
   alias SanbaseWeb.Graphql.Resolvers.{
     InsightResolver,
-    TimelineEventResolver
+    TimelineEventResolver,
+    ShortUrlResolver
   }
 
   alias SanbaseWeb.Graphql.SanbaseRepo
@@ -14,6 +15,7 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
   enum :comment_entity_enum do
     value(:insight)
     value(:timeline_event)
+    value(:short_url)
   end
 
   object :comment do
@@ -25,6 +27,10 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
 
     field :timeline_event_id, non_null(:id) do
       cache_resolve(&TimelineEventResolver.timeline_event_id/3)
+    end
+
+    field :short_url_id, non_null(:id) do
+      cache_resolve(&ShortUrlResolver.short_url_id/3)
     end
 
     field(:content, non_null(:string))

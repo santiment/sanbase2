@@ -1339,7 +1339,8 @@ CREATE TABLE public.project (
     logo_url character varying(255),
     slug character varying(255),
     is_hidden boolean DEFAULT false,
-    dark_logo_url character varying(255)
+    dark_logo_url character varying(255),
+    telegram_chat_id integer
 );
 
 
@@ -1690,6 +1691,38 @@ CREATE TABLE public.schema_migrations (
     version bigint NOT NULL,
     inserted_at timestamp without time zone
 );
+
+
+--
+-- Name: short_url_comments_mapping; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.short_url_comments_mapping (
+    id bigint NOT NULL,
+    comment_id bigint,
+    short_url_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: short_url_comments_mapping_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.short_url_comments_mapping_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: short_url_comments_mapping_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.short_url_comments_mapping_id_seq OWNED BY public.short_url_comments_mapping.id;
 
 
 --
@@ -2720,6 +2753,13 @@ ALTER TABLE ONLY public.schedule_rescrape_prices ALTER COLUMN id SET DEFAULT nex
 
 
 --
+-- Name: short_url_comments_mapping id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.short_url_comments_mapping ALTER COLUMN id SET DEFAULT nextval('public.short_url_comments_mapping_id_seq'::regclass);
+
+
+--
 -- Name: short_urls id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3235,6 +3275,14 @@ ALTER TABLE ONLY public.schedule_rescrape_prices
 
 ALTER TABLE ONLY public.schema_migrations
     ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+
+
+--
+-- Name: short_url_comments_mapping short_url_comments_mapping_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.short_url_comments_mapping
+    ADD CONSTRAINT short_url_comments_mapping_pkey PRIMARY KEY (id);
 
 
 --
@@ -3769,6 +3817,20 @@ CREATE UNIQUE INDEX promo_coupons_email_index ON public.promo_coupons USING btre
 --
 
 CREATE INDEX schedule_rescrape_prices_project_id_index ON public.schedule_rescrape_prices USING btree (project_id);
+
+
+--
+-- Name: short_url_comments_mapping_comment_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX short_url_comments_mapping_comment_id_index ON public.short_url_comments_mapping USING btree (comment_id);
+
+
+--
+-- Name: short_url_comments_mapping_short_url_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX short_url_comments_mapping_short_url_id_index ON public.short_url_comments_mapping USING btree (short_url_id);
 
 
 --
@@ -4353,6 +4415,22 @@ ALTER TABLE ONLY public.schedule_rescrape_prices
 
 
 --
+-- Name: short_url_comments_mapping short_url_comments_mapping_comment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.short_url_comments_mapping
+    ADD CONSTRAINT short_url_comments_mapping_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES public.comments(id);
+
+
+--
+-- Name: short_url_comments_mapping short_url_comments_mapping_short_url_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.short_url_comments_mapping
+    ADD CONSTRAINT short_url_comments_mapping_short_url_id_fkey FOREIGN KEY (short_url_id) REFERENCES public.short_urls(id);
+
+
+--
 -- Name: short_urls short_urls_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4892,3 +4970,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200813141704);
 INSERT INTO public."schema_migrations" (version) VALUES (20200826101751);
 INSERT INTO public."schema_migrations" (version) VALUES (20200826114101);
 INSERT INTO public."schema_migrations" (version) VALUES (20200908092849);
+INSERT INTO public."schema_migrations" (version) VALUES (20200910142423);
+INSERT INTO public."schema_migrations" (version) VALUES (20200923090710);

@@ -557,7 +557,7 @@ defmodule Sanbase.Price do
   defp combine_marketcap_and_volume_results(results) do
     # Combine 2 price points. If `map` is empty then this is a new/initial price point
     build_result = fn map, price_point ->
-      initial = %{
+      %{
         marketcap: (map[:marketcap] || 0) + (price_point[:marketcap] || 0),
         marketcap_usd: (map[:marketcap_usd] || 0) + (price_point[:marketcap_usd] || 0),
         volume: (map[:volume] || 0) + (price_point[:volume] || 0),
@@ -575,11 +575,8 @@ defmodule Sanbase.Price do
 
           Map.update(inner_acc, datetime, initial, fn elem ->
             case elem do
-              %{has_changed: 0} ->
-                elem
-
-              _ ->
-                build_result.(elem, price_point)
+              %{has_changed: 0} -> elem
+              _ -> build_result.(elem, price_point)
             end
           end)
         end)

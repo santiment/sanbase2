@@ -625,6 +625,13 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def short_url_factory do
+    %Sanbase.ShortUrl{
+      short_url: rand_str(),
+      full_url: "https://santiment.net"
+    }
+  end
+
   def rand_str(length \\ 10) do
     :crypto.strong_rand_bytes(length) |> Base.encode64() |> binary_part(0, length)
   end

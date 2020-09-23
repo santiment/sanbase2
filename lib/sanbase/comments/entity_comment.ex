@@ -1,9 +1,6 @@
 defmodule Sanbase.Comments.EntityComment do
-  @entities [:insight, :timeline_event]
-
   @moduledoc """
   Module for dealing with comments for certain entities.
-  Current list of supported entities: #{inspect(@entities)}
   """
   import Ecto.Query
 
@@ -11,8 +8,9 @@ defmodule Sanbase.Comments.EntityComment do
   alias Sanbase.Comment
   alias Sanbase.Timeline.TimelineEventComment
   alias Sanbase.Insight.PostComment
+  alias Sanbase.ShortUrl.ShortUrlComment
 
-  @type entity :: :insight | :timeline_event
+  @type entity :: :insight | :timeline_event | :short_url
 
   @spec create_and_link(
           entity,
@@ -22,7 +20,7 @@ defmodule Sanbase.Comments.EntityComment do
           String.t()
         ) ::
           {:ok, %Comment{}} | {:error, any()}
-  def create_and_link(entity, entity_id, user_id, parent_id, content) when entity in @entities do
+  def create_and_link(entity, entity_id, user_id, parent_id, content) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(
       :create_comment,
@@ -58,28 +56,44 @@ defmodule Sanbase.Comments.EntityComment do
     |> Repo.insert()
   end
 
+  @spec link(:short_url, non_neg_integer(), non_neg_integer()) ::
+          {:ok, %ShortUrlComment{}} | {:error, Ecto.Changeset.t()}
+  def link(:short_url, entity_id, comment_id) do
+    %ShortUrlComment{}
+    |> ShortUrlComment.changeset(%{comment_id: comment_id, short_url_id: entity_id})
+    |> Repo.insert()
+  end
+
   @spec get_comments(entity, non_neg_integer(), map()) :: [%Comment{}]
-  def get_comments(entity, entity_id, %{limit: limit} = args) when entity in @entities do
+  def get_comments(entity, entity_id, %{limit: limit} = args) do
     cursor = Map.get(args, :cursor)
 
-    entity_comments_query(entity_id, entity)
+    entity_comments_query(entity, entity_id)
     |> apply_cursor(cursor)
     |> order_by([c], c.inserted_at)
     |> limit(^limit)
     |> Repo.all()
   end
 
-  # private functions
-  defp entity_comments_query(entity_id, :timeline_event) do
-    from(p in Sanbase.Timeline.TimelineEventComment,
-      where: p.timeline_event_id == ^entity_id,
+  # Private Functions
+
+  defp entity_comments_query(:timeline_event, entity_id) do
+    from(comment in TimelineEventComment,
+      where: comment.timeline_event_id == ^entity_id,
       preload: [:comment, comment: :user]
     )
   end
 
-  defp entity_comments_query(entity_id, :insight) do
-    from(p in Sanbase.Insight.PostComment,
-      where: p.post_id == ^entity_id,
+  defp entity_comments_query(:insight, entity_id) do
+    from(comment in PostComment,
+      where: comment.post_id == ^entity_id,
+      preload: [:comment, comment: :user]
+    )
+  end
+
+  defp entity_comments_query(:short_url, entity_id) do
+    from(comment in ShortUrlComment,
+      where: comment.short_url_id == ^entity_id,
       preload: [:comment, comment: :user]
     )
   end

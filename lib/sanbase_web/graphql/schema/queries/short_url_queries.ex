@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.Schema.ShortUrlQueries do
 
   object :short_url_queries do
     @desc "Get the full url that corresponds to the full url."
-    field :get_full_url, :string do
+    field :get_full_url, :short_url do
       meta(access: :free)
       arg(:short_url, non_null(:string))
 
@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.Schema.ShortUrlQueries do
 
   object :short_url_mutations do
     @desc "Create a short url that will resolve to the full url."
-    field :create_short_url, :string do
+    field :create_short_url, :short_url do
       arg(:full_url, non_null(:string))
 
       resolve(&ShortUrlResolver.create_short_url/3)

@@ -51,6 +51,17 @@ defmodule SanbaseWeb.Graphql.MetricPostgresDataloader do
     |> Map.new()
   end
 
+  def query(:comment_short_url_id, comment_ids) do
+    ids = Enum.to_list(comment_ids)
+
+    from(mapping in Sanbase.ShortUrl.ShortUrlComment,
+      where: mapping.comment_id in ^ids,
+      select: {mapping.comment_id, mapping.short_url_id}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
   def query(:insights_comments_count, post_ids) do
     ids = Enum.to_list(post_ids)
 
@@ -70,6 +81,18 @@ defmodule SanbaseWeb.Graphql.MetricPostgresDataloader do
       where: mapping.timeline_event_id in ^ids,
       group_by: mapping.timeline_event_id,
       select: {mapping.timeline_event_id, fragment("COUNT(*)")}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  def query(:short_urls_comments_count, short_url_ids) do
+    ids = Enum.to_list(short_url_ids)
+
+    from(mapping in Sanbase.ShortUrl.ShortUrlComment,
+      where: mapping.short_url_id in ^ids,
+      group_by: mapping.short_url_id,
+      select: {mapping.short_url_id, fragment("COUNT(*)")}
     )
     |> Repo.all()
     |> Map.new()

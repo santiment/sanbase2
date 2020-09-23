@@ -40,6 +40,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.PaginationTypes)
   import_types(Graphql.ProjectChartTypes)
   import_types(Graphql.Schema.KafkaTypes)
+  import_types(Graphql.ShortUrlTypes)
   import_types(Graphql.SignalsHistoricalActivityTypes)
   import_types(Graphql.TagTypes)
   import_types(Graphql.TimelineEventTypes)

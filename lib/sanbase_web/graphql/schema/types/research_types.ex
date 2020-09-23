@@ -5,8 +5,10 @@ defmodule SanbaseWeb.Graphql.ResearchTypes do
     field(:total_minted, :float)
     field(:centralized_exchanges, :float)
     field(:decentralized_exchanges, :float)
-    field(:other_transfers, :float)
+    field(:cex_trader, :float)
     field(:dex_trader, :float)
+    field(:cex_dex_trader, :float)
+    field(:other_transfers, :float)
   end
 
   object :uniswap_who_claimed do

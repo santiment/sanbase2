@@ -348,6 +348,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "miners_balance",
         "genesis_balance",
         "dex_trader_balance",
+        "trader_balance",
         "defi_balance",
         "dex_balance",
         "cex_balance",

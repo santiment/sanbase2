@@ -88,7 +88,7 @@ defmodule Sanbase.Clickhouse.Research.Uniswap do
         multiIf(hasAny(labels, ['decentralized_exchange']), 'decentralized_exchanges',
                 hasAny(labels, ['centralized_exchange', 'deposit']), 'centralized_exchanges',
                 hasAny(labels, ['withdrawal']), 'cex_trader',
-                'other_transfers') AS exchange_status,
+                'other_addresses') AS exchange_status,
                 value/1e18 AS value2
       FROM erc20_transfers
       PREWHERE

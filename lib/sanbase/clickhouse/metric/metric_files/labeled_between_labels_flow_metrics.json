@@ -1,5 +1,73 @@
 [
   {
+    "human_readable_name": "Unlabeled to Labeled Flow",
+    "name": "unlabeled_to_labeled_flow",
+    "metric": "unlabeled_to_labeled_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Labeled to Unlabeled Flow",
+    "name": "labeled_to_unlabeled_flow",
+    "metric": "labeled_to_unlabeled_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Unlabeled to Unlabeled Flow",
+    "name": "unlabeled_to_unlabeled_flow",
+    "metric": "unlabeled_to_unlabeled_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Labeled to Labeled Flow",
+    "name": "labeled_to_labeled_flow",
+    "metric": "labeled_to_labeled_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "DEX Traders to DEXes Flow",
     "name": "dex_traders_to_dexes_flow",
     "metric": "dex_traders_to_dexes_flow",
@@ -153,9 +221,124 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Unlabeled to Labeled Flow",
-    "name": "unlabeled_to_labeled_flow",
-    "metric": "unlabeled_to_labeled_flow",
+    "human_readable_name": "DEX Traders to Whale Flow",
+    "name": "dex_traders_to_whale_flow",
+    "metric": "dex_traders_to_whale_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Whale to DEX Traders Flow",
+    "name": "whale_to_dex_traders_flow",
+    "metric": "whale_to_dex_traders_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DEX Traders Whale Balance",
+    "name": "dex_traders_whale_balance",
+    "metric": "dex_traders_whale_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  ,
+  {
+    "human_readable_name": "Other to DEX Traders Flow",
+    "name": "other_to_dex_traders_flow",
+    "metric": "other_to_dex_traders_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DEX Traders to Other Flow",
+    "name": "dex_traders_to_other_flow",
+    "metric": "dex_traders_to_other_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Other DEX Traders Balance",
+    "name": "other_dex_traders_balance",
+    "metric": "other_dex_traders_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "CEX and DEX Traders to DEXes Flow",
+    "name": "traders_to_dexes_flow",
+    "metric": "traders_to_dexes_flow",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug"],
@@ -170,9 +353,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Labeled to Unlabeled Flow",
-    "name": "labeled_to_unlabeled_flow",
-    "metric": "labeled_to_unlabeled_flow",
+    "human_readable_name": "DEXes to CEX and DEX Traders Flow",
+    "name": "dexes_to_traders_flow",
+    "metric": "dexes_to_traders_flow",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug"],
@@ -187,9 +370,9 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Unlabeled to Unlabeled Flow",
-    "name": "unlabeled_to_unlabeled_flow",
-    "metric": "unlabeled_to_unlabeled_flow",
+    "human_readable_name": "CEX and DEX Traders DEX Balance",
+    "name": "traders_dex_balance",
+    "metric": "traders_dex_balance",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug"],
@@ -204,12 +387,212 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Labeled to Labeled Flow",
-    "name": "labeled_to_labeled_flow",
-    "metric": "labeled_to_labeled_flow",
+    "human_readable_name": "CEX and DEX Traders to CEXes Flow",
+    "name": "traders_to_cexes_flow",
+    "metric": "traders_to_cexes_flow",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "CEXes to CEX and DEX Traders Flow",
+    "name": "cexes_to_traders_flow",
+    "metric": "cexes_to_traders_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "CEX and DEX Traders CEX Balance",
+    "name": "traders_cex_balance",
+    "metric": "traders_cex_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "CEX and DEX Traders to DeFi Flow",
+    "name": "traders_to_defi_flow",
+    "metric": "traders_to_defi_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "DeFi to CEX and DEX Traders Flow",
+    "name": "defi_to_traders_flow",
+    "metric": "defi_to_traders_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "CEX and DEX Traders DeFi Balance",
+    "name": "traders_defi_balance",
+    "metric": "traders_defi_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "CEX and DEX Traders to Whale Flow",
+    "name": "traders_to_whale_flow",
+    "metric": "traders_to_whale_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Whale to CEX and DEX Traders Flow",
+    "name": "whale_to_traders_flow",
+    "metric": "whale_to_traders_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "CEX and DEX Traders Whale Balance",
+    "name": "traders_whale_balance",
+    "metric": "traders_whale_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  ,
+  {
+    "human_readable_name": "Other to CEX and DEX Traders Flow",
+    "name": "other_to_traders_flow",
+    "metric": "other_to_traders_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "CEX and DEX Traders to Other Flow",
+    "name": "traders_to_other_flow",
+    "metric": "traders_to_other_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Other CEX and DEX Traders Balance",
+    "name": "other_traders_balance",
+    "metric": "other_traders_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
     "min_plan": {
       "SANAPI": "pro",
       "SANBASE": "free"
@@ -734,63 +1117,6 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "DEX Traders to Whale Flow",
-    "name": "dex_traders_to_whale_flow",
-    "metric": "dex_traders_to_whale_flow",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Whale to DEX Traders Flow",
-    "name": "whale_to_dex_traders_flow",
-    "metric": "whale_to_dex_traders_flow",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "DEX Traders Whale Balance",
-    "name": "dex_traders_whale_balance",
-    "metric": "dex_traders_whale_balance",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
     "human_readable_name": "Other to Whales Flow",
     "name": "other_to_whale_flow",
     "metric": "other_to_whale_flow",
@@ -832,63 +1158,6 @@
     "human_readable_name": "Other Whale Balance",
     "name": "other_whale_balance",
     "metric": "other_whale_balance",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Other to DEX Traders Flow",
-    "name": "other_to_dex_traders_flow",
-    "metric": "other_to_dex_traders_flow",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "DEX Traders to Other Flow",
-    "name": "dex_traders_to_other_flow",
-    "metric": "dex_traders_to_other_flow",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": [
-      "slug"
-    ],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Other DEX Traders Balance",
-    "name": "other_dex_traders_balance",
-    "metric": "other_dex_traders_balance",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": [

@@ -102,6 +102,57 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "CEX and DEX Traders to Exchanges Flow",
+    "name": "traders_to_exchanges_flow",
+    "metric": "traders_to_exchanges_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Exchanges to CEX and DEX Traders Flow",
+    "name": "exchanges_to_traders_flow",
+    "metric": "exchanges_to_traders_flow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "CEX and DEX Traders Exchange Balance",
+    "name": "traders_exchange_balance",
+    "metric": "traders_exchange_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "DEX Traders to Exchanges Flow",
     "name": "dex_traders_to_exchanges_flow",
     "metric": "dex_traders_to_exchanges_flow",

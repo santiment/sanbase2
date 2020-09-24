@@ -114,8 +114,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.BtcBalance do
   @doc false
   @spec top_transactions(%DateTime{}, %DateTime{}, integer) ::
           {:ok, nil} | {:ok, list(transaction)} | {:error, String.t()}
-  def top_transactions(from, to, limit) do
-    {query, args} = btc_top_transactions_query(from, to, limit)
+  def top_transactions(from, to, limit, excluded_addresses \\ []) do
+    {query, args} = btc_top_transactions_query(from, to, limit, excluded_addresses)
 
     ClickhouseRepo.query_transform(
       query,

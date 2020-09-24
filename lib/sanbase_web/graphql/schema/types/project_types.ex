@@ -608,6 +608,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:limit, :integer, default_value: 10)
+      arg(:excluded_addresses, list_of(:string))
 
       complexity(&Complexity.from_to_interval/3)
       cache_resolve(&ProjectTransactionsResolver.token_top_transactions/3)

@@ -41,8 +41,8 @@ defmodule Sanbase.Clickhouse.Research.Uniswap do
     UNION ALL
 
     SELECT multiIf(
-                  hasAny(labels, ['decentralized_exchange']), 'decentralized_exchange',
-                  hasAny(labels, ['centralized_exchange', 'deposit']), 'centralized_exchange',
+                  hasAny(labels, ['decentralized_exchange']), 'decentralized_exchanges',
+                  hasAny(labels, ['centralized_exchange', 'deposit']), 'centralized_exchanges',
                   hasAll(labels, ['withdrawal', 'dex_trader']), 'cex_dex_trader',
                   hasAny(labels, ['withdrawal']), 'cex_trader',
                   hasAny(labels, ['dex_trader']), 'dex_trader',
@@ -85,8 +85,8 @@ defmodule Sanbase.Clickhouse.Research.Uniswap do
     FROM (
       SELECT
         splitByChar(',', dictGetString('default.eth_label_dict', 'labels', tuple(cityHash64(to), toUInt64(0)))) AS labels,
-        multiIf(hasAny(labels, ['decentralized_exchange']), 'decentralized_exchange',
-                hasAny(labels, ['centralized_exchange', 'deposit']), 'centralized_exchange',
+        multiIf(hasAny(labels, ['decentralized_exchange']), 'decentralized_exchanges',
+                hasAny(labels, ['centralized_exchange', 'deposit']), 'centralized_exchanges',
                 'other_transfers') AS exchange_status,
                 value/1e18 AS value2
       FROM erc20_transfers

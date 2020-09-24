@@ -87,6 +87,7 @@ defmodule Sanbase.Clickhouse.Research.Uniswap do
         splitByChar(',', dictGetString('default.eth_label_dict', 'labels', tuple(cityHash64(to), toUInt64(0)))) AS labels,
         multiIf(hasAny(labels, ['decentralized_exchange']), 'decentralized_exchanges',
                 hasAny(labels, ['centralized_exchange', 'deposit']), 'centralized_exchanges',
+                hasAny(labels, ['withdrawal']), 'cex_trader',
                 'other_transfers') AS exchange_status,
                 value/1e18 AS value2
       FROM erc20_transfers

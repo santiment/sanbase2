@@ -24,8 +24,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   defp calculate_token_top_transactions(%Project{slug: "bitcoin"} = project, args) do
     %{from: from, to: to, limit: limit} = args
     limit = Enum.min([limit, 100])
+    excluded_addresses = Map.get(args, :excluded_addresses, [])
 
-    with {:ok, token_transactions} <- BtcBalance.top_transactions(from, to, limit),
+    with {:ok, token_transactions} <-
+           BtcBalance.top_transactions(from, to, limit, excluded_addresses),
          {:ok, token_transactions} <-
            Clickhouse.MarkExchanges.mark_exchange_wallets(token_transactions),
          {:ok, token_transactions} <- Label.add_labels("bitcoin", token_transactions) do
@@ -45,6 +47,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   defp calculate_token_top_transactions(%Project{slug: slug} = project, args) do
     %{from: from, to: to, limit: limit} = args
     limit = Enum.min([limit, 100])
+    excluded_addresses = Map.get(args, :excluded_addresses, [])
 
     with {:ok, contract_address, token_decimals} <- Project.contract_info(project),
          {:ok, token_transactions} <-
@@ -53,7 +56,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
              from,
              to,
              limit,
-             token_decimals
+             token_decimals,
+             excluded_addresses
            ),
          {:ok, token_transactions} <-
            Clickhouse.MarkExchanges.mark_exchange_wallets(token_transactions),

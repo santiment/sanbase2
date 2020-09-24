@@ -127,7 +127,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.UtxoSqlQueries do
     {query, args}
   end
 
-  def btc_top_transactions_query(from, to, limit) do
+  def btc_top_transactions_query(from, to, limit, excluded_addresses) do
     to_unix = DateTime.to_unix(to)
     from_unix = DateTime.to_unix(from)
 
@@ -135,14 +135,33 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.UtxoSqlQueries do
     amount_filter = if Timex.diff(to, from, :days) > 7, do: 100, else: 20
 
     query = """
-    SELECT toUnixTimestamp(dt), address, balance - oldBalance as amount, txID
+    SELECT
+      toUnixTimestamp(dt),
+      address,
+      balance - oldBalance AS amount,
+      txID
     FROM btc_balances FINAL
-    PREWHERE  amount > ?1 AND dt >= toDateTime(?2) AND dt < toDateTime(?3)
+    PREWHERE
+      amount > ?1 AND
+      dt >= toDateTime(?2) AND
+      dt < toDateTime(?3)
+      #{maybe_exclude_addresses(excluded_addresses, arg_position: 5)}
     ORDER BY amount DESC
     LIMIT ?4
     """
 
-    args = [amount_filter, from_unix, to_unix, limit]
+    args =
+      [amount_filter, from_unix, to_unix, limit] ++
+        if excluded_addresses == [], do: [], else: [excluded_addresses]
+
     {query, args}
+  end
+
+  defp maybe_exclude_addresses([], _opts), do: ""
+
+  defp maybe_exclude_addresses([_ | _] = addresses, opts) do
+    arg_position = Keyword.get(opts, :arg_position)
+
+    "AND (from NOT IN (?#{arg_position}) AND to NOT IN (?#{arg_position}))"
   end
 end

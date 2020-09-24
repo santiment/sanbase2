@@ -47,11 +47,25 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
   """
   @spec token_top_transfers(String.t(), %DateTime{}, %DateTime{}, String.t(), integer) ::
           {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
-  def token_top_transfers(contract, from_datetime, to_datetime, limit, token_decimals \\ 0) do
+  def token_top_transfers(
+        contract,
+        from_datetime,
+        to_datetime,
+        limit,
+        token_decimals \\ 0,
+        excluded_addresses \\ []
+      ) do
     token_decimals = Sanbase.Math.ipow(10, token_decimals)
 
     {query, args} =
-      token_top_transfers_query(contract, from_datetime, to_datetime, limit, token_decimals)
+      token_top_transfers_query(
+        contract,
+        from_datetime,
+        to_datetime,
+        limit,
+        token_decimals,
+        excluded_addresses
+      )
 
     ClickhouseRepo.query_transform(
       query,
@@ -68,7 +82,14 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     )
   end
 
-  defp token_top_transfers_query(contract, from_datetime, to_datetime, limit, token_decimals) do
+  defp token_top_transfers_query(
+         contract,
+         from_datetime,
+         to_datetime,
+         limit,
+         token_decimals,
+         excluded_addresses
+       ) do
     from_datetime_unix = DateTime.to_unix(from_datetime)
     to_datetime_unix = DateTime.to_unix(to_datetime)
 
@@ -84,18 +105,30 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
       assetRefId = cityHash64('ETH_' || ?2) AND
       dt >= toDateTime(?3) AND
       dt <= toDateTime(?4)
+      #{maybe_exclude_addresses(excluded_addresses, arg_position: 6)}
     ORDER BY value DESC
     LIMIT ?5
     """
 
-    args = [
-      token_decimals,
-      contract,
-      from_datetime_unix,
-      to_datetime_unix,
-      limit
-    ]
+    maybe_extra_params = if excluded_addresses == [], do: [], else: [excluded_addresses]
+
+    args =
+      [
+        token_decimals,
+        contract,
+        from_datetime_unix,
+        to_datetime_unix,
+        limit
+      ] ++ maybe_extra_params
 
     {query, args}
+  end
+
+  defp maybe_exclude_addresses([], _opts), do: ""
+
+  defp maybe_exclude_addresses([_ | _] = addresses, opts) do
+    arg_position = Keyword.get(opts, :arg_position)
+
+    "AND (from NOT IN (?#{arg_position}) AND to NOT IN (?#{arg_position}))"
   end
 end

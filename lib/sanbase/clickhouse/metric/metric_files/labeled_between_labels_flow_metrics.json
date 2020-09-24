@@ -277,7 +277,6 @@
     "has_incomplete_data": false,
     "data_type": "timeseries"
   },
-  ,
   {
     "human_readable_name": "Other to DEX Traders Flow",
     "name": "other_to_dex_traders_flow",
@@ -545,7 +544,6 @@
     "has_incomplete_data": false,
     "data_type": "timeseries"
   },
-  ,
   {
     "human_readable_name": "Other to CEX and DEX Traders Flow",
     "name": "other_to_traders_flow",

@@ -12,6 +12,7 @@ defmodule SanbaseWeb.Graphql.ResearchTypes do
   end
 
   object :uniswap_who_claimed do
+    field(:cex_trader, :float)
     field(:centralized_exchanges, :float)
     field(:decentralized_exchanges, :float)
     field(:other_addresses, :float)

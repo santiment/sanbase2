@@ -50,6 +50,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.CommentResolver do
     {:ok, comments}
   end
 
+  def comments(
+        _root,
+        %{entity_type: entity_type} = args,
+        _resolution
+      ) do
+    comments = EntityComment.get_comments(entity_type, nil, args) |> Enum.map(& &1.comment)
+
+    {:ok, comments}
+  end
+
   def subcomments(
         _root,
         %{comment_id: comment_id} = args,

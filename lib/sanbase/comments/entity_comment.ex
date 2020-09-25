@@ -66,36 +66,45 @@ defmodule Sanbase.Comments.EntityComment do
 
   @spec get_comments(entity, non_neg_integer(), map()) :: [%Comment{}]
   def get_comments(entity, entity_id, %{limit: limit} = args) do
-    cursor = Map.get(args, :cursor)
+    cursor = Map.get(args, :cursor) || %{}
+    order = Map.get(cursor, :order, :asc)
 
     entity_comments_query(entity, entity_id)
     |> apply_cursor(cursor)
-    |> order_by([c], c.inserted_at)
+    |> order_by([c], [{^order, c.inserted_at}])
     |> limit(^limit)
     |> Repo.all()
   end
 
   # Private Functions
 
+  defp maybe_add_entity_id_clause(query, _field, nil), do: query
+
+  defp maybe_add_entity_id_clause(query, field, entity_id) do
+    query
+    |> where([elem], field(elem, ^field) == ^entity_id)
+  end
+
   defp entity_comments_query(:timeline_event, entity_id) do
-    from(comment in TimelineEventComment,
-      where: comment.timeline_event_id == ^entity_id,
+    from(
+      comment in TimelineEventComment,
       preload: [:comment, comment: :user]
     )
+    |> maybe_add_entity_id_clause(:timeline_event_id, entity_id)
   end
 
   defp entity_comments_query(:insight, entity_id) do
     from(comment in PostComment,
-      where: comment.post_id == ^entity_id,
       preload: [:comment, comment: :user]
     )
+    |> maybe_add_entity_id_clause(:post_id, entity_id)
   end
 
   defp entity_comments_query(:short_url, entity_id) do
     from(comment in ShortUrlComment,
-      where: comment.short_url_id == ^entity_id,
       preload: [:comment, comment: :user]
     )
+    |> maybe_add_entity_id_clause(:short_url_id, entity_id)
   end
 
   defp apply_cursor(query, %{type: :before, datetime: datetime}) do
@@ -106,5 +115,5 @@ defmodule Sanbase.Comments.EntityComment do
     from(c in query, where: c.inserted_at >= ^(datetime |> DateTime.to_naive()))
   end
 
-  defp apply_cursor(query, nil), do: query
+  defp apply_cursor(query, _), do: query
 end

@@ -38,7 +38,9 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   @external_resource Path.join(__DIR__, "metric_files/makerdao_metrics.json")
   @external_resource Path.join(__DIR__, "metric_files/label_metrics.json")
   @external_resource Path.join(__DIR__, "metric_files/defi_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/balance_and_flow_labeled_metrics.json")
+  @external_resource Path.join(__DIR__, "metric_files/labeled_balance_metrics.json")
+  @external_resource Path.join(__DIR__, "metric_files/labeled_between_labels_flow_metrics.json")
+  @external_resource Path.join(__DIR__, "metric_files/labeled_exchange_flow_metrics.json")
   @external_resource Path.join(__DIR__, "metric_files/uniswap_metrics.json")
 
   @metrics_json Enum.reduce(@external_resource, [], fn file, acc ->

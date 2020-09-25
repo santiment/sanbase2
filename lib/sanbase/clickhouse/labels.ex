@@ -81,7 +81,25 @@ defmodule Sanbase.Clickhouse.Label do
 
   defp addresses_labels_query(slug, addresses) do
     query = """
-    SELECT lower(address) as address, label, metadata
+    SELECT lower(address) as address,
+           multiIf(label='uniswap_ecosystem', 'Uniswap Ecosystem',
+                   label='centralized_exchange', 'CEX',
+                   label='decentralized_exchange', 'DEX',
+                   label='withdrawal', 'CEX Trader',
+                   label='dex_trader', 'DEX Trader',
+                   label='whale', 'Whale',
+                   label='deposit', 'CEX Deposit',
+                   label='defi', 'DeFi',
+                   label='deployer', 'Deployer',
+                   label='stablecoin', 'Stablecoin',
+                   label='uniswap_ecosystem', 'Uniswap',
+                   label='makerdao-cdp-owner', 'MakerDAO CDP Owner',
+                   label='makerdao-bite-keeper', 'MakerDAO Bite Keeper',
+                   label='genesis', 'Genesis',
+                   label='proxy', 'Proxy',
+                   label='system', 'System',
+                   label='miner', 'Miner', label) as label,
+           metadata
     FROM blockchain_address_labels FINAL
     PREWHERE
       blockchain = 'ethereum' AND

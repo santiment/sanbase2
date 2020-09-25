@@ -42,6 +42,7 @@ defmodule Sanbase.Clickhouse.Metric.FileHandler do
   @external_resource Path.join(__DIR__, "metric_files/labeled_between_labels_flow_metrics.json")
   @external_resource Path.join(__DIR__, "metric_files/labeled_exchange_flow_metrics.json")
   @external_resource Path.join(__DIR__, "metric_files/uniswap_metrics.json")
+  @external_resource Path.join(__DIR__, "metric_files/change_metrics.json")
 
   @metrics_json Enum.reduce(@external_resource, [], fn file, acc ->
                   (File.read!(file) |> Jason.decode!()) ++ acc

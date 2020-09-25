@@ -121,8 +121,8 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def available_metrics(%{slug: slug}) do
     case slug do
-      "uniswap" -> @metrics
-      _ -> []
+      "uniswap" -> {:ok, @metrics}
+      _ -> {:ok, []}
     end
   end
 

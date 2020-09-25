@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.ShortUrlApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Plug.Conn
   import SanbaseWeb.Graphql.TestHelpers
 
   test "create and fetch short url", context do
@@ -24,26 +23,30 @@ defmodule SanbaseWeb.Graphql.ShortUrlApiTest do
   defp create_short_url(conn, full_url) do
     mutation = """
     mutation {
-      createShortUrl(fullUrl: "#{full_url}")
+      createShortUrl(fullUrl: "#{full_url}"){
+        shortUrl
+      }
     }
     """
 
     conn
     |> post("/graphql", mutation_skeleton(mutation))
     |> json_response(200)
-    |> get_in(["data", "createShortUrl"])
+    |> get_in(["data", "createShortUrl", "shortUrl"])
   end
 
   defp get_full_url(conn, short_url) do
     mutation = """
     {
-      getFullUrl(shortUrl: "#{short_url}")
+      getFullUrl(shortUrl: "#{short_url}"){
+        fullUrl
+      }
     }
     """
 
     conn
     |> post("/graphql", mutation_skeleton(mutation))
     |> json_response(200)
-    |> get_in(["data", "getFullUrl"])
+    |> get_in(["data", "getFullUrl", "fullUrl"])
   end
 end

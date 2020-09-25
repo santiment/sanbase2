@@ -2,8 +2,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.CommentResolver do
   alias Sanbase.Comment
   alias Sanbase.Comments.EntityComment
 
-  @entities [:insight, :timeline_event]
-
   # # Note: deprecated - should be removed if not used by frontend
   def create_comment(
         _root,
@@ -17,8 +15,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.CommentResolver do
         _root,
         %{entity_type: entity_type, id: id, content: content} = args,
         %{context: %{auth: %{current_user: user}}}
-      )
-      when entity_type in @entities do
+      ) do
     EntityComment.create_and_link(entity_type, id, user.id, Map.get(args, :parent_id), content)
   end
 
@@ -47,9 +44,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.CommentResolver do
         _root,
         %{entity_type: entity_type, id: id} = args,
         _resolution
-      )
-      when entity_type in @entities do
+      ) do
     comments = EntityComment.get_comments(entity_type, id, args) |> Enum.map(& &1.comment)
+
+    {:ok, comments}
+  end
+
+  def comments(
+        _root,
+        %{entity_type: entity_type} = args,
+        _resolution
+      ) do
+    comments = EntityComment.get_comments(entity_type, nil, args) |> Enum.map(& &1.comment)
 
     {:ok, comments}
   end

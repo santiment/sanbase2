@@ -80,6 +80,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
   object :string_address_float_value do
     field(:address, :string)
+    field(:balance, :float)
     field(:labels, list_of(:string))
     field(:value, :float)
   end

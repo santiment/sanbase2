@@ -74,6 +74,11 @@ defmodule SanbaseWeb.Graphql.MetricPostgresDataloader do
     |> Map.new()
   end
 
+  def query(:insights_count_per_user, _user_ids) do
+    {:ok, map} = Sanbase.Insight.Post.insights_count_map()
+    map
+  end
+
   def query(:timeline_events_comments_count, timeline_events_ids) do
     ids = Enum.to_list(timeline_events_ids)
 

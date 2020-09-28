@@ -22,6 +22,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
           | :comment_timeline_event_id
           | :comment_short_url_id
           | :insights_comments_count
+          | :insights_count_per_user
           | :timeline_events_comments_count
           | :short_urls_comments_count
           | :project_by_slug
@@ -56,6 +57,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
              :infrastructure,
              :market_segment,
              :insights_comments_count,
+             :insights_count_per_user,
              :timeline_events_comments_count,
              :short_urls_comments_count,
              :project_by_slug

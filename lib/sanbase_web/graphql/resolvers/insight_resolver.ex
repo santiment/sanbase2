@@ -200,6 +200,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     end
   end
 
+  def insights_count(%User{id: id}, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :insights_count_per_user, id)
+    |> on_load(fn loader ->
+      {:ok,
+       Dataloader.get(loader, SanbaseDataloader, :insights_count_per_user, id) ||
+         %{total_count: 0, pulse_count: 0, paywall_count: 0}}
+    end)
+  end
+
   # Note: deprecated - should be removed if not used by frontend
   def insight_comments(_root, %{insight_id: insight_id} = args, _resolution) do
     comments =

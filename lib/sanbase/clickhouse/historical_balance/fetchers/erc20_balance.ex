@@ -121,6 +121,28 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     end)
   end
 
+  def last_balance(addresses, contract, from, to, decimals) do
+    query = """
+    SELECT address, argMax(value, dt)
+    FROM #{@table}
+    PREWHERE
+      address IN (?1) AND
+      contract = ?2 AND
+      dt >= toDateTime(?3) AND
+      dt < toDateTime(?4) AND
+      sign = 1
+    GROUP BY address
+    """
+
+    args = [addresses, contract, DateTime.to_unix(from), DateTime.to_unix(to)]
+
+    decimals = Sanbase.Math.ipow(10, decimals)
+
+    ClickhouseRepo.query_reduce(query, args, %{}, fn [address, balance], acc ->
+      Map.put(acc, address, balance / decimals)
+    end)
+  end
+
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def last_balance_before(address, contract, decimals, datetime) do
     query = """

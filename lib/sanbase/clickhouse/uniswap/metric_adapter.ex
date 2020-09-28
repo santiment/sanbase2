@@ -18,6 +18,8 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
 
   @default_complexity_weight 0.3
 
+  @contract "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"
+
   @impl Sanbase.Metric.Behaviour
   def has_incomplete_data?(_), do: false
 
@@ -44,7 +46,7 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
       dt >= toDateTime(?1) AND
       dt < toDateTime(?2) AND
       from = '0x090d4613473dee047c3f2706764f49e0821d256e' AND
-      contract = '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984'
+      contract = '#{@contract}'
     GROUP BY to
     ORDER BY amount DESC
     LIMIT ?3
@@ -56,6 +58,7 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
     Sanbase.ClickhouseRepo.query_transform(query, args, fn [address, value] ->
       %{address: address, value: value}
     end)
+    |> maybe_add_balances(from, to)
     |> maybe_apply_function(fn data -> Enum.sort_by(data, & &1.value, :desc) end)
   end
 
@@ -147,4 +150,28 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def min_plan_map(), do: @min_plan_map
+
+  # Private functions
+  defp maybe_add_balances({:ok, data}, from, to) do
+    addresses = Enum.map(data, & &1.address)
+
+    {:ok, balances} =
+      Sanbase.Clickhouse.HistoricalBalance.Erc20Balance.last_balance(
+        addresses,
+        @contract,
+        from,
+        to,
+        18
+      )
+
+    data =
+      Enum.map(data, fn %{address: address} = elem ->
+        balance = Map.get(balances, address)
+        Map.put(elem, :balance, balance)
+      end)
+
+    {:ok, data}
+  end
+
+  defp maybe_add_balances({:error, error}), do: {:error, error}
 end

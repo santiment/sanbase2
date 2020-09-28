@@ -15,7 +15,7 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
   alias SanbaseWeb.Graphql.Middlewares.PostPaywallFilter
 
   object :insight_queries do
-    field :popular_insight_authors, list_of(:user) do
+    field :popular_insight_authors, list_of(:public_user) do
       meta(access: :free)
 
       cache_resolve(&InsightResolver.popular_insight_authors/3)

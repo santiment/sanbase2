@@ -71,6 +71,26 @@ defmodule Sanbase.Insight.Post do
     timestamps()
   end
 
+  def insights_count_map() do
+    map =
+      from(
+        p in __MODULE__,
+        select: {
+          p.user_id,
+          fragment("COUNT(*) AS total_count"),
+          fragment("COUNT(*) FILTER (WHERE is_pulse = true) AS pulse_count"),
+          fragment("COUNT(*) FILTER (WHERE is_paywall_required = true) AS paywall_count")
+        },
+        group_by: p.user_id
+      )
+      |> Repo.all()
+      |> Map.new(fn {user_id, total, pulse, paywall} ->
+        {user_id, %{total_count: total, pulse_count: pulse, paywall_count: paywall}}
+      end)
+
+    {:ok, map}
+  end
+
   # Needed by ex_admin
   def changeset(%Post{} = post, attrs \\ %{}) do
     post |> cast(attrs, [])

@@ -59,6 +59,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       cache_resolve(&InsightResolver.public_insights/3, ttl: 60)
     end
 
+    field :insights_count, :insights_count do
+      cache_resolve(&InsightResolver.insights_count/3, ttl: 60)
+    end
+
     field :watchlists, list_of(:user_list) do
       cache_resolve(&UserListResolver.public_watchlists/3, ttl: 60)
     end
@@ -122,6 +126,10 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       cache_resolve(&UserResolver.followers/3)
     end
 
+    field :insights_count, :insights_count do
+      cache_resolve(&InsightResolver.insights_count/3, ttl: 60)
+    end
+
     field :insights, list_of(:post) do
       arg(:is_pulse, :boolean)
       arg(:is_paywall_required, :boolean)
@@ -147,6 +155,12 @@ defmodule SanbaseWeb.Graphql.UserTypes do
 
       cache_resolve(&UserResolver.api_calls_history/3)
     end
+  end
+
+  object :insights_count do
+    field(:total_count, :integer)
+    field(:paywall_count, :integer)
+    field(:pulse_count, :integer)
   end
 
   object :access_restriction do

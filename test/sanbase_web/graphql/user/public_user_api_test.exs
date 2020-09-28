@@ -27,6 +27,7 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "followers" => %{"count" => 0, "users" => []},
                  "following" => %{"count" => 0, "users" => []},
                  "id" => "#{user.id}",
+                 "insightsCount" => %{"totalCount" => 0, "pulseCount" => 0, "paywallCount" => 0},
                  "insights" => [],
                  "triggers" => [],
                  "username" => "#{user.username}",
@@ -42,8 +43,8 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
   test "fetch public insights of a user", context do
     %{conn: conn, user: user} = context
 
-    post = insert(:post, %{user: user, state: "approved", ready_state: "published"})
-    insert(:post, %{user: user})
+    post =
+      insert(:post, %{user: user, state: "approved", ready_state: "published", is_pulse: true})
 
     result = get_user(conn, user)
 
@@ -54,6 +55,7 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "followers" => %{"count" => 0, "users" => []},
                  "following" => %{"count" => 0, "users" => []},
                  "id" => "#{user.id}",
+                 "insightsCount" => %{"totalCount" => 1, "pulseCount" => 1, "paywallCount" => 0},
                  "insights" => [
                    %{"id" => "#{post.id}"}
                  ],
@@ -81,6 +83,7 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "followers" => %{"count" => 0, "users" => []},
                  "following" => %{"count" => 0, "users" => []},
                  "id" => "#{user.id}",
+                 "insightsCount" => %{"totalCount" => 0, "pulseCount" => 0, "paywallCount" => 0},
                  "insights" => [],
                  "triggers" => [%{"id" => user_trigger.id}],
                  "username" => "#{user.username}",
@@ -106,6 +109,7 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "followers" => %{"count" => 0, "users" => []},
                  "following" => %{"count" => 0, "users" => []},
                  "id" => "#{user.id}",
+                 "insightsCount" => %{"totalCount" => 0, "pulseCount" => 0, "paywallCount" => 0},
                  "insights" => [],
                  "triggers" => [],
                  "username" => "#{user.username}",
@@ -128,6 +132,7 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "followers" => %{"count" => 0, "users" => []},
                  "following" => %{"count" => 0, "users" => []},
                  "id" => "#{user.id}",
+                 "insightsCount" => %{"totalCount" => 0, "pulseCount" => 0, "paywallCount" => 0},
                  "insights" => [],
                  "triggers" => [],
                  "username" => "#{user.username}",
@@ -151,6 +156,7 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
                  "following" => %{"count" => 0, "users" => []},
                  "id" => "#{user.id}",
                  "insights" => [],
+                 "insightsCount" => %{"totalCount" => 0, "pulseCount" => 0, "paywallCount" => 0},
                  "triggers" => [],
                  "username" => "#{user.username}",
                  "watchlists" => [],
@@ -167,6 +173,7 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
         id
         email
         username
+        insightsCount{ totalCount paywallCount pulseCount }
         insights{ id }
         triggers{ id }
         watchlists{ id }

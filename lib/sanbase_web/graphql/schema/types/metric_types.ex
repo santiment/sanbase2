@@ -21,6 +21,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
   enum :selector_name do
     value(:slug)
+    value(:slugs)
     value(:text)
     value(:owner)
     value(:label)
@@ -32,6 +33,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
   input_object :metric_target_selector_input_object do
     field(:slug, :string)
+    field(:slugs, list_of(:string))
     field(:text, :string)
     field(:owner, :string)
     field(:label, :string)
@@ -138,6 +140,12 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   object :histogram_data do
     field(:labels, list_of(:string))
     field(:values, :value_list)
+  end
+
+  object :table_data do
+    field(:rows, list_of(:string))
+    field(:columns, list_of(:string))
+    field(:values, list_of(list_of(:float)))
   end
 
   object :metric_metadata do
@@ -342,6 +350,17 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       middleware(AccessControl)
 
       cache_resolve(&MetricResolver.histogram_data/3)
+    end
+
+    field :table_data, :table_data do
+      arg(:slug, :string)
+      arg(:selector, :metric_target_selector_input_object)
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      middleware(AccessControl)
+
+      cache_resolve(&MetricResolver.table_data/3)
     end
 
     field :available_since, :datetime do

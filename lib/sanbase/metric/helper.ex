@@ -68,7 +68,8 @@ defmodule Sanbase.Metric.Helper do
   @histogram_metric_module_mapping List.flatten(@histogram_metric_module_mapping_acc)
                                    |> Enum.uniq()
 
-  @metric_module_mapping (@histogram_metric_module_mapping ++ @timeseries_metric_module_mapping)
+  @metric_module_mapping (@histogram_metric_module_mapping ++
+                            @timeseries_metric_module_mapping ++ @table_metric_module_mapping)
                          |> Enum.uniq()
 
   @metric_to_module_map @metric_module_mapping

@@ -346,7 +346,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "other_trade_amount_by_dex",
         # table metrics
         "labelled_exchange_balance_sum",
-        "stablecoin_net_exchange_flow",
         # balance and flow labeled metrics
         "miners_balance",
         "genesis_balance",

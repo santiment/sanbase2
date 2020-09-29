@@ -77,6 +77,45 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
     end)
   end
 
+  def address_historical_balance_change(
+        _root,
+        %{selector: selector, from: from, to: to, addresses: addresses},
+        _resolution
+      ) do
+    HistoricalBalance.balance_change(
+      selector,
+      addresses,
+      from,
+      to
+    )
+    |> case do
+      {:ok, data} ->
+        data =
+          Enum.map(data, fn {address, {balance_start, balance_end, balance_change}} ->
+            %{
+              address: address,
+              balance_start: balance_start,
+              balance_end: balance_end,
+              balance_change_amount: balance_change,
+              balance_change_percent: Sanbase.Math.percent_change(balance_start, balance_end)
+            }
+          end)
+
+        {:ok, data}
+
+      {:error, error} ->
+        {:error, error}
+    end
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(
+        "Historical Balance Change per Address",
+        inspect(selector),
+        error,
+        description: "selector"
+      )
+    end)
+  end
+
   def miners_balance(
         _root,
         %{slug: slug, from: from, to: to, interval: interval},

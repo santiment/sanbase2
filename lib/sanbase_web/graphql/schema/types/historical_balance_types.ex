@@ -11,6 +11,14 @@ defmodule SanbaseWeb.Graphql.HistoricalBalanceTypes do
     field(:balance, :float)
   end
 
+  object :address_balance_change do
+    field(:address, non_null(:string))
+    field(:balance_start, non_null(:float))
+    field(:balance_end, non_null(:float))
+    field(:balance_change_amount, non_null(:float))
+    field(:balance_change_percent, non_null(:float))
+  end
+
   input_object :address_selector_input_object do
     field(:infrastructure, non_null(:string))
     field(:address, non_null(:string))

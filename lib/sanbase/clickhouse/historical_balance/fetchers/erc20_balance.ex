@@ -96,7 +96,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def balance_change([], _, _, _, _), do: {:ok, []}
 
-  def balance_change(addr, contract, token_decimals, from, to) do
+  def balance_change(address_or_addresses, contract, token_decimals, from, to) do
     token_decimals = Sanbase.Math.ipow(10, token_decimals)
 
     query = """
@@ -112,7 +112,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     GROUP BY address
     """
 
-    addresses = addr |> List.wrap() |> Enum.map(&String.downcase/1)
+    addresses = address_or_addresses |> List.wrap() |> Enum.map(&String.downcase/1)
     args = [addresses, contract, from, to]
 
     ClickhouseRepo.query_transform(query, args, fn [address, start_balance, end_balance, change] ->

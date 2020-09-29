@@ -116,6 +116,40 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
     end)
   end
 
+  def transaction_volume_per_address(
+        _root,
+        %{
+          selector: %{slug: slug, infrastructure: "ETH"} = selector,
+          from: from,
+          to: to,
+          addresses: addresses
+        },
+        _resolution
+      ) do
+    with {:ok, contract, decimals} <- Sanbase.Model.Project.contract_info_by_slug(slug) do
+      Sanbase.Clickhouse.Erc20Transfers.transaction_volume_per_address(
+        addresses,
+        contract,
+        from,
+        to,
+        decimals
+      )
+      |> maybe_handle_graphql_error(fn error ->
+        handle_graphql_error(
+          "Historical Balance Change per Address",
+          inspect(selector),
+          error,
+          description: "selector"
+        )
+      end)
+    end
+  end
+
+  def transaction_volume_per_address(_root, _args, _resolution) do
+    {:error,
+     "Transaction volume per address is currently supported only for selectors with infrastructure ETH and a slug"}
+  end
+
   def miners_balance(
         _root,
         %{slug: slug, from: from, to: to, interval: interval},

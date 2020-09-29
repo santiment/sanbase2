@@ -17,6 +17,8 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
 
   use Ecto.Schema
 
+  import Sanbase.Utils.Transform
+
   alias Sanbase.ClickhouseRepo
 
   @table "erc20_transfers"
@@ -52,10 +54,10 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
         from_datetime,
         to_datetime,
         limit,
-        token_decimals \\ 0,
+        decimals \\ 0,
         excluded_addresses \\ []
       ) do
-    token_decimals = Sanbase.Math.ipow(10, token_decimals)
+    decimals = Sanbase.Math.ipow(10, decimals)
 
     {query, args} =
       token_top_transfers_query(
@@ -63,7 +65,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
         from_datetime,
         to_datetime,
         limit,
-        token_decimals,
+        decimals,
         excluded_addresses
       )
 
@@ -81,6 +83,66 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
       end
     )
   end
+
+  def transaction_volume_per_address(addresses, contract, from, to, decimals \\ 0) do
+    query = """
+    SELECT
+      address,
+      SUM(incoming) AS incoming,
+      SUM(outgoing) AS outgoing
+    FROM (
+      SELECT
+        from AS address,
+        0 AS incoming,
+        value AS outgoing
+      FROM erc20_transfers FINAL
+      PREWHERE
+        from IN (?1) AND
+        contract = ?2 AND
+        dt >= toDateTime(?3) AND
+        dt < toDateTime(?4)
+
+      UNION ALL
+
+      SELECT
+        to AS address,
+        value AS incoming,
+        0 AS outgoing
+      FROM erc20_transfers FINAL
+      PREWHERE
+        to in (?1) AND
+        contract = ?2 AND
+        dt >= toDateTime(?3) AND
+        dt < toDateTime(?4)
+    )
+    GROUP BY address
+    """
+
+    decimals = Sanbase.Math.ipow(10, decimals)
+    addresses = Enum.map(addresses, &String.downcase/1)
+    args = [addresses, contract, DateTime.to_unix(from), DateTime.to_unix(to)]
+
+    ClickhouseRepo.query_transform(
+      query,
+      args,
+      fn [address, incoming, outgoing] ->
+        incoming = incoming / decimals
+        outgoing = outgoing / decimals
+
+        %{
+          address: address,
+          transaction_volume_inflow: incoming,
+          transaction_volume_outflow: outgoing,
+          transaction_volume_total: incoming + outgoing
+        }
+      end
+    )
+    |> maybe_apply_function(fn data ->
+      Enum.sort_by(data, & &1.transaction_volume_total, :desc)
+    end)
+  end
+
+  # Private functions
 
   defp token_top_transfers_query(
          contract,
@@ -126,7 +188,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
 
   defp maybe_exclude_addresses([], _opts), do: ""
 
-  defp maybe_exclude_addresses([_ | _] = addresses, opts) do
+  defp maybe_exclude_addresses([_ | _], opts) do
     arg_position = Keyword.get(opts, :arg_position)
 
     "AND (from NOT IN (?#{arg_position}) AND to NOT IN (?#{arg_position}))"

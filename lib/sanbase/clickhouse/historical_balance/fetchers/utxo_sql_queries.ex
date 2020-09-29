@@ -159,7 +159,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.UtxoSqlQueries do
 
   defp maybe_exclude_addresses([], _opts), do: ""
 
-  defp maybe_exclude_addresses([_ | _] = addresses, opts) do
+  defp maybe_exclude_addresses([_ | _], opts) do
     arg_position = Keyword.get(opts, :arg_position)
 
     "AND (from NOT IN (?#{arg_position}) AND to NOT IN (?#{arg_position}))"

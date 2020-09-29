@@ -121,7 +121,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     end)
   end
 
-  def last_balance(addresses, contract, from, to, decimals) do
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
+  def last_balance(addresses, contract, decimals, from, to) do
     query = """
     SELECT address, argMax(value, dt)
     FROM #{@table}

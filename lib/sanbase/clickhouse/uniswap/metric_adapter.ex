@@ -159,9 +159,9 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
       Sanbase.Clickhouse.HistoricalBalance.Erc20Balance.last_balance(
         addresses,
         @contract,
+        18,
         from,
-        to,
-        18
+        to
       )
 
     data =

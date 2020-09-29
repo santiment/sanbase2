@@ -5,7 +5,7 @@
     "metric": "labelled_exchange_balance_sum",
     "version": "2020-09-15",
     "access": "restricted",
-    "selector": [
+    "selectors": [
       "slug",
       "market_segments",
       "slugs"

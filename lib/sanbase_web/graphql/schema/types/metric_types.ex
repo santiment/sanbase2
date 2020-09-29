@@ -51,6 +51,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   enum :metric_data_type do
     value(:timeseries)
     value(:histogram)
+    value(:table)
   end
 
   object :metric_data do

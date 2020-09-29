@@ -3,7 +3,14 @@ defmodule Sanbase.Clickhouse.Metric.TableMetric do
 
   alias Sanbase.ClickhouseRepo
 
-  def table_data(_metric, %{slug: []}, _from, _to), do: {:ok, []}
+  def table_data(_metric, %{slug: []}, _from, _to) do
+    {:ok,
+     %{
+       rows: [],
+       columns: [],
+       values: []
+     }}
+  end
 
   def table_data("labelled_exchange_balance_sum", %{slug: slug_or_slugs}, from, to) do
     slugs = List.wrap(slug_or_slugs)

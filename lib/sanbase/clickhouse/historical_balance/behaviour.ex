@@ -95,6 +95,14 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Behaviour do
               interval
             ) :: historical_balance_change_result()
 
+  @callback last_balance(
+              list(address),
+              target,
+              decimals,
+              from :: datetime,
+              to :: datetime
+            ) :: {:ok, float()} | {:error, String.t()}
+
   @callback last_balance_before(
               address,
               target,
@@ -102,5 +110,5 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Behaviour do
               before :: datetime
             ) :: {:ok, float()} | {:error, String.t()}
 
-  @optional_callbacks historical_balance_change: 6
+  @optional_callbacks historical_balance_change: 6, last_balance: 5
 end

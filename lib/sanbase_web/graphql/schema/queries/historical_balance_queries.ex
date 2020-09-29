@@ -40,6 +40,19 @@ defmodule SanbaseWeb.Graphql.Schema.HistoricalBalanceQueries do
       cache_resolve(&HistoricalBalanceResolver.historical_balance/3)
     end
 
+    field :address_historical_balance_change, list_of(:address_balance_change) do
+      meta(access: :free)
+
+      arg(:selector, :historical_balance_selector)
+      arg(:addresses, list_of(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(AccessControl)
+      cache_resolve(&HistoricalBalanceResolver.address_historical_balance_change/3)
+    end
+
     @desc """
     Returns miner balances over time.
     Currently only ETH is supported.

@@ -35,6 +35,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiContractAddressTest do
             Enum.map(project.contract_addresses, fn contract ->
               %{
                 "address" => contract.address,
+                "decimals" => contract.decimals,
                 "label" => contract.label,
                 "description" => contract.description
               }
@@ -53,6 +54,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiContractAddressTest do
         slug
         contractAddresses {
           address
+          decimals
           label
           description
         }

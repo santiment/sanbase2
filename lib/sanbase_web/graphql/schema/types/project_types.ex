@@ -632,6 +632,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
   object :contract_address do
     field(:address, non_null(:string))
+    field(:decimals, :integer)
     field(:label, :string)
     field(:description, :string)
     field(:inserted_at, :datetime)

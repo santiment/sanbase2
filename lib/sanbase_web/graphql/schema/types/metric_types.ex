@@ -377,7 +377,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
           selector: { slugs: ["ethereum", "uniswap"] } ){
             rows
             columns
-            valuesI
+            values
         }
       }
     }

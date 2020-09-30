@@ -48,7 +48,7 @@ defmodule SanbaseWeb.Graphql.CustomTypes.DateTime do
   @spec parse_datetime(Absinthe.Blueprint.Input.String.t()) :: {:ok, DateTime.t()} | :error
   @spec parse_datetime(Absinthe.Blueprint.Input.Null.t()) :: {:ok, nil}
   defp parse_datetime(%Absinthe.Blueprint.Input.String{value: "utc_now" <> _rest = value}) do
-    case String.split(value, "-") do
+    case String.split(value, ~r/\s*-\s*/) do
       ["utc_now"] ->
         {:ok, DateTime.utc_now()}
 

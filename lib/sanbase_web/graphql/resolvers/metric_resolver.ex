@@ -164,6 +164,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end
   end
 
+  def table_data(
+        _root,
+        %{from: from, to: to} = args,
+        %{source: %{metric: metric}}
+      ) do
+    selector = to_selector(args)
+
+    with true <- valid_selector?(selector),
+         {:ok, data} <- Metric.table_data(metric, selector, from, to) do
+      {:ok, data}
+    else
+      {:error, error} ->
+        {:error, handle_graphql_error(metric, selector, error)}
+    end
+  end
+
   # Private functions
 
   # gold and s-and-p-500 are present only in the intrday metrics table, not in asset_prices
@@ -291,7 +307,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   defp valid_selector?(_), do: true
 
   defp to_selector(%{slug: slug}), do: %{slug: slug}
+  defp to_selector(%{slugs: slugs}), do: %{slug: slugs}
   defp to_selector(%{word: word}), do: %{word: word}
+  defp to_selector(%{selector: %{slugs: slugs}}), do: %{slug: slugs}
   defp to_selector(%{selector: %{} = selector}), do: selector
   defp to_selector(_), do: %{}
 end

@@ -21,6 +21,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
   enum :selector_name do
     value(:slug)
+    value(:slugs)
     value(:text)
     value(:owner)
     value(:label)
@@ -32,6 +33,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
 
   input_object :metric_target_selector_input_object do
     field(:slug, :string)
+    field(:slugs, list_of(:string))
     field(:text, :string)
     field(:owner, :string)
     field(:label, :string)
@@ -49,6 +51,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   enum :metric_data_type do
     value(:timeseries)
     value(:histogram)
+    value(:table)
   end
 
   object :metric_data do
@@ -138,6 +141,12 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   object :histogram_data do
     field(:labels, list_of(:string))
     field(:values, :value_list)
+  end
+
+  object :table_data do
+    field(:rows, list_of(:string))
+    field(:columns, list_of(:string))
+    field(:values, list_of(list_of(:float)))
   end
 
   object :metric_metadata do
@@ -342,6 +351,81 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       middleware(AccessControl)
 
       cache_resolve(&MetricResolver.histogram_data/3)
+    end
+
+    @desc ~s"""
+    A table metric is a metric represented as a 2D table and not a timeseries.
+
+    The result is represented with three elements:
+    - list of column names
+    - list of row names
+    - list of lists that represent the values. The length of the list is the number
+    of rows and the length of every of its list elements is the number of columns.
+
+    Example: The `labelled_exchange_balance_sum` shows the exchange balance
+    of all slug-exchange pairs. Every row represents data for one exchange. Every
+    cell in that row contains the exchange balance of the slug at the same
+    position in the columns list for that same exchange.
+
+    GraphQL API request:
+    ```graphql
+    {
+      getMetric(metric: "labelled_exchange_balance_sum"){
+        tableData(
+          from: "2020-09-28T00:00:00Z"
+          to: "2020-09-29T00:00:00Z"
+          selector: { slugs: ["ethereum", "uniswap"] } ){
+            rows
+            columns
+            values
+        }
+      }
+    }
+    ```
+
+    On September 29 2020:
+    - ethereum exchange balance on catexexchange was 341
+    - uniswap exchange balance on catexexchange was 0
+    - ethereum exchange balance on binance was 85802226
+    - uniswap exchange balance on binance was 964953679
+
+    {
+    "data": {
+      "getMetric": {
+        "tableData": {
+          "columns": [
+            "ethereum",
+            "uniswap"
+          ],
+          "rows": [
+            "catexexchange",
+            "binance",
+            ...
+          ],
+          "values": [
+            [
+              341.49313850999255,
+              0
+            ],
+            [
+              85802226.14164084,
+              964953679.4342929
+            ],
+            ...
+          ]
+        }
+      }
+    }
+    """
+    field :table_data, :table_data do
+      arg(:slug, :string)
+      arg(:selector, :metric_target_selector_input_object)
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      middleware(AccessControl)
+
+      cache_resolve(&MetricResolver.table_data/3)
     end
 
     field :available_since, :datetime do

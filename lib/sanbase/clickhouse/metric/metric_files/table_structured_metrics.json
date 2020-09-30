@@ -1,0 +1,19 @@
+[
+  {
+    "human_readable_name": "Stablecoin Balances",
+    "name": "labelled_exchange_balance_sum",
+    "metric": "labelled_exchange_balance_sum",
+    "version": "2020-09-15",
+    "access": "restricted",
+    "selectors": ["slug", "market_segments", "slugs"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "table"
+  }
+]

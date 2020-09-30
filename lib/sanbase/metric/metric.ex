@@ -24,6 +24,9 @@ defmodule Sanbase.Metric do
   @timeseries_metric_to_module_map Sanbase.Metric.Helper.timeseries_metric_to_module_map()
   @timeseries_metrics Sanbase.Metric.Helper.timeseries_metrics()
   @timeseries_metrics_mapset Sanbase.Metric.Helper.timeseries_metrics_mapset()
+  @table_metrics Sanbase.Metric.Helper.table_metrics()
+  @table_metrics_mapset Sanbase.Metric.Helper.table_metrics_mapset()
+  @table_metric_to_module_map Sanbase.Metric.Helper.table_metric_to_module_map()
 
   def has_metric?(metric) do
     case metric in @metrics_mapset do
@@ -194,6 +197,35 @@ defmodule Sanbase.Metric do
   end
 
   @doc ~s"""
+  Get a table for a given metric
+  """
+
+  def table_data(metric, identifier, from, to, opts \\ [])
+
+  def table_data(metric, identifier, from, to, opts) do
+    case Map.get(@table_metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric, type: :table)
+
+      module when is_atom(module) ->
+        identifier = transform_identifier(identifier)
+        aggregation = Keyword.get(opts, :aggregation, nil)
+
+        fun = fn ->
+          module.table_data(
+            metric,
+            identifier,
+            from,
+            to,
+            opts
+          )
+        end
+
+        execute_if_aggregation_valid(fun, metric, aggregation)
+    end
+  end
+
+  @doc ~s"""
   Get the human readable name representation of a given metric
   """
   def human_readable_name(metric)
@@ -357,7 +389,7 @@ defmodule Sanbase.Metric do
 
     case available_metrics do
       {:nocache, {:ok, metrics}} ->
-        {:nocache, {:ok, metrics -- @histogram_metrics}}
+        {:nocache, {:ok, metrics -- (@histogram_metrics ++ @table_metrics)}}
 
       {:ok, metrics} ->
         {:ok, metrics -- @histogram_metrics}
@@ -373,16 +405,34 @@ defmodule Sanbase.Metric do
 
     case available_metrics do
       {:nocache, {:ok, metrics}} ->
-        {:nocache, {:ok, metrics -- @timeseries_metrics}}
+        {:nocache, {:ok, metrics -- (@timeseries_metrics ++ @table_metrics)}}
 
       {:ok, metrics} ->
-        {:ok, metrics -- @timeseries_metrics}
+        {:ok, metrics -- (@timeseries_metrics ++ @table_metrics)}
+    end
+  end
+
+  def available_table_metrics_for_slug(selector) do
+    available_metrics =
+      Sanbase.Cache.get_or_store(
+        {__MODULE__, :available_metrics_for_slug, selector} |> Sanbase.Cache.hash(),
+        fn -> available_metrics_for_slug(selector) end
+      )
+
+    case available_metrics do
+      {:nocache, {:ok, metrics}} ->
+        {:nocache, {:ok, metrics -- (@timeseries_metrics ++ @histogram_metrics)}}
+
+      {:ok, metrics} ->
+        {:ok, metrics -- (@timeseries_metrics ++ @histogram_metrics)}
     end
   end
 
   def available_timeseries_metrics(), do: @timeseries_metrics
 
   def available_histogram_metrics(), do: @histogram_metrics
+
+  def available_table_metrics(), do: @table_metrics
 
   @doc ~s"""
   Get all slugs for which at least one of the metrics is available
@@ -477,6 +527,13 @@ defmodule Sanbase.Metric do
       close:
         Enum.find(@timeseries_metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.8 end),
       error_msg: "The timeseries metric '#{metric}' is not supported or is mistyped."
+    }
+  end
+
+  defp metric_not_available_error_details(metric, :table) do
+    %{
+      close: Enum.find(@table_metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.8 end),
+      error_msg: "The table metric '#{metric}' is not supported or is mistyped."
     }
   end
 

@@ -25,12 +25,24 @@ defmodule SanbaseWeb.Graphql.ApiMetricMetadataTest do
       assert metadata["humanReadableName"] |> is_binary()
       assert metadata["defaultAggregation"] in aggregations
       assert metadata["minInterval"] in ["1m", "5m", "1h", "6h", "8h", "1d"]
-      assert metadata["dataType"] in ["TIMESERIES", "HISTOGRAM"]
+      assert metadata["dataType"] in ["TIMESERIES", "HISTOGRAM", "TABLE"]
       assert metadata["isRestricted"] in [true, false]
 
       assert Enum.all?(
                metadata["availableSelectors"],
-               &Enum.member?(["SLUG", "TEXT", "LABEL", "OWNER", "HOLDERS_COUNT", "SOURCE"], &1)
+               &Enum.member?(
+                 [
+                   "SLUG",
+                   "SLUGS",
+                   "MARKET_SEGMENTS",
+                   "TEXT",
+                   "LABEL",
+                   "OWNER",
+                   "HOLDERS_COUNT",
+                   "SOURCE"
+                 ],
+                 &1
+               )
              )
 
       assert Enum.all?(

@@ -13,7 +13,7 @@ defmodule Sanbase.Clickhouse.Metric do
   import Sanbase.Clickhouse.Metric.SqlQuery
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
 
-  alias __MODULE__.{HistogramMetric, FileHandler}
+  alias __MODULE__.{HistogramMetric, FileHandler, TableMetric}
 
   alias Sanbase.ClickhouseRepo
 
@@ -21,6 +21,7 @@ defmodule Sanbase.Clickhouse.Metric do
   @aggregations [nil] ++ @plain_aggregations
   @timeseries_metrics_name_list FileHandler.metrics_with_data_type(:timeseries)
   @histogram_metrics_name_list FileHandler.metrics_with_data_type(:histogram)
+  @table_structured_metrics_name_list FileHandler.metrics_with_data_type(:table)
   @access_map FileHandler.access_map()
   @min_plan_map FileHandler.min_plan_map()
   @min_interval_map FileHandler.min_interval_map()
@@ -29,7 +30,8 @@ defmodule Sanbase.Clickhouse.Metric do
   @aggregation_map FileHandler.aggregation_map()
   @human_readable_name_map FileHandler.human_readable_name_map()
   @metrics_data_type_map FileHandler.metrics_data_type_map()
-  @metrics_name_list (@histogram_metrics_name_list ++ @timeseries_metrics_name_list)
+  @metrics_name_list (@histogram_metrics_name_list ++
+                        @timeseries_metrics_name_list ++ @table_structured_metrics_name_list)
                      |> Enum.uniq()
   @metrics_mapset @metrics_name_list |> MapSet.new()
   @incomplete_data_map FileHandler.incomplete_data_map()
@@ -85,6 +87,9 @@ defmodule Sanbase.Clickhouse.Metric do
 
   @impl Sanbase.Metric.Behaviour
   defdelegate histogram_data(metric, slug, from, to, interval, limit), to: HistogramMetric
+
+  @impl Sanbase.Metric.Behaviour
+  defdelegate table_data(metric, slug_or_slugs, from, to, opts), to: TableMetric
 
   @impl Sanbase.Metric.Behaviour
   def aggregated_timeseries_data(metric, selector, from, to, opts)
@@ -151,6 +156,9 @@ defmodule Sanbase.Clickhouse.Metric do
 
   @impl Sanbase.Metric.Behaviour
   def available_timeseries_metrics(), do: @timeseries_metrics_name_list
+
+  @impl Sanbase.Metric.Behaviour
+  def available_table_metrics(), do: @table_structured_metrics_name_list
 
   @impl Sanbase.Metric.Behaviour
   def available_metrics(), do: @metrics_name_list

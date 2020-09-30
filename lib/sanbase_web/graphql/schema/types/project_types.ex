@@ -252,6 +252,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve(&ProjectMetricsResolver.available_histogram_metrics/3, ttl: 1200)
     end
 
+    field :available_table_metrics, list_of(:string) do
+      cache_resolve(&ProjectMetricsResolver.available_table_metrics/3, ttl: 1200)
+    end
+
     @desc ~s"""
     Returns a list of GraphQL queries that have data for the given slug.
 

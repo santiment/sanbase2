@@ -1,5 +1,6 @@
 defmodule Sanbase.Clickhouse.Metric.TableMetric do
-  import Sanbase.Clickhouse.Metric.SqlQuery
+  import Sanbase.Clickhouse.Metric.TableSqlQuery
+  import Sanbase.Utils.Transform
 
   alias Sanbase.ClickhouseRepo
 
@@ -12,15 +13,21 @@ defmodule Sanbase.Clickhouse.Metric.TableMetric do
      }}
   end
 
-  def table_data("labelled_exchange_balance_sum", %{slug: slug_or_slugs}, from, to) do
+  def table_data(
+        "labelled_exchange_balance_sum" = metric,
+        %{slug: slug_or_slugs},
+        from,
+        to,
+        _opts
+      ) do
     slugs = List.wrap(slug_or_slugs)
-    {query, args} = table_data_query("labelled_exchange_balance_sum", slugs, from, to)
+    {query, args} = table_data_query(metric, slugs, from, to)
 
-    case ClickhouseRepo.query_transform(query, args, fn [_label | tail] -> tail end) do
-      {:ok, owner_value_pairs} -> {:ok, transform_table_data(owner_value_pairs, slugs)}
-      {:error, error} -> {:error, error}
-    end
+    ClickhouseRepo.query_transform(query, args, fn [_label | tail] -> tail end)
+    |> maybe_apply_function(&transform_table_data(&1, slugs))
   end
+
+  # Private functiions
 
   defp transform_table_data(owner_value_pairs, slugs) do
     rows = Enum.map(owner_value_pairs, fn [owner | _values] -> owner end)

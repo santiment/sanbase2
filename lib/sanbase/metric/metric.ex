@@ -200,20 +200,28 @@ defmodule Sanbase.Metric do
   Get a table for a given metric
   """
 
-  def table_data(metric, identifier, from, to) do
+  def table_data(metric, identifier, from, to, opts \\ [])
+
+  def table_data(metric, identifier, from, to, opts) do
     case Map.get(@table_metric_to_module_map, metric) do
       nil ->
         metric_not_available_error(metric, type: :table)
 
       module when is_atom(module) ->
         identifier = transform_identifier(identifier)
+        aggregation = Keyword.get(opts, :aggregation, nil)
 
-        module.table_data(
-          metric,
-          identifier,
-          from,
-          to
-        )
+        fun = fn ->
+          module.table_data(
+            metric,
+            identifier,
+            from,
+            to,
+            opts
+          )
+        end
+
+        execute_if_aggregation_valid(fun, metric, aggregation)
     end
   end
 

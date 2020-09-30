@@ -89,8 +89,7 @@ defmodule Sanbase.Clickhouse.Metric do
   defdelegate histogram_data(metric, slug, from, to, interval, limit), to: HistogramMetric
 
   @impl Sanbase.Metric.Behaviour
-
-  defdelegate table_data(metric, slug_or_slugs, from, to), to: TableMetric
+  defdelegate table_data(metric, slug_or_slugs, from, to, opts), to: TableMetric
 
   @impl Sanbase.Metric.Behaviour
   def aggregated_timeseries_data(metric, selector, from, to, opts)

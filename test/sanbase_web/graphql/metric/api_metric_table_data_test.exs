@@ -32,7 +32,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTableDataTest do
       |> Enum.random()
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.Metric.table_data/4,
+      &Sanbase.Clickhouse.Metric.table_data/5,
       success_result(list_of_slugs)
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -55,7 +55,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTableDataTest do
     metrics = Metric.available_table_metrics() |> Enum.shuffle()
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.Metric.table_data/4,
+      &Sanbase.Clickhouse.Metric.table_data/5,
       success_result(list_of_slugs)
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -82,7 +82,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTableDataTest do
     list_of_slugs = [p1.slug, p2.slug]
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.Metric.table_data/4,
+      &Sanbase.Clickhouse.Metric.table_data/5,
       success_result(list_of_slugs)
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -108,7 +108,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTableDataTest do
           "labelled_exchange_balance_sum",
           %{slug: [:_, :_]},
           from,
-          to
+          to,
+          []
         )
       )
     end)
@@ -125,7 +126,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTableDataTest do
     list_of_slugs = [p1.slug, p2.slug]
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.Metric.table_data/4,
+      &Sanbase.Clickhouse.Metric.table_data/5,
       success_result(list_of_slugs)
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -151,7 +152,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTableDataTest do
           "labelled_exchange_balance_sum",
           %{slug: [:_, :_]},
           from,
-          to
+          to,
+          []
         )
       )
     end)

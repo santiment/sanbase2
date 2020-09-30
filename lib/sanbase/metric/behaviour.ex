@@ -67,7 +67,8 @@ defmodule Sanbase.Metric.Behaviour do
               metric :: metric(),
               selector :: selector,
               from :: DateTime.t(),
-              to :: DateTime.t()
+              to :: DateTime.t(),
+              opts :: opts
             ) :: {:ok, table_data_point} | {:error, String.t()}
 
   @callback aggregated_timeseries_data(
@@ -133,5 +134,5 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback min_plan_map() :: map()
 
-  @optional_callbacks [histogram_data: 6, table_data: 4]
+  @optional_callbacks [histogram_data: 6, table_data: 5]
 end

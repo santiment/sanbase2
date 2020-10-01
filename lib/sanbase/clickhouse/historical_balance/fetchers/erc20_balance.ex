@@ -108,7 +108,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     FROM #{@table} FINAL
     PREWHERE
       address IN (?1) AND
-      contract = ?2
+      assetRefId = cityHash64('ETH_' || ?2)
     GROUP BY address
     """
 
@@ -128,7 +128,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     FROM #{@table}
     PREWHERE
       address IN (?1) AND
-      contract = ?2 AND
+      assetRefId = cityHash64('ETH_' || ?2) AND
       dt >= toDateTime(?3) AND
       dt < toDateTime(?4) AND
       sign = 1
@@ -151,7 +151,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     FROM #{@table}
     PREWHERE
       address = ?1 AND
-      contract = ?2 AND
+      assetRefId = cityHash64('ETH_' || ?2) AND
       dt <= toDateTime(?3) AND
       sign = 1
     ORDER BY dt DESC
@@ -195,7 +195,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     FROM #{@table}
     PREWHERE
       address = ?3 AND
-      contract = ?4 AND
+      assetRefId = cityHash64('ETH_' || ?4) AND
       sign = 1 AND
       dt >= toDateTime(?5) AND
       dt < toDateTime(?6)

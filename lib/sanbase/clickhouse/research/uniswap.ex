@@ -1,6 +1,12 @@
 defmodule Sanbase.Clickhouse.Research.Uniswap do
   alias Sanbase.ClickhouseRepo
 
+  require Sanbase.Utils.Config, as: Config
+
+  alias Sanbase.Clickhouse.Erc20Transfers
+  defp address_ordered_table(), do: Config.module_get(Erc20Transfers, :address_ordered_table)
+  defp dt_ordered_table(), do: Config.module_get(Erc20Transfers, :address_ordered_table)
+
   def who_claimed() do
     {query, args} = who_claimed_query()
 
@@ -34,9 +40,10 @@ defmodule Sanbase.Clickhouse.Research.Uniswap do
     SELECT
       'total_minted' AS exchange_status,
       sum(value)/1e18 AS token_value
-    FROM erc20_transfers
-    PREWHERE (contract = '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984')
-      AND (from = '0x090d4613473dee047c3f2706764f49e0821d256e')
+    FROM #{address_ordered_table()} FINAL
+    PREWHERE
+      assetRefId = cityHash64('ETH_' || '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984') AND
+      from = '0x090d4613473dee047c3f2706764f49e0821d256e'
 
     UNION ALL
 
@@ -46,8 +53,9 @@ defmodule Sanbase.Clickhouse.Research.Uniswap do
                   hasAll(labels, ['withdrawal', 'dex_trader']), 'cex_dex_trader',
                   hasAny(labels, ['withdrawal']), 'cex_trader',
                   hasAny(labels, ['dex_trader']), 'dex_trader',
-                  'other_transfers') AS exchange_status,
-                  sum(value_transfered_after_claiming) AS token_value
+                  'other_transfers'
+      ) AS exchange_status,
+      sum(value_transfered_after_claiming) AS token_value
     FROM (
       SELECT
         address,
@@ -58,17 +66,18 @@ defmodule Sanbase.Clickhouse.Research.Uniswap do
           SELECT
             from AS address,
             sum(value)/1e18 AS value_transfered
-          FROM erc20_transfers
-          PREWHERE contract = '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984'
-                AND dt >= toDateTime('2020-09-16 21:32:52')
+          FROM #{dt_ordered_table()} FINAL
+          PREWHERE
+            assetRefId = cityHash64('ETH_' || '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984') AND
+            dt >= toDateTime('2020-09-16 21:32:52')
           GROUP BY address)
       GLOBAL ALL INNER JOIN (
           SELECT
             to AS address,
             sum(value)/1e18 AS value_claimed
-          FROM erc20_transfers
+          FROM #{address_ordered_table()} FINAL
           PREWHERE
-            contract = '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984' AND
+            assetRefId = cityHash64('ETH_' || '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984') AND
             from = '0x090d4613473dee047c3f2706764f49e0821d256e'
           GROUP BY address)
       USING address
@@ -85,14 +94,16 @@ defmodule Sanbase.Clickhouse.Research.Uniswap do
     FROM (
       SELECT
         splitByChar(',', dictGetString('default.eth_label_dict', 'labels', tuple(cityHash64(to), toUInt64(0)))) AS labels,
-        multiIf(hasAny(labels, ['decentralized_exchange']), 'decentralized_exchanges',
+        multiIf(
+                hasAny(labels, ['decentralized_exchange']), 'decentralized_exchanges',
                 hasAny(labels, ['centralized_exchange', 'deposit']), 'centralized_exchanges',
                 hasAny(labels, ['withdrawal']), 'cex_trader',
-                'other_addresses') AS exchange_status,
-                value/1e18 AS value2
-      FROM erc20_transfers
+                'other_addresses'
+        ) AS exchange_status,
+        value/1e18 AS value2
+      FROM #{address_ordered_table()} FINAL
       PREWHERE
-        contract = '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984' AND
+        assetRefId = cityHash64('ETH_' || '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984') AND
         from = '0x090d4613473dee047c3f2706764f49e0821d256e'
     )
     GROUP BY exchange_status

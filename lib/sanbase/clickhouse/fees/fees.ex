@@ -43,14 +43,13 @@ defmodule Sanbase.Clickhouse.Fees do
             (
                 SELECT transactionHash, value
                 FROM eth_transfers FINAL
-                PREWHERE dt >= toDateTime(?1) and dt <= toDateTime(?2)
-                WHERE type = 'fee'
+                PREWHERE dt >= toDateTime(?1) AND dt < toDateTime(?2) AND type = 'fee'
             )
             ANY LEFT JOIN
             (
                 SELECT transactionHash, contract, assetRefId
                 FROM erc20_transfers_union
-                WHERE dt >= toDateTime(?1) and dt <= toDateTime(?2)
+                WHERE dt >= toDateTime(?1) and dt < toDateTime(?2)
             ) USING (transactionHash)
             GROUP BY assetRefId, contract
             ORDER BY fees DESC
@@ -58,8 +57,8 @@ defmodule Sanbase.Clickhouse.Fees do
         )
         ALL LEFT JOIN
         (
-            SELECT name, asset_ref_id AS assetRefId
-            FROM asset_metadata FINAL
+          SELECT name, asset_ref_id AS assetRefId
+          FROM asset_metadata FINAL
         ) USING (assetRefId)
     ) ORDER BY fees DESC
     """

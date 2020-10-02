@@ -101,8 +101,8 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :twitter_data,
           :twitter_mention_count,
           :user_list,
-          :watchlist,
-          :watchlist_by_slug
+          :watchlist_by_slug,
+          :watchlist
         ]
         |> Enum.sort()
 
@@ -138,6 +138,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :token_age_consumed,
           :token_circulation,
           :token_velocity,
+          :top_exchanges_by_balance,
           :top_holders_percent_of_total_supply,
           :top_social_gainers_losers,
           :topic_search,

@@ -3,9 +3,23 @@ defmodule SanbaseWeb.Graphql.Schema.ExchangeQueries do
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
+  alias SanbaseWeb.Graphql.Middlewares.AccessControl
   alias SanbaseWeb.Graphql.Resolvers.ExchangeResolver
 
   object :exchange_queries do
+    field :top_exchanges_by_balance, list_of(:top_exchange_balance) do
+      meta(access: :restricted)
+
+      arg(:slug, non_null(:string))
+      arg(:label, list_of(:string))
+      arg(:owner, list_of(:string))
+      arg(:limit, :integer, default_value: 100)
+
+      middleware(AccessControl)
+
+      cache_resolve(&ExchangeResolver.top_exchanges_by_balance/3)
+    end
+
     @desc ~s"""
     Returns last market depth calculations for given exchange and ticker pair
     """

@@ -12,6 +12,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
     ExchangeAddress.exchange_names(slug, Map.get(args, :is_dex, nil))
   end
 
+  def top_exchanges_by_balance(
+        _root,
+        %{slug: slug} = args,
+        _resolution
+      ) do
+    limit = Map.get(args, :limit, 100)
+
+    opts =
+      case Map.split(args, [:owner, :label]) do
+        {map, _rest} when map_size(map) -> [additional_filters: Keyword.new(map)]
+        _ -> []
+      end
+
+    Exchanges.ExchangeMetric.top_exchanges_by_balance(slug, limit, opts)
+  end
+
   def last_exchange_market_depth(
         _root,
         %{exchange: exchange, ticker_pair: ticker_pair, limit: limit},

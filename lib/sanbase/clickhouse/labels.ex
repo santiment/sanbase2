@@ -106,7 +106,8 @@ defmodule Sanbase.Clickhouse.Label do
       ((label = 'whale' and asset_id = (SELECT argMax(asset_id, computed_at) FROM asset_metadata FINAL PREWHERE name = ?1))
         OR (label != 'whale' and asset_id = 0)) AND
       lower(address) IN (?2)
-    HAVING sign = 1
+    HAVING (sign = 1)
+       AND (address != '0x0000000000000000000000000000000000000000' OR label='System')
     """
 
     {query, [slug, addresses]}

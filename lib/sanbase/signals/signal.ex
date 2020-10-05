@@ -5,14 +5,11 @@ end
 defimpl Sanbase.Signal, for: Any do
   alias Sanbase.Auth.User
 
-  @default_limit_per_day %{
-    "email" => 50,
-    "telegram" => 100,
-    "webhook" => 1000,
-    "webpush" => 1000
-  }
+  @default_signals_limit_per_day Sanbase.Auth.Settings.default_signals_limit_per_day()
 
-  @channels Map.keys(@default_limit_per_day)
+  @channels Map.keys(@default_signals_limit_per_day)
+
+  def default_signals_limit_per_day(), do: @default_signals_limit_per_day
 
   def send(%{user: user, trigger: %{settings: %{channel: channel}}} = user_trigger) do
     # Mutex is needed, so the `max_signals_to_send` can be properly counted and
@@ -90,7 +87,7 @@ defimpl Sanbase.Signal, for: Any do
   end
 
   defp send_email(
-         %{user: %User{id: user_id} = user, trigger: %{settings: %{payload: payload_map}}},
+         %{user: %User{id: user_id}, trigger: %{settings: %{payload: payload_map}}},
          _max_signals_to_send
        ) do
     Enum.map(payload_map, fn {identifier, _payload} ->
@@ -136,6 +133,7 @@ defimpl Sanbase.Signal, for: Any do
     # Force the settings to be fetched and not taken from the user struct
     # This is done so while evaluating signals, the signals fired count is
     # properly reflected here.
+
     user_settings = Sanbase.Auth.UserSettings.settings_for(%Sanbase.Auth.User{id: user.id})
 
     %{
@@ -148,7 +146,8 @@ defimpl Sanbase.Signal, for: Any do
 
     Enum.reduce(@channels, %{}, fn channel, map ->
       channel_limit =
-        Map.get(signals_per_day_limit, channel) || Map.get(@default_limit_per_day, channel)
+        Map.get(signals_per_day_limit, channel) ||
+          Map.get(@default_signals_limit_per_day, channel)
 
       channel_sent_today = Map.get(notifications_sent_today, channel, 0)
       left_to_send = Enum.max([channel_limit - channel_sent_today, 0])
@@ -218,7 +217,7 @@ defimpl Sanbase.Signal, for: Any do
   end
 
   defp update_user_signals_sent_per_day(user, sent_list_per_channel) do
-    %{signals_fired: signals_fired, signals_per_day_limit: signals_per_day_limit} =
+    %{signals_fired: signals_fired} =
       Sanbase.Auth.UserSettings.settings_for(%Sanbase.Auth.User{id: user.id})
 
     map_key = Date.utc_today() |> to_string()
@@ -246,13 +245,13 @@ defimpl Sanbase.Signal, for: Any do
   defp send_limit_reached_notification("telegram", user) do
     Sanbase.Telegram.send_message(
       user,
-      limit_reached_payload("telegram", user)
+      limit_reached_payload("telegram")
     )
   end
 
   defp send_limit_reached_notification("email", user) do
     Sanbase.MandrillApi.send("signals", user.email, %{
-      payload: limit_reached_payload("email", user) |> Earmark.as_html!(breaks: true)
+      payload: limit_reached_payload("email") |> Earmark.as_html!(breaks: true)
     })
     |> case do
       {:ok, _} -> :ok
@@ -260,9 +259,9 @@ defimpl Sanbase.Signal, for: Any do
     end
   end
 
-  defp send_limit_reached_notification(_channel, _user), do: :ok
+  defp send_limit_reached_notification(_channel), do: :ok
 
-  defp limit_reached_payload(channel, user) do
+  defp limit_reached_payload(channel) do
     """
     Your maximum amount of #{channel} alert notifications per day has been reached.
 

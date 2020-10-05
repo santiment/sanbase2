@@ -2,6 +2,15 @@ defmodule Sanbase.Auth.Settings do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @default_signals_limit_per_day %{
+    "email" => 50,
+    "telegram" => 100,
+    "webhook" => 1000,
+    "webpush" => 1000
+  }
+
+  def default_signals_limit_per_day(), do: @default_signals_limit_per_day
+
   @newsletter_subscription_types ["DAILY", "WEEKLY", "OFF"]
 
   embedded_schema do

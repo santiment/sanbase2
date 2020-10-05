@@ -87,6 +87,23 @@ defimpl Sanbase.Signal, for: Any do
   end
 
   defp send_email(
+         %{
+           user: %User{
+             email: email,
+             user_settings: %{settings: %{signal_notify_email: false}}
+           },
+           trigger: %{settings: %{payload: payload_map}}
+         },
+         _
+       )
+       when is_binary(email) and is_map(payload_map) do
+    # The emails notifications are disabled
+    Enum.map(payload_map, fn {identifier, _payload} ->
+      {identifier, :channel_disabled}
+    end)
+  end
+
+  defp send_email(
          %{user: %User{id: user_id}, trigger: %{settings: %{payload: payload_map}}},
          _max_signals_to_send
        ) do
@@ -98,7 +115,12 @@ defimpl Sanbase.Signal, for: Any do
   defp send_telegram(
          %{
            id: user_trigger_id,
-           user: %User{user_settings: %{settings: %{telegram_chat_id: telegram_chat_id}}} = user,
+           user:
+             %User{
+               user_settings: %{
+                 settings: %{telegram_chat_id: telegram_chat_id, signal_notify_telegram: true}
+               }
+             } = user,
            trigger: %{
              settings: %{payload: payload_map}
            }
@@ -111,6 +133,29 @@ defimpl Sanbase.Signal, for: Any do
     end
 
     send_or_limit("telegram", user, payload_map, max_signals_to_send, fun)
+  end
+
+  defp send_telegram(
+         %{
+           user: %User{
+             user_settings: %{
+               settings: %{
+                 telegram_chat_id: telegram_chat_id,
+                 signal_notify_telegram: false
+               }
+             }
+           },
+           trigger: %{
+             settings: %{payload: payload_map}
+           }
+         },
+         _
+       )
+       when is_integer(telegram_chat_id) and telegram_chat_id > 0 and is_map(payload_map) do
+    # The emails notifications are disabled
+    Enum.map(payload_map, fn {identifier, _payload} ->
+      {identifier, :channel_disabled}
+    end)
   end
 
   defp send_telegram(

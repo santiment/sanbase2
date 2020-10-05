@@ -21,8 +21,8 @@ defmodule Sanbase.Auth.UserSettings do
     |> unique_constraint(:user_id)
   end
 
-  def settings_for(%User{user_settings: %{settings: %Settings{} = settings}}) do
-    settings
+  def settings_for(%User{user_settings: %{settings: %Settings{}} = user_settings}) do
+    modify_settings(user_settings)
   end
 
   def settings_for(%User{id: user_id}) do
@@ -93,16 +93,18 @@ defmodule Sanbase.Auth.UserSettings do
   end
 
   defp settings_update(user_id, params) do
-    Repo.get_by(__MODULE__, user_id: user_id)
-    |> case do
-      nil ->
-        changeset(%__MODULE__{}, %{user_id: user_id, settings: params})
+    changeset =
+      Repo.get_by(__MODULE__, user_id: user_id)
+      |> case do
+        nil ->
+          # There are no settings inserted for that user still, create a record
+          changeset(%__MODULE__{}, %{user_id: user_id, settings: params})
 
-      %__MODULE__{} = us ->
-        changeset(us, %{settings: params})
-    end
-    |> Repo.insert_or_update()
-    |> case do
+        %__MODULE__{} = us ->
+          changeset(us, %{settings: params})
+      end
+
+    case changeset |> Repo.insert_or_update() do
       {:ok, %__MODULE__{} = us} ->
         {:ok, %{us | settings: modify_settings(us)}}
 
@@ -112,13 +114,30 @@ defmodule Sanbase.Auth.UserSettings do
   end
 
   defp modify_settings(%__MODULE__{} = us) do
+    # The default value of the signals limit is an empty map.
+    # Put the defaults here, after fetching from the DB, at runtime.
+    # This is done so the default values can be changed without altering DB records.
+
+    signals_per_day_limit =
+      us.settings.signals_per_day_limit
+      |> case do
+        empty_map when map_size(empty_map) == 0 ->
+          Sanbase.Auth.Settings.default_signals_limit_per_day()
+
+        map when is_map(map) ->
+          map
+      end
+
+    newsletter_subscription =
+      us.settings.newsletter_subscription
+      |> String.downcase()
+      |> String.to_existing_atom()
+
     %{
       us.settings
       | has_telegram_connected: us.settings.telegram_chat_id != nil,
-        newsletter_subscription:
-          us.settings.newsletter_subscription
-          |> String.downcase()
-          |> String.to_existing_atom()
+        signals_per_day_limit: signals_per_day_limit,
+        newsletter_subscription: newsletter_subscription
     }
   end
 end

@@ -146,7 +146,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
            }
   end
 
-  test "returns default values if user has'nt any user_settings", %{conn: conn} do
+  test "returns default values if user has no user_settings", %{conn: conn} do
     query = current_user_query()
     result = conn |> execute(query, "currentUser")
 

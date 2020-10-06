@@ -36,7 +36,7 @@
   {
     "human_readable_name": "Multi-Collateral DAI ERC20 Supply",
     "name": "mcd_erc20_supply",
-    "metric": "mcd_total_supply",
+    "metric": "total_supply",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug"],

@@ -49,7 +49,8 @@ defmodule SanbaseWeb.Graphql.Schema.ExchangeQueries do
 
     @desc ~s"""
     Returns trades for given exchange and ticker pair between start and end datetime.
-    Optionally the data can be aggregated and put into interval length buckets if `interval` arg is used.
+    Optionally the data can be aggregated and put into interval length buckets if
+    `interval` arg is used.
     """
     field :exchange_trades, list_of(:exchange_trade) do
       meta(access: :free)

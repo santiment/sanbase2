@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
   require Logger
 
   import Sanbase.Utils.ErrorHandling,
-    only: [maybe_handle_graphql_error: 2, handle_graphql_error: 4]
+    only: [maybe_handle_graphql_error: 2, handle_graphql_error: 3, handle_graphql_error: 4]
 
   alias Sanbase.Clickhouse.ExchangeAddress
   alias Sanbase.Clickhouse.Exchanges
@@ -14,18 +14,28 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
 
   def top_exchanges_by_balance(
         _root,
-        %{slug: slug} = args,
+        args,
         _resolution
       ) do
     limit = Map.get(args, :limit, 100)
 
     opts =
       case Map.split(args, [:owner, :label]) do
-        {map, _rest} when map_size(map) -> [additional_filters: Keyword.new(map)]
+        {map, _rest} when map_size(map) > 0 -> [additional_filters: Keyword.new(map)]
         _ -> []
       end
 
-    Exchanges.ExchangeMetric.top_exchanges_by_balance(slug, limit, opts)
+    with {:ok, selector} <- Sanbase.Metric.Selector.args_to_selector(args),
+         {:ok, result} <- Exchanges.ExchangeMetric.top_exchanges_by_balance(selector, limit, opts) do
+      {:ok, result}
+    end
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(
+        "Top Exchanges By Balance",
+        Sanbase.Metric.Selector.args_to_raw_selector(args),
+        error
+      )
+    end)
   end
 
   def last_exchange_market_depth(
@@ -41,7 +51,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
     |> maybe_handle_graphql_error(fn error ->
       handle_graphql_error(
         "Last exchange market depth",
-        inspect(exchange) <> " and " <> inspect(ticker_pair),
+        "#{inspect(exchange)} and #{inspect(ticker_pair)}",
         error,
         description: "exchange and ticker_pair"
       )

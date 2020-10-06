@@ -80,6 +80,9 @@ defmodule Sanbase.Utils.ErrorHandling do
           slug when is_binary(slug) ->
             {"project with slug", slug}
 
+          %{} = selector when map_size(selector) > 0 ->
+            {"selector", selector}
+
           %{} ->
             {"an empty selector", "{}"}
         end

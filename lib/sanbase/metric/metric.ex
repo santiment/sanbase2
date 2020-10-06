@@ -7,11 +7,7 @@ defmodule Sanbase.Metric do
   @metric_modules list and everything else happens automatically.
   """
   @compile :inline_list_funcs
-  @compile inline: [
-             transform_identifier: 1,
-             execute_if_aggregation_valid: 3,
-             metric_not_available_error: 2
-           ]
+  @compile inline: [execute_if_aggregation_valid: 3]
 
   @access_map Sanbase.Metric.Helper.access_map()
   @aggregations Sanbase.Metric.Helper.aggregations()
@@ -61,23 +57,20 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        with {:ok, identifier} <- transform_identifier(identifier),
-             {:ok, identifier} <- maybe_ignore_slugs(identifier) do
-          aggregation = Keyword.get(opts, :aggregation, nil)
+        aggregation = Keyword.get(opts, :aggregation, nil)
 
-          fun = fn ->
-            module.timeseries_data(
-              metric,
-              identifier,
-              from,
-              to,
-              interval,
-              opts
-            )
-          end
-
-          execute_if_aggregation_valid(fun, metric, aggregation)
+        fun = fn ->
+          module.timeseries_data(
+            metric,
+            identifier,
+            from,
+            to,
+            interval,
+            opts
+          )
         end
+
+        execute_if_aggregation_valid(fun, metric, aggregation)
     end
   end
 
@@ -97,20 +90,17 @@ defmodule Sanbase.Metric do
       module when is_atom(module) ->
         aggregation = Keyword.get(opts, :aggregation, nil)
 
-        with {:ok, identifier} <- transform_identifier(identifier),
-             {:ok, identifier} <- maybe_ignore_slugs(identifier) do
-          fun = fn ->
-            module.aggregated_timeseries_data(
-              metric,
-              identifier,
-              from,
-              to,
-              opts
-            )
-          end
-
-          execute_if_aggregation_valid(fun, metric, aggregation)
+        fun = fn ->
+          module.aggregated_timeseries_data(
+            metric,
+            identifier,
+            from,
+            to,
+            opts
+          )
         end
+
+        execute_if_aggregation_valid(fun, metric, aggregation)
     end
   end
 
@@ -193,17 +183,14 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        with {:ok, identifier} <- transform_identifier(identifier),
-             {:ok, identifier} <- maybe_ignore_slugs(identifier) do
-          module.histogram_data(
-            metric,
-            identifier,
-            from,
-            to,
-            interval,
-            limit
-          )
-        end
+        module.histogram_data(
+          metric,
+          identifier,
+          from,
+          to,
+          interval,
+          limit
+        )
     end
   end
 
@@ -219,22 +206,19 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :table)
 
       module when is_atom(module) ->
-        with {:ok, identifier} <- transform_identifier(identifier),
-             {:ok, identifier} <- maybe_ignore_slugs(identifier) do
-          aggregation = Keyword.get(opts, :aggregation, nil)
+        aggregation = Keyword.get(opts, :aggregation, nil)
 
-          fun = fn ->
-            module.table_data(
-              metric,
-              identifier,
-              from,
-              to,
-              opts
-            )
-          end
-
-          execute_if_aggregation_valid(fun, metric, aggregation)
+        fun = fn ->
+          module.table_data(
+            metric,
+            identifier,
+            from,
+            to,
+            opts
+          )
         end
+
+        execute_if_aggregation_valid(fun, metric, aggregation)
     end
   end
 
@@ -557,57 +541,6 @@ defmodule Sanbase.Metric do
       error_msg: "The histogram metric '#{metric}' is not supported or is mistyped."
     }
   end
-
-  defp transform_identifier(%{market_segments: market_segments} = selector) do
-    slugs =
-      Sanbase.Model.Project.List.by_market_segment_all_of(market_segments)
-      |> Enum.map(& &1.slug)
-
-    {:ok, Map.put(selector, :slug, slugs)}
-  end
-
-  defp transform_identifier(%{watchlist_id: watchlist_id} = selector)
-       when is_integer(watchlist_id) do
-    case Sanbase.UserList.by_id(watchlist_id) do
-      nil ->
-        {:error, "Watchlist with id #{watchlist_id} does not exist."}
-
-      watchlist ->
-        case watchlist |> Sanbase.UserList.get_slugs() do
-          {:ok, slugs} ->
-            {:ok, Map.put(selector, :slug, slugs)}
-
-          {:error, _error} ->
-            {:error, "Cannot fetch slugs for watchlist with id #{watchlist_id}"}
-        end
-    end
-  end
-
-  defp transform_identifier(%{watchlist_slug: watchlist_slug} = selector)
-       when is_binary(watchlist_slug) do
-    case Sanbase.UserList.by_slug(watchlist_slug) do
-      nil ->
-        {:error, "Watchlist with slug #{watchlist_slug} does not exist."}
-
-      watchlist ->
-        case watchlist |> Sanbase.UserList.get_slugs() do
-          {:ok, slugs} ->
-            {:ok, Map.put(selector, :slug, slugs)}
-
-          {:error, _error} ->
-            {:error, "Cannot fetch slugs for watchlist with slug #{watchlist_slug}"}
-        end
-    end
-  end
-
-  defp transform_identifier(identifier), do: {:ok, identifier}
-
-  defp maybe_ignore_slugs(%{ignored_slugs: [_ | _] = ignored_slugs, slug: slugs} = selector) do
-    slugs = List.wrap(slugs) -- ignored_slugs
-    {:ok, Map.put(selector, :slug, slugs)}
-  end
-
-  defp maybe_ignore_slugs(selector), do: {:ok, selector}
 
   defp execute_if_aggregation_valid(fun, metric, aggregation) do
     aggregation_valid? = aggregation in Map.get(@aggregations_per_metric, metric)

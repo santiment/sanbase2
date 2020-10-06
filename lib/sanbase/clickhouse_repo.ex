@@ -21,7 +21,7 @@ defmodule Sanbase.ClickhouseRepo do
     {:ok, opts}
   end
 
-  @error_message "Cannot execute database query. If issue persist please contact Santiment Support."
+  @error_message "Cannot execute database query. If issue persists please contact Santiment Support."
   def query_transform(query, args, transform_fn) do
     try do
       ordered_params = order_params(query, args)

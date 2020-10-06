@@ -10,7 +10,8 @@ defmodule SanbaseWeb.Graphql.Schema.ExchangeQueries do
     field :top_exchanges_by_balance, list_of(:top_exchange_balance) do
       meta(access: :restricted)
 
-      arg(:slug, non_null(:string))
+      arg(:slug, :string)
+      arg(:selector, :metric_target_selector_input_object)
       arg(:label, list_of(:string))
       arg(:owner, list_of(:string))
       arg(:limit, :integer, default_value: 100)

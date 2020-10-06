@@ -118,7 +118,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
              metric in @community_messages_count_timeseries_metrics do
     case timeseries_data(metric, selector, from, to, "1h", opts) do
       {:ok, result} ->
-        {:ok, Enum.reduce(result, 0, &(&1.value + &2))}
+        value = Enum.reduce(result, 0, &(&1.value + &2))
+        {:ok, [%{value: value}]}
 
       {:error, error} ->
         {:error, error}
@@ -129,11 +130,11 @@ defmodule Sanbase.SocialData.MetricAdapter do
       when metric in @social_dominance_timeseries_metrics do
     case timeseries_data(metric, selector, from, to, "1h", opts) do
       {:ok, result} ->
-        result =
+        value =
           Enum.reduce(result, 0, &(&1.value + &2))
           |> Sanbase.Math.average()
 
-        {:ok, result}
+        {:ok, [%{value: value}]}
 
       {:error, error} ->
         {:error, error}

@@ -29,7 +29,7 @@ defmodule SanbaseWeb.Graphql.Exchanges.MarketDepthTest do
       assert log =~ inspect(error)
 
       assert log =~
-               ~s(Can't fetch Last exchange market depth for exchange and ticker_pair: "Kraken" and "ZEC/BTC")
+               ~s(Can't fetch Last exchange market depth for exchange and ticker_pair "Kraken" and "ZEC/BTC")
     end)
   end
 

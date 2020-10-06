@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Graphql.Exchanges.TradesTest do
       assert log =~ inspect(error)
 
       assert log =~
-               ~s(Can't fetch Last exchange trades for exchange and ticker_pair: "Kraken" and "ETH/EUR")
+               ~s(Can't fetch Last exchange trades for exchange and ticker_pair "Kraken" and "ETH/EUR")
     end)
   end
 
@@ -66,7 +66,7 @@ defmodule SanbaseWeb.Graphql.Exchanges.TradesTest do
       assert log =~ inspect(error)
 
       assert log =~
-               ~s(Can't fetch Exchange trades for exchange and ticker_pair: "Kraken" and "ETH/EUR")
+               ~s(Can't fetch Exchange trades for exchange and ticker_pair "Kraken" and "ETH/EUR")
     end)
   end
 
@@ -99,7 +99,7 @@ defmodule SanbaseWeb.Graphql.Exchanges.TradesTest do
       assert log =~ inspect(error)
 
       assert log =~
-               ~s(Can't fetch Aggregated exchange trades for exchange and ticker_pair: "Kraken" and "ETH/EUR")
+               ~s(Can't fetch Aggregated exchange trades for exchange and ticker_pair "Kraken" and "ETH/EUR")
     end)
   end
 

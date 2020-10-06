@@ -21,11 +21,13 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
 
   alias Sanbase.ClickhouseRepo
 
-  @table "erc20_transfers"
+  require Sanbase.Utils.Config, as: Config
+  defp dt_ordered_table(), do: Config.get(:dt_ordered_table)
 
+  # Note: The schema name is not important as it is not used.
   @primary_key false
   @timestamps_opts [updated_at: false]
-  schema @table do
+  schema "erc20_transfers" do
     field(:datetime, :utc_datetime, source: :dt)
     field(:contract, :string, primary_key: true)
     field(:from_address, :string, primary_key: true, source: :from)
@@ -95,10 +97,10 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
         from AS address,
         0 AS incoming,
         value AS outgoing
-      FROM erc20_transfers FINAL
+      FROM #{dt_ordered_table()} FINAL
       PREWHERE
         from IN (?1) AND
-        contract = ?2 AND
+        assetRefId = cityHash64('ETH_' || ?2) AND
         dt >= toDateTime(?3) AND
         dt < toDateTime(?4)
 
@@ -108,10 +110,10 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
         to AS address,
         value AS incoming,
         0 AS outgoing
-      FROM erc20_transfers FINAL
+      FROM #{dt_ordered_table()} FINAL
       PREWHERE
         to in (?1) AND
-        contract = ?2 AND
+        assetRefId = cityHash64('ETH_' || ?2) AND
         dt >= toDateTime(?3) AND
         dt < toDateTime(?4)
     )
@@ -162,7 +164,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
       to,
       transactionHash,
       value / ?1
-    FROM #{@table} FINAL
+    FROM #{dt_ordered_table()} FINAL
     PREWHERE
       assetRefId = cityHash64('ETH_' || ?2) AND
       dt >= toDateTime(?3) AND

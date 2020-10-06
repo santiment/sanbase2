@@ -20,6 +20,10 @@ config :postgrex, :json_library, Jason
 
 config :sanbase, Sanbase, environment: "#{Mix.env()}"
 
+config :sanbase, Sanbase.Clickhouse.Erc20Transfers,
+  dt_ordered_table: {:system, "dt_ordered_table", "erc20_transfers_new"},
+  address_ordered_table: {:system, "address_ordered_table", "erc20_transfers"}
+
 config :sanbase, Sanbase.KafkaExporter,
   supervisor: SanExporterEx.Producer.Supervisor,
   producer: SanExporterEx.Producer,

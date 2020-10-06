@@ -22,6 +22,10 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
 
   @contract "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"
 
+  alias Sanbase.Clickhouse.Erc20Transfers
+  require Sanbase.Utils.Config, as: Config
+  defp address_ordered_table(), do: Config.module_get(Erc20Transfers, :address_ordered_table)
+
   @impl Sanbase.Metric.Behaviour
   def has_incomplete_data?(_), do: false
 
@@ -33,26 +37,26 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
     {:error, "Timeseries data is not implemented for uniswap metrics."}
   end
 
+  @impl Sanbase.Metric.Behaviour
   def histogram_data("uniswap_top_claimers", %{slug: "uniswap"}, from, to, _interval, limit) do
     query = """
     SELECT
       to AS address,
       amount AS value
-    FROM
-    (
-    SELECT
-      to,
-      SUM(value)/1e18 AS amount
-    FROM erc20_transfers
-    PREWHERE
-      dt >= toDateTime(?1) AND
-      dt < toDateTime(?2) AND
-      from = '0x090d4613473dee047c3f2706764f49e0821d256e' AND
-      contract = '#{@contract}'
-    GROUP BY to
-    ORDER BY amount DESC
-    LIMIT ?3
-    ) ORDER BY value
+    FROM (
+      SELECT
+        to,
+        SUM(value)/1e18 AS amount
+      FROM #{address_ordered_table()} FINAL
+      PREWHERE
+        assetRefId = cityHash64('ETH_' || '#{@contract}') AND
+        from = '0x090d4613473dee047c3f2706764f49e0821d256e' AND
+        dt >= toDateTime(?1) AND
+        dt < toDateTime(?2)
+      GROUP BY to
+      ORDER BY amount DESC
+      LIMIT ?3
+    )
     """
 
     args = [from |> DateTime.to_unix(), to |> DateTime.to_unix(), limit]

@@ -178,8 +178,7 @@ defimpl Sanbase.Signal, for: Any do
     # Force the settings to be fetched and not taken from the user struct
     # This is done so while evaluating signals, the signals fired count is
     # properly reflected here.
-
-    user_settings = Sanbase.Auth.UserSettings.settings_for(%Sanbase.Auth.User{id: user.id})
+    user_settings = Sanbase.Auth.UserSettings.settings_for(user, force: true)
 
     %{
       signals_fired: signals_fired,
@@ -262,8 +261,7 @@ defimpl Sanbase.Signal, for: Any do
   end
 
   defp update_user_signals_sent_per_day(user, sent_list_per_channel) do
-    %{signals_fired: signals_fired} =
-      Sanbase.Auth.UserSettings.settings_for(%Sanbase.Auth.User{id: user.id})
+    %{signals_fired: signals_fired} = Sanbase.Auth.UserSettings.settings_for(user, force: true)
 
     map_key = Date.utc_today() |> to_string()
 

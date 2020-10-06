@@ -41,7 +41,7 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
         SELECT name AS metric_name, metric_id FROM metric_metadata FINAL
         ) USING metric_id
       PREWHERE
-        asset_id IN ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name IN (?1) LIMIT 1 ) AND
+        asset_id IN ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name IN (?1) ) AND
         metric_id IN ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name IN ('labelled_exchange_balance', 'labelled_exchange_balance_sum') ) AND
         dt >= now() - INTERVAL 1 MONTH AND
         dt < now() AND

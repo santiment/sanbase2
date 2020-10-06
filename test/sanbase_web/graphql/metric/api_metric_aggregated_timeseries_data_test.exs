@@ -121,7 +121,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
                get_aggregated_timeseries_metric(conn, metric, from, to, aggregation)
 
              assert error_message =~
-                      "Can't fetch #{metric} for an empty selector: , Reason: \"The selector must have at least one field provided." <>
+                      "Can't fetch #{metric} for an empty selector {}, Reason: \"The selector must have at least one field provided." <>
                         "The available selector fields for a metric are listed in the metadata's availableSelectors field.\""
            end) =~ "Can't fetch #{metric} for an empty selector"
   end

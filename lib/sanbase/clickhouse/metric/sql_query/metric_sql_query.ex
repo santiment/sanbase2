@@ -11,7 +11,9 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
   use Ecto.Schema
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
-  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3, generate_comparison_string: 3]
+
+  import Sanbase.Metric.SqlQuery.Helper,
+    only: [aggregation: 3, generate_comparison_string: 3, asset_id_filter: 2]
 
   alias Sanbase.Clickhouse.Metric.FileHandler
 
@@ -58,24 +60,6 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     ]
 
     {query, args}
-  end
-
-  defp asset_id_filter(slug, opts) when is_binary(slug) do
-    arg_position = Keyword.fetch!(opts, :argument_position)
-
-    """
-    asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?#{arg_position} LIMIT 1 )
-    """
-  end
-
-  defp asset_id_filter(slugs, opts) when is_list(slugs) do
-    arg_position = Keyword.fetch!(opts, :argument_position)
-
-    """
-    asset_id IN ( SELECT DISTINCT(asset_id) FROM asset_metadata FINAL PREWHERE name IN (?#{
-      arg_position
-    }) )
-    """
   end
 
   def aggregated_timeseries_data_query(metric, asset_ids, from, to, aggregation, filters) do

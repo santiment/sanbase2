@@ -192,7 +192,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       assert log =~ inspect(error)
 
       assert log =~
-               ~s|Can't fetch Historical Balances for selector: #{inspect(selector)}|
+               ~s|Can't fetch Historical Balances for selector #{inspect(selector)}|
     end)
   end
 
@@ -297,7 +297,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
         error = result["errors"] |> List.first()
 
         assert error["message"] =~
-                 "Can't fetch Historical Balances for selector: #{inspect(selector)}"
+                 "Can't fetch Historical Balances for selector #{inspect(selector)}"
       end)
 
     assert log =~ "Can't find contract address of project with slug: someid1"
@@ -329,7 +329,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
           error = result["errors"] |> List.first()
 
           assert error["message"] =~
-                   "Can't fetch Historical Balances for selector: #{inspect(selector)}"
+                   "Can't fetch Historical Balances for selector #{inspect(selector)}"
         end)
 
       assert log =~ "Can't fetch Historical Balances for selector"

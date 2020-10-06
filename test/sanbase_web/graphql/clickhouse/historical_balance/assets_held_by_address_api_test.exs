@@ -120,8 +120,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
                error = result["errors"] |> List.first()
 
                assert error["message"] =~
-                        "Can't fetch Assets held by address for address: #{address}"
-             end) =~ "Can't fetch Assets held by address for address: #{address}"
+                        "Can't fetch Assets held by address for address #{address}"
+             end) =~ "Can't fetch Assets held by address for address #{address}"
     end
   end
 

@@ -38,7 +38,7 @@ defmodule Sanbase.Utils.ErrorHandling do
       end
 
     error_msg =
-      "[#{uuid}] Can't fetch #{metric} for #{target_description}: #{
+      "[#{uuid}] Can't fetch #{metric} for #{target_description} #{
         identifier_to_string(identifier)
       }"
 
@@ -65,10 +65,26 @@ defmodule Sanbase.Utils.ErrorHandling do
     case Keyword.get(opts, :description) do
       nil ->
         case identifier do
-          %{slug: slug} -> {"project with slug", slug}
-          %{text: text} -> {"search term", text}
-          slug when is_binary(slug) -> {"project with slug", slug}
-          %{} -> {"an empty selector", ""}
+          %{metric: metric, selector: selector} ->
+            {"selector #{inspect(selector)} and metric #{metric}", ""}
+
+          %{slug: slug} ->
+            {"project with slug", slug}
+
+          %{text: text} ->
+            {"search term", text}
+
+          %{metric: metric} ->
+            {"metric", metric}
+
+          slug when is_binary(slug) ->
+            {"project with slug", slug}
+
+          %{} = selector when map_size(selector) > 0 ->
+            {"selector", selector}
+
+          %{} ->
+            {"an empty selector", "{}"}
         end
 
       description ->

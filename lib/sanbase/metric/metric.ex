@@ -6,6 +6,8 @@ defmodule Sanbase.Metric do
   `Sanbase.Metric.Behaviour` behaviour. Such modules are added to the
   @metric_modules list and everything else happens automatically.
   """
+  @compile :inline_list_funcs
+  @compile inline: [execute_if_aggregation_valid: 3]
 
   @access_map Sanbase.Metric.Helper.access_map()
   @aggregations Sanbase.Metric.Helper.aggregations()
@@ -56,7 +58,6 @@ defmodule Sanbase.Metric do
 
       module when is_atom(module) ->
         aggregation = Keyword.get(opts, :aggregation, nil)
-        identifier = transform_identifier(identifier)
 
         fun = fn ->
           module.timeseries_data(
@@ -88,7 +89,6 @@ defmodule Sanbase.Metric do
 
       module when is_atom(module) ->
         aggregation = Keyword.get(opts, :aggregation, nil)
-        identifier = transform_identifier(identifier)
 
         fun = fn ->
           module.aggregated_timeseries_data(
@@ -183,8 +183,6 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        identifier = transform_identifier(identifier)
-
         module.histogram_data(
           metric,
           identifier,
@@ -208,7 +206,6 @@ defmodule Sanbase.Metric do
         metric_not_available_error(metric, type: :table)
 
       module when is_atom(module) ->
-        identifier = transform_identifier(identifier)
         aggregation = Keyword.get(opts, :aggregation, nil)
 
         fun = fn ->
@@ -544,17 +541,6 @@ defmodule Sanbase.Metric do
       error_msg: "The histogram metric '#{metric}' is not supported or is mistyped."
     }
   end
-
-  defp transform_identifier(%{market_segments: market_segments} = selector) do
-    slugs =
-      Sanbase.Model.Project.List.by_market_segment_all_of(market_segments) |> Enum.map(& &1.slug)
-
-    ignored_slugs = Map.get(selector, :ignored_slugs, [])
-
-    %{slug: slugs -- ignored_slugs}
-  end
-
-  defp transform_identifier(identifier), do: identifier
 
   defp execute_if_aggregation_valid(fun, metric, aggregation) do
     aggregation_valid? = aggregation in Map.get(@aggregations_per_metric, metric)

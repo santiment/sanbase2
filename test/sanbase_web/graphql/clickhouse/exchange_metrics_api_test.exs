@@ -27,6 +27,7 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
   setup do
     user = insert(:user)
     conn = setup_jwt_auth(build_conn(), user)
+    project = insert(:random_project)
 
     insert(:exchange_market_pair_mappings, %{
       exchange: "Bitfinex",
@@ -40,6 +41,7 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
 
     [
       exchange: "Binance",
+      project: project,
       conn: conn,
       from: Timex.shift(Timex.now(), days: -10),
       to: Timex.now()
@@ -95,7 +97,7 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
 
   describe "top exchanges api" do
     test "get top exchanges by balance", context do
-      query = top_exchanges_by_balance("ethereum", 10)
+      query = top_exchanges_by_balance(context.project.slug, 10)
 
       data = [
         %{

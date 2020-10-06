@@ -9,44 +9,56 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
     query = """
     SELECT
       owner,
-      label2 AS label,
-      argMaxIf( value2, dt, metric_name = 'labelled_exchange_balance_sum' ) AS balance,
-      sumIf( value2, metric_name = 'labelled_exchange_balance' and dt > now() - INTERVAL 1 DAY ) AS change_1d,
-      sumIf( value2, metric_name = 'labelled_exchange_balance' and dt > now() - INTERVAL 7 DAY ) AS change_1w,
-      sumIf( value2, metric_name = 'labelled_exchange_balance') AS change_1m,
-      toUnixTimestamp(if(
-        minIf( dt, metric_name = 'labelled_exchange_balance' and abs(value2) > 0 ) = 0,
-        NULL,
-        minIf( dt, metric_name = 'labelled_exchange_balance' and abs(value2) > 0 )
-      )) AS unix_ts_of_first_transfer,
-      if(
-          unix_ts_of_first_transfer > 0,
-          intDivOrZero( now() - toDateTime(unix_ts_of_first_transfer), 86400 ),
-          NULL
-     ) AS days_since_first_transfer
+      label,
+      sum( balance ) AS balance,
+      sum( change_1d ) AS change_1d,
+      sum( change_1w ) AS change_1w,
+      sum( change_1m ) AS change_1m,
+      min( unix_ts_of_first_transfer ) AS unix_ts_of_first_transfer,
+      max( days_since_first_transfer ) AS days_since_first_transfer
     FROM (
       SELECT
-        if(
-          label='deposit',
-          'centralized_exchange',
-          label
-        ) AS label2,
         owner,
-        dt,
-        metric_name,
-        argMax( value, computed_at ) AS value2
-      FROM intraday_label_based_metrics FINAL
+        label2 AS label,
+        argMaxIf( value2, dt, metric_name = 'labelled_exchange_balance_sum' ) AS balance,
+        sumIf( value2, metric_name = 'labelled_exchange_balance' and dt > now() - INTERVAL 1 DAY ) AS change_1d,
+        sumIf( value2, metric_name = 'labelled_exchange_balance' and dt > now() - INTERVAL 7 DAY ) AS change_1w,
+        sumIf( value2, metric_name = 'labelled_exchange_balance') AS change_1m,
+        toUnixTimestamp(if(
+          minIf( dt, metric_name = 'labelled_exchange_balance' and abs(value2) > 0 ) = 0,
+          NULL,
+          minIf( dt, metric_name = 'labelled_exchange_balance' and abs(value2) > 0 )
+        )) AS unix_ts_of_first_transfer,
+        if(
+            unix_ts_of_first_transfer > 0,
+            intDivOrZero( now() - toDateTime(unix_ts_of_first_transfer), 86400 ),
+            NULL
+       ) AS days_since_first_transfer
+      FROM (
+        SELECT
+          if(
+            label='deposit',
+            'centralized_exchange',
+            label
+          ) AS label2,
+          owner,
+          dt,
+          metric_name,
+          argMax( value, computed_at ) AS value2
+        FROM intraday_label_based_metrics FINAL
 
-      ANY LEFT JOIN (
-        SELECT name AS metric_name, metric_id FROM metric_metadata FINAL
-        ) USING metric_id
-      PREWHERE
-        asset_id IN ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name IN (?1) ) AND
-        metric_id IN ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name IN ('labelled_exchange_balance', 'labelled_exchange_balance_sum') ) AND
-        dt >= now() - INTERVAL 1 MONTH AND
-        dt < now() AND
-        dt != toDateTime('1970-01-01 00:00:00')
-      GROUP BY label2, owner, dt, metric_name, asset_id
+        ANY LEFT JOIN (
+          SELECT name AS metric_name, metric_id FROM metric_metadata FINAL
+          ) USING metric_id
+        PREWHERE
+          asset_id IN ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name IN (?1) ) AND
+          metric_id IN ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name IN ('labelled_exchange_balance', 'labelled_exchange_balance_sum') ) AND
+          dt >= now() - INTERVAL 1 MONTH AND
+          dt < now() AND
+          dt != toDateTime('1970-01-01 00:00:00')
+        GROUP BY label2, owner, dt, metric_name, asset_id
+      )
+    GROUP BY label, owner, asset_id
     )
     #{if(additional_filters != [], do: "WHERE #{additional_filters}")}
     GROUP BY label, owner

@@ -127,12 +127,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          {:ok, from, to} <-
            calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
          {:ok, result} <- Metric.aggregated_timeseries_data(metric, selector, from, to, opts) do
-      [%{value: value} | _] = result
-      {:ok, value}
+      # This requires internal rework - all aggregated_timeseries_data queries must return the same format
+      case result do
+        value when is_number(value) ->
+          {:ok, value}
+
+        [%{value: value}] ->
+          {:ok, value}
+
+        %{} = map ->
+          value = Map.values(map) |> hd
+          {:ok, value}
+
+        _ ->
+          {:ok, nil}
+      end
+      |> maybe_handle_graphql_error(fn error ->
+        handle_graphql_error(metric, args_to_raw_selector(args), error)
+      end)
     end
-    |> maybe_handle_graphql_error(fn error ->
-      handle_graphql_error(metric, args_to_raw_selector(args), error)
-    end)
   end
 
   def histogram_data(

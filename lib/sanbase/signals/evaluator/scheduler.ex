@@ -216,8 +216,13 @@ defmodule Sanbase.Signal.Scheduler do
       Logger.warn("Cannot send a #{type} signal. Reason: #{inspect(error)}")
     end
 
+    disabled_count = Enum.filter(list, &match?({_, :channel_disabled}, &1)) |> Enum.count()
+    verb = if disabled_count == 1, do: "has", else: "have"
+
     Logger.info(
-      "In total #{successful_messages_count}/#{length(list)} #{type} signals were sent successfully."
+      "In total #{successful_messages_count}/#{length(list)} (#{disabled_count} #{verb} disabled channel) #{
+        type
+      } signals were sent successfully."
     )
   end
 

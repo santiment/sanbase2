@@ -87,6 +87,23 @@ defimpl Sanbase.Signal, for: Any do
   end
 
   defp send_email(
+         %{
+           user: %User{
+             email: email,
+             user_settings: %{settings: %{signal_notify_email: false}}
+           },
+           trigger: %{settings: %{payload: payload_map}}
+         },
+         _
+       )
+       when is_binary(email) and is_map(payload_map) do
+    # The emails notifications are disabled
+    Enum.map(payload_map, fn {identifier, _payload} ->
+      {identifier, :channel_disabled}
+    end)
+  end
+
+  defp send_email(
          %{user: %User{id: user_id}, trigger: %{settings: %{payload: payload_map}}},
          _max_signals_to_send
        ) do
@@ -98,7 +115,12 @@ defimpl Sanbase.Signal, for: Any do
   defp send_telegram(
          %{
            id: user_trigger_id,
-           user: %User{user_settings: %{settings: %{telegram_chat_id: telegram_chat_id}}} = user,
+           user:
+             %User{
+               user_settings: %{
+                 settings: %{telegram_chat_id: telegram_chat_id, signal_notify_telegram: true}
+               }
+             } = user,
            trigger: %{
              settings: %{payload: payload_map}
            }
@@ -111,6 +133,29 @@ defimpl Sanbase.Signal, for: Any do
     end
 
     send_or_limit("telegram", user, payload_map, max_signals_to_send, fun)
+  end
+
+  defp send_telegram(
+         %{
+           user: %User{
+             user_settings: %{
+               settings: %{
+                 telegram_chat_id: telegram_chat_id,
+                 signal_notify_telegram: false
+               }
+             }
+           },
+           trigger: %{
+             settings: %{payload: payload_map}
+           }
+         },
+         _
+       )
+       when is_integer(telegram_chat_id) and telegram_chat_id > 0 and is_map(payload_map) do
+    # The emails notifications are disabled
+    Enum.map(payload_map, fn {identifier, _payload} ->
+      {identifier, :channel_disabled}
+    end)
   end
 
   defp send_telegram(
@@ -133,8 +178,7 @@ defimpl Sanbase.Signal, for: Any do
     # Force the settings to be fetched and not taken from the user struct
     # This is done so while evaluating signals, the signals fired count is
     # properly reflected here.
-
-    user_settings = Sanbase.Auth.UserSettings.settings_for(%Sanbase.Auth.User{id: user.id})
+    user_settings = Sanbase.Auth.UserSettings.settings_for(user, force: true)
 
     %{
       signals_fired: signals_fired,
@@ -221,8 +265,7 @@ defimpl Sanbase.Signal, for: Any do
   end
 
   defp update_user_signals_sent_per_day(user, sent_list_per_channel) do
-    %{signals_fired: signals_fired} =
-      Sanbase.Auth.UserSettings.settings_for(%Sanbase.Auth.User{id: user.id})
+    %{signals_fired: signals_fired} = Sanbase.Auth.UserSettings.settings_for(user, force: true)
 
     map_key = Date.utc_today() |> to_string()
 

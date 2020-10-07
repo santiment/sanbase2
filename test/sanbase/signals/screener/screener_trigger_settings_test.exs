@@ -13,7 +13,7 @@ defmodule Sanbase.Signal.ScreenerTriggerSettingsTest do
 
     Sanbase.Signal.Evaluator.Cache.clear_all()
 
-    user = insert(:user)
+    user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     selector = %{
@@ -91,7 +91,8 @@ defmodule Sanbase.Signal.ScreenerTriggerSettingsTest do
       # First run
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(ScreenerTriggerSettings)
-             end) =~ "In total 1/1 screener_signal signals were sent successfully"
+             end) =~
+               "In total 1/1 (0 have disabled channel) screener_signal signals were sent successfully"
 
       # Clear the result of the filter
       Sanbase.Cache.clear_all()
@@ -140,7 +141,8 @@ defmodule Sanbase.Signal.ScreenerTriggerSettingsTest do
       # First run
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(ScreenerTriggerSettings)
-             end) =~ "In total 1/1 screener_signal signals were sent successfully"
+             end) =~
+               "In total 1/1 (0 have disabled channel) screener_signal signals were sent successfully"
 
       # Clear the result of the filter
       Sanbase.Cache.clear_all()

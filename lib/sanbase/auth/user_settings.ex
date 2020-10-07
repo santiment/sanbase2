@@ -21,21 +21,32 @@ defmodule Sanbase.Auth.UserSettings do
     |> unique_constraint(:user_id)
   end
 
-  def settings_for(%User{user_settings: %{settings: %Settings{}} = user_settings}) do
-    modify_settings(user_settings)
+  def settings_for(user, opts \\ [])
+
+  def settings_for(%User{user_settings: %{settings: %Settings{}}} = user, opts) do
+    user =
+      case Keyword.get(opts, :force, false) do
+        false -> user
+        true -> Repo.preload(user, [:user_settings], force: true)
+      end
+
+    user.user_settings
+    |> modify_settings()
   end
 
-  def settings_for(%User{id: user_id}) do
-    Repo.get_by(__MODULE__, user_id: user_id)
-    |> case do
-      nil ->
-        changeset(%__MODULE__{}, %{user_id: user_id, settings: %{}})
-        |> Repo.insert!()
-        |> modify_settings()
+  def settings_for(%User{id: user_id}, _opts) do
+    user_settings =
+      Repo.get_by(__MODULE__, user_id: user_id)
+      |> case do
+        nil ->
+          changeset(%__MODULE__{}, %{user_id: user_id, settings: %{}})
+          |> Repo.insert!()
 
-      %__MODULE__{} = us ->
-        modify_settings(us)
-    end
+        %__MODULE__{} = us ->
+          us
+      end
+
+    user_settings |> modify_settings()
   end
 
   def sync_paid_with() do

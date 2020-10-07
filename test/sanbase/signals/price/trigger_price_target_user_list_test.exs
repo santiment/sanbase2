@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.TargetUserListTest do
   setup do
     clean_task_supervisor_children()
 
-    user = insert(:user)
+    user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
 
     p1 =
       insert(:project, %{

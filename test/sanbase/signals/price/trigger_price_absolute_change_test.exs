@@ -12,7 +12,7 @@ defmodule Sanbase.Signal.TriggerPriceAbsoluteChangeTest do
 
     Tesla.Mock.mock(fn %{method: :post} -> %Tesla.Env{status: 200, body: "ok"} end)
 
-    user = insert(:user)
+    user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     [
@@ -143,7 +143,8 @@ defmodule Sanbase.Signal.TriggerPriceAbsoluteChangeTest do
       |> Sanbase.Mock.run_with_mocks(fn ->
         assert capture_log(fn ->
                  Sanbase.Signal.Scheduler.run_signal(PriceAbsoluteChangeSettings)
-               end) =~ "In total 1/1 price_absolute_change signals were sent successfully"
+               end) =~
+                 "In total 1/1 (0 have disabled channel) price_absolute_change signals were sent successfully"
 
         Sanbase.Signal.Evaluator.Cache.clear_all()
 

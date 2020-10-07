@@ -146,10 +146,14 @@ defimpl Sanbase.Signal, for: Any do
 
     Enum.reduce(@channels, %{}, fn channel, map ->
       channel_limit =
-        Map.get(signals_per_day_limit, channel) ||
-          Map.get(@default_signals_limit_per_day, channel)
+        (Map.get(signals_per_day_limit, channel) ||
+           Map.get(@default_signals_limit_per_day, channel))
+        |> Sanbase.Math.to_integer()
 
-      channel_sent_today = Map.get(notifications_sent_today, channel, 0)
+      channel_sent_today =
+        Map.get(notifications_sent_today, channel, 0)
+        |> Sanbase.Math.to_integer()
+
       left_to_send = Enum.max([channel_limit - channel_sent_today, 0])
 
       Map.put(map, channel, left_to_send)

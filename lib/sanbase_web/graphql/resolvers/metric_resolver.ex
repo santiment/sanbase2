@@ -142,10 +142,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         _ ->
           {:ok, nil}
       end
-      |> maybe_handle_graphql_error(fn error ->
-        handle_graphql_error(metric, args_to_raw_selector(args), error)
-      end)
     end
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(metric, args_to_raw_selector(args), error)
+    end)
   end
 
   def histogram_data(

@@ -3,7 +3,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20AssetsHeldByAdderssTest do
 
   import Sanbase.Factory
 
-  alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.HistoricalBalance.Erc20Balance
 
   setup do
@@ -17,20 +16,11 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20AssetsHeldByAdderssTest do
 
   test "clickhouse returns list of results", context do
     rows = [
-      [
-        Project.contract_address(context.p1),
-        Sanbase.Math.ipow(10, context.p1.token_decimals) * 100
-      ],
-      [
-        Project.contract_address(context.p2),
-        Sanbase.Math.ipow(10, context.p2.token_decimals) * 255
-      ],
-      [Project.contract_address(context.p3), 0],
-      [
-        Project.contract_address(context.p4),
-        Sanbase.Math.ipow(10, context.p4.token_decimals) * 1643
-      ],
-      [Project.contract_address(context.p5), 0]
+      [context.p1.slug, 100.0],
+      [context.p2.slug, 255.0],
+      [context.p3.slug, 0.0],
+      [context.p4.slug, 1643.0],
+      [context.p5.slug, 0.0]
     ]
 
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
@@ -38,10 +28,10 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20AssetsHeldByAdderssTest do
       assert Erc20Balance.assets_held_by_address("0x123") ==
                {:ok,
                 [
-                  %{balance: 100, slug: context.p1.slug},
-                  %{balance: 255, slug: context.p2.slug},
+                  %{balance: 100.0, slug: context.p1.slug},
+                  %{balance: 255.0, slug: context.p2.slug},
                   %{balance: 0.0, slug: context.p3.slug},
-                  %{balance: 1643, slug: context.p4.slug},
+                  %{balance: 1643.0, slug: context.p4.slug},
                   %{balance: 0.0, slug: context.p5.slug}
                 ]}
     end)

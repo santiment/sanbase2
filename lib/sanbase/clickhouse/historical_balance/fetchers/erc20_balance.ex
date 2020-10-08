@@ -9,7 +9,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
   import Sanbase.Clickhouse.HistoricalBalance.Utils
 
   alias Sanbase.ClickhouseRepo
-  alias Sanbase.Model.Project
 
   @table "erc20_balances"
   schema @table do
@@ -29,38 +28,12 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
   def assets_held_by_address(address) do
     {query, args} = assets_held_by_address_query(address)
 
-    case ClickhouseRepo.query_transform(query, args, & &1) do
-      {:ok, contract_value_pairs} ->
-        projects =
-          contract_value_pairs
-          |> Enum.map(fn [contract, _] -> contract end)
-          |> Project.List.by_contracts(preload?: true, preload: [:contract_addresses])
-
-        result =
-          Enum.map(contract_value_pairs, fn [contract, value] ->
-            Enum.find(projects, fn project ->
-              String.downcase(contract) == String.downcase(Project.contract_address(project))
-            end)
-            |> case do
-              nil ->
-                nil
-
-              %Project{} = project ->
-                {:ok, _contract, decimals} = Project.contract_info(project)
-
-                %{
-                  slug: project.slug,
-                  balance: value / Sanbase.Math.ipow(10, decimals || 0)
-                }
-            end
-          end)
-          |> Enum.reject(&is_nil/1)
-
-        {:ok, result}
-
-      {:error, error} ->
-        {:error, error}
-    end
+    ClickhouseRepo.query_transform(query, args, fn [slug, balance] ->
+      %{
+        slug: slug,
+        balance: balance
+      }
+    end)
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
@@ -213,14 +186,17 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
   defp assets_held_by_address_query(address) do
     query = """
     SELECT
-      contract,
-      argMax(value, blockNumber)
-    FROM
-      #{@table}
+      name,
+      argMax(value, blockNumber) / pow(10, decimals) AS balance
+    FROM erc20_balances
+    INNER JOIN (
+      SELECT asset_ref_id AS assetRefId, name, decimals
+      FROM asset_metadata FINAL
+    ) USING (assetRefId)
     PREWHERE
       address = ?1 AND
       sign = 1
-    GROUP BY contract
+    GROUP BY assetRefId, name, decimals
     """
 
     args = [address |> String.downcase()]

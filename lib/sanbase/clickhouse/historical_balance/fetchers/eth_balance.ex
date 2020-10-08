@@ -121,8 +121,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
   defp current_balances_query(address) do
     query = """
     SELECT value
-    FROM
-      #{@table}
+    FROM #{@table}
     PREWHERE
       address = ?1 AND
       sign = 1

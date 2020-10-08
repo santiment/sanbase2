@@ -56,9 +56,23 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
           ) USING metric_id
         PREWHERE
           #{asset_id_filter(slug_or_slugs, argument_position: 1)} AND
-          ((metric_id IN ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name IN ('labelled_exchange_balance_sum'))
-            AND dt >= now() - INTERVAL 7 DAY)
-           OR (metric_id IN ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name IN ('labelled_exchange_balance')))) AND
+          (
+            (
+              metric_id IN (
+                SELECT metric_id
+                FROM metric_metadata FINAL
+                PREWHERE name IN ('labelled_exchange_balance_sum')
+              ) AND
+              dt >= now() - INTERVAL 7 DAY)
+            OR
+            (
+              metric_id IN (
+                SELECT metric_id
+                FROM metric_metadata FINAL
+                PREWHERE name IN ('labelled_exchange_balance')
+              )
+            )
+          ) AND
           dt < now() AND
           dt != toDateTime('1970-01-01 00:00:00')
         GROUP BY asset_id, label2, owner, dt, metric_name

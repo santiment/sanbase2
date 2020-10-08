@@ -8,13 +8,17 @@ defmodule Sanbase.AvailableSlugs do
   """
   @behaviour Sanbase.AvailableSlugs.Behaviour
 
+  # There are 2 special cases that are not a project slug but refer to big groups
+  # of projects and there is marketcap and volume data for them
+  @non_project_slugs ["TOTAL_MARKET", "TOTAL_ERC20"]
+
   @ets_table :available_projects_slugs_ets_table
   use GenServer
 
   @impl Sanbase.AvailableSlugs.Behaviour
   def valid_slug?(slug) do
     case :ets.lookup(@ets_table, slug) do
-      [] -> false
+      [] -> slug in @non_project_slugs
       _ -> true
     end
   end

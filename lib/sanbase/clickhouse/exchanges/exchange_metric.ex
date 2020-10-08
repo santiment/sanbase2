@@ -75,7 +75,7 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
     ClickhouseRepo.query_transform(
       query,
       args,
-      fn [owner, label, balance, change_1d, change_7d, change_30d, dt, days] ->
+      fn [owner, label, balance, change_1d, change_7d, change_30d, ts, days] ->
         %{
           owner: owner,
           label: label,
@@ -83,7 +83,7 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
           balance_change1d: change_1d,
           balance_change7d: change_7d,
           balance_change30d: change_30d,
-          datetime_of_first_transfer: dt |> DateTime.from_unix!(),
+          datetime_of_first_transfer: if(ts, do: ts |> DateTime.from_unix!()),
           days_since_first_transfer: days
         }
       end

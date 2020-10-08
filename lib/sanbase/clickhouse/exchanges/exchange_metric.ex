@@ -63,7 +63,8 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
                 FROM metric_metadata FINAL
                 PREWHERE name IN ('labelled_exchange_balance_sum')
               ) AND
-              dt >= now() - INTERVAL 7 DAY)
+              dt >= now() - INTERVAL 7 DAY
+            )
             OR
             (
               metric_id IN (

@@ -26,13 +26,13 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     result = conn |> execute(query, "updateUserSettings")
 
     assert result == %{"isBetaMode" => true}
-    assert UserSettings.settings_for(user) |> Map.get(:is_beta_mode) == true
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:is_beta_mode) == true
 
     query = toggle_beta_mode_query(false)
     result = conn |> execute(query, "updateUserSettings")
 
     assert result == %{"isBetaMode" => false}
-    assert UserSettings.settings_for(user) |> Map.get(:is_beta_mode) == false
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:is_beta_mode) == false
   end
 
   test "change theme", %{user: user, conn: conn} do
@@ -40,13 +40,13 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     result = conn |> execute(query, "updateUserSettings")
 
     assert result == %{"theme" => "nightmode"}
-    assert UserSettings.settings_for(user) |> Map.get(:theme) == "nightmode"
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:theme) == "nightmode"
 
     query = change_theme_query("default")
     result = conn |> execute(query, "updateUserSettings")
 
     assert result == %{"theme" => "default"}
-    assert UserSettings.settings_for(user) |> Map.get(:theme) == "default"
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:theme) == "default"
   end
 
   test "change page size", %{user: user, conn: conn} do
@@ -54,13 +54,13 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     result = conn |> execute(query, "updateUserSettings")
 
     assert result == %{"pageSize" => 100}
-    assert UserSettings.settings_for(user) |> Map.get(:page_size) == 100
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:page_size) == 100
 
     query = change_page_size_query(50)
     result = conn |> execute(query, "updateUserSettings")
 
     assert result == %{"pageSize" => 50}
-    assert UserSettings.settings_for(user) |> Map.get(:page_size) == 50
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:page_size) == 50
   end
 
   test "change table columns", %{user: user, conn: conn} do
@@ -69,7 +69,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
 
     assert result == %{"tableColumns" => %{"shown" => ["price", "volume", "devActivity"]}}
 
-    assert UserSettings.settings_for(user) |> Map.get(:table_columns) == %{
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:table_columns) == %{
              "shown" => ["price", "volume", "devActivity"]
            }
 
@@ -78,7 +78,9 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
 
     assert result == %{"tableColumns" => %{"shown" => ["price"]}}
 
-    assert UserSettings.settings_for(user) |> Map.get(:table_columns) == %{"shown" => ["price"]}
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:table_columns) == %{
+             "shown" => ["price"]
+           }
   end
 
   test "toggle telegram notification channel", %{user: user, conn: conn} do
@@ -86,13 +88,17 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     result = conn |> execute(query, "settingsToggleChannel")
 
     assert result == %{"signalNotifyTelegram" => true}
-    assert UserSettings.settings_for(user) |> Map.get(:signal_notify_telegram) == true
+
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:signal_notify_telegram) ==
+             true
 
     query = toggle_telegram_channel_query(false)
     result = conn |> execute(query, "settingsToggleChannel")
 
     assert result == %{"signalNotifyTelegram" => false}
-    assert UserSettings.settings_for(user) |> Map.get(:signal_notify_telegram) == false
+
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:signal_notify_telegram) ==
+             false
   end
 
   test "toggle email notification channel", %{user: user, conn: conn} do
@@ -100,13 +106,13 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     result = conn |> execute(query, "settingsToggleChannel")
 
     assert result == %{"signalNotifyEmail" => true}
-    assert UserSettings.settings_for(user) |> Map.get(:signal_notify_email) == true
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:signal_notify_email) == true
 
     query = toggle_email_channel_query(false)
     result = conn |> execute(query, "settingsToggleChannel")
 
     assert result == %{"signalNotifyEmail" => false}
-    assert UserSettings.settings_for(user) |> Map.get(:signal_notify_email) == false
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:signal_notify_email) == false
   end
 
   test "toggle on existing record", %{user: user, conn: conn} do
@@ -116,7 +122,9 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     result = conn |> execute(query, "settingsToggleChannel")
 
     assert result == %{"signalNotifyTelegram" => true}
-    assert UserSettings.settings_for(user) |> Map.get(:signal_notify_telegram) == true
+
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:signal_notify_telegram) ==
+             true
   end
 
   test "fetches settings for current user", %{user: user, conn: conn} do
@@ -168,7 +176,9 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
       result = conn |> execute(query, "changeNewsletterSubscription")
 
       assert result["newsletterSubscription"] == "DAILY"
-      assert UserSettings.settings_for(user) |> Map.get(:newsletter_subscription) == :daily
+
+      assert UserSettings.settings_for(user, force: true) |> Map.get(:newsletter_subscription) ==
+               :daily
     end
 
     test "changes subscription to weekly", %{conn: conn, user: user} do
@@ -177,7 +187,9 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
       result = conn |> execute(query, "changeNewsletterSubscription")
 
       assert result["newsletterSubscription"] == "WEEKLY"
-      assert UserSettings.settings_for(user) |> Map.get(:newsletter_subscription) == :weekly
+
+      assert UserSettings.settings_for(user, force: true) |> Map.get(:newsletter_subscription) ==
+               :weekly
     end
 
     test "can turn off subscription", %{conn: conn, user: user} do
@@ -186,7 +198,9 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
       result = conn |> execute(query, "changeNewsletterSubscription")
 
       assert result["newsletterSubscription"] == "OFF"
-      assert UserSettings.settings_for(user) |> Map.get(:newsletter_subscription) == :off
+
+      assert UserSettings.settings_for(user, force: true) |> Map.get(:newsletter_subscription) ==
+               :off
     end
 
     test "can handle unknown subscription types", %{conn: conn, user: user} do
@@ -195,7 +209,9 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
       result = conn |> execute(query, "changeNewsletterSubscription")
 
       assert result["newsletterSubscription"] == nil
-      assert UserSettings.settings_for(user) |> Map.get(:newsletter_subscription) == :weekly
+
+      assert UserSettings.settings_for(user, force: true) |> Map.get(:newsletter_subscription) ==
+               :weekly
     end
   end
 

@@ -2,7 +2,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   import SanbaseWeb.Graphql.Helpers.Utils
   import SanbaseWeb.Graphql.Helpers.CalibrateInterval
 
-  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3, handle_graphql_error: 4]
+  import Sanbase.Utils.ErrorHandling,
+    only: [handle_graphql_error: 3, handle_graphql_error: 4, maybe_handle_graphql_error: 2]
+
+  import Sanbase.Metric.Selector, only: [args_to_selector: 1, args_to_raw_selector: 1]
   import SanbaseWeb.Graphql.Helpers.Utils
 
   alias Sanbase.Metric
@@ -12,7 +15,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   require Logger
 
   @datapoints 300
-  @available_slugs_module Application.compile_env(:sanbase, :available_slugs_module)
 
   def get_metric(_root, %{metric: metric}, _resolution) do
     case Metric.has_metric?(metric) do
@@ -47,7 +49,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         {:ok, Map.merge(access_restrictions, metadata)}
 
       {:error, error} ->
-        {:error, handle_graphql_error("metadata", metric, error, description: "metric")}
+        {:error, handle_graphql_error("metadata", %{metric: metric}, error)}
     end
   end
 
@@ -57,21 +59,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   def available_since(_root, args, %{source: %{metric: metric}}) do
-    selector = to_selector(args)
-
-    case valid_selector?(selector) do
-      true -> Metric.first_datetime(metric, selector)
-      {:error, error} -> {:error, error}
+    with {:ok, selector} <- args_to_selector(args),
+         {:ok, first_datetime} <- Metric.first_datetime(metric, selector) do
+      {:ok, first_datetime}
     end
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(
+        "Available Since",
+        %{metric: metric, selector: args_to_raw_selector(args)},
+        error
+      )
+    end)
   end
 
   def last_datetime_computed_at(_root, args, %{source: %{metric: metric}}) do
-    selector = to_selector(args)
-
-    case valid_selector?(selector) do
-      true -> Metric.last_datetime_computed_at(metric, selector)
-      {:error, error} -> {:error, error}
+    with {:ok, selector} <- args_to_selector(args) do
+      Metric.last_datetime_computed_at(metric, selector)
     end
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(
+        "Last Datetime Computed At",
+        %{metric: metric, selector: args_to_raw_selector(args)},
+        error
+      )
+    end)
   end
 
   def timeseries_data(
@@ -84,11 +95,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     transform =
       Map.get(args, :transform, %{type: "none"}) |> Map.update!(:type, &Inflex.underscore/1)
 
-    selector = to_selector(args)
-    metric = maybe_replace_metric(metric, selector)
-    opts = selector_args_to_opts(args)
-
-    with true <- valid_selector?(selector),
+    with {:ok, selector} <- args_to_selector(args),
+         metric = maybe_replace_metric(metric, selector),
+         opts = selector_args_to_opts(args),
          {:ok, from, to, interval} <-
            calibrate(Metric, metric, selector, from, to, interval, 86_400, @datapoints),
          {:ok, from, to} <-
@@ -100,10 +109,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
          {:ok, result} <- apply_transform(transform, result),
          {:ok, result} <- fit_from_datetime(result, args) do
       {:ok, result |> Enum.reject(&is_nil/1)}
-    else
-      {:error, error} ->
-        {:error, handle_graphql_error(metric, selector, error)}
     end
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(metric, args_to_raw_selector(args), error)
+    end)
   end
 
   def aggregated_timeseries_data(
@@ -112,14 +121,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         %{source: %{metric: metric}}
       ) do
     include_incomplete_data = Map.get(args, :include_incomplete_data, false)
-    selector = to_selector(args)
-    opts = selector_args_to_opts(args)
 
-    with true <- valid_selector?(selector),
+    with {:ok, selector} <- args_to_selector(args),
+         opts = selector_args_to_opts(args),
          {:ok, from, to} <-
            calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
-         {:ok, result} <-
-           Metric.aggregated_timeseries_data(metric, selector, from, to, opts) do
+         {:ok, result} <- Metric.aggregated_timeseries_data(metric, selector, from, to, opts) do
       # This requires internal rework - all aggregated_timeseries_data queries must return the same format
       case result do
         value when is_number(value) ->
@@ -135,10 +142,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         _ ->
           {:ok, nil}
       end
-    else
-      {:error, error} ->
-        {:error, handle_graphql_error(metric, selector, error)}
     end
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(metric, args_to_raw_selector(args), error)
+    end)
   end
 
   def histogram_data(
@@ -151,17 +158,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     # the histogram for all time.
     from = Map.get(args, :from, nil)
     interval = transform_interval(metric, interval)
-    selector = to_selector(args)
 
-    with true <- valid_selector?(selector),
+    with {:ok, selector} <- args_to_selector(args),
          true <- valid_histogram_args?(metric, args),
          {:ok, data} <- Metric.histogram_data(metric, selector, from, to, interval, limit),
          {:ok, data} <- maybe_enrich_with_labels(metric, data) do
       {:ok, %{values: %{data: data}}}
-    else
-      {:error, error} ->
-        {:error, handle_graphql_error(metric, selector, error)}
     end
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(metric, args_to_raw_selector(args), error)
+    end)
   end
 
   def table_data(
@@ -169,20 +175,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         %{from: from, to: to} = args,
         %{source: %{metric: metric}}
       ) do
-    selector = to_selector(args)
-
-    with true <- valid_selector?(selector),
+    with {:ok, selector} <- args_to_selector(args),
          {:ok, data} <- Metric.table_data(metric, selector, from, to) do
       {:ok, data}
-    else
-      {:error, error} ->
-        {:error, handle_graphql_error(metric, selector, error)}
     end
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(metric, args_to_raw_selector(args), error)
+    end)
   end
 
   # Private functions
-
-  # gold and s-and-p-500 are present only in the intrday metrics table, not in asset_prices
 
   defp maybe_enrich_with_labels(_metric, [%{address: address} | _] = data)
        when is_binary(address) do
@@ -200,6 +202,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   defp maybe_enrich_with_labels(_metric, data), do: {:ok, data}
 
+  # gold and s-and-p-500 are present only in the intrday metrics table, not in asset_prices
   defp maybe_replace_metric("price_usd", %{slug: slug})
        when slug in ["gold", "s-and-p-500", "crude-oil"],
        do: "price_usd_5m"
@@ -290,26 +293,4 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
       true
     end
   end
-
-  defp valid_selector?(%{slug: slug}) when is_binary(slug) do
-    case @available_slugs_module.valid_slug?(slug) do
-      true -> true
-      false -> {:error, "The slug #{inspect(slug)} is not an existing slug."}
-    end
-  end
-
-  defp valid_selector?(%{} = map) when map_size(map) == 0,
-    do:
-      {:error,
-       "The selector must have at least one field provided." <>
-         "The available selector fields for a metric are listed in the metadata's availableSelectors field."}
-
-  defp valid_selector?(_), do: true
-
-  defp to_selector(%{slug: slug}), do: %{slug: slug}
-  defp to_selector(%{slugs: slugs}), do: %{slug: slugs}
-  defp to_selector(%{word: word}), do: %{word: word}
-  defp to_selector(%{selector: %{slugs: slugs}}), do: %{slug: slugs}
-  defp to_selector(%{selector: %{} = selector}), do: selector
-  defp to_selector(_), do: %{}
 end

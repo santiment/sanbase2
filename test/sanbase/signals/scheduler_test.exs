@@ -14,7 +14,9 @@ defmodule Sanbase.Signal.SchedulerTest do
     Tesla.Mock.mock_global(fn %{method: :post} -> %Tesla.Env{status: 200, body: "ok"} end)
 
     project = insert(:random_erc20_project)
-    user = insert(:user)
+
+    user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
+
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     trigger_settings = %{
@@ -71,7 +73,8 @@ defmodule Sanbase.Signal.SchedulerTest do
 
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
-             end) =~ "In total 1/1 metric_signal signals were sent successfully"
+             end) =~
+               "In total 1/1 (0 have disabled channel) metric_signal signals were sent successfully"
 
       ut = Sanbase.Repo.get(UserTrigger, trigger.id)
       assert ut.trigger.is_repeating == false
@@ -90,7 +93,8 @@ defmodule Sanbase.Signal.SchedulerTest do
 
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
-             end) =~ "In total 1/1 metric_signal signals were sent successfully"
+             end) =~
+               "In total 1/1 (0 have disabled channel) metric_signal signals were sent successfully"
 
       ut = Sanbase.Repo.get(UserTrigger, trigger.id)
       assert ut.trigger.is_repeating == false

@@ -11,7 +11,7 @@ defmodule Sanbase.Signal.TriggerPricePercentChangeTest do
 
     Tesla.Mock.mock(fn %{method: :post} -> %Tesla.Env{status: 200, body: "ok"} end)
 
-    user = insert(:user)
+    user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     project = insert(:random_erc20_project)

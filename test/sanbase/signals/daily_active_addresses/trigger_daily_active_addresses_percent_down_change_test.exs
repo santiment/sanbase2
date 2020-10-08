@@ -13,7 +13,7 @@ defmodule Sanbase.Signal.DailyActiveAddressesPercentDownChangeTest do
   setup do
     Sanbase.Signal.Evaluator.Cache.clear_all()
 
-    user = insert(:user)
+    user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     Sanbase.Factory.insert(:project, %{

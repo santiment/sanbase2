@@ -34,4 +34,22 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
 
   def generate_comparison_string(column, :outside_channel_exclusive, [low, high]),
     do: "#{column} < #{low} OR #{column} > #{high}"
+
+  def asset_id_filter(slug, opts) when is_binary(slug) do
+    arg_position = Keyword.fetch!(opts, :argument_position)
+
+    """
+    asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?#{arg_position} LIMIT 1 )
+    """
+  end
+
+  def asset_id_filter(slugs, opts) when is_list(slugs) do
+    arg_position = Keyword.fetch!(opts, :argument_position)
+
+    """
+    asset_id IN ( SELECT DISTINCT(asset_id) FROM asset_metadata FINAL PREWHERE name IN (?#{
+      arg_position
+    }) )
+    """
+  end
 end

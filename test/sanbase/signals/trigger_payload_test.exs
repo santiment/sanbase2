@@ -10,7 +10,13 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
 
   setup do
     Sanbase.Signal.Evaluator.Cache.clear_all()
-    user = insert(:user, email: "test@example.com")
+
+    user =
+      insert(:user,
+        email: "test@example.com",
+        user_settings: %{settings: %{signal_notify_telegram: true}}
+      )
+
     Sanbase.Auth.UserSettings.update_settings(user, %{signal_notify_email: true})
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 

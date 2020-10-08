@@ -13,7 +13,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingWordTest do
   setup do
     Sanbase.Signal.Evaluator.Cache.clear_all()
 
-    user = insert(:user)
+    user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     trending_words_settings = %{
@@ -65,7 +65,8 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingWordTest do
       end do
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
-             end) =~ "In total 1/1 trending_words signals were sent successfully"
+             end) =~
+               "In total 1/1 (0 have disabled channel) trending_words signals were sent successfully"
 
       Sanbase.Signal.Evaluator.Cache.clear_all()
 
@@ -87,7 +88,8 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingWordTest do
       end do
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
-             end) =~ "In total 1/1 trending_words signals were sent successfully"
+             end) =~
+               "In total 1/1 (0 have disabled channel) trending_words signals were sent successfully"
 
       Sanbase.Signal.Evaluator.Cache.clear_all()
 

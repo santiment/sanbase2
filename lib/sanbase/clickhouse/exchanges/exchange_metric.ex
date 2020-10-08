@@ -25,7 +25,7 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
         argMaxIf( value2, dt, metric_name = 'labelled_exchange_balance_sum' ) AS balance,
         sumIf( value2, metric_name = 'labelled_exchange_balance' and dt > now() - INTERVAL 1 DAY ) AS change_1d,
         sumIf( value2, metric_name = 'labelled_exchange_balance' and dt > now() - INTERVAL 7 DAY ) AS change_7d,
-        sumIf( value2, metric_name = 'labelled_exchange_balance') AS change_30d,
+        sumIf( value2, metric_name = 'labelled_exchange_balance' and dt > now() - INTERVAL 30 DAY) AS change_30d,
         toUnixTimestamp(if(
           minIf( dt, metric_name = 'labelled_exchange_balance' and abs(value2) > 0 ) = 0,
           NULL,
@@ -56,8 +56,24 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
           ) USING metric_id
         PREWHERE
           #{asset_id_filter(slug_or_slugs, argument_position: 1)} AND
-          metric_id IN ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name IN ('labelled_exchange_balance', 'labelled_exchange_balance_sum') ) AND
-          dt >= now() - INTERVAL 1 MONTH AND
+          (
+            (
+              metric_id IN (
+                SELECT metric_id
+                FROM metric_metadata FINAL
+                PREWHERE name IN ('labelled_exchange_balance_sum')
+              ) AND
+              dt >= now() - INTERVAL 7 DAY
+            )
+            OR
+            (
+              metric_id IN (
+                SELECT metric_id
+                FROM metric_metadata FINAL
+                PREWHERE name IN ('labelled_exchange_balance')
+              )
+            )
+          ) AND
           dt < now() AND
           dt != toDateTime('1970-01-01 00:00:00')
         GROUP BY asset_id, label2, owner, dt, metric_name

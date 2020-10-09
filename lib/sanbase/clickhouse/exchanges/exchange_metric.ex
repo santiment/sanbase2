@@ -11,7 +11,7 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
     query = """
     SELECT
       owner,
-      label,
+      label2 as label,
       SUM( balance ) AS balance,
       SUM( change_1d ) AS change_1d,
       SUM( change_7d ) AS balance_7d,
@@ -21,7 +21,11 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
     FROM (
       SELECT
         owner,
-        label2 AS label,
+        if(
+            label='deposit',
+            'centralized_exchange',
+            label
+          ) AS label2,
         argMaxIf( value2, dt, metric_name = 'labelled_exchange_balance_sum' ) AS balance,
         sumIf( value2, metric_name = 'labelled_exchange_balance' and dt > now() - INTERVAL 1 DAY ) AS change_1d,
         sumIf( value2, metric_name = 'labelled_exchange_balance' and dt > now() - INTERVAL 7 DAY ) AS change_7d,
@@ -39,11 +43,7 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
       FROM (
         SELECT
           asset_id,
-          if(
-            label='deposit',
-            'centralized_exchange',
-            label
-          ) AS label2,
+          label,
           owner,
           dt,
           metric_name,
@@ -56,6 +56,7 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
           ) USING metric_id
         PREWHERE
           #{asset_id_filter(slug_or_slugs, argument_position: 1)} AND
+          label IN ('deposit', 'centralized_exchange', 'decentralized_exchange') AND
           (
             (
               metric_id IN (
@@ -76,7 +77,7 @@ defmodule Sanbase.Clickhouse.Exchanges.ExchangeMetric do
           ) AND
           dt < now() AND
           dt != toDateTime('1970-01-01 00:00:00')
-        GROUP BY asset_id, label2, owner, dt, metric_name
+        GROUP BY asset_id, label, owner, dt, metric_name
       )
       #{if(additional_filters != [], do: "WHERE #{additional_filters}")}
       GROUP BY asset_id, label, owner

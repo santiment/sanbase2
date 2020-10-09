@@ -15,6 +15,22 @@ defmodule Sanbase.Clickhouse.TopHolders do
           in_top_holders_total: number()
         }
 
+  @type top_holders :: %{
+          datetime: DateTime.t(),
+          address: String.t(),
+          value: number(),
+          value_usd: number(),
+          part_of_total: number()
+        }
+
+  @spec top_holders(
+          slug :: String.t(),
+          contract :: String.t(),
+          token_decimals :: non_neg_integer(),
+          from :: DateTime.t(),
+          to :: DateTime.t(),
+          number_of_holders :: non_neg_integer()
+        ) :: {:ok, list(top_holders)} | {:error, String.t()}
   def top_holders(slug, contract, token_decimals, from, to, number_of_holders) do
     {query, args} =
       top_holders_query(
@@ -38,7 +54,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
 
     with {:ok, top_holders} <- ClickhouseRepo.query_transform(query, args, transform_func),
          addresses <- Enum.map(top_holders, & &1.address),
-         {:ok, address_labels_map} <- Label.get_address_labels("santiment", addresses) do
+         {:ok, address_labels_map} <- Label.get_address_labels(slug, addresses) do
       labelled_top_holders =
         top_holders
         |> Enum.map(fn top_holder ->
@@ -103,7 +119,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
       val as value,
       val * price as value_usd,
       partOfTotal
-    FROM(
+    FROM (
       SELECT
         max(dt) as dt,
         address,
@@ -119,15 +135,16 @@ defmodule Sanbase.Clickhouse.TopHolders do
           multiIf(valueTotal > 0,
           value / (valueTotal / pow(10, ?3)),
           0) AS partOfTotal
-        FROM(
+        FROM (
           SELECT *
           FROM
             eth_top_holders PREWHERE (contract = ?2)
             AND (address NOT IN ('TOTAL',
             'freeze'))
             AND ((dt >= toStartOfDay(toDateTime(?4)))
-            AND (dt <= toStartOfDay(toDateTime(?5)))) ) GLOBAL ANY
-        LEFT JOIN (
+            AND (dt <= toStartOfDay(toDateTime(?5))))
+        )
+        GLOBAL ANY LEFT JOIN (
           SELECT
             dt,
             sum(value) AS valueTotal
@@ -142,7 +159,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
       ORDER BY val DESC
       LIMIT ?6
     )
-    ALL LEFT JOIN (
+    GLOBAL ANY JOIN (
       SELECT
         toStartOfDay(dt) as dt,
         avg(value) AS price

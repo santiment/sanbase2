@@ -16,7 +16,32 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     TopHolders
   }
 
-  # Return this number of datapoints is the provided interval is an empty string
+  def top_holders(
+        _root,
+        %{
+          slug: slug,
+          from: from,
+          to: to,
+          number_of_holders: number_of_holders
+        },
+        _resolution
+      ) do
+    with {:ok, contract, token_decimals} <- Project.contract_info_by_slug(slug),
+         {:ok, top_holders} <-
+           TopHolders.top_holders(
+             slug,
+             contract,
+             token_decimals,
+             from,
+             to,
+             number_of_holders
+           ) do
+      {:ok, top_holders}
+    else
+      {:error, error} ->
+        {:error, handle_graphql_error("Top Holders", slug, error)}
+    end
+  end
 
   def top_holders_percent_of_total_supply(
         _root,

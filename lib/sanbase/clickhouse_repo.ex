@@ -24,7 +24,7 @@ defmodule Sanbase.ClickhouseRepo do
   @error_message "Cannot execute database query. If issue persists please contact Santiment Support."
   def query_transform(query, args, transform_fn) do
     try do
-      ordered_params = order_params(query, args) |> IO.inspect()
+      ordered_params = order_params(query, args)
       sanitized_query = sanitize_query(query)
 
       __MODULE__.query(sanitized_query, ordered_params)

@@ -140,6 +140,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :token_velocity,
           :top_exchanges_by_balance,
           :top_holders_percent_of_total_supply,
+          :top_holders,
           :top_social_gainers_losers,
           :topic_search,
           :transaction_volume,

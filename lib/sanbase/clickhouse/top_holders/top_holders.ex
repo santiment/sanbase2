@@ -109,9 +109,6 @@ defmodule Sanbase.Clickhouse.TopHolders do
          to,
          number_of_holders
        ) do
-    from_datetime_unix = DateTime.to_unix(from)
-    to_datetime_unix = DateTime.to_unix(to)
-
     query = """
     SELECT
       toUnixTimestamp(dt),
@@ -133,14 +130,12 @@ defmodule Sanbase.Clickhouse.TopHolders do
           rank,
           value / pow(10, ?3) AS value,
           multiIf(valueTotal > 0,
-          value / (valueTotal / pow(10, ?3)),
-          0) AS partOfTotal
+          value / (valueTotal / pow(10, ?3)), 0) AS partOfTotal
         FROM (
           SELECT *
-          FROM
-            eth_top_holders PREWHERE (contract = ?2)
-            AND (address NOT IN ('TOTAL',
-            'freeze'))
+          FROM eth_top_holders
+          PREWHERE (contract = ?2)
+            AND (address NOT IN ('TOTAL', 'freeze'))
             AND ((dt >= toStartOfDay(toDateTime(?4)))
             AND (dt <= toStartOfDay(toDateTime(?5))))
         )
@@ -148,8 +143,8 @@ defmodule Sanbase.Clickhouse.TopHolders do
           SELECT
             dt,
             sum(value) AS valueTotal
-          FROM
-            eth_top_holders PREWHERE (contract = ?2)
+          FROM eth_top_holders
+          PREWHERE (contract = ?2)
             AND (address IN ('TOTAL','freeze'))
             AND dt >= toStartOfDay(toDateTime(?4))
             AND dt <= toStartOfDay(toDateTime(?5))
@@ -163,9 +158,9 @@ defmodule Sanbase.Clickhouse.TopHolders do
       SELECT
         toStartOfDay(dt) as dt,
         avg(value) AS price
-      FROM
-        intraday_metrics FINAL
-        PREWHERE asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 LIMIT 1)
+      FROM intraday_metrics FINAL
+      PREWHERE
+        asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 LIMIT 1)
         AND metric_id = (SELECT metric_id FROM metric_metadata FINAL PREWHERE name = 'price_usd' LIMIT 1)
       GROUP BY dt
     ) USING (dt)
@@ -175,8 +170,8 @@ defmodule Sanbase.Clickhouse.TopHolders do
       slug,
       contract,
       token_decimals,
-      from_datetime_unix,
-      to_datetime_unix,
+      DateTime.to_unix(from),
+      DateTime.to_unix(to),
       number_of_holders
     ]
 

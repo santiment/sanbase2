@@ -1,0 +1,116 @@
+[
+  {
+    "human_readable_name": "Social Volume Total",
+    "name": "social_volume_total",
+    "metric": "social_volume",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Social Dominance Total",
+    "name": "social_dominance_total",
+    "metric": "social_dominance",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Volume Consumed Total",
+    "name": "sentiment_volume_consumed_total",
+    "metric": "sentiment_volume_consumed",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Positive Total",
+    "name": "sentiment_positive_total",
+    "metric": "sentiment_positive",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Negative Total",
+    "name": "sentiment_negative_total",
+    "metric": "sentiment_negative",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Sentiment Balance Total",
+    "name": "sentiment_balance_total",
+    "metric": "sentiment_balance",
+    "version": "2020-07-31",
+    "access": "restricted",
+    "selectors": [
+      "slug"
+    ],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
+]

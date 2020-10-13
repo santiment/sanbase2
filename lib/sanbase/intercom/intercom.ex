@@ -18,7 +18,6 @@ defmodule Sanbase.Intercom do
 
   def all_users_stats do
     %{
-      customer_payment_type_map: customer_payment_type_map(),
       triggers_map: User.resource_user_count_map(Sanbase.Signal.UserTrigger),
       insights_map: User.resource_user_count_map(Sanbase.Insight.Post),
       watchlists_map: User.resource_user_count_map(Sanbase.UserList),
@@ -83,8 +82,7 @@ defmodule Sanbase.Intercom do
            users_used_api_list: users_used_api_list,
            users_used_sansheets_list: users_used_sansheets_list,
            api_calls_per_user_count: api_calls_per_user_count,
-           users_with_monitored_watchlist: users_with_monitored_watchlist,
-           customer_payment_type_map: customer_payment_type_map
+           users_with_monitored_watchlist: users_with_monitored_watchlist
          }
        ) do
     {sanbase_subscription_current_status, sanbase_trial_created_at} =
@@ -119,7 +117,6 @@ defmodule Sanbase.Intercom do
           sanbase_subscription_current_status: sanbase_subscription_current_status,
           sanbase_trial_created_at: sanbase_trial_created_at,
           user_paid_after_trial: user_paid_after_trial,
-          user_paid_with: Map.get(customer_payment_type_map, stripe_customer_id, "not_paid"),
           weekly_digest:
             Sanbase.Auth.UserSettings.settings_for(user).newsletter_subscription |> to_string(),
           used_sanapi: id in users_used_api_list,

@@ -3,6 +3,8 @@ defmodule Sanbase.Intercom do
   Sync all users and user stats into intercom
   """
 
+  import Ecto.Query
+
   require Sanbase.Utils.Config, as: Config
   require Logger
 
@@ -12,9 +14,11 @@ defmodule Sanbase.Intercom do
   alias Sanbase.Clickhouse.ApiCallData
   alias Sanbase.Intercom.UserAttributes
   alias Sanbase.Auth.EthAccount
+  alias Sanbase.Repo
 
   @intercom_url "https://api.intercom.io/users"
   @user_events_url "https://api.intercom.io/events?type=user"
+  @users_page_size 100
 
   def all_users_stats do
     %{
@@ -40,16 +44,20 @@ defmodule Sanbase.Intercom do
     all_users_stats = all_users_stats()
 
     if intercom_api_key() do
-      User.all()
-      |> Stream.map(fn user ->
-        fetch_stats_for_user(user, all_users_stats)
+      1..user_pages()
+      |> Stream.flat_map(fn page ->
+        users_by_page(page, @users_page_size)
       end)
-      |> Enum.each(&send_user_stats_to_intercom/1)
+      |> fetch_and_send_stats(all_users_stats)
 
       Logger.info("Finish sync_users to Intercom")
     else
       :ok
     end
+  end
+
+  defp all_users_count() do
+    Repo.one(from(u in User, select: count(u.id)))
   end
 
   def get_events_for_user(user_id, since \\ nil) do
@@ -192,6 +200,32 @@ defmodule Sanbase.Intercom do
           }"
         )
     end
+  end
+
+  defp user_pages() do
+    (all_users_count() / @users_page_size)
+    |> Float.ceil()
+    |> round()
+  end
+
+  defp users_by_page(page, page_size) do
+    offset = (page - 1) * page_size
+
+    from(u in User,
+      order_by: u.id,
+      limit: ^page_size,
+      offset: ^offset,
+      preload: [:eth_accounts]
+    )
+    |> Repo.all()
+  end
+
+  defp fetch_and_send_stats(users, all_users_stats) do
+    users
+    |> Stream.map(fn user ->
+      fetch_stats_for_user(user, all_users_stats)
+    end)
+    |> Enum.each(&send_user_stats_to_intercom/1)
   end
 
   defp merge_intercom_attributes(stats, intercom_resp) do

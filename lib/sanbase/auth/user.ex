@@ -398,11 +398,6 @@ defmodule Sanbase.Auth.User do
     )
   end
 
-  def all() do
-    from(u in User, order_by: u.id, preload: [:eth_accounts])
-    |> Sanbase.Repo.all()
-  end
-
   def by_id(user_id) when is_integer(user_id) do
     case Sanbase.Repo.get_by(User, id: user_id) do
       nil ->

@@ -2138,7 +2138,7 @@
   {
     "human_readable_name": "Daily Age Distribution Histogram",
     "name": "daily_age_distribution",
-    "metric": "daily_age_distribution_delta",
+    "metric": "age_distribution_1day_delta",
     "version": "2019-01-01",
     "access": "restricted",
     "selectors": ["slug"],

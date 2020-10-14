@@ -17,8 +17,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "social_volume_reddit",
     "social_volume_professional_traders_chat",
     "social_volume_twitter",
-    "social_volume_bitcointalk",
-    "social_volume_total"
+    "social_volume_bitcointalk"
   ]
 
   @community_messages_count_timeseries_metrics [
@@ -32,14 +31,13 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "social_dominance_telegram",
     "social_dominance_discord",
     "social_dominance_reddit",
-    "social_dominance_professional_traders_chat",
-    "social_dominance_total"
+    "social_dominance_professional_traders_chat"
   ]
 
   @sentiment_timeseries_metrics for name <- ["sentiment"],
                                     type <- ["positive", "negative", "balance", "volume_consumed"],
                                     source <-
-                                      ["total"] ++ Sanbase.SocialData.SocialHelper.sources(),
+                                      Sanbase.SocialData.SocialHelper.sources(),
                                     do: "#{name}_#{type}_#{source}"
 
   @active_users_timeseries_metrics ["social_active_users"]

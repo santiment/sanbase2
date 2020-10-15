@@ -9,10 +9,11 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
 
     with selector when is_map(selector) <- args[:selector],
          {map, _rest} when map_size(map) > 0 <- Map.split(selector, [:owner, :label]) do
-      [additional_filters: Keyword.new(map)] ++ opts
+      opts = [additional_filters: Keyword.new(map)] ++ opts
+      {:ok, opts}
     else
       _ ->
-        opts
+        {:ok, opts}
     end
   end
 

@@ -143,8 +143,6 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
     )
   end
 
-  alias __MODULE__
-
   defimpl Sanbase.Signal.Settings, for: EthWalletTriggerSettings do
     def triggered?(%EthWalletTriggerSettings{triggered?: triggered}), do: triggered
 

@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   import SanbaseWeb.Graphql.Helpers.CalibrateInterval
 
   import Sanbase.Utils.ErrorHandling,
-    only: [handle_graphql_error: 3, handle_graphql_error: 4, maybe_handle_graphql_error: 2]
+    only: [handle_graphql_error: 3, maybe_handle_graphql_error: 2]
 
   import Sanbase.Metric.Selector, only: [args_to_selector: 1, args_to_raw_selector: 1]
   import SanbaseWeb.Graphql.Helpers.Utils
@@ -87,25 +87,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   def timeseries_data(
         _root,
-        %{from: from, to: to, interval: interval} = args,
+        args,
         %{source: %{metric: metric}}
       ) do
-    include_incomplete_data = Map.get(args, :include_incomplete_data, false)
-
     transform =
-      Map.get(args, :transform, %{type: "none"}) |> Map.update!(:type, &Inflex.underscore/1)
+      Map.get(args, :transform, %{type: "none"})
+      |> Map.update!(:type, &Inflex.underscore/1)
 
     with {:ok, selector} <- args_to_selector(args),
-         metric = maybe_replace_metric(metric, selector),
-         opts = selector_args_to_opts(args),
+         {:ok, metric} <- maybe_replace_metric(metric, selector),
+         {:ok, opts} <- selector_args_to_opts(args),
          {:ok, from, to, interval} <-
-           calibrate(Metric, metric, selector, from, to, interval, 86_400, @datapoints),
-         {:ok, from, to} <-
-           calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
-         {:ok, from} <-
-           calibrate_transform_params(transform, from, to, interval),
-         {:ok, result} <-
-           Metric.timeseries_data(metric, selector, from, to, interval, opts),
+           transform_datetime_params(selector, metric, transform, args),
+         {:ok, result} <- Metric.timeseries_data(metric, selector, from, to, interval, opts),
          {:ok, result} <- apply_transform(transform, result),
          {:ok, result} <- fit_from_datetime(result, args) do
       {:ok, result |> Enum.reject(&is_nil/1)}
@@ -123,25 +117,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     include_incomplete_data = Map.get(args, :include_incomplete_data, false)
 
     with {:ok, selector} <- args_to_selector(args),
-         opts = selector_args_to_opts(args),
+         {:ok, opts} = selector_args_to_opts(args),
          {:ok, from, to} <-
            calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
          {:ok, result} <- Metric.aggregated_timeseries_data(metric, selector, from, to, opts) do
-      # This requires internal rework - all aggregated_timeseries_data queries must return the same format
-      case result do
-        value when is_number(value) ->
-          {:ok, value}
-
-        [%{value: value}] ->
-          {:ok, value}
-
-        %{} = map ->
-          value = Map.values(map) |> hd
-          {:ok, value}
-
-        _ ->
-          {:ok, nil}
-      end
+      {:ok, Map.values(result) |> List.first()}
     end
     |> maybe_handle_graphql_error(fn error ->
       handle_graphql_error(metric, args_to_raw_selector(args), error)
@@ -159,8 +139,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     from = Map.get(args, :from, nil)
     interval = transform_interval(metric, interval)
 
-    with {:ok, selector} <- args_to_selector(args),
-         true <- valid_histogram_args?(metric, args),
+    with true <- valid_histogram_args?(metric, args),
+         {:ok, selector} <- args_to_selector(args),
          {:ok, data} <- Metric.histogram_data(metric, selector, from, to, interval, limit),
          {:ok, data} <- maybe_enrich_with_labels(metric, data) do
       {:ok, %{values: %{data: data}}}
@@ -185,6 +165,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   # Private functions
+  defp transform_datetime_params(selector, metric, transform, args) do
+    %{from: from, to: to, interval: interval} = args
+
+    include_incomplete_data = Map.get(args, :include_incomplete_data, false)
+
+    with {:ok, from, to, interval} <-
+           calibrate(Metric, metric, selector, from, to, interval, 86_400, @datapoints),
+         {:ok, from, to} <-
+           calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
+         {:ok, from} <-
+           calibrate_transform_params(transform, from, to, interval) do
+      {:ok, from, to, interval}
+    end
+  end
 
   defp maybe_enrich_with_labels(_metric, [%{address: address} | _] = data)
        when is_binary(address) do
@@ -205,9 +199,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   # gold and s-and-p-500 are present only in the intrday metrics table, not in asset_prices
   defp maybe_replace_metric("price_usd", %{slug: slug})
        when slug in ["gold", "s-and-p-500", "crude-oil"],
-       do: "price_usd_5m"
+       do: {:ok, "price_usd_5m"}
 
-  defp maybe_replace_metric(metric, _selector), do: metric
+  defp maybe_replace_metric(metric, _selector), do: {:ok, metric}
 
   defp calibrate_transform_params(%{type: "none"}, from, _to, _interval),
     do: {:ok, from}

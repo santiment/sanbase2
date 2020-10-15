@@ -317,19 +317,19 @@ defmodule Sanbase.Intercom do
   defp list_invoices(params) do
     Stripe.Invoice.list(params)
     |> elem(1)
-    |> Map.get(:data)
+    |> Map.get(:data, [])
     |> Enum.map(fn invoice ->
       Map.split(invoice, [:id, :customer, :total, :starting_balance, :status, :created])
       |> elem(0)
     end)
   end
 
-  defp format_dt(nil), do: nil
-
-  defp format_dt(unix_dt) do
-    DateTime.from_unix!(unix_dt)
+  defp format_dt(unix_timestmap) when is_integer(unix_timestmap) do
+    DateTime.from_unix!(unix_timestmap)
     |> DateTime.to_iso8601()
   end
+
+  defp format_dt(nil), do: nil
 
   defp intercom_headers() do
     [

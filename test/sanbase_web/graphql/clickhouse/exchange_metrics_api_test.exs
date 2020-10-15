@@ -103,7 +103,7 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
         %{
           owner: "Binance",
           label: "centralized_exchange",
-          balance: 10000,
+          balance: 10_000,
           balance_change_1d: 100,
           balance_change_7d: -300,
           balance_change_30d: 1000,
@@ -113,10 +113,10 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
         %{
           owner: "Bitfinex",
           label: "centralized_exchange",
-          balance: 20000,
+          balance: 20_000,
           balance_change_1d: 20,
           balance_change_7d: -600,
-          balance_change_30d: 12000,
+          balance_change_30d: 12_000,
           datetime_of_first_transfers: ~U[2020-01-05 00:00:00Z],
           days: 15
         }

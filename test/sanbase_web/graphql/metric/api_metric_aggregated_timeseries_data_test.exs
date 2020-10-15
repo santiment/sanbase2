@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
     Sanbase.Mock.prepare_mock(
       Sanbase.Clickhouse.Metric,
       :aggregated_timeseries_data,
-      fn _, slug, _, _, _ -> {:ok, [%{slug: slug, value: 100}]} end
+      fn _, slug, _, _, _ -> {:ok, %{slug => 100}} end
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
@@ -43,7 +43,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
     metrics = Metric.available_timeseries_metrics()
 
     Sanbase.Mock.prepare_mock(Metric, :aggregated_timeseries_data, fn _, slug_arg, _, _, _ ->
-      {:ok, [%{slug: slug_arg, value: 100}]}
+      {:ok, %{slug_arg => 100}}
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
       for metric <- metrics do
@@ -63,7 +63,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
     {:ok, %{available_aggregations: aggregations}} = Metric.metadata(metric)
 
     Sanbase.Mock.prepare_mock(Metric, :aggregated_timeseries_data, fn _, slug, _, _, _ ->
-      {:ok, [%{slug: slug, value: 100}]}
+      {:ok, %{slug => 100}}
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
       for aggregation <- aggregations do

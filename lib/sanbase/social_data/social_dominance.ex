@@ -47,11 +47,11 @@ defmodule Sanbase.SocialData.SocialDominance do
   def social_dominance(%{slug: slug}, from, to, interval, source) do
     social_dominance_request(%{slug: slug}, from, to, interval, source)
     |> case do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+      {:ok, %{status_code: 200, body: body}} ->
         {:ok, result} = Jason.decode(body)
         social_dominance_result(result)
 
-      {:ok, %HTTPoison.Response{status_code: status}} ->
+      {:ok, %{status_code: status}} ->
         warn_result(
           "Error status #{status} fetching social dominance for project with slug #{inspect(slug)}}"
         )

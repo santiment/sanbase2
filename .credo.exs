@@ -24,7 +24,7 @@
         included: [
           "lib/",
           "src/",
-          "test/",
+          # "test/",
           "web/",
           "apps/*/lib/",
           "apps/*/src/",
@@ -170,7 +170,7 @@
         {Credo.Check.Refactor.DoubleBooleanNegation, []},
         {Credo.Check.Refactor.ModuleDependencies, []},
         {Credo.Check.Refactor.NegatedIsNil, false},
-        {Credo.Check.Refactor.PipeChainStart, []},
+        {Credo.Check.Refactor.PipeChainStart, false},
         {Credo.Check.Refactor.VariableRebinding, false},
         {Credo.Check.Warning.LeakyEnvironment, []},
         {Credo.Check.Warning.MapGetUnsafePass, []},

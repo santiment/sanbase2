@@ -50,11 +50,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
       }) do
     user_id = current_user.id
 
-    with {:subscription?, %Subscription{user_id: ^user_id} = subscription} <-
+    with {_, %Subscription{user_id: ^user_id} = subscription} <-
            {:subscription?, Subscription.by_id(subscription_id)},
-         {:not_cancelled?, %Subscription{cancel_at_period_end: false}} <-
+         {_, %Subscription{cancel_at_period_end: false}} <-
            {:not_cancelled?, subscription},
-         {:plan?, %Plan{is_deprecated: false} = new_plan} <- {:plan?, Plan.by_id(plan_id)},
+         {_, %Plan{is_deprecated: false} = new_plan} <- {:plan?, Plan.by_id(plan_id)},
          {:ok, subscription} <- Subscription.update_subscription(subscription, new_plan) do
       {:ok, subscription}
     else
@@ -72,9 +72,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
       }) do
     user_id = current_user.id
 
-    with {:subscription?, %Subscription{user_id: ^user_id} = subscription} <-
+    with {_, %Subscription{user_id: ^user_id} = subscription} <-
            {:subscription?, Subscription.by_id(subscription_id)},
-         {:not_cancelled?, %Subscription{cancel_at_period_end: false}} <-
+         {_, %Subscription{cancel_at_period_end: false}} <-
            {:not_cancelled?, subscription},
          {:ok, cancel_subscription} <-
            Subscription.cancel_subscription(subscription) do
@@ -94,9 +94,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
       }) do
     user_id = current_user.id
 
-    with {:subscription?, %Subscription{user_id: ^user_id} = subscription} <-
+    with {_, %Subscription{user_id: ^user_id} = subscription} <-
            {:subscription?, Subscription.by_id(subscription_id)},
-         {:cancelled?, %Subscription{cancel_at_period_end: true}} <-
+         {_, %Subscription{cancel_at_period_end: true}} <-
            {:cancelled?, subscription},
          {:ok, subscription} <- Subscription.renew_cancelled_subscription(subscription) do
       {:ok, subscription}
@@ -154,20 +154,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   # private functions
   defp transform_payments(%Stripe.List{data: payments}) do
     payments
-    |> Enum.map(fn %Stripe.Charge{
-                     status: status,
-                     amount: amount,
-                     created: created,
-                     receipt_url: receipt_url,
-                     description: description
-                   } ->
-      %{
+    |> Enum.map(fn
+      %Stripe.Charge{
         status: status,
         amount: amount,
-        created_at: DateTime.from_unix!(created),
+        created: created,
         receipt_url: receipt_url,
         description: description
-      }
+      } ->
+        %{
+          status: status,
+          amount: amount,
+          created_at: DateTime.from_unix!(created),
+          receipt_url: receipt_url,
+          description: description
+        }
     end)
   end
 

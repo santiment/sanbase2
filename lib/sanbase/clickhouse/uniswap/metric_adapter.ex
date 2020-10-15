@@ -2,6 +2,10 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
   import Sanbase.Utils.Transform
 
+  alias Sanbase.Clickhouse.Erc20Transfers
+
+  require Sanbase.Utils.Config, as: Config
+
   @aggregations [:sum]
 
   @timeseries_metrics []
@@ -22,8 +26,6 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
 
   @contract "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"
 
-  alias Sanbase.Clickhouse.Erc20Transfers
-  require Sanbase.Utils.Config, as: Config
   defp address_ordered_table(), do: Config.module_get(Erc20Transfers, :address_ordered_table)
 
   @impl Sanbase.Metric.Behaviour
@@ -182,5 +184,5 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
     {:ok, data}
   end
 
-  defp maybe_add_balances({:error, error}), do: {:error, error}
+  defp maybe_add_balances({:error, error}, _from, _to), do: {:error, error}
 end

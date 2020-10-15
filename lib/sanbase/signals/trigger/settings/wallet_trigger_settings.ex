@@ -21,7 +21,7 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
   @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
   @trigger_type "wallet_movement"
 
-  @enforce_keys [:type, :channel, :target, :asset]
+  @enforce_keys [:type, :channel, :target]
   defstruct type: @trigger_type,
             channel: nil,
             selector: nil,

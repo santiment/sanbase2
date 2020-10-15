@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Schema.ReportQueries do
   use Absinthe.Schema.Notation
   alias SanbaseWeb.Graphql.Resolvers.ReportResolver
-  alias SanbaseWeb.Graphql.Middlewares.{BasicAuth, JWTAuth}
+  alias SanbaseWeb.Graphql.Middlewares.BasicAuth
 
   import_types(SanbaseWeb.Graphql.ReportTypes)
 

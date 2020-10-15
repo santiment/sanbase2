@@ -77,8 +77,8 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
       fn [datetime, from_address, to_address, trx_hash, trx_value] ->
         %{
           datetime: DateTime.from_unix!(datetime),
-          from_address: from_address,
-          to_address: to_address,
+          from_address: maybe_transform_from_address(from_address),
+          to_address: maybe_transform_to_address(to_address),
           trx_hash: trx_hash,
           trx_value: trx_value
         }

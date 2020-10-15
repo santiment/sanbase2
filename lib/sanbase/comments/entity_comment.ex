@@ -64,7 +64,7 @@ defmodule Sanbase.Comments.EntityComment do
     |> Repo.insert()
   end
 
-  @spec get_comments(entity, non_neg_integer(), map()) :: [%Comment{}]
+  @spec get_comments(entity, non_neg_integer() | nil, map()) :: [%Comment{}]
   def get_comments(entity, entity_id, %{limit: limit} = args) do
     cursor = Map.get(args, :cursor) || %{}
     order = Map.get(cursor, :order, :asc)

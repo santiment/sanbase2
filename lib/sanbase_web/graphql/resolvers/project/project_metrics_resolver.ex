@@ -58,7 +58,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
 
         from = from |> Sanbase.DateTimeUtils.round_datetime(300)
         to = to |> Sanbase.DateTimeUtils.round_datetime(300)
-        opts = selector_args_to_opts(args)
+        {:ok, opts} = selector_args_to_opts(args)
 
         data = %{
           slug: slug,

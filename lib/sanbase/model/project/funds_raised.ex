@@ -8,7 +8,7 @@ defmodule Sanbase.Model.Project.FundsRaised do
     ico_with_max_price =
       project
       |> Repo.preload([:icos])
-      |> Map.get(:icos)
+      |> Map.get(:icos, [])
       |> Enum.reject(fn ico -> is_nil(ico.token_usd_ico_price) end)
       |> Enum.max_by(
         fn ico -> ico.token_usd_ico_price |> Decimal.to_float() end,

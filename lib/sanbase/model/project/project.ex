@@ -379,7 +379,7 @@ defmodule Sanbase.Model.Project do
   def has_main_contract_addresses?(project) do
     project
     |> Repo.preload([:contract_addresses])
-    |> Map.get(:contract_addresses)
+    |> Map.get(:contract_addresses, [])
     |> Enum.find(&(&1.label == "main"))
     |> case do
       nil -> false

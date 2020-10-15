@@ -1,12 +1,13 @@
 defmodule Sanbase.Intercom.UserEvent do
   use Ecto.Schema
+
   import Ecto.Changeset
   import Ecto.Query
 
-  require Logger
-
   alias Sanbase.Repo
   alias Sanbase.Auth.User
+
+  require Logger
 
   schema "user_events" do
     field(:created_at, :utc_datetime)
@@ -77,7 +78,7 @@ defmodule Sanbase.Intercom.UserEvent do
 
   # helpers
 
-  defp sync_with_intercom(user_id, since \\ nil) do
+  defp sync_with_intercom(user_id, since) do
     Sanbase.Intercom.get_events_for_user(user_id, since)
     |> Enum.map(fn %{
                      "created_at" => created_at,

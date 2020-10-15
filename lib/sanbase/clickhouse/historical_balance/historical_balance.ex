@@ -6,9 +6,10 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   """
 
   use AsyncWith
-  @async_with_timeout 29_000
 
   alias Sanbase.Model.Project
+
+  @async_with_timeout 29_000
 
   alias Sanbase.Clickhouse.HistoricalBalance.{
     BchBalance,
@@ -86,37 +87,14 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   @spec balance_change(selector, address, from :: DateTime.t(), to :: DateTime.t()) ::
           __MODULE__.Behaviour.balance_change_result()
   def balance_change(selector, address, from, to) do
-    infrastructure = Map.fetch!(selector, :infrastructure)
-    slug = Map.get(selector, :slug)
+    selector = selector |> Map.put_new(:slug, nil)
 
-    case {infrastructure, slug} do
-      {"ETH", "ethereum"} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug("ethereum"),
-             do: EthBalance.balance_change(address, contract, decimals, from, to)
+    case selector_to_args(selector) do
+      {module, asset, decimals} ->
+        module.balance_Change(address, asset, decimals, from, to)
 
-      {"ETH", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug || "ethereum"),
-             do: Erc20Balance.balance_change(address, contract, decimals, from, to)
-
-      {"XRP", _} ->
-        currency = Map.get(selector, :currency, "XRP")
-        XrpBalance.balance_change(address, currency, 0, from, to)
-
-      {"BTC", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug("bitcoin"),
-             do: BtcBalance.balance_change(address, contract, decimals, from, to)
-
-      {"BCH", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug("bitcoin-cash"),
-             do: BchBalance.balance_change(address, contract, decimals, from, to)
-
-      {"LTC", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug("litecoin"),
-             do: LtcBalance.balance_change(address, contract, decimals, from, to)
-
-      {"BNB", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug || "binance-coin"),
-             do: BnbBalance.balance_change(address, contract, decimals, from, to)
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -127,85 +105,51 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   @spec historical_balance(selector, address, from :: DateTime.t(), to :: DateTime.t(), interval) ::
           __MODULE__.Behaviour.historical_balance_result()
   def historical_balance(selector, address, from, to, interval) do
-    infrastructure = Map.fetch!(selector, :infrastructure)
-    slug = Map.get(selector, :slug)
+    case selector_to_args(selector) do
+      {module, asset, decimals} ->
+        module.historical_balance(address, asset, decimals, from, to, interval)
 
-    case {infrastructure, slug} do
-      {"ETH", ethereum} when ethereum in [nil, "ethereum"] ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug("ethereum"),
-             do: EthBalance.historical_balance(address, contract, decimals, from, to, interval)
-
-      {"ETH", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug),
-             do: Erc20Balance.historical_balance(address, contract, decimals, from, to, interval)
-
-      {"XRP", _} ->
-        currency = Map.get(selector, :currency, "XRP")
-        XrpBalance.historical_balance(address, currency, 0, from, to, interval)
-
-      {"BTC", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug("bitcoin"),
-             do: BtcBalance.historical_balance(address, contract, decimals, from, to, interval)
-
-      {"BCH", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug("bitcoin-cash"),
-             do: BchBalance.historical_balance(address, contract, decimals, from, to, interval)
-
-      {"LTC", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug("litecoin"),
-             do: LtcBalance.historical_balance(address, contract, decimals, from, to, interval)
-
-      {"BNB", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug || "binance-coin"),
-             do: BnbBalance.historical_balance(address, contract, decimals, from, to, interval)
+      {:error, error} ->
+        {:error, error}
     end
   end
 
-  @doc ~s"""
-  For a given address or list of addresses returns the combined `slug` balance for each bucket
-  of size `interval` in the from-to time period
-  """
-  @spec balance_change(
-          selector,
-          address | list(address),
-          from :: DateTime.t(),
-          to :: DateTime.t(),
-          interval
-        ) ::
-          __MODULE__.Behaviour.balance_change_result()
-  def balance_change(selector, address_or_addresses, from, to, interval) do
-    infrastructure = Map.fetch!(selector, :infrastructure)
-    slug = Map.get(selector, :slug)
-    addresses = List.wrap(address_or_addresses)
+  # erc20 case
+  defp selector_to_args(%{infrastructure: "ETH", slug: slug})
+       when is_binary(slug) and slug != "ethereum" do
+    with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug),
+         do: {Erc20Balance, contract, decimals}
+  end
 
-    case {infrastructure, slug} do
-      {"ETH", ethereum} when ethereum in [nil, "ethereum"] ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug("ethereum"),
-             do: EthBalance.balance_change(addresses, contract, decimals, from, to, interval)
+  defp selector_to_args(%{infrastructure: "ETH"}) do
+    with {:ok, contract, decimals} <- Project.contract_info_by_slug("ethereum"),
+         do: {EthBalance, contract, decimals}
+  end
 
-      {"ETH", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug),
-             do: Erc20Balance.balance_change(addresses, contract, decimals, from, to, interval)
+  defp selector_to_args(%{infrastructure: "XRP"} = selector) do
+    currency = Map.get(selector, :currency, "XRP")
+    {XrpBalance, currency, 0}
+  end
 
-      {"XRP", _} ->
-        currency = Map.get(selector, :currency, "XRP")
-        XrpBalance.balance_change(addresses, currency, 0, from, to, interval)
+  defp selector_to_args(%{infrastructure: "BTC"}) do
+    with {:ok, contract, decimals} <- Project.contract_info_by_slug("bitcoin"),
+         do: {BtcBalance, contract, decimals}
+  end
 
-      {"BTC", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug("bitcoin"),
-             do: BtcBalance.balance_change(addresses, contract, decimals, from, to, interval)
+  defp selector_to_args(%{infrastructure: "BCH"}) do
+    with {:ok, contract, decimals} <- Project.contract_info_by_slug("bitcoin-cash"),
+         do: {BchBalance, contract, decimals}
+  end
 
-      {"BCH", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug("bitcoin-cash"),
-             do: BchBalance.balance_change(addresses, contract, decimals, from, to, interval)
+  defp selector_to_args(%{infrastructure: "LTC"}) do
+    with {:ok, contract, decimals} <- Project.contract_info_by_slug("litecoin"),
+         do: {LtcBalance, contract, decimals}
+  end
 
-      {"LTC", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug("litecoin"),
-             do: LtcBalance.balance_change(addresses, contract, decimals, from, to, interval)
+  defp selector_to_args(%{infrastructure: "BNB"} = selector) do
+    slug = Map.get(selector, :slug, "binance-coin")
 
-      {"BNB", _} ->
-        with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug || "binance-coin"),
-             do: BnbBalance.balance_change(addresses, contract, decimals, from, to, interval)
-    end
+    with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug),
+         do: {BnbBalance, contract, decimals}
   end
 end

@@ -38,7 +38,7 @@ defmodule Sanbase.Model.Project.GithubOrganization do
   def organizations_of(%Project{} = project) do
     project
     |> Repo.preload(:github_organizations)
-    |> Map.get(:github_organizations)
+    |> Map.get(:github_organizations, [])
     |> Enum.map(& &1.organization)
   end
 

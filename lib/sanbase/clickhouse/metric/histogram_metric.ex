@@ -116,6 +116,8 @@ defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
   defp maybe_transform_into_buckets({:error, error}, _slug, _from, _to, _limit),
     do: {:error, error}
 
+  # Break a bucket with range [low, high] into 2 buckes [low, divider] and [divider, high]
+  # putting the proper number of entities that fall into each of the 2 ranges
   defp break_bucket(bucketed_data, original_data, [low, high], divider) do
     {lower_half_amount, upper_half_amount} =
       original_data

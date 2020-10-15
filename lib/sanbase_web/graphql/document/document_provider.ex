@@ -176,50 +176,53 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do
   use Absinthe.Phase
   @spec run(Absinthe.Blueprint.t(), Keyword.t()) :: Absinthe.Phase.result_t()
   def run(bp_root, _) do
-    bp_root.operations
-    |> Enum.flat_map(fn %{selections: selections} ->
-      selections
-      |> Enum.flat_map(fn
-        %{name: name, argument_data: %{metric: metric}} = struct ->
-          case name |> Inflex.underscore() do
-            "get_metric" ->
-              selections =
-                Enum.map(struct.selections, fn
-                  %{name: name} -> name |> Inflex.underscore()
-                  _ -> nil
-                end)
-                |> Enum.reject(&is_nil/1)
-
-              # Put the metric name in the list 0, 1 or 2 times, depending
-              # on the selections. `timeseries_data` and `aggregated_timeseries_data`
-              # would go through the complexity code once, remiving the metric
-              # name from the list both times - so it has to be there twice, while
-              # `timeseries_data_complexity` won't go through that path.
-              # `histogram_data` does not have complexity checks right now.
-
-              # This is equivalent to X -- (X -- Y) because the `--` operator
-              # has right to left associativity
-              common_parts =
-                selections -- selections -- ["timeseries_data", "aggregated_timeseries_data"]
-
-              Enum.map(common_parts, fn _ -> metric end)
-
-            _ ->
-              []
-          end
-
-        _ ->
-          []
+    metrics =
+      bp_root.operations
+      |> Enum.flat_map(fn %{selections: selections} ->
+        selections_to_metrics(selections)
       end)
-    end)
-    |> case do
-      [_ | _] = metrics ->
-        Process.put(:__metric_name_from_get_metric_api__, metrics)
 
-      _ ->
-        :ok
+    case metrics do
+      [_ | _] = metrics -> Process.put(:__metric_name_from_get_metric_api__, metrics)
+      _ -> :ok
     end
 
     {:ok, bp_root}
+  end
+
+  defp selections_to_metrics(selections) do
+    selections
+    |> Enum.flat_map(fn
+      %{name: name, argument_data: %{metric: metric}} = struct ->
+        case name |> Inflex.underscore() do
+          "get_metric" ->
+            selections =
+              Enum.map(struct.selections, fn
+                %{name: name} -> name |> Inflex.underscore()
+                _ -> nil
+              end)
+              |> Enum.reject(&is_nil/1)
+
+            # Put the metric name in the list 0, 1 or 2 times, depending
+            # on the selections. `timeseries_data` and `aggregated_timeseries_data`
+            # would go through the complexity code once, remiving the metric
+            # name from the list both times - so it has to be there twice, while
+            # `timeseries_data_complexity` won't go through that path.
+            # `histogram_data` does not have complexity checks right now.
+
+            # This is equivalent to X -- (X -- Y) because the `--` operator
+            # has right to left associativity
+            common_parts =
+              selections -- selections -- ["timeseries_data", "aggregated_timeseries_data"]
+
+            Enum.map(common_parts, fn _ -> metric end)
+
+          _ ->
+            []
+        end
+
+      _ ->
+        []
+    end)
   end
 end

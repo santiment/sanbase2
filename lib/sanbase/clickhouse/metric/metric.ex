@@ -11,7 +11,7 @@ defmodule Sanbase.Clickhouse.Metric do
 
   import Sanbase.Clickhouse.MetadataHelper
   import Sanbase.Clickhouse.Metric.SqlQuery
-  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
+  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
 
   alias __MODULE__.{HistogramMetric, FileHandler, TableMetric}
 
@@ -165,19 +165,13 @@ defmodule Sanbase.Clickhouse.Metric do
 
   @impl Sanbase.Metric.Behaviour
   def available_metrics(%{slug: slug}) when is_binary(slug) do
-    Enum.reduce_while(@tables_list, [], fn table, acc ->
-      case available_metrics_in_table(table, slug) do
-        {:ok, metrics} ->
-          {:cont, metrics ++ acc}
+    {query, args} = available_metrics_for_slug_query(slug)
 
-        _ ->
-          {:halt, {:error, "Error fetching available metrics for #{slug}"}}
-      end
+    ClickhouseRepo.query_transform(query, args, fn [metric] -> metric end)
+    |> maybe_apply_function(fn metrics ->
+      MapSet.intersection(@metrics_mapset, MapSet.new(metrics))
+      |> Enum.to_list()
     end)
-    |> case do
-      {:error, error} -> {:error, error}
-      metrics when is_list(metrics) -> {:ok, metrics}
-    end
   end
 
   @impl Sanbase.Metric.Behaviour

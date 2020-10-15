@@ -249,6 +249,26 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
     {query, args}
   end
 
+  def available_metrics_for_slug_query(slug) do
+    query = """
+    SELECT name
+    FROM available_metrics FINAL
+    INNER JOIN (
+      SELECT name, metric_id
+      FROM metric_metadata FINAL
+    ) USING (metric_id)
+    PREWHERE
+      asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
+      end_dt > toDateTime(?2)
+
+    """
+
+    # artifical boundary so the query checks less results
+    datetime = Timex.shift(Timex.now(), days: -14) |> DateTime.to_unix()
+    args = [slug, datetime]
+    {query, args}
+  end
+
   # Private functions
 
   # Add additional `=` filters to the query. This is mostly used with labeled

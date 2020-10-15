@@ -173,8 +173,6 @@ defmodule Sanbase.Price do
     async with {:ok, prices_slug_usd} <- timeseries_data(slug_or_slugs, from, to, interval, opts),
                {:ok, prices_ethereum_usd} <- timeseries_data("ethereum", from, to, interval, opts) do
       transform_func = fn value1, value2 ->
-        IO.inspect(value1)
-        IO.inspect(value2)
         if value1 != nil && value2 != 0 && value2 != nil, do: value1 / value2, else: 0
       end
 

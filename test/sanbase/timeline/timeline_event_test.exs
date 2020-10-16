@@ -138,7 +138,8 @@ defmodule Sanbase.Timeline.TimelineEventTest do
 
   defp default_trigger_settings_string_keys() do
     %{
-      "type" => "daily_active_addresses",
+      "type" => "metric_signal",
+      "metric" => "active_addresses_24h",
       "target" => %{"slug" => "santiment"},
       "channel" => "telegram",
       "time_window" => "1d",

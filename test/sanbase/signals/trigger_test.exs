@@ -17,7 +17,8 @@ defmodule Sanbase.Signal.TriggersTest do
     user = insert(:user)
 
     trigger_settings = %{
-      type: "daily_active_addresses",
+      type: "metric_signal",
+      metric: "active_addresses_24h",
       target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
@@ -74,7 +75,8 @@ defmodule Sanbase.Signal.TriggersTest do
     user = insert(:user)
 
     trigger_settings = %{
-      type: "daily_active_addresses",
+      type: "metric_signal",
+      metric: "active_addresses_24h",
       target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
@@ -102,7 +104,8 @@ defmodule Sanbase.Signal.TriggersTest do
     user = insert(:user)
 
     trigger_settings = %{
-      type: "daily_active_addresses",
+      type: "metric_signal",
+      metric: "active_addresses_24h",
       target: %{slug: "santiment"},
       channel: "unknown",
       time_window: "1d",
@@ -137,7 +140,8 @@ defmodule Sanbase.Signal.TriggersTest do
     user = insert(:user)
 
     settings = %{
-      type: "daily_active_addresses",
+      type: "metric_signal",
+      metric: "active_addresses_24h",
       target: %{slug: "santiment"},
       time_window: "1d",
       operation: %{percent_up: 300.0}
@@ -218,7 +222,8 @@ defmodule Sanbase.Signal.TriggersTest do
     user = insert(:user)
 
     trigger_settings1 = %{
-      type: "daily_active_addresses",
+      type: "metric_signal",
+      metric: "active_addresses_24h",
       target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
@@ -254,7 +259,8 @@ defmodule Sanbase.Signal.TriggersTest do
     user = insert(:user)
 
     trigger_settings1 = %{
-      type: "daily_active_addresses",
+      type: "metric_signal",
+      metric: "active_addresses_24h",
       target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
@@ -282,7 +288,8 @@ defmodule Sanbase.Signal.TriggersTest do
     trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:id)
 
     updated_trigger = %{
-      type: "daily_active_addresses",
+      type: "metric_signal",
+      metric: "active_addresses_24h",
       target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
@@ -321,7 +328,8 @@ defmodule Sanbase.Signal.TriggersTest do
     user = insert(:user)
 
     trigger_settings = %{
-      type: "daily_active_addresses",
+      type: "metric_signal",
+      metric: "active_addresses_24h",
       target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",

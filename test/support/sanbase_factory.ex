@@ -324,7 +324,8 @@ defmodule Sanbase.Factory do
 
   defp trigger_settings() do
     %{
-      "type" => "daily_active_addresses",
+      "type" => "metric_signal",
+      "metric" => "daily_active_addresses",
       "target" => %{"slug" => "santiment"},
       "channel" => "telegram",
       "time_window" => "1d",

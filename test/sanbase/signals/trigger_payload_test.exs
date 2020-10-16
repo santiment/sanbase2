@@ -6,7 +6,7 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
   import Sanbase.TestHelpers
 
   alias Sanbase.Signal.{UserTrigger, Scheduler}
-  alias Sanbase.Signal.Trigger.DailyActiveAddressesSettings
+  alias Sanbase.Signal.Trigger.MetricTriggerSettings
 
   setup do
     Sanbase.Signal.Evaluator.Cache.clear_all()
@@ -34,7 +34,8 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
       |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
 
     trigger_settings = %{
-      type: "daily_active_addresses",
+      type: "metric_signal",
+      metric: "active_addresses_24h",
       target: %{slug: project.slug},
       channel: ["telegram", "email"],
       time_window: "1d",
@@ -51,7 +52,7 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
 
     self_pid = self()
 
-    Sanbase.Mock.prepare_mock2(&DailyActiveAddressesSettings.get_data/1, [
+    Sanbase.Mock.prepare_mock2(&MetricTriggerSettings.get_data/1, [
       {project.slug, daily_active_addresses}
     ])
     |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
@@ -60,7 +61,7 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
     end)
     |> Sanbase.Mock.prepare_mock2(&Sanbase.MandrillApi.send/3, {:ok, %{"status" => "sent"}})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Scheduler.run_signal(DailyActiveAddressesSettings)
+      Scheduler.run_signal(MetricTriggerSettings)
 
       assert_receive({:telegram_to_self, message}, 1000)
       assert message =~ "10,456.00"
@@ -76,7 +77,8 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
       |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
 
     trigger_settings = %{
-      type: "daily_active_addresses",
+      type: "metric_signal",
+      metric: "active_addresses_24h",
       target: %{slug: project.slug},
       channel: ["telegram", "email"],
       time_window: "1d",
@@ -93,7 +95,7 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
 
     self_pid = self()
 
-    Sanbase.Mock.prepare_mock2(&DailyActiveAddressesSettings.get_data/1, [
+    Sanbase.Mock.prepare_mock2(&MetricTriggerSettings.get_data/1, [
       {project.slug, daily_active_addresses}
     ])
     |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
@@ -102,7 +104,7 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
     end)
     |> Sanbase.Mock.prepare_mock2(&Sanbase.MandrillApi.send/3, {:ok, %{"status" => "sent"}})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Scheduler.run_signal(DailyActiveAddressesSettings)
+      Scheduler.run_signal(MetricTriggerSettings)
 
       assert_receive({:telegram_to_self, message}, 1000)
       assert message =~ "9.23 Billion"
@@ -118,7 +120,8 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
       |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
 
     trigger_settings = %{
-      type: "daily_active_addresses",
+      type: "metric_signal",
+      metric: "active_addresses_24h",
       target: %{slug: project.slug},
       channel: ["telegram", "email"],
       time_window: "1d",
@@ -135,7 +138,7 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
 
     self_pid = self()
 
-    Sanbase.Mock.prepare_mock2(&DailyActiveAddressesSettings.get_data/1, [
+    Sanbase.Mock.prepare_mock2(&MetricTriggerSettings.get_data/1, [
       {project.slug, daily_active_addresses}
     ])
     |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
@@ -144,7 +147,7 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
     end)
     |> Sanbase.Mock.prepare_mock2(&Sanbase.MandrillApi.send/3, {:ok, %{"status" => "sent"}})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Scheduler.run_signal(DailyActiveAddressesSettings)
+      Scheduler.run_signal(MetricTriggerSettings)
 
       assert_receive({:telegram_to_self, message}, 1000)
       assert message =~ SanbaseWeb.Endpoint.show_signal_url(trigger.id)
@@ -160,7 +163,8 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
       |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
 
     trigger_settings = %{
-      type: "daily_active_addresses",
+      type: "metric_signal",
+      metric: "active_addresses_24h",
       target: %{slug: project.slug},
       channel: [%{"webhook" => "url"}],
       time_window: "1d",
@@ -175,7 +179,7 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
         settings: trigger_settings
       })
 
-    Sanbase.Mock.prepare_mock2(&DailyActiveAddressesSettings.get_data/1, [
+    Sanbase.Mock.prepare_mock2(&MetricTriggerSettings.get_data/1, [
       {project.slug, daily_active_addresses}
     ])
     |> Sanbase.Mock.prepare_mock2(
@@ -183,7 +187,7 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
       {:ok, %HTTPoison.Response{status_code: 200}}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Scheduler.run_signal(DailyActiveAddressesSettings)
+      Scheduler.run_signal(MetricTriggerSettings)
 
       trigger = trigger |> Sanbase.Repo.preload([:user])
 

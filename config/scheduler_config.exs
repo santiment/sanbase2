@@ -20,10 +20,6 @@ config :sanbase, Sanbase.Signals.Scheduler,
       schedule: "1-59/5 * * * *",
       task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.ScreenerTriggerSettings]}
     ],
-    daily_active_addresses_sonar_signal: [
-      schedule: "2-59/5 * * * *",
-      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.DailyActiveAddressesSettings]}
-    ],
     price_percent_change_sonar_signal: [
       schedule: "3-59/5 * * * *",
       task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.PricePercentChangeSettings]}

@@ -127,21 +127,6 @@ defmodule Sanbase.Signal.UserTrigger do
   Get all active triggers of a given type. Returns both public and private as it is used
   to run the signals evaluator and not in the public API.
   """
-  @spec get_all_triggers_by_type(String.t()) :: list(%__MODULE__{})
-  def get_all_triggers_by_type(type) do
-    from(
-      ut in UserTrigger,
-      where: trigger_type_is(type),
-      preload: [{:user, :user_settings}, :tags]
-    )
-    |> Repo.all()
-    |> Enum.map(&trigger_in_struct/1)
-  end
-
-  @doc ~s"""
-  Get all active triggers of a given type. Returns both public and private as it is used
-  to run the signals evaluator and not in the public API.
-  """
   @spec get_active_triggers_by_type(String.t()) :: list(%__MODULE__{})
   def get_active_triggers_by_type(type) do
     from(

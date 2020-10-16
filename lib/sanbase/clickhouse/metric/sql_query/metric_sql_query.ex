@@ -205,11 +205,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   def first_datetime_query(metric, nil) do
     query = """
     SELECT
-      toUnixTimestamp(toDateTime(min(dt)))
-    FROM #{Map.get(@table_map, metric)}
+      toUnixTimestamp(start_dt)
+    FROM available_metrics FINAL
     PREWHERE
-      metric_id = ( SELECT metric_id AS metric_id FROM metric_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
-      value != 0 AND isNotNull(value) AND NOT isNaN(toFloat64(value))
+      metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 )
     """
 
     args = [Map.get(@name_to_metric_map, metric)]
@@ -220,12 +219,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   def first_datetime_query(metric, slug) do
     query = """
     SELECT
-      toUnixTimestamp(toDateTime(min(dt)))
-    FROM #{Map.get(@table_map, metric)}
+      toUnixTimestamp(start_dt)
+    FROM available_metrics FINAL
     PREWHERE
       asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
-      metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 ) AND
-      value != 0 AND isNotNull(value) AND NOT isNaN(toFloat64(value))
+      metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 )
     """
 
     args = [slug, Map.get(@name_to_metric_map, metric)]

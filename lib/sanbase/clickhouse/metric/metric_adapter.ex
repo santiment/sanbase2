@@ -36,7 +36,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @metrics_mapset @metrics_name_list |> MapSet.new()
   @incomplete_data_map FileHandler.incomplete_data_map()
   @selectors_map FileHandler.selectors_map()
-  @tables_list FileHandler.table_map() |> Map.values() |> List.flatten() |> Enum.uniq()
 
   @default_complexity_weight 0.3
 

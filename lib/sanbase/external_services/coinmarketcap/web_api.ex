@@ -54,6 +54,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
         wait_rate_limit(resp)
         get_first_datetime(id)
 
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
+        body
+        |> Jason.decode!()
+        |> get_in(["status", "timestamp"])
+        |> case do
+          bin_ts when is_binary(bin_ts) -> {:ok, Sanbase.DateTimeUtils.from_iso8601!(bin_ts)}
+          _ -> {:error, "[CMC] Error fetching first datetime for #{id}."}
+        end
+
       {:ok, %Tesla.Env{status: 400, body: body}} ->
         body
         |> Jason.decode!()

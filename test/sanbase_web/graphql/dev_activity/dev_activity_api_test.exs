@@ -117,7 +117,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiGithubTest do
   describe "dev activity for market segments" do
     test "one segment with multiple projects", context do
       Sanbase.Mock.prepare_mock2(
-        &Sanbase.Clickhouse.Metric.timeseries_data/6,
+        &Sanbase.Clickhouse.MetricAdapter.timeseries_data/6,
         {:ok,
          [
            %{datetime: context.dt1, value: 100},

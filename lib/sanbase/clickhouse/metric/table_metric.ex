@@ -1,5 +1,5 @@
-defmodule Sanbase.Clickhouse.Metric.TableMetric do
-  import Sanbase.Clickhouse.Metric.TableSqlQuery
+defmodule Sanbase.Clickhouse.MetricAdapter.TableMetric do
+  import Sanbase.Clickhouse.MetricAdapter.TableSqlQuery
   import Sanbase.Utils.Transform
 
   alias Sanbase.ClickhouseRepo

@@ -125,7 +125,7 @@ defmodule Sanbase.Model.ProjectListSelectorTest do
       }
 
       Sanbase.Mock.prepare_mock2(
-        &Sanbase.Clickhouse.Metric.slugs_by_filter/6,
+        &Sanbase.Clickhouse.MetricAdapter.slugs_by_filter/6,
         {:ok, [p1.slug, p3.slug, p4.slug]}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -224,7 +224,7 @@ defmodule Sanbase.Model.ProjectListSelectorTest do
       }
 
       Sanbase.Mock.prepare_mock2(
-        &Sanbase.Clickhouse.Metric.slugs_by_filter/6,
+        &Sanbase.Clickhouse.MetricAdapter.slugs_by_filter/6,
         {:ok, [p1.slug, p2.slug, p3.slug]}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
@@ -260,7 +260,7 @@ defmodule Sanbase.Model.ProjectListSelectorTest do
       }
 
       Sanbase.Mock.prepare_mock2(
-        &Sanbase.Clickhouse.Metric.slugs_by_filter/6,
+        &Sanbase.Clickhouse.MetricAdapter.slugs_by_filter/6,
         {:ok, [p1.slug, p3.slug, p4.slug]}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->

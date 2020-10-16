@@ -25,7 +25,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
     %{conn: conn, slug: slug, from: from, to: to} = context
 
     Sanbase.Mock.prepare_mock(
-      Sanbase.Clickhouse.Metric,
+      Sanbase.Clickhouse.MetricAdapter,
       :aggregated_timeseries_data,
       fn _, slug, _, _, _ -> {:ok, %{slug => 100}} end
     )

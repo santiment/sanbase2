@@ -32,7 +32,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     insert(:random_project, market_segments: [market_segment])
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.Metric.timeseries_data/6,
+      &Sanbase.Clickhouse.MetricAdapter.timeseries_data/6,
       {:ok,
        [
          %{value: 100.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
@@ -58,7 +58,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
              ]
 
       assert_called(
-        Sanbase.Clickhouse.Metric.timeseries_data(
+        Sanbase.Clickhouse.MetricAdapter.timeseries_data(
           "holders_distribution_0.1_to_1",
           %{slug: [:_, :_, :_]},
           from,
@@ -79,7 +79,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     p3 = insert(:random_project, market_segments: [market_segment])
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.Metric.timeseries_data/6,
+      &Sanbase.Clickhouse.MetricAdapter.timeseries_data/6,
       {:ok,
        [
          %{value: 100.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
@@ -105,7 +105,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
              ]
 
       assert_called(
-        Sanbase.Clickhouse.Metric.timeseries_data(
+        Sanbase.Clickhouse.MetricAdapter.timeseries_data(
           "holders_distribution_0.1_to_1",
           %{slug: [:_, :_]},
           from,
@@ -159,7 +159,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     {:ok, %{default_aggregation: aggregation}} = Metric.metadata(metric)
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.Metric.timeseries_data/6,
+      &Sanbase.Clickhouse.MetricAdapter.timeseries_data/6,
       {:ok,
        [
          %{value: 100.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
@@ -230,7 +230,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     {:ok, %{available_aggregations: aggregations}} = Metric.metadata(metric)
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.Metric.timeseries_data/6,
+      &Sanbase.Clickhouse.MetricAdapter.timeseries_data/6,
       {:ok,
        [
          %{value: 100.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},

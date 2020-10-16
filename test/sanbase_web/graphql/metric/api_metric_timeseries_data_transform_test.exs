@@ -26,7 +26,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTransformTest do
       %{datetime: ~U[2019-01-08T00:00:00Z], value: 320.0}
     ]
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.Metric.timeseries_data/6, {:ok, data})
+    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, {:ok, data})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         get_timeseries_metric(

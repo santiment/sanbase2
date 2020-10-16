@@ -1,4 +1,4 @@
-defmodule Sanbase.Clickhouse.Metric.Description do
+defmodule Sanbase.Clickhouse.MetricAdapter.Description do
   @circulation """
   Token circulation shows the distribution of non-transacted tokens over time.
   In other words - how many tokens are being HODLed, and for how long.

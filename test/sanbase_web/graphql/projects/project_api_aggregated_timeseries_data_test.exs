@@ -18,14 +18,17 @@ defmodule SanbaseWeb.Graphql.ProjectApiAggregatedTimeseriesDataTest do
     slugs = [context.p1, context.p2, context.p3, context.p4, context.p5] |> Enum.map(& &1.slug)
 
     Sanbase.Mock.prepare_mock(
-      Sanbase.Clickhouse.Metric,
+      Sanbase.Clickhouse.MetricAdapter,
       :aggregated_timeseries_data,
       fn _, %{slug: slugs}, _, _, _ ->
         result = slugs |> Enum.into(%{}, fn slug -> {slug, :rand.uniform(100)} end)
         {:ok, result}
       end
     )
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.Metric.available_slugs/1, {:ok, slugs})
+    |> Sanbase.Mock.prepare_mock2(
+      &Sanbase.Clickhouse.MetricAdapter.available_slugs/1,
+      {:ok, slugs}
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         execute(

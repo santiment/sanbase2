@@ -31,7 +31,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFiltersTest do
     %{p1: p1, p2: p2, p3: p3, p4: p4, p5: p5} = context
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.Metric.slugs_by_filter/6,
+      &Sanbase.Clickhouse.MetricAdapter.slugs_by_filter/6,
       {:ok, [p1.slug, p2.slug]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -73,7 +73,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFiltersTest do
     %{p1: p1, p2: p2, p3: p3, p4: p4, p5: p5} = context
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.Metric.slugs_by_filter/6,
+      &Sanbase.Clickhouse.MetricAdapter.slugs_by_filter/6,
       {:ok, [p1.slug, p2.slug, p3.slug]}
     )
     |> Sanbase.Mock.prepare_mock2(

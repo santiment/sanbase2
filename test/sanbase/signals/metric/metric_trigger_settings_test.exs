@@ -118,7 +118,7 @@ defmodule Sanbase.Signal.MetricTriggerSettingsTest do
         ]
         |> Sanbase.Mock.wrap_consecutives(arity: 6)
 
-      Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.Metric, :timeseries_data, mock_fun)
+      Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.MetricAdapter, :timeseries_data, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         [triggered] =
           MetricTriggerSettings.type()
@@ -155,7 +155,7 @@ defmodule Sanbase.Signal.MetricTriggerSettingsTest do
         ]
         |> Sanbase.Mock.wrap_consecutives(arity: 6)
 
-      Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.Metric, :timeseries_data, mock_fun)
+      Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.MetricAdapter, :timeseries_data, mock_fun)
       |> Sanbase.Mock.run_with_mocks(fn ->
         [triggered] =
           MetricTriggerSettings.type()

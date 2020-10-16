@@ -1,6 +1,6 @@
-defmodule Sanbase.Clickhouse.Metric.HistogramMetric do
+defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
-  import Sanbase.Clickhouse.Metric.HistogramSqlQuery
+  import Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery
 
   alias Sanbase.ClickhouseRepo
 

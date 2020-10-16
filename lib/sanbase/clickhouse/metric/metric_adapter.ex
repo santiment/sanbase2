@@ -1,4 +1,4 @@
-defmodule Sanbase.Clickhouse.Metric do
+defmodule Sanbase.Clickhouse.MetricAdapter do
   @table "daily_metrics_v2"
 
   @moduledoc ~s"""
@@ -10,8 +10,8 @@ defmodule Sanbase.Clickhouse.Metric do
   @behaviour Sanbase.Metric.Behaviour
 
   import Sanbase.Clickhouse.MetadataHelper
-  import Sanbase.Clickhouse.Metric.SqlQuery
-  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
+  import Sanbase.Clickhouse.MetricAdapter.SqlQuery
+  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
 
   alias __MODULE__.{HistogramMetric, FileHandler, TableMetric}
 
@@ -36,7 +36,6 @@ defmodule Sanbase.Clickhouse.Metric do
   @metrics_mapset @metrics_name_list |> MapSet.new()
   @incomplete_data_map FileHandler.incomplete_data_map()
   @selectors_map FileHandler.selectors_map()
-  @tables_list FileHandler.table_map() |> Map.values() |> List.flatten() |> Enum.uniq()
 
   @default_complexity_weight 0.3
 
@@ -165,19 +164,13 @@ defmodule Sanbase.Clickhouse.Metric do
 
   @impl Sanbase.Metric.Behaviour
   def available_metrics(%{slug: slug}) when is_binary(slug) do
-    Enum.reduce_while(@tables_list, [], fn table, acc ->
-      case available_metrics_in_table(table, slug) do
-        {:ok, metrics} ->
-          {:cont, metrics ++ acc}
+    {query, args} = available_metrics_for_slug_query(slug)
 
-        _ ->
-          {:halt, {:error, "Error fetching available metrics for #{slug}"}}
-      end
+    ClickhouseRepo.query_transform(query, args, fn [metric] -> metric end)
+    |> maybe_apply_function(fn metrics ->
+      MapSet.intersection(@metrics_mapset, MapSet.new(metrics))
+      |> Enum.to_list()
     end)
-    |> case do
-      {:error, error} -> {:error, error}
-      metrics when is_list(metrics) -> {:ok, metrics}
-    end
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -222,10 +215,7 @@ defmodule Sanbase.Clickhouse.Metric do
   defp min_interval(metric), do: Map.get(@min_interval_map, metric)
 
   defp get_available_slugs() do
-    # NOTE: Fetch the metrics from the daily_metrics_v2 only for performance reasons
-    # currently searching in the intraday and distributions tables does not
-    # add slugs that are not present in the daily metrics
-    {query, args} = available_slugs_in_table_query("daily_metrics_v2")
+    {query, args} = available_slugs_query()
 
     ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
   end
@@ -273,24 +263,5 @@ defmodule Sanbase.Clickhouse.Metric do
           Map.put(acc, slug, value)
         end)
     end
-  end
-
-  def available_metrics_in_table(table, slug) do
-    {query, args} = available_metrics_in_table_query(table, slug)
-
-    {:ok, metric_map} = metric_id_to_metric_name_map()
-
-    ClickhouseRepo.query_reduce(query, args, [], fn [metric_id], acc ->
-      metrics = Map.get(metric_map, metric_id |> Sanbase.Math.to_integer())
-
-      case metrics != nil and metrics != [] do
-        true ->
-          metrics = Enum.filter(metrics, &(&1 in @metrics_mapset))
-          metrics ++ acc
-
-        false ->
-          acc
-      end
-    end)
   end
 end

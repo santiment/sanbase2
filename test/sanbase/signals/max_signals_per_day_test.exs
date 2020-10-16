@@ -60,7 +60,7 @@ defmodule Sanbase.Signal.MaxSignalsPerDayTest do
 
     self_pid = self()
 
-    Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.Metric, :timeseries_data, mock_fun)
+    Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.MetricAdapter, :timeseries_data, mock_fun)
     |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
       send(self_pid, {:telegram_to_self, text})
       :ok

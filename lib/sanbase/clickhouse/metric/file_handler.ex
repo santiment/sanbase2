@@ -1,4 +1,4 @@
-defmodule Sanbase.Clickhouse.Metric.FileHandler do
+defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   @moduledoc false
 
   defmodule Helper do

@@ -60,7 +60,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiOrderingTest do
     %{p1: p1, p2: p2, p3: p3, p4: p4, p5: p5} = context
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.Metric.slugs_order/5,
+      &Sanbase.Clickhouse.MetricAdapter.slugs_order/5,
       {:ok, [p1.slug, p2.slug, p3.slug, p4.slug, p5.slug]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->

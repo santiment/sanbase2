@@ -1,5 +1,5 @@
-defmodule Sanbase.Clickhouse.Metric.HistogramSqlQuery do
-  alias Sanbase.Clickhouse.Metric.FileHandler
+defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
+  alias Sanbase.Clickhouse.MetricAdapter.FileHandler
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
   @table_map FileHandler.table_map()

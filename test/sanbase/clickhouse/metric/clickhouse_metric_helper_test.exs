@@ -1,4 +1,4 @@
-defmodule Sanbase.Clickhouse.Metric.HelperTest do
+defmodule Sanbase.Clickhouse.MetricAdapter.HelperTest do
   use Sanbase.DataCase
 
   test "metric id to name map" do

@@ -8,7 +8,7 @@ defmodule Sanbase.Clickhouse.MetadataHelper do
 
   # Map from the names used in ClickHouse to the publicly exposed ones.
   # Example: stack_circulation_20y -> circulation
-  @original_name_to_metric_name Sanbase.Clickhouse.Metric.FileHandler.name_to_metric_map()
+  @original_name_to_metric_name Sanbase.Clickhouse.MetricAdapter.FileHandler.name_to_metric_map()
                                 |> Enum.reduce(%{}, fn {k, v}, acc ->
                                   Map.update(acc, v, [k], fn list -> [k | list] end)
                                 end)

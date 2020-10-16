@@ -1,5 +1,5 @@
-defmodule Sanbase.Clickhouse.Metric.TableSqlQuery do
-  alias Sanbase.Clickhouse.Metric.FileHandler
+defmodule Sanbase.Clickhouse.MetricAdapter.TableSqlQuery do
+  alias Sanbase.Clickhouse.MetricAdapter.FileHandler
 
   @table_map FileHandler.table_map()
   @name_to_metric_map FileHandler.name_to_metric_map()

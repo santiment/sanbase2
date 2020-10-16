@@ -15,7 +15,7 @@ defmodule Sanbase.MetricTest do
   ]
 
   setup_all_with_mocks([
-    {Sanbase.Clickhouse.Metric, [:passthrough],
+    {Sanbase.Clickhouse.MetricAdapter, [:passthrough],
      timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},
     {Sanbase.Clickhouse.Github.MetricAdapter, [:passthrough],
      timeseries_data: fn _, _, _, _, _, _ -> {:ok, @resp} end},

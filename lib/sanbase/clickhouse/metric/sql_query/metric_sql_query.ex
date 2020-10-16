@@ -1,4 +1,4 @@
-defmodule Sanbase.Clickhouse.Metric.SqlQuery do
+defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   @table "daily_metrics_v2"
 
   @moduledoc ~s"""
@@ -15,7 +15,7 @@ defmodule Sanbase.Clickhouse.Metric.SqlQuery do
   import Sanbase.Metric.SqlQuery.Helper,
     only: [aggregation: 3, generate_comparison_string: 3, asset_id_filter: 2]
 
-  alias Sanbase.Clickhouse.Metric.FileHandler
+  alias Sanbase.Clickhouse.MetricAdapter.FileHandler
 
   @name_to_metric_map FileHandler.name_to_metric_map()
   @table_map FileHandler.table_map()

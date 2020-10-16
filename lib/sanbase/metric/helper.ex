@@ -1,7 +1,7 @@
 defmodule Sanbase.Metric.Helper do
   @metric_modules [
     Sanbase.Clickhouse.Github.MetricAdapter,
-    Sanbase.Clickhouse.Metric,
+    Sanbase.Clickhouse.MetricAdapter,
     Sanbase.SocialData.MetricAdapter,
     Sanbase.Price.MetricAdapter,
     Sanbase.Twitter.MetricAdapter,

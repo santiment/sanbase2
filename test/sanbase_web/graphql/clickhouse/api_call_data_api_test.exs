@@ -15,7 +15,7 @@ defmodule SanbaseWeb.Graphql.ApiCallDataApiTest do
   test "export get_metric api calls with the metric as argument", context do
     %{conn: conn, project: project} = context
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.Metric.timeseries_data/6, {:ok, []})
+    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, {:ok, []})
     |> Sanbase.Mock.run_with_mocks(fn ->
       from = ~U[2019-01-05 00:00:00Z]
       to = ~U[2019-01-06 00:00:00Z]

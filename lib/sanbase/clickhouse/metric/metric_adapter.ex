@@ -1,4 +1,4 @@
-defmodule Sanbase.Clickhouse.Metric do
+defmodule Sanbase.Clickhouse.MetricAdapter do
   @table "daily_metrics_v2"
 
   @moduledoc ~s"""
@@ -10,7 +10,7 @@ defmodule Sanbase.Clickhouse.Metric do
   @behaviour Sanbase.Metric.Behaviour
 
   import Sanbase.Clickhouse.MetadataHelper
-  import Sanbase.Clickhouse.Metric.SqlQuery
+  import Sanbase.Clickhouse.MetricAdapter.SqlQuery
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
 
   alias __MODULE__.{HistogramMetric, FileHandler, TableMetric}

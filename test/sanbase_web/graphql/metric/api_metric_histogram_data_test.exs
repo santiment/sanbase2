@@ -30,7 +30,10 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
       |> Enum.reject(&String.contains?(&1, "uniswap"))
       |> Enum.random()
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.Metric.histogram_data/6, success_result())
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Clickhouse.MetricAdapter.histogram_data/6,
+      success_result()
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         get_histogram_metric(conn, metric, slug, from, to, "1d", 3)
@@ -54,7 +57,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
       Metric.available_histogram_metrics() |> Enum.reject(&String.contains?(&1, "uniswap"))
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.Metric.histogram_data/6,
+      &Sanbase.Clickhouse.MetricAdapter.histogram_data/6,
       {:ok, [%{range: [2.0, 3.0], value: 15.0}]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -114,7 +117,10 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
     %{conn: conn, slug: slug, to: to} = context
     metric = "all_spent_coins_cost"
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.Metric.histogram_data/6, success_result())
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Clickhouse.MetricAdapter.histogram_data/6,
+      success_result()
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         get_histogram_metric(conn, metric, slug, nil, to, "47h", 3)
@@ -136,7 +142,10 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
     %{conn: conn, slug: slug, to: to} = context
     metric = "spent_coins_cost"
 
-    Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.Metric.histogram_data/6, success_result())
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Clickhouse.MetricAdapter.histogram_data/6,
+      success_result()
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       capture_log(fn ->
         result = get_histogram_metric(conn, metric, slug, nil, to, "1d", 3)

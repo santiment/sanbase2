@@ -150,7 +150,7 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
     }
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.Metric.slugs_by_filter/6,
+      &Sanbase.Clickhouse.MetricAdapter.slugs_by_filter/6,
       {:ok, ["ethereum", "dai", "bitcoin"]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -200,7 +200,7 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
       }
     }
 
-    Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.Metric, :slugs_by_filter, fn
+    Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.MetricAdapter, :slugs_by_filter, fn
       "daily_active_addresses", _, _, _, _, _ -> {:ok, [p1.slug, p2.slug, p3.slug]}
       "nvt", _, _, _, _, _ -> {:ok, [p3.slug, p4.slug, p5.slug]}
     end)
@@ -239,7 +239,7 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
     }
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.Metric.slugs_by_filter/6,
+      &Sanbase.Clickhouse.MetricAdapter.slugs_by_filter/6,
       {:ok, ["ethereum", "dai", "bitcoin"]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->

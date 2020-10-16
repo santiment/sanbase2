@@ -5,6 +5,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
 
   use Ecto.Schema
 
+  import Sanbase.Utils.Transform
+
   alias Sanbase.ClickhouseRepo
 
   require Logger
@@ -59,8 +61,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       [timestamp, from_address, to_address, trx_hash, trx_value] ->
         %{
           datetime: DateTime.from_unix!(timestamp),
-          from_address: from_address,
-          to_address: to_address,
+          from_address: maybe_transform_from_address(from_address),
+          to_address: maybe_transform_to_address(to_address),
           trx_hash: trx_hash,
           trx_value: trx_value
         }
@@ -76,8 +78,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       [timestamp, from_address, to_address, trx_hash, trx_value] ->
         %{
           datetime: DateTime.from_unix!(timestamp),
-          from_address: from_address,
-          to_address: to_address,
+          from_address: maybe_transform_from_address(from_address),
+          to_address: maybe_transform_to_address(to_address),
           trx_hash: trx_hash,
           trx_value: trx_value / @eth_decimals
         }

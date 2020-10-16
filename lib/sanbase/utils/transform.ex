@@ -110,4 +110,9 @@ defmodule Sanbase.Utils.Transform do
     end)
     |> Enum.sort_by(&DateTime.to_unix(&1[:datetime]))
   end
+
+  def maybe_transform_from_address("0x0000000000000000000000000000000000000000"), do: "mint"
+  def maybe_transform_from_address(address), do: address
+  def maybe_transform_to_address("0x0000000000000000000000000000000000000000"), do: "burn"
+  def maybe_transform_to_address(address), do: address
 end

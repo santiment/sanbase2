@@ -17,23 +17,19 @@ config :sanbase, Sanbase.Signals.Scheduler,
         {Sanbase.Signal.Scheduler, :run_signal, [Trigger.PriceVolumeDifferenceTriggerSettings]}
     ],
     screener_sonar_signal: [
-      schedule: "1-59/5 * * * *",
+      schedule: "2-59/5 * * * *",
       task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.ScreenerTriggerSettings]}
     ],
-    price_percent_change_sonar_signal: [
-      schedule: "3-59/5 * * * *",
-      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.PricePercentChangeSettings]}
-    ],
-    price_absolute_change_sonar_signal: [
-      schedule: "4-59/5 * * * *",
-      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.PriceAbsoluteChangeSettings]}
-    ],
     eth_wallet_signal: [
-      schedule: "5-59/5 * * * *",
+      schedule: "3-59/5 * * * *",
       task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.EthWalletTriggerSettings]}
     ],
+    wallet_movement: [
+      schedule: "3-59/5 * * * *",
+      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.WalletTriggerSettings]}
+    ],
     trending_words_sonar_signal: [
-      schedule: "5-59/5 * * * *",
+      schedule: "4-59/5 * * * *",
       task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.TrendingWordsTriggerSettings]}
     ],
     metric_signal: [

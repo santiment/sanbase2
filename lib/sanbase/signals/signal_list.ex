@@ -5,8 +5,6 @@ defmodule Sanbase.Signal.List do
     [
       Trigger.EthWalletTriggerSettings,
       Trigger.MetricTriggerSettings,
-      Trigger.PriceAbsoluteChangeSettings,
-      Trigger.PricePercentChangeSettings,
       Trigger.PriceVolumeDifferenceTriggerSettings,
       Trigger.ScreenerTriggerSettings,
       Trigger.TrendingWordsTriggerSettings,

@@ -215,10 +215,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   defp min_interval(metric), do: Map.get(@min_interval_map, metric)
 
   defp get_available_slugs() do
-    # NOTE: Fetch the metrics from the daily_metrics_v2 only for performance reasons
-    # currently searching in the intraday and distributions tables does not
-    # add slugs that are not present in the daily metrics
-    {query, args} = available_slugs_in_table_query("daily_metrics_v2")
+    {query, args} = available_slugs_query()
 
     ClickhouseRepo.query_transform(query, args, fn [slug] -> slug end)
   end
@@ -266,24 +263,5 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
           Map.put(acc, slug, value)
         end)
     end
-  end
-
-  def available_metrics_in_table(table, slug) do
-    {query, args} = available_metrics_in_table_query(table, slug)
-
-    {:ok, metric_map} = metric_id_to_metric_name_map()
-
-    ClickhouseRepo.query_reduce(query, args, [], fn [metric_id], acc ->
-      metrics = Map.get(metric_map, metric_id |> Sanbase.Math.to_integer())
-
-      case metrics != nil and metrics != [] do
-        true ->
-          metrics = Enum.filter(metrics, &(&1 in @metrics_mapset))
-          metrics ++ acc
-
-        false ->
-          acc
-      end
-    end)
   end
 end

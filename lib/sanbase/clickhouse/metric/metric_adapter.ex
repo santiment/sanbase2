@@ -36,7 +36,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @metrics_mapset @metrics_name_list |> MapSet.new()
   @incomplete_data_map FileHandler.incomplete_data_map()
   @selectors_map FileHandler.selectors_map()
-
+  @metric_to_name_map FileHandler.metric_to_name_map()
   @default_complexity_weight 0.3
 
   @type slug :: String.t()
@@ -166,7 +166,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   def available_metrics(%{slug: slug}) when is_binary(slug) do
     {query, args} = available_metrics_for_slug_query(slug)
 
-    ClickhouseRepo.query_transform(query, args, fn [metric] -> metric end)
+    ClickhouseRepo.query_transform(query, args, fn [metric] ->
+      Map.get(@metric_to_name_map, metric)
+    end)
     |> maybe_apply_function(fn metrics ->
       MapSet.intersection(@metrics_mapset, MapSet.new(metrics))
       |> Enum.to_list()

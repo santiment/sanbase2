@@ -91,7 +91,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
     case selector_to_args(selector) do
       {module, asset, decimals} ->
-        module.balance_Change(address, asset, decimals, from, to)
+        module.balance_change(address, asset, decimals, from, to)
 
       {:error, error} ->
         {:error, error}

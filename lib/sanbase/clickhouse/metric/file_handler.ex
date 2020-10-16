@@ -53,6 +53,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
 
   @metrics_data_type_map Helper.name_to_field_map(@metrics_json, "data_type", &String.to_atom/1)
   @name_to_metric_map Helper.name_to_field_map(@metrics_json, "metric")
+  @metric_to_name_map @name_to_metric_map |> Map.new(fn {k, v} -> {v, k} end)
   @access_map Helper.name_to_field_map(@metrics_json, "access", &String.to_atom/1)
   @table_map Helper.name_to_field_map(@metrics_json, "table")
   @aggregation_map Helper.name_to_field_map(@metrics_json, "aggregation", &String.to_atom/1)
@@ -93,6 +94,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   def min_interval_map(), do: @min_interval_map
   def min_plan_map(), do: @min_plan_map
   def name_to_metric_map(), do: @name_to_metric_map
+  def metric_to_name_map(), do: @metric_to_name_map
   def human_readable_name_map(), do: @human_readable_name_map
   def metric_version_map(), do: @metric_version_map
   def metrics_data_type_map(), do: @metrics_data_type_map

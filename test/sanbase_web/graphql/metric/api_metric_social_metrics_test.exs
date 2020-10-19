@@ -111,10 +111,13 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
       {"data":{"#{from}":100,"#{to}":200}}
       """
 
+      res = {:ok, [%{datetime: from, value: 100.0}, %{datetime: to, value: 200.0}]}
+
       Sanbase.Mock.prepare_mock2(
         &HTTPoison.get/3,
         {:ok, %HTTPoison.Response{body: resp, status_code: 200}}
       )
+      |> Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, res)
       |> Sanbase.Mock.run_with_mocks(fn ->
         for metric <- metrics do
           result =
@@ -143,6 +146,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
         {"data":{"#{from}":100,"#{to}":200}}
       """
 
+      res = {:ok, [%{datetime: from, value: 100.0}, %{datetime: to, value: 200.0}]}
+
       Sanbase.Mock.prepare_mock(HTTPoison, :get, fn _, _, options ->
         source =
           Enum.find(Keyword.get(options, :params), &match?({"source", _}, &1))
@@ -154,6 +159,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
           _ -> {:ok, %HTTPoison.Response{body: resp2, status_code: 200}}
         end
       end)
+      |> Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, res)
       |> Sanbase.Mock.run_with_mocks(fn ->
         for metric <- metrics do
           result =
@@ -186,10 +192,13 @@ defmodule SanbaseWeb.Graphql.ApiMetricSocialMetricsTest do
       {"data":{"#{from}":15,"#{to}":20}}
       """
 
+      res = {:ok, [%{datetime: from, value: 15.0}, %{datetime: to, value: 20.0}]}
+
       Sanbase.Mock.prepare_mock2(
         &HTTPoison.get/3,
         {:ok, %HTTPoison.Response{body: resp, status_code: 200}}
       )
+      |> Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, res)
       |> Sanbase.Mock.run_with_mocks(fn ->
         for metric <- metrics do
           result =

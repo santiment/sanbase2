@@ -6,7 +6,8 @@
     "version": "2020-07-31",
     "access": "restricted",
     "selectors": [
-      "slug"
+      "slug",
+      "text"
     ],
     "min_plan": {
       "SANAPI": "free",

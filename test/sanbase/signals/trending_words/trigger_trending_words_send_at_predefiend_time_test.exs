@@ -84,7 +84,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
              end) =~
-               "In total 1/1 (0 have disabled channel) trending_words signals were sent successfully"
+               "In total 1/1 trending_words signals were sent successfully"
 
       user_signal = HistoricalActivity |> Sanbase.Repo.all() |> List.first()
       assert user_signal.user_id == context.user.id
@@ -129,7 +129,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
              end) =~
-               "In total 1/1 (0 have disabled channel) trending_words signals were sent successfully"
+               "In total 1/1 trending_words signals were sent successfully"
 
       {:ok, ut} = UserTrigger.get_trigger_by_id(context.user, context.trigger_trending_words.id)
       refute ut.trigger.is_active

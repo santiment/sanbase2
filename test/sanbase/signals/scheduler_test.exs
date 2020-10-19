@@ -74,7 +74,7 @@ defmodule Sanbase.Signal.SchedulerTest do
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
              end) =~
-               "In total 1/1 (0 have disabled channel) metric_signal signals were sent successfully"
+               "In total 1/1 metric_signal signals were sent successfully"
 
       ut = Sanbase.Repo.get(UserTrigger, trigger.id)
       assert ut.trigger.is_repeating == false
@@ -94,7 +94,7 @@ defmodule Sanbase.Signal.SchedulerTest do
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
              end) =~
-               "In total 1/1 (0 have disabled channel) metric_signal signals were sent successfully"
+               "In total 1/1 metric_signal signals were sent successfully"
 
       ut = Sanbase.Repo.get(UserTrigger, trigger.id)
       assert ut.trigger.is_repeating == false

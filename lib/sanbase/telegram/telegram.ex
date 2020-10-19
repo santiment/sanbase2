@@ -65,7 +65,7 @@ defmodule Sanbase.Telegram do
   def send_message(%User{} = user, text) do
     case UserSettings.settings_for(user) do
       %Settings{telegram_chat_id: chat_id} when is_integer(chat_id) ->
-        send_message_to_chat_id(chat_id, text)
+        send_message_to_chat_id(chat_id, text, user)
 
       %Settings{telegram_chat_id: chat_id} ->
         {:error,
@@ -79,8 +79,9 @@ defmodule Sanbase.Telegram do
   @doc ~s"""
   Send a telegram message to a given chat_id
   """
-  @spec send_message_to_chat_id(non_neg_integer(), message) :: :ok | {:error, String.t()}
-  def send_message_to_chat_id(chat_id, text) do
+  @spec send_message_to_chat_id(non_neg_integer(), message, nil | %User{}) ::
+          :ok | {:error, String.t()}
+  def send_message_to_chat_id(chat_id, text, user \\ nil) do
     content =
       %{
         parse_mode: "markdown",
@@ -93,6 +94,15 @@ defmodule Sanbase.Telegram do
     case post("sendMessage", content) do
       {:ok, %Tesla.Env{status: 200}} ->
         :ok
+
+      {:ok, %Tesla.Env{status: 403}} ->
+        user_data = if user, do: "User with id #{user.id}", else: "User"
+
+        error_msg =
+          "Telegram message not sent. Reason: #{user_data} has blocked the telegram bot."
+
+        Logger.info(error_msg)
+        {:error, error_msg}
 
       error ->
         Logger.warn("Telegram message not sent. Reason: #{inspect(error)}")
@@ -117,17 +127,19 @@ defmodule Sanbase.Telegram do
             :ok
 
           {:error, changeset} ->
+            error_msg = Sanbase.Utils.ErrorHandling.changeset_errors_to_str(changeset)
+
             Logger.error(
-              "Cannot set telegram chat id for user id #{user_id}. Reason: #{inspect(changeset)}"
+              "Cannot set telegram chat id for user id #{user_id}. Reason: #{error_msg}"
             )
 
-            {:error, changeset}
+            {:error, error_msg}
         end
 
         :ok
 
       _ ->
-        {:error, "User token not existent"}
+        {:error, "There is not user connected with the provided user token."}
     end
   end
 

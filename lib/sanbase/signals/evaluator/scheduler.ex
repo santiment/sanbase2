@@ -216,14 +216,22 @@ defmodule Sanbase.Signal.Scheduler do
       Logger.warn("Cannot send a #{type} signal. Reason: #{inspect(error)}")
     end
 
-    disabled_count = Enum.filter(list, &match?({_, :channel_disabled}, &1)) |> Enum.count()
-    verb = if disabled_count == 1, do: "has", else: "have"
+    telegram_bot_blocked_count =
+      Enum.count(list, fn
+        {_identifier, error} when is_binary(error) ->
+          String.contains?(error, "blocked the telegram bot")
 
-    Logger.info(
-      "In total #{successful_messages_count}/#{length(list)} (#{disabled_count} #{verb} disabled channel) #{
-        type
-      } signals were sent successfully."
-    )
+        {_identifier, _status} ->
+          false
+      end)
+
+    disabled_count = Enum.count(list, &match?({_, :channel_disabled}, &1))
+
+    Logger.info("""
+    In total #{successful_messages_count}/#{length(list)} #{type} signals were sent successfully.
+    #{disabled_count} failed because the user has disabled the notification channel.
+    #{telegram_bot_blocked_count} failed because the user has blocked the telegram bot.
+    """)
   end
 
   defp max_last_triggered(last_triggered) when is_non_empty_map(last_triggered) do

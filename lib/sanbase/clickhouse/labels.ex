@@ -107,7 +107,8 @@ defmodule Sanbase.Clickhouse.Label do
         OR (label != 'whale' and asset_id = 0)) AND
       lower(address) IN (?2)
     HAVING (sign = 1)
-       AND (address != '0x0000000000000000000000000000000000000000' OR label = 'System')
+       AND (address NOT IN ('0x0000000000000000000000000000000000000000', 'burn', 'mint')
+            OR label = 'System')
     """
 
     {query, [slug, addresses]}

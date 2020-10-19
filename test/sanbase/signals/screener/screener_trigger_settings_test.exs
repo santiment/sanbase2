@@ -92,7 +92,7 @@ defmodule Sanbase.Signal.ScreenerTriggerSettingsTest do
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(ScreenerTriggerSettings)
              end) =~
-               "In total 1/1 (0 have disabled channel) screener_signal signals were sent successfully"
+               "In total 1/1 screener_signal signals were sent successfully"
 
       # Clear the result of the filter
       Sanbase.Cache.clear_all()
@@ -142,7 +142,7 @@ defmodule Sanbase.Signal.ScreenerTriggerSettingsTest do
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(ScreenerTriggerSettings)
              end) =~
-               "In total 1/1 (0 have disabled channel) screener_signal signals were sent successfully"
+               "In total 1/1 screener_signal signals were sent successfully"
 
       # Clear the result of the filter
       Sanbase.Cache.clear_all()

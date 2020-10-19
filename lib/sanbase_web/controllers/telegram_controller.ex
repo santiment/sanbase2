@@ -5,12 +5,20 @@ defmodule SanbaseWeb.TelegramController do
 
   def index(conn, %{"message" => %{"text" => "/start " <> user_token}} = params) do
     %{"message" => %{"chat" => %{"id" => chat_id}}} = params
-    Telegram.store_chat_id(user_token, chat_id)
-    Telegram.send_message_to_chat_id(chat_id, welcome_message())
 
-    conn
-    |> resp(200, "ok")
-    |> send_resp()
+    case Telegram.store_chat_id(user_token, chat_id) do
+      :ok ->
+        Telegram.send_message_to_chat_id(chat_id, welcome_message())
+
+        conn
+        |> resp(200, "ok")
+        |> send_resp()
+
+      {:error, error} ->
+        conn
+        |> resp(400, error)
+        |> send_resp()
+    end
   end
 
   def index(conn, _params) do

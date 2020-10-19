@@ -144,7 +144,7 @@ defmodule Sanbase.Signal.TriggerPriceAbsoluteChangeTest do
         assert capture_log(fn ->
                  Sanbase.Signal.Scheduler.run_signal(PriceAbsoluteChangeSettings)
                end) =~
-                 "In total 1/1 (0 have disabled channel) price_absolute_change signals were sent successfully"
+                 "In total 1/1 price_absolute_change signals were sent successfully"
 
         Sanbase.Signal.Evaluator.Cache.clear_all()
 

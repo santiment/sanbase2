@@ -66,7 +66,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingWordTest do
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
              end) =~
-               "In total 1/1 (0 have disabled channel) trending_words signals were sent successfully"
+               "In total 1/1 trending_words signals were sent successfully"
 
       Sanbase.Signal.Evaluator.Cache.clear_all()
 
@@ -89,7 +89,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingWordTest do
       assert capture_log(fn ->
                Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
              end) =~
-               "In total 1/1 (0 have disabled channel) trending_words signals were sent successfully"
+               "In total 1/1 trending_words signals were sent successfully"
 
       Sanbase.Signal.Evaluator.Cache.clear_all()
 

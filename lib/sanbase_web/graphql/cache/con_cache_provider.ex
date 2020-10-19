@@ -51,7 +51,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
     # Do not include the TTL as part of the key name.
     true_key = true_key(key)
 
-    {result, error_if_any} =
+    {result, error} =
       case ConCache.get(cache, true_key) do
         {:stored, value} ->
           {value, nil}
@@ -83,8 +83,8 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
           end)
       end
 
-    if error_if_any != nil do
-      error_if_any
+    if error do
+      error
     else
       result
     end

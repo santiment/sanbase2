@@ -1,5 +1,6 @@
 defmodule Sanbase.Application.Web do
   import Sanbase.ApplicationUtils
+  import Cachex.Spec, only: [expiration: 1, limit: 1]
   require Logger
 
   def init() do
@@ -32,7 +33,22 @@ defmodule Sanbase.Application.Web do
          ]},
         id: :api_cache
       ),
-
+      {Cachex,
+       [
+         name: :graphql_cachex_cache,
+         limit:
+           limit(
+             size: 50_000,
+             policy: Cachex.Policy.LRW,
+             reclaim: 0.1,
+             options: []
+           ),
+         expiration:
+           expiration(
+             default: :timer.minutes(5),
+             interval: :timer.seconds(15)
+           )
+       ]},
       # Time sereies Twitter DB connection
       Sanbase.Twitter.Store.child_spec(),
 

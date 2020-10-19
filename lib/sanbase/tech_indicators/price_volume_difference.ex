@@ -6,9 +6,6 @@ defmodule Sanbase.TechIndicators.PriceVolumeDifference do
 
   alias Sanbase.Model.Project
 
-  require Mockery.Macro
-  defp http_client, do: Mockery.Macro.mockable(HTTPoison)
-
   @recv_timeout 15_000
 
   @type price_volume_diff_point :: %{
@@ -68,7 +65,7 @@ defmodule Sanbase.TechIndicators.PriceVolumeDifference do
       ]
     ]
 
-    http_client().get(url, [], options)
+    HTTPoison.get(url, [], options)
     |> handle_result(project)
     |> case do
       {:ok, result} ->

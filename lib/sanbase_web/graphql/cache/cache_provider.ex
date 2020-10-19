@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.CacheProvider do
   """
 
   @type hash :: String.t()
-  @type key :: hash | {atom, hash} | {non_neg_integer(), non_neg_integer()}
+  @type key :: any() | {any(), non_neg_integer()}
   @type error :: String.t()
   @type stored_value :: any()
   @type cache :: atom()
@@ -12,7 +12,7 @@ defmodule SanbaseWeb.Graphql.CacheProvider do
   @doc ~s"""
   Get the value for the given key from the cache
   """
-  @callback get(cache, hash) :: {:ok, any} | {:error, error} | nil
+  @callback get(cache, hash) :: {:ok, stored_value} | {:error, error} | nil
 
   @doc ~s"""
   Put a query document in the cache with the key as cache key

@@ -126,7 +126,7 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def available_histogram_metrics(), do: @histogram_metrics
 
-  @impl Sanbase.Metric.Behavour
+  @impl Sanbase.Metric.Behaviour
   def available_table_metrics(), do: @table_metrics
 
   @impl Sanbase.Metric.Behaviour

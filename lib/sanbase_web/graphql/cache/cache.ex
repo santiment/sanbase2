@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.Cache do
 
   @ttl 300
   @max_ttl_offset 120
-  @cache_name :graphql_cache
+  @cache_name :graphql_cachex_cache
 
   @compile :inline_list_funcs
   @compile {:inline,
@@ -26,7 +26,8 @@ defmodule SanbaseWeb.Graphql.Cache do
             generate_additional_args: 1}
 
   alias __MODULE__, as: CacheMod
-  alias SanbaseWeb.Graphql.ConCacheProvider, as: CacheProvider
+  # alias SanbaseWeb.Graphql.ConCacheProvider, as: CacheProvider
+  alias SanbaseWeb.Graphql.CachexCacheProvider, as: CacheProvider
 
   @doc ~s"""
   Macro that's used instead of Absinthe's `resolve`. This resolver can perform

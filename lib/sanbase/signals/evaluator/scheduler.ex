@@ -218,7 +218,7 @@ defmodule Sanbase.Signal.Scheduler do
 
     telegram_bot_blocked_count =
       Enum.count(list, fn
-        {_identifier, error} when is_binary(error) ->
+        {_identifier, {:error, error}} when is_binary(error) ->
           String.contains?(error, "blocked the telegram bot")
 
         {_identifier, _status} ->

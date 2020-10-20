@@ -43,7 +43,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         #{additional_filters(filters)}
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
-        NOT isNaN(value) AND
+        isNotNull(value) AND NOT isNaN(value) AND
         #{asset_id_filter(slug_or_slugs, argument_position: 5)} AND
         metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 )
     )
@@ -77,7 +77,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         #{additional_filters(filters)}
         asset_id IN (?1) AND
         metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 ) AND
-        NOT isNaN(value) AND
+        isNotNull(value) AND NOT isNaN(value) AND
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")}
     )

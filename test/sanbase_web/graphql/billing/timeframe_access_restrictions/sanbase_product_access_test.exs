@@ -301,6 +301,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
 
   defp create_trigger_mutation(context) do
     query = create_trigger_mutation()
+
     execute_mutation(context.conn, query, "createTrigger")
   end
 
@@ -383,7 +384,8 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
 
   defp create_trigger_mutation() do
     trigger_settings = %{
-      type: "daily_active_addresses",
+      type: "metric_signal",
+      metric: "active_addresses_24h",
       target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",

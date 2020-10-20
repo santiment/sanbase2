@@ -29,7 +29,10 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
         # Telegram notification is sent when creation sucessful
         assert_receive({:telegram_to_self, message})
-        assert message =~ "Successfully created a new signal of type: Daily Active Addresses"
+
+        assert message =~
+                 "Successfully created a new signal of type: Metric Signal\n\nTitle: Generic title \n\nThis bot will alert you when your signal triggers 🤖\n"
+
         assert message =~ "Title: Generic title"
         assert message =~ "This bot will alert you when your signal triggers 🤖"
 
@@ -66,7 +69,8 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
     test "with mistyped field in settings - returns proper error", %{conn: conn} do
       trigger_settings = %{
-        "type" => "daily_active_addresses",
+        "type" => "metric_signal",
+        "metric" => "active_addresses_24h",
         "target" => %{"slug" => "santiment"},
         "channel" => "telegram",
         "time_window" => "1d",
@@ -85,7 +89,8 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
   test "load trigger with mistyped settings", %{conn: conn} do
     trigger_settings = %{
-      "type" => "daily_active_addresses",
+      "type" => "metric_signal",
+      "metric" => "active_addresses_24h",
       "target" => %{"slug" => "santiment"},
       "channel" => "telegram",
       "time_window" => "1d",
@@ -419,7 +424,8 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
   defp default_trigger_settings_string_keys() do
     %{
-      "type" => "daily_active_addresses",
+      "type" => "metric_signal",
+      "metric" => "active_addresses_24h",
       "target" => %{"slug" => "santiment"},
       "channel" => "telegram",
       "time_window" => "1d",

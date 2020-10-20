@@ -123,7 +123,6 @@ alias Sanbase.SocialData
 alias Sanbase.Signal.{UserTrigger, Trigger, Scheduler}
 
 alias Sanbase.Signal.Trigger.{
-  DailyActiveAddressesSettings,
   PricePercentChangeSettings,
   PriceVolumeDifferenceTriggerSettings,
   TrendingWordsTriggerSettings

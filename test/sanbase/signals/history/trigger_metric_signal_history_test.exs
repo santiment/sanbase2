@@ -21,7 +21,7 @@ defmodule Sanbase.Signal.TriggerMetricHistoryTest do
   test "percent change up 200", %{project: project} do
     trigger_settings = %{
       type: "metric_signal",
-      metric: "daily_active_addresses",
+      metric: "active_addresses_24h",
       target: %{slug: project.slug},
       channel: "telegram",
       time_window: "2d",
@@ -225,7 +225,7 @@ defmodule Sanbase.Signal.TriggerMetricHistoryTest do
   test "percent change up 100% and absolute value above 50", %{project: project} do
     trigger_settings = %{
       type: "metric_signal",
-      metric: "daily_active_addresses",
+      metric: "active_addresses_24h",
       target: %{slug: project.slug},
       channel: "telegram",
       time_window: "2d",
@@ -268,7 +268,7 @@ defmodule Sanbase.Signal.TriggerMetricHistoryTest do
   test "amount up more than 100", %{project: project} do
     trigger_settings = %{
       type: "metric_signal",
-      metric: "daily_active_addresses",
+      metric: "active_addresses_24h",
       target: %{slug: project.slug},
       channel: "telegram",
       time_window: "2d",
@@ -299,7 +299,7 @@ defmodule Sanbase.Signal.TriggerMetricHistoryTest do
   test "amount down more than 100", %{project: project} do
     trigger_settings = %{
       type: "metric_signal",
-      metric: "daily_active_addresses",
+      metric: "active_addresses_24h",
       target: %{slug: project.slug},
       channel: "telegram",
       time_window: "2d",
@@ -330,7 +330,7 @@ defmodule Sanbase.Signal.TriggerMetricHistoryTest do
   test "amount down or up more than 100", %{project: project} do
     trigger_settings = %{
       type: "metric_signal",
-      metric: "daily_active_addresses",
+      metric: "active_addresses_24h",
       target: %{slug: project.slug},
       channel: "telegram",
       time_window: "2d",
@@ -373,7 +373,7 @@ defmodule Sanbase.Signal.TriggerMetricHistoryTest do
   test "amount up 100 AND percent change up 100 AND above 190", %{project: project} do
     trigger_settings = %{
       type: "metric_signal",
-      metric: "daily_active_addresses",
+      metric: "active_addresses_24h",
       target: %{slug: project.slug},
       channel: "telegram",
       time_window: "2d",

@@ -51,133 +51,140 @@ defimpl Sanbase.Signal, for: Any do
   end
 
   defp send_webhook(
-         %{
-           id: user_trigger_id,
-           user: %User{} = user,
-           trigger: %{settings: %{payload: payload_map}}
-         },
+         trigger,
          webhook_url,
          %{"webhook" => max_signals_to_send}
        ) do
+    %{id: user_trigger_id} = trigger
+
     fun = fn identifier, payload ->
       do_send_webhook(webhook_url, identifier, payload, user_trigger_id)
     end
 
-    send_or_limit("webhook", user, payload_map, max_signals_to_send, fun)
+    send_or_limit("webhook", trigger, max_signals_to_send, fun)
   end
 
   defp send_email(
          %{
-           id: id,
-           user:
-             %User{
-               email: email,
-               user_settings: %{settings: %{signal_notify_email: true}}
-             } = user,
-           trigger: %{settings: %{payload: payload_map}}
-         },
+           user: %User{
+             email: email,
+             user_settings: %{settings: %{signal_notify_email: true}}
+           }
+         } = trigger,
          %{"email" => max_signals_to_send}
        )
-       when is_binary(email) and is_map(payload_map) do
+       when is_binary(email) do
     fun = fn _identifier, payload ->
-      do_send_email(email, payload, id)
+      do_send_email(email, payload, trigger.id)
     end
 
-    send_or_limit("email", user, payload_map, max_signals_to_send, fun)
+    send_or_limit("email", trigger, max_signals_to_send, fun)
   end
 
   defp send_email(
          %{
            user: %User{
-             id: user_id,
              email: email,
              user_settings: %{settings: %{signal_notify_email: false}}
-           },
-           trigger: %{settings: %{payload: payload_map}}
-         },
+           }
+         } = trigger,
          _
        )
-       when is_binary(email) and is_map(payload_map) do
+       when is_binary(email) do
+    %{id: trigger_id, user: %{id: user_id}, trigger: %{settings: %{payload: payload_map}}} =
+      trigger
+
     # The emails notifications are disabled
     Enum.map(payload_map, fn {identifier, _payload} ->
-      {identifier, {:error, %{reason: :channel_disabled, user_id: user_id}}}
+      {identifier,
+       {:error, %{reason: :email_channel_disabled, user_id: user_id, trigger_id: trigger_id}}}
     end)
   end
 
-  defp send_email(
-         %{user: %User{id: user_id}, trigger: %{settings: %{payload: payload_map}}},
-         _max_signals_to_send
-       ) do
+  defp send_email(trigger, _max_signals_to_send) do
+    %{
+      id: trigger_id,
+      user: %User{id: user_id},
+      trigger: %{settings: %{payload: payload_map}}
+    } = trigger
+
     Enum.map(payload_map, fn {identifier, _payload} ->
-      {identifier, {:error, %{reason: :no_email, user_id: user_id}}}
+      {identifier, {:error, %{reason: :no_email, user_id: user_id, trigger_id: trigger_id}}}
     end)
-  end
-
-  defp send_telegram(
-         %{
-           id: user_trigger_id,
-           user:
-             %User{
-               user_settings: %{
-                 settings: %{telegram_chat_id: telegram_chat_id, signal_notify_telegram: true}
-               }
-             } = user,
-           trigger: %{
-             settings: %{payload: payload_map}
-           }
-         },
-         %{"telegram" => max_signals_to_send}
-       )
-       when is_integer(telegram_chat_id) and telegram_chat_id > 0 and is_map(payload_map) do
-    fun = fn _identifier, payload ->
-      Sanbase.Telegram.send_message(user, extend_payload(payload, user_trigger_id))
-      |> maybe_transform_telegram_response(user)
-    end
-
-    send_or_limit("telegram", user, payload_map, max_signals_to_send, fun)
   end
 
   defp send_telegram(
          %{
            user: %User{
-             id: user_id,
+             user_settings: %{
+               settings: %{
+                 telegram_chat_id: telegram_chat_id,
+                 signal_notify_telegram: true
+               }
+             }
+           }
+         } = trigger,
+         %{"telegram" => max_signals_to_send}
+       )
+       when is_integer(telegram_chat_id) and telegram_chat_id > 0 do
+    fun = fn _identifier, payload ->
+      Sanbase.Telegram.send_message(trigger.user, extend_payload(payload, trigger.id))
+      |> maybe_transform_telegram_response(trigger)
+    end
+
+    send_or_limit("telegram", trigger, max_signals_to_send, fun)
+  end
+
+  defp send_telegram(
+         %{
+           user: %User{
              user_settings: %{
                settings: %{
                  telegram_chat_id: telegram_chat_id,
                  signal_notify_telegram: false
                }
              }
-           },
-           trigger: %{
-             settings: %{payload: payload_map}
            }
-         },
+         } = trigger,
          _
        )
-       when is_integer(telegram_chat_id) and telegram_chat_id > 0 and is_map(payload_map) do
-    # The emails notifications are disabled
+       when is_integer(telegram_chat_id) and telegram_chat_id > 0 do
+    %{
+      id: trigger_id,
+      user: %User{id: user_id},
+      trigger: %{
+        settings: %{payload: payload_map}
+      }
+    } = trigger
+
     Enum.map(payload_map, fn {identifier, _payload} ->
-      {identifier, {:error, %{reason: :channel_disabled, user_id: user_id}}}
+      {identifier,
+       {:error, %{reason: :telegram_channel_disabled, user_id: user_id, trigger_id: trigger_id}}}
     end)
   end
 
-  defp send_telegram(
-         %{user: %User{id: user_id}, trigger: %{settings: %{payload: payload_map}}},
-         _max_signals_to_send
-       ) do
+  defp send_telegram(trigger, _max_signals_to_send) do
+    %{
+      id: trigger_id,
+      user: %User{id: user_id},
+      trigger: %{settings: %{payload: payload_map}}
+    } = trigger
+
     Enum.map(payload_map, fn {identifier, _payload} ->
-      {identifier, {:error, %{reason: :no_telegram, user_id: user_id}}}
+      {identifier, {:error, %{reason: :no_telegram, user_id: user_id, trigger_id: trigger_id}}}
     end)
   end
 
-  defp maybe_transform_telegram_response({:ok, _} = response, _user), do: {:ok, response}
+  defp maybe_transform_telegram_response({:error, error}, trigger) do
+    %{user: %User{id: user_id}, trigger: %{id: trigger_id}} = trigger
 
-  defp maybe_transform_telegram_response({:error, error}, %User{id: user_id}) do
     case is_binary(error) and String.contains?(error, "blocked the telegram bot") do
-      true -> {:error, %{reason: :telegram_bot_blocked, user_id: user_id}}
+      true -> {:error, %{reason: :telegram_bot_blocked, user_id: user_id, trigger_id: trigger_id}}
       false -> {:error, error}
     end
   end
+
+  defp maybe_transform_telegram_response(response, _trigger), do: response
 
   defp extend_payload(payload, user_trigger_id) do
     """
@@ -228,14 +235,14 @@ defimpl Sanbase.Signal, for: Any do
     end
   end
 
-  defp do_send_webhook(webhook_url, identifier, payload, user_trigger_id) do
+  defp do_send_webhook(webhook_url, identifier, payload, trigger_id) do
     encoded_json_payload =
       %{
         timestamp: DateTime.utc_now() |> DateTime.to_unix(),
         identifier: identifier,
         content: payload,
-        trigger_id: user_trigger_id,
-        trigger_url: SanbaseWeb.Endpoint.show_signal_url(user_trigger_id)
+        trigger_id: trigger_id,
+        trigger_url: SanbaseWeb.Endpoint.show_signal_url(trigger_id)
       }
       |> Jason.encode!()
 
@@ -246,20 +253,33 @@ defimpl Sanbase.Signal, for: Any do
         {identifier, :ok}
 
       {:ok, %HTTPoison.Response{status_code: code}} ->
-        {identifier, {:error, %{reason: :webhook_send_fail, status_code: code}}}
+        {identifier,
+         {:error, %{reason: :webhook_send_fail, status_code: code, trigger_id: trigger_id}}}
 
-      {:error, reason} ->
-        {identifier, {:error, %{reason: :webhook_send_fail, error: reason}}}
+      {:error, error} ->
+        {identifier,
+         {:error, %{reason: :webhook_send_fail, error: error, trigger_id: trigger_id}}}
     end
   end
 
-  defp send_or_limit(channel, user, payload_map, limit, fun) when is_function(fun, 2) do
+  defp send_or_limit(channel, trigger, limit, fun) when is_function(fun, 2) do
+    %{
+      id: trigger_id,
+      user: user,
+      trigger: %{
+        settings: %{payload: payload_map}
+      }
+    } = trigger
+
+    signals_limit_reached_error =
+      {:error, %{reason: :signals_limit_reached, user_id: user.id, trigger_id: trigger_id}}
+
     {result, remaining_to_send} =
       payload_map
       |> Enum.reduce({[], limit}, fn {identifier, payload}, {list, remaining} ->
         case remaining do
           0 ->
-            elem = {identifier, {:error, %{reason: :signals_limit_reached, user_id: user.id}}}
+            elem = {identifier, signals_limit_reached_error}
 
             {[elem | list], 0}
 

@@ -366,6 +366,7 @@ defmodule Sanbase.Metric do
         _ -> []
       end)
       |> Enum.sort()
+      |> Enum.uniq()
 
     has_errors? =
       metrics_in_modules

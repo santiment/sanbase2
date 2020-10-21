@@ -1,4 +1,10 @@
 defmodule Sanbase.SocialData.MetricAdapter do
+  @moduledoc """
+  Provides access and metadata for social metrics - these metrics are currently taken from internal service called metricshub.
+  All `_total` metrics are served from 2 different places depending on the invocation.
+  The ones with `slug` argument are served from clickhouse, the others with `text` argument
+  from metricshub.
+  """
   @behaviour Sanbase.Metric.Behaviour
 
   import Sanbase.Metric.Transform

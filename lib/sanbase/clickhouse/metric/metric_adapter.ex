@@ -84,6 +84,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     end)
   end
 
+  @doc """
+  Social metrics totals with text argument are served by social data metrics adapter.
+  """
   def timeseries_data(metric, %{text: _text} = selector, from, to, interval, opts)
       when metric in [
              "social_volume_total",

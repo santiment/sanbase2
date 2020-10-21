@@ -89,6 +89,7 @@ defimpl Sanbase.Signal, for: Any do
   defp send_email(
          %{
            user: %User{
+             id: user_id,
              email: email,
              user_settings: %{settings: %{signal_notify_email: false}}
            },
@@ -99,7 +100,7 @@ defimpl Sanbase.Signal, for: Any do
        when is_binary(email) and is_map(payload_map) do
     # The emails notifications are disabled
     Enum.map(payload_map, fn {identifier, _payload} ->
-      {identifier, :channel_disabled}
+      {identifier, {:error, %{reason: :channel_disabled, user_id: user_id}}}
     end)
   end
 
@@ -130,6 +131,7 @@ defimpl Sanbase.Signal, for: Any do
        when is_integer(telegram_chat_id) and telegram_chat_id > 0 and is_map(payload_map) do
     fun = fn _identifier, payload ->
       Sanbase.Telegram.send_message(user, extend_payload(payload, user_trigger_id))
+      |> maybe_transform_telegram_response(user)
     end
 
     send_or_limit("telegram", user, payload_map, max_signals_to_send, fun)
@@ -138,6 +140,7 @@ defimpl Sanbase.Signal, for: Any do
   defp send_telegram(
          %{
            user: %User{
+             id: user_id,
              user_settings: %{
                settings: %{
                  telegram_chat_id: telegram_chat_id,
@@ -154,7 +157,7 @@ defimpl Sanbase.Signal, for: Any do
        when is_integer(telegram_chat_id) and telegram_chat_id > 0 and is_map(payload_map) do
     # The emails notifications are disabled
     Enum.map(payload_map, fn {identifier, _payload} ->
-      {identifier, :channel_disabled}
+      {identifier, {:error, %{reason: :channel_disabled, user_id: user_id}}}
     end)
   end
 
@@ -165,6 +168,15 @@ defimpl Sanbase.Signal, for: Any do
     Enum.map(payload_map, fn {identifier, _payload} ->
       {identifier, {:error, %{reason: :no_telegram, user_id: user_id}}}
     end)
+  end
+
+  defp maybe_transform_telegram_response({:ok, _} = response, _user), do: {:ok, response}
+
+  defp maybe_transform_telegram_response({:error, error}, %User{id: user_id}) do
+    case is_binary(error) and String.contains?(error, "blocked the telegram bot") do
+      true -> {:error, %{reason: :telegram_bot_blocked, user_id: user_id}}
+      false -> {:error, error}
+    end
   end
 
   defp extend_payload(payload, user_trigger_id) do
@@ -234,10 +246,10 @@ defimpl Sanbase.Signal, for: Any do
         {identifier, :ok}
 
       {:ok, %HTTPoison.Response{status_code: code}} ->
-        {identifier, {:error, "Error sending webhook alert. Status code: #{code}."}}
+        {identifier, {:error, %{reason: :webhook_send_fail, status_code: code}}}
 
       {:error, reason} ->
-        {identifier, {:error, "Error sending webhook alert. Reason: #{inspect(reason)}"}}
+        {identifier, {:error, %{reason: :webhook_send_fail, error: reason}}}
     end
   end
 
@@ -247,7 +259,8 @@ defimpl Sanbase.Signal, for: Any do
       |> Enum.reduce({[], limit}, fn {identifier, payload}, {list, remaining} ->
         case remaining do
           0 ->
-            elem = {identifier, :signals_limit_reached}
+            elem = {identifier, {:error, %{reason: :signals_limit_reached, user_id: user.id}}}
+
             {[elem | list], 0}
 
           remaining ->
@@ -302,7 +315,7 @@ defimpl Sanbase.Signal, for: Any do
     })
     |> case do
       {:ok, _} -> :ok
-      {:error, reason} -> {:error, reason}
+      {:error, reason} -> {:error, %{reason: :email_send_fail, error: reason}}
     end
   end
 

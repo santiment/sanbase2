@@ -211,26 +211,29 @@ defmodule Sanbase.Signal.Scheduler do
 
   defp log_sent_messages_stats(list, type) do
     successful_messages_count = list |> Enum.count(fn {_elem, status} -> status == :ok end)
+    errors = for {_, {:error, error}} <- list, do: error
 
-    for {_, {:error, error}} <- list do
+    Enum.each(errors, fn error ->
       Logger.warn("Cannot send a #{type} signal. Reason: #{inspect(error)}")
-    end
+    end)
 
-    telegram_bot_blocked_count =
-      Enum.count(list, fn
-        {_identifier, {:error, error}} when is_binary(error) ->
-          String.contains?(error, "blocked the telegram bot")
-
-        {_identifier, _status} ->
-          false
+    errors_to_count_map =
+      errors
+      |> Enum.group_by(fn
+        %{reason: reason} -> reason
+        _ -> :unspecified
       end)
-
-    disabled_count = Enum.count(list, &match?({_, :channel_disabled}, &1))
+      |> Map.new(fn {reason, list} -> {reason, length(list)} end)
+      |> Enum.reject(fn {_reason, count} -> count == 0 end)
+      |> Map.new()
 
     Logger.info("""
     In total #{successful_messages_count}/#{length(list)} #{type} signals were sent successfully.
-    #{disabled_count} failed because the user has disabled the notification channel.
-    #{telegram_bot_blocked_count} failed because the user has blocked the telegram bot.
+    #{
+      Enum.map(errors_to_count_map, fn {reason, count} ->
+        "#{count} failed with the reason #{reason}\n"
+      end)
+    }
     """)
   end
 

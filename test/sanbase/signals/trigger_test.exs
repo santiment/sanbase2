@@ -166,7 +166,8 @@ defmodule Sanbase.Signal.TriggersTest do
     user = insert(:user)
 
     trigger_settings = %{
-      type: "price_percent_change",
+      type: "metric_signal",
+      metric: "price_usd",
       target: %{slug: "santiment"},
       operation: %{percent_up: 20},
       channel: "telegram",
@@ -190,7 +191,8 @@ defmodule Sanbase.Signal.TriggersTest do
     user = insert(:user)
 
     trigger_settings = %{
-      type: "price_percent_change",
+      type: "metric_signal",
+      metric: "price_usd",
       target: %{slug: "santiment"},
       operation: %{percent_up: 20},
       channel: "telegram",
@@ -238,7 +240,8 @@ defmodule Sanbase.Signal.TriggersTest do
     assert length(UserTrigger.triggers_for(user)) == 1
 
     trigger_settings2 = %{
-      type: "price_percent_change",
+      type: "metric_signal",
+      metric: "price_usd",
       target: %{slug: "santiment"},
       channel: "email",
       time_window: "1d",
@@ -268,7 +271,8 @@ defmodule Sanbase.Signal.TriggersTest do
     }
 
     trigger_settings2 = %{
-      type: "price_percent_change",
+      type: "metric_signal",
+      metric: "price_usd",
       target: %{slug: "santiment"},
       channel: "email",
       time_window: "1d",

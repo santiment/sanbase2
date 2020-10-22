@@ -185,7 +185,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "fees_to_network_circulation_usd_1d",
         "total_supply",
         "avg_gas_used",
-        "daily_age_distribution",
         # social metrics
         "community_messages_count_telegram",
         "community_messages_count_total",

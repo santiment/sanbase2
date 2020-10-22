@@ -103,29 +103,29 @@ defmodule SanbaseWeb.Graphql.PriceVolumeDiffApiTest do
   end
 
   test "tech_indicators returns error", context do
-    mock(
-      HTTPoison,
-      :get,
+    result =
       {:ok,
        %HTTPoison.Response{
          body: "Internal Server Error",
          status_code: 500
        }}
-    )
 
-    query = price_volume_diff_query(context)
+    Sanbase.Mock.prepare_mock2(&HTTPoison.get/3, result)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      query = price_volume_diff_query(context)
 
-    assert capture_log(fn ->
-             result =
-               context.conn
-               |> post("/graphql", query_skeleton(query, "priceVolumeDiff"))
-               |> json_response(200)
+      assert capture_log(fn ->
+               result =
+                 context.conn
+                 |> post("/graphql", query_skeleton(query, "priceVolumeDiff"))
+                 |> json_response(200)
 
-             assert result["data"] == %{"priceVolumeDiff" => nil}
-             error = result["errors"] |> List.first()
-             assert error["message"] =~ "Error executing query. See logs for details"
-           end) =~
-             "Error status 500 fetching price-volume diff for project with slug: santiment - Internal Server Error"
+               assert result["data"] == %{"priceVolumeDiff" => nil}
+               error = result["errors"] |> List.first()
+               assert error["message"] =~ "Error executing query. See logs for details"
+             end) =~
+               "Error status 500 fetching price-volume diff for project with slug: santiment - Internal Server Error"
+    end)
   end
 
   # Private functions

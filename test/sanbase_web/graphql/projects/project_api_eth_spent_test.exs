@@ -163,6 +163,4 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
       assert %{"ethSpent" => 500.0} in total_spent
     end)
   end
-
-  # Private functions
 end

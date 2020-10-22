@@ -83,7 +83,7 @@ defmodule Sanbase.Metric.Helper do
                           {metric, module}
                         end)
 
-  @aggregations_per_metric Enum.reduce(@aggregations_per_metric_acc, %{}, &Map.merge(&1, &2))
+  @aggregations_per_metric Enum.reduce(@aggregations_per_metric_acc, %{}, &Map.merge(&2, &1))
   @access_map Enum.reduce(@access_map_acc, %{}, &Map.merge(&1, &2))
   @min_plan_map Enum.reduce(@min_plan_map_acc, %{}, &Map.merge(&1, &2))
 

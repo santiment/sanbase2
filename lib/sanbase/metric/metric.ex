@@ -16,7 +16,6 @@ defmodule Sanbase.Metric do
   @histogram_metric_to_module_map Sanbase.Metric.Helper.histogram_metric_to_module_map()
   @histogram_metrics Sanbase.Metric.Helper.histogram_metrics()
   @histogram_metrics_mapset Sanbase.Metric.Helper.histogram_metrics_mapset()
-  @metric_module_mapping Sanbase.Metric.Helper.metric_module_mapping()
   @metric_modules Sanbase.Metric.Helper.metric_modules()
   @metric_to_module_map Sanbase.Metric.Helper.metric_to_module_map()
   @metrics Sanbase.Metric.Helper.metrics()
@@ -225,22 +224,21 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Get the human readable name representation of a given metric
   """
-  def human_readable_name(metric)
+  def human_readable_name(metric) do
+    case Map.get(@metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric)
 
-  for %{metric: metric, module: module} <- @metric_module_mapping do
-    def human_readable_name(unquote(metric)) do
-      unquote(module).human_readable_name(unquote(metric))
+      module when is_atom(module) ->
+        module.human_readable_name(metric)
     end
   end
-
-  def human_readable_name(metric), do: metric_not_available_error(metric)
 
   @doc ~s"""
   Get the complexity weight of a metric. This is a multiplier applied to the
   computed complexity. Clickhouse is faster compared to Elasticsearch for fetching
   timeseries data, so it has a smaller weight
   """
-  def complexity_weight(metric)
 
   def complexity_weight(metric) do
     case Map.get(@metric_to_module_map, metric) do
@@ -260,8 +258,6 @@ defmodule Sanbase.Metric do
   - The available aggregations for the metric
   - The available slugs for the metric
   """
-  def metadata(metric)
-
   def metadata(metric) do
     case Map.get(@metric_to_module_map, metric) do
       nil ->

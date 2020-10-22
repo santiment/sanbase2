@@ -2136,23 +2136,6 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Daily Age Distribution Histogram",
-    "name": "daily_age_distribution",
-    "metric": "age_distribution_1day_delta",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "1d",
-    "table": "distribution_deltas_5min",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
     "human_readable_name": "Average Gas Used in Gwei",
     "name": "avg_gas_used",
     "metric": "avg_gas",

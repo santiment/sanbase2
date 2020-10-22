@@ -1,4 +1,11 @@
 defmodule Sanbase.Metric.Helper do
+  # Note: Order in `@metric_modules` matter.`Module.register_attribute` with `accumulate` option puts
+  # new attributes on top of the accumulated list. That means when we put them in a map those that
+  # are first in @metric_modules might override later ones.
+  # One example for this is part of social metrics which are both in Sanbase.Clickhouse.MetricAdapter and
+  # Sanbase.SocialData.MetricAdapter and are invoked with different args. The ones in `Sanbase.Clickhouse.MetricAdapter`
+  # will override the ones in Sanbase.SocialData.MetricAdapter.
+
   @metric_modules [
     Sanbase.Clickhouse.Github.MetricAdapter,
     Sanbase.Clickhouse.MetricAdapter,
@@ -76,7 +83,7 @@ defmodule Sanbase.Metric.Helper do
                           {metric, module}
                         end)
 
-  @aggregations_per_metric Enum.reduce(@aggregations_per_metric_acc, %{}, &Map.merge(&1, &2))
+  @aggregations_per_metric Enum.reduce(@aggregations_per_metric_acc, %{}, &Map.merge(&2, &1))
   @access_map Enum.reduce(@access_map_acc, %{}, &Map.merge(&1, &2))
   @min_plan_map Enum.reduce(@min_plan_map_acc, %{}, &Map.merge(&1, &2))
 

@@ -84,6 +84,21 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     end)
   end
 
+  @doc """
+  Social metrics totals with text argument are served by social data metrics adapter.
+  """
+  def timeseries_data(metric, %{text: _text} = selector, from, to, interval, opts)
+      when metric in [
+             "social_volume_total",
+             "social_dominance_total",
+             "sentiment_positive_total",
+             "sentiment_negative_total",
+             "sentiment_balance_total",
+             "sentiment_volume_consumed_total"
+           ] do
+    Sanbase.SocialData.MetricAdapter.timeseries_data(metric, selector, from, to, interval, opts)
+  end
+
   @impl Sanbase.Metric.Behaviour
   defdelegate histogram_data(metric, slug, from, to, interval, limit), to: HistogramMetric
 

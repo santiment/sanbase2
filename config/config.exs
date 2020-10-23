@@ -25,8 +25,8 @@ config :sanbase, SanbaseWeb.Plug.BasicAuth,
   password: {:system, "ADMIN_BASIC_AUTH_PASSWORD", "admin"}
 
 config :sanbase, Sanbase.Clickhouse.Erc20Transfers,
-  dt_ordered_table: {:system, "dt_ordered_table", "erc20_transfers_new"},
-  address_ordered_table: {:system, "address_ordered_table", "erc20_transfers"}
+  dt_ordered_table: {:system, "DT_ORDERED_ERC20_TRANFERS_TABLE", "erc20_transfers_new"},
+  address_ordered_table: {:system, "ADDRESS_ORDERED_ERC20_TRANSFERS_TABLE", "erc20_transfers"}
 
 config :sanbase, Sanbase.KafkaExporter,
   supervisor: SanExporterEx.Producer.Supervisor,

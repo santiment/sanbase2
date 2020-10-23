@@ -10,6 +10,7 @@ config :ex_admin,
   theme: ExAdmin.Theme.AdminLte2,
   # MyProject.Web for phoenix >= 1.3.0-rc
   module: SanbaseWeb,
+  realm: {:system, "ADMIN_BASIC_AUTH_REALM"},
   modules: [
     SanbaseWeb.ExAdmin.Dashboard,
     SanbaseWeb.ExAdmin.Statistics,
@@ -67,9 +68,4 @@ config :ex_admin,
     SanbaseWeb.ExAdmin.Intercom.UserAttributes,
     SanbaseWeb.ExAdmin.Intercom.UserEvent,
     SanbaseWeb.ExAdmin.Report
-  ],
-  basic_auth: [
-    username: {:system, "ADMIN_BASIC_AUTH_USERNAME"},
-    password: {:system, "ADMIN_BASIC_AUTH_PASSWORD"},
-    realm: {:system, "ADMIN_BASIC_AUTH_REALM"}
   ]

@@ -20,6 +20,10 @@ config :postgrex, :json_library, Jason
 
 config :sanbase, Sanbase, environment: "#{Mix.env()}"
 
+config :sanbase, SanbaseWeb.Plug.BasicAuth,
+  username: {:system, "ADMIN_BASIC_AUTH_USERNAME", "admin"},
+  password: {:system, "ADMIN_BASIC_AUTH_PASSWORD", "admin"}
+
 config :sanbase, Sanbase.Clickhouse.Erc20Transfers,
   dt_ordered_table: {:system, "dt_ordered_table", "erc20_transfers_new"},
   address_ordered_table: {:system, "address_ordered_table", "erc20_transfers"}

@@ -45,7 +45,6 @@ defmodule Sanbase.Mixfile do
       {:absinthe, github: "absinthe-graphql/absinthe", override: true},
       {:waffle, "~> 1.1"},
       {:async_with, github: "fertapric/async_with"},
-      {:basic_auth, "~> 2.2"},
       {:clickhouse_ecto, github: "santiment/clickhouse_ecto", branch: "migrate-ecto-3"},
       {:clickhousex, github: "ivanivanoff/clickhousex", override: true},
       {:con_cache, "~> 0.13"},

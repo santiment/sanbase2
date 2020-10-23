@@ -10,7 +10,7 @@ defmodule SanbaseWeb.Router do
   end
 
   pipeline :basic_auth do
-    plug(BasicAuth, use_config: {:ex_admin, :basic_auth})
+    plug(SanbaseWeb.Plug.BasicAuth)
   end
 
   pipeline :api do

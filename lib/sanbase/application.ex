@@ -175,9 +175,6 @@ defmodule Sanbase.Application do
       # Start the Clickhouse Repo
       start_in(Sanbase.ClickhouseRepo, [:prod, :dev]),
 
-      # Time series Prices DB connection
-      Sanbase.Prices.Store.child_spec(),
-
       # Start the Task Supervisor
       {Task.Supervisor, [name: Sanbase.TaskSupervisor]},
 

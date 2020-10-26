@@ -4,13 +4,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
   alias Sanbase.ExternalServices.Coinmarketcap.TickerFetcher
   alias Sanbase.Model.Project
 
-  import Sanbase.InfluxdbHelpers
-
   @topic "asset_prices"
 
   setup do
-    setup_prices_influxdb()
-
     Sanbase.KafkaExporter.start_link(
       name: :prices_exporter,
       buffering_max_messages: 5000,

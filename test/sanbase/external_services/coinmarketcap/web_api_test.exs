@@ -2,15 +2,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApiTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
-  import Sanbase.InfluxdbHelpers
 
   alias Sanbase.ExternalServices.Coinmarketcap.WebApi
 
   @moduletag capture_log: true
 
   setup do
-    setup_prices_influxdb()
-
     project =
       insert(:project, %{
         slug: "bitcoin",

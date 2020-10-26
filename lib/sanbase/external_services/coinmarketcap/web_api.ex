@@ -8,7 +8,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   alias Sanbase.ExternalServices.Coinmarketcap.{PricePoint, PriceScrapingProgress}
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Model.Project
-  alias Sanbase.Prices.Store
 
   @rate_limiting_server :graph_coinmarketcap_rate_limiter
   plug(Sanbase.ExternalServices.RateLimiting.Middleware, name: @rate_limiting_server)
@@ -104,7 +103,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
       _ ->
         # Consume 10 price point intervals. Break early in case of errors.
         # Errors should not be ignored as this can cause a gap in the prices
-        # in case the next fetch succeeds and we store a later progress datetime
+        # in case the next fetch succeeds and we  a later progress datetime
         price_stream(coinmarketcap_integer_id, last_fetched_datetime, DateTime.utc_now())
         |> Stream.take(10)
         |> Enum.reduce_while(%{}, fn
@@ -125,7 +124,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
     # Consume 10 price point intervals. Break early in case of errors.
     # Errors should not be ignored as this can cause a gap in the prices
-    # in case the next fetch succeeds and we store a later progress datetime
+    # in case the next fetch succeeds and we  a later progress datetime
     price_stream("TOTAL_MARKET", last_fetched_datetime, DateTime.utc_now())
     |> Stream.take(10)
     |> Enum.reduce_while(%{}, fn
@@ -138,7 +137,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     end)
   end
 
-  # In case there is gap in the data store the end of the interval. This is done
+  # In case there is gap in the data  the end of the interval. This is done
   # because in case of gaps the scraper can get stuck and rescrape the same
   # interval over and over again.
   defp store_price_points(%Project{slug: slug}, [], {_, to}) do
@@ -155,7 +154,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     %{datetime: latest_datetime} = Enum.max_by(price_points, &DateTime.to_unix(&1.datetime))
 
     :ok = export_prices_to_kafka(project, price_points)
-    :ok = export_prices_to_influxdb(Measurement.name_from(project), price_points)
 
     PriceScrapingProgress.store_progress(slug, @source, latest_datetime)
   end
@@ -165,28 +163,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
     :ok = export_prices_to_kafka("TOTAL_MARKET", price_points)
 
-    # The influxdb TOTAL_MARKET measurement has float types
-    price_points =
-      Enum.map(
-        price_points,
-        fn %PricePoint{marketcap_usd: marketcap_usd, volume_usd: volume_usd} = point ->
-          %PricePoint{
-            point
-            | marketcap_usd: marketcap_usd |> Sanbase.Math.to_float(),
-              volume_usd: volume_usd |> Sanbase.Math.to_float()
-          }
-        end
-      )
-
-    :ok = export_prices_to_influxdb(@total_market_measurement, price_points)
-
     PriceScrapingProgress.store_progress("TOTAL_MARKET", @source, latest_datetime)
-  end
-
-  defp export_prices_to_influxdb(measurement, price_points) do
-    price_points
-    |> Enum.flat_map(&PricePoint.price_points_to_measurements(&1, measurement))
-    |> Store.import()
   end
 
   defp export_prices_to_kafka(%Project{slug: slug}, price_points) do
@@ -201,10 +178,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
 
   def price_stream(identifier, from_datetime, to_datetime) do
     intervals_stream(from_datetime, to_datetime, days_step: 10)
-    |> Stream.map(&extract_price_points_for_interval(identifier, &1))
+    |> Stream.map(&extractstore_price_points_for_interval(identifier, &1))
   end
 
-  defp json_to_price_points(json, "TOTAL_MARKET", interval) do
+  defp json_to_store_price_points(json, "TOTAL_MARKET", interval) do
     with {:ok, decoded} <- Jason.decode(json),
          %{
            "data" => data,
@@ -225,7 +202,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     end
   end
 
-  defp json_to_price_points(json, identifier, interval) do
+  defp json_to_store_price_points(json, identifier, interval) do
     with {:ok, decoded} <- Jason.decode(json),
          %{
            "data" => data,
@@ -257,7 +234,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     end
   end
 
-  defp extract_price_points_for_interval(
+  defp extractstore_price_points_for_interval(
          "TOTAL_MARKET" = total_market,
          {from_unix, to_unix} = interval
        ) do
@@ -274,10 +251,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
         wait_rate_limit(resp)
-        extract_price_points_for_interval(total_market, interval)
+        extractstore_price_points_for_interval(total_market, interval)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
-        json_to_price_points(body, total_market, interval)
+        json_to_store_price_points(body, total_market, interval)
 
       {:ok, %Tesla.Env{status: status}} ->
         error_msg = "[CMC] Error fetching data for TOTAL_MARKET. Status code: #{status}"
@@ -291,7 +268,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     end
   end
 
-  defp extract_price_points_for_interval(id, {from_unix, to_unix} = interval)
+  defp extractstore_price_points_for_interval(id, {from_unix, to_unix} = interval)
        when is_integer(id) do
     Logger.info("""
       [CMC] Extracting price points for coinmarketcap integer id #{id} and interval [#{
@@ -306,10 +283,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
         wait_rate_limit(resp)
-        extract_price_points_for_interval(id, interval)
+        extractstore_price_points_for_interval(id, interval)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
-        json_to_price_points(body, id, interval)
+        json_to_store_price_points(body, id, interval)
 
       {:ok, %Tesla.Env{status: status}} ->
         error_msg = """

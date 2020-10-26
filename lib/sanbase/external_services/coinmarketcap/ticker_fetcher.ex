@@ -15,7 +15,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   alias Sanbase.DateTimeUtils
   alias Sanbase.Model.{LatestCoinmarketcapData, Project}
   alias Sanbase.ExternalServices.Coinmarketcap.{Ticker, PricePoint}
-  alias Sanbase.Prices.Store
 
   @prices_exporter :prices_exporter
 
@@ -25,8 +24,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
 
   def init(:ok) do
     if Config.get(:sync_enabled, false) do
-      Store.create_db()
-
       Process.send(self(), :sync, [:noconnect])
 
       update_interval = Config.get(:update_interval) |> String.to_integer()
@@ -65,11 +62,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
 
     tickers
     |> Enum.each(&store_latest_coinmarketcap_data!(&1, cmc_id_to_slugs_mapping))
-
-    # Store the data in Influxdb
-    tickers
-    |> Enum.flat_map(&Ticker.convert_for_importing(&1, cmc_id_to_slugs_mapping))
-    |> Store.import()
 
     tickers
     |> export_to_kafka(cmc_id_to_slugs_mapping)

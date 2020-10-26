@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
   import Sanbase.Factory
   import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Sanbase.Metric
 
@@ -16,8 +15,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
     [
       conn: conn,
       slug: project.slug,
-      from: from_iso8601!("2019-01-01T00:00:00Z"),
-      to: from_iso8601!("2019-01-02T00:00:00Z")
+      from: ~U[2019-01-01 00:00:00Z],
+      to: ~U[2019-01-02 00:00:00Z]
     ]
   end
 

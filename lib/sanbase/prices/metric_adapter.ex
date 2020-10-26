@@ -34,6 +34,15 @@ defmodule Sanbase.Price.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def timeseries_data_per_slug(metric, %{slug: slug}, from, to, interval, opts) do
+    aggregation = Keyword.get(opts, :aggregation, nil) || @default_aggregation
+
+    Price.timeseries_metric_data_per_slug(slug, metric, from, to, interval,
+      aggregation: aggregation
+    )
+  end
+
+  @impl Sanbase.Metric.Behaviour
   def aggregated_timeseries_data(metric, %{slug: slug}, from, to, opts) do
     aggregation = Keyword.get(opts, :aggregation, nil) || @default_aggregation
     Price.aggregated_metric_timeseries_data(slug, metric, from, to, aggregation: aggregation)

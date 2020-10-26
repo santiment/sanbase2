@@ -85,28 +85,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end)
   end
 
-  def timeseries_data(
-        _root,
-        args,
-        %{source: %{metric: metric}}
-      ) do
-    transform =
-      Map.get(args, :transform, %{type: "none"})
-      |> Map.update!(:type, &Inflex.underscore/1)
+  def timeseries_data(_root, args, %{source: %{metric: metric}}) do
+    fetch_timeseries_data(metric, args, :timeseries_data)
+  end
 
-    with {:ok, selector} <- args_to_selector(args),
-         {:ok, metric} <- maybe_replace_metric(metric, selector),
-         {:ok, opts} <- selector_args_to_opts(args),
-         {:ok, from, to, interval} <-
-           transform_datetime_params(selector, metric, transform, args),
-         {:ok, result} <- Metric.timeseries_data(metric, selector, from, to, interval, opts),
-         {:ok, result} <- apply_transform(transform, result),
-         {:ok, result} <- fit_from_datetime(result, args) do
-      {:ok, result |> Enum.reject(&is_nil/1)}
-    end
-    |> maybe_handle_graphql_error(fn error ->
-      handle_graphql_error(metric, args_to_raw_selector(args), error)
-    end)
+  def timeseries_data_per_slug(_root, args, %{source: %{metric: metric}}) do
+    fetch_timeseries_data(metric, args, :timeseries_data_per_slug)
   end
 
   def aggregated_timeseries_data(
@@ -165,6 +149,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   # Private functions
+
+  # timeseries_data and timeseries_data_per_slug are processed and fetched in
+  # exactly the same way. The only difference is the function that is called
+  # from the Metric module.
+  defp fetch_timeseries_data(metric, args, function) do
+    transform =
+      Map.get(args, :transform, %{type: "none"})
+      |> Map.update!(:type, &Inflex.underscore/1)
+
+    with {:ok, selector} <- args_to_selector(args),
+         {:ok, metric} <- maybe_replace_metric(metric, selector),
+         {:ok, opts} <- selector_args_to_opts(args),
+         {:ok, from, to, interval} <-
+           transform_datetime_params(selector, metric, transform, args),
+         {:ok, result} <- apply(Metric, function, [metric, selector, from, to, interval, opts]),
+         {:ok, result} <- apply_transform(transform, result),
+         {:ok, result} <- fit_from_datetime(result, args) do
+      {:ok, result |> Enum.reject(&is_nil/1)}
+    end
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(metric, args_to_raw_selector(args), error)
+    end)
+  end
+
   defp transform_datetime_params(selector, metric, transform, args) do
     %{from: from, to: to, interval: interval} = args
 

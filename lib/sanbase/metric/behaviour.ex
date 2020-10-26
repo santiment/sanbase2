@@ -42,7 +42,14 @@ defmodule Sanbase.Metric.Behaviour do
 
   @type aggregation :: nil | :any | :sum | :avg | :min | :max | :last | :first | :median
 
+  @type slug_float_value_pair :: %{slug: slug, value: float}
+
   @type timeseries_data_point :: %{datetime: Datetime.t(), value: float()}
+
+  @type timeseries_data_per_slug_point :: %{
+          datetime: Datetime.t(),
+          data: list(slug_float_value_pair())
+        }
 
   @callback timeseries_data(
               metric :: metric(),
@@ -53,6 +60,16 @@ defmodule Sanbase.Metric.Behaviour do
               opts :: opts
             ) ::
               {:ok, list(timeseries_data_point)} | {:error, String.t()}
+
+  @callback timeseries_data_per_slug(
+              metric :: metric(),
+              selector :: selector,
+              from :: DatetTime.t(),
+              to :: DateTime.t(),
+              interval :: interval(),
+              opts :: opts
+            ) ::
+              {:ok, list(timeseries_data_per_slug_point)} | {:error, String.t()}
 
   @callback histogram_data(
               metric :: metric(),
@@ -134,5 +151,5 @@ defmodule Sanbase.Metric.Behaviour do
 
   @callback min_plan_map() :: map()
 
-  @optional_callbacks [histogram_data: 6, table_data: 5]
+  @optional_callbacks [histogram_data: 6, table_data: 5, timeseries_data_per_slug: 6]
 end

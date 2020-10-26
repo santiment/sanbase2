@@ -62,6 +62,53 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     {query, args}
   end
 
+  def timeseries_data_per_slug_query(
+        metric,
+        slug_or_slugs,
+        from,
+        to,
+        interval,
+        aggregation,
+        filters
+      ) do
+    query = """
+    SELECT
+      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
+      name AS slug,
+      #{aggregation(aggregation, "value", "dt")} AS value
+    FROM(
+      SELECT
+        asset_id,
+        dt,
+        value
+      FROM #{Map.get(@table_map, metric)} FINAL
+      PREWHERE
+        #{additional_filters(filters)}
+        #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
+        #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
+        isNotNull(value) AND NOT isNaN(value) AND
+        #{asset_id_filter(slug_or_slugs, argument_position: 5)} AND
+        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 )
+    )
+    INNER JOIN (
+      SELECT asset_id, name
+      FROM asset_metadata FINAL
+    ) USING (asset_id)
+    GROUP BY t, name
+    ORDER BY t
+    """
+
+    args = [
+      str_to_sec(interval),
+      Map.get(@name_to_metric_map, metric),
+      from |> DateTime.to_unix(),
+      to |> DateTime.to_unix(),
+      slug_or_slugs
+    ]
+
+    {query, args}
+  end
+
   def aggregated_timeseries_data_query(metric, asset_ids, from, to, aggregation, filters) do
     query = """
     SELECT

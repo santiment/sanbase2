@@ -74,6 +74,37 @@ defmodule Sanbase.Metric do
   end
 
   @doc ~s"""
+  Get a given metric for an identifier and time range. The metric's aggregation
+  function can be changed by the last optional parameter. The available
+  aggregations are #{inspect(@aggregations)}. If no aggregation is provided,
+  a default one (based on the metric) will be used.
+  """
+  def timeseries_data_per_slug(metric, identifier, from, to, interval, opts \\ [])
+
+  def timeseries_data_per_slug(metric, identifier, from, to, interval, opts) do
+    case Map.get(@timeseries_metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric, type: :timeseries)
+
+      module when is_atom(module) ->
+        aggregation = Keyword.get(opts, :aggregation, nil)
+
+        fun = fn ->
+          module.timeseries_data_per_slug(
+            metric,
+            identifier,
+            from,
+            to,
+            interval,
+            opts
+          )
+        end
+
+        execute_if_aggregation_valid(fun, metric, aggregation)
+    end
+  end
+
+  @doc ~s"""
   Get the aggregated value for a metric, an identifier and time range.
   The metric's aggregation function can be changed by the last optional parameter.
   The available aggregations are #{inspect(@aggregations)}. If no aggregation is

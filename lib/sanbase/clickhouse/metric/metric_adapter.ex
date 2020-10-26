@@ -85,18 +85,34 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   end
 
   @doc """
-  Social metrics totals with text argument are served by social data metrics adapter.
+  All metrics with text argument are served by social data metrics adapter.
   """
-  def timeseries_data(metric, %{text: _text} = selector, from, to, interval, opts)
-      when metric in [
-             "social_volume_total",
-             "social_dominance_total",
-             "sentiment_positive_total",
-             "sentiment_negative_total",
-             "sentiment_balance_total",
-             "sentiment_volume_consumed_total"
-           ] do
+  def timeseries_data(metric, %{text: _text} = selector, from, to, interval, opts) do
     Sanbase.SocialData.MetricAdapter.timeseries_data(metric, selector, from, to, interval, opts)
+  end
+
+  @impl Sanbase.Metric.Behaviour
+  def timeseries_data_per_slug(metric, %{slug: slug}, from, to, interval, opts) do
+    aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
+    filters = Keyword.get(opts, :additional_filters, [])
+
+    {query, args} =
+      timeseries_data_per_slug_query(metric, slug, from, to, interval, aggregation, filters)
+
+    ClickhouseRepo.query_reduce(
+      query,
+      args,
+      %{},
+      fn [timestamp, slug, value], acc ->
+        datetime = DateTime.from_unix!(timestamp)
+        elem = %{slug: slug, value: value}
+        Map.update(acc, datetime, [elem], &[elem | &1])
+      end
+    )
+    |> maybe_apply_function(fn list ->
+      list
+      |> Enum.map(fn {datetime, data} -> %{datetime: datetime, data: data} end)
+    end)
   end
 
   @impl Sanbase.Metric.Behaviour

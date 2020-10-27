@@ -3,7 +3,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
   import ExUnit.CaptureLog
 
   alias Sanbase.Metric
@@ -17,8 +16,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
     [
       conn: conn,
       slug: project.slug,
-      from: from_iso8601!("2019-01-01T00:00:00Z"),
-      to: from_iso8601!("2019-01-03T00:00:00Z")
+      from: ~U[2019-01-01 00:00:00Z],
+      to: ~U[2019-01-03 00:00:00Z]
     ]
   end
 

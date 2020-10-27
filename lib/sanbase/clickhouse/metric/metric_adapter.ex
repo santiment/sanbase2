@@ -9,7 +9,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   """
   @behaviour Sanbase.Metric.Behaviour
 
-  import Sanbase.Clickhouse.MetadataHelper
   import Sanbase.Clickhouse.MetricAdapter.SqlQuery
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
 
@@ -84,19 +83,28 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
     end)
   end
 
-  @doc """
-  Social metrics totals with text argument are served by social data metrics adapter.
-  """
-  def timeseries_data(metric, %{text: _text} = selector, from, to, interval, opts)
-      when metric in [
-             "social_volume_total",
-             "social_dominance_total",
-             "sentiment_positive_total",
-             "sentiment_negative_total",
-             "sentiment_balance_total",
-             "sentiment_volume_consumed_total"
-           ] do
-    Sanbase.SocialData.MetricAdapter.timeseries_data(metric, selector, from, to, interval, opts)
+  @impl Sanbase.Metric.Behaviour
+  def timeseries_data_per_slug(metric, %{slug: slug}, from, to, interval, opts) do
+    aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
+    filters = Keyword.get(opts, :additional_filters, [])
+
+    {query, args} =
+      timeseries_data_per_slug_query(metric, slug, from, to, interval, aggregation, filters)
+
+    ClickhouseRepo.query_reduce(
+      query,
+      args,
+      %{},
+      fn [timestamp, slug, value], acc ->
+        datetime = DateTime.from_unix!(timestamp)
+        elem = %{slug: slug, value: value}
+        Map.update(acc, datetime, [elem], &[elem | &1])
+      end
+    )
+    |> maybe_apply_function(fn list ->
+      list
+      |> Enum.map(fn {datetime, data} -> %{datetime: datetime, data: data} end)
+    end)
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -263,22 +271,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   defp get_aggregated_timeseries_data(metric, slugs, from, to, aggregation, filters)
        when is_list(slugs) do
-    {:ok, asset_map} = slug_to_asset_id_map()
+    {query, args} =
+      aggregated_timeseries_data_query(metric, slugs, from, to, aggregation, filters)
 
-    case Map.take(asset_map, slugs) |> Map.values() do
-      [] ->
-        {:ok, %{}}
-
-      asset_ids ->
-        {:ok, asset_id_map} = asset_id_to_slug_map()
-
-        {query, args} =
-          aggregated_timeseries_data_query(metric, asset_ids, from, to, aggregation, filters)
-
-        ClickhouseRepo.query_reduce(query, args, %{}, fn [asset_id, value], acc ->
-          slug = Map.get(asset_id_map, asset_id)
-          Map.put(acc, slug, value)
-        end)
-    end
+    ClickhouseRepo.query_reduce(query, args, %{}, fn [slug, value], acc ->
+      Map.put(acc, slug, value)
+    end)
   end
 end

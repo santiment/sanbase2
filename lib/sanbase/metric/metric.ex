@@ -7,7 +7,7 @@ defmodule Sanbase.Metric do
   @metric_modules list and everything else happens automatically.
   """
   @compile :inline_list_funcs
-  @compile inline: [execute_if_aggregation_valid: 3]
+  @compile inline: [execute_if_aggregation_valid: 3, maybe_change_module: 3]
 
   @access_map Sanbase.Metric.Helper.access_map()
   @aggregations Sanbase.Metric.Helper.aggregations()
@@ -43,25 +43,26 @@ defmodule Sanbase.Metric do
   end
 
   @doc ~s"""
-  Get a given metric for an identifier and time range. The metric's aggregation
+  Get a given metric for an selector and time range. The metric's aggregation
   function can be changed by the last optional parameter. The available
   aggregations are #{inspect(@aggregations)}. If no aggregation is provided,
   a default one (based on the metric) will be used.
   """
-  def timeseries_data(metric, identifier, from, to, interval, opts \\ [])
+  def timeseries_data(metric, selector, from, to, interval, opts \\ [])
 
-  def timeseries_data(metric, identifier, from, to, interval, opts) do
+  def timeseries_data(metric, selector, from, to, interval, opts) do
     case Map.get(@timeseries_metric_to_module_map, metric) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
+        module = maybe_change_module(module, metric, selector)
         aggregation = Keyword.get(opts, :aggregation, nil)
 
         fun = fn ->
           module.timeseries_data(
             metric,
-            identifier,
+            selector,
             from,
             to,
             interval,
@@ -74,25 +75,58 @@ defmodule Sanbase.Metric do
   end
 
   @doc ~s"""
-  Get the aggregated value for a metric, an identifier and time range.
-  The metric's aggregation function can be changed by the last optional parameter.
-  The available aggregations are #{inspect(@aggregations)}. If no aggregation is
-  provided, a default one (based on the metric) will be used.
+  Get a given metric for an selector and time range. The metric's aggregation
+  function can be changed by the last optional parameter. The available
+  aggregations are #{inspect(@aggregations)}. If no aggregation is provided,
+  a default one (based on the metric) will be used.
   """
-  def aggregated_timeseries_data(metric, identifier, from, to, opts \\ [])
+  def timeseries_data_per_slug(metric, selector, from, to, interval, opts \\ [])
 
-  def aggregated_timeseries_data(metric, identifier, from, to, opts) do
+  def timeseries_data_per_slug(metric, selector, from, to, interval, opts) do
     case Map.get(@timeseries_metric_to_module_map, metric) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
+        module = maybe_change_module(module, metric, selector)
+        aggregation = Keyword.get(opts, :aggregation, nil)
+
+        fun = fn ->
+          module.timeseries_data_per_slug(
+            metric,
+            selector,
+            from,
+            to,
+            interval,
+            opts
+          )
+        end
+
+        execute_if_aggregation_valid(fun, metric, aggregation)
+    end
+  end
+
+  @doc ~s"""
+  Get the aggregated value for a metric, an selector and time range.
+  The metric's aggregation function can be changed by the last optional parameter.
+  The available aggregations are #{inspect(@aggregations)}. If no aggregation is
+  provided, a default one (based on the metric) will be used.
+  """
+  def aggregated_timeseries_data(metric, selector, from, to, opts \\ [])
+
+  def aggregated_timeseries_data(metric, selector, from, to, opts) do
+    case Map.get(@timeseries_metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric, type: :timeseries)
+
+      module when is_atom(module) ->
+        module = maybe_change_module(module, metric, selector)
         aggregation = Keyword.get(opts, :aggregation, nil)
 
         fun = fn ->
           module.aggregated_timeseries_data(
             metric,
-            identifier,
+            selector,
             from,
             to,
             opts
@@ -174,17 +208,19 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Get a histogram for a given metric
   """
-  def histogram_data(metric, identifier, from, to, interval, limit \\ 100)
+  def histogram_data(metric, selector, from, to, interval, limit \\ 100)
 
-  def histogram_data(metric, identifier, from, to, interval, limit) do
+  def histogram_data(metric, selector, from, to, interval, limit) do
     case Map.get(@histogram_metric_to_module_map, metric) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
+        module = maybe_change_module(module, metric, selector)
+
         module.histogram_data(
           metric,
-          identifier,
+          selector,
           from,
           to,
           interval,
@@ -197,20 +233,21 @@ defmodule Sanbase.Metric do
   Get a table for a given metric
   """
 
-  def table_data(metric, identifier, from, to, opts \\ [])
+  def table_data(metric, selector, from, to, opts \\ [])
 
-  def table_data(metric, identifier, from, to, opts) do
+  def table_data(metric, selector, from, to, opts) do
     case Map.get(@table_metric_to_module_map, metric) do
       nil ->
         metric_not_available_error(metric, type: :table)
 
       module when is_atom(module) ->
+        module = maybe_change_module(module, metric, selector)
         aggregation = Keyword.get(opts, :aggregation, nil)
 
         fun = fn ->
           module.table_data(
             metric,
-            identifier,
+            selector,
             from,
             to,
             opts
@@ -271,13 +308,14 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Get the first datetime for which a given metric is available for a given slug
   """
-  def first_datetime(metric, slug) do
+  def first_datetime(metric, selector) do
     case Map.get(@metric_to_module_map, metric) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        module.first_datetime(metric, slug)
+        module = maybe_change_module(module, metric, selector)
+        module.first_datetime(metric, selector)
     end
   end
 
@@ -285,13 +323,14 @@ defmodule Sanbase.Metric do
   Get the datetime for which the data point with latest dt for the given metric/slug
   pair is computed.
   """
-  def last_datetime_computed_at(metric, slug) do
+  def last_datetime_computed_at(metric, selector) do
     case Map.get(@metric_to_module_map, metric) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
 
       module when is_atom(module) ->
-        module.last_datetime_computed_at(metric, slug)
+        module = maybe_change_module(module, metric, selector)
+        module.last_datetime_computed_at(metric, selector)
     end
   end
 
@@ -550,4 +589,17 @@ defmodule Sanbase.Metric do
         {:error, "The aggregation #{aggregation} is not supported for the metric #{metric}"}
     end
   end
+
+  @social_metrics Sanbase.SocialData.MetricAdapter.available_metrics()
+  # When using slug, the social metrics are fetched from clickhouse
+  # But when text selector is used, the metric should be fetched from Elasticsearch
+  # as it cannot be precomputed due to the vast number of possible text arguments
+  defp maybe_change_module(module, metric, %{text: _text}) do
+    case metric in @social_metrics do
+      true -> Sanbase.SocialData.MetricAdapter
+      false -> module
+    end
+  end
+
+  defp maybe_change_module(module, _metric, _selector), do: module
 end

@@ -5,7 +5,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
   import Sanbase.Factory
   import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Sanbase.Metric
 
@@ -17,8 +16,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     [
       conn: conn,
       slug: project.slug,
-      from: from_iso8601!("2019-01-01T00:00:00Z"),
-      to: from_iso8601!("2019-01-02T00:00:00Z"),
+      from: ~U[2019-01-01 00:00:00Z],
+      to: ~U[2019-01-02 00:00:00Z],
       interval: "1d"
     ]
   end
@@ -35,8 +34,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
       &Sanbase.Clickhouse.MetricAdapter.timeseries_data/6,
       {:ok,
        [
-         %{value: 100.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
-         %{value: 200.0, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
+         %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z]},
+         %{value: 200.0, datetime: ~U[2019-01-02 00:00:00Z]}
        ]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -82,8 +81,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
       &Sanbase.Clickhouse.MetricAdapter.timeseries_data/6,
       {:ok,
        [
-         %{value: 100.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
-         %{value: 200.0, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
+         %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z]},
+         %{value: 200.0, datetime: ~U[2019-01-02 00:00:00Z]}
        ]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -162,8 +161,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
       &Sanbase.Clickhouse.MetricAdapter.timeseries_data/6,
       {:ok,
        [
-         %{value: 100.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
-         %{value: 200.0, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
+         %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z]},
+         %{value: 200.0, datetime: ~U[2019-01-02 00:00:00Z]}
        ]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -196,8 +195,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
       &Metric.timeseries_data/6,
       {:ok,
        [
-         %{value: 100.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
-         %{value: 200.0, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
+         %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z]},
+         %{value: 200.0, datetime: ~U[2019-01-02 00:00:00Z]}
        ]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -233,8 +232,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
       &Sanbase.Clickhouse.MetricAdapter.timeseries_data/6,
       {:ok,
        [
-         %{value: 100.0, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
-         %{value: 200.0, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
+         %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z]},
+         %{value: 200.0, datetime: ~U[2019-01-02 00:00:00Z]}
        ]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->

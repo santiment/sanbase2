@@ -66,6 +66,37 @@ defmodule Sanbase.Price.SqlQuery do
     {query, args}
   end
 
+  def timeseries_metric_data_per_slug_query(
+        slug_or_slugs,
+        metric,
+        from,
+        to,
+        interval,
+        source,
+        aggregation
+      ) do
+    {from, to, interval, span} = timerange_parameters(from, to, interval)
+
+    query = """
+    SELECT
+      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS time,
+      slug,
+      #{aggregation(aggregation, "#{metric}", "dt")}
+    FROM #{@table}
+    PREWHERE
+      #{slug_filter(slug_or_slugs, argument_position: 3)} AND
+      source = cast(?4, 'LowCardinality(String)') AND
+      dt >= toDateTime(?5) AND
+      dt < toDateTime(?6)
+    GROUP BY time, slug
+    ORDER BY time
+    """
+
+    args = [interval, span, slug_or_slugs, source, from, to]
+
+    {query, args}
+  end
+
   def aggregated_timeseries_data_query(slugs, from, to, source, opts \\ []) do
     price_aggr = Keyword.get(opts, :price_aggregation, :avg)
     marketcap_aggr = Keyword.get(opts, :marketcap_aggregation, :avg)

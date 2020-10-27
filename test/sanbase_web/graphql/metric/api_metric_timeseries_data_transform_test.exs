@@ -16,14 +16,14 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTransformTest do
     %{conn: conn, slug: slug} = context
 
     data = [
-      %{datetime: ~U[2019-01-01T00:00:00Z], value: 100.0},
-      %{datetime: ~U[2019-01-02T00:00:00Z], value: 200.0},
-      %{datetime: ~U[2019-01-03T00:00:00Z], value: 50.0},
-      %{datetime: ~U[2019-01-04T00:00:00Z], value: 400.0},
-      %{datetime: ~U[2019-01-05T00:00:00Z], value: 300.0},
-      %{datetime: ~U[2019-01-06T00:00:00Z], value: 10.0},
-      %{datetime: ~U[2019-01-07T00:00:00Z], value: 200.0},
-      %{datetime: ~U[2019-01-08T00:00:00Z], value: 320.0}
+      %{datetime: ~U[2019-01-01 00:00:00Z], value: 100.0},
+      %{datetime: ~U[2019-01-02 00:00:00Z], value: 200.0},
+      %{datetime: ~U[2019-01-03 00:00:00Z], value: 50.0},
+      %{datetime: ~U[2019-01-04 00:00:00Z], value: 400.0},
+      %{datetime: ~U[2019-01-05 00:00:00Z], value: 300.0},
+      %{datetime: ~U[2019-01-06 00:00:00Z], value: 10.0},
+      %{datetime: ~U[2019-01-07 00:00:00Z], value: 200.0},
+      %{datetime: ~U[2019-01-08 00:00:00Z], value: 320.0}
     ]
 
     Sanbase.Mock.prepare_mock2(&Sanbase.Clickhouse.MetricAdapter.timeseries_data/6, {:ok, data})
@@ -33,8 +33,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTransformTest do
           conn,
           "daily_active_addresses",
           slug,
-          ~U[2019-01-04T00:00:00Z],
-          ~U[2019-01-08T00:00:00Z],
+          ~U[2019-01-04 00:00:00Z],
+          ~U[2019-01-08 00:00:00Z],
           "1d",
           :avg,
           %{type: "moving_average", moving_average_base: 3}

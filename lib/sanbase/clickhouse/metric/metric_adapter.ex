@@ -9,7 +9,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   """
   @behaviour Sanbase.Metric.Behaviour
 
-  import Sanbase.Clickhouse.MetadataHelper
   import Sanbase.Clickhouse.MetricAdapter.SqlQuery
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
 
@@ -82,13 +81,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
         value: value
       }
     end)
-  end
-
-  @doc """
-  All metrics with text argument are served by social data metrics adapter.
-  """
-  def timeseries_data(metric, %{text: _text} = selector, from, to, interval, opts) do
-    Sanbase.SocialData.MetricAdapter.timeseries_data(metric, selector, from, to, interval, opts)
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -279,22 +271,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   defp get_aggregated_timeseries_data(metric, slugs, from, to, aggregation, filters)
        when is_list(slugs) do
-    {:ok, asset_map} = slug_to_asset_id_map()
+    {query, args} =
+      aggregated_timeseries_data_query(metric, slugs, from, to, aggregation, filters)
 
-    case Map.take(asset_map, slugs) |> Map.values() do
-      [] ->
-        {:ok, %{}}
-
-      asset_ids ->
-        {:ok, asset_id_map} = asset_id_to_slug_map()
-
-        {query, args} =
-          aggregated_timeseries_data_query(metric, asset_ids, from, to, aggregation, filters)
-
-        ClickhouseRepo.query_reduce(query, args, %{}, fn [asset_id, value], acc ->
-          slug = Map.get(asset_id_map, asset_id)
-          Map.put(acc, slug, value)
-        end)
-    end
+    ClickhouseRepo.query_reduce(query, args, %{}, fn [slug, value], acc ->
+      Map.put(acc, slug, value)
+    end)
   end
 end

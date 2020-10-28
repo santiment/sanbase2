@@ -78,6 +78,9 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
     end)
   end
 
+  defguard is_proper_metric_data(data)
+           when is_number(data) or (is_map(data) and map_size(data) > 0)
+
   def fetch_metric(metric, selector, time_window) do
     cache_key =
       {:metric_signal, metric, selector, time_window, round_datetime(Timex.now(), 300)}
@@ -91,16 +94,16 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
     last = now
 
     Cache.get_or_store(cache_key, fn ->
-      with {:ok, data1} <- Metric.aggregated_timeseries_data(metric, selector, first, middle),
-           {:ok, data2} <- Metric.aggregated_timeseries_data(metric, selector, middle, last) do
+      with {:ok, data1} when is_proper_metric_data(data1) > 0 <-
+             Metric.aggregated_timeseries_data(metric, selector, first, middle),
+           {:ok, data2} when is_proper_metric_data(data2) > 0 <-
+             Metric.aggregated_timeseries_data(metric, selector, middle, last) do
         # NOTE: Rework when the aggregated_timeseries_data function
         # starts to return the result in the same format
-
         to_value = fn
-          nil -> 0
           %{} = map -> Map.values(map) |> List.first()
           [%{} = map] -> Map.values(map) |> List.first()
-          number when is_number(number) -> number
+          value -> value
         end
 
         value1 = to_value.(data1)

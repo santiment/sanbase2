@@ -99,6 +99,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
         to_value = fn
           nil -> 0
           %{} = map -> Map.values(map) |> List.first()
+          [%{} = map] -> Map.values(map) |> List.first()
           number when is_number(number) -> number
         end
 

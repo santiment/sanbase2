@@ -39,10 +39,10 @@ defmodule Sanbase.Signal.SchedulerTest do
 
     mock_fun =
       [
-        fn -> {:ok, [%{datetime: datetimes |> List.first(), value: 100}]} end,
-        fn -> {:ok, [%{datetiem: datetimes |> List.last(), value: 5000}]} end
+        fn -> {:ok, %{project.slug => 100}} end,
+        fn -> {:ok, %{project.slug => 5000}} end
       ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 6)
+      |> Sanbase.Mock.wrap_consecutives(arity: 5)
 
     [
       trigger: trigger,
@@ -54,7 +54,7 @@ defmodule Sanbase.Signal.SchedulerTest do
   end
 
   test "active is_repeating: false triggers again", context do
-    %{user: user, trigger: trigger} = context
+    %{user: user, trigger: trigger, project: project} = context
 
     UserTrigger.update_user_trigger(user, %{
       id: trigger.id,
@@ -63,8 +63,8 @@ defmodule Sanbase.Signal.SchedulerTest do
     })
 
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.MetricAdapter.timeseries_data/6,
-      {:ok, [%{datetime: Timex.now(), value: 5000}]}
+      &Sanbase.Clickhouse.MetricAdapter.aggregated_timeseries_data/5,
+      {:ok, %{project.slug => 5000}}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       ut = Sanbase.Repo.get(UserTrigger, trigger.id)
@@ -105,7 +105,11 @@ defmodule Sanbase.Signal.SchedulerTest do
   test "successful signal is written in signals_historical_activity", context do
     %{mock_fun: mock_fun, user: user, project: project} = context
 
-    Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.MetricAdapter, :timeseries_data, mock_fun)
+    Sanbase.Mock.prepare_mock(
+      Sanbase.Clickhouse.MetricAdapter,
+      :aggregated_timeseries_data,
+      mock_fun
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
 
@@ -136,7 +140,11 @@ defmodule Sanbase.Signal.SchedulerTest do
       project: project
     } = context
 
-    Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.MetricAdapter, :timeseries_data, mock_fun)
+    Sanbase.Mock.prepare_mock(
+      Sanbase.Clickhouse.MetricAdapter,
+      :aggregated_timeseries_data,
+      mock_fun
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
 
@@ -189,7 +197,11 @@ defmodule Sanbase.Signal.SchedulerTest do
         settings: trigger_settings
       })
 
-    Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.MetricAdapter, :timeseries_data, mock_fun)
+    Sanbase.Mock.prepare_mock(
+      Sanbase.Clickhouse.MetricAdapter,
+      :aggregated_timeseries_data,
+      mock_fun
+    )
     |> Sanbase.Mock.run_with_mocks(fn ->
       Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
       ut = Sanbase.Repo.get(UserTrigger, trigger.id)

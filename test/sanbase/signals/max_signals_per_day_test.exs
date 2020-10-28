@@ -34,14 +34,12 @@ defmodule Sanbase.Signal.MaxSignalsPerDayTest do
     {:ok, _} = create_trigger_fun.()
     {:ok, _} = create_trigger_fun.()
 
-    datetimes = generate_datetimes(~U[2019-01-01 00:00:00Z], "1d", 7)
-
     mock_fun =
       [
-        fn -> {:ok, [%{datetime: datetimes |> List.first(), value: 100}]} end,
-        fn -> {:ok, [%{datetiem: datetimes |> List.last(), value: 500}]} end
+        fn -> {:ok, %{project.slug => 100}} end,
+        fn -> {:ok, %{project.slug => 500}} end
       ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 6)
+      |> Sanbase.Mock.wrap_consecutives(arity: 5)
 
     [
       trigger: trigger,
@@ -60,7 +58,11 @@ defmodule Sanbase.Signal.MaxSignalsPerDayTest do
 
     self_pid = self()
 
-    Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.MetricAdapter, :timeseries_data, mock_fun)
+    Sanbase.Mock.prepare_mock(
+      Sanbase.Clickhouse.MetricAdapter,
+      :aggregated_timeseries_data,
+      mock_fun
+    )
     |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
       send(self_pid, {:telegram_to_self, text})
       :ok

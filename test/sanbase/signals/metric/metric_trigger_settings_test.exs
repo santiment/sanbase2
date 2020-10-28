@@ -26,15 +26,14 @@ defmodule Sanbase.Signal.MetricTriggerSettingsTest do
       # Clean children on exit, otherwise DB calls from async tasks can be attempted
       clean_task_supervisor_children()
       Sanbase.Signal.Evaluator.Cache.clear_all()
-      datetimes = generate_datetimes(~U[2019-01-01 00:00:00Z], "1d", 7)
 
       user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
       Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
-      %{user: user, datetimes: datetimes}
+      %{user: user}
     end
 
     test "signal with text selector works", context do
-      %{user: user, datetimes: datetimes} = context
+      %{user: user} = context
 
       trigger_settings = %{
         type: "metric_signal",
@@ -56,12 +55,16 @@ defmodule Sanbase.Signal.MetricTriggerSettingsTest do
       # for consecutive calls
       mock_fun =
         [
-          fn -> {:ok, [%{datetime: datetimes |> List.first(), value: 100}]} end,
-          fn -> {:ok, [%{datetiem: datetimes |> List.last(), value: 5000}]} end
+          fn -> {:ok, 100} end,
+          fn -> {:ok, 5000} end
         ]
-        |> Sanbase.Mock.wrap_consecutives(arity: 6)
+        |> Sanbase.Mock.wrap_consecutives(arity: 5)
 
-      Sanbase.Mock.prepare_mock(Sanbase.SocialData.MetricAdapter, :timeseries_data, mock_fun)
+      Sanbase.Mock.prepare_mock(
+        Sanbase.SocialData.MetricAdapter,
+        :aggregated_timeseries_data,
+        mock_fun
+      )
       |> Sanbase.Mock.run_with_mocks(fn ->
         [triggered] =
           MetricTriggerSettings.type()
@@ -85,13 +88,11 @@ defmodule Sanbase.Signal.MetricTriggerSettingsTest do
 
       project = Sanbase.Factory.insert(:random_project)
 
-      datetimes = generate_datetimes(~U[2019-01-01 00:00:00Z], "1d", 7)
-
-      %{user: user, project: project, datetimes: datetimes}
+      %{user: user, project: project}
     end
 
     test "signal with a metric works - above operation", context do
-      %{project: project, user: user, datetimes: datetimes} = context
+      %{project: project, user: user} = context
 
       trigger_settings = %{
         type: "metric_signal",
@@ -113,12 +114,16 @@ defmodule Sanbase.Signal.MetricTriggerSettingsTest do
       # for consecutive calls
       mock_fun =
         [
-          fn -> {:ok, [%{datetime: datetimes |> List.first(), value: 100}]} end,
-          fn -> {:ok, [%{datetiem: datetimes |> List.last(), value: 5000}]} end
+          fn -> {:ok, %{project.slug => 100}} end,
+          fn -> {:ok, %{project.slug => 5000}} end
         ]
-        |> Sanbase.Mock.wrap_consecutives(arity: 6)
+        |> Sanbase.Mock.wrap_consecutives(arity: 5)
 
-      Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.MetricAdapter, :timeseries_data, mock_fun)
+      Sanbase.Mock.prepare_mock(
+        Sanbase.Clickhouse.MetricAdapter,
+        :aggregated_timeseries_data,
+        mock_fun
+      )
       |> Sanbase.Mock.run_with_mocks(fn ->
         [triggered] =
           MetricTriggerSettings.type()
@@ -130,7 +135,7 @@ defmodule Sanbase.Signal.MetricTriggerSettingsTest do
     end
 
     test "signal with metric works - percent change operation", context do
-      %{project: project, user: user, datetimes: datetimes} = context
+      %{project: project, user: user} = context
 
       trigger_settings = %{
         type: "metric_signal",
@@ -150,12 +155,16 @@ defmodule Sanbase.Signal.MetricTriggerSettingsTest do
 
       mock_fun =
         [
-          fn -> {:ok, [%{datetime: datetimes |> List.first(), value: 100}]} end,
-          fn -> {:ok, [%{datetiem: datetimes |> List.last(), value: 500}]} end
+          fn -> {:ok, %{project.slug => 100}} end,
+          fn -> {:ok, %{project.slug => 500}} end
         ]
-        |> Sanbase.Mock.wrap_consecutives(arity: 6)
+        |> Sanbase.Mock.wrap_consecutives(arity: 5)
 
-      Sanbase.Mock.prepare_mock(Sanbase.Clickhouse.MetricAdapter, :timeseries_data, mock_fun)
+      Sanbase.Mock.prepare_mock(
+        Sanbase.Clickhouse.MetricAdapter,
+        :aggregated_timeseries_data,
+        mock_fun
+      )
       |> Sanbase.Mock.run_with_mocks(fn ->
         [triggered] =
           MetricTriggerSettings.type()

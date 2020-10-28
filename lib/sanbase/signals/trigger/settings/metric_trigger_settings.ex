@@ -94,9 +94,9 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
     last = now
 
     Cache.get_or_store(cache_key, fn ->
-      with {:ok, data1} when is_proper_metric_data(data1) > 0 <-
+      with {:ok, data1} when is_proper_metric_data(data1) <-
              Metric.aggregated_timeseries_data(metric, selector, first, middle),
-           {:ok, data2} when is_proper_metric_data(data2) > 0 <-
+           {:ok, data2} when is_proper_metric_data(data2) <-
              Metric.aggregated_timeseries_data(metric, selector, middle, last) do
         # NOTE: Rework when the aggregated_timeseries_data function
         # starts to return the result in the same format

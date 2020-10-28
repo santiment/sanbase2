@@ -137,7 +137,7 @@ defmodule Sanbase.SocialData.MetricAdapter do
     case timeseries_data(metric, selector, from, to, "1h", opts) do
       {:ok, result} ->
         value =
-          Enum.reduce(result, 0, &(&1.value + &2))
+          Enum.map(result, & &1.value)
           |> Sanbase.Math.average()
 
         {:ok, %{value: value}}

@@ -23,7 +23,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.IntercomResolver do
         |> Enum.map(fn %{"event_name" => event_name, "created_at" => created_at} = event ->
           %{
             event_name: event_name,
-            created_at: Sanbase.DateTimeUtils.from_iso8601!(created_at),
+            created_at:
+              Sanbase.DateTimeUtils.from_iso8601!(created_at) |> DateTime.truncate(:second),
             user_id: user.id,
             metadata: event["metadata"],
             inserted_at: Timex.now() |> DateTime.truncate(:second),

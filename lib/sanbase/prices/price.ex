@@ -4,8 +4,9 @@ defmodule Sanbase.Price do
   @async_with_timeout 29_000
 
   import Sanbase.Price.SqlQuery
-  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
+  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
   import Sanbase.Metric.Transform, only: [maybe_nullify_values: 1, remove_missing_values: 1]
+
   alias Sanbase.Model.Project
 
   alias Sanbase.ClickhouseRepo
@@ -218,6 +219,37 @@ defmodule Sanbase.Price do
           }
       end
     )
+  end
+
+  def timeseries_metric_data_per_slug(slug_or_slugs, metric, from, to, interval, opts) do
+    source = Keyword.get(opts, :source) || @default_source
+    aggregation = Keyword.get(opts, :aggregation) || :last
+
+    {query, args} =
+      timeseries_metric_data_per_slug_query(
+        slug_or_slugs,
+        metric,
+        from,
+        to,
+        interval,
+        source,
+        aggregation
+      )
+
+    ClickhouseRepo.query_reduce(
+      query,
+      args,
+      %{},
+      fn [timestamp, slug, value], acc ->
+        datetime = DateTime.from_unix!(timestamp)
+        elem = %{slug: slug, value: value}
+        Map.update(acc, datetime, [elem], &[elem | &1])
+      end
+    )
+    |> maybe_apply_function(fn list ->
+      list
+      |> Enum.map(fn {datetime, data} -> %{datetime: datetime, data: data} end)
+    end)
   end
 
   @doc ~s"""

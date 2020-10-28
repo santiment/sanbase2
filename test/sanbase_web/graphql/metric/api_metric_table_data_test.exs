@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricTableDataTest do
   import Mock, only: [assert_called: 1]
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
   import ExUnit.CaptureLog
 
   alias Sanbase.Metric
@@ -18,8 +17,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTableDataTest do
     [
       conn: conn,
       slugs: [project1.slug, project2.slug],
-      from: from_iso8601!("2019-01-01T00:00:00Z"),
-      to: from_iso8601!("2019-01-03T00:00:00Z")
+      from: ~U[2019-01-01 00:00:00Z],
+      to: ~U[2019-01-03 00:00:00Z]
     ]
   end
 

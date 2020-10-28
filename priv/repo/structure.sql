@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 11.9
--- Dumped by pg_dump version 11.9
+-- Dumped from database version 12.3
+-- Dumped by pg_dump version 12.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -72,8 +72,6 @@ CREATE TYPE public.status AS ENUM (
 
 
 SET default_tablespace = '';
-
-SET default_with_oids = false;
 
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
@@ -1339,8 +1337,7 @@ CREATE TABLE public.project (
     logo_url character varying(255),
     slug character varying(255),
     is_hidden boolean DEFAULT false,
-    dark_logo_url character varying(255),
-    telegram_chat_id integer
+    dark_logo_url character varying(255)
 );
 
 
@@ -4970,7 +4967,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200813141704);
 INSERT INTO public."schema_migrations" (version) VALUES (20200826101751);
 INSERT INTO public."schema_migrations" (version) VALUES (20200826114101);
 INSERT INTO public."schema_migrations" (version) VALUES (20200908092849);
-INSERT INTO public."schema_migrations" (version) VALUES (20200910142423);
 INSERT INTO public."schema_migrations" (version) VALUES (20200923090710);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016091443);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016105225);

@@ -82,15 +82,22 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     end
   end
 
-  defp should_halt?(conn, %{auth: %{subscription: %{plan: %{name: plan_name}}}}) do
-    case is_sansheets_request(conn) and plan_name == "FREE" do
-      true ->
+  # FREE requests to San API and Sansheets are blocked
+  defp should_halt?(conn, %{auth: %{subscription: %{plan: %{name: "FREE"}}}}) do
+    case request_type(conn) do
+      :sanapi ->
+        %{
+          error_msg: "You need to upgrade your plan in order to use Santiment API",
+          error_code: 401
+        }
+
+      :sansheets ->
         %{
           error_msg: "You need to upgrade to Sanbase Pro in order to use SanSheets.",
           error_code: 401
         }
 
-      false ->
+      _ ->
         false
     end
   end
@@ -323,10 +330,20 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   defp get_no_auth_product_id(_), do: @product_id_api
 
-  defp is_sansheets_request(conn) do
-    case Plug.Conn.get_req_header(conn, "user-agent") do
-      [user_agent] -> String.contains?(user_agent, "Google-Apps-Script")
-      _ -> false
+  defp request_type(conn) do
+    user_agent = get_req_header(conn, "user-agent") |> List.first()
+    origin = get_req_header(conn, "origin") |> List.first()
+
+    cond do
+      user_agent && String.contains?(user_agent, "Google-Apps-Script") ->
+        :sansheets
+
+      # Everything ending with "santiment.net" is treated like Sanbase
+      origin && String.ends_with?(origin, "santiment.net") ->
+        :sanbase
+
+      true ->
+        :sanapi
     end
   end
 

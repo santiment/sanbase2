@@ -22,79 +22,51 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     user = insert(:user)
     project = insert(:random_erc20_project)
     {:ok, apikey} = Apikey.generate_apikey(user)
-    conn = setup_apikey_auth(build_conn(), apikey)
+    conn = build_conn() |> put_req_header("authorization", "Apikey " <> apikey)
 
     [user: user, conn: conn, project: project]
   end
 
   describe "SanAPI product, No subscription" do
-    test "can access FREE metrics for all time", context do
-      {from, to} = from_to(2500, 0)
+    test "cannot access free metrics", context do
+      {from, to} = from_to(40, 35)
       metric = v2_free_timeseries_metric(context.next_integer.(), "SANAPI")
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
-      result = execute_query(context.conn, query, "getMetric")
-      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
-      assert result != nil
+
+      error = execute_with_401(context.conn, query, "getMetric")
+
+      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert error == upgrade_api_error()
     end
 
-    test "can access FREE queries for all time", context do
-      {from, to} = from_to(2500, 0)
+    test "cannot access FREE queries", context do
+      {from, to} = from_to(40, 35)
       slug = context.project.slug
       query = history_price_query(slug, from, to)
-      result = execute_query(context.conn, query, "historyPrice")
-      assert_called(Sanbase.Price.timeseries_data(slug, from, to, :_))
-      assert result != nil
+
+      error = execute_with_401(context.conn, query, "getMetric")
+      refute called(Sanbase.Price.timeseries_data(slug, from, to, :_))
+      assert error == upgrade_api_error()
     end
 
-    test "cannot access RESTRICTED metrics for over 3 months", context do
-      {from, to} = from_to(91, 10)
+    test "cannot access RESTRICTED metrics", context do
+      {from, to} = from_to(40, 35)
       metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
       slug = context.project.slug
       query = metric_query(metric, slug, from, to)
-      result = execute_query(context.conn, query, "getMetric")
+      error = execute_with_401(context.conn, query, "getMetric")
 
-      assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
-      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
-      assert result != nil
+      refute called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
+      assert error == upgrade_api_error()
     end
 
-    test "cannot access RESTRICTED queries for over 3 months", context do
-      {from, to} = from_to(91, 10)
+    test "cannot access RESTRICTED queries", context do
+      {from, to} = from_to(40, 35)
       query = network_growth_query(context.project.slug, from, to)
-      result = execute_query(context.conn, query, "networkGrowth")
 
-      refute called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
-      assert result != nil
-    end
-
-    test "cannot access RESTRICTED queries realtime", context do
-      {from, to} = from_to(10, 0)
-      query = network_growth_query(context.project.slug, from, to)
-      result = execute_query(context.conn, query, "networkGrowth")
-
-      refute called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
-      assert result != nil
-    end
-
-    test "can access RESTRICTED metrics within 90 days and 2 day interval", context do
-      {from, to} = from_to(89, 2)
-      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :free)
-      slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
-      result = execute_query(context.conn, query, "getMetric")
-
-      assert called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
-      assert result != nil
-    end
-
-    test "can access RESTRICTED queries within 90 days and 2 day interval", context do
-      {from, to} = from_to(89, 2)
-      query = network_growth_query(context.project.slug, from, to)
-      result = execute_query(context.conn, query, "networkGrowth")
-
-      assert_called(Metric.timeseries_data("network_growth", :_, :_, :_, :_, :_))
-      assert result != nil
+      error = execute_with_401(context.conn, query, "networkGrowth")
+      assert error == upgrade_api_error()
     end
   end
 
@@ -243,6 +215,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "can access FREE metrics for all time", context do
+      Sanbase.Billing.Subscription |> Sanbase.Repo.all()
       {from, to} = from_to(2500, 0)
       metric = v2_free_timeseries_metric(context.next_integer.(), "SANAPI")
       slug = context.project.slug
@@ -389,6 +362,16 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
   end
 
   # Private functions
+
+  defp execute_with_401(conn, query, query_name) do
+    conn
+    |> post("/graphql", query_skeleton(query, query_name))
+    |> json_response(401)
+  end
+
+  defp upgrade_api_error do
+    %{"errors" => %{"details" => "You need to upgrade your plan in order to use Santiment API"}}
+  end
 
   defp metric_query(metric, slug, from, to) do
     """

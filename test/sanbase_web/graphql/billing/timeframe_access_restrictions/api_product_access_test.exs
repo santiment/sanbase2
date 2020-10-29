@@ -70,6 +70,33 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
   end
 
+  describe "SanAPI product, Sanbase subscription" do
+    setup context do
+      insert(:subscription_pro_sanbase, user: context.user)
+      :ok
+    end
+
+    test "can access RESTRICTED queries for more than 7 years", context do
+      {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)
+      query = network_growth_query(context.project.slug, from, to)
+      result = execute_query(context.conn, query, "networkGrowth")
+
+      assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "can access RESTRICTED metrics for over 7 years", context do
+      {from, to} = from_to(7 * 365 + 1, 7 * 365 - 1)
+      metric = v2_restricted_metric_for_plan(context.next_integer.(), @product, :pro)
+      slug = context.project.slug
+      query = metric_query(metric, slug, from, to)
+      result = execute_query(context.conn, query, "getMetric")
+
+      assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
+      assert result != nil
+    end
+  end
+
   describe "SanAPI product, user with BASIC plan" do
     setup context do
       insert(:subscription_essential, user: context.user)
@@ -215,7 +242,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
     end
 
     test "can access FREE metrics for all time", context do
-      Sanbase.Billing.Subscription |> Sanbase.Repo.all()
       {from, to} = from_to(2500, 0)
       metric = v2_free_timeseries_metric(context.next_integer.(), "SANAPI")
       slug = context.project.slug

@@ -29,6 +29,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   @free_subscription Subscription.free_subscription()
   @extension_metrics Plan.AccessChecker.extension_metrics()
   @extension_metric_product_map GraphqlSchema.extension_metric_product_map()
+  @product_id_api Product.product_api()
+  @product_id_sanbase Product.product_sanbase()
 
   def call(resolution, opts) do
     # First call `check_from_to_params` and then pass the execution to do_call/2
@@ -67,21 +69,35 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     resolution
   end
 
+  # User with Sanbase PRO subscription can access API
+  defp check_plan(
+         %Resolution{
+           context: %{
+             product_id: @product_id_api,
+             auth: %{
+               plan: :pro,
+               subscription: %{plan: %{product_id: @product_id_sanbase}}
+             }
+           }
+         } = resolution
+       ) do
+    resolution
+  end
+
   defp check_plan(
          %Resolution{context: %{__query_or_metric_atom_name__: query_or_metric} = context} =
            resolution
        ) do
     plan = context[:auth][:plan] || :free
     subscription = context[:auth][:subscription] || @free_subscription
-    product_id = subscription.plan.product_id || context.product_id
-    product = Product.code_by_id(product_id)
+    access_product = Product.code_by_id(context.product_id)
 
-    case Plan.AccessChecker.plan_has_access?(plan, product, query_or_metric) do
+    case Plan.AccessChecker.plan_has_access?(plan, access_product, query_or_metric) do
       true ->
         resolution
 
       false ->
-        min_plan = Plan.AccessChecker.min_plan(product, query_or_metric)
+        min_plan = Plan.AccessChecker.min_plan(access_product, query_or_metric)
 
         Resolution.put_result(
           resolution,
@@ -138,6 +154,21 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
       _ ->
         Resolution.put_result(resolution, {:error, :unauthorized})
     end
+  end
+
+  defp do_call(
+         %Resolution{
+           context: %{
+             product_id: @product_id_api,
+             auth: %{
+               plan: :pro,
+               subscription: %{plan: %{product_id: @product_id_sanbase}}
+             }
+           }
+         } = resolution,
+         _middleware_args
+       ) do
+    resolution
   end
 
   # Dispatch the resolution of restricted and not-restricted queries to

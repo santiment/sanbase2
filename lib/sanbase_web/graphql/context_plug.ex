@@ -252,6 +252,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
       subscription =
         Subscription.current_subscription(current_user, product_id) ||
+          Subscription.current_subscription(current_user, @product_id_sanbase) ||
           @free_subscription
 
       %{

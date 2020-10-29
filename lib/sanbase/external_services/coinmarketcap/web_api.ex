@@ -154,8 +154,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   defp store_price_points(%Project{slug: slug} = project, price_points, _) do
     %{datetime: latest_datetime} = Enum.max_by(price_points, &DateTime.to_unix(&1.datetime))
 
-    :ok = export_prices_to_kafka(project, price_points)
-    :ok = export_prices_to_influxdb(Measurement.name_from(project), price_points)
+    export_prices_to_kafka(project, price_points)
+    export_prices_to_influxdb(Measurement.name_from(project), price_points)
 
     PriceScrapingProgress.store_progress(slug, @source, latest_datetime)
   end
@@ -163,7 +163,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
   defp store_price_points("TOTAL_MARKET", price_points, _) do
     %{datetime: latest_datetime} = Enum.max_by(price_points, &DateTime.to_unix(&1.datetime))
 
-    :ok = export_prices_to_kafka("TOTAL_MARKET", price_points)
+    export_prices_to_kafka("TOTAL_MARKET", price_points)
 
     # The influxdb TOTAL_MARKET measurement has float types
     price_points =
@@ -178,7 +178,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApi do
         end
       )
 
-    :ok = export_prices_to_influxdb(@total_market_measurement, price_points)
+    export_prices_to_influxdb(@total_market_measurement, price_points)
 
     PriceScrapingProgress.store_progress("TOTAL_MARKET", @source, latest_datetime)
   end

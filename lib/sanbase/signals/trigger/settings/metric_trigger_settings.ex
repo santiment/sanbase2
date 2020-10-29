@@ -93,22 +93,21 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
     middle = Timex.shift(now, seconds: -interval_seconds)
     last = now
 
+    # NOTE: Rework when the aggregated_timeseries_data function
+    # starts to return the result in the same format
+    to_value = fn
+      %{} = map -> Map.values(map) |> List.first()
+      [%{} = map] -> Map.values(map) |> List.first()
+      value -> value
+    end
+
     Cache.get_or_store(cache_key, fn ->
       with {:ok, data1} when is_proper_metric_data(data1) <-
              Metric.aggregated_timeseries_data(metric, selector, first, middle),
            {:ok, data2} when is_proper_metric_data(data2) <-
-             Metric.aggregated_timeseries_data(metric, selector, middle, last) do
-        # NOTE: Rework when the aggregated_timeseries_data function
-        # starts to return the result in the same format
-        to_value = fn
-          %{} = map -> Map.values(map) |> List.first()
-          [%{} = map] -> Map.values(map) |> List.first()
-          value -> value
-        end
-
-        value1 = to_value.(data1)
-        value2 = to_value.(data2)
-
+             Metric.aggregated_timeseries_data(metric, selector, middle, last),
+           value1 when not is_nil(value1) <- to_value.(data1),
+           value2 when not is_nil(value2) <- to_value.(data2) do
         [%{datetime: first, value: value1}, %{datetime: middle, value: value2}]
       else
         _ -> {:error, "Cannot fetch #{metric} for #{inspect(selector)}"}

@@ -50,9 +50,7 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionTest do
 
     insert(:latest_cmc_data, %{coinmarketcap_id: "santiment", rank: 95, volume_usd: 100_000})
 
-    conn = build_conn()
-
-    {:ok, conn: conn, p1: p1, p2: p2, p3: p3, p4: p4}
+    {:ok, p1: p1, p2: p2, p3: p3, p4: p4}
   end
 
   test "projects by function for selector", context do
@@ -226,11 +224,5 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionTest do
          }
       }
     } | |> String.replace(~r|\"|, ~S|\\"|) |> String.replace(~r|'|, ~S|"|)
-  end
-
-  defp execute_query(conn, query) do
-    conn
-    |> post("/graphql", query_skeleton(query))
-    |> json_response(200)
   end
 end

@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
     user = insert(:user)
 
     conn = setup_jwt_auth(build_conn(), user)
-    basic_auth_conn = setup_basic_auth(conn, "user", "pass")
+    basic_auth_conn = setup_basic_auth(build_conn(), "user", "pass")
 
     {:ok, conn: conn, basic_auth_conn: basic_auth_conn}
   end
@@ -19,8 +19,8 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
       assert res["data"]["uploadReport"]["url"] =~ "image.png"
     end
 
-    test "unauthorized with no auth" do
-      %{"errors" => [error]} = upload_report(build_conn())
+    test "unauthorized with no auth", context do
+      %{"errors" => [error]} = upload_report(context.not_logged_conn)
       assert error["message"] =~ "unauthorized"
     end
 
@@ -54,7 +54,7 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
     end
 
     test "not logged in user - gets only report preview fields", context do
-      res = get_reports(build_conn())
+      res = get_reports(context.not_logged_conn)
 
       assert Enum.map(res["data"]["getReports"], & &1["name"]) == [
                context.free_report.name,

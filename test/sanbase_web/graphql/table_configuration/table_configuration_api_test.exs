@@ -8,7 +8,6 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
     user = insert(:user)
     user2 = insert(:user)
 
-    conn_no_user = build_conn()
     conn = setup_jwt_auth(build_conn(), user)
     conn2 = setup_jwt_auth(build_conn(), user2)
 
@@ -28,7 +27,6 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
     %{
       conn: conn,
       conn2: conn2,
-      conn_no_user: conn_no_user,
       user: user,
       user2: user2,
       settings: settings
@@ -109,7 +107,7 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
 
   describe "table configuration queries" do
     test "can query with anonymous user", context do
-      %{conn: conn, conn_no_user: conn_no_user, settings: settings} = context
+      %{conn: conn, not_logged_conn: not_logged_conn, settings: settings} = context
 
       # Create a public and private table configuration
 
@@ -124,19 +122,19 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
       # Test fetching table configurations with no logged in user
 
       table_configuration1 =
-        get_table_configuration(conn_no_user, table_configuration_id1)
+        get_table_configuration(not_logged_conn, table_configuration_id1)
         |> get_in(["data", "tableConfiguration"])
 
       assert table_configuration1["id"] == table_configuration_id1
 
       table_configuration2 =
-        get_table_configuration(conn_no_user, table_configuration_id2)
+        get_table_configuration(not_logged_conn, table_configuration_id2)
         |> get_in(["data", "tableConfiguration"])
 
       assert table_configuration2 == nil
 
       table_configuration_ids =
-        get_table_configurations(conn_no_user, nil)
+        get_table_configurations(not_logged_conn, nil)
         |> get_in(["data", "tableConfigurations"])
         |> Enum.map(& &1["id"])
 

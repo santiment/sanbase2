@@ -57,7 +57,7 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
     end
 
     test "with not logged in user", context do
-      insight = execute_query(build_conn(), context.query, "insight")
+      insight = execute_query(context.query, "insight")
 
       assert insight["isPaywallRequired"]
       assert insight["text"] != context.post.text

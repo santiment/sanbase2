@@ -85,15 +85,13 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
       assert result == "User can't follow oneself"
     end
 
-    test "mutation can be called only by logged in users" do
-      # not logged in user
-      conn = build_conn()
+    test "mutation can be called only by logged in users", context do
       user = insert(:user)
 
       result =
         user.id
         |> follow_unfollow_mutation("follow")
-        |> execute_follow_unfollow(conn)
+        |> execute_follow_unfollow(context.not_logged_conn)
         |> Map.get("errors")
         |> hd()
         |> Map.get("message")

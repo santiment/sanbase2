@@ -2,7 +2,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
-  import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Metric

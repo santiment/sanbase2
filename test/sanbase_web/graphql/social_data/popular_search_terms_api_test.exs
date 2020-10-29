@@ -4,10 +4,6 @@ defmodule SanbaseWeb.Graphql.SocialData.PopularSearchTermApiTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
-  setup do
-    [conn: build_conn()]
-  end
-
   test "returns data for an interval", context do
     now = Timex.now() |> DateTime.truncate(:second)
     yesterday = Timex.shift(now, days: -1)
@@ -63,9 +59,6 @@ defmodule SanbaseWeb.Graphql.SocialData.PopularSearchTermApiTest do
       }
     """
 
-    conn
-    |> post("/graphql", query_skeleton(query, "popularSearchTerms"))
-    |> json_response(200)
-    |> get_in(["data", "popularSearchTerms"])
+    execute_query(conn, query, "popularSearchTerms")
   end
 end

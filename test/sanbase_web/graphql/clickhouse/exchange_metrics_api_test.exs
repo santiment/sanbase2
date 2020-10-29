@@ -65,13 +65,13 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
   describe "#exchangeMarketPairToSlugs" do
     test "returns the proper slugs" do
       query = exchange_market_pair_to_slugs("Bitfinex", "SAN/USD")
-      result = execute_query(build_conn(), query, "exchangeMarketPairToSlugs")
+      result = execute_query(query, "exchangeMarketPairToSlugs")
       assert result == %{"fromSlug" => "santiment", "toSlug" => "usd"}
     end
 
     test "returns nulls" do
       query = exchange_market_pair_to_slugs("Non-existing", "SAN/USD")
-      result = execute_query(build_conn(), query, "exchangeMarketPairToSlugs")
+      result = execute_query(query, "exchangeMarketPairToSlugs")
       assert result == %{"fromSlug" => nil, "toSlug" => nil}
     end
   end
@@ -79,7 +79,7 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
   describe "#slugsToExchangeMarketPair" do
     test "returns the proper slugs" do
       query = slugs_to_exchange_market_pair_query("Bitfinex", "santiment", "usd")
-      result = execute_query(build_conn(), query, "slugsToExchangeMarketPair")
+      result = execute_query(query, "slugsToExchangeMarketPair")
 
       assert result == %{
                "marketPair" => "SAN/USD",
@@ -90,7 +90,7 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
 
     test "returns nulls" do
       query = slugs_to_exchange_market_pair_query("Non-existing", "santiment", "usd")
-      result = execute_query(build_conn(), query, "slugsToExchangeMarketPair")
+      result = execute_query(query, "slugsToExchangeMarketPair")
       assert result == %{"fromTicker" => nil, "marketPair" => nil, "toTicker" => nil}
     end
   end

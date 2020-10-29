@@ -70,12 +70,14 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
 
     conn
     |> put_req_header("authorization", "Bearer " <> token)
+    |> put_req_header("origin", "https://app.santiment.net")
     |> ContextPlug.call(%{})
   end
 
   def setup_apikey_auth(conn, apikey) do
     conn
     |> put_req_header("authorization", "Apikey " <> apikey)
+    |> put_req_header("origin", "https://app.santiment.net")
     |> ContextPlug.call(%{})
   end
 
@@ -84,7 +86,20 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
 
     conn
     |> put_req_header("authorization", "Basic " <> token)
+    |> put_req_header("origin", "https://app.santiment.net")
     |> ContextPlug.call(%{})
+  end
+
+  def execute_query(%Plug.Conn{} = conn, query) do
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+  end
+
+  def execute_query(query, query_name) do
+    build_conn()
+    |> put_req_header("origin", "https://app.santiment.net")
+    |> execute_query(query, query_name)
   end
 
   def execute_query(conn, query, query_name) do
@@ -92,6 +107,12 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     |> post("/graphql", query_skeleton(query, query_name))
     |> json_response(200)
     |> get_in(["data", query_name])
+  end
+
+  def execute_query_with_error(query, query_name) do
+    build_conn()
+    |> put_req_header("origin", "https://app.santiment.net")
+    |> execute_query_with_error(query, query_name)
   end
 
   def execute_query_with_error(conn, query, query_name) do
@@ -103,11 +124,23 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     |> Map.get("message")
   end
 
+  def execute_mutation(query, query_name) do
+    build_conn()
+    |> put_req_header("origin", "https://app.santiment.net")
+    |> execute_mutation(query, query_name)
+  end
+
   def execute_mutation(conn, query, query_name) do
     conn
     |> post("/graphql", mutation_skeleton(query))
     |> json_response(200)
     |> get_in(["data", query_name])
+  end
+
+  def execute_mutation_with_error(query) do
+    build_conn()
+    |> put_req_header("origin", "https://app.santiment.net")
+    |> execute_mutation_with_error(query)
   end
 
   def execute_mutation_with_error(conn, query) do

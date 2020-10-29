@@ -22,7 +22,12 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     project2 = insert(:project, slug: "ethereum", ticker: "ETH", name: "Ethereum")
 
     {:ok,
-     conn: conn, user: user, role_san_clan: role_san_clan, project: project, project2: project2}
+     not_logged_conn: context.conn,
+     conn: conn,
+     user: user,
+     role_san_clan: role_san_clan,
+     project: project,
+     project2: project2}
   end
 
   test "timeline events with public entities by followed users or by san family are fetched", %{
@@ -299,7 +304,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
         event_type: TimelineEvent.publish_insight_type()
       )
 
-      result = get_timeline_events(build_conn(), "limit: 5")
+      result = get_timeline_events(context.not_logged_conn, "limit: 5")
 
       assert result |> hd() |> Map.get("events") |> length() == 1
     end
@@ -327,7 +332,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
         data: %{"user_trigger_data" => %{"default" => %{"value" => 15}}}
       )
 
-      result = get_timeline_events(build_conn(), "limit: 5")
+      result = get_timeline_events(context.not_logged_conn, "limit: 5")
 
       assert result |> hd() |> Map.get("events") == []
     end

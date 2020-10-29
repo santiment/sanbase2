@@ -35,11 +35,14 @@ defmodule SanbaseWeb.ConnCase do
 
     Sanbase.CaseHelpers.checkout_shared(tags)
 
-    conn = Phoenix.ConnTest.build_conn()
+    conn =
+      Phoenix.ConnTest.build_conn()
+      |> Plug.Conn.put_req_header("origin", "https://app.santiment.net")
 
     product_and_plans = Sanbase.Billing.TestSeed.seed_products_and_plans()
 
     {:ok,
+     not_logged_conn: conn,
      conn: conn,
      product: Map.get(product_and_plans, :product),
      plans: Map.delete(product_and_plans, :product),

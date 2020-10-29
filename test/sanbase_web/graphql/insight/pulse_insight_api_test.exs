@@ -110,30 +110,14 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
     }
     """
 
-    result =
-      build_conn()
-      |> post("/graphql", query_skeleton(query, "insight"))
+    result = execute_query(query, "insight")
+    assert result["state"] == post.state
 
-    fetched_insight = json_response(result, 200)["data"]["insight"]
-    assert fetched_insight["state"] == post.state
+    created_at = Sanbase.DateTimeUtils.from_iso8601!(result["createdAt"])
+    assert Sanbase.TestUtils.datetime_close_to(Timex.now(), created_at, 2, :seconds)
 
-    created_at = Sanbase.DateTimeUtils.from_iso8601!(fetched_insight["createdAt"])
-
-    assert Sanbase.TestUtils.datetime_close_to(
-             Timex.now(),
-             created_at,
-             2,
-             :seconds
-           )
-
-    updated_at = Sanbase.DateTimeUtils.from_iso8601!(fetched_insight["updatedAt"])
-
-    assert Sanbase.TestUtils.datetime_close_to(
-             Timex.now(),
-             updated_at,
-             2,
-             :seconds
-           )
+    updated_at = Sanbase.DateTimeUtils.from_iso8601!(result["updatedAt"])
+    assert Sanbase.TestUtils.datetime_close_to(Timex.now(), updated_at, 2, :seconds)
   end
 
   test "getting all pulse insights as anon user", %{user: user} do
@@ -157,16 +141,14 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
     }
     """
 
-    result =
-      build_conn()
-      |> post("/graphql", query_skeleton(query, "allInsights"))
+    result = execute_query(query, "allInsights")
 
-    assert [
+    assert result == [
              %{
                "title" => post.title,
                "readyState" => Post.published()
              }
-           ] == json_response(result, 200)["data"]["allInsights"]
+           ]
   end
 
   test "excluding draft and not approved pulse insights from allInsights", %{
@@ -321,7 +303,7 @@ defmodule SanbaseWeb.Graphql.PulseInsightApiTest do
       )
 
     query = insights_by_tags_query([tag1.name, tag2.name])
-    result = execute_query(build_conn(), query, "allInsights") |> Enum.sort_by(& &1["id"])
+    result = execute_query(query, "allInsights") |> Enum.sort_by(& &1["id"])
 
     assert result ==
              [%{"id" => "#{post.id}"}, %{"id" => "#{post3.id}"}] |> Enum.sort_by(& &1["id"])

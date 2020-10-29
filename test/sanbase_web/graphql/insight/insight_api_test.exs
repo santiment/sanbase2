@@ -97,8 +97,8 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     assert json_response(result, 200)["data"]["insight"] |> Map.get("text") == post.text
   end
 
-  test "getting an insight by id for anon user", %{user: user} do
-    post = insert(:post, user: user, state: Post.approved_state())
+  test "getting an insight by id for anon user", context do
+    post = insert(:post, user: context.user, state: Post.approved_state())
 
     query = """
     {
@@ -120,30 +120,14 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     }
     """
 
-    result =
-      build_conn()
-      |> post("/graphql", query_skeleton(query, "insight"))
+    result = execute_query(query, "insight")
+    assert result["state"] == post.state
 
-    fetched_insight = json_response(result, 200)["data"]["insight"]
-    assert fetched_insight["state"] == post.state
+    {:ok, created_at, 0} = DateTime.from_iso8601(result["createdAt"])
+    assert Sanbase.TestUtils.datetime_close_to(Timex.now(), created_at, 2, :seconds)
 
-    {:ok, created_at, 0} = DateTime.from_iso8601(fetched_insight["createdAt"])
-
-    assert Sanbase.TestUtils.datetime_close_to(
-             Timex.now(),
-             created_at,
-             2,
-             :seconds
-           )
-
-    {:ok, updated_at, 0} = DateTime.from_iso8601(fetched_insight["updatedAt"])
-
-    assert Sanbase.TestUtils.datetime_close_to(
-             Timex.now(),
-             updated_at,
-             2,
-             :seconds
-           )
+    {:ok, updated_at, 0} = DateTime.from_iso8601(result["updatedAt"])
+    assert Sanbase.TestUtils.datetime_close_to(Timex.now(), updated_at, 2, :seconds)
   end
 
   test "getting all posts as anon user", %{user: user} do
@@ -164,17 +148,15 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     }
     """
 
-    result =
-      build_conn()
-      |> post("/graphql", query_skeleton(query, "allInsights"))
+    result = execute_query(query, "allInsights")
 
-    assert [
+    assert result == [
              %{
                "title" => post.title,
                "shortDesc" => post.short_desc,
                "readyState" => Post.published()
              }
-           ] == json_response(result, 200)["data"]["allInsights"]
+           ]
   end
 
   test "excluding draft and not approved insights from allInsights", %{
@@ -366,7 +348,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         tags: [tag1, tag2]
       )
 
-    result = execute_query(build_conn(), insights_by_tag_query(tag1), "allInsightsByTag")
+    result = execute_query(insights_by_tag_query(tag1), "allInsightsByTag")
 
     assert result == [%{"id" => "#{post.id}"}]
   end
@@ -400,7 +382,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       )
 
     query = insights_by_tags_query([tag1.name, tag2.name])
-    result = execute_query(build_conn(), query, "allInsights") |> Enum.sort_by(& &1["id"])
+    result = execute_query(query, "allInsights") |> Enum.sort_by(& &1["id"])
 
     assert result ==
              [%{"id" => "#{post.id}"}, %{"id" => "#{post3.id}"}] |> Enum.sort_by(& &1["id"])

@@ -18,18 +18,7 @@ defmodule SanbaseWeb.Graphql.CustomTypes.IntervalTypeTest do
     }
     """
 
-    result =
-      build_conn()
-      |> post("/graphql", query_skeleton(query))
-      |> json_response(200)
-
-    assert result == %{
-             "errors" => [
-               %{
-                 "locations" => [%{"column" => 5, "line" => 6}],
-                 "message" => "Argument \"interval\" has invalid value \"10hour\"."
-               }
-             ]
-           }
+    err_msg = execute_query_with_error(query, "getMetric")
+    assert err_msg == "Argument \"interval\" has invalid value \"10hour\"."
   end
 end

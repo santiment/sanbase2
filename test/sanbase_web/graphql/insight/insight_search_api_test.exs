@@ -122,9 +122,6 @@ defmodule SanbaseWeb.Graphql.InsightSearchApiTest do
     }
     """
 
-    conn
-    |> post("/graphql", query_skeleton(query))
-    |> json_response(200)
-    |> get_in(["data", "allInsightsBySearchTerm"])
+    execute_query(conn, query, "allInsightsBySearchTerm")
   end
 end

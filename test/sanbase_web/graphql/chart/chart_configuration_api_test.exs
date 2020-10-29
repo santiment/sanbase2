@@ -10,7 +10,6 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
     user = insert(:user)
     user2 = insert(:user)
 
-    conn_no_user = build_conn()
     conn = setup_jwt_auth(build_conn(), user)
     conn2 = setup_jwt_auth(build_conn(), user2)
 
@@ -43,7 +42,6 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
     %{
       conn: conn,
       conn2: conn2,
-      conn_no_user: conn_no_user,
       user: user,
       user2: user2,
       post: post,
@@ -150,7 +148,7 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
 
   describe "chart configuration queries" do
     test "can query with anonymous user", context do
-      %{conn: conn, conn_no_user: conn_no_user, settings: settings} = context
+      %{conn: conn, not_logged_conn: not_logged_conn, settings: settings} = context
 
       # Create a public and private configuration
 
@@ -165,19 +163,19 @@ defmodule SanbaseWeb.Graphql.ChartConfigurationApiTest do
       # Test fetching configuratins with no logged in user
 
       config1 =
-        get_chart_configuration(conn_no_user, config_id1)
+        get_chart_configuration(not_logged_conn, config_id1)
         |> get_in(["data", "chartConfiguration"])
 
       assert config1["id"] == config_id1
 
       config2 =
-        get_chart_configuration(conn_no_user, config_id2)
+        get_chart_configuration(not_logged_conn, config_id2)
         |> get_in(["data", "chartConfiguration"])
 
       assert config2 == nil
 
       config_ids =
-        get_chart_configurations(conn_no_user, nil, nil)
+        get_chart_configurations(not_logged_conn, nil, nil)
         |> get_in(["data", "chartConfigurations"])
         |> Enum.map(& &1["id"])
 

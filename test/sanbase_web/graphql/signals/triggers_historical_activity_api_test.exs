@@ -171,9 +171,9 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
     assert result["cursor"] == %{"after" => nil, "before" => nil}
   end
 
-  test "fetch signal historical activities without logged in user" do
+  test "fetch signal historical activities without logged in user", context do
     assert current_user_signals_activity(
-             build_conn(),
+             context.not_logged_conn,
              "limit: 1"
            ) == nil
   end

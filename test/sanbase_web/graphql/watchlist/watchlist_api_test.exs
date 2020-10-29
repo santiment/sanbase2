@@ -14,11 +14,11 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
     clean_task_supervisor_children()
 
     user = insert(:user)
-    user2 = insert(:user)
+    not_logged_in_user = insert(:user)
 
     conn = setup_jwt_auth(build_conn(), user)
 
-    {:ok, conn: conn, user: user, user2: user2}
+    {:ok, conn: conn, user: user, not_logged_in_user: not_logged_in_user}
   end
 
   test "create watchlist", %{user: user, conn: conn} do
@@ -209,8 +209,8 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
     assert updated_watchlist["listItems"] == []
   end
 
-  test "cannot update not own watchlist", %{user2: user2, conn: conn} do
-    {:ok, watchlist} = UserList.create_user_list(user2, %{name: "My Test List"})
+  test "cannot update not own watchlist", %{not_logged_in_user: not_logged_in_user, conn: conn} do
+    {:ok, watchlist} = UserList.create_user_list(not_logged_in_user, %{name: "My Test List"})
 
     update_name = "My updated list"
 
@@ -292,9 +292,15 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
     assert user_lists["user"]["id"] == user.id |> to_string()
   end
 
-  test "fetch all public watchlists", %{user: user, user2: user2, conn: conn} do
+  test "fetch all public watchlists", %{
+    user: user,
+    not_logged_in_user: not_logged_in_user,
+    conn: conn
+  } do
     {:ok, _} = UserList.create_user_list(user, %{name: "My Test List", is_public: true})
-    {:ok, _} = UserList.create_user_list(user2, %{name: "My Test List", is_public: true})
+
+    {:ok, _} =
+      UserList.create_user_list(not_logged_in_user, %{name: "My Test List", is_public: true})
 
     query = query("fetchAllPublicWatchlists")
 
@@ -332,11 +338,14 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
       assert result["data"]["watchlistBySlug"]["slug"] == ws.slug
     end
 
-    test "returns public lists for anonymous users", %{user2: user2} do
+    test "returns public lists for anonymous users", context do
       project = insert(:project)
 
       {:ok, watchlist} =
-        UserList.create_user_list(user2, %{name: "My Test List", is_public: true})
+        UserList.create_user_list(context.not_logged_in_user, %{
+          name: "My Test List",
+          is_public: true
+        })
 
       {:ok, watchlist} =
         UserList.update_user_list(%{id: watchlist.id, list_items: [%{project_id: project.id}]})
@@ -344,7 +353,7 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
       query = query("watchlist(id: #{watchlist.id})")
 
       result =
-        post(build_conn(), "/graphql", query_skeleton(query, "watchlist"))
+        post(context.not_logged_conn, "/graphql", query_skeleton(query, "watchlist"))
         |> json_response(200)
 
       assert result["data"]["watchlist"] == %{
@@ -353,15 +362,15 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
                "is_public" => true,
                "listItems" => [%{"project" => %{"id" => "#{project.id}"}}],
                "name" => "My Test List",
-               "user" => %{"id" => "#{user2.id}"}
+               "user" => %{"id" => "#{context.not_logged_in_user.id}"}
              }
     end
 
-    test "returns watchlist when public", %{user2: user2, conn: conn} do
+    test "returns watchlist when public", %{not_logged_in_user: not_logged_in_user, conn: conn} do
       project = insert(:project)
 
       {:ok, watchlist} =
-        UserList.create_user_list(user2, %{name: "My Test List", is_public: true})
+        UserList.create_user_list(not_logged_in_user, %{name: "My Test List", is_public: true})
 
       {:ok, watchlist} =
         UserList.update_user_list(%{id: watchlist.id, list_items: [%{project_id: project.id}]})
@@ -383,7 +392,7 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
                "is_public" => true,
                "listItems" => [%{"project" => %{"id" => "#{project.id}"}}],
                "name" => "My Test List",
-               "user" => %{"id" => "#{user2.id}"}
+               "user" => %{"id" => "#{not_logged_in_user.id}"}
              }
     end
 
@@ -413,9 +422,12 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
              }
     end
 
-    test "returns null when no public watchlist is available", %{user2: user2, conn: conn} do
+    test "returns null when no public watchlist is available", %{
+      not_logged_in_user: not_logged_in_user,
+      conn: conn
+    } do
       {:ok, watchlist} =
-        UserList.create_user_list(user2, %{name: "My Test List", is_public: false})
+        UserList.create_user_list(not_logged_in_user, %{name: "My Test List", is_public: false})
 
       query = query("watchlist(id: #{watchlist.id})")
 

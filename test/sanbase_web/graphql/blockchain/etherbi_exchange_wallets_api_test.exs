@@ -9,7 +9,7 @@ defmodule Sanbase.Etherbi.ExchangeWalletsApiTest do
     ]
   end
 
-  test "returning an error when there is no basic auth" do
+  test "returning an error when there is no basic auth", context do
     query = """
     {
       exchangeWallets(slug: "ethereum"){
@@ -20,13 +20,8 @@ defmodule Sanbase.Etherbi.ExchangeWalletsApiTest do
     }
     """
 
-    result =
-      build_conn()
-      |> post("/graphql", query_skeleton(query, "exchangeWallets"))
-
-    error = json_response(result, 200)["errors"] |> hd
-
-    assert error["message"] == "unauthorized"
+    err_msg = execute_query_with_error(context.not_logged_conn, query, "exchangeWallets")
+    assert err_msg == "unauthorized"
   end
 
   test "returning a list of wallets from the DB", context do

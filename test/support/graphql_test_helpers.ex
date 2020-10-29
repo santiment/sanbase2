@@ -124,6 +124,12 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     |> Map.get("message")
   end
 
+  def execute_mutation(%Plug.Conn{} = conn, query) do
+    conn
+    |> post("/graphql", mutation_skeleton(query))
+    |> json_response(200)
+  end
+
   def execute_mutation(query, query_name) do
     build_conn()
     |> put_req_header("origin", "https://app.santiment.net")

@@ -409,10 +409,4 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
     |> String.replace(~r|\"|, ~S|\\"|)
     |> String.replace(~r|'|, ~S|"|)
   end
-
-  defp execute_mutation(conn, query) do
-    conn
-    |> post("/graphql", mutation_skeleton(query))
-    |> json_response(200)
-  end
 end

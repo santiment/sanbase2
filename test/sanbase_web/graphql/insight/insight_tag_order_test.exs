@@ -118,16 +118,4 @@ defmodule SanbaseWeb.Graphql.InsightTagOrderTest do
     |> get_in(["data", "insight", "tags"])
     |> Enum.map(& &1["name"])
   end
-
-  defp execute_mutation(conn, mutation) do
-    conn
-    |> post("/graphql", mutation_skeleton(mutation))
-    |> json_response(200)
-  end
-
-  defp execute_query(conn, query) do
-    conn
-    |> post("/graphql", query_skeleton(query))
-    |> json_response(200)
-  end
 end

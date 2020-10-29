@@ -22,12 +22,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     project2 = insert(:project, slug: "ethereum", ticker: "ETH", name: "Ethereum")
 
     {:ok,
-     not_logged_conn: context.conn,
-     conn: conn,
-     user: user,
-     role_san_clan: role_san_clan,
-     project: project,
-     project2: project2}
+     conn: conn, user: user, role_san_clan: role_san_clan, project: project, project2: project2}
   end
 
   test "timeline events with public entities by followed users or by san family are fetched", %{

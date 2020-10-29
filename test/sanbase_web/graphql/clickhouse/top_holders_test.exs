@@ -48,7 +48,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
            }
          ]}
       end do
-      response = execute_query(context)
+      response = top_holders(context)
       holders = parse_response(response)
 
       assert_called(
@@ -81,7 +81,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
 
   test "returns empty array when there is no data", context do
     with_mock TopHolders, percent_of_total_supply: fn _, _, _, _, _, _ -> {:ok, []} end do
-      response = execute_query(context)
+      response = top_holders(context)
       holders = parse_response(response)
 
       assert_called(
@@ -105,7 +105,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
     with_mock TopHolders,
       percent_of_total_supply: fn _, _, _, _, _, _ -> {:error, error} end do
       assert capture_log(fn ->
-               response = execute_query(context)
+               response = top_holders(context)
                holders = parse_response(response)
                assert holders == nil
              end) =~
@@ -121,7 +121,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
               percent_of_total_supply: fn _, _, _, _, _, _ ->
                 {:error, error}
               end do
-      response = execute_query(context)
+      response = top_holders(context)
       [first_error | _] = json_response(response, 200)["errors"]
 
       assert first_error["message"] =~
@@ -133,7 +133,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.TopHoldersTest do
     json_response(response, 200)["data"]["topHoldersPercentOfTotalSupply"]
   end
 
-  defp execute_query(context) do
+  defp top_holders(context) do
     query =
       top_holders_percent_supply_query(
         context.slug,

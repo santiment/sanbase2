@@ -30,7 +30,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
     with_mock MiningPoolsDistribution,
       distribution: fn _, _, _, _ -> {:error, error} end do
       assert capture_log(fn ->
-               response = execute_query("unsupported", context)
+               response = mining_pools_distribution("unsupported", context)
                result = parse_response(response)
                assert result == nil
              end) =~
@@ -57,7 +57,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
            }
          ]}
       end do
-      response = execute_query(context.slug, context)
+      response = mining_pools_distribution(context.slug, context)
       result = parse_response(response)
 
       assert_called(
@@ -88,7 +88,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
 
   test "returns empty array when there is no data", context do
     with_mock MiningPoolsDistribution, distribution: fn _, _, _, _ -> {:ok, []} end do
-      response = execute_query(context.slug, context)
+      response = mining_pools_distribution(context.slug, context)
       result = parse_response(response)
 
       assert_called(
@@ -110,7 +110,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
     with_mock MiningPoolsDistribution,
       distribution: fn _, _, _, _ -> {:error, error} end do
       assert capture_log(fn ->
-               response = execute_query(context.slug, context)
+               response = mining_pools_distribution(context.slug, context)
                result = parse_response(response)
                assert result == nil
              end) =~
@@ -126,7 +126,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
               distribution: fn _, _, _, _ ->
                 {:error, error}
               end do
-      response = execute_query(context.slug, context)
+      response = mining_pools_distribution(context.slug, context)
       [first_error | _] = json_response(response, 200)["errors"]
 
       assert first_error["message"] =~
@@ -162,7 +162,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
     json_response(response, 200)["data"]["miningPoolsDistribution"]
   end
 
-  defp execute_query(slug, context) do
+  defp mining_pools_distribution(slug, context) do
     query = mining_pools_distribution_query(slug, context.from, context.to, context.interval)
 
     context.conn

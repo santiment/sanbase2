@@ -39,7 +39,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.GasUsedTest do
            }
          ]}
       end do
-      response = execute_query(context.slug, context)
+      response = gas_used(context.slug, context)
       result = parse_response(response)
 
       assert_called(GasUsed.gas_used(context.slug, context.from, context.to, context.interval))
@@ -59,7 +59,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.GasUsedTest do
 
   test "returns empty array when there is no data", context do
     with_mock GasUsed, gas_used: fn _, _, _, _ -> {:ok, []} end do
-      response = execute_query(context.slug, context)
+      response = gas_used(context.slug, context)
       result = parse_response(response)
 
       assert_called(GasUsed.gas_used(context.slug, context.from, context.to, context.interval))
@@ -73,7 +73,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.GasUsedTest do
     with_mock GasUsed,
       gas_used: fn _, _, _, _ -> {:error, error} end do
       assert capture_log(fn ->
-               response = execute_query(context.slug, context)
+               response = gas_used(context.slug, context)
                result = parse_response(response)
                assert result == nil
              end) =~
@@ -89,7 +89,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.GasUsedTest do
               gas_used: fn _, _, _, _ ->
                 {:error, error}
               end do
-      response = execute_query(context.slug, context)
+      response = gas_used(context.slug, context)
       [first_error | _] = json_response(response, 200)["errors"]
 
       assert first_error["message"] =~
@@ -121,7 +121,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.GasUsedTest do
     with_mock GasUsed,
       gas_used: fn _, _, _, _ -> {:error, error} end do
       assert capture_log(fn ->
-               response = execute_query("unsupported", context)
+               response = gas_used("unsupported", context)
                result = parse_response(response)
                assert result == nil
              end) =~
@@ -198,7 +198,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.GasUsedTest do
     json_response(response, 200)["data"]["gasUsed"]
   end
 
-  defp execute_query(slug, context) do
+  defp gas_used(slug, context) do
     query = gas_used_query(slug, context.from, context.to, context.interval)
 
     context.conn

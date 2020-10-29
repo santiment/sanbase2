@@ -4,8 +4,6 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.Metric
-
   setup do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
     project1 = insert(:random_project, slug: "aaaaa")

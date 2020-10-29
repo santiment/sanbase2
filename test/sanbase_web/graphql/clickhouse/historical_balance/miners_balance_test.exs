@@ -39,7 +39,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalance.MinersBalanceTest do
            }
          ]}
       end do
-      response = execute_query(context.slug, context)
+      response = miners_balance(context.slug, context)
       result = parse_response(response)
 
       assert_called(
@@ -61,7 +61,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalance.MinersBalanceTest do
 
   test "returns empty array when there is no data", context do
     with_mock MinersBalance, historical_balance: fn _, _, _, _ -> {:ok, []} end do
-      response = execute_query(context.slug, context)
+      response = miners_balance(context.slug, context)
       result = parse_response(response)
 
       assert_called(
@@ -78,7 +78,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalance.MinersBalanceTest do
     with_mock MinersBalance,
       historical_balance: fn _, _, _, _ -> {:error, error} end do
       assert capture_log(fn ->
-               response = execute_query(context.slug, context)
+               response = miners_balance(context.slug, context)
                result = parse_response(response)
                assert result == nil
              end) =~
@@ -94,7 +94,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalance.MinersBalanceTest do
               historical_balance: fn _, _, _, _ ->
                 {:error, error}
               end do
-      response = execute_query(context.slug, context)
+      response = miners_balance(context.slug, context)
       [first_error | _] = json_response(response, 200)["errors"]
 
       assert first_error["message"] =~
@@ -126,7 +126,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalance.MinersBalanceTest do
     json_response(response, 200)["data"]["minersBalance"]
   end
 
-  defp execute_query(slug, context) do
+  defp miners_balance(slug, context) do
     query = miners_balance_query(slug, context.from, context.to, context.interval)
 
     context.conn

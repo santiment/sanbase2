@@ -20,14 +20,13 @@ defmodule Sanbase.Project.AvailableMetricsTest do
   end
 
   defp get_available_metrics(project) do
-    query =
-      """
-      {
-        projectBySlug(slug: "#{project.slug}"){
-          availableMetrics
-        }
+    """
+    {
+      projectBySlug(slug: "#{project.slug}"){
+        availableMetrics
       }
-      """
-      |> execute_query("projectBySlug")
+    }
+    """
+    |> execute_query("projectBySlug")
   end
 end

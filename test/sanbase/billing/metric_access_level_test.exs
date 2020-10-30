@@ -37,6 +37,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "price_usd_5m",
         "volume_usd",
         "twitter_followers",
+        "total_supply",
         # change metrics
         "volume_usd_change_1d",
         "volume_usd_change_7d",
@@ -66,7 +67,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "uniswap_total_user_claims_amount",
         "uniswap_total_user_claims_count",
         "uniswap_user_claims_amount",
-        "uniswap_user_claims_count"
+        "uniswap_user_claims_count",
+        "circulation"
       ]
       |> Enum.sort()
 
@@ -119,7 +121,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "mvrv_usd_intraday_7d",
         "mvrv_usd_intraday_1d",
         # circulation metrics
-        "circulation",
         "circulation_10y",
         "circulation_5y",
         "circulation_3y",
@@ -183,7 +184,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "median_fees_usd",
         "network_circulation_usd_1d",
         "fees_to_network_circulation_usd_1d",
-        "total_supply",
         "avg_gas_used",
         "network_profit_loss",
         "total_supply_in_profit",

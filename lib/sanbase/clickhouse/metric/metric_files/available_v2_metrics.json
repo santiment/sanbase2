@@ -839,7 +839,7 @@
     "name": "circulation",
     "metric": "stack_circulation_20y",
     "version": "2019-01-01",
-    "access": "restricted",
+    "access": "free",
     "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "free",
@@ -1715,7 +1715,7 @@
     "name": "total_supply",
     "metric": "total_supply",
     "version": "2020-01-01",
-    "access": "restricted",
+    "access": "free",
     "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "free",

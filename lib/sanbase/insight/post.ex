@@ -299,6 +299,8 @@ defmodule Sanbase.Insight.Post do
     |> by_user(user_id)
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
+    |> order_by_published_at()
+    |> page(opts)
     |> preload(^@preloads)
     |> Repo.all()
     |> Tag.Preloader.order_tags()
@@ -313,6 +315,8 @@ defmodule Sanbase.Insight.Post do
     |> by_is_pulse(Keyword.get(opts, :is_pulse, nil))
     |> by_is_paywall_required(Keyword.get(opts, :is_paywall_required, nil))
     |> by_from_to_datetime(Keyword.get(opts, :from, nil), Keyword.get(opts, :to, nil))
+    |> order_by_published_at()
+    |> page(opts)
     |> preload(^@preloads)
     |> Repo.all()
     |> Tag.Preloader.order_tags()
@@ -531,6 +535,17 @@ defmodule Sanbase.Insight.Post do
       preload: [:tags, :user],
       select: [:id, :title, :published_at, :user_id]
     )
+  end
+
+  defp page(query, opts) do
+    page = Keyword.get(opts, :page, nil)
+    page_size = Keyword.get(opts, :page_size, nil)
+
+    if page && page_size do
+      page(query, page, page_size)
+    else
+      query
+    end
   end
 
   defp page(query, page, page_size) do

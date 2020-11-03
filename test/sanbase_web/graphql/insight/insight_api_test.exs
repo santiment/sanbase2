@@ -284,16 +284,25 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     assert json_response(result, 200)["data"]["allInsights"] |> length() == 2
   end
 
-  test "Getting all insight for given user", %{
+  test "Getting all insight for given user, paginated", %{
     user: user,
     staked_user: staked_user,
     conn: conn
   } do
-    post =
+    post1 =
       insert(:post,
         user: user,
         ready_state: Post.published(),
-        state: Post.approved_state()
+        state: Post.approved_state(),
+        published_at: Timex.shift(Timex.now(), hours: -1)
+      )
+
+    post2 =
+      insert(:post,
+        user: user,
+        ready_state: Post.published(),
+        state: Post.approved_state(),
+        published_at: Timex.now()
       )
 
     insert(:post, user: user, ready_state: Post.draft())
@@ -301,21 +310,17 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     query = """
     {
-      allInsightsForUser(user_id: #{user.id}) {
+      allInsightsForUser(user_id: #{user.id}, page: 1, page_size: 1) {
         id,
         text
       }
     }
     """
 
-    all_insights_for_user =
-      conn
-      |> post("/graphql", query_skeleton(query, "allInsightsForUser"))
-      |> json_response(200)
-      |> get_in(["data", "allInsightsForUser"])
+    all_insights_for_user = execute_query(conn, query, "allInsightsForUser")
 
     assert all_insights_for_user |> Enum.count() == 1
-    assert all_insights_for_user |> hd() |> Map.get("text") == post.text
+    assert all_insights_for_user |> hd() |> Map.get("text") == post2.text
   end
 
   test "Getting all insight user has voted for", %{

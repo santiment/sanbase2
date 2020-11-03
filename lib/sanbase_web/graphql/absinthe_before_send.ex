@@ -38,6 +38,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
              maybe_create_or_drop_session: 2
            ]
 
+  @product_id_api Sanbase.Billing.Product.product_api()
+
   @cached_queries [
     "allProjects",
     "allErc20Projects",
@@ -60,6 +62,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     export_api_call_data(queries, conn, blueprint)
     do_not_cache? = is_nil(Process.get(:do_not_cache_query))
 
+    maybe_update_api_call_limit_usage(blueprint.execution.context, Enum.count(queries))
+
     case do_not_cache? or has_graphql_errors?(blueprint) do
       true -> :ok
       false -> cache_result(queries, blueprint)
@@ -68,6 +72,27 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     conn
     |> maybe_create_or_drop_session(blueprint.execution.context)
   end
+
+  defp maybe_update_api_call_limit_usage(
+         %{product_id: @product_id_api, auth: %{current_user: user, auth_method: auth_method}},
+         count
+       ) do
+    Sanbase.ApiCallLimit.update_usage(:user, user, count, auth_method)
+    |> IO.inspect(label: "80", limit: :infinity)
+  end
+
+  defp maybe_update_api_call_limit_usage(
+         %{product_id: @product_id_api, remote_ip: remote_ip} = context,
+         count
+       ) do
+    auth_method = context[:auth][:auth_method] || :unauthorized
+    remote_ip = remote_ip |> :inet_parse.ntoa() |> to_string()
+
+    Sanbase.ApiCallLimit.update_usage(:remote_ip, remote_ip, count, auth_method)
+    |> IO.inspect(label: "91", limit: :infinity)
+  end
+
+  defp maybe_update_api_call_limit_usage(_, _), do: :ok
 
   defp cache_result(queries, blueprint) do
     all_queries_cachable? = queries |> Enum.all?(&Enum.member?(@cached_queries, &1))

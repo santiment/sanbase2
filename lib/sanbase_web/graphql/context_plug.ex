@@ -28,6 +28,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   import Plug.Conn
   require Sanbase.Utils.Config, as: Config
 
+  alias Sanbase.ApiCallLimit
   alias Sanbase.Auth.User
   alias Sanbase.Billing.{Subscription, Product}
   alias SanbaseWeb.Graphql.ContextPlug
@@ -39,6 +40,11 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     &ContextPlug.bearer_auth_header_authentication/1,
     &ContextPlug.apikey_authentication/1,
     &ContextPlug.basic_authentication/1
+  ]
+
+  @should_halt_methods [
+    &ContextPlug.halt_sansheets_request?/2,
+    &ContextPlug.halt_api_call_limit_reached?/2
   ]
 
   @product_id_api Product.product_api()
@@ -67,7 +73,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       conn
       |> put_private(:absinthe, %{context: context})
 
-    case should_halt?(conn, context) do
+    case should_halt?(conn, context, @should_halt_methods) do
       false ->
         conn
 
@@ -82,7 +88,16 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     end
   end
 
-  defp should_halt?(conn, %{auth: %{subscription: %{plan: %{name: plan_name}}}}) do
+  defp should_halt?(_conn, _context, []), do: false
+
+  defp should_halt?(conn, context, [halt_method | rest]) do
+    case halt_method.(conn, context) do
+      false -> should_halt?(conn, context, rest)
+      error -> error
+    end
+  end
+
+  def halt_sansheets_request?(conn, %{auth: %{subscription: %{plan: %{name: plan_name}}}}) do
     case is_sansheets_request(conn) and plan_name == "FREE" do
       true ->
         %{
@@ -95,7 +110,43 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     end
   end
 
-  defp should_halt?(_conn, _context), do: false
+  def halt_sansheets_request?(_, _), do: false
+
+  def halt_api_call_limit_reached?(_conn, %{
+        product_id: @product_id_api,
+        auth: %{current_user: user, auth_method: auth_method}
+      }) do
+    case ApiCallLimit.get_quota(:user, user, auth_method)
+         |> IO.inspect(label: "119", limit: :infinity) do
+      {:ok, 0} ->
+        %{error_msg: "API Rate Limit Reached", error_code: 429}
+
+      {:ok, _} ->
+        false
+    end
+  end
+
+  def halt_api_call_limit_reached?(
+        _conn,
+        %{
+          product_id: @product_id_api,
+          remote_ip: remote_ip
+        } = context
+      ) do
+    remote_ip = remote_ip |> :inet_parse.ntoa() |> to_string()
+    auth_method = context[:auth][:auth_method] || :unauthorized
+
+    case ApiCallLimit.get_quota(:remote_ip, remote_ip, auth_method)
+         |> IO.inspect(label: "138", limit: :infinity) do
+      {:ok, 0} ->
+        %{error_msg: "API Rate Limit Reached", error_code: 429}
+
+      {:ok, _} ->
+        false
+    end
+  end
+
+  def halt_api_call_limit_reached?(_conn, _context), do: false
 
   defp build_error_msg(msg) do
     %{errors: %{details: msg}} |> Jason.encode!()
@@ -296,7 +347,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     Base.encode64(username <> ":" <> password)
     |> case do
       ^auth_attempt ->
-        {:ok, username}
+        {:ok, %User{is_superuser: true}}
 
       _ ->
         {:error, "Invalid basic authorization header credentials"}

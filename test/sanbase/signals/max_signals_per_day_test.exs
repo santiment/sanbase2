@@ -2,7 +2,6 @@ defmodule Sanbase.Signal.MaxSignalsPerDayTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
-  import Sanbase.TestHelpers
 
   alias Sanbase.Signal.UserTrigger
   alias Sanbase.Signal.Trigger.MetricTriggerSettings

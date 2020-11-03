@@ -2,7 +2,6 @@ defmodule Sanbase.Signal.SchedulerTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
-  import Sanbase.TestHelpers
   import ExUnit.CaptureLog
 
   alias Sanbase.Signal.{UserTrigger, HistoricalActivity}
@@ -34,8 +33,6 @@ defmodule Sanbase.Signal.SchedulerTest do
         cooldown: "12h",
         settings: trigger_settings
       })
-
-    datetimes = generate_datetimes(~U[2019-01-01 00:00:00Z], "1d", 7)
 
     mock_fun =
       [

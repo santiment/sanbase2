@@ -73,6 +73,7 @@ defmodule Sanbase.Auth.User do
     field(:first_login, :boolean, default: false, virtual: true)
     field(:avatar_url, :string)
     field(:is_registered, :boolean, default: false)
+    field(:is_superuser, :boolean, default: false)
 
     # GDPR related fields
     field(:privacy_policy_accepted, :boolean, default: false)
@@ -126,7 +127,8 @@ defmodule Sanbase.Auth.User do
       :stripe_customer_id,
       :first_login,
       :avatar_url,
-      :is_registered
+      :is_registered,
+      :is_superuser
     ])
     |> normalize_username(attrs)
     |> normalize_email(attrs[:email], :email)

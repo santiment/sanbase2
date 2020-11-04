@@ -425,7 +425,7 @@ defmodule Sanbase.Metric do
         {:nocache, {:ok, metrics -- (@histogram_metrics ++ @table_metrics)}}
 
       {:ok, metrics} ->
-        {:ok, metrics -- @histogram_metrics}
+        {:ok, metrics -- (@histogram_metrics ++ @table_metrics)}
     end
   end
 

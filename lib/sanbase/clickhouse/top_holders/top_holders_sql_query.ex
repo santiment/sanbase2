@@ -4,6 +4,13 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
   import Sanbase.DateTimeUtils
   import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3]
 
+  defp table_to_where_keyword(table) do
+    case String.contains?(table, "union") do
+      true -> "WHERE"
+      false -> "PREWHERE"
+    end
+  end
+
   def timeseries_data_query(
         "amount_in_top_holders",
         table,
@@ -25,12 +32,12 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
         toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS dt,
         #{aggregation(aggregation, "value", "dt")} / #{decimals} AS value
       FROM #{table} FINAL
-      PREWHERE
+      #{table_to_where_keyword(table)}
         contract = ?2 AND
         rank <= ?3 AND
         dt >= toDateTime(?4) AND
         dt < toDateTime(?5) AND
-        rank IS NOT NULL
+        rank IS NOT NULL AND rank > 0
       GROUP BY dt, address
       ORDER BY dt, value desc
       LIMIT ?3 BY dt
@@ -74,11 +81,11 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
       FROM (
         SELECT dt, address, value
         FROM #{table} FINAL
-        PREWHERE
+        #{table_to_where_keyword(table)}
           contract = ?2 AND
           dt >= toDateTime(?4) AND
           dt < toDateTime(?5) AND
-          rank IS NOT NULL
+          rank IS NOT NULL AND rank > 0
       )
       GROUP BY dt, address
       ORDER BY dt, value DESC
@@ -128,7 +135,7 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
         toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS dt,
         address
       FROM #{table} FINAL
-      PREWHERE
+      #{table_to_where_keyword(table)}
         address GLOBAL NOT IN (
           SELECT address
           FROM blockchain_address_labels FINAL
@@ -138,7 +145,7 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
         contract = ?2 AND
         dt >= toDateTime(?4) AND
         dt < toDateTime(?5) AND
-        rank IS NOT NULL
+        rank IS NOT NULL AND rank > 0
       GROUP BY dt, address
       ORDER BY dt, value DESC
       LIMIT ?3 BY dt
@@ -164,7 +171,7 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
     SELECT
       toUnixTimestamp(toDateTime(min(dt)))
     FROM #{table}
-    PREWHERE
+    #{table_to_where_keyword(table)}
       contract = ?1
     """
 
@@ -177,7 +184,7 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
     SELECT
       toUnixTimestamp(argMax(computed_at, dt))
     FROM #{table} FINAL
-    PREWHERE
+    #{table_to_where_keyword(table)}
       contract = ?1
     """
 

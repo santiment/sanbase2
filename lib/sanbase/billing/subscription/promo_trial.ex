@@ -93,7 +93,8 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
     with {:ok, stripe_subscription} <-
            promotional_subsciption_data(user, plan, trial_days) |> StripeApi.create_subscription(),
          {:ok, subscription} <-
-           Subscription.create_subscription_db(stripe_subscription, user, plan) do
+           Subscription.create_subscription_db(stripe_subscription, user, plan),
+         {:ok, _} <- Sanbase.ApiCallLimit.update_user_plan(user) do
       {:ok, subscription}
     end
   end
@@ -109,20 +110,20 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
   defp handle_error(user, error) do
     case error do
       %Stripe.Error{message: message} = error ->
-        log(user, error)
+        log_error(user, error)
         {:error, message}
 
       error_msg when is_binary(error_msg) ->
-        log(user, error)
+        log_error(user, error)
         {:error, error_msg}
 
       error ->
-        log(user, error)
+        log_error(user, error)
         {:error, error}
     end
   end
 
-  defp log(user, error) do
+  defp log_error(user, error) do
     Logger.error(
       "Error creating promotional subscription for user: #{inspect(user)}, reason: #{
         inspect(error)

@@ -77,15 +77,17 @@ defmodule Sanbase.Insight.Post do
         p in __MODULE__,
         select: {
           p.user_id,
-          fragment("COUNT(*) AS total_count"),
+          fragment("COUNT(*) FILTER (WHERE ready_state = 'published') AS total_count"),
+          fragment("COUNT(*) FILTER (WHERE ready_state = 'draft') AS draft_count"),
           fragment("COUNT(*) FILTER (WHERE is_pulse = true) AS pulse_count"),
           fragment("COUNT(*) FILTER (WHERE is_paywall_required = true) AS paywall_count")
         },
         group_by: p.user_id
       )
       |> Repo.all()
-      |> Map.new(fn {user_id, total, pulse, paywall} ->
-        {user_id, %{total_count: total, pulse_count: pulse, paywall_count: paywall}}
+      |> Map.new(fn {user_id, total, draft, pulse, paywall} ->
+        {user_id,
+         %{total_count: total, draft_count: draft, pulse_count: pulse, paywall_count: paywall}}
       end)
 
     {:ok, map}

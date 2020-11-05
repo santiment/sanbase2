@@ -1,7 +1,7 @@
 defmodule Sanbase.ApiCallLimit do
   use Ecto.Schema
 
-  import Ecto.{Query, Changeset}
+  import Ecto.Changeset
 
   alias Sanbase.Repo
   alias Sanbase.Auth.User
@@ -10,22 +10,29 @@ defmodule Sanbase.ApiCallLimit do
   @compile :inline_list_funcs
   @compile inline: [by_user: 1, by_remote_ip: 1]
 
-  @default_limit 1000
-
-  @limit_per_month_per_plan %{
+  @limits_per_month %{
     "sanbase_pro" => 5000,
-    "sanapi_free" => @default_limit,
+    "sanapi_free" => 1000,
     "sanapi_basic" => 300_000,
     "sanapi_pro" => 600_000,
     "sanapi_enterprise" => :infinity,
     "sanapi_custom" => :infinity
   }
 
-  @limit_per_hour_per_plan %{
+  @limits_per_hour %{
     "sanbase_pro" => 1000,
     "sanapi_free" => 500,
     "sanapi_basic" => 3000,
     "sanapi_pro" => 6000,
+    "sanapi_enterprise" => :infinity,
+    "sanapi_custom" => :infinity
+  }
+
+  @limits_per_minute %{
+    "sanbase_pro" => 100,
+    "sanapi_free" => 100,
+    "sanapi_basic" => 300,
+    "sanapi_pro" => 600,
     "sanapi_enterprise" => :infinity,
     "sanapi_custom" => :infinity
   }
@@ -138,7 +145,8 @@ defmodule Sanbase.ApiCallLimit do
 
     %{
       month_str: now |> Timex.beginning_of_month() |> to_string(),
-      hour_str: %{now | :minute => 0, :second => 0, :microsecond => {0, 0}} |> to_string()
+      hour_str: %{now | :minute => 0} |> to_string(),
+      minute_str: %{now | :second => 0, :microsecond => {0, 0}}
     }
   end
 
@@ -162,22 +170,35 @@ defmodule Sanbase.ApiCallLimit do
 
   defp do_get_quota(%__MODULE__{} = acl) do
     %{api_calls_limit_plan: plan, api_calls: api_calls} = acl
-
     keys = get_map_keys()
 
     api_calls_this_month = Map.get(api_calls, keys.month_str, 0)
     api_calls_this_hour = Map.get(api_calls, keys.hour_str, 0)
+    api_calls_this_minute = Map.get(api_calls, keys.minute_str, 0)
 
-    limit_per_month = Map.get(@limit_per_month_per_plan, plan)
-    limit_per_hour = Map.get(@limit_per_hour_per_plan, plan)
+    api_calls_left_this_month = Enum.max([@limits_per_month[plan] - api_calls_this_month, 0])
+    api_calls_left_this_hour = Enum.max([@limits_per_hour[plan] - api_calls_this_hour, 0])
+    api_calls_left_this_minute = Enum.max([@limits_per_minute[plan] - api_calls_this_minute, 0])
 
-    api_calls_left_this_month = Enum.max([limit_per_month - api_calls_this_month, 0])
-    api_calls_left_this_hour = Enum.max([limit_per_hour - api_calls_this_hour, 0])
-    api_calls_left = Enum.min([api_calls_left_this_month, api_calls_left_this_hour])
+    api_calls_left =
+      Enum.min([api_calls_left_this_minute, api_calls_left_this_month, api_calls_left_this_hour])
 
-    quota = Enum.min([@quota_size, api_calls_left])
+    case Enum.min([@quota_size, api_calls_left]) do
+      0 ->
+        now = Timex.now()
 
-    {:ok, quota}
+        blocked_for_seconds =
+          cond do
+            api_calls_left_this_month == 0 -> Timex.diff(Timex.end_of_month(now), now, :seconds)
+            api_calls_left_this_hour == 0 -> 3600 - (now.minute * 60 + now.second)
+            api_calls_left_this_minute == 0 -> 60 - now.second
+          end
+
+        {:error, %{blocked_for_seconds: blocked_for_seconds}}
+
+      quota ->
+        {:ok, quota}
+    end
   end
 
   defp do_update_usage_db(%__MODULE__{api_calls: api_calls} = acl, count, keys) do

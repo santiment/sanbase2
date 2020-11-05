@@ -79,9 +79,11 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
       %{
         error_msg: error_msg,
-        error_code: error_code
+        error_code: error_code,
+        extra_headers: extra_headers
       } ->
         conn
+        |> Sanbase.Utils.Conn.put_extra_resp_headers(extra_headers)
         |> put_resp_content_type("application/json", "charset=utf-8")
         |> send_resp(error_code, build_error_msg(error_msg))
         |> halt()
@@ -102,7 +104,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       true ->
         %{
           error_msg: "You need to upgrade to Sanbase Pro in order to use SanSheets.",
-          error_code: 401
+          error_code: 401,
+          extra_headers: []
         }
 
       false ->
@@ -117,8 +120,12 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         auth: %{current_user: user, auth_method: auth_method}
       }) do
     case ApiCallLimit.get_quota(:user, user, auth_method) do
-      {:ok, 0} ->
-        %{error_msg: "API Rate Limit Reached", error_code: 429}
+      {:error, %{blocked_for_seconds: blocked_for_seconds}} ->
+        extra_headers = [
+          {"X-RateLimit-Reset", blocked_for_seconds}
+        ]
+
+        %{error_msg: "API Rate Limit Reached", error_code: 429, extra_headers: extra_headers}
 
       {:ok, _} ->
         false
@@ -136,8 +143,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     auth_method = context[:auth][:auth_method] || :unauthorized
 
     case ApiCallLimit.get_quota(:remote_ip, remote_ip, auth_method) do
-      {:ok, 0} ->
-        %{error_msg: "API Rate Limit Reached", error_code: 429}
+      {:error, %{blocked_for_seconds: blocked_for_seconds}} ->
+        %{error_msg: "API Rate Limit Reached", error_code: 429, extra_headers: []}
 
       {:ok, _} ->
         false

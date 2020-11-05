@@ -4,6 +4,10 @@ defmodule Sanbase.ApiCallLimit.ETS do
   alias Sanbase.ApiCallLimit
   alias Sanbase.Auth.User
 
+  @type entity_type :: :remote_ip | :user
+  @type remote_ip :: String.t()
+  @type entity :: remote_ip | %User{}
+
   @ets_table :api_call_limit_ets_table
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name, __MODULE__))
@@ -29,19 +33,16 @@ defmodule Sanbase.ApiCallLimit.ETS do
 
   A special case is when the authentication is Basic Authentication. It is used
   exclusievly from internal services and there will be no limit imposed.
+
+  Returns {:ok, number} or {:error, error}
   """
-  def get_quota(_type, _entity, :basic),
-    do: {:ok, :infinity}
-
-  def get_quota(:user, %User{} = user, _auth_method) do
-    do_get_quota(:user, user, user.id)
-  end
-
-  def get_quota(:remote_ip, remote_ip, _auth_method) do
-    do_get_quota(:remote_ip, remote_ip, remote_ip)
-  end
+  @spec get_quota(entity_type, entity, atom()) :: {:ok, integer()} | {:error, any()}
+  def get_quota(_type, _entity, :basic), do: {:ok, :infinity}
+  def get_quota(:user, %User{} = user, _auth_method), do: do_get_quota(:user, user, user.id)
+  def get_quota(:remote_ip, ip, _auth_method), do: do_get_quota(:remote_ip, ip, ip)
 
   @doc ~s"""
+  Updates the 
   """
   def update_usage(_type, _entity, :basic), do: :ok
 
@@ -58,19 +59,21 @@ defmodule Sanbase.ApiCallLimit.ETS do
   defp do_get_quota(entity_type, entity, entity_key) do
     case :ets.lookup(@ets_table, entity_key) do
       [] ->
-        {:ok, quota} = ApiCallLimit.get_quota_db(entity_type, entity)
-        true = :ets.insert(@ets_table, {entity_key, quota, quota})
-        {:ok, quota}
+        with {:ok, quota} <- ApiCallLimit.get_quota_db(entity_type, entity) do
+          true = :ets.insert(@ets_table, {entity_key, quota, quota})
+          {:ok, quota}
+        end
 
       [{^entity_key, :infinity, :infinity}] ->
         {:ok, :infinity}
 
       [{^entity_key, api_calls_left, quota}] when api_calls_left <= 0 ->
         :ok = ApiCallLimit.update_usage_db(entity_type, entity, quota + -api_calls_left)
-        {:ok, quota} = ApiCallLimit.get_quota_db(entity_type, entity)
-        true = :ets.insert(@ets_table, {entity_key, quota, quota})
 
-        {:ok, quota}
+        with {:ok, quota} <- ApiCallLimit.get_quota_db(entity_type, entity) do
+          true = :ets.insert(@ets_table, {entity_key, quota, quota})
+          {:ok, quota}
+        end
 
       [{^entity_key, api_calls_left, _}] ->
         {:ok, api_calls_left}

@@ -118,7 +118,7 @@ CREATE TABLE public.api_call_limits (
     remote_ip character varying(255) DEFAULT NULL::character varying,
     has_limits boolean DEFAULT true,
     api_calls_limit_plan character varying(255) DEFAULT 'free'::character varying,
-    api_calls jsonb
+    api_calls jsonb DEFAULT '{}'::jsonb
 );
 
 

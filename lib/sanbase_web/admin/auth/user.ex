@@ -29,6 +29,7 @@ defmodule SanbaseWeb.ExAdmin.Auth.User do
 
     form user do
       inputs do
+        input(user, :is_superuser)
         input(user, :test_san_balance)
         input(user, :email)
         input(user, :stripe_customer_id)

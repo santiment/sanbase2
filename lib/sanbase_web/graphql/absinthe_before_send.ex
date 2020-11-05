@@ -78,7 +78,6 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
          count
        ) do
     Sanbase.ApiCallLimit.update_usage(:user, user, count, auth_method)
-    |> IO.inspect(label: "80", limit: :infinity)
   end
 
   defp maybe_update_api_call_limit_usage(
@@ -89,7 +88,6 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     remote_ip = remote_ip |> :inet_parse.ntoa() |> to_string()
 
     Sanbase.ApiCallLimit.update_usage(:remote_ip, remote_ip, count, auth_method)
-    |> IO.inspect(label: "91", limit: :infinity)
   end
 
   defp maybe_update_api_call_limit_usage(_, _), do: :ok

@@ -80,13 +80,12 @@ defmodule Sanbase.Billing.Subscription do
   @spec subscribe(%User{}, %Plan{}, string_or_nil, string_or_nil) ::
           {:ok, %__MODULE__{}} | {atom(), String.t()}
   def subscribe(user, plan, card_token \\ nil, coupon \\ nil) do
-    with {:ok, %User{stripe_customer_id: stripe_customer_id} = user}
-         when not is_nil(stripe_customer_id) <-
+    with {:ok, %User{stripe_customer_id: id} = user} when not is_nil(id) <-
            create_or_update_stripe_customer(user, card_token),
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, subscription} <- create_subscription_db(stripe_subscription, user, plan),
          {:ok, _} <- Sanbase.ApiCallLimit.update_user_plan(user) do
-      {:ok, subscription |> Repo.preload(plan: [:product])}
+      {:ok, subscription |> Repo.preload(plan: [:product], force: true)}
     end
   end
 
@@ -102,12 +101,13 @@ defmodule Sanbase.Billing.Subscription do
     # because the spec is wrong.
     # More info here: https://github.com/code-corps/stripity_stripe/pull/499
     with {:ok, item_id} <- StripeApi.get_subscription_first_item_id(sub.stripe_id),
-         %__MODULE__{user: user} <- Repo.preload([:user, plan: [:product]], force: true),
          {:ok, stripe_sub} <-
            StripeApi.update_subscription(sub.stripe_id, %{
              items: [%{id: item_id, plan: plan.stripe_id}]
            }),
          {:ok, updated_sub} <- sync_with_stripe_subscription(stripe_sub, sub),
+         %__MODULE__{user: user} = updated_sub <-
+           Repo.preload(updated_sub, [:user, plan: [:product]], force: true),
          {:ok, _} <- Sanbase.ApiCallLimit.update_user_plan(user) do
       {:ok, updated_sub}
     end
@@ -124,15 +124,15 @@ defmodule Sanbase.Billing.Subscription do
   """
   def cancel_subscription(%__MODULE__{} = sub) do
     with {:ok, stripe_sub} <- StripeApi.cancel_subscription(sub.stripe_id),
-         %__MODULE__{user: user} <- Repo.preload([:user]),
-         {:ok, _} <- sync_with_stripe_subscription(stripe_sub, sub),
+         {:ok, canceled_sub} <- sync_with_stripe_subscription(stripe_sub, sub),
+         %__MODULE__{user: user} = canceled_sub <- Repo.preload(canceled_sub, [:user]),
          {:ok, _} <- Sanbase.ApiCallLimit.update_user_plan(user) do
       Sanbase.Billing.StripeEvent.send_cancel_event_to_discord(sub)
 
       {:ok,
        %{
          is_scheduled_for_cancellation: true,
-         scheduled_for_cancellation_at: sub.current_period_end
+         scheduled_for_cancellation_at: canceled_sub.current_period_end
        }}
     end
   end
@@ -151,7 +151,7 @@ defmodule Sanbase.Billing.Subscription do
          {:ok, updated_sub} <- sync_with_stripe_subscription(stripe_sub, sub),
          %__MODULE__{user: user} <- Repo.preload(updated_sub, [:user]),
          {:ok, _} <- Sanbase.ApiCallLimit.update_user_plan(user) do
-      {:ok, updated_sub |> Repo.preload([plan: [:product]], force: true)}
+      {:ok, Repo.preload(updated_sub, [plan: [:product]], force: true)}
     else
       {:end_period_reached?, _} ->
         {:end_period_reached_error,
@@ -201,15 +201,17 @@ defmodule Sanbase.Billing.Subscription do
 
   def sync_with_stripe_subscription(%__MODULE__{stripe_id: stripe_id} = sub) do
     with {:ok, %Stripe.Subscription{} = stripe_sub} <- StripeApi.retrieve_subscription(stripe_id),
-         {_, %Plan{id: plan_id}} <- {:plan_exists?, Plan.by_stripe_id(stripe_sub.plan.id)} do
-      update_subscription_db(sub, %{
+         {_, %Plan{id: plan_id} = plan} <- {:plan_exists?, Plan.by_stripe_id(stripe_sub.plan.id)} do
+      args = %{
         current_period_end: DateTime.from_unix!(stripe_sub.current_period_end),
         cancel_at_period_end: stripe_sub.cancel_at_period_end,
         status: stripe_sub.status,
         plan_id: plan_id,
         trial_end: calculate_trial_end(stripe_sub),
         inserted_at: DateTime.from_unix!(stripe_sub.created) |> DateTime.to_naive()
-      })
+      }
+
+      update_subscription_db(sub, args)
     else
       {:plan_exists?, nil} ->
         Logger.error(

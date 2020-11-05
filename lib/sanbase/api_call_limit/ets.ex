@@ -33,86 +33,63 @@ defmodule Sanbase.ApiCallLimit.ETS do
   def get_quota(_type, _entity, :basic),
     do: {:ok, :infinity}
 
-  def get_quota(:user, %User{id: user_id} = user, _auth_method) do
-    case :ets.lookup(@ets_table, user_id) do
-      [] ->
-        {:ok, quota} = ApiCallLimit.get_quota_db(:user, user)
-        true = :ets.insert(@ets_table, {user_id, quota, quota})
-        {:ok, quota}
-
-      [{^user_id, :infinity, :infinity}] ->
-        {:ok, :infinity}
-
-      [{^user_id, api_calls_left, quota}] when api_calls_left <= 0 ->
-        # If one graphql request contains multiple batched queries the
-        # api_calls_left value can become negative
-        :ok = ApiCallLimit.update_usage_db(:user, user, quota + -api_calls_left)
-        {:ok, quota} = ApiCallLimit.get_quota_db(:user, user)
-        true = :ets.insert(@ets_table, {user_id, quota, quota})
-
-        {:ok, quota}
-
-      [{^user_id, api_calls_left, _}] ->
-        {:ok, api_calls_left}
-    end
+  def get_quota(:user, %User{} = user, _auth_method) do
+    do_get_quota(:user, user, user.id)
   end
 
   def get_quota(:remote_ip, remote_ip, _auth_method) do
-    case :ets.lookup(@ets_table, remote_ip) do
-      [] ->
-        {:ok, quota} = ApiCallLimit.get_quota_db(:remote_ip, remote_ip)
-        true = :ets.insert(@ets_table, {remote_ip, quota, quota})
-        {:ok, quota}
-
-      [{^remote_ip, :infinity, :infinity}] ->
-        {:ok, :infinity}
-
-      [{^remote_ip, api_calls_left, quota}] when api_calls_left <= 0 ->
-        :ok = ApiCallLimit.update_usage_db(:remote_ip, remote_ip, quota + -api_calls_left)
-        {:ok, quota} = ApiCallLimit.get_quota_db(:remote_ip, remote_ip)
-        true = :ets.insert(@ets_table, {remote_ip, quota, quota})
-
-        {:ok, quota}
-
-      [{^remote_ip, api_calls_left, _}] ->
-        {:ok, api_calls_left}
-    end
+    do_get_quota(:remote_ip, remote_ip, remote_ip)
   end
 
   @doc ~s"""
   """
   def update_usage(_type, _entity, :basic), do: :ok
 
-  def update_usage(:user, %User{id: user_id} = user, count, _auth_method) do
-    case :ets.lookup(@ets_table, user_id) do
-      [] ->
-        :ok = ApiCallLimit.update_usage_db(:user, user, count)
-        {:ok, quota} = ApiCallLimit.get_quota_db(:user, user)
-        true = :ets.insert(@ets_table, {user_id, quota, quota})
-        :ok
-
-      [{^user_id, :infinity, :infinity}] ->
-        :ok
-
-      [{^user_id, api_calls_left, _quota}] ->
-        true = :ets.update_element(@ets_table, user_id, {2, api_calls_left - count})
-        :ok
-    end
+  def update_usage(:user, %User{} = user, count, _auth_method) do
+    do_update_usage(:user, user, user.id, count)
   end
 
   def update_usage(:remote_ip, remote_ip, count, _auth_method) do
-    case :ets.lookup(@ets_table, remote_ip) do
+    do_update_usage(:remote_ip, remote_ip, remote_ip, count)
+  end
+
+  # Private functions
+
+  defp do_get_quota(entity_type, entity, entity_key) do
+    case :ets.lookup(@ets_table, entity_key) do
       [] ->
-        :ok = ApiCallLimit.update_usage_db(:remote_ip, remote_ip, count)
-        {:ok, quota} = ApiCallLimit.get_quota_db(:remote_ip, remote_ip)
-        true = :ets.insert(@ets_table, {remote_ip, quota, quota})
+        {:ok, quota} = ApiCallLimit.get_quota_db(entity_type, entity)
+        true = :ets.insert(@ets_table, {entity_key, quota, quota})
+        {:ok, quota}
+
+      [{^entity_key, :infinity, :infinity}] ->
+        {:ok, :infinity}
+
+      [{^entity_key, api_calls_left, quota}] when api_calls_left <= 0 ->
+        :ok = ApiCallLimit.update_usage_db(entity_type, entity, quota + -api_calls_left)
+        {:ok, quota} = ApiCallLimit.get_quota_db(entity_type, entity)
+        true = :ets.insert(@ets_table, {entity_key, quota, quota})
+
+        {:ok, quota}
+
+      [{^entity_key, api_calls_left, _}] ->
+        {:ok, api_calls_left}
+    end
+  end
+
+  defp do_update_usage(entity_type, entity, entity_key, count) do
+    case :ets.lookup(@ets_table, entity_key) do
+      [] ->
+        :ok = ApiCallLimit.update_usage_db(entity_type, entity, count)
+        {:ok, quota} = ApiCallLimit.get_quota_db(entity_type, entity)
+        true = :ets.insert(@ets_table, {entity_key, quota, quota})
         :ok
 
-      [{^remote_ip, :infinity, :infinity}] ->
+      [{^entity_key, :infinity, :infinity}] ->
         :ok
 
-      [{^remote_ip, api_calls_left, _quota}] ->
-        true = :ets.update_element(@ets_table, remote_ip, {2, api_calls_left - count})
+      [{^entity_key, api_calls_left, _quota}] ->
+        true = :ets.update_element(@ets_table, entity_key, {2, api_calls_left - count})
         :ok
     end
   end

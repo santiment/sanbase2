@@ -130,21 +130,8 @@ defmodule Sanbase.ApiCallLimit do
   defp get_by(:user, user), do: by_user(user)
   defp get_by(:remote_ip, remote_ip), do: by_remote_ip(remote_ip)
 
-  defp by_user(%User{} = user) do
-    from(
-      acl in __MODULE__,
-      where: acl.user_id == ^user.id
-    )
-    |> Repo.one()
-  end
-
-  defp by_remote_ip(remote_ip) do
-    from(
-      acl in __MODULE__,
-      where: acl.remote_ip == ^remote_ip
-    )
-    |> Repo.one()
-  end
+  defp by_user(%User{} = user), do: Repo.get_by(__MODULE__, user_id: user.id)
+  defp by_remote_ip(remote_ip), do: Repo.get_by(__MODULE__, remote_ip: remote_ip)
 
   defp get_map_keys() do
     now = Timex.now()

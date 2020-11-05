@@ -8,7 +8,7 @@ defmodule Sanbase.Repo.Migrations.AddApiCallLimitsTable do
       add(:remote_ip, :string, default: nil)
       add(:has_limits, :boolean, default: true)
       add(:api_calls_limit_plan, :string, default: "free")
-      add(:api_calls, :jsonb)
+      add(:api_calls, :map, default: %{})
     end
 
     create(unique_index(@table, [:user_id]))

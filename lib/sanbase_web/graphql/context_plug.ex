@@ -116,8 +116,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         product_id: @product_id_api,
         auth: %{current_user: user, auth_method: auth_method}
       }) do
-    case ApiCallLimit.get_quota(:user, user, auth_method)
-         |> IO.inspect(label: "119", limit: :infinity) do
+    case ApiCallLimit.get_quota(:user, user, auth_method) do
       {:ok, 0} ->
         %{error_msg: "API Rate Limit Reached", error_code: 429}
 
@@ -136,8 +135,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     remote_ip = remote_ip |> :inet_parse.ntoa() |> to_string()
     auth_method = context[:auth][:auth_method] || :unauthorized
 
-    case ApiCallLimit.get_quota(:remote_ip, remote_ip, auth_method)
-         |> IO.inspect(label: "138", limit: :infinity) do
+    case ApiCallLimit.get_quota(:remote_ip, remote_ip, auth_method) do
       {:ok, 0} ->
         %{error_msg: "API Rate Limit Reached", error_code: 429}
 

@@ -77,6 +77,8 @@ defmodule SanbaseWeb.Graphql.Schema.InsightQueries do
       arg(:is_paywall_required, :boolean)
       arg(:from, :datetime)
       arg(:to, :datetime)
+      arg(:page, :integer, default_value: 1)
+      arg(:page_size, :integer, default_value: 20)
 
       resolve(&InsightResolver.all_insights_for_user/3)
       middleware(PostPaywallFilter)

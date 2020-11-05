@@ -16,23 +16,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     PopularAuthor.get()
   end
 
-  def insights(%User{} = user, args, _resolution) do
+  def insights(%User{} = user, %{page: page, page_size: page_size} = args, _resolution) do
     opts = [
       is_pulse: Map.get(args, :is_pulse),
       is_paywall_required: Map.get(args, :is_paywall_required),
       from: Map.get(args, :from),
-      to: Map.get(args, :to)
+      to: Map.get(args, :to),
+      page: page,
+      page_size: page_size
     ]
 
     {:ok, Post.user_insights(user.id, opts)}
   end
 
-  def public_insights(%User{} = user, args, _resolution) do
+  def public_insights(%User{} = user, %{page: page, page_size: page_size} = args, _resolution) do
     opts = [
       is_pulse: Map.get(args, :is_pulse),
       is_paywall_required: Map.get(args, :is_paywall_required),
       from: Map.get(args, :from),
-      to: Map.get(args, :to)
+      to: Map.get(args, :to),
+      page: page,
+      page_size: page_size
     ]
 
     {:ok, Post.user_public_insights(user.id, opts)}
@@ -73,12 +77,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     {:ok, posts}
   end
 
-  def all_insights_for_user(_root, %{user_id: user_id} = args, _context) do
+  def all_insights_for_user(
+        _root,
+        %{user_id: user_id, page: page, page_size: page_size} = args,
+        _context
+      ) do
     opts = [
       is_pulse: Map.get(args, :is_pulse),
       is_paywall_required: Map.get(args, :is_paywall_required),
       from: Map.get(args, :from),
-      to: Map.get(args, :to)
+      to: Map.get(args, :to),
+      page: page,
+      page_size: page_size
     ]
 
     posts = Post.user_public_insights(user_id, opts)

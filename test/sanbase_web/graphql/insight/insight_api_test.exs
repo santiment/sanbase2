@@ -24,59 +24,126 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     {:ok, conn: conn, user: user, staked_user: staked_user}
   end
 
-  test "getting all inisghts for currentUser", %{conn: conn, user: user} do
-    published =
-      insert(:post,
-        user: user,
-        state: Post.approved_state(),
-        ready_state: Post.published()
-      )
+  describe "Insights for currentUser or getUser |" do
+    setup context do
+      published =
+        insert(:post,
+          user: context.user,
+          state: Post.approved_state(),
+          ready_state: Post.published()
+        )
 
-    draft =
-      insert(:post,
-        user: user,
-        state: Post.approved_state(),
-        ready_state: Post.draft()
-      )
+      draft =
+        insert(:post,
+          user: context.user,
+          state: Post.approved_state(),
+          ready_state: Post.draft()
+        )
 
-    query = """
-    {
-      currentUser {
-        insights {
-          id,
-          text,
-          readyState
+      {:ok, published: published, draft: draft}
+    end
+
+    test "Fetching all inisghts", %{published: published, draft: draft} = context do
+      query = """
+      {
+        currentUser {
+          insights {
+            id,
+            text,
+            readyState
+          }
         }
       }
-    }
-    """
+      """
 
-    result =
-      conn
-      |> post("/graphql", query_skeleton(query, "currentUser"))
-      |> json_response(200)
+      result = execute_query(context.conn, query, "currentUser")
 
-    expected_insights =
-      [
-        %{
-          "id" => "#{published.id}",
-          "readyState" => "#{published.ready_state}",
-          "text" => "#{published.text}"
-        },
-        %{
-          "id" => "#{draft.id}",
-          "readyState" => "#{draft.ready_state}",
-          "text" => "#{draft.text}"
+      expected_insights =
+        [
+          %{
+            "id" => "#{published.id}",
+            "readyState" => "#{published.ready_state}",
+            "text" => "#{published.text}"
+          },
+          %{
+            "id" => "#{draft.id}",
+            "readyState" => "#{draft.ready_state}",
+            "text" => "#{draft.text}"
+          }
+        ]
+        |> Enum.sort_by(& &1["id"])
+
+      insights = result["insights"] |> Enum.sort_by(& &1["id"])
+
+      assert insights == expected_insights
+    end
+
+    test "Fetching all public inisghts", %{published: published} = context do
+      query = """
+      {
+        getUser(selector: { id: #{context.user.id} }) {
+          insights {
+            id,
+            text,
+            readyState
+          }
         }
-      ]
-      |> Enum.sort_by(& &1["id"])
+      }
+      """
 
-    insights = result["data"]["currentUser"]["insights"] |> Enum.sort_by(& &1["id"])
+      result = execute_query(context.conn, query, "getUser")
 
-    assert insights == expected_insights
+      expected_insights =
+        [
+          %{
+            "id" => "#{published.id}",
+            "readyState" => "#{published.ready_state}",
+            "text" => "#{published.text}"
+          }
+        ]
+        |> Enum.sort_by(& &1["id"])
+
+      insights = result["insights"] |> Enum.sort_by(& &1["id"])
+
+      assert insights == expected_insights
+    end
+
+    test "Fetching all inisghts paginated", context do
+      query = """
+      {
+        currentUser {
+          insights(page: 1, page_size: 1) {
+            id,
+            text,
+            readyState
+          }
+        }
+      }
+      """
+
+      result = execute_query(context.conn, query, "currentUser")
+      assert length(result["insights"]) == 1
+    end
+
+    test "Fetching all public insights paginated", context do
+      query = """
+      {
+        getUser(selector: { id: #{context.user.id} }) {
+          insights(page: 2, page_size: 1) {
+            id,
+            text,
+            readyState
+          }
+        }
+      }
+      """
+
+      result = execute_query(context.conn, query, "getUser")
+      assert result["insights"] == []
+    end
   end
 
-  test "get an insight by id", %{conn: conn, user: user} do
+  test "Get an insight by id", %{conn: conn, user: user} do
     post =
       insert(:post,
         text: "test123",
@@ -97,7 +164,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     assert json_response(result, 200)["data"]["insight"] |> Map.get("text") == post.text
   end
 
-  test "getting an insight by id for anon user", %{user: user} do
+  test "Getting an insight by id for anon user", %{user: user} do
     post = insert(:post, user: user, state: Post.approved_state())
 
     query = """
@@ -146,7 +213,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
            )
   end
 
-  test "getting all posts as anon user", %{user: user} do
+  test "Getting all insights as anon user", %{user: user} do
     post =
       insert(:post,
         user: user,
@@ -177,7 +244,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
            ] == json_response(result, 200)["data"]["allInsights"]
   end
 
-  test "excluding draft and not approved insights from allInsights", %{
+  test "Excluding draft and not approved insights from allInsights", %{
     conn: conn,
     user: user,
     staked_user: staked_user
@@ -217,16 +284,25 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     assert json_response(result, 200)["data"]["allInsights"] |> length() == 2
   end
 
-  test "getting all insight for given user", %{
+  test "Getting all insight for given user, paginated", %{
     user: user,
     staked_user: staked_user,
     conn: conn
   } do
-    post =
+    post1 =
       insert(:post,
         user: user,
         ready_state: Post.published(),
-        state: Post.approved_state()
+        state: Post.approved_state(),
+        published_at: Timex.shift(Timex.now(), hours: -1)
+      )
+
+    post2 =
+      insert(:post,
+        user: user,
+        ready_state: Post.published(),
+        state: Post.approved_state(),
+        published_at: Timex.now()
       )
 
     insert(:post, user: user, ready_state: Post.draft())
@@ -234,24 +310,20 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
     query = """
     {
-      allInsightsForUser(user_id: #{user.id}) {
+      allInsightsForUser(user_id: #{user.id}, page: 1, page_size: 1) {
         id,
         text
       }
     }
     """
 
-    all_insights_for_user =
-      conn
-      |> post("/graphql", query_skeleton(query, "allInsightsForUser"))
-      |> json_response(200)
-      |> get_in(["data", "allInsightsForUser"])
+    all_insights_for_user = execute_query(conn, query, "allInsightsForUser")
 
     assert all_insights_for_user |> Enum.count() == 1
-    assert all_insights_for_user |> hd() |> Map.get("text") == post.text
+    assert all_insights_for_user |> hd() |> Map.get("text") == post2.text
   end
 
-  test "getting all insight user has voted for", %{
+  test "Getting all insight user has voted for", %{
     user: user,
     staked_user: staked_user,
     conn: conn
@@ -293,7 +365,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     assert result |> hd() |> Map.get("text") == post.text
   end
 
-  test "getting all insights ordered", %{
+  test "Getting all insights ordered", %{
     user: user,
     staked_user: staked_user,
     conn: conn
@@ -406,7 +478,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
              [%{"id" => "#{post.id}"}, %{"id" => "#{post3.id}"}] |> Enum.sort_by(& &1["id"])
   end
 
-  describe "create insight" do
+  describe "Create insight" do
     test "adding a new insight", %{user: user, conn: conn} do
       project = insert(:random_project)
       # Insert the metrics otherwise they cannot be added to the post
@@ -568,7 +640,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     end
   end
 
-  describe "update post" do
+  describe "Update insight" do
     test "update post", %{conn: conn, user: user} do
       image_url = upload_image(conn)
       tag1 = %Tag{name: "PRJ1"} |> Repo.insert!()
@@ -720,7 +792,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     end
   end
 
-  describe "delete post" do
+  describe "Delete insight" do
     test "deleting a post", %{user: user, conn: conn} do
       sanbase_post = insert(:post, user: user, state: Post.approved_state())
 
@@ -769,7 +841,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     end
   end
 
-  describe "publish post" do
+  describe "Publish insight" do
     test "successfully publishes in Discord and creates timeline event", %{
       user: user,
       conn: conn
@@ -870,7 +942,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     end
   end
 
-  test "get all tags", %{conn: conn} do
+  test "Get all tags", %{conn: conn} do
     tag1 = %Tag{name: "PRJ1"} |> Repo.insert!()
     tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
 
@@ -890,7 +962,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
              [%{"name" => tag1.name}, %{"name" => tag2.name}]
   end
 
-  test "voting for a post", %{conn: conn, user: user} do
+  test "Voting for an insight", %{conn: conn, user: user} do
     sanbase_post =
       %Post{
         user_id: user.id,
@@ -922,7 +994,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     assert result_post["votes"]["totalVotes"] == 1
   end
 
-  test "unvoting an insight", %{conn: conn, user: user} do
+  test "Unvoting an insight", %{conn: conn, user: user} do
     sanbase_post =
       %Post{
         user_id: user.id,
@@ -955,7 +1027,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     assert result_post["votes"]["totalVotes"] == 0
   end
 
-  test "voting is idempotent", context do
+  test "Voting is idempotent", context do
     %{conn: conn, user: user} = context
     post = insert(:post, %{user: user})
 
@@ -975,7 +1047,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
            )
   end
 
-  describe "create chart event" do
+  describe "Create chart event" do
     test "successfully creates chart event", context do
       conf = insert(:chart_configuration, is_public: true)
 
@@ -1013,7 +1085,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     end
   end
 
-  test "getting all insights filtered by from/to", %{
+  test "Getting all insights filtered by from/to", %{
     user: user,
     conn: conn
   } do

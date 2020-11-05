@@ -78,6 +78,38 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       assert insights == expected_insights
     end
 
+    test "Fetching insights count for current user", context do
+      query = """
+      {
+        currentUser {
+          insightsCount {
+            totalCount
+            draftCount
+          }
+        }
+      }
+      """
+
+      result = execute_query(context.conn, query, "currentUser")
+      assert result["insightsCount"]["totalCount"] == 1
+      assert result["insightsCount"]["draftCount"] == 1
+    end
+
+    test "Fetching insights count for public user", context do
+      query = """
+      {
+        getUser(selector: { id: #{context.user.id} }) {
+          insightsCount {
+            totalCount
+          }
+        }
+      }
+      """
+
+      result = execute_query(context.conn, query, "getUser")
+      assert result["insightsCount"]["totalCount"] == 1
+    end
+
     test "Fetching all public inisghts", %{published: published} = context do
       query = """
       {
@@ -289,13 +321,12 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
     staked_user: staked_user,
     conn: conn
   } do
-    post1 =
-      insert(:post,
-        user: user,
-        ready_state: Post.published(),
-        state: Post.approved_state(),
-        published_at: Timex.shift(Timex.now(), hours: -1)
-      )
+    insert(:post,
+      user: user,
+      ready_state: Post.published(),
+      state: Post.approved_state(),
+      published_at: Timex.shift(Timex.now(), hours: -1)
+    )
 
     post2 =
       insert(:post,

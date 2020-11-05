@@ -61,7 +61,7 @@ defmodule SanbaseWeb.Graphql.UserTypes do
       cache_resolve(&InsightResolver.public_insights/3, ttl: 60)
     end
 
-    field :insights_count, :insights_count do
+    field :insights_count, :public_insights_count do
       cache_resolve(&InsightResolver.insights_count/3, ttl: 60)
     end
 
@@ -162,8 +162,15 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     end
   end
 
+  object :public_insights_count do
+    field(:total_count, :integer)
+    field(:paywall_count, :integer)
+    field(:pulse_count, :integer)
+  end
+
   object :insights_count do
     field(:total_count, :integer)
+    field(:draft_count, :integer)
     field(:paywall_count, :integer)
     field(:pulse_count, :integer)
   end

@@ -216,7 +216,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     |> on_load(fn loader ->
       {:ok,
        Dataloader.get(loader, SanbaseDataloader, :insights_count_per_user, id) ||
-         %{total_count: 0, pulse_count: 0, paywall_count: 0}}
+         %{total_count: 0, draft_count: 0, pulse_count: 0, paywall_count: 0}}
     end)
   end
 

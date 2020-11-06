@@ -93,6 +93,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
     (queries ++ metrics)
     |> Enum.map(fn metric_or_query -> get(metric_or_query, subscription, product_id) end)
     |> Enum.filter(& &1.is_accessible)
+    |> Enum.uniq_by(& &1.name)
   end
 
   defp construct_name(:metric, name), do: name |> to_string()

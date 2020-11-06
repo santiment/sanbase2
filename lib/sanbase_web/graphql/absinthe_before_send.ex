@@ -26,6 +26,8 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   """
   alias SanbaseWeb.Graphql.Cache
 
+  require Sanbase.Utils.Config, as: Config
+
   @compile :inline_list_funcs
   @compile inline: [
              construct_query_name: 1,
@@ -62,7 +64,9 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     export_api_call_data(queries, conn, blueprint)
     do_not_cache? = is_nil(Process.get(:do_not_cache_query))
 
-    maybe_update_api_call_limit_usage(blueprint.execution.context, Enum.count(queries))
+    if Config.module_get(SanbaseWeb.Graphql.ContextPlug, :rate_limiting_enabled?) do
+      maybe_update_api_call_limit_usage(blueprint.execution.context, Enum.count(queries))
+    end
 
     case do_not_cache? or has_graphql_errors?(blueprint) do
       true -> :ok

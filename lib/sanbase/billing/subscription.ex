@@ -85,7 +85,7 @@ defmodule Sanbase.Billing.Subscription do
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, subscription} <- create_subscription_db(stripe_subscription, user, plan),
          {:ok, _} <- Sanbase.ApiCallLimit.update_user_plan(user) do
-      {:ok, subscription |> Repo.preload(plan: [:product], force: true)}
+      {:ok, subscription |> Repo.preload([plan: [:product]], force: true)}
     end
   end
 
@@ -124,15 +124,15 @@ defmodule Sanbase.Billing.Subscription do
   """
   def cancel_subscription(%__MODULE__{} = sub) do
     with {:ok, stripe_sub} <- StripeApi.cancel_subscription(sub.stripe_id),
-         {:ok, canceled_sub} <- sync_with_stripe_subscription(stripe_sub, sub),
-         %__MODULE__{user: user} = canceled_sub <- Repo.preload(canceled_sub, [:user]),
+         {:ok, _canceled_sub} <- sync_with_stripe_subscription(stripe_sub, sub),
+         %__MODULE__{user: user} <- Repo.preload(sub, [:user]),
          {:ok, _} <- Sanbase.ApiCallLimit.update_user_plan(user) do
       Sanbase.Billing.StripeEvent.send_cancel_event_to_discord(sub)
 
       {:ok,
        %{
          is_scheduled_for_cancellation: true,
-         scheduled_for_cancellation_at: canceled_sub.current_period_end
+         scheduled_for_cancellation_at: sub.current_period_end
        }}
     end
   end
@@ -201,12 +201,12 @@ defmodule Sanbase.Billing.Subscription do
 
   def sync_with_stripe_subscription(%__MODULE__{stripe_id: stripe_id} = sub) do
     with {:ok, %Stripe.Subscription{} = stripe_sub} <- StripeApi.retrieve_subscription(stripe_id),
-         {_, %Plan{id: plan_id} = plan} <- {:plan_exists?, Plan.by_stripe_id(stripe_sub.plan.id)} do
+         {_, %Plan{} = plan} <- {:plan_exists?, Plan.by_stripe_id(stripe_sub.plan.id)} do
       args = %{
         current_period_end: DateTime.from_unix!(stripe_sub.current_period_end),
         cancel_at_period_end: stripe_sub.cancel_at_period_end,
         status: stripe_sub.status,
-        plan_id: plan_id,
+        plan_id: plan.id,
         trial_end: calculate_trial_end(stripe_sub),
         inserted_at: DateTime.from_unix!(stripe_sub.created) |> DateTime.to_naive()
       }

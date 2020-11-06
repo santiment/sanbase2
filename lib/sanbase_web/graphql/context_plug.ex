@@ -73,7 +73,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       conn
       |> put_private(:absinthe, %{context: context})
 
-    case should_halt?(conn, context, @should_halt_methods) do
+    rate_limiting_enabled? = Config.get(:rate_limiting_enabled?)
+
+    case rate_limiting_enabled? and should_halt?(conn, context, @should_halt_methods) do
       false ->
         conn
 

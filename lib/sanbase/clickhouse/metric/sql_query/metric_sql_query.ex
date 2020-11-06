@@ -32,12 +32,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     query = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
-      #{aggregation(aggregation, "value", "dt")}
+      #{aggregation(aggregation, "value", "dt")},
+      toUnixTimestamp(argMax(computed_at, dt))
     FROM(
       SELECT
         asset_id,
+        value,
         dt,
-        value
+        computed_at
       FROM #{Map.get(@table_map, metric)} FINAL
       PREWHERE
         #{additional_filters(filters)}

@@ -61,11 +61,15 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   object :metric_data do
     field(:datetime, non_null(:datetime))
     field(:value, :float)
+    field(:computed_at, :datetime)
+    field(:datetime_interval_start, :datetime)
+    field(:datetime_interval_end, :datetime)
   end
 
   object :slug_float_value_pair do
     field(:slug, non_null(:string))
     field(:value, :float)
+    field(:computed_at, :datetime)
   end
 
   object :metric_data_per_slug do

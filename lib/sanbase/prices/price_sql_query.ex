@@ -10,7 +10,7 @@ defmodule Sanbase.Price.SqlQuery do
     SELECT time, SUM(price_usd), SUM(price_btc), SUM(marketcap_usd), SUM(volume_usd), toUInt32(SUM(has_changed))
     FROM (
       SELECT
-        toUnixTimestamp(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) AS time,
+        toUnixTimestamp(intDiv(toUInt32(?5 + (number + 1) * ?1), ?1) * ?1) AS time,
         toFloat64(0) AS price_usd,
         toFloat64(0) AS price_btc,
         toFloat64(0) AS marketcap_usd,
@@ -49,7 +49,7 @@ defmodule Sanbase.Price.SqlQuery do
 
     query = """
     SELECT
-      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS time,
+      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1 + ?1) AS time,
       #{aggregation(aggregation, "#{metric}", "dt")}
     FROM #{@table}
     PREWHERE

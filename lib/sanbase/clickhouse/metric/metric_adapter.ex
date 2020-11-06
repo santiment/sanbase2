@@ -75,10 +75,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
     {query, args} = timeseries_data_query(metric, slug, from, to, interval, aggregation, filters)
 
-    ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
+    ClickhouseRepo.query_transform(query, args, fn [unix, value, unix_computed_at] ->
       %{
         datetime: DateTime.from_unix!(unix),
-        value: value
+        value: value,
+        computed_at: DateTime.from_unix!(unix_computed_at)
       }
     end)
   end

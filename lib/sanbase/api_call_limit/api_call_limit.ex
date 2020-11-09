@@ -7,7 +7,6 @@ defmodule Sanbase.ApiCallLimit do
   alias Sanbase.Auth.User
   alias Sanbase.Billing.{Product, Subscription}
 
-  @compile :inline_list_funcs
   @compile inline: [by_user: 1, by_remote_ip: 1]
 
   @limits_per_month %{

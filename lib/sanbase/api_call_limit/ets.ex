@@ -1,4 +1,12 @@
 defmodule Sanbase.ApiCallLimit.ETS do
+  @moduledoc ~s"""
+  Track the API Call quotas (get and update) of the user and remote IPs.
+
+  The quota is fetched from the central database and the progress of using it is
+  tracked in-memory in an ETS table. When API calls are made, the progress is
+  updated in the ETS table until `quota` number of API calls are made. Then
+  the API calls count is updated in the central DB and a new quota is fetched.
+  """
   use GenServer
 
   alias Sanbase.ApiCallLimit
@@ -7,7 +15,6 @@ defmodule Sanbase.ApiCallLimit.ETS do
   @type entity_type :: :remote_ip | :user
   @type remote_ip :: String.t()
   @type entity :: remote_ip | %User{}
-
   @ets_table :api_call_limit_ets_table
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name, __MODULE__))
@@ -34,15 +41,18 @@ defmodule Sanbase.ApiCallLimit.ETS do
   A special case is when the authentication is Basic Authentication. It is used
   exclusievly from internal services and there will be no limit imposed.
 
-  Returns {:ok, number} or {:error, error}
+  Returns {:ok, infinity}, {:ok, number} or {:error, map}
   """
-  @spec get_quota(entity_type, entity, atom()) :: {:ok, integer()} | {:error, any()}
+  @spec get_quota(entity_type, entity, atom()) ::
+          {:ok, :infinity} | {:ok, integer()} | {:error, map()}
   def get_quota(_type, _entity, :basic), do: {:ok, :infinity}
   def get_quota(:user, %User{} = user, _auth_method), do: do_get_quota(:user, user, user.id)
   def get_quota(:remote_ip, ip, _auth_method), do: do_get_quota(:remote_ip, ip, ip)
 
   @doc ~s"""
-  Updates the 
+  Updates the number of api calls made by a user or an ip address. The number of
+  API calls is tracked in-memory in an ETS table and after a certain number of
+  API calls is made, the number is updated in the centralized database.
   """
   def update_usage(_type, _entity, :basic), do: :ok
 

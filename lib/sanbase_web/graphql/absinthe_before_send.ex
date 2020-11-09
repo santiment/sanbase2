@@ -26,9 +26,6 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   """
   alias SanbaseWeb.Graphql.Cache
 
-  require Sanbase.Utils.Config, as: Config
-
-  @compile :inline_list_funcs
   @compile inline: [
              construct_query_name: 1,
              cache_result: 2,

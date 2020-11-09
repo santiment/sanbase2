@@ -194,7 +194,13 @@ defmodule Sanbase.ApiCallLimit do
             api_calls_left_this_minute == 0 -> 60 - now.second
           end
 
-        {:error, %{blocked_for_seconds: blocked_for_seconds}}
+        {:error,
+         %{
+           blocked_for_seconds: blocked_for_seconds,
+           api_calls_left_this_month: api_calls_left_this_month,
+           api_calls_left_this_hour: api_calls_left_this_hour,
+           api_calls_left_this_minute: api_calls_left_this_minute
+         }}
 
       quota ->
         {:ok, quota}

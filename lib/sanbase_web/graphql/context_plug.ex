@@ -122,12 +122,12 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         auth: %{current_user: user, auth_method: auth_method}
       }) do
     case ApiCallLimit.get_quota(:user, user, auth_method) do
-      {:error, %{blocked_for_seconds: blocked_for_seconds}} ->
-        extra_headers = [
-          {"X-RateLimit-Reset", blocked_for_seconds}
-        ]
-
-        %{error_msg: "API Rate Limit Reached", error_code: 429, extra_headers: extra_headers}
+      {:error, %{blocked_for_seconds: _} = error} ->
+        %{
+          error_msg: "API Rate Limit Reached",
+          error_code: 429,
+          extra_headers: rate_limit_error_to_headers(error)
+        }
 
       {:ok, _} ->
         false
@@ -146,8 +146,12 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     auth_method = context[:auth][:auth_method] || :unauthorized
 
     case ApiCallLimit.get_quota(:remote_ip, remote_ip, auth_method) do
-      {:error, %{blocked_for_seconds: blocked_for_seconds}} ->
-        %{error_msg: "API Rate Limit Reached", error_code: 429, extra_headers: []}
+      {:error, %{blocked_for_seconds: _} = error} ->
+        %{
+          error_msg: "API Rate Limit Reached",
+          error_code: 429,
+          extra_headers: rate_limit_error_to_headers(error)
+        }
 
       {:ok, _} ->
         false
@@ -155,6 +159,23 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   end
 
   def halt_api_call_limit_reached?(_conn, _context), do: false
+
+  defp rate_limit_error_to_headers(error_map) do
+    %{
+      blocked_for_seconds: blocked_for_seconds,
+      api_calls_left_this_month: left_month,
+      api_calls_left_this_hour: left_hour,
+      api_calls_left_this_minute: left_minute
+    } = error_map
+
+    [
+      {"X-RateLimit-Reset", blocked_for_seconds},
+      {"X-RateLimit-Remaining-Month", left_month},
+      {"X-RateLimit-Remaining-Hour", left_hour},
+      {"X-RateLimit-Remaining-Minute", left_minute},
+      {"X-RateLimit-Remaining", left_minute}
+    ]
+  end
 
   defp build_error_msg(msg) do
     %{errors: %{details: msg}} |> Jason.encode!()

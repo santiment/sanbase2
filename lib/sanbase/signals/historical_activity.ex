@@ -29,6 +29,12 @@ defmodule Sanbase.Signal.HistoricalActivity do
     |> validate_required([:user_id, :user_trigger_id, :payload, :triggered_at])
   end
 
+  def create(attrs) do
+    %HistoricalActivity{}
+    |> changeset(attrs)
+    |> Repo.insert()
+  end
+
   @doc """
   Fetch signal historical activity for user with cursor ordered by triggered_at descending.
   Cursor is a map with `type` (one of `:before` and `:after`) and `datetime`.

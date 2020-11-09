@@ -4,9 +4,97 @@ defmodule Sanbase.Auth.UserTest do
   import Mockery
   import Sanbase.Factory
   import ExUnit.CaptureLog
+  import Ecto.Query
 
   alias Sanbase.Auth.{EthAccount, User}
   alias Sanbase.Repo
+  alias Sanbase.Timeline.TimelineEvent
+
+  test "Delete user and associations" do
+    user = insert(:user, stripe_customer_id: "test")
+
+    # UserToken
+    Sanbase.Telegram.UserToken.generate(user.id)
+
+    # Eth Account
+    Sanbase.Auth.EthAccount.create(%{user_id: user.id, address: "0x01"})
+
+    # Subscription
+    insert(:subscription_pro_sanbase, user: user, status: "trialing")
+
+    # Insight
+    post = insert(:post, user: user)
+
+    # Vote for a post
+    Sanbase.Vote.create(%{user_id: user.id, post_id: post.id})
+
+    # User follower
+    user_to_follow = insert(:user)
+    Sanbase.Auth.UserFollower.follow(user_to_follow.id, user.id)
+
+    # Timeline event with post
+    insert(:timeline_event,
+      post: post,
+      user: user,
+      event_type: TimelineEvent.publish_insight_type()
+    )
+
+    # Watchlist
+    {:ok, user_list} =
+      Sanbase.UserList.create_user_list(user, %{name: "My Test List", is_public: true})
+
+    # Timeline event with watchlist
+    insert(:timeline_event,
+      user_list: user_list,
+      user: user,
+      event_type: TimelineEvent.update_watchlist_type()
+    )
+
+    # Trigger
+    user_trigger =
+      insert(:user_trigger,
+        user: user,
+        trigger: %{
+          is_public: true,
+          settings: default_trigger_settings_string_keys(),
+          title: "my trigger",
+          description: "DAA going up 300%"
+        }
+      )
+
+    # Timeline event with trigger
+    insert(:timeline_event,
+      user_trigger: user_trigger,
+      user: user_to_follow,
+      event_type: TimelineEvent.create_public_trigger_type()
+    )
+
+    # Trigger Historical activity
+    {:ok, _} =
+      Sanbase.Signal.HistoricalActivity.create(%{
+        user_id: user.id,
+        user_trigger_id: user_trigger.id,
+        triggered_at: Timex.now(),
+        payload: %{}
+      })
+
+    # Promo trial
+    Sanbase.Billing.Subscription.PromoTrial.create_promo_trial(%{
+      plans: [3],
+      trial_days: 14,
+      user_id: user.id
+    })
+
+    # User settings
+    insert(:user_settings, user: user) |> IO.inspect()
+
+    # Chart configuration
+    chart_config = insert(:chart_configuration, user: user, is_public: true)
+    :ok = Sanbase.FeaturedItem.update_item(chart_config, true)
+
+    {:ok, deleted} = Repo.delete(user)
+    assert deleted.id == user.id
+  end
 
   test "san balance cache is stale when the cache is never updated" do
     user = insert(:user, %{san_balance: nil, san_balance_updated_at: nil})
@@ -428,5 +516,15 @@ defmodule Sanbase.Auth.UserTest do
              [
                "`something invalid` is not a valid URL. Reason: it is missing scheme (e.g. missing https:// part)"
              ]
+  end
+
+  defp default_trigger_settings_string_keys() do
+    %{
+      "type" => "daily_active_addresses",
+      "target" => %{"slug" => "santiment"},
+      "channel" => "telegram",
+      "time_window" => "1d",
+      "operation" => %{"percent_up" => 300.0}
+    }
   end
 end

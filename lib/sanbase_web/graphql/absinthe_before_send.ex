@@ -64,9 +64,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     export_api_call_data(queries, conn, blueprint)
     do_not_cache? = is_nil(Process.get(:do_not_cache_query))
 
-    if Config.module_get(SanbaseWeb.Graphql.ContextPlug, :rate_limiting_enabled?) do
-      maybe_update_api_call_limit_usage(blueprint.execution.context, Enum.count(queries))
-    end
+    maybe_update_api_call_limit_usage(blueprint.execution.context, Enum.count(queries))
 
     case do_not_cache? or has_graphql_errors?(blueprint) do
       true -> :ok
@@ -78,14 +76,22 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   end
 
   defp maybe_update_api_call_limit_usage(
-         %{product_id: @product_id_api, auth: %{current_user: user, auth_method: auth_method}},
+         %{
+           rate_limiting_enabled: true,
+           product_id: @product_id_api,
+           auth: %{current_user: user, auth_method: auth_method}
+         },
          count
        ) do
     Sanbase.ApiCallLimit.update_usage(:user, user, count, auth_method)
   end
 
   defp maybe_update_api_call_limit_usage(
-         %{product_id: @product_id_api, remote_ip: remote_ip} = context,
+         %{
+           rate_limiting_enabled: true,
+           product_id: @product_id_api,
+           remote_ip: remote_ip
+         } = context,
          count
        ) do
     auth_method = context[:auth][:auth_method] || :unauthorized

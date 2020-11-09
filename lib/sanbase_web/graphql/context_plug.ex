@@ -68,14 +68,13 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       context
       |> Map.put(:remote_ip, conn.remote_ip)
       |> Map.put(:origin_url, Plug.Conn.get_req_header(conn, "origin") |> List.first())
+      |> Map.put(:rate_limiting_enabled, Config.get(:rate_limiting_enabled))
 
     conn =
       conn
       |> put_private(:absinthe, %{context: context})
 
-    rate_limiting_enabled? = Config.get(:rate_limiting_enabled?)
-
-    case rate_limiting_enabled? and should_halt?(conn, context, @should_halt_methods) do
+    case should_halt?(conn, context, @should_halt_methods) do
       false ->
         conn
 
@@ -118,6 +117,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   def halt_sansheets_request?(_, _), do: false
 
   def halt_api_call_limit_reached?(_conn, %{
+        rate_limiting_enabled: true,
         product_id: @product_id_api,
         auth: %{current_user: user, auth_method: auth_method}
       }) do
@@ -137,6 +137,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   def halt_api_call_limit_reached?(
         _conn,
         %{
+          rate_limiting_enabled: true,
           product_id: @product_id_api,
           remote_ip: remote_ip
         } = context

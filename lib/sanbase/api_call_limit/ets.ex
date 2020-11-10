@@ -116,15 +116,6 @@ defmodule Sanbase.ApiCallLimit.ETS do
 
         :ok
 
-      [{^entity_key, :rate_limited, data}] ->
-        case DateTime.compare(DateTime.utc_now(), data.retry_again_after) do
-          :lt ->
-            :ok
-
-          _ ->
-            nil
-        end
-
       [{^entity_key, :infinity, :infinity}] ->
         :ok
 

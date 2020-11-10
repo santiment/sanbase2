@@ -115,41 +115,46 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   end
 
   # erc20 case
-  defp selector_to_args(%{infrastructure: "ETH", slug: slug})
-       when is_binary(slug) and slug != "ethereum" do
+  @spec selector_to_args(selector) :: {Atom.t(), String.t(), non_neg_integer()}
+  def selector_to_args(%{infrastructure: "ETH", slug: slug})
+      when is_binary(slug) and slug != "ethereum" do
     with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug),
          do: {Erc20Balance, contract, decimals}
   end
 
-  defp selector_to_args(%{infrastructure: "ETH"}) do
+  def selector_to_args(%{infrastructure: "ETH"}) do
     with {:ok, contract, decimals} <- Project.contract_info_by_slug("ethereum"),
          do: {EthBalance, contract, decimals}
   end
 
-  defp selector_to_args(%{infrastructure: "XRP"} = selector) do
+  def selector_to_args(%{infrastructure: "XRP"} = selector) do
     currency = Map.get(selector, :currency, "XRP")
     {XrpBalance, currency, 0}
   end
 
-  defp selector_to_args(%{infrastructure: "BTC"}) do
+  def selector_to_args(%{infrastructure: "BTC"}) do
     with {:ok, contract, decimals} <- Project.contract_info_by_slug("bitcoin"),
          do: {BtcBalance, contract, decimals}
   end
 
-  defp selector_to_args(%{infrastructure: "BCH"}) do
+  def selector_to_args(%{infrastructure: "BCH"}) do
     with {:ok, contract, decimals} <- Project.contract_info_by_slug("bitcoin-cash"),
          do: {BchBalance, contract, decimals}
   end
 
-  defp selector_to_args(%{infrastructure: "LTC"}) do
+  def selector_to_args(%{infrastructure: "LTC"}) do
     with {:ok, contract, decimals} <- Project.contract_info_by_slug("litecoin"),
          do: {LtcBalance, contract, decimals}
   end
 
-  defp selector_to_args(%{infrastructure: "BNB"} = selector) do
+  def selector_to_args(%{infrastructure: "BNB"} = selector) do
     slug = Map.get(selector, :slug, "binance-coin")
 
     with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug),
          do: {BnbBalance, contract, decimals}
+  end
+
+  def selector_to_args(selector) do
+    {:error, "Invalid selector: #{inspect(selector)}"}
   end
 end

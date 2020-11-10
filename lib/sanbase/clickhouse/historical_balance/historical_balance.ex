@@ -115,7 +115,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   end
 
   # erc20 case
-  @spec selector_to_args(selector) :: {Atom.t(), String.t(), non_neg_integer()}
+  @spec selector_to_args(selector) ::
+          {module(), String.t(), non_neg_integer()} | {:error, String.t()}
   def selector_to_args(%{infrastructure: "ETH", slug: slug})
       when is_binary(slug) and slug != "ethereum" do
     with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug),

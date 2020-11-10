@@ -34,6 +34,11 @@ defmodule Sanbase.ApiCallLimit.ETS do
     {:ok, %{ets_table: ets_table}}
   end
 
+  def clear_all() do
+    @ets_table
+    |> :ets.delete_all_objects()
+  end
+
   @doc ~s"""
   Get a quota that represent the number of API calls that can be made and tracked
   in-memory in an ETS table before checking the postgres database again.
@@ -74,6 +79,18 @@ defmodule Sanbase.ApiCallLimit.ETS do
           {:ok, quota}
         end
 
+      [{^entity_key, :rate_limited, error_map}] ->
+        case DateTime.compare(DateTime.utc_now(), error_map.blocked_until) do
+          :lt ->
+            {:error, error_map}
+
+          _ ->
+            with {:ok, quota} <- ApiCallLimit.get_quota_db(entity_type, entity) do
+              true = :ets.insert(@ets_table, {entity_key, quota, quota})
+              {:ok, quota}
+            end
+        end
+
       [{^entity_key, :infinity, :infinity}] ->
         {:ok, :infinity}
 
@@ -94,16 +111,53 @@ defmodule Sanbase.ApiCallLimit.ETS do
     case :ets.lookup(@ets_table, entity_key) do
       [] ->
         :ok = ApiCallLimit.update_usage_db(entity_type, entity, count)
-        {:ok, quota} = ApiCallLimit.get_quota_db(entity_type, entity)
-        true = :ets.insert(@ets_table, {entity_key, quota, quota})
+
+        get_quota_db_and_update_ets(entity_type, entity, entity_key)
+
         :ok
 
+      [{^entity_key, :rate_limited, data}] ->
+        case DateTime.compare(DateTime.utc_now(), data.retry_again_after) do
+          :lt ->
+            :ok
+
+          _ ->
+            nil
+        end
+
       [{^entity_key, :infinity, :infinity}] ->
+        :ok
+
+      [{^entity_key, api_calls_left, quota}] when api_calls_left <= count ->
+        :ok = ApiCallLimit.update_usage_db(entity_type, entity, quota + api_calls_left + count)
+        get_quota_db_and_update_ets(entity_type, entity, entity_key)
+
         :ok
 
       [{^entity_key, api_calls_left, _quota}] ->
         true = :ets.update_element(@ets_table, entity_key, {2, api_calls_left - count})
         :ok
+    end
+  end
+
+  defp get_quota_db_and_update_ets(entity_type, entity, entity_key) do
+    case ApiCallLimit.get_quota_db(entity_type, entity) do
+      {:ok, quota} ->
+        true = :ets.insert(@ets_table, {entity_key, quota, quota})
+
+      {:error, %{} = error_map} ->
+        retry_again_after =
+          Enum.min(
+            [
+              error_map.blocked_until,
+              DateTime.add(DateTime.utc_now(), 60, :second)
+            ],
+            DateTime
+          )
+
+        error_map = Map.put(error_map, :retry_again_after, retry_again_after)
+
+        true = :ets.insert(@ets_table, {entity_key, :rate_limited, error_map})
     end
   end
 end

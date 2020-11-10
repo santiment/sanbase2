@@ -169,11 +169,11 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     } = error_map
 
     [
-      {"X-RateLimit-Reset", blocked_for_seconds},
-      {"X-RateLimit-Remaining-Month", left_month},
-      {"X-RateLimit-Remaining-Hour", left_hour},
-      {"X-RateLimit-Remaining-Minute", left_minute},
-      {"X-RateLimit-Remaining", left_minute}
+      {"x-ratelimit-reset", blocked_for_seconds},
+      {"x-ratelimit-remaining-month", left_month},
+      {"x-ratelimit-remaining-hour", left_hour},
+      {"x-ratelimit-remaining-minute", left_minute},
+      {"x-ratelimit-remaining", left_minute}
     ]
   end
 

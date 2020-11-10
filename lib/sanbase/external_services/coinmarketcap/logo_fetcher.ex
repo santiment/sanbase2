@@ -49,8 +49,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
     case Map.get(local_projects_map, slug) do
       %Project{} = project ->
         with {:ok, local_filepath} <- download(url, dir_path, filename),
-             {:logo_has_changed?, true} <-
-               {:logo_has_changed?, logo_changed?(project, local_filepath)},
+             {_, true} <- {:logo_has_changed?, logo_changed?(project, local_filepath)},
              {:ok, local_filepath} <- resize_image(local_filepath, dir_path, filename),
              {:ok, uploaded_filepath} <- upload(local_filepath),
              {:ok, _} <-

@@ -44,7 +44,7 @@ defmodule Sanbase.ApiCallLimit do
 
   schema "api_call_limits" do
     field(:has_limits, :boolean, default: true)
-    field(:api_calls_limit_plan, :string, default: "free")
+    field(:api_calls_limit_plan, :string, default: "sanapi_free")
     field(:api_calls, :map, default: %{})
     field(:remote_ip, :string, default: nil)
 
@@ -84,49 +84,52 @@ defmodule Sanbase.ApiCallLimit do
 
   def update_usage_db(:user, %User{is_superuser: true}, _), do: :ok
 
-  def update_usage_db(:user, %User{} = user, api_calls_count) do
+  def update_usage_db(:user, %User{} = user, count) do
     keys = get_map_keys()
 
     case by_user(user) do
       nil ->
-        %{month_str: month_str, hour_str: hour_str} = keys
+        %{month_str: month_str, hour_str: hour_str, minute_str: minute_str} = keys
+
+        api_calls = %{month_str => count, hour_str => count, minute_str => count}
 
         changeset(%__MODULE__{}, %{
           user_id: user.id,
           api_calls_limit_plan: user_to_plan(user),
           has_limits: user_has_limits?(user),
-          api_calls: %{month_str => api_calls_count, hour_str => api_calls_count}
+          api_calls: api_calls
         })
         |> Repo.insert()
 
         :ok
 
       %__MODULE__{} = acl ->
-        do_update_usage_db(acl, api_calls_count, keys)
+        do_update_usage_db(acl, count, keys)
 
         :ok
     end
   end
 
-  def update_usage_db(:remote_ip, remote_ip, api_calls_count) do
+  def update_usage_db(:remote_ip, remote_ip, count) do
     keys = get_map_keys()
 
     case by_remote_ip(remote_ip) do
       nil ->
-        %{month_str: month_str, hour_str: hour_str} = keys
+        %{month_str: month_str, hour_str: hour_str, minute_str: minute_str} = keys
+        api_calls = %{month_str => count, hour_str => count, minute_str => count}
 
         changeset(%__MODULE__{}, %{
           remote_ip: remote_ip,
-          api_calls_limit_plan: "free",
+          api_calls_limit_plan: "sanapi_free",
           has_limits: remote_ip_has_limits?(remote_ip),
-          api_calls: %{month_str => api_calls_count, hour_str => api_calls_count}
+          api_calls: api_calls
         })
         |> Repo.insert()
 
         :ok
 
       %__MODULE__{} = acl ->
-        do_update_usage_db(acl, api_calls_count, keys)
+        do_update_usage_db(acl, count, keys)
         :ok
     end
   end
@@ -144,8 +147,8 @@ defmodule Sanbase.ApiCallLimit do
 
     %{
       month_str: now |> Timex.beginning_of_month() |> to_string(),
-      hour_str: %{now | :minute => 0} |> to_string(),
-      minute_str: %{now | :second => 0, :microsecond => {0, 0}}
+      hour_str: %{now | :minute => 0, :second => 0, :microsecond => {0, 0}} |> to_string(),
+      minute_str: %{now | :second => 0, :microsecond => {0, 0}} |> to_string()
     }
   end
 
@@ -169,6 +172,7 @@ defmodule Sanbase.ApiCallLimit do
 
   defp do_get_quota(%__MODULE__{} = acl) do
     %{api_calls_limit_plan: plan, api_calls: api_calls} = acl
+
     keys = get_map_keys()
 
     api_calls_this_month = Map.get(api_calls, keys.month_str, 0)
@@ -195,6 +199,7 @@ defmodule Sanbase.ApiCallLimit do
 
         {:error,
          %{
+           blocked_until: DateTime.add(now, blocked_for_seconds, :second),
            blocked_for_seconds: blocked_for_seconds,
            api_calls_left_this_month: api_calls_left_this_month,
            api_calls_left_this_hour: api_calls_left_this_hour,
@@ -207,11 +212,12 @@ defmodule Sanbase.ApiCallLimit do
   end
 
   defp do_update_usage_db(%__MODULE__{api_calls: api_calls} = acl, count, keys) do
-    %{month_str: month_str, hour_str: hour_str} = keys
+    %{month_str: month_str, hour_str: hour_str, minute_str: minute_str} = keys
 
     new_api_calls = %{
       month_str => count + Map.get(api_calls, month_str, 0),
-      hour_str => count + Map.get(api_calls, hour_str, 0)
+      hour_str => count + Map.get(api_calls, hour_str, 0),
+      minute_str => count + Map.get(api_calls, minute_str, 0)
     }
 
     changeset(acl, %{api_calls: new_api_calls})

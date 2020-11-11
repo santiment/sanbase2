@@ -3684,17 +3684,17 @@ CREATE UNIQUE INDEX post_images_image_url_index ON public.post_images USING btre
 
 
 --
+-- Name: posts_metrics_post_id_metric_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX posts_metrics_post_id_metric_id_index ON public.posts_metrics USING btree (post_id, metric_id);
+
+
+--
 -- Name: posts_projects_post_id_project_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE UNIQUE INDEX posts_projects_post_id_project_id_index ON public.posts_projects USING btree (post_id, project_id);
-
-
---
--- Name: posts_tags_post_id_tag_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX posts_tags_post_id_tag_id_index ON public.posts_tags USING btree (post_id, tag_id);
 
 
 --
@@ -4096,7 +4096,7 @@ ALTER TABLE ONLY public.exchange_addresses
 --
 
 ALTER TABLE ONLY public.featured_items
-    ADD CONSTRAINT featured_items_chart_configuration_id_fkey FOREIGN KEY (chart_configuration_id) REFERENCES public.chart_configurations(id);
+    ADD CONSTRAINT featured_items_chart_configuration_id_fkey FOREIGN KEY (chart_configuration_id) REFERENCES public.chart_configurations(id) ON DELETE CASCADE;
 
 
 --
@@ -4104,7 +4104,7 @@ ALTER TABLE ONLY public.featured_items
 --
 
 ALTER TABLE ONLY public.featured_items
-    ADD CONSTRAINT featured_items_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id);
+    ADD CONSTRAINT featured_items_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE;
 
 
 --
@@ -4112,7 +4112,7 @@ ALTER TABLE ONLY public.featured_items
 --
 
 ALTER TABLE ONLY public.featured_items
-    ADD CONSTRAINT featured_items_table_configuration_id_fkey FOREIGN KEY (table_configuration_id) REFERENCES public.table_configurations(id);
+    ADD CONSTRAINT featured_items_table_configuration_id_fkey FOREIGN KEY (table_configuration_id) REFERENCES public.table_configurations(id) ON DELETE CASCADE;
 
 
 --
@@ -4120,7 +4120,7 @@ ALTER TABLE ONLY public.featured_items
 --
 
 ALTER TABLE ONLY public.featured_items
-    ADD CONSTRAINT featured_items_user_list_id_fkey FOREIGN KEY (user_list_id) REFERENCES public.user_lists(id);
+    ADD CONSTRAINT featured_items_user_list_id_fkey FOREIGN KEY (user_list_id) REFERENCES public.user_lists(id) ON DELETE CASCADE;
 
 
 --
@@ -4128,7 +4128,7 @@ ALTER TABLE ONLY public.featured_items
 --
 
 ALTER TABLE ONLY public.featured_items
-    ADD CONSTRAINT featured_items_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id);
+    ADD CONSTRAINT featured_items_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id) ON DELETE CASCADE;
 
 
 --
@@ -4264,7 +4264,7 @@ ALTER TABLE ONLY public.posts
 --
 
 ALTER TABLE ONLY public.posts_metrics
-    ADD CONSTRAINT posts_metrics_metric_id_fkey FOREIGN KEY (metric_id) REFERENCES public.metrics(id);
+    ADD CONSTRAINT posts_metrics_metric_id_fkey FOREIGN KEY (metric_id) REFERENCES public.metrics(id) ON DELETE CASCADE;
 
 
 --
@@ -4272,7 +4272,7 @@ ALTER TABLE ONLY public.posts_metrics
 --
 
 ALTER TABLE ONLY public.posts_metrics
-    ADD CONSTRAINT posts_metrics_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id);
+    ADD CONSTRAINT posts_metrics_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE;
 
 
 --
@@ -4304,7 +4304,7 @@ ALTER TABLE ONLY public.posts_projects
 --
 
 ALTER TABLE ONLY public.posts_tags
-    ADD CONSTRAINT posts_tags_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id);
+    ADD CONSTRAINT posts_tags_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE;
 
 
 --
@@ -4312,7 +4312,7 @@ ALTER TABLE ONLY public.posts_tags
 --
 
 ALTER TABLE ONLY public.posts_tags
-    ADD CONSTRAINT posts_tags_tag_id_fkey FOREIGN KEY (tag_id) REFERENCES public.tags(id);
+    ADD CONSTRAINT posts_tags_tag_id_fkey FOREIGN KEY (tag_id) REFERENCES public.tags(id) ON DELETE CASCADE;
 
 
 --
@@ -4528,7 +4528,7 @@ ALTER TABLE ONLY public.timeline_event_comments_mapping
 --
 
 ALTER TABLE ONLY public.timeline_events
-    ADD CONSTRAINT timeline_events_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id);
+    ADD CONSTRAINT timeline_events_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE;
 
 
 --
@@ -4536,7 +4536,7 @@ ALTER TABLE ONLY public.timeline_events
 --
 
 ALTER TABLE ONLY public.timeline_events
-    ADD CONSTRAINT timeline_events_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT timeline_events_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -4544,7 +4544,7 @@ ALTER TABLE ONLY public.timeline_events
 --
 
 ALTER TABLE ONLY public.timeline_events
-    ADD CONSTRAINT timeline_events_user_list_id_fkey FOREIGN KEY (user_list_id) REFERENCES public.user_lists(id);
+    ADD CONSTRAINT timeline_events_user_list_id_fkey FOREIGN KEY (user_list_id) REFERENCES public.user_lists(id) ON DELETE CASCADE;
 
 
 --
@@ -4552,7 +4552,7 @@ ALTER TABLE ONLY public.timeline_events
 --
 
 ALTER TABLE ONLY public.timeline_events
-    ADD CONSTRAINT timeline_events_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id);
+    ADD CONSTRAINT timeline_events_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id) ON DELETE CASCADE;
 
 
 --
@@ -4971,4 +4971,8 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200923090710);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016091443);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016105225);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016124426);
+INSERT INTO public."schema_migrations" (version) VALUES (20201109091755);
+INSERT INTO public."schema_migrations" (version) VALUES (20201109092655);
+INSERT INTO public."schema_migrations" (version) VALUES (20201109112004);
+INSERT INTO public."schema_migrations" (version) VALUES (20201109124013);
 INSERT INTO public."schema_migrations" (version) VALUES (20201110115647);

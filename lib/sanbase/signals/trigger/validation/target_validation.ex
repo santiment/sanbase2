@@ -69,11 +69,12 @@ defmodule Sanbase.Signal.Validation.Target do
   def valid_historical_balance_selector?(selector) when is_map(selector) do
     case Sanbase.Clickhouse.HistoricalBalance.selector_to_args(selector) do
       {_, _, _} -> :ok
-      {:error, _error} -> "#{inspect(selector)} is not a valid selector."
+      {:error, _error} -> "#{inspect(selector)} is not a valid  historical balance selector."
     end
   end
 
   def valid_historical_balance_selector?(selector) do
-    {:error, "#{inspect(selector)} is not a valid selector - it has to be a map"}
+    {:error,
+     "#{inspect(selector)} is not a valid historical balance selector - it has to be a map"}
   end
 end

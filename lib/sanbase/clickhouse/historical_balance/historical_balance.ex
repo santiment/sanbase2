@@ -116,7 +116,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
   # erc20 case
   @spec selector_to_args(selector) ::
-          {module(), String.t(), non_neg_integer()} | {:error, String.t()}
+          {module(), String.t(), non_neg_integer()} | {:error, tuple()}
   def selector_to_args(%{infrastructure: "ETH", slug: slug})
       when is_binary(slug) and slug != "ethereum" do
     with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug),
@@ -156,6 +156,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   end
 
   def selector_to_args(selector) do
-    {:error, "Invalid selector: #{inspect(selector)}"}
+    {:error, "Invalid historical balance selector: #{inspect(selector)}"}
   end
 end

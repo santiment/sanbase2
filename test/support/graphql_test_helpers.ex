@@ -1,8 +1,6 @@
 defmodule SanbaseWeb.Graphql.TestHelpers do
   import Plug.Conn
   import Phoenix.ConnTest
-
-  alias SanbaseWeb.Graphql.ContextPlug
   alias Sanbase.Billing.Plan.AccessChecker
 
   # The default endpoint for testing
@@ -70,13 +68,11 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
 
     conn
     |> put_req_header("authorization", "Bearer " <> token)
-    |> ContextPlug.call(%{})
   end
 
   def setup_apikey_auth(conn, apikey) do
     conn
     |> put_req_header("authorization", "Apikey " <> apikey)
-    |> ContextPlug.call(%{})
   end
 
   def setup_basic_auth(conn, user, pass) do
@@ -84,7 +80,6 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
 
     conn
     |> put_req_header("authorization", "Basic " <> token)
-    |> ContextPlug.call(%{})
   end
 
   def execute_query(conn, query, query_name) do

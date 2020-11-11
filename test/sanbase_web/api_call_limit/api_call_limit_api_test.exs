@@ -46,7 +46,9 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         response
         |> json_response(429)
 
-      assert result == %{"errors" => %{"details" => "API Rate Limit Reached"}}
+      %{"errors" => %{"details" => error_msg}} = result
+
+      assert error_msg =~ "API Rate Limit Reached. Try again in"
 
       assert {"x-ratelimit-remaining-month", "800"} in response.resp_headers
       assert {"x-ratelimit-remaining-hour", "300"} in response.resp_headers
@@ -63,7 +65,9 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         response
         |> json_response(429)
 
-      assert result == %{"errors" => %{"details" => "API Rate Limit Reached"}}
+      %{"errors" => %{"details" => error_msg}} = result
+
+      assert error_msg =~ "API Rate Limit Reached. Try again in"
 
       assert {"x-ratelimit-remaining-month", "400"} in response.resp_headers
       assert {"x-ratelimit-remaining-hour", "0"} in response.resp_headers
@@ -80,7 +84,9 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         response
         |> json_response(429)
 
-      assert result == %{"errors" => %{"details" => "API Rate Limit Reached"}}
+      %{"errors" => %{"details" => error_msg}} = result
+
+      assert error_msg =~ "API Rate Limit Reached. Try again in"
 
       assert {"x-ratelimit-remaining-month", "0"} in response.resp_headers
       assert {"x-ratelimit-remaining-hour", "0"} in response.resp_headers
@@ -126,7 +132,9 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         response
         |> json_response(429)
 
-      assert result == %{"errors" => %{"details" => "API Rate Limit Reached"}}
+      %{"errors" => %{"details" => error_msg}} = result
+
+      assert error_msg =~ "API Rate Limit Reached. Try again in"
 
       assert {"x-ratelimit-remaining-month", "599300"} in response.resp_headers
       assert {"x-ratelimit-remaining-hour", "5300"} in response.resp_headers
@@ -158,7 +166,9 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         response
         |> json_response(429)
 
-      assert result == %{"errors" => %{"details" => "API Rate Limit Reached"}}
+      %{"errors" => %{"details" => error_msg}} = result
+
+      assert error_msg =~ "API Rate Limit Reached. Try again in"
 
       assert {"x-ratelimit-remaining-month", "4800"} in response.resp_headers
       assert {"x-ratelimit-remaining-hour", "800"} in response.resp_headers
@@ -186,7 +196,9 @@ defmodule SanbaseWeb.ApiCallLimitTest do
         response
         |> json_response(429)
 
-      assert result == %{"errors" => %{"details" => "API Rate Limit Reached"}}
+      %{"errors" => %{"details" => error_msg}} = result
+
+      assert error_msg =~ "API Rate Limit Reached. Try again in"
 
       assert {"x-ratelimit-remaining-month", "0"} in response.resp_headers
       assert {"x-ratelimit-remaining-hour", "0"} in response.resp_headers

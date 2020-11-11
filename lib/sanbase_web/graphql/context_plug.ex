@@ -75,67 +75,72 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       |> put_private(:absinthe, %{context: context})
 
     case should_halt?(conn, context, @should_halt_methods) do
-      false ->
+      {false, conn} ->
         conn
 
-      %{
-        error_msg: error_msg,
-        error_code: error_code,
-        extra_headers: extra_headers
-      } ->
+      {true, conn, error_map} ->
+        %{error_msg: error_msg, error_code: error_code} = error_map
+
         conn
-        |> Sanbase.Utils.Conn.put_extra_resp_headers(extra_headers)
         |> put_resp_content_type("application/json", "charset=utf-8")
         |> send_resp(error_code, build_error_msg(error_msg))
         |> halt()
     end
   end
 
-  defp should_halt?(_conn, _context, []), do: false
+  defp should_halt?(conn, _context, []), do: {false, conn}
 
   defp should_halt?(conn, context, [halt_method | rest]) do
     case halt_method.(conn, context) do
-      false -> should_halt?(conn, context, rest)
-      error -> error
+      {false, conn} -> should_halt?(conn, context, rest)
+      {true, conn, error_map} -> {true, conn, error_map}
     end
   end
 
   def halt_sansheets_request?(conn, %{auth: %{subscription: %{plan: %{name: plan_name}}}}) do
     case is_sansheets_request(conn) and plan_name == "FREE" do
       true ->
-        %{
+        error_map = %{
           error_msg: "You need to upgrade to Sanbase Pro in order to use SanSheets.",
-          error_code: 401,
-          extra_headers: []
+          error_code: 401
         }
 
+        {true, conn, error_map}
+
       false ->
-        false
+        {false, conn}
     end
   end
 
-  def halt_sansheets_request?(_, _), do: false
+  def halt_sansheets_request?(conn, _context), do: {false, conn}
 
-  def halt_api_call_limit_reached?(_conn, %{
+  def halt_api_call_limit_reached?(conn, %{
         rate_limiting_enabled: true,
         product_id: @product_id_api,
         auth: %{current_user: user, auth_method: auth_method}
       }) do
     case ApiCallLimit.get_quota(:user, user, auth_method) do
-      {:error, %{blocked_for_seconds: _} = error} ->
-        %{
-          error_msg: "API Rate Limit Reached",
-          error_code: 429,
-          extra_headers: rate_limit_error_to_headers(error)
+      {:error, %{blocked_for_seconds: _} = rate_limit_map} ->
+        error_map = %{
+          error_msg: rate_limit_error_message(rate_limit_map),
+          error_code: 429
         }
 
-      {:ok, _} ->
-        false
+        conn = Sanbase.Utils.Conn.put_extra_resp_headers(conn, rate_limit_headers(rate_limit_map))
+
+        {true, conn, error_map}
+
+      {:ok, %{quota: :infinity}} ->
+        {false, conn}
+
+      {:ok, %{quota: _} = quota_map} ->
+        conn = Sanbase.Utils.Conn.put_extra_resp_headers(conn, rate_limit_headers(quota_map))
+        {false, conn}
     end
   end
 
   def halt_api_call_limit_reached?(
-        _conn,
+        conn,
         %{
           rate_limiting_enabled: true,
           product_id: @product_id_api,
@@ -146,35 +151,55 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     auth_method = context[:auth][:auth_method] || :unauthorized
 
     case ApiCallLimit.get_quota(:remote_ip, remote_ip, auth_method) do
-      {:error, %{blocked_for_seconds: _} = error} ->
-        %{
-          error_msg: "API Rate Limit Reached",
-          error_code: 429,
-          extra_headers: rate_limit_error_to_headers(error)
+      {:error, %{blocked_for_seconds: _} = rate_limit_map} ->
+        error_map = %{
+          error_msg: rate_limit_error_message(rate_limit_map),
+          error_code: 429
         }
 
+        conn = Sanbase.Utils.Conn.put_extra_resp_headers(conn, rate_limit_headers(rate_limit_map))
+
+        {true, conn, error_map}
+
       {:ok, _} ->
-        false
+        {false, conn}
     end
   end
 
-  def halt_api_call_limit_reached?(_conn, _context), do: false
+  def halt_api_call_limit_reached?(conn, _context), do: {false, conn}
 
-  defp rate_limit_error_to_headers(error_map) do
+  defp rate_limit_error_message(%{blocked_for_seconds: seconds}) do
+    human_duration = Sanbase.DateTimeUtils.seconds_to_human_readable(seconds)
+
+    """
+    API Rate Limit Reached. Try again in #{seconds} seconds (#{human_duration})
+    """
+  end
+
+  defp rate_limit_headers(map) do
     %{
-      blocked_for_seconds: blocked_for_seconds,
-      api_calls_left_this_month: left_month,
-      api_calls_left_this_hour: left_hour,
-      api_calls_left_this_minute: left_minute
-    } = error_map
+      api_calls_limits: api_calls_limit,
+      api_calls_remaining: api_calls_remaining
+    } = map
 
-    [
-      {"x-ratelimit-reset", blocked_for_seconds},
-      {"x-ratelimit-remaining-month", left_month},
-      {"x-ratelimit-remaining-hour", left_hour},
-      {"x-ratelimit-remaining-minute", left_minute},
-      {"x-ratelimit-remaining", left_minute}
+    headers = [
+      {"x-ratelimit-remaining-month", api_calls_remaining.month},
+      {"x-ratelimit-remaining-hour", api_calls_remaining.hour},
+      {"x-ratelimit-remaining-minute", api_calls_remaining.minute},
+      {"x-ratelimit-remaining", api_calls_remaining.minute},
+      {"x-ratelimit-limit-month", api_calls_limit.month},
+      {"x-ratelimit-limit-hour", api_calls_limit.hour},
+      {"x-ratelimit-limit-minute", api_calls_limit.minute},
+      {"x-ratelimit-limit", api_calls_limit.minute}
     ]
+
+    case Map.get(map, :blocked_for_seconds) do
+      nil ->
+        headers
+
+      blocked_for_seconds ->
+        [{"x-ratelimit-reset", blocked_for_seconds} | headers]
+    end
   end
 
   defp build_error_msg(msg) do

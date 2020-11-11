@@ -20,7 +20,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
       }
       |> Repo.insert!()
 
-    conn = setup_jwt_auth(conn, user)
+    conn = setup_jwt_auth(conn, user) |> ContextPlug.call(%{})
 
     conn_context = conn.private.absinthe.context
 
@@ -218,7 +218,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
     test "when JWT auth - product is SANBase" do
       user = insert(:user)
-      conn = setup_jwt_auth(build_conn(), user)
+      conn = setup_jwt_auth(build_conn(), user) |> ContextPlug.call(%{})
 
       conn_context = conn.private.absinthe.context
 
@@ -237,7 +237,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
           "Mozilla/5.0 (compatible; Google-Apps-Script)"
         )
 
-      conn = setup_apikey_auth(conn, apikey)
+      conn = setup_apikey_auth(conn, apikey) |> ContextPlug.call(%{})
 
       conn_context = conn.private.absinthe.context
 
@@ -248,7 +248,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
       user = insert(:user)
       {:ok, apikey} = Apikey.generate_apikey(user)
 
-      conn = setup_apikey_auth(build_conn(), apikey)
+      conn = setup_apikey_auth(build_conn(), apikey) |> ContextPlug.call(%{})
 
       conn_context = conn.private.absinthe.context
 

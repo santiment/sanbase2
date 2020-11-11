@@ -9,31 +9,26 @@ defmodule Sanbase.ApiCallLimit do
 
   @compile inline: [by_user: 1, by_remote_ip: 1]
 
+  @plans_without_limits ["sanapi_enterprise", "sanapi_premium", "sanapi_custom"]
   @limits_per_month %{
     "sanbase_pro" => 5000,
     "sanapi_free" => 1000,
     "sanapi_basic" => 300_000,
-    "sanapi_pro" => 600_000,
-    "sanapi_enterprise" => :infinity,
-    "sanapi_custom" => :infinity
+    "sanapi_pro" => 600_000
   }
 
   @limits_per_hour %{
     "sanbase_pro" => 1000,
     "sanapi_free" => 500,
     "sanapi_basic" => 3000,
-    "sanapi_pro" => 6000,
-    "sanapi_enterprise" => :infinity,
-    "sanapi_custom" => :infinity
+    "sanapi_pro" => 6000
   }
 
   @limits_per_minute %{
     "sanbase_pro" => 100,
     "sanapi_free" => 100,
     "sanapi_basic" => 300,
-    "sanapi_pro" => 600,
-    "sanapi_enterprise" => :infinity,
-    "sanapi_custom" => :infinity
+    "sanapi_pro" => 600
   }
 
   @quota_size 100
@@ -66,75 +61,81 @@ defmodule Sanbase.ApiCallLimit do
         acl
         |> changeset(%{api_calls_limit_plan: user_to_plan(user)})
         |> Repo.update()
+        |> case do
+          {:ok, _} = result ->
+            # Clear the in-memory data for the user after plan update. This will
+            # make any curently applied rate limits go away.
+            __MODULE__.ETS.clear_data(:user, user)
+            result
+
+          {:error, error} ->
+            {:error, error}
+        end
     end
   end
 
   defdelegate get_quota(type, entity, auth_method), to: __MODULE__.ETS
   defdelegate update_usage(type, entity, count, auth_method), to: __MODULE__.ETS
 
-  def get_quota_db(:user, %User{is_superuser: true}), do: {:ok, :infinity}
-
   def get_quota_db(type, entity) do
     case get_by(type, entity) do
-      nil -> {:ok, @quota_size}
-      %{has_limits: false} -> {:ok, :infinity}
-      %__MODULE__{} = acl -> do_get_quota(acl)
+      nil ->
+        {:ok, acl} = create(type, entity)
+        do_get_quota(acl)
+
+      %{has_limits: false} ->
+        {:ok, %{quota: :infinity}}
+
+      %__MODULE__{} = acl ->
+        do_get_quota(acl)
     end
   end
 
-  def update_usage_db(:user, %User{is_superuser: true}, _), do: :ok
-
-  def update_usage_db(:user, %User{} = user, count) do
-    keys = get_map_keys()
-
-    case by_user(user) do
-      nil ->
-        %{month_str: month_str, hour_str: hour_str, minute_str: minute_str} = keys
-
-        api_calls = %{month_str => count, hour_str => count, minute_str => count}
-
-        changeset(%__MODULE__{}, %{
-          user_id: user.id,
-          api_calls_limit_plan: user_to_plan(user),
-          has_limits: user_has_limits?(user),
-          api_calls: api_calls
-        })
-        |> Repo.insert()
-
-        :ok
-
-      %__MODULE__{} = acl ->
-        do_update_usage_db(acl, count, keys)
-
-        :ok
-    end
-  end
-
-  def update_usage_db(:remote_ip, remote_ip, count) do
-    keys = get_map_keys()
-
-    case by_remote_ip(remote_ip) do
-      nil ->
-        %{month_str: month_str, hour_str: hour_str, minute_str: minute_str} = keys
-        api_calls = %{month_str => count, hour_str => count, minute_str => count}
-
-        changeset(%__MODULE__{}, %{
-          remote_ip: remote_ip,
-          api_calls_limit_plan: "sanapi_free",
-          has_limits: remote_ip_has_limits?(remote_ip),
-          api_calls: api_calls
-        })
-        |> Repo.insert()
-
-        :ok
-
-      %__MODULE__{} = acl ->
-        do_update_usage_db(acl, count, keys)
-        :ok
+  def update_usage_db(type, entity, count) do
+    case get_by(type, entity) do
+      nil -> create(type, entity, count)
+      %__MODULE__{} = acl -> do_update_usage_db(acl, count)
     end
   end
 
   # Private functions
+
+  defp create(type, entity, count \\ 0)
+
+  defp create(:user, %User{} = user, count) do
+    %{month_str: month_str, hour_str: hour_str, minute_str: minute_str} = get_time_str_keys()
+
+    api_calls = %{month_str => count, hour_str => count, minute_str => count}
+
+    plan = user_to_plan(user)
+
+    has_limits =
+      user_has_limits?(user) and
+        plan not in @plans_without_limits
+
+    %__MODULE__{}
+    |> changeset(%{
+      user_id: user.id,
+      api_calls_limit_plan: plan,
+      has_limits: has_limits,
+      api_calls: api_calls
+    })
+    |> Repo.insert()
+  end
+
+  defp create(:remote_ip, remote_ip, count) do
+    %{month_str: month_str, hour_str: hour_str, minute_str: minute_str} = get_time_str_keys()
+    api_calls = %{month_str => count, hour_str => count, minute_str => count}
+
+    %__MODULE__{}
+    |> changeset(%{
+      remote_ip: remote_ip,
+      api_calls_limit_plan: "sanapi_free",
+      has_limits: remote_ip_has_limits?(remote_ip),
+      api_calls: api_calls
+    })
+    |> Repo.insert()
+  end
 
   defp get_by(:user, user), do: by_user(user)
   defp get_by(:remote_ip, remote_ip), do: by_remote_ip(remote_ip)
@@ -142,7 +143,7 @@ defmodule Sanbase.ApiCallLimit do
   defp by_user(%User{} = user), do: Repo.get_by(__MODULE__, user_id: user.id)
   defp by_remote_ip(remote_ip), do: Repo.get_by(__MODULE__, remote_ip: remote_ip)
 
-  defp get_map_keys() do
+  defp get_time_str_keys() do
     now = Timex.now()
 
     %{
@@ -170,48 +171,66 @@ defmodule Sanbase.ApiCallLimit do
     end
   end
 
+  defp do_get_quota(%__MODULE__{has_limits: false} = acl) do
+    {:ok, %{quota: :infinity}}
+  end
+
   defp do_get_quota(%__MODULE__{} = acl) do
     %{api_calls_limit_plan: plan, api_calls: api_calls} = acl
 
-    keys = get_map_keys()
+    keys = get_time_str_keys()
 
-    api_calls_this_month = Map.get(api_calls, keys.month_str, 0)
-    api_calls_this_hour = Map.get(api_calls, keys.hour_str, 0)
-    api_calls_this_minute = Map.get(api_calls, keys.minute_str, 0)
+    api_calls_limits = %{
+      month: @limits_per_month[plan],
+      hour: @limits_per_hour[plan],
+      minute: @limits_per_minute[plan]
+    }
 
-    api_calls_left_this_month = Enum.max([@limits_per_month[plan] - api_calls_this_month, 0])
-    api_calls_left_this_hour = Enum.max([@limits_per_hour[plan] - api_calls_this_hour, 0])
-    api_calls_left_this_minute = Enum.max([@limits_per_minute[plan] - api_calls_this_minute, 0])
+    api_calls = %{
+      month: Map.get(api_calls, keys.month_str, 0),
+      hour: Map.get(api_calls, keys.hour_str, 0),
+      minute: Map.get(api_calls, keys.minute_str, 0)
+    }
 
-    api_calls_left =
-      Enum.min([api_calls_left_this_minute, api_calls_left_this_month, api_calls_left_this_hour])
+    api_calls_remaining = %{
+      month: Enum.max([api_calls_limits.month - api_calls.month, 0]),
+      hour: Enum.max([api_calls_limits.hour - api_calls.hour, 0]),
+      minute: Enum.max([api_calls_limits.minute - api_calls.minute, 0])
+    }
 
-    case Enum.min([@quota_size, api_calls_left]) do
+    min_remaining = api_calls_remaining |> Map.values() |> Enum.min()
+
+    case Enum.min([@quota_size, min_remaining]) do
       0 ->
         now = Timex.now()
 
         blocked_for_seconds =
           cond do
-            api_calls_left_this_month == 0 -> Timex.diff(Timex.end_of_month(now), now, :seconds)
-            api_calls_left_this_hour == 0 -> 3600 - (now.minute * 60 + now.second)
-            api_calls_left_this_minute == 0 -> 60 - now.second
+            api_calls_remaining.month == 0 -> Timex.diff(Timex.end_of_month(now), now, :seconds)
+            api_calls_remaining.hour == 0 -> 3600 - (now.minute * 60 + now.second)
+            api_calls_remaining.minute == 0 -> 60 - now.second
           end
 
         {:error,
          %{
            blocked_until: DateTime.add(now, blocked_for_seconds, :second),
            blocked_for_seconds: blocked_for_seconds,
-           api_calls_left_this_month: api_calls_left_this_month,
-           api_calls_left_this_hour: api_calls_left_this_hour,
-           api_calls_left_this_minute: api_calls_left_this_minute
+           api_calls_remaining: api_calls_remaining,
+           api_calls_limits: api_calls_limits
          }}
 
       quota ->
-        {:ok, quota}
+        {:ok,
+         %{
+           quota: quota,
+           api_calls_remaining: api_calls_remaining,
+           api_calls_limits: api_calls_limits
+         }}
     end
   end
 
-  defp do_update_usage_db(%__MODULE__{api_calls: api_calls} = acl, count, keys) do
+  defp do_update_usage_db(%__MODULE__{api_calls: api_calls} = acl, count) do
+    keys = get_time_str_keys()
     %{month_str: month_str, hour_str: hour_str, minute_str: minute_str} = keys
 
     new_api_calls = %{

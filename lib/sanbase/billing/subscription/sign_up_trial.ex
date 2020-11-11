@@ -128,10 +128,14 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
           {:ok, _} ->
             update_trial(sign_up_trial, %{is_finished: true})
 
-          {:error, reason} ->
+          # Subscription is already cancelled - update locally
+          {:error, %Stripe.Error{extra: %{http_status: 404}}} ->
+            update_trial(sign_up_trial, %{is_finished: true})
+
+          {:error, other} ->
             Logger.error(
               "Can't delete the subscription for: #{inspect(sign_up_trial)}, reason: #{
-                inspect(reason)
+                inspect(other)
               }"
             )
         end

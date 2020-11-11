@@ -631,7 +631,13 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "whale_to_traders_flow_change_30d",
         "traders_to_whale_flow_change_1d",
         "traders_to_whale_flow_change_7d",
-        "traders_to_whale_flow_change_30d"
+        "traders_to_whale_flow_change_30d",
+        "social_dominance_total_change_1d",
+        "social_dominance_total_change_7d",
+        "social_dominance_total_change_30d",
+        "sentiment_balance_total_change_1d",
+        "sentiment_balance_total_change_7d",
+        "sentiment_balance_total_change_30d"
       ]
       |> Enum.sort()
 

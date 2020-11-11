@@ -141,6 +141,20 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
   end
 
   defp update_local_project(%Project{} = project, %{} = fields) do
-    Project.changeset(project, fields) |> Repo.update()
+    case Project.changeset(project, fields) |> Repo.update() do
+      {:ok, schema} ->
+        {:ok, schema}
+
+      {:error, error} ->
+        error_msg = Sanbase.Utils.ErrorHandling.changeset_errors_to_str(error)
+
+        Logger.error(
+          "#{@log_tag} Error updating project locally: #{project.slug}. Error message: #{
+            error_msg
+          }"
+        )
+
+        {:error, error_msg}
+    end
   end
 end

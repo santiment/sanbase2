@@ -160,7 +160,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     resolution
   end
 
-  defp get_query_or_metric(:timeseries_data, %{metric: metric}, _args), do: {:metric, metric}
+  defp get_query_or_metric(:timeseries_data, %{metric: metric}, _args),
+    do: {:metric, metric}
+
+  defp get_query_or_metric(:timeseries_data_per_slug, %{metric: metric}, _args),
+    do: {:metric, metric}
 
   defp get_query_or_metric(:aggregated_timeseries_data, %{metric: metric}, _args),
     do: {:metric, metric}

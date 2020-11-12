@@ -4,11 +4,7 @@ defmodule Sanbase.Auth.User.Email do
   alias Sanbase.Repo
   alias Sanbase.Auth.User
 
-  # The Login links will be valid 1 hour
-  @login_email_valid_minutes 60
-
-  # The login link will be valid for 10
-  @login_email_valid_after_validation_minutes 10
+  @token_valid_window_minutes 60
 
   require Mockery.Macro
   defp mandrill_api(), do: Mockery.Macro.mockable(Sanbase.MandrillApi)
@@ -96,47 +92,20 @@ defmodule Sanbase.Auth.User.Email do
   def email_token_valid?(user, token) do
     naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
-    cond do
-      user.email_token != token ->
-        false
-
-      Timex.diff(naive_now, user.email_token_generated_at, :minutes) >
-          @login_email_valid_minutes ->
-        false
-
-      user.email_token_validated_at == nil ->
-        true
-
-      Timex.diff(naive_now, user.email_token_validated_at, :minutes) >
-          @login_email_valid_after_validation_minutes ->
-        false
-
-      true ->
-        true
-    end
+    # same token, not used and still valid
+    user.email_token == token and
+      user.email_token_validated_at == nil and
+      Timex.diff(naive_now, user.email_token_generated_at, :minutes) < @token_valid_window_minutes
   end
 
   def email_candidate_token_valid?(user, email_candidate_token) do
     naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
-    cond do
-      user.email_candidate_token != email_candidate_token ->
-        false
-
-      Timex.diff(naive_now, user.email_candidate_token_generated_at, :minutes) >
-          @login_email_valid_minutes ->
-        false
-
-      user.email_candidate_token_validated_at == nil ->
-        true
-
-      Timex.diff(naive_now, user.email_candidate_token_validated_at, :minutes) >
-          @login_email_valid_after_validation_minutes ->
-        false
-
-      true ->
-        true
-    end
+    # same token, not used and still valid
+    user.email_candidate_token == email_candidate_token and
+      user.email_candidate_token_validated_at == nil and
+      Timex.diff(naive_now, user.email_candidate_token_generated_at, :minutes) <
+        @token_valid_window_minutes
   end
 
   def send_login_email(user, origin_url, args \\ %{}) do

@@ -80,10 +80,10 @@ defmodule Sanbase.ApiCallLimit do
   def get_quota_db(type, entity) do
     case get_by(type, entity) do
       nil ->
-        {:ok, acl} = create(type, entity)
+        {:ok, %__MODULE__{} = acl} = create(type, entity)
         do_get_quota(acl)
 
-      %{has_limits: false} ->
+      %__MODULE__{has_limits: false} ->
         {:ok, %{quota: :infinity}}
 
       %__MODULE__{} = acl ->
@@ -154,24 +154,23 @@ defmodule Sanbase.ApiCallLimit do
   end
 
   defp user_to_plan(%User{} = user) do
-    api_subscription = Subscription.current_subscription(user, @product_api_id)
+    subscription =
+      Subscription.current_subscription(user, @product_api_id) ||
+        Subscription.current_subscription(user, @product_sanbase_id)
 
-    case api_subscription do
-      %Subscription{} ->
-        plan = api_subscription |> Subscription.plan_name()
-        "sanapi_#{plan}"
+    case subscription do
+      %Subscription{plan: %{product: %{id: @product_api_id}}} ->
+        "sanapi_#{Subscription.plan_name(subscription)}"
+
+      %Subscription{plan: %{product: %{id: @product_sanbase_id}}} ->
+        "sanbase_pro"
 
       _ ->
-        sanbase_subscription = Subscription.current_subscription(user, @product_sanbase_id)
-
-        case sanbase_subscription do
-          %Subscription{} -> "sanbase_pro"
-          _ -> "sanapi_free"
-        end
+        "sanapi_free"
     end
   end
 
-  defp do_get_quota(%__MODULE__{has_limits: false} = acl) do
+  defp do_get_quota(%__MODULE__{has_limits: false}) do
     {:ok, %{quota: :infinity}}
   end
 
@@ -230,8 +229,7 @@ defmodule Sanbase.ApiCallLimit do
   end
 
   defp do_update_usage_db(%__MODULE__{api_calls: api_calls} = acl, count) do
-    keys = get_time_str_keys()
-    %{month_str: month_str, hour_str: hour_str, minute_str: minute_str} = keys
+    %{month_str: month_str, hour_str: hour_str, minute_str: minute_str} = get_time_str_keys()
 
     new_api_calls = %{
       month_str => count + Map.get(api_calls, month_str, 0),

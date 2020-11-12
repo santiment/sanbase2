@@ -2,7 +2,7 @@ defmodule Sanbase.DateTimeUtils do
   def seconds_to_human_readable(seconds) do
     seconds
     |> Timex.Duration.from_seconds()
-    |> Elixir.Timex.Format.Duration.Formatters.Humanized.format()
+    |> Timex.Format.Duration.Formatters.Humanized.format()
   end
 
   def truncate_datetimes(%{} = map, precision \\ :second) do

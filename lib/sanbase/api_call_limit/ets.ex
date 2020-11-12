@@ -72,21 +72,12 @@ defmodule Sanbase.ApiCallLimit.ETS do
   defp do_get_quota(entity_type, entity, entity_key) do
     case :ets.lookup(@ets_table, entity_key) do
       [] ->
-        with {:ok, %{quota: quota} = metadata} <- ApiCallLimit.get_quota_db(entity_type, entity) do
-          true = :ets.insert(@ets_table, {entity_key, quota, quota, metadata})
-          {:ok, metadata}
-        end
+        get_quota_db_and_update_ets(entity_type, entity, entity_key)
 
       [{^entity_key, :rate_limited, error_map}] ->
         case DateTime.compare(DateTime.utc_now(), error_map.blocked_until) do
-          :lt ->
-            {:error, error_map}
-
-          _ ->
-            with {:ok, quota} <- ApiCallLimit.get_quota_db(entity_type, entity) do
-              true = :ets.insert(@ets_table, {entity_key, quota, quota})
-              {:ok, quota}
-            end
+          :lt -> {:error, error_map}
+          _ -> get_quota_db_and_update_ets(entity_type, entity, entity_key)
         end
 
       [{^entity_key, :infinity, :infinity, metadata}] ->
@@ -94,11 +85,7 @@ defmodule Sanbase.ApiCallLimit.ETS do
 
       [{^entity_key, api_calls_remaining, quota}] when api_calls_remaining <= 0 ->
         {:ok, _} = ApiCallLimit.update_usage_db(entity_type, entity, quota + -api_calls_remaining)
-
-        with {:ok, %{quota: quota} = metadata} <- ApiCallLimit.get_quota_db(entity_type, entity) do
-          true = :ets.insert(@ets_table, {entity_key, quota, quota, metadata})
-          {:ok, metadata}
-        end
+        get_quota_db_and_update_ets(entity_type, entity, entity_key)
 
       [{^entity_key, api_calls_remaining, _quota, metadata}] ->
         {:ok, %{metadata | quota: api_calls_remaining}}
@@ -135,6 +122,7 @@ defmodule Sanbase.ApiCallLimit.ETS do
     case ApiCallLimit.get_quota_db(entity_type, entity) do
       {:ok, %{quota: quota} = metadata} ->
         true = :ets.insert(@ets_table, {entity_key, quota, quota, metadata})
+        {:ok, metadata}
 
       {:error, %{} = error_map} ->
         retry_again_after =

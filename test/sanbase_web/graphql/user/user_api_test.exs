@@ -440,7 +440,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
     assert json_response(result, 200)["errors"] != nil
   end
 
-  test "trying to login again with a valid email token after one validation", %{conn: conn} do
+  test "fail to login again with a valid email token after one validation", %{conn: conn} do
     {:ok, user} =
       %User{
         salt: User.generate_salt(),
@@ -474,11 +474,9 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
     result =
       conn
       |> post("/graphql", mutation_skeleton(query))
+      |> json_response(200)
 
-    login_data = json_response(result, 200)["data"]["emailLoginVerify"]
-
-    assert login_data["token"] != nil
-    assert login_data["user"]["email"] == user.email
+    assert result["errors"] != nil
   end
 
   test "trying to login again with a valid email token after it has been validated 20 min ago", %{

@@ -2,10 +2,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
-  import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
-
-  alias Sanbase.Metric
 
   setup do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))

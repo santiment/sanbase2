@@ -1,14 +1,25 @@
 defmodule Sanbase.Auth.UserTest do
   use Sanbase.DataCase, async: false
 
+  import Mock
   import Mockery
   import Sanbase.Factory
   import ExUnit.CaptureLog
-  import Ecto.Query
 
   alias Sanbase.Auth.{EthAccount, User}
   alias Sanbase.Repo
   alias Sanbase.Timeline.TimelineEvent
+  alias Sanbase.StripeApi
+  alias Sanbase.StripeApiTestResponse
+
+  setup_with_mocks([
+    {StripeApi, [:passthrough],
+     [create_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
+    {StripeApi, [:passthrough],
+     [create_subscription: fn _ -> StripeApiTestResponse.create_subscription_resp() end]}
+  ]) do
+    :ok
+  end
 
   test "Delete user and associations" do
     user = insert(:user, stripe_customer_id: "test")
@@ -86,7 +97,7 @@ defmodule Sanbase.Auth.UserTest do
     })
 
     # User settings
-    insert(:user_settings, user: user) |> IO.inspect()
+    insert(:user_settings, user: user)
 
     # Chart configuration
     chart_config = insert(:chart_configuration, user: user, is_public: true)

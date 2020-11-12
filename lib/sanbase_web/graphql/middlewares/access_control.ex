@@ -172,7 +172,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   defp get_query_or_metric(:aggregated_timeseries_data, _source, %{metric: metric}),
     do: {:metric, metric}
 
-  defp get_query_or_metric(:histogram_data, %{metric: metric}, _args), do: {:metric, metric}
+  defp get_query_or_metric(:histogram_data, %{metric: metric}, _args),
+    do: {:metric, metric}
+
+  defp get_query_or_metric(:table_data, %{metric: metric}, _args),
+    do: {:metric, metric}
 
   defp get_query_or_metric(query, _source, _args), do: {:query, query}
 

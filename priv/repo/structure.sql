@@ -1337,7 +1337,8 @@ CREATE TABLE public.project (
     logo_url character varying(255),
     slug character varying(255),
     is_hidden boolean DEFAULT false,
-    dark_logo_url character varying(255)
+    dark_logo_url character varying(255),
+    telegram_chat_id integer
 );
 
 
@@ -4976,3 +4977,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20201109092655);
 INSERT INTO public."schema_migrations" (version) VALUES (20201109112004);
 INSERT INTO public."schema_migrations" (version) VALUES (20201109124013);
 INSERT INTO public."schema_migrations" (version) VALUES (20201110115647);
+INSERT INTO public."schema_migrations" (version) VALUES (20201112142519);

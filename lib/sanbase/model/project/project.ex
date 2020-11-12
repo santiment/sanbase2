@@ -20,44 +20,45 @@ defmodule Sanbase.Model.Project do
   @preloads [:eth_addresses, :latest_coinmarketcap_data, :github_organizations]
 
   schema "project" do
-    field(:name, :string)
-    field(:coinmarketcap_id, :string)
-    field(:ticker, :string)
-    field(:logo_url, :string)
-    field(:dark_logo_url, :string)
-    field(:website_link, :string)
-    field(:email, :string)
+    field(:blog_link, :string)
     field(:btt_link, :string)
+    field(:coinmarketcap_id, :string)
+    field(:dark_logo_url, :string)
+    field(:description, :string)
+    field(:email, :string)
     field(:facebook_link, :string)
     field(:github_link, :string)
-    field(:reddit_link, :string)
-    field(:twitter_link, :string)
-    field(:whitepaper_link, :string)
-    field(:blog_link, :string)
-    field(:slack_link, :string)
+    field(:is_hidden, :boolean, default: false)
     field(:linkedin_link, :string)
-    field(:telegram_link, :string)
-    field(:token_address, :string)
-    field(:team_token_wallet, :string)
-    field(:token_decimals, :integer)
-    field(:total_supply, :decimal)
-    field(:description, :string)
+    field(:logo_url, :string)
     field(:long_description, :string)
     field(:main_contract_address, :string)
-    field(:is_hidden, :boolean, default: false)
+    field(:name, :string)
+    field(:reddit_link, :string)
+    field(:slack_link, :string)
+    field(:team_token_wallet, :string)
+    field(:telegram_chat_id, :integer)
+    field(:telegram_link, :string)
+    field(:ticker, :string)
+    field(:token_address, :string)
+    field(:token_decimals, :integer)
+    field(:total_supply, :decimal)
+    field(:twitter_link, :string)
+    field(:website_link, :string)
+    field(:whitepaper_link, :string)
 
     has_one(:social_volume_query, Project.SocialVolumeQuery)
 
-    has_many(:contract_addresses, Project.ContractAddress)
-    has_many(:source_slug_mappings, Project.SourceSlugMapping)
-    has_many(:icos, Ico)
-    has_many(:github_organizations, Project.GithubOrganization)
-    has_many(:eth_addresses, ProjectEthAddress)
     has_many(:btc_addresses, ProjectBtcAddress)
     has_many(:chart_configurations, Sanbase.Chart.Configuration, on_delete: :delete_all)
+    has_many(:contract_addresses, Project.ContractAddress)
+    has_many(:eth_addresses, ProjectEthAddress)
+    has_many(:github_organizations, Project.GithubOrganization)
+    has_many(:icos, Ico)
+    has_many(:source_slug_mappings, Project.SourceSlugMapping)
 
-    belongs_to(:market_segment, MarketSegment, on_replace: :nilify)
     belongs_to(:infrastructure, Infrastructure, on_replace: :nilify)
+    belongs_to(:market_segment, MarketSegment, on_replace: :nilify)
 
     belongs_to(
       :latest_coinmarketcap_data,
@@ -80,34 +81,35 @@ defmodule Sanbase.Model.Project do
   def changeset(%Project{} = project, attrs \\ %{}) do
     project
     |> cast(attrs, [
-      :name,
-      :ticker,
-      :logo_url,
-      :dark_logo_url,
-      :slug,
-      :coinmarketcap_id,
-      :website_link,
-      :email,
-      :market_segment_id,
-      :infrastructure_id,
+      :blog_link,
       :btt_link,
+      :coinmarketcap_id,
+      :dark_logo_url,
+      :description,
+      :email,
       :facebook_link,
       :github_link,
-      :reddit_link,
-      :twitter_link,
-      :whitepaper_link,
-      :blog_link,
-      :slack_link,
+      :infrastructure_id,
+      :is_hidden,
       :linkedin_link,
-      :telegram_link,
-      :token_address,
-      :main_contract_address,
-      :team_token_wallet,
-      :description,
+      :logo_url,
       :long_description,
+      :main_contract_address,
+      :market_segment_id,
+      :name,
+      :reddit_link,
+      :slack_link,
+      :slug,
+      :team_token_wallet,
+      :telegram_chat_id,
+      :telegram_link,
+      :ticker,
+      :token_address,
       :token_decimals,
       :total_supply,
-      :is_hidden
+      :twitter_link,
+      :website_link,
+      :whitepaper_link
     ])
     |> cast_assoc(:market_segments)
     |> validate_required([:name])

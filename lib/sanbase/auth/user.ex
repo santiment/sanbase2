@@ -20,17 +20,8 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.Auth.UserFollower
   alias Sanbase.Billing.Subscription
 
-  # The Login links will be valid 1 hour
-  @login_email_valid_minutes 60
-
-  # The login link will be valid for 10
-  @login_email_valid_after_validation_minutes 10
-
   @salt_length 64
   @email_token_length 64
-
-  # 5 minutes
-  @san_balance_cache_seconds 60 * 5
 
   # Fallback username and email for Insights owned by deleted user accounts
   @anonymous_user_username "anonymous"
@@ -50,9 +41,6 @@ defmodule Sanbase.Auth.User do
              :email_candidate_token_validated_at,
              :consent_id
            ]}
-
-  require Mockery.Macro
-  defp mandrill_api, do: Mockery.Macro.mockable(Sanbase.MandrillApi)
 
   schema "users" do
     field(:email, :string)
@@ -139,6 +127,55 @@ defmodule Sanbase.Auth.User do
     |> unique_constraint(:stripe_customer_id)
   end
 
+  # Email functions
+  defdelegate find_or_insert_by_email(email, username \\ nil), to: __MODULE__.Email
+  defdelegate find_by_email_candidate(candidate, token), to: __MODULE__.Email
+  defdelegate update_email_token(user, consent \\ nil), to: __MODULE__.Email
+  defdelegate update_email_candidate(user, candidate), to: __MODULE__.Email
+  defdelegate mark_email_token_as_validated(user), to: __MODULE__.Email
+  defdelegate update_email_from_email_candidate(user), to: __MODULE__.Email
+  defdelegate email_token_valid?(user, token), to: __MODULE__.Email
+  defdelegate email_candidate_token_valid?(user, candidate_token), to: __MODULE__.Email
+  defdelegate send_login_email(user, origin_url, args \\ %{}), to: __MODULE__.Email
+  defdelegate send_verify_email(user), to: __MODULE__.Email
+
+  # San Balance functions
+
+  defdelegate san_balance_cache_stale?(user), to: __MODULE__.SanBalance
+  defdelegate update_san_balance_changeset(user), to: __MODULE__.SanBalance
+  defdelegate san_balance(user), to: __MODULE__.SanBalance
+  defdelegate san_balance!(user), to: __MODULE__.SanBalance
+
+  def by_id(user_id) when is_integer(user_id) do
+    case Sanbase.Repo.get_by(User, id: user_id) do
+      nil ->
+        {:error, "Cannot fetch the user with id #{user_id}"}
+
+      user ->
+        {:ok, user}
+    end
+  end
+
+  def by_id(user_ids) when is_list(user_ids) do
+    users =
+      from(
+        u in __MODULE__,
+        where: u.id in ^user_ids,
+        order_by: fragment("array_position(?, ?::int)", ^user_ids, u.id)
+      )
+      |> Repo.all()
+
+    {:ok, users}
+  end
+
+  def by_email(email) when is_binary(email) do
+    Sanbase.Repo.get_by(User, email: email)
+  end
+
+  def by_selector(%{id: id}), do: Repo.get_by(__MODULE__, id: id)
+  def by_selector(%{email: email}), do: Repo.get_by(__MODULE__, email: email)
+  def by_selector(%{username: username}), do: Repo.get_by(__MODULE__, username: username)
+
   def ascii_username?(nil), do: true
 
   def ascii_username?(username) do
@@ -187,247 +224,11 @@ defmodule Sanbase.Auth.User do
     end
   end
 
-  def san_balance_cache_stale?(%User{san_balance_updated_at: nil}), do: true
-
-  def san_balance_cache_stale?(%User{san_balance_updated_at: san_balance_updated_at}) do
-    naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-    Timex.diff(naive_now, san_balance_updated_at, :seconds) > @san_balance_cache_seconds
-  end
-
-  def update_san_balance_changeset(user) do
-    user = Repo.preload(user, :eth_accounts)
-    san_balance = san_balance_for_eth_accounts(user)
-    naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-
-    user
-    |> change(
-      san_balance_updated_at: naive_now,
-      san_balance: san_balance
-    )
-  end
-
-  @spec san_balance(%User{}) :: {:ok, float()} | {:ok, nil} | {:error, String.t()}
-  def san_balance(%User{test_san_balance: test_san_balance})
-      when not is_nil(test_san_balance) do
-    {:ok, test_san_balance |> Sanbase.Math.to_float()}
-  end
-
-  def san_balance(%User{san_balance: san_balance} = user) do
-    if san_balance_cache_stale?(user) do
-      update_san_balance_changeset(user)
-      |> Repo.update()
-      |> case do
-        {:ok, %{san_balance: san_balance}} ->
-          {:ok, san_balance |> Sanbase.Math.to_float()}
-
-        {:error, error} ->
-          {:error, error}
-      end
-    else
-      {:ok, san_balance |> Sanbase.Math.to_float()}
-    end
-  end
-
-  @spec san_balance!(%User{}) :: float | nil | no_return
-  def san_balance!(%User{} = user) do
-    case san_balance(user) do
-      {:ok, san_balance} -> san_balance
-      {:error, error} -> raise(error)
-    end
-  end
-
-  defp san_balance_for_eth_accounts(%User{eth_accounts: eth_accounts, san_balance: san_balance}) do
-    eth_accounts_balances =
-      eth_accounts
-      |> Enum.map(&EthAccount.san_balance/1)
-      |> Enum.reject(&is_nil/1)
-
-    case Enum.member?(eth_accounts_balances, :error) do
-      true -> san_balance
-      _ -> Enum.reduce(eth_accounts_balances, 0, &Kernel.+/2)
-    end
-  end
-
-  def find_or_insert_by_email(email, username \\ nil) do
-    email = String.downcase(email)
-
-    case Repo.get_by(User, email: email) do
-      nil ->
-        %User{email: email, username: username, salt: generate_salt(), first_login: true}
-        |> Repo.insert()
-
-      user ->
-        {:ok, user}
-    end
-  end
-
-  def find_by_email_candidate(email_candidate, email_candidate_token) do
-    email_candidate = String.downcase(email_candidate)
-
-    case Repo.get_by(User,
-           email_candidate: email_candidate,
-           email_candidate_token: email_candidate_token
-         ) do
-      nil ->
-        {:error, "Can't find user with email candidate #{email_candidate}"}
-
-      user ->
-        {:ok, user}
-    end
-  end
-
-  def update_email_token(user, consent \\ nil) do
-    user
-    |> change(
-      email_token: generate_email_token(),
-      email_token_generated_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second),
-      email_token_validated_at: nil,
-      consent_id: consent
-    )
-    |> Repo.update()
-  end
-
-  def update_email_candidate(user, email_candidate) do
-    user
-    |> changeset(%{
-      email_candidate: email_candidate,
-      email_candidate_token: generate_email_token(),
-      email_candidate_token_generated_at:
-        NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second),
-      email_candidate_token_validated_at: nil
-    })
-    |> Repo.update()
-  end
-
-  def mark_email_token_as_validated(user) do
-    validated_at =
-      (user.email_token_validated_at || Timex.now())
-      |> Timex.to_naive_datetime()
-      |> NaiveDateTime.truncate(:second)
-
-    user
-    |> change(
-      email_token_validated_at: validated_at,
-      is_registered: true
-    )
-    |> Repo.update()
-  end
-
-  def update_email_from_email_candidate(user) do
-    validated_at =
-      (user.email_candidate_token_validated_at || Timex.now())
-      |> Timex.to_naive_datetime()
-      |> NaiveDateTime.truncate(:second)
-
-    user
-    |> changeset(%{
-      email: user.email_candidate,
-      email_candidate: nil,
-      email_candidate_token_validated_at: validated_at
-    })
-    |> Repo.update()
-  end
-
-  def email_token_valid?(user, token) do
-    naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-
-    cond do
-      user.email_token != token ->
-        false
-
-      Timex.diff(naive_now, user.email_token_generated_at, :minutes) >
-          @login_email_valid_minutes ->
-        false
-
-      user.email_token_validated_at == nil ->
-        true
-
-      Timex.diff(naive_now, user.email_token_validated_at, :minutes) >
-          @login_email_valid_after_validation_minutes ->
-        false
-
-      true ->
-        true
-    end
-  end
-
-  def email_candidate_token_valid?(user, email_candidate_token) do
-    naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-
-    cond do
-      user.email_candidate_token != email_candidate_token ->
-        false
-
-      Timex.diff(naive_now, user.email_candidate_token_generated_at, :minutes) >
-          @login_email_valid_minutes ->
-        false
-
-      user.email_candidate_token_validated_at == nil ->
-        true
-
-      Timex.diff(naive_now, user.email_candidate_token_validated_at, :minutes) >
-          @login_email_valid_after_validation_minutes ->
-        false
-
-      true ->
-        true
-    end
-  end
-
   def change_username(%__MODULE__{} = user, username) do
     user
     |> changeset(%{username: username})
     |> Repo.update()
   end
-
-  def send_login_email(user, origin_url, args \\ %{}) do
-    origin_url
-    |> Sanbase.Email.Template.choose_login_template(first_login?: user.first_login)
-    |> mandrill_api().send(user.email, %{
-      LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email, origin_url, args)
-    })
-  end
-
-  def send_verify_email(user) do
-    mandrill_api().send(
-      Sanbase.Email.Template.verification_email_template(),
-      user.email_candidate,
-      %{
-        VERIFY_LINK:
-          SanbaseWeb.Endpoint.verify_url(user.email_candidate_token, user.email_candidate)
-      }
-    )
-  end
-
-  def by_id(user_id) when is_integer(user_id) do
-    case Sanbase.Repo.get_by(User, id: user_id) do
-      nil ->
-        {:error, "Cannot fetch the user with id #{user_id}"}
-
-      user ->
-        {:ok, user}
-    end
-  end
-
-  def by_id(user_ids) when is_list(user_ids) do
-    users =
-      from(
-        u in __MODULE__,
-        where: u.id in ^user_ids,
-        order_by: fragment("array_position(?, ?::int)", ^user_ids, u.id)
-      )
-      |> Repo.all()
-
-    {:ok, users}
-  end
-
-  def by_email(email) when is_binary(email) do
-    Sanbase.Repo.get_by(User, email: email)
-  end
-
-  def by_selector(%{id: id}), do: Repo.get_by(__MODULE__, id: id)
-  def by_selector(%{email: email}), do: Repo.get_by(__MODULE__, email: email)
-  def by_selector(%{username: username}), do: Repo.get_by(__MODULE__, username: username)
 
   def users_with_monitored_watchlist_and_email() do
     from(u in User,
@@ -510,10 +311,7 @@ defmodule Sanbase.Auth.User do
   end
 
   def sanbase_bot_email, do: @sanbase_bot_email
-
-  def sanbase_bot_email(idx) do
-    String.replace(@sanbase_bot_email, "@", "#{idx}@")
-  end
+  def sanbase_bot_email(idx), do: String.replace(@sanbase_bot_email, "@", "#{idx}@")
 
   def has_credit_card_in_stripe?(user_id) do
     with {:ok, user} <- by_id(user_id),

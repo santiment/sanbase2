@@ -35,8 +35,6 @@ defmodule Sanbase.Signal.SchedulerTest do
         settings: trigger_settings
       })
 
-    datetimes = generate_datetimes(~U[2019-01-01 00:00:00Z], "1d", 7)
-
     mock_fun =
       [
         fn -> {:ok, %{project.slug => 100}} end,

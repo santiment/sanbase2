@@ -1,99 +1,108 @@
 defmodule Sanbase.Auth.UserTest do
   use Sanbase.DataCase, async: false
 
+  import Mock
   import Mockery
   import Sanbase.Factory
   import ExUnit.CaptureLog
-  import Ecto.Query
 
   alias Sanbase.Auth.{EthAccount, User}
   alias Sanbase.Repo
   alias Sanbase.Timeline.TimelineEvent
+  alias Sanbase.StripeApi
+  alias Sanbase.StripeApiTestResponse
 
   test "Delete user and associations" do
-    user = insert(:user, stripe_customer_id: "test")
+    with_mocks([
+      {StripeApi, [:passthrough],
+       [create_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
+      {StripeApi, [:passthrough],
+       [create_subscription: fn _ -> StripeApiTestResponse.create_subscription_resp() end]}
+    ]) do
+      user = insert(:user, stripe_customer_id: "test")
 
-    # UserToken
-    Sanbase.Telegram.UserToken.generate(user.id)
+      # UserToken
+      Sanbase.Telegram.UserToken.generate(user.id)
 
-    # Eth Account
-    Sanbase.Auth.EthAccount.create(%{user_id: user.id, address: "0x01"})
+      # Eth Account
+      Sanbase.Auth.EthAccount.create(%{user_id: user.id, address: "0x01"})
 
-    # Subscription
-    insert(:subscription_pro_sanbase, user: user, status: "trialing")
+      # Subscription
+      insert(:subscription_pro_sanbase, user: user, status: "trialing")
 
-    # Insight
-    post = insert(:post, user: user)
+      # Insight
+      post = insert(:post, user: user)
 
-    # Vote for a post
-    Sanbase.Vote.create(%{user_id: user.id, post_id: post.id})
+      # Vote for a post
+      Sanbase.Vote.create(%{user_id: user.id, post_id: post.id})
 
-    # User follower
-    user_to_follow = insert(:user)
-    Sanbase.Auth.UserFollower.follow(user_to_follow.id, user.id)
+      # User follower
+      user_to_follow = insert(:user)
+      Sanbase.Auth.UserFollower.follow(user_to_follow.id, user.id)
 
-    # Timeline event with post
-    insert(:timeline_event,
-      post: post,
-      user: user,
-      event_type: TimelineEvent.publish_insight_type()
-    )
-
-    # Watchlist
-    {:ok, user_list} =
-      Sanbase.UserList.create_user_list(user, %{name: "My Test List", is_public: true})
-
-    # Timeline event with watchlist
-    insert(:timeline_event,
-      user_list: user_list,
-      user: user,
-      event_type: TimelineEvent.update_watchlist_type()
-    )
-
-    # Trigger
-    user_trigger =
-      insert(:user_trigger,
+      # Timeline event with post
+      insert(:timeline_event,
+        post: post,
         user: user,
-        trigger: %{
-          is_public: true,
-          settings: default_trigger_settings_string_keys(),
-          title: "my trigger",
-          description: "DAA going up 300%"
-        }
+        event_type: TimelineEvent.publish_insight_type()
       )
 
-    # Timeline event with trigger
-    insert(:timeline_event,
-      user_trigger: user_trigger,
-      user: user_to_follow,
-      event_type: TimelineEvent.create_public_trigger_type()
-    )
+      # Watchlist
+      {:ok, user_list} =
+        Sanbase.UserList.create_user_list(user, %{name: "My Test List", is_public: true})
 
-    # Trigger Historical activity
-    {:ok, _} =
-      Sanbase.Signal.HistoricalActivity.create(%{
-        user_id: user.id,
-        user_trigger_id: user_trigger.id,
-        triggered_at: Timex.now(),
-        payload: %{}
+      # Timeline event with watchlist
+      insert(:timeline_event,
+        user_list: user_list,
+        user: user,
+        event_type: TimelineEvent.update_watchlist_type()
+      )
+
+      # Trigger
+      user_trigger =
+        insert(:user_trigger,
+          user: user,
+          trigger: %{
+            is_public: true,
+            settings: default_trigger_settings_string_keys(),
+            title: "my trigger",
+            description: "DAA going up 300%"
+          }
+        )
+
+      # Timeline event with trigger
+      insert(:timeline_event,
+        user_trigger: user_trigger,
+        user: user_to_follow,
+        event_type: TimelineEvent.create_public_trigger_type()
+      )
+
+      # Trigger Historical activity
+      {:ok, _} =
+        Sanbase.Signal.HistoricalActivity.create(%{
+          user_id: user.id,
+          user_trigger_id: user_trigger.id,
+          triggered_at: Timex.now(),
+          payload: %{}
+        })
+
+      # Promo trial
+      Sanbase.Billing.Subscription.PromoTrial.create_promo_trial(%{
+        plans: [3],
+        trial_days: 14,
+        user_id: user.id
       })
 
-    # Promo trial
-    Sanbase.Billing.Subscription.PromoTrial.create_promo_trial(%{
-      plans: [3],
-      trial_days: 14,
-      user_id: user.id
-    })
+      # User settings
+      insert(:user_settings, user: user)
 
-    # User settings
-    insert(:user_settings, user: user) |> IO.inspect()
+      # Chart configuration
+      chart_config = insert(:chart_configuration, user: user, is_public: true)
+      :ok = Sanbase.FeaturedItem.update_item(chart_config, true)
 
-    # Chart configuration
-    chart_config = insert(:chart_configuration, user: user, is_public: true)
-    :ok = Sanbase.FeaturedItem.update_item(chart_config, true)
-
-    {:ok, deleted} = Repo.delete(user)
-    assert deleted.id == user.id
+      {:ok, deleted} = Repo.delete(user)
+      assert deleted.id == user.id
+    end
   end
 
   test "san balance cache is stale when the cache is never updated" do

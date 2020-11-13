@@ -175,6 +175,9 @@ defmodule Sanbase.Application do
       # Start the Clickhouse Repo
       start_in(Sanbase.ClickhouseRepo, [:prod, :dev]),
 
+      # Star the API call service
+      Sanbase.ApiCallLimit.ETS,
+
       # Time series Prices DB connection
       Sanbase.Prices.Store.child_spec(),
 

@@ -74,6 +74,14 @@ defmodule Sanbase.Mock do
     end
   end
 
+  def prepare_mocks2(state \\ MapSet.new(), list, opts \\ [])
+
+  def prepare_mocks2(state, list, opts) when is_list(list) do
+    Enum.reduce(list, state, fn {captured_fun, data}, acc ->
+      prepare_mock2(acc, captured_fun, data, opts)
+    end)
+  end
+
   def run_with_mocks(state, assert_fun) do
     state
     |> Enum.to_list()

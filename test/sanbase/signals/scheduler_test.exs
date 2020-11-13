@@ -2,7 +2,6 @@ defmodule Sanbase.Signal.SchedulerTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
-  import Sanbase.TestHelpers
   import ExUnit.CaptureLog
 
   alias Sanbase.Signal.{UserTrigger, HistoricalActivity}

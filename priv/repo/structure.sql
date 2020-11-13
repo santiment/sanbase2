@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.3
--- Dumped by pg_dump version 12.3
+-- Dumped from database version 13.0
+-- Dumped by pg_dump version 13.0
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -106,6 +106,39 @@ CREATE SEQUENCE public.active_widgets_id_seq
 --
 
 ALTER SEQUENCE public.active_widgets_id_seq OWNED BY public.active_widgets.id;
+
+
+--
+-- Name: api_call_limits; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.api_call_limits (
+    id bigint NOT NULL,
+    user_id bigint,
+    remote_ip character varying(255) DEFAULT NULL::character varying,
+    has_limits boolean DEFAULT true,
+    api_calls_limit_plan character varying(255) DEFAULT 'free'::character varying,
+    api_calls jsonb DEFAULT '{}'::jsonb
+);
+
+
+--
+-- Name: api_call_limits_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.api_call_limits_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: api_call_limits_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.api_call_limits_id_seq OWNED BY public.api_call_limits.id;
 
 
 --
@@ -2351,7 +2384,8 @@ CREATE TABLE public.users (
     email_candidate_token_validated_at timestamp without time zone,
     stripe_customer_id character varying(255),
     avatar_url character varying(255),
-    is_registered boolean DEFAULT false
+    is_registered boolean DEFAULT false,
+    is_superuser boolean DEFAULT false
 );
 
 
@@ -2433,6 +2467,13 @@ CREATE TABLE public.watchlist_settings (
 --
 
 ALTER TABLE ONLY public.active_widgets ALTER COLUMN id SET DEFAULT nextval('public.active_widgets_id_seq'::regclass);
+
+
+--
+-- Name: api_call_limits id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.api_call_limits ALTER COLUMN id SET DEFAULT nextval('public.api_call_limits_id_seq'::regclass);
 
 
 --
@@ -2889,6 +2930,14 @@ ALTER TABLE ONLY public.votes ALTER COLUMN id SET DEFAULT nextval('public.votes_
 
 ALTER TABLE ONLY public.active_widgets
     ADD CONSTRAINT active_widgets_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: api_call_limits api_call_limits_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.api_call_limits
+    ADD CONSTRAINT api_call_limits_pkey PRIMARY KEY (id);
 
 
 --
@@ -3468,6 +3517,20 @@ ALTER TABLE ONLY public.watchlist_settings
 
 
 --
+-- Name: api_call_limits_remote_ip_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX api_call_limits_remote_ip_index ON public.api_call_limits USING btree (remote_ip);
+
+
+--
+-- Name: api_call_limits_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX api_call_limits_user_id_index ON public.api_call_limits USING btree (user_id);
+
+
+--
 -- Name: chart_configurations_project_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4018,6 +4081,14 @@ CREATE UNIQUE INDEX votes_post_id_user_id_index ON public.votes USING btree (pos
 --
 
 CREATE UNIQUE INDEX votes_timeline_event_id_user_id_index ON public.votes USING btree (timeline_event_id, user_id);
+
+
+--
+-- Name: api_call_limits api_call_limits_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.api_call_limits
+    ADD CONSTRAINT api_call_limits_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -4972,6 +5043,8 @@ INSERT INTO public."schema_migrations" (version) VALUES (20200923090710);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016091443);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016105225);
 INSERT INTO public."schema_migrations" (version) VALUES (20201016124426);
+INSERT INTO public."schema_migrations" (version) VALUES (20201102120842);
+INSERT INTO public."schema_migrations" (version) VALUES (20201021132548);
 INSERT INTO public."schema_migrations" (version) VALUES (20201109091755);
 INSERT INTO public."schema_migrations" (version) VALUES (20201109092655);
 INSERT INTO public."schema_migrations" (version) VALUES (20201109112004);

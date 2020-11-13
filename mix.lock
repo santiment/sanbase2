@@ -10,6 +10,7 @@
   "bunt": {:hex, :bunt, "0.2.0", "951c6e801e8b1d2cbe58ebbd3e616a869061ddadcc4863d0a2182541acae9a38", [:mix], [], "hexpm", "7af5c7e09fe1d40f76c8e4f9dd2be7cebd83909f31fee7cd0e9eadc567da8353"},
   "castore": {:hex, :castore, "0.1.8", "1b61eaba71bb755b756ac42d4741f4122f8beddb92456a84126d6177ec0af1fc", [:mix], [], "hexpm", "23ab8305baadb057bc689adc0088309f808cb2247dc9a48b87849bb1d242bb6c"},
   "certifi": {:git, "https://github.com/certifi/erlang-certifi", "e08b12e8993502240c25b78563993776f87ecd2a", [tag: "2.5.1"]},
+  "cidr": {:hex, :cidr, "1.1.0", "77ab79e3d694d6d315c2e7dea1c66710623488ab7595316d3e2987aebe0def25", [:mix], [], "hexpm", "155c26559b27be49a446e13a9e12bf50d62bf9231c548e7743263e75fa61dc91"},
   "clickhouse_ecto": {:git, "https://github.com/santiment/clickhouse_ecto.git", "9518142275534f040edb19c61646fc3aed889040", [branch: "migrate-ecto-3"]},
   "clickhousex": {:git, "https://github.com/ivanivanoff/clickhousex.git", "2529ddc5c4a45ed4af3a9f07d4306ec9c03335df", []},
   "combine": {:hex, :combine, "0.10.0", "eff8224eeb56498a2af13011d142c5e7997a80c8f5b97c499f84c841032e429f", [:mix], [], "hexpm", "1b1dbc1790073076580d0d1d64e42eae2366583e7aecd455d1215b0d16f2451b"},

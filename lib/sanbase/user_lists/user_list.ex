@@ -26,18 +26,23 @@ defmodule Sanbase.UserList do
   alias Sanbase.Timeline.TimelineEvent
 
   schema "user_lists" do
-    field(:name, :string)
-    field(:slug, :string)
-    field(:description, :string)
-    field(:is_public, :boolean, default: false)
+    # field(:type, :string)
+
     field(:color, ColorEnum, default: :none)
+    field(:description, :string)
     field(:function, WatchlistFunction, default: %WatchlistFunction{})
     field(:is_monitored, :boolean, default: false)
+    field(:is_public, :boolean, default: false)
+    field(:name, :string)
+    field(:slug, :string)
 
     belongs_to(:user, User)
     belongs_to(:table_configuration, Sanbase.TableConfiguration)
 
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
+
+    has_many(:projects, ListItem, on_delete: :delete_all)
+    has_many(:blockchain_addresses, ListItem, on_delete: :delete_all)
 
     has_many(:list_items, ListItem, on_delete: :delete_all, on_replace: :delete)
     has_many(:timeline_events, TimelineEvent, on_delete: :delete_all)
@@ -107,6 +112,9 @@ defmodule Sanbase.UserList do
   end
 
   def is_public?(%__MODULE__{is_public: is_public}), do: is_public
+
+  def get_blockchain_addresses(%__MODULE__{id: id}) do
+  end
 
   @doc ~s"""
   Return a list of all projects in a watchlist.

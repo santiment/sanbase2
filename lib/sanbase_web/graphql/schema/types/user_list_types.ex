@@ -52,6 +52,14 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
       resolve(&UserListResolver.list_items/3)
     end
 
+    field :projects, list_of(:list_item) do
+      resolve(&UserListResolver.projects/3)
+    end
+
+    field :blockchain_addresses, list_of(:list_item) do
+      resolve(&UserListResolver.blockchain_addresses/3)
+    end
+
     field(:table_configuration, :table_configuration, resolve: dataloader(SanbaseRepo))
 
     field(:inserted_at, non_null(:naive_datetime))

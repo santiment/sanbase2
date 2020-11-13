@@ -36,8 +36,8 @@ defmodule Sanbase.ApiCallLimit.ETS do
   end
 
   def clear_all(), do: :ets.delete_all_objects(@ets_table)
-  def clear_data(:user, %User{id: user_id}), do: :ets.delete_object(@ets_table, user_id)
-  def clear_data(:remote_ip, remote_ip), do: :ets.delete_object(@ets_table, remote_ip)
+  def clear_data(:user, %User{id: user_id}), do: :ets.delete(@ets_table, user_id)
+  def clear_data(:remote_ip, remote_ip), do: :ets.delete(@ets_table, remote_ip)
 
   @doc ~s"""
   Get a quota that represent the number of API calls that can be made and tracked

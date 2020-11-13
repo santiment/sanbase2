@@ -137,6 +137,8 @@ defmodule Sanbase.ApiCallLimit.ETS do
         error_map = Map.put(error_map, :retry_again_after, retry_again_after)
 
         true = :ets.insert(@ets_table, {entity_key, :rate_limited, error_map})
+
+        {:error, error_map}
     end
   end
 end

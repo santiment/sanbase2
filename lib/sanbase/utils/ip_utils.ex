@@ -1,10 +1,16 @@
 defmodule Sanbase.Utils.IP do
-  def is_san_cluster_ip?(remote_ip) do
-    cidr = CIDR.parse("100.64.0.0/10")
+  @range100mask10 CIDR.parse("100.64.0.0/10")
+  @range10mask8 CIDR.parse("10.0.0.0/8")
 
-    case CIDR.match(cidr, remote_ip) do
-      {:ok, boolean} -> boolean
-      _ -> false
+  def is_san_cluster_ip?(":ffff:" <> rest), do: is_san_cluster_ip?(rest)
+
+  def is_san_cluster_ip?(remote_ip) do
+    with {:ok, false} <- CIDR.match(@range100mask10, remote_ip),
+         {:ok, false} <- CIDR.match(@range10mask8, remote_ip) do
+      false
+    else
+      {:ok, true} -> true
+      {:error, _} -> false
     end
   end
 

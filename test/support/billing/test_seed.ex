@@ -25,8 +25,8 @@ defmodule Sanbase.Billing.TestSeed do
           plan_premium_yearly: insert(:plan_premium_yearly, product: product_api),
           plan_custom_yearly: insert(:plan_custom_yearly, product: product_api),
           plan_free_sanbase: insert(:plan_free_sanbase, product: product_sanbase),
-          plan_basic_sanbase: insert(:plan_basic_sanbase, product: product_sanbase),
           plan_pro_sanbase: insert(:plan_pro_sanbase, product: product_sanbase),
+          plan_pro_plus_sanbase: insert(:plan_pro_plus_sanbase, product: product_sanbase),
           plan_pro_graphs_factory: insert(:plan_pro_sandata, product: product_sandata),
           plan_exchange_wallets_extension:
             insert(:plan_exchange_wallets_extension, product: product_exchange_wallets)

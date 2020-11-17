@@ -251,6 +251,24 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
   end
 
+  describe "SANBase product, user with PRO PLUS plan" do
+    setup context do
+      insert(:subscription_pro_plus_sanbase, user: context.user)
+      :ok
+    end
+
+    test "can access RESTRICTED metrics realtime", context do
+      {from, to} = from_to(10, 0)
+      slug = context.project.slug
+      query = network_growth_query(slug, from, to)
+
+      result = execute_query(context.conn, query, "networkGrowth")
+
+      assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
+      assert result != nil
+    end
+  end
+
   describe "for SANbase when signals limit reached" do
     test "user with FREE plan cannot create new trigger", context do
       assert create_trigger_mutation_with_error(context) ==

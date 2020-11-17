@@ -51,6 +51,7 @@ defmodule Sanbase.Billing.Plan do
       # should be renamed to basic in the DB
       %{name: "ESSENTIAL"} -> :basic
       %{name: "PRO"} -> :pro
+      %{name: "PRO_PLUS"} -> :pro_plus
       %{name: "PREMIUM"} -> :premium
       %{name: "CUSTOM"} -> :custom
       %{name: "ENTERPRISE"} -> :custom

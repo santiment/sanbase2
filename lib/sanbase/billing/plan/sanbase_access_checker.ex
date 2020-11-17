@@ -81,6 +81,7 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
       :free -> @free_plan_stats
       :basic -> @basic_plan_stats
       :pro -> @pro_plan_stats
+      :pro_plus -> @pro_plan_stats
       :premium -> @custom_plan_stats
       :custom -> @custom_plan_stats
     end

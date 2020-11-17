@@ -480,6 +480,16 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def plan_pro_plus_sanbase_factory() do
+    %Plan{
+      id: 203,
+      name: "PRO_PLUS",
+      amount: 25000,
+      currency: "USD",
+      interval: "month"
+    }
+  end
+
   def plan_pro_sandata_factory() do
     %Plan{
       id: 42,
@@ -536,17 +546,17 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def subscription_basic_sanbase_factory() do
+  def subscription_pro_sanbase_factory() do
     %Subscription{
-      plan_id: 12,
+      plan_id: 13,
       current_period_end: Timex.shift(Timex.now(), days: 1),
       status: "active"
     }
   end
 
-  def subscription_pro_sanbase_factory() do
+  def subscription_pro_plus_sanbase_factory() do
     %Subscription{
-      plan_id: 13,
+      plan_id: 203,
       current_period_end: Timex.shift(Timex.now(), days: 1),
       status: "active"
     }

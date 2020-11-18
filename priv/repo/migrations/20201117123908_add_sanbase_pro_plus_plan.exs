@@ -4,7 +4,7 @@ defmodule Sanbase.Repo.Migrations.AddSanbaseProPlusPlan do
   def up do
     execute("""
     INSERT INTO plans (id, name, product_id, amount, currency, interval, "order") VALUES
-      (203,'PRO_PLUS',2,25000,'USD','month',7),
+      (203,'PRO_PLUS',2,24900,'USD','month',7),
       (204,'PRO_PLUS',2,270000,'USD','year',5)
       ON CONFLICT DO NOTHING
     """)

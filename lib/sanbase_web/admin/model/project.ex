@@ -135,31 +135,34 @@ defmodule SanbaseWeb.ExAdmin.Model.Project do
 
     form project do
       inputs do
+        input(project, :name)
+        input(project, :ticker)
+        input(project, :slug)
+        input(project, :description)
+        input(project, :long_description, type: :text)
+        input(project, :token_supply)
+
         input(
           project,
           :infrastructure,
           collection: from(i in Infrastructure, order_by: i.code) |> Sanbase.Repo.all()
         )
 
+        input(project, :token_decimals)
+
+        input(project, :is_hidden)
+        input(project, :telegram_chat_id)
+        input(project, :logo_url)
+        input(project, :dark_logo_url)
+        input(project, :email)
+
         input(project, :blog_link)
         input(project, :btt_link)
-        input(project, :dark_logo_url)
-        input(project, :description)
-        input(project, :email)
         input(project, :facebook_link)
-        input(project, :is_hidden)
         input(project, :linkedin_link)
-        input(project, :logo_url)
-        input(project, :long_description, type: :text)
-        input(project, :name)
         input(project, :reddit_link)
         input(project, :slack_link)
-        input(project, :slug)
-        input(project, :telegram_chat_id)
         input(project, :telegram_link)
-        input(project, :ticker)
-        input(project, :token_decimals)
-        input(project, :token_supply)
         input(project, :twitter_link)
         input(project, :website_link)
         input(project, :whitepaper_link)

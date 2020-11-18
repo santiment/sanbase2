@@ -71,6 +71,16 @@ CREATE TYPE public.status AS ENUM (
 );
 
 
+--
+-- Name: watchlist_type; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.watchlist_type AS ENUM (
+    'project',
+    'blockchain_address'
+);
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -2374,7 +2384,8 @@ CREATE TABLE public.user_lists (
     slug character varying(255),
     is_monitored boolean DEFAULT false,
     table_configuration_id bigint,
-    description text
+    description text,
+    type public.watchlist_type DEFAULT 'project'::public.watchlist_type NOT NULL
 );
 
 
@@ -5332,3 +5343,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20201117123908);
 INSERT INTO public."schema_migrations" (version) VALUES (20201117132755);
 INSERT INTO public."schema_migrations" (version) VALUES (20201118125118);
 INSERT INTO public."schema_migrations" (version) VALUES (20201118141407);
+INSERT INTO public."schema_migrations" (version) VALUES (20201118145315);

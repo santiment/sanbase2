@@ -26,7 +26,7 @@ defmodule Sanbase.UserList do
   alias Sanbase.Timeline.TimelineEvent
 
   schema "user_lists" do
-    # field(:type, :string)
+    field(:type, WatchlistType, default: "project")
 
     field(:color, ColorEnum, default: :none)
     field(:description, :string)

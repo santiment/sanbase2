@@ -3,7 +3,7 @@ defmodule Sanbase.BlockchainAddress.BlockchainAddressUserPair do
 
   import Ecto.Changeset
 
-  @labels_join_through_table :blockchain_address_user_pairs_labels
+  @labels_join_through_table "blockchain_address_users_label_pairs"
 
   schema "blockchain_address_user_pairs" do
     field(:notes, :string)
@@ -15,6 +15,7 @@ defmodule Sanbase.BlockchainAddress.BlockchainAddressUserPair do
       :labels,
       Sanbase.BlockchainAddress.BlockchainAddressLabel,
       join_through: @labels_join_through_table,
+      join_keys: [blockchain_address_user_pair_id: :id, label_id: :id],
       on_replace: :delete,
       on_delete: :delete_all
     )

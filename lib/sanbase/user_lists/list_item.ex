@@ -33,11 +33,17 @@ defmodule Sanbase.UserList.ListItem do
   def get_blockchain_addresses(%UserList{id: id}) do
     from(
       li in __MODULE__,
-      where: li.user_list_id == ^id and not is_nil(li.blockchain_address_id),
-      select: li.blockchain_address,
-      preload: [:blockchain_address]
+      where: li.user_list_id == ^id and not is_nil(li.blockchain_address_user_pair_id),
+      preload: [
+        :blockchain_address_user_pair,
+        blockchain_address_user_pair: [
+          :labels,
+          :blockchain_address,
+          blockchain_address: :infrastructure
+        ]
+      ]
     )
     |> Sanbase.Repo.all()
-    |> Enum.map(& &1.blockchain_address)
+    |> Enum.map(& &1.blockchain_address_user_pair)
   end
 end

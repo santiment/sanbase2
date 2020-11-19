@@ -868,7 +868,7 @@ ALTER SEQUENCE public.latest_coinmarketcap_data_id_seq OWNED BY public.latest_co
 
 CREATE TABLE public.list_items (
     user_list_id bigint NOT NULL,
-    project_id bigint NOT NULL,
+    project_id bigint,
     blockchain_address_user_pair_id bigint,
     id integer NOT NULL
 );
@@ -5344,3 +5344,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20201117132755);
 INSERT INTO public."schema_migrations" (version) VALUES (20201118125118);
 INSERT INTO public."schema_migrations" (version) VALUES (20201118141407);
 INSERT INTO public."schema_migrations" (version) VALUES (20201118145315);
+INSERT INTO public."schema_migrations" (version) VALUES (20201119085940);

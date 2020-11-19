@@ -110,11 +110,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     end
   end
 
-  def list_items(%UserList{} = user_list, args, resolution) do
+  def list_items(%UserList{type: :project} = user_list, args, resolution) do
     projects(user_list, args, resolution)
   end
 
-  def projects(%UserList{} = user_list, _args, _resolution) do
+  def list_items(%UserList{type: :blockchain_address} = user_list, args, resolution) do
+    blockchain_addresses(user_list, args, resolution)
+  end
+
+  defp projects(%UserList{} = user_list, _args, _resolution) do
     case UserList.get_projects(user_list) do
       {:ok, %{projects: projects}} ->
         result =
@@ -131,8 +135,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
 
   def blockchain_addresses(%UserList{} = user_list, _args, _resolution) do
     case UserList.get_blockchain_addresses(user_list) do
-      {:ok, %{blockchain_addresses: blockchain_addresses}} ->
-        {:ok, blockchain_addresses}
+      {:ok, %{blockchain_addresses: blockchain_addresses}} = result ->
+        result =
+          blockchain_addresses
+          |> Enum.map(
+            &%{
+              blockchain_address: %{
+                address: &1.blockchain_address.address,
+                labels: &1.labels,
+                notes: &1.notes,
+                infrastructure: &1.blockchain_address.infrastructure
+              }
+            }
+          )
+
+        {:ok, result}
 
       {:error, error} ->
         {:error, error}

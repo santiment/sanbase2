@@ -58,15 +58,16 @@ defmodule Sanbase.UserList do
   def create_changeset(%__MODULE__{} = user_list, attrs \\ %{}) do
     user_list
     |> cast(attrs, [
-      :user_id,
-      :name,
-      :slug,
-      :description,
-      :is_public,
       :color,
+      :description,
       :function,
       :is_monitored,
-      :table_configuration_id
+      :is_public,
+      :name,
+      :slug,
+      :table_configuration_id,
+      :type,
+      :user_id
     ])
     |> validate_required([:name, :user_id])
     |> validate_change(:function, &validate_function/2)
@@ -76,14 +77,15 @@ defmodule Sanbase.UserList do
   def update_changeset(%__MODULE__{id: _id} = user_list, attrs \\ %{}) do
     user_list
     |> cast(attrs, [
-      :name,
-      :slug,
-      :description,
-      :is_public,
       :color,
+      :description,
       :function,
       :is_monitored,
-      :table_configuration_id
+      :is_public,
+      :name,
+      :slug,
+      :table_configuration_id,
+      :type
     ])
     |> cast_assoc(:list_items)
     |> validate_change(:function, &validate_function/2)
@@ -113,7 +115,14 @@ defmodule Sanbase.UserList do
 
   def is_public?(%__MODULE__{is_public: is_public}), do: is_public
 
-  def get_blockchain_addresses(%__MODULE__{id: id}) do
+  def get_blockchain_addresses(%__MODULE__{} = watchlist) do
+    blockchain_addresses = ListItem.get_blockchain_addresses(watchlist)
+
+    {:ok,
+     %{
+       blockchain_addresses: blockchain_addresses,
+       total_blockchain_addresses_count: length(blockchain_addresses)
+     }}
   end
 
   @doc ~s"""

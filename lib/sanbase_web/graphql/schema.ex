@@ -25,6 +25,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Absinthe.Plug.Types)
   import_types(Graphql.AggregationTypes)
   import_types(Graphql.AnomalyTypes)
+  import_types(Graphql.BlockchainAddressType)
   import_types(Graphql.CommentTypes)
   import_types(Graphql.CustomTypes.Date)
   import_types(Graphql.CustomTypes.DateTime)

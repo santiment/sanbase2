@@ -13,6 +13,72 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   @trending_fields [:trending_slugs, :trending_tickers, :trending_names, :trending_projects]
                    |> Enum.map(&Inflex.camelize(&1, :lower))
 
+  ###########################
+  #         Queries         #
+  ###########################
+
+  def fetch_user_lists(_root, %{} = args, %{context: %{auth: %{current_user: current_user}}}) do
+    type = Map.get(args, :type) || :project
+    UserList.fetch_user_lists(current_user, type)
+  end
+
+  def fetch_user_lists(_root, _args, _resolution) do
+    {:error, "Only logged in users can call this method"}
+  end
+
+  def fetch_public_user_lists(_root, %{} = args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    type = Map.get(args, :type) || :project
+    UserList.fetch_public_user_lists(current_user, type)
+  end
+
+  def fetch_all_public_user_lists(_root, %{} = args, _resolution) do
+    type = Map.get(args, :type) || :project
+    UserList.fetch_all_public_lists(type)
+  end
+
+  def watchlist(_root, %{id: id}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    UserList.user_list(id, current_user)
+  end
+
+  def watchlist(_root, %{id: id}, _resolution) do
+    UserList.user_list(id, %User{id: nil})
+  end
+
+  def watchlist_by_slug(_root, %{slug: slug}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    UserList.user_list_by_slug(slug, current_user)
+  end
+
+  def watchlist_by_slug(_root, %{slug: slug}, _resolution) do
+    UserList.user_list_by_slug(slug, %User{id: nil})
+  end
+
+  def public_watchlists(%User{} = user, %{} = args, _resolution) do
+    type = Map.get(args, :type) || :project
+    UserList.fetch_public_user_lists(user, type)
+  end
+
+  def watchlists(%User{} = user, %{} = args, _resolution) do
+    type = Map.get(args, :type) || :project
+
+    UserList.fetch_user_lists(user, type)
+  end
+
+  def user_list(_root, %{user_list_id: user_list_id}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    UserList.user_list(user_list_id, current_user)
+  end
+
+  def user_list(_root, %{user_list_id: user_list_id}, _resolution) do
+    UserList.user_list(user_list_id, %User{id: nil})
+  end
+
   def settings(%UserList{} = watchlist, _args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
@@ -24,7 +90,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   end
 
   def stats(
-        %UserList{} = user_list,
+        %UserList{type: :project} = user_list,
         _args,
         resolution
       ) do
@@ -32,6 +98,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
       trending_words_stats = trending_words_stats(projects, resolution)
       result = Map.merge(trending_words_stats, %{projects_count: length(projects)})
       {:ok, result}
+    end
+  end
+
+  def stats(
+        %UserList{type: :blockchain_address} = user_list,
+        _args,
+        _resolution
+      ) do
+    with {:ok, %{total_blockchain_addresses_count: count}} <-
+           UserList.get_blockchain_addresses(user_list) do
+      {:ok, %{blockchain_addresses_count: count}}
     end
   end
 
@@ -111,14 +188,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   end
 
   def list_items(%UserList{type: :project} = user_list, args, resolution) do
-    projects(user_list, args, resolution)
-  end
-
-  def list_items(%UserList{type: :blockchain_address} = user_list, args, resolution) do
-    blockchain_addresses(user_list, args, resolution)
-  end
-
-  defp projects(%UserList{} = user_list, _args, _resolution) do
     case UserList.get_projects(user_list) do
       {:ok, %{projects: projects}} ->
         result =
@@ -133,7 +202,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     end
   end
 
-  def blockchain_addresses(%UserList{} = user_list, _args, _resolution) do
+  def list_items(%UserList{type: :blockchain_address} = user_list, args, resolution) do
     case UserList.get_blockchain_addresses(user_list) do
       {:ok, %{blockchain_addresses: blockchain_addresses}} = result ->
         result =
@@ -155,6 +224,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
         {:error, error}
     end
   end
+
+  ###########################
+  #        Mutations        #
+  ###########################
 
   def create_user_list(_root, args, %{context: %{auth: %{current_user: current_user}}}) do
     case UserList.create_user_list(current_user, args) do
@@ -218,61 +291,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     end
   end
 
-  def fetch_user_lists(_root, _args, %{context: %{auth: %{current_user: current_user}}}) do
-    UserList.fetch_user_lists(current_user)
-  end
-
-  def fetch_user_lists(_root, _args, _resolution) do
-    {:error, "Only logged in users can call this method"}
-  end
-
-  def fetch_public_user_lists(_root, _args, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
-    UserList.fetch_public_user_lists(current_user)
-  end
-
-  def fetch_all_public_user_lists(_root, _args, _resolution) do
-    UserList.fetch_all_public_lists()
-  end
-
-  def watchlist(_root, %{id: id}, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
-    UserList.user_list(id, current_user)
-  end
-
-  def watchlist(_root, %{id: id}, _resolution) do
-    UserList.user_list(id, %User{id: nil})
-  end
-
-  def watchlist_by_slug(_root, %{slug: slug}, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
-    UserList.user_list_by_slug(slug, current_user)
-  end
-
-  def watchlist_by_slug(_root, %{slug: slug}, _resolution) do
-    UserList.user_list_by_slug(slug, %User{id: nil})
-  end
-
-  def public_watchlists(%User{} = user, _args, _resolution) do
-    UserList.fetch_public_user_lists(user)
-  end
-
-  def watchlists(%User{} = user, _args, _resolution) do
-    UserList.fetch_user_lists(user)
-  end
-
-  def user_list(_root, %{user_list_id: user_list_id}, %{
-        context: %{auth: %{current_user: current_user}}
-      }) do
-    UserList.user_list(user_list_id, current_user)
-  end
-
-  def user_list(_root, %{user_list_id: user_list_id}, _resolution) do
-    UserList.user_list(user_list_id, %User{id: nil})
-  end
+  # Private functions
 
   defp has_permissions?(id, %User{id: user_id}) do
     UserList.by_id(id).user_id == user_id

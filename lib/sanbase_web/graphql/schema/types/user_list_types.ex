@@ -25,6 +25,7 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
     field(:trending_tickers, list_of(:string))
     field(:trending_projects, list_of(:project))
     field(:projects_count, :integer)
+    field(:blockchain_addresses_count, :integer)
   end
 
   object :watchlist_settings do

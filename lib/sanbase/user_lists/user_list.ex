@@ -115,6 +115,9 @@ defmodule Sanbase.UserList do
 
   def is_public?(%__MODULE__{is_public: is_public}), do: is_public
 
+  @doc ~s"""
+  Return a list of all blockchain addresses in a watchlist.
+  """
   def get_blockchain_addresses(%__MODULE__{} = watchlist) do
     blockchain_addresses = ListItem.get_blockchain_addresses(watchlist)
 
@@ -209,28 +212,35 @@ defmodule Sanbase.UserList do
     |> Repo.delete()
   end
 
-  def fetch_user_lists(%User{id: id} = _user) do
-    query = from(ul in __MODULE__, where: ul.user_id == ^id)
-    {:ok, Repo.all(query)}
+  def fetch_user_lists(%User{id: user_id}, type) do
+    result =
+      __MODULE__
+      |> filter_by_user_id_query(user_id)
+      |> filter_by_type_query(type)
+      |> Repo.all()
+
+    {:ok, result}
   end
 
-  def fetch_public_user_lists(%User{id: id} = _user) do
-    query =
-      from(ul in __MODULE__,
-        where: ul.user_id == ^id and ul.is_public == true
-      )
+  def fetch_public_user_lists(%User{id: user_id}, type) do
+    result =
+      __MODULE__
+      |> filter_by_user_id_query(user_id)
+      |> filter_by_is_public_query(true)
+      |> filter_by_type_query(type)
+      |> Repo.all()
 
-    {:ok, Repo.all(query)}
+    {:ok, result}
   end
 
-  def fetch_all_public_lists() do
-    query =
-      from(
-        ul in __MODULE__,
-        where: ul.is_public == true
-      )
+  def fetch_all_public_lists(type) do
+    result =
+      __MODULE__
+      |> filter_by_is_public_query(true)
+      |> filter_by_type_query(type)
+      |> Repo.all()
 
-    {:ok, Repo.all(query)}
+    {:ok, result}
   end
 
   def user_list(user_list_id, user) do
@@ -257,7 +267,7 @@ defmodule Sanbase.UserList do
   end
 
   defp user_list_query_by_user_id(_) do
-    from(dul in __MODULE__, where: dul.is_public == true)
+    from(ul in __MODULE__, where: ul.is_public == true)
   end
 
   defp update_list_items_params(%{list_items: list_items} = params, id)
@@ -270,4 +280,19 @@ defmodule Sanbase.UserList do
   end
 
   defp update_list_items_params(params, _) when is_map(params), do: params
+
+  defp filter_by_user_id_query(query, user_id) do
+    query
+    |> where([ul], ul.user_id == ^user_id)
+  end
+
+  defp filter_by_type_query(query, type) do
+    query
+    |> where([ul], ul.type == ^type)
+  end
+
+  defp filter_by_is_public_query(query, is_public) do
+    query
+    |> where([ul], ul.is_public == ^is_public)
+  end
 end

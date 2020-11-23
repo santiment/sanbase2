@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.ExAdmin.Taag do
+defmodule SanbaseWeb.ExAdmin.Tag do
   use ExAdmin.Register
 
   register_resource Sanbase.Tag do

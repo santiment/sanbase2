@@ -82,7 +82,7 @@ defmodule Sanbase.Billing.StripeEvent do
       subscription = subscription |> Repo.preload(:user)
 
       message = """
-      😿 New cancellation scheduled for `#{subscription.current_period_end}` from `#{
+      New cancellation scheduled for `#{subscription.current_period_end}` from `#{
         mask_user(subscription.user)
       }` | #{subscription.user.stripe_customer_id}.
       Subscription status before cancellation: `#{subscription.status}`.
@@ -315,7 +315,7 @@ defmodule Sanbase.Billing.StripeEvent do
     |> case do
       1 ->
         [
-          "New payment for $#{total / 100} for #{product_name} / #{plan_name} by #{
+          "🎉 New payment for $#{total / 100} for #{product_name} / #{plan_name} by #{
             mask_user(user)
           }"
         ]

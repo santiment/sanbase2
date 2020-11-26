@@ -135,7 +135,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     now = DateTime.utc_now() |> DateTime.to_unix(:nanosecond)
     now_mono = System.monotonic_time()
     duration_ms = div(now_mono - blueprint.telemetry.start_time_mono, 1_000_000)
-
+    duration_ms = Enum.max([duration_ms, 0])
     user_agent = Plug.Conn.get_req_header(conn, "user-agent") |> List.first()
 
     {user_id, san_tokens, auth_method, api_token} =

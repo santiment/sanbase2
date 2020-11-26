@@ -2,11 +2,17 @@ defmodule Sanbase.Repo.Migrations.AddSerialIdToListItems do
   use Ecto.Migration
 
   @table :list_items
-  def change do
-    execute("ALTER TABLE #{@table} DROP CONSTRAINT list_items_pkey")
+  def up do
+    execute("ALTER TABLE #{@table} DROP CONSTRAINT IF EXISTS list_items_pkey")
 
     alter table(@table) do
       add(:id, :serial, primary_key: true)
+    end
+  end
+
+  def down do
+    alter table(@table) do
+      remove(:id)
     end
   end
 end

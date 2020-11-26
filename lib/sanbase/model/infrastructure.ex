@@ -42,4 +42,9 @@ defmodule Sanbase.Model.Infrastructure do
 
     infrastructure
   end
+
+  def by_codes(codes) when is_list(codes) do
+    from(infr in __MODULE__, where: infr.code in ^codes)
+    |> Repo.all()
+  end
 end

@@ -5,6 +5,7 @@ defmodule Sanbase.BlockchainAddress do
 
   alias Sanbase.Model.Infrastructure
 
+  # @primary_key {:id, :integer, read_after_writes: true}
   schema "blockchain_addresses" do
     field(:address, :string)
     field(:notes, :string)
@@ -16,5 +17,33 @@ defmodule Sanbase.BlockchainAddress do
     addr
     |> cast(attrs, [:address, :infrastructure_id, :notes])
     |> validate_required([:address])
+  end
+
+  def maybe_create(%{address: _, infrastructure_id: _} = map) do
+    %__MODULE__{}
+    |> changeset(map)
+    |> Sanbase.Repo.insert(on_conflict: :nothing)
+  end
+
+  def maybe_create(list) when is_list(list) do
+    changesets = list |> Enum.map(&changeset(%__MODULE__{}, &1)) |> Enum.with_index()
+
+    Enum.reduce(
+      changesets,
+      Ecto.Multi.new(),
+      fn {changeset, offset}, multi ->
+        multi
+        |> Ecto.Multi.insert(offset, changeset,
+          on_conflict: {:replace, [:address]},
+          conflict_target: [:address, :infrastructure_id],
+          returning: true
+        )
+      end
+    )
+    |> Sanbase.Repo.transaction()
+    |> case do
+      {:ok, result} -> {:ok, Map.values(result)}
+      {:error, error} -> {:error, error}
+    end
   end
 end

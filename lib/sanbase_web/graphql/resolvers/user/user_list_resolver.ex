@@ -65,7 +65,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
 
   def watchlists(%User{} = user, %{} = args, _resolution) do
     type = Map.get(args, :type) || :project
-
     UserList.fetch_user_lists(user, type)
   end
 
@@ -187,7 +186,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     end
   end
 
-  def list_items(%UserList{type: :project} = user_list, args, resolution) do
+  def list_items(%UserList{type: :project} = user_list, _args, _resolution) do
     case UserList.get_projects(user_list) do
       {:ok, %{projects: projects}} ->
         result =
@@ -202,26 +201,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     end
   end
 
-  def list_items(%UserList{type: :blockchain_address} = user_list, args, resolution) do
-    case UserList.get_blockchain_addresses(user_list) do
-      {:ok, %{blockchain_addresses: blockchain_addresses}} = result ->
-        result =
-          blockchain_addresses
-          |> Enum.map(
-            &%{
-              blockchain_address: %{
-                address: &1.blockchain_address.address,
-                labels: &1.labels,
-                notes: &1.notes,
-                infrastructure: &1.blockchain_address.infrastructure
-              }
+  def list_items(%UserList{type: :blockchain_address} = user_list, _args, _resolution) do
+    with {:ok, %{blockchain_addresses: blockchain_addresses}} <-
+           UserList.get_blockchain_addresses(user_list) do
+      result =
+        blockchain_addresses
+        |> Enum.map(
+          &%{
+            blockchain_address: %{
+              address: &1.blockchain_address.address,
+              labels: &1.labels,
+              notes: &1.notes,
+              infrastructure: &1.blockchain_address.infrastructure.code
             }
-          )
+          }
+        )
 
-        {:ok, result}
-
-      {:error, error} ->
-        {:error, error}
+      {:ok, result}
     end
   end
 
@@ -237,21 +233,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
       {:error, changeset} ->
         {
           :error,
-          message: "Cannot create user list", details: Utils.error_details(changeset)
+          message: "Cannot create user list",
+          details: Sanbase.Utils.ErrorHandling.changeset_errors_to_str(changeset)
         }
     end
   end
 
   def update_watchlist(_root, %{id: id} = args, %{context: %{auth: %{current_user: current_user}}}) do
     if has_permissions?(id, current_user) do
-      case UserList.update_user_list(args) do
+      case UserList.update_user_list(current_user, args) do
         {:ok, user_list} ->
           {:ok, user_list}
 
         {:error, changeset} ->
           {
             :error,
-            message: "Cannot update user list", details: Utils.error_details(changeset)
+            message: "Cannot update user list",
+            details: Sanbase.Utils.ErrorHandling.changeset_errors_to_str(changeset)
           }
       end
     else

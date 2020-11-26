@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressType do
   use Absinthe.Schema.Notation
 
   object :blockchain_address_label do
-    field(:label, :string)
+    field(:name, :string)
     field(:notes, :string)
   end
 

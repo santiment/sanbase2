@@ -25,8 +25,7 @@ defmodule Sanbase.Timeline.TimelineEventTest do
     {:ok, private_watchlist} =
       UserList.create_user_list(user, %{name: "My Private List", is_public: false})
 
-    {
-      :ok,
+    %{
       approved_post: approved_post,
       awaiting_approval_post: awaiting_approval_post,
       user: user,
@@ -84,12 +83,15 @@ defmodule Sanbase.Timeline.TimelineEventTest do
   end
 
   describe "#maybe_create_event_async for watchlists" do
-    test "creates an event when updated watchlist is public and projects are updated", %{
-      public_watchlist: public_watchlist
-    } do
+    test "creates an event when updated watchlist is public and projects are updated", context do
+      %{
+        public_watchlist: public_watchlist,
+        user: user
+      } = context
+
       project = insert(:project)
 
-      UserList.update_user_list(%{
+      UserList.update_user_list(user, %{
         id: public_watchlist.id,
         list_items: [%{project_id: project.id}]
       })
@@ -99,12 +101,15 @@ defmodule Sanbase.Timeline.TimelineEventTest do
       assert Sanbase.Timeline.TimelineEvent |> Repo.all() |> length() == 1
     end
 
-    test "does not create an event when updated watchlist is not public", %{
-      private_watchlist: private_watchlist
-    } do
+    test "does not create an event when updated watchlist is not public", context do
+      %{
+        private_watchlist: private_watchlist,
+        user: user
+      } = context
+
       project = insert(:project)
 
-      UserList.update_user_list(%{
+      UserList.update_user_list(user, %{
         id: private_watchlist.id,
         list_items: [%{project_id: project.id}]
       })
@@ -115,13 +120,10 @@ defmodule Sanbase.Timeline.TimelineEventTest do
     end
 
     test "does not create an event when updated watchlist is public but does not update projects",
-         %{
-           public_watchlist: public_watchlist
-         } do
-      UserList.update_user_list(%{
-        id: public_watchlist.id,
-        name: "New name"
-      })
+         context do
+      %{public_watchlist: public_watchlist, user: user} = context
+
+      UserList.update_user_list(user, %{id: public_watchlist.id, name: "New name"})
 
       refute_receive({_, {:ok, %TimelineEvent{}}})
 

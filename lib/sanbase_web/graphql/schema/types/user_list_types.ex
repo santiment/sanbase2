@@ -10,8 +10,16 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
   enum(:color_enum, values: [:none, :blue, :red, :green, :yellow, :grey, :black])
   enum(:watchlist_type_enum, values: [:project, :blockchain_address])
 
+  input_object :blockchain_address_input_object do
+    field(:address, :string)
+    field(:infrastructure, :string)
+    field(:notes, :string)
+    field(:labels, list_of(:string))
+  end
+
   input_object :input_list_item do
     field(:project_id, :integer)
+    field(:blockchain_address, :blockchain_address_input_object)
   end
 
   object :list_item do

@@ -80,7 +80,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.TimelineQueries)
   import_types(Graphql.Schema.UserQueries)
   import_types(Graphql.Schema.UserTriggerQueries)
-  import_types(Graphql.Schema.WatchlistQueries)
+  import_types(Graphql.Schema.UserListQueries)
   import_types(Graphql.Schema.WidgetQueries)
 
   def dataloader() do

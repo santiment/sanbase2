@@ -24,6 +24,7 @@ defmodule Sanbase.UserList do
   alias Sanbase.WatchlistFunction
   alias Sanbase.Repo
   alias Sanbase.Timeline.TimelineEvent
+  alias Sanbase.BlockchainAddress.{BlockchainAddressUserPair, BlockchainAddressLabel}
 
   schema "user_lists" do
     field(:type, WatchlistType, default: "project")
@@ -176,7 +177,7 @@ defmodule Sanbase.UserList do
     end
   end
 
-  def create_user_list(%User{id: user_id}, params \\ %{}) do
+  def create_user_list(%User{id: user_id} = user, params \\ %{}) do
     params = params |> Map.put(:user_id, user_id)
 
     %__MODULE__{}
@@ -184,9 +185,9 @@ defmodule Sanbase.UserList do
     |> Repo.insert()
     |> case do
       {:ok, user_list} ->
-        case Map.has_key?(params, :list_items) do
-          true -> update_user_list(%{id: user_list.id, list_items: params[:list_items]})
-          false -> {:ok, user_list}
+        case list_items = Map.get(params, :list_items) do
+          nil -> {:ok, user_list}
+          _ -> update_user_list(user, %{id: user_list.id, list_items: list_items})
         end
 
       {:error, error} ->
@@ -194,11 +195,12 @@ defmodule Sanbase.UserList do
     end
   end
 
-  def update_user_list(%{id: id} = params) do
-    params = update_list_items_params(params, id)
+  def update_user_list(user, params) do
+    %{id: user_list_id} = params
+    params = update_list_items_params(params, user)
 
     changeset =
-      id
+      user_list_id
       |> by_id()
       |> Repo.preload(:list_items)
       |> update_changeset(params)
@@ -270,16 +272,78 @@ defmodule Sanbase.UserList do
     from(ul in __MODULE__, where: ul.is_public == true)
   end
 
-  defp update_list_items_params(%{list_items: list_items} = params, id)
-       when is_list(list_items) do
+  defp update_list_items_params(%{list_items: [%{project_id: _} | _]} = params, _user) do
+    %{id: user_list_id, list_items: input_objects} = params
+
     list_items =
-      list_items
-      |> Enum.map(fn item -> %{project_id: item.project_id, user_list_id: id} end)
+      input_objects
+      |> Enum.map(fn item -> %{project_id: item.project_id, user_list_id: user_list_id} end)
+      |> Enum.uniq_by(& &1.project_id)
 
     %{params | list_items: list_items}
   end
 
-  defp update_list_items_params(params, _) when is_map(params), do: params
+  defp update_list_items_params(
+         %{list_items: [%{blockchain_address: _} | _]} = params,
+         user
+       ) do
+    %{id: user_list_id, list_items: input_objects} = params
+
+    # A list of list item input objects
+    input_blockchain_addresses =
+      input_objects
+      |> Enum.map(& &1.blockchain_address)
+      |> Enum.uniq_by(& &1.address)
+
+    # A list map in the format %{"ETH" => 1, "BTC" => 2, "XRP" => 3}
+    infr_code_to_id_map =
+      input_blockchain_addresses
+      |> Enum.reduce(MapSet.new(), &MapSet.put(&2, &1.infrastructure))
+      |> Enum.to_list()
+      |> Sanbase.Model.Infrastructure.by_codes()
+      |> Map.new(fn %{id: id, code: code} -> {code, id} end)
+
+    # A list of Sanbase.BlockchainAddress structs
+    {:ok, blockchain_addresses} =
+      input_blockchain_addresses
+      |> Enum.map(fn addr ->
+        %{
+          address: addr.address,
+          infrastructure_id: Map.get(infr_code_to_id_map, addr.infrastructure)
+        }
+      end)
+      |> Sanbase.BlockchainAddress.maybe_create()
+
+    blockchain_address_to_id_map =
+      blockchain_addresses
+      |> Map.new(fn %{address: address, id: id} -> {address, id} end)
+
+    # A list of Sanbase.BlockchainAddressUserPair structs
+    blockchain_address_user_pairs =
+      input_blockchain_addresses
+      |> Enum.map(fn %{address: address} = addr ->
+        attrs = %{
+          blockchain_address_id: Map.get(blockchain_address_to_id_map, address),
+          user_id: user.id,
+          labels: Map.get(addr, :labels),
+          notes: Map.get(addr, :notes)
+        }
+      end)
+      |> BlockchainAddressUserPair.maybe_create()
+
+    list_items =
+      blockchain_address_user_pairs
+      |> Enum.map(fn pair ->
+        %{
+          blockchain_address_user_pair_id: pair.id,
+          user_list_id: user_list_id
+        }
+      end)
+
+    %{params | list_items: list_items}
+  end
+
+  defp update_list_items_params(params, _user) when is_map(params), do: params
 
   defp filter_by_user_id_query(query, user_id) do
     query

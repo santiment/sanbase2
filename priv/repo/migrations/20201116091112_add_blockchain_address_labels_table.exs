@@ -5,10 +5,10 @@ defmodule Sanbase.Repo.Migrations.AddBlockchainAddressLabelsTable do
 
   def change do
     create(table(@table)) do
-      add(:label, :string, null: false)
+      add(:name, :string, null: false)
       add(:notes, :string)
     end
 
-    create(unique_index(@table, [:label]))
+    create(unique_index(@table, [:name]))
   end
 end

@@ -8,11 +8,18 @@ defmodule Sanbase.Repo.Migrations.AddUserBlockchainAddresses do
       add(:blockchain_address_id, references(:blockchain_addresses))
     end
 
-    blockchain_address_user_pairs_labels
+    create(unique_index(:blockchain_address_user_pairs, [:user_id, :blockchain_address_id]))
 
-    create table(:blockchain_address_users_label_pairs) do
+    create table(:blockchain_address_user_pairs_labels) do
       add(:blockchain_address_user_pair_id, references(:blockchain_address_user_pairs))
       add(:label_id, references(:blockchain_address_labels))
     end
+
+    create(
+      unique_index(:blockchain_address_user_pairs_labels, [
+        :blockchain_address_user_pair_id,
+        :label_id
+      ])
+    )
   end
 end

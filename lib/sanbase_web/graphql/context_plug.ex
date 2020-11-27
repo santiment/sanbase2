@@ -372,7 +372,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   defp anon_user_base_context(conn) do
     product_id =
-      get_req_header(conn, "origin")
+      conn
+      |> get_origin_host()
       |> get_no_auth_product_id()
 
     Map.put(@anon_user_base_context, :product_id, product_id)
@@ -419,14 +420,14 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     end
   end
 
-  defp get_no_auth_product_id([origin]) do
+  defp get_no_auth_product_id(nil), do: @product_id_api
+
+  defp get_no_auth_product_id(origin) do
     case String.ends_with?(origin, "santiment.net") do
       true -> @product_id_sanbase
       false -> @product_id_api
     end
   end
-
-  defp get_no_auth_product_id(_), do: @product_id_api
 
   defp is_sansheets_request(conn) do
     case Plug.Conn.get_req_header(conn, "user-agent") do

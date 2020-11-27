@@ -31,16 +31,16 @@ defmodule Sanbase.BlockchainAddress.BlockchainAddressUserPair do
   end
 
   def maybe_create(attrs_list) when is_list(attrs_list) do
-    indexed_changesets = list |> Enum.map(&changeset(%__MODULE__{}, &1)) |> Enum.with_index()
-
-    Enum.reduce(
-      indexed_changesets,
+    attrs_list
+    |> Enum.map(&changeset(%__MODULE__{}, &1))
+    |> Enum.with_index()
+    |> Enum.reduce(
       Ecto.Multi.new(),
       fn {changeset, offset}, multi ->
         multi
         |> Ecto.Multi.insert(offset, changeset,
           on_conflict: {:replace, [:user_id]},
-          conflict_target: [:user_id],
+          conflict_target: [:user_id, :blockchain_address_id],
           returning: true
         )
       end
@@ -48,7 +48,7 @@ defmodule Sanbase.BlockchainAddress.BlockchainAddressUserPair do
     |> Sanbase.Repo.transaction()
     |> case do
       {:ok, result} -> {:ok, Map.values(result)}
-      {:error, error} -> {:error, error}
+      {:error, _name, error, _changes_so_far} -> {:error, error}
     end
   end
 

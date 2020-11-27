@@ -15,11 +15,10 @@ defmodule Sanbase.BlockchainAddress.BlockchainAddressLabel do
   end
 
   def find_or_insert_by_names(names) do
-    indexed_changesets =
-      names |> Enum.map(&changeset(%__MODULE__{}, %{name: &1})) |> Enum.with_index()
-
-    Enum.reduce(
-      indexed_changesets,
+    names
+    |> Enum.map(&changeset(%__MODULE__{}, %{name: &1}))
+    |> Enum.with_index()
+    |> Enum.reduce(
       Ecto.Multi.new(),
       fn {changeset, offset}, multi ->
         multi
@@ -33,7 +32,7 @@ defmodule Sanbase.BlockchainAddress.BlockchainAddressLabel do
     |> Sanbase.Repo.transaction()
     |> case do
       {:ok, result} -> {:ok, Map.values(result)}
-      {:error, error} -> {:error, error}
+      {:error, _name, error, _changes_so_far} -> {:error, error}
     end
   end
 end

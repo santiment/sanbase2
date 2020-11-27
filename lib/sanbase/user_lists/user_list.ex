@@ -24,10 +24,10 @@ defmodule Sanbase.UserList do
   alias Sanbase.WatchlistFunction
   alias Sanbase.Repo
   alias Sanbase.Timeline.TimelineEvent
-  alias Sanbase.BlockchainAddress.{BlockchainAddressUserPair, BlockchainAddressLabel}
+  alias Sanbase.BlockchainAddress.BlockchainAddressUserPair
 
   schema "user_lists" do
-    field(:type, WatchlistType, default: "project")
+    field(:type, WatchlistType, default: :project)
 
     field(:color, ColorEnum, default: :none)
     field(:description, :string)
@@ -289,47 +289,15 @@ defmodule Sanbase.UserList do
        ) do
     %{id: user_list_id, list_items: input_objects} = params
 
-    # A list of list item input objects
+    # A list of list item input objects in the form of maps
     input_blockchain_addresses =
       input_objects
       |> Enum.map(& &1.blockchain_address)
       |> Enum.uniq_by(& &1.address)
 
-    # A list map in the format %{"ETH" => 1, "BTC" => 2, "XRP" => 3}
-    infr_code_to_id_map =
-      input_blockchain_addresses
-      |> Enum.reduce(MapSet.new(), &MapSet.put(&2, &1.infrastructure))
-      |> Enum.to_list()
-      |> Sanbase.Model.Infrastructure.by_codes()
-      |> Map.new(fn %{id: id, code: code} -> {code, id} end)
-
-    # A list of Sanbase.BlockchainAddress structs
-    {:ok, blockchain_addresses} =
-      input_blockchain_addresses
-      |> Enum.map(fn addr ->
-        %{
-          address: addr.address,
-          infrastructure_id: Map.get(infr_code_to_id_map, addr.infrastructure)
-        }
-      end)
-      |> Sanbase.BlockchainAddress.maybe_create()
-
-    blockchain_address_to_id_map =
-      blockchain_addresses
-      |> Map.new(fn %{address: address, id: id} -> {address, id} end)
-
     # A list of Sanbase.BlockchainAddressUserPair structs
-    blockchain_address_user_pairs =
-      input_blockchain_addresses
-      |> Enum.map(fn %{address: address} = addr ->
-        attrs = %{
-          blockchain_address_id: Map.get(blockchain_address_to_id_map, address),
-          user_id: user.id,
-          labels: Map.get(addr, :labels),
-          notes: Map.get(addr, :notes)
-        }
-      end)
-      |> BlockchainAddressUserPair.maybe_create()
+    {:ok, blockchain_address_user_pairs} =
+      get_or_create_blockchain_address_user_pairs(input_blockchain_addresses, user)
 
     list_items =
       blockchain_address_user_pairs
@@ -358,5 +326,44 @@ defmodule Sanbase.UserList do
   defp filter_by_is_public_query(query, is_public) do
     query
     |> where([ul], ul.is_public == ^is_public)
+  end
+
+  defp get_or_create_blockchain_address_user_pairs(input_blockchain_addresses, user) do
+    blockchain_address_to_id_map = blockchain_address_to_id_map(input_blockchain_addresses)
+
+    input_blockchain_addresses
+    |> Enum.map(fn %{address: address} = addr ->
+      %{
+        blockchain_address_id: Map.get(blockchain_address_to_id_map, address),
+        user_id: user.id,
+        labels: Map.get(addr, :labels),
+        notes: Map.get(addr, :notes)
+      }
+    end)
+    |> BlockchainAddressUserPair.maybe_create()
+  end
+
+  defp blockchain_address_to_id_map(input_blockchain_addresses) do
+    # A list map in the format %{"ETH" => 1, "BTC" => 2, "XRP" => 3}
+    infr_code_to_id_map =
+      input_blockchain_addresses
+      |> Enum.reduce(MapSet.new(), &MapSet.put(&2, &1.infrastructure))
+      |> Enum.to_list()
+      |> Sanbase.Model.Infrastructure.by_codes()
+      |> Map.new(fn %{id: id, code: code} -> {code, id} end)
+
+    # A list of Sanbase.BlockchainAddress structs
+    {:ok, blockchain_addresses} =
+      input_blockchain_addresses
+      |> Enum.map(fn addr ->
+        %{
+          address: addr.address,
+          infrastructure_id: Map.get(infr_code_to_id_map, addr.infrastructure)
+        }
+      end)
+      |> Sanbase.BlockchainAddress.maybe_create()
+
+    blockchain_addresses
+    |> Map.new(fn %{address: address, id: id} -> {address, id} end)
   end
 end

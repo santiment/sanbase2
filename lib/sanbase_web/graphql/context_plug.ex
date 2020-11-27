@@ -11,7 +11,6 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   @behaviour Plug
 
-  @compile :inline_list_funcs
   @compile {:inline,
             build_context: 2,
             build_error_msg: 1,
@@ -23,7 +22,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
             apikey_authorize: 1,
             get_no_auth_product_id: 1,
             get_apikey_product_id: 1,
-            san_balance: 1}
+            san_balance: 1,
+            get_origin_host: 1}
 
   import Plug.Conn
   require Sanbase.Utils.Config, as: Config
@@ -67,7 +67,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     context =
       context
       |> Map.put(:remote_ip, conn.remote_ip)
-      |> Map.put(:origin_url, Plug.Conn.get_req_header(conn, "origin") |> List.first())
+      |> Map.put(:origin_url, get_origin_host(conn))
       |> Map.put(:rate_limiting_enabled, Config.get(:rate_limiting_enabled))
 
     conn =
@@ -443,4 +443,18 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   end
 
   defp get_apikey_product_id(_), do: @product_id_api
+
+  defp get_origin_host(conn) do
+    Plug.Conn.get_req_header(conn, "origin")
+    |> List.first()
+    |> case do
+      origin when is_binary(origin) ->
+        # Strip trailing backslashes, ports, etc.
+        %URI{host: host} = origin |> URI.parse()
+        host
+
+      _ ->
+        nil
+    end
+  end
 end

@@ -20,6 +20,15 @@ config :postgrex, :json_library, Jason
 
 config :sanbase, Sanbase, environment: "#{Mix.env()}"
 
+config :ueberauth, Ueberauth,
+  providers: [
+    google: {Ueberauth.Strategy.Google, []}
+  ]
+
+config :ueberauth, Ueberauth.Strategy.Google.OAuth,
+  client_id: {System, :get_env, ["GOOGLE_CLIENT_ID"]},
+  client_secret: {System, :get_env, ["GOOGLE_CLIENT_SECRET"]}
+
 config :sanbase, SanbaseWeb.Plug.BasicAuth,
   username: {:system, "ADMIN_BASIC_AUTH_USERNAME", "admin"},
   password: {:system, "ADMIN_BASIC_AUTH_PASSWORD", "admin"}

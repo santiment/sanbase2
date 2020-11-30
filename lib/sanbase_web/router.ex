@@ -31,6 +31,12 @@ defmodule SanbaseWeb.Router do
 
   use ExAdmin.Router
 
+  scope "/auth", SanbaseWeb do
+    pipe_through(:browser)
+    get("/:provider", AuthController, :request)
+    get("/:provider/callback", AuthController, :callback)
+  end
+
   scope "/admin", ExAdmin do
     pipe_through([:browser, :basic_auth])
     admin_routes()
@@ -62,7 +68,7 @@ defmodule SanbaseWeb.Router do
       analyze_complexity: true,
       max_complexity: 20_000,
       log_level: :info,
-      before_send: {SanbaseWeb.Graphql.AbsintheBeforeSend, :before_send}
+      before_send: {SanbaseWeb.Graphql.AbsintheBeforeSend, :et}
     )
 
     forward(

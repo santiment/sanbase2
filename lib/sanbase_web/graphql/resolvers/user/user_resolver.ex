@@ -80,9 +80,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     {:ok, %{count: length(followers), users: followers}}
   end
 
-  def google_login(_root, args, _resolution) do
-  end
-
   def eth_login(
         _root,
         %{signature: signature, address: address, message_hash: message_hash} = args,

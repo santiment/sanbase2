@@ -27,20 +27,20 @@ defmodule SanbaseWeb.AuthController do
   end
 
   def callback(%{assigns: %{ueberauth_auth: %{provider: :google} = auth}} = conn, _params) do
-    IO.inspect(auth, label: "AUTH")
+    email = auth.extra.raw_info.user["email"]
 
-
-    case {:error, :not_found} do
-      {:error, :not_found} ->
+    with true <- is_binary(email),
+         {:ok, user} <- Sanbase.Auth.User.find_or_insert_by_email(email),
+         {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}) do
+      conn
+      |> put_flash(:info, "Successfully authenticated.")
+      |> put_session(:auth_token, token)
+      |> redirect(external: SanbaseWeb.Endpoint.website_url())
+    else
+      _ ->
         conn
-        |> put_flash(:info, "Successfully authenticated.")
-        |> put_session(:current_user, %Sanbase.Auth.User{id: 1})
-        |> redirect(to: "/")
-
-      student ->
-        conn
-        |> put_flash(:info, "Successfully authenticated.")
-        |> redirect(to: "/")
+        |> put_flash(:error, "Failed to authenticate.")
+        |> redirect(external: SanbaseWeb.Endpoint.website_url())
     end
   end
 end

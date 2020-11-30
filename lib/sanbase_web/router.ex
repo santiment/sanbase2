@@ -33,6 +33,8 @@ defmodule SanbaseWeb.Router do
 
   scope "/auth", SanbaseWeb do
     pipe_through(:browser)
+
+    get("/delete", AuthController, :delete)
     get("/:provider", AuthController, :request)
     get("/:provider/callback", AuthController, :callback)
   end
@@ -68,7 +70,7 @@ defmodule SanbaseWeb.Router do
       analyze_complexity: true,
       max_complexity: 20_000,
       log_level: :info,
-      before_send: {SanbaseWeb.Graphql.AbsintheBeforeSend, :et}
+      before_send: {SanbaseWeb.Graphql.AbsintheBeforeSend, :before_send}
     )
 
     forward(

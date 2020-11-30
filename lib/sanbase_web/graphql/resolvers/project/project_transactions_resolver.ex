@@ -51,7 +51,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
 
     with {:ok, contract_address, token_decimals} <- Project.contract_info(project),
          {:ok, token_transactions} <-
-           Clickhouse.Erc20Transfers.token_top_transfers(
+           Clickhouse.Erc20Transfers.token_top_transactions(
              contract_address,
              from,
              to,

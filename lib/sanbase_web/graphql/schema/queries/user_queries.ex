@@ -60,7 +60,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
       arg(:address, non_null(:string))
       arg(:message_hash, non_null(:string))
 
-      resolve(&UserResolver.eth_login/2)
+      resolve(&UserResolver.eth_login/3)
       middleware(CreateOrDeleteSession)
     end
 

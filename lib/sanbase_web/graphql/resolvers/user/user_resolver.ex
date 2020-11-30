@@ -81,6 +81,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   end
 
   def eth_login(
+        _root,
         %{signature: signature, address: address, message_hash: message_hash} = args,
         _resolution
       ) do

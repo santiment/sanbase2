@@ -121,6 +121,7 @@ defmodule Sanbase.Mixfile do
       {:temp, "~> 0.4"},
       {:tesla, "~> 1.0"},
       {:timex, "~> 3.5.0"},
+      {:ueberauth_google, "~> 0.10"},
       {:uuid, "~> 1.1"},
       {:vex, "~> 0.8.0", override: true}
     ]

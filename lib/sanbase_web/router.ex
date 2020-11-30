@@ -31,6 +31,14 @@ defmodule SanbaseWeb.Router do
 
   use ExAdmin.Router
 
+  scope "/auth", SanbaseWeb do
+    pipe_through(:browser)
+
+    get("/delete", AuthController, :delete)
+    get("/:provider", AuthController, :request)
+    get("/:provider/callback", AuthController, :callback)
+  end
+
   scope "/admin", ExAdmin do
     pipe_through([:browser, :basic_auth])
     admin_routes()

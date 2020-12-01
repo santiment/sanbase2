@@ -223,7 +223,7 @@ defmodule Sanbase.MonitorTest do
       }
       |> Map.merge(update_opts)
 
-    {:ok, watchlist} = UserList.update_user_list(update_opts)
+    {:ok, watchlist} = UserList.update_user_list(context.user, update_opts)
     watchlist
   end
 end

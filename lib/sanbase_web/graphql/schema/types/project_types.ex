@@ -317,6 +317,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:twitter_link, :string)
     field(:whitepaper_link, :string)
     field(:blog_link, :string)
+    field(:telegram_chat_id, :integer)
     field(:slack_link, :string)
     field(:linkedin_link, :string)
     field(:telegram_link, :string)

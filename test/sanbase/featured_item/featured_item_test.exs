@@ -123,7 +123,7 @@ defmodule Sanbase.FeaturedItemTest do
 
   describe "watchlist featured items" do
     test "no watchlists are featured" do
-      assert FeaturedItem.watchlists() == []
+      assert FeaturedItem.watchlists(:project) == []
     end
 
     test "cannot make private watchlist featured" do
@@ -133,16 +133,24 @@ defmodule Sanbase.FeaturedItemTest do
     end
 
     test "marking watchlists as featured" do
-      watchlist = insert(:watchlist, is_public: true) |> Sanbase.Repo.preload([:list_items])
+      watchlist =
+        insert(:watchlist, is_public: true, type: :blockchain_address)
+        |> Sanbase.Repo.preload([:list_items])
+
+      insert(:watchlist, is_public: true, type: :project)
       :ok = FeaturedItem.update_item(watchlist, true)
-      assert FeaturedItem.watchlists() == [watchlist]
+      assert FeaturedItem.watchlists(:blockchain_address) == [watchlist]
     end
 
     test "unmarking watchlists as featured" do
-      watchlist = insert(:watchlist, is_public: true)
+      watchlist = insert(:watchlist, is_public: true, type: :blockchain_address)
+      _ = insert(:watchlist, is_public: true, type: :blockchain_address)
+      _ = insert(:watchlist, is_public: true)
+
       FeaturedItem.update_item(watchlist, true)
       FeaturedItem.update_item(watchlist, false)
-      assert FeaturedItem.watchlists() == []
+
+      assert FeaturedItem.watchlists(:blockchain_address) == []
     end
 
     test "marking watchlist as featured is idempotent" do

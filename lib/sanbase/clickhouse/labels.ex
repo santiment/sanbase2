@@ -81,34 +81,65 @@ defmodule Sanbase.Clickhouse.Label do
 
   defp addresses_labels_query(slug, addresses) do
     query = """
-    SELECT lower(address) as address,
-           multiIf(label='uniswap_ecosystem', 'Uniswap Ecosystem',
-                   label='centralized_exchange', 'CEX',
-                   label='decentralized_exchange', 'DEX',
-                   label='withdrawal', 'CEX Trader',
-                   label='dex_trader', 'DEX Trader',
-                   label='whale', 'Whale',
-                   label='deposit', 'CEX Deposit',
-                   label='defi', 'DeFi',
-                   label='deployer', 'Deployer',
-                   label='stablecoin', 'Stablecoin',
-                   label='uniswap_ecosystem', 'Uniswap',
-                   label='makerdao-cdp-owner', 'MakerDAO CDP Owner',
-                   label='makerdao-bite-keeper', 'MakerDAO Bite Keeper',
-                   label='genesis', 'Genesis',
-                   label='proxy', 'Proxy',
-                   label='system', 'System',
-                   label='miner', 'Miner', label) as label,
-           metadata
-    FROM blockchain_address_labels FINAL
-    PREWHERE
-      blockchain = 'ethereum' AND
-      ((label = 'whale' and asset_id = (SELECT argMax(asset_id, computed_at) FROM asset_metadata FINAL PREWHERE name = ?1))
-        OR (label != 'whale' and asset_id = 0)) AND
-      lower(address) IN (?2)
-    HAVING (sign = 1)
-       AND (address NOT IN ('0x0000000000000000000000000000000000000000', 'burn', 'mint')
-            OR label = 'System')
+    SELECT address,
+           label_owner_final.1 as label,
+           concat('\{', '"owner": "', label_owner_final.2, '"\}') as metadata
+    FROM (
+        SELECT address,
+               groupArray(label_owner) as labels_owners,
+               multiIf(
+                   length(labels_owners) > 1, arrayFilter(x -> x.1 != 'Whale', labels_owners)[1],
+                   labels_owners[1]
+               ) as label_owner_final
+        FROM (
+            SELECT address_hash,
+                   asset_id,
+                   address,
+                   splitByChar(',', labels) as label_arr,
+                   splitByChar(',', owners) as owner_arr,
+                   arrayZip(label_arr, owner_arr) as labels_owners,
+                   multiIf(
+                       has(label_arr, 'uniswap_ecosystem'), ('Uniswap Ecosystem', arrayFilter(x -> x.1 = 'uniswap_ecosystem', labels_owners)[1].2),
+                       has(label_arr, 'decentralized_exchange'), ('DEX', arrayFilter(x -> x.1 = 'decentralized_exchange', labels_owners)[1].2),
+                       has(label_arr, 'defi'), ('DeFi', arrayFilter(x -> x.1 = 'defi', labels_owners)[1].2),
+                       has(label_arr, 'deployer'), ('Deployer', arrayFilter(x -> x.1 = 'deployer', labels_owners)[1].2),
+                       has(label_arr, 'stablecoin'), ('Stablecoin', arrayFilter(x -> x.1 = 'stablecoin', labels_owners)[1].2),
+                       has(label_arr, 'deposit'), ('CEX Deposit', arrayFilter(x -> x.1 = 'deposit', labels_owners)[1].2),
+                       has(label_arr, 'withdrawal'), ('CEX Trader', arrayFilter(x -> x.1 = 'withdrawal', labels_owners)[1].2),
+                       has(label_arr, 'dex_trader'), ('DEX Trader', arrayFilter(x -> x.1 = 'dex_trader', labels_owners)[1].2),
+                       has(label_arr, 'whale') AND asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1), ('Whale', arrayFilter(x -> x.1 = 'whale', labels_owners)[1].2),
+                       has(label_arr, 'whale') AND asset_id != (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1), ('wrong_whale', ''),
+                       has(label_arr, 'centralized_exchange'), ('CEX', arrayFilter(x -> x.1 = 'centralized_exchange', labels_owners)[1].2),
+                       has(label_arr, 'makerdao-cdp-owner'), ('MakerDAO CDP Owner', arrayFilter(x -> x.1 = 'makerdao-cdp-owner', labels_owners)[1].2),
+                       has(label_arr, 'makerdao-bite-keeper'), ('MakerDAO Bite Keeper', arrayFilter(x -> x.1 = 'makerdao-bite-keeper', labels_owners)[1].2),
+                       has(label_arr, 'genesis'), ('Genesis', arrayFilter(x -> x.1 = 'genesis', labels_owners)[1].2),
+                       has(label_arr, 'proxy'), ('Proxy', arrayFilter(x -> x.1 = 'proxy', labels_owners)[1].2),
+                       has(label_arr, 'system'), ('System', arrayFilter(x -> x.1 = 'system', labels_owners)[1].2),
+                       has(label_arr, 'miner'), ('Miner', arrayFilter(x -> x.1 = 'miner', labels_owners)[1].2),
+                       (label_arr[1], owner_arr[1])
+                   ) as label_owner,
+                   label_owner.1 as label,
+                   label_owner.2 as owner
+            FROM eth_labels_final
+            ANY INNER JOIN (
+                SELECT cityHash64(address) as address_hash,
+                       address
+                FROM (
+                    SELECT arrayJoin([?2]) as address
+                )
+            )
+            USING address_hash
+            PREWHERE address_hash IN (
+                SELECT cityHash64(address)
+                FROM (
+                    SELECT lower(arrayJoin([?2])) as address
+                )
+            )
+                AND NOT has(label_arr, 'system')
+        )
+        WHERE label != 'wrong_whale'
+        GROUP BY address
+    )
     """
 
     {query, [slug, addresses]}

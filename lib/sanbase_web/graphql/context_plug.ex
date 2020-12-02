@@ -138,6 +138,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
       {:ok, %{quota: _} = quota_map} ->
         conn = Sanbase.Utils.Conn.put_extra_resp_headers(conn, rate_limit_headers(quota_map))
+
         {false, conn}
     end
   end
@@ -164,7 +165,12 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
         {true, conn, error_map}
 
-      {:ok, _} ->
+      {:ok, %{quota: :infinity}} ->
+        {false, conn}
+
+      {:ok, %{quota: _} = quota_map} ->
+        conn = Sanbase.Utils.Conn.put_extra_resp_headers(conn, rate_limit_headers(quota_map))
+
         {false, conn}
     end
   end

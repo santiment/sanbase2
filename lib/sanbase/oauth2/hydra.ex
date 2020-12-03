@@ -102,12 +102,12 @@ defmodule Sanbase.Oauth2.Hydra do
     ])
   end
 
-  defp do_accept_consent(consent, access_token, %User{username: username, id: id, email: email}) do
+  defp do_accept_consent(consent, access_token, %User{id: id} = user) do
     data = %{
       "grantScopes" => ["openid", "offline", "hydra.clients"],
       "accessTokenExtra" => %{},
-      "idTokenExtra" => %{id: id, name: username, email: email || username},
-      "subject" => "user:#{id}:#{username}"
+      "idTokenExtra" => %{id: id, name: user.username, email: user.email},
+      "subject" => "user:#{id}"
     }
 
     HTTPoison.patch(consent_url() <> "/#{consent}/accept", Jason.encode!(data), [

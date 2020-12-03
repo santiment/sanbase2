@@ -618,6 +618,26 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve(&ProjectTransactionsResolver.token_top_transactions/3)
     end
 
+    @desc "Recent ethereum transactions for address"
+    field :eth_recent_transactions, list_of(:transaction) do
+      arg(:address, non_null(:string))
+      arg(:page, non_null(:integer), default_value: 1)
+      arg(:page_size, non_null(:integer), default_value: 10)
+
+      # TODO change to cache_resolve
+      resolve(&ProjectTransactionsResolver.eth_recent_transactions/3)
+    end
+
+    @desc "Recent erc20 transactions for address"
+    field :token_recent_transactions, list_of(:transaction) do
+      arg(:address, non_null(:string))
+      arg(:page, non_null(:integer), default_value: 1)
+      arg(:page_size, non_null(:integer), default_value: 10)
+
+      # TODO change to cache_resolve
+      resolve(&ProjectTransactionsResolver.token_recent_transactions/3)
+    end
+
     @desc "Average daily active addresses for a ERC20 project or Ethereum and given time period"
     field :average_daily_active_addresses, :float do
       arg(:from, :datetime)

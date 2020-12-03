@@ -24,6 +24,7 @@ defmodule SanbaseWeb.Graphql.TransactionTypes do
     field(:trx_value, non_null(:float))
     field(:from_address, :address)
     field(:to_address, non_null(:address))
+    field(:slug, :string)
   end
 
   object :exchange_funds_flow do

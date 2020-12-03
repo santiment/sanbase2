@@ -14,8 +14,6 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Middlewares.{AccessControl, ProjectPermissions}
 
-  import_types(SanbaseWeb.Graphql.ProjectTypes)
-
   object :project_queries do
     @desc "Fetch all projects that have price data."
     field :all_projects, list_of(:project) do

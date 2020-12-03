@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   alias Sanbase.Clickhouse
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.SanbaseDataloader
-  alias Sanbase.Clickhouse.Label
+  alias Sanbase.Clickhouse.{Label, EthTransfers, Erc20Transfers, MarkExchanges}
   alias Sanbase.Clickhouse.HistoricalBalance.BtcBalance
 
   @max_concurrency 100

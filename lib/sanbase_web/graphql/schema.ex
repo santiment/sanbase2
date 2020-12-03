@@ -38,6 +38,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.MarketSegmentTypes)
   import_types(Graphql.MetricTypes)
   import_types(Graphql.PaginationTypes)
+  import_types(Graphql.ProjectTypes)
   import_types(Graphql.ProjectChartTypes)
   import_types(Graphql.Schema.KafkaTypes)
   import_types(Graphql.ShortUrlTypes)
@@ -54,6 +55,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   # Queries and mutations
   import_types(Graphql.Schema.AnomalyQueries)
   import_types(Graphql.Schema.BillingQueries)
+  import_types(Graphql.Schema.BlockchainAddressQueries)
   import_types(Graphql.Schema.BlockchainQueries)
   import_types(Graphql.Schema.ChartConfigurationQueries)
   import_types(Graphql.Schema.CommentQueries)
@@ -120,6 +122,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:anomaly_queries)
     import_fields(:billing_queries)
     import_fields(:blockchain_queries)
+    import_fields(:blockchain_address_queries)
     import_fields(:comment_queries)
     import_fields(:exchange_queries)
     import_fields(:featured_queries)

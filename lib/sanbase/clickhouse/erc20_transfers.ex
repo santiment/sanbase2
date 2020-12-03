@@ -148,9 +148,9 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     end)
   end
 
-  @spec token_recent_transactions(String.t(), non_neg_integer(), non_neg_integer()) ::
+  @spec recent_transactions(String.t(), non_neg_integer(), non_neg_integer()) ::
           {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
-  def token_recent_transactions(address, page_size, page \\ 1) do
+  def recent_transactions(address, page, page_size) do
     offset = (page - 1) * page_size
 
     {query, args} = token_recent_transactions_query(address, page_size, offset)
@@ -247,7 +247,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
   end
 
   defp decimals(decimals) when is_integer(decimals) and decimals > 0 do
-    decimals
+    Sanbase.Math.ipow(10, decimals)
   end
 
   defp decimals(_), do: @eth_decimals

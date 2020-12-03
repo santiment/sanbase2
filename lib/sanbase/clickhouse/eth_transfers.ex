@@ -86,9 +86,9 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     end)
   end
 
-  @spec eth_recent_transactions(String.t(), non_neg_integer(), non_neg_integer()) ::
+  @spec recent_transactions(String.t(), non_neg_integer(), non_neg_integer()) ::
           {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
-  def eth_recent_transactions(address, page_size, page \\ 1) do
+  def recent_transactions(address, page, page_size) do
     offset = (page - 1) * page_size
 
     {query, args} = eth_recent_transactions_query(address, page_size, offset)

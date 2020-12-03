@@ -22,12 +22,17 @@ config :sanbase, Sanbase, environment: "#{Mix.env()}"
 
 config :ueberauth, Ueberauth,
   providers: [
-    google: {Ueberauth.Strategy.Google, []}
+    google: {Ueberauth.Strategy.Google, []},
+    twitter: {Ueberauth.Strategy.Twitter, []}
   ]
 
 config :ueberauth, Ueberauth.Strategy.Google.OAuth,
   client_id: {System, :get_env, ["GOOGLE_OAUTH_CLIENT_ID"]},
   client_secret: {System, :get_env, ["GOOGLE_OAUTH_CLIENT_SECRET"]}
+
+config :ueberauth, Ueberauth.Strategy.Twitter.OAuth,
+  consumer_key: {System, :get_env, ["TWITTER_OAUTH_CONSUMER_KEY"]},
+  consumer_secret: {System, :get_env, ["TWITTER_OAUTH_CONSUMER_SECRET"]}
 
 config :sanbase, SanbaseWeb.Plug.BasicAuth,
   username: {:system, "ADMIN_BASIC_AUTH_USERNAME", "admin"},

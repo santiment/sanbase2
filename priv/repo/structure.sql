@@ -2549,7 +2549,8 @@ CREATE TABLE public.users (
     stripe_customer_id character varying(255),
     avatar_url character varying(255),
     is_registered boolean DEFAULT false,
-    is_superuser boolean DEFAULT false
+    is_superuser boolean DEFAULT false,
+    twitter_id character varying(255) DEFAULT NULL::character varying
 );
 
 
@@ -4333,6 +4334,13 @@ CREATE UNIQUE INDEX users_email_token_index ON public.users USING btree (email_t
 --
 
 CREATE UNIQUE INDEX users_stripe_customer_id_index ON public.users USING btree (stripe_customer_id);
+
+
+--
+-- Name: users_twitter_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX users_twitter_id_index ON public.users USING btree (twitter_id);
 
 
 --

@@ -16,8 +16,8 @@ defmodule Sanbase.GrafanaApi do
 
   def plan_team_map, do: @plan_team_map
 
-  def get_user_by_email_or_username(%{username: username, email: email}) do
-    token = email || username
+  def get_user(user) do
+    token = User.get_unique_str(user)
     request_path = "api/users/lookup?" <> URI.encode_query(%{"loginOrEmail" => token})
 
     Path.join(base_url(), request_path)
@@ -25,14 +25,17 @@ defmodule Sanbase.GrafanaApi do
     |> handle_response()
   end
 
-  def create_user(%User{username: username, email: email}) do
+  def create_user(%User{} = user) do
+    %User{username: username, email: email, twitter_id: twitter_id} = user
+    user_unique_str = User.get_unique_str(user)
     request_path = "api/admin/users"
 
     data =
       %{
-        "name" => username || email,
-        "email" => email || username,
-        "login" => username || email,
+        "name" => username || user_unique_str,
+        "email" => email || user_unique_str,
+        "twitter_id" => twitter_id,
+        "login" => user_unique_str,
         "password" => :crypto.strong_rand_bytes(16) |> Base.encode64() |> binary_part(0, 16)
       }
       |> Jason.encode!()

@@ -255,17 +255,17 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
 
   defp do_send_email_and_mark_sent(%__MODULE__{user_id: user_id} = sign_up_trial, email_type) do
     user = Repo.get(User, user_id)
+    user_unique_str = User.get_unique_str(user)
+
     template = @templates[email_type]
 
     # User exists, we have proper template in Mandrill and this email type is not already sent
     if user && template && !Map.get(sign_up_trial, email_type) do
       Logger.info(
-        "Trial email template #{template} sent to: #{user.email}, name=#{
-          user.username || user.email
-        }"
+        "Trial email template #{template} sent to: #{user.email}, name=#{user_unique_str}"
       )
 
-      Sanbase.MandrillApi.send(template, user.email, %{name: user.username || user.email})
+      Sanbase.MandrillApi.send(template, user.email, %{name: user_unique_str})
 
       update_trial(sign_up_trial, %{email_type => true})
     end

@@ -47,7 +47,7 @@ defmodule Sanbase.Oauth2.Hydra do
         end
 
       nil ->
-        error_msg = "#{user.email || user.username} doesn't have an active Sandata subscription"
+        error_msg = "#{User.describe(user)} doesn't have an active Sandata subscription"
         Logger.error(error_msg)
         reject_consent(consent, access_token, error_msg)
     end
@@ -56,7 +56,7 @@ defmodule Sanbase.Oauth2.Hydra do
   # helpers
 
   defp find_or_create_grafana_user(user) do
-    case GrafanaApi.get_user_by_email_or_username(user) do
+    case GrafanaApi.get_user(user) do
       {:ok, grafana_user} ->
         {:ok, grafana_user}
 
@@ -102,12 +102,20 @@ defmodule Sanbase.Oauth2.Hydra do
     ])
   end
 
-  defp do_accept_consent(consent, access_token, %User{username: username, id: id, email: email}) do
+  defp do_accept_consent(consent, access_token, %User{} = user) do
+    user_unique_str = User.get_unique_str(user)
+
+    user_keys = %{
+      name: user.username || user_unique_str,
+      email: user.email || user_unique_str,
+      id: user.id
+    }
+
     data = %{
       "grantScopes" => ["openid", "offline", "hydra.clients"],
       "accessTokenExtra" => %{},
-      "idTokenExtra" => %{id: id, name: username, email: email || username},
-      "subject" => "user:#{id}:#{username}"
+      "idTokenExtra" => user_keys,
+      "subject" => "user:#{user.id}"
     }
 
     HTTPoison.patch(consent_url() <> "/#{consent}/accept", Jason.encode!(data), [

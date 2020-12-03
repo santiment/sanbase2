@@ -62,6 +62,7 @@ defmodule Sanbase.Auth.User do
     field(:avatar_url, :string)
     field(:is_registered, :boolean, default: false)
     field(:is_superuser, :boolean, default: false)
+    field(:twitter_id, :string)
 
     # GDPR related fields
     field(:privacy_policy_accepted, :boolean, default: false)
@@ -87,6 +88,19 @@ defmodule Sanbase.Auth.User do
     has_one(:user_settings, UserSettings, on_delete: :delete_all)
 
     timestamps()
+  end
+
+  def get_unique_str(%__MODULE__{} = user) do
+    user.username || user.email || user.twitter_id || "id_#{user.id}"
+  end
+
+  def describe(%__MODULE__{} = user) do
+    cond do
+      user.username != nil -> "User with username #{user.username}"
+      user.email != nil -> "User with email #{user.email}"
+      user.twitter_id != nil -> "User with twitter_id #{user.twitter_id}"
+      true -> "User with id #{user.id}"
+    end
   end
 
   def generate_salt() do
@@ -116,7 +130,8 @@ defmodule Sanbase.Auth.User do
       :first_login,
       :avatar_url,
       :is_registered,
-      :is_superuser
+      :is_superuser,
+      :twitter_id
     ])
     |> normalize_username(attrs)
     |> normalize_email(attrs[:email], :email)
@@ -127,8 +142,11 @@ defmodule Sanbase.Auth.User do
     |> unique_constraint(:email)
     |> unique_constraint(:username)
     |> unique_constraint(:stripe_customer_id)
+    |> unique_constraint(:twitter_id)
   end
 
+  # Twitter functions
+  defdelegate find_or_insert_by_twitter_id(twitter_id, username \\ nil), to: __MODULE__.Twitter
   # Email functions
   defdelegate find_or_insert_by_email(email, username \\ nil), to: __MODULE__.Email
   defdelegate find_by_email_candidate(candidate, token), to: __MODULE__.Email

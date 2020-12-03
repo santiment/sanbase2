@@ -122,6 +122,7 @@ defmodule Sanbase.Mixfile do
       {:tesla, "~> 1.0"},
       {:timex, "~> 3.5.0"},
       {:ueberauth_google, "~> 0.10"},
+      {:ueberauth_twitter, github: "santiment/ueberauth_twitter"},
       {:uuid, "~> 1.1"},
       {:vex, "~> 0.8.0", override: true}
     ]

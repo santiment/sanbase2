@@ -15,14 +15,12 @@ defmodule SanbaseWeb.AuthController do
 
   def delete(conn, _params) do
     conn
-    |> put_flash(:info, "You have been logged out!")
     |> configure_session(drop: true)
     |> redirect(to: "/")
   end
 
   def callback(%{assigns: %{ueberauth_failure: _fails}} = conn, _params) do
     conn
-    |> put_flash(:error, "Failed to authenticate.")
     |> redirect(to: "/")
   end
 
@@ -33,13 +31,11 @@ defmodule SanbaseWeb.AuthController do
          {:ok, user} <- Sanbase.Auth.User.find_or_insert_by_email(email),
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}) do
       conn
-      |> put_flash(:info, "Successfully authenticated.")
       |> put_session(:auth_token, token)
       |> redirect(external: SanbaseWeb.Endpoint.website_url())
     else
       _ ->
         conn
-        |> put_flash(:error, "Failed to authenticate.")
         |> redirect(external: SanbaseWeb.Endpoint.website_url())
     end
   end
@@ -51,13 +47,11 @@ defmodule SanbaseWeb.AuthController do
          {:ok, user} <- Sanbase.Auth.User.find_or_insert_by_twitter_id(twitter_id_str),
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}) do
       conn
-      |> put_flash(:info, "Successfully authenticated.")
       |> put_session(:auth_token, token)
       |> redirect(external: SanbaseWeb.Endpoint.website_url())
     else
       _ ->
         conn
-        |> put_flash(:error, "Failed to authenticate.")
         |> redirect(external: SanbaseWeb.Endpoint.website_url())
     end
   end

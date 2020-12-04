@@ -9,6 +9,15 @@ defmodule SanbaseWeb.ExAdmin.Auth.User do
       before_filter(:assign_all_user_insights_to_anonymous, only: [:destroy])
     end
 
+    index do
+      column(:id)
+      column(:username)
+      column(:email)
+      column(:twitter_id)
+      column(:is_superuser)
+      column(:san_balance)
+    end
+
     show user do
       attributes_table(all: true)
 

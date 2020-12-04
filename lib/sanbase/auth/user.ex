@@ -116,22 +116,26 @@ defmodule Sanbase.Auth.User do
 
     user
     |> cast(attrs, [
-      :email,
-      :email_candidate,
-      :email_candidate_token,
+      :avatar_url,
+      :consent_id,
       :email_candidate_token_generated_at,
       :email_candidate_token_validated_at,
-      :username,
-      :salt,
-      :test_san_balance,
-      :privacy_policy_accepted,
-      :marketing_accepted,
-      :stripe_customer_id,
+      :email_candidate_token,
+      :email_candidate,
+      :email_token_generated_at,
+      :email_token_validated_at,
+      :email_token,
+      :email,
       :first_login,
-      :avatar_url,
       :is_registered,
       :is_superuser,
-      :twitter_id
+      :marketing_accepted,
+      :privacy_policy_accepted,
+      :salt,
+      :stripe_customer_id,
+      :test_san_balance,
+      :twitter_id,
+      :username
     ])
     |> normalize_username(attrs)
     |> normalize_email(attrs[:email], :email)
@@ -146,9 +150,11 @@ defmodule Sanbase.Auth.User do
   end
 
   # Twitter functions
-  defdelegate find_or_insert_by_twitter_id(twitter_id, username \\ nil), to: __MODULE__.Twitter
+  defdelegate find_or_insert_by_twitter_id(twitter_id, username \\ %{}), to: __MODULE__.Twitter
+  defdelegate update_twitter_id(user, twitter_id), to: __MODULE__.Twitter
+
   # Email functions
-  defdelegate find_or_insert_by_email(email, username \\ nil), to: __MODULE__.Email
+  defdelegate find_or_insert_by_email(email, username \\ %{}), to: __MODULE__.Email
   defdelegate find_by_email_candidate(candidate, token), to: __MODULE__.Email
   defdelegate update_email_token(user, consent \\ nil), to: __MODULE__.Email
   defdelegate update_email_candidate(user, candidate), to: __MODULE__.Email
@@ -243,6 +249,8 @@ defmodule Sanbase.Auth.User do
       {:error, msg} -> [avatar_url: msg]
     end
   end
+
+  def change_username(%__MODULE__{username: username} = user, username), do: {:ok, user}
 
   def change_username(%__MODULE__{} = user, username) do
     user

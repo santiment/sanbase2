@@ -91,7 +91,7 @@ defmodule Sanbase.Auth.User do
   end
 
   def get_unique_str(%__MODULE__{} = user) do
-    user.username || user.email || user.twitter_id || "id_#{user.id}"
+    user.email || user.username || user.twitter_id || "id_#{user.id}"
   end
 
   def describe(%__MODULE__{} = user) do

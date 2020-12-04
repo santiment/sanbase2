@@ -29,7 +29,7 @@ defmodule SanbaseWeb.AuthController do
     email = auth.info.email
 
     with true <- is_binary(email),
-         {:ok, user} <- User.find_or_insert_by_email(email, %{is_registered: true}),
+         {:ok, user} <- User.find_or_insert_by(:email, email, %{is_registered: true}),
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}) do
       conn
       |> put_session(:auth_token, token)
@@ -64,13 +64,13 @@ defmodule SanbaseWeb.AuthController do
   # has that twitter_id set. So this results in a single DB call in all cases
   # except the first time twitter login is used.
   defp twitter_login(email, twitter_id) when is_binary(email) and byte_size(email) > 0 do
-    with {:ok, user} <- User.find_or_insert_by_email(email, %{is_registered: true}),
-         {:ok, user} <- User.update_twitter_id(user, twitter_id) do
+    with {:ok, user} <- User.find_or_insert_by(:email, email, %{is_registered: true}),
+         {:ok, user} <- User.update_field(user, :twitter_id, twitter_id) do
       {:ok, user}
     end
   end
 
   defp twitter_login(_email, twitter_id) do
-    User.find_or_insert_by_twitter_id(twitter_id)
+    User.find_or_insert_by(:twitter_id, twitter_id, %{is_registered: true})
   end
 end

@@ -390,7 +390,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
 
     login_data = json_response(result, 200)["data"]["emailLoginVerify"]
 
-    {:ok, user} = User.find_or_insert_by_email(user.email)
+    {:ok, user} = User.find_or_insert_by(:email, user.email)
 
     assert login_data["token"] != nil
     assert login_data["user"]["email"] == user.email

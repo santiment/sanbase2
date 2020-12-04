@@ -7,26 +7,6 @@ defmodule Sanbase.Auth.User.Email do
   require Mockery.Macro
   defp mandrill_api(), do: Mockery.Macro.mockable(Sanbase.MandrillApi)
 
-  def find_or_insert_by_email(email, attrs \\ %{}) do
-    email = String.downcase(email)
-
-    case Repo.get_by(User, email: email) do
-      nil ->
-        user_create_attrs =
-          Map.merge(
-            attrs,
-            %{email: email, salt: User.generate_salt(), first_login: true}
-          )
-
-        %User{}
-        |> User.changeset(user_create_attrs)
-        |> Repo.insert()
-
-      user ->
-        {:ok, user}
-    end
-  end
-
   def find_by_email_candidate(email_candidate, email_candidate_token) do
     email_candidate = String.downcase(email_candidate)
 

@@ -85,13 +85,6 @@ defmodule Sanbase.Clickhouse.Label do
            label_owner_final.1 as label,
            concat('\{', '"owner": "', label_owner_final.2, '"\}') as metadata
     FROM (
-        SELECT address,
-               groupArray(label_owner) as labels_owners,
-               multiIf(
-                   length(labels_owners) > 1, arrayFilter(x -> x.1 != 'Whale', labels_owners)[1],
-                   labels_owners[1]
-               ) as label_owner_final
-        FROM (
             SELECT address_hash,
                    asset_id,
                    address,

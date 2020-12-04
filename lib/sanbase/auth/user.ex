@@ -116,22 +116,26 @@ defmodule Sanbase.Auth.User do
 
     user
     |> cast(attrs, [
-      :email,
-      :email_candidate,
-      :email_candidate_token,
+      :avatar_url,
+      :consent_id,
       :email_candidate_token_generated_at,
       :email_candidate_token_validated_at,
-      :username,
-      :salt,
-      :test_san_balance,
-      :privacy_policy_accepted,
-      :marketing_accepted,
-      :stripe_customer_id,
+      :email_candidate_token,
+      :email_candidate,
+      :email_token_generated_at,
+      :email_token_validated_at,
+      :email_token,
+      :email,
       :first_login,
-      :avatar_url,
       :is_registered,
       :is_superuser,
-      :twitter_id
+      :marketing_accepted,
+      :privacy_policy_accepted,
+      :salt,
+      :stripe_customer_id,
+      :test_san_balance,
+      :twitter_id,
+      :username
     ])
     |> normalize_username(attrs)
     |> normalize_email(attrs[:email], :email)
@@ -145,10 +149,7 @@ defmodule Sanbase.Auth.User do
     |> unique_constraint(:twitter_id)
   end
 
-  # Twitter functions
-  defdelegate find_or_insert_by_twitter_id(twitter_id, username \\ nil), to: __MODULE__.Twitter
   # Email functions
-  defdelegate find_or_insert_by_email(email, username \\ nil), to: __MODULE__.Email
   defdelegate find_by_email_candidate(candidate, token), to: __MODULE__.Email
   defdelegate update_email_token(user, consent \\ nil), to: __MODULE__.Email
   defdelegate update_email_candidate(user, candidate), to: __MODULE__.Email
@@ -195,6 +196,35 @@ defmodule Sanbase.Auth.User do
   def by_selector(%{id: id}), do: Repo.get_by(__MODULE__, id: id)
   def by_selector(%{email: email}), do: Repo.get_by(__MODULE__, email: email)
   def by_selector(%{username: username}), do: Repo.get_by(__MODULE__, username: username)
+
+  def update_field(%__MODULE__{} = user, field, value) do
+    case Map.fetch!(user, field) == value do
+      true ->
+        {:ok, user}
+
+      false ->
+        user |> changeset(%{field => value}) |> Repo.update()
+    end
+  end
+
+  def find_or_insert_by(field, value, attrs \\ %{})
+      when field in [:email, :username, :twitter_id] do
+    case Repo.get_by(User, [{field, value}]) do
+      nil ->
+        user_create_attrs =
+          Map.merge(
+            attrs,
+            %{field => value, salt: User.generate_salt(), first_login: true}
+          )
+
+        %User{}
+        |> User.changeset(user_create_attrs)
+        |> Repo.insert()
+
+      user ->
+        {:ok, user}
+    end
+  end
 
   def ascii_username?(nil), do: true
 
@@ -243,6 +273,8 @@ defmodule Sanbase.Auth.User do
       {:error, msg} -> [avatar_url: msg]
     end
   end
+
+  def change_username(%__MODULE__{username: username} = user, username), do: {:ok, user}
 
   def change_username(%__MODULE__{} = user, username) do
     user

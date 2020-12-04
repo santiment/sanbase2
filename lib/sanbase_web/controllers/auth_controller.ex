@@ -7,6 +7,7 @@ defmodule SanbaseWeb.AuthController do
 
   plug(Ueberauth)
 
+  alias Sanbase.Auth.User
   alias Ueberauth.Strategy.Helpers
 
   def request(conn, _params) do
@@ -28,7 +29,7 @@ defmodule SanbaseWeb.AuthController do
     email = auth.info.email
 
     with true <- is_binary(email),
-         {:ok, user} <- Sanbase.Auth.User.find_or_insert_by_email(email),
+         {:ok, user} <- User.find_or_insert_by(:email, email, %{is_registered: true}),
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}) do
       conn
       |> put_session(:auth_token, token)
@@ -41,10 +42,10 @@ defmodule SanbaseWeb.AuthController do
   end
 
   def callback(%{assigns: %{ueberauth_auth: %{provider: :twitter} = auth}} = conn, _params) do
-    twitter_id_str = auth.uid
+    twitter_id = auth.uid
+    email = auth.info.email
 
-    with true <- is_binary(twitter_id_str),
-         {:ok, user} <- Sanbase.Auth.User.find_or_insert_by_twitter_id(twitter_id_str),
+    with {:ok, user} <- twitter_login(email, twitter_id),
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}) do
       conn
       |> put_session(:auth_token, token)
@@ -54,5 +55,22 @@ defmodule SanbaseWeb.AuthController do
         conn
         |> redirect(external: SanbaseWeb.Endpoint.website_url())
     end
+  end
+
+  # In case the twitter profile has an email address, try fetching the user with
+  # that email and set its twitter_id to the given id. This is done so existing
+  # account can be linked to a twitter account when email addresses match.
+  # The User.update_twitter_id/2 is no-op if the user with that email already exists and
+  # has that twitter_id set. So this results in a single DB call in all cases
+  # except the first time twitter login is used.
+  defp twitter_login(email, twitter_id) when is_binary(email) and byte_size(email) > 0 do
+    with {:ok, user} <- User.find_or_insert_by(:email, email, %{is_registered: true}),
+         {:ok, user} <- User.update_field(user, :twitter_id, twitter_id) do
+      {:ok, user}
+    end
+  end
+
+  defp twitter_login(_email, twitter_id) do
+    User.find_or_insert_by(:twitter_id, twitter_id, %{is_registered: true})
   end
 end

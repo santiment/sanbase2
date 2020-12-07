@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
       arg(:page_size, non_null(:integer), default_value: 10)
 
       # TODO change to cache_resolve
-      resolve(&BlockchainAddressResolver.eth_recent_transactions/3)
+      cache_resolve(&BlockchainAddressResolver.eth_recent_transactions/3)
     end
 
     @desc "Recent erc20 transactions for address"
@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
       arg(:page_size, non_null(:integer), default_value: 10)
 
       # TODO change to cache_resolve
-      resolve(&BlockchainAddressResolver.token_recent_transactions/3)
+      cache_resolve(&BlockchainAddressResolver.token_recent_transactions/3)
     end
   end
 end

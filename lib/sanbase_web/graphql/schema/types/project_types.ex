@@ -317,6 +317,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:twitter_link, :string)
     field(:whitepaper_link, :string)
     field(:blog_link, :string)
+    field(:telegram_chat_id, :integer)
     field(:slack_link, :string)
     field(:linkedin_link, :string)
     field(:telegram_link, :string)
@@ -616,26 +617,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
       complexity(&Complexity.from_to_interval/3)
       cache_resolve(&ProjectTransactionsResolver.token_top_transactions/3)
-    end
-
-    @desc "Recent ethereum transactions for address"
-    field :eth_recent_transactions, list_of(:transaction) do
-      arg(:address, non_null(:string))
-      arg(:page, non_null(:integer), default_value: 1)
-      arg(:page_size, non_null(:integer), default_value: 10)
-
-      # TODO change to cache_resolve
-      resolve(&ProjectTransactionsResolver.eth_recent_transactions/3)
-    end
-
-    @desc "Recent erc20 transactions for address"
-    field :token_recent_transactions, list_of(:transaction) do
-      arg(:address, non_null(:string))
-      arg(:page, non_null(:integer), default_value: 1)
-      arg(:page_size, non_null(:integer), default_value: 10)
-
-      # TODO change to cache_resolve
-      resolve(&ProjectTransactionsResolver.token_recent_transactions/3)
     end
 
     @desc "Average daily active addresses for a ERC20 project or Ethereum and given time period"

@@ -91,6 +91,7 @@ defmodule Sanbase.Clickhouse.Label do
                label_owner.2 as owner,
                asset_id,
                multiIf(
+                   address = '0x7a250d5630b4cf539739df2c5dacb4c659f2488d', 'Uniswap Router',
                    label_raw='uniswap_ecosystem', 'Uniswap Ecosystem',
                    label_raw='cex_dex_trader', 'CEX & DEX Trader',
                    label_raw='centralized_exchange', 'CEX',
@@ -110,7 +111,9 @@ defmodule Sanbase.Clickhouse.Label do
                    label_raw='proxy', 'Proxy',
                    label_raw='system', 'System',
                    label_raw='miner', 'Miner',
+                   label_raw='contract_factory', 'Contract Factory',
                    label_raw='derivative_token', 'Derivative Token',
+                   label_raw='eth2stakingcontract', 'ETH2 Staking Contract',
                    label_raw
                ) as label
         FROM (
@@ -121,8 +124,8 @@ defmodule Sanbase.Clickhouse.Label do
                    splitByChar(',', owners) as owner_arr,
                    arrayZip(label_arr, owner_arr) as labels_owners,
                    multiIf(
-                       hasAll(label_arr, ['dex_trader', 'withdrawal']), arrayPushFront(arrayFilter(x -> x.1 NOT IN ['dex_trader', 'withdrawal'], labels_owners), ('cex_dex_trader', arrayFilter(x -> x.1 == 'withdrawal', labels_owners)[1].2)),
                        hasAll(label_arr, ['deposit', 'withdrawal']), arrayFilter(x -> x.1 != 'withdrawal', labels_owners),
+                       hasAll(label_arr, ['dex_trader', 'withdrawal']), arrayPushFront(arrayFilter(x -> x.1 NOT IN ['dex_trader', 'withdrawal'], labels_owners), ('cex_dex_trader', arrayFilter(x -> x.1 == 'withdrawal', labels_owners)[1].2)),
                        hasAll(label_arr, ['dex_trader', 'decentralized_exchange']), arrayFilter(x -> x.1 != 'dex_trader', labels_owners),
                        labels_owners
                    ) as labels_owners_filtered
@@ -131,7 +134,7 @@ defmodule Sanbase.Clickhouse.Label do
                 SELECT cityHash64(address) as address_hash,
                        address
                 FROM (
-                    SELECT arrayJoin([?2]) as address
+                    SELECT lower(arrayJoin([?2])) as address
                 )
             )
             USING address_hash

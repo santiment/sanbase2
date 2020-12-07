@@ -152,6 +152,38 @@ ALTER SEQUENCE public.api_call_limits_id_seq OWNED BY public.api_call_limits.id;
 
 
 --
+-- Name: blockchain_address_comments_mapping; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blockchain_address_comments_mapping (
+    id bigint NOT NULL,
+    comment_id bigint,
+    blockchain_address_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: blockchain_address_comments_mapping_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.blockchain_address_comments_mapping_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: blockchain_address_comments_mapping_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.blockchain_address_comments_mapping_id_seq OWNED BY public.blockchain_address_comments_mapping.id;
+
+
+--
 -- Name: blockchain_address_labels; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2642,6 +2674,13 @@ ALTER TABLE ONLY public.api_call_limits ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
+-- Name: blockchain_address_comments_mapping id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_address_comments_mapping ALTER COLUMN id SET DEFAULT nextval('public.blockchain_address_comments_mapping_id_seq'::regclass);
+
+
+--
 -- Name: blockchain_address_labels id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3138,6 +3177,14 @@ ALTER TABLE ONLY public.active_widgets
 
 ALTER TABLE ONLY public.api_call_limits
     ADD CONSTRAINT api_call_limits_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: blockchain_address_comments_mapping blockchain_address_comments_mapping_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_address_comments_mapping
+    ADD CONSTRAINT blockchain_address_comments_mapping_pkey PRIMARY KEY (id);
 
 
 --
@@ -3763,6 +3810,20 @@ CREATE UNIQUE INDEX api_call_limits_user_id_index ON public.api_call_limits USIN
 
 
 --
+-- Name: blockchain_address_comments_mapping_blockchain_address_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_address_comments_mapping_blockchain_address_id_index ON public.blockchain_address_comments_mapping USING btree (blockchain_address_id);
+
+
+--
+-- Name: blockchain_address_comments_mapping_comment_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX blockchain_address_comments_mapping_comment_id_index ON public.blockchain_address_comments_mapping USING btree (comment_id);
+
+
+--
 -- Name: blockchain_address_labels_name_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4370,6 +4431,22 @@ CREATE UNIQUE INDEX votes_timeline_event_id_user_id_index ON public.votes USING 
 
 ALTER TABLE ONLY public.api_call_limits
     ADD CONSTRAINT api_call_limits_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: blockchain_address_comments_mapping blockchain_address_comments_mapping_blockchain_address_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_address_comments_mapping
+    ADD CONSTRAINT blockchain_address_comments_mapping_blockchain_address_id_fkey FOREIGN KEY (blockchain_address_id) REFERENCES public.blockchain_addresses(id) ON DELETE CASCADE;
+
+
+--
+-- Name: blockchain_address_comments_mapping blockchain_address_comments_mapping_comment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_address_comments_mapping
+    ADD CONSTRAINT blockchain_address_comments_mapping_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES public.comments(id) ON DELETE CASCADE;
 
 
 --
@@ -5388,3 +5465,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20201118125118);
 INSERT INTO public."schema_migrations" (version) VALUES (20201118141407);
 INSERT INTO public."schema_migrations" (version) VALUES (20201118145315);
 INSERT INTO public."schema_migrations" (version) VALUES (20201119085940);
+INSERT INTO public."schema_migrations" (version) VALUES (20201201102246);
+INSERT INTO public."schema_migrations" (version) VALUES (20201202125900);

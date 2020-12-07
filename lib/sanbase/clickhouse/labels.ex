@@ -91,7 +91,7 @@ defmodule Sanbase.Clickhouse.Label do
                label_owner.2 as owner,
                asset_id,
                multiIf(
-                   address = '0x7a250d5630b4cf539739df2c5dacb4c659f2488d', 'Uniswap Router',
+                   owner = 'uniswap router', 'Uniswap Router',
                    label_raw='uniswap_ecosystem', 'Uniswap Ecosystem',
                    label_raw='cex_dex_trader', 'CEX & DEX Trader',
                    label_raw='centralized_exchange', 'CEX',

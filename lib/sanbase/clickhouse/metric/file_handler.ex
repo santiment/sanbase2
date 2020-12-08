@@ -45,6 +45,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   @external_resource Path.join(__DIR__, "metric_files/change_metrics.json")
   @external_resource Path.join(__DIR__, "metric_files/table_structured_metrics.json")
   @external_resource Path.join(__DIR__, "metric_files/social_metrics.json")
+  @external_resource Path.join(__DIR__, "metric_files/eth2_metrics.json")
 
   @metrics_json Enum.reduce(@external_resource, [], fn file, acc ->
                   (File.read!(file) |> Jason.decode!()) ++ acc

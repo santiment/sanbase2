@@ -1,0 +1,19 @@
+[
+  {
+    "human_readable_name": "ETH 2.0 Stakers Count",
+    "name": "eth2_stakers_count",
+    "metric": "eth2_staker_count",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
+]

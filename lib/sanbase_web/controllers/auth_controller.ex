@@ -8,11 +8,6 @@ defmodule SanbaseWeb.AuthController do
   plug(Ueberauth)
 
   alias Sanbase.Auth.User
-  alias Ueberauth.Strategy.Helpers
-
-  def request(conn, _params) do
-    render(conn, "request.html", callback_url: Helpers.callback_url(conn))
-  end
 
   def delete(conn, _params) do
     conn
@@ -25,7 +20,9 @@ defmodule SanbaseWeb.AuthController do
     |> redirect(to: "/")
   end
 
-  def callback(%{assigns: %{ueberauth_auth: %{provider: :google} = auth}} = conn, _params) do
+  def callback(%{assigns: %{ueberauth_auth: %{provider: :google} = auth}} = conn, params) do
+    redirect_urls = get_redirect_urls(params)
+
     email = auth.info.email
 
     with true <- is_binary(email),
@@ -33,15 +30,17 @@ defmodule SanbaseWeb.AuthController do
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}) do
       conn
       |> put_session(:auth_token, token)
-      |> redirect(external: SanbaseWeb.Endpoint.website_url())
+      |> redirect(external: redirect_urls.success)
     else
       _ ->
         conn
-        |> redirect(external: SanbaseWeb.Endpoint.website_url())
+        |> redirect(external: redirect_urls.fail)
     end
   end
 
-  def callback(%{assigns: %{ueberauth_auth: %{provider: :twitter} = auth}} = conn, _params) do
+  def callback(%{assigns: %{ueberauth_auth: %{provider: :twitter} = auth}} = conn, params) do
+    redirect_urls = get_redirect_urls(params)
+
     twitter_id = auth.uid
     email = auth.info.email
 
@@ -49,11 +48,11 @@ defmodule SanbaseWeb.AuthController do
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}) do
       conn
       |> put_session(:auth_token, token)
-      |> redirect(external: SanbaseWeb.Endpoint.website_url())
+      |> redirect(external: redirect_urls.success)
     else
       _ ->
         conn
-        |> redirect(external: SanbaseWeb.Endpoint.website_url())
+        |> redirect(external: redirect_urls.fail)
     end
   end
 
@@ -72,5 +71,37 @@ defmodule SanbaseWeb.AuthController do
 
   defp twitter_login(_email, twitter_id) do
     User.find_or_insert_by(:twitter_id, twitter_id, %{is_registered: true})
+  end
+
+  defp get_redirect_urls(%{"state" => state}) do
+    website_url = SanbaseWeb.Endpoint.website_url()
+
+    map =
+      state
+      |> Base.decode64!()
+      |> Jason.decode!()
+
+    %{
+      success: Map.get(map, "success_redirect_url", website_url),
+      fails: Map.get(map, "fail_redirect_url", website_url)
+    }
+    |> Enum.into(%{}, fn {key, url} ->
+      # Use the state provided redirects only if they're form the santiment host
+      with %URI{host: host} <- URI.parse(url),
+           ["santiment", "net"] <- host |> String.split(".") |> Enum.take(-2) do
+        {key, url}
+      else
+        _ -> {key, website_url}
+      end
+    end)
+  end
+
+  defp get_redirect_urls(_params) do
+    website_url = SanbaseWeb.Endpoint.website_url()
+
+    %{
+      success: website_url,
+      fail: website_url
+    }
   end
 end

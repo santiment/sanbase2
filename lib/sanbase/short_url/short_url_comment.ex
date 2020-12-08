@@ -2,7 +2,7 @@ defmodule Sanbase.ShortUrl.ShortUrlComment do
   @moduledoc ~s"""
   A mapping table connecting comments and short urls.
 
-  This module is used to create, update, delete and fetch insight comments.
+  This module is used to create, update, delete and fetch short url comments.
   """
   use Ecto.Schema
 

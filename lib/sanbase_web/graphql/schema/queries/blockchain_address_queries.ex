@@ -12,7 +12,6 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
       arg(:page, non_null(:integer), default_value: 1)
       arg(:page_size, non_null(:integer), default_value: 10)
 
-      # TODO change to cache_resolve
       cache_resolve(&BlockchainAddressResolver.eth_recent_transactions/3)
     end
 
@@ -22,8 +21,13 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
       arg(:page, non_null(:integer), default_value: 1)
       arg(:page_size, non_null(:integer), default_value: 10)
 
-      # TODO change to cache_resolve
       cache_resolve(&BlockchainAddressResolver.token_recent_transactions/3)
+    end
+
+    field :blockchain_address, :blockchain_address do
+      arg(:selector, non_null(:blockchain_address_selector_input_object))
+
+      resolve(&BlockchainAddressResolver.blockchain_address/3)
     end
   end
 end

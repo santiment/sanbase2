@@ -11,7 +11,6 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   @behaviour Plug
 
-  @compile :inline_list_funcs
   @compile {:inline,
             build_context: 2,
             build_error_msg: 1,
@@ -23,7 +22,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
             apikey_authorize: 1,
             get_no_auth_product_id: 1,
             get_apikey_product_id: 1,
-            san_balance: 1}
+            san_balance: 1,
+            get_origin: 1}
 
   import Plug.Conn
   require Sanbase.Utils.Config, as: Config
@@ -64,10 +64,13 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   def call(conn, _) do
     {conn, context} = build_context(conn, @auth_methods)
 
+    %{origin_host: origin_host, origin_url: origin_url} = get_origin(conn)
+
     context =
       context
       |> Map.put(:remote_ip, conn.remote_ip)
-      |> Map.put(:origin_url, Plug.Conn.get_req_header(conn, "origin") |> List.first())
+      |> Map.put(:origin_url, origin_url)
+      |> Map.put(:origin_host, origin_host)
       |> Map.put(:rate_limiting_enabled, Config.get(:rate_limiting_enabled))
 
     conn =
@@ -135,6 +138,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
       {:ok, %{quota: _} = quota_map} ->
         conn = Sanbase.Utils.Conn.put_extra_resp_headers(conn, rate_limit_headers(quota_map))
+
         {false, conn}
     end
   end
@@ -161,7 +165,12 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
         {true, conn, error_map}
 
-      {:ok, _} ->
+      {:ok, %{quota: :infinity}} ->
+        {false, conn}
+
+      {:ok, %{quota: _} = quota_map} ->
+        conn = Sanbase.Utils.Conn.put_extra_resp_headers(conn, rate_limit_headers(quota_map))
+
         {false, conn}
     end
   end
@@ -372,7 +381,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   defp anon_user_base_context(conn) do
     product_id =
-      get_req_header(conn, "origin")
+      conn
+      |> get_origin()
+      |> Map.get(:origin_host)
       |> get_no_auth_product_id()
 
     Map.put(@anon_user_base_context, :product_id, product_id)
@@ -419,14 +430,14 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     end
   end
 
-  defp get_no_auth_product_id([origin]) do
+  defp get_no_auth_product_id(nil), do: @product_id_api
+
+  defp get_no_auth_product_id(origin) do
     case String.ends_with?(origin, "santiment.net") do
       true -> @product_id_sanbase
       false -> @product_id_api
     end
   end
-
-  defp get_no_auth_product_id(_), do: @product_id_api
 
   defp is_sansheets_request(conn) do
     case Plug.Conn.get_req_header(conn, "user-agent") do
@@ -443,4 +454,25 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   end
 
   defp get_apikey_product_id(_), do: @product_id_api
+
+  defp get_origin(conn) do
+    Plug.Conn.get_req_header(conn, "origin")
+    |> List.first()
+    |> case do
+      origin_url when is_binary(origin_url) ->
+        # Strip trailing backslashes, ports, etc.
+        %URI{host: origin_host} = origin_url |> URI.parse()
+
+        %{
+          origin_host: origin_host,
+          origin_url: origin_url
+        }
+
+      _ ->
+        %{
+          origin_host: nil,
+          origin_url: nil
+        }
+    end
+  end
 end

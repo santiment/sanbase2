@@ -1,5 +1,7 @@
 import EctoEnum
 
+defenum(WatchlistType, :watchlist_type, ["project", "blockchain_address"])
+
 defenum(ColorEnum, :color, ["none", "blue", "red", "green", "yellow", "grey", "black"])
 
 # https://stripe.com/docs/api/subscriptions/object#subscription_object-status

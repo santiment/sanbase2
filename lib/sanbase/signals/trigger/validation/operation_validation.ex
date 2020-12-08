@@ -76,8 +76,8 @@ defmodule Sanbase.Signal.Validation.Operation do
   def valid_operation?(%{percent_down: percent}) when is_valid_percent_change(percent), do: :ok
 
   # Validate absolute values
-  def valid_operation?(%{above: above}) when is_valid_price(above), do: :ok
-  def valid_operation?(%{below: below}) when is_valid_price(below), do: :ok
+  def valid_operation?(%{above: above}) when is_number(above), do: :ok
+  def valid_operation?(%{below: below}) when is_number(below), do: :ok
 
   # Validate channels
   def valid_operation?(%{inside_channel: [min, max]}),

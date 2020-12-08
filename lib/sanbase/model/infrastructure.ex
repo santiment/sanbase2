@@ -42,4 +42,16 @@ defmodule Sanbase.Model.Infrastructure do
 
     infrastructure
   end
+
+  def by_code(code) when is_binary(code) do
+    case Repo.get_by(__MODULE__, code: code) do
+      %__MODULE__{} = infr -> {:ok, infr}
+      nil -> {:error, "No infrastructure with code #{code} exists."}
+    end
+  end
+
+  def by_codes(codes) when is_list(codes) do
+    from(infr in __MODULE__, where: infr.code in ^codes)
+    |> Repo.all()
+  end
 end

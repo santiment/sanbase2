@@ -1,6 +1,4 @@
 defmodule Sanbase.Auth.User.Email do
-  import Ecto.Changeset
-
   alias Sanbase.Repo
   alias Sanbase.Auth.User
 
@@ -8,19 +6,6 @@ defmodule Sanbase.Auth.User.Email do
 
   require Mockery.Macro
   defp mandrill_api(), do: Mockery.Macro.mockable(Sanbase.MandrillApi)
-
-  def find_or_insert_by_email(email, username \\ nil) do
-    email = String.downcase(email)
-
-    case Repo.get_by(User, email: email) do
-      nil ->
-        %User{email: email, username: username, salt: User.generate_salt(), first_login: true}
-        |> Repo.insert()
-
-      user ->
-        {:ok, user}
-    end
-  end
 
   def find_by_email_candidate(email_candidate, email_candidate_token) do
     email_candidate = String.downcase(email_candidate)
@@ -39,12 +24,12 @@ defmodule Sanbase.Auth.User.Email do
 
   def update_email_token(user, consent \\ nil) do
     user
-    |> change(
+    |> User.changeset(%{
       email_token: User.generate_email_token(),
       email_token_generated_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second),
       email_token_validated_at: nil,
       consent_id: consent
-    )
+    })
     |> Repo.update()
   end
 
@@ -67,10 +52,10 @@ defmodule Sanbase.Auth.User.Email do
       |> NaiveDateTime.truncate(:second)
 
     user
-    |> change(
+    |> User.changeset(%{
       email_token_validated_at: validated_at,
       is_registered: true
-    )
+    })
     |> Repo.update()
   end
 

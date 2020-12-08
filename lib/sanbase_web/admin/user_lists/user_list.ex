@@ -33,6 +33,7 @@ defmodule SanbaseWeb.ExAdmin.UserList do
       column(:id)
       column(:name)
       column(:slug)
+      column(:type)
       column(:is_featured, &is_featured(&1))
       column(:is_public)
       column(:user)
@@ -43,6 +44,7 @@ defmodule SanbaseWeb.ExAdmin.UserList do
       inputs do
         input(user_list, :name)
         input(user_list, :slug)
+        input(:type, :watchlist_type)
         input(user_list, :is_public)
         input(user_list, :function, type: :text)
 
@@ -59,6 +61,7 @@ defmodule SanbaseWeb.ExAdmin.UserList do
         row(:id)
         row(:name)
         row(:slug)
+        row(:type)
         row(:is_public)
         row(:is_featured, &is_featured(&1))
         row(:color)

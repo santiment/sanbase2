@@ -8,13 +8,23 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
   alias SanbaseWeb.Graphql.Resolvers.UserListResolver
 
   enum(:color_enum, values: [:none, :blue, :red, :green, :yellow, :grey, :black])
+  enum(:watchlist_type_enum, values: [:project, :blockchain_address])
+
+  input_object :blockchain_address_input_object do
+    field(:address, :string)
+    field(:infrastructure, :string)
+    field(:notes, :string)
+    field(:labels, list_of(:string))
+  end
 
   input_object :input_list_item do
     field(:project_id, :integer)
+    field(:blockchain_address, :blockchain_address_input_object)
   end
 
   object :list_item do
     field(:project, :project)
+    field(:blockchain_address, :blockchain_address)
   end
 
   object :watchlist_stats do
@@ -23,6 +33,7 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
     field(:trending_tickers, list_of(:string))
     field(:trending_projects, list_of(:project))
     field(:projects_count, :integer)
+    field(:blockchain_addresses_count, :integer)
   end
 
   object :watchlist_settings do
@@ -39,6 +50,7 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
 
   object :user_list do
     field(:id, non_null(:id))
+    field(:type, :watchlist_type_enum)
     field(:user, non_null(:post_author), resolve: dataloader(SanbaseRepo))
     field(:name, non_null(:string))
     field(:slug, :string)

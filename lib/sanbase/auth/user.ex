@@ -62,6 +62,7 @@ defmodule Sanbase.Auth.User do
     field(:avatar_url, :string)
     field(:is_registered, :boolean, default: false)
     field(:is_superuser, :boolean, default: false)
+    field(:twitter_id, :string)
 
     # GDPR related fields
     field(:privacy_policy_accepted, :boolean, default: false)
@@ -89,6 +90,19 @@ defmodule Sanbase.Auth.User do
     timestamps()
   end
 
+  def get_unique_str(%__MODULE__{} = user) do
+    user.email || user.username || user.twitter_id || "id_#{user.id}"
+  end
+
+  def describe(%__MODULE__{} = user) do
+    cond do
+      user.username != nil -> "User with username #{user.username}"
+      user.email != nil -> "User with email #{user.email}"
+      user.twitter_id != nil -> "User with twitter_id #{user.twitter_id}"
+      true -> "User with id #{user.id}"
+    end
+  end
+
   def generate_salt() do
     :crypto.strong_rand_bytes(@salt_length) |> Base.url_encode64() |> binary_part(0, @salt_length)
   end
@@ -102,21 +116,26 @@ defmodule Sanbase.Auth.User do
 
     user
     |> cast(attrs, [
-      :email,
-      :email_candidate,
-      :email_candidate_token,
+      :avatar_url,
+      :consent_id,
       :email_candidate_token_generated_at,
       :email_candidate_token_validated_at,
-      :username,
-      :salt,
-      :test_san_balance,
-      :privacy_policy_accepted,
-      :marketing_accepted,
-      :stripe_customer_id,
+      :email_candidate_token,
+      :email_candidate,
+      :email_token_generated_at,
+      :email_token_validated_at,
+      :email_token,
+      :email,
       :first_login,
-      :avatar_url,
       :is_registered,
-      :is_superuser
+      :is_superuser,
+      :marketing_accepted,
+      :privacy_policy_accepted,
+      :salt,
+      :stripe_customer_id,
+      :test_san_balance,
+      :twitter_id,
+      :username
     ])
     |> normalize_username(attrs)
     |> normalize_email(attrs[:email], :email)
@@ -127,10 +146,10 @@ defmodule Sanbase.Auth.User do
     |> unique_constraint(:email)
     |> unique_constraint(:username)
     |> unique_constraint(:stripe_customer_id)
+    |> unique_constraint(:twitter_id)
   end
 
   # Email functions
-  defdelegate find_or_insert_by_email(email, username \\ nil), to: __MODULE__.Email
   defdelegate find_by_email_candidate(candidate, token), to: __MODULE__.Email
   defdelegate update_email_token(user, consent \\ nil), to: __MODULE__.Email
   defdelegate update_email_candidate(user, candidate), to: __MODULE__.Email
@@ -177,6 +196,35 @@ defmodule Sanbase.Auth.User do
   def by_selector(%{id: id}), do: Repo.get_by(__MODULE__, id: id)
   def by_selector(%{email: email}), do: Repo.get_by(__MODULE__, email: email)
   def by_selector(%{username: username}), do: Repo.get_by(__MODULE__, username: username)
+
+  def update_field(%__MODULE__{} = user, field, value) do
+    case Map.fetch!(user, field) == value do
+      true ->
+        {:ok, user}
+
+      false ->
+        user |> changeset(%{field => value}) |> Repo.update()
+    end
+  end
+
+  def find_or_insert_by(field, value, attrs \\ %{})
+      when field in [:email, :username, :twitter_id] do
+    case Repo.get_by(User, [{field, value}]) do
+      nil ->
+        user_create_attrs =
+          Map.merge(
+            attrs,
+            %{field => value, salt: User.generate_salt(), first_login: true}
+          )
+
+        %User{}
+        |> User.changeset(user_create_attrs)
+        |> Repo.insert()
+
+      user ->
+        {:ok, user}
+    end
+  end
 
   def ascii_username?(nil), do: true
 
@@ -225,6 +273,8 @@ defmodule Sanbase.Auth.User do
       {:error, msg} -> [avatar_url: msg]
     end
   end
+
+  def change_username(%__MODULE__{username: username} = user, username), do: {:ok, user}
 
   def change_username(%__MODULE__{} = user, username) do
     user

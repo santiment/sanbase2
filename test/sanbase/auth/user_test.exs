@@ -230,7 +230,7 @@ defmodule Sanbase.Auth.UserTest do
   end
 
   test "find_or_insert_by_email when the user does not exist" do
-    {:ok, user} = User.find_or_insert_by_email("test@example.com", "john_snow")
+    {:ok, user} = User.find_or_insert_by(:email, "test@example.com", %{username: "john_snow"})
 
     assert user.email == "test@example.com"
     assert user.username == "john_snow"
@@ -245,7 +245,7 @@ defmodule Sanbase.Auth.UserTest do
         privacy_policy_accepted: true
       )
 
-    {:ok, user} = User.find_or_insert_by_email(existing_user.email, "john_snow")
+    {:ok, user} = User.find_or_insert_by(:email, existing_user.email, %{username: "john_snow"})
 
     assert user.id == existing_user.id
     assert user.email == existing_user.email

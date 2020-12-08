@@ -252,7 +252,7 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
       |> post("/graphql", mutation_skeleton(query))
       |> json_response(200)
 
-    assert UserList.fetch_user_lists(user) == {:ok, []}
+    assert UserList.fetch_user_lists(user, :project) == {:ok, []}
   end
 
   test "fetch watchlists", %{user: user, conn: conn} do
@@ -332,14 +332,16 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
       assert result["data"]["watchlistBySlug"]["slug"] == ws.slug
     end
 
-    test "returns public lists for anonymous users", %{user2: user2} do
+    test "returns public lists for anonymous users", %{user2: user} do
       project = insert(:project)
 
-      {:ok, watchlist} =
-        UserList.create_user_list(user2, %{name: "My Test List", is_public: true})
+      {:ok, watchlist} = UserList.create_user_list(user, %{name: "My Test List", is_public: true})
 
       {:ok, watchlist} =
-        UserList.update_user_list(%{id: watchlist.id, list_items: [%{project_id: project.id}]})
+        UserList.update_user_list(user, %{
+          id: watchlist.id,
+          list_items: [%{project_id: project.id}]
+        })
 
       query = query("watchlist(id: #{watchlist.id})")
 
@@ -353,18 +355,20 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
                "is_public" => true,
                "listItems" => [%{"project" => %{"id" => "#{project.id}"}}],
                "name" => "My Test List",
-               "user" => %{"id" => "#{user2.id}"}
+               "user" => %{"id" => "#{user.id}"}
              }
     end
 
-    test "returns watchlist when public", %{user2: user2, conn: conn} do
+    test "returns watchlist when public", %{user2: user, conn: conn} do
       project = insert(:project)
 
-      {:ok, watchlist} =
-        UserList.create_user_list(user2, %{name: "My Test List", is_public: true})
+      {:ok, watchlist} = UserList.create_user_list(user, %{name: "My Test List", is_public: true})
 
       {:ok, watchlist} =
-        UserList.update_user_list(%{id: watchlist.id, list_items: [%{project_id: project.id}]})
+        UserList.update_user_list(user, %{
+          id: watchlist.id,
+          list_items: [%{project_id: project.id}]
+        })
 
       assert_receive({_, {:ok, %TimelineEvent{}}})
 
@@ -383,7 +387,7 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
                "is_public" => true,
                "listItems" => [%{"project" => %{"id" => "#{project.id}"}}],
                "name" => "My Test List",
-               "user" => %{"id" => "#{user2.id}"}
+               "user" => %{"id" => "#{user.id}"}
              }
     end
 
@@ -394,7 +398,10 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
         UserList.create_user_list(user, %{name: "My Test List", is_public: false})
 
       {:ok, watchlist} =
-        UserList.update_user_list(%{id: watchlist.id, list_items: [%{project_id: project.id}]})
+        UserList.update_user_list(user, %{
+          id: watchlist.id,
+          list_items: [%{project_id: project.id}]
+        })
 
       query = query("watchlist(id: #{watchlist.id})")
 
@@ -413,9 +420,9 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
              }
     end
 
-    test "returns null when no public watchlist is available", %{user2: user2, conn: conn} do
+    test "returns null when no public watchlist is available", %{user2: user, conn: conn} do
       {:ok, watchlist} =
-        UserList.create_user_list(user2, %{name: "My Test List", is_public: false})
+        UserList.create_user_list(user, %{name: "My Test List", is_public: false})
 
       query = query("watchlist(id: #{watchlist.id})")
 

@@ -21,10 +21,13 @@ defmodule Sanbase.Signal.TriggerTrendingWordsWatchlistTargetTest do
 
     {:ok, user_list} = UserList.create_user_list(user, %{name: "my_user_list", color: :green})
 
-    UserList.update_user_list(%{
-      id: user_list.id,
-      list_items: [%{project_id: p1.id}, %{project_id: p2.id}]
-    })
+    UserList.update_user_list(
+      user,
+      %{
+        id: user_list.id,
+        list_items: [%{project_id: p1.id}, %{project_id: p2.id}]
+      }
+    )
 
     trending_words_settings = %{
       type: TrendingWordsTriggerSettings.type(),

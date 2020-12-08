@@ -37,7 +37,7 @@ defmodule Sanbase.Model.Project.AvailableQueries do
       &slug_queries/1,
       &historical_balance_queries/1,
       &holders_queries/1,
-      &blockchain_queries/1,
+      &blockchain_metric_queries/1,
       &social_queries/1,
       &wallets_queries/1,
       &get_metric_queries/1
@@ -104,7 +104,7 @@ defmodule Sanbase.Model.Project.AvailableQueries do
   @ethereum_specific_queries ["miningPoolsDistribution", "minersBalance", "gasUsed"]
   @bitcoin_specific_queries []
 
-  defp blockchain_queries(%Project{} = project) do
+  defp blockchain_metric_queries(%Project{} = project) do
     case {project, Project.is_erc20?(project)} do
       {%Project{slug: "ethereum"}, _} ->
         @mineable_specific_queries ++

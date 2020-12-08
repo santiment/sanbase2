@@ -9,8 +9,9 @@ defmodule Sanbase.Comments.EntityComment do
   alias Sanbase.Timeline.TimelineEventComment
   alias Sanbase.Insight.PostComment
   alias Sanbase.ShortUrl.ShortUrlComment
+  alias Sanbase.BlockchainAddress.BlockchainAddressComment
 
-  @type entity :: :insight | :timeline_event | :short_url
+  @type entity :: :insight | :timeline_event | :short_url | :blockchain_address
 
   @spec create_and_link(
           entity,
@@ -52,6 +53,17 @@ defmodule Sanbase.Comments.EntityComment do
     |> TimelineEventComment.changeset(%{
       comment_id: comment_id,
       timeline_event_id: entity_id
+    })
+    |> Repo.insert()
+  end
+
+  @spec link(:blockchain_address, non_neg_integer(), non_neg_integer()) ::
+          {:ok, %BlockchainAddressComment{}} | {:error, Ecto.Changeset.t()}
+  def link(:blockchain_address, entity_id, comment_id) do
+    %BlockchainAddressComment{}
+    |> BlockchainAddressComment.changeset(%{
+      comment_id: comment_id,
+      blockchain_address_id: entity_id
     })
     |> Repo.insert()
   end
@@ -98,6 +110,13 @@ defmodule Sanbase.Comments.EntityComment do
       preload: [:comment, comment: :user]
     )
     |> maybe_add_entity_id_clause(:post_id, entity_id)
+  end
+
+  defp entity_comments_query(:blockchain_address, entity_id) do
+    from(comment in BlockchainAddressComment,
+      preload: [:comment, comment: :user]
+    )
+    |> maybe_add_entity_id_clause(:blockchain_address_id, entity_id)
   end
 
   defp entity_comments_query(:short_url, entity_id) do

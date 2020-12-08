@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.3
--- Dumped by pg_dump version 12.3
+-- Dumped from database version 13.0
+-- Dumped by pg_dump version 13.0
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -68,6 +68,16 @@ CREATE TYPE public.status AS ENUM (
     'past_due',
     'canceled',
     'unpaid'
+);
+
+
+--
+-- Name: watchlist_type; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.watchlist_type AS ENUM (
+    'project',
+    'blockchain_address'
 );
 
 
@@ -139,6 +149,160 @@ CREATE SEQUENCE public.api_call_limits_id_seq
 --
 
 ALTER SEQUENCE public.api_call_limits_id_seq OWNED BY public.api_call_limits.id;
+
+
+--
+-- Name: blockchain_address_comments_mapping; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blockchain_address_comments_mapping (
+    id bigint NOT NULL,
+    comment_id bigint,
+    blockchain_address_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: blockchain_address_comments_mapping_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.blockchain_address_comments_mapping_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: blockchain_address_comments_mapping_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.blockchain_address_comments_mapping_id_seq OWNED BY public.blockchain_address_comments_mapping.id;
+
+
+--
+-- Name: blockchain_address_labels; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blockchain_address_labels (
+    id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    notes character varying(255)
+);
+
+
+--
+-- Name: blockchain_address_labels_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.blockchain_address_labels_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: blockchain_address_labels_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.blockchain_address_labels_id_seq OWNED BY public.blockchain_address_labels.id;
+
+
+--
+-- Name: blockchain_address_user_pairs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blockchain_address_user_pairs (
+    id bigint NOT NULL,
+    notes character varying(255),
+    user_id bigint,
+    blockchain_address_id bigint
+);
+
+
+--
+-- Name: blockchain_address_user_pairs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.blockchain_address_user_pairs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: blockchain_address_user_pairs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.blockchain_address_user_pairs_id_seq OWNED BY public.blockchain_address_user_pairs.id;
+
+
+--
+-- Name: blockchain_address_user_pairs_labels; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blockchain_address_user_pairs_labels (
+    id bigint NOT NULL,
+    blockchain_address_user_pair_id bigint,
+    label_id bigint
+);
+
+
+--
+-- Name: blockchain_address_user_pairs_labels_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.blockchain_address_user_pairs_labels_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: blockchain_address_user_pairs_labels_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.blockchain_address_user_pairs_labels_id_seq OWNED BY public.blockchain_address_user_pairs_labels.id;
+
+
+--
+-- Name: blockchain_addresses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blockchain_addresses (
+    id bigint NOT NULL,
+    address character varying(255) NOT NULL,
+    infrastructure_id bigint,
+    notes text
+);
+
+
+--
+-- Name: blockchain_addresses_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.blockchain_addresses_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: blockchain_addresses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.blockchain_addresses_id_seq OWNED BY public.blockchain_addresses.id;
 
 
 --
@@ -734,8 +898,39 @@ ALTER SEQUENCE public.latest_coinmarketcap_data_id_seq OWNED BY public.latest_co
 
 CREATE TABLE public.list_items (
     user_list_id bigint NOT NULL,
-    project_id bigint NOT NULL
+    project_id bigint,
+    blockchain_address_user_pair_id bigint,
+    id integer NOT NULL,
+    CONSTRAINT only_one_fk CHECK (((
+CASE
+    WHEN (blockchain_address_user_pair_id IS NULL) THEN 0
+    ELSE 1
+END +
+CASE
+    WHEN (project_id IS NULL) THEN 0
+    ELSE 1
+END) = 1))
 );
+
+
+--
+-- Name: list_items_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.list_items_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: list_items_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.list_items_id_seq OWNED BY public.list_items.id;
 
 
 --
@@ -2228,7 +2423,8 @@ CREATE TABLE public.user_lists (
     slug character varying(255),
     is_monitored boolean DEFAULT false,
     table_configuration_id bigint,
-    description text
+    description text,
+    type public.watchlist_type DEFAULT 'project'::public.watchlist_type NOT NULL
 );
 
 
@@ -2385,7 +2581,8 @@ CREATE TABLE public.users (
     stripe_customer_id character varying(255),
     avatar_url character varying(255),
     is_registered boolean DEFAULT false,
-    is_superuser boolean DEFAULT false
+    is_superuser boolean DEFAULT false,
+    twitter_id character varying(255) DEFAULT NULL::character varying
 );
 
 
@@ -2474,6 +2671,41 @@ ALTER TABLE ONLY public.active_widgets ALTER COLUMN id SET DEFAULT nextval('publ
 --
 
 ALTER TABLE ONLY public.api_call_limits ALTER COLUMN id SET DEFAULT nextval('public.api_call_limits_id_seq'::regclass);
+
+
+--
+-- Name: blockchain_address_comments_mapping id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_address_comments_mapping ALTER COLUMN id SET DEFAULT nextval('public.blockchain_address_comments_mapping_id_seq'::regclass);
+
+
+--
+-- Name: blockchain_address_labels id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_address_labels ALTER COLUMN id SET DEFAULT nextval('public.blockchain_address_labels_id_seq'::regclass);
+
+
+--
+-- Name: blockchain_address_user_pairs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_address_user_pairs ALTER COLUMN id SET DEFAULT nextval('public.blockchain_address_user_pairs_id_seq'::regclass);
+
+
+--
+-- Name: blockchain_address_user_pairs_labels id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_address_user_pairs_labels ALTER COLUMN id SET DEFAULT nextval('public.blockchain_address_user_pairs_labels_id_seq'::regclass);
+
+
+--
+-- Name: blockchain_addresses id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_addresses ALTER COLUMN id SET DEFAULT nextval('public.blockchain_addresses_id_seq'::regclass);
 
 
 --
@@ -2586,6 +2818,13 @@ ALTER TABLE ONLY public.latest_btc_wallet_data ALTER COLUMN id SET DEFAULT nextv
 --
 
 ALTER TABLE ONLY public.latest_coinmarketcap_data ALTER COLUMN id SET DEFAULT nextval('public.latest_coinmarketcap_data_id_seq'::regclass);
+
+
+--
+-- Name: list_items id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.list_items ALTER COLUMN id SET DEFAULT nextval('public.list_items_id_seq'::regclass);
 
 
 --
@@ -2941,6 +3180,46 @@ ALTER TABLE ONLY public.api_call_limits
 
 
 --
+-- Name: blockchain_address_comments_mapping blockchain_address_comments_mapping_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_address_comments_mapping
+    ADD CONSTRAINT blockchain_address_comments_mapping_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: blockchain_address_labels blockchain_address_labels_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_address_labels
+    ADD CONSTRAINT blockchain_address_labels_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: blockchain_address_user_pairs_labels blockchain_address_user_pairs_labels_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_address_user_pairs_labels
+    ADD CONSTRAINT blockchain_address_user_pairs_labels_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: blockchain_address_user_pairs blockchain_address_user_pairs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_address_user_pairs
+    ADD CONSTRAINT blockchain_address_user_pairs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: blockchain_addresses blockchain_addresses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_addresses
+    ADD CONSTRAINT blockchain_addresses_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: chart_configurations chart_configurations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3081,7 +3360,7 @@ ALTER TABLE ONLY public.latest_coinmarketcap_data
 --
 
 ALTER TABLE ONLY public.list_items
-    ADD CONSTRAINT list_items_pkey PRIMARY KEY (user_list_id, project_id);
+    ADD CONSTRAINT list_items_pkey PRIMARY KEY (id);
 
 
 --
@@ -3531,6 +3810,48 @@ CREATE UNIQUE INDEX api_call_limits_user_id_index ON public.api_call_limits USIN
 
 
 --
+-- Name: blockchain_address_comments_mapping_blockchain_address_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_address_comments_mapping_blockchain_address_id_index ON public.blockchain_address_comments_mapping USING btree (blockchain_address_id);
+
+
+--
+-- Name: blockchain_address_comments_mapping_comment_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX blockchain_address_comments_mapping_comment_id_index ON public.blockchain_address_comments_mapping USING btree (comment_id);
+
+
+--
+-- Name: blockchain_address_labels_name_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX blockchain_address_labels_name_index ON public.blockchain_address_labels USING btree (name);
+
+
+--
+-- Name: blockchain_address_user_pairs_labels_blockchain_address_user_pa; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX blockchain_address_user_pairs_labels_blockchain_address_user_pa ON public.blockchain_address_user_pairs_labels USING btree (blockchain_address_user_pair_id, label_id);
+
+
+--
+-- Name: blockchain_address_user_pairs_user_id_blockchain_address_id_ind; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX blockchain_address_user_pairs_user_id_blockchain_address_id_ind ON public.blockchain_address_user_pairs USING btree (user_id, blockchain_address_id);
+
+
+--
+-- Name: blockchain_addresses_address_infrastructure_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX blockchain_addresses_address_infrastructure_id_index ON public.blockchain_addresses USING btree (address, infrastructure_id);
+
+
+--
 -- Name: chart_configurations_project_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3675,6 +3996,20 @@ CREATE UNIQUE INDEX latest_btc_wallet_data_address_index ON public.latest_btc_wa
 --
 
 CREATE UNIQUE INDEX latest_coinmarketcap_data_coinmarketcap_id_index ON public.latest_coinmarketcap_data USING btree (coinmarketcap_id);
+
+
+--
+-- Name: list_items_user_list_id_blockchain_address_user_pair_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX list_items_user_list_id_blockchain_address_user_pair_id_index ON public.list_items USING btree (user_list_id, blockchain_address_user_pair_id);
+
+
+--
+-- Name: list_items_user_list_id_project_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX list_items_user_list_id_project_id_index ON public.list_items USING btree (user_list_id, project_id);
 
 
 --
@@ -4063,6 +4398,13 @@ CREATE UNIQUE INDEX users_stripe_customer_id_index ON public.users USING btree (
 
 
 --
+-- Name: users_twitter_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX users_twitter_id_index ON public.users USING btree (twitter_id);
+
+
+--
 -- Name: users_username_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4089,6 +4431,62 @@ CREATE UNIQUE INDEX votes_timeline_event_id_user_id_index ON public.votes USING 
 
 ALTER TABLE ONLY public.api_call_limits
     ADD CONSTRAINT api_call_limits_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: blockchain_address_comments_mapping blockchain_address_comments_mapping_blockchain_address_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_address_comments_mapping
+    ADD CONSTRAINT blockchain_address_comments_mapping_blockchain_address_id_fkey FOREIGN KEY (blockchain_address_id) REFERENCES public.blockchain_addresses(id) ON DELETE CASCADE;
+
+
+--
+-- Name: blockchain_address_comments_mapping blockchain_address_comments_mapping_comment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_address_comments_mapping
+    ADD CONSTRAINT blockchain_address_comments_mapping_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES public.comments(id) ON DELETE CASCADE;
+
+
+--
+-- Name: blockchain_address_user_pairs blockchain_address_user_pairs_blockchain_address_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_address_user_pairs
+    ADD CONSTRAINT blockchain_address_user_pairs_blockchain_address_id_fkey FOREIGN KEY (blockchain_address_id) REFERENCES public.blockchain_addresses(id);
+
+
+--
+-- Name: blockchain_address_user_pairs_labels blockchain_address_user_pairs_labels_blockchain_address_user_pa; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_address_user_pairs_labels
+    ADD CONSTRAINT blockchain_address_user_pairs_labels_blockchain_address_user_pa FOREIGN KEY (blockchain_address_user_pair_id) REFERENCES public.blockchain_address_user_pairs(id);
+
+
+--
+-- Name: blockchain_address_user_pairs_labels blockchain_address_user_pairs_labels_label_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_address_user_pairs_labels
+    ADD CONSTRAINT blockchain_address_user_pairs_labels_label_id_fkey FOREIGN KEY (label_id) REFERENCES public.blockchain_address_labels(id);
+
+
+--
+-- Name: blockchain_address_user_pairs blockchain_address_user_pairs_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_address_user_pairs
+    ADD CONSTRAINT blockchain_address_user_pairs_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: blockchain_addresses blockchain_addresses_infrastructure_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_addresses
+    ADD CONSTRAINT blockchain_addresses_infrastructure_id_fkey FOREIGN KEY (infrastructure_id) REFERENCES public.infrastructures(id);
 
 
 --
@@ -4241,6 +4639,14 @@ ALTER TABLE ONLY public.icos
 
 ALTER TABLE ONLY public.icos
     ADD CONSTRAINT icos_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
+
+
+--
+-- Name: list_items list_items_blockchain_address_user_pair_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.list_items
+    ADD CONSTRAINT list_items_blockchain_address_user_pair_id_fkey FOREIGN KEY (blockchain_address_user_pair_id) REFERENCES public.blockchain_address_user_pairs(id);
 
 
 --
@@ -5051,4 +5457,13 @@ INSERT INTO public."schema_migrations" (version) VALUES (20201109112004);
 INSERT INTO public."schema_migrations" (version) VALUES (20201109124013);
 INSERT INTO public."schema_migrations" (version) VALUES (20201110115647);
 INSERT INTO public."schema_migrations" (version) VALUES (20201112142519);
+INSERT INTO public."schema_migrations" (version) VALUES (20201113114758);
+INSERT INTO public."schema_migrations" (version) VALUES (20201116091112);
 INSERT INTO public."schema_migrations" (version) VALUES (20201117123908);
+INSERT INTO public."schema_migrations" (version) VALUES (20201117132755);
+INSERT INTO public."schema_migrations" (version) VALUES (20201118125118);
+INSERT INTO public."schema_migrations" (version) VALUES (20201118141407);
+INSERT INTO public."schema_migrations" (version) VALUES (20201118145315);
+INSERT INTO public."schema_migrations" (version) VALUES (20201119085940);
+INSERT INTO public."schema_migrations" (version) VALUES (20201201102246);
+INSERT INTO public."schema_migrations" (version) VALUES (20201202125900);

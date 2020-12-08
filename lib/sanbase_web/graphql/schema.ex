@@ -25,6 +25,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Absinthe.Plug.Types)
   import_types(Graphql.AggregationTypes)
   import_types(Graphql.AnomalyTypes)
+  import_types(Graphql.BlockchainAddressType)
   import_types(Graphql.CommentTypes)
   import_types(Graphql.CustomTypes.Date)
   import_types(Graphql.CustomTypes.DateTime)
@@ -56,7 +57,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.AnomalyQueries)
   import_types(Graphql.Schema.BillingQueries)
   import_types(Graphql.Schema.BlockchainAddressQueries)
-  import_types(Graphql.Schema.BlockchainQueries)
+  import_types(Graphql.Schema.BlockchainMetricQueries)
   import_types(Graphql.Schema.ChartConfigurationQueries)
   import_types(Graphql.Schema.CommentQueries)
   import_types(Graphql.Schema.EmailQueries)
@@ -81,7 +82,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.TimelineQueries)
   import_types(Graphql.Schema.UserQueries)
   import_types(Graphql.Schema.UserTriggerQueries)
-  import_types(Graphql.Schema.WatchlistQueries)
+  import_types(Graphql.Schema.UserListQueries)
   import_types(Graphql.Schema.WidgetQueries)
 
   def dataloader() do
@@ -121,8 +122,8 @@ defmodule SanbaseWeb.Graphql.Schema do
   query do
     import_fields(:anomaly_queries)
     import_fields(:billing_queries)
-    import_fields(:blockchain_queries)
     import_fields(:blockchain_address_queries)
+    import_fields(:blockchain_metric_queries)
     import_fields(:comment_queries)
     import_fields(:exchange_queries)
     import_fields(:featured_queries)

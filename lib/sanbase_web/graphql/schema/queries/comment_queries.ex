@@ -10,7 +10,8 @@ defmodule SanbaseWeb.Graphql.Schema.CommentQueries do
 
   object :comment_queries do
     field :comments, list_of(:comment) do
-      arg(:entity_type, :comment_entity_enum, default_value: :insight)
+      arg(:entity_type, :comment_entity_type_enum, default_value: :insight)
+
       arg(:id, :id)
       arg(:cursor, :cursor_input, default_value: nil)
       arg(:limit, :integer, default_value: 50)
@@ -28,7 +29,7 @@ defmodule SanbaseWeb.Graphql.Schema.CommentQueries do
 
   object :comment_mutations do
     field :create_comment, :comment do
-      arg(:entity_type, :comment_entity_enum, default_value: :insight)
+      arg(:entity_type, :comment_entity_type_enum, default_value: :insight)
       arg(:id, :integer)
       arg(:insight_id, non_null(:integer), deprecate: "Use `entityType` + `id` instead")
       arg(:content, non_null(:string))

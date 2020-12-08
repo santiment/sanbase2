@@ -81,6 +81,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   end
 
   def eth_login(
+        _root,
         %{signature: signature, address: address, message_hash: message_hash} = args,
         _resolution
       ) do
@@ -103,7 +104,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   def email_login(%{email: email} = args, %{
         context: %{origin_url: origin_url}
       }) do
-    with {:ok, user} <- User.find_or_insert_by_email(email, args[:username]),
+    with {:ok, user} <- User.find_or_insert_by(:email, email, %{username: args[:username]}),
          {:ok, user} <- User.update_email_token(user, args[:consent]),
          {:ok, _user} <- User.send_login_email(user, origin_url, args) do
       {:ok, %{success: true, first_login: user.first_login}}
@@ -113,7 +114,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   end
 
   def email_login_verify(%{token: token, email: email}, _resolution) do
-    with {:ok, user} <- User.find_or_insert_by_email(email),
+    with {:ok, user} <- User.find_or_insert_by(:email, email),
          true <- User.email_token_valid?(user, token),
          _ <- create_free_trial_on_signup(user),
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),

@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.WatchlistStatsApiTest do
     {:ok, watchlist2} = UserList.create_user_list(user, %{name: "test watchlist2"})
 
     {:ok, watchlist} =
-      UserList.update_user_list(%{
+      UserList.update_user_list(user, %{
         id: watchlist.id,
         list_items: [%{project_id: project1.id}, %{project_id: project2.id}]
       })

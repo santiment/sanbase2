@@ -27,8 +27,14 @@ defmodule Sanbase.Mixfile do
   def application do
     [
       mod: {Sanbase.Application, []},
-      extra_applications: [:logger, :runtime_tools, :sasl, :clickhousex, :os_mon],
-      included_applications: [:oauther, :brod, :kaffe]
+      extra_applications: [
+        :logger,
+        :runtime_tools,
+        :sasl,
+        :clickhousex,
+        :os_mon
+      ],
+      included_applications: [:oauther, :brod, :kaffe, :ueberauth_twitter]
     ]
   end
 
@@ -121,6 +127,9 @@ defmodule Sanbase.Mixfile do
       {:temp, "~> 0.4"},
       {:tesla, "~> 1.0"},
       {:timex, "~> 3.5.0"},
+      {:ueberauth_google, "~> 0.10"},
+      {:ueberauth_twitter, github: "santiment/ueberauth_twitter"},
+      # {:ueberauth_twitter, "~> 0.3"},
       {:uuid, "~> 1.1"},
       {:vex, "~> 0.8.0", override: true}
     ]

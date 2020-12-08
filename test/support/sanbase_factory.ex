@@ -27,6 +27,7 @@ defmodule Sanbase.Factory do
   alias Sanbase.TableConfiguration
   alias Sanbase.Email.NewsletterToken
   alias Sanbase.Report
+  alias Sanbase.BlockchainAddress
 
   def user_factory() do
     %User{
@@ -53,6 +54,14 @@ defmodule Sanbase.Factory do
       san_balance: Decimal.new(20_000),
       san_balance_updated_at: Timex.now(),
       privacy_policy_accepted: true
+    }
+  end
+
+  def blockchain_address_factory() do
+    %BlockchainAddress{
+      address: "0x" <> rand_hex_str(38),
+      infrastructure:
+        Sanbase.Repo.get_by(Infrastructure, code: "ETH") || build(:infrastructure, %{code: "ETH"})
     }
   end
 

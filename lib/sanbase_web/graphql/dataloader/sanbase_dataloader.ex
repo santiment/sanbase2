@@ -20,10 +20,12 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
           | :infrastructure
           | :comment_insight_id
           | :comment_timeline_event_id
+          | :comment_blockchain_address_id
           | :comment_short_url_id
           | :insights_comments_count
           | :insights_count_per_user
           | :timeline_events_comments_count
+          | :blockchain_addresses_comments_count
           | :short_urls_comments_count
           | :project_by_slug
           | :aggregated_metric,
@@ -53,12 +55,14 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
       when x in [
              :comment_insight_id,
              :comment_timeline_event_id,
+             :comment_blockchain_address_id,
              :comment_short_url_id,
              :infrastructure,
              :market_segment,
              :insights_comments_count,
              :insights_count_per_user,
              :timeline_events_comments_count,
+             :blockchain_addresses_comments_count,
              :short_urls_comments_count,
              :project_by_slug
            ] ->

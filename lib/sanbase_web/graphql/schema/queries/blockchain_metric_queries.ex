@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
+defmodule SanbaseWeb.Graphql.Schema.BlockchainMetricQueries do
   use Absinthe.Schema.Notation
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainQueries do
   import_types(SanbaseWeb.Graphql.ClickhouseTypes)
   import_types(SanbaseWeb.Graphql.ExchangeTypes)
 
-  object :blockchain_queries do
+  object :blockchain_metric_queries do
     # STANDART PLAN
     @desc ~s"""
     Fetch burn rate for a project within a given time period, grouped by interval.

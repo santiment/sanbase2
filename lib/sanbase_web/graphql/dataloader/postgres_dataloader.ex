@@ -51,6 +51,17 @@ defmodule SanbaseWeb.Graphql.MetricPostgresDataloader do
     |> Map.new()
   end
 
+  def query(:comment_blockchain_address_id, comment_ids) do
+    ids = Enum.to_list(comment_ids)
+
+    from(mapping in Sanbase.BlockchainAddress.BlockchainAddressComment,
+      where: mapping.comment_id in ^ids,
+      select: {mapping.comment_id, mapping.blockchain_address_id}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
   def query(:comment_short_url_id, comment_ids) do
     ids = Enum.to_list(comment_ids)
 
@@ -86,6 +97,18 @@ defmodule SanbaseWeb.Graphql.MetricPostgresDataloader do
       where: mapping.timeline_event_id in ^ids,
       group_by: mapping.timeline_event_id,
       select: {mapping.timeline_event_id, fragment("COUNT(*)")}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  def query(:blockchain_addresses_comments_count, blockchain_address_ids) do
+    ids = Enum.to_list(blockchain_address_ids)
+
+    from(mapping in Sanbase.BlockchainAddress.BlockchainAddressComment,
+      where: mapping.blockchain_address_id in ^ids,
+      group_by: mapping.blockchain_address_id,
+      select: {mapping.blockchain_address_id, fragment("COUNT(*)")}
     )
     |> Repo.all()
     |> Map.new()

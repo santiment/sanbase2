@@ -19,6 +19,13 @@ defmodule Sanbase.BlockchainAddress do
     |> validate_required([:address])
   end
 
+  def by_id(id) do
+    case Sanbase.Repo.get(__MODULE__, id) do
+      nil -> {:error, "Blockchain address with #{id} does not exist."}
+      %__MODULE__{} = addr -> {:ok, addr}
+    end
+  end
+
   def maybe_create(%{address: _, infrastructure_id: _} = map) do
     %__MODULE__{}
     |> changeset(map)

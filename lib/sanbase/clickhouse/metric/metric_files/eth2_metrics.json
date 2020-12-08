@@ -1,7 +1,7 @@
 [
   {
-    "human_readable_name": "ETH2.0 Staker Count",
-    "name": "eth2_staker_count",
+    "human_readable_name": "ETH 2.0 Stakers Count",
+    "name": "eth2_stakers_count",
     "metric": "eth2_staker_count",
     "version": "2019-01-01",
     "access": "restricted",

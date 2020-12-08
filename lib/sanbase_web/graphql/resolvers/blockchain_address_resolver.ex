@@ -16,16 +16,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
         %{selector: %{address: address, infrastructure: infrastructure}},
         _resolution
       ) do
-    [%{id: infrastructure_id}] = Sanbase.Model.Infrastructure.by_codes(infrastructure)
-
-    BlockchainAddress.maybe_create(%{address: address, infrastructure_id: infrastructure_id})
-    |> case do
-      {:ok, addr} ->
-        {:ok, addr}
-
-      {:error, changeset} ->
+    with {:ok, %{id: infrastructure_id}} <- Sanbase.Model.Infrastructure.by_code(infrastructure),
+         {:ok, addr} <-
+           BlockchainAddress.maybe_create(%{
+             address: address,
+             infrastructure_id: infrastructure_id
+           }) do
+      {:ok, addr}
+    else
+      {:error, %Ecto.Changeset{} = changeset} ->
         reason = ErrorHandling.changeset_errors_to_str(changeset)
         {:error, "Cannot get blockchain address #{infrastructure} #{address}. Reason: #{reason}"}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 

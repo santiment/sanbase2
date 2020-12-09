@@ -114,6 +114,18 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
     end
   end
 
+  @spec current_balance(selector, address | list(address)) ::
+          __MODULE__.Behaviour.current_balance_result()
+  def current_balance(selector, addresses) do
+    case selector_to_args(selector) do
+      {module, asset, decimals} ->
+        module.current_balance(addresses, asset, decimals)
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
   # erc20 case
   @spec selector_to_args(selector) ::
           {module(), String.t(), non_neg_integer()} | {:error, tuple()}

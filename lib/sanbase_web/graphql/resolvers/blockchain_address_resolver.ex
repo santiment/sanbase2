@@ -64,7 +64,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     end
   end
 
-  def blockchain_address_id(%{id: id}, _args, %{context: %{loader: loader}}) do
+  def balance(%{address: address}, %{slug: slug}, %{context: %{loader: loader}}) do
+    address = BlockchainAddress.to_internal_format(address)
+
+    loader
+    |> Dataloader.load(SanbaseDataloader, :current_address_slug_balance, {address, slug})
+    |> on_load(fn loader ->
+      {:ok,
+       Dataloader.get(loader, SanbaseDataloader, :current_address_slug_balance, {address, slug})}
+    end)
+  end
+
+  def blockchain_address_id(%{id: id}, _args, %{
+        context: %{loader: loader}
+      }) do
     loader
     |> Dataloader.load(SanbaseDataloader, :comment_blockchain_address_id, id)
     |> on_load(fn loader ->

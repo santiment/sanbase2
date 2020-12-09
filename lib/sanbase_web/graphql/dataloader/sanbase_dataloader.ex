@@ -1,8 +1,11 @@
 defmodule SanbaseWeb.Graphql.SanbaseDataloader do
-  alias SanbaseWeb.Graphql.ClickhouseDataloader
-  alias SanbaseWeb.Graphql.PriceDataloader
-  alias SanbaseWeb.Graphql.ParityDataloader
-  alias SanbaseWeb.Graphql.MetricPostgresDataloader
+  alias SanbaseWeb.Graphql.{
+    BalanceDataloader,
+    ClickhouseDataloader,
+    MetricPostgresDataloader,
+    ParityDataloader,
+    PriceDataloader
+  }
 
   @spec data() :: Dataloader.KV.t()
   def data() do
@@ -10,25 +13,26 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
   end
 
   @spec query(
-          :average_daily_active_addresses
+          :aggregated_metric
+          | :average_daily_active_addresses
           | :average_dev_activity
+          | :blockchain_addresses_comments_count
+          | :comment_blockchain_address_id
+          | :comment_insight_id
+          | :comment_short_url_id
+          | :comment_timeline_event_id
+          | :current_address_slug_balance
           | :eth_balance
           | :eth_spent
-          | :volume_change_24h
-          | {:price, any()}
-          | :market_segment
           | :infrastructure
-          | :comment_insight_id
-          | :comment_timeline_event_id
-          | :comment_blockchain_address_id
-          | :comment_short_url_id
           | :insights_comments_count
           | :insights_count_per_user
-          | :timeline_events_comments_count
-          | :blockchain_addresses_comments_count
-          | :short_urls_comments_count
+          | :market_segment
           | :project_by_slug
-          | :aggregated_metric,
+          | :short_urls_comments_count
+          | :timeline_events_comments_count
+          | :volume_change_24h
+          | {:price, any()},
           any()
         ) :: {:error, String.t()} | {:ok, float()} | map()
   def query(queryable, args) do
@@ -41,6 +45,9 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
              :aggregated_metric
            ] ->
         ClickhouseDataloader.query(queryable, args)
+
+      :current_address_slug_balance ->
+        BalanceDataloader.query(queryable, args)
 
       :volume_change_24h ->
         PriceDataloader.query(queryable, args)

@@ -26,6 +26,13 @@ defmodule Sanbase.BlockchainAddress do
     end
   end
 
+  def to_internal_format(address) do
+    case Regex.match?(~r/^0x([A-Fa-f0-9]{40})$/, address) do
+      true -> String.downcase(address)
+      _ -> address
+    end
+  end
+
   def maybe_create(%{address: _, infrastructure_id: _} = map) do
     %__MODULE__{}
     |> changeset(map)

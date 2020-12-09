@@ -1,6 +1,8 @@
 defmodule Sanbase.SocialData.Community do
   import Sanbase.Utils.ErrorHandling
 
+  alias Sanbase.SocialData.SocialHelper
+
   require Sanbase.Utils.Config, as: Config
 
   alias Sanbase.Model.Project
@@ -8,23 +10,13 @@ defmodule Sanbase.SocialData.Community do
   require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
-  @recv_timeout 15_000
-  @sources [:telegram]
+  @recv_timeout 25_000
 
   def community_messages_count(selector, from, to, interval, source)
       when source in [:all, "all", :total, "total"] do
-    result =
-      @sources
-      |> Sanbase.Parallel.flat_map(
-        fn source ->
-          {:ok, result} = community_messages_count(selector, from, to, interval, source)
-          result
-        end,
-        max_concurrency: 4
-      )
-      |> Sanbase.Utils.Transform.sum_by_datetime(:mentions_count)
+    sources_string = SocialHelper.sources() |> Enum.join(",")
 
-    {:ok, result}
+    community_messages_count(selector, from, to, interval, sources_string)
   end
 
   def community_messages_count(%{slug: slug}, from, to, interval, source) do
@@ -45,47 +37,43 @@ defmodule Sanbase.SocialData.Community do
             HTTPoison.Error.message(error)
           }"
         )
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
-  def community_messages_count(argument) do
-    {:error, "Invalid argument for community_messages_count #{inspect(argument)}"}
-  end
-
-  defp source_to_indicator(<<"discord", _::binary>>), do: "discord_discussion_overview"
-  defp source_to_indicator(<<"telegram", _::binary>>), do: "telegram_discussion_overview"
-
   defp community_messages_count_request(slug, from, to, interval, source) do
-    url = "#{tech_indicators_url()}/indicator/#{source_to_indicator(source)}"
+    url = "#{metrics_hub_url()}/community_social_volume"
 
     options = [
       recv_timeout: @recv_timeout,
       params: [
-        {"project", "#{Project.ticker_by_slug(slug)}_#{slug}"},
-        {"datetime_from", DateTime.to_unix(from)},
-        {"datetime_to", DateTime.to_unix(to)},
-        {"interval", interval}
+        {"slug", slug},
+        {"from_timestamp", from |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
+        {"to_timestamp", to |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
+        {"interval", interval},
+        {"source", source}
       ]
     ]
 
     http_client().get(url, [], options)
   end
 
-  defp community_messages_count_result(result) do
-    result =
-      result
-      |> Enum.map(fn
-        %{"timestamp" => timestamp, "mentions_count" => mentions_count} ->
-          %{
-            datetime: DateTime.from_unix!(timestamp),
-            mentions_count: mentions_count
-          }
+  defp community_messages_count_result(%{"data" => map}) do
+    map =
+      Enum.map(map, fn {datetime, value} ->
+        %{
+          datetime: Sanbase.DateTimeUtils.from_iso8601!(datetime),
+          mentions_count: value
+        }
       end)
+      |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
 
-    {:ok, result}
+    {:ok, map}
   end
 
-  defp tech_indicators_url() do
-    Config.module_get(Sanbase.TechIndicators, :url)
+  defp metrics_hub_url() do
+    Config.module_get(Sanbase.SocialData, :metricshub_url)
   end
 end

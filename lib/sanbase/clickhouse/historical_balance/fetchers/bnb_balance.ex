@@ -37,6 +37,18 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.BnbBalance do
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
+  def current_balance(addresses, asset, _decimals) do
+    {query, args} = current_balance_query(addresses, asset)
+
+    ClickhouseRepo.query_transform(query, args, fn [address, value] ->
+      %{
+        address: address,
+        balance: value
+      }
+    end)
+  end
+
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def historical_balance([], _, _, _, _, _), do: {:ok, []}
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
@@ -158,9 +170,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.BnbBalance do
     query = """
     SELECT
       contract,
-      argMax(value, blockNumber)
-    FROM
-      #{@table}
+      argMax(value, dt)
+    FROM #{@table}
     PREWHERE
       address = ?1 AND
       sign = 1
@@ -168,6 +179,23 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.BnbBalance do
     """
 
     args = [address]
+
+    {query, args}
+  end
+
+  defp current_balance_query(addresses, asset) do
+    query = """
+    SELECT
+      address,
+      argMax(value, dt)
+    FROM #{@table}
+    PREWHERE
+      address = ?1 AND
+      sign = 1
+    GROUP BY contract
+    """
+
+    args = [addresses, asset]
 
     {query, args}
   end

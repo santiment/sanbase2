@@ -37,6 +37,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     end)
   end
 
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def current_balance(addresses, "ETH", _decimals) do
     {query, args} = current_balance_query(addresses)
 

@@ -26,6 +26,15 @@ defmodule Sanbase.BlockchainAddress do
     end
   end
 
+  @doc ~s"""
+  Convert an address to the internal format used in our databases.
+
+  Ethereum addresses are case-insensitive - the upper and lower letters are used
+  only for checks. Internally we store the addresses all lowercased so they can be
+  compared.
+
+  All other chains are sensitive, so they are not changed by this function.
+  """
   def to_internal_format(address) do
     case Regex.match?(~r/^0x([A-Fa-f0-9]{40})$/, address) do
       true -> String.downcase(address)

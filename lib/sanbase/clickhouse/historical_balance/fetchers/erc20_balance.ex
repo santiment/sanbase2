@@ -36,6 +36,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     end)
   end
 
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def current_balance(addresses, contract, decimals) do
     decimals = Sanbase.Math.ipow(10, decimals)
 

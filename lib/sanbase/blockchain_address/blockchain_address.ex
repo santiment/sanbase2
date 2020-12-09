@@ -42,10 +42,11 @@ defmodule Sanbase.BlockchainAddress do
     end
   end
 
-  def maybe_create(%{address: _, infrastructure_id: _} = map) do
-    %__MODULE__{}
-    |> changeset(map)
-    |> Sanbase.Repo.insert(on_conflict: :nothing)
+  def maybe_create(%{address: _, infrastructure_id: _} = attrs) do
+    case maybe_create([attrs]) do
+      {:ok, [result]} -> {:ok, result}
+      {:error, error} -> {:error, error}
+    end
   end
 
   def maybe_create(list) when is_list(list) do

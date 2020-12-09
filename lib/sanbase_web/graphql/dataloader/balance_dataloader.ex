@@ -4,15 +4,15 @@ defmodule SanbaseWeb.Graphql.BalanceDataloader do
 
   def data(), do: Dataloader.KV.new(&query/2)
 
-  def query(:current_address_slug_balance, address_slug_pairs) do
-    slug_groups =
+  def query(:current_address_selector_balance, address_selector_pairs) do
+    selector_groups =
       Enum.group_by(
-        address_slug_pairs,
-        fn {_address, slug} -> slug end,
-        fn {address, _slug} -> address end
+        address_selector_pairs,
+        fn {_address, selector} -> selector end,
+        fn {address, _selector} -> address end
       )
 
-    Sanbase.Parallel.map(slug_groups, &get_balance/1,
+    Sanbase.Parallel.map(selector_groups, &get_balance/1,
       max_concurrency: 4,
       ordered: false,
       timeout: 55_000
@@ -20,13 +20,11 @@ defmodule SanbaseWeb.Graphql.BalanceDataloader do
     |> Enum.reduce(%{}, &Map.merge(&1, &2))
   end
 
-  defp get_balance({slug, addresses}) do
-    {:ok, infr} = Project.by_slug(slug) |> Project.infrastructure_real_code()
-
-    case HistoricalBalance.current_balance(%{infrastructure: infr, slug: slug}, addresses) do
+  defp get_balance({selector, addresses}) do
+    case HistoricalBalance.current_balance(selector, addresses) do
       {:ok, list} ->
         Enum.reduce(list, %{}, fn map, acc ->
-          Map.put(acc, {map.address, slug}, map.balance)
+          Map.put(acc, {map.address, selector}, map.balance)
         end)
 
       {:error, _error} ->

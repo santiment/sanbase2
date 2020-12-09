@@ -11,14 +11,14 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
   setup do
     clean_task_supervisor_children()
 
-    insert(:infrastructure, code: "ETH")
+    infr = insert(:infrastructure, code: "ETH")
 
     user = insert(:user)
     user2 = insert(:user)
 
     conn = setup_jwt_auth(build_conn(), user)
 
-    {:ok, conn: conn, user: user, user2: user2}
+    {:ok, conn: conn, user: user, user2: user2, infr: infr}
   end
 
   test "create blockchain addresses watchlist", %{user: user, conn: conn} do
@@ -472,7 +472,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
       ]
     })
 
-    project = insert(:random_erc20_project)
+    project = insert(:random_erc20_project, infrastructure: context.infr)
 
     query = """
     {
@@ -480,7 +480,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
         listItems{
           blockchainAddress{
             address
-              balance(slug: "#{project.slug}")
+              balance(selector: {slug: "#{project.slug}"})
           }
         }
       }

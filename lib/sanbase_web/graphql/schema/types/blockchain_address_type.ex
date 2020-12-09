@@ -29,7 +29,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressType do
     field(:notes, :string)
 
     field :balance, :float do
-      arg(:slug, :string)
+      arg(:selector, :historical_balance_selector)
       cache_resolve(&BlockchainAddressResolver.balance/3)
     end
 

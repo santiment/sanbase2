@@ -15,8 +15,8 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
 
     Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
     |> Sanbase.Mock.run_with_mocks(fn ->
-      query = eth_recent_transactions_query()
-      result = execute_query(context.conn, query, "ethRecentTransactions")
+      query = recent_transactions_query("ETH")
+      result = execute_query(context.conn, query, "recentTransactions")
       assert result == expected_eth_transactions()
     end)
   end
@@ -31,17 +31,32 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
 
     Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
     |> Sanbase.Mock.run_with_mocks(fn ->
-      query = token_recent_transactions_query()
-      result = execute_query(context.conn, query, "tokenRecentTransactions")
+      query = recent_transactions_query("ERC20")
+      result = execute_query(context.conn, query, "recentTransactions")
       assert result == expected_token_transactions()
     end)
   end
 
-  defp token_recent_transactions_query do
+  test "Error when fetching recent transactions", context do
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.ClickhouseRepo.query/2,
+      {:error, "Internal error message"}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      query = recent_transactions_query("ERC20")
+      error = execute_query_with_error(context.conn, query, "recentTransactions")
+
+      assert error =~
+               "Can't fetch Recent transactions for Address 0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8"
+    end)
+  end
+
+  defp recent_transactions_query(type) do
     """
     {
-      tokenRecentTransactions(
-        address: "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8"
+      recentTransactions(
+        address: "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8",
+        type: #{type}
       ) {
         fromAddress {
           address
@@ -58,31 +73,6 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
         trxValue
         trxHash
         slug
-      }
-    }
-    """
-  end
-
-  defp eth_recent_transactions_query do
-    """
-    {
-      ethRecentTransactions(
-        address: "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8"
-      ) {
-        fromAddress {
-          address
-          labels {
-            name
-          }
-        }
-        toAddress {
-          address
-          labels {
-            name
-          }
-        }
-        trxValue
-        trxHash
       }
     }
     """
@@ -151,7 +141,8 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
           "labels" => [%{"name" => "whale"}, %{"name" => "centralized_exchange"}]
         },
         "trxHash" => "0x21a56440bedb1a5c2f4adca4a6f9fbccf13bd741d63c0e3b2214a6ee418a5974",
-        "trxValue" => 5.5
+        "trxValue" => 5.5,
+        "slug" => nil
       }
     ]
   end

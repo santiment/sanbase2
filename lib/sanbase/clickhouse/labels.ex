@@ -38,13 +38,6 @@ defmodule Sanbase.Clickhouse.Label do
           datetime: Datetime.t()
         }
 
-  @spec add_labels(list(input_transaction)) :: {:ok, list(output_transaction)}
-  def add_labels([]), do: {:ok, []}
-
-  def add_labels(transactions) when is_list(transactions) do
-    add_labels(nil, transactions)
-  end
-
   @spec add_labels(String.t() | nil, list(input_transaction)) :: {:ok, list(output_transaction)}
   def add_labels(_, []), do: {:ok, []}
 

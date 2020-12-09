@@ -9,41 +9,28 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
   alias Sanbase.Utils.ErrorHandling
   alias Sanbase.Clickhouse.{Label, EthTransfers, Erc20Transfers, MarkExchanges}
 
-  def eth_recent_transactions(
+  @recent_transactions_type_map %{
+    eth: %{module: EthTransfers, slug: "ethereum"},
+    erc20: %{module: Erc20Transfers, slug: nil}
+  }
+
+  def recent_transactions(
         _root,
-        %{address: address, page: page, page_size: page_size},
+        %{address: address, type: type, page: page, page_size: page_size},
         _resolution
       ) do
     page_size = Enum.min([page_size, 100])
     page_size = Enum.max([page_size, 1])
 
+    module = @recent_transactions_type_map[type].module
+    slug = @recent_transactions_type_map[type].slug
+
     with {:ok, recent_transactions} <-
-           EthTransfers.recent_transactions(address, page, page_size),
+           module.recent_transactions(address, page, page_size),
          {:ok, recent_transactions} <-
            MarkExchanges.mark_exchange_wallets(recent_transactions),
          {:ok, recent_transactions} <-
-           Label.add_labels("ethereum", recent_transactions) do
-      {:ok, recent_transactions}
-    else
-      {:error, error} ->
-        {:error, handle_graphql_error("Recent transactions", %{address: address}, error)}
-    end
-  end
-
-  def token_recent_transactions(
-        _root,
-        %{address: address, page: page, page_size: page_size},
-        _resolution
-      ) do
-    page_size = Enum.min([page_size, 100])
-    page_size = Enum.max([page_size, 1])
-
-    with {:ok, recent_transactions} <-
-           Erc20Transfers.recent_transactions(address, page, page_size),
-         {:ok, recent_transactions} <-
-           MarkExchanges.mark_exchange_wallets(recent_transactions),
-         {:ok, recent_transactions} <-
-           Label.add_labels(recent_transactions) do
+           Label.add_labels(slug, recent_transactions) do
       {:ok, recent_transactions}
     else
       {:error, error} ->

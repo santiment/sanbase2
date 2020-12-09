@@ -6,22 +6,14 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
   alias SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver
 
   object :blockchain_address_queries do
-    @desc "Recent ethereum transactions for address"
-    field :eth_recent_transactions, list_of(:transaction) do
+    @desc "Recent transactions for this address"
+    field :recent_transactions, list_of(:transaction) do
       arg(:address, non_null(:string))
+      arg(:type, non_null(:recent_transactions_type))
       arg(:page, non_null(:integer), default_value: 1)
       arg(:page_size, non_null(:integer), default_value: 10)
 
-      cache_resolve(&BlockchainAddressResolver.eth_recent_transactions/3)
-    end
-
-    @desc "Recent erc20 transactions for address"
-    field :token_recent_transactions, list_of(:transaction) do
-      arg(:address, non_null(:string))
-      arg(:page, non_null(:integer), default_value: 1)
-      arg(:page_size, non_null(:integer), default_value: 10)
-
-      cache_resolve(&BlockchainAddressResolver.token_recent_transactions/3)
+      cache_resolve(&BlockchainAddressResolver.recent_transactions/3)
     end
 
     field :blockchain_address, :blockchain_address do

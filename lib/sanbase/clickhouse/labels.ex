@@ -124,10 +124,16 @@ defmodule Sanbase.Clickhouse.Label do
                    splitByChar(',', owners) as owner_arr,
                    arrayZip(label_arr, owner_arr) as labels_owners,
                    multiIf(
+                       -- if there is the `system` label for an address, we exclude other labels
                        has(label_arr, 'system'), arrayFilter(x -> x.1 = 'system', labels_owners),
+                       -- if an address has a `centralized_exchange` label and at least one of the `deposit` and
+                       -- `withdrawal` labels, we exclude the `deposit` and `withdrawal` labels.
                        has(label_arr, 'centralized_exchange') AND hasAny(label_arr, ['deposit', 'withdrawal']), arrayFilter(x -> x.1 NOT IN ('deposit', 'withdrawal'), labels_owners),
+                       -- if there are the `dex_trader` and `decentralized_exchange` labels for an address, we exclude `dex_trader` label
                        hasAll(label_arr, ['dex_trader', 'decentralized_exchange']), arrayFilter(x -> x.1 != 'dex_trader', labels_owners),
+                       -- if there are the `deposit` and `withdrawal` labels for an address, we exclude the `withdrawal` label
                        hasAll(label_arr, ['deposit', 'withdrawal']), arrayFilter(x -> x.1 != 'withdrawal', labels_owners),
+                       -- if there are the `dex_trader` and `withdrawal` labels for an address, we replace these metrics to the `cex_dex_trader` label
                        hasAll(label_arr, ['dex_trader', 'withdrawal']), arrayPushFront(arrayFilter(x -> x.1 NOT IN ['dex_trader', 'withdrawal'], labels_owners), ('cex_dex_trader', arrayFilter(x -> x.1 == 'withdrawal', labels_owners)[1].2)),
                        labels_owners
                    ) as labels_owners_filtered

@@ -81,8 +81,6 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
     {:ok, watchlist} =
       UserList.create_user_list(user, %{name: "My Test List", type: :blockchain_address})
 
-    # insert(:latest_cmc_data, %{coinmarketcap_id: project.slug, price_usd: 0.5})
-
     update_name = "My updated list"
     update_description = "My updated description"
 
@@ -335,140 +333,210 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
     assert Enum.count(all_public_lists) == 2
   end
 
-  describe "UserList" do
-    test "fetch watchlist by slug", context do
-      ws =
-        insert(:watchlist, %{
-          slug: "stablecoins",
-          name: "Stablecoins",
-          is_public: true,
-          type: :blockchain_address
-        })
+  test "fetch watchlist by slug", context do
+    ws =
+      insert(:watchlist, %{
+        slug: "stablecoins",
+        name: "Stablecoins",
+        is_public: true,
+        type: :blockchain_address
+      })
 
-      query = """
-      {
-        watchlistBySlug(slug: "stablecoins") {
-          id
-          name
-          slug
+    query = """
+    {
+      watchlistBySlug(slug: "stablecoins") {
+        id
+        name
+        slug
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
+
+    assert result["data"]["watchlistBySlug"]["id"] |> Sanbase.Math.to_integer() == ws.id
+    assert result["data"]["watchlistBySlug"]["name"] == ws.name
+    assert result["data"]["watchlistBySlug"]["slug"] == ws.slug
+  end
+
+  test "returns public lists for anonymous users", %{user2: user} do
+    {:ok, watchlist} =
+      UserList.create_user_list(user, %{
+        name: "My Test List",
+        is_public: true,
+        type: :blockchain_address
+      })
+
+    query = query("watchlist(id: #{watchlist.id})")
+
+    result =
+      post(build_conn(), "/graphql", query_skeleton(query, "watchlist"))
+      |> json_response(200)
+
+    assert result["data"]["watchlist"] == %{
+             "color" => "NONE",
+             "id" => "#{watchlist.id}",
+             "is_public" => true,
+             "listItems" => [],
+             "name" => "My Test List",
+             "user" => %{"id" => "#{user.id}"}
+           }
+  end
+
+  test "returns blockchain watchlist when public", %{user2: user, conn: conn} do
+    {:ok, watchlist} =
+      UserList.create_user_list(user, %{
+        name: "My Test List",
+        is_public: true,
+        type: :blockchain_address
+      })
+
+    query = query("watchlist(id: #{watchlist.id})")
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "watchlist"))
+      |> json_response(200)
+
+    assert result["data"]["watchlist"] == %{
+             "color" => "NONE",
+             "id" => "#{watchlist.id}",
+             "is_public" => true,
+             "listItems" => [],
+             "name" => "My Test List",
+             "user" => %{"id" => "#{user.id}"}
+           }
+  end
+
+  test "returns current user's private watchlist", %{user: user, conn: conn} do
+    {:ok, watchlist} =
+      UserList.create_user_list(user, %{
+        name: "My Test List",
+        is_public: false,
+        type: :blockchain_address
+      })
+
+    query = query("watchlist(id: #{watchlist.id})")
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "watchlist"))
+      |> json_response(200)
+
+    assert result["data"]["watchlist"] == %{
+             "color" => "NONE",
+             "id" => "#{watchlist.id}",
+             "is_public" => false,
+             "listItems" => [],
+             "name" => "My Test List",
+             "user" => %{"id" => "#{user.id}"}
+           }
+  end
+
+  test "returns null when no public watchlist is available", %{user2: user2, conn: conn} do
+    {:ok, watchlist} =
+      UserList.create_user_list(user2, %{
+        name: "My Test List",
+        is_public: false,
+        type: :blockchain_address
+      })
+
+    query = query("watchlist(id: #{watchlist.id})")
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "watchlist"))
+      |> json_response(200)
+
+    assert result["data"]["watchlist"] == nil
+  end
+
+  test "fetch balance of blockchain addresses in watchlists", context do
+    %{user: user, conn: conn} = context
+
+    watchlist = insert(:watchlist, type: :blockchain_address, is_public: true)
+
+    addr1 = "0x04291180af677efd464432138d2a5d766a3898d4"
+    addr2 = "0x00e6a95f6f438cbe873d0465e1a2533052e155f0"
+    addr3 = "0x003b9fb45362194a35a30cf076c937b5f483dc73"
+
+    UserList.update_user_list(user, %{
+      id: watchlist.id,
+      list_items: [
+        %{blockchain_address: %{address: addr1, infrastructure: "ETH"}},
+        %{blockchain_address: %{address: addr2, infrastructure: "ETH"}},
+        %{blockchain_address: %{address: addr3, infrastructure: "ETH"}}
+      ]
+    })
+
+    project = insert(:random_erc20_project)
+
+    query = """
+    {
+      watchlist(id: #{watchlist.id}){
+        listItems{
+          blockchainAddress{
+            address
+              balance(slug: "#{project.slug}")
+          }
         }
       }
-      """
+    }
+    """
 
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Clickhouse.HistoricalBalance.current_balance/2,
+      {:ok,
+       [
+         %{address: addr1, balance: 100.0},
+         %{address: addr2, balance: 200.0},
+         %{address: addr3, balance: 300.0}
+       ]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
       result =
-        context.conn
+        conn
         |> post("/graphql", query_skeleton(query))
         |> json_response(200)
+        |> get_in(["data", "watchlist", "listItems"])
 
-      assert result["data"]["watchlistBySlug"]["id"] |> Sanbase.Math.to_integer() == ws.id
-      assert result["data"]["watchlistBySlug"]["name"] == ws.name
-      assert result["data"]["watchlistBySlug"]["slug"] == ws.slug
-    end
+      assert %{
+               "blockchainAddress" => %{
+                 "address" => addr1,
+                 "balance" => 100.0
+               }
+             } in result
 
-    test "returns public lists for anonymous users", %{user2: user} do
-      {:ok, watchlist} =
-        UserList.create_user_list(user, %{
-          name: "My Test List",
-          is_public: true,
-          type: :blockchain_address
-        })
+      assert %{
+               "blockchainAddress" => %{
+                 "address" => addr2,
+                 "balance" => 200.0
+               }
+             } in result
 
-      query = query("watchlist(id: #{watchlist.id})")
-
-      result =
-        post(build_conn(), "/graphql", query_skeleton(query, "watchlist"))
-        |> json_response(200)
-
-      assert result["data"]["watchlist"] == %{
-               "color" => "NONE",
-               "id" => "#{watchlist.id}",
-               "is_public" => true,
-               "listItems" => [],
-               "name" => "My Test List",
-               "user" => %{"id" => "#{user.id}"}
-             }
-    end
-
-    test "returns blockchain watchlist when public", %{user2: user, conn: conn} do
-      {:ok, watchlist} =
-        UserList.create_user_list(user, %{
-          name: "My Test List",
-          is_public: true,
-          type: :blockchain_address
-        })
-
-      query = query("watchlist(id: #{watchlist.id})")
-
-      result =
-        conn
-        |> post("/graphql", query_skeleton(query, "watchlist"))
-        |> json_response(200)
-
-      assert result["data"]["watchlist"] == %{
-               "color" => "NONE",
-               "id" => "#{watchlist.id}",
-               "is_public" => true,
-               "listItems" => [],
-               "name" => "My Test List",
-               "user" => %{"id" => "#{user.id}"}
-             }
-    end
-
-    test "returns current user's private watchlist", %{user: user, conn: conn} do
-      {:ok, watchlist} =
-        UserList.create_user_list(user, %{
-          name: "My Test List",
-          is_public: false,
-          type: :blockchain_address
-        })
-
-      query = query("watchlist(id: #{watchlist.id})")
-
-      result =
-        conn
-        |> post("/graphql", query_skeleton(query, "watchlist"))
-        |> json_response(200)
-
-      assert result["data"]["watchlist"] == %{
-               "color" => "NONE",
-               "id" => "#{watchlist.id}",
-               "is_public" => false,
-               "listItems" => [],
-               "name" => "My Test List",
-               "user" => %{"id" => "#{user.id}"}
-             }
-    end
-
-    test "returns null when no public watchlist is available", %{user2: user2, conn: conn} do
-      {:ok, watchlist} =
-        UserList.create_user_list(user2, %{
-          name: "My Test List",
-          is_public: false,
-          type: :blockchain_address
-        })
-
-      query = query("watchlist(id: #{watchlist.id})")
-
-      result =
-        conn
-        |> post("/graphql", query_skeleton(query, "watchlist"))
-        |> json_response(200)
-
-      assert result["data"]["watchlist"] == nil
-    end
+      assert %{
+               "blockchainAddress" => %{
+                 "address" => addr3,
+                 "balance" => 300.0
+               }
+             } in result
+    end)
   end
 
   defp query(query) do
     """
     {
       #{query} {
-        id,
-        name,
-        color,
-        is_public,
+        id
+        name
+        color
+        is_public
         user {
           id
-        },
+        }
         listItems {
           blockchainAddress {
             address

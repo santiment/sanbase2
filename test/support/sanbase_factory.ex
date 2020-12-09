@@ -204,7 +204,8 @@ defmodule Sanbase.Factory do
       github_organizations: [build(:github_organization)],
       contract_addresses: [build(:contract_address)],
       market_segments: [build(:market_segment)],
-      infrastructure: nil,
+      infrastructure:
+        Sanbase.Repo.get_by(Infrastructure, code: "ETH") || build(:infrastructure, %{code: "ETH"}),
       eth_addresses: [build(:project_eth_address)]
     }
     |> merge_attributes(attrs)
@@ -227,7 +228,8 @@ defmodule Sanbase.Factory do
       github_organizations: [build(:github_organization)],
       contract_addresses: [build(:contract_address)],
       market_segments: [build(:market_segment)],
-      infrastructure: nil,
+      infrastructure:
+        Sanbase.Repo.get_by(Infrastructure, code: "ETH") || build(:infrastructure, %{code: "ETH"}),
       eth_addresses: [build(:project_eth_address)]
     }
     |> merge_attributes(attrs)

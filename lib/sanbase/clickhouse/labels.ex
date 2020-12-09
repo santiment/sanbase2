@@ -125,8 +125,8 @@ defmodule Sanbase.Clickhouse.Label do
                    arrayZip(label_arr, owner_arr) as labels_owners,
                    multiIf(
                        has(label_arr, 'system'), arrayFilter(x -> x.1 = 'system', labels_owners),
-                       has(label_arr, 'centralized_exchange'), arrayFilter(x -> x.1 NOT IN ('deposit', 'withdrawal'), labels_owners),
-                       has(label_arr, 'decentralized_exchange'), arrayFilter(x -> x.1 != 'dex_trader', labels_owners),
+                       has(label_arr, 'centralized_exchange') AND hasAny(label_arr, ['deposit', 'withdrawal']), arrayFilter(x -> x.1 NOT IN ('deposit', 'withdrawal'), labels_owners),
+                       hasAll(label_arr, ['dex_trader', 'decentralized_exchange']), arrayFilter(x -> x.1 != 'dex_trader', labels_owners),
                        hasAll(label_arr, ['deposit', 'withdrawal']), arrayFilter(x -> x.1 != 'withdrawal', labels_owners),
                        hasAll(label_arr, ['dex_trader', 'withdrawal']), arrayPushFront(arrayFilter(x -> x.1 NOT IN ['dex_trader', 'withdrawal'], labels_owners), ('cex_dex_trader', arrayFilter(x -> x.1 == 'withdrawal', labels_owners)[1].2)),
                        labels_owners

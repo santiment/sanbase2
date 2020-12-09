@@ -5,10 +5,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
   import Sanbase.DateTimeUtils, only: [round_datetime: 2]
+  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
-
-  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
 
   alias Sanbase.Clickhouse.{
     GasUsed,

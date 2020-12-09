@@ -170,8 +170,8 @@ defmodule Sanbase.Clickhouse.Label do
 
   defp whale_filter(nil, _), do: ""
 
-  defp whale_filter(slug, position_arg) when is_binary(slug) do
-    position = Keyword.fetch!(position_arg, :position)
+  defp whale_filter(slug, opts) when is_binary(slug) do
+    position = Keyword.fetch!(opts, :position)
 
     """
     label_raw='whale' AND asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?#{
@@ -205,15 +205,7 @@ defmodule Sanbase.Clickhouse.Label do
     end)
   end
 
-  defp do_add_labels(nil, transactions, address_labels_map) do
-    do_add_labels(transactions, address_labels_map)
-  end
-
   defp do_add_labels(_slug, transactions, address_labels_map) do
-    do_add_labels(transactions, address_labels_map)
-  end
-
-  defp do_add_labels(transactions, address_labels_map) do
     transactions
     |> Enum.map(fn %{from_address: from, to_address: to} = transaction ->
       from_labels = Map.get(address_labels_map, String.downcase(from.address), [])

@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
   require Logger
 
   import Absinthe.Resolution.Helpers, except: [async: 1]
+  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
 
   alias Sanbase.BlockchainAddress
   alias SanbaseWeb.Graphql.SanbaseDataloader
@@ -9,11 +10,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
   alias Sanbase.Clickhouse.{Label, EthTransfers, Erc20Transfers, MarkExchanges}
 
   def eth_recent_transactions(
-        _,
+        _root,
         %{address: address, page: page, page_size: page_size},
-        _
+        _resolution
       ) do
     page_size = Enum.min([page_size, 100])
+    page_size = Enum.max([page_size, 1])
 
     with {:ok, recent_transactions} <-
            EthTransfers.recent_transactions(address, page, page_size),
@@ -23,19 +25,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
            Label.add_labels("ethereum", recent_transactions) do
       {:ok, recent_transactions}
     else
-      error ->
-        Logger.warn("Cannot fetch recent transactions for #{address}. Reason: #{inspect(error)}")
-
-        {:ok, []}
+      {:error, error} ->
+        {:error, handle_graphql_error("Recent transactions", %{address: address}, error)}
     end
   end
 
   def token_recent_transactions(
-        _,
+        _root,
         %{address: address, page: page, page_size: page_size},
-        _
+        _resolution
       ) do
     page_size = Enum.min([page_size, 100])
+    page_size = Enum.max([page_size, 1])
 
     with {:ok, recent_transactions} <-
            Erc20Transfers.recent_transactions(address, page, page_size),
@@ -45,10 +46,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
            Label.add_labels(recent_transactions) do
       {:ok, recent_transactions}
     else
-      error ->
-        Logger.warn("Cannot fetch recent transactions for #{address}. Reason: #{inspect(error)}")
-
-        {:ok, []}
+      {:error, error} ->
+        {:error, handle_graphql_error("Recent transactions", %{address: address}, error)}
     end
   end
 

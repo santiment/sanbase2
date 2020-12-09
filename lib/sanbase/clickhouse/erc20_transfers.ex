@@ -53,9 +53,9 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
   If the top transactions for SAN token are needed, the SAN contract address must be
   provided as a first argument.
   """
-  @spec token_top_transactions(String.t(), %DateTime{}, %DateTime{}, String.t(), integer) ::
+  @spec top_transactions(String.t(), %DateTime{}, %DateTime{}, String.t(), integer) ::
           {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
-  def token_top_transactions(
+  def top_transactions(
         contract,
         from_datetime,
         to_datetime,
@@ -66,7 +66,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     decimals = Sanbase.Math.ipow(10, decimals)
 
     {query, args} =
-      token_top_transfers_query(
+      top_transactions_query(
         contract,
         from_datetime,
         to_datetime,
@@ -151,9 +151,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
   @spec recent_transactions(String.t(), non_neg_integer(), non_neg_integer()) ::
           {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
   def recent_transactions(address, page, page_size) do
-    offset = (page - 1) * page_size
-
-    {query, args} = token_recent_transactions_query(address, page_size, offset)
+    {query, args} = recent_transactions_query(address, page, page_size)
 
     ClickhouseRepo.query_transform(query, args, fn
       [timestamp, from_address, to_address, trx_hash, trx_value, name, decimals] ->
@@ -170,7 +168,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
 
   # Private functions
 
-  defp token_top_transfers_query(
+  defp top_transactions_query(
          contract,
          from_datetime,
          to_datetime,
@@ -212,7 +210,9 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     {query, args}
   end
 
-  defp token_recent_transactions_query(address, limit, offset) do
+  defp recent_transactions_query(address, page, page_size) do
+    offset = (page - 1) * page_size
+
     query = """
     SELECT
       toUnixTimestamp(dt) AS datetime,
@@ -233,7 +233,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     LIMIT ?2 OFFSET ?3
     """
 
-    args = [address, limit, offset]
+    args = [String.downcase(address), page_size, offset]
 
     {query, args}
   end

@@ -3,6 +3,11 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressType do
 
   alias SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver
 
+  enum :recent_transactions_type do
+    value(:eth)
+    value(:erc20)
+  end
+
   input_object :blockchain_address_selector_input_object do
     field(:id, :id)
     field(:address, :string)

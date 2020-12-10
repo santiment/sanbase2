@@ -38,7 +38,7 @@ defmodule Sanbase.Clickhouse.Label do
           datetime: Datetime.t()
         }
 
-  @spec add_labels(String.t(), list(input_transaction)) :: {:ok, list(output_transaction)}
+  @spec add_labels(String.t() | nil, list(input_transaction)) :: {:ok, list(output_transaction)}
   def add_labels(_, []), do: {:ok, []}
 
   def add_labels(slug, transactions) when is_list(transactions) do
@@ -68,7 +68,8 @@ defmodule Sanbase.Clickhouse.Label do
   end
 
   # helpers
-  defp addresses_labels_query("bitcoin", addresses) do
+
+  def addresses_labels_query("bitcoin", addresses) do
     query = """
     SELECT address, label, metadata
     FROM blockchain_address_labels FINAL
@@ -79,8 +80,18 @@ defmodule Sanbase.Clickhouse.Label do
     {query, [addresses]}
   end
 
-  defp addresses_labels_query(slug, addresses) do
-    query = """
+  def addresses_labels_query(nil, addresses) do
+    query = create_addresses_labels_query(nil)
+    {query, [addresses]}
+  end
+
+  def addresses_labels_query(slug, addresses) do
+    query = create_addresses_labels_query(slug)
+    {query, [addresses, slug]}
+  end
+
+  defp create_addresses_labels_query(slug) do
+    """
     SELECT address,
            label,
            concat('\{', '"owner": "', owner, '"\}') as metadata
@@ -98,8 +109,7 @@ defmodule Sanbase.Clickhouse.Label do
                    label_raw='decentralized_exchange', 'DEX',
                    label_raw='withdrawal', 'CEX Trader',
                    label_raw='dex_trader', 'DEX Trader',
-                   label_raw='whale' AND asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1), 'Whale',
-                   label_raw='whale' AND asset_id != (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1), 'whale_wrong',
+                   #{whale_filter(slug, position: 2)}
                    label_raw='deposit', 'CEX Deposit',
                    label_raw='defi', 'DeFi',
                    label_raw='deployer', 'Deployer',
@@ -142,22 +152,35 @@ defmodule Sanbase.Clickhouse.Label do
                 SELECT cityHash64(address) as address_hash,
                        address
                 FROM (
-                    SELECT lower(arrayJoin([?2])) as address
+                    SELECT lower(arrayJoin([?1])) as address
                 )
             )
             USING address_hash
             PREWHERE address_hash IN (
                 SELECT cityHash64(address)
                 FROM (
-                    SELECT lower(arrayJoin([?2])) as address
+                    SELECT lower(arrayJoin([?1])) as address
                 )
             )
         )
     )
     WHERE label != 'whale_wrong'
     """
+  end
 
-    {query, [slug, addresses]}
+  defp whale_filter(nil, _), do: ""
+
+  defp whale_filter(slug, opts) when is_binary(slug) do
+    position = Keyword.fetch!(opts, :position)
+
+    """
+    label_raw='whale' AND asset_id = (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?#{
+      position
+    }), 'Whale',
+    label_raw='whale' AND asset_id != (SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?#{
+      position
+    }), 'whale_wrong',
+    """
   end
 
   defp get_list_of_addresses(transactions) do

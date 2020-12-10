@@ -12,7 +12,8 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
           trx_value: float,
           block_number: non_neg_integer,
           trx_position: non_neg_integer,
-          log_index: non_neg_integer
+          log_index: non_neg_integer,
+          slug: String.t()
         }
 
   use Ecto.Schema
@@ -23,6 +24,8 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
 
   require Sanbase.Utils.Config, as: Config
   defp dt_ordered_table(), do: Config.get(:dt_ordered_table)
+
+  @eth_decimals 1_000_000_000_000_000_000
 
   # Note: The schema name is not important as it is not used.
   @primary_key false
@@ -37,6 +40,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     field(:block_number, :integer, source: :blockNumber)
     field(:trx_position, :integer, source: :transactionPosition)
     field(:log_index, :integer, source: :logIndex)
+    field(:slug, :string, source: :name)
   end
 
   @spec changeset(any(), any()) :: no_return()
@@ -49,9 +53,9 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
   If the top transactions for SAN token are needed, the SAN contract address must be
   provided as a first argument.
   """
-  @spec token_top_transfers(String.t(), %DateTime{}, %DateTime{}, String.t(), integer) ::
+  @spec top_transactions(String.t(), %DateTime{}, %DateTime{}, String.t(), integer) ::
           {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
-  def token_top_transfers(
+  def top_transactions(
         contract,
         from_datetime,
         to_datetime,
@@ -62,7 +66,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     decimals = Sanbase.Math.ipow(10, decimals)
 
     {query, args} =
-      token_top_transfers_query(
+      top_transactions_query(
         contract,
         from_datetime,
         to_datetime,
@@ -144,9 +148,27 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     end)
   end
 
+  @spec recent_transactions(String.t(), non_neg_integer(), non_neg_integer()) ::
+          {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
+  def recent_transactions(address, page, page_size) do
+    {query, args} = recent_transactions_query(address, page, page_size)
+
+    ClickhouseRepo.query_transform(query, args, fn
+      [timestamp, from_address, to_address, trx_hash, trx_value, name, decimals] ->
+        %{
+          datetime: DateTime.from_unix!(timestamp),
+          from_address: from_address,
+          to_address: to_address,
+          slug: name,
+          trx_hash: trx_hash,
+          trx_value: trx_value / decimals(decimals)
+        }
+    end)
+  end
+
   # Private functions
 
-  defp token_top_transfers_query(
+  defp top_transactions_query(
          contract,
          from_datetime,
          to_datetime,
@@ -188,6 +210,34 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     {query, args}
   end
 
+  defp recent_transactions_query(address, page, page_size) do
+    offset = (page - 1) * page_size
+
+    query = """
+    SELECT
+      toUnixTimestamp(dt) AS datetime,
+      from,
+      to,
+      transactionHash,
+      value,
+      name,
+      decimals
+    FROM erc20_transfers FINAL
+    INNER JOIN (
+      SELECT asset_ref_id AS assetRefId, name, decimals
+      FROM asset_metadata FINAL
+    ) USING (assetRefId)
+    PREWHERE
+      (from = ?1 OR to = ?1)
+    ORDER BY dt DESC
+    LIMIT ?2 OFFSET ?3
+    """
+
+    args = [String.downcase(address), page_size, offset]
+
+    {query, args}
+  end
+
   defp maybe_exclude_addresses([], _opts), do: ""
 
   defp maybe_exclude_addresses([_ | _], opts) do
@@ -195,4 +245,10 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
 
     "AND (from NOT IN (?#{arg_position}) AND to NOT IN (?#{arg_position}))"
   end
+
+  defp decimals(decimals) when is_integer(decimals) and decimals > 0 do
+    Sanbase.Math.ipow(10, decimals)
+  end
+
+  defp decimals(_), do: @eth_decimals
 end

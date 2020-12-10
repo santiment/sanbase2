@@ -2,10 +2,41 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
   require Logger
 
   import Absinthe.Resolution.Helpers, except: [async: 1]
+  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
 
   alias Sanbase.BlockchainAddress
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Utils.ErrorHandling
+  alias Sanbase.Clickhouse.{Label, EthTransfers, Erc20Transfers, MarkExchanges}
+
+  @recent_transactions_type_map %{
+    eth: %{module: EthTransfers, slug: "ethereum"},
+    erc20: %{module: Erc20Transfers, slug: nil}
+  }
+
+  def recent_transactions(
+        _root,
+        %{address: address, type: type, page: page, page_size: page_size},
+        _resolution
+      ) do
+    page_size = Enum.min([page_size, 100])
+    page_size = Enum.max([page_size, 1])
+
+    module = @recent_transactions_type_map[type].module
+    slug = @recent_transactions_type_map[type].slug
+
+    with {:ok, recent_transactions} <-
+           module.recent_transactions(address, page, page_size),
+         {:ok, recent_transactions} <-
+           MarkExchanges.mark_exchange_wallets(recent_transactions),
+         {:ok, recent_transactions} <-
+           Label.add_labels(slug, recent_transactions) do
+      {:ok, recent_transactions}
+    else
+      {:error, error} ->
+        {:error, handle_graphql_error("Recent transactions", %{address: address}, error)}
+    end
+  end
 
   def blockchain_address(_root, %{selector: %{id: id}}, _resolution) do
     BlockchainAddress.by_id(id)

@@ -69,10 +69,10 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     end)
   end
 
-  @spec eth_top_transactions(%DateTime{}, %DateTime{}, integer) ::
+  @spec top_transactions(%DateTime{}, %DateTime{}, integer) ::
           {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
-  def eth_top_transactions(from, to, limit) do
-    {query, args} = eth_top_transactions_query(from, to, limit)
+  def top_transactions(from, to, limit) do
+    {query, args} = top_transactions_query(from, to, limit)
 
     ClickhouseRepo.query_transform(query, args, fn
       [timestamp, from_address, to_address, trx_hash, trx_value] ->
@@ -80,6 +80,23 @@ defmodule Sanbase.Clickhouse.EthTransfers do
           datetime: DateTime.from_unix!(timestamp),
           from_address: maybe_transform_from_address(from_address),
           to_address: maybe_transform_to_address(to_address),
+          trx_hash: trx_hash,
+          trx_value: trx_value / @eth_decimals
+        }
+    end)
+  end
+
+  @spec recent_transactions(String.t(), non_neg_integer(), non_neg_integer()) ::
+          {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
+  def recent_transactions(address, page, page_size) do
+    {query, args} = recent_transactions_query(address, page, page_size)
+
+    ClickhouseRepo.query_transform(query, args, fn
+      [timestamp, from_address, to_address, trx_hash, trx_value] ->
+        %{
+          datetime: DateTime.from_unix!(timestamp),
+          from_address: from_address,
+          to_address: to_address,
           trx_hash: trx_hash,
           trx_value: trx_value / @eth_decimals
         }
@@ -177,7 +194,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     {query, args}
   end
 
-  defp eth_top_transactions_query(from, to, limit) do
+  defp top_transactions_query(from, to, limit) do
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
 
@@ -203,6 +220,25 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       to_unix,
       limit
     ]
+
+    {query, args}
+  end
+
+  defp recent_transactions_query(address, page, page_size) do
+    offset = (page - 1) * page_size
+
+    query = """
+    SELECT
+      toUnixTimestamp(dt), from, to, transactionHash, value
+    FROM eth_transfers FINAL
+    PREWHERE
+      (from = ?1 OR to = ?1) AND
+      type = 'call'
+    ORDER BY dt DESC
+    LIMIT ?2 OFFSET ?3
+    """
+
+    args = [String.downcase(address), page_size, offset]
 
     {query, args}
   end

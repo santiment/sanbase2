@@ -71,6 +71,9 @@ defmodule Sanbase.Utils.ErrorHandling do
           %{slug: slug} ->
             {"project with slug", slug}
 
+          %{address: address} ->
+            {"Address", address}
+
           %{text: text} ->
             {"search term", text}
 

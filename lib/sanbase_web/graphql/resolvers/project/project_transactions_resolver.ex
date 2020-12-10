@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   alias Sanbase.Clickhouse
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.SanbaseDataloader
-  alias Sanbase.Clickhouse.Label
+  alias Sanbase.Clickhouse.{Label, EthTransfers, Erc20Transfers, MarkExchanges}
   alias Sanbase.Clickhouse.HistoricalBalance.BtcBalance
 
   @max_concurrency 100
@@ -29,7 +29,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     with {:ok, token_transactions} <-
            BtcBalance.top_transactions(from, to, limit, excluded_addresses),
          {:ok, token_transactions} <-
-           Clickhouse.MarkExchanges.mark_exchange_wallets(token_transactions),
+           MarkExchanges.mark_exchange_wallets(token_transactions),
          {:ok, token_transactions} <- Label.add_labels("bitcoin", token_transactions) do
       {:ok, token_transactions}
     else
@@ -51,7 +51,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
 
     with {:ok, contract_address, token_decimals} <- Project.contract_info(project),
          {:ok, token_transactions} <-
-           Clickhouse.Erc20Transfers.token_top_transfers(
+           Erc20Transfers.top_transactions(
              contract_address,
              from,
              to,
@@ -60,7 +60,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
              excluded_addresses
            ),
          {:ok, token_transactions} <-
-           Clickhouse.MarkExchanges.mark_exchange_wallets(token_transactions),
+           MarkExchanges.mark_exchange_wallets(token_transactions),
          {:ok, token_transactions} <- Label.add_labels(slug, token_transactions) do
       {:ok, token_transactions}
     else
@@ -201,9 +201,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     limit = Enum.min([limit, 100])
 
     with {:ok, eth_transactions} <-
-           Clickhouse.EthTransfers.eth_top_transactions(from, to, limit),
+           EthTransfers.top_transactions(from, to, limit),
          {:ok, eth_transactions} <-
-           Clickhouse.MarkExchanges.mark_exchange_wallets(eth_transactions),
+           MarkExchanges.mark_exchange_wallets(eth_transactions),
          {:ok, eth_transactions} <- Label.add_labels("ethereum", eth_transactions) do
       {:ok, eth_transactions}
     else
@@ -224,7 +224,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
 
     with {:ok, eth_addresses} <- Project.eth_addresses(project),
          {:ok, eth_transactions} <-
-           Clickhouse.EthTransfers.top_wallet_transfers(
+           EthTransfers.top_wallet_transfers(
              eth_addresses,
              from,
              to,
@@ -232,7 +232,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
              trx_type
            ),
          {:ok, eth_transactions} <-
-           Clickhouse.MarkExchanges.mark_exchange_wallets(eth_transactions),
+           MarkExchanges.mark_exchange_wallets(eth_transactions),
          {:ok, eth_transactions} <- Label.add_labels(slug, eth_transactions) do
       {:ok, eth_transactions}
     else

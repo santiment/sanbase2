@@ -167,7 +167,7 @@ defmodule SanbaseWeb.ApiCallLimitTest do
       assert error_msg =~ "API Rate Limit Reached. Try again in"
 
       assert {"x-ratelimit-remaining-month", "599300"} in response.resp_headers
-      assert {"x-ratelimit-remaining-hour", "5300"} in response.resp_headers
+      assert {"x-ratelimit-remaining-hour", "29300"} in response.resp_headers
       assert {"x-ratelimit-remaining-minute", "0"} in response.resp_headers
       assert {"x-ratelimit-remaining", "0"} in response.resp_headers
     end

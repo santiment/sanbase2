@@ -37,6 +37,20 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
+  def current_balance(addresses, contract, decimals) do
+    decimals = Sanbase.Math.ipow(10, decimals)
+
+    {query, args} = current_balance_query(addresses, contract)
+
+    ClickhouseRepo.query_transform(query, args, fn [address, balance] ->
+      %{
+        address: address,
+        balance: balance / decimals
+      }
+    end)
+  end
+
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def historical_balance([], _, _, _, _, _), do: {:ok, []}
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
@@ -187,8 +201,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     query = """
     SELECT
       name,
-      argMax(value, blockNumber) / pow(10, decimals) AS balance
-    FROM erc20_balances
+      argMax(value, dt) / pow(10, decimals) AS balance
+    FROM #{@table}
     INNER JOIN (
       SELECT asset_ref_id AS assetRefId, name, decimals
       FROM asset_metadata FINAL
@@ -200,6 +214,25 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     """
 
     args = [address |> String.downcase()]
+
+    {query, args}
+  end
+
+  defp current_balance_query(addresses, contract) do
+    query = """
+    SELECT
+      address,
+      argMax(value, dt) AS balance
+    FROM #{@table}
+    PREWHERE
+      address IN (?1) AND
+      contract = ?2 AND
+      sign = 1
+    GROUP BY address
+    """
+
+    addresses = Enum.map(addresses, &String.downcase/1)
+    args = [addresses, contract]
 
     {query, args}
   end

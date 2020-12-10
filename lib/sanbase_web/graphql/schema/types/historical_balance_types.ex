@@ -32,9 +32,10 @@ defmodule SanbaseWeb.Graphql.HistoricalBalanceTypes do
   end
 
   input_object :historical_balance_selector do
-    field(:infrastructure, non_null(:string))
+    field(:infrastructure, :string)
     field(:currency, :string)
     field(:contract, :string)
+    field(:decimals, :integer)
     field(:slug, :string)
   end
 

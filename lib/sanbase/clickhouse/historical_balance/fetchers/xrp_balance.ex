@@ -26,11 +26,23 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def assets_held_by_address(address) do
-    {query, args} = current_balances_query(address)
+    {query, args} = current_balances_query([address], "XRP")
 
-    ClickhouseRepo.query_transform(query, args, fn [_currency, value] ->
+    ClickhouseRepo.query_transform(query, args, fn [^address, value] ->
       %{
         slug: "ripple",
+        balance: value
+      }
+    end)
+  end
+
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
+  def current_balance(addresses, currency, _decimals) do
+    {query, args} = current_balances_query(addresses, "XRP")
+
+    ClickhouseRepo.query_transform(query, args, fn [address, value] ->
+      %{
+        address: address,
         balance: value
       }
     end)
@@ -116,19 +128,18 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
 
   # Private functions
 
-  defp current_balances_query(address) do
+  defp current_balances_query(address, currency) do
     query = """
-    SELECT value
+    SELECT address, argMax(value, dt)
     FROM #{@table}
     PREWHERE
       address = ?1 AND
-      sign = 1 AND
-      currency = 'XRP'
-    ORDER BY dt DESC
-    LIMIT 1
+      currency = ?2 AND
+      sign = 1
+    GROUP BY address
     """
 
-    args = [address |> String.downcase()]
+    args = [address, currency]
     {query, args}
   end
 

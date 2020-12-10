@@ -14,6 +14,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Behaviour do
   """
   @type interval :: String.t()
 
+  @type slug :: String.t()
   @type address :: String.t()
   @type address_or_addresses :: address | list(address)
   @type decimals :: non_neg_integer()
@@ -25,7 +26,12 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Behaviour do
   @type target :: contract | currency
 
   @type slug_balance_map :: %{
-          slug: String.t(),
+          slug: slug,
+          balance: float()
+        }
+
+  @type address_balance_map :: %{
+          address: address,
           balance: float()
         }
 
@@ -55,6 +61,13 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Behaviour do
   """
   @callback assets_held_by_address(address) ::
               {:ok, list(slug_balance_map)} | {:error, String.t()}
+
+  @doc ~s"""
+  Return a list of all assets that the address holds or has held in the past and
+  the latest balance.
+  """
+  @callback current_balance(address, target, decimals) ::
+              {:ok, list(address_balance_map)} | {:error, String.t()}
 
   @doc ~s"""
   For a given address or list of addresses returns the combined

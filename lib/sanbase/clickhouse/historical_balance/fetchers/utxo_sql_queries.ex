@@ -19,17 +19,16 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.UtxoSqlQueries do
     {query, args}
   end
 
-  def current_balance_query(table, address) do
+  def current_balance_query(table, addresses) do
     query = """
-    SELECT balance
+    SELECT address, argMax(balance, dt)
     FROM #{table}
     PREWHERE
-      address = ?1
-    ORDER BY dt DESC
-    LIMIT 1
+      address IN (?1)
+    GROUP BY address
     """
 
-    args = [address]
+    args = [addresses]
     {query, args}
   end
 

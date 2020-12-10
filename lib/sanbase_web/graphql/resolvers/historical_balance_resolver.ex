@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
 
   import SanbaseWeb.Graphql.Helpers.CalibrateInterval, only: [calibrate: 7]
 
+  alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.HistoricalBalance
 
   # Return this number of datapoints is the provided interval is an empty string
@@ -40,9 +41,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
 
   def historical_balance(
         _root,
-        %{selector: selector, from: from, to: to, interval: interval, address: address},
+        %{from: from, to: to, interval: interval, address: address} = args,
         _resolution
       ) do
+    selector =
+      case args do
+        %{selector: selector} -> selector
+        %{slug: slug} -> %{slug: slug}
+      end
+
     HistoricalBalance.historical_balance(
       selector,
       address,
@@ -57,23 +64,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
         error,
         description: "selector"
       )
-    end)
-  end
-
-  def historical_balance(
-        _root,
-        %{slug: slug, from: from, to: to, interval: interval, address: address},
-        _resolution
-      ) do
-    HistoricalBalance.historical_balance(
-      %{infrastructure: "ETH", slug: slug},
-      address,
-      from,
-      to,
-      interval
-    )
-    |> maybe_handle_graphql_error(fn error ->
-      handle_graphql_error("Historical Balances", slug, error)
     end)
   end
 
@@ -119,7 +109,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
   def transaction_volume_per_address(
         _root,
         %{
-          selector: %{slug: slug, infrastructure: "ETH"} = selector,
+          selector: %{slug: slug} = selector,
           from: from,
           to: to,
           addresses: addresses

@@ -25,12 +25,24 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.BchBalance do
     do: raise("Should not try to change bch balances")
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
-  def assets_held_by_address(address) do
-    {query, args} = current_balance_query(@table, address)
+  def assets_held_by_address(address) when is_binary(address) do
+    {query, args} = current_balance_query(@table, [address])
 
-    ClickhouseRepo.query_transform(query, args, fn [value] ->
+    ClickhouseRepo.query_transform(query, args, fn [^address, value] ->
       %{
         slug: "bitcoin",
+        balance: value
+      }
+    end)
+  end
+
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
+  def current_balance(addresses, "BCH", _decimals) do
+    {query, args} = current_balance_query(@table, addresses)
+
+    ClickhouseRepo.query_transform(query, args, fn [address, value] ->
+      %{
+        address: address,
         balance: value
       }
     end)

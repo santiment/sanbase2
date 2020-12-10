@@ -27,11 +27,23 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def assets_held_by_address(address) do
-    {query, args} = current_balances_query(address)
+    {query, args} = asset_held_by_address_query(address)
 
     ClickhouseRepo.query_transform(query, args, fn [value] ->
       %{
         slug: "ethereum",
+        balance: value / @eth_decimals
+      }
+    end)
+  end
+
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
+  def current_balance(addresses, "ETH", _decimals) do
+    {query, args} = current_balance_query(addresses)
+
+    ClickhouseRepo.query_transform(query, args, fn [address, value] ->
+      %{
+        address: address,
         balance: value / @eth_decimals
       }
     end)
@@ -118,7 +130,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
 
   # Private functions
 
-  defp current_balances_query(address) do
+  defp asset_held_by_address_query(address) do
     query = """
     SELECT value
     FROM #{@table}
@@ -130,6 +142,22 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     """
 
     args = [address |> String.downcase()]
+    {query, args}
+  end
+
+  defp current_balance_query(addresses) do
+    query = """
+    SELECT address, argMax(value, dt)
+    FROM #{@table}
+    PREWHERE
+      address IN (?1) AND
+      sign = 1
+    GROUP BY address
+    """
+
+    addresses = Enum.map(addresses, &String.downcase/1)
+    args = [addresses]
+
     {query, args}
   end
 

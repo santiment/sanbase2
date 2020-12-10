@@ -45,6 +45,18 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.BtcBalance do
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
+  def current_balance(addresses, "BTC", _decimals) do
+    {query, args} = current_balance_query(@table, addresses)
+
+    ClickhouseRepo.query_transform(query, args, fn [address, value] ->
+      %{
+        address: address,
+        balance: value
+      }
+    end)
+  end
+
+  @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def historical_balance([], _, _, _, _, _), do: {:ok, []}
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour

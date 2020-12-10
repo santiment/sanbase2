@@ -209,6 +209,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
         |> Enum.map(
           &%{
             blockchain_address: %{
+              id: &1.id,
               address: &1.blockchain_address.address,
               labels: &1.labels,
               notes: &1.notes,

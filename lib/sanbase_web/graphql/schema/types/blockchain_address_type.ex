@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.BlockchainAddressType do
   use Absinthe.Schema.Notation
 
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
+
   alias SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver
 
   enum :recent_transactions_type do
@@ -25,6 +27,11 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressType do
     field(:infrastructure, :infrastructure)
     field(:labels, list_of(:blockchain_address_label))
     field(:notes, :string)
+
+    field :balance, :float do
+      arg(:selector, :historical_balance_selector)
+      cache_resolve(&BlockchainAddressResolver.balance/3)
+    end
 
     field :comments_count, :integer do
       resolve(&BlockchainAddressResolver.comments_count/3)

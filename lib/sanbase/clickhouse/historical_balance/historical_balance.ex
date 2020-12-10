@@ -114,9 +114,28 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
     end
   end
 
+  @spec current_balance(selector, address | list(address)) ::
+          __MODULE__.Behaviour.current_balance_result()
+  def current_balance(selector, addresses) do
+    case selector_to_args(selector) do
+      {module, asset, decimals} ->
+        module.current_balance(addresses, asset, decimals)
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
   # erc20 case
+
   @spec selector_to_args(selector) ::
           {module(), String.t(), non_neg_integer()} | {:error, tuple()}
+
+  def selector_to_args(%{infrastructure: "ETH", contract: contract, decimals: decimals})
+      when is_binary(contract) and is_number(decimals) and decimals > 0 do
+    {Erc20Balance, String.downcase(contract), decimals}
+  end
+
   def selector_to_args(%{infrastructure: "ETH", slug: slug})
       when is_binary(slug) and slug != "ethereum" do
     with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug),
@@ -153,6 +172,17 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
     with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug),
          do: {BnbBalance, contract, decimals}
+  end
+
+  def selector_to_args(%{slug: slug} = selector) do
+    with {:ok, contract, decimals, infrastructure} <-
+           Sanbase.Model.Project.contract_info_infrastructure_by_slug(slug),
+         module when not is_nil(module) <- Map.get(@infrastructure_to_module, infrastructure) do
+      {module, contract, decimals}
+    else
+      _ ->
+        {:error, "Invalid historical balance selector: #{inspect(selector)}"}
+    end
   end
 
   def selector_to_args(selector) do

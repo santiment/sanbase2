@@ -100,8 +100,6 @@ defmodule Sanbase.Clickhouse.Label do
                arrayJoin(labels_owners_filtered) as label_owner,
                label_owner.1 as label_raw,
                label_owner.2 as owner,
-               asset_id,
-               name,
                multiIf(
                    owner = 'uniswap router', 'Uniswap Router',
                    label_raw='uniswap_ecosystem', 'Uniswap Ecosystem',

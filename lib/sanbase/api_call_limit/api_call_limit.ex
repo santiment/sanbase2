@@ -18,7 +18,7 @@ defmodule Sanbase.ApiCallLimit do
   }
 
   @limits_per_hour %{
-    "sanbase_pro" => 5000,
+    "sanbase_pro" => 1000,
     "sanapi_free" => 500,
     "sanapi_basic" => 20_000,
     "sanapi_pro" => 30_000

@@ -101,6 +101,7 @@ defmodule Sanbase.Clickhouse.Label do
                label_owner.1 as label_raw,
                label_owner.2 as owner,
                asset_id,
+               name,
                multiIf(
                    owner = 'uniswap router', 'Uniswap Router',
                    label_raw='uniswap_ecosystem', 'Uniswap Ecosystem',
@@ -163,12 +164,19 @@ defmodule Sanbase.Clickhouse.Label do
                 )
             )
         )
+        ANY LEFT JOIN (
+          select asset_id, name from asset_metadata
+        ) USING asset_id
     )
     WHERE label != 'whale_wrong'
     """
   end
 
-  defp whale_filter(nil, _), do: ""
+  defp whale_filter(nil, _) do
+    """
+    label_raw='whale', concat('Whale, token:', name),
+    """
+  end
 
   defp whale_filter(slug, opts) when is_binary(slug) do
     position = Keyword.fetch!(opts, :position)

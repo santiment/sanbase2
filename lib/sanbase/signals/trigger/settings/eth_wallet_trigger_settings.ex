@@ -74,12 +74,12 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
     target_list
     |> Enum.map(fn addr ->
       case balance_change(addr, settings.asset.slug, from, to) do
-        [{^addr, {start_balance, end_balance, balance_change}}] ->
+        [%{address: ^addr} = result] ->
           {addr, from,
            %{
-             start_balance: start_balance,
-             end_balance: end_balance,
-             balance_change: balance_change
+             balance_start: result.balance_start,
+             balance_end: result.balance_end,
+             balance_change: result.balance_change_amount
            }}
 
         _ ->
@@ -102,23 +102,22 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
         eth_addresses
         |> Enum.map(&String.downcase/1)
         |> balance_change(settings.asset.slug, from, to)
-        |> Enum.map(fn {_, data} -> data end)
 
-      {start_balance, end_balance, balance_change} =
+      {balance_start, balance_end, balance_change} =
         project_balance_data
         |> Enum.reduce({0, 0, 0}, fn
-          {start_balance, end_balance, balance_change}, {start_acc, end_acc, change_acc} ->
+          %{} = map, {start_acc, end_acc, change_acc} ->
             {
-              start_acc + start_balance,
-              end_acc + end_balance,
-              change_acc + balance_change
+              start_acc + map.balance_start,
+              end_acc + map.balance_end,
+              change_acc + map.balance_change_amount
             }
         end)
 
       {project, from,
        %{
-         start_balance: start_balance,
-         end_balance: end_balance,
+         balance_start: balance_start,
+         balance_end: balance_end,
          balance_change: balance_change
        }}
     end)
@@ -200,8 +199,8 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
         balance_change_text: operation_text(settings.operation),
         balance_change: balance_data.balance_change,
         balance_change_abs: abs(balance_data.balance_change),
-        balance: balance_data.end_balance,
-        previous_balance: balance_data.start_balance
+        balance: balance_data.balance_end,
+        previous_balance: balance_data.balance_start
       }
 
       template = """
@@ -225,8 +224,8 @@ defmodule Sanbase.Signal.Trigger.EthWalletTriggerSettings do
         since: DateTime.truncate(from, :second),
         balance_change: balance_data.balance_change,
         balance_change_abs: abs(balance_data.balance_change),
-        balance: balance_data.end_balance,
-        previous_balance: balance_data.start_balance
+        balance: balance_data.balance_end,
+        previous_balance: balance_data.balance_start
       }
 
       template = """

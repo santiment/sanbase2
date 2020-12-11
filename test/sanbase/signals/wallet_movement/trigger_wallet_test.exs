@@ -92,7 +92,16 @@ defmodule Sanbase.Signal.WalletTriggerTest do
        end},
       {HistoricalBalance, [:passthrough],
        balance_change: fn _, _, _, _ ->
-         {:ok, [{context.address, {20, 70, 50}}]}
+         {:ok,
+          [
+            %{
+              address: context.address,
+              balance_start: 20,
+              balance_end: 70,
+              balance_change_amount: 50,
+              balance_change_percent: 250.0
+            }
+          ]}
        end}
     ] do
       Scheduler.run_signal(WalletTriggerSettings)
@@ -117,7 +126,16 @@ defmodule Sanbase.Signal.WalletTriggerTest do
        end},
       {HistoricalBalance, [:passthrough],
        balance_change: fn _, _, _, _ ->
-         {:ok, [{context.address, {20, 300, 280}}]}
+         {:ok,
+          [
+            %{
+              address: context.address,
+              balance_start: 20,
+              balance_end: 300,
+              balance_change_amount: 280,
+              balance_change_percent: 1400.0
+            }
+          ]}
        end}
     ] do
       Scheduler.run_signal(WalletTriggerSettings)
@@ -152,7 +170,16 @@ defmodule Sanbase.Signal.WalletTriggerTest do
        end},
       {HistoricalBalance, [:passthrough],
        balance_change: fn _, _, _, _ ->
-         {:ok, [{context.address, {100, 0, -100}}]}
+         {:ok,
+          [
+            %{
+              address: context.address,
+              balance_start: 100,
+              balance_end: 0,
+              balance_change_amount: -100,
+              balance_change_percent: -100.0
+            }
+          ]}
        end}
     ] do
       Scheduler.run_signal(WalletTriggerSettings)

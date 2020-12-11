@@ -77,8 +77,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.BnbBalance do
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def balance_change([], _, _, _, _), do: {:ok, []}
 
-  def balance_change(addr, currency, token_decimals, from, to) do
-    token_decimals = Sanbase.Math.ipow(10, token_decimals)
+  def balance_change(addr, currency, decimals, from, to) do
+    decimals = Sanbase.Math.ipow(10, decimals)
 
     query = """
     SELECT
@@ -96,9 +96,15 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.BnbBalance do
     addresses = addr |> List.wrap()
     args = [addresses, currency, from, to]
 
-    ClickhouseRepo.query_transform(query, args, fn [address, start_balance, end_balance, change] ->
-      {address,
-       {start_balance / token_decimals, end_balance / token_decimals, change / token_decimals}}
+    ClickhouseRepo.query_transform(query, args, fn
+      [address, balance_start, balance_end, balance_change] ->
+        %{
+          address: address,
+          balance_start: balance_start / decimals,
+          balance_end: balance_end / decimals,
+          balance_change_amount: balance_change / decimals,
+          balance_change_percent: Sanbase.Math.percent_change(balance_start, balance_end)
+        }
     end)
   end
 

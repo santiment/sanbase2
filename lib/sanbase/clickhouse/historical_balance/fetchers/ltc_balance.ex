@@ -83,8 +83,15 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.LtcBalance do
       when is_binary(address_or_addresses) or is_list(address_or_addresses) do
     {query, args} = balance_change_query(@table, address_or_addresses, from, to)
 
-    ClickhouseRepo.query_transform(query, args, fn [address, start_balance, end_balance, change] ->
-      {address, {start_balance, end_balance, change}}
+    ClickhouseRepo.query_transform(query, args, fn
+      [address, balance_start, balance_end, balance_change] ->
+        %{
+          address: address,
+          balance_start: balance_start,
+          balance_end: balance_end,
+          balance_change_amount: balance_change,
+          balance_change_percent: Sanbase.Math.percent_change(balance_start, balance_end)
+        }
     end)
   end
 

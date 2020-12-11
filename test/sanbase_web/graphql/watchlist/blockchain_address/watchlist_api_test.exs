@@ -481,20 +481,55 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
           blockchainAddress{
             address
               balance(selector: {slug: "#{project.slug}"})
+              balanceChange(selector: {slug: "#{project.slug}"}, from: "utc_now-1d", to: "utc_now"){
+                balanceStart
+                balanceEnd
+                balanceChangeAmount
+                balanceChangePercent
+              }
           }
         }
       }
     }
     """
 
+    current_balance_data = [
+      %{address: addr1, balance: 100.0},
+      %{address: addr2, balance: 200.0},
+      %{address: addr3, balance: 300.0}
+    ]
+
+    balance_change_data = [
+      %{
+        address: addr1,
+        balance_start: 50.0,
+        balance_end: 100.0,
+        balance_change_amount: 50.0,
+        balance_change_percent: 100.0
+      },
+      %{
+        address: addr2,
+        balance_start: 50.0,
+        balance_end: 200.0,
+        balance_change_amount: 150.0,
+        balance_change_percent: 300.0
+      },
+      %{
+        address: addr3,
+        balance_start: 66.0,
+        balance_end: 300.0,
+        balance_change_amount: 234.0,
+        balance_change_percent: 354.55
+      }
+    ]
+
     Sanbase.Mock.prepare_mock2(
       &Sanbase.Clickhouse.HistoricalBalance.current_balance/2,
-      {:ok,
-       [
-         %{address: addr1, balance: 100.0},
-         %{address: addr2, balance: 200.0},
-         %{address: addr3, balance: 300.0}
-       ]}
+      {:ok, current_balance_data}
+    )
+    |> Sanbase.Mock.prepare_mock2(
+      &Sanbase.Clickhouse.HistoricalBalance.balance_change/4,
+      {:ok, balance_change_data}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
@@ -506,21 +541,39 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
       assert %{
                "blockchainAddress" => %{
                  "address" => addr1,
-                 "balance" => 100.0
+                 "balance" => 100.0,
+                 "balanceChange" => %{
+                   "balanceChangeAmount" => 50.0,
+                   "balanceChangePercent" => 100.0,
+                   "balanceEnd" => 100.0,
+                   "balanceStart" => 50.0
+                 }
                }
              } in result
 
       assert %{
                "blockchainAddress" => %{
                  "address" => addr2,
-                 "balance" => 200.0
+                 "balance" => 200.0,
+                 "balanceChange" => %{
+                   "balanceChangeAmount" => 150.0,
+                   "balanceChangePercent" => 300.0,
+                   "balanceEnd" => 200.0,
+                   "balanceStart" => 50.0
+                 }
                }
              } in result
 
       assert %{
                "blockchainAddress" => %{
                  "address" => addr3,
-                 "balance" => 300.0
+                 "balance" => 300.0,
+                 "balanceChange" => %{
+                   "balanceChangeAmount" => 234.0,
+                   "balanceChangePercent" => 354.55,
+                   "balanceEnd" => 300.0,
+                   "balanceStart" => 66.0
+                 }
                }
              } in result
     end)

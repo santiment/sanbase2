@@ -33,6 +33,14 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressType do
       cache_resolve(&BlockchainAddressResolver.balance/3)
     end
 
+    field :balance_change, :address_balance_change do
+      arg(:selector, non_null(:historical_balance_selector))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      cache_resolve(&BlockchainAddressResolver.balance_change/3)
+    end
+
     field :comments_count, :integer do
       resolve(&BlockchainAddressResolver.comments_count/3)
     end

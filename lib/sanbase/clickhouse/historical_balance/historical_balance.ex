@@ -174,11 +174,18 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
          do: {BnbBalance, contract, decimals}
   end
 
+  def selector_to_args(%{slug: "ethereum"} = selector),
+    do: selector_to_args(Map.put(selector, :infrastructure, "ETH"))
+
   def selector_to_args(%{slug: slug} = selector) do
     with {:ok, contract, decimals, infrastructure} <-
            Sanbase.Model.Project.contract_info_infrastructure_by_slug(slug),
          module when not is_nil(module) <- Map.get(@infrastructure_to_module, infrastructure) do
-      {module, contract, decimals}
+      # TODO: Rework better. The ETH infrastructure is resolved to 2 different modules
+      case module do
+        [_, _] -> {Erc20Balance, contract, decimals}
+        _ -> {module, contract, decimals}
+      end
     else
       _ ->
         {:error, "Invalid historical balance selector: #{inspect(selector)}"}

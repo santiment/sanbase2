@@ -21,7 +21,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
           | :comment_insight_id
           | :comment_short_url_id
           | :comment_timeline_event_id
-          | :current_address_selector_balance
+          | :address_selector_current_balance
           | :eth_balance
           | :eth_spent
           | :infrastructure
@@ -46,7 +46,11 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
            ] ->
         ClickhouseDataloader.query(queryable, args)
 
-      :current_address_selector_balance ->
+      x
+      when x in [
+             :address_selector_current_balance,
+             :address_selector_balance_change
+           ] ->
         BalanceDataloader.query(queryable, args)
 
       :volume_change_24h ->

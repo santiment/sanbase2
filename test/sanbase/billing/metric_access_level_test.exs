@@ -338,6 +338,10 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "deposit_transactions_per_exchange",
         "exchange_inflow_per_exchange",
         "exchange_outflow_per_exchange",
+        "inflow_per_protocol",
+        "outflow_per_protocol",
+        "balance_per_protocol_delta",
+        "balance_per_protocol",
         "withdrawal_transactions_per_exchange",
         "total_trade_volume_by_dex",
         "eth_based_trade_volume_by_dex",
@@ -347,8 +351,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "eth_based_trade_amount_by_dex",
         "stablecoin_trade_amount_by_dex",
         "other_trade_amount_by_dex",
-        "balance_per_protocol_delta",
-        "balance_per_protocol",
         # table metrics
         "labelled_exchange_balance_sum",
         # balance and flow labeled metrics

@@ -85,8 +85,42 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Exchange Inflow per Exchange",
+    "human_readable_name": "Exchange Outflow per Exchange",
     "name": "exchange_outflow_per_exchange",
+    "metric": "labelled_exchange_outflow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Inflow per Protocol",
+    "name": "inflow_per_protocol",
+    "metric": "labelled_exchange_inflow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Outflow per Protocol",
+    "name": "outflow_per_protocol",
     "metric": "labelled_exchange_outflow",
     "version": "2019-01-01",
     "access": "restricted",

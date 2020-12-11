@@ -348,8 +348,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "eth_based_trade_amount_by_dex",
         "stablecoin_trade_amount_by_dex",
         "other_trade_amount_by_dex",
-        "balance_per_protocol_delta",
-        "balance_per_protocol",
+        "labelled_exchange_balance",
+        "labelled_exchange_balance_sum",
         # balance and flow labeled metrics
         "miners_balance",
         "genesis_balance",

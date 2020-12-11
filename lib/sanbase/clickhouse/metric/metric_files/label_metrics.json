@@ -102,8 +102,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Exchange Balance (Inflow - Outflow) per Exchange",
-    "name": "exchange_balance_per_exchange",
+    "human_readable_name": "Exchange Balance (Inflow - Outflow) per Exchange Delta",
+    "name": "balance_per_protocol_delta",
     "metric": "labelled_exchange_balance",
     "version": "2019-01-01",
     "access": "restricted",
@@ -113,6 +113,23 @@
       "SANBASE": "free"
     },
     "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Exchange Balance (Inflow - Outflow) per Exchange",
+    "name": "balance_per_protocol",
+    "metric": "labelled_exchange_balance_sum",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,

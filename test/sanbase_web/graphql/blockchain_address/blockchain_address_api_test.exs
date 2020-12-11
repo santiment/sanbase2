@@ -93,24 +93,6 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
     ]
   end
 
-  defp transactions do
-    {:ok,
-     [
-       %Sanbase.Clickhouse.Erc20Transfers{
-         block_number: 5_619_729,
-         contract: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098",
-         datetime: DateTime.from_naive!(~N[2018-06-10 10:33:47], "Etc/UTC"),
-         from_address: "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8",
-         log_index: 0,
-         to_address: "0x742d35cc6634c0532925a3b844bc454e4438f44e",
-         trx_hash: "0x9a561c88bb59a1f6dfe63ed4fe036466b3a328d1d86d039377481ab7c4defe4e",
-         trx_value: 4.5,
-         trx_position: 2,
-         slug: "santiment"
-       }
-     ]}
-  end
-
   defp expected_token_transactions do
     [
       %{

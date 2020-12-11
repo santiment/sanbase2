@@ -336,7 +336,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "active_deposits_per_exchange",
         "active_withdrawals_per_exchange",
         "deposit_transactions_per_exchange",
-        "exchange_balance_per_exchange",
         "exchange_inflow_per_exchange",
         "exchange_outflow_per_exchange",
         "withdrawal_transactions_per_exchange",

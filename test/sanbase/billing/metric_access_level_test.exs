@@ -186,6 +186,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "fees_usd_intraday",
         "average_fees_usd",
         "median_fees_usd",
+        "average_fees_usd_intraday",
+        "median_fees_usd_intraday",
         "network_circulation_usd_1d",
         "fees_to_network_circulation_usd_1d",
         "avg_gas_used",

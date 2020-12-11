@@ -60,12 +60,13 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
 
   defp exchange_names_query(blockchain, is_dex) do
     query = """
-    SELECT DISTINCT JSONExtractString(metadata, 'owner')
+    SELECT DISTINCT lower(JSONExtractString(metadata, 'owner')) as exchange
     FROM blockchain_address_labels FINAL
     PREWHERE
       blockchain = ?1 AND
       #{maybe_is_dex(is_dex)}
     HAVING sign = 1
+    ORDER BY exchange
     """
 
     args = [blockchain |> String.downcase()]
@@ -75,7 +76,7 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
 
   defp exchange_addresses_query(blockchain, limit) do
     query = """
-    SELECT DISTINCT(address), label, JSONExtractString(metadata, 'owner')
+    SELECT DISTINCT(address), label, lower(JSONExtractString(metadata, 'owner'))
     FROM blockchain_address_labels FINAL
     PREWHERE blockchain = 'ethereum' AND label in ('centralized_exchange', 'decentralized_exchange')
     HAVING sign = 1
@@ -89,7 +90,7 @@ defmodule Sanbase.Clickhouse.ExchangeAddress do
 
   defp exchange_addresses_for_exchange_query(blockchain, owner, limit) do
     query = """
-    SELECT DISTINCT(address), label, JSONExtractString(metadata, 'owner')
+    SELECT DISTINCT(address), label, lower(JSONExtractString(metadata, 'owner'))
     FROM blockchain_address_labels FINAL
     PREWHERE
       blockchain = ?1 AND

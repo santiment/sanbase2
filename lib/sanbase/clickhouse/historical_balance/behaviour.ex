@@ -42,8 +42,13 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Behaviour do
 
   @type historical_balance_result :: {:ok, list(historical_balance)} | {:error, String.t()}
 
-  @type balance_change ::
-          {address, {balance_before :: number, balance_after :: number, balance_change :: number}}
+  @type balance_change :: %{
+          address: address,
+          balance_start: number,
+          balance_end: number,
+          balance_change_amount: number,
+          balance_change_percent: number
+        }
 
   @type balance_change_result :: {:ok, list(balance_change)} | {:error, String.t()}
 

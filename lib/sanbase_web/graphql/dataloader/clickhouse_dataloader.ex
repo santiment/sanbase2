@@ -184,7 +184,9 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     case Clickhouse.HistoricalBalance.EthSpent.eth_balance_change(eth_addresses, from, to) do
       {:ok, balance_changes} ->
         balance_changes
-        |> Enum.map(fn {addr, {_, _, change}} -> {addr, {:ok, change}} end)
+        |> Enum.map(fn %{address: address, balance_change_amount: balance_change_amount} ->
+          {address, {:ok, balance_change_amount}}
+        end)
 
       _ ->
         eth_addresses

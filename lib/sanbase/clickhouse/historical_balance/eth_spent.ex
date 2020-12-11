@@ -62,7 +62,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthSpent do
       {:ok, balance_changes} ->
         eth_spent =
           balance_changes
-          |> Enum.map(fn {_, {_, _, change}} -> change end)
+          |> Enum.map(fn %{balance_change_amount: change} -> change end)
           |> Enum.sum()
           |> case do
             change when change < 0 -> abs(change)

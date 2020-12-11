@@ -85,9 +85,15 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
       when is_binary(address_or_addresses) or is_list(address_or_addresses) do
     {query, args} = balance_change_query(address_or_addresses, from, to)
 
-    ClickhouseRepo.query_transform(query, args, fn [address, start_balance, end_balance, change] ->
-      {address,
-       {start_balance / @eth_decimals, end_balance / @eth_decimals, change / @eth_decimals}}
+    ClickhouseRepo.query_transform(query, args, fn
+      [address, balance_start, balance_end, balance_change] ->
+        %{
+          address: address,
+          balance_start: balance_start / @eth_decimals,
+          balance_end: balance_end / @eth_decimals,
+          balance_change_amount: balance_change / @eth_decimals,
+          balance_change_percent: Sanbase.Math.percent_change(balance_start, balance_end)
+        }
     end)
   end
 

@@ -52,22 +52,11 @@ defmodule SanbaseWeb.Graphql.BalanceDataloader do
   defp get_balance_change({selector_from_to_map, addresses}) do
     %{selector: selector, from: from, to: to} = selector_from_to_map
 
-    HistoricalBalance.balance_change(
-      selector,
-      addresses,
-      from,
-      to
-    )
-    |> case do
+    case HistoricalBalance.balance_change(selector, addresses, from, to) do
       {:ok, list} ->
         Enum.reduce(list, %{}, fn
-          {address, {balance_start, balance_end, balance_change}}, acc ->
-            Map.put(acc, {address, selector, from, to}, %{
-              balance_start: balance_start,
-              balance_end: balance_end,
-              balance_change_amount: balance_change,
-              balance_change_percent: Sanbase.Math.percent_change(balance_start, balance_end)
-            })
+          %{address: address} = result, acc ->
+            Map.put(acc, {address, selector, from, to}, result)
         end)
 
       {:error, _error} ->

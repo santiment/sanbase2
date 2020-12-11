@@ -73,12 +73,11 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
 
     target_list
     |> Enum.map(fn address ->
-      with {:ok, [{address, {balance_before, balance_after, _balance_change}}]} <-
-             balance_change(selector, address, from, to) do
+      with {:ok, [%{address: ^address} = result]} <- balance_change(selector, address, from, to) do
         {address,
          [
-           %{datetime: from, balance: balance_before},
-           %{datetime: to, balance: balance_after}
+           %{datetime: from, balance: result.balance_start},
+           %{datetime: to, balance: result.balance_end}
          ]}
       end
     end)
@@ -106,9 +105,8 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
           data
           |> Enum.reduce(
             {0, 0},
-            fn {_, {balance_before, balance_after, _change}},
-               {balance_before_acc, balance_after_acc} ->
-              {balance_before + balance_before_acc, balance_after + balance_after_acc}
+            fn %{} = result, {balance_before_acc, balance_after_acc} ->
+              {result.balance_start + balance_before_acc, result.balance_end + balance_after_acc}
             end
           )
 

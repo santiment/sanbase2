@@ -12,6 +12,7 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
 
     with true <- valid_args?(args),
          true <- valid_filters_combinator?(args),
+         true <- valid_base_projects?(args),
          true <- valid_filters?(filters),
          true <- valid_order_by?(order_by),
          true <- valid_pagination?(pagination) do
@@ -41,6 +42,32 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
          """
          Unsupported filter_combinator #{inspect(filters_combinator)}.
          Supported filter combinators are 'and' and 'or'.
+         """}
+    end
+  end
+
+  defp valid_base_projects?(args) do
+    base_projects = get_in(args, [:selector, :base_projects]) || :all
+
+    case base_projects do
+      :all ->
+        true
+
+      %{watchlist_id: id} when is_integer(id) ->
+        true
+
+      %{watchlist_slug: slug} when is_binary(slug) ->
+        true
+
+      %{slugs: [_ | _]} ->
+        true
+
+      _ ->
+        {:error,
+         """
+         Unsupported base_projects #{inspect(base_projects)}.
+         Supported base projects are '{"watchlist_id": <integer>}',
+         '{"watchlsit_slug": "<string>"}' or '{"slugs": [<list of strings>]}'.
          """}
     end
   end

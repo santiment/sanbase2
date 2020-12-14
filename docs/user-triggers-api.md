@@ -383,6 +383,32 @@ in dynamic watchlsits and in the `allProjects` selector are supported in exactly
 the same way with the same syntax in this signal
 
 ```json
+// All stablecoin projects with DAA > 1000.
+// `watchlistId` with an integer argument and `slugs` with a list of slugs
+// are also supported for the base_projects argument
+{
+  "type": "screener_signal",
+  "metric": "social_volume_total",
+  "channel": "telegram",
+  "operation": {
+    "selector": {
+      "base_projects": {"watchlistSlug": "stablecoins"},
+      "filters": [
+        {
+          "metric": "daily_active_addresse",
+          "dynamicFrom": "1d",
+          "dynamicTo": "now",
+          "aggregation": "last",
+          "operation": "greater_than",
+          "threshold": 500
+        }
+      ]
+    }
+  }
+}
+```
+
+```json
 // All projects with DAA > 500.
 {
   "type": "screener_signal",

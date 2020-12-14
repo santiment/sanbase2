@@ -76,7 +76,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   end
 
   input_object :projects_selector_input_object do
-    field(:base_projects, :base_projects_input_object)
+    field(:base_projects, list_of(:base_projects_input_object))
     field(:filters, list_of(:project_filter_input_object))
     field(:filters_combinator, :filters_combinator, default_value: :and)
     field(:order_by, :project_order_input_object)

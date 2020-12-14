@@ -47,29 +47,33 @@ defmodule Sanbase.Model.Project.ListSelector.Validator do
   end
 
   defp valid_base_projects?(args) do
-    base_projects = get_in(args, [:selector, :base_projects]) || :all
+    base_projects_list = get_in(args, [:selector, :base_projects]) || [:all]
 
-    case base_projects do
-      :all ->
-        true
+    base_projects_list
+    |> Enum.map(fn base_projects ->
+      case base_projects do
+        :all ->
+          true
 
-      %{watchlist_id: id} when is_integer(id) ->
-        true
+        %{watchlist_id: id} when is_integer(id) ->
+          true
 
-      %{watchlist_slug: slug} when is_binary(slug) ->
-        true
+        %{watchlist_slug: slug} when is_binary(slug) ->
+          true
 
-      %{slugs: [_ | _]} ->
-        true
+        %{slugs: [_ | _]} ->
+          true
 
-      _ ->
-        {:error,
-         """
-         Unsupported base_projects #{inspect(base_projects)}.
-         Supported base projects are '{"watchlist_id": <integer>}',
-         '{"watchlsit_slug": "<string>"}' or '{"slugs": [<list of strings>]}'.
-         """}
-    end
+        _ ->
+          {:error,
+           """
+           Unsupported base_projects #{inspect(base_projects)}.
+           Supported base projects are '{"watchlist_id": <integer>}',
+           '{"watchlsit_slug": "<string>"}' or '{"slugs": [<list of strings>]}'.
+           """}
+      end
+    end)
+    |> Enum.find(true, &match?({:error, _}, &1))
   end
 
   defp valid_order_by?(order_by) do

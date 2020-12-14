@@ -38,11 +38,22 @@ defmodule SanbaseWeb.Graphql.BalanceDataloader do
   # Private functions
 
   defp get_current_balance({selector, addresses}) do
+    addresses = Enum.uniq(addresses)
+
     case HistoricalBalance.current_balance(selector, addresses) do
       {:ok, list} ->
-        Enum.reduce(list, %{}, fn map, acc ->
-          Map.put(acc, {map.address, selector}, map.balance)
-        end)
+        balance_map =
+          Enum.reduce(list, %{}, fn map, acc ->
+            Map.put(acc, {map.address, selector}, map.balance)
+          end)
+
+        total_balance =
+          Enum.reduce(balance_map, 0, fn
+            {_, balance}, acc when is_number(balance) -> balance + acc
+            _, acc -> acc
+          end)
+
+        Map.put(balance_map, {:total_balance, selector}, total_balance)
 
       {:error, _error} ->
         %{}

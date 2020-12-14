@@ -481,6 +481,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
           blockchainAddress{
             address
               balance(selector: {slug: "#{project.slug}"})
+              balanceDominance(selector: {slug: "#{project.slug}"})
               balanceChange(selector: {slug: "#{project.slug}"}, from: "utc_now-1d", to: "utc_now"){
                 balanceStart
                 balanceEnd
@@ -542,6 +543,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
                "blockchainAddress" => %{
                  "address" => addr1,
                  "balance" => 100.0,
+                 "balanceDominance" => 16.67,
                  "balanceChange" => %{
                    "balanceChangeAmount" => 50.0,
                    "balanceChangePercent" => 100.0,
@@ -555,6 +557,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
                "blockchainAddress" => %{
                  "address" => addr2,
                  "balance" => 200.0,
+                 "balanceDominance" => 33.33,
                  "balanceChange" => %{
                    "balanceChangeAmount" => 150.0,
                    "balanceChangePercent" => 300.0,
@@ -568,6 +571,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
                "blockchainAddress" => %{
                  "address" => addr3,
                  "balance" => 300.0,
+                 "balanceDominance" => 50.0,
                  "balanceChange" => %{
                    "balanceChangeAmount" => 234.0,
                    "balanceChangePercent" => 354.55,

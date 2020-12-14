@@ -29,8 +29,18 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressType do
     field(:notes, :string)
 
     field :balance, :float do
-      arg(:selector, :historical_balance_selector)
+      arg(:selector, non_null(:historical_balance_selector))
       cache_resolve(&BlockchainAddressResolver.balance/3)
+    end
+
+    @desc ~s"""
+    Shows what percentage of the total balance of the whole watchlist of a specific
+    coin/token a given address holds. If there are no other addresses in the watchlist
+    or the field is not executed in the context of a watchlist, 1.0 is returned.
+    """
+    field :balance_dominance, :float do
+      arg(:selector, non_null(:historical_balance_selector))
+      cache_resolve(&BlockchainAddressResolver.balance_dominance/3)
     end
 
     field :balance_change, :address_balance_change do

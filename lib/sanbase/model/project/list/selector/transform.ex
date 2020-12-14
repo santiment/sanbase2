@@ -10,7 +10,6 @@ defmodule Sanbase.Model.Project.ListSelector.Transform do
   def args_to_base_projects(args) do
     case get_in(args, [:selector, :base_projects]) do
       nil -> :all
-      "all" -> :all
       data -> data
     end
   end

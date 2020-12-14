@@ -28,7 +28,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.LtcBalance do
   def assets_held_by_address(address) do
     {query, args} = current_balance_query(@table, address)
 
-    ClickhouseRepo.query_transform(query, args, fn [value] ->
+    ClickhouseRepo.query_transform(query, args, fn [^address, value] ->
       %{
         slug: "litecoin",
         balance: value

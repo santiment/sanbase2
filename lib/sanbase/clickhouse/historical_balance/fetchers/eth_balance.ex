@@ -27,9 +27,10 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
   def assets_held_by_address(address) do
-    {query, args} = asset_held_by_address_query(address)
+    {query, args} = current_balance_query([address])
 
-    ClickhouseRepo.query_transform(query, args, fn [value] ->
+    # Do not pattern match against address as it might have different casing
+    ClickhouseRepo.query_transform(query, args, fn [_address, value] ->
       %{
         slug: "ethereum",
         balance: value / @eth_decimals
@@ -135,21 +136,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
   end
 
   # Private functions
-
-  defp asset_held_by_address_query(address) do
-    query = """
-    SELECT value
-    FROM #{@table}
-    PREWHERE
-      address = ?1 AND
-      sign = 1
-    ORDER BY dt DESC
-    LIMIT 1
-    """
-
-    args = [address |> String.downcase()]
-    {query, args}
-  end
 
   defp current_balance_query(addresses) do
     query = """

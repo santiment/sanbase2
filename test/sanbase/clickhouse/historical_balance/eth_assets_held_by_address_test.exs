@@ -12,7 +12,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthAssetsHeldByAdderssTest do
   end
 
   test "clickhouse returns list of results", context do
-    rows = [[1000 * Sanbase.Math.ipow(10, 18)]]
+    rows = [["0x123", 1000 * Sanbase.Math.ipow(10, 18)]]
 
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->

@@ -80,6 +80,28 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     end)
   end
 
+  def balance_dominance(%{address: address}, %{selector: selector}, %{context: %{loader: loader}}) do
+    address = BlockchainAddress.to_internal_format(address)
+
+    loader
+    |> Dataloader.load(SanbaseDataloader, :address_selector_current_balance, {address, selector})
+    |> on_load(fn loader ->
+      [address_balance, total_balance] =
+        Dataloader.get_many(
+          loader,
+          SanbaseDataloader,
+          :address_selector_current_balance,
+          [{address, selector}, {:total_balance, selector}]
+        )
+
+      dominance =
+        Sanbase.Math.percent_of(address_balance, total_balance, type: :between_0_and_100)
+        |> Sanbase.Math.round_float()
+
+      {:ok, dominance}
+    end)
+  end
+
   def balance_change(%{address: address}, %{selector: selector, from: from, to: to}, %{
         context: %{loader: loader}
       }) do

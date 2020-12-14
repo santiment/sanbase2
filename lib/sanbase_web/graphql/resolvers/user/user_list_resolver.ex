@@ -111,6 +111,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     end
   end
 
+  # Private functions
+
   defp trending_words_stats(projects, resolution) do
     requested_trending_fields =
       MapSet.intersection(Utils.requested_fields(resolution), MapSet.new(@trending_fields))

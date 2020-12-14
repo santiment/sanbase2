@@ -286,7 +286,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   def available_metrics_for_slug_query(slug) do
     query = """
     SELECT name
-    FROM available_metrics FINAL
+    FROM we FINAL
     INNER JOIN (
       SELECT name, metric_id
       FROM metric_metadata FINAL

@@ -69,7 +69,14 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:direction, non_null(:direction_type))
   end
 
+  input_object :base_projects_input_object do
+    field(:watchlist_id, :integer)
+    field(:watchlist_slug, :string)
+    field(:slugs, list_of(:string))
+  end
+
   input_object :projects_selector_input_object do
+    field(:base_projects, :base_projects_input_object)
     field(:filters, list_of(:project_filter_input_object))
     field(:filters_combinator, :filters_combinator, default_value: :and)
     field(:order_by, :project_order_input_object)

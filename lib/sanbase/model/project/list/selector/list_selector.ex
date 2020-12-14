@@ -70,11 +70,18 @@ defmodule Sanbase.Model.Project.ListSelector do
     args = Sanbase.MapUtils.atomize_keys(args)
 
     filters = Transform.args_to_filters(args)
+    base_projects_selector = Transform.args_to_base_projects(args)
     order_by = Transform.args_to_order_by(args)
     pagination = Transform.args_to_pagination(args)
     filters_combinator = Transform.args_to_filters_combinator(args)
 
-    included_slugs = filters |> included_slugs_by_filters(filters_combinator)
+    base_slugs = base_slugs(base_projects_selector)
+
+    included_slugs =
+      filters
+      |> included_slugs_by_filters(filters_combinator)
+      |> intersect_with_base_slugs(base_slugs)
+
     ordered_slugs = order_by |> ordered_slugs_by_order_by(included_slugs)
 
     [
@@ -88,6 +95,15 @@ defmodule Sanbase.Model.Project.ListSelector do
     ]
   end
 
+  # Private functions
+
+  defp intersect_with_base_slugs(slugs, :all), do: slugs
+
+  defp intersect_with_base_slugs(slugs, base_slugs) do
+    MapSet.intersection(MapSet.new(slugs), MapSet.new(base_slugs))
+    |> Enum.to_list()
+  end
+
   defp total_projects_count(list, opts) do
     with true <- Keyword.get(opts, :has_pagination?),
          slugs when is_list(slugs) <- Keyword.get(opts, :included_slugs) do
@@ -96,6 +112,48 @@ defmodule Sanbase.Model.Project.ListSelector do
       _ -> length(list)
     end
   end
+
+  defp detect_cycles!(args) do
+    case Process.get(:__get_base_projects__) do
+      nil ->
+        Process.put(:__get_base_projects__, %{
+          iterations_left: 5,
+          args_seen_so_far: MapSet.new([args])
+        })
+
+      %{iterations_left: 0} ->
+        raise("The base projects nesting of a watchlist is too deep.")
+
+      %{iterations_left: iterations_left, args_seen_so_far: args_seen_so_far} ->
+        case MapSet.member?(args_seen_so_far, args) do
+          true ->
+            raise("There is a cycle in the base_projects of watchlists.")
+
+          false ->
+            Process.put(:__get_base_projects__, %{
+              iterations_left: iterations_left - 1,
+              args_seen_so_far: MapSet.put(args_seen_so_far, args)
+            })
+        end
+    end
+  end
+
+  defp base_slugs(:all), do: :all
+
+  defp base_slugs(args) do
+    detect_cycles!(args)
+    {:ok, slugs} = get_base_slugs(args)
+    slugs
+  end
+
+  defp get_base_slugs(%{watchlist_id: id}),
+    do: id |> Sanbase.UserList.by_id() |> Sanbase.UserList.get_slugs()
+
+  defp get_base_slugs(%{watchlist_slug: slug}),
+    do: slug |> Sanbase.UserList.by_slug() |> Sanbase.UserList.get_slugs()
+
+  defp get_base_slugs(%{slugs: slugs}) when is_list(slugs),
+    do: {:ok, slugs}
 
   defp included_slugs_by_filters([], _filters_combinator), do: :all
 

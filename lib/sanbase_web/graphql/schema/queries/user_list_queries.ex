@@ -82,6 +82,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserListQueries do
       meta(access: :free)
 
       arg(:id, non_null(:id))
+      arg(:selector, :projects_selector_input_object)
 
       resolve(&UserListResolver.watchlist/3)
     end
@@ -90,6 +91,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserListQueries do
       meta(access: :free)
 
       arg(:slug, non_null(:string))
+      arg(:selector, :projects_selector_input_object)
 
       resolve(&UserListResolver.watchlist_by_slug/3)
     end

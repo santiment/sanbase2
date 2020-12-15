@@ -118,7 +118,7 @@ defmodule Sanbase.Auth.Statistics do
     |> Repo.one()
   end
 
-  # Resource coud be watchlist, insight, user_trigger struct or any other struct which belongs to User
+  # Resource could be watchlist, insight, user_trigger struct or any other struct which belongs to User
   # By passing queries: [list_of_queries] you can apply list of filters to the main query
   def resource_user_count_map(resource, opts \\ []) do
     queries = Keyword.get(opts, :queries, [])
@@ -140,7 +140,7 @@ defmodule Sanbase.Auth.Statistics do
     |> Enum.into(%{})
   end
 
-  def screeners_user_count_map do
+  def user_screeners_count_map do
     resource_user_count_map(UserList,
       queries: [
         fn query ->
@@ -148,16 +148,6 @@ defmodule Sanbase.Auth.Statistics do
         end
       ]
     )
-  end
-
-  def active_subscriptions_map() do
-    from(s in Subscription, where: s.status == "active", preload: [plan: [:product]])
-    |> Sanbase.Repo.all()
-    |> Enum.map(fn s -> %{user_id: s.user_id, sub: "#{s.plan.product.name}/#{s.plan.name}"} end)
-    |> Enum.group_by(fn s -> s.user_id end)
-    |> Enum.map(fn {user_id, subs} ->
-      {user_id, Enum.map(subs, & &1.sub) |> Enum.join(",")}
-    end)
   end
 
   def users_with_monitored_watchlist_and_email() do

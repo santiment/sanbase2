@@ -359,6 +359,18 @@ defmodule Sanbase.Billing.Subscription do
     |> Enum.each(&maybe_send_email_and_delete_subscription/1)
   end
 
+  def active_subscriptions_map() do
+    from(s in __MODULE__, where: s.status == "active", preload: [plan: [:product]])
+    |> Sanbase.Repo.all()
+    |> Enum.map(fn s ->
+      %{user_id: s.user_id, product: "#{s.plan.product.name}/#{s.plan.name}"}
+    end)
+    |> Enum.group_by(& &1.user_id)
+    |> Enum.into(%{}, fn {user_id, products} ->
+      {user_id, Enum.map(products, & &1.product) |> Enum.join(", ")}
+    end)
+  end
+
   # Private functions
 
   defp create_stripe_subscription(user, plan, nil) do

@@ -9,7 +9,7 @@ defmodule Sanbase.Intercom do
   require Logger
 
   alias Sanbase.Auth.{User, Statistics}
-  alias Sanbase.Billing.Product
+  alias Sanbase.Billing.{Subscription, Product}
   alias Sanbase.Signal.UserTrigger
   alias Sanbase.Clickhouse.ApiCallData
   alias Sanbase.Intercom.UserAttributes
@@ -26,11 +26,11 @@ defmodule Sanbase.Intercom do
       triggers_map: Statistics.resource_user_count_map(Sanbase.Signal.UserTrigger),
       insights_map: Statistics.resource_user_count_map(Sanbase.Insight.Post),
       watchlists_map: Statistics.resource_user_count_map(Sanbase.UserList),
-      screeners_map: Statistics.screeners_user_count_map(),
+      screeners_map: Statistics.user_screeners_count_map(),
       users_used_api_list: ApiCallData.users_used_api(),
       users_used_sansheets_list: ApiCallData.users_used_sansheets(),
       api_calls_per_user_count: ApiCallData.api_calls_count_per_user(),
-      active_subscriptions_map: Statistics.active_subscriptions_map(),
+      active_subscriptions_map: Subscription.active_subscriptions_map(),
       users_with_monitored_watchlist:
         Sanbase.UserLists.Statistics.users_with_monitored_watchlist()
         |> Enum.map(fn {%{id: user_id}, count} -> {user_id, count} end)

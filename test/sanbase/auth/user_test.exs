@@ -6,7 +6,7 @@ defmodule Sanbase.Auth.UserTest do
   import Sanbase.Factory
   import ExUnit.CaptureLog
 
-  alias Sanbase.Auth.{EthAccount, User}
+  alias Sanbase.Auth.{EthAccount, User, Statistics}
   alias Sanbase.Repo
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.StripeApi
@@ -487,19 +487,19 @@ defmodule Sanbase.Auth.UserTest do
     test "user has email and monitored watchlist - returns 1 record" do
       user = insert(:user)
       Sanbase.UserList.create_user_list(user, %{name: "test", is_monitored: true})
-      assert length(User.users_with_monitored_watchlist_and_email()) == 1
+      assert length(Statistics.users_with_monitored_watchlist_and_email()) == 1
     end
 
     test "user without email - returns 0 records" do
       user = insert(:user, email: nil)
       Sanbase.UserList.create_user_list(user, %{name: "test", is_monitored: true})
-      assert User.users_with_monitored_watchlist_and_email() == []
+      assert Statistics.users_with_monitored_watchlist_and_email() == []
     end
 
     test "user's watchlist is not monitored" do
       user = insert(:user)
       Sanbase.UserList.create_user_list(user, %{name: "test"})
-      assert User.users_with_monitored_watchlist_and_email() == []
+      assert Statistics.users_with_monitored_watchlist_and_email() == []
     end
   end
 

@@ -10,7 +10,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
 
   alias Sanbase.ClickhouseRepo
 
-  @table "xrp_balances_orderby_currency"
+  @table "xrp_balances"
   schema @table do
     field(:datetime, :utc_datetime, source: :dt)
     field(:balance, :float)

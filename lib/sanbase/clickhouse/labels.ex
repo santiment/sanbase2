@@ -1,6 +1,6 @@
 defmodule Sanbase.Clickhouse.Label do
   @moduledoc """
-  Labeling transaction addresses
+  Labeling addresses
   """
 
   @type label :: %{

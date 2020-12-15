@@ -5,7 +5,6 @@ defmodule Sanbase.BlockchainAddress do
 
   alias Sanbase.Model.Infrastructure
 
-  # @primary_key {:id, :integer, read_after_writes: true}
   schema "blockchain_addresses" do
     field(:address, :string)
     field(:notes, :string)

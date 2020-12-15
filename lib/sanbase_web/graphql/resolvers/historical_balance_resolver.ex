@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
 
   import SanbaseWeb.Graphql.Helpers.CalibrateInterval, only: [calibrate: 7]
 
-  alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.HistoricalBalance
 
   # Return this number of datapoints is the provided interval is an empty string

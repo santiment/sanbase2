@@ -6,6 +6,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
 
   alias Sanbase.{SocialData, TechIndicators}
   alias SanbaseWeb.Graphql.SanbaseDataloader
+  alias SanbaseWeb.Graphql.Resolvers.MetricResolver
 
   @context_words_default_size 10
 
@@ -155,10 +156,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
 
   def social_dominance(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval, source: source},
+        %{slug: _slug, from: _from, to: _to, interval: _interval, source: source} = args,
         _resolution
       ) do
-    SocialData.social_dominance(%{slug: slug}, from, to, interval, source)
+    source = if source == :all, do: :total, else: source
+
+    MetricResolver.timeseries_data(
+      %{},
+      args,
+      %{
+        source: %{
+          metric: "social_dominance_#{source}"
+        }
+      }
+    )
+    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :dominance)
   end
 
   def news(_root, %{tag: tag, from: from, to: to, size: size}, _resolution) do

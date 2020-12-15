@@ -4,6 +4,8 @@ defmodule Sanbase.Auth.Statistics do
   alias Sanbase.Repo
   alias Sanbase.Math
   alias Sanbase.Auth.{User, UserSettings}
+  alias Sanbase.UserList
+  alias Sanbase.Billing.Subscription
 
   def tokens_staked() do
     san_balances =
@@ -114,6 +116,48 @@ defmodule Sanbase.Auth.Statistics do
     |> newsletter_updated_filter_query(from, to)
     |> count()
     |> Repo.one()
+  end
+
+  # Resource could be watchlist, insight, user_trigger struct or any other struct which belongs to User
+  # By passing queries: [list_of_queries] you can apply list of filters to the main query
+  def resource_user_count_map(resource, opts \\ []) do
+    queries = Keyword.get(opts, :queries, [])
+
+    resource_query =
+      from(
+        r in resource,
+        group_by: r.user_id,
+        select: {r.user_id, count(r.user_id)}
+      )
+
+    query =
+      Enum.reduce(queries, resource_query, fn query_func, acc ->
+        query_func.(acc)
+      end)
+
+    query
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
+
+  def user_screeners_count_map do
+    resource_user_count_map(UserList,
+      queries: [
+        fn query ->
+          from(r in query, where: fragment("?.function->>'name' != 'empty'", r))
+        end
+      ]
+    )
+  end
+
+  def users_with_monitored_watchlist_and_email() do
+    from(u in User,
+      join: ul in UserList,
+      on: ul.user_id == u.id,
+      where: not is_nil(u.email) and ul.is_monitored == true,
+      distinct: true
+    )
+    |> Repo.all()
   end
 
   # Private functions

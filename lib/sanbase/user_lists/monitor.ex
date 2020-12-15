@@ -9,12 +9,12 @@ defmodule Sanbase.UserList.Monitor do
   import Ecto.Query
 
   alias Sanbase.UserList
-  alias Sanbase.Auth.User
+  alias Sanbase.Auth.{User, Statistics}
   alias Sanbase.Insight.Post
   alias Sanbase.Repo
 
   def run() do
-    User.users_with_monitored_watchlist_and_email()
+    Statistics.users_with_monitored_watchlist_and_email()
     |> Enum.each(&run_for_user/1)
   end
 

@@ -8,8 +8,8 @@ defmodule Sanbase.Intercom do
   require Sanbase.Utils.Config, as: Config
   require Logger
 
-  alias Sanbase.Auth.User
-  alias Sanbase.Billing.Product
+  alias Sanbase.Auth.{User, Statistics}
+  alias Sanbase.Billing.{Subscription, Product}
   alias Sanbase.Signal.UserTrigger
   alias Sanbase.Clickhouse.ApiCallData
   alias Sanbase.Intercom.UserAttributes
@@ -23,13 +23,14 @@ defmodule Sanbase.Intercom do
   def all_users_stats do
     %{
       customer_payment_type_map: customer_payment_type_map(),
-      triggers_map: User.resource_user_count_map(Sanbase.Signal.UserTrigger),
-      insights_map: User.resource_user_count_map(Sanbase.Insight.Post),
-      watchlists_map: User.resource_user_count_map(Sanbase.UserList),
-      screeners_map: User.screeners_user_count_map(),
+      triggers_map: Statistics.resource_user_count_map(Sanbase.Signal.UserTrigger),
+      insights_map: Statistics.resource_user_count_map(Sanbase.Insight.Post),
+      watchlists_map: Statistics.resource_user_count_map(Sanbase.UserList),
+      screeners_map: Statistics.user_screeners_count_map(),
       users_used_api_list: ApiCallData.users_used_api(),
       users_used_sansheets_list: ApiCallData.users_used_sansheets(),
       api_calls_per_user_count: ApiCallData.api_calls_count_per_user(),
+      active_subscriptions_map: Subscription.active_subscriptions_map(),
       users_with_monitored_watchlist:
         Sanbase.UserLists.Statistics.users_with_monitored_watchlist()
         |> Enum.map(fn {%{id: user_id}, count} -> {user_id, count} end)
@@ -92,7 +93,8 @@ defmodule Sanbase.Intercom do
            users_used_sansheets_list: users_used_sansheets_list,
            api_calls_per_user_count: api_calls_per_user_count,
            users_with_monitored_watchlist: users_with_monitored_watchlist,
-           customer_payment_type_map: customer_payment_type_map
+           customer_payment_type_map: customer_payment_type_map,
+           active_subscriptions_map: active_subscriptions_map
          }
        ) do
     {sanbase_subscription_current_status, sanbase_trial_created_at} =
@@ -133,7 +135,8 @@ defmodule Sanbase.Intercom do
           used_sanapi: id in users_used_api_list,
           used_sansheets: id in users_used_sansheets_list,
           api_calls_count: Map.get(api_calls_per_user_count, id, 0),
-          weekly_report_watchlist_count: Map.get(users_with_monitored_watchlist, id, 0)
+          weekly_report_watchlist_count: Map.get(users_with_monitored_watchlist, id, 0),
+          active_subscriptions: Map.get(active_subscriptions_map, id, "")
         }
         |> Map.merge(triggers_type_count(user))
     }

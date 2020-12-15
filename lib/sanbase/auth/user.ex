@@ -282,16 +282,6 @@ defmodule Sanbase.Auth.User do
     |> Repo.update()
   end
 
-  def users_with_monitored_watchlist_and_email() do
-    from(u in User,
-      join: ul in UserList,
-      on: ul.user_id == u.id,
-      where: not is_nil(u.email) and ul.is_monitored == true,
-      distinct: true
-    )
-    |> Repo.all()
-  end
-
   @spec add_eth_account(%User{}, String.t()) :: {:ok, %User{}} | {:error, Ecto.Changeset.t()}
   def add_eth_account(%User{id: user_id}, address) do
     EthAccount.changeset(%EthAccount{}, %{user_id: user_id, address: address})
@@ -320,38 +310,6 @@ defmodule Sanbase.Auth.User do
       {:error,
        "Cannot remove ethereum address #{address}. There must be an email or other ethereum address set."}
     end
-  end
-
-  # Resource coud be watchlist, insight, user_trigger struct or any other struct which belongs to User
-  # By passing queries: [list_of_queries] you can apply list of filters to the main query
-  def resource_user_count_map(resource, opts \\ []) do
-    queries = Keyword.get(opts, :queries, [])
-
-    resource_query =
-      from(
-        r in resource,
-        group_by: r.user_id,
-        select: {r.user_id, count(r.user_id)}
-      )
-
-    query =
-      Enum.reduce(queries, resource_query, fn query_func, acc ->
-        query_func.(acc)
-      end)
-
-    query
-    |> Repo.all()
-    |> Enum.into(%{})
-  end
-
-  def screeners_user_count_map do
-    resource_user_count_map(UserList,
-      queries: [
-        fn query ->
-          from(r in query, where: fragment("?.function->>'name' != 'empty'", r))
-        end
-      ]
-    )
   end
 
   def anonymous_user_username, do: @anonymous_user_username

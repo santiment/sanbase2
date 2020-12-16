@@ -29,16 +29,6 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
     conn = setup_jwt_auth(build_conn(), user)
     project = insert(:random_project)
 
-    insert(:exchange_market_pair_mappings, %{
-      exchange: "Bitfinex",
-      market_pair: "SAN/USD",
-      from_slug: "santiment",
-      to_slug: "usd",
-      source: "coinmarketcap",
-      from_ticker: "SAN",
-      to_ticker: "USD"
-    })
-
     [
       exchange: "Binance",
       project: project,
@@ -60,39 +50,6 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
       |> get_in(["data", "allExchanges"])
 
     assert Enum.sort(exchanges) == Enum.sort(["Binance", "Bitfinex"])
-  end
-
-  describe "#exchangeMarketPairToSlugs" do
-    test "returns the proper slugs" do
-      query = exchange_market_pair_to_slugs("Bitfinex", "SAN/USD")
-      result = execute_query(build_conn(), query, "exchangeMarketPairToSlugs")
-      assert result == %{"fromSlug" => "santiment", "toSlug" => "usd"}
-    end
-
-    test "returns nulls" do
-      query = exchange_market_pair_to_slugs("Non-existing", "SAN/USD")
-      result = execute_query(build_conn(), query, "exchangeMarketPairToSlugs")
-      assert result == %{"fromSlug" => nil, "toSlug" => nil}
-    end
-  end
-
-  describe "#slugsToExchangeMarketPair" do
-    test "returns the proper slugs" do
-      query = slugs_to_exchange_market_pair_query("Bitfinex", "santiment", "usd")
-      result = execute_query(build_conn(), query, "slugsToExchangeMarketPair")
-
-      assert result == %{
-               "marketPair" => "SAN/USD",
-               "fromTicker" => "SAN",
-               "toTicker" => "USD"
-             }
-    end
-
-    test "returns nulls" do
-      query = slugs_to_exchange_market_pair_query("Non-existing", "santiment", "usd")
-      result = execute_query(build_conn(), query, "slugsToExchangeMarketPair")
-      assert result == %{"fromTicker" => nil, "marketPair" => nil, "toTicker" => nil}
-    end
   end
 
   describe "top exchanges api" do
@@ -166,31 +123,6 @@ defmodule SanbaseWeb.Graphql.ExchangeMetricsApiTest do
         balanceChange30d
         datetimeOfFirstTransfer
         daysSinceFirstTransfer
-      }
-    }
-    """
-  end
-
-  defp exchange_market_pair_to_slugs(exchange, ticker_pair) do
-    """
-    {
-      exchangeMarketPairToSlugs(exchange:"#{exchange}", tickerPair:"#{ticker_pair}") {
-        fromSlug
-        toSlug
-      }
-    }
-    """
-  end
-
-  defp slugs_to_exchange_market_pair_query(exchange, from_slug, to_slug) do
-    """
-    {
-      slugsToExchangeMarketPair(exchange:"#{exchange}", fromSlug:"#{from_slug}", toSlug:"#{
-      to_slug
-    }") {
-        marketPair
-        fromTicker
-        toTicker
       }
     }
     """

@@ -1,7 +1,7 @@
 defmodule Sanbase.BlockchainAddress.BlockchainAddressLabel do
   use Ecto.Schema
 
-  import Ecto.{Query, Changeset}
+  import Ecto.Changeset
 
   schema "blockchain_address_labels" do
     field(:name, :string)

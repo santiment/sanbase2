@@ -41,7 +41,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.PaginationTypes)
   import_types(Graphql.ProjectTypes)
   import_types(Graphql.ProjectChartTypes)
-  import_types(Graphql.Schema.KafkaTypes)
   import_types(Graphql.ShortUrlTypes)
   import_types(Graphql.SignalsHistoricalActivityTypes)
   import_types(Graphql.TagTypes)
@@ -76,7 +75,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.ResearchQueries)
   import_types(Graphql.Schema.ShortUrlQueries)
   import_types(Graphql.Schema.SocialDataQueries)
-  import_types(Graphql.Schema.Subscriptions.KafkaSubscriptions)
   import_types(Graphql.Schema.TableConfigurationQueries)
   import_types(Graphql.Schema.TechIndicatorsQueries)
   import_types(Graphql.Schema.TimelineQueries)
@@ -166,9 +164,5 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:timeline_mutations)
     import_fields(:user_list_mutations)
     import_fields(:user_mutations)
-  end
-
-  subscription do
-    import_fields(:kafka_subscriptions)
   end
 end

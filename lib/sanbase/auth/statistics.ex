@@ -5,7 +5,6 @@ defmodule Sanbase.Auth.Statistics do
   alias Sanbase.Math
   alias Sanbase.Auth.{User, UserSettings}
   alias Sanbase.UserList
-  alias Sanbase.Billing.Subscription
 
   def tokens_staked() do
     san_balances =

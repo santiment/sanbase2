@@ -50,20 +50,6 @@ config :sanbase, Sanbase.KafkaExporter,
   prices_topic: {:system, "KAFKA_PRICES_TOPIC", "asset_prices"},
   api_call_data_topic: {:system, "KAFKA_API_CALL_DATA_TOPIC", "sanbase_api_call_data"}
 
-config :sanbase, Sanbase.Kafka,
-  url: {:system, "KAFKA_URL", "blockchain-kafka-kafka"},
-  port: {:system, "KAFKA_PORT", "9092"},
-  topics: {:system, "KAFKA_TOPICS_CSV_STRING", "exchange_trades, exchange_market_depth"},
-  consumer_group_basename: {:system, "KAFKA_CONSUMER_GROUP_BASENAME", "sanbase_kafka_consumer"}
-
-config :kaffe,
-  consumer: [
-    message_handler: Sanbase.Kafka.MessageProcessor,
-    async_message_ack: false,
-    start_with_earliest_message: false,
-    offset_reset_policy: :reset_to_latest
-  ]
-
 config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
   implementation_module: Sanbase.ExternalServices.RateLimiting.WaitServer
 

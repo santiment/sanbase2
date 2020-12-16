@@ -19,12 +19,14 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressType do
   object :blockchain_address_label do
     field(:name, :string)
     field(:notes, :string)
+    field(:origin, :string, default_value: "user")
+    field(:metadata, :json, default_value: %{})
   end
 
   object :blockchain_address do
     field(:id, :integer)
     field(:address, :string)
-    field(:infrastructure, :infrastructure)
+    field(:infrastructure, :string)
 
     field :labels, list_of(:blockchain_address_label) do
       cache_resolve(&BlockchainAddressResolver.labels/3, ttl: 600, max_ttl_offset: 600)

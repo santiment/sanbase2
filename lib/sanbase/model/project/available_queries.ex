@@ -74,7 +74,7 @@ defmodule Sanbase.Model.Project.AvailableQueries do
     end
   end
 
-  defp social_queries(%Project{}), do: ["socialGainersLosersStatus", "getTrendingWords"]
+  defp social_queries(%Project{}), do: ["socialGainersLosersStatus"]
 
   def historical_balance_queries(%Project{} = project) do
     case Project.infrastructure_real_code(project) do

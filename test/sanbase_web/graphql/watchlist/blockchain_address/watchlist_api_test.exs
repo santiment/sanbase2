@@ -29,7 +29,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
         name: "My list"
         description: "Description"
         listItems: [
-          {blockchainAddress: {address: "0x123a", infrastructure: "ETH", labels: ["Trader", "DEX"]}},
+          {blockchainAddress: {address: "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8", infrastructure: "ETH", labels: ["Trader", "DEX"]}},
           {blockchainAddress: {address: "0x123b", infrastructure: "ETH", labels: ["Trader", "CEX"]}}
         ]
         color: BLACK) {
@@ -42,39 +42,63 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
           listItems {
             blockchainAddress {
               address
-              labels { name}
+              labels { name origin }
             }
           }
       }
     }
     """
 
-    result =
-      conn
-      |> post("/graphql", mutation_skeleton(query))
-      |> json_response(200)
+    labels_rows = [
+      [
+        "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8",
+        "centralized_exchange",
+        ~s|{"comment":"Poloniex GNT","is_dex":false,"owner":"Poloniex","source":""}|
+      ],
+      [
+        "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8",
+        "whale",
+        ~s|{"rank": 58, "value": 1.1438690681177702e+24}|
+      ]
+    ]
 
-    watchlist = result["data"]["createWatchlist"]
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: labels_rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        conn
+        |> post("/graphql", mutation_skeleton(query))
+        |> json_response(200)
 
-    assert watchlist["name"] == "My list"
-    assert watchlist["description"] == "Description"
-    assert watchlist["color"] == "BLACK"
-    assert watchlist["is_public"] == false
-    assert watchlist["user"]["id"] == user.id |> to_string()
+      watchlist = result["data"]["createWatchlist"]
 
-    assert %{
-             "blockchainAddress" => %{
-               "address" => "0x123a",
-               "labels" => [%{"name" => "Trader"}, %{"name" => "DEX"}]
-             }
-           } in watchlist["listItems"]
+      assert watchlist["name"] == "My list"
+      assert watchlist["description"] == "Description"
+      assert watchlist["color"] == "BLACK"
+      assert watchlist["is_public"] == false
+      assert watchlist["user"]["id"] == user.id |> to_string()
 
-    assert %{
-             "blockchainAddress" => %{
-               "address" => "0x123b",
-               "labels" => [%{"name" => "Trader"}, %{"name" => "CEX"}]
-             }
-           } in watchlist["listItems"]
+      assert %{
+               "blockchainAddress" => %{
+                 "address" => "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8",
+                 "labels" => [
+                   %{"name" => "Trader", "origin" => "user"},
+                   %{"name" => "DEX", "origin" => "user"},
+                   %{"name" => "whale", "origin" => "santiment"},
+                   %{"name" => "centralized_exchange", "origin" => "santiment"}
+                 ]
+               }
+             } in watchlist["listItems"]
+
+      assert %{
+               "blockchainAddress" => %{
+                 "address" => "0x123b",
+                 "labels" => [
+                   %{"name" => "Trader", "origin" => "user"},
+                   %{"name" => "CEX", "origin" => "user"}
+                 ]
+               }
+             } in watchlist["listItems"]
+    end)
   end
 
   test "update blockchain address watchlist", %{user: user, conn: conn} do

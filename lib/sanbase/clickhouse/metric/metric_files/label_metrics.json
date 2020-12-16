@@ -85,7 +85,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Exchange Inflow per Exchange",
+    "human_readable_name": "Exchange Outflow per Exchange",
     "name": "exchange_outflow_per_exchange",
     "metric": "labelled_exchange_outflow",
     "version": "2019-01-01",
@@ -102,8 +102,42 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Exchange Balance (Inflow - Outflow) per Exchange",
-    "name": "exchange_balance_per_exchange",
+    "human_readable_name": "Inflow per Label and Owner",
+    "name": "inflow_per_label_and_owner",
+    "metric": "labelled_exchange_inflow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Outflow per Label and Owner",
+    "name": "outflow_per_label_and_owner",
+    "metric": "labelled_exchange_outflow",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Balance per Label and Owner (Inflow - Outflow) Delta",
+    "name": "balance_per_label_and_owner_delta",
     "metric": "labelled_exchange_balance",
     "version": "2019-01-01",
     "access": "restricted",
@@ -113,6 +147,23 @@
       "SANBASE": "free"
     },
     "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Balance per Owner (Inflow - Outflow)",
+    "name": "balance_per_owner",
+    "metric": "labelled_exchange_balance_sum",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_label_based_metrics",
     "has_incomplete_data": false,

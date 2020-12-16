@@ -102,8 +102,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Inflow per Protocol",
-    "name": "inflow_per_protocol",
+    "human_readable_name": "Inflow per Label and Owner",
+    "name": "inflow_per_label_and_owner",
     "metric": "labelled_exchange_inflow",
     "version": "2019-01-01",
     "access": "restricted",
@@ -119,8 +119,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Outflow per Protocol",
-    "name": "outflow_per_protocol",
+    "human_readable_name": "Outflow per Label and Owner",
+    "name": "outflow_per_label_and_owner",
     "metric": "labelled_exchange_outflow",
     "version": "2019-01-01",
     "access": "restricted",
@@ -136,8 +136,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Balance per Protocol (Inflow - Outflow) Delta",
-    "name": "balance_per_protocol_delta",
+    "human_readable_name": "Balance per Label and Owner (Inflow - Outflow) Delta",
+    "name": "balance_per_label_and_owner_delta",
     "metric": "labelled_exchange_balance",
     "version": "2019-01-01",
     "access": "restricted",
@@ -153,8 +153,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Balance per Protocol (Inflow - Outflow)",
-    "name": "balance_per_protocol",
+    "human_readable_name": "Balance per Owner (Inflow - Outflow)",
+    "name": "balance_per_owner",
     "metric": "labelled_exchange_balance_sum",
     "version": "2019-01-01",
     "access": "restricted",

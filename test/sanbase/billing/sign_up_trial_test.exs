@@ -46,36 +46,6 @@ defmodule Sanbase.Billing.SignUpTrialTest do
       assert_called(Sanbase.MandrillApi.send("second-edu-email2", :_, :_))
       assert sign_up_trial.sent_second_education_email
     end
-
-    test "card will be charged email is sent successfully if user has a card", context do
-      with_mocks([
-        {Sanbase.StripeApi, [],
-         retrieve_customer: fn _ -> {:ok, %Stripe.Customer{default_source: "alabala"}} end}
-      ]) do
-        sign_up_trial(context, trial_day: 13)
-        SignUpTrial.send_email_on_trial_day()
-
-        sign_up_trial = SignUpTrial |> Repo.all() |> hd()
-
-        assert_called(Sanbase.MandrillApi.send("trial-finished2", :_, :_))
-        assert sign_up_trial.sent_cc_will_be_charged
-      end
-    end
-
-    test "card will be charged is not sent to users without card", context do
-      with_mocks([
-        {Sanbase.StripeApi, [],
-         retrieve_customer: fn _ -> {:ok, %Stripe.Customer{default_source: nil}} end}
-      ]) do
-        sign_up_trial(context, trial_day: 13)
-        SignUpTrial.send_email_on_trial_day()
-
-        sign_up_trial = SignUpTrial |> Repo.all() |> hd()
-
-        refute called(Sanbase.MandrillApi.send("trial-finished2", :_, :_))
-        refute sign_up_trial.sent_cc_will_be_charged
-      end
-    end
   end
 
   defp sign_up_trial(context, opts) do

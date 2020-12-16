@@ -194,6 +194,8 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "network_profit_loss",
         "total_supply_in_profit",
         "percent_of_total_supply_in_profit",
+        "average_transfer_5min",
+        "median_transfer_5min",
         # social metrics
         "community_messages_count_telegram",
         "community_messages_count_total",

@@ -487,7 +487,7 @@ defmodule Sanbase.Billing.Subscription do
     format_trial_end(trial_end)
   end
 
-  # Send email and delete subscription if user has no credit card attached
+  # Send email and delete subscription if user plan is one of our free trial plans
   defp maybe_send_email_and_delete_subscription(
          %__MODULE__{
            user_id: user_id,

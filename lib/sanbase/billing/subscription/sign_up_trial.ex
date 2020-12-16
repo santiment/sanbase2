@@ -32,8 +32,7 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
 
   @day_email_type_map %{
     4 => :sent_first_education_email,
-    7 => :sent_second_education_email,
-    13 => :sent_cc_will_be_charged
+    7 => :sent_second_education_email
   }
 
   @templates %{
@@ -45,8 +44,6 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     sent_second_education_email: "second-edu-email2",
     # 3 days before end with coupon code
     sent_trial_will_end_email: "trial-three-days-before-end2",
-    # 1 day before end on customers with credit card
-    sent_cc_will_be_charged: "trial-finished2",
     # when we cancel - ~ 2 hours before end
     sent_trial_finished_without_cc: "trial-finished-without-card2"
   }
@@ -235,13 +232,6 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
 
       {:error, reason} ->
         {:error, reason}
-    end
-  end
-
-  # this email is send only to users with credit card in Stripe
-  defp maybe_send_email(sign_up_trial, :sent_cc_will_be_charged) do
-    if User.has_credit_card_in_stripe?(sign_up_trial.user_id) do
-      do_send_email_and_mark_sent(sign_up_trial, :sent_cc_will_be_charged)
     end
   end
 

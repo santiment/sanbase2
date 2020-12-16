@@ -1,6 +1,6 @@
 defmodule Sanbase.Clickhouse.Label do
   @moduledoc """
-  Labeling transaction addresses
+  Labeling addresses
   """
 
   @type label :: %{
@@ -46,7 +46,7 @@ defmodule Sanbase.Clickhouse.Label do
     {query, args} = addresses_labels_query(slug, addresses)
 
     Sanbase.ClickhouseRepo.query_reduce(query, args, %{}, fn [address, label, metadata], acc ->
-      label = %{name: label, metadata: metadata}
+      label = %{name: label, metadata: metadata, origin: "santiment"}
       Map.update(acc, address, [label], &[label | &1])
     end)
     |> case do
@@ -62,7 +62,7 @@ defmodule Sanbase.Clickhouse.Label do
     {query, args} = addresses_labels_query(slug, addresses)
 
     Sanbase.ClickhouseRepo.query_reduce(query, args, %{}, fn [address, label, metadata], acc ->
-      label = %{name: label, metadata: metadata}
+      label = %{name: label, metadata: metadata, origin: "santiment"}
       Map.update(acc, address, [label], &[label | &1])
     end)
   end

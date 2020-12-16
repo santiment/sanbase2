@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
   alias SanbaseWeb.Graphql.{
     BalanceDataloader,
     ClickhouseDataloader,
+    LabelsDataloader,
     MetricPostgresDataloader,
     ParityDataloader,
     PriceDataloader
@@ -12,71 +13,64 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     Dataloader.KV.new(&query/2)
   end
 
-  @spec query(
-          :aggregated_metric
-          | :average_daily_active_addresses
-          | :average_dev_activity
-          | :blockchain_addresses_comments_count
-          | :comment_blockchain_address_id
-          | :comment_insight_id
-          | :comment_short_url_id
-          | :comment_timeline_event_id
-          | :address_selector_current_balance
-          | :eth_balance
-          | :eth_spent
-          | :infrastructure
-          | :insights_comments_count
-          | :insights_count_per_user
-          | :market_segment
-          | :project_by_slug
-          | :short_urls_comments_count
-          | :timeline_events_comments_count
-          | :volume_change_24h
-          | {:price, any()},
-          any()
-        ) :: {:error, String.t()} | {:ok, float()} | map()
+  @labels_dataloader [
+    :address_labels
+  ]
+
+  @clickhouse_dataloader [
+    :average_daily_active_addresses,
+    :average_dev_activity,
+    :eth_spent,
+    :aggregated_metric
+  ]
+
+  @balance_dataloader [
+    :address_selector_current_balance,
+    :address_selector_balance_change
+  ]
+
+  @price_dataloader [:volume_change_24h]
+
+  @parity_dataloader [:eth_balance]
+
+  @metric_postgres_dataloader [
+    :comment_insight_id,
+    :comment_timeline_event_id,
+    :comment_blockchain_address_id,
+    :comment_short_url_id,
+    :infrastructure,
+    :market_segment,
+    :insights_comments_count,
+    :insights_count_per_user,
+    :timeline_events_comments_count,
+    :blockchain_addresses_comments_count,
+    :short_urls_comments_count,
+    :project_by_slug
+  ]
+
+  # TOOD: Rework so the argument is in the args
+  def query({:price, _} = queryable, args) do
+    PriceDataloader.query(queryable, args)
+  end
+
   def query(queryable, args) do
     case queryable do
-      x
-      when x in [
-             :average_daily_active_addresses,
-             :average_dev_activity,
-             :eth_spent,
-             :aggregated_metric
-           ] ->
+      x when x in @labels_dataloader ->
+        LabelsDataloader.query(queryable, args)
+
+      x when x in @clickhouse_dataloader ->
         ClickhouseDataloader.query(queryable, args)
 
-      x
-      when x in [
-             :address_selector_current_balance,
-             :address_selector_balance_change
-           ] ->
+      x when x in @balance_dataloader ->
         BalanceDataloader.query(queryable, args)
 
-      :volume_change_24h ->
+      x when x in @price_dataloader ->
         PriceDataloader.query(queryable, args)
 
-      {:price, _} ->
-        PriceDataloader.query(queryable, args)
-
-      :eth_balance ->
+      x when x in @parity_dataloader ->
         ParityDataloader.query(queryable, args)
 
-      x
-      when x in [
-             :comment_insight_id,
-             :comment_timeline_event_id,
-             :comment_blockchain_address_id,
-             :comment_short_url_id,
-             :infrastructure,
-             :market_segment,
-             :insights_comments_count,
-             :insights_count_per_user,
-             :timeline_events_comments_count,
-             :blockchain_addresses_comments_count,
-             :short_urls_comments_count,
-             :project_by_slug
-           ] ->
+      x when x in @metric_postgres_dataloader ->
         MetricPostgresDataloader.query(queryable, args)
     end
   end

@@ -37,7 +37,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.XrpBalance do
   end
 
   @impl Sanbase.Clickhouse.HistoricalBalance.Behaviour
-  def current_balance(addresses, currency, _decimals) do
+  def current_balance(addresses, _currency, _decimals) do
     {query, args} = current_balances_query(addresses, "XRP")
 
     ClickhouseRepo.query_transform(query, args, fn [address, value] ->

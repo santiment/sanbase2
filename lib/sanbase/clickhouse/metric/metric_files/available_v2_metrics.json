@@ -2205,7 +2205,7 @@
   },
   {
     "human_readable_name": "Active Deposits",
-    "name": "active_deposits_5min",
+    "name": "active_deposits_5m",
     "metric": "active_deposits_5min",
     "version": "2019-01-01",
     "access": "restricted",
@@ -2222,7 +2222,7 @@
   },
   {
     "human_readable_name": "Deposit Transactions",
-    "name": "deposit_transactions_5min",
+    "name": "deposit_transactions_5m",
     "metric": "deposit_transactions_5min",
     "version": "2019-01-01",
     "access": "restricted",
@@ -2239,7 +2239,7 @@
   },
   {
     "human_readable_name": "Active Withdrawals",
-    "name": "active_withdrawals_5min",
+    "name": "active_withdrawals_5m",
     "metric": "active_withdrawals_5min",
     "version": "2019-01-01",
     "access": "restricted",
@@ -2256,7 +2256,7 @@
   },
   {
     "human_readable_name": "Withdrawal Transactions",
-    "name": "withdrawal_transactions_5min",
+    "name": "withdrawal_transactions_5m",
     "metric": "withdrawal_transactions_5min",
     "version": "2019-01-01",
     "access": "restricted",
@@ -2273,7 +2273,7 @@
   },
   {
     "human_readable_name": "Average Fees Paid in USD",
-    "name": "average_fees_usd_intraday",
+    "name": "average_fees_usd_5m",
     "metric": "avg_fees_usd_intraday",
     "version": "2019-01-01",
     "access": "restricted",
@@ -2290,7 +2290,7 @@
   },
   {
     "human_readable_name": "Median Fees Paid in USD",
-    "name": "median_fees_usd_intraday",
+    "name": "median_fees_usd_5m",
     "metric": "median_fees_usd_intraday",
     "version": "2019-01-01",
     "access": "restricted",
@@ -2307,7 +2307,7 @@
   },
   {
     "human_readable_name": "Average Transfer",
-    "name": "average_transfer_5min",
+    "name": "average_transfer_5m",
     "metric": "average_transfer_5min",
     "version": "2019-01-01",
     "access": "restricted",
@@ -2324,7 +2324,7 @@
   },
   {
     "human_readable_name": "Median Transfer",
-    "name": "median_transfer_5min",
+    "name": "median_transfer_5m",
     "metric": "median_transfer_5min",
     "version": "2019-01-01",
     "access": "restricted",

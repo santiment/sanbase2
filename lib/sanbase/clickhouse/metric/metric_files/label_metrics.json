@@ -153,6 +153,23 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Balance per Label and Owner (Inflow - Outflow) Delta",
+    "name": "exchange_balance_per_exchange",
+    "metric": "labelled_exchange_balance",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Balance per Owner (Inflow - Outflow)",
     "name": "balance_per_owner",
     "metric": "labelled_exchange_balance_sum",

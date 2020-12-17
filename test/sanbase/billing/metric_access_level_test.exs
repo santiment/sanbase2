@@ -340,6 +340,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "exchange_outflow_per_exchange",
         "inflow_per_label_and_owner",
         "outflow_per_label_and_owner",
+        "exchange_balance_per_exchange",
         "balance_per_label_and_owner_delta",
         "balance_per_owner",
         "withdrawal_transactions_per_exchange",

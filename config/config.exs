@@ -55,8 +55,8 @@ config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
 
 config :sanbase, Sanbase.ClickhouseRepo,
   adapter: Ecto.Adapters.Postgres,
-  queue_target: 5000,
-  queue_interval: 1000
+  queue_target: 10_000,
+  queue_interval: 2000
 
 config :sanbase, Sanbase.Repo,
   loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],

@@ -159,7 +159,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
       |> Map.update!(:type, &Inflex.underscore/1)
 
     with {:ok, selector} <- args_to_selector(args),
-         {:ok, metric} <- maybe_replace_metric(metric, selector),
          {:ok, opts} <- selector_args_to_opts(args),
          {:ok, from, to, interval} <-
            transform_datetime_params(selector, metric, transform, args),
@@ -203,13 +202,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   end
 
   defp maybe_enrich_with_labels(_metric, data), do: {:ok, data}
-
-  # gold and s-and-p-500 are present only in the intrday metrics table, not in asset_prices
-  defp maybe_replace_metric("price_usd", %{slug: slug})
-       when slug in ["gold", "s-and-p-500", "crude-oil"],
-       do: {:ok, "price_usd_5m"}
-
-  defp maybe_replace_metric(metric, _selector), do: {:ok, metric}
 
   defp calibrate_transform_params(%{type: "none"}, from, _to, _interval),
     do: {:ok, from}

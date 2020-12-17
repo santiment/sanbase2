@@ -161,8 +161,11 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "transaction_volume",
         "transaction_volume_usd",
         "exchange_inflow",
+        "exchange_inflow_v2",
         "exchange_outflow",
+        "exchange_outflow_v2",
         "exchange_balance",
+        "exchange_balance_v2",
         "exchange_inflow_usd",
         "exchange_outflow_usd",
         "age_consumed",
@@ -240,6 +243,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "uniswap_top_claimers",
         # exchange supply metrics
         "supply_on_exchanges",
+        "supply_on_exchanges_v2",
         "supply_outside_exchanges",
         "percent_of_total_supply_on_exchanges",
         # top holders metrics

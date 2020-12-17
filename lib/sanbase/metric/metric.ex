@@ -6,7 +6,10 @@ defmodule Sanbase.Metric do
   `Sanbase.Metric.Behaviour` behaviour. Such modules are added to the
   @metric_modules list and everything else happens automatically.
   """
-  @compile :inline_list_funcs
+
+  import Sanbase.Metric.MetricReplace,
+    only: [maybe_replace_metric: 2, maybe_replace_metrics: 2]
+
   @compile inline: [execute_if_aggregation_valid: 3, maybe_change_module: 3]
 
   @access_map Sanbase.Metric.Helper.access_map()
@@ -51,6 +54,8 @@ defmodule Sanbase.Metric do
   def timeseries_data(metric, selector, from, to, interval, opts \\ [])
 
   def timeseries_data(metric, selector, from, to, interval, opts) do
+    metric = maybe_replace_metric(metric, selector)
+
     case Map.get(@timeseries_metric_to_module_map, metric) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
@@ -83,6 +88,8 @@ defmodule Sanbase.Metric do
   def timeseries_data_per_slug(metric, selector, from, to, interval, opts \\ [])
 
   def timeseries_data_per_slug(metric, selector, from, to, interval, opts) do
+    metric = maybe_replace_metric(metric, selector)
+
     case Map.get(@timeseries_metric_to_module_map, metric) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
@@ -115,6 +122,8 @@ defmodule Sanbase.Metric do
   def aggregated_timeseries_data(metric, selector, from, to, opts \\ [])
 
   def aggregated_timeseries_data(metric, selector, from, to, opts) do
+    metric = maybe_replace_metric(metric, selector)
+
     case Map.get(@timeseries_metric_to_module_map, metric) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
@@ -211,6 +220,8 @@ defmodule Sanbase.Metric do
   def histogram_data(metric, selector, from, to, interval, limit \\ 100)
 
   def histogram_data(metric, selector, from, to, interval, limit) do
+    metric = maybe_replace_metric(metric, selector)
+
     case Map.get(@histogram_metric_to_module_map, metric) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
@@ -236,6 +247,8 @@ defmodule Sanbase.Metric do
   def table_data(metric, selector, from, to, opts \\ [])
 
   def table_data(metric, selector, from, to, opts) do
+    metric = maybe_replace_metric(metric, selector)
+
     case Map.get(@table_metric_to_module_map, metric) do
       nil ->
         metric_not_available_error(metric, type: :table)
@@ -309,6 +322,8 @@ defmodule Sanbase.Metric do
   Get the first datetime for which a given metric is available for a given slug
   """
   def first_datetime(metric, selector) do
+    metric = maybe_replace_metric(metric, selector)
+
     case Map.get(@metric_to_module_map, metric) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
@@ -324,6 +339,8 @@ defmodule Sanbase.Metric do
   pair is computed.
   """
   def last_datetime_computed_at(metric, selector) do
+    metric = maybe_replace_metric(metric, selector)
+
     case Map.get(@metric_to_module_map, metric) do
       nil ->
         metric_not_available_error(metric, type: :timeseries)
@@ -383,7 +400,7 @@ defmodule Sanbase.Metric do
 
   @spec available_metrics_for_slug(any) ::
           {:ok, list(String.t())} | {:nocache, {:ok, list(String.t())}}
-  def available_metrics_for_slug(selector) do
+  def available_metrics_for_slug(%{slug: slug} = selector) do
     parallel_opts = [ordered: false, max_concurrency: 8, timeout: 60_000]
 
     parallel_fun = fn module ->
@@ -400,8 +417,9 @@ defmodule Sanbase.Metric do
         {:ok, metrics} -> metrics
         _ -> []
       end)
-      |> Enum.sort()
+      |> maybe_replace_metrics(slug)
       |> Enum.uniq()
+      |> Enum.sort()
 
     has_errors? =
       metrics_in_modules

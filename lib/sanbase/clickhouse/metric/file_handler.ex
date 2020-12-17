@@ -34,18 +34,20 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
 
   # @external_resource is registered with `accumulate: true`, so it holds all files
   @external_resource Path.join(__DIR__, "metric_files/available_v2_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/holders_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/makerdao_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/label_metrics.json")
+  @external_resource Path.join(__DIR__, "metric_files/change_metrics.json")
   @external_resource Path.join(__DIR__, "metric_files/defi_metrics.json")
+  @external_resource Path.join(__DIR__, "metric_files/derivatives_metrics.json")
+  @external_resource Path.join(__DIR__, "metric_files/eth2_metrics.json")
+  @external_resource Path.join(__DIR__, "metric_files/exchange_metrics.json")
+  @external_resource Path.join(__DIR__, "metric_files/holders_metrics.json")
+  @external_resource Path.join(__DIR__, "metric_files/label_metrics.json")
   @external_resource Path.join(__DIR__, "metric_files/labeled_balance_metrics.json")
   @external_resource Path.join(__DIR__, "metric_files/labeled_between_labels_flow_metrics.json")
   @external_resource Path.join(__DIR__, "metric_files/labeled_exchange_flow_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/uniswap_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/change_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/table_structured_metrics.json")
+  @external_resource Path.join(__DIR__, "metric_files/makerdao_metrics.json")
   @external_resource Path.join(__DIR__, "metric_files/social_metrics.json")
-  @external_resource Path.join(__DIR__, "metric_files/eth2_metrics.json")
+  @external_resource Path.join(__DIR__, "metric_files/table_structured_metrics.json")
+  @external_resource Path.join(__DIR__, "metric_files/uniswap_metrics.json")
 
   @metrics_json Enum.reduce(@external_resource, [], fn file, acc ->
                   (File.read!(file) |> Jason.decode!()) ++ acc

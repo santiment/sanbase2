@@ -351,6 +351,9 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "eth_based_trade_amount_by_dex",
         "stablecoin_trade_amount_by_dex",
         "other_trade_amount_by_dex",
+        "eth_trade_volume_by_token",
+        "stablecoin_trade_volume_by_token",
+        "token_eth_price_by_dex_5m",
         # table metrics
         "labelled_exchange_balance_sum",
         # balance and flow labeled metrics

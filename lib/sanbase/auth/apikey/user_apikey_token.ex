@@ -33,6 +33,16 @@ defmodule Sanbase.Auth.UserApikeyToken do
     {:ok, Sanbase.Repo.all(query)}
   end
 
+  def user_tokens_structs(%User{id: user_id}) do
+    query =
+      from(
+        pair in UserApikeyToken,
+        where: pair.user_id == ^user_id
+      )
+
+    {:ok, Sanbase.Repo.all(query)}
+  end
+
   def add_user_token(%User{id: user_id}, token) do
     %UserApikeyToken{}
     |> changeset(%{user_id: user_id, token: token})

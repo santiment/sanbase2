@@ -21,7 +21,42 @@ defmodule SanbaseWeb.ExAdmin.Auth.User do
     show user do
       attributes_table(all: true)
 
-      panel "Eth accounts" do
+      panel "User Settings" do
+        table_for [Sanbase.Repo.preload(user, [:user_settings]).user_settings] do
+          column(:id, link: true)
+        end
+      end
+
+      panel "Apikey tokens" do
+        table_for Sanbase.Auth.UserApikeyToken.user_tokens_structs(user) |> elem(1) do
+          column(:token, link: true)
+        end
+      end
+
+      panel "Subscriptions" do
+        table_for Sanbase.Repo.preload(user, [
+                    :subscriptions,
+                    subscriptions: [:plan, plan: :product]
+                  ]).subscriptions do
+          column(:id, link: true)
+          column(:status)
+
+          column(:subscription, fn subscription ->
+            "#{subscription.plan.name}/#{
+              subscription.plan.product.name |> String.trim_trailing(" by Santiment")
+            }"
+          end)
+        end
+      end
+
+      panel "Last 10 Published Insights" do
+        table_for Sanbase.Insight.Post.user_public_insights(user.id, page: 1, page_size: 10) do
+          column(:id, link: true)
+          column(:title, link: true)
+        end
+      end
+
+      panel "ETH Accounts" do
         table_for user.eth_accounts do
           column(:id, link: true)
           column(:address)

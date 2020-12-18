@@ -45,8 +45,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     end
   end
 
-  def api_calls_history(%User{} = user, %{from: from, to: to, interval: interval}, _resolution) do
-    Sanbase.Clickhouse.ApiCallData.api_call_history(user.id, from, to, interval)
+  def api_calls_history(
+        %User{} = user,
+        %{from: from, to: to, interval: interval} = args,
+        _resolution
+      ) do
+    auth_method = Map.get(args, :auth_method, :all)
+    Sanbase.Clickhouse.ApiCallData.api_call_history(user.id, from, to, interval, auth_method)
+  end
+
+  def api_calls_count(
+        %User{} = user,
+        %{from: from, to: to} = args,
+        _resolution
+      ) do
+    auth_method = Map.get(args, :auth_method, :all)
+    Sanbase.Clickhouse.ApiCallData.api_call_count(user.id, from, to, auth_method)
   end
 
   def current_user(_root, _args, %{

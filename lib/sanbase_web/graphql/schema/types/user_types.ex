@@ -18,6 +18,13 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     BillingResolver
   }
 
+  enum :api_call_auth_method do
+    value(:all)
+    value(:apikey)
+    value(:basic)
+    value(:jwt)
+  end
+
   input_object :user_selector_input_object do
     field(:id, :id)
     field(:email, :string)
@@ -150,15 +157,26 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     end
 
     @desc ~s"""
-    The total number of api calls made by the user in a given time range.
-    Counts all API calls made either with JWT or API Key authentication
+    Timeseries data of api calls count per interval in a given time range.
     """
     field :api_calls_history, list_of(:api_call_data) do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
+      arg(:auth_method, :api_call_auth_method, default_value: :apikey)
       arg(:interval, :interval, default_value: "1d")
 
       cache_resolve(&UserResolver.api_calls_history/3)
+    end
+
+    @desc ~s"""
+    Timeseries data of api calls count per interval in a given time range.
+    """
+    field :api_calls_count, :integer do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:auth_method, :api_call_auth_method, default_value: :apikey)
+
+      cache_resolve(&UserResolver.api_calls_count/3)
     end
   end
 

@@ -136,7 +136,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricHistogramDataTest do
     end)
   end
 
-  test "histogram metric different than all_spent_coins_cost without from datetime - returns proper error",
+  test "histogram metric different except without from datetime - returns proper error",
        context do
     %{conn: conn, slug: slug, to: to} = context
     metric = "spent_coins_cost"

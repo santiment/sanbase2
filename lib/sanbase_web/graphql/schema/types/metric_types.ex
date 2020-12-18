@@ -102,6 +102,23 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:value, :float)
   end
 
+  object :datetime_range_float_value do
+    field(:range, list_of(:datetime))
+    field(:value, :float)
+  end
+
+  object :string_label_float_value do
+    field(:label, :string)
+    field(:value, :float)
+  end
+
+  object :string_address_string_label_float_value do
+    field(:address, :string)
+    field(:label, :string)
+    field(:value, :float)
+  end
+
+  # List objects
   object :string_address_float_value_list do
     field(:data, list_of(:string_address_float_value))
   end
@@ -114,9 +131,12 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:data, list_of(:datetime_range_float_value))
   end
 
-  object :datetime_range_float_value do
-    field(:range, list_of(:datetime))
-    field(:value, :float)
+  object :string_label_float_value_list do
+    field(:data, list_of(:string_label_float_value))
+  end
+
+  object :string_address_string_label_float_value_list do
+    field(:data, list_of(:string_address_string_label_float_value))
   end
 
   union :value_list do
@@ -127,7 +147,9 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       :float_list,
       :float_range_float_value_list,
       :datetime_range_float_value_list,
-      :string_address_float_value_list
+      :string_address_float_value_list,
+      :string_label_float_value_list,
+      :string_address_string_label_float_value_list
     ])
 
     resolve_type(fn
@@ -137,15 +159,24 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       %{data: [value | _]}, _ when is_binary(value) ->
         :string_list
 
-      %{data: [%{range: [r | _], value: value} | _]}, _ when is_number(r) and is_number(value) ->
+      %{data: [%{range: [r | _], value: value} | _]}, _
+      when is_number(r) and is_number(value) ->
         :float_range_float_value_list
 
       %{data: [%{range: [%DateTime{} | _], value: value} | _]}, _ when is_number(value) ->
         :datetime_range_float_value_list
 
+      %{data: [%{address: address, label: label, value: value} | _]}, _
+      when is_binary(label) and is_binary(address) and is_number(value) ->
+        :string_address_string_label_float_value_list
+
       %{data: [%{address: address, value: value} | _]}, _
       when is_binary(address) and is_number(value) ->
         :string_address_float_value_list
+
+      %{data: [%{label: label, value: value} | _]}, _
+      when is_binary(label) and is_number(value) ->
+        :string_label_float_value_list
 
       %{data: []}, _ ->
         :float_list

@@ -15,6 +15,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
       [
         "active_addresses_24h",
         "active_addresses_1h",
+        "circulation",
         "daily_active_addresses",
         "daily_avg_marketcap_usd",
         "daily_avg_price_usd",
@@ -68,7 +69,11 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "uniswap_total_user_claims_count",
         "uniswap_user_claims_amount",
         "uniswap_user_claims_count",
-        "circulation"
+        # histogram metrics
+        "eth2_staked_amount_per_label",
+        "eth2_staked_address_count_per_label",
+        "eth2_unlabeled_staker_inflow_sources",
+        "eth2_top_stakers"
       ]
       |> Enum.sort()
 

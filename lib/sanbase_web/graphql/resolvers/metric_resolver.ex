@@ -125,7 +125,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
     with true <- valid_histogram_args?(metric, args),
          {:ok, selector} <- args_to_selector(args),
-         {:ok, data} <- Metric.histogram_data(metric, selector, from, to, interval, limit),
+         {:ok, data} <-
+           Metric.histogram_data(metric, selector, from, to, interval, limit),
          {:ok, data} <- maybe_enrich_with_labels(metric, data) do
       {:ok, %{values: %{data: data}}}
     end
@@ -186,6 +187,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
       {:ok, from, to, interval}
     end
   end
+
+  defp maybe_enrich_with_labels("eth2_top_stakers", data), do: {:ok, data}
 
   defp maybe_enrich_with_labels(_metric, [%{address: address} | _] = data)
        when is_binary(address) do
@@ -279,12 +282,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
   defp transform_interval(_, interval), do: interval
 
+  @metrics_allowed_missing_from ["all_spent_coins_cost", "eth2_staked_amount_per_label"]
   # All histogram metrics except "all_spent_coins_cost" require `from` argument
   defp valid_histogram_args?(metric, args) do
-    if metric != "all_spent_coins_cost" && !Map.get(args, :from) do
-      {:error, "Missing required `from` argument"}
-    else
+    if metric in @metrics_allowed_missing_from or Map.get(args, :from) do
       true
+    else
+      {:error, "Missing required `from` argument"}
     end
   end
 end

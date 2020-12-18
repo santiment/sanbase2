@@ -6,6 +6,16 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
 
   @spent_coins_cost_histograms ["price_histogram", "spent_coins_cost", "all_spent_coins_cost"]
 
+  @eth2_string_label_float_value_metrics [
+    "eth2_staked_amount_per_label",
+    "eth2_staked_address_count_per_label",
+    "eth2_unlabeled_staker_inflow_sources"
+  ]
+
+  @eth2_string_address_string_label_float_value_metrics [
+    "eth2_top_stakers"
+  ]
+
   def histogram_data("age_distribution" = metric, %{slug: slug}, from, to, interval, limit) do
     {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
 
@@ -34,6 +44,45 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramMetric do
       }
     end)
     |> maybe_transform_into_buckets(slug, from, to, limit)
+  end
+
+  def histogram_data(
+        metric,
+        %{slug: "ethereum" = slug},
+        from,
+        to,
+        interval,
+        limit
+      )
+      when metric in @eth2_string_label_float_value_metrics do
+    {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
+
+    ClickhouseRepo.query_transform(query, args, fn [label, amount] ->
+      %{
+        label: label,
+        value: Sanbase.Math.to_float(amount)
+      }
+    end)
+  end
+
+  def histogram_data(
+        metric,
+        %{slug: "ethereum" = slug},
+        from,
+        to,
+        interval,
+        limit
+      )
+      when metric in @eth2_string_address_string_label_float_value_metrics do
+    {query, args} = histogram_data_query(metric, slug, from, to, interval, limit)
+
+    ClickhouseRepo.query_transform(query, args, fn [address, label, amount] ->
+      %{
+        address: address,
+        label: label,
+        value: Sanbase.Math.to_float(amount)
+      }
+    end)
   end
 
   def first_datetime(metric, %{slug: _} = selector)

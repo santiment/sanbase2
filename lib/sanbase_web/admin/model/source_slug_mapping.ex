@@ -4,14 +4,14 @@ defmodule SanbaseWeb.ExAdmin.Model.Project.SourceSlugMapping do
   register_resource Sanbase.Model.Project.SourceSlugMapping do
     form source_slug_mapping do
       inputs do
-        input(source_slug_mapping, :source)
-        input(source_slug_mapping, :slug)
-
         input(
           source_slug_mapping,
           :project,
           collection: from(p in Sanbase.Model.Project, order_by: p.name) |> Sanbase.Repo.all()
         )
+
+        input(source_slug_mapping, :source)
+        input(source_slug_mapping, :slug)
       end
     end
 

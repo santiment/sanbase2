@@ -48,6 +48,19 @@ defmodule SanbaseWeb.ExAdmin.Model.Project do
         end
       end
 
+      panel "Github Organizations" do
+        markup_contents do
+          a ".btn .btn-primary",
+            href: "/admin/github_organizations/new?project_id=" <> to_string(project.id) do
+            "New Github Organization"
+          end
+        end
+
+        table_for Sanbase.Repo.preload(project, [:github_organizations]).github_organizations do
+          column(:organization, link: true)
+        end
+      end
+
       panel "Market Segments" do
         markup_contents do
           a ".btn .btn-primary",
@@ -129,6 +142,28 @@ defmodule SanbaseWeb.ExAdmin.Model.Project do
             |> Enum.map(fn ic -> "#{ic.currency.code}: #{ic.amount}" end)
             |> Enum.join("<br/>")
           end)
+        end
+      end
+
+      panel "Latest Coinmarketcap Data" do
+        list_cmc_data =
+          case Sanbase.Repo.preload(project, [:latest_coinmarketcap_data]).latest_coinmarketcap_data do
+            nil -> []
+            elem -> [elem]
+          end
+
+        table_for list_cmc_data do
+          column(:coinmarketcap_id)
+          column(:coinmarketcap_integer_id)
+          column(:rank)
+          column(:price_usd)
+          column(:price_btc)
+          column(:volume_usd)
+          column(:market_cap_usd)
+          column(:available_supply)
+          column(:total_supply)
+          column(:logo_updated_at)
+          column(:update_time)
         end
       end
     end

@@ -12,7 +12,7 @@ defmodule Sanbase.Clickhouse.ApiCallDataTest do
     [user: user]
   end
 
-  test "clickhouse returns data", context do
+  test "clickhouse returns data for api call history", context do
     dt1 = ~U[2019-01-01 00:00:00Z]
     dt2 = ~U[2019-01-02 00:00:00Z]
     dt3 = ~U[2019-01-03 00:00:00Z]
@@ -25,7 +25,7 @@ defmodule Sanbase.Clickhouse.ApiCallDataTest do
 
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      result = ApiCallData.api_call_history(context.user.id, dt1, dt3, "1d")
+      result = ApiCallData.api_call_history(context.user.id, dt1, dt3, "1d", :apikey)
 
       assert result ==
                {:ok,
@@ -37,13 +37,23 @@ defmodule Sanbase.Clickhouse.ApiCallDataTest do
     end)
   end
 
+  test "clickhouse returns data for api call count", context do
+    from = ~U[2019-01-01 00:00:00Z]
+    to = ~U[2019-01-02 00:00:00Z]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: [[100]]}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      assert ApiCallData.api_call_count(context.user.id, from, to, :all) == {:ok, 100}
+    end)
+  end
+
   test "clickhouse returns empty list", context do
     dt1 = ~U[2019-01-01 00:00:00Z]
     dt2 = ~U[2019-01-03 00:00:00Z]
 
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: []}})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      result = ApiCallData.api_call_history(context.user.id, dt1, dt2, "1d")
+      result = ApiCallData.api_call_history(context.user.id, dt1, dt2, "1d", :all)
 
       assert result == {:ok, []}
     end)
@@ -58,7 +68,8 @@ defmodule Sanbase.Clickhouse.ApiCallDataTest do
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:error, error_msg})
     |> Sanbase.Mock.run_with_mocks(fn ->
       assert capture_log(fn ->
-               {:error, error} = ApiCallData.api_call_history(context.user.id, dt1, dt3, "1d")
+               {:error, error} =
+                 ApiCallData.api_call_history(context.user.id, dt1, dt3, "1d", :all)
 
                assert error =~ "Cannot execute database query."
              end) =~ error_msg

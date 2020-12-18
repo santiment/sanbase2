@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.UserApiCallDataApiTest do
     dt3_str = "2019-01-03T00:00:00Z"
 
     with_mock Sanbase.Clickhouse.ApiCallData,
-      api_call_history: fn _, _, _, _ ->
+      api_call_history: fn _, _, _, _, _ ->
         {:ok,
          [
            %{datetime: from_iso8601!(dt1_str), api_calls_count: 400},
@@ -64,7 +64,7 @@ defmodule SanbaseWeb.Graphql.UserApiCallDataApiTest do
     dt2_str = "2019-01-03T00:00:00Z"
 
     with_mock Sanbase.Clickhouse.ApiCallData,
-      api_call_history: fn _, _, _, _ ->
+      api_call_history: fn _, _, _, _, _ ->
         {:ok, []}
       end do
       result =
@@ -92,7 +92,7 @@ defmodule SanbaseWeb.Graphql.UserApiCallDataApiTest do
     dt2_str = "2019-01-03T00:00:00Z"
 
     with_mock Sanbase.Clickhouse.ApiCallData,
-      api_call_history: fn _, _, _, _ ->
+      api_call_history: fn _, _, _, _, _ ->
         {:error, "Something went wrong"}
       end do
       result =

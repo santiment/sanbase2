@@ -39,6 +39,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   @external_resource Path.join(__DIR__, "metric_files/derivatives_metrics.json")
   @external_resource Path.join(__DIR__, "metric_files/eth2_metrics.json")
   @external_resource Path.join(__DIR__, "metric_files/exchange_metrics.json")
+  @external_resource Path.join(__DIR__, "metric_files/histogram_metrics.json")
   @external_resource Path.join(__DIR__, "metric_files/holders_metrics.json")
   @external_resource Path.join(__DIR__, "metric_files/label_metrics.json")
   @external_resource Path.join(__DIR__, "metric_files/labeled_balance_metrics.json")

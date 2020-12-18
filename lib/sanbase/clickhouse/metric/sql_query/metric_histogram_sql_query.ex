@@ -114,6 +114,186 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     {query, args}
   end
 
+  def histogram_data_query(
+        "eth2_staked_amount_per_label",
+        "ethereum",
+        from,
+        to,
+        _interval,
+        limit
+      ) do
+    query = """
+    SELECT
+      label,
+      SUM(locked_sum) AS value
+    FROM (
+      SELECT
+        address,
+        locked_sum,
+        #{label_select(label_as: "label")},
+      FROM (
+        SELECT address, SUM(amount) AS locked_sum
+        FROM (
+            SELECT distinct *
+            FROM eth2_staking_transfers_mv
+            WHERE
+              dt < toDateTime(?2)
+              #{if from, do: "AND dt >= toDateTime(?3)"}
+        )
+        GROUP BY address
+      )
+    )
+    GROUP BY label
+    ORDER BY value DESC
+    LIMIT ?1
+    """
+
+    args =
+      case from do
+        nil -> [limit, to |> DateTime.to_unix()]
+        _ -> [limit, to |> DateTime.to_unix(), from |> DateTime.to_unix()]
+      end
+
+    {query, args}
+  end
+
+  def histogram_data_query(
+        "eth2_staked_address_count_per_label",
+        "ethereum",
+        from,
+        to,
+        _interval,
+        limit
+      ) do
+    query = """
+    SELECT
+      label,
+      count(address) AS value
+    FROM (
+      SELECT
+        address,
+        #{label_select(label_as: "label")}
+        FROM (
+          SELECT DISTINCT(address)
+          FROM eth2_staking_transfers_mv
+          WHERE
+            dt < toDateTime(?2)
+            #{if from, do: "AND dt >= toDateTime(?3)"}
+        )
+    )
+    GROUP BY label
+    ORDER BY value DESC
+    LIMIT ?1
+    """
+
+    args =
+      case from do
+        nil -> [limit, to |> DateTime.to_unix()]
+        _ -> [limit, to |> DateTime.to_unix(), from |> DateTime.to_unix()]
+      end
+
+    {query, args}
+  end
+
+  def histogram_data_query(
+        "eth2_unlabeled_staker_inflow_sources",
+        "ethereum",
+        from,
+        to,
+        _interval,
+        limit
+      ) do
+    query = """
+    SELECT
+      label,
+      sum(address_inflow) AS value
+    FROM (
+      SELECT
+        address,
+        address_inflow,
+        #{label_select(label_as: "label", label_str_as: "label_str")}
+      FROM (
+          SELECT
+            from AS address,
+            sum(value / 1e18) AS address_inflow
+          FROM eth_transfers
+          WHERE to GLOBAL IN (
+            SELECT address
+            FROM (
+              SELECT
+                address,
+                dictGet('default.eth_label_dict', 'labels', (cityHash64(address), toUInt64(0))) AS label_str
+              FROM (
+                SELECT DISTINCT(address)
+                FROM eth2_staking_transfers_mv FINAL
+                WHERE
+                  dt < toDateTime(?2)
+                  #{if from, do: "AND dt >= toDateTime(?3)"}
+              )
+            )
+            WHERE label_str = ''
+          )
+        GROUP BY address
+      )
+    )
+    GROUP BY label
+    ORDER BY value DESC
+    LIMIT ?1
+    """
+
+    args =
+      case from do
+        nil -> [limit, to |> DateTime.to_unix()]
+        _ -> [limit, to |> DateTime.to_unix(), from |> DateTime.to_unix()]
+      end
+
+    {query, args}
+  end
+
+  def histogram_data_query(
+        "eth2_top_stakers",
+        "ethereum",
+        from,
+        to,
+        _interval,
+        limit
+      ) do
+    query = """
+    SELECT
+      address,
+      label,
+      locked_value AS staked
+    FROM (
+      SELECT
+        address,
+        locked_value,
+        #{label_select(label_as: "label")}
+      FROM (
+        SELECT
+          address,
+          SUM(amount) AS locked_value
+        FROM eth2_staking_transfers_mv FINAL
+        WHERE
+          dt < toDateTime(?2)
+          #{if from, do: "AND dt >= toDateTime(?3)"}
+        GROUP BY address
+        ORDER BY locked_value DESC
+        LIMIT ?1
+      )
+    )
+    ORDER BY staked DESC
+    """
+
+    args =
+      case from do
+        nil -> [limit, to |> DateTime.to_unix()]
+        _ -> [limit, to |> DateTime.to_unix(), from |> DateTime.to_unix()]
+      end
+
+    {query, args}
+  end
+
+  # Generic
   def histogram_data_query(metric, slug, from, to, interval, limit) do
     query = """
     SELECT
@@ -142,5 +322,32 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
     ]
 
     {query, args}
+  end
+
+  defp label_select(opts) do
+    label_as = Keyword.get(opts, :label_as, "label")
+    label_str_as = Keyword.get(opts, :label_str_as, "label_str")
+
+    """
+    dictGet('default.eth_label_dict', 'labels', (cityHash64(address), toUInt64(0))) AS #{
+      label_str_as
+    },
+    splitByChar(',', #{label_str_as}) AS label_arr_internal,
+    multiIf(
+      has(label_arr_internal, 'decentralized_exchange'), 'DEX',
+      hasAny(label_arr_internal, ['centralized_exchange', 'deposit']), 'CEX',
+      has(label_arr_internal, 'defi'), 'DeFi',
+      has(label_arr_internal, 'genesis'), 'Genesis',
+      has(label_arr_internal, 'miner'), 'Miner',
+      has(label_arr_internal, 'makerdao-cdp-owner'), 'CDP Owner',
+      has(label_arr_internal, 'whale'), 'Whale',
+      hasAll(label_arr_internal, ['dex_trader', 'withdrawal']), 'CEX & DEX Trader',
+      has(label_arr_internal, 'withdrawal'), 'CEX Trader',
+      has(label_arr_internal, 'proxy'), 'Proxy',
+      has(label_arr_internal, 'dex_trader'), 'DEX Trader',
+      #{label_str_as} = '', 'Unlabeled',
+      label_arr_internal[1]
+      ) AS #{label_as}
+    """
   end
 end

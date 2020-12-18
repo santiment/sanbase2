@@ -1,0 +1,126 @@
+[
+  {
+    "human_readable_name": "Price Histogram",
+    "name": "price_histogram",
+    "metric": "price_histogram",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": ["distribution_deltas_5min", "intraday_metrics"],
+    "has_incomplete_data": false,
+    "data_type": "histogram"
+  },
+  {
+    "human_readable_name": "Spent Coins Cost",
+    "name": "spent_coins_cost",
+    "metric": "spent_coins_cost",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": ["distribution_deltas_5min", "intraday_metrics"],
+    "has_incomplete_data": false,
+    "data_type": "histogram"
+  },
+  {
+    "human_readable_name": "All Spent Coins Cost",
+    "name": "all_spent_coins_cost",
+    "metric": "all_spent_coins_cost",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": ["distribution_deltas_5min", "intraday_metrics"],
+    "has_incomplete_data": false,
+    "data_type": "histogram"
+  },
+  {
+    "human_readable_name": "Age Distribution Histogram",
+    "name": "age_distribution",
+    "metric": "age_distribution_5min_delta",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "distribution_deltas_5min",
+    "has_incomplete_data": false,
+    "data_type": "histogram"
+  },
+  {
+    "human_readable_name": "ETH2 Staked Amount",
+    "name": "eth2_staked_amount_per_label",
+    "metric": "eth2_staked_amount_per_label",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "eth2_staking_transfers_mv",
+    "has_incomplete_data": false,
+    "data_type": "histogram"
+  },
+  {
+    "human_readable_name": "ETH2 Staked Amount",
+    "name": "eth2_staked_address_count_per_label",
+    "metric": "eth2_staked_address_count_per_label",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "eth2_staking_transfers_mv",
+    "has_incomplete_data": false,
+    "data_type": "histogram"
+  },
+  {
+    "human_readable_name": "ETH2 Staked Amount",
+    "name": "eth2_unlabeled_staker_inflow_sources",
+    "metric": "eth2_unlabeled_staker_inflow_sources",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "eth2_staking_transfers_mv",
+    "has_incomplete_data": false,
+    "data_type": "histogram"
+  },
+  {
+    "human_readable_name": "ETH2 Staked Amount",
+    "name": "eth2_top_stakers",
+    "metric": "eth2_top_stakers",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "eth2_staking_transfers_mv",
+    "has_incomplete_data": false,
+    "data_type": "histogram"
+  }
+]

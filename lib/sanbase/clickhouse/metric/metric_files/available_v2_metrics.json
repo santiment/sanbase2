@@ -1537,62 +1537,6 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Age Distribution Histogram",
-    "name": "age_distribution",
-    "metric": "age_distribution_5min_delta",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": "distribution_deltas_5min",
-    "has_incomplete_data": false,
-    "data_type": "histogram"
-  },
-  {
-    "human_readable_name": "Price Histogram",
-    "name": "price_histogram",
-    "metric": "price_histogram",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": ["distribution_deltas_5min", "intraday_metrics"],
-    "has_incomplete_data": false,
-    "data_type": "histogram"
-  },
-  {
-    "human_readable_name": "Spent Coins Cost",
-    "name": "spent_coins_cost",
-    "metric": "spent_coins_cost",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": ["distribution_deltas_5min", "intraday_metrics"],
-    "has_incomplete_data": false,
-    "data_type": "histogram"
-  },
-  {
-    "human_readable_name": "All Spent Coins Cost",
-    "name": "all_spent_coins_cost",
-    "metric": "all_spent_coins_cost",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "aggregation": "last",
-    "min_interval": "5m",
-    "table": ["distribution_deltas_5min", "intraday_metrics"],
-    "has_incomplete_data": false,
-    "data_type": "histogram"
-  },
-  {
     "human_readable_name": "Active Deposits",
     "name": "active_deposits",
     "metric": "active_deposits",

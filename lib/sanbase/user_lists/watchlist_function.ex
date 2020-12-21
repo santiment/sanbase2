@@ -19,7 +19,13 @@ defmodule Sanbase.WatchlistFunction do
     args = Enum.into(args, %{}, fn {k, v} -> {Inflex.underscore(k), v} end)
 
     with {selector, empty_map} when map_size(empty_map) == 0 <-
-           Map.split(args, ["filters", "order_by", "pagination", "filters_combinator"]),
+           Map.split(args, [
+             "filters",
+             "order_by",
+             "pagination",
+             "filters_combinator",
+             "base_projects"
+           ]),
          true <- Project.ListSelector.valid_selector?(%{selector: selector}) do
       true
     else

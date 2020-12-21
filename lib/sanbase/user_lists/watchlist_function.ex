@@ -118,7 +118,13 @@ defmodule Sanbase.WatchlistFunction do
   def evaluate(%__MODULE__{name: "selector", args: args}) do
     args = Enum.into(args, %{}, fn {k, v} -> {Inflex.underscore(k), v} end)
 
-    case Map.split(args, ["filters", "order_by", "pagination", "filters_combinator"]) do
+    case Map.split(args, [
+           "filters",
+           "order_by",
+           "pagination",
+           "filters_combinator",
+           "base_projects"
+         ]) do
       {selector, empty_map} when map_size(empty_map) == 0 ->
         Project.ListSelector.projects(%{selector: selector})
 

@@ -98,6 +98,7 @@ defmodule Sanbase.Model.Project.ListSelector do
   # Private functions
 
   defp intersect_with_base_slugs(slugs, :all), do: slugs
+  defp intersect_with_base_slugs(:all, base_slugs), do: base_slugs
 
   defp intersect_with_base_slugs(slugs, base_slugs) do
     MapSet.intersection(MapSet.new(slugs), MapSet.new(base_slugs))

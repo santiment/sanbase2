@@ -130,12 +130,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
       SELECT
         address,
         locked_sum,
-        #{label_select(label_as: "label")},
+        #{label_select(label_as: "label")}
       FROM (
         SELECT address, SUM(amount) AS locked_sum
         FROM (
             SELECT distinct *
-            FROM eth2_staking_transfers_mv
+            FROM eth2_staking_transfers_mv FINAL
             WHERE
               dt < toDateTime(?2)
               #{if from, do: "AND dt >= toDateTime(?3)"}
@@ -175,7 +175,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.HistogramSqlQuery do
         #{label_select(label_as: "label")}
         FROM (
           SELECT DISTINCT(address)
-          FROM eth2_staking_transfers_mv
+          FROM eth2_staking_transfers_mv FINAL
           WHERE
             dt < toDateTime(?2)
             #{if from, do: "AND dt >= toDateTime(?3)"}

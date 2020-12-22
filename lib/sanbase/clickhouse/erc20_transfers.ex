@@ -148,10 +148,14 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     end)
   end
 
-  @spec recent_transactions(String.t(), non_neg_integer(), non_neg_integer()) ::
+  @spec recent_transactions(String.t(),
+          page: non_neg_integer(),
+          page_size: non_neg_integer(),
+          only_sender: boolean()
+        ) ::
           {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
-  def recent_transactions(address, page, page_size) do
-    {query, args} = recent_transactions_query(address, page, page_size)
+  def recent_transactions(address, opts) do
+    {query, args} = recent_transactions_query(address, opts)
 
     ClickhouseRepo.query_transform(query, args, fn
       [timestamp, from_address, to_address, trx_hash, trx_value, name, decimals] ->
@@ -210,7 +214,10 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     {query, args}
   end
 
-  defp recent_transactions_query(address, page, page_size) do
+  defp recent_transactions_query(address, opts) do
+    page = Keyword.get(opts, :page, 1)
+    page_size = Keyword.get(opts, :page_size, 10)
+    only_sender = Keyword.get(opts, :only_sender, false)
     offset = (page - 1) * page_size
 
     query = """
@@ -228,7 +235,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
       FROM asset_metadata FINAL
     ) USING (assetRefId)
     PREWHERE
-      (from = ?1 OR to = ?1)
+      #{if only_sender, do: "from = ?1", else: "(from = ?1 OR to = ?1)"}
     ORDER BY dt DESC
     LIMIT ?2 OFFSET ?3
     """

@@ -16,7 +16,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
 
   def recent_transactions(
         _root,
-        %{address: address, type: type, page: page, page_size: page_size},
+        %{
+          address: address,
+          type: type,
+          page: page,
+          page_size: page_size,
+          only_sender: only_sender
+        },
         _resolution
       ) do
     page_size = Enum.min([page_size, 100])
@@ -26,7 +32,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     slug = @recent_transactions_type_map[type].slug
 
     with {:ok, recent_transactions} <-
-           module.recent_transactions(address, page, page_size),
+           module.recent_transactions(address,
+             page: page,
+             page_size: page_size,
+             only_sender: only_sender
+           ),
          {:ok, recent_transactions} <-
            MarkExchanges.mark_exchange_wallets(recent_transactions),
          {:ok, recent_transactions} <-

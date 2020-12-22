@@ -12,6 +12,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
       arg(:type, non_null(:recent_transactions_type))
       arg(:page, non_null(:integer), default_value: 1)
       arg(:page_size, non_null(:integer), default_value: 10)
+      arg(:only_sender, non_null(:boolean), default_value: true)
 
       cache_resolve(&BlockchainAddressResolver.recent_transactions/3)
     end

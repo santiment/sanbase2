@@ -28,6 +28,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectListResolver do
         apply(Project.List, fun, [opts])
       end
 
+    projects = Enum.uniq_by(projects, & &1.id)
+
     {:ok, projects}
   end
 
@@ -35,6 +37,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectListResolver do
     with {:ok, function} <- Sanbase.WatchlistFunction.cast(function),
          {:ok, data} <- Sanbase.WatchlistFunction.evaluate(function) do
       %{projects: projects, total_projects_count: total_projects_count} = data
+
+      projects = Enum.uniq_by(projects, & &1.id)
 
       {:ok,
        %{
@@ -47,7 +51,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectListResolver do
   end
 
   def all_projects_by_ticker(_root, %{ticker: ticker}, _resolution) do
-    {:ok, Project.List.projects_by_ticker(ticker)}
+    projects = Project.List.projects_by_ticker(ticker) |> Enum.uniq_by(& &1.id)
+
+    {:ok, projects}
   end
 
   def projects_count(_root, args, _resolution) do

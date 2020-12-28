@@ -120,7 +120,7 @@ defmodule Sanbase.Signal.Validation.Operation do
   end
 
   defp valid_channel_operation?(op, [min, max])
-       when op in [:inside_channel, :outside_channel] and is_valid_min_max_price(min, max),
+       when op in [:inside_channel, :outside_channel] and is_valid_min_max(min, max),
        do: :ok
 
   defp valid_channel_operation?(op, [min, max]) do

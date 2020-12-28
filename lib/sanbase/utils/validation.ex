@@ -4,6 +4,9 @@ defmodule Sanbase.Validation do
   defguard is_valid_percent(percent) when is_number(percent) and percent >= -100
   defguard is_valid_percent_change(percent) when is_number(percent) and percent > 0
 
+  defguard is_valid_min_max(min, max)
+           when min < max and is_number(min) and is_number(max)
+
   defguard is_valid_min_max_price(min, max)
            when min < max and is_valid_price(min) and is_valid_price(max)
 

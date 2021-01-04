@@ -15,7 +15,7 @@ defmodule Sanbase.WatchlistFunction do
   @impl Ecto.Type
   def type, do: :map
 
-  def valid_function?(%__MODULE__{name: "selector", args: args}) do
+  def valid_function?(%__MODULE__{name: "selector", args: args} = fun) do
     args = Enum.into(args, %{}, fn {k, v} -> {Inflex.underscore(k), v} end)
 
     with {selector, empty_map} when map_size(empty_map) == 0 <-
@@ -27,7 +27,7 @@ defmodule Sanbase.WatchlistFunction do
              "base_projects"
            ]),
          true <- Project.ListSelector.valid_selector?(%{selector: selector}) do
-      true
+      evaluates?(fun)
     else
       {%{}, %{} = unsupported_keys_map} ->
         {:error,
@@ -40,25 +40,25 @@ defmodule Sanbase.WatchlistFunction do
     end
   end
 
-  def valid_function?(%__MODULE__{name: "market_segment", args: args}) do
+  def valid_function?(%__MODULE__{name: "market_segment", args: args} = fun) do
     market_segment = Map.get(args, "market_segment") || Map.fetch!(args, :market_segment)
 
     case is_binary(market_segment) do
-      true -> true
+      true -> evaluates?(fun)
       false -> {:error, "The market_segment argument must be a string."}
     end
   end
 
-  def valid_function?(%__MODULE__{name: "market_segments", args: args}) do
+  def valid_function?(%__MODULE__{name: "market_segments", args: args} = fun) do
     market_segment = Map.get(args, "market_segments") || Map.fetch!(args, :market_segments)
 
     case is_list(market_segment) and market_segment != [] do
-      true -> true
+      true -> evaluates?(fun)
       false -> {:error, "The market_segments argument must be a non-empty list."}
     end
   end
 
-  def valid_function?(%__MODULE__{name: "top_erc20_projects", args: args}) do
+  def valid_function?(%__MODULE__{name: "top_erc20_projects", args: args} = fun) do
     size = Map.get(args, "size") || Map.fetch!(args, :size)
     ignored_projects = Map.get(args, "ignored_projects") || Map.get(args, :ignored_projects) || []
 
@@ -68,13 +68,13 @@ defmodule Sanbase.WatchlistFunction do
 
       true ->
         case is_list(ignored_projects) do
-          true -> true
+          true -> evaluates?(fun)
           false -> {:error, "The ignored projects argument must be a list."}
         end
     end
   end
 
-  def valid_function?(%__MODULE__{name: "top_all_projects", args: args}) do
+  def valid_function?(%__MODULE__{name: "top_all_projects", args: args} = fun) do
     size = Map.get(args, "size") || Map.fetch!(args, :size)
     ignored_projects = Map.get(args, "ignored_projects") || Map.get(args, :ignored_projects) || []
 
@@ -84,26 +84,26 @@ defmodule Sanbase.WatchlistFunction do
 
       true ->
         case is_list(ignored_projects) do
-          true -> true
+          true -> evaluates?(fun)
           false -> {:error, "The ignored projects argument must be a list."}
         end
     end
   end
 
-  def valid_function?(%__MODULE__{name: "min_volume", args: args}) do
+  def valid_function?(%__MODULE__{name: "min_volume", args: args} = fun) do
     min_volume = Map.get(args, "min_volume") || Map.fetch!(args, :min_volume)
 
     case is_number(min_volume) and min_volume >= 0 do
-      true -> true
+      true -> evaluates?(fun)
       false -> {:error, "The min volume argument must be a non-negative number."}
     end
   end
 
-  def valid_function?(%__MODULE__{name: "slugs", args: args}) do
+  def valid_function?(%__MODULE__{name: "slugs", args: args} = fun) do
     slugs = Map.get(args, "slugs") || Map.fetch!(args, :slugs)
 
     case is_list(slugs) and slugs != [] do
-      true -> true
+      true -> evaluates?(fun)
       false -> {:error, "The slugs argument must be a non-empty list."}
     end
   end
@@ -111,6 +111,23 @@ defmodule Sanbase.WatchlistFunction do
   def valid_function?(%__MODULE__{name: "trending_projects"}), do: true
 
   def valid_function?(%__MODULE__{name: "empty"}), do: true
+
+  @doc ~s"""
+  Checks if function evaluates. This is used as a last resort to checking if a
+  function is valid as some edge cases can be missed. Creating a watchlist
+  with a function that cannot be evaulated will cause constant errors on runtime.
+  """
+  @spec evaluates?(%__MODULE__{}) :: boolean()
+  def evaluates?(%__MODULE__{} = fun) do
+    try do
+      case evaluate(fun) do
+        {:ok, _} -> true
+        {:error, _} -> false
+      end
+    rescue
+      _ -> false
+    end
+  end
 
   @spec evaluate(%__MODULE__{}) :: {:ok, result} | {:error, String.t()}
   def evaluate(watchlist_function)

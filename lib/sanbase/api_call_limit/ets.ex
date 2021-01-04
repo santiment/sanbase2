@@ -105,17 +105,45 @@ defmodule Sanbase.ApiCallLimit.ETS do
         :ok
 
       [{^entity_key, api_calls_remaining, quota, _metadata}] when api_calls_remaining <= count ->
-        {:ok, _} =
-          ApiCallLimit.update_usage_db(entity_type, entity, quota - api_calls_remaining + count)
+        # If 2+ processes execute :ets.lookup/2 at the same time with the same key
+        # it could happen that both processes enter this path. This will lead to
+        # updating the DB more than once, thus leading to storing more api calls
+        # than the user actually made.
+        # This issue is not neatly solved by using a mutex so the read/writes
+        # happen sequentially. A better solution would be sought that uses
+        # techniques similar to CAS operation.
 
-        get_quota_db_and_update_ets(entity_type, entity, entity_key)
+        lock = Mutex.await(Sanbase.ApiCallLimitMutex, entity_key, 5_000)
 
+        # Do another lookup do re-fetch the data in case we waited for the
+        # mutex while some other process was doing work here.
+        [{^entity_key, api_calls_remaining, quota, _metadata}] =
+          :ets.lookup(@ets_table, entity_key)
+
+        if api_calls_remaining <= count do
+          {:ok, _} =
+            ApiCallLimit.update_usage_db(
+              entity_type,
+              entity,
+              quota - api_calls_remaining + count
+            )
+
+          get_quota_db_and_update_ets(entity_type, entity, entity_key)
+        else
+          true = do_upate_ets_usage(entity_key, api_calls_remaining - count)
+        end
+
+        Mutex.release(Sanbase.ApiCallLimitMutex, lock)
         :ok
 
       [{^entity_key, api_calls_remaining, _quota, _metadata}] ->
-        true = :ets.update_element(@ets_table, entity_key, {2, api_calls_remaining - count})
+        true = do_upate_ets_usage(entity_key, api_calls_remaining - count)
         :ok
     end
+  end
+
+  defp do_upate_ets_usage(entity_key, value) do
+    :ets.update_element(@ets_table, entity_key, {2, value})
   end
 
   defp get_quota_db_and_update_ets(entity_type, entity, entity_key) do

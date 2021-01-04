@@ -31,9 +31,6 @@ defmodule Sanbase.ApiCallLimit do
     "sanapi_pro" => 600
   }
 
-  @quota_size 100
-  def quota_size(), do: @quota_size
-
   @product_api_id Product.product_api()
   @product_sanbase_id Product.product_sanbase()
 
@@ -198,8 +195,9 @@ defmodule Sanbase.ApiCallLimit do
     }
 
     min_remaining = api_calls_remaining |> Map.values() |> Enum.min()
+    quota_size = :rand.uniform(100) + 100
 
-    case Enum.min([@quota_size, min_remaining]) do
+    case Enum.min([quota_size, min_remaining]) do
       0 ->
         now = Timex.now()
 

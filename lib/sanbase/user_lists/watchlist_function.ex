@@ -115,7 +115,7 @@ defmodule Sanbase.WatchlistFunction do
   @doc ~s"""
   Checks if function evaluates. This is used as a last resort to checking if a
   function is valid as some edge cases can be missed. Creating a watchlist
-  with a function that cannot be evaulated will cause constant errors on runtime.
+  with a function that cannot be evaluated will cause constant errors on runtime.
   """
   @spec evaluates?(%__MODULE__{}) :: boolean()
   def evaluates?(%__MODULE__{} = fun) do

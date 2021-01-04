@@ -79,7 +79,7 @@ defmodule SanbaseWeb.Graphql.Schema.HistoricalBalanceQueries do
       arg(:interval, :interval, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
-      middleware(AccessControl)
+      # middleware(AccessControl)
       cache_resolve(&HistoricalBalanceResolver.miners_balance/3)
     end
   end

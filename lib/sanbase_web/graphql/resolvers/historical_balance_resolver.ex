@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
   import SanbaseWeb.Graphql.Helpers.CalibrateInterval, only: [calibrate: 7]
 
   alias Sanbase.Clickhouse.HistoricalBalance
+  alias SanbaseWeb.Graphql.Resolvers.MetricResolver
 
   # Return this number of datapoints is the provided interval is an empty string
   @datapoints 300
@@ -118,25 +119,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
 
   def miners_balance(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval},
+        %{} = args,
         _resolution
       ) do
-    with {:ok, from, to, interval} <-
-           calibrate(
-             HistoricalBalance.MinersBalance,
-             slug,
-             from,
-             to,
-             interval,
-             86_400,
-             @datapoints
-           ),
-         {:ok, balance} <-
-           HistoricalBalance.MinersBalance.historical_balance(slug, from, to, interval) do
-      {:ok, balance}
-    else
-      {:error, error} ->
-        {:error, handle_graphql_error("Miners Balance", slug, error)}
-    end
+    MetricResolver.timeseries_data(
+      %{},
+      args,
+      %{source: %{metric: "miners_balance"}}
+    )
+    |> Sanbase.Utils.Transform.rename_map_keys(old_key: :value, new_key: :balance)
   end
 end

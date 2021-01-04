@@ -13,7 +13,10 @@ defmodule Sanbase.Application.Signals do
       # Mutex used when sending notifications for triggered signals
       # Guards agains concurrently sending notifications to a single user
       # which can bypass the limit for signals per day
-      {Mutex, name: Sanbase.SignalMutex},
+      Supervisor.child_spec(
+        {Mutex, name: Sanbase.SignalMutex},
+        id: Sanbase.SignalMutex
+      ),
 
       # Start the signal evaluator cache
       Supervisor.child_spec(

@@ -75,9 +75,28 @@ defmodule Sanbase.ApiCallLimit.ETS do
         get_quota_db_and_update_ets(entity_type, entity, entity_key)
 
       [{^entity_key, :rate_limited, error_map}] ->
-        case DateTime.compare(DateTime.utc_now(), error_map.blocked_until) do
-          :lt -> {:error, error_map}
-          _ -> get_quota_db_and_update_ets(entity_type, entity, entity_key)
+        # Try again after `retry_again_after` datetime in case something changed.
+        # This handles cases where the data changed without a plan upgrade, for
+        # example changing the `has_limits` in the admin panel manually.
+        # User plan upgrades are handled separately by clearing the ETS records
+        # for the user.
+        now = DateTime.utc_now()
+
+        case DateTime.compare(now, error_map.retry_again_after) do
+          :lt ->
+            # Update the `blocked_for_seconds` field in order to properly return
+            # the report the time left until unblocked
+            error_map =
+              error_map
+              |> Map.put(
+                :blocked_for_seconds,
+                abs(DateTime.diff(error_map.blocked_until, now))
+              )
+
+            {:error, error_map}
+
+          _ ->
+            get_quota_db_and_update_ets(entity_type, entity, entity_key)
         end
 
       [{^entity_key, :infinity, :infinity, metadata}] ->
@@ -104,7 +123,7 @@ defmodule Sanbase.ApiCallLimit.ETS do
       [{^entity_key, :infinity, :infinity, _metadata}] ->
         :ok
 
-      [{^entity_key, api_calls_remaining, quota, _metadata}] when api_calls_remaining <= count ->
+      [{^entity_key, api_calls_remaining, _quota, _metadata}] when api_calls_remaining <= count ->
         # If 2+ processes execute :ets.lookup/2 at the same time with the same key
         # it could happen that both processes enter this path. This will lead to
         # updating the DB more than once, thus leading to storing more api calls

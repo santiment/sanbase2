@@ -185,7 +185,10 @@ defmodule Sanbase.Application do
       {Task.Supervisor, [name: Sanbase.TaskSupervisor]},
 
       # Mutex for forcing sequential execution when updating api call limits
-      {Mutex, name: Sanbase.ApiCallLimitMutex},
+      Supervisor.child_spec(
+        {Mutex, name: Sanbase.ApiCallLimitMutex},
+        id: Sanbase.ApiCallLimitMutex
+      ),
 
       # Start telegram rate limiter. Used both in web and signals
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(

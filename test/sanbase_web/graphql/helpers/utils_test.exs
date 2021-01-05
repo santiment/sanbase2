@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.Helpers.UtilsTest do
   alias SanbaseWeb.Graphql.Helpers.CalibrateInterval
 
   defmodule StoreMock do
-    def first_datetime(_measurement) do
+    def first_datetime(_slug) do
       {:ok, DateTime.from_naive!(~N[2017-05-15 18:00:00], "Etc/UTC")}
     end
   end
@@ -20,7 +20,7 @@ defmodule SanbaseWeb.Graphql.Helpers.UtilsTest do
     test "returns original data if interval is specified", context do
       assert CalibrateInterval.calibrate(
                StoreMock,
-               "some_measurement",
+               "some_slug",
                context.from,
                context.to,
                "1000s",
@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Graphql.Helpers.UtilsTest do
 
       assert CalibrateInterval.calibrate(
                StoreMock,
-               "some_measurement",
+               "some_slug",
                context.from,
                context.to,
                "",
@@ -47,7 +47,7 @@ defmodule SanbaseWeb.Graphql.Helpers.UtilsTest do
 
       assert CalibrateInterval.calibrate(
                StoreMock,
-               "some_measurement",
+               "some_slug",
                from,
                context.to,
                "",
@@ -62,7 +62,7 @@ defmodule SanbaseWeb.Graphql.Helpers.UtilsTest do
 
       assert CalibrateInterval.calibrate_moving_average(
                StoreMock,
-               "some_measurement",
+               "some_slug",
                context.from,
                context.to,
                "",
@@ -76,7 +76,7 @@ defmodule SanbaseWeb.Graphql.Helpers.UtilsTest do
 
       assert CalibrateInterval.calibrate_moving_average(
                StoreMock,
-               "some_measurement",
+               "some_slug",
                context.from,
                context.to,
                "",

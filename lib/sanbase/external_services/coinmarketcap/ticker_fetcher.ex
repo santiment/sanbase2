@@ -67,9 +67,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     |> Enum.each(&store_latest_coinmarketcap_data!(&1, cmc_id_to_slugs_mapping))
 
     # Store the data in Influxdb
-    tickers
-    |> Enum.flat_map(&Ticker.convert_for_importing(&1, cmc_id_to_slugs_mapping))
-    |> Store.import()
+    if Application.get_env(:sanbase, :influx_store_enabled, true) do
+      tickers
+      |> Enum.flat_map(&Ticker.convert_for_importing(&1, cmc_id_to_slugs_mapping))
+      |> Store.import()
+    end
 
     tickers
     |> export_to_kafka(cmc_id_to_slugs_mapping)

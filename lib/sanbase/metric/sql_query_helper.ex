@@ -47,9 +47,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     arg_position = Keyword.fetch!(opts, :argument_position)
 
     """
-    asset_id IN ( SELECT DISTINCT(asset_id) FROM asset_metadata FINAL PREWHERE name IN (?#{
-      arg_position
-    }) )
+    asset_id IN ( SELECT DISTINCT(asset_id) FROM asset_metadata FINAL PREWHERE name IN (?#{arg_position}) )
     """
   end
 end

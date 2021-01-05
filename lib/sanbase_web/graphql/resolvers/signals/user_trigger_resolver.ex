@@ -94,13 +94,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
         Telegram.send_message(
           current_user,
           """
-          Successfully created a new signal of type: #{
-            Trigger.human_readable_settings_type(args.settings["type"])
-          }
+          Successfully created a new signal of type: #{Trigger.human_readable_settings_type(args.settings["type"])}
 
-          Title: #{args.title} #{
-            if args[:description], do: "\nDescription: #{args[:description]}"
-          }
+          Title: #{args.title} #{if args[:description], do: "\nDescription: #{args[:description]}"}
 
           This bot will alert you when your signal triggers 🤖
           """

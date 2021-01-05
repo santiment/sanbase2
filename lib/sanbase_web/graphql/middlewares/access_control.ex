@@ -86,9 +86,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         Resolution.put_result(
           resolution,
           {:error,
-           "The metric #{elem(query_or_metric, 1)} is not accessible with your current plan #{
-             plan
-           }. Please upgrade to #{min_plan} plan."}
+           "The metric #{elem(query_or_metric, 1)} is not accessible with your current plan #{plan}. Please upgrade to #{min_plan} plan."}
         )
     end
   end
@@ -283,11 +281,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         |> Resolution.put_result(
           {:error,
            """
-           Both `from` and `to` parameters are outside the allowed interval you can query #{
-             context[:__query_or_metric_atom_name__] |> elem(1)
-           } with your current subscription #{context[:product_id] |> Product.code_by_id()} #{
-             context[:auth][:plan] || :free
-           }. Upgrade to a higher tier in order to access more data.
+           Both `from` and `to` parameters are outside the allowed interval you can query #{context[:__query_or_metric_atom_name__] |> elem(1)} with your current subscription #{context[:product_id] |> Product.code_by_id()} #{context[:auth][:plan] || :free}. Upgrade to a higher tier in order to access more data.
 
            Allowed time restrictions:
              - `from` - #{restricted_from || "unrestricted"}

@@ -148,9 +148,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
         error_msg = Sanbase.Utils.ErrorHandling.changeset_errors_to_str(error)
 
         Logger.error(
-          "#{@log_tag} Error updating project locally: #{project.slug}. Error message: #{
-            error_msg
-          }"
+          "#{@log_tag} Error updating project locally: #{project.slug}. Error message: #{error_msg}"
         )
 
         {:error, error_msg}

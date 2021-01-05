@@ -125,9 +125,7 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
 
   defp log_error(user, error) do
     Logger.error(
-      "Error creating promotional subscription for user: #{inspect(user)}, reason: #{
-        inspect(error)
-      }"
+      "Error creating promotional subscription for user: #{inspect(user)}, reason: #{inspect(error)}"
     )
   end
 

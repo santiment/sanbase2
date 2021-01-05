@@ -131,9 +131,7 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
 
           {:error, other} ->
             Logger.error(
-              "Can't delete the subscription for: #{inspect(sign_up_trial)}, reason: #{
-                inspect(other)
-              }"
+              "Can't delete the subscription for: #{inspect(sign_up_trial)}, reason: #{inspect(other)}"
             )
         end
       end

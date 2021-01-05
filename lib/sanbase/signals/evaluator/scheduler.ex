@@ -229,11 +229,7 @@ defmodule Sanbase.Signal.Scheduler do
 
     Logger.info("""
     In total #{successful_messages_count}/#{length(list)} #{type} signals were sent successfully.
-    #{
-      Enum.map(errors_to_count_map, fn {reason, count} ->
-        "#{count} failed with the reason #{reason}\n"
-      end)
-    }
+    #{Enum.map(errors_to_count_map, fn {reason, count} -> "#{count} failed with the reason #{reason}\n" end)}
     """)
   end
 

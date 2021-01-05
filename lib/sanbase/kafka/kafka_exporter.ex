@@ -87,9 +87,7 @@ defmodule Sanbase.KafkaExporter do
   """
   def terminate(_reason, state) do
     Logger.info(
-      "Terminating the KafkaExporter. Sending #{length(state.data)} events to kafka topic: #{
-        state.topic
-      }"
+      "Terminating the KafkaExporter. Sending #{length(state.data)} events to kafka topic: #{state.topic}"
     )
 
     send_data(state.data, state)

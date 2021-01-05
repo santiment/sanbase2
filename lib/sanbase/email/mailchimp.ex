@@ -116,9 +116,7 @@ defmodule Sanbase.Email.Mailchimp do
 
         {:ok, %HTTPoison.Response{} = response} ->
           Logger.error(
-            "Error #{type} email from Mailchimp: #{inspect(body_json)}}. Response: #{
-              inspect(response)
-            }"
+            "Error #{type} email from Mailchimp: #{inspect(body_json)}}. Response: #{inspect(response)}"
           )
 
         {:error, reason} ->

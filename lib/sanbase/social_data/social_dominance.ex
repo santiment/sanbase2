@@ -58,9 +58,7 @@ defmodule Sanbase.SocialData.SocialDominance do
 
       {:error, %HTTPoison.Error{} = error} ->
         error_result(
-          "Cannot fetch social dominance data for project with slug #{inspect(slug)}}: #{
-            HTTPoison.Error.message(error)
-          }"
+          "Cannot fetch social dominance data for project with slug #{inspect(slug)}}: #{HTTPoison.Error.message(error)}"
         )
 
       {:error, error} ->

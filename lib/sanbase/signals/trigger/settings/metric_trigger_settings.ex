@@ -207,9 +207,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
         |> Map.merge(curr_value_kv)
 
       template = """
-      🔔 \#{{project_ticker}} | **{{project_name}}**'s {{metric_human_readable_name}} #{
-        operation_template
-      }.
+      🔔 \#{{project_ticker}} | **{{project_name}}**'s {{metric_human_readable_name}} #{operation_template}.
       #{curr_value_template}.
       """
 

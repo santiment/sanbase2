@@ -103,9 +103,7 @@ defmodule Sanbase.TableConfiguration do
 
       %__MODULE__{} ->
         {:error,
-         "table configuration with id #{table_configuration_id} is not owned by the user with id #{
-           user_id
-         }"}
+         "table configuration with id #{table_configuration_id} is not owned by the user with id #{user_id}"}
 
       nil ->
         {:error, "table configuration with id #{table_configuration_id} does not exist."}

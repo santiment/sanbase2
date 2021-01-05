@@ -181,9 +181,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
 
       {:subscription?, _} ->
         reason =
-          "Cannot find subscription with id #{params.subscription_id} for user with id #{
-            params.user_id
-          }. Either this subscription doesn not exist or it does not belong to the user."
+          "Cannot find subscription with id #{params.subscription_id} for user with id #{params.user_id}. Either this subscription doesn not exist or it does not belong to the user."
 
         Logger.error("#{log_message} - reason: #{reason}")
         {:error, reason}
@@ -191,9 +189,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
       {:not_cancelled?,
        %Subscription{cancel_at_period_end: true, current_period_end: current_period_end}} ->
         reason =
-          "Subscription is scheduled for cancellation at the end of the paid period: #{
-            current_period_end
-          }"
+          "Subscription is scheduled for cancellation at the end of the paid period: #{current_period_end}"
 
         Logger.error("#{log_message} - reason: #{reason}")
         {:error, reason}

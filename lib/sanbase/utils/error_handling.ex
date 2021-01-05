@@ -38,9 +38,7 @@ defmodule Sanbase.Utils.ErrorHandling do
       end
 
     error_msg =
-      "[#{uuid}] Can't fetch #{metric} for #{target_description} #{
-        identifier_to_string(identifier)
-      }"
+      "[#{uuid}] Can't fetch #{metric} for #{target_description} #{identifier_to_string(identifier)}"
 
     error_msg_with_reason = error_msg <> ", Reason: #{inspect(message)}"
 

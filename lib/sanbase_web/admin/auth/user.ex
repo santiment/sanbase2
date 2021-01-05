@@ -42,9 +42,7 @@ defmodule SanbaseWeb.ExAdmin.Auth.User do
           column(:status)
 
           column(:subscription, fn subscription ->
-            "#{subscription.plan.name}/#{
-              subscription.plan.product.name |> String.trim_trailing(" by Santiment")
-            }"
+            "#{subscription.plan.name}/#{subscription.plan.product.name |> String.trim_trailing(" by Santiment")}"
           end)
         end
       end

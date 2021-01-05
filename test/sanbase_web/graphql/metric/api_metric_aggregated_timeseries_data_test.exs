@@ -156,9 +156,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricAggregatedTimeseriesDataTest do
             slug: "#{slug}"
             from: "#{from}"
             to: "#{to}"
-            #{
-      if aggregation, do: "aggregation: #{Atom.to_string(aggregation) |> String.upcase()}"
-    })
+            #{if aggregation, do: "aggregation: #{Atom.to_string(aggregation) |> String.upcase()}"})
         }
       }
     """

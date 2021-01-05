@@ -60,17 +60,13 @@ defmodule Sanbase.TechIndicators.MetricAnomaly do
 
   defp handle_result({:ok, %HTTPoison.Response{status_code: status, body: body}}, slug, metric) do
     warn_result(
-      "Error status #{status} fetching anomalies for project with slug: #{slug} for metric #{
-        metric
-      } - #{body}"
+      "Error status #{status} fetching anomalies for project with slug: #{slug} for metric #{metric} - #{body}"
     )
   end
 
   defp handle_result({:error, %HTTPoison.Error{} = error}, slug, metric) do
     error_result(
-      "Cannot fetch anomalies for project with slug: #{slug} for metric #{metric} - #{
-        HTTPoison.Error.message(error)
-      }"
+      "Cannot fetch anomalies for project with slug: #{slug} for metric #{metric} - #{HTTPoison.Error.message(error)}"
     )
   end
 

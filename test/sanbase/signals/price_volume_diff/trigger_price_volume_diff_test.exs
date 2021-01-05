@@ -86,9 +86,7 @@ defmodule Sanbase.Signal.PriceVolumeDiffTest do
            body: """
            [
              #{Sanbase.TechIndicatorsTestResponse.price_volume_diff_prepend_response()},
-             {"price_volume_diff": 0.01, "price_change": 0.04, "volume_change": 0.03, "timestamp": #{
-             DateTime.utc_now() |> DateTime.to_unix()
-           }}
+             {"price_volume_diff": 0.01, "price_change": 0.04, "volume_change": 0.03, "timestamp": #{DateTime.utc_now() |> DateTime.to_unix()}}
            ]
            """,
            status_code: 200

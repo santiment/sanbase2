@@ -221,9 +221,7 @@ defmodule SanbaseWeb.Graphql.WatchlistSettingsApiTest do
   defp create_watchlist(conn, opts) do
     mutation = """
     mutation {
-      createWatchlist(name: "#{Keyword.get(opts, :title)}", color: BLACK, isPublic: #{
-      Keyword.get(opts, :is_public, false)
-    }) {
+      createWatchlist(name: "#{Keyword.get(opts, :title)}", color: BLACK, isPublic: #{Keyword.get(opts, :is_public, false)}) {
          id
       }
     }

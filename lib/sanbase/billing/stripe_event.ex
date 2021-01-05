@@ -82,9 +82,7 @@ defmodule Sanbase.Billing.StripeEvent do
       subscription = subscription |> Repo.preload(:user)
 
       message = """
-      New cancellation scheduled for `#{subscription.current_period_end}` from `#{
-        mask_user(subscription.user)
-      }` | #{subscription.user.stripe_customer_id}.
+      New cancellation scheduled for `#{subscription.current_period_end}` from `#{mask_user(subscription.user)}` | #{subscription.user.stripe_customer_id}.
       Subscription status before cancellation: `#{subscription.status}`.
       """
 
@@ -128,9 +126,7 @@ defmodule Sanbase.Billing.StripeEvent do
        when amount > 1 do
     payload =
       [
-        "Failed card charge for $#{amount / 100} . Details: https://dashboard.stripe.com/events/#{
-          id
-        }"
+        "Failed card charge for $#{amount / 100} . Details: https://dashboard.stripe.com/events/#{id}"
       ]
       |> Discord.encode!(publish_user())
 
@@ -282,9 +278,7 @@ defmodule Sanbase.Billing.StripeEvent do
          "data" => %{"object" => %{"total" => total}}
        }) do
     [
-      "New payment for $#{total / 100} received. Details: https://dashboard.stripe.com/events/#{
-        id
-      }"
+      "New payment for $#{total / 100} received. Details: https://dashboard.stripe.com/events/#{id}"
     ]
   end
 
@@ -315,16 +309,12 @@ defmodule Sanbase.Billing.StripeEvent do
     |> case do
       1 ->
         [
-          "🎉 New payment for $#{total / 100} for #{product_name} / #{plan_name} by #{
-            mask_user(user)
-          }"
+          "🎉 New payment for $#{total / 100} for #{product_name} / #{plan_name} by #{mask_user(user)}"
         ]
 
       count ->
         [
-          "Recurring payment for $#{total / 100} for #{product_name} / #{plan_name} (month #{
-            count
-          }) by #{mask_user(user)}"
+          "Recurring payment for $#{total / 100} for #{product_name} / #{plan_name} (month #{count}) by #{mask_user(user)}"
         ]
     end
   end

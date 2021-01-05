@@ -35,9 +35,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     else
       error ->
         Logger.warn(
-          "Cannot fetch top token transactions for project with id #{project.id}. Reason: #{
-            inspect(error)
-          }"
+          "Cannot fetch top token transactions for project with id #{project.id}. Reason: #{inspect(error)}"
         )
 
         {:nocache, {:ok, []}}
@@ -69,9 +67,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
 
       error ->
         Logger.warn(
-          "Cannot fetch top token transactions for project with id #{project.id}. Reason: #{
-            inspect(error)
-          }"
+          "Cannot fetch top token transactions for project with id #{project.id}. Reason: #{inspect(error)}"
         )
 
         {:nocache, {:ok, []}}
@@ -209,9 +205,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     else
       error ->
         Logger.warn(
-          "Cannot fetch top ETH transactions for #{Project.describe(project)}. Reason: #{
-            inspect(error)
-          }"
+          "Cannot fetch top ETH transactions for #{Project.describe(project)}. Reason: #{inspect(error)}"
         )
 
         {:nocache, {:ok, []}}
@@ -238,9 +232,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     else
       error ->
         Logger.warn(
-          "Cannot fetch top ETH transactions for #{Project.describe(project)}. Reason: #{
-            inspect(error)
-          }"
+          "Cannot fetch top ETH transactions for #{Project.describe(project)}. Reason: #{inspect(error)}"
         )
 
         {:nocache, {:ok, []}}
@@ -310,9 +302,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
 
       error ->
         Logger.warn(
-          "Cannot calculate ETH spent over time for for #{Project.describe(project)}. Reason: #{
-            inspect(error)
-          }"
+          "Cannot calculate ETH spent over time for for #{Project.describe(project)}. Reason: #{inspect(error)}"
         )
 
         {:nocache, {:ok, []}}

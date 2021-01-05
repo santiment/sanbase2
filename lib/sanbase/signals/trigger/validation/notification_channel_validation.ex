@@ -18,9 +18,7 @@ defmodule Sanbase.Signal.Validation.NotificationChannel do
       false ->
         {:error,
          """
-         #{inspect(channels)} is not a valid list of notification channels. The available notification channels are [#{
-           @notification_channels |> Enum.join(", ")
-         }]
+         #{inspect(channels)} is not a valid list of notification channels. The available notification channels are [#{@notification_channels |> Enum.join(", ")}]
          """}
     end
   end
@@ -28,9 +26,7 @@ defmodule Sanbase.Signal.Validation.NotificationChannel do
   def valid_notification_channel?(channel) do
     {:error,
      """
-     #{inspect(channel)} is not a valid notification channel. The available notification channels are [#{
-       @notification_channels |> Enum.join(", ")
-     }]
+     #{inspect(channel)} is not a valid notification channel. The available notification channels are [#{@notification_channels |> Enum.join(", ")}]
      """}
   end
 end

@@ -25,9 +25,7 @@ defmodule Sanbase.InternalServices.Parity do
     else
       {:ok, %Tesla.Env{status: status, body: body}} ->
         {:error,
-         "Error get_transaction_by_hash for hash #{transaction_hash}. Status #{status}. Body: #{
-           inspect(body)
-         }"}
+         "Error get_transaction_by_hash for hash #{transaction_hash}. Status #{status}. Body: #{inspect(body)}"}
 
       {:error, error} ->
         {:error,
@@ -80,9 +78,7 @@ defmodule Sanbase.InternalServices.Parity do
     else
       {:ok, %Tesla.Env{status: status, body: body}} ->
         {:error,
-         "Failed getting ETH balance for address #{address}. Status: #{status}. Body: #{
-           inspect(body)
-         }"}
+         "Failed getting ETH balance for address #{address}. Status: #{status}. Body: #{inspect(body)}"}
 
       {:error, error} ->
         {:error, "Failed getting ETH balance for address #{address}. Reason: #{inspect(error)}"}

@@ -118,9 +118,11 @@ defmodule Sanbase.Twitter.Worker do
   defp store_twitter_user_data(nil, _twitter_name), do: :ok
 
   defp store_twitter_user_data(twitter_user_data, twitter_name) do
-    twitter_user_data
-    |> convert_to_measurement(twitter_name)
-    |> Store.import()
+    if Application.get_env(:sanbase, :influx_store_enabled, true) do
+      twitter_user_data
+      |> convert_to_measurement(twitter_name)
+      |> Store.import()
+    end
   end
 
   defp convert_to_measurement(

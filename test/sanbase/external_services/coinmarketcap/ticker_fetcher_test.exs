@@ -2,15 +2,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
   use Sanbase.DataCase, async: false
 
   alias Sanbase.ExternalServices.Coinmarketcap.TickerFetcher
+  alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.Model.Project
-
-  import Sanbase.InfluxdbHelpers
 
   @topic "asset_prices"
 
   setup do
-    setup_prices_influxdb()
-
     Sanbase.KafkaExporter.start_link(
       name: :prices_exporter,
       buffering_max_messages: 5000,
@@ -26,12 +23,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
     :ok
   end
 
-  test "ticker fetcher inserts the proper latest coinmarketcap data" do
+  test "ticker fetcher inserts the proper latest coinmarketcap data in postgres" do
     TickerFetcher.work()
-    ethereum_latest_cmc = Sanbase.Model.LatestCoinmarketcapData.by_coinmarketcap_id("ethereum")
+    ethereum_latest_cmc = LatestCoinmarketcapData.by_coinmarketcap_id("ethereum")
     assert ethereum_latest_cmc.coinmarketcap_integer_id == 1027
 
-    bitcoin_latest_cmc = Sanbase.Model.LatestCoinmarketcapData.by_coinmarketcap_id("bitcoin")
+    bitcoin_latest_cmc = LatestCoinmarketcapData.by_coinmarketcap_id("bitcoin")
     assert bitcoin_latest_cmc.coinmarketcap_integer_id == 1
   end
 

@@ -212,10 +212,11 @@ defmodule Sanbase.Factory do
 
   def random_project_factory(attrs) do
     slug = Map.get(attrs, :slug, rand_str())
+    ticker = Map.get(attrs, :ticker, rand_str(4) |> String.upcase())
 
     %Project{
       name: rand_str(),
-      ticker: rand_hex_str() |> String.upcase(),
+      ticker: ticker,
       slug: slug,
       is_hidden: false,
       source_slug_mappings: [

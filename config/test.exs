@@ -4,6 +4,7 @@ import Config
 # you can enable the server option below.
 
 config :sanbase,
+  influx_store_enabled: false,
   available_slugs_module: Sanbase.DirectAvailableSlugs
 
 config :sanbase, Sanbase, url: {:system, "SANBASE_URL", ""}

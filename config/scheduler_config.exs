@@ -93,5 +93,9 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     sync_paid_with: [
       schedule: "20 * * * *",
       task: {Sanbase.Auth.UserSettings, :sync_paid_with, []}
+    ],
+    sync_subscribed_users_with_changed_email: [
+      schedule: "20 * * * *",
+      task: {Sanbase.Auth.User, :sync_subscribed_users_with_changed_email, []}
     ]
   ]

@@ -338,6 +338,24 @@ defmodule Sanbase.Auth.User do
     |> Repo.update()
   end
 
+  @doc """
+  Sync users' emails in Stripe.
+  User might change his email in Sanbase, so we want keep Sanbase in sync with Stripe.
+  """
+  def sync_subscribed_users_with_changed_email() do
+    from(u in __MODULE__,
+      where:
+        not is_nil(u.email) and
+          not is_nil(u.email_candidate_token_validated_at) and
+          not is_nil(u.stripe_customer_id),
+      select: %{email: u.email, stripe_customer_id: u.stripe_customer_id}
+    )
+    |> Repo.all()
+    |> Enum.each(fn %{email: email, stripe_customer_id: stripe_customer_id} ->
+      Stripe.Customer.update(stripe_customer_id, %{email: email})
+    end)
+  end
+
   defp can_remove_eth_account?(%User{id: user_id, email: email}, address) do
     count_other_accounts =
       from(ea in EthAccount,

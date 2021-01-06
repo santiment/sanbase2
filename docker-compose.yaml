@@ -14,6 +14,20 @@ services:
     image: influxdb
     ports:
       - "8086"
+
+  clickhouse-server:
+    image: yandex/clickhouse-server:20.8.11.17
+    ports:
+      - '8123:8123'
+      - '9000:9000'
+      - '9009:9009'
+
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 262144
+        hard: 262144
+
   sanbase:
     build:
       context: .

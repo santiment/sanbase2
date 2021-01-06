@@ -23,38 +23,34 @@ defmodule Sanbase.ClickhouseRepo do
 
   @error_message "Cannot execute database query. If issue persists please contact Santiment Support."
   def query_transform(query, args, transform_fn) do
-    try do
-      ordered_params = order_params(query, args)
-      sanitized_query = sanitize_query(query)
+    ordered_params = order_params(query, args)
+    sanitized_query = sanitize_query(query)
 
-      __MODULE__.query(sanitized_query, ordered_params)
-      |> case do
-        {:ok, result} ->
-          {:ok, Enum.map(result.rows, transform_fn)}
+    __MODULE__.query(sanitized_query, ordered_params)
+    |> case do
+      {:ok, result} ->
+        {:ok, Enum.map(result.rows, transform_fn)}
 
-        {:error, error} ->
-          log_and_return_error(inspect(error), "query_transform/3")
-      end
-    rescue
-      e ->
-        log_and_return_error(e, "query_transform/3")
+      {:error, error} ->
+        log_and_return_error(inspect(error), "query_transform/3")
     end
+  rescue
+    e ->
+      log_and_return_error(e, "query_transform/3")
   end
 
   def query_reduce(query, args, init, reducer) do
-    try do
-      ordered_params = order_params(query, args)
-      sanitized_query = sanitize_query(query)
+    ordered_params = order_params(query, args)
+    sanitized_query = sanitize_query(query)
 
-      __MODULE__.query(sanitized_query, ordered_params)
-      |> case do
-        {:ok, result} -> {:ok, Enum.reduce(result.rows, init, reducer)}
-        {:error, error} -> log_and_return_error(inspect(error), "query_reduce/4")
-      end
-    rescue
-      e ->
-        log_and_return_error(e, "query_reduce/4")
+    __MODULE__.query(sanitized_query, ordered_params)
+    |> case do
+      {:ok, result} -> {:ok, Enum.reduce(result.rows, init, reducer)}
+      {:error, error} -> log_and_return_error(inspect(error), "query_reduce/4")
     end
+  rescue
+    e ->
+      log_and_return_error(e, "query_reduce/4")
   end
 
   defp log_and_return_error(%{} = e, function_executed) do

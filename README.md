@@ -4,6 +4,8 @@
 
 This is the source code for the GraphQL API server https://api.santiment.net/graphiql
 
+The project structure can be found [here](docs/project-structure.md).
+
 ## Dependencies
 
 - Elixir 1.10

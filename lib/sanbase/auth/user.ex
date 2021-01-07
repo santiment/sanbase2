@@ -220,6 +220,7 @@ defmodule Sanbase.Auth.User do
         %User{}
         |> User.changeset(user_create_attrs)
         |> Repo.insert()
+        |> maybe_create_sign_up_trial(attrs)
 
       user ->
         {:ok, user}
@@ -347,4 +348,11 @@ defmodule Sanbase.Auth.User do
 
     count_other_accounts > 0 or not is_nil(email)
   end
+
+  defp maybe_create_sign_up_trial({:ok, %User{id: id}}, %{login_origin: origin})
+       when origin in [:google, :twitter] do
+    Sanbase.Billing.Subscription.SignUpTrial.create_subscription(id)
+  end
+
+  defp maybe_create_sign_up_trial(result, _), do: result
 end

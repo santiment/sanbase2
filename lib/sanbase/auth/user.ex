@@ -349,9 +349,11 @@ defmodule Sanbase.Auth.User do
     count_other_accounts > 0 or not is_nil(email)
   end
 
-  defp maybe_create_sign_up_trial({:ok, %User{id: id}}, %{login_origin: origin})
+  defp maybe_create_sign_up_trial({:ok, %User{id: id}} = result, %{login_origin: origin})
        when origin in [:google, :twitter] do
     Sanbase.Billing.Subscription.SignUpTrial.create_subscription(id)
+
+    result
   end
 
   defp maybe_create_sign_up_trial(result, _), do: result

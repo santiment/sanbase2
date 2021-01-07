@@ -43,7 +43,11 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
 
   def create_promo_trial(%{plans: plans, trial_days: trial_days, user_id: user_id}) do
     {:ok, user} = User.by_id(user_id)
-    plans = plans |> Enum.map(&maybe_convert_to_integer?/1)
+
+    plans =
+      plans
+      |> Enum.map(&maybe_convert_to_integer?/1)
+
     trial_days = maybe_convert_to_integer?(trial_days)
 
     create_promo_subscription(user, plans, trial_days)

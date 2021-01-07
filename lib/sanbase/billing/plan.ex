@@ -84,13 +84,6 @@ defmodule Sanbase.Billing.Plan do
     {:ok, product_with_plans}
   end
 
-  def sync_plans_in_stripe() do
-    __MODULE__
-    |> Repo.all()
-    |> Repo.preload(:product)
-    |> Enum.each(&maybe_create_plan_in_stripe/1)
-  end
-
   @doc """
   If a plan doesn't have filled `stripe_id` - create a plan in Stripe and update with the received
   `stripe_id`

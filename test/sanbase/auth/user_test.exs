@@ -101,6 +101,9 @@ defmodule Sanbase.Auth.UserTest do
       chart_config = insert(:chart_configuration, user: user, is_public: true)
       :ok = Sanbase.FeaturedItem.update_item(chart_config, true)
 
+      # Intercom attributes
+      {:ok, _} = Sanbase.Intercom.UserAttributes.save(%{user_id: user.id, properties: %{}})
+
       {:ok, deleted} = Repo.delete(user)
       assert deleted.id == user.id
     end

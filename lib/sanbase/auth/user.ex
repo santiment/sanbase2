@@ -84,6 +84,7 @@ defmodule Sanbase.Auth.User do
     has_many(:promo_trials, Sanbase.Billing.Subscription.PromoTrial, on_delete: :delete_all)
     has_many(:triggers, Sanbase.Signal.UserTrigger, on_delete: :delete_all)
     has_many(:chart_configurations, Sanbase.Chart.Configuration, on_delete: :delete_all)
+    has_many(:user_attributes, Sanbase.Intercom.UserAttributes, on_delete: :delete_all)
 
     has_one(:user_settings, UserSettings, on_delete: :delete_all)
 

@@ -1,10 +1,8 @@
 defmodule Sanbase.Clickhouse.MetricAdapter do
-  @table "daily_metrics_v2"
-
   @moduledoc ~s"""
   Provide access to the v2 metrics in Clickhouse
 
-  The metrics are stored in the '#{@table}' clickhouse table where each metric
+  The metrics are stored in clickhouse tables where each metric
   is defined by a `metric_id` and every project is defined by an `asset_id`.
   """
   @behaviour Sanbase.Metric.Behaviour

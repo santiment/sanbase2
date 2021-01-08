@@ -1,6 +1,11 @@
 defmodule Sanbase.Metric.Behaviour do
   @moduledoc ~s"""
-  Behaviour describing a metric fetcher
+  Behaviour describing a MetricAdapter module.
+
+  A MetricAdapter module describes how metrics and metadata for them are fetched.
+  After a new MetricAdapter module is created, in order to expose it through
+  the Sanbase.Metric module, it should be added to the list of modules defined
+  in Sanbase.Metric.Helper
   """
 
   @type slug :: String.t()

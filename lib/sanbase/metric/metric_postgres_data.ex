@@ -1,22 +1,20 @@
 defmodule Sanbase.Metric.MetricPostgresData do
+  @moduledoc """
+  Schema module that keeps the metric names in a postgres table.
+
+  This table is referenced from different places like insights to expliclitly
+  show what metrics are used.
+  """
+
   use Ecto.Schema
 
   import Ecto.Changeset
   import Ecto.Query
 
   alias Sanbase.Repo
-  alias Sanbase.Insight.Post
 
-  @posts_join_through_table "posts_metrics"
   schema "metrics" do
     field(:name, :string)
-
-    many_to_many(:posts, Post,
-      join_through: @posts_join_through_table,
-      join_keys: [post_id: :id, metric_id: :id],
-      on_replace: :delete,
-      on_delete: :delete_all
-    )
 
     timestamps()
   end

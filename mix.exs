@@ -139,12 +139,14 @@ defmodule Sanbase.Mixfile do
     [
       "ecto.setup": [
         "load_dotenv",
+        "database_safety",
         "ecto.drop -r Sanbase.Repo",
         "ecto.create -r Sanbase.Repo",
         "ecto.load -r Sanbase.Repo"
       ],
       "ecto.migrate": [
         "load_dotenv",
+        "database_safety",
         "ecto.migrate -r Sanbase.Repo",
         "ecto.dump -r Sanbase.Repo"
       ],
@@ -153,11 +155,13 @@ defmodule Sanbase.Mixfile do
       ],
       "ecto.rollback": [
         "load_dotenv",
+        "database_safety",
         "ecto.rollback -r Sanbase.Repo",
         "ecto.dump -r Sanbase.Repo"
       ],
       test: [
         "load_dotenv",
+        "database_safety",
         "ecto.create -r Sanbase.Repo --quiet",
         "ecto.load -r Sanbase.Repo --skip-if-loaded",
         "test"
@@ -167,27 +171,32 @@ defmodule Sanbase.Mixfile do
       # and run all tests
       "ecto.setup_all": [
         "load_dotenv",
+        "database_safety",
         "ecto.drop",
         "ecto.create",
         "ecto.load"
       ],
       "ecto.load_all": [
         "load_dotenv",
+        "database_safety",
         "ecto.create --quiet",
         "ecto.load"
       ],
       "ecto.reset_all": [
         "load_dotenv",
+        "database_safety",
         "ecto.drop",
         "ecto.setup_all"
       ],
       "ecto.migrate_all": [
         "load_dotenv",
+        "database_safety",
         "ecto.migrate",
         "ecto.dump"
       ],
       "ecto.rollback_all": [
         "load_dotenv",
+        "database_safety",
         "ecto.rollback",
         "ecto.dump"
       ]

@@ -1,4 +1,4 @@
-defmodule Sanbase.Auth.UserTest do
+defmodule Sanbase.Accounts.UserTest do
   use Sanbase.DataCase, async: false
 
   import Mock
@@ -6,7 +6,7 @@ defmodule Sanbase.Auth.UserTest do
   import Sanbase.Factory
   import ExUnit.CaptureLog
 
-  alias Sanbase.Auth.{EthAccount, User, Statistics}
+  alias Sanbase.Accounts.{EthAccount, User, Statistics}
   alias Sanbase.Repo
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.StripeApi
@@ -27,7 +27,7 @@ defmodule Sanbase.Auth.UserTest do
       Sanbase.Telegram.UserToken.generate(user.id)
 
       # Eth Account
-      Sanbase.Auth.EthAccount.create(%{user_id: user.id, address: "0x01"})
+      Sanbase.Accounts.EthAccount.create(%{user_id: user.id, address: "0x01"})
 
       # Subscription
       insert(:subscription_pro_sanbase, user: user, status: "trialing")
@@ -40,7 +40,7 @@ defmodule Sanbase.Auth.UserTest do
 
       # User follower
       user_to_follow = insert(:user)
-      Sanbase.Auth.UserFollower.follow(user_to_follow.id, user.id)
+      Sanbase.Accounts.UserFollower.follow(user_to_follow.id, user.id)
 
       # Timeline event with post
       insert(:timeline_event,

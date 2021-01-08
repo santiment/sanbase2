@@ -6,7 +6,7 @@ defmodule Sanbase.Promoters.FirstPromoterApi do
   require Logger
   require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
 
   @promoters_api_base_url "https://firstpromoter.com/api/v1/promoters/"
 

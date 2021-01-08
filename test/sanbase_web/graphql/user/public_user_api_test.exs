@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.PublicUserApiTest do
   setup do
     user = insert(:user)
     user2 = insert(:user)
-    Sanbase.Auth.UserSettings.update_settings(user2, %{hide_privacy_data: false})
+    Sanbase.Accounts.UserSettings.update_settings(user2, %{hide_privacy_data: false})
 
     {:ok, user: user, user2: user2}
   end

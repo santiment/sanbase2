@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.UserEthAccountApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Repo
 
   import Tesla.Mock

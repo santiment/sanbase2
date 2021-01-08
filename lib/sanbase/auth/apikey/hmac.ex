@@ -1,4 +1,4 @@
-defmodule Sanbase.Auth.Hmac do
+defmodule Sanbase.Accounts.Hmac do
   @moduledoc """
   What is HMAC? HMAC is a way to combine a key and a hashing function in a way
   that's harder to attack.

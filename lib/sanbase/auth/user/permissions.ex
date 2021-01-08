@@ -1,5 +1,5 @@
-defmodule Sanbase.Auth.User.Permissions do
-  alias Sanbase.Auth.User
+defmodule Sanbase.Accounts.User.Permissions do
+  alias Sanbase.Accounts.User
   alias Sanbase.Billing.{Subscription, Product}
 
   def permissions(%User{} = user) do

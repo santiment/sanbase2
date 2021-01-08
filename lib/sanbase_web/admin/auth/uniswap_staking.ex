@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.ExAdmin.Auth.UniswapStaking do
+defmodule SanbaseWeb.ExAdmin.Accounts.UniswapStaking do
   use ExAdmin.Register
 
   register_resource Sanbase.Auth.User.UniswapStaking do

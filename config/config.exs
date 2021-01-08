@@ -72,7 +72,7 @@ config :sanbase, Sanbase.Repo,
   prepare: :unnamed,
   migration_timestamps: [type: :naive_datetime_usec]
 
-config :sanbase, Sanbase.Auth.Hmac, secret_key: {:system, "APIKEY_HMAC_SECRET_KEY", nil}
+config :sanbase, Sanbase.Accounts.Hmac, secret_key: {:system, "APIKEY_HMAC_SECRET_KEY", nil}
 
 # Configures the endpoint
 config :sanbase, SanbaseWeb.Endpoint,

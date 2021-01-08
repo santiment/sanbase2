@@ -130,7 +130,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   defp do_call(%Resolution{context: %{__query_or_metric_atom_name__: query}} = resolution, _)
        when query in @extension_metrics do
     case resolution.context[:auth][:current_user] do
-      %Sanbase.Auth.User{} = user ->
+      %Sanbase.Accounts.User{} = user ->
         product_ids = Subscription.user_subscriptions_product_ids(user)
 
         if Map.get(@extension_metric_product_map, query) in product_ids do

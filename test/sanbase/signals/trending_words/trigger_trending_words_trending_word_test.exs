@@ -14,7 +14,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingWordTest do
     Sanbase.Signal.Evaluator.Cache.clear_all()
 
     user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
-    Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
+    Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     trending_words_settings = %{
       type: TrendingWordsTriggerSettings.type(),

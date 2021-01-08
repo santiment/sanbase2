@@ -21,7 +21,7 @@ defmodule Sanbase.Comment do
   import Ecto.{Query, Changeset}
 
   alias Sanbase.Repo
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
 
   @max_comment_length 15_000
 

@@ -10,7 +10,7 @@ defmodule Sanbase.BlockchainAddress.BlockchainAddressUserPair do
   schema "blockchain_address_user_pairs" do
     field(:notes, :string)
 
-    belongs_to(:user, Sanbase.Auth.User)
+    belongs_to(:user, Sanbase.Accounts.User)
     belongs_to(:blockchain_address, Sanbase.BlockchainAddress)
 
     many_to_many(

@@ -6,7 +6,7 @@ defmodule Sanbase.Billing.ApiIncludeIncompleteDataFlagTest do
   import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.Auth.Apikey
+  alias Sanbase.Accounts.Apikey
   alias Sanbase.Metric
 
   @moduletag capture_log: true

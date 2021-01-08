@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
 
-  alias Sanbase.Auth.Apikey
+  alias Sanbase.Accounts.Apikey
 
   setup do
     contract = "0x132123"

@@ -8,7 +8,7 @@ defmodule Sanbase.Intercom.UserAttributes do
   schema "user_intercom_attributes" do
     field(:properties, :map)
 
-    belongs_to(:user, Sanbase.Auth.User)
+    belongs_to(:user, Sanbase.Accounts.User)
     timestamps(type: :utc_datetime)
   end
 

@@ -3,7 +3,7 @@ defmodule SanbaseWeb.BotLoginController do
 
   require Logger
 
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
 
   def index(conn, %{"user" => user_idx}) do
     Sanbase.Repo.get_by(User, email: User.sanbase_bot_email(user_idx))

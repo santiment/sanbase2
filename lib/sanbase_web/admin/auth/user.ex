@@ -1,10 +1,10 @@
-defmodule SanbaseWeb.ExAdmin.Auth.User do
+defmodule SanbaseWeb.ExAdmin.Accounts.User do
   use ExAdmin.Register
 
-  alias Sanbase.Auth.EthAccount
+  alias Sanbase.Accounts.EthAccount
   alias Sanbase.Insight.Post
 
-  register_resource Sanbase.Auth.User do
+  register_resource Sanbase.Accounts.User do
     controller do
       before_filter(:assign_all_user_insights_to_anonymous, only: [:destroy])
     end
@@ -28,7 +28,7 @@ defmodule SanbaseWeb.ExAdmin.Auth.User do
       end
 
       panel "Apikey tokens" do
-        table_for Sanbase.Auth.UserApikeyToken.user_tokens_structs(user) |> elem(1) do
+        table_for Sanbase.Accounts.UserApikeyToken.user_tokens_structs(user) |> elem(1) do
           column(:token, link: true)
         end
       end

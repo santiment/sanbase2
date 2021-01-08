@@ -1,7 +1,7 @@
-defmodule SanbaseWeb.ExAdmin.Auth.UserApikeyToken do
+defmodule SanbaseWeb.ExAdmin.Accounts.UserApikeyToken do
   use ExAdmin.Register
 
-  register_resource Sanbase.Auth.UserApikeyToken do
+  register_resource Sanbase.Accounts.UserApikeyToken do
     # Showing the apikey token is safe as the whole apikey cannot be generated
     # out of it. To generate the whole apikey a secret key, known only by the
     # server is needed.

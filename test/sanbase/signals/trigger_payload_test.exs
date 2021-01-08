@@ -15,8 +15,8 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
         user_settings: %{settings: %{signal_notify_telegram: true}}
       )
 
-    Sanbase.Auth.UserSettings.update_settings(user, %{signal_notify_email: true})
-    Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
+    Sanbase.Accounts.UserSettings.update_settings(user, %{signal_notify_email: true})
+    Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     project = insert(:random_project)
 

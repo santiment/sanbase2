@@ -1,13 +1,13 @@
-defmodule SanbaseWeb.ExAdmin.Auth.UserSettings do
+defmodule SanbaseWeb.ExAdmin.Accounts.UserSettings do
   use ExAdmin.Register
 
-  alias Sanbase.Auth.UserSettings
+  alias Sanbase.Accounts.UserSettings
 
-  register_resource Sanbase.Auth.UserSettings do
+  register_resource Sanbase.Accounts.UserSettings do
     action_items(only: [:show])
   end
 
-  defimpl ExAdmin.Render, for: Sanbase.Auth.Settings do
+  defimpl ExAdmin.Render, for: Sanbase.Accounts.Settings do
     def to_string(data) do
       data |> Map.from_struct() |> Jason.encode!()
     end

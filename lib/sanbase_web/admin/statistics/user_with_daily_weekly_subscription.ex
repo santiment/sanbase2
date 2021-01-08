@@ -24,8 +24,8 @@ defmodule SanbaseWeb.ExAdmin.Statistics.UsersWithWeeklyNewsletterSubscription do
       end
 
       users =
-        Sanbase.Auth.Settings.weekly_subscription_type()
-        |> Sanbase.Auth.Statistics.newsletter_subscribed_users()
+        Sanbase.Accounts.Settings.weekly_subscription_type()
+        |> Sanbase.Accounts.Statistics.newsletter_subscribed_users()
 
       users
       |> Enum.map(fn user ->

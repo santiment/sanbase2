@@ -8,12 +8,12 @@ defmodule Sanbase.Intercom do
   require Sanbase.Utils.Config, as: Config
   require Logger
 
-  alias Sanbase.Auth.{User, Statistics}
+  alias Sanbase.Accounts.{User, Statistics}
   alias Sanbase.Billing.{Subscription, Product}
   alias Sanbase.Signal.UserTrigger
   alias Sanbase.Clickhouse.ApiCallData
   alias Sanbase.Intercom.UserAttributes
-  alias Sanbase.Auth.EthAccount
+  alias Sanbase.Accounts.EthAccount
   alias Sanbase.Repo
 
   @intercom_url "https://api.intercom.io/users"
@@ -131,7 +131,8 @@ defmodule Sanbase.Intercom do
           user_paid_after_trial: user_paid_after_trial,
           user_paid_with: Map.get(customer_payment_type_map, stripe_customer_id, "not_paid"),
           weekly_digest:
-            Sanbase.Auth.UserSettings.settings_for(user).newsletter_subscription |> to_string(),
+            Sanbase.Accounts.UserSettings.settings_for(user).newsletter_subscription
+            |> to_string(),
           used_sanapi: id in users_used_api_list,
           used_sansheets: id in users_used_sansheets_list,
           api_calls_count: Map.get(api_calls_per_user_count, id, 0),

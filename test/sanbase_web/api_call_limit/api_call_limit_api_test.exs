@@ -8,11 +8,11 @@ defmodule SanbaseWeb.ApiCallLimitTest do
 
   setup do
     san_user = insert(:user, email: "santiment@santiment.net")
-    {:ok, san_apikey} = Sanbase.Auth.Apikey.generate_apikey(san_user)
+    {:ok, san_apikey} = Sanbase.Accounts.Apikey.generate_apikey(san_user)
     san_apikey_conn = setup_apikey_auth(build_conn(), san_apikey)
 
     user = insert(:user, email: "santiment@gmail.com")
-    {:ok, apikey} = Sanbase.Auth.Apikey.generate_apikey(user)
+    {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
     apikey_conn = setup_apikey_auth(build_conn(), apikey)
 
     project = insert(:random_project)

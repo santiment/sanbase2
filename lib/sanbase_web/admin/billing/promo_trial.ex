@@ -2,7 +2,7 @@ defmodule SanbaseWeb.ExAdmin.Billing.PromoTrial do
   use ExAdmin.Register
 
   alias Sanbase.Repo
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Billing.Plan
   alias Sanbase.Billing.Subscription.PromoTrial
 

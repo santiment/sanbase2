@@ -7,7 +7,7 @@ defmodule Sanbase.Insight.Post do
 
   alias Sanbase.Tag
   alias Sanbase.Repo
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Model.Project
   alias Sanbase.Vote
   alias Sanbase.Insight.{Post, PostImage}

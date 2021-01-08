@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
 
   import SanbaseWeb.Graphql.Helpers.Async, only: [async: 1]
 
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.UserList
   alias Sanbase.Model.Project
   alias SanbaseWeb.Graphql.Helpers.Utils

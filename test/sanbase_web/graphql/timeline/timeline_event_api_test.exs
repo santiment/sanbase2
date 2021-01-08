@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
   alias Sanbase.Timeline.TimelineEvent
-  alias Sanbase.Auth.UserFollower
+  alias Sanbase.Accounts.UserFollower
   alias Sanbase.Comments.EntityComment
   alias Sanbase.Signal.UserTrigger
 

@@ -13,7 +13,7 @@ defmodule Sanbase.Billing.StripeEvent do
   import Ecto.Changeset
 
   alias Sanbase.Repo
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Billing.{Subscription, Plan, Product}
   alias Sanbase.StripeApi
   alias Sanbase.Notifications.Discord

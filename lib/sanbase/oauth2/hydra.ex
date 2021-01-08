@@ -2,7 +2,7 @@ defmodule Sanbase.Oauth2.Hydra do
   require Sanbase.Utils.Config, as: Config
   require Logger
 
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Billing.{Product, Subscription, Plan}
   alias Sanbase.GrafanaApi
 

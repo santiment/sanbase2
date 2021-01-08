@@ -1,14 +1,15 @@
-defmodule Sanbase.Auth.User do
+defmodule Sanbase.Accounts.User do
   use Ecto.Schema
 
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Sanbase.Auth.{
+  alias Sanbase.Accounts.{
     User,
     EthAccount,
     UserApikeyToken,
-    UserSettings
+    UserSettings,
+    UserFollower
   }
 
   alias Sanbase.Vote
@@ -17,8 +18,8 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.Repo
   alias Sanbase.Telegram
   alias Sanbase.Signal.HistoricalActivity
-  alias Sanbase.Auth.UserFollower
   alias Sanbase.Billing
+  alias Sanbase.Billing.Subscription
 
   @salt_length 64
   @email_token_length 64
@@ -69,8 +70,8 @@ defmodule Sanbase.Auth.User do
     field(:marketing_accepted, :boolean, default: false)
 
     has_one(:telegram_user_tokens, Telegram.UserToken, on_delete: :delete_all)
-    has_one(:sign_up_trial, Billing.Subscription.SignUpTrial, on_delete: :delete_all)
-    has_one(:uniswap_staking, Sanbase.Auth.User.UniswapStaking, on_delete: :delete_all)
+    has_one(:sign_up_trial, Subscription.SignUpTrial, on_delete: :delete_all)
+    has_one(:uniswap_staking, User.UniswapStaking, on_delete: :delete_all)
     has_many(:timeline_events, Sanbase.Timeline.TimelineEvent, on_delete: :delete_all)
     has_many(:eth_accounts, EthAccount, on_delete: :delete_all)
     has_many(:votes, Vote, on_delete: :delete_all)
@@ -80,9 +81,9 @@ defmodule Sanbase.Auth.User do
     has_many(:signals_historical_activity, HistoricalActivity, on_delete: :delete_all)
     has_many(:followers, UserFollower, foreign_key: :user_id, on_delete: :delete_all)
     has_many(:following, UserFollower, foreign_key: :follower_id, on_delete: :delete_all)
-    has_many(:subscriptions, Billing.Subscription, on_delete: :delete_all)
-    has_many(:roles, {"user_roles", Sanbase.Auth.UserRole}, on_delete: :delete_all)
-    has_many(:promo_trials, Billing.Subscription.PromoTrial, on_delete: :delete_all)
+    has_many(:subscriptions, Subscription, on_delete: :delete_all)
+    has_many(:roles, {"user_roles", Accounts.UserRole}, on_delete: :delete_all)
+    has_many(:promo_trials, Subscription.PromoTrial, on_delete: :delete_all)
     has_many(:triggers, Sanbase.Signal.UserTrigger, on_delete: :delete_all)
     has_many(:chart_configurations, Sanbase.Chart.Configuration, on_delete: :delete_all)
     has_many(:user_attributes, Sanbase.Intercom.UserAttributes, on_delete: :delete_all)

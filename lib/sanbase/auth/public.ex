@@ -1,6 +1,6 @@
-defmodule Sanbase.Auth.User.Public do
-  alias Sanbase.Auth.User
-  alias Sanbase.Auth.UserSettings
+defmodule Sanbase.Accounts.User.Public do
+  alias Sanbase.Accounts.User
+  alias Sanbase.Accounts.UserSettings
 
   @sensitive_fields [:email, :twitter_id]
 

@@ -1,4 +1,4 @@
-defmodule Sanbase.Auth.UserFollower do
+defmodule Sanbase.Accounts.UserFollower do
   @moduledoc """
   Module implementing follow/unfollow functionality between users.
   """
@@ -7,7 +7,7 @@ defmodule Sanbase.Auth.UserFollower do
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Repo
 
   @primary_key false

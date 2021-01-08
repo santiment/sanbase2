@@ -5,7 +5,7 @@ defmodule Sanbase.Insight.PostPaywall do
   """
   alias Sanbase.Insight.Post
   alias Sanbase.Billing.{Subscription, Product}
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Billing.Plan.SanbaseAccessChecker
 
   # Show only first @max_words_shown_as_preview word of content

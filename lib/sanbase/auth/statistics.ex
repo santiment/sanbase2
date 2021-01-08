@@ -1,9 +1,9 @@
-defmodule Sanbase.Auth.Statistics do
+defmodule Sanbase.Accounts.Statistics do
   import Ecto.Query
 
   alias Sanbase.Repo
   alias Sanbase.Math
-  alias Sanbase.Auth.{User, UserSettings}
+  alias Sanbase.Accounts.{User, UserSettings}
   alias Sanbase.UserList
 
   def tokens_staked() do

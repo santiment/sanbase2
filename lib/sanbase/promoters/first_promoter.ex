@@ -1,6 +1,6 @@
 defmodule Sanbase.Promoters.FirstPromoter do
   alias Sanbase.Promoters.FirstPromoterApi
-  alias Sanbase.Auth.{User, UserSettings}
+  alias Sanbase.Accounts.{User, UserSettings}
 
   @type promoter_args :: %{
           optional(:ref_id) => String.t(),

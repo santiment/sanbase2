@@ -1,10 +1,10 @@
-defmodule Sanbase.Auth.UserApikeyToken do
+defmodule Sanbase.Accounts.UserApikeyToken do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
 
   alias __MODULE__
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Repo
 
   schema "user_api_key_tokens" do

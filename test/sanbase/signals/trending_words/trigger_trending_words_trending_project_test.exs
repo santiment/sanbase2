@@ -16,7 +16,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingProjectTest do
     user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
     project = insert(:project)
 
-    Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
+    Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     trending_words_settings = %{
       type: TrendingWordsTriggerSettings.type(),

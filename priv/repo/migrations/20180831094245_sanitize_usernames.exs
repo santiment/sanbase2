@@ -2,7 +2,7 @@ defmodule Sanbase.Repo.Migrations.SanitizeUsernames do
   use Ecto.Migration
 
   require Logger
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Repo
 
   alias SanbaseWeb.Graphql.Helpers.Utils

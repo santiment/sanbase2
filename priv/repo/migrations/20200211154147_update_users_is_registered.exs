@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.UpdateUsersIsRegistered do
 
   import Ecto.Query
 
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Repo
 
   def up do

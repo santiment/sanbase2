@@ -17,7 +17,7 @@ defmodule Sanbase.TableConfiguration do
       foreign_key: :table_configuration_id
     )
 
-    belongs_to(:user, Sanbase.Auth.User)
+    belongs_to(:user, Sanbase.Accounts.User)
 
     has_many(:watchlists, Sanbase.UserList)
 

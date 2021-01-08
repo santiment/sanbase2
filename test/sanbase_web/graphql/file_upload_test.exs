@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.FileUploadTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Repo
   alias Sanbase.Insight.PostImage
 

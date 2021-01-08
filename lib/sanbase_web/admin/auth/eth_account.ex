@@ -1,6 +1,6 @@
-defmodule SanbaseWeb.ExAdmin.Auth.EthAccount do
+defmodule SanbaseWeb.ExAdmin.Accounts.EthAccount do
   use ExAdmin.Register
 
-  register_resource Sanbase.Auth.EthAccount do
+  register_resource Sanbase.Accounts.EthAccount do
   end
 end

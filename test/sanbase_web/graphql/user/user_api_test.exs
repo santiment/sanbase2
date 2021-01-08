@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
   import ExUnit.CaptureLog
   import Sanbase.Factory
 
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Repo
   alias Sanbase.Billing.Subscription.SignUpTrial
   alias Sanbase.Auth.User.UniswapStaking

@@ -96,15 +96,15 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     ],
     sync_paid_with: [
       schedule: "20 * * * *",
-      task: {Sanbase.Auth.UserSettings, :sync_paid_with, []}
+      task: {Sanbase.Accounts.UserSettings, :sync_paid_with, []}
     ],
     sync_subscribed_users_with_changed_email: [
       schedule: "20 * * * *",
-      task: {Sanbase.Auth.User, :sync_subscribed_users_with_changed_email, []}
+      task: {Sanbase.Accounts.User, :sync_subscribed_users_with_changed_email, []}
     ],
     update_all_uniswap_san_staked_users: [
       schedule: "4-59/30 * * * *",
-      task: {Sanbase.Auth.User, :update_all_uniswap_san_staked_users, []}
+      task: {Sanbase.Accounts.User, :update_all_uniswap_san_staked_users, []}
     ],
     sync_liquidity_subscriptions_staked_users: [
       schedule: "7-59/30 * * * *",

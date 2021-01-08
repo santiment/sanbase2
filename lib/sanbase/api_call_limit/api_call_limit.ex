@@ -4,7 +4,7 @@ defmodule Sanbase.ApiCallLimit do
   import Ecto.Changeset
 
   alias Sanbase.Repo
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Billing.{Product, Subscription}
 
   @compile inline: [by_user: 1, by_remote_ip: 1]

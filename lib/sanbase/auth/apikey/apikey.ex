@@ -1,4 +1,4 @@
-defmodule Sanbase.Auth.Apikey do
+defmodule Sanbase.Accounts.Apikey do
   @moduledoc ~s"""
   Apikey combines and exposes in a transparent manner all the operations with the
   apikeys.
@@ -12,7 +12,7 @@ defmodule Sanbase.Auth.Apikey do
 
   require Logger
 
-  alias Sanbase.Auth.{
+  alias Sanbase.Accounts.{
     Hmac,
     UserApikeyToken,
     User

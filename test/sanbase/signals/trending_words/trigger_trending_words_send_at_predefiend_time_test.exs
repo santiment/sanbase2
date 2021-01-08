@@ -16,7 +16,7 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
     Sanbase.Signal.Evaluator.Cache.clear_all()
 
     user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
-    Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
+    Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     send_at = Time.utc_now() |> Time.add(60) |> Time.to_iso8601()
 

@@ -5,6 +5,12 @@ defmodule Sanbase.Metric do
   This module dispatches the fetching to modules implementing the
   `Sanbase.Metric.Behaviour` behaviour. Such modules are added to the
   @metric_modules list and everything else happens automatically.
+
+  This project is a data-centric application and the metrics are one of the
+  main data types provided.
+
+  The module works by either dispatching the functions to the proper module or
+  by aggregating data fetched by multiple modules.
   """
 
   import Sanbase.Metric.MetricReplace,

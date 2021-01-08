@@ -1,4 +1,10 @@
 defmodule Sanbase.Metric.Selector do
+  @moduledoc """
+  Module that is used for transforming selector from user-facing facing to the
+  internal format.
+  """
+
+  # This module exposes a single valid_slug?/1 function that returns true/false
   @available_slugs_module Application.compile_env(:sanbase, :available_slugs_module)
 
   def args_to_raw_selector(%{slug: slug}), do: %{slug: slug}

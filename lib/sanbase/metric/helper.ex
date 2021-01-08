@@ -1,10 +1,20 @@
 defmodule Sanbase.Metric.Helper do
-  # Note: Order in `@metric_modules` matter.`Module.register_attribute` with `accumulate` option puts
-  # new attributes on top of the accumulated list. That means when we put them in a map those that
-  # are first in @metric_modules might override later ones.
-  # One example for this is part of social metrics which are both in Sanbase.Clickhouse.MetricAdapter and
-  # Sanbase.SocialData.MetricAdapter and are invoked with different args. The ones in `Sanbase.Clickhouse.MetricAdapter`
-  # will override the ones in Sanbase.SocialData.MetricAdapter.
+  @moduledoc """
+  A helper module that uses the separate metric modules and  builds maps and
+  mappings that combine the data from all modules into a single place.
+
+  This module is hiding the metric modules from the user-facing `Sanbase.Metric`
+  module and makes adding new modules transparent.
+
+  The order of modules in `@metric_modules` **does** matter.
+  `Module.register_attribute/3` with `accumulate: true` option puts new
+  attributes on top of the accumulated list. That means when we put them in a
+  map those that are first in @metric_modules might override later ones. One
+  example for this is part of social metrics which are both in
+  Sanbase.Clickhouse.MetricAdapter and Sanbase.SocialData.MetricAdapter and are
+  invoked with different args. The ones in `Sanbase.Clickhouse.MetricAdapter`
+  will override the ones in Sanbase.SocialData.MetricAdapter.
+  """
 
   @metric_modules [
     Sanbase.Clickhouse.Github.MetricAdapter,

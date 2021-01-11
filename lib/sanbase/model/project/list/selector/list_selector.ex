@@ -1,6 +1,20 @@
 defmodule Sanbase.Model.Project.ListSelector do
+  @moduledoc ~s"""
+  Module that resolved a selector object to a list of projects.
+
+  Important note:
+  #TODO: Rework this
+  Currently, the caller must make sure that every different watchlist is resolved
+  in a different process or call clear_detect_cycles/0 function.
+  This is because in order to detect cycles, some storage must be used to keep
+  data between calls. For this purposes the process dictionary is used. This can
+  lead to issues if more than 1 watchlist is resolved.
+  """
   alias Sanbase.Model.Project
   alias __MODULE__.{Transform, Validator}
+
+  @cycle_detection_key :__get_base_projects__
+  def clear_detect_cycles(), do: Process.delete(@cycle_detection_key)
 
   defdelegate valid_selector?(args), to: Validator
 
@@ -118,9 +132,9 @@ defmodule Sanbase.Model.Project.ListSelector do
   defp watchlist_args_to_str(%{watchlist_slug: slug}), do: "watchlist with slug #{slug}"
 
   defp detect_cycles!(args) do
-    case Process.get(:__get_base_projects__) do
+    case Process.get(@cycle_detection_key) do
       nil ->
-        Process.put(:__get_base_projects__, %{
+        Process.put(@cycle_detection_key, %{
           iterations_left: 5,
           args_seen_so_far: MapSet.new([args]),
           original_args: args
@@ -143,7 +157,7 @@ defmodule Sanbase.Model.Project.ListSelector do
             )
 
           false ->
-            Process.put(:__get_base_projects__, %{
+            Process.put(@cycle_detection_key, %{
               iterations_left: iterations_left - 1,
               args_seen_so_far: MapSet.put(args_seen_so_far, args),
               original_args: original_args

@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   require Logger
 
+  import SanbaseWeb.Graphql.Helpers.Async, only: [async: 1]
+
   alias Sanbase.Auth.User
   alias Sanbase.UserList
   alias Sanbase.Model.Project
@@ -189,18 +191,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   end
 
   def list_items(%UserList{type: :project} = user_list, _args, _resolution) do
-    case UserList.get_projects(user_list) do
-      {:ok, %{projects: projects}} ->
-        result =
-          projects
-          |> Project.preload_assocs()
-          |> Enum.map(&%{project: &1})
+    async(fn ->
+      case UserList.get_projects(user_list) do
+        {:ok, %{projects: projects}} ->
+          result =
+            projects
+            |> Project.preload_assocs()
+            |> Enum.map(&%{project: &1})
 
-        {:ok, result}
+          {:ok, result}
 
-      {:error, error} ->
-        {:error, error}
-    end
+        {:error, error} ->
+          {:error, error}
+      end
+    end)
   end
 
   def list_items(%UserList{type: :blockchain_address} = user_list, _args, _resolution) do

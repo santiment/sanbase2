@@ -189,7 +189,7 @@ defimpl Sanbase.Signal, for: Any do
   defp extend_payload(payload, user_trigger_id) do
     """
     #{payload}
-    The alert was triggered by #{SanbaseWeb.Endpoint.show_signal_url(user_trigger_id)}
+    Triggered by #{SanbaseWeb.Endpoint.show_signal_url(user_trigger_id)}
     """
   end
 
@@ -235,7 +235,23 @@ defimpl Sanbase.Signal, for: Any do
     end
   end
 
-  defp do_send_webhook(webhook_url, identifier, payload, trigger_id) do
+  def do_send_webhook(
+        "https://hooks.slack.com/services" <> _rest = webhook_url,
+        identifier,
+        payload,
+        trigger_id
+      ) do
+    encoded_json_payload =
+      %{
+        text: payload
+      }
+      |> Jason.encode!()
+
+    HTTPoison.post(webhook_url, encoded_json_payload, [{"Content-Type", "application/json"}])
+    |> handle_webhook_response(identifier, trigger_id)
+  end
+
+  def do_send_webhook(webhook_url, identifier, payload, trigger_id) do
     encoded_json_payload =
       %{
         timestamp: DateTime.utc_now() |> DateTime.to_unix(),
@@ -246,9 +262,12 @@ defimpl Sanbase.Signal, for: Any do
       }
       |> Jason.encode!()
 
-    case HTTPoison.post(webhook_url, encoded_json_payload, [
-           {"Content-Type", "application/json"}
-         ]) do
+    HTTPoison.post(webhook_url, encoded_json_payload, [{"Content-Type", "application/json"}])
+    |> handle_webhook_response(identifier, trigger_id)
+  end
+
+  defp handle_webhook_response(response, identifier, trigger_id) do
+    case response do
       {:ok, %HTTPoison.Response{status_code: status_code}} when status_code in 200..299 ->
         {identifier, :ok}
 

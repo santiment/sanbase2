@@ -79,13 +79,22 @@ defmodule Sanbase.Billing.StripeEvent do
 
   def send_cancel_event_to_discord(subscription) do
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
-      subscription = subscription |> Repo.preload(:user)
+      subscription = subscription |> Repo.preload([:user, plan: [:product]])
+      created_months_ago = Timex.diff(Timex.now(), subscription.inserted_at, :months)
+
+      duration =
+        if created_months_ago == 0 do
+          "#{Timex.diff(Timex.now(), subscription.inserted_at, :days)} days"
+        else
+          "#{created_months_ago} months"
+        end
 
       message = """
       New cancellation scheduled for `#{subscription.current_period_end}` from `#{
         mask_user(subscription.user)
-      }` | #{subscription.user.stripe_customer_id}.
+      }` for `#{product_name(subscription)}` | #{subscription.user.stripe_customer_id}.
       Subscription status before cancellation: `#{subscription.status}`.
+      Subscription lasted #{duration}
       """
 
       do_send_to_discord(message)
@@ -347,6 +356,10 @@ defmodule Sanbase.Billing.StripeEvent do
 
   defp mask_user(_) do
     "Metamask user"
+  end
+
+  defp product_name(subscription) do
+    "#{subscription.plan.product.name}/#{subscription.plan.name}"
   end
 
   # checks which month of recurring subscription it is by the subscription creation date

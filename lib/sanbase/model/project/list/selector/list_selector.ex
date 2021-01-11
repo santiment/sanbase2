@@ -114,26 +114,39 @@ defmodule Sanbase.Model.Project.ListSelector do
     end
   end
 
+  defp watchlist_args_to_str(%{watchlist_id: id}), do: "watchlist with id #{id}"
+  defp watchlist_args_to_str(%{watchlist_slug: slug}), do: "watchlist with slug #{slug}"
+
   defp detect_cycles!(args) do
     case Process.get(:__get_base_projects__) do
       nil ->
         Process.put(:__get_base_projects__, %{
           iterations_left: 5,
-          args_seen_so_far: MapSet.new([args])
+          args_seen_so_far: MapSet.new([args]),
+          original_args: args
         })
 
-      %{iterations_left: 0} ->
-        raise("The base projects nesting of a watchlist is too deep.")
+      %{iterations_left: 0, original_args: original_args} ->
+        raise(
+          "The base projects nesting of a #{watchlist_args_to_str(original_args)} is too deep."
+        )
 
-      %{iterations_left: iterations_left, args_seen_so_far: args_seen_so_far} ->
+      %{
+        iterations_left: iterations_left,
+        args_seen_so_far: args_seen_so_far,
+        original_args: original_args
+      } ->
         case MapSet.member?(args_seen_so_far, args) do
           true ->
-            raise("There is a cycle in the base_projects of watchlists.")
+            raise(
+              "There is a cycle in the base_projects of #{watchlist_args_to_str(original_args)}."
+            )
 
           false ->
             Process.put(:__get_base_projects__, %{
               iterations_left: iterations_left - 1,
-              args_seen_so_far: MapSet.put(args_seen_so_far, args)
+              args_seen_so_far: MapSet.put(args_seen_so_far, args),
+              original_args: original_args
             })
         end
     end

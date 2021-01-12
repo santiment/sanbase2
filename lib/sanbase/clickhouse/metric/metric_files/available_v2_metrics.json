@@ -418,7 +418,7 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "avg",
+    "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
@@ -435,7 +435,7 @@
       "SANAPI": "free",
       "SANBASE": "free"
     },
-    "aggregation": "avg",
+    "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
@@ -452,7 +452,7 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "avg",
+    "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
@@ -469,7 +469,7 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "avg",
+    "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
@@ -486,7 +486,7 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "avg",
+    "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
@@ -503,7 +503,7 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "avg",
+    "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
@@ -520,7 +520,7 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "avg",
+    "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
@@ -537,7 +537,7 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "avg",
+    "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
@@ -554,7 +554,7 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "avg",
+    "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
@@ -571,7 +571,7 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "avg",
+    "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
@@ -588,7 +588,7 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "avg",
+    "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
@@ -605,7 +605,7 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "avg",
+    "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
@@ -622,7 +622,7 @@
       "SANAPI": "pro",
       "SANBASE": "free"
     },
-    "aggregation": "avg",
+    "aggregation": "last",
     "min_interval": "1d",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
@@ -643,7 +643,7 @@
     "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries"
   },
   {
@@ -660,7 +660,7 @@
     "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries"
   },
   {
@@ -677,7 +677,7 @@
     "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries"
   },
   {
@@ -694,7 +694,7 @@
     "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries"
   },
   {
@@ -711,7 +711,7 @@
     "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries"
   },
   {
@@ -728,7 +728,7 @@
     "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries"
   },
   {
@@ -745,7 +745,7 @@
     "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries"
   },
   {
@@ -762,7 +762,7 @@
     "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries"
   },
   {
@@ -779,7 +779,7 @@
     "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries"
   },
   {
@@ -796,7 +796,7 @@
     "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries"
   },
   {
@@ -813,7 +813,7 @@
     "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries"
   },
   {
@@ -830,7 +830,7 @@
     "aggregation": "last",
     "min_interval": "5m",
     "table": "intraday_metrics",
-    "has_incomplete_data": true,
+    "has_incomplete_data": false,
     "data_type": "timeseries"
   },
 

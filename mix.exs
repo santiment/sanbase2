@@ -86,6 +86,7 @@ defmodule Sanbase.Mixfile do
       {:hackney, github: "benoitc/hackney", override: true},
       {:hammer, "~> 6.0"},
       {:httpoison, "~> 1.2", override: true},
+      {:inch_ex, github: "rrrene/inch_ex", only: [:dev, :test]},
       {:inflex, "~> 2.0", override: true},
       {:instream, "~> 0.16"},
       {:jason, "~> 1.2"},

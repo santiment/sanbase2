@@ -61,6 +61,7 @@
   "html_sanitize_ex": {:git, "https://github.com/sublimecoder/html_sanitize_ex.git", "30282178751750e88418b23483be79d5d01a8047", []},
   "httpoison": {:hex, :httpoison, "1.7.0", "abba7d086233c2d8574726227b6c2c4f6e53c4deae7fe5f6de531162ce9929a0", [:mix], [{:hackney, "~> 1.16", [hex: :hackney, repo: "hexpm", optional: false]}], "hexpm", "975cc87c845a103d3d1ea1ccfd68a2700c211a434d8428b10c323dc95dc5b980"},
   "idna": {:git, "https://github.com/benoitc/erlang-idna", "6cff72747821110169ecfac871b0c69e5064afff", [tag: "6.0.0"]},
+  "inch_ex": {:git, "https://github.com/rrrene/inch_ex.git", "c8eeaa65312df3ce150e91d7dddb50e2983b3209", []},
   "inet_cidr": {:hex, :inet_cidr, "1.0.4", "a05744ab7c221ca8e395c926c3919a821eb512e8f36547c062f62c4ca0cf3d6e", [:mix], [], "hexpm", "64a2d30189704ae41ca7dbdd587f5291db5d1dda1414e0774c29ffc81088c1bc"},
   "inflex": {:hex, :inflex, "2.1.0", "a365cf0821a9dacb65067abd95008ca1b0bb7dcdd85ae59965deef2aa062924c", [:mix], [], "hexpm", "14c17d05db4ee9b6d319b0bff1bdf22aa389a25398d1952c7a0b5f3d93162dd8"},
   "influxql": {:hex, :influxql, "0.2.1", "71bfd5c0d81bf870f239baf3357bf5226b44fce16e1b9399ba1368203ca71245", [:mix], [], "hexpm", "75faf04960d6830ca0827869eaac1ba092655041c5e96deb2a588bafb601205c"},

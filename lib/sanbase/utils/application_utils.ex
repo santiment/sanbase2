@@ -11,9 +11,7 @@ defmodule Sanbase.ApplicationUtils do
   """
   @spec start_in(any(), list[atom()]) :: nil | any
   def start_in(expr, environments) do
-    env =
-      Config.module_get(Sanbase, :environment)
-      |> String.to_existing_atom()
+    env = Config.module_get(Sanbase, :env)
 
     if env in environments do
       expr

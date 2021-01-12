@@ -114,43 +114,32 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   Returns the accumulated ETH spent by all ERC20 projects for a given time period.
   """
   def eth_spent_by_all_projects(_, %{from: from, to: to}, _resolution) do
-    with projects when is_list(projects) <- Project.List.projects() do
-      total_eth_spent =
-        projects
-        |> Sanbase.Parallel.map(
-          &calculate_eth_spent_cached(&1, from, to).(),
-          timeout: 25_000,
-          max_concurrency: @max_concurrency
-        )
-        |> Enum.map(fn
-          {:ok, value} when not is_nil(value) -> value
-          _ -> 0
-        end)
-        |> Enum.sum()
-
-      {:ok, total_eth_spent}
-    end
+    Project.List.projects()
+    |> calculate_eth_spent_by_projects(from, to)
   end
 
   @doc ~s"""
   Returns the accumulated ETH spent by all ERC20 projects for a given time period.
   """
   def eth_spent_by_erc20_projects(_, %{from: from, to: to}, _resolution) do
-    with projects when is_list(projects) <- Project.List.erc20_projects() do
-      total_eth_spent =
-        projects
-        |> Sanbase.Parallel.map(&calculate_eth_spent_cached(&1, from, to).(),
-          timeout: 25_000,
-          max_concurrency: @max_concurrency
-        )
-        |> Enum.map(fn
-          {:ok, value} when not is_nil(value) -> value
-          _ -> 0
-        end)
-        |> Enum.sum()
+    Project.List.erc20_projects()
+    |> calculate_eth_spent_by_projects(from, to)
+  end
 
-      {:ok, total_eth_spent}
-    end
+  defp calculate_eth_spent_by_projects(projects, from, to) do
+    total_eth_spent =
+      projects
+      |> Sanbase.Parallel.map(&calculate_eth_spent_cached(&1, from, to).(),
+        timeout: 25_000,
+        max_concurrency: @max_concurrency
+      )
+      |> Enum.map(fn
+        {:ok, value} when not is_nil(value) -> value
+        _ -> 0
+      end)
+      |> Enum.sum()
+
+    {:ok, total_eth_spent}
   end
 
   @doc ~s"""

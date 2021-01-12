@@ -1,19 +1,17 @@
 defmodule Sanbase.Cache.RehydratingCache.Supervisor do
   use Supervisor
-  alias Sanbase.Cache.RehydratingCache
-  alias Sanbase.Cache.RehydratingCache.Store
 
-  @name RehydratingCache.name()
+  alias Sanbase.Cache.RehydratingCache.Store
 
   def child_spec(opts) do
     %{
-      id: :"__rehydrating_cache_supervisor_#{@name}_id__",
+      id: :__rehydrating_cache_supervisor__id__,
       start: {__MODULE__, :start_link, [opts]}
     }
   end
 
   def start_link(opts) do
-    Supervisor.start_link(__MODULE__, opts, name: :"__rehydrating_cache_supervisor_#{@name}__")
+    Supervisor.start_link(__MODULE__, opts, name: :__rehydrating_cache_supervisor__)
   end
 
   def init(_opts) do
@@ -24,12 +22,12 @@ defmodule Sanbase.Cache.RehydratingCache.Supervisor do
       Supervisor.child_spec(
         {ConCache,
          [
-           name: Store.name(@name),
+           name: Store.name(),
            ttl_check_interval: :timer.seconds(15),
            global_ttl: :timer.hours(6),
            acquire_lock_timeout: 60_000
          ]},
-        id: :"__rehydrating_cache_con_cache_#{@name}"
+        id: :__rehydrating_cache_con_cache__
       ),
 
       # Task supervisor

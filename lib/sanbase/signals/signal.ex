@@ -298,13 +298,10 @@ defimpl Sanbase.Signal, for: Any do
       |> Enum.reduce({[], limit}, fn {identifier, payload}, {list, remaining} ->
         case remaining do
           0 ->
-            elem = {identifier, signals_limit_reached_error}
-
-            {[elem | list], 0}
+            {[{identifier, signals_limit_reached_error} | list], 0}
 
           remaining ->
-            elem = {identifier, fun.(identifier, payload)}
-            {[elem | list], remaining - 1}
+            {[{identifier, fun.(identifier, payload)} | list], remaining - 1}
         end
       end)
 

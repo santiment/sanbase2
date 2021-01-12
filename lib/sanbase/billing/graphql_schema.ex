@@ -45,19 +45,7 @@ defmodule Sanbase.Billing.GraphqlSchema do
   def min_plan_map() do
     # Metadata looks like this:
     # meta(access: :restricted, min_plan: [sanapi: :pro, sanbase: :free])
-    query_min_plan_map =
-      get_query_meta_field_list(:min_plan)
-      |> Enum.into(%{}, fn
-        {query, kw_list} when is_list(kw_list) ->
-          {{:query, query},
-           %{
-             "SANAPI" => Keyword.get(kw_list, :sanapi, :free),
-             "SANBASE" => Keyword.get(kw_list, :sanbase, :free)
-           }}
-
-        {query, _} ->
-          {{:query, query}, %{"SANAPI" => :free, "SANBASE" => :free}}
-      end)
+    query_min_plan_map = get_query_min_plan_map()
 
     Sanbase.Metric.min_plan_map()
     |> Enum.into(query_min_plan_map, fn
@@ -109,5 +97,21 @@ defmodule Sanbase.Billing.GraphqlSchema do
 
   def get_all_without_access_level() do
     get_metrics_with_access_level(nil) -- [:__typename, :__type, :__schema]
+  end
+
+  # Private functions
+  defp get_query_min_plan_map() do
+    get_query_meta_field_list(:min_plan)
+    |> Enum.into(%{}, fn
+      {query, kw_list} when is_list(kw_list) ->
+        {{:query, query},
+         %{
+           "SANAPI" => Keyword.get(kw_list, :sanapi, :free),
+           "SANBASE" => Keyword.get(kw_list, :sanbase, :free)
+         }}
+
+      {query, _} ->
+        {{:query, query}, %{"SANAPI" => :free, "SANBASE" => :free}}
+    end)
   end
 end

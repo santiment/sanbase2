@@ -2,8 +2,14 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.Factory
 
   require Sanbase.Utils.Config
+
+  setup do
+    project = insert(:random_project)
+    {:ok, project: project}
+  end
 
   test "Ethereum recent transactions", context do
     mock_fun =
@@ -24,7 +30,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
   test "Token recent transactions", context do
     mock_fun =
       [
-        fn -> {:ok, %{rows: token_recent_transactions_result()}} end,
+        fn -> {:ok, %{rows: token_recent_transactions_result(context.project)}} end,
         fn -> {:ok, %{rows: labels_rows()}} end
       ]
       |> Sanbase.Mock.wrap_consecutives(arity: 2)
@@ -33,7 +39,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
     |> Sanbase.Mock.run_with_mocks(fn ->
       query = recent_transactions_query("ERC20")
       result = execute_query(context.conn, query, "recentTransactions")
-      assert result == expected_token_transactions()
+      assert result == expected_token_transactions(context.project)
     end)
   end
 
@@ -72,7 +78,10 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
         }
         trxValue
         trxHash
-        slug
+        project {
+          id
+          slug
+        }
       }
     }
     """
@@ -93,14 +102,17 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
     ]
   end
 
-  defp expected_token_transactions do
+  defp expected_token_transactions(project) do
     [
       %{
         "fromAddress" => %{
           "address" => "0xc12d1c73ee7dc3615ba4e37e4abfdbddfa38907e",
           "labels" => []
         },
-        "slug" => "kickico",
+        "project" => %{
+          "slug" => project.slug,
+          "id" => to_string(project.id)
+        },
         "toAddress" => %{
           "address" => "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8",
           "labels" => [%{"name" => "whale"}, %{"name" => "centralized_exchange"}]
@@ -124,12 +136,12 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
         },
         "trxHash" => "0x21a56440bedb1a5c2f4adca4a6f9fbccf13bd741d63c0e3b2214a6ee418a5974",
         "trxValue" => 5.5,
-        "slug" => nil
+        "project" => nil
       }
     ]
   end
 
-  defp token_recent_transactions_result do
+  defp token_recent_transactions_result(project) do
     [
       [
         1_579_862_776,
@@ -137,7 +149,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
         "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8",
         "0x4bd5d44da7f69c5227530728249431072087b5f9780eec704869fc768922121e",
         8.88888e13,
-        "kickico",
+        project.slug,
         8
       ]
     ]

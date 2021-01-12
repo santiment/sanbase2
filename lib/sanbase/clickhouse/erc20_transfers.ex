@@ -13,7 +13,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
           block_number: non_neg_integer,
           trx_position: non_neg_integer,
           log_index: non_neg_integer,
-          slug: String.t()
+          project: map()
         }
 
   use Ecto.Schema
@@ -21,6 +21,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
   import Sanbase.Utils.Transform
 
   alias Sanbase.ClickhouseRepo
+  alias Sanbase.Model.Project
 
   require Sanbase.Utils.Config, as: Config
   defp dt_ordered_table(), do: Config.get(:dt_ordered_table)
@@ -40,7 +41,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     field(:block_number, :integer, source: :blockNumber)
     field(:trx_position, :integer, source: :transactionPosition)
     field(:log_index, :integer, source: :logIndex)
-    field(:slug, :string, source: :name)
+    field(:project, :map)
   end
 
   @spec changeset(any(), any()) :: no_return()
@@ -163,11 +164,12 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
           datetime: DateTime.from_unix!(timestamp),
           from_address: from_address,
           to_address: to_address,
-          slug: name,
+          project: name,
           trx_hash: trx_hash,
           trx_value: trx_value / decimals(decimals)
         }
     end)
+    |> maybe_transform()
   end
 
   # Private functions
@@ -258,4 +260,21 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
   end
 
   defp decimals(_), do: @eth_decimals
+
+  defp maybe_transform({:ok, data}) do
+    slugs = data |> Enum.map(& &1.project)
+
+    slug_project_map =
+      Project.by_slug(slugs)
+      |> Enum.into(%{}, fn project -> {project.slug, project} end)
+
+    data =
+      Enum.map(data, fn %{project: slug} = trx ->
+        %{trx | project: Map.get(slug_project_map, slug, nil)}
+      end)
+
+    {:ok, data}
+  end
+
+  defp maybe_transform({:error, _} = result), do: result
 end

@@ -47,3 +47,6 @@ npm-debug.log
 
 # asdf
 .tool-versions
+
+# logs
+*.log

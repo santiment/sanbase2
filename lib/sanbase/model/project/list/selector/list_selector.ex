@@ -124,6 +124,8 @@ defmodule Sanbase.Model.Project.ListSelector do
          slugs when is_list(slugs) <- Keyword.get(opts, :included_slugs) do
       length(slugs)
     else
+      :all -> Project.List.projects_count()
+      :erc20 -> Project.List.erc20_projects_count()
       _ -> length(list)
     end
   end
@@ -190,6 +192,7 @@ defmodule Sanbase.Model.Project.ListSelector do
   end
 
   defp included_slugs_by_filters([], _filters_combinator), do: :all
+  defp included_slugs_by_filters([%{name: "erc20"}], _filters_combinator), do: :erc20
 
   defp included_slugs_by_filters(filters, filters_combinator) when is_list(filters) do
     slug_mapsets =
@@ -265,6 +268,10 @@ defmodule Sanbase.Model.Project.ListSelector do
     case slugs do
       :all ->
         ordered_slugs
+
+      :erc20 ->
+        slugs_mapset = Project.List.erc20_projects_slugs() |> MapSet.new()
+        Enum.filter(ordered_slugs, &(&1 in slugs_mapset))
 
       ^slugs when is_list(slugs) ->
         slugs_mapset = slugs |> MapSet.new()

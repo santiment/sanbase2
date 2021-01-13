@@ -60,7 +60,6 @@ defmodule Sanbase.Model.Project.Roi do
          unknown_count <- Enum.filter(tokens_sold_at_icos, &is_nil/1) |> length(),
          true <- unknown_count > 0 do
       zero = Decimal.new(0)
-      one = Decimal.new(1)
 
       known_tokens_sum =
         tokens_sold_at_icos
@@ -68,9 +67,9 @@ defmodule Sanbase.Model.Project.Roi do
         |> Enum.reduce(zero, &Decimal.add/2)
 
       unknown_tokens_sum =
-        Decimal.compare(project.latest_coinmarketcap_data.available_supply, known_tokens_sum)
+        Decimal.cmp(project.latest_coinmarketcap_data.available_supply, known_tokens_sum)
         |> case do
-          ^one ->
+          :gt ->
             Decimal.sub(project.latest_coinmarketcap_data.available_supply, known_tokens_sum)
 
           _ ->

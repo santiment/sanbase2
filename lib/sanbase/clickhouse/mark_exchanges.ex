@@ -121,7 +121,7 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
   # This is running every time the app is started, so it would require a
   # global mock across all test suites. In the only test where it is used,
   # the state is filled with the explicit add_exchange_wallets/1 call
-  if Mix.env() == :test do
+  if Application.compile_env(:sanbase, [Sanbase, :env]) == :test do
     defp fill_state(), do: %{exchange_wallets_set: MapSet.new(), updated_at: Timex.now()}
   else
     defp fill_state() do

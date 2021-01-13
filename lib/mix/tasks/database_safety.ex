@@ -16,7 +16,7 @@ defmodule Mix.Tasks.DatabaseSafety do
 
   @impl Mix.Task
   def run(_args) do
-    env = Config.module_get(Sanbase, :environment)
+    env = Config.module_get(Sanbase, :env)
     database_url = System.get_env("DATABASE_URL")
     database_hostname = Config.module_get(Sanbase.Repo, :hostname)
 
@@ -28,7 +28,7 @@ defmodule Mix.Tasks.DatabaseSafety do
       not is_nil(database_hostname) and
         Enum.any?(@prod_db_patterns, &String.contains?(database_hostname, &1))
 
-    case env != "prod" and (prod_db_url? or prod_db_config?) do
+    case env != :prod and (prod_db_url? or prod_db_config?) do
       true ->
         raise(Mix.Error, """
         Migration execution was stopped due to safety concerns!

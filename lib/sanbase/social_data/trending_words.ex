@@ -21,6 +21,8 @@ defmodule Sanbase.SocialData.TrendingWords do
   use Ecto.Schema
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
+  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
+
   alias Sanbase.ClickhouseRepo
 
   @type word :: String.t()
@@ -169,10 +171,7 @@ defmodule Sanbase.SocialData.TrendingWords do
         position: position
       }
     end)
-    |> case do
-      {:ok, result} -> {:ok, Enum.reject(result, &is_nil(&1.position))}
-      {:error, error} -> {:error, error}
-    end
+    |> maybe_apply_function(fn result -> Enum.reject(result, &is_nil(&1.position)) end)
   end
 
   @spec get_project_trending_history(slug, DateTime.t(), DateTime.t(), interval, non_neg_integer) ::
@@ -188,10 +187,7 @@ defmodule Sanbase.SocialData.TrendingWords do
         position: position
       }
     end)
-    |> case do
-      {:ok, result} -> {:ok, Enum.reject(result, &is_nil(&1.position))}
-      {:error, error} -> {:error, error}
-    end
+    |> maybe_apply_function(fn result -> Enum.reject(result, &is_nil(&1.position)) end)
   end
 
   defp get_trending_words_query(from, to, interval, size) do

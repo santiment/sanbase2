@@ -18,7 +18,7 @@ config :phoenix, :json_library, Jason
 
 config :postgrex, :json_library, Jason
 
-config :sanbase, Sanbase, environment: "#{Mix.env()}"
+config :sanbase, Sanbase, env: Mix.env()
 
 config :ueberauth, Ueberauth,
   providers: [

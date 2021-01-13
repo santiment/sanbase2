@@ -87,7 +87,8 @@ defmodule Sanbase.Promoters.FirstPromoterApi do
     response
     |> case do
       {:ok, %HTTPoison.Response{status_code: code, body: body}} when code in 200..299 ->
-        {:ok, Jason.decode!(body, keys: &atomize_keys/1)}
+        # TODO: `keys: :atoms` is not safe.
+        {:ok, Jason.decode!(body, keys: :atoms)}
 
       {:ok, %HTTPoison.Response{status_code: _code, body: body}} = response ->
         Logger.error("#{default_error_msg}: #{inspect(filter_response(response))}")
@@ -97,12 +98,6 @@ defmodule Sanbase.Promoters.FirstPromoterApi do
         Logger.error("#{default_error_msg}: #{inspect(filter_response(response))}")
         {:error, default_error_msg}
     end
-  end
-
-  defp atomize_keys(key) do
-    String.to_existing_atom(key)
-  rescue
-    _ -> String.to_atom(key)
   end
 
   defp http_client(), do: HTTPoison

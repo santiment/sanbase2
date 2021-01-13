@@ -168,6 +168,8 @@ defmodule Sanbase.Model.Project.List do
     |> Enum.filter(fn project -> source in Enum.map(project.source_slug_mappings, & &1.source) end)
   end
 
+  def projects_count(opts \\ [])
+
   def projects_count(opts) do
     projects_query(opts)
     |> select([p], fragment("count(*)"))

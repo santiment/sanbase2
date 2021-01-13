@@ -25,6 +25,8 @@ defmodule SanbaseWeb.Graphql.TransactionTypes do
     field(:from_address, :address)
     field(:to_address, non_null(:address))
     field(:project, :project)
+    # Remove when frontend migrates
+    field(:slug, :string)
   end
 
   object :exchange_funds_flow do

@@ -1,11 +1,15 @@
 defmodule Sanbase.Signal.Validation.Target do
+  @doc ~s"""
+  Check if a given `target` is a valid target argument for a signal.
+
+  A target can be valid if it match one of many criteria. For more information,
+  check the function headers.
+  """
   def valid_target?("default"), do: :ok
 
   def valid_target?(%{user_list: int}) when is_integer(int), do: :ok
   def valid_target?(%{watchlist_id: int}) when is_integer(int), do: :ok
-
   def valid_target?(%{text: text}) when is_binary(text), do: :ok
-
   def valid_target?(%{word: word}) when is_binary(word), do: :ok
 
   def valid_target?(%{word: words}) when is_list(words) do
@@ -29,20 +33,45 @@ defmodule Sanbase.Signal.Validation.Target do
   def valid_target?(target),
     do: {:error, "#{inspect(target)} is not a valid target"}
 
+  @doc ~s"""
+  Check if a target is a valid eth_wallet signal target.
+
+  It is a valid target if:
+    - It is %{eth_address: addres_or_addresses}
+    - It is not a watchlist
+    - It returns true for valid_target
+  """
+  @spec valid_eth_wallet_target?(any) :: :ok | {:error, <<_::64, _::_*8>>}
   def valid_eth_wallet_target?(%{eth_address: address_or_addresses}) do
     valid_crypto_address?(address_or_addresses)
   end
 
+  def valid_eth_wallet_target?(%{word: _}) do
+    {:error, "Word is not valid wallet target"}
+  end
+
+  def valid_eth_wallet_target?(%{text: _}) do
+    {:error, "Text is not valid wallet target"}
+  end
+
   def valid_eth_wallet_target?(%{user_list: _}) do
-    {:error, "Watchlists are not valid ethereum wallet target"}
+    {:error, "Watchlists are not valid wallet target"}
   end
 
   def valid_eth_wallet_target?(%{watchlist_id: _}) do
-    {:error, "Watchlists are not valid ethereum wallet target"}
+    {:error, "Watchlists are not valid wallet target"}
   end
 
   def valid_eth_wallet_target?(target), do: valid_target?(target)
 
+  @doc ~s"""
+  Check if the target is a valid crypto address.
+
+  A valid crypto address is:
+    - An address or lsit of addresses
+    - A `slug`. In this case the blockchain addresses associated with this
+      slug will be used.
+  """
   def valid_crypto_address?(%{slug: slug}), do: valid_target?(%{slug: slug})
 
   def valid_crypto_address?(%{address: address_or_addresses}) do

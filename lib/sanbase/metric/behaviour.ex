@@ -13,6 +13,7 @@ defmodule Sanbase.Metric.Behaviour do
   @type interval :: String.t()
   @type opts :: Keyword.t()
   @type available_data_types :: :timeseries | :histogram | :table
+  @type threshold :: number()
   @type direction :: :asc | :desc
   @type operator ::
           :greater_than | :less_than | :greater_than_or_equal_to | :less_than_or_equal_to
@@ -56,6 +57,40 @@ defmodule Sanbase.Metric.Behaviour do
           data: list(slug_float_value_pair())
         }
 
+  # Return types
+  @type timeseries_data_result :: {:ok, list(timeseries_data_point)} | {:error, String.t()}
+
+  @type aggregated_timeseries_data_result :: {:ok, map()} | {:error, String.t()}
+
+  @type timeseries_data_per_slug_result ::
+          {:ok, list(timeseries_data_per_slug_point)} | {:error, String.t()}
+
+  @type table_data_result :: {:ok, table_data_point} | {:error, String.t()}
+
+  @type histogram_data_result :: {:ok, histogram_data} | {:error, String.t()}
+
+  @type slugs_by_filter_result :: {:ok, list(slug())} | {:error, String.t()}
+
+  @type slugs_order_result :: {:ok, list(slug())} | {:error, String.t()}
+
+  @type human_readable_name_result :: {:ok, String.t()} | {:error, String.t()}
+
+  @type first_datetime_result :: {:ok, DateTime.t()} | {:error, String.t()}
+
+  @type last_datetime_computed_at_result :: {:ok, DateTime.t()} | {:error, String.t()}
+
+  @type metadata_result :: {:ok, metadata()} | {:error, String.t()}
+
+  @type available_slugs_result :: {:ok, list(slug)} | {:error, String.t()}
+
+  @type available_metrics_result :: {:ok, list(metric)} | {:error, String.t()}
+
+  @type has_incomplete_data_result :: boolean()
+
+  @type complexity_weight_result :: number()
+
+  # Callbacks
+
   @callback timeseries_data(
               metric :: metric(),
               selector :: selector,
@@ -64,7 +99,7 @@ defmodule Sanbase.Metric.Behaviour do
               interval :: interval(),
               opts :: opts
             ) ::
-              {:ok, list(timeseries_data_point)} | {:error, String.t()}
+              timeseries_data_result
 
   @callback timeseries_data_per_slug(
               metric :: metric(),
@@ -74,7 +109,7 @@ defmodule Sanbase.Metric.Behaviour do
               interval :: interval(),
               opts :: opts
             ) ::
-              {:ok, list(timeseries_data_per_slug_point)} | {:error, String.t()}
+              timeseries_data_per_slug_result
 
   @callback histogram_data(
               metric :: metric(),
@@ -83,7 +118,7 @@ defmodule Sanbase.Metric.Behaviour do
               to :: DateTime.t(),
               interval :: interval(),
               limit :: non_neg_integer()
-            ) :: {:ok, histogram_data} | {:error, String.t()}
+            ) :: histogram_data_result
 
   @callback table_data(
               metric :: metric(),
@@ -91,7 +126,7 @@ defmodule Sanbase.Metric.Behaviour do
               from :: DateTime.t(),
               to :: DateTime.t(),
               opts :: opts
-            ) :: {:ok, table_data_point} | {:error, String.t()}
+            ) :: table_data_result
 
   @callback aggregated_timeseries_data(
               metric :: metric,
@@ -99,16 +134,16 @@ defmodule Sanbase.Metric.Behaviour do
               from :: DatetTime.t(),
               to :: DateTime.t(),
               opts :: opts
-            ) :: {:ok, map()} | {:error, String.t()}
+            ) :: aggregated_timeseries_data_result
 
   @callback slugs_by_filter(
               metric :: metric,
               from :: DateTime.t(),
               to :: DateTime.t(),
               operator :: operator,
-              threshold :: number(),
+              threshold :: threshold,
               opts :: opts
-            ) :: {:ok, list(slug())} | {:error, String.t()}
+            ) :: slugs_by_filter_result
 
   @callback slugs_order(
               metric :: metric,
@@ -116,31 +151,29 @@ defmodule Sanbase.Metric.Behaviour do
               to :: DateTime.t(),
               direction :: direction,
               opts :: opts
-            ) :: {:ok, list(slug())} | {:error, String.t()}
+            ) :: slugs_order_result
 
-  @callback has_incomplete_data?(metric :: metric) :: true | false
+  @callback has_incomplete_data?(metric :: metric) :: has_incomplete_data_result
 
-  @callback complexity_weight(metric :: metric) :: number
+  @callback complexity_weight(metric :: metric) :: complexity_weight_result
 
-  @callback first_datetime(metric, selector) ::
-              {:ok, DateTime.t()} | {:error, String.t()}
+  @callback first_datetime(metric, selector) :: first_datetime_result
 
-  @callback last_datetime_computed_at(metric, selector) ::
-              {:ok, DateTime.t()} | {:error, String.t()}
+  @callback last_datetime_computed_at(metric, selector) :: last_datetime_computed_at_result
 
-  @callback human_readable_name(metric) :: {:ok, String.t()} | {:error, String.t()}
+  @callback human_readable_name(metric) :: human_readable_name_result
 
-  @callback metadata(metric) :: {:ok, metadata()} | {:error, String.t()}
+  @callback metadata(metric) :: metadata_result
 
   @callback available_aggregations() :: list(aggregation)
 
-  @callback available_slugs() :: {:ok, list(slug)} | {:error, String.t()}
+  @callback available_slugs() :: available_slugs_result
 
-  @callback available_slugs(metric) :: {:ok, list(slug)} | {:error, String.t()}
+  @callback available_slugs(metric) :: available_slugs_result
 
   @callback available_metrics() :: list(metric)
 
-  @callback available_metrics(selector) :: {:ok, list(metric)} | {:error, String.t()}
+  @callback available_metrics(selector) :: available_metrics_result()
 
   @callback available_timeseries_metrics() :: list(metric)
 

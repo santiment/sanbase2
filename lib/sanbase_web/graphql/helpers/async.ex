@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Async do
     quote bind_quoted: [func: func] do
       require Sanbase.Utils.Config
 
-      if Sanbase.Utils.Config.module_get(Sanbase, :environment) == "test" do
+      if Sanbase.Utils.Config.module_get(Sanbase, :env) == :test do
         func.()
       else
         Absinthe.Resolution.Helpers.async(func)

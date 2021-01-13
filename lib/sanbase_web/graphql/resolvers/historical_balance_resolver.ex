@@ -1,14 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver do
   import Sanbase.Utils.ErrorHandling,
-    only: [maybe_handle_graphql_error: 2, handle_graphql_error: 3, handle_graphql_error: 4]
-
-  import SanbaseWeb.Graphql.Helpers.CalibrateInterval, only: [calibrate: 7]
+    only: [maybe_handle_graphql_error: 2, handle_graphql_error: 4]
 
   alias Sanbase.Clickhouse.HistoricalBalance
   alias SanbaseWeb.Graphql.Resolvers.MetricResolver
-
-  # Return this number of datapoints is the provided interval is an empty string
-  @datapoints 300
 
   def assets_held_by_address(_root, args, _resolution) do
     selector =

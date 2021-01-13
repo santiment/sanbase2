@@ -5,6 +5,7 @@ defmodule Sanbase.Clickhouse.MetadataHelper do
   """
 
   alias Sanbase.ClickhouseRepo
+  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
 
   # Map from the names used in ClickHouse to the publicly exposed ones.
   # Example: stack_circulation_20y -> circulation
@@ -42,39 +43,37 @@ defmodule Sanbase.Clickhouse.MetadataHelper do
 
   def metric_name_to_metric_id_map() do
     cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
-
-    Sanbase.Cache.get_or_store({cache_key, 600}, fn ->
-      query = "SELECT toUInt32(metric_id), name FROM metric_metadata"
-      args = []
-
-      ClickhouseRepo.query_reduce(query, args, %{}, fn [metric_id, name], acc ->
-        names = Map.get(@original_name_to_metric_name, name, [name])
-
-        names
-        |> Enum.reduce(acc, fn inner_name, inner_acc ->
-          Map.put(inner_acc, inner_name, metric_id)
-        end)
-      end)
-    end)
+    Sanbase.Cache.get_or_store({cache_key, 600}, &get_metric_name_to_metric_id_map/0)
   end
 
   def metric_id_to_metric_name_map() do
     cache_key = {__MODULE__, __ENV__.function} |> Sanbase.Cache.hash()
+    Sanbase.Cache.get_or_store({cache_key, 600}, &get_metric_id_to_metric_name_map/0)
+  end
 
-    Sanbase.Cache.get_or_store({cache_key, 600}, fn ->
-      case metric_name_to_metric_id_map() do
-        {:ok, data} ->
-          map =
-            data
-            |> Enum.reduce(%{}, fn {name, id}, acc ->
-              Map.update(acc, id, [name], fn list -> [name | list] end)
-            end)
+  # Private functions
 
-          {:ok, map}
+  defp get_metric_name_to_metric_id_map() do
+    query = "SELECT toUInt32(metric_id), name FROM metric_metadata"
+    args = []
 
-        {:error, error} ->
-          {:error, error}
-      end
+    ClickhouseRepo.query_reduce(query, args, %{}, fn [metric_id, name], acc ->
+      names = Map.get(@original_name_to_metric_name, name, [name])
+
+      names
+      |> Enum.reduce(acc, fn inner_name, inner_acc ->
+        Map.put(inner_acc, inner_name, metric_id)
+      end)
+    end)
+  end
+
+  defp get_metric_id_to_metric_name_map() do
+    metric_name_to_metric_id_map()
+    |> maybe_apply_function(fn data ->
+      data
+      |> Enum.reduce(%{}, fn {name, id}, acc ->
+        Map.update(acc, id, [name], fn list -> [name | list] end)
+      end)
     end)
   end
 end

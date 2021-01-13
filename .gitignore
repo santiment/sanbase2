@@ -10,6 +10,15 @@
 # Generated on crash by the VM
 erl_crash.dump
 
+# Where 3rd-party dependencies like ExDoc output generated docs.
+/doc/
+
+# Ignore .fetch files in case you like to edit your project deps locally.
+/.fetch
+
+# Ignore package tarball (built via "mix hex.build").
+sanbase2-*.tar
+
 # Files matching config/*.secret.exs pattern contain sensitive
 # data and you should not commit them into version control.
 #

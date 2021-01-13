@@ -88,6 +88,8 @@ defmodule Sanbase.Model.Project.List do
   def erc20_projects_count(opts \\ [])
 
   def erc20_projects_count(opts) do
+    opts = Keyword.put(opts, :preload?, false)
+
     erc20_projects_query(opts)
     |> select([p], fragment("count(*)"))
     |> Repo.one()
@@ -131,7 +133,11 @@ defmodule Sanbase.Model.Project.List do
 
   See the "Shared options" section at the module documentation for more options.
   """
+  def currency_projects_count(opts \\ [])
+
   def currency_projects_count(opts) do
+    opts = Keyword.put(opts, :preload?, false)
+
     currency_projects_query(opts)
     |> select([p], fragment("count(*)"))
     |> Repo.one()
@@ -168,7 +174,11 @@ defmodule Sanbase.Model.Project.List do
     |> Enum.filter(fn project -> source in Enum.map(project.source_slug_mappings, & &1.source) end)
   end
 
+  def projects_count(opts \\ [])
+
   def projects_count(opts) do
+    opts = Keyword.put(opts, :preload?, false)
+
     projects_query(opts)
     |> select([p], fragment("count(*)"))
     |> Repo.one()

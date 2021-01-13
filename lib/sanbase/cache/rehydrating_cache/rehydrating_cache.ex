@@ -18,7 +18,7 @@ defmodule Sanbase.Cache.RehydratingCache do
   require Logger
 
   @name :__rehydrating_cache__
-  @store_name Store.name(@name)
+  @store_name Store.name()
 
   def name(), do: @name
 

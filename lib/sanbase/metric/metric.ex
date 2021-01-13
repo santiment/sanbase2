@@ -16,7 +16,29 @@ defmodule Sanbase.Metric do
   import Sanbase.Metric.MetricReplace,
     only: [maybe_replace_metric: 2, maybe_replace_metrics: 2]
 
+  # Use only the types from the behaviour module
+  alias Sanbase.Metric.Behaviour, as: Type
+
   @compile inline: [execute_if_aggregation_valid: 3, maybe_change_module: 3]
+
+  @type datetime :: DateTime.t()
+  @type metric :: Type.metric()
+  @type selector :: Type.metric()
+  @type interval :: Type.interval()
+  @type operation :: Type.operation()
+  @type threshold :: Type.threshold()
+  @type direction :: Type.direction()
+  @type opts :: Type.opts()
+
+  @typedoc """
+  This type is used when the available metrics from many modules are gathered.
+  It might be the case that one of these modlues cannot fetch some data (the
+  service it uses is down). In this case, instead of breaking everything and
+  returning error, return a :nocache result. This will make the API not cache
+  the result and the subsequent call will try to compute the result again.
+  """
+  @type available_metrics_with_nocache_result ::
+          {:ok, list(metric)} | {:nocache, {:ok, list(metric)}}
 
   @access_map Sanbase.Metric.Helper.access_map()
   @aggregations Sanbase.Metric.Helper.aggregations()
@@ -38,6 +60,10 @@ defmodule Sanbase.Metric do
   @table_metrics_mapset Sanbase.Metric.Helper.table_metrics_mapset()
   @table_metric_to_module_map Sanbase.Metric.Helper.table_metric_to_module_map()
 
+  @doc ~s"""
+  Check if `metric` is a valid metric name.
+  """
+  @spec has_metric?(any()) :: true | {:error, String.t()}
   def has_metric?(metric) do
     case metric in @metrics_mapset do
       true -> true
@@ -45,6 +71,15 @@ defmodule Sanbase.Metric do
     end
   end
 
+  @doc ~s"""
+  Check if a metric has incomplete data.
+
+  Incomplete data applies to daily metrics, whose value for the current day
+  is updated many times throughout the day. For example, the value for Daily
+  Active Addresses at 18:00 contains only for 3/4 of the day. The value for a given
+  day becomes constant only when the next day starts.
+  """
+  @spec has_incomplete_data?(Sanbase.Metric.Behaviour.metric()) :: boolean()
   def has_incomplete_data?(metric) do
     module = Map.get(@metric_to_module_map, metric)
 
@@ -52,11 +87,16 @@ defmodule Sanbase.Metric do
   end
 
   @doc ~s"""
-  Get a given metric for an selector and time range. The metric's aggregation
+  Returns timeseries data (pairs of datetime and float value) for a given set
+  of arguments.
+
+  Get a given metric for an interval and time range. The metric's aggregation
   function can be changed by the last optional parameter. The available
   aggregations are #{inspect(@aggregations)}. If no aggregation is provided,
   a default one (based on the metric) will be used.
   """
+  @spec timeseries_data(metric, selector, datetime, datetime, interval, opts) ::
+          Type.timeseries_data_result()
   def timeseries_data(metric, selector, from, to, interval, opts \\ [])
 
   def timeseries_data(metric, selector, from, to, interval, opts) do
@@ -86,11 +126,16 @@ defmodule Sanbase.Metric do
   end
 
   @doc ~s"""
+  Returns timeseries data (pairs of datetime and float value) for every slug
+  separately.
+
   Get a given metric for an selector and time range. The metric's aggregation
   function can be changed by the last optional parameter. The available
   aggregations are #{inspect(@aggregations)}. If no aggregation is provided,
   a default one (based on the metric) will be used.
   """
+  @spec timeseries_data_per_slug(metric, selector, datetime, datetime, interval, opts) ::
+          Type.timeseries_data_per_slug_result()
   def timeseries_data_per_slug(metric, selector, from, to, interval, opts \\ [])
 
   def timeseries_data_per_slug(metric, selector, from, to, interval, opts) do
@@ -125,6 +170,8 @@ defmodule Sanbase.Metric do
   The available aggregations are #{inspect(@aggregations)}. If no aggregation is
   provided, a default one (based on the metric) will be used.
   """
+  @spec aggregated_timeseries_data(metric, selector, datetime, datetime, opts) ::
+          Type.aggregated_timeseries_data_result()
   def aggregated_timeseries_data(metric, selector, from, to, opts \\ [])
 
   def aggregated_timeseries_data(metric, selector, from, to, opts) do
@@ -162,6 +209,8 @@ defmodule Sanbase.Metric do
 
   If no aggregation is provided, a default one (based on the metric) will be used.
   """
+  @spec slugs_by_filter(metric, datetime, datetime, operation, threshold, opts) ::
+          Type.slugs_by_filter_result()
   def slugs_by_filter(metric, from, to, operation, threshold, opts \\ [])
 
   def slugs_by_filter(metric, from, to, operation, threshold, opts) do
@@ -196,6 +245,8 @@ defmodule Sanbase.Metric do
   argument with two values - :asc and :desc
   If no aggregation is provided, a default one (based on the metric) will be used.
   """
+  @spec slugs_order(metric, datetime, datetime, direction, opts) ::
+          Type.slugs_order_result()
   def slugs_order(metric, from, to, direction, opts \\ [])
 
   def slugs_order(metric, from, to, direction, opts) do
@@ -223,6 +274,8 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Get a histogram for a given metric
   """
+  @spec histogram_data(metric, selector, datetime, datetime, interval, non_neg_integer()) ::
+          Type.histogram_data_result()
   def histogram_data(metric, selector, from, to, interval, limit \\ 100)
 
   def histogram_data(metric, selector, from, to, interval, limit) do
@@ -247,9 +300,12 @@ defmodule Sanbase.Metric do
   end
 
   @doc ~s"""
-  Get a table for a given metric
-  """
+  Get a table for a given metric.
 
+  Take a look at the `TableMetric` modules.
+  """
+  @spec table_data(metric, selector, datetime, datetime, opts()) ::
+          Type.table_data_result()
   def table_data(metric, selector, from, to, opts \\ [])
 
   def table_data(metric, selector, from, to, opts) do
@@ -280,6 +336,7 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Get the human readable name representation of a given metric
   """
+  @spec human_readable_name(metric) :: Type.human_readable_name_result()
   def human_readable_name(metric) do
     case Map.get(@metric_to_module_map, metric) do
       nil ->
@@ -295,7 +352,7 @@ defmodule Sanbase.Metric do
   computed complexity. Clickhouse is faster compared to Elasticsearch for fetching
   timeseries data, so it has a smaller weight
   """
-
+  @spec complexity_weight(metric) :: Type.complexity_weight()
   def complexity_weight(metric) do
     case Map.get(@metric_to_module_map, metric) do
       nil ->
@@ -314,6 +371,7 @@ defmodule Sanbase.Metric do
   - The available aggregations for the metric
   - The available slugs for the metric
   """
+  @spec metadata(metric) :: Type.metadata_result()
   def metadata(metric) do
     case Map.get(@metric_to_module_map, metric) do
       nil ->
@@ -327,6 +385,7 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Get the first datetime for which a given metric is available for a given slug
   """
+  @spec first_datetime(metric, selector) :: Type.first_datetime_result()
   def first_datetime(metric, selector) do
     metric = maybe_replace_metric(metric, selector)
 
@@ -344,6 +403,7 @@ defmodule Sanbase.Metric do
   Get the datetime for which the data point with latest dt for the given metric/slug
   pair is computed.
   """
+  @spec last_datetime_computed_at(metric, selector) :: Type.last_datetime_computed_at_result()
   def last_datetime_computed_at(metric, selector) do
     metric = maybe_replace_metric(metric, selector)
 
@@ -360,6 +420,7 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Get all available slugs for a given metric
   """
+  @spec available_slugs(metric) :: Type.available_slugs_result()
   def available_slugs(metric) do
     case Map.get(@metric_to_module_map, metric) do
       nil ->
@@ -373,6 +434,7 @@ defmodule Sanbase.Metric do
   @doc ~s"""
   Get all available aggregations
   """
+  @spec available_aggregations :: list(Type.aggregation())
   def available_aggregations(), do: @aggregations
 
   @doc ~s"""
@@ -382,6 +444,7 @@ defmodule Sanbase.Metric do
   - min_interval_less_or_equal - return all metrics with min interval that is
   less or equal than a given amount (expessed as a string - 5m, 1h, etc.)
   """
+  @spec available_metrics(opts) :: list(metric)
   def available_metrics(opts \\ [])
 
   def available_metrics(opts) do
@@ -390,22 +453,14 @@ defmodule Sanbase.Metric do
         @metrics
 
       interval ->
-        interval_to_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
-
-        @metrics
-        |> Enum.filter(fn metric ->
-          {:ok, %{min_interval: min_interval}} = metadata(metric)
-
-          case Sanbase.DateTimeUtils.str_to_sec(min_interval) do
-            seconds when seconds <= interval_to_sec -> true
-            _ -> false
-          end
-        end)
+        filter_metrics_by_min_interval(@metrics, interval)
     end
   end
 
-  @spec available_metrics_for_slug(any) ::
-          {:ok, list(String.t())} | {:nocache, {:ok, list(String.t())}}
+  @doc ~s"""
+  Get the available metrics for a given slug.
+  """
+  @spec available_metrics_for_slug(any) :: available_metrics_with_nocache_result
   def available_metrics_for_slug(%{slug: slug} = selector) do
     parallel_opts = [ordered: false, max_concurrency: 8, timeout: 60_000]
 
@@ -437,6 +492,11 @@ defmodule Sanbase.Metric do
     end
   end
 
+  @doc ~s"""
+  Get the available timeseries metrics for a given slug.
+  The result is a subset of available_metrics_for_slug/1
+  """
+  @spec available_timeseries_metrics_for_slug(any) :: available_metrics_with_nocache_result
   def available_timeseries_metrics_for_slug(selector) do
     available_metrics =
       Sanbase.Cache.get_or_store(
@@ -453,6 +513,11 @@ defmodule Sanbase.Metric do
     end
   end
 
+  @doc ~s"""
+  Get the available histogram metrics for a given slug.
+  The result is a subset of available_metrics_for_slug/1
+  """
+  @spec available_histogram_metrics_for_slug(any) :: available_metrics_with_nocache_result
   def available_histogram_metrics_for_slug(selector) do
     available_metrics =
       Sanbase.Cache.get_or_store(
@@ -469,6 +534,11 @@ defmodule Sanbase.Metric do
     end
   end
 
+  @doc ~s"""
+  Get the available table metrics for a given slug.
+  The result is a subset of available_metrics_for_slug/1
+  """
+  @spec available_table_metrics_for_slug(any) :: available_metrics_with_nocache_result
   def available_table_metrics_for_slug(selector) do
     available_metrics =
       Sanbase.Cache.get_or_store(
@@ -485,77 +555,60 @@ defmodule Sanbase.Metric do
     end
   end
 
+  @doc ~s"""
+  Get all available timeseries metrics
+  """
+  @spec available_timeseries_metrics() :: list(metric)
   def available_timeseries_metrics(), do: @timeseries_metrics
 
+  @doc ~s"""
+  Get all available histogram metrics
+  """
+  @spec available_histogram_metrics() :: list(metric)
   def available_histogram_metrics(), do: @histogram_metrics
 
+  @doc ~s"""
+  Get all available table metrics
+  """
+  @spec available_table_metrics() :: list(metric)
   def available_table_metrics(), do: @table_metrics
 
   @doc ~s"""
   Get all slugs for which at least one of the metrics is available
   """
+  @spec available_slugs() :: Type.available_slugs_result()
   def available_slugs() do
     # Providing a 2 element tuple `{any, integer}` will use that second element
     # as TTL for the cache key
-    Sanbase.Cache.get_or_store({:metric_available_slugs_all_metrics, 1800}, fn ->
-      {slugs, errors} =
-        Enum.reduce(@metric_modules, {[], []}, fn module, {slugs_acc, errors} ->
-          case module.available_slugs() do
-            {:ok, slugs} -> {slugs ++ slugs_acc, errors}
-            {:error, error} -> {slugs_acc, [error | errors]}
-          end
-        end)
-
-      case errors do
-        [] -> {:ok, slugs |> Enum.uniq()}
-        _ -> {:error, "Cannot fetch all available slugs. Errors: #{inspect(errors)}"}
-      end
-    end)
-  end
-
-  def available_slugs_per_module() do
-    Sanbase.Cache.get_or_store({:available_slugs_per_module, 1800}, fn ->
-      {result, errors} =
-        Enum.reduce(@metric_modules, {%{}, []}, fn module, {acc, errors} ->
-          case module.available_slugs() do
-            {:ok, slugs} -> {Map.put(acc, module, slugs), errors}
-            {:error, error} -> {acc, [error | errors]}
-          end
-        end)
-
-      case errors do
-        [] -> {:ok, result}
-        _ -> {:error, "Cannot fetch all available slugs per module. Errors: #{inspect(errors)}"}
-      end
-    end)
-  end
-
-  def available_slugs_mapset() do
-    case available_slugs() do
-      {:ok, list} -> {:ok, MapSet.new(list)}
-      {:error, error} -> {:error, error}
-    end
+    Sanbase.Cache.get_or_store(
+      {:metric_available_slugs_all_metrics, 1800},
+      &get_available_slugs/0
+    )
   end
 
   @doc ~s"""
   Get all free metrics
   """
+  @spec free_metrics() :: list(metric)
   def free_metrics(), do: @free_metrics
 
   @doc ~s"""
   Get all restricted metrics
   """
+  @spec restricted_metrics() :: list(metric)
   def restricted_metrics(), do: @restricted_metrics
 
   @doc ~s"""
   Get a map where the key is a metric and the value is the access level
   """
+  @spec access_map() :: map()
   def access_map(), do: @access_map
 
   @doc ~s"""
   Get a map where the key is a metric and the value is the min plan it is
   accessible in.
   """
+  @spec min_plan_map() :: map()
   def min_plan_map(), do: @min_plan_map
 
   # Private functions
@@ -626,4 +679,33 @@ defmodule Sanbase.Metric do
   end
 
   defp maybe_change_module(module, _metric, _selector), do: module
+
+  defp filter_metrics_by_min_interval(metrics, interval) do
+    interval_to_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+
+    metrics
+    |> Enum.filter(fn metric ->
+      {:ok, %{min_interval: min_interval}} = metadata(metric)
+
+      case Sanbase.DateTimeUtils.str_to_sec(min_interval) do
+        seconds when seconds <= interval_to_sec -> true
+        _ -> false
+      end
+    end)
+  end
+
+  defp get_available_slugs() do
+    {slugs, errors} =
+      Enum.reduce(@metric_modules, {[], []}, fn module, {slugs_acc, errors} ->
+        case module.available_slugs() do
+          {:ok, slugs} -> {slugs ++ slugs_acc, errors}
+          {:error, error} -> {slugs_acc, [error | errors]}
+        end
+      end)
+
+    case errors do
+      [] -> {:ok, slugs |> Enum.uniq()}
+      _ -> {:error, "Cannot fetch all available slugs. Errors: #{inspect(errors)}"}
+    end
+  end
 end

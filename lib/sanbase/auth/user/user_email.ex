@@ -74,6 +74,14 @@ defmodule Sanbase.Auth.User.Email do
     |> Repo.update()
   end
 
+  @doc ~s"""
+  Validate an email login token.
+
+  A token is valid if it:
+    - Matches the one stored in the users table for the user
+    - Has not been used
+    - Has been issues less than #{@token_valid_window_minutes} minutes ago
+  """
   def email_token_valid?(user, token) do
     naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 

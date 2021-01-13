@@ -13,7 +13,7 @@ defmodule Sanbase.Clickhouse.Research.Uniswap do
     ClickhouseRepo.query_transform(query, args, fn [k, v] -> {k, v} end)
     |> case do
       {:ok, pairs_list} ->
-        {:ok, Map.new(pairs_list, fn {k, v} -> {String.to_atom(k), v} end)}
+        {:ok, Map.new(pairs_list, fn {k, v} -> {String.to_existing_atom(k), v} end)}
 
       {:error, reason} ->
         {:error, reason}
@@ -26,7 +26,7 @@ defmodule Sanbase.Clickhouse.Research.Uniswap do
     ClickhouseRepo.query_transform(query, args, fn [k, v] -> {k, v} end)
     |> case do
       {:ok, pairs_list} ->
-        {:ok, Map.new(pairs_list, fn {k, v} -> {String.to_atom(k), v} end)}
+        {:ok, Map.new(pairs_list, fn {k, v} -> {String.to_existing_atom(k), v} end)}
 
       {:error, reason} ->
         {:error, reason}

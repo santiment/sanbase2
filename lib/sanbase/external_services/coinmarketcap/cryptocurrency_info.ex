@@ -91,7 +91,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
   defp parse_json(json) do
     json
     |> Jason.decode!()
-    |> Map.get("data")
+    |> Map.fetch!("data")
     |> Enum.map(fn {_, %{"slug" => slug, "logo" => logo}} ->
       %__MODULE__{slug: slug, logo: logo}
     end)

@@ -15,11 +15,16 @@ Some tips to find issues while developing can be found [here](docs/development-t
 - Elixir 1.10
 - Erlang/OTP 22
 
-## Why is it open source?
+> Note: Erlang/OTP 23 and 24 remove some APIs and modules that are used in some
+> core dependencies. As part of our work we submit PRs to these libraries to improve
+> the integration with the latest Erlang versions. When possible, we'll migrate to these
+> newer versions.
+
+## Why Open Source?
 
 - We like open source and all of the dependencies used in this project are open source, too.
-- There are not that many production open source Elixir projects out there. If this repository can help someone with pieces of code, insipration or ideas, we want to help them.
-- Santiment is a data-oriented company. This project cannot be run in isolation without the timeseries and relational databases with data. Open sourcing strikes a balance between helping the Elixir community and not revealing all of Santiment's secrets how we do things.
+- There are not that many production open source Elixir projects out there. If this repository can help someone with pieces of code, insipration or ideas, we will be happy.
+- Santiment is a data-oriented company. This project cannot be run in isolation without the timeseries and relational databases with data. Open sourcing strikes a balance between helping the Elixir community and not revealing all of Santiment's secrets.
 
 ## Where is this used?
 

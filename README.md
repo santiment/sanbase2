@@ -8,7 +8,7 @@ The project structure can be found [here](docs/project-structure.md).
 
 Guide for adding metrics can be found [here](docs/adding-metrics-guide.md)
 
-Some tips to find issues while developing can be found [here](docs/devvelopment-tips.md)
+Some tips to find issues while developing can be found [here](docs/development-tips.md)
 
 ## Dependencies
 

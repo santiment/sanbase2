@@ -11,6 +11,12 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
     p2 = insert(:random_erc20_project)
 
     eth_project = insert(:project, %{name: "Ethereum", slug: "ethereum", ticker: "ETH"})
+    btc_project = insert(:project, %{name: "Bitcoin", slug: "bitcoin", ticker: "BTC"})
+
+    insert(:latest_cmc_data, %{coinmarketcap_id: p1.slug, price_usd: 2})
+    insert(:latest_cmc_data, %{coinmarketcap_id: p2.slug, price_usd: 2})
+    insert(:latest_cmc_data, %{coinmarketcap_id: eth_project.slug, price_usd: 2})
+    insert(:latest_cmc_data, %{coinmarketcap_id: btc_project.slug, price_usd: 2})
 
     {:ok, [p1: p1, p2: p2, eth_project: eth_project]}
   end
@@ -42,8 +48,12 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
       assert result == %{
                "data" => %{
                  "assetsHeldByAddress" => [
-                   %{"balance" => 1.0e3, "slug" => context.eth_project.slug},
-                   %{"balance" => 200.0, "slug" => context.p2.slug}
+                   %{
+                     "balance" => 1.0e3,
+                     "slug" => context.eth_project.slug,
+                     "balanceUsd" => 2000.0
+                   },
+                   %{"balance" => 200.0, "slug" => context.p2.slug, "balanceUsd" => 400.0}
                  ]
                }
              }
@@ -69,7 +79,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
       assert result == %{
                "data" => %{
                  "assetsHeldByAddress" => [
-                   %{"balance" => 200.0, "slug" => "bitcoin"}
+                   %{"balance" => 200.0, "slug" => "bitcoin", "balanceUsd" => 400.0}
                  ]
                }
              }
@@ -161,6 +171,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
         ){
             slug
             balance
+            balanceUsd
         }
       }
     """

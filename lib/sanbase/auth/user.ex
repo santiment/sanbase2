@@ -358,6 +358,15 @@ defmodule Sanbase.Auth.User do
     end)
   end
 
+  def fetch_all_users_with_eth_account() do
+    from(
+      u in __MODULE__,
+      join: ea in assoc(u, :eth_accounts),
+      preload: :eth_accounts
+    )
+    |> Repo.all()
+  end
+
   defp can_remove_eth_account?(%User{id: user_id, email: email}, address) do
     count_other_accounts =
       from(ea in EthAccount,

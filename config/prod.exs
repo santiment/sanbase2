@@ -51,7 +51,7 @@ config :sanbase, SanbaseWeb.Plug.SessionPlug,
   domain: {:system, "SANTIMENT_ROOT_DOMAIN", ".santiment.net"}
 
 config :ethereumex,
-  url: "${PARITY_WITH_CREDENTIALS_URL}"
+  url: "${PARITY_URL}"
 
 if File.exists?("config/prod.secret.exs") do
   import_config "prod.secret.exs"

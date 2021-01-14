@@ -68,14 +68,21 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   def assets_held_by_address(%{infrastructure: "ETH", address: address}) do
     async with {:ok, erc20_assets} <- Erc20Balance.assets_held_by_address(address),
                {:ok, ethereum} <- EthBalance.assets_held_by_address(address) do
-      {:ok, ethereum ++ erc20_assets}
+      assets = add_usd_balance(ethereum ++ erc20_assets)
+      {:ok, assets}
     end
   end
 
   def assets_held_by_address(%{infrastructure: infr, address: address}) do
     case Map.get(@infrastructure_to_module, infr) do
-      nil -> {:error, "Infrastructure #{infr} is not supported."}
-      module -> module.assets_held_by_address(address)
+      nil ->
+        {:error, "Infrastructure #{infr} is not supported."}
+
+      module ->
+        case module.assets_held_by_address(address) do
+          {:ok, assets} -> {:ok, add_usd_balance(assets)}
+          error -> error
+        end
     end
   end
 
@@ -194,5 +201,27 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
   def selector_to_args(selector) do
     {:error, "Invalid historical balance selector: #{inspect(selector)}"}
+  end
+
+  def add_usd_balance([]), do: []
+
+  def add_usd_balance(assets_held_by_address) do
+    slugs = assets_held_by_address |> Enum.map(& &1.slug)
+
+    slug_usd_price_map =
+      slugs
+      |> Project.by_slug()
+      |> Enum.into(%{}, fn project ->
+        if project.latest_coinmarketcap_data do
+          {project.slug, Sanbase.Math.to_float(project.latest_coinmarketcap_data.price_usd, 0)}
+        else
+          {project.slug, 0.0}
+        end
+      end)
+
+    assets_held_by_address
+    |> Enum.map(fn %{slug: slug, balance: balance} = data ->
+      Map.put(data, :balance_usd, balance * (slug_usd_price_map[slug] || 0))
+    end)
   end
 end

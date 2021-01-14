@@ -4,6 +4,8 @@ defmodule SanbaseWeb.Graphql.HistoricalBalanceTypes do
   object :slug_balance do
     field(:slug, non_null(:string))
     field(:balance, non_null(:float))
+    # TODO - should be resolved via Dataloader only when it is requested.
+    field(:balance_usd, non_null(:float))
   end
 
   object :historical_balance do

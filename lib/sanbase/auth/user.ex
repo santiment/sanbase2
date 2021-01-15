@@ -70,6 +70,7 @@ defmodule Sanbase.Auth.User do
 
     has_one(:telegram_user_tokens, Telegram.UserToken, on_delete: :delete_all)
     has_one(:sign_up_trial, Sanbase.Billing.Subscription.SignUpTrial, on_delete: :delete_all)
+    has_one(:uniswap_staking, Sanbase.Auth.User.UniswapStaking, on_delete: :delete_all)
     has_many(:timeline_events, Sanbase.Timeline.TimelineEvent, on_delete: :delete_all)
     has_many(:eth_accounts, EthAccount, on_delete: :delete_all)
     has_many(:votes, Vote, on_delete: :delete_all)
@@ -167,6 +168,10 @@ defmodule Sanbase.Auth.User do
   defdelegate update_san_balance_changeset(user), to: __MODULE__.SanBalance
   defdelegate san_balance(user), to: __MODULE__.SanBalance
   defdelegate san_balance!(user), to: __MODULE__.SanBalance
+
+  # Uniswap San Staking functions
+  defdelegate update_all_san_staked_users(), to: __MODULE__.UniswapStaking
+  defdelegate fetch_san_staked_user(user), to: __MODULE__.UniswapStaking
 
   def by_id(user_id) when is_integer(user_id) do
     case Sanbase.Repo.get_by(User, id: user_id) do
@@ -361,8 +366,9 @@ defmodule Sanbase.Auth.User do
   def fetch_all_users_with_eth_account() do
     from(
       u in __MODULE__,
-      join: ea in assoc(u, :eth_accounts),
-      preload: :eth_accounts
+      inner_join: ea in assoc(u, :eth_accounts),
+      preload: :eth_accounts,
+      distinct: true
     )
     |> Repo.all()
   end

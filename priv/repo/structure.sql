@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 13.0
--- Dumped by pg_dump version 13.0
+-- Dumped from database version 12.3
+-- Dumped by pg_dump version 12.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -82,6 +82,8 @@ CREATE TYPE public.watchlist_type AS ENUM (
 
 
 SET default_tablespace = '';
+
+SET default_table_access_method = heap;
 
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
@@ -2554,6 +2556,38 @@ ALTER SEQUENCE public.user_triggers_tags_id_seq OWNED BY public.user_triggers_ta
 
 
 --
+-- Name: user_uniswap_staking; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_uniswap_staking (
+    id bigint NOT NULL,
+    san_staked double precision,
+    user_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: user_uniswap_staking_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_uniswap_staking_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_uniswap_staking_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_uniswap_staking_id_seq OWNED BY public.user_uniswap_staking.id;
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3147,6 +3181,13 @@ ALTER TABLE ONLY public.user_triggers ALTER COLUMN id SET DEFAULT nextval('publi
 --
 
 ALTER TABLE ONLY public.user_triggers_tags ALTER COLUMN id SET DEFAULT nextval('public.user_triggers_tags_id_seq'::regclass);
+
+
+--
+-- Name: user_uniswap_staking id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_uniswap_staking ALTER COLUMN id SET DEFAULT nextval('public.user_uniswap_staking_id_seq'::regclass);
 
 
 --
@@ -3772,6 +3813,14 @@ ALTER TABLE ONLY public.user_triggers_tags
 
 
 --
+-- Name: user_uniswap_staking user_uniswap_staking_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_uniswap_staking
+    ADD CONSTRAINT user_uniswap_staking_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4374,6 +4423,13 @@ CREATE UNIQUE INDEX user_triggers_tags_user_trigger_id_tag_id_index ON public.us
 --
 
 CREATE INDEX user_triggers_user_id_index ON public.user_triggers USING btree (user_id);
+
+
+--
+-- Name: user_uniswap_staking_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX user_uniswap_staking_user_id_index ON public.user_uniswap_staking USING btree (user_id);
 
 
 --
@@ -5138,6 +5194,14 @@ ALTER TABLE ONLY public.user_triggers
 
 
 --
+-- Name: user_uniswap_staking user_uniswap_staking_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_uniswap_staking
+    ADD CONSTRAINT user_uniswap_staking_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: votes votes_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5467,3 +5531,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20201118145315);
 INSERT INTO public."schema_migrations" (version) VALUES (20201119085940);
 INSERT INTO public."schema_migrations" (version) VALUES (20201201102246);
 INSERT INTO public."schema_migrations" (version) VALUES (20201202125900);
+INSERT INTO public."schema_migrations" (version) VALUES (20210115081700);

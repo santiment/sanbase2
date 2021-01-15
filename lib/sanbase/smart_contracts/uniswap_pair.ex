@@ -1,9 +1,10 @@
 defmodule Sanbase.SmartContracts.UniswapPair do
-  import Sanbase.SmartContracts.Utils, only: [format_address: 1]
+  import Sanbase.SmartContracts.Utils, only: [format_address: 1, format_number: 2]
 
   @bac_san_pair_contract "0x0D88ba937A8492AE235519334Da954EbA73625dF"
   @san_eth_pair_contract "0x430ba84fadf427ee5e8d4d78538b64c1e7456020"
   @all_pair_contracts [@bac_san_pair_contract, @san_eth_pair_contract]
+  @decimals 18
 
   def bac_san_pair_contract, do: @bac_san_pair_contract
   def san_eth_pair_contract, do: @san_eth_pair_contract
@@ -25,23 +26,26 @@ defmodule Sanbase.SmartContracts.UniswapPair do
   end
 
   def reserves(contract) do
-    call_contract(
-      contract,
-      "getReserves()",
-      [],
-      [{:uint, 112}, {:uint, 112}, {:uint, 32}]
-    )
+    [token0_reserves, token1_reserves, _] =
+      call_contract(
+        contract,
+        "getReserves()",
+        [],
+        [{:uint, 112}, {:uint, 112}, {:uint, 32}]
+      )
+
+    [format_number(token0_reserves, @decimals), format_number(token1_reserves, @decimals)]
   end
 
   def total_supply(contract) do
     [total_supply] = call_contract(contract, "totalSupply()", [], [{:uint, 256}])
-    total_supply
+    format_number(total_supply, @decimals)
   end
 
   def balance_of(address, contract) do
     address = format_address(address)
     [balance] = call_contract(contract, "balanceOf(address)", [address], [{:uint, 256}])
-    balance
+    format_number(balance, @decimals)
   end
 
   def get_san_position(contract) do

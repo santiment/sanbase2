@@ -20,6 +20,11 @@ defmodule Sanbase.Auth.User.UniswapStaking do
     |> validate_required([:san_staked])
   end
 
+  @doc """
+  Fetch all users with conncted wallets, fetch their total staked
+  SAN tokens and update.
+  """
+  @spec update_all_san_staked_users() :: {integer(), nil | [term()]}
   def update_all_san_staked_users() do
     naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
@@ -43,35 +48,19 @@ defmodule Sanbase.Auth.User.UniswapStaking do
     )
   end
 
+  @doc """
+  Fetch the total SAN tokens staked as liquidity provider in Uniswap
+  pair contracts that we follow for all connected user wallets.
+  """
+  @spec fetch_san_staked_user(%User{}) :: float()
   def fetch_san_staked_user(user) do
     user = user |> Repo.preload(:eth_accounts)
 
     Enum.reduce(user.eth_accounts, 0.0, fn %EthAccount{address: address}, acc ->
       UniswapPair.all_pair_contracts()
-      |> Enum.map(&san_staked_address(address, &1))
+      |> Enum.map(&EthAccount.san_staked_address(address, &1))
       |> List.insert_at(-1, acc)
       |> Enum.sum()
     end)
-  end
-
-  def san_staked_address(address, contract) do
-    address_staked_tokens = UniswapPair.balance_of(address, contract)
-    calculate_san_staked(contract, address_staked_tokens)
-  end
-
-  # Helpers
-
-  defp calculate_san_staked(_, address_staked_tokens) when address_staked_tokens == 0.0 do
-    0.0
-  end
-
-  defp calculate_san_staked(contract, address_staked_tokens) do
-    san_position_in_pair = UniswapPair.get_san_position(contract)
-
-    total_staked_tokens = UniswapPair.total_supply(contract)
-    address_share = address_staked_tokens / total_staked_tokens
-
-    total_san_staked = UniswapPair.reserves(contract) |> Enum.at(san_position_in_pair)
-    address_share * total_san_staked
   end
 end

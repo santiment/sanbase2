@@ -131,7 +131,9 @@ defmodule Sanbase.Mixfile do
       {:ueberauth_google, "~> 0.10"},
       {:ueberauth_twitter, github: "santiment/ueberauth_twitter"},
       {:uuid, "~> 1.1"},
-      {:vex, "~> 0.8.0", override: true}
+      {:vex, "~> 0.8.0", override: true},
+      {:ethereumex, "~> 0.7.0"},
+      {:ex_abi, "~> 0.5.2"}
     ]
   end
 

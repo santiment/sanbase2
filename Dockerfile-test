@@ -6,7 +6,9 @@ RUN apk add --no-cache make \
                        postgresql-client \
                        imagemagick \
 											 openssl \
-											 wget
+											 wget \
+                       rust \
+                       cargo
 
 ENV MIX_ENV test
 

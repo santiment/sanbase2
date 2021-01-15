@@ -9,7 +9,9 @@ RUN apk add --no-cache make \
   nodejs \
   nodejs-npm \
   openssl \
-  wget
+  wget \
+  rust \
+  cargo
 
 RUN mix local.hex --force
 RUN mix local.rebar --force

@@ -9,7 +9,9 @@ RUN apk add --no-cache make \
                        inotify-tools \
                        imagemagick \
                        openssl \
-                       wget
+                       wget \
+                       rust \
+                       cargo
 
 RUN mix local.hex --force
 RUN mix local.rebar --force

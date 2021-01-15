@@ -96,6 +96,9 @@ config :waffle,
   # Note: without using storage_dir_prefix: "/", a local "tmp/..." dir is used instead of "/tmp/..."
   storage_dir_prefix: "/"
 
+config :ethereumex,
+  url: "http://parity.stage.san:30954"
+
 if File.exists?("config/dev.secret.exs") do
   import_config "dev.secret.exs"
 end

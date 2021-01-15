@@ -1,7 +1,6 @@
 defmodule Sanbase.Signal.TriggerPayloadTest do
   use Sanbase.DataCase, async: false
 
-  import Mock
   import Sanbase.Factory
   import Sanbase.TestHelpers
 
@@ -29,159 +28,104 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
   test "human readable numbers between 1000 and 1,000,000", context do
     %{user: user, project: project, datetimes: datetimes} = context
 
-    daily_active_addresses =
-      Enum.zip(datetimes, [100, 120, 100, 80, 20, 10, 10_456])
-      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
+    data = gen_timeseries_data(datetimes, [100, 120, 100, 80, 20, 10, 10_456])
 
-    trigger_settings = %{
-      type: "metric_signal",
-      metric: "active_addresses_24h",
-      target: %{slug: project.slug},
-      channel: ["telegram", "email"],
-      time_window: "1d",
-      operation: %{above: 10_000}
-    }
-
-    {:ok, _trigger} =
-      UserTrigger.create_user_trigger(user, %{
-        title: "Generic title",
-        is_public: true,
-        cooldown: "12h",
-        settings: trigger_settings
-      })
+    {:ok, _trigger} = create_trigger(user, project.slug)
 
     self_pid = self()
 
-    Sanbase.Mock.prepare_mock2(&MetricTriggerSettings.get_data/1, [
-      {project.slug, daily_active_addresses}
-    ])
+    Sanbase.Mock.prepare_mock2(&MetricTriggerSettings.get_data/1, [{project.slug, data}])
     |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
       send(self_pid, {:telegram_to_self, text})
       :ok
     end)
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.MandrillApi.send/3, {:ok, %{"status" => "sent"}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       Scheduler.run_signal(MetricTriggerSettings)
 
       assert_receive({:telegram_to_self, message}, 1000)
       assert message =~ "10,456.00"
-      assert_called(Sanbase.MandrillApi.send("signals", "test@example.com", :_))
     end)
   end
 
   test "human readable numbers above 1,000,000", context do
     %{user: user, project: project, datetimes: datetimes} = context
 
-    daily_active_addresses =
-      Enum.zip(datetimes, [100, 120, 100, 80, 20, 10, 9_231_100_456])
-      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
+    data = gen_timeseries_data(datetimes, [100, 120, 100, 80, 20, 10, 9_231_100_456])
 
-    trigger_settings = %{
-      type: "metric_signal",
-      metric: "active_addresses_24h",
-      target: %{slug: project.slug},
-      channel: ["telegram", "email"],
-      time_window: "1d",
-      operation: %{above: 10_000}
-    }
-
-    {:ok, _trigger} =
-      UserTrigger.create_user_trigger(user, %{
-        title: "Generic title",
-        is_public: true,
-        cooldown: "12h",
-        settings: trigger_settings
-      })
+    {:ok, _trigger} = create_trigger(user, project.slug)
 
     self_pid = self()
 
-    Sanbase.Mock.prepare_mock2(&MetricTriggerSettings.get_data/1, [
-      {project.slug, daily_active_addresses}
-    ])
+    Sanbase.Mock.prepare_mock2(&MetricTriggerSettings.get_data/1, [{project.slug, data}])
     |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
       send(self_pid, {:telegram_to_self, text})
       :ok
     end)
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.MandrillApi.send/3, {:ok, %{"status" => "sent"}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       Scheduler.run_signal(MetricTriggerSettings)
 
       assert_receive({:telegram_to_self, message}, 1000)
       assert message =~ "9.23 Billion"
-      assert_called(Sanbase.MandrillApi.send("signals", "test@example.com", :_))
     end)
   end
 
   test "payload is extended", context do
     %{user: user, project: project, datetimes: datetimes} = context
 
-    daily_active_addresses =
-      Enum.zip(datetimes, [100, 120, 100, 80, 20, 10, 5])
-      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
+    data = gen_timeseries_data(datetimes, [100, 120, 100, 80, 20, 10, 5])
 
-    trigger_settings = %{
-      type: "metric_signal",
-      metric: "active_addresses_24h",
-      target: %{slug: project.slug},
-      channel: ["telegram", "email"],
-      time_window: "1d",
-      operation: %{above: 5}
-    }
-
-    {:ok, trigger} =
-      UserTrigger.create_user_trigger(user, %{
-        title: "Generic title",
-        is_public: true,
-        cooldown: "12h",
-        settings: trigger_settings
-      })
+    {:ok, trigger} = create_trigger(user, project.slug)
 
     self_pid = self()
 
-    Sanbase.Mock.prepare_mock2(&MetricTriggerSettings.get_data/1, [
-      {project.slug, daily_active_addresses}
-    ])
+    Sanbase.Mock.prepare_mock2(&MetricTriggerSettings.get_data/1, [{project.slug, data}])
     |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
       send(self_pid, {:telegram_to_self, text})
       :ok
     end)
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.MandrillApi.send/3, {:ok, %{"status" => "sent"}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       Scheduler.run_signal(MetricTriggerSettings)
 
       assert_receive({:telegram_to_self, message}, 1000)
       assert message =~ SanbaseWeb.Endpoint.show_signal_url(trigger.id)
-      assert_called(Sanbase.MandrillApi.send("signals", "test@example.com", :_))
     end)
   end
 
+  test "metric payload details", context do
+    %{user: user, project: project, datetimes: datetimes} = context
+
+    data = gen_timeseries_data(datetimes, [100, 120, 100, 80, 20, 10, 5])
+
+    {:ok, _trigger} =
+      create_trigger(user, project.slug, metric: "active_addresses_24h", time_window: "2d")
+
+    self_pid = self()
+
+    Sanbase.Mock.prepare_mock2(&MetricTriggerSettings.get_data/1, [{project.slug, data}])
+    |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
+      send(self_pid, {:telegram_to_self, text})
+      :ok
+    end)
+    |> Sanbase.Mock.prepare_mock2(&DateTime.utc_now/0, ~U[2021-01-10 15:00:00Z])
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      Scheduler.run_signal(MetricTriggerSettings)
+
+      assert_receive({:telegram_to_self, message}, 1000)
+
+      assert message =~
+               "Generated by the value of the metric at 10 Jan 2021 15:00 UTC"
+    end)
+  end
+
+  # TODO: Move to a `trigger_sending_test.exs`
   test "send to a webhook", context do
     %{user: user, project: project, datetimes: datetimes} = context
 
-    daily_active_addresses =
-      Enum.zip(datetimes, [100, 120, 100, 80, 20, 10, 5])
-      |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
+    data = gen_timeseries_data(datetimes, [100, 120, 100, 80, 20, 10, 15])
 
-    trigger_settings = %{
-      type: "metric_signal",
-      metric: "active_addresses_24h",
-      target: %{slug: project.slug},
-      channel: [%{"webhook" => "url"}],
-      time_window: "1d",
-      operation: %{above: 5}
-    }
+    {:ok, trigger} = create_trigger(user, project.slug, channel: [%{"webhook" => "url"}])
 
-    {:ok, trigger} =
-      UserTrigger.create_user_trigger(user, %{
-        title: "Generic title",
-        is_public: true,
-        cooldown: "12h",
-        settings: trigger_settings
-      })
-
-    Sanbase.Mock.prepare_mock2(&MetricTriggerSettings.get_data/1, [
-      {project.slug, daily_active_addresses}
-    ])
+    Sanbase.Mock.prepare_mock2(&MetricTriggerSettings.get_data/1, [{project.slug, data}])
     |> Sanbase.Mock.prepare_mock2(
       &HTTPoison.post/2,
       {:ok, %HTTPoison.Response{status_code: 200}}
@@ -201,5 +145,35 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
       # Last triggered is rounded to minutes
       assert Sanbase.TestUtils.datetime_close_to(Timex.now(), last_triggered_dt, 60, :seconds)
     end)
+  end
+
+  # Private functions
+
+  defp gen_timeseries_data(datetimes, data) do
+    Enum.zip(datetimes, data)
+    |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
+  end
+
+  defp create_trigger(user, slug, opts \\ []) do
+    metric = Keyword.get(opts, :metric, "active_addresses_24h")
+    time_window = Keyword.get(opts, :time_window, "1d")
+    channel = Keyword.get(opts, :channel, ["telegram"])
+
+    trigger_settings = %{
+      type: "metric_signal",
+      metric: metric,
+      target: %{slug: slug},
+      channel: channel,
+      time_window: time_window,
+      operation: %{above: 5}
+    }
+
+    {:ok, _trigger} =
+      UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
+        is_public: true,
+        cooldown: "12h",
+        settings: trigger_settings
+      })
   end
 end

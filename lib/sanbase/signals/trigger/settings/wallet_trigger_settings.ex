@@ -184,8 +184,7 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
       {operation_template, operation_kv} =
         OperationText.to_template_kv(values, settings.operation)
 
-      {curr_value_template, curr_value_kv} =
-        OperationText.current_value(values, settings.operation)
+      {curr_value_template, curr_value_kv} = OperationText.current_value(values)
 
       asset_target_blockchain_kv = asset_target_blockchain_kv(settings.selector)
 
@@ -215,8 +214,7 @@ defmodule Sanbase.Signal.Trigger.WalletTriggerSettings do
       {operation_template, operation_kv} =
         OperationText.to_template_kv(values, settings.operation)
 
-      {curr_value_template, curr_value_kv} =
-        OperationText.current_value(values, settings.operation)
+      {curr_value_template, curr_value_kv} = OperationText.current_value(values)
 
       asset_target_blockchain_kv = asset_target_blockchain_kv(settings.selector)
 

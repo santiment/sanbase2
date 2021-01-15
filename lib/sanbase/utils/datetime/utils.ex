@@ -1,4 +1,12 @@
 defmodule Sanbase.DateTimeUtils do
+  @doc ~s"""
+  Return a human readable representation of a datetime
+  """
+  def to_human_readable(datetime) do
+    datetime
+    |> Timex.format!("{0D} {Mshort} {YYYY} {h24}:{m} UTC")
+  end
+
   def seconds_to_human_readable(seconds) do
     seconds
     |> Timex.Duration.from_seconds()
@@ -44,6 +52,10 @@ defmodule Sanbase.DateTimeUtils do
 
   def after_interval(interval, datetime \\ DateTime.utc_now()) when is_binary(interval) do
     str_to_sec(interval) |> seconds_after(datetime)
+  end
+
+  def before_interval(interval, datetime \\ DateTime.utc_now()) when is_binary(interval) do
+    str_to_sec(interval) |> seconds_ago(datetime)
   end
 
   def seconds_after(seconds, datetime \\ DateTime.utc_now()) do

@@ -3,6 +3,12 @@ defmodule Sanbase.DateTimeUtilsTest do
 
   alias Sanbase.DateTimeUtils
 
+  test "to_human_readable/1" do
+    assert DateTimeUtils.to_human_readable(~U[2021-01-12 12:45:56Z]) == "12 Jan 2021 12:45 UTC"
+    assert DateTimeUtils.to_human_readable(~U[1992-11-10 04:41:12Z]) == "10 Nov 1992 04:41 UTC"
+    assert DateTimeUtils.to_human_readable(~U[2012-12-31 22:12:12Z]) == "31 Dec 2012 22:12 UTC"
+  end
+
   test "#str_to_sec/1" do
     assert DateTimeUtils.str_to_sec("10000000000ns") == 10
     assert DateTimeUtils.str_to_sec("100s") == 100
@@ -21,8 +27,8 @@ defmodule Sanbase.DateTimeUtilsTest do
   end
 
   test "seconds after" do
-    datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
-    datetime2 = DateTime.from_naive!(~N[2017-05-13 21:45:37], "Etc/UTC")
+    datetime1 = ~U[2017-05-13 21:45:00Z]
+    datetime2 = ~U[2017-05-13 21:45:37Z]
 
     assert DateTime.compare(
              DateTimeUtils.seconds_after(37, datetime1),
@@ -31,8 +37,8 @@ defmodule Sanbase.DateTimeUtilsTest do
   end
 
   test "seconds ago" do
-    datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
-    datetime2 = DateTime.from_naive!(~N[2017-05-13 21:45:37], "Etc/UTC")
+    datetime1 = ~U[2017-05-13 21:45:00Z]
+    datetime2 = ~U[2017-05-13 21:45:37Z]
 
     assert DateTime.compare(
              DateTimeUtils.seconds_ago(37, datetime2),

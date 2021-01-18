@@ -1,27 +1,50 @@
 defmodule Sanbase.Clickhouse.Fees do
+  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
+
+  alias Sanbase.Model.Project
   alias Sanbase.ClickhouseRepo
 
   def eth_fees_distribution(from, to, limit) do
     {query, args} = eth_fees_distribution_query(from, to, limit)
 
-    ClickhouseRepo.query_transform(query, args, fn [slug_or_address, fees] ->
-      project = Sanbase.Model.Project.by_slug(slug_or_address)
+    ClickhouseRepo.query_transform(query, args, & &1)
+    |> maybe_apply_function(fn data ->
+      data = Enum.uniq_by(data, &Enum.at(&1, 0))
 
-      if project do
-        %{
-          slug: project.slug,
-          ticker: project.ticker,
-          address: nil,
-          fees: fees
-        }
-      else
-        %{
-          slug: nil,
-          ticker: nil,
-          address: slug_or_address,
-          fees: fees
-        }
-      end
+      # Get the list of projects. Returns a non-empty list when at least one of the
+      # first elements in the sublists is a slug and not an address
+      projects =
+        Enum.map(data, &Enum.at(&1, 0))
+        |> Project.List.by_field(:slug, preload?: true, preload: [:contract_addresses])
+
+      projects_map =
+        projects
+        |> Enum.flat_map(fn %Project{} = project ->
+          [{project.slug, project}] ++
+            Enum.map(project.contract_addresses, fn %{address: address} ->
+              {address |> String.downcase(), project}
+            end)
+        end)
+        |> Map.new()
+
+      # If an address points to a known address, the value will be added to the
+      # project's slug and not to the actual address. This helps grouping fees
+      # for a project with more than one address.
+      Enum.map(data, fn [value, fees] ->
+        case Map.get(projects_map, value) do
+          %Project{} = project ->
+            %{slug: project.slug, ticker: project.ticker, address: nil, fees: fees}
+
+          _ ->
+            %{slug: nil, ticker: nil, address: value, fees: fees}
+        end
+      end)
+      |> Enum.group_by(fn %{slug: slug, address: address} -> slug || address end)
+      |> Enum.map(fn {_key, list} ->
+        [elem | _] = list
+        fees = Enum.map(list, & &1.fees) |> Enum.sum()
+        %{elem | fees: fees}
+      end)
     end)
   end
 

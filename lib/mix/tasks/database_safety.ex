@@ -16,8 +16,15 @@ defmodule Mix.Tasks.DatabaseSafety do
 
   @impl Mix.Task
   def run(_args) do
+    if Code.ensure_loaded?(Envy) do
+      Envy.auto_load()
+    else
+      raise(Mix.Error, "Cannot load Envy")
+    end
+
     env = Config.module_get(Sanbase, :env)
     database_url = System.get_env("DATABASE_URL")
+
     database_hostname = Config.module_get(Sanbase.Repo, :hostname)
 
     prod_db_url? =

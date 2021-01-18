@@ -122,7 +122,7 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
     ch_repo_enabled? = Sanbase.ClickhouseRepo.enabled?()
     env = Application.get_env(:sanbase, :env)
 
-    case ch_repo_enabled? and env != "test" do
+    case ch_repo_enabled? and env != :test do
       true -> do_fill_state()
       false -> %{exchange_wallets_set: MapSet.new(), updated_at: Timex.now()}
     end

@@ -8,43 +8,45 @@ defmodule Sanbase.Clickhouse.Fees do
     {query, args} = eth_fees_distribution_query(from, to, limit)
 
     ClickhouseRepo.query_transform(query, args, & &1)
-    |> maybe_apply_function(fn data ->
-      data = Enum.uniq_by(data, &Enum.at(&1, 0))
+    |> maybe_apply_function(&value_fees_list_to_result/1)
+  end
 
-      # Get the list of projects. Returns a non-empty list when at least one of the
-      # first elements in the sublists is a slug and not an address
-      projects =
-        Enum.map(data, &Enum.at(&1, 0))
-        |> Project.List.by_field(:slug, preload?: true, preload: [:contract_addresses])
+  def value_fees_list_to_result(data) do
+    data = Enum.uniq_by(data, &Enum.at(&1, 0))
 
-      projects_map =
-        projects
-        |> Enum.flat_map(fn %Project{} = project ->
-          [{project.slug, project}] ++
-            Enum.map(project.contract_addresses, fn %{address: address} ->
-              {address |> String.downcase(), project}
-            end)
-        end)
-        |> Map.new()
+    # Get the list of projects. Returns a non-empty list when at least one of the
+    # first elements in the sublists is a slug and not an address
+    projects =
+      Enum.map(data, &Enum.at(&1, 0))
+      |> Project.List.by_field(:slug, preload?: true, preload: [:contract_addresses])
 
-      # If an address points to a known address, the value will be added to the
-      # project's slug and not to the actual address. This helps grouping fees
-      # for a project with more than one address.
-      Enum.map(data, fn [value, fees] ->
-        case Map.get(projects_map, value) do
-          %Project{} = project ->
-            %{slug: project.slug, ticker: project.ticker, address: nil, fees: fees}
-
-          _ ->
-            %{slug: nil, ticker: nil, address: value, fees: fees}
-        end
+    projects_map =
+      projects
+      |> Enum.flat_map(fn %Project{} = project ->
+        [{project.slug, project}] ++
+          Enum.map(project.contract_addresses, fn %{address: address} ->
+            {address |> String.downcase(), project}
+          end)
       end)
-      |> Enum.group_by(fn %{slug: slug, address: address} -> slug || address end)
-      |> Enum.map(fn {_key, list} ->
-        [elem | _] = list
-        fees = Enum.map(list, & &1.fees) |> Enum.sum()
-        %{elem | fees: fees}
-      end)
+      |> Map.new()
+
+    # If an address points to a known address, the value will be added to the
+    # project's slug and not to the actual address. This helps grouping fees
+    # for a project with more than one address.
+    Enum.map(data, fn [value, fees] ->
+      case Map.get(projects_map, value) do
+        %Project{} = project ->
+          %{slug: project.slug, ticker: project.ticker, address: nil, fees: fees}
+
+        _ ->
+          %{slug: nil, ticker: nil, address: value, fees: fees}
+      end
+    end)
+    |> Enum.group_by(fn %{slug: slug, address: address} -> slug || address end)
+    |> Enum.map(fn {_key, list} ->
+      [elem | _] = list
+      fees = Enum.map(list, & &1.fees) |> Enum.sum()
+      %{elem | fees: fees}
     end)
   end
 

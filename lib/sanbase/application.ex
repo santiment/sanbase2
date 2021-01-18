@@ -174,8 +174,11 @@ defmodule Sanbase.Application do
 
       # Start the Clickhouse Repo
       start_if(
-        fn -> start_in(Sanbase.ClickhouseRepo, [:prod, :dev]) end,
-        fn -> System.get_env("CLICKHOUSE_REPO_ENABLED", "true") |> String.to_existing_atom() end
+        fn -> Sanbase.ClickhouseRepo end,
+        fn ->
+          Application.get_env(:sanbase, :env) in [:dev, :prod] and
+            Sanbase.ClickhouseRepo.enabled?()
+        end
       ),
 
       # Star the API call service

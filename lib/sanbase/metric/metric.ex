@@ -283,7 +283,7 @@ defmodule Sanbase.Metric do
 
     case Map.get(@histogram_metric_to_module_map, metric) do
       nil ->
-        metric_not_available_error(metric, type: :timeseries)
+        metric_not_available_error(metric, type: :histogram)
 
       module when is_atom(module) ->
         module = maybe_change_module(module, metric, selector)
@@ -621,38 +621,66 @@ defmodule Sanbase.Metric do
 
     case close do
       nil -> {:error, error_msg}
-      close -> {:error, error_msg <> " Did you mean '#{close}'?"}
+      {"", close} -> {:error, error_msg <> " Did you mean the metric '#{close}'?"}
+      {type, close} -> {:error, error_msg <> " Did you mean the #{type} metric '#{close}'?"}
     end
   end
 
-  defp metric_not_available_error_details(metric, :all) do
+  defp metric_not_available_error_details(metric, type) do
     %{
-      close: Enum.find(@metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.8 end),
+      close: maybe_get_close_metric(metric, type),
       error_msg: "The metric '#{metric}' is not supported or is mistyped."
     }
   end
 
-  defp metric_not_available_error_details(metric, :timeseries) do
-    %{
-      close:
-        Enum.find(@timeseries_metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.8 end),
-      error_msg: "The timeseries metric '#{metric}' is not supported or is mistyped."
-    }
+  # Find the metric from the mapset which is clostest to the original metric.
+  # The found metric must have a jaro distance bigger than 0.8
+  defp find_closest(mapset, metric) do
+    Enum.reduce(mapset, {nil, -1}, fn m, {max_m, max_dist} ->
+      dist = String.jaro_distance(metric, m)
+
+      case dist > max_dist do
+        true -> {m, dist}
+        false -> {max_m, max_dist}
+      end
+    end)
+    |> case do
+      {metric, dist} when dist > 0.8 -> metric
+      _ -> nil
+    end
   end
 
-  defp metric_not_available_error_details(metric, :table) do
-    %{
-      close: Enum.find(@table_metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.8 end),
-      error_msg: "The table metric '#{metric}' is not supported or is mistyped."
-    }
-  end
+  # Returns {closest_metric_type, closest_metric}
+  # The metrics of the same type are with highest priority.
+  # If a metric of type timeseries is mistyped, then if there is a metric of
+  # the same type with a jaro distance > 0.8 it is returned.
+  defp maybe_get_close_metric(metric, type) do
+    timeseries = find_closest(@timeseries_metrics_mapset, metric)
+    histogram = find_closest(@histogram_metrics_mapset, metric)
+    table = find_closest(@table_metrics_mapset, metric)
 
-  defp metric_not_available_error_details(metric, :histogram) do
-    %{
-      close:
-        Enum.find(@histogram_metrics_mapset, fn m -> String.jaro_distance(metric, m) > 0.8 end),
-      error_msg: "The histogram metric '#{metric}' is not supported or is mistyped."
-    }
+    case timeseries || histogram || table do
+      nil ->
+        nil
+
+      _ ->
+        case type do
+          :all ->
+            {"", timeseries || histogram || table}
+
+          :timeseries ->
+            (timeseries && {:timeseries, timeseries}) || (histogram && {:histogram, histogram}) ||
+              (table && {:table, table})
+
+          :histogram ->
+            (histogram && {:histogram, histogram}) || (timeseries && {:timeseries, timeseries}) ||
+              (table && {:table, table})
+
+          :table ->
+            (table && {:table, table}) || (timeseries && {:timeseries, timeseries}) ||
+              (histogram && {:histogram, histogram})
+        end
+    end
   end
 
   defp execute_if_aggregation_valid(fun, metric, aggregation) do

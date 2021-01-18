@@ -64,7 +64,9 @@ defmodule Sanbase.Model.ProjectListSelectorTest do
       }
 
       {:error, error_msg} = ListSelector.valid_selector?(%{selector: selector})
-      assert error_msg =~ "The metric 'nvtt' is not supported or is mistyped. Did you mean 'nvt'?"
+
+      assert error_msg =~
+               "The metric 'nvtt' is not supported or is mistyped. Did you mean the metric 'nvt'?"
     end
   end
 

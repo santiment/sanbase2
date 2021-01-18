@@ -154,8 +154,7 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
       {operation_template, operation_kv} =
         OperationText.to_template_kv(values, settings.operation)
 
-      {curr_value_template, curr_value_kv} =
-        OperationText.current_value(values, settings.operation)
+      {curr_value_template, curr_value_kv} = OperationText.current_value(values)
 
       kv =
         %{
@@ -190,8 +189,9 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
       {operation_template, operation_kv} =
         OperationText.to_template_kv(values, settings.operation, opts)
 
-      {curr_value_template, curr_value_kv} =
-        OperationText.current_value(values, settings.operation, opts)
+      {curr_value_template, curr_value_kv} = OperationText.current_value(values, opts)
+
+      {details_template, details_kv} = OperationText.details(:metric, settings)
 
       kv =
         %{
@@ -205,12 +205,15 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerSettings do
         }
         |> Map.merge(operation_kv)
         |> Map.merge(curr_value_kv)
+        |> Map.merge(details_kv)
 
       template = """
       🔔 \#{{project_ticker}} | **{{project_name}}**'s {{metric_human_readable_name}} #{
         operation_template
       }.
       #{curr_value_template}.
+
+      #{details_template}
       """
 
       {template, kv}

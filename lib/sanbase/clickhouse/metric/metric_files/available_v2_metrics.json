@@ -1771,7 +1771,7 @@
       "SANBASE": "free"
     },
     "aggregation": "last",
-    "min_interval": "1d",
+    "min_interval": "15m",
     "table": "daily_metrics_v2",
     "has_incomplete_data": true,
     "data_type": "timeseries"

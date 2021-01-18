@@ -109,6 +109,56 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
              "Cryptocurrencies didn't exist before 2009-01-01 00:00:00Z.\nPlease check `from` and/or `to` parameters values.\n"
   end
 
+  test "returns success when sansheets user with API key is Basic" do
+    %{user: user} = insert(:subscription_basic_sanbase, user: insert(:user))
+    {:ok, apikey} = Apikey.generate_apikey(user)
+
+    conn =
+      setup_apikey_auth(build_conn(), apikey)
+      |> put_req_header(
+        "user-agent",
+        "Mozilla/5.0 (compatible; Google-Apps-Script)"
+      )
+
+    from = from_iso8601!("2019-01-01T00:00:00Z")
+    to = from_iso8601!("2019-01-02T00:00:00Z")
+
+    result = %{
+      rows: [
+        [from_iso8601_to_unix!("2019-01-01T00:00:00Z"), 100],
+        [from_iso8601_to_unix!("2019-01-02T00:00:00Z"), 150]
+      ]
+    }
+
+    query = """
+     {
+      getMetric(metric: "daily_active_addresses") {
+        timeseriesData(
+          slug: "santiment",
+          from: "#{from}",
+          to: "#{to}",
+          interval: "1d") {
+          datetime
+          value
+        }
+      }
+    }
+    """
+
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.ClickhouseRepo.query/2,
+      {:ok, result}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        conn
+        |> post("/graphql", query_skeleton(query))
+        |> json_response(200)
+
+      assert Map.has_key?(result, "data") && !Map.has_key?(result, "error")
+    end)
+  end
+
   test "returns success when sansheets user with API key is Pro" do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
     {:ok, apikey} = Apikey.generate_apikey(user)
@@ -191,7 +241,7 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
       |> json_response(401)
 
     assert result["errors"]["details"] ==
-             "You need to upgrade to Sanbase Pro in order to use SanSheets."
+             "You need to upgrade to Sanbase Basic or Sanbase Pro in order to use SanSheets."
   end
 
   test "returns error when sansheets user without API key is not Pro" do
@@ -225,6 +275,6 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
       |> json_response(401)
 
     assert result["errors"]["details"] ==
-             "You need to upgrade to Sanbase Pro in order to use SanSheets."
+             "You need to upgrade to Sanbase Basic or Sanbase Pro in order to use SanSheets."
   end
 end

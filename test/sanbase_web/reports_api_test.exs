@@ -40,8 +40,11 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
       free_conn = setup_jwt_auth(build_conn(), free_user)
 
       pro_user = insert(:user)
+      basic_user = insert(:user)
       insert(:subscription_pro_sanbase, user: pro_user)
+      insert(:subscription_basic_sanbase, user: basic_user)
       pro_conn = setup_jwt_auth(build_conn(), pro_user)
+      basic_conn = setup_jwt_auth(build_conn(), basic_user)
 
       {
         :ok,
@@ -49,6 +52,7 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
         free_report: free_report,
         pro_report: pro_report,
         free_conn: free_conn,
+        basic_conn: basic_conn,
         pro_conn: pro_conn
       }
     end
@@ -74,6 +78,20 @@ defmodule SanbaseWeb.Graphql.ReportsApiTest do
              ]
 
       assert Enum.map(res["data"]["getReports"], & &1["url"]) == [context.free_report.url, nil]
+    end
+
+    test "with basic sanbase user list all published reports", context do
+      res = get_reports(context.basic_conn)
+
+      assert Enum.map(res["data"]["getReports"], & &1["name"]) == [
+               context.free_report.name,
+               context.pro_report.name
+             ]
+
+      assert Enum.map(res["data"]["getReports"], & &1["url"]) == [
+               context.free_report.url,
+               context.pro_report.url
+             ]
     end
 
     test "with pro sanbase user list all published reports", context do

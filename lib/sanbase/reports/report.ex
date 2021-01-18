@@ -135,8 +135,10 @@ defmodule Sanbase.Report do
     end)
   end
 
-  defp show_only_preview_fields?(reports, %{is_logged_in: true, plan_atom_name: :pro}),
-    do: reports
+  defp show_only_preview_fields?(reports, %{is_logged_in: true, plan_atom_name: plan})
+       when plan != :free do
+    reports
+  end
 
   defp do_save_report(%{filename: filename, path: filepath} = report, params) do
     with {:ok, content_hash} <- FileHash.calculate(filepath),

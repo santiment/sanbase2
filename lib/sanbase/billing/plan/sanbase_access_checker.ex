@@ -19,7 +19,6 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
     signals: %{
       limit: 10
     },
-    external_data_providers: false,
     sangraphs_access: false
   }
 
@@ -29,11 +28,10 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
       limit: :no_limit
     },
     access_paywalled_insights: true,
-    external_data_providers: true,
     sangraphs_access: true
   }
 
-  @basic_plan_stats @pro_plan_stats
+  @basic_plan_stats Map.merge(@free_plan_stats, %{access_paywalled_insights: true})
 
   @custom_plan_stats @pro_plan_stats
 

@@ -104,7 +104,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     case is_sansheets_request(conn) and plan_name == "FREE" do
       true ->
         error_map = %{
-          error_msg: "You need to upgrade to Sanbase Pro in order to use SanSheets.",
+          error_msg:
+            "You need to upgrade to Sanbase Basic or Sanbase Pro in order to use SanSheets.",
           error_code: 401
         }
 

@@ -48,6 +48,14 @@ defmodule SanbaseWeb.Graphql.PaywalledInsightApiTest do
       assert insight["text"] =~ "alabala"
     end
 
+    test "with logged in user with basic subscription", context do
+      insert(:subscription_basic_sanbase, user: context.user)
+      insight = execute_query(context.conn, context.query, "insight")
+
+      assert insight["isPaywallRequired"]
+      assert insight["text"] == context.post.text
+    end
+
     test "with logged in user with pro subscription", context do
       insert(:subscription_pro_sanbase, user: context.user)
       insight = execute_query(context.conn, context.query, "insight")

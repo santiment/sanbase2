@@ -472,9 +472,9 @@ defmodule Sanbase.Factory do
 
   def plan_basic_sanbase_factory() do
     %Plan{
-      id: 12,
+      id: 205,
       name: "BASIC",
-      amount: 1100,
+      amount: 900,
       currency: "USD",
       interval: "month"
     }
@@ -484,7 +484,7 @@ defmodule Sanbase.Factory do
     %Plan{
       id: 13,
       name: "PRO",
-      amount: 5100,
+      amount: 4900,
       currency: "USD",
       interval: "month"
     }
@@ -494,7 +494,7 @@ defmodule Sanbase.Factory do
     %Plan{
       id: 203,
       name: "PRO_PLUS",
-      amount: 25000,
+      amount: 24900,
       currency: "USD",
       interval: "month"
     }
@@ -551,6 +551,14 @@ defmodule Sanbase.Factory do
     %Subscription{
       stripe_id: rand_str(),
       plan_id: 5,
+      current_period_end: Timex.shift(Timex.now(), days: 1),
+      status: "active"
+    }
+  end
+
+  def subscription_basic_sanbase_factory() do
+    %Subscription{
+      plan_id: 205,
       current_period_end: Timex.shift(Timex.now(), days: 1),
       status: "active"
     }

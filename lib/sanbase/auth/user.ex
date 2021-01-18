@@ -170,6 +170,7 @@ defmodule Sanbase.Auth.User do
   defdelegate san_balance!(user), to: __MODULE__.SanBalance
 
   # Uniswap San Staking functions
+  defdelegate fetch_all_staked_users(), to: __MODULE__.UniswapStaking
   defdelegate update_all_san_staked_users(), to: __MODULE__.UniswapStaking
   defdelegate fetch_san_staked_user(user), to: __MODULE__.UniswapStaking
 
@@ -371,6 +372,21 @@ defmodule Sanbase.Auth.User do
       distinct: true
     )
     |> Repo.all()
+  end
+
+  @doc """
+  Mark user as registered.
+  Sign up with email has 2 phases.
+  1. Creating user object and sending token to user email.
+  2. Verifying the token from email.
+  Only after the token is verified the user is marked as registered.
+  """
+  def mark_as_registered(%User{is_registered: true} = user), do: {:ok, user}
+
+  def mark_as_registered(%User{is_registered: false} = user) do
+    user
+    |> User.changeset(%{is_registered: true})
+    |> Repo.update()
   end
 
   defp can_remove_eth_account?(%User{id: user_id, email: email}, address) do

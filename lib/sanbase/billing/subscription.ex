@@ -54,6 +54,12 @@ defmodule Sanbase.Billing.Subscription do
     |> foreign_key_constraint(:plan_id, name: :subscriptions_plan_id_fkey)
   end
 
+  def create(params) do
+    %__MODULE__{}
+    |> changeset(params)
+    |> Repo.insert()
+  end
+
   def by_id(id) do
     Repo.get(__MODULE__, id)
     |> Repo.preload(:plan)

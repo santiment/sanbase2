@@ -130,9 +130,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   def email_login_verify(%{token: token, email: email}, _resolution) do
     with {:ok, user} <- User.find_or_insert_by(:email, email),
          true <- User.email_token_valid?(user, token),
-         _ <- create_free_trial_on_signup(user),
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),
-         {:ok, user} <- User.mark_email_token_as_validated(user) do
+         {:ok, user} <- User.mark_email_token_as_validated(user),
+         _ <- create_free_trial_on_signup(user),
+         {:ok, user} <- User.mark_as_registered(user) do
       {:ok, %{user: user, token: token}}
     else
       _ -> {:error, message: "Login failed"}

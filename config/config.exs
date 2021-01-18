@@ -11,6 +11,7 @@ config :tzdata, :autoupdate, :disabled
 
 # General application configuration
 config :sanbase,
+  env: Mix.env(),
   ecto_repos: [Sanbase.Repo],
   available_slugs_module: Sanbase.AvailableSlugs
 

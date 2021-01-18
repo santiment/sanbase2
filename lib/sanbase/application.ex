@@ -173,7 +173,13 @@ defmodule Sanbase.Application do
       SanbaseWeb.Telemetry,
 
       # Start the Clickhouse Repo
-      start_in(Sanbase.ClickhouseRepo, [:prod, :dev]),
+      start_if(
+        fn -> Sanbase.ClickhouseRepo end,
+        fn ->
+          Application.get_env(:sanbase, :env) in [:dev, :prod] and
+            Sanbase.ClickhouseRepo.enabled?()
+        end
+      ),
 
       # Star the API call service
       Sanbase.ApiCallLimit.ETS,

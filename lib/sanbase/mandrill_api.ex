@@ -2,7 +2,7 @@ defmodule Sanbase.MandrillApi do
   require Sanbase.Utils.Config, as: Config
 
   @send_email_url "https://mandrillapp.com/api/1.0/messages/send-template.json"
-  @environment Application.compile_env(:sanbase, [Sanbase, :env])
+  @environment Application.compile_env(:sanbase, :env)
 
   @spec send(any, String.t() | nil, any, map) :: {:error, any} | {:ok, any}
   def send(template, recepient, variables, message_opts \\ %{})

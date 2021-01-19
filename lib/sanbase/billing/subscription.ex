@@ -23,6 +23,7 @@ defmodule Sanbase.Billing.Subscription do
   Please, contact administrator of the site for more information.
   """
   @free_trial_plans Plan.Metadata.free_trial_plans()
+  @sanbase_basic_plan_id 205
 
   schema "subscriptions" do
     field(:stripe_id, :string)
@@ -373,6 +374,17 @@ defmodule Sanbase.Billing.Subscription do
 
   # Private functions
 
+  # Add 80% off Sanbase Basic subscription for first month
+  defp create_stripe_subscription(user, %Plan{id: plan_id} = plan, _)
+       when plan_id == @sanbase_basic_plan_id do
+    with {:ok, coupon} <- StripeApi.create_coupon(%{percent_off: 80, duration: "once"}) do
+      subscription_defaults(user, plan)
+      |> update_subscription_with_coupon(coupon)
+      |> StripeApi.create_subscription()
+    end
+  end
+
+  # When user doesn't provide coupon - check if he has SAN staked
   defp create_stripe_subscription(user, plan, nil) do
     percent_off =
       user
@@ -390,6 +402,7 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
+  # When user provided a coupon - use it
   defp create_stripe_subscription(user, plan, coupon) when not is_nil(coupon) do
     with {:ok, stripe_coupon} <- StripeApi.retrieve_coupon(coupon) do
       subscription_defaults(user, plan)

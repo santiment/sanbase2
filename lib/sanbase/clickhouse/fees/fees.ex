@@ -35,11 +35,11 @@ defmodule Sanbase.Clickhouse.Fees do
     # for a project with more than one address.
     Enum.map(data, fn [value, fees] ->
       case Map.get(projects_map, value) do
-        %Project{} = project ->
-          %{slug: project.slug, ticker: project.ticker, address: nil, fees: fees}
+        %Project{slug: slug, ticker: ticker} = project ->
+          %{slug: slug, ticker: ticker, project: project, address: nil, fees: fees}
 
         _ ->
-          %{slug: nil, ticker: nil, address: value, fees: fees}
+          %{slug: nil, ticker: nil, project: nil, address: value, fees: fees}
       end
     end)
     |> Enum.group_by(fn %{slug: slug, address: address} -> slug || address end)
@@ -48,6 +48,7 @@ defmodule Sanbase.Clickhouse.Fees do
       fees = Enum.map(list, & &1.fees) |> Enum.sum()
       %{elem | fees: fees}
     end)
+    |> Enum.sort_by(& &1.fees, :desc)
   end
 
   defp eth_fees_distribution_query(from, to, limit) do

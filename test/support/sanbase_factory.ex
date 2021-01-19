@@ -474,7 +474,7 @@ defmodule Sanbase.Factory do
     %Plan{
       id: 205,
       name: "BASIC",
-      amount: 900,
+      amount: 2500,
       currency: "USD",
       interval: "month"
     }

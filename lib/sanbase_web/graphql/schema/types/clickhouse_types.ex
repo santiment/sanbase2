@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseTypes do
     field(:slug, :string)
     field(:ticker, :string)
     field(:address, :string)
+    field(:project, :project)
     field(:fees, non_null(:float))
   end
 

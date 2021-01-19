@@ -197,6 +197,7 @@ defmodule SanbaseWeb.ExAdmin.Model.Project do
         input(project, :linkedin_link)
         input(project, :reddit_link)
         input(project, :slack_link)
+        input(project, :discord_link)
         input(project, :telegram_link)
         input(project, :twitter_link)
         input(project, :website_link)

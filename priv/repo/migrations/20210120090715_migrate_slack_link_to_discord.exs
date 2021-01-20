@@ -31,10 +31,6 @@ defmodule Sanbase.Repo.Migrations.MigrateSlackLinkToDiscord do
     end)
   end
 
-  defp transform_discord_link(link) do
-    long_prefix = "https://discordapp.com/invite/"
-    short_prefix = "https://discord.gg/"
-
-    String.replace_prefix(link, long_prefix, short_prefix)
-  end
+  defp transform_link("https://discordapp.com/invite/" <> rest), do: "https://discord.gg/" <> rest
+  defp transform_link(link), do: link
 end

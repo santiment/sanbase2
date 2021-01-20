@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   alias Sanbase.Auth.{User, EthAccount, UserFollower}
   alias Sanbase.Repo
   alias Ecto.Multi
-  alias Sanbase.Billing.Subscription.SignUpTrial
+  alias Sanbase.Billing
 
   def email(%User{email: nil}, _args, _resolution), do: {:ok, nil}
 
@@ -101,7 +101,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
       ) do
     with true <- Ethauth.verify_signature(signature, address, message_hash),
          {:ok, user} <- fetch_user(args, EthAccount.by_address(address)),
-         {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}) do
+         {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),
+         _ <- Billing.maybe_create_free_or_trial_subscription(user.id),
+         {:ok, user} <- User.mark_as_registered(user) do
       {:ok, %{user: user, token: token}}
     else
       {:error, reason} ->
@@ -132,7 +134,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
          true <- User.email_token_valid?(user, token),
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),
          {:ok, user} <- User.mark_email_token_as_validated(user),
-         _ <- create_free_trial_on_signup(user),
+         _ <- Billing.maybe_create_free_or_trial_subscription(user.id),
          {:ok, user} <- User.mark_as_registered(user) do
       {:ok, %{user: user, token: token}}
     else
@@ -280,8 +282,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
       User.changeset(%User{}, %{
         username: address,
         salt: User.generate_salt(),
-        first_login: true,
-        is_registered: true
+        first_login: true
       })
     )
     |> Multi.run(:add_eth_account, fn _repo, %{add_user: %User{id: id}} ->
@@ -294,7 +295,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     |> Repo.transaction()
     |> case do
       {:ok, %{add_user: user}} ->
-        SignUpTrial.create_subscription(user.id)
         {:ok, user}
 
       {:error, _, reason, _} ->
@@ -306,11 +306,4 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   defp fetch_user(_, %EthAccount{user_id: user_id}) do
     User.by_id(user_id)
   end
-
-  # when `email_token_validated_at` is nil - user haven't completed registration
-  defp create_free_trial_on_signup(%User{is_registered: false} = user) do
-    SignUpTrial.create_subscription(user.id)
-  end
-
-  defp create_free_trial_on_signup(%User{is_registered: true}), do: :ok
 end

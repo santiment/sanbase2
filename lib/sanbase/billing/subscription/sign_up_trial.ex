@@ -82,6 +82,27 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     |> unique_constraint(:subscription_id)
   end
 
+  def by_user_id(user_id) do
+    Repo.get_by(__MODULE__, user_id: user_id, is_finished: false)
+  end
+
+  def create(user_id) do
+    %__MODULE__{} |> changeset(%{user_id: user_id}) |> Repo.insert()
+  end
+
+  @doc """
+  Create trial only if user is not marked registered.
+  """
+  def create_trial_subscription(user_id) do
+    with {:ok, %User{is_registered: false}} <- User.by_id(user_id),
+         {:ok, sign_up_trial} <- create(user_id),
+         {:ok, sign_up_trial} <- create_promo_trial(sign_up_trial) do
+      send_email_async(sign_up_trial, :sent_welcome_email)
+
+      {:ok, sign_up_trial}
+    end
+  end
+
   # scheduled to run once a day
   def send_email_on_trial_day() do
     from(sut in __MODULE__, where: sut.is_finished == false)
@@ -138,23 +159,6 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
         end
       end
     end)
-  end
-
-  def by_user_id(user_id) do
-    Repo.get_by(__MODULE__, user_id: user_id, is_finished: false)
-  end
-
-  def create(user_id) do
-    %__MODULE__{} |> changeset(%{user_id: user_id}) |> Repo.insert()
-  end
-
-  def create_subscription(user_id) do
-    with {:ok, sign_up_trial} <- create(user_id),
-         {:ok, sign_up_trial} <- create_promo_trial(sign_up_trial) do
-      send_email_async(sign_up_trial, :sent_welcome_email)
-
-      {:ok, sign_up_trial}
-    end
   end
 
   def handle_trial_will_end(stripe_subscription_id) do

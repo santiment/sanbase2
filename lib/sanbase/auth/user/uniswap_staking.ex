@@ -2,6 +2,8 @@ defmodule Sanbase.Auth.User.UniswapStaking do
   use Ecto.Schema
   import Ecto.Changeset
 
+  require Logger
+
   alias Sanbase.Repo
   alias Sanbase.Auth.{User, EthAccount}
   alias Sanbase.SmartContracts.UniswapPair
@@ -31,8 +33,9 @@ defmodule Sanbase.Auth.User.UniswapStaking do
   Fetch all users with conncted wallets, fetch their total staked
   SAN tokens and update.
   """
-  @spec update_all_san_staked_users() :: {integer(), nil | [term()]}
+  @spec update_all_san_staked_users() :: {:ok, {integer(), nil | [term()]}} | {:error, any()}
   def update_all_san_staked_users() do
+    Logger.info("Start update_all_san_staked_users")
     naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
     users_san_staked =
@@ -57,6 +60,15 @@ defmodule Sanbase.Auth.User.UniswapStaking do
         conflict_target: [:user_id]
       )
     end)
+    |> case do
+      {:ok, result} ->
+        Logger.info("Finished update_all_san_staked_users ok: #{inspect(result)}")
+        {:ok, result}
+
+      {:error, reason} ->
+        Logger.error("Finished update_all_san_staked_users error: #{inspect(reason)}")
+        {:error, reason}
+    end
   end
 
   @doc """

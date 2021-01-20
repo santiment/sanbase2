@@ -45,14 +45,6 @@ defmodule Sanbase.Auth.User.Email do
     |> Repo.update()
   end
 
-  def mark_user_as_registered(%User{is_registered: true} = user), do: {:ok, user}
-
-  def mark_user_as_registered(%User{is_registered: false} = user) do
-    user
-    |> User.changeset(%{is_registered: true})
-    |> Repo.update()
-  end
-
   def mark_email_token_as_validated(user) do
     validated_at =
       (user.email_token_validated_at || Timex.now())

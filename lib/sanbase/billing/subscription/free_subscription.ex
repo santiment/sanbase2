@@ -2,20 +2,20 @@ defmodule Sanbase.Billing.Subscription.FreeSubscription do
   @moduledoc """
   Free subscriptions are subscriptions present only in Sanbase but
   not synced in Stripe. They are given on some conditions.
-  One example of such condition is when user has staked SAN tokens in given
+  An example of such condition is when user has staked SAN tokens in given
   Uniswap liquidity pools.
   """
-
-  import Ecto.Query
 
   alias Sanbase.Billing.Subscription
   alias Sanbase.Auth.User
   alias Sanbase.Repo
 
-  # SAN stake  required for free subscription
+  # SAN stake required for free subscription. We advertise 3000 SAN
+  # but require >= 2000 due to possible fluctuations of staked amount in pools.
   @san_stake_required_free_sub 2000
   @san_stake_free_plan Sanbase.Billing.Plan.Metadata.current_san_stake_plan()
 
+  @spec create_free_subscription(non_neg_integer()) :: {:ok, %Subscription{}} | {:error, any()}
   def create_free_subscription(user_id) do
     Subscription.create(%{
       user_id: user_id,
@@ -28,35 +28,52 @@ defmodule Sanbase.Billing.Subscription.FreeSubscription do
     Repo.delete(free_subscription)
   end
 
-  # Active here is `active` and `past_due` statuses
+  @doc """
+  Subscriptions present only in Sanbase but not in Stripe
+  They don't have `stripe_id`
+  """
+  @spec list_free_subscriptions() :: list(%Subscription{})
+  def list_free_subscriptions() do
+    Subscription
+    |> Subscription.Query.all_active_subscriptions_for_plan_query(@san_stake_free_plan)
+    |> Subscription.Query.free_subscriptions_query()
+    |> Repo.all()
+  end
+
+  @doc """
+  User has any active subscriptions.
+  Active here is `active` and `past_due` statuses, but not `trialing`
+  """
+  @spec user_has_active_sanbase_subscriptions?(non_neg_integer()) :: boolean()
   def user_has_active_sanbase_subscriptions?(user_id) do
     Subscription
-    |> all_active_sanbase_subscriptions_query()
-    |> filter_user_query(user_id)
+    |> Subscription.Query.all_active_subscriptions_for_plan_query(@san_stake_free_plan)
+    |> Subscription.Query.filter_user_query(user_id)
     |> Repo.all()
     |> Enum.any?()
   end
 
-  # Subscriptions present only in Sanbase - without stripe_id
-  def all_free_subscriptions() do
-    Subscription
-    |> all_active_sanbase_subscriptions_query()
-    |> free_subscriptions_query()
-  end
-
-  def maybe_create_free_subscription(user_id) do
+  @doc """
+  User doesn't have active Sanbase subscriptions and have enough SAN staked
+  """
+  @spec eligible_for_free_subscription?(non_neg_integer()) :: boolean()
+  def eligible_for_free_subscription?(user_id) do
     !user_has_active_sanbase_subscriptions?(user_id) &&
-      User.fetch_san_staked_user(user_id) >= @san_stake_free_plan &&
-      create_free_subscription(user_id)
+      User.fetch_san_staked_user(user_id) >= @san_stake_free_plan
   end
 
-  # Create free subscription for those that don't have one and with enough SAN staked
-  # Remove free subscription of those who have one and don't have enough SAN staked
+  @doc """
+  Create free subscription for those that don't have one and with enough SAN staked
+  Remove free subscription of those who have one and don't have enough SAN staked
+  """
   def sync_free_subscriptions_staked_users do
     maybe_create_free_subscriptions_staked_users()
     maybe_remove_free_subscriptions_staked_users()
   end
 
+  @doc """
+  Create free subscription for those that don't have one and with enough SAN staked
+  """
   def maybe_create_free_subscriptions_staked_users() do
     user_ids_with_enough_staked()
     |> Enum.each(fn user_id ->
@@ -66,8 +83,11 @@ defmodule Sanbase.Billing.Subscription.FreeSubscription do
     end)
   end
 
+  @doc """
+  Remove free subscription of those who have one and don't have enough SAN staked
+  """
   def maybe_remove_free_subscriptions_staked_users() do
-    free_subscriptions = all_free_subscriptions()
+    free_subscriptions = list_free_subscriptions()
     user_ids_with_enough_staked = user_ids_with_enough_staked()
 
     free_subscriptions
@@ -78,24 +98,10 @@ defmodule Sanbase.Billing.Subscription.FreeSubscription do
     end)
   end
 
-  defp all_active_sanbase_subscriptions_query(query) do
-    from(q in query,
-      where:
-        q.plan_id == ^@san_stake_free_plan and
-          q.status in ["active", "past_due"]
-    )
-  end
-
-  defp free_subscriptions_query(query) do
-    from(q in query, where: is_nil(q.stripe_id))
-  end
-
-  defp filter_user_query(query, user_id) do
-    from(q in query, where: q.user_id == ^user_id)
-  end
+  # Helpers
 
   defp user_ids_with_enough_staked() do
-    User.fetch_san_staked_users()
+    User.fetch_all_staked_users()
     |> Enum.filter(&(&1.san_staked >= @san_stake_required_free_sub))
     |> Enum.map(& &1.user_id)
   end

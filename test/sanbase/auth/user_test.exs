@@ -249,7 +249,7 @@ defmodule Sanbase.Auth.UserTest do
 
       assert user.email == "example@gmail.com"
       assert user.first_login
-      assert_called(SignUpTrial.create_subscription(user.id))
+      assert_called(SignUpTrial.create_trial_subscription(user.id))
     end
   end
 

@@ -299,12 +299,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiTest do
       |> get_in(["data", "projectBySlug"])
 
     assert %{
-      "discordLink"=> "https://discord.gg/#{random_string}",
-      "twitterLink"=> "https://twitter.com/#{random_string}",
-      "slackLink"=> "https://#{random_string}.slack.com",
-      "facebookLink"=> "https://facebook.com/#{random_string}",
-      "redditLink"=> "https://reddit.com/r/#{random_string}"
-    } == result
+             "discordLink" => "https://discord.gg/#{random_string}",
+             "twitterLink" => "https://twitter.com/#{random_string}",
+             "slackLink" => "https://#{random_string}.slack.com",
+             "facebookLink" => "https://facebook.com/#{random_string}",
+             "redditLink" => "https://reddit.com/r/#{random_string}"
+           } == result
   end
 
   # Helper functions

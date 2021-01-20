@@ -52,34 +52,6 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
     @desc ~s"""
     Returns lists with trending words and their corresponding trend score.
 
-    Arguments description:
-      * source - one of the following:
-        1. TELEGRAM
-        2. PROFESSIONAL_TRADERS_CHAT
-        3. REDDIT
-        4. ALL
-      * size - an integer showing how many words should be included in the top list (max 30)
-      * hour - an integer from 0 to 23 showing the hour of the day when the calculation was executed
-      * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
-      * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
-    """
-    field :trending_words, list_of(:trending_words) do
-      meta(access: :restricted)
-
-      arg(:source, non_null(:trending_words_sources))
-      arg(:size, non_null(:integer))
-      arg(:hour, non_null(:integer))
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-
-      complexity(&Complexity.from_to_interval/3)
-      middleware(AccessControl, %{allow_realtime_data: true})
-      cache_resolve(&SocialDataResolver.trending_words/3, ttl: 600, max_ttl_offset: 240)
-    end
-
-    @desc ~s"""
-    Returns lists with trending words and their corresponding trend score.
-
     * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
     * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
     * interval - a string representing at what interval the words are returned

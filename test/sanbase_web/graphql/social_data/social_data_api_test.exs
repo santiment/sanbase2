@@ -17,63 +17,6 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
     %{conn: conn}
   end
 
-  describe "trending words" do
-    test "successfully fetch trending words", context do
-      success_response = [
-        %{
-          datetime: DateTimeUtils.from_iso8601!("2018-11-10T00:00:00Z"),
-          top_words: [
-            %{score: 167.74716011726295, word: "pele"},
-            %{score: 137.61557511242117, word: "people"}
-          ]
-        }
-      ]
-
-      with_mock SocialData, trending_words: fn _, _, _, _, _ -> {:ok, success_response} end do
-        args = %{
-          source: "TELEGRAM",
-          from: "2018-01-09T00:00:00Z",
-          to: "2018-01-10T00:00:00Z",
-          size: 1,
-          hour: 8
-        }
-
-        query = trending_words_query(args)
-        result = execute_and_parse_success_response(context.conn, query, "trendingWords")
-
-        assert result == %{
-                 "data" => %{
-                   "trendingWords" => [
-                     %{
-                       "datetime" => "2018-11-10T00:00:00Z",
-                       "topWords" => [
-                         %{"score" => 167.74716011726295, "word" => "pele"},
-                         %{"score" => 137.61557511242117, "word" => "people"}
-                       ]
-                     }
-                   ]
-                 }
-               }
-      end
-    end
-
-    test "fetch trending words - proper error is returned", context do
-      with_mock SocialData, trending_words: fn _, _, _, _, _ -> {:error, @error_response} end do
-        args = %{
-          source: "TELEGRAM",
-          from: "2018-01-09T00:00:00Z",
-          to: "2018-01-10T00:00:00Z",
-          size: 1,
-          hour: 8
-        }
-
-        query = trending_words_query(args)
-        error = execute_and_parse_error_response(context.conn, query, "trendingWords")
-        assert error =~ @error_response
-      end
-    end
-  end
-
   describe "word context" do
     test "successfully fetch word context", context do
       success_response = [
@@ -378,26 +321,6 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
         assert error =~ @error_response
       end
     end
-  end
-
-  defp trending_words_query(args) do
-    """
-    {
-      trendingWords(
-        source: #{args.source},
-        from: "#{args.from}",
-        to: "#{args.to}",
-        size: 5,
-        hour: 8
-        ){
-          datetime
-          topWords{
-            word
-            score
-          }
-        }
-      }
-    """
   end
 
   defp word_context_query(args) do

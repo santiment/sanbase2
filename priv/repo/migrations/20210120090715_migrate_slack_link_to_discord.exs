@@ -22,7 +22,7 @@ defmodule Sanbase.Repo.Migrations.MigrateSlackLinkToDiscord do
       include_hidden_projects?: true
     )
     |> Enum.filter(fn %Project{slack_link: link} ->
-     String.contains?(link, "discord")
+      String.contains?(link, "discord")
     end)
     |> Enum.map(fn %Project{slack_link: link} = project ->
       Project.changeset(project, %{discord_link: link})

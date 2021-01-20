@@ -11,7 +11,6 @@ defmodule Sanbase.Auth.UserTest do
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestResponse
-  alias Sanbase.Billing.Subscription.SignUpTrial
 
   test "Delete user and associations" do
     with_mocks([
@@ -243,13 +242,13 @@ defmodule Sanbase.Auth.UserTest do
 
   test "find_or_insert_by_email when the user does not exist and login origin is google" do
     with_mocks([
-      {SignUpTrial, [:passtrough], [create_subscription: fn _ -> {:ok, %{}} end]}
+      {Sanbase.Billing, [:passtrough], [create_trial_subscription: fn _ -> {:ok, %{}} end]}
     ]) do
       {:ok, user} = User.find_or_insert_by(:email, "example@gmail.com", %{login_origin: :google})
 
       assert user.email == "example@gmail.com"
       assert user.first_login
-      assert_called(SignUpTrial.create_trial_subscription(user.id))
+      assert_called(Sanbase.Billing.create_trial_subscription(user.id))
     end
   end
 

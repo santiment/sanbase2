@@ -27,8 +27,9 @@ defmodule SanbaseWeb.AuthController do
 
     with true <- is_binary(email),
          {:ok, user} <-
-           User.find_or_insert_by(:email, email, %{is_registered: true, login_origin: :google}),
-         {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}) do
+           User.find_or_insert_by(:email, email, %{login_origin: :google}),
+         {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),
+         {:ok, _} <- User.mark_as_registered(user) do
       conn
       |> put_session(:auth_token, token)
       |> redirect(external: redirect_urls.success)
@@ -46,7 +47,8 @@ defmodule SanbaseWeb.AuthController do
     email = auth.info.email
 
     with {:ok, user} <- twitter_login(email, twitter_id),
-         {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}) do
+         {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),
+         {:ok, _} <- User.mark_as_registered(user) do
       conn
       |> put_session(:auth_token, token)
       |> redirect(external: redirect_urls.success)

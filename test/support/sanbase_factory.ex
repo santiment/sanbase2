@@ -484,7 +484,7 @@ defmodule Sanbase.Factory do
 
   def plan_pro_sanbase_factory() do
     %Plan{
-      id: 13,
+      id: 201,
       name: "PRO",
       amount: 4900,
       currency: "USD",
@@ -568,7 +568,7 @@ defmodule Sanbase.Factory do
 
   def subscription_pro_sanbase_factory() do
     %Subscription{
-      plan_id: 13,
+      plan_id: 201,
       current_period_end: Timex.shift(Timex.now(), days: 1),
       status: "active"
     }
@@ -660,6 +660,12 @@ defmodule Sanbase.Factory do
     %Sanbase.ShortUrl{
       short_url: rand_str(),
       full_url: "https://santiment.net"
+    }
+  end
+
+  def uniswap_staking_factory do
+    %Sanbase.Auth.User.UniswapStaking{
+      san_staked: 3000
     }
   end
 

@@ -18,7 +18,7 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.Telegram
   alias Sanbase.Signal.HistoricalActivity
   alias Sanbase.Auth.UserFollower
-  alias Sanbase.Billing.Subscription
+  alias Sanbase.Billing
 
   @salt_length 64
   @email_token_length 64
@@ -69,7 +69,7 @@ defmodule Sanbase.Auth.User do
     field(:marketing_accepted, :boolean, default: false)
 
     has_one(:telegram_user_tokens, Telegram.UserToken, on_delete: :delete_all)
-    has_one(:sign_up_trial, Sanbase.Billing.Subscription.SignUpTrial, on_delete: :delete_all)
+    has_one(:sign_up_trial, Billing.Subscription.SignUpTrial, on_delete: :delete_all)
     has_one(:uniswap_staking, Sanbase.Auth.User.UniswapStaking, on_delete: :delete_all)
     has_many(:timeline_events, Sanbase.Timeline.TimelineEvent, on_delete: :delete_all)
     has_many(:eth_accounts, EthAccount, on_delete: :delete_all)
@@ -80,9 +80,9 @@ defmodule Sanbase.Auth.User do
     has_many(:signals_historical_activity, HistoricalActivity, on_delete: :delete_all)
     has_many(:followers, UserFollower, foreign_key: :user_id, on_delete: :delete_all)
     has_many(:following, UserFollower, foreign_key: :follower_id, on_delete: :delete_all)
-    has_many(:subscriptions, Subscription, on_delete: :delete_all)
+    has_many(:subscriptions, Billing.Subscription, on_delete: :delete_all)
     has_many(:roles, {"user_roles", Sanbase.Auth.UserRole}, on_delete: :delete_all)
-    has_many(:promo_trials, Sanbase.Billing.Subscription.PromoTrial, on_delete: :delete_all)
+    has_many(:promo_trials, Billing.Subscription.PromoTrial, on_delete: :delete_all)
     has_many(:triggers, Sanbase.Signal.UserTrigger, on_delete: :delete_all)
     has_many(:chart_configurations, Sanbase.Chart.Configuration, on_delete: :delete_all)
     has_many(:user_attributes, Sanbase.Intercom.UserAttributes, on_delete: :delete_all)
@@ -170,8 +170,9 @@ defmodule Sanbase.Auth.User do
   defdelegate san_balance!(user), to: __MODULE__.SanBalance
 
   # Uniswap San Staking functions
-  defdelegate update_all_san_staked_users(), to: __MODULE__.UniswapStaking
-  defdelegate fetch_san_staked_user(user), to: __MODULE__.UniswapStaking
+  defdelegate fetch_all_uniswap_staked_users(), to: __MODULE__.UniswapStaking
+  defdelegate update_all_uniswap_san_staked_users(), to: __MODULE__.UniswapStaking
+  defdelegate fetch_uniswap_san_staked_user(user), to: __MODULE__.UniswapStaking
 
   def by_id(user_id) when is_integer(user_id) do
     case Sanbase.Repo.get_by(User, id: user_id) do
@@ -226,7 +227,7 @@ defmodule Sanbase.Auth.User do
         %User{}
         |> User.changeset(user_create_attrs)
         |> Repo.insert()
-        |> maybe_create_sign_up_trial(attrs)
+        |> maybe_create_free_or_trial_subscription(attrs)
 
       user ->
         {:ok, user}
@@ -373,6 +374,21 @@ defmodule Sanbase.Auth.User do
     |> Repo.all()
   end
 
+  @doc """
+  Mark user as registered.
+  It is used from all channels for sign up - email, metamask, google, twitter.
+  If user is already registered it does nothing but returning the user object.
+  """
+  def mark_as_registered(%User{is_registered: true} = user), do: {:ok, user}
+
+  def mark_as_registered(%User{is_registered: false} = user) do
+    user
+    |> User.changeset(%{is_registered: true})
+    |> Repo.update()
+  end
+
+  # Helpers
+
   defp can_remove_eth_account?(%User{id: user_id, email: email}, address) do
     count_other_accounts =
       from(ea in EthAccount,
@@ -383,12 +399,14 @@ defmodule Sanbase.Auth.User do
     count_other_accounts > 0 or not is_nil(email)
   end
 
-  defp maybe_create_sign_up_trial({:ok, %User{id: id}} = result, %{login_origin: origin})
+  defp maybe_create_free_or_trial_subscription({:ok, %User{id: user_id}} = result, %{
+         login_origin: origin
+       })
        when origin in [:google, :twitter] do
-    Sanbase.Billing.Subscription.SignUpTrial.create_subscription(id)
+    Billing.maybe_create_free_or_trial_subscription(user_id)
 
     result
   end
 
-  defp maybe_create_sign_up_trial(result, _), do: result
+  defp maybe_create_free_or_trial_subscription(result, _), do: result
 end

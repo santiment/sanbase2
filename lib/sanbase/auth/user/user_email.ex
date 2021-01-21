@@ -52,10 +52,7 @@ defmodule Sanbase.Auth.User.Email do
       |> NaiveDateTime.truncate(:second)
 
     user
-    |> User.changeset(%{
-      email_token_validated_at: validated_at,
-      is_registered: true
-    })
+    |> User.changeset(%{email_token_validated_at: validated_at})
     |> Repo.update()
   end
 

@@ -12,6 +12,7 @@ defmodule Sanbase.Auth.UserTest do
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestResponse
   alias Sanbase.Billing.Subscription.SignUpTrial
+  alias Sanbase.Auth.User.UniswapStaking
 
   test "Delete user and associations" do
     with_mocks([
@@ -233,39 +234,63 @@ defmodule Sanbase.Auth.UserTest do
     assert User.san_balance!(user) == 10.0
   end
 
-  test "find_or_insert_by_email when the user does not exist" do
-    {:ok, user} = User.find_or_insert_by(:email, "test@example.com", %{username: "john_snow"})
+  describe "#find_or_insert_by_email" do
+    test "with non existing user" do
+      {:ok, user} = User.find_or_insert_by(:email, "test@example.com", %{username: "john_snow"})
 
-    assert user.email == "test@example.com"
-    assert user.username == "john_snow"
-    assert user.first_login
-  end
-
-  test "find_or_insert_by_email when the user does not exist and login origin is google" do
-    with_mocks([
-      {SignUpTrial, [:passtrough], [create_subscription: fn _ -> {:ok, %{}} end]}
-    ]) do
-      {:ok, user} = User.find_or_insert_by(:email, "example@gmail.com", %{login_origin: :google})
-
-      assert user.email == "example@gmail.com"
+      assert user.email == "test@example.com"
+      assert user.username == "john_snow"
       assert user.first_login
-      assert_called(SignUpTrial.create_subscription(user.id))
     end
-  end
 
-  test "find_or_insert_by_email when the user exists" do
-    existing_user =
-      insert(:user,
-        email: "test@example.com",
-        username: "cersei",
-        privacy_policy_accepted: true
-      )
+    test "with not registered user that has staked >= 2000 SAN and login origin is google" do
+      Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_uniswap_san_staked_user/1, 2001)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        {:ok, user} =
+          User.find_or_insert_by(:email, "example@gmail.com", %{login_origin: :google})
 
-    {:ok, user} = User.find_or_insert_by(:email, existing_user.email, %{username: "john_snow"})
+        assert user.email == "example@gmail.com"
+        assert user.first_login
+        assert Sanbase.Billing.list_free_subscriptions() |> length() == 1
+      end)
+    end
 
-    assert user.id == existing_user.id
-    assert user.email == existing_user.email
-    assert user.username == existing_user.username
+    test "with not registered user that has staked < 2000 SAN and login origin is google" do
+      Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_uniswap_san_staked_user/1, 1999)
+      |> Sanbase.Mock.prepare_mock2(&SignUpTrial.create_trial_subscription/1, {:ok, %{}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        {:ok, user} =
+          User.find_or_insert_by(:email, "example@gmail.com", %{login_origin: :google})
+
+        assert user.email == "example@gmail.com"
+        assert user.first_login
+        assert Sanbase.Billing.list_free_subscriptions() == []
+      end)
+    end
+
+    test "with registered user" do
+      existing_user =
+        insert(:user,
+          email: "test@example.com",
+          username: "cersei",
+          privacy_policy_accepted: true,
+          is_registered: true
+        )
+
+      Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_uniswap_san_staked_user/1, 2001)
+      |> Sanbase.Mock.prepare_mock2(&SignUpTrial.create_trial_subscription/1, {:ok, %{}})
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        {:ok, user} =
+          User.find_or_insert_by(:email, existing_user.email, %{username: "john_snow"})
+
+        assert user.id == existing_user.id
+        assert user.email == existing_user.email
+        assert user.username == existing_user.username
+
+        assert Sanbase.Billing.list_free_subscriptions() == []
+        refute called(SignUpTrial.create_trial_subscription(user.id))
+      end)
+    end
   end
 
   test "update_email_token updates the email_token and the email_token_generated_at" do

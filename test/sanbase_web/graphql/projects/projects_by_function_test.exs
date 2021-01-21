@@ -154,6 +154,60 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionTest do
     end)
   end
 
+  test "empty filter returns all projects", context do
+    function = %{"name" => "selector", "args" => %{"filters" => []}}
+
+    result =
+      execute_query(context.conn, query(function))
+      |> get_in(["data", "allProjectsByFunction", "projects"])
+
+    projects_count = Sanbase.Model.Project.List.projects_count()
+    assert length(result) == projects_count
+  end
+
+  test "pagination works with empty filter", context do
+    function = %{
+      "name" => "selector",
+      "args" => %{
+        "filters" => [],
+        "pagination" => %{"page" => 1, "page_size" => 5}
+      }
+    }
+
+    result =
+      execute_query(context.conn, query(function))
+      |> get_in(["data", "allProjectsByFunction", "projects"])
+
+    assert length(result) == 5
+  end
+
+  test "erc20 filter returns all erc20 projects", context do
+    function = %{"name" => "selector", "args" => %{"filters" => [%{"name" => "erc20"}]}}
+
+    result =
+      execute_query(context.conn, query(function))
+      |> get_in(["data", "allProjectsByFunction", "projects"])
+
+    projects_count = Sanbase.Model.Project.List.erc20_projects_count()
+    assert length(result) == projects_count
+  end
+
+  test "pagination works with erc20 filter ", context do
+    function = %{
+      "name" => "selector",
+      "args" => %{
+        "filters" => [%{"name" => "erc20"}],
+        "pagination" => %{"page" => 1, "page_size" => 3}
+      }
+    }
+
+    result =
+      execute_query(context.conn, query(function))
+      |> get_in(["data", "allProjectsByFunction", "projects"])
+
+    assert length(result) == 3
+  end
+
   test "projects by function for market segments", %{conn: conn} do
     function = %{"name" => "market_segment", "args" => %{"market_segment" => "stablecoin"}}
 

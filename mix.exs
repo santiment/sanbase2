@@ -121,7 +121,7 @@ defmodule Sanbase.Mixfile do
       {:sentry, "~> 7.0"},
       {:mutex, "~> 1.1"},
       {:stream_data, "~> 0.5", only: :test},
-      {:stripity_stripe, git: "https://github.com/code-corps/stripity_stripe"},
+      {:stripity_stripe, "~> 2.9"},
       {:sweet_xml, "~> 0.6"},
       {:telemetry_metrics, "~> 0.5"},
       {:telemetry_poller, "~> 0.4"},

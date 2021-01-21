@@ -265,6 +265,44 @@ defmodule SanbaseWeb.Graphql.ProjectApiTest do
     assert response["icoPrice"] == nil
   end
 
+  test "fetch social media links", context do
+    random_string = rand_str()
+
+    project =
+      insert(
+        :random_project,
+        %{
+          discord_link: "https://discord.gg/#{random_string}",
+          twitter_link: "https://twitter.com/#{random_string}",
+          slack_link: "https://#{random_string}.slack.com",
+          facebook_link: "https://facebook.com/#{random_string}",
+          reddit_link: "https://reddit.com/r/#{random_string}"
+        }
+      )
+
+    query = """
+    {
+      projectBySlug(slug: "#{project.slug}") {
+        discordLink
+        twitterLink
+        slackLink
+        facebookLink
+        redditLink
+      }
+    }
+    """
+
+    result = execute_query(context.conn, query, "projectBySlug")
+
+    assert %{
+             "discordLink" => "https://discord.gg/#{random_string}",
+             "twitterLink" => "https://twitter.com/#{random_string}",
+             "slackLink" => "https://#{random_string}.slack.com",
+             "facebookLink" => "https://facebook.com/#{random_string}",
+             "redditLink" => "https://reddit.com/r/#{random_string}"
+           } == result
+  end
+
   # Helper functions
 
   defp query_ico_price(context, cmc_id) do

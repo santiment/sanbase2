@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.3
--- Dumped by pg_dump version 12.3
+-- Dumped from database version 11.9 (Debian 11.9-0+deb10u1)
+-- Dumped by pg_dump version 11.9 (Debian 11.9-0+deb10u1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -82,6 +82,8 @@ CREATE TYPE public.watchlist_type AS ENUM (
 
 
 SET default_tablespace = '';
+
+SET default_with_oids = false;
 
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
@@ -1566,7 +1568,8 @@ CREATE TABLE public.project (
     slug character varying(255),
     is_hidden boolean DEFAULT false,
     dark_logo_url character varying(255),
-    telegram_chat_id integer
+    telegram_chat_id integer,
+    discord_link character varying(255)
 );
 
 
@@ -5531,3 +5534,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20201201102246);
 INSERT INTO public."schema_migrations" (version) VALUES (20201202125900);
 INSERT INTO public."schema_migrations" (version) VALUES (20210115081700);
 INSERT INTO public."schema_migrations" (version) VALUES (20210118080213);
+INSERT INTO public."schema_migrations" (version) VALUES (20210119085344);
+INSERT INTO public."schema_migrations" (version) VALUES (20210120090715);

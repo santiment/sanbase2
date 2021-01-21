@@ -34,6 +34,8 @@ config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
 # Configure postgres database
 config :sanbase, Sanbase.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
+  username: "postgres",
+  password: "postgres",
   database: "sanbase_test",
   pool_size: 5
 

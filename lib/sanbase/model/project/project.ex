@@ -36,6 +36,7 @@ defmodule Sanbase.Model.Project do
     field(:name, :string)
     field(:reddit_link, :string)
     field(:slack_link, :string)
+    field(:discord_link, :string)
     field(:team_token_wallet, :string)
     field(:telegram_chat_id, :integer)
     field(:telegram_link, :string)
@@ -99,6 +100,7 @@ defmodule Sanbase.Model.Project do
       :name,
       :reddit_link,
       :slack_link,
+      :discord_link,
       :slug,
       :team_token_wallet,
       :telegram_chat_id,

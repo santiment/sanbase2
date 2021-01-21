@@ -20,7 +20,8 @@ defmodule Sanbase.Billing.Subscription.FreeSubscription do
     Subscription.create(%{
       user_id: user_id,
       plan_id: @san_stake_free_plan,
-      status: "active"
+      status: "active",
+      current_period_end: Timex.shift(Timex.now(), days: 30)
     })
   end
 

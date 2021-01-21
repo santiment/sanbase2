@@ -129,8 +129,8 @@ defmodule Sanbase.Billing.Subscription do
   left that he has already paid for.
   https://stripe.com/docs/billing/subscriptions/canceling-pausing#canceling
   """
-  def cancel_subscription(%__MODULE__{} = sub) do
-    with {:ok, stripe_sub} <- StripeApi.cancel_subscription(sub.stripe_id),
+  def cancel_subscription(%__MODULE__{stripe_id: stripe_id} = sub) when is_binary(stripe_id) do
+    with {:ok, stripe_sub} <- StripeApi.cancel_subscription(stripe_id),
          {:ok, _canceled_sub} <- sync_with_stripe_subscription(stripe_sub, sub),
          %__MODULE__{user: user} <- Repo.preload(sub, [:user]),
          {:ok, _} <- Sanbase.ApiCallLimit.update_user_plan(user) do
@@ -143,6 +143,9 @@ defmodule Sanbase.Billing.Subscription do
        }}
     end
   end
+
+  def cancel_subscription(_),
+    do: {:error, "This type of automatically created subscription can't be cancelled"}
 
   @doc """
   Renew cancelled subscription if `current_period_end` is not reached.

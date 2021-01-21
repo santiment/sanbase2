@@ -230,6 +230,7 @@ defmodule Sanbase.Auth.User do
         |> maybe_create_free_or_trial_subscription(attrs)
 
       user ->
+        maybe_create_free_subscription(user, attrs)
         {:ok, user}
     end
   end
@@ -398,6 +399,14 @@ defmodule Sanbase.Auth.User do
 
     count_other_accounts > 0 or not is_nil(email)
   end
+
+  defp maybe_create_free_subscription(user, %{login_origin: origin})
+       when origin in [:google, :twitter] do
+    Billing.eligible_for_free_subscription?(user.id) &&
+      Billing.create_free_subscription(user.id)
+  end
+
+  defp maybe_create_free_subscription(_, _), do: :ok
 
   defp maybe_create_free_or_trial_subscription({:ok, %User{id: user_id}} = result, %{
          login_origin: origin

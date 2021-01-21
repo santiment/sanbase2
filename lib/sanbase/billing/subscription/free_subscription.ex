@@ -59,7 +59,7 @@ defmodule Sanbase.Billing.Subscription.FreeSubscription do
   @spec eligible_for_free_subscription?(non_neg_integer()) :: boolean()
   def eligible_for_free_subscription?(user_id) do
     !user_has_active_sanbase_subscriptions?(user_id) and
-      User.fetch_san_staked_user(user_id) >= @san_stake_required_free_sub
+      User.fetch_uniswap_san_staked_user(user_id) >= @san_stake_required_free_sub
   end
 
   @doc """
@@ -101,7 +101,7 @@ defmodule Sanbase.Billing.Subscription.FreeSubscription do
   # Helpers
 
   defp user_ids_with_enough_staked() do
-    User.fetch_all_staked_users()
+    User.fetch_all_uniswap_staked_users()
     |> Enum.filter(&(&1.san_staked >= @san_stake_required_free_sub))
     |> Enum.map(& &1.user_id)
   end

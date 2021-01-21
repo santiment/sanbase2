@@ -353,7 +353,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
         insert(:user, email: "example@santiment.net", is_registered: false)
         |> User.update_email_token()
 
-      Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_san_staked_user/1, 2001)
+      Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_uniswap_san_staked_user/1, 2001)
       |> Sanbase.Mock.run_with_mocks(fn ->
         mutation = email_login_verify_mutation(user)
         result = execute_mutation(context.conn, mutation, "emailLoginVerify")
@@ -370,7 +370,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
         insert(:user, email: "example@santiment.net", is_registered: true)
         |> User.update_email_token()
 
-      Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_san_staked_user/1, 2001)
+      Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_uniswap_san_staked_user/1, 2001)
       |> Sanbase.Mock.run_with_mocks(fn ->
         mutation = email_login_verify_mutation(user)
         result = execute_mutation(context.conn, mutation, "emailLoginVerify")
@@ -389,7 +389,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
 
       insert(:subscription_pro_sanbase, user: user, stripe_id: "123")
 
-      Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_san_staked_user/1, 2001)
+      Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_uniswap_san_staked_user/1, 2001)
       |> Sanbase.Mock.run_with_mocks(fn ->
         mutation = email_login_verify_mutation(user)
         result = execute_mutation(context.conn, mutation, "emailLoginVerify")
@@ -406,7 +406,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
         insert(:user, email: "example@santiment.net", is_registered: false)
         |> User.update_email_token()
 
-      Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_san_staked_user/1, 1999)
+      Sanbase.Mock.prepare_mock2(&UniswapStaking.fetch_uniswap_san_staked_user/1, 1999)
       |> Sanbase.Mock.run_with_mocks(fn ->
         mutation = email_login_verify_mutation(user)
         result = execute_mutation(context.conn, mutation, "emailLoginVerify")

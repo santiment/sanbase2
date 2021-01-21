@@ -25,7 +25,7 @@ defmodule Sanbase.Auth.User.UniswapStaking do
   @doc """
   Fetch all staked users over certain amount
   """
-  def fetch_all_staked_users() do
+  def fetch_all_uniswap_staked_users() do
     __MODULE__ |> Repo.all()
   end
 
@@ -33,9 +33,10 @@ defmodule Sanbase.Auth.User.UniswapStaking do
   Fetch all users with conncted wallets, fetch their total staked
   SAN tokens and update.
   """
-  @spec update_all_san_staked_users() :: {:ok, {integer(), nil | [term()]}} | {:error, any()}
-  def update_all_san_staked_users() do
-    Logger.info("Start update_all_san_staked_users")
+  @spec update_all_uniswap_san_staked_users() ::
+          {:ok, {integer(), nil | [term()]}} | {:error, any()}
+  def update_all_uniswap_san_staked_users() do
+    Logger.info("Start update_all_uniswap_san_staked_users")
     naive_now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
     users_san_staked =
@@ -43,7 +44,7 @@ defmodule Sanbase.Auth.User.UniswapStaking do
       |> Enum.map(fn user ->
         %{
           user_id: user.id,
-          san_staked: fetch_san_staked_user(user),
+          san_staked: fetch_uniswap_san_staked_user(user),
           inserted_at: naive_now,
           updated_at: naive_now
         }
@@ -62,11 +63,11 @@ defmodule Sanbase.Auth.User.UniswapStaking do
     end)
     |> case do
       {:ok, result} ->
-        Logger.info("Finished update_all_san_staked_users ok: #{inspect(result)}")
+        Logger.info("Finished update_all_uniswap_san_staked_users ok: #{inspect(result)}")
         {:ok, result}
 
       {:error, reason} ->
-        Logger.error("Finished update_all_san_staked_users error: #{inspect(reason)}")
+        Logger.error("Finished update_all_uniswap_san_staked_users error: #{inspect(reason)}")
         {:error, reason}
     end
   end
@@ -75,22 +76,22 @@ defmodule Sanbase.Auth.User.UniswapStaking do
   Fetch the total SAN tokens staked as liquidity provider in Uniswap
   pair contracts that we follow for all connected user wallets.
   """
-  @spec fetch_san_staked_user(%User{} | non_neg_integer()) :: float()
-  def fetch_san_staked_user(%User{} = user) do
+  @spec fetch_uniswap_san_staked_user(%User{} | non_neg_integer()) :: float()
+  def fetch_uniswap_san_staked_user(%User{} = user) do
     user = user |> Repo.preload(:eth_accounts)
 
-    calc_san_staked_user(user)
+    calc_uniswap_san_staked_user(user)
   end
 
-  def fetch_san_staked_user(user_id) do
+  def fetch_uniswap_san_staked_user(user_id) do
     {:ok, user} = User.by_id(user_id)
     user = user |> Repo.preload(:eth_accounts)
 
-    calc_san_staked_user(user)
+    calc_uniswap_san_staked_user(user)
   end
 
   # Helpers
-  defp calc_san_staked_user(user) do
+  defp calc_uniswap_san_staked_user(user) do
     Enum.reduce(user.eth_accounts, 0.0, fn %EthAccount{address: address}, acc ->
       UniswapPair.all_pair_contracts()
       |> Enum.map(&EthAccount.san_staked_address(address, &1))

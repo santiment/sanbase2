@@ -170,9 +170,9 @@ defmodule Sanbase.Auth.User do
   defdelegate san_balance!(user), to: __MODULE__.SanBalance
 
   # Uniswap San Staking functions
-  defdelegate fetch_all_staked_users(), to: __MODULE__.UniswapStaking
-  defdelegate update_all_san_staked_users(), to: __MODULE__.UniswapStaking
-  defdelegate fetch_san_staked_user(user), to: __MODULE__.UniswapStaking
+  defdelegate fetch_all_uniswap_staked_users(), to: __MODULE__.UniswapStaking
+  defdelegate update_all_uniswap_san_staked_users(), to: __MODULE__.UniswapStaking
+  defdelegate fetch_uniswap_san_staked_user(user), to: __MODULE__.UniswapStaking
 
   def by_id(user_id) when is_integer(user_id) do
     case Sanbase.Repo.get_by(User, id: user_id) do

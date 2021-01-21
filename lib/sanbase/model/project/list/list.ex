@@ -474,8 +474,13 @@ defmodule Sanbase.Model.Project.List do
   end
 
   defp erc20_projects_query(opts) do
+    projects_query(opts)
+    |> filter_erc20_projects()
+  end
+
+  defp filter_erc20_projects(query) do
     from(
-      p in projects_query(opts),
+      p in query,
       inner_join: infr in assoc(p, :infrastructure),
       inner_join: contract in assoc(p, :contract_addresses),
       where: not is_nil(contract.id) and infr.code == "ETH"
@@ -579,6 +584,10 @@ defmodule Sanbase.Model.Project.List do
       # Do not exclude any projects
       :all ->
         query
+
+      :erc20 ->
+        query
+        |> filter_erc20_projects()
 
       slugs when is_list(slugs) ->
         query

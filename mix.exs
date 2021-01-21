@@ -45,14 +45,14 @@ defmodule Sanbase.Mixfile do
 
   defp deps() do
     [
-      {:absinthe_metrics, "~> 1.0"},
+      {:absinthe_metrics, "~> 1.1"},
       {:absinthe_phoenix, "~> 2.0"},
-      {:absinthe_plug, github: "absinthe-graphql/absinthe_plug", override: true},
-      {:absinthe, github: "absinthe-graphql/absinthe", override: true},
-      {:waffle, "~> 1.1"},
+      {:absinthe_plug, "~> 1.5"},
+      {:absinthe, "~> 1.5"},
       {:async_with, github: "fertapric/async_with"},
       {:cidr, "~> 1.1"},
       {:clickhouse_ecto, github: "santiment/clickhouse_ecto", branch: "migrate-ecto-3"},
+      {:waffle, "~> 1.1"},
       {:clickhousex, github: "santiment/clickhousex", override: true},
       {:con_cache, "~> 0.13"},
       {:corsica, "~> 1.0"},
@@ -83,7 +83,7 @@ defmodule Sanbase.Mixfile do
       {:floki, "~> 0.20"},
       {:gettext, "~> 0.11"},
       {:guardian, "~> 2.0"},
-      {:hackney, github: "benoitc/hackney", override: true},
+      {:hackney, "~> 1.17", override: true},
       {:hammer, "~> 6.0"},
       {:httpoison, "~> 1.2", override: true},
       {:inch_ex, github: "rrrene/inch_ex", only: [:dev, :test]},

@@ -292,11 +292,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiTest do
     }
     """
 
-    result =
-      context.conn
-      |> post("/graphql", query_skeleton(query, "projectBySlug"))
-      |> json_response(200)
-      |> get_in(["data", "projectBySlug"])
+    result = execute_query(context.conn, query, "projectBySlug")
 
     assert %{
              "discordLink" => "https://discord.gg/#{random_string}",

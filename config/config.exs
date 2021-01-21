@@ -152,7 +152,7 @@ config :sanbase, Sanbase.TechIndicators,
 config :sanbase, Sanbase.SocialData, metricshub_url: {:system, "METRICS_HUB_URL"}
 
 config :sanbase, Sanbase.SocialData.TrendingWords,
-  trending_words_table: {:system, "TRENDING_WORDS_TABLE", "trending_words_top_500"}
+  trending_words_table: {:system, "TRENDING_WORDS_TABLE", "trending_words_v4_top_500"}
 
 config :waffle,
   storage: Waffle.Storage.S3,

@@ -139,7 +139,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :top_social_gainers_losers,
           :topic_search,
           :transaction_volume,
-          :trending_words,
           :word_context,
           :word_trend_score
         ]

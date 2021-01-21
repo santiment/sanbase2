@@ -130,11 +130,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
   end
 
   def word_context(%{word: word}, _args, resolution) do
-    %{source: source, from: from, to: to} =
-      Utils.extract_root_query_args(resolution, "trending_words")
+    %{from: from, to: to} = Utils.extract_root_query_args(resolution, "get_trending_words")
 
     async(fn ->
-      SocialData.word_context(word, source, @context_words_default_size, from, to)
+      SocialData.word_context(word, :all, @context_words_default_size, from, to)
     end)
   end
 

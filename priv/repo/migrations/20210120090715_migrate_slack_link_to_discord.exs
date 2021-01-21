@@ -24,13 +24,15 @@ defmodule Sanbase.Repo.Migrations.MigrateSlackLinkToDiscord do
     |> Enum.filter(fn %Project{slack_link: link} ->
       String.contains?(link, "discord")
     end)
-    |> Enum.map(fn %Project{slack_link: link} = project ->
-      Project.changeset(project, %{discord_link: link})
-      |> update_change(:discord_link, &transform_discord_link/1)
+    |> Enum.each(fn %Project{slack_link: link} = project ->
+      Project.changeset(project, %{discord_link: transform_discord_link(link)})
       |> Repo.update!()
     end)
   end
 
-  defp transform_link("https://discordapp.com/invite/" <> rest), do: "https://discord.gg/" <> rest
-  defp transform_link(link), do: link
+  defp transform_discord_link("https://discordapp.com/invite/" <> rest) do
+    "https://discord.gg/" <> rest
+  end
+
+  defp transform_discord_link(link), do: link
 end

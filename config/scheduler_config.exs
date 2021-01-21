@@ -58,9 +58,9 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "*/5 * * * *",
       task: {Sanbase.Billing.Subscription.SignUpTrial, :cancel_prematurely_ended_trials, []}
     ],
-    sync_plans_in_stripe: [
+    sync_with_stripe: [
       schedule: "@reboot",
-      task: {Sanbase.Billing.Plan, :sync_plans_in_stripe, []}
+      task: {Sanbase.Billing, :sync_with_stripe, []}
     ],
     sync_stripe_subscriptions: [
       schedule: "2-59/5 * * * *",
@@ -99,7 +99,11 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       task: {Sanbase.Auth.User, :sync_subscribed_users_with_changed_email, []}
     ],
     update_all_san_staked_users: [
-      schedule: "@hourly * * * *",
+      schedule: "4-59/30 * * * *",
       task: {Sanbase.Auth.User, :update_all_san_staked_users, []}
+    ],
+    sync_free_subscriptions_staked_users: [
+      schedule: "7-59/30 * * * *",
+      task: {Sanbase.Billing, :sync_free_subscriptions_staked_users, []}
     ]
   ]

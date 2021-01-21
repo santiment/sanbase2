@@ -29,7 +29,7 @@ defmodule SanbaseWeb.AuthController do
          {:ok, user} <-
            User.find_or_insert_by(:email, email, %{login_origin: :google}),
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),
-         {:ok, user} <- User.mark_as_registered(user) do
+         {:ok, _} <- User.mark_as_registered(user) do
       conn
       |> put_session(:auth_token, token)
       |> redirect(external: redirect_urls.success)
@@ -48,7 +48,7 @@ defmodule SanbaseWeb.AuthController do
 
     with {:ok, user} <- twitter_login(email, twitter_id),
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),
-         {:ok, user} <- User.mark_as_registered(user) do
+         {:ok, _} <- User.mark_as_registered(user) do
       conn
       |> put_session(:auth_token, token)
       |> redirect(external: redirect_urls.success)

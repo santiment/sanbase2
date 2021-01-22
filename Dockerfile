@@ -8,6 +8,8 @@ RUN apk add --no-cache curl
 RUN curl https://sh.rustup.rs -sSf | \
   sh -s -- --default-toolchain stable -y
 
+ENV RUSTFLAGS="-C target-feature=-crt-static"
+
 ENV PATH=/root/.cargo/bin:$PATH
 
 RUN apk add --no-cache make \
@@ -17,6 +19,7 @@ RUN apk add --no-cache make \
   nodejs-npm \
   openssl \
   wget
+
 
 RUN mix local.hex --force
 RUN mix local.rebar --force

@@ -210,7 +210,26 @@ defmodule Sanbase.UserList do
     |> maybe_create_event(changeset, TimelineEvent.update_watchlist_type())
   end
 
-  def remove_user_list(%{id: id}) do
+  def add_user_list_items(user, %{id: id, list_items: _} = params) do
+    %{list_items: list_items} = update_list_items_params(params, user)
+
+    case ListItem.create(list_items) do
+      {:ok, _} -> {:ok, by_id(id)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  def remove_user_list_items(user, %{id: id, list_items: _} = params) do
+    %{list_items: list_items} = update_list_items_params(params, user)
+
+    case ListItem.delete(list_items) do
+      {nil, _} -> {:ok, by_id(id)}
+      {num, _} when is_integer(num) -> {:ok, by_id(id)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  def remove_user_list(_user, %{id: id}) do
     by_id(id)
     |> Repo.delete()
   end

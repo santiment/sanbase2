@@ -165,6 +165,22 @@ defmodule SanbaseWeb.Graphql.Schema.UserListQueries do
       resolve(&UserListResolver.update_watchlist/3)
     end
 
+    field :add_watchlist_items, :user_list do
+      arg(:id, non_null(:integer))
+      arg(:list_items, non_null(list_of(:input_list_item)))
+
+      middleware(JWTAuth)
+      resolve(&UserListResolver.add_watchlist_items/3)
+    end
+
+    field :remove_watchlist_items, :user_list do
+      arg(:id, non_null(:integer))
+      arg(:list_items, non_null(list_of(:input_list_item)))
+
+      middleware(JWTAuth)
+      resolve(&UserListResolver.remove_watchlist_items/3)
+    end
+
     field :update_watchlist_settings, :watchlist_settings do
       arg(:id, non_null(:integer))
       arg(:settings, non_null(:watchlist_settings_input_object))

@@ -2,11 +2,9 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
-  import Sanbase.TestHelpers
 
   alias Sanbase.Signal.{UserTrigger, Scheduler}
   alias Sanbase.Signal.Trigger.MetricTriggerSettings
-  alias Sanbase.Signal.Trigger.MetricTriggerHelper
 
   setup do
     Sanbase.Signal.Evaluator.Cache.clear_all()
@@ -20,14 +18,13 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
     Sanbase.Auth.UserSettings.update_settings(user, %{signal_notify_email: true})
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
-    datetimes = generate_datetimes(~U[2019-01-01 00:00:00Z], "1d", 7)
     project = insert(:random_project)
 
-    [user: user, project: project, datetimes: datetimes]
+    [user: user, project: project]
   end
 
   test "human readable numbers between 1000 and 1,000,000", context do
-    %{user: user, project: project, datetimes: datetimes} = context
+    %{user: user, project: project} = context
 
     {:ok, _trigger} = create_trigger(user, project.slug)
 
@@ -54,7 +51,7 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
   end
 
   test "human readable numbers above 1,000,000", context do
-    %{user: user, project: project, datetimes: datetimes} = context
+    %{user: user, project: project} = context
 
     {:ok, _trigger} = create_trigger(user, project.slug)
 
@@ -81,9 +78,7 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
   end
 
   test "payload is extended", context do
-    %{user: user, project: project, datetimes: datetimes} = context
-
-    data = gen_timeseries_data(datetimes, [100, 120, 100, 80, 20, 10, 5])
+    %{user: user, project: project} = context
 
     {:ok, trigger} = create_trigger(user, project.slug)
 
@@ -109,7 +104,7 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
   end
 
   test "metric payload details", context do
-    %{user: user, project: project, datetimes: datetimes} = context
+    %{user: user, project: project} = context
 
     {:ok, _trigger} =
       create_trigger(user, project.slug, metric: "active_addresses_24h", time_window: "2d")
@@ -141,7 +136,7 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
 
   # TODO: Move to a `trigger_sending_test.exs`
   test "send to a webhook", context do
-    %{user: user, project: project, datetimes: datetimes} = context
+    %{user: user, project: project} = context
 
     {:ok, trigger} = create_trigger(user, project.slug, channel: [%{"webhook" => "url"}])
 
@@ -172,11 +167,6 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
   end
 
   # Private functions
-
-  defp gen_timeseries_data(datetimes, data) do
-    Enum.zip(datetimes, data)
-    |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
-  end
 
   defp create_trigger(user, slug, opts \\ []) do
     metric = Keyword.get(opts, :metric, "active_addresses_24h")

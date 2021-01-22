@@ -67,6 +67,8 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerHelper do
     interval_seconds = str_to_sec(time_window)
     now = Timex.now()
 
+    # TODO: Replace datetimes in case of daily metric. They should be dates so we
+    # pick some value from today.
     first = Timex.shift(now, seconds: -2 * interval_seconds)
     middle = Timex.shift(now, seconds: -interval_seconds)
     last = now

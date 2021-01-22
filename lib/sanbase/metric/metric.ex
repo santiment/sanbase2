@@ -447,13 +447,20 @@ defmodule Sanbase.Metric do
   @spec available_metrics(opts) :: list(metric)
   def available_metrics(opts \\ [])
 
+  def available_metrics([]), do: @metrics
+
   def available_metrics(opts) do
-    case Keyword.get(opts, :min_interval_less_or_equal) do
+    case Keyword.get(opts, :filter) do
       nil ->
         @metrics
 
-      interval ->
-        filter_metrics_by_min_interval(@metrics, interval)
+      :min_interval_less_or_equal ->
+        filter_interval = Keyword.fetch!(opts, :filter_interval)
+        filter_metrics_by_min_interval(@metrics, filter_interval, &<=/2)
+
+      :min_interval_greater_or_equal ->
+        filter_interval = Keyword.fetch!(opts, :filter_interval)
+        filter_metrics_by_min_interval(@metrics, filter_interval, &>=/2)
     end
   end
 
@@ -708,17 +715,16 @@ defmodule Sanbase.Metric do
 
   defp maybe_change_module(module, _metric, _selector), do: module
 
-  defp filter_metrics_by_min_interval(metrics, interval) do
+  defp filter_metrics_by_min_interval(metrics, interval, compare_fun) do
     interval_to_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
 
     metrics
     |> Enum.filter(fn metric ->
       {:ok, %{min_interval: min_interval}} = metadata(metric)
 
-      case Sanbase.DateTimeUtils.str_to_sec(min_interval) do
-        seconds when seconds <= interval_to_sec -> true
-        _ -> false
-      end
+      min_interval_sec = Sanbase.DateTimeUtils.str_to_sec(min_interval)
+
+      compare_fun.(min_interval_sec, interval_to_sec)
     end)
   end
 

@@ -3,6 +3,7 @@ defmodule Sanbase.UserList.ListItem do
   import Ecto.Changeset
   import Ecto.Query
 
+  alias Sanbase.Repo
   alias Sanbase.UserList
   alias Sanbase.Model.Project
   alias Sanbase.BlockchainAddress.BlockchainAddressUserPair
@@ -46,4 +47,47 @@ defmodule Sanbase.UserList.ListItem do
     |> Sanbase.Repo.all()
     |> Enum.map(& &1.blockchain_address_user_pair)
   end
+
+  def create(list_items) do
+    list_items
+    |> Enum.map(&changeset(%__MODULE__{}, &1))
+    |> Enum.with_index()
+    |> Enum.reduce(
+      Ecto.Multi.new(),
+      fn {changeset, offset}, multi ->
+        multi
+        |> Ecto.Multi.insert(offset, changeset, on_conflict: :nothing)
+      end
+    )
+    |> Sanbase.Repo.transaction()
+    |> case do
+      {:ok, result} -> {:ok, Map.values(result)}
+      {:error, _name, error, _changes_so_far} -> {:error, error}
+    end
+  end
+
+  def delete([%{project_id: _} | _] = list_items) do
+    Enum.reduce(list_items, __MODULE__, fn map, query ->
+      query
+      |> or_where(
+        [li],
+        li.user_list_id == ^map.user_list_id and li.project_id == ^map.project_id
+      )
+    end)
+    |> Repo.delete_all()
+  end
+
+  def delete([%{blockchain_address_id: _} | _] = list_items) do
+    Enum.reduce(list_items, __MODULE__, fn map, query ->
+      query
+      |> or_where(
+        [li],
+        li.user_list_id == ^map.user_list_id and
+          li.blockchain_address_id == ^map.blockchain_address_id
+      )
+    end)
+    |> Repo.delete_all()
+  end
+
+  def delete([]), do: {0, nil}
 end

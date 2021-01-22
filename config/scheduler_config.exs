@@ -35,6 +35,10 @@ config :sanbase, Sanbase.Signals.Scheduler,
     metric_signal: [
       schedule: "5-59/5 * * * *",
       task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.MetricTriggerSettings]}
+    ],
+    daily_metric_signal: [
+      schedule: "0 3 * * *",
+      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.DailyMetricTriggerSettings]}
     ]
   ]
 

@@ -3,6 +3,7 @@ defmodule Sanbase.Signal.List do
 
   def get() do
     [
+      Trigger.DailyMetricTriggerSettings,
       Trigger.EthWalletTriggerSettings,
       Trigger.MetricTriggerSettings,
       Trigger.PriceVolumeDifferenceTriggerSettings,

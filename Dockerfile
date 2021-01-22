@@ -3,15 +3,20 @@ FROM elixir:1.10.4-alpine as code_builder
 
 ENV MIX_ENV prod
 
+RUN apk add --no-cache curl
+
+RUN curl https://sh.rustup.rs -sSf | \
+  sh -s -- --default-toolchain stable -y
+
+ENV PATH=/root/.cargo/bin:$PATH
+
 RUN apk add --no-cache make \
   g++ \
   git \
   nodejs \
   nodejs-npm \
   openssl \
-  wget \
-  rust \
-  cargo
+  wget
 
 RUN mix local.hex --force
 RUN mix local.rebar --force

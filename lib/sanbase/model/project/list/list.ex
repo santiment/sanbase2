@@ -474,8 +474,22 @@ defmodule Sanbase.Model.Project.List do
   end
 
   defp erc20_projects_query(opts) do
+    # If the opts have included_slugs: :erc20 then the filter_erc20_projects/1
+    # function will be called twice - once here and once from the projects_query(opts)
+    # Fix this by removing :included_slugs only in this case. Do not change them in
+    # other cases as this option can be used to further filter the projects.
+    opts =
+      if Keyword.get(opts, :included_slugs) == :erc20,
+        do: Keyword.delete(opts, :included_slugs),
+        else: opts
+
+    projects_query(opts)
+    |> filter_erc20_projects()
+  end
+
+  defp filter_erc20_projects(query) do
     from(
-      p in projects_query(opts),
+      p in query,
       inner_join: infr in assoc(p, :infrastructure),
       inner_join: contract in assoc(p, :contract_addresses),
       where: not is_nil(contract.id) and infr.code == "ETH"
@@ -579,6 +593,10 @@ defmodule Sanbase.Model.Project.List do
       # Do not exclude any projects
       :all ->
         query
+
+      :erc20 ->
+        query
+        |> filter_erc20_projects()
 
       slugs when is_list(slugs) ->
         query

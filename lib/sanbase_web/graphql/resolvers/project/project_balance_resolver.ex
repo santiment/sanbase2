@@ -69,17 +69,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
     loader
     |> eth_balance_loader(project)
     |> btc_balance_loader(project)
-    |> Dataloader.load(SanbaseDataloader, {:price, "ethereum"}, :last)
-    |> Dataloader.load(SanbaseDataloader, {:price, "bitcoin"}, :last)
+    |> Dataloader.load(SanbaseDataloader, :last_price_usd, "ethereum")
+    |> Dataloader.load(SanbaseDataloader, :last_price_usd, "bitcoin")
   end
 
   def usd_balance_from_loader(loader, %Project{} = project) do
     with {:ok, eth_balance} <- eth_balance_from_loader(loader, project),
          {:ok, btc_balance} <- btc_balance_from_loader(loader, project),
          {eth_price_usd, _eth_price_btc} when not is_nil(eth_price_usd) <-
-           Dataloader.get(loader, SanbaseDataloader, {:price, "ethereum"}, :last),
+           Dataloader.get(loader, SanbaseDataloader, :last_price_usd, "ethereum"),
          {btc_price_usd, _btc_price_btc} when not is_nil(btc_price_usd) <-
-           Dataloader.get(loader, SanbaseDataloader, {:price, "bitcoin"}, :last) do
+           Dataloader.get(loader, SanbaseDataloader, :last_price_usd, "bitcoin") do
       usd_balance_float = eth_balance * eth_price_usd + btc_balance * btc_price_usd
 
       {:ok, usd_balance_float}

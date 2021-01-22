@@ -1,14 +1,21 @@
 FROM elixir:1.10.4-alpine
 
+RUN apk add --no-cache curl
+
+RUN curl https://sh.rustup.rs -sSf | \
+  sh -s -- --default-toolchain stable -y
+
+ENV RUSTFLAGS="-C target-feature=-crt-static"
+
+ENV PATH=/root/.cargo/bin:$PATH
+
 RUN apk add --no-cache make \
-                       g++ \
-                       git \
-                       postgresql-client \
-                       imagemagick \
-											 openssl \
-											 wget \
-                       rust \
-                       cargo
+  g++ \
+  git \
+  postgresql-client \
+  imagemagick \
+  openssl \
+  wget
 
 ENV MIX_ENV test
 

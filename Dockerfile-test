@@ -7,8 +7,7 @@ RUN apk add --no-cache make \
                        imagemagick \
 											 openssl \
 											 wget \
-                       rust \
-                       cargo
+                       rustup
 
 ENV MIX_ENV test
 

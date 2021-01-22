@@ -10,8 +10,7 @@ RUN apk add --no-cache make \
                        imagemagick \
                        openssl \
                        wget \
-                       rust \
-                       cargo
+                       rustup
 
 RUN mix local.hex --force
 RUN mix local.rebar --force

@@ -102,7 +102,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     with true <- Ethauth.verify_signature(signature, address, message_hash),
          {:ok, user} <- fetch_user(args, EthAccount.by_address(address)),
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),
-         _ <- Billing.maybe_create_free_or_trial_subscription(user.id),
+         _ <- Billing.maybe_create_liquidity_or_trial_subscription(user.id),
          {:ok, user} <- User.mark_as_registered(user) do
       {:ok, %{user: user, token: token}}
     else
@@ -134,7 +134,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
          true <- User.email_token_valid?(user, token),
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),
          {:ok, user} <- User.mark_email_token_as_validated(user),
-         _ <- Billing.maybe_create_free_or_trial_subscription(user.id),
+         _ <- Billing.maybe_create_liquidity_or_trial_subscription(user.id),
          {:ok, user} <- User.mark_as_registered(user) do
       {:ok, %{user: user, token: token}}
     else

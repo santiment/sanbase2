@@ -395,7 +395,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
         result = execute_mutation(context.conn, mutation, "emailLoginVerify")
 
         assert result["user"]["email"] == user.email
-        assert Sanbase.Billing.list_free_subscriptions() == []
+        assert Sanbase.Billing.list_liquidity_subscriptions() == []
         assert Repo.get(User, user.id).is_registered
         assert_called(SignUpTrial.create_trial_subscription(user.id))
       end)
@@ -412,7 +412,7 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
         result = execute_mutation(context.conn, mutation, "emailLoginVerify")
 
         assert result["user"]["email"] == user.email
-        assert Sanbase.Billing.list_free_subscriptions() == []
+        assert Sanbase.Billing.list_liquidity_subscriptions() == []
         assert Repo.get(User, user.id).is_registered
         assert_called(SignUpTrial.create_trial_subscription(user.id))
       end)

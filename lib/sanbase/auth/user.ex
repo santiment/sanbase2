@@ -227,7 +227,7 @@ defmodule Sanbase.Auth.User do
         %User{}
         |> User.changeset(user_create_attrs)
         |> Repo.insert()
-        |> maybe_create_free_or_trial_subscription(attrs)
+        |> maybe_create_liquidity_or_trial_subscription(attrs)
 
       user ->
         maybe_create_free_subscription(user, attrs)
@@ -402,20 +402,20 @@ defmodule Sanbase.Auth.User do
 
   defp maybe_create_free_subscription(user, %{login_origin: origin})
        when origin in [:google, :twitter] do
-    Billing.eligible_for_free_subscription?(user.id) &&
-      Billing.create_free_subscription(user.id)
+    Billing.eligible_for_liquidity_subscription?(user.id) &&
+      Billing.create_liquidity_subscription(user.id)
   end
 
   defp maybe_create_free_subscription(_, _), do: :ok
 
-  defp maybe_create_free_or_trial_subscription({:ok, %User{id: user_id}} = result, %{
+  defp maybe_create_liquidity_or_trial_subscription({:ok, %User{id: user_id}} = result, %{
          login_origin: origin
        })
        when origin in [:google, :twitter] do
-    Billing.maybe_create_free_or_trial_subscription(user_id)
+    Billing.maybe_create_liquidity_or_trial_subscription(user_id)
 
     result
   end
 
-  defp maybe_create_free_or_trial_subscription(result, _), do: result
+  defp maybe_create_liquidity_or_trial_subscription(result, _), do: result
 end

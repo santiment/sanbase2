@@ -251,7 +251,7 @@ defmodule Sanbase.Auth.UserTest do
 
         assert user.email == "example@gmail.com"
         assert user.first_login
-        assert Sanbase.Billing.list_free_subscriptions() |> length() == 1
+        assert Sanbase.Billing.list_liquidity_subscriptions() |> length() == 1
       end)
     end
 
@@ -264,7 +264,7 @@ defmodule Sanbase.Auth.UserTest do
 
         assert user.email == "example@gmail.com"
         assert user.first_login
-        assert Sanbase.Billing.list_free_subscriptions() == []
+        assert Sanbase.Billing.list_liquidity_subscriptions() == []
       end)
     end
 
@@ -287,7 +287,7 @@ defmodule Sanbase.Auth.UserTest do
         assert user.email == existing_user.email
         assert user.username == existing_user.username
 
-        assert Sanbase.Billing.list_free_subscriptions() == []
+        assert Sanbase.Billing.list_liquidity_subscriptions() == []
         refute called(SignUpTrial.create_trial_subscription(user.id))
       end)
     end

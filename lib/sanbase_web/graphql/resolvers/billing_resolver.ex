@@ -174,6 +174,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
 
   defp handle_subscription_error_result(result, log_message, params) do
     case result do
+      {:error, %Stripe.Error{message: message} = reason} ->
+        Logger.error("#{log_message} - reason: #{inspect(reason)}")
+        {:error, message}
+
       {:plan?, _} ->
         reason = "Cannot find plan with id #{params.plan_id}"
         Logger.error("#{log_message} - reason: #{reason}")

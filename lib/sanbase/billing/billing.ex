@@ -7,18 +7,18 @@ defmodule Sanbase.Billing do
 
   alias Sanbase.Repo
   alias Sanbase.Billing.{Product, Plan, Subscription}
-  alias Sanbase.Billing.Subscription.{FreeSubscription, SignUpTrial}
+  alias Sanbase.Billing.Subscription.{LiquiditySubscription, SignUpTrial}
 
   defdelegate create_trial_subscription(user_id), to: SignUpTrial
-  # FreeSubscription
-  defdelegate create_free_subscription(user_id), to: FreeSubscription
-  defdelegate remove_free_subscription(free_subscription), to: FreeSubscription
-  defdelegate list_free_subscriptions(), to: FreeSubscription
-  defdelegate eligible_for_free_subscription?(user_id), to: FreeSubscription
-  defdelegate user_has_active_sanbase_subscriptions?(user_id), to: FreeSubscription
-  defdelegate sync_free_subscriptions_staked_users(), to: FreeSubscription
-  defdelegate maybe_create_free_subscriptions_staked_users(), to: FreeSubscription
-  defdelegate maybe_remove_free_subscriptions_staked_users(), to: FreeSubscription
+  # LiquiditySubscription
+  defdelegate create_liquidity_subscription(user_id), to: LiquiditySubscription
+  defdelegate remove_liquidity_subscription(liquidity_subscription), to: LiquiditySubscription
+  defdelegate list_liquidity_subscriptions(), to: LiquiditySubscription
+  defdelegate eligible_for_liquidity_subscription?(user_id), to: LiquiditySubscription
+  defdelegate user_has_active_sanbase_subscriptions?(user_id), to: LiquiditySubscription
+  defdelegate sync_liquidity_subscriptions_staked_users(), to: LiquiditySubscription
+  defdelegate maybe_create_liquidity_subscriptions_staked_users(), to: LiquiditySubscription
+  defdelegate maybe_remove_liquidity_subscriptions_staked_users(), to: LiquiditySubscription
 
   def list_products(), do: Repo.all(Product)
 
@@ -50,11 +50,11 @@ defmodule Sanbase.Billing do
   If user has enough SAN staked and has no active Sanbase subscription - create one
   Or if user is not yet registered - create a 14 day trial
   """
-  @spec maybe_create_free_or_trial_subscription(non_neg_integer()) ::
+  @spec maybe_create_liquidity_or_trial_subscription(non_neg_integer()) ::
           {:ok, %Subscription{}} | {:ok, %SignUpTrial{}} | {:error, any()}
-  def maybe_create_free_or_trial_subscription(user_id) do
-    case eligible_for_free_subscription?(user_id) do
-      true -> create_free_subscription(user_id)
+  def maybe_create_liquidity_or_trial_subscription(user_id) do
+    case eligible_for_liquidity_subscription?(user_id) do
+      true -> create_liquidity_subscription(user_id)
       false -> create_trial_subscription(user_id)
     end
   end

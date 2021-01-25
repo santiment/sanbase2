@@ -102,8 +102,8 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "4-59/30 * * * *",
       task: {Sanbase.Auth.User, :update_all_uniswap_san_staked_users, []}
     ],
-    sync_free_subscriptions_staked_users: [
+    sync_liquidity_subscriptions_staked_users: [
       schedule: "7-59/30 * * * *",
-      task: {Sanbase.Billing, :sync_free_subscriptions_staked_users, []}
+      task: {Sanbase.Billing, :sync_liquidity_subscriptions_staked_users, []}
     ]
   ]

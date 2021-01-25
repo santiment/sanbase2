@@ -19,7 +19,7 @@ defmodule Sanbase.Billing.Subscription.Query do
     )
   end
 
-  def free_subscriptions_query(query) do
+  def liquidity_subscriptions_query(query) do
     from(q in query, where: is_nil(q.stripe_id))
   end
 

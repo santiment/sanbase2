@@ -87,8 +87,7 @@ defmodule Sanbase.Promoters.FirstPromoterApi do
     response
     |> case do
       {:ok, %HTTPoison.Response{status_code: code, body: body}} when code in 200..299 ->
-        # TODO: `keys: :atoms` is not safe.
-        {:ok, Jason.decode!(body, keys: :atoms)}
+        {:ok, Jason.decode!(body)}
 
       {:ok, %HTTPoison.Response{status_code: _code, body: body}} = response ->
         Logger.error("#{default_error_msg}: #{inspect(filter_response(response))}")

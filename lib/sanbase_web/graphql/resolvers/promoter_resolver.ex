@@ -17,6 +17,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PromoterResolver do
 
   defp extract_and_atomize_needed_fields({:error, _} = result), do: result
 
+  # Note: Adding new field to extract should be also reflected by adding it in promoter_types.ex
   defp extract_and_atomize_needed_fields({:ok, promoter}) do
     promoter =
       promoter

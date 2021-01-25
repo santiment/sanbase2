@@ -4,7 +4,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   A time restrictions is defined by the query/metric, plan and product.
   """
 
-  alias Sanbase.Billing.{Product, Plan, Plan.AccessChecker}
+  alias Sanbase.Billing.{Product, Plan.AccessChecker}
 
   @type restriction :: %{
           type: String.t(),
@@ -22,12 +22,9 @@ defmodule Sanbase.Billing.Plan.Restrictions do
     now = Timex.now()
     type_str = type |> to_string()
     name_str = construct_name(type, name)
+    product = Product.code_by_id(product_id)
 
-    case AccessChecker.plan_has_access?(
-           plan,
-           Product.code_by_id(product_id),
-           query_or_metric
-         ) do
+    case AccessChecker.plan_has_access?(plan, product, query_or_metric) do
       false ->
         %{
           type: type_str,
@@ -50,22 +47,15 @@ defmodule Sanbase.Billing.Plan.Restrictions do
 
           true ->
             restricted_from =
-              case AccessChecker.historical_data_in_days(
-                     plan,
-                     query_or_metric,
-                     product_id
-                   ) do
+              case AccessChecker.historical_data_in_days(plan, query_or_metric, product_id) do
                 nil -> nil
                 days -> Timex.shift(now, days: -days)
               end
 
             restricted_to =
-              case AccessChecker.realtime_data_cut_off_in_days(
-                     plan,
-                     query_or_metric,
-                     product_id
-                   ) do
+              case AccessChecker.realtime_data_cut_off_in_days(plan, query_or_metric, product_id) do
                 nil -> nil
+                0 -> nil
                 days -> Timex.shift(now, days: -days)
               end
 

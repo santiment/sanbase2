@@ -479,6 +479,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "other_traders_balance",
         # ETH2 metrics
         "eth2_stakers_count",
+        "eth2_roi",
         # Defi
         "defi_total_value_locked_eth",
         "defi_total_value_locked_usd",

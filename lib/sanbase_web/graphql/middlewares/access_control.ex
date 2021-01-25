@@ -187,10 +187,10 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     product_id = subscription.plan.product_id || context.product_id
 
     historical_data_in_days =
-      Subscription.historical_data_in_days(subscription, query, product_id)
+      Subscription.historical_data_in_days(subscription, product_id, query)
 
     realtime_data_cut_off_in_days =
-      Subscription.realtime_data_cut_off_in_days(subscription, query, product_id)
+      Subscription.realtime_data_cut_off_in_days(subscription, product_id, query)
 
     resolution
     |> update_resolution_from_to(

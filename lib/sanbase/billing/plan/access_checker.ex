@@ -145,30 +145,30 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     {Product.product_sanbase(), SanbaseAccessChecker}
   ]
 
-  @spec historical_data_in_days(atom(), query_or_metric(), non_neg_integer()) ::
+  @spec historical_data_in_days(atom(), non_neg_integer(), query_or_metric()) ::
           non_neg_integer() | nil
-  def historical_data_in_days(plan, query_or_metric, _product_id)
+  def historical_data_in_days(plan, _product_id, query_or_metric)
       when query_or_metric in @custom_access_queries do
     Map.get(@custom_access_queries_stats, query_or_metric)
     |> get_in([:plan_access, plan, :historical_data_in_days])
   end
 
   for {product_id, module} <- @product_to_access_module do
-    def historical_data_in_days(plan, query_or_metric, unquote(product_id)) do
+    def historical_data_in_days(plan, unquote(product_id), query_or_metric) do
       unquote(module).historical_data_in_days(plan, query_or_metric)
     end
   end
 
-  @spec realtime_data_cut_off_in_days(atom(), query_or_metric(), non_neg_integer()) ::
+  @spec realtime_data_cut_off_in_days(atom(), non_neg_integer(), query_or_metric()) ::
           non_neg_integer() | nil
-  def realtime_data_cut_off_in_days(plan, query_or_metric, _product_id)
+  def realtime_data_cut_off_in_days(plan, _product_id, query_or_metric)
       when query_or_metric in @custom_access_queries do
     Map.get(@custom_access_queries_stats, query_or_metric)
     |> get_in([:plan_access, plan, :realtime_data_cut_off_in_days])
   end
 
   for {product_id, module} <- @product_to_access_module do
-    def realtime_data_cut_off_in_days(plan, query_or_metric, unquote(product_id)) do
+    def realtime_data_cut_off_in_days(plan, unquote(product_id), query_or_metric) do
       unquote(module).realtime_data_cut_off_in_days(plan, query_or_metric)
     end
   end

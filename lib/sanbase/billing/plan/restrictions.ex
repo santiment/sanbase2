@@ -47,13 +47,13 @@ defmodule Sanbase.Billing.Plan.Restrictions do
 
           true ->
             restricted_from =
-              case AccessChecker.historical_data_in_days(plan, query_or_metric, product_id) do
+              case AccessChecker.historical_data_in_days(plan, product_id, query_or_metric) do
                 nil -> nil
                 days -> Timex.shift(now, days: -days)
               end
 
             restricted_to =
-              case AccessChecker.realtime_data_cut_off_in_days(plan, query_or_metric, product_id) do
+              case AccessChecker.realtime_data_cut_off_in_days(plan, product_id, query_or_metric) do
                 nil -> nil
                 0 -> nil
                 days -> Timex.shift(now, days: -days)

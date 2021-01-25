@@ -292,23 +292,26 @@ defmodule Sanbase.Billing.Subscription do
   @doc """
   How much historical days a subscription plan can access.
   """
-  @spec historical_data_in_days(%__MODULE__{}, AccessChecker.query_or_metric(), non_neg_integer()) ::
-          non_neg_integer() | nil
-  def historical_data_in_days(%__MODULE__{plan: plan}, query_or_metric, product_id) do
+  @spec historical_data_in_days(
+          %__MODULE__{},
+          non_neg_integer(),
+          AccessChecker.query_or_metric()
+        ) :: non_neg_integer() | nil
+  def historical_data_in_days(%__MODULE__{plan: plan}, product_id, query_or_metric) do
     plan
     |> Plan.plan_atom_name()
-    |> AccessChecker.historical_data_in_days(query_or_metric, product_id)
+    |> AccessChecker.historical_data_in_days(product_id, query_or_metric)
   end
 
   @spec realtime_data_cut_off_in_days(
           %__MODULE__{},
-          AccessChecker.query_or_metric(),
-          non_neg_integer()
+          non_neg_integer(),
+          AccessChecker.query_or_metric()
         ) :: non_neg_integer() | nil
-  def realtime_data_cut_off_in_days(%__MODULE__{plan: plan}, query_or_metric, product_id) do
+  def realtime_data_cut_off_in_days(%__MODULE__{plan: plan}, product_id, query_or_metric) do
     plan
     |> Plan.plan_atom_name()
-    |> AccessChecker.realtime_data_cut_off_in_days(query_or_metric, product_id)
+    |> AccessChecker.realtime_data_cut_off_in_days(product_id, query_or_metric)
   end
 
   def plan_name(nil), do: :free

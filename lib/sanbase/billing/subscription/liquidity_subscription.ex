@@ -10,7 +10,7 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
 
   # SAN stake required for free subscription. We advertise 3000 SAN
   # but require >= 2000 due to possible fluctuations of staked amount in pools.
-  @san_stake_required_liquidity_sub 3000
+  @san_stake_required_liquidity_sub 2000
   @san_stake_free_plan Sanbase.Billing.Plan.Metadata.current_san_stake_plan()
 
   @spec create_liquidity_subscription(non_neg_integer()) ::

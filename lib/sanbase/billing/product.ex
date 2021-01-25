@@ -56,6 +56,10 @@ defmodule Sanbase.Billing.Product do
     Map.get(@product_code_by_id_map, id)
   end
 
+  def id_by_code(code) when is_atom(code) and not is_nil(code) do
+    code |> Atom.to_string() |> String.upcase() |> id_by_code()
+  end
+
   def id_by_code(code) do
     Map.get(@code_product_id_map, code)
   end

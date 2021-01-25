@@ -72,9 +72,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
            resolution
        ) do
     plan = context[:auth][:plan] || :free
-    subscription = context[:auth][:subscription] || @free_subscription
-    product_id = subscription.plan.product_id || context.product_id
-    product = Product.code_by_id(product_id)
+    product = Product.code_by_id(context[:product_id]) || "SANAPI"
 
     case Plan.AccessChecker.plan_has_access?(plan, product, query_or_metric) do
       true ->
@@ -275,7 +273,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         %{restricted_from: restricted_from, restricted_to: restricted_to} =
           Sanbase.Billing.Plan.Restrictions.get(
             context[:__query_or_metric_atom_name__],
-            context[:auth][:subscription],
+            context[:auth][:plan],
             context[:product_id]
           )
 

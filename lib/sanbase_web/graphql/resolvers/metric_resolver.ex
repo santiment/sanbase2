@@ -41,11 +41,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     do: Metric.human_readable_name(metric)
 
   def get_metadata(%{}, _args, %{source: %{metric: metric}} = resolution) do
-    %{context: %{product_id: product_id, auth: %{subscription: subscription}}} = resolution
+    %{context: %{product_id: product_id, auth: %{plan: plan}}} = resolution
 
     case Metric.metadata(metric) do
       {:ok, metadata} ->
-        access_restrictions = Restrictions.get({:metric, metric}, subscription, product_id)
+        access_restrictions = Restrictions.get({:metric, metric}, plan, product_id)
         {:ok, Map.merge(access_restrictions, metadata)}
 
       {:error, error} ->

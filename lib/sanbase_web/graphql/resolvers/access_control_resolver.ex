@@ -1,12 +1,13 @@
 defmodule SanbaseWeb.Graphql.Resolvers.AccessControlResolver do
-  alias Sanbase.Billing.Subscription
+  alias Sanbase.Billing.Product
 
-  def get_access_restrictions(_root, _args, %{
-        context: %{product_id: product_id} = context
-      }) do
-    subscription = context[:auth][:subscription] || Subscription.free_subscription()
+  def get_access_restrictions(_root, args, %{context: context}) do
+    plan = Map.get(args, :plan) || context[:auth][:plan] || :free
 
-    restrictions = Sanbase.Billing.Plan.Restrictions.get_all(subscription, product_id)
+    product_id =
+      Product.id_by_code(Map.get(args, :product)) || context[:product_id] || Product.product_api()
+
+    restrictions = Sanbase.Billing.Plan.Restrictions.get_all(plan, product_id)
 
     {:ok, restrictions}
   end

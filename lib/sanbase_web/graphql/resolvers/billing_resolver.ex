@@ -19,10 +19,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
         {:ok, %{success: true}}
 
       {:error, %Stripe.Error{message: message} = reason} ->
-        Logger.error(
-          "Update customer card: user=#{inspect(current_user)} reason=#{inspect(reason)}"
-        )
-
+        log_error("Update customer card: user=#{inspect(current_user)}", reason)
         {:error, message}
     end
   end
@@ -122,7 +119,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
         {:ok, transform_payments(payments)}
 
       {:error, reason} ->
-        Logger.error("Listing payments failed: reason: #{inspect(reason)}")
+        log_error("Listing payments failed", reason)
         {:error, Subscription.generic_error_message()}
     end
   end
@@ -142,7 +139,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
          %{is_valid: valid, id: id, name: name, percent_off: percent_off, amount_off: amount_off}}
 
       {:error, %Stripe.Error{message: message} = reason} ->
-        Logger.error("Error checking coupon: #{inspect(reason)}")
+        log_error("Error checking coupon", reason)
         {:error, message}
     end
   end
@@ -174,9 +171,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
 
   defp handle_subscription_error_result(result, log_message, params) do
     case result do
+      {:error, %Stripe.Error{message: message} = reason} ->
+        log_error(log_message, reason)
+        {:error, message}
+
       {:plan?, _} ->
         reason = "Cannot find plan with id #{params.plan_id}"
-        Logger.error("#{log_message} - reason: #{reason}")
+        log_error(log_message, reason)
         {:error, reason}
 
       {:subscription?, _} ->
@@ -185,7 +186,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
             params.user_id
           }. Either this subscription doesn not exist or it does not belong to the user."
 
-        Logger.error("#{log_message} - reason: #{reason}")
+        log_error(log_message, reason)
         {:error, reason}
 
       {:not_cancelled?,
@@ -195,22 +196,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
             current_period_end
           }"
 
-        Logger.error("#{log_message} - reason: #{reason}")
+        log_error(log_message, reason)
         {:error, reason}
 
       {:cancelled?, %Subscription{cancel_at_period_end: false}} ->
         reason = "Subscription is not scheduled for cancellation so it cannot be renewed"
 
-        Logger.error("#{log_message} - reason: #{reason}")
+        log_error(log_message, reason)
         {:error, reason}
 
       {:end_period_reached_error, reason} ->
-        Logger.error("#{log_message} - reason: #{inspect(reason)}")
+        log_error(log_message, reason)
         {:error, reason}
 
       {:error, reason} ->
-        Logger.error("#{log_message} - reason: #{inspect(reason)}")
+        log_error(log_message, reason)
         {:error, Subscription.generic_error_message()}
     end
+  end
+
+  defp log_error(log_message, reason) do
+    Logger.error("#{log_message}. Reason: #{inspect(reason)}")
   end
 end

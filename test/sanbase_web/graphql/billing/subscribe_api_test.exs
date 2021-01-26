@@ -9,7 +9,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   alias Sanbase.Auth.User
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestResponse
-  alias Sanbase.Billing.Subscription
 
   @coupon_code "test_coupon"
 
@@ -159,7 +158,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
         assert capture_log(fn ->
                  error_msg = execute_mutation_with_error(context.conn, query)
 
-                 assert error_msg == Subscription.generic_error_message()
+                 assert error_msg =~ "test error"
                end) =~ "test error"
       end
     end
@@ -171,7 +170,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
         {StripeApi, [:passthrough],
          [
            create_coupon: fn _ ->
-             {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
+             {:error, %Stripe.Error{message: "invalid coupon", source: "ala", code: "bala"}}
            end
          ]}
       ]) do
@@ -180,8 +179,8 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
         assert capture_log(fn ->
                  error_msg = execute_mutation_with_error(context.conn, query)
 
-                 assert error_msg == Subscription.generic_error_message()
-               end) =~ "test error"
+                 assert error_msg =~ "invalid coupon"
+               end) =~ "invalid coupon"
       end
     end
 
@@ -204,7 +203,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
         assert capture_log(fn ->
                  error_msg = execute_mutation_with_error(context.conn, query)
 
-                 assert error_msg == Subscription.generic_error_message()
+                 assert error_msg =~ "test error"
                end) =~ "test error"
       end
     end
@@ -318,7 +317,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
         assert capture_log(fn ->
                  error_msg = execute_mutation_with_error(context.conn, query)
 
-                 assert error_msg == Subscription.generic_error_message()
+                 assert error_msg =~ "test error"
                end) =~ "test error"
       end
     end
@@ -340,7 +339,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
         assert capture_log(fn ->
                  error_msg = execute_mutation_with_error(context.conn, query)
 
-                 assert error_msg == Subscription.generic_error_message()
+                 assert error_msg =~ "test error"
                end) =~ "test error"
       end
     end
@@ -427,7 +426,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
         assert capture_log(fn ->
                  error_msg = execute_mutation_with_error(context.conn, query)
 
-                 assert error_msg == Subscription.generic_error_message()
+                 assert error_msg =~ "test error"
                end) =~ "test error"
       end
     end
@@ -543,7 +542,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
         assert capture_log(fn ->
                  error_msg = execute_mutation_with_error(context.conn, query)
 
-                 assert error_msg == Subscription.generic_error_message()
+                 assert error_msg =~ "test error"
                end) =~ "test error"
       end
     end

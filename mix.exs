@@ -40,7 +40,7 @@ defmodule Sanbase.Mixfile do
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   # local_dev/ dir is used for local development and is excluded from source control
-  defp elixirc_paths(:dev), do: ["lib", "local_dev"]
+  defp elixirc_paths(:dev), do: ["lib", "local_dev", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
   defp deps() do

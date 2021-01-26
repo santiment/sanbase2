@@ -274,7 +274,6 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       {:ok, current_user} ->
         subscription =
           Subscription.current_subscription(current_user, @product_id_sanbase) ||
-            Subscription.current_subscription(current_user, @product_id_api) ||
             @free_subscription
 
         %{
@@ -301,7 +300,6 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
          {:ok, current_user} <- bearer_authorize(token) do
       subscription =
         Subscription.current_subscription(current_user, @product_id_sanbase) ||
-          Subscription.current_subscription(current_user, @product_id_api) ||
           @free_subscription
 
       %{

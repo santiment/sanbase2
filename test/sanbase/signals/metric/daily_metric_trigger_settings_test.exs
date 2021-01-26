@@ -122,7 +122,7 @@ defmodule Sanbase.Signal.DailyMetricTriggerSettingsTest do
     end)
   end
 
-  test "can create triggers with all available metrics with min interval less than 5 min",
+  test "can create triggers with all available metrics with min interval >= 1d",
        context do
     %{project: project, user: user} = context
 

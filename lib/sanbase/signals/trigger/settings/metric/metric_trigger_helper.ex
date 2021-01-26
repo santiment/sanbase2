@@ -14,6 +14,11 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerHelper do
     ResultBuilder
   }
 
+  alias Sanbase.Signal.Trigger.{
+    MetricTriggerSettings,
+    DailyMetricTriggerSettings
+  }
+
   def triggered?(%{triggered?: triggered?}), do: triggered?
 
   def cache_key(%{} = settings) do
@@ -37,13 +42,11 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerHelper do
   end
 
   def get_data(%{} = settings) do
-    %{time_window: time_window} = settings
-
-    %{metric: metric, filtered_target: %{list: target_list, type: type}} = settings
+    %{filtered_target: %{list: target_list, type: type}} = settings
 
     target_list
     |> Enum.map(fn identifier ->
-      {identifier, fetch_metric(metric, %{type => identifier}, time_window)}
+      {identifier, fetch_metric(%{type => identifier}, settings)}
     end)
     |> Enum.reject(fn
       {_, {:error, _}} -> true
@@ -59,19 +62,19 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerHelper do
   defguard is_proper_metric_data(data)
            when is_number(data) or (is_map(data) and map_size(data) > 0)
 
-  defp fetch_metric(metric, selector, time_window) do
+  defp fetch_metric(selector, settings) do
+    %{metric: metric, time_window: time_window} = settings
+
     cache_key =
       {:metric_signal, metric, selector, time_window, round_datetime(Timex.now(), 300)}
       |> Sanbase.Cache.hash()
 
-    interval_seconds = str_to_sec(time_window)
-    now = Timex.now()
-
-    # TODO: Replace datetimes in case of daily metric. They should be dates so we
-    # pick some value from today.
-    first = Timex.shift(now, seconds: -2 * interval_seconds)
-    middle = Timex.shift(now, seconds: -interval_seconds)
-    last = now
+    %{
+      first_start: first_start,
+      first_end: first_end,
+      second_start: second_start,
+      second_end: second_end
+    } = timerange_params(settings)
 
     to_value = fn
       %{} = map -> Map.values(map) |> List.first()
@@ -80,16 +83,43 @@ defmodule Sanbase.Signal.Trigger.MetricTriggerHelper do
 
     Cache.get_or_store(cache_key, fn ->
       with {:ok, data1} when is_proper_metric_data(data1) <-
-             Metric.aggregated_timeseries_data(metric, selector, first, middle),
+             Metric.aggregated_timeseries_data(metric, selector, first_start, first_end),
            {:ok, data2} when is_proper_metric_data(data2) <-
-             Metric.aggregated_timeseries_data(metric, selector, middle, last),
+             Metric.aggregated_timeseries_data(metric, selector, second_start, second_end),
            value1 when not is_nil(value1) <- to_value.(data1),
            value2 when not is_nil(value2) <- to_value.(data2) do
-        [%{datetime: first, value: value1}, %{datetime: middle, value: value2}]
+        [%{datetime: first_start, value: value1}, %{datetime: second_start, value: value2}]
       else
         _ -> {:error, "Cannot fetch #{metric} for #{inspect(selector)}"}
       end
     end)
+  end
+
+  defp timerange_params(%MetricTriggerSettings{} = settings) do
+    interval_seconds = str_to_sec(settings.time_window)
+    now = Timex.now()
+
+    %{
+      first_start: Timex.shift(now, seconds: -2 * interval_seconds),
+      first_end: Timex.shift(now, seconds: -interval_seconds),
+      second_start: Timex.shift(now, seconds: -interval_seconds),
+      second_end: now
+    }
+  end
+
+  defp timerange_params(%DailyMetricTriggerSettings{} = settings) do
+    # Because the daily metrics use `Date` type in the column and check with
+    # >= and <=, in order to fetch exactly one day of data, the `from` param
+    # must start at 00:00:00Z and the `to` param must end at 23:59:59Z
+    interval_seconds = str_to_sec(settings.time_window)
+    now = Timex.now() |> Timex.beginning_of_day() |> Timex.shift(seconds: -1)
+
+    %{
+      first_start: Timex.shift(now, seconds: -2 * interval_seconds + 1),
+      first_end: Timex.shift(now, seconds: -interval_seconds),
+      second_start: Timex.shift(now, seconds: -interval_seconds + 1),
+      second_end: now
+    }
   end
 
   defp build_result(data, %{} = settings) do

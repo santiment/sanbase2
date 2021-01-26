@@ -79,7 +79,7 @@ defmodule SanbaseWeb.ExAdmin.TableConfiguration do
   end
 
   def set_featured(conn, params, resource, :update) do
-    is_featured = params.configuration.is_featured |> String.to_existing_atom()
+    is_featured = params.table_configuration.is_featured |> String.to_existing_atom()
     Sanbase.FeaturedItem.update_item(resource, is_featured)
     {conn, params, resource}
   end

@@ -15,5 +15,22 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "ETH 2.0 ROI",
+    "name": "eth2_roi",
+    "metric": "eth2_roi",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug", "owner", "label"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_label_based_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
   }
 ]

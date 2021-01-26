@@ -8,6 +8,7 @@
     - [Example settings structure for `price_volume_difference`](#example-settings-structure-for-price_volume_difference)
     - [Example settings structure for `wallet_movement`](#example-settings-structure-for-wallet_movement)
     - [Example settings structure for `metric_signal`](#example-settings-structure-for-metric_signal)
+    - [Example settings structure for `daily_metric_signal`](#example-settings-structure-for-daily_metric_signal)
     - [Example settings structure for `screener_signal`](#example-settings-structure-for-metric_signal)
   - [Create trigger](#create-trigger)
   - [Get all triggers for current user](#get-all-triggers-for-current-user)
@@ -38,7 +39,7 @@ These are the fields describing a trigger.
 
 ### Settings fields
 
-- **type** Defines the type of the trigger. Can be one of: `["trending_words", "price_volume_difference", "metric_signal", "wallet_movement"]`
+- **type** Defines the type of the trigger. Can be one of: `["trending_words", "price_volume_difference", "metric_signal", "daily_metric_signal", "wallet_movement"]`
 - **target**: Slug or list of slugs or watchlist or ethereum addresses or list of ethereum addresses - `{"slug": "naga"} | {"slug": ["ethereum", "santiment"]} | {"watchlist_id": watchlsit_id} | {"eth_address": "0x123"} | {"eth_address": ["0x123", "0x234"]}`.
 - **channel**: A channel where the signal is sent. Can be one of `"telegram" | "email" | "web_push" | {"webhook": <webhook_url>}` or a list of any combination.
 - **time_window**: `1d`, `4w`, `1h` - Time string we use throughout the API for `interval`
@@ -252,7 +253,7 @@ these are the tickers of the projects. Supported currencies are: `XRP`, `BTC`, `
 
 #### Example settings structure for `metric_signal`
 
-Supported metrics are all metrics obtainable by the getMetric API that have a min interval at most 5 minutes. These metrics are:
+Supported most metrics that are obtainable by the getMetric API and have a min interval at most 5 minutes. These metrics are:
 
 All metrics support the `slug` target.
 All `social_volume_*` metrics also support the `text` target.
@@ -368,6 +369,41 @@ For full list check [here](<https://api.santiment.net/graphiql?variables=&query=
   "channel": "telegram",
   "target": { "slug": "santiment" },
   "operation": { "some_of": [{ "percent_up": 10 }, { "above": 10000 }] }
+}
+```
+
+#### Example settings structure for `daily_metric_signal`
+
+The `daily_metric_signal` works exactly as `metric_signal` (they reuse all their
+internal logic) with the only difference that it is evaluated only once a day at
+03:00 UTC and works on metrics with 1 day min_interval such as, but not only:
+
+- mean_age
+- mean_age_dollar_invested
+- nvt
+- withdrawal_transactions
+- etc.
+
+
+```json
+// The Mean Age of Santiment' increased by 10% AND is above 100
+{
+  "type": "daily_metric_signal",
+  "metric": "mean_age",
+  "channel": "telegram",
+  "target": { "slug": "santiment" },
+  "operation": { "all_of": [{ "percent_up": 10 }, { "above": 10000 }] }
+}
+```
+
+```json
+// The NVT of Ethereum project decreased by 15%
+{
+  "type": "daily_metric_signal",
+  "metric": "exchange_outflow",
+  "channel": "telegram",
+  "target": { "slug": "santiment" },
+  "operation": { "percent_down": 15 }
 }
 ```
 

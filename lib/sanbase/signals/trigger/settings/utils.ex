@@ -44,6 +44,7 @@ defmodule Sanbase.Signal.Utils do
       iex> Sanbase.Signal.Utils.construct_cache_key([1,2,3]) |> is_binary()
       true
   """
+  @spec construct_cache_key(list(any)) :: String.t()
   def construct_cache_key(keys) when is_list(keys) do
     data = keys |> Jason.encode!()
 

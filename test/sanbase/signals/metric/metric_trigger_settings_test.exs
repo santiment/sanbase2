@@ -10,7 +10,10 @@ defmodule Sanbase.Signal.MetricTriggerSettingsTest do
   alias Sanbase.Metric
   alias Sanbase.Signal.Trigger.MetricTriggerSettings
 
-  @metrics_5m_min_interval Metric.available_metrics(min_interval_less_or_equal: "5m")
+  @metrics_5m_min_interval Metric.available_metrics(
+                             filter: :min_interval_less_or_equal,
+                             filter_interval: "5m"
+                           )
   setup_all_with_mocks([
     {
       Sanbase.Timeline.TimelineEvent,

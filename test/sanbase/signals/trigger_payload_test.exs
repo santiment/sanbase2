@@ -2,7 +2,6 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
-  import Sanbase.TestHelpers
 
   alias Sanbase.Signal.{UserTrigger, Scheduler}
   alias Sanbase.Signal.Trigger.MetricTriggerSettings
@@ -19,22 +18,26 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
     Sanbase.Auth.UserSettings.update_settings(user, %{signal_notify_email: true})
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
-    datetimes = generate_datetimes(~U[2019-01-01 00:00:00Z], "1d", 7)
     project = insert(:random_project)
 
-    [user: user, project: project, datetimes: datetimes]
+    [user: user, project: project]
   end
 
   test "human readable numbers between 1000 and 1,000,000", context do
-    %{user: user, project: project, datetimes: datetimes} = context
-
-    data = gen_timeseries_data(datetimes, [100, 120, 100, 80, 20, 10, 10_456])
+    %{user: user, project: project} = context
 
     {:ok, _trigger} = create_trigger(user, project.slug)
 
     self_pid = self()
 
-    Sanbase.Mock.prepare_mock2(&MetricTriggerSettings.get_data/1, [{project.slug, data}])
+    mock_fun =
+      [
+        fn -> {:ok, %{project.slug => 100}} end,
+        fn -> {:ok, %{project.slug => 10_456}} end
+      ]
+      |> Sanbase.Mock.wrap_consecutives(arity: 4)
+
+    Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
     |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
       send(self_pid, {:telegram_to_self, text})
       :ok
@@ -48,15 +51,20 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
   end
 
   test "human readable numbers above 1,000,000", context do
-    %{user: user, project: project, datetimes: datetimes} = context
-
-    data = gen_timeseries_data(datetimes, [100, 120, 100, 80, 20, 10, 9_231_100_456])
+    %{user: user, project: project} = context
 
     {:ok, _trigger} = create_trigger(user, project.slug)
 
     self_pid = self()
 
-    Sanbase.Mock.prepare_mock2(&MetricTriggerSettings.get_data/1, [{project.slug, data}])
+    mock_fun =
+      [
+        fn -> {:ok, %{project.slug => 10}} end,
+        fn -> {:ok, %{project.slug => 9_231_100_456}} end
+      ]
+      |> Sanbase.Mock.wrap_consecutives(arity: 4)
+
+    Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
     |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
       send(self_pid, {:telegram_to_self, text})
       :ok
@@ -70,38 +78,47 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
   end
 
   test "payload is extended", context do
-    %{user: user, project: project, datetimes: datetimes} = context
-
-    data = gen_timeseries_data(datetimes, [100, 120, 100, 80, 20, 10, 5])
+    %{user: user, project: project} = context
 
     {:ok, trigger} = create_trigger(user, project.slug)
 
     self_pid = self()
 
-    Sanbase.Mock.prepare_mock2(&MetricTriggerSettings.get_data/1, [{project.slug, data}])
+    mock_fun =
+      [
+        fn -> {:ok, %{project.slug => 10}} end,
+        fn -> {:ok, %{project.slug => 5}} end
+      ]
+      |> Sanbase.Mock.wrap_consecutives(arity: 4)
+
+    Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
     |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
       send(self_pid, {:telegram_to_self, text})
       :ok
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
       Scheduler.run_signal(MetricTriggerSettings)
-
       assert_receive({:telegram_to_self, message}, 1000)
       assert message =~ SanbaseWeb.Endpoint.show_signal_url(trigger.id)
     end)
   end
 
   test "metric payload details", context do
-    %{user: user, project: project, datetimes: datetimes} = context
-
-    data = gen_timeseries_data(datetimes, [100, 120, 100, 80, 20, 10, 5])
+    %{user: user, project: project} = context
 
     {:ok, _trigger} =
       create_trigger(user, project.slug, metric: "active_addresses_24h", time_window: "2d")
 
     self_pid = self()
 
-    Sanbase.Mock.prepare_mock2(&MetricTriggerSettings.get_data/1, [{project.slug, data}])
+    mock_fun =
+      [
+        fn -> {:ok, %{project.slug => 10}} end,
+        fn -> {:ok, %{project.slug => 5}} end
+      ]
+      |> Sanbase.Mock.wrap_consecutives(arity: 4)
+
+    Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
     |> Sanbase.Mock.prepare_mock(Sanbase.Telegram, :send_message, fn _user, text ->
       send(self_pid, {:telegram_to_self, text})
       :ok
@@ -119,17 +136,19 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
 
   # TODO: Move to a `trigger_sending_test.exs`
   test "send to a webhook", context do
-    %{user: user, project: project, datetimes: datetimes} = context
-
-    data = gen_timeseries_data(datetimes, [100, 120, 100, 80, 20, 10, 15])
+    %{user: user, project: project} = context
 
     {:ok, trigger} = create_trigger(user, project.slug, channel: [%{"webhook" => "url"}])
 
-    Sanbase.Mock.prepare_mock2(&MetricTriggerSettings.get_data/1, [{project.slug, data}])
-    |> Sanbase.Mock.prepare_mock2(
-      &HTTPoison.post/2,
-      {:ok, %HTTPoison.Response{status_code: 200}}
-    )
+    mock_fun =
+      [
+        fn -> {:ok, %{project.slug => 10}} end,
+        fn -> {:ok, %{project.slug => 15}} end
+      ]
+      |> Sanbase.Mock.wrap_consecutives(arity: 4)
+
+    Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
+    |> Sanbase.Mock.prepare_mock2(&HTTPoison.post/2, {:ok, %HTTPoison.Response{status_code: 200}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       Scheduler.run_signal(MetricTriggerSettings)
 
@@ -148,11 +167,6 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
   end
 
   # Private functions
-
-  defp gen_timeseries_data(datetimes, data) do
-    Enum.zip(datetimes, data)
-    |> Enum.map(&%{datetime: elem(&1, 0), value: elem(&1, 1)})
-  end
 
   defp create_trigger(user, slug, opts \\ []) do
     metric = Keyword.get(opts, :metric, "active_addresses_24h")

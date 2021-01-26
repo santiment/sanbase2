@@ -4,7 +4,10 @@ defmodule Sanbase.Signal.History.MetricHistory do
   Currently it is bucketed in `1 day` intervals and goes 90 days back.
   """
 
-  alias Sanbase.Signal.Trigger.MetricTriggerSettings
+  alias Sanbase.Signal.Trigger.{
+    MetricTriggerSettings,
+    DailyMetricTriggerSettings
+  }
 
   @type historical_trigger_points_type :: %{
           datetime: %DateTime{},
@@ -14,7 +17,7 @@ defmodule Sanbase.Signal.History.MetricHistory do
           triggered?: boolean()
         }
 
-  defimpl Sanbase.Signal.History, for: MetricTriggerSettings do
+  defimpl Sanbase.Signal.History, for: [MetricTriggerSettings, DailyMetricTriggerSettings] do
     import Sanbase.DateTimeUtils, only: [str_to_days: 1]
 
     alias Sanbase.Signal.History.ResultBuilder
@@ -26,12 +29,12 @@ defmodule Sanbase.Signal.History.MetricHistory do
     defguard has_binary_key?(map, key)
              when is_map(map) and is_map_key(map, key) and is_binary(:erlang.map_get(key, map))
 
-    @spec historical_trigger_points(%MetricTriggerSettings{}, String.t()) ::
+    @spec historical_trigger_points(%{}, String.t()) ::
             {:ok, list(MetricHistory.historical_trigger_points_type())}
             | {:error, String.t()}
-    def historical_trigger_points(%MetricTriggerSettings{target: target} = settings, cooldown)
+    def historical_trigger_points(%{target: target} = settings, cooldown)
         when has_binary_key?(target, :slug) or has_binary_key?(target, :text) do
-      %MetricTriggerSettings{metric: metric, time_window: time_window} = settings
+      %{metric: metric, time_window: time_window} = settings
 
       case get_data(metric, target, time_window) do
         {:ok, data} -> ResultBuilder.build(data, settings, cooldown, value_key: :value)
@@ -39,7 +42,7 @@ defmodule Sanbase.Signal.History.MetricHistory do
       end
     end
 
-    def historical_trigger_points(%MetricTriggerSettings{target: target}, _) do
+    def historical_trigger_points(%{target: target}, _) do
       {:error,
        """
        Target must be a single slug in the format '{slug: "single_string_slug"}' or

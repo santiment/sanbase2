@@ -1,10 +1,10 @@
 defmodule Sanbase.Billing.Plan.Restrictions do
   @moduledoc ~s"""
   Work with the access restrictions for all queries and metrics.
-  A time restrictions is defined by the query/metric, subscription and plan.
+  A time restrictions is defined by the query/metric, plan and product.
   """
 
-  alias Sanbase.Billing.{Product, Subscription, Plan.AccessChecker}
+  alias Sanbase.Billing.{Product, Plan.AccessChecker}
 
   @type restriction :: %{
           type: String.t(),
@@ -15,19 +15,16 @@ defmodule Sanbase.Billing.Plan.Restrictions do
           restricted_to: DateTime.t()
         }
 
-  @spec get(query_or_metric, %Subscription{}, non_neg_integer()) :: restriction()
+  @spec get(query_or_metric, atom(), non_neg_integer()) :: restriction()
         when query_or_metric: {:metric, String.t()} | {:query, atom()}
-  def get({type, name} = query_or_metric, subscription, product_id)
+  def get({type, name} = query_or_metric, plan, product_id)
       when type in [:metric, :query] do
     now = Timex.now()
     type_str = type |> to_string()
     name_str = construct_name(type, name)
+    product = Product.code_by_id(product_id)
 
-    case AccessChecker.plan_has_access?(
-           subscription.plan,
-           Product.code_by_id(product_id),
-           query_or_metric
-         ) do
+    case AccessChecker.plan_has_access?(plan, product, query_or_metric) do
       false ->
         %{
           type: type_str,
@@ -50,18 +47,15 @@ defmodule Sanbase.Billing.Plan.Restrictions do
 
           true ->
             restricted_from =
-              case Subscription.historical_data_in_days(subscription, query_or_metric, product_id) do
+              case AccessChecker.historical_data_in_days(plan, product_id, query_or_metric) do
                 nil -> nil
                 days -> Timex.shift(now, days: -days)
               end
 
             restricted_to =
-              case Subscription.realtime_data_cut_off_in_days(
-                     subscription,
-                     query_or_metric,
-                     product_id
-                   ) do
+              case AccessChecker.realtime_data_cut_off_in_days(plan, product_id, query_or_metric) do
                 nil -> nil
+                0 -> nil
                 days -> Timex.shift(now, days: -days)
               end
 
@@ -81,8 +75,8 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   Return a list in which every element describes either a metric or a query.
   The elements are maps describing the time restrictions of the given metric/query.
   """
-  @spec get_all(%Subscription{}, non_neg_integer()) :: list(restriction)
-  def get_all(subscription, product_id) do
+  @spec get_all(atom(), non_neg_integer()) :: list(restriction)
+  def get_all(plan, product_id) do
     metrics = Sanbase.Metric.available_metrics() |> Enum.map(&{:metric, &1})
 
     queries =
@@ -91,7 +85,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
 
     # elements are {:metric, <string>} or {:query, <atom>}
     (queries ++ metrics)
-    |> Enum.map(fn metric_or_query -> get(metric_or_query, subscription, product_id) end)
+    |> Enum.map(fn metric_or_query -> get(metric_or_query, plan, product_id) end)
     |> Enum.filter(& &1.is_accessible)
     |> Enum.uniq_by(& &1.name)
   end

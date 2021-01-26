@@ -289,28 +289,6 @@ defmodule Sanbase.Billing.Subscription do
     fetch_current_subscription(user_id, product_id)
   end
 
-  @doc """
-  How much historical days a subscription plan can access.
-  """
-  @spec historical_data_in_days(%__MODULE__{}, AccessChecker.query_or_metric(), non_neg_integer()) ::
-          non_neg_integer() | nil
-  def historical_data_in_days(%__MODULE__{plan: plan}, query_or_metric, product_id) do
-    plan
-    |> Plan.plan_atom_name()
-    |> AccessChecker.historical_data_in_days(query_or_metric, product_id)
-  end
-
-  @spec realtime_data_cut_off_in_days(
-          %__MODULE__{},
-          AccessChecker.query_or_metric(),
-          non_neg_integer()
-        ) :: non_neg_integer() | nil
-  def realtime_data_cut_off_in_days(%__MODULE__{plan: plan}, query_or_metric, product_id) do
-    plan
-    |> Plan.plan_atom_name()
-    |> AccessChecker.realtime_data_cut_off_in_days(query_or_metric, product_id)
-  end
-
   def plan_name(nil), do: :free
   def plan_name(%__MODULE__{plan: plan}), do: plan |> Plan.plan_atom_name()
 

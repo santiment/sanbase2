@@ -149,32 +149,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       assert_called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
       assert result != nil
     end
-
-    test "fallbacks to API pro subscription if exists", context do
-      insert(:subscription_pro, user: context.user)
-
-      from = Timex.shift(Timex.now(), days: -(5 * 365 - 1))
-      to = Timex.now()
-      slug = context.project.slug
-      query = network_growth_query(slug, from, to)
-
-      result = execute_query(context.conn, query, "networkGrowth")
-
-      assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
-      assert result != nil
-    end
-
-    test "fallbacks to PREMIUM subscription if exists", context do
-      insert(:subscription_premium, user: context.user)
-      {from, to} = from_to(18 * 30 + 1, 0)
-      slug = context.project.slug
-      query = network_growth_query(slug, from, to)
-
-      result = execute_query(context.conn, query, "networkGrowth")
-
-      assert_called(Metric.timeseries_data("network_growth", :_, from, to, :_, :_))
-      assert result != nil
-    end
   end
 
   describe "SANBase product, user with PRO plan" do
@@ -283,20 +257,6 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
 
     test "user with PRO plan can create new trigger", context do
       insert(:subscription_pro_sanbase, user: context.user)
-
-      assert create_trigger_mutation(context)["trigger"]["id"] != nil
-    end
-  end
-
-  describe "for SanAPI when signals limit reached" do
-    test "with BASIC plan can create new trigger", context do
-      insert(:subscription_essential, user: context.user)
-
-      assert create_trigger_mutation(context)["trigger"]["id"] != nil
-    end
-
-    test "with PREMIUM plan can create new trigger", context do
-      insert(:subscription_premium, user: context.user)
 
       assert create_trigger_mutation(context)["trigger"]["id"] != nil
     end

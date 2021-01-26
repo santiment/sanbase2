@@ -50,6 +50,10 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
 
     field :get_access_restrictions, list_of(:access_restriction) do
       meta(access: :free)
+
+      arg(:product, :products_enum)
+      arg(:plan, :plans_enum)
+
       resolve(&AccessControlResolver.get_access_restrictions/3)
     end
   end

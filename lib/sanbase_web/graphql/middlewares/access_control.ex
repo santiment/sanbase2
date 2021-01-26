@@ -47,7 +47,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   end
 
   # The name of the query/mutation can be passed in snake case or camel case.
-  # Here we transform the name to an altom in snake case for consistency
+  # Here we transform the name to an atom in snake case for consistency
   # and faster comparison of atoms
   defp transform_resolution(%Resolution{} = resolution) do
     %{context: context, definition: definition, arguments: arguments, source: source} = resolution

@@ -26,10 +26,9 @@ defmodule Sanbase.Github.TwitterApiTest do
     }
     """
 
-    result =
-      conn
-      |> post("/graphql", query_skeleton(query, "twitterData"))
-      |> json_response(200)
+    conn
+    |> post("/graphql", query_skeleton(query, "twitterData"))
+    |> json_response(200)
   end
 
   defp get_twitter_followers(conn, slug, from, to, interval) do

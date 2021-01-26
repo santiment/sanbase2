@@ -79,7 +79,7 @@ defmodule Sanbase.Mixfile do
       {:excoveralls, "~> 0.8", optional: true, only: [:dev, :test]},
       {:exprof, "~> 0.2.0"},
       {:extwitter, "~> 0.11"},
-      {:faker, "~> 0.12"},
+      {:faker, "~> 0.12", only: [:dev, :test]},
       {:floki, "~> 0.20"},
       {:gettext, "~> 0.11"},
       {:guardian, "~> 2.0"},

@@ -200,7 +200,7 @@ defmodule Sanbase.Factory do
       ],
       token_decimals: 18,
       total_supply: 83_000_000,
-      twitter_link: "https://twitter.com/#{rand_hex_str()}",
+      twitter_link: "https://twitter.com/santimentfeed",
       discord_link: "https://santiment.net/discord",
       github_organizations: [build(:github_organization)],
       contract_addresses: [build(:contract_address)],

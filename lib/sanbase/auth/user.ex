@@ -174,6 +174,13 @@ defmodule Sanbase.Auth.User do
   defdelegate update_all_uniswap_san_staked_users(), to: __MODULE__.UniswapStaking
   defdelegate fetch_uniswap_san_staked_user(user), to: __MODULE__.UniswapStaking
 
+  def by_id!(user_id) do
+    case by_id(user_id) do
+      {:ok, data} -> data
+      {:error, error} -> raise(error)
+    end
+  end
+
   def by_id(user_id) when is_integer(user_id) do
     case Sanbase.Repo.get_by(User, id: user_id) do
       nil ->

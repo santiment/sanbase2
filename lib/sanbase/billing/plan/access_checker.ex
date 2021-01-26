@@ -176,12 +176,7 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   def user_can_create_signal?(user, subscription) do
     subscription = subscription || @free_subscription
 
-    cond do
-      # If user has API subscription - he has unlimited signals
-      subscription.plan.product_id == Product.product_api() -> true
-      SanbaseAccessChecker.signals_limits_not_reached?(user, subscription) -> true
-      true -> false
-    end
+    SanbaseAccessChecker.signals_limits_not_reached?(user, subscription)
   end
 
   def signals_limits_upgrade_message(), do: SanbaseAccessChecker.signals_limits_upgrade_message()

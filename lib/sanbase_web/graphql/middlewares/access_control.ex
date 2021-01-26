@@ -22,12 +22,18 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
 
   alias Absinthe.Resolution
-  alias Sanbase.Billing.{Subscription, GraphqlSchema, Plan, Product}
+
+  alias Sanbase.Billing.{
+    Subscription,
+    GraphqlSchema,
+    Plan,
+    Plan.AccessChecker,
+    Product
+  }
 
   @freely_available_slugs ["santiment"]
   @minimal_datetime_param from_iso8601!("2009-01-01T00:00:00Z")
-  @free_subscription Subscription.free_subscription()
-  @extension_metrics Plan.AccessChecker.extension_metrics()
+  @extension_metrics AccessChecker.extension_metrics()
   @extension_metric_product_map GraphqlSchema.extension_metric_product_map()
 
   def call(resolution, opts) do
@@ -41,7 +47,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   end
 
   # The name of the query/mutation can be passed in snake case or camel case.
-  # Here we transform the name to an atom in snake case for consistency
+  # Here we transform the name to an altom in snake case for consistency
   # and faster comparison of atoms
   defp transform_resolution(%Resolution{} = resolution) do
     %{context: context, definition: definition, arguments: arguments, source: source} = resolution
@@ -74,12 +80,12 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
     plan = context[:auth][:plan] || :free
     product = Product.code_by_id(context[:product_id]) || "SANAPI"
 
-    case Plan.AccessChecker.plan_has_access?(plan, product, query_or_metric) do
+    case AccessChecker.plan_has_access?(plan, product, query_or_metric) do
       true ->
         resolution
 
       false ->
-        min_plan = Plan.AccessChecker.min_plan(product, query_or_metric)
+        min_plan = AccessChecker.min_plan(product, query_or_metric)
 
         Resolution.put_result(
           resolution,
@@ -183,14 +189,13 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
          middleware_args,
          query
        ) do
-    subscription = context[:auth][:subscription] || @free_subscription
-    product_id = subscription.plan.product_id || context.product_id
+    plan = context[:auth][:plan] || :free
+    product_id = context[:product_id] || Product.product_api()
 
-    historical_data_in_days =
-      Subscription.historical_data_in_days(subscription, product_id, query)
+    historical_data_in_days = AccessChecker.historical_data_in_days(plan, product_id, query)
 
     realtime_data_cut_off_in_days =
-      Subscription.realtime_data_cut_off_in_days(subscription, product_id, query)
+      AccessChecker.realtime_data_cut_off_in_days(plan, product_id, query)
 
     resolution
     |> update_resolution_from_to(

@@ -6,6 +6,13 @@ defmodule Sanbase.Notifications.Insight do
   alias Sanbase.Insight.Post
 
   def publish_in_discord(post) do
+    case Config.get(:enabled, "true") |> String.to_existing_atom() do
+      true -> do_publish_in_discord(post)
+      false -> :ok
+    end
+  end
+
+  def do_publish_in_discord(post) do
     post
     |> create_discord_payload()
     |> publish()

@@ -138,6 +138,14 @@ If you want to access an IEX console attached to the running server, run:
 bin/console.sh
 ```
 
+## Seeding data
+
+To seed example data run:
+
+```console
+CLICKHOUSE_REPO_ENABLED=false mix run lib/mix/seeds/seeds.exs
+```
+
 ## Structure of the app
 
 The API code is in `lib/` and follows the phoenix 1.3

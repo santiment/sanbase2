@@ -188,21 +188,17 @@ defmodule Sanbase.Auth.UserTest do
     user =
       insert(:user,
         san_balance_updated_at: Timex.shift(Timex.now(), minutes: -10),
-        privacy_policy_accepted: true
+        privacy_policy_accepted: true,
+        eth_accounts: [%EthAccount{address: "0x000000000001"}]
       )
 
     mock(Sanbase.InternalServices.Ethauth, :san_balance, {:ok, 10.0})
 
-    %EthAccount{address: "0x000000000001", user_id: user.id}
-    |> Repo.insert!()
-
-    user =
-      Repo.get(User, user.id)
-      |> Repo.preload(:eth_accounts)
+    user = User.by_id!(user.id) |> Repo.preload(:eth_accounts)
 
     assert User.san_balance!(user) == 10.0
 
-    user = Repo.get(User, user.id)
+    user = User.by_id!(user.id) |> Repo.preload(:eth_accounts)
 
     assert Sanbase.TestUtils.datetime_close_to(
              Timex.now(),

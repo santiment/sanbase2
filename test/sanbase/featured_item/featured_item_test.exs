@@ -188,7 +188,10 @@ defmodule Sanbase.FeaturedItemTest do
     end
 
     test "marking user_trigger as featured is idempotent" do
-      user_trigger = insert(:user_trigger, is_public: true) |> Sanbase.Repo.preload([:tags])
+      user_trigger =
+        insert(:user_trigger, is_public: true)
+        |> Sanbase.Repo.preload([:tags])
+
       :ok = FeaturedItem.update_item(user_trigger, true)
       :ok = FeaturedItem.update_item(user_trigger, true)
       :ok = FeaturedItem.update_item(user_trigger, true)

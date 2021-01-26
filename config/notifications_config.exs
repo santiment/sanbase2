@@ -6,6 +6,7 @@
 import Config
 
 config :sanbase, Sanbase.Notifications.Insight,
+  enabled: {:system, "INSIGHTS_DISCORD_NOTIFICATION_ENABLED", "true"},
   webhook_url: {:system, "INSIGHTS_DISCORD_WEBHOOK_URL"},
   insights_discord_publish_user: {:system, "INSIGHTS_DISCORD_PUBLISH_USER", "New Insight"}
 

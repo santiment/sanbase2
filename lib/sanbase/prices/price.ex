@@ -103,7 +103,7 @@ defmodule Sanbase.Price do
   @type combined_marketcap_and_volume_result ::
           {:ok, list(combined_marketcap_and_volume_map())} | {:error, error()}
 
-  @table "asset_prices"
+  @table "asset_prices_v3"
   schema @table do
     field(:datetime, :naive_datetime, source: :dt)
     field(:source, :string)

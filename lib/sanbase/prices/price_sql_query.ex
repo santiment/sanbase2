@@ -1,5 +1,5 @@
 defmodule Sanbase.Price.SqlQuery do
-  @table "asset_prices"
+  @table "asset_prices_v3"
 
   import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3, generate_comparison_string: 3]
 

@@ -77,17 +77,18 @@ defmodule Sanbase.StripeApiTestResponse do
   def create_or_update_customer_resp do
     {:ok,
      %Stripe.Customer{
-       account_balance: 0,
-       created: 1_558_015_347,
-       currency: "usd",
-       default_source: "card_1EbSP1CA0hGU8IEVPRxGB0SU",
+       address: nil,
+       balance: 0,
+       created: 1_611_668_366,
+       currency: nil,
+       default_source: nil,
        deleted: nil,
        delinquent: false,
-       description: "tsvetozar.penov@gmail.com",
+       description: "9E8C8A90786C2B6AF4F1804CCAF9E0EB",
        discount: nil,
-       email: nil,
-       id: "cus_F4ty1PY1JIzyfi",
-       invoice_prefix: "3AA97AE0",
+       email: "non_existing_email@santiment.net",
+       id: "cus_nonxistingid",
+       invoice_prefix: "1C6F5C94",
        invoice_settings: %{
          custom_fields: nil,
          default_payment_method: nil,
@@ -95,118 +96,35 @@ defmodule Sanbase.StripeApiTestResponse do
        },
        livemode: false,
        metadata: %{},
+       name: nil,
+       next_invoice_sequence: 1,
        object: "customer",
+       payment_method: nil,
+       phone: nil,
+       preferred_locales: [],
        shipping: nil,
        sources: %Stripe.List{
-         data: [
-           %Stripe.Card{
-             account: nil,
-             address_city: nil,
-             address_country: nil,
-             address_line1: nil,
-             address_line1_check: nil,
-             address_line2: nil,
-             address_state: nil,
-             address_zip: "12345",
-             address_zip_check: "pass",
-             available_payout_methods: nil,
-             brand: "Visa",
-             country: "US",
-             currency: nil,
-             customer: "cus_F4ty1PY1JIzyfi",
-             cvc_check: "pass",
-             default_for_currency: nil,
-             deleted: nil,
-             dynamic_last4: nil,
-             exp_month: 10,
-             exp_year: 2023,
-             fingerprint: "hSHi7W7s6frUu26i",
-             funding: "credit",
-             id: "card_1EbSP1CA0hGU8IEVPRxGB0SU",
-             last4: "4242",
-             metadata: %{},
-             name: nil,
-             object: "card",
-             recipient: nil,
-             tokenization_method: nil
-           }
-         ],
+         data: [],
          has_more: false,
          object: "list",
-         total_count: 1,
-         url: "/v1/customers/cus_F4ty1PY1JIzyfi/sources"
+         total_count: 0,
+         url: "/v1/customers/cus_nonxistingid/sources"
        },
        subscriptions: %Stripe.List{
-         data: [
-           %Stripe.Subscription{
-             application_fee_percent: nil,
-             billing: "charge_automatically",
-             billing_cycle_anchor: 1_558_015_628,
-             cancel_at_period_end: false,
-             canceled_at: nil,
-             created: 1_558_015_628,
-             current_period_end: 1_560_694_028,
-             current_period_start: 1_558_015_628,
-             customer: "cus_F4ty1PY1JIzyfi",
-             days_until_due: nil,
-             discount: nil,
-             ended_at: nil,
-             id: "sub_F4u2B5At3tmbtV",
-             items: %Stripe.List{
-               data: [
-                 %Stripe.SubscriptionItem{
-                   created: 1_558_015_629,
-                   deleted: nil,
-                   id: "si_F4u27F2cU3a4TM",
-                   metadata: %{},
-                   object: "subscription_item",
-                   plan: %Stripe.Plan{
-                     active: true,
-                     aggregate_usage: nil,
-                     amount: 5000,
-                     billing_scheme: "per_unit",
-                     created: 1_557_758_525,
-                     currency: "usd"
-                   },
-                   quantity: 1,
-                   subscription: "sub_F4u2B5At3tmbtV"
-                 }
-               ],
-               has_more: false,
-               object: "list",
-               total_count: 1,
-               url: "/v1/subscription_items?subscription=sub_F4u2B5At3tmbtV"
-             },
-             livemode: false,
-             metadata: %{},
-             object: "subscription",
-             plan: %Stripe.Plan{
-               active: true,
-               aggregate_usage: nil,
-               amount: 5000,
-               billing_scheme: "per_unit",
-               created: 1_557_758_525,
-               currency: "usd",
-               deleted: nil,
-               id: "plan_F3mvutBFg21hoh",
-               interval: "month",
-               interval_count: 1
-             },
-             quantity: 1,
-             start: 1_558_015_628,
-             status: "active",
-             tax_percent: nil,
-             trial_end: nil,
-             trial_start: nil
-           }
-         ],
+         data: [],
          has_more: false,
          object: "list",
-         total_count: 1,
-         url: "/v1/customers/cus_F4ty1PY1JIzyfi/subscriptions"
+         total_count: 0,
+         url: "/v1/customers/cus_nonxistingid/subscriptions"
        },
-       tax_info: nil,
-       tax_info_verification: nil
+       tax_exempt: "none",
+       tax_ids: %Stripe.List{
+         data: [],
+         has_more: false,
+         object: "list",
+         total_count: 0,
+         url: "/v1/customers/cus_nonxistingid/tax_ids"
+       }
      }}
   end
 
@@ -217,14 +135,14 @@ defmodule Sanbase.StripeApiTestResponse do
     {:ok,
      %Stripe.Subscription{
        application_fee_percent: nil,
-       billing: "charge_automatically",
+       collection_method: "charge_automatically",
        billing_cycle_anchor: 1_558_185_786,
        cancel_at_period_end: false,
        canceled_at: nil,
        created: 1_558_185_786,
        current_period_end: 1_560_864_186,
        current_period_start: 1_558_185_786,
-       customer: "cus_F4ty1PY1JIzyfi",
+       customer: "cus_nonxistingid",
        days_until_due: nil,
        discount: nil,
        ended_at: nil,
@@ -234,7 +152,7 @@ defmodule Sanbase.StripeApiTestResponse do
            %Stripe.SubscriptionItem{
              created: 1_558_185_787,
              deleted: nil,
-             id: "si_F5dmDhHWlVMFkV",
+             id: "si_anothernonexistingid",
              metadata: %{},
              object: "subscription_item",
              plan: %Stripe.Plan{
@@ -253,7 +171,7 @@ defmodule Sanbase.StripeApiTestResponse do
                name: nil,
                nickname: nil,
                object: "plan",
-               product: "prod_F5bvgigFaj5Qqo",
+               product: "prod_nonexistingproduct",
                tiers: nil,
                tiers_mode: nil,
                transform_usage: nil,
@@ -261,13 +179,13 @@ defmodule Sanbase.StripeApiTestResponse do
                usage_type: "licensed"
              },
              quantity: 1,
-             subscription: "sub_F5dmKstgL3Yq3r"
+             subscription: "sub_nonexistingsub"
            }
          ],
          has_more: false,
          object: "list",
          total_count: 1,
-         url: "/v1/subscription_items?subscription=sub_F5dmKstgL3Yq3r"
+         url: "/v1/subscription_items?subscription=sub_nonexistingsub"
        },
        livemode: false,
        metadata: %{},
@@ -288,7 +206,7 @@ defmodule Sanbase.StripeApiTestResponse do
          name: nil,
          nickname: nil,
          object: "plan",
-         product: "prod_F5bvgigFaj5Qqo",
+         product: "prod_nonexistingproduct",
          tiers: nil,
          tiers_mode: nil,
          transform_usage: nil,
@@ -296,7 +214,7 @@ defmodule Sanbase.StripeApiTestResponse do
          usage_type: "licensed"
        },
        quantity: 1,
-       start: 1_558_185_786,
+       start_date: 1_558_185_786,
        status: "active",
        tax_percent: nil,
        trial_end: nil,

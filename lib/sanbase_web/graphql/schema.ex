@@ -24,7 +24,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   # Types
   import_types(Absinthe.Plug.Types)
   import_types(Graphql.AggregationTypes)
-  import_types(Graphql.AnomalyTypes)
   import_types(Graphql.BlockchainAddressType)
   import_types(Graphql.CommentTypes)
   import_types(Graphql.CustomTypes.Date)
@@ -51,9 +50,10 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.UserSettingsTypes)
   import_types(Graphql.UserTriggerTypes)
   import_types(Graphql.UserTypes)
+  import_types(Graphql.SignalTypes)
 
   # Queries and mutations
-  import_types(Graphql.Schema.AnomalyQueries)
+  import_types(Graphql.Schema.SignalQueries)
   import_types(Graphql.Schema.BillingQueries)
   import_types(Graphql.Schema.BlockchainAddressQueries)
   import_types(Graphql.Schema.BlockchainMetricQueries)
@@ -118,7 +118,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   end
 
   query do
-    import_fields(:anomaly_queries)
+    import_fields(:signal_queries)
     import_fields(:billing_queries)
     import_fields(:blockchain_address_queries)
     import_fields(:blockchain_metric_queries)

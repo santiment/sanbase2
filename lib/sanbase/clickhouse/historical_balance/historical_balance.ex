@@ -70,7 +70,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
                {:ok, ethereum_assets} <- EthBalance.assets_held_by_address(address) do
       sorted_assets =
         (erc20_assets ++ ethereum_assets)
-        |> Enum.sort_by(&Map.get(&1, :balance), &>=/2)
+        |> Enum.sort_by(& &1.balance, :desc)
 
       {:ok, sorted_assets}
     end

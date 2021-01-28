@@ -1,11 +1,15 @@
 defmodule SanbaseWeb.Graphql.HistoricalBalanceTypes do
   use Absinthe.Schema.Notation
 
+  alias SanbaseWeb.Graphql.Resolvers.HistoricalBalanceResolver
+
   object :slug_balance do
     field(:slug, non_null(:string))
     field(:balance, non_null(:float))
-    # TODO - should be resolved via Dataloader only when it is requested.
-    field(:balance_usd, non_null(:float))
+
+    field :balance_usd, :float do
+      resolve(&HistoricalBalanceResolver.balance_usd/3)
+    end
   end
 
   object :historical_balance do

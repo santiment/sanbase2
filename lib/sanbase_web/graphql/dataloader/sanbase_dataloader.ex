@@ -29,7 +29,10 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :address_selector_balance_change
   ]
 
-  @price_dataloader [:volume_change_24h]
+  @price_dataloader [
+    :volume_change_24h,
+    :last_price_usd
+  ]
 
   @parity_dataloader [:eth_balance]
 
@@ -47,11 +50,6 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :short_urls_comments_count,
     :project_by_slug
   ]
-
-  # TOOD: Rework so the argument is in the args
-  def query({:price, _} = queryable, args) do
-    PriceDataloader.query(queryable, args)
-  end
 
   def query(queryable, args) do
     case queryable do

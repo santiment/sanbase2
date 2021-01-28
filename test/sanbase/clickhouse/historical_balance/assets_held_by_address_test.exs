@@ -36,9 +36,9 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.AssetsHeldByAdderssTest do
       assert HistoricalBalance.assets_held_by_address(%{address: "0x123", infrastructure: "ETH"}) ==
                {:ok,
                 [
-                  %{slug: context.eth_project.slug, balance: 1000.0, balance_usd: 2000.0},
-                  %{slug: context.p1.slug, balance: 100.0, balance_usd: 200.0},
-                  %{slug: context.p2.slug, balance: 200.0, balance_usd: 400.0}
+                  %{slug: context.eth_project.slug, balance: 1000.0},
+                  %{slug: context.p2.slug, balance: 200.0},
+                  %{slug: context.p1.slug, balance: 100.0}
                 ]}
     end
   end

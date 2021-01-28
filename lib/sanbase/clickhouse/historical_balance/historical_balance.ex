@@ -67,9 +67,12 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   @spec assets_held_by_address(map()) :: {:ok, list(map())} | {:error, String.t()}
   def assets_held_by_address(%{infrastructure: "ETH", address: address}) do
     async with {:ok, erc20_assets} <- Erc20Balance.assets_held_by_address(address),
-               {:ok, ethereum} <- EthBalance.assets_held_by_address(address) do
-      assets = add_usd_balance(ethereum ++ erc20_assets)
-      {:ok, assets}
+               {:ok, ethereum_assets} <- EthBalance.assets_held_by_address(address) do
+      sorted_assets =
+        (erc20_assets ++ ethereum_assets)
+        |> Enum.sort_by(& &1.balance, :desc)
+
+      {:ok, sorted_assets}
     end
   end
 
@@ -80,8 +83,12 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
       module ->
         case module.assets_held_by_address(address) do
-          {:ok, assets} -> {:ok, add_usd_balance(assets)}
-          error -> error
+          {:ok, assets} ->
+            sorted_assets = Enum.sort_by(assets, &Map.get(&1, :balance), &>=/2)
+            {:ok, sorted_assets}
+
+          error ->
+            error
         end
     end
   end
@@ -201,27 +208,5 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
   def selector_to_args(selector) do
     {:error, "Invalid historical balance selector: #{inspect(selector)}"}
-  end
-
-  def add_usd_balance([]), do: []
-
-  def add_usd_balance(assets_held_by_address) do
-    slugs = assets_held_by_address |> Enum.map(& &1.slug)
-
-    slug_usd_price_map =
-      slugs
-      |> Project.by_slug()
-      |> Enum.into(%{}, fn project ->
-        if project.latest_coinmarketcap_data do
-          {project.slug, Sanbase.Math.to_float(project.latest_coinmarketcap_data.price_usd, 0)}
-        else
-          {project.slug, 0.0}
-        end
-      end)
-
-    assets_held_by_address
-    |> Enum.map(fn %{slug: slug, balance: balance} = data ->
-      Map.put(data, :balance_usd, balance * (slug_usd_price_map[slug] || 0))
-    end)
   end
 end

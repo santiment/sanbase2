@@ -42,6 +42,24 @@ defmodule SanbaseWeb.Graphql.PriceDataloader do
     |> Map.new()
   end
 
+  def query(:last_price_usd, slugs) do
+    now = Timex.now()
+    yesterday = Timex.shift(Timex.now(), days: -1)
+    slugs = Enum.to_list(slugs)
+
+    # Returns result like: {:ok, %{"bitcoin" => 31886.7990282547, "santiment" => 0.07190104}}
+    {:ok, result} =
+      Sanbase.Metric.aggregated_timeseries_data(
+        "price_usd",
+        %{slug: slugs},
+        yesterday,
+        now,
+        aggregation: :last
+      )
+
+    result
+  end
+
   # Helper functions
 
   defp do_volume_change(slugs, latest_dt, middle_dt, earliest_dt) do

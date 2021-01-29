@@ -3,7 +3,10 @@ defmodule Sanbase.Scrapers.Scheduler do
     otp_app: :sanbase
 
   def enabled?() do
-    System.get_env("QUANTUM_SCHEDULER_ENABLED", "false") |> String.to_existing_atom()
+    case System.get_env("QUANTUM_SCHEDULER_ENABLED", "false") do
+      truthy when truthy in ["1", "true", true] -> true
+      falsy when falsy in ["0", "false", false, nil] -> false
+    end
   end
 end
 
@@ -12,6 +15,9 @@ defmodule Sanbase.Signals.Scheduler do
     otp_app: :sanbase
 
   def enabled?() do
-    System.get_env("QUANTUM_SCHEDULER_ENABLED", "false") |> String.to_existing_atom()
+    case System.get_env("QUANTUM_SCHEDULER_ENABLED", "false") do
+      truthy when truthy in ["1", "true", true] -> true
+      falsy when falsy in ["0", "false", false, nil] -> false
+    end
   end
 end

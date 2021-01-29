@@ -31,6 +31,13 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     value(:ignored_slugs)
     value(:watchlist_id)
     value(:watchlist_slug)
+    value(:base_ttl)
+    value(:max_ttl_offset)
+  end
+
+  input_object :caching_params_input_object do
+    field(:base_ttl, :integer)
+    field(:max_ttl_offset, :integer)
   end
 
   input_object :metric_target_selector_input_object do
@@ -300,6 +307,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:aggregation, :aggregation, default_value: nil)
       arg(:transform, :timeseries_metric_transform_input_object)
       arg(:include_incomplete_data, :boolean, default_value: false)
+      arg(:caching_params, :caching_params_input_object)
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
@@ -315,6 +323,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:aggregation, :aggregation, default_value: nil)
       arg(:transform, :timeseries_metric_transform_input_object)
       arg(:include_incomplete_data, :boolean, default_value: false)
+      arg(:caching_params, :caching_params_input_object)
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)
@@ -336,6 +345,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:aggregation, :aggregation, default_value: nil)
+      arg(:caching_params, :caching_params_input_object)
 
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl)

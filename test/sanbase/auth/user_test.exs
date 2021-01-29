@@ -12,7 +12,7 @@ defmodule Sanbase.Accounts.UserTest do
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestResponse
   alias Sanbase.Billing.Subscription.SignUpTrial
-  alias Sanbase.Auth.User.UniswapStaking
+  alias Sanbase.Accounts.User.UniswapStaking
 
   test "Delete user and associations" do
     with_mocks([

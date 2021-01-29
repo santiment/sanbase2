@@ -9,7 +9,8 @@ defmodule Sanbase.Accounts.User do
     EthAccount,
     UserApikeyToken,
     UserSettings,
-    UserFollower
+    UserFollower,
+    UserRole
   }
 
   alias Sanbase.Vote
@@ -82,7 +83,7 @@ defmodule Sanbase.Accounts.User do
     has_many(:followers, UserFollower, foreign_key: :user_id, on_delete: :delete_all)
     has_many(:following, UserFollower, foreign_key: :follower_id, on_delete: :delete_all)
     has_many(:subscriptions, Subscription, on_delete: :delete_all)
-    has_many(:roles, {"user_roles", Accounts.UserRole}, on_delete: :delete_all)
+    has_many(:roles, {"user_roles", UserRole}, on_delete: :delete_all)
     has_many(:promo_trials, Subscription.PromoTrial, on_delete: :delete_all)
     has_many(:triggers, Sanbase.Signal.UserTrigger, on_delete: :delete_all)
     has_many(:chart_configurations, Sanbase.Chart.Configuration, on_delete: :delete_all)

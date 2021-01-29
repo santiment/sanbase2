@@ -664,7 +664,7 @@ defmodule Sanbase.Factory do
   end
 
   def uniswap_staking_factory do
-    %Sanbase.Auth.User.UniswapStaking{
+    %Sanbase.Accounts.User.UniswapStaking{
       san_staked: 3000
     }
   end

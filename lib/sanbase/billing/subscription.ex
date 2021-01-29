@@ -10,7 +10,6 @@ defmodule Sanbase.Billing.Subscription do
   import Ecto.Query
 
   alias Sanbase.Billing.Plan
-  alias Sanbase.Billing.Plan.AccessChecker
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
   alias Sanbase.StripeApi

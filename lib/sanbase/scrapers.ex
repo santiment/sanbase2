@@ -68,7 +68,7 @@ defmodule Sanbase.Application.Scrapers do
       # Quantum Scheduler
       start_if(
         fn -> {Sanbase.Scrapers.Scheduler, []} end,
-        fn -> System.get_env("QUANTUM_SCHEDULER_ENABLED") end
+        fn -> Sanbase.Scrapers.Scheduler.enabled?() end
       )
     ]
 

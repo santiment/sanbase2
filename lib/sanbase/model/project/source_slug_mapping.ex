@@ -26,6 +26,16 @@ defmodule Sanbase.Model.Project.SourceSlugMapping do
     changeset(%__MODULE__{}, attrs) |> Repo.insert()
   end
 
+  def get_source_slug_mappings(source) do
+    from(
+      ssm in __MODULE__,
+      join: p in assoc(ssm, :project),
+      where: ssm.source == ^source,
+      select: {ssm.slug, p.slug}
+    )
+    |> Repo.all()
+  end
+
   def get_slug(%Project{id: project_id}, source) do
     from(
       ssm in __MODULE__,

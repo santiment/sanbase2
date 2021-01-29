@@ -1,6 +1,7 @@
 defmodule Sanbase.Kaiko do
   alias Sanbase.ExternalServices.Coinmarketcap.PriceScrapingProgress, as: Progress
 
+  import Sanbase.DateTimeUtils, only: [round_datetime: 2]
   require Logger
   require Sanbase.Utils.Config, as: Config
 
@@ -8,6 +9,8 @@ defmodule Sanbase.Kaiko do
   @source "kaiko"
   @url "https://eu.market-api.kaiko.io"
   @recv_timeout 30_000
+  @interval "10s"
+  @interval_sec 10
 
   def run(opts \\ []) do
     # cronjobs cannot use sub-minute intervals.
@@ -17,35 +20,26 @@ defmodule Sanbase.Kaiko do
 
     Logger.info("Scraping Kaiko prices for #{length(pairs())} pairs")
 
+    now = Timex.now()
+
     Sanbase.Parallel.map(
       pairs(),
-      fn {base_asset, quote_asset, slug} ->
-        identifier = base_asset <> "/" <> quote_asset
+      fn {base_asset, slug} ->
+        # Build the timerange params. All `end_time` params are matching
+        usd_timerange = get_timerange_params(base_asset, "usd", now)
+        btc_timerange = get_timerange_params(base_asset, "btc", now)
 
-        timerange = %{
-          start_time: last_datetime_scraped(identifier),
-          end_time: Timex.now(),
-          interval: "10s"
-        }
+        # Fetch the USD and BTC prices and combine them based on
+        # the datetime. The datetime is rounded to `@interval_sec` buckets
+        # so this combination can be done in more cases
+        usd_prices = current_prices(base_asset, "usd", usd_timerange)
+        btc_prices = current_prices(base_asset, "btc", btc_timerange)
+        prices = combine_prices(usd_prices, btc_prices)
 
-        prices =
-          current_prices(base_asset, quote_asset, timerange)
-          |> Enum.filter(& &1.price)
+        :ok = export_to_kafka(prices, slug)
 
-        last_datapoint =
-          prices
-          |> Enum.max_by(fn elem -> elem.datetime end, DateTime, fn -> nil end)
-
-        :ok = export_to_kafka(slug, quote_asset, prices)
-
-        case last_datapoint do
-          %{datetime: %DateTime{} = dt} ->
-            {:ok, _} = Progress.store_progress(identifier, @source, dt)
-            :ok
-
-          _ ->
-            :ok
-        end
+        :ok = store_last_datetime(usd_prices, base_asset, "usd")
+        :ok = store_last_datetime(btc_prices, base_asset, "btc")
       end
     )
   end
@@ -55,20 +49,29 @@ defmodule Sanbase.Kaiko do
 
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- get(url),
          {:ok, %{"data" => data}} <- Jason.decode(body) do
+      # Round the datetimes, so the combining of USD and BTC prices can be done.
+      # It is expected that the timestamps come in already rounded but this is
+      # done just to make sure
       data
       |> Enum.map(fn elem ->
         %{
           price: elem["price"] |> Sanbase.Math.to_float(),
-          datetime: elem["timestamp"] |> DateTime.from_unix!(:millisecond)
+          datetime:
+            elem["timestamp"]
+            |> DateTime.from_unix!(:millisecond)
+            |> round_datetime(@interval_sec)
         }
       end)
     else
       _ ->
         []
     end
+    |> Enum.filter(& &1.price)
   end
 
   # execute authenticated request
+
+  defp identifier(base_asset, quote_asset), do: base_asset <> "/" <> quote_asset
 
   defp get(url) do
     headers = [{"X-Api-Key", Config.get(:apikey)}]
@@ -95,10 +98,54 @@ defmodule Sanbase.Kaiko do
     end
   end
 
-  defp export_to_kafka(slug, quote_asset, prices) when quote_asset in ["btc", "usd"] do
+  def store_last_datetime(prices, base_asset, quote_asset) do
+    identifier = identifier(base_asset, quote_asset)
+
+    prices
+    |> Enum.filter(& &1.price)
+    |> Enum.max_by(fn elem -> elem.datetime end, DateTime, fn -> nil end)
+    |> case do
+      %{datetime: %DateTime{} = dt} ->
+        {:ok, _} = Progress.store_progress(identifier, @source, dt)
+        :ok
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp get_timerange_params(base_asset, quote_asset, end_time) do
+    %{
+      start_time: identifier(base_asset, quote_asset) |> last_datetime_scraped(),
+      end_time: end_time,
+      interval: @interval
+    }
+  end
+
+  defp combine_prices(usd_prices, btc_prices) do
+    usd_map = Map.new(usd_prices, &{&1.datetime, &1.price})
+    btc_map = Map.new(btc_prices, &{&1.datetime, &1.price})
+
+    Map.merge(usd_map, btc_map, fn _datetime, price_usd, price_btc ->
+      %{price_usd: price_usd, price_btc: price_btc}
+    end)
+    |> Enum.map(fn {datetime, map} ->
+      %{
+        datetime: datetime,
+        price_usd: map.price_usd,
+        price_btc: map.price_btc,
+        marketcap_usd: nil,
+        volume_usd: nil
+      }
+    end)
+    |> Enum.reject(fn elem -> is_nil(elem.price_usd) and is_nil(elem.price_btc) end)
+    |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
+  end
+
+  defp export_to_kafka(prices, slug) do
     Enum.map(
       prices,
-      fn %{price: price, datetime: datetime} ->
+      fn %{price_usd: price_usd, price_btc: price_btc, datetime: datetime} ->
         key = @source <> "_" <> slug <> "_" <> DateTime.to_iso8601(datetime)
 
         value =
@@ -106,8 +153,8 @@ defmodule Sanbase.Kaiko do
             timestamp: DateTime.to_unix(datetime),
             source: @source,
             slug: slug,
-            price_usd: (quote_asset == "usd" && price) || nil,
-            price_btc: (quote_asset == "btc" && price) || nil,
+            price_usd: price_usd,
+            price_btc: price_btc,
             marketcap_usd: nil,
             volume_usd: nil
           }
@@ -121,8 +168,5 @@ defmodule Sanbase.Kaiko do
 
   defp pairs() do
     Sanbase.Model.Project.SourceSlugMapping.get_source_slug_mappings(@source)
-    |> Enum.flat_map(fn {kaiko_code, santiment_slug} ->
-      [{kaiko_code, "usd", santiment_slug}, {kaiko_code, "btc", santiment_slug}]
-    end)
   end
 end

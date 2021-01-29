@@ -31,34 +31,33 @@ defmodule Sanbase.KaikoTest do
         Sanbase.InMemoryKafka.Producer.get_state()
         |> Map.get("asset_prices")
 
-      # There 13 non-null prices in the JSON response. There are 26 results
-      # because it will reuse the same JSON response for two fetches - one
-      # with USD quote_asset and one with BTC
-      assert length(prices) == 26
+      # There 13 non-null prices in the JSON response. There are 13 USD results
+      # and 13 BTC results that get combined into one data point
+      assert length(prices) == 13
 
       {key, value_json} = Enum.at(prices, 0)
-      assert key == "kaiko_bitcoin_2021-01-28T15:02:00.000Z"
+      assert key == "kaiko_bitcoin_2021-01-28T15:00:00Z"
 
       assert Jason.decode!(value_json) == %{
                "marketcap_usd" => nil,
-               "price_btc" => 0.04220187108187633,
-               "price_usd" => nil,
+               "price_btc" => 0.04228463511481032,
+               "price_usd" => 0.04228463511481032,
                "slug" => "bitcoin",
                "source" => "kaiko",
-               "timestamp" => 1_611_846_120,
+               "timestamp" => 1_611_846_000,
                "volume_usd" => nil
              }
 
-      {key20, value_json20} = Enum.at(prices, 20)
-      assert key20 == "kaiko_bitcoin_2021-01-28T15:00:50.000Z"
+      {key20, value_json20} = Enum.at(prices, 10)
+      assert key20 == "kaiko_bitcoin_2021-01-28T15:01:40Z"
 
       assert Jason.decode!(value_json20) == %{
                "marketcap_usd" => nil,
-               "price_btc" => nil,
-               "price_usd" => 0.04222828954379179,
+               "price_btc" => 0.04222825282476801,
+               "price_usd" => 0.04222825282476801,
                "slug" => "bitcoin",
                "source" => "kaiko",
-               "timestamp" => 1_611_846_050,
+               "timestamp" => 1_611_846_100,
                "volume_usd" => nil
              }
     end)

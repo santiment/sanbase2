@@ -6,15 +6,18 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
 
   def selector_args_to_opts(args) when is_map(args) do
     opts = [aggregation: Map.get(args, :aggregation, nil)]
+    selector = args[:selector]
 
-    with selector when is_map(selector) <- args[:selector],
-         {map, _rest} when map_size(map) > 0 <- Map.split(selector, [:owner, :label]) do
-      opts = [additional_filters: Keyword.new(map)] ++ opts
-      {:ok, opts}
-    else
-      _ ->
-        {:ok, opts}
-    end
+    opts =
+      if is_map(selector) do
+        opts
+        |> maybe_add_field(:additional_filters, selector)
+        |> maybe_add_field(:source, selector)
+      else
+        opts
+      end
+
+    {:ok, opts}
   end
 
   @doc ~s"""
@@ -92,5 +95,22 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
     Enum.reduce(opts, msg, fn {key, value}, acc ->
       String.replace(acc, "%{#{key}}", to_string(inspect(value)))
     end)
+  end
+
+  defp maybe_add_field(opts, :additional_filters, selector) do
+    case Map.split(selector, [:owner, :label]) do
+      {map, _rest} when map_size(map) > 0 ->
+        [additional_filters: Keyword.new(map)] ++ opts
+
+      _ ->
+        opts
+    end
+  end
+
+  defp maybe_add_field(opts, field, selector) when is_atom(field) do
+    case Map.has_key?(selector, field) do
+      true -> [{field, Map.fetch!(selector, field)}] ++ opts
+      false -> opts
+    end
   end
 end

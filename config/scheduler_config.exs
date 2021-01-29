@@ -109,5 +109,17 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     sync_liquidity_subscriptions_staked_users: [
       schedule: "7-59/30 * * * *",
       task: {Sanbase.Billing, :sync_liquidity_subscriptions_staked_users, []}
+    ],
+    get_kaiko_realtime_prices: [
+      # Start scraping at every round minute
+      schedule: "* * * * *",
+      task: {Sanbase.Kaiko, :run, []}
+    ],
+    get_kaiko_realtime_prices_30: [
+      # Start scraping at every minute and 30 seconds.
+      # Cron jobs do not support sub-minute frequency, so it is done by starting
+      # at every round minute and sleeping for 30 seconds before doing the work.
+      schedule: "* * * * *",
+      task: {Sanbase.Kaiko, :run, [[sleep: 30_000]]}
     ]
   ]

@@ -209,8 +209,13 @@ defmodule SanbaseWeb.Graphql.Cache do
   # Helper functions
 
   def cache_key(name, args, opts \\ []) do
-    base_ttl = Keyword.get(opts, :ttl, @ttl)
-    max_ttl_offset = Keyword.get(opts, :max_ttl_offset, @max_ttl_offset)
+    base_ttl = args[:caching_params][:base_ttl] || Keyword.get(opts, :ttl, @ttl)
+
+    max_ttl_offset =
+      args[:caching_params][:max_ttl_offset] ||
+        Keyword.get(opts, :max_ttl_offset, @max_ttl_offset)
+
+    max_ttl_offset = Enum.max([max_ttl_offset, 5])
 
     # Used to randomize the TTL for lists of objects like list of projects
     additional_args = Map.take(args, [:slug, :id])

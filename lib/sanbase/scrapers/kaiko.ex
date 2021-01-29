@@ -122,21 +122,26 @@ defmodule Sanbase.Kaiko do
     }
   end
 
-  defp combine_prices(usd_prices, btc_prices) do
-    usd_map = Map.new(usd_prices, &{&1.datetime, &1.price})
-    btc_map = Map.new(btc_prices, &{&1.datetime, &1.price})
+  def combine_prices(usd_prices, btc_prices) do
+    usd_map = Map.new(usd_prices, &{&1.datetime, %{price_usd: &1.price}})
+    btc_map = Map.new(btc_prices, &{&1.datetime, %{price_btc: &1.price}})
 
-    Map.merge(usd_map, btc_map, fn _datetime, price_usd, price_btc ->
-      %{price_usd: price_usd, price_btc: price_btc}
+    Map.merge(usd_map, btc_map, fn _datetime, map_usd, map_btc ->
+      Map.merge(map_usd, map_btc)
     end)
     |> Enum.map(fn {datetime, map} ->
+      # map contains price_usd, price_btc or both in case there are both prices
+      # for the same datetime and the Map.merge/3 function was triggered.
+      # The call to Map.merge/2 here overrides the prices that are present
+      # in the map parameter
       %{
-        datetime: datetime,
-        price_usd: map.price_usd,
-        price_btc: map.price_btc,
+        price_usd: nil,
+        price_btc: nil,
         marketcap_usd: nil,
         volume_usd: nil
       }
+      |> Map.merge(map)
+      |> Map.put(:datetime, datetime)
     end)
     |> Enum.reject(fn elem -> is_nil(elem.price_usd) and is_nil(elem.price_btc) end)
     |> Enum.sort_by(& &1.datetime, {:asc, DateTime})

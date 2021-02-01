@@ -60,8 +60,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
   Parse the binary received from the CMC response to a list of tickers
   """
   @spec fetch_data() :: {:error, String.t()} | {:ok, [%__MODULE__{}]}
-  def fetch_data() do
-    projects_number = Config.module_get(TickerFetcher, :projects_number) |> String.to_integer()
+  def fetch_data(opts \\ []) do
+    projects_number =
+      case Keyword.get(opts, :projects_number) do
+        count when is_integer(count) and count > 0 -> count
+        _ -> Config.module_get(TickerFetcher, :projects_number) |> String.to_integer()
+      end
 
     Logger.info("[CMC] Fetching the realtime data for top #{projects_number} projects")
 

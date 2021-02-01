@@ -43,10 +43,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     end
   end
 
-  def work() do
+  def work(opts \\ []) do
     Logger.info("[CMC] Fetching realtime data from coinmarketcap")
     # Fetch current coinmarketcap data for many tickers
-    {:ok, tickers} = Ticker.fetch_data()
+    {:ok, tickers} = Ticker.fetch_data(opts)
 
     # Create a project if it's a new one in the top projects and we don't have it
     tickers

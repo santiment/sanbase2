@@ -87,6 +87,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:label, :string)
     field(:owner, :string)
     field(:holders_count, :integer)
+    field(:source, :string)
   end
 
   object :metric_anomalies do

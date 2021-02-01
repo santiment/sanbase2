@@ -121,5 +121,16 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       # at every round minute and sleeping for 30 seconds before doing the work.
       schedule: "* * * * *",
       task: {Sanbase.Kaiko, :run, [[sleep: 30_000]]}
+    ],
+    sync_coinmarketcap_projects: [
+      # When a new project gets a coinmarketcap string slug associated with it,
+      # it is not until the first scrape which includes it, that it also gets the
+      # coinmarketcap integer id. We're only scraping the top 2500 projects as
+      # this is the limit our current paid plan allows if we scrape every 5 minutes.
+      # Scraping once a day all projects will fill those missing coinmarketcap
+      # integer ids.
+      schedule: "@daily",
+      task:
+        {Sanbase.ExternalServices.Coinmarketcap.TickerFetcher, :work, [projects_number: 10_000]}
     ]
   ]

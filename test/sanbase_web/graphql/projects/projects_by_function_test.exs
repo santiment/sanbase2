@@ -258,10 +258,8 @@ defmodule SanbaseWeb.Graphql.ProjectsByFunctionTest do
     result = execute_query(conn, query(function))
     projects = result["data"]["allProjectsByFunction"]["projects"]
 
-    assert projects == [
-             %{"slug" => "bitcoin"},
-             %{"slug" => "santiment"}
-           ]
+    assert %{"slug" => "bitcoin"} in projects
+    assert %{"slug" => "santiment"} in projects
   end
 
   defp query(function, additional_fields \\ []) when is_map(function) do

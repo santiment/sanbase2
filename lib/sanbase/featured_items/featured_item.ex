@@ -12,7 +12,7 @@ defmodule Sanbase.FeaturedItem do
   alias Sanbase.Repo
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
-  alias Sanbase.Signal.UserTrigger
+  alias Sanbase.Alert.UserTrigger
   alias Sanbase.Chart.Configuration, as: ChartConfiguration
   alias Sanbase.TableConfiguration
 

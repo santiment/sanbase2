@@ -1,13 +1,13 @@
-defmodule Sanbase.Repo.Migrations.MigratePricePercentChangeToMetricSignals do
+defmodule Sanbase.Repo.Migrations.MigratePricePercentChangeToMetricAlerts do
   use Ecto.Migration
 
-  alias Sanbase.Signal.Trigger.{
+  alias Sanbase.Alert.Trigger.{
     PricePercentChangeSettings,
     PriceAbsoluteChangeSettings,
     MetricTriggerSettings
   }
 
-  alias Sanbase.Signal.UserTrigger
+  alias Sanbase.Alert.UserTrigger
 
   def up do
     setup()

@@ -1,4 +1,4 @@
-defmodule Sanbase.Signal.ResultBuilder.TransformerTest do
+defmodule Sanbase.Alert.ResultBuilder.TransformerTest do
   use ExUnit.Case
-  doctest Sanbase.Signal.ResultBuilder.Transformer
+  doctest Sanbase.Alert.ResultBuilder.Transformer
 end

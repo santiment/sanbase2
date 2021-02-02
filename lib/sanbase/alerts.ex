@@ -1,0 +1,60 @@
+defmodule Sanbase.Application.Alerts do
+  import Sanbase.ApplicationUtils
+
+  def init(), do: :ok
+
+  @doc ~s"""
+  Return the children and options that will be started in the scrapers container.
+  Along with these children all children from `Sanbase.Application.common_children/0`
+  will be started, too.
+  """
+  def children() do
+    children = [
+      # Mutex used when sending notifications for triggered alerts
+      # Guards agains concurrently sending notifications to a single user
+      # which can bypass the limit for alerts per day
+      Supervisor.child_spec(
+        {Mutex, name: Sanbase.AlertMutex},
+        id: Sanbase.AlertMutex
+      ),
+
+      # Start the alert evaluator cache
+      Supervisor.child_spec(
+        {ConCache,
+         [
+           name: :alerts_evaluator_cache,
+           ttl_check_interval: :timer.minutes(1),
+           global_ttl: :timer.minutes(3),
+           acquire_lock_timeout: 60_000
+         ]},
+        id: :alerts_evaluator_cache
+      ),
+
+      # Start alerts cache
+      Supervisor.child_spec(
+        {ConCache,
+         [
+           name: :long_ttl_cache,
+           ttl_check_interval: :timer.minutes(10),
+           global_ttl: :timer.hours(1)
+         ]},
+        id: :long_ttl_cache
+      ),
+
+      # Quantum Scheduler
+      start_if(
+        fn -> {Sanbase.Alerts.Scheduler, []} end,
+        fn -> Sanbase.Alerts.Scheduler.enabled?() end
+      )
+    ]
+
+    opts = [
+      strategy: :one_for_one,
+      name: Sanbase.AlertsSupervisor,
+      max_restarts: 5,
+      max_seconds: 1
+    ]
+
+    {children, opts}
+  end
+end

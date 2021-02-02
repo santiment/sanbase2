@@ -1,19 +1,19 @@
-defmodule Sanbase.Signal.ScreenerTriggerSettingsTest do
+defmodule Sanbase.Alert.ScreenerTriggerSettingsTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
   import Sanbase.TestHelpers
   import ExUnit.CaptureLog
 
-  alias Sanbase.Signal.{UserTrigger, Trigger.ScreenerTriggerSettings}
+  alias Sanbase.Alert.{UserTrigger, Trigger.ScreenerTriggerSettings}
 
   setup do
     # Clean children on exit, otherwise DB calls from async tasks can be attempted
     clean_task_supervisor_children()
 
-    Sanbase.Signal.Evaluator.Cache.clear_all()
+    Sanbase.Alert.Evaluator.Cache.clear_all()
 
-    user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
+    user = insert(:user, user_settings: %{settings: %{alert_notify_telegram: true}})
     Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     selector = %{
@@ -86,22 +86,22 @@ defmodule Sanbase.Signal.ScreenerTriggerSettingsTest do
 
       # Clear the result of the filter
       Sanbase.Cache.clear_all()
-      Sanbase.Signal.Evaluator.Cache.clear_all()
+      Sanbase.Alert.Evaluator.Cache.clear_all()
 
       # First run
       assert capture_log(fn ->
-               Sanbase.Signal.Scheduler.run_signal(ScreenerTriggerSettings)
+               Sanbase.Alert.Scheduler.run_alert(ScreenerTriggerSettings)
              end) =~
-               "In total 1/1 screener_signal signals were sent successfully"
+               "In total 1/1 screener_signal alerts were sent successfully"
 
       # Clear the result of the filter
       Sanbase.Cache.clear_all()
-      Sanbase.Signal.Evaluator.Cache.clear_all()
+      Sanbase.Alert.Evaluator.Cache.clear_all()
 
       # Second run
       assert capture_log(fn ->
-               Sanbase.Signal.Scheduler.run_signal(ScreenerTriggerSettings)
-             end) =~ "There were no screener_signal signals triggered"
+               Sanbase.Alert.Scheduler.run_alert(ScreenerTriggerSettings)
+             end) =~ "There were no screener_signal alerts triggered"
     end)
   end
 
@@ -136,22 +136,22 @@ defmodule Sanbase.Signal.ScreenerTriggerSettingsTest do
 
       # Clear the result of the filter
       Sanbase.Cache.clear_all()
-      Sanbase.Signal.Evaluator.Cache.clear_all()
+      Sanbase.Alert.Evaluator.Cache.clear_all()
 
       # First run
       assert capture_log(fn ->
-               Sanbase.Signal.Scheduler.run_signal(ScreenerTriggerSettings)
+               Sanbase.Alert.Scheduler.run_alert(ScreenerTriggerSettings)
              end) =~
-               "In total 1/1 screener_signal signals were sent successfully"
+               "In total 1/1 screener_signal alerts were sent successfully"
 
       # Clear the result of the filter
       Sanbase.Cache.clear_all()
-      Sanbase.Signal.Evaluator.Cache.clear_all()
+      Sanbase.Alert.Evaluator.Cache.clear_all()
 
       # Second run
       assert capture_log(fn ->
-               Sanbase.Signal.Scheduler.run_signal(ScreenerTriggerSettings)
-             end) =~ "There were no screener_signal signals triggered"
+               Sanbase.Alert.Scheduler.run_alert(ScreenerTriggerSettings)
+             end) =~ "There were no screener_signal alerts triggered"
     end)
   end
 end

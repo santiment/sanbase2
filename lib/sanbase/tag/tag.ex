@@ -7,7 +7,7 @@ defmodule Sanbase.Tag do
   alias __MODULE__
   alias Sanbase.Repo
   alias Sanbase.Insight.Post
-  alias Sanbase.Signal.UserTrigger
+  alias Sanbase.Alert.UserTrigger
 
   @posts_join_through_table "posts_tags"
   @user_triggers_join_through_table "user_triggers_tags"

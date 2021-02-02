@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
   require Logger
 
   import Sanbase.Utils.ErrorHandling,
-    only: [maybe_handle_graphql_error: 2, handle_graphql_error: 3, handle_graphql_error: 4]
+    only: [maybe_handle_graphql_error: 2, handle_graphql_error: 3]
 
   alias Sanbase.Clickhouse.ExchangeAddress
   alias Sanbase.Clickhouse.Exchanges

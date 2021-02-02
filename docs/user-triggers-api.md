@@ -18,7 +18,7 @@
   - [Getting all public triggers](#getting-all-public-triggers)
   - [Getting all public triggers for given user](#getting-all-public-triggers-for-given-user)
   - [Featured user triggers](#featured-user-triggers)
-  - [API for signals historical activity (user signals timeline)](#api-for-signals-historical-activity-user-signals-timeline)
+  - [API for alerts historical activity (user alerts timeline)](#api-for-alerts-historical-activity-user-alerts-timeline)
     - [Historical activity request](#historical-activity-request)
     - [Historical activity response](#historical-activity-response)
 
@@ -31,21 +31,21 @@ These are the fields describing a trigger.
     field(:title, :string) # Trigger title
     field(:description, :string) # Trigger description
     field(:is_public, :boolean, default: false) # Whether trigger is public or private
-    field(:cooldown, :string, default: "24h") # After a signal is fired it can be again fired after `cooldown` time has passed. By default - `24h`
+    field(:cooldown, :string, default: "24h") # After an alert is fired it can be again fired after `cooldown` time has passed. By default - `24h`
     field(:icon_url, :string) # Url of icon for the trigger
     field(:is_active, :boolean, default: true) # Whether trigger is active. By default - yes
-    field(:is_repeating, :boolean, default: true) # Whether the signal will fire just one time or it will be working until manually turned off. By default - working until turned off.
+    field(:is_repeating, :boolean, default: true) # Whether the alert will fire just one time or it will be working until manually turned off. By default - working until turned off.
 ```
 
 ### Settings fields
 
 - **type** Defines the type of the trigger. Can be one of: `["trending_words", "price_volume_difference", "metric_signal", "daily_metric_signal", "wallet_movement"]`
 - **target**: Slug or list of slugs or watchlist or ethereum addresses or list of ethereum addresses - `{"slug": "naga"} | {"slug": ["ethereum", "santiment"]} | {"watchlist_id": watchlsit_id} | {"eth_address": "0x123"} | {"eth_address": ["0x123", "0x234"]}`.
-- **channel**: A channel where the signal is sent. Can be one of `"telegram" | "email" | "web_push" | {"webhook": <webhook_url>}` or a list of any combination.
+- **channel**: A channel where the alert is sent. Can be one of `"telegram" | "email" | "web_push" | {"webhook": <webhook_url>}` or a list of any combination.
 - **time_window**: `1d`, `4w`, `1h` - Time string we use throughout the API for `interval`
-- **operation** - A map describing the operation that triggers the signal. Check the examples.
+- **operation** - A map describing the operation that triggers the alert. Check the examples.
 - **threshold** - Float threshold used in `price_volume_difference`
-- **trigger_time** - At what time of the day to fire the signal. It ISO8601 UTC time used only in `trending_words`, ex: `"12:00:00"`
+- **trigger_time** - At what time of the day to fire the alert. It ISO8601 UTC time used only in `trending_words`, ex: `"12:00:00"`
 
 ### Examples
 
@@ -65,7 +65,7 @@ These are the fields describing a trigger.
 ```
 
 ```json
-// Send a signal if one project is trending. A project is trending if
+// Send an alert if one project is trending. A project is trending if
 // at least one of its ticker, name or slug is in the trending words
 // The check is case insensitive.
 {
@@ -77,7 +77,7 @@ These are the fields describing a trigger.
 ```
 
 ```json
-// Send a signal if any of the projects is trending. A project is trending if
+// Send an alert if any of the projects is trending. A project is trending if
 // at least one of its ticker, name or slug is in the trending words
 // The check is case insensitive.
 {
@@ -89,7 +89,7 @@ These are the fields describing a trigger.
 ```
 
 ```json
-// Send a signal if any of the projects in a watchlist is trending. A project is trending if
+// Send an alert if any of the projects in a watchlist is trending. A project is trending if
 // at least one of its ticker, name or slug is in the trending words
 // The check is case insensitive.
 {
@@ -101,7 +101,7 @@ These are the fields describing a trigger.
 ```
 
 ```json
-// Send a signal if a word is trending. The check is case insensitive.
+// Send an alert if a word is trending. The check is case insensitive.
 {
   "type": "trending_words",
   "channel": "telegram",
@@ -111,7 +111,7 @@ These are the fields describing a trigger.
 ```
 
 ```json
-// Send a signal if any of the words is trending. The check is case insensitive.
+// Send an alert if any of the words is trending. The check is case insensitive.
 {
   "type": "trending_words",
   "channel": "telegram",
@@ -134,7 +134,7 @@ These are the fields describing a trigger.
 
 #### Example settings structure for `wallet_movement`
 
-This signal is the successor of `eth_wallet`. It allows for a wider variety
+This alert is the successor of `eth_wallet`. It allows for a wider variety
 of blockchains and operations.
 
 The following blockchains are supported, identifier by `infrastructure`:
@@ -659,13 +659,13 @@ mutation {
 }
 ```
 
-### API for signals historical activity (user signals timeline)
+### API for alerts historical activity (user alerts timeline)
 
 #### Historical activity request
 
 ```graphql
 {
-  signalsHistoricalActivity(
+  alertsHistoricalActivity(
     limit: 1
     cursor: { type: BEFORE, datetime: "2019-03-11T11:56:42.970284" }
   ) {
@@ -691,7 +691,7 @@ mutation {
 ````graphql
 {
   "data": {
-    "signalsHistoricalActivity": {
+    "alertsHistoricalActivity": {
       "activity": [
         {
           "payload": {
@@ -720,7 +720,7 @@ mutation {
 #### Take activities newer than certain datetime
 
 ```graphql
-    signalsHistoricalActivity(
+    alertsHistoricalActivity(
       limit:1,
       cursor:{
         type:AFTER,
@@ -732,7 +732,7 @@ mutation {
 #### Take activities before certain datetime
 
 ```graphql
-    signalsHistoricalActivity(
+    alertsHistoricalActivity(
       limit:1,
       cursor:{
         type:BEFORE,

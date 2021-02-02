@@ -1,14 +1,14 @@
-defmodule Sanbase.Signal.DailyMetricTriggerSettingsTest do
+defmodule Sanbase.Alert.DailyMetricTriggerSettingsTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
   import Sanbase.TestHelpers
   import ExUnit.CaptureLog
 
-  alias Sanbase.Signal.UserTrigger
-  alias Sanbase.Signal.Evaluator
+  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Alert.Evaluator
   alias Sanbase.Metric
-  alias Sanbase.Signal.Trigger.DailyMetricTriggerSettings
+  alias Sanbase.Alert.Trigger.DailyMetricTriggerSettings
 
   @metrics_1d_min_interval Metric.available_metrics(
                              filter: :min_interval_greater_or_equal,
@@ -28,7 +28,7 @@ defmodule Sanbase.Signal.DailyMetricTriggerSettingsTest do
     # Clean children on exit, otherwise DB calls from async tasks can be attempted
     clean_task_supervisor_children()
 
-    Sanbase.Signal.Evaluator.Cache.clear_all()
+    Sanbase.Alert.Evaluator.Cache.clear_all()
 
     user = insert(:user)
     Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)

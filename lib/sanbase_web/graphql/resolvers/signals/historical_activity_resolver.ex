@@ -1,7 +1,7 @@
-defmodule SanbaseWeb.Graphql.Resolvers.SignalsHistoricalActivityResolver do
+defmodule SanbaseWeb.Graphql.Resolvers.AlertsHistoricalActivityResolver do
   import SanbaseWeb.Graphql.Helpers.Utils, only: [replace_user_trigger_with_trigger: 1]
 
-  alias Sanbase.Signal.HistoricalActivity
+  alias Sanbase.Alert.HistoricalActivity
 
   require Logger
 

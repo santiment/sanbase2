@@ -1,20 +1,20 @@
-defmodule Sanbase.Signal.SchedulerTest do
+defmodule Sanbase.Alert.SchedulerTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
   import ExUnit.CaptureLog
 
-  alias Sanbase.Signal.{UserTrigger, HistoricalActivity}
-  alias Sanbase.Signal.Trigger.MetricTriggerSettings
+  alias Sanbase.Alert.{UserTrigger, HistoricalActivity}
+  alias Sanbase.Alert.Trigger.MetricTriggerSettings
 
   setup do
-    Sanbase.Signal.Evaluator.Cache.clear_all()
+    Sanbase.Alert.Evaluator.Cache.clear_all()
 
     Tesla.Mock.mock_global(fn %{method: :post} -> %Tesla.Env{status: 200, body: "ok"} end)
 
     project = insert(:random_erc20_project)
 
-    user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
+    user = insert(:user, user_settings: %{settings: %{alert_notify_telegram: true}})
 
     Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
@@ -69,9 +69,9 @@ defmodule Sanbase.Signal.SchedulerTest do
       assert ut.trigger.is_active == true
 
       assert capture_log(fn ->
-               Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
+               Sanbase.Alert.Scheduler.run_alert(MetricTriggerSettings)
              end) =~
-               "In total 1/1 metric_signal signals were sent successfully"
+               "In total 1/1 metric_signal alerts were sent successfully"
 
       ut = Sanbase.Repo.get(UserTrigger, trigger.id)
       assert ut.trigger.is_repeating == false
@@ -89,9 +89,9 @@ defmodule Sanbase.Signal.SchedulerTest do
       assert ut.trigger.is_active == true
 
       assert capture_log(fn ->
-               Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
+               Sanbase.Alert.Scheduler.run_alert(MetricTriggerSettings)
              end) =~
-               "In total 1/1 metric_signal signals were sent successfully"
+               "In total 1/1 metric_signal alerts were sent successfully"
 
       ut = Sanbase.Repo.get(UserTrigger, trigger.id)
       assert ut.trigger.is_repeating == false
@@ -108,7 +108,7 @@ defmodule Sanbase.Signal.SchedulerTest do
       mock_fun
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
+      Sanbase.Alert.Scheduler.run_alert(MetricTriggerSettings)
 
       activity = HistoricalActivity |> Sanbase.Repo.all() |> List.first()
 
@@ -143,7 +143,7 @@ defmodule Sanbase.Signal.SchedulerTest do
       mock_fun
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
+      Sanbase.Alert.Scheduler.run_alert(MetricTriggerSettings)
 
       Process.sleep(100)
 
@@ -200,7 +200,7 @@ defmodule Sanbase.Signal.SchedulerTest do
       mock_fun
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
+      Sanbase.Alert.Scheduler.run_alert(MetricTriggerSettings)
       ut = Sanbase.Repo.get(UserTrigger, trigger.id)
 
       # Previously "error" was put as the identifier instead the project's slug

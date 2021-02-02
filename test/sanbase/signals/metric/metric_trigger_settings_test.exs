@@ -1,14 +1,14 @@
-defmodule Sanbase.Signal.MetricTriggerSettingsTest do
+defmodule Sanbase.Alert.MetricTriggerSettingsTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
   import Sanbase.TestHelpers
   import ExUnit.CaptureLog
 
-  alias Sanbase.Signal.UserTrigger
-  alias Sanbase.Signal.Evaluator
+  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Alert.Evaluator
   alias Sanbase.Metric
-  alias Sanbase.Signal.Trigger.MetricTriggerSettings
+  alias Sanbase.Alert.Trigger.MetricTriggerSettings
 
   @metrics_5m_min_interval Metric.available_metrics(
                              filter: :min_interval_less_or_equal,
@@ -28,10 +28,11 @@ defmodule Sanbase.Signal.MetricTriggerSettingsTest do
     setup do
       # Clean children on exit, otherwise DB calls from async tasks can be attempted
       clean_task_supervisor_children()
-      Sanbase.Signal.Evaluator.Cache.clear_all()
+      Sanbase.Alert.Evaluator.Cache.clear_all()
 
-      user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
+      user = insert(:user, user_settings: %{settings: %{alert_notify_telegram: true}})
       Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
+
       %{user: user}
     end
 
@@ -84,7 +85,7 @@ defmodule Sanbase.Signal.MetricTriggerSettingsTest do
       # Clean children on exit, otherwise DB calls from async tasks can be attempted
       clean_task_supervisor_children()
 
-      Sanbase.Signal.Evaluator.Cache.clear_all()
+      Sanbase.Alert.Evaluator.Cache.clear_all()
 
       user = insert(:user)
       Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)

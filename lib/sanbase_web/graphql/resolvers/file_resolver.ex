@@ -53,7 +53,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
 
   # If the image map has error field != nil then it was not saved in S3/Local storage
   # and so the meta data in postgres should not be saved too. This error will be returned
-  # in the query respose to signal the error.
+  # in the query respose to propagate the error.
   defp save_image_meta_data(images) do
     images
     |> Enum.reject(&image_upload_error?/1)

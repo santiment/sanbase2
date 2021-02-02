@@ -11,9 +11,8 @@ config :sanbase, Sanbase.Notifications.Insight,
   insights_discord_publish_user: {:system, "INSIGHTS_DISCORD_PUBLISH_USER", "New Insight"}
 
 config :sanbase, Sanbase.Telegram,
-  bot_username: {:system, "TELEGRAM_NOTIFICATAIONS_BOT_USERNAME", "SanbaseSignalsStageBot"},
+  bot_username: {:system, "TELEGRAM_NOTIFICATAIONS_BOT_USERNAME", "SanbaseAlertsStageBot"},
   telegram_endpoint: {:system, "TELEGRAM_ENDPOINT_RANDOM_STRING", "some_random_string"},
   token: {:system, "TELEGRAM_SIGNALS_BOT_TOKEN"}
 
-config :sanbase, Sanbase.Signal,
-  email_channel_enabled: {:system, "EMAIL_CHANNEL_ENABLED", "false"}
+config :sanbase, Sanbase.Alert, email_channel_enabled: {:system, "EMAIL_CHANNEL_ENABLED", "false"}

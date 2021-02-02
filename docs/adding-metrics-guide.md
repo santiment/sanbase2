@@ -1,7 +1,7 @@
 # Adding Metrics Guide
 
 Serving metrics is one of the main tasks done by the GraphQL API server. Metrics
-are also used internally for computing signals and for computing other metrics
+are also used internally for computing alerts and for computing other metrics
 and checks.
 
 ## Some history

@@ -29,25 +29,29 @@ defined but only through their context modules and public interfaces.
   the request processing highly concurrent. The programmer never spawns or sees
   any processes - everything is handled behind the scenes.
   Books to learn more about OTP:
+
   - Elixir in Action
   - Learn you some Erlang for great good
   - Elixir/Erlang documentation
 
 - `Phoenix` - The Web phramework used to expose an web endpoint and spawn a new
   Books to learn more about Phoenix:
+
   - Programming Phoenix >= 1.4
-  process per request.
+    process per request.
 
 - `Ecto` - The library used to communicate with databses. It provides DB
   connection, DB connection pools, DSL for not writing raw SQL, migrations,
   schema definitions, etc.
   Books to learn more about Ecto:
+
   - Programming Ecto
 
 - `Absinthe` - The GraphQL server. It provides the whole GraphQL server
   capabilities - everything from parsing and processing the GraphQL request to
   buildng and sending the response.
   Books to learn Absinthe:
+
   - Craft GraphQL APIs in Elixir with Absinthe
 
 - `Dataloader` - Used in combination with Absinthe to solve the N+1 problem.
@@ -95,7 +99,7 @@ In this mode only the scrapers collecting data are started. This
 includes price scraping from Coinmarketcap, some blockchain data scrapers and
 a social data scraper. With time these scrapers will be moved out of sanbase.
 
-### Signals
+### Alerts
 
 Based on metric data (timeseries or blockchain data) many alerts can
 be defined. Examples for such alerts are:
@@ -104,8 +108,8 @@ be defined. Examples for such alerts are:
 - Notify me when the work `Bitcoin` is in the trending word
 - Notify me when the address `0x123` spends more than 100 ETH.
 
-The signals code is located in the `lib/sanbase/signals` directory.
-Signals are created and managed via the GraphQL API but when an alert
+The alerts code is located in the `lib/sanbase/alerts` directory.
+Alerts are created and managed via the GraphQL API but when an alert
 is fired, it sends the result via one or more of the following channels:
 
 - Email
@@ -137,12 +141,12 @@ Expose an admin panel to the database so data can be manipulated and added manua
 ### Project Data
 
 - The `project` is the main entity for which we define data. A project is an
-abstraction that sits on top of a tradable asset, most often connected with
-a blockchain contract/coin and a company. For example there are projects
-`Bitcoin` and `Ethereum` which are blockchains and tradable coins, but there
-is no single company behind them. There is also `Santiment` project which
-represents the santiment ERC20 token and the Santiment company.
-We serve the following data (and not only):
+  abstraction that sits on top of a tradable asset, most often connected with
+  a blockchain contract/coin and a company. For example there are projects
+  `Bitcoin` and `Ethereum` which are blockchains and tradable coins, but there
+  is no single company behind them. There is also `Santiment` project which
+  represents the santiment ERC20 token and the Santiment company.
+  We serve the following data (and not only):
 - Project name, ticker, slug
 - Social data information - twitter/medium/telegram/discord/slack/email link
 - How they spend the funds raised during the ICO (ETH spent over time metric)

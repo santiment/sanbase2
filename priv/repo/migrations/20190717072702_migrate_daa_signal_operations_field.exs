@@ -1,12 +1,12 @@
-defmodule Sanbase.Repo.Migrations.MigrateDaaSignalOperationsField do
+defmodule Sanbase.Repo.Migrations.MigrateDaaAlertOperationsField do
   use Ecto.Migration
 
   import Ecto.Query
-  import Sanbase.Signal.TriggerQuery
+  import Sanbase.Alert.TriggerQuery
 
-  alias Sanbase.Signal.UserTrigger
+  alias Sanbase.Alert.UserTrigger
 
-  alias Sanbase.Signal.Trigger.DailyActiveAddressesSettings
+  alias Sanbase.Alert.Trigger.DailyActiveAddressesSettings
 
   alias Sanbase.Repo
 

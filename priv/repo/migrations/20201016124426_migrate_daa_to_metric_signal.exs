@@ -1,12 +1,12 @@
-defmodule Sanbase.Repo.Migrations.MigrateDaaToMetricSignal do
+defmodule Sanbase.Repo.Migrations.MigrateDaaToMetricAlert do
   use Ecto.Migration
 
-  alias Sanbase.Signal.Trigger.{
+  alias Sanbase.Alert.Trigger.{
     DailyActiveAddressesSettings,
     MetricTriggerSettings
   }
 
-  alias Sanbase.Signal.UserTrigger
+  alias Sanbase.Alert.UserTrigger
 
   def up do
     setup()

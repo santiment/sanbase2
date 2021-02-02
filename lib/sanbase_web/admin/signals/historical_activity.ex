@@ -1,7 +1,7 @@
-defmodule SanbaseWeb.ExAdmin.Signal.HistoricalActivity do
+defmodule SanbaseWeb.ExAdmin.Alert.HistoricalActivity do
   use ExAdmin.Register
 
-  register_resource Sanbase.Signal.HistoricalActivity do
+  register_resource Sanbase.Alert.HistoricalActivity do
     action_items(only: [:show, :delete])
 
     index do

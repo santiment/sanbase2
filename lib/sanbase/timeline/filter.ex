@@ -4,7 +4,7 @@ defmodule Sanbase.Timeline.Filter do
   alias Sanbase.Timeline.Query
 
   alias Sanbase.UserList
-  alias Sanbase.Signal.UserTrigger
+  alias Sanbase.Alert.UserTrigger
   alias Sanbase.Insight.Post
   alias Sanbase.Repo
 

@@ -102,6 +102,11 @@ defmodule SanbaseWeb.Endpoint do
     |> Path.join("sonar")
   end
 
+  def my_alerts_url() do
+    sonar_url()
+    |> Path.join("my-alerts")
+  end
+
   def trending_word_url(word) when is_binary(word) do
     website_url()
     |> Path.join("labs/trends/explore")
@@ -167,7 +172,7 @@ defmodule SanbaseWeb.Endpoint do
       URI.encode_query(token: email_candidate_token, emailCandidate: email_candidate)
   end
 
-  def show_signal_url(id) do
+  def show_alert_url(id) do
     sonar_url() <> "/signal/#{id}"
   end
 end

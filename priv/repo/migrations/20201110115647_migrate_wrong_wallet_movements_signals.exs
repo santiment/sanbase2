@@ -1,8 +1,8 @@
-defmodule Sanbase.Repo.Migrations.MigrateWrongWalletMovementsSignals do
+defmodule Sanbase.Repo.Migrations.MigrateWrongWalletMovementsAlerts do
   use Ecto.Migration
 
-  alias Sanbase.Signal.Trigger.WalletTriggerSettings
-  alias Sanbase.Signal.UserTrigger
+  alias Sanbase.Alert.Trigger.WalletTriggerSettings
+  alias Sanbase.Alert.UserTrigger
 
   def up do
     setup()

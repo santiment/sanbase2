@@ -1,6 +1,6 @@
-defmodule Sanbase.Signal.Evaluator.CacheTest do
+defmodule Sanbase.Alert.Evaluator.CacheTest do
   use Sanbase.DataCase, async: false
-  alias Sanbase.Signal.Evaluator.Cache
+  alias Sanbase.Alert.Evaluator.Cache
 
   test "value is correctly calculated and returned" do
     result = Cache.get_or_store("some_key", fn -> 123_456 end)

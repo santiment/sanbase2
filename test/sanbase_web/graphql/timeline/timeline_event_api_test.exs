@@ -9,7 +9,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Accounts.UserFollower
   alias Sanbase.Comments.EntityComment
-  alias Sanbase.Signal.UserTrigger
+  alias Sanbase.Alert.UserTrigger
 
   @entity_type :timeline_event
 
@@ -961,14 +961,14 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
     }
 
     trending_words_settings = %{
-      type: Sanbase.Signal.Trigger.TrendingWordsTriggerSettings.type(),
+      type: Sanbase.Alert.Trigger.TrendingWordsTriggerSettings.type(),
       channel: "telegram",
       operation: %{trending_word: true},
       target: %{word: [context.project.slug]}
     }
 
     trending_words_settings2 = %{
-      type: Sanbase.Signal.Trigger.TrendingWordsTriggerSettings.type(),
+      type: Sanbase.Alert.Trigger.TrendingWordsTriggerSettings.type(),
       channel: "telegram",
       operation: %{trending_word: true},
       target: %{word: ["san"]}

@@ -55,7 +55,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
   This is done by propagating the tags and the UserTrigger id into the Trigger
   structure
   """
-  def transform_user_trigger(%Sanbase.Signal.UserTrigger{trigger: trigger, tags: tags} = ut) do
+  def transform_user_trigger(%Sanbase.Alert.UserTrigger{trigger: trigger, tags: tags} = ut) do
     ut = Map.from_struct(ut)
     trigger = Map.from_struct(trigger)
 

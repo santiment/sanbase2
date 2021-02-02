@@ -6,7 +6,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.Signal.UserTrigger
+  alias Sanbase.Alert.UserTrigger
 
   setup do
     user = insert(:user)
@@ -31,10 +31,13 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         assert_receive({:telegram_to_self, message})
 
         assert message =~
-                 "Successfully created a new signal of type: Metric Signal\n\nTitle: Generic title \n\nThis bot will alert you when your signal triggers 🤖\n"
+                 """
+                 Successfully created a new alert of type: Metric Signal
 
-        assert message =~ "Title: Generic title"
-        assert message =~ "This bot will alert you when your signal triggers 🤖"
+                 Title: Generic title
+
+                 This bot will send you a message when the alert triggers 🤖
+                 """
 
         assert created_trigger["settings"] == trigger_settings
         assert created_trigger["id"] != nil

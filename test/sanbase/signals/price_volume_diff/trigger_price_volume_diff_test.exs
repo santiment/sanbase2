@@ -1,25 +1,25 @@
-defmodule Sanbase.Signal.PriceVolumeDiffTest do
+defmodule Sanbase.Alert.PriceVolumeDiffTest do
   use Sanbase.DataCase, async: false
 
   import Mock
   import Sanbase.Factory
   import ExUnit.CaptureLog
 
-  alias Sanbase.Signal.{Trigger, UserTrigger, Evaluator}
-  alias Sanbase.Signal.Trigger.PriceVolumeDifferenceTriggerSettings
+  alias Sanbase.Alert.{Trigger, UserTrigger, Evaluator}
+  alias Sanbase.Alert.Trigger.PriceVolumeDifferenceTriggerSettings
 
   @ticker "SAN"
   @cmc_id "santiment"
 
   setup do
-    Sanbase.Signal.Evaluator.Cache.clear_all()
+    Sanbase.Alert.Evaluator.Cache.clear_all()
 
     Tesla.Mock.mock(fn
       %{method: :post} ->
         %Tesla.Env{status: 200, body: "ok"}
     end)
 
-    user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
+    user = insert(:user, user_settings: %{settings: %{alert_notify_telegram: true}})
     Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     Sanbase.Factory.insert(:project, %{
@@ -55,7 +55,7 @@ defmodule Sanbase.Signal.PriceVolumeDiffTest do
     assert triggered == []
   end
 
-  test "none of the price volume diff signals triggered", _context do
+  test "none of the price volume diff alerts triggered", _context do
     with_mock HTTPoison, [],
       get: fn _, _, _ ->
         {:ok,
@@ -78,7 +78,7 @@ defmodule Sanbase.Signal.PriceVolumeDiffTest do
     end
   end
 
-  test "only some of price volume diff signals triggered", context do
+  test "only some of price volume diff alerts triggered", context do
     with_mock HTTPoison, [],
       get: fn _, _, _ ->
         {:ok,

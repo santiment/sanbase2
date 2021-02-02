@@ -1,19 +1,19 @@
-defmodule Sanbase.Signal.TriggerTrendingWordsWatchlistTargetTest do
+defmodule Sanbase.Alert.TriggerTrendingWordsWatchlistTargetTest do
   use Sanbase.DataCase, async: false
 
   import Mock
   import Sanbase.Factory
 
   alias Sanbase.UserList
-  alias Sanbase.Signal.UserTrigger
-  alias Sanbase.Signal.Evaluator
+  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Alert.Evaluator
 
-  alias Sanbase.Signal.Trigger.TrendingWordsTriggerSettings
+  alias Sanbase.Alert.Trigger.TrendingWordsTriggerSettings
 
   setup do
-    Sanbase.Signal.Evaluator.Cache.clear_all()
+    Sanbase.Alert.Evaluator.Cache.clear_all()
 
-    user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
+    user = insert(:user, user_settings: %{settings: %{alert_notify_telegram: true}})
     Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     p1 = insert(:random_project)

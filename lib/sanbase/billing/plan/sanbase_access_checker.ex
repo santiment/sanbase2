@@ -6,17 +6,17 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
   @doc documentation_ref: "# DOCS access-plans/index.md"
 
   alias Sanbase.Billing.Plan
-  alias Sanbase.Signal.UserTrigger
+  alias Sanbase.Alert.UserTrigger
 
-  @signals_limits_upgrade_message """
-  You have reached the maximum number of allowed signals for your current subscription plan.
-  Please upgrade to PRO subscription plan for unlimited signals.
+  @alerts_limits_upgrade_message """
+  You have reached the maximum number of allowed alerts for your current subscription plan.
+  Please upgrade to PRO subscription plan for unlimited alerts.
   """
 
   @free_plan_stats %{
     historical_data_in_days: 2 * 365,
     realtime_data_cut_off_in_days: 30,
-    signals: %{
+    alerts: %{
       limit: 10
     },
     sangraphs_access: false
@@ -24,7 +24,7 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
 
   @pro_plan_stats %{
     realtime_data_cut_off_in_days: 0,
-    signals: %{
+    alerts: %{
       limit: :no_limit
     },
     access_paywalled_insights: true,
@@ -45,25 +45,25 @@ defmodule Sanbase.Billing.Plan.SanbaseAccessChecker do
     |> Map.get(:realtime_data_cut_off_in_days)
   end
 
-  def signals_limit(plan) do
+  def alerts_limit(plan) do
     plan_stats(plan)
-    |> get_in([:signals, :limit])
+    |> get_in([:alerts, :limit])
   end
 
-  def signals_limits_not_reached?(user, subscription) do
-    created_signals_count = UserTrigger.triggers_count_for(user)
+  def alerts_limits_not_reached?(user, subscription) do
+    created_alerts_count = UserTrigger.triggers_count_for(user)
 
     subscription.plan
     |> Plan.plan_atom_name()
-    |> signals_limit()
+    |> alerts_limit()
     |> case do
       :no_limit -> true
-      limit when is_integer(limit) and created_signals_count >= limit -> false
+      limit when is_integer(limit) and created_alerts_count >= limit -> false
       _ -> true
     end
   end
 
-  def signals_limits_upgrade_message(), do: @signals_limits_upgrade_message
+  def alerts_limits_upgrade_message(), do: @alerts_limits_upgrade_message
 
   def can_access_paywalled_insights?(nil), do: false
 

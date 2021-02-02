@@ -1,21 +1,21 @@
-defmodule Sanbase.Signal.TriggerPayloadTest do
+defmodule Sanbase.Alert.TriggerPayloadTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
 
-  alias Sanbase.Signal.{UserTrigger, Scheduler}
-  alias Sanbase.Signal.Trigger.MetricTriggerSettings
+  alias Sanbase.Alert.{UserTrigger, Scheduler}
+  alias Sanbase.Alert.Trigger.MetricTriggerSettings
 
   setup do
-    Sanbase.Signal.Evaluator.Cache.clear_all()
+    Sanbase.Alert.Evaluator.Cache.clear_all()
 
     user =
       insert(:user,
         email: "test@example.com",
-        user_settings: %{settings: %{signal_notify_telegram: true}}
+        user_settings: %{settings: %{alert_notify_telegram: true}}
       )
 
-    Sanbase.Accounts.UserSettings.update_settings(user, %{signal_notify_email: true})
+    Sanbase.Accounts.UserSettings.update_settings(user, %{alert_notify_email: true})
     Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     project = insert(:random_project)
@@ -43,7 +43,7 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
       :ok
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Scheduler.run_signal(MetricTriggerSettings)
+      Scheduler.run_alert(MetricTriggerSettings)
 
       assert_receive({:telegram_to_self, message}, 1000)
       assert message =~ "10,456.00"
@@ -70,7 +70,7 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
       :ok
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Scheduler.run_signal(MetricTriggerSettings)
+      Scheduler.run_alert(MetricTriggerSettings)
 
       assert_receive({:telegram_to_self, message}, 1000)
       assert message =~ "9.23 Billion"
@@ -97,9 +97,9 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
       :ok
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Scheduler.run_signal(MetricTriggerSettings)
+      Scheduler.run_alert(MetricTriggerSettings)
       assert_receive({:telegram_to_self, message}, 1000)
-      assert message =~ SanbaseWeb.Endpoint.show_signal_url(trigger.id)
+      assert message =~ SanbaseWeb.Endpoint.show_alert_url(trigger.id)
     end)
   end
 
@@ -125,7 +125,7 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
     end)
     |> Sanbase.Mock.prepare_mock2(&DateTime.utc_now/0, ~U[2021-01-10 15:00:00Z])
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Scheduler.run_signal(MetricTriggerSettings)
+      Scheduler.run_alert(MetricTriggerSettings)
 
       assert_receive({:telegram_to_self, message}, 1000)
 
@@ -150,11 +150,11 @@ defmodule Sanbase.Signal.TriggerPayloadTest do
     Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
     |> Sanbase.Mock.prepare_mock2(&HTTPoison.post/2, {:ok, %HTTPoison.Response{status_code: 200}})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Scheduler.run_signal(MetricTriggerSettings)
+      Scheduler.run_alert(MetricTriggerSettings)
 
       trigger = trigger |> Sanbase.Repo.preload([:user])
 
-      {:ok, user_trigger} = Sanbase.Signal.UserTrigger.get_trigger_by_id(trigger.user, trigger.id)
+      {:ok, user_trigger} = Sanbase.Alert.UserTrigger.get_trigger_by_id(trigger.user, trigger.id)
 
       last_triggered_dt =
         user_trigger.trigger.last_triggered

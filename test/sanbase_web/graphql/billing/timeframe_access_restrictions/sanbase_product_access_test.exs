@@ -15,7 +15,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   setup_all_with_mocks([
     {Sanbase.Price, [:passthrough], [timeseries_data: fn _, _, _, _ -> price_resp() end]},
     {Sanbase.Metric, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> metric_resp() end]},
-    {Sanbase.Signal.UserTrigger, [:passthrough],
+    {Sanbase.Alert.UserTrigger, [:passthrough],
      [triggers_count_for: fn _ -> @triggers_limit_count end]}
   ]) do
     []
@@ -243,10 +243,10 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
   end
 
-  describe "for SANbase when signals limit reached" do
+  describe "for SANbase when alerts limit reached" do
     test "user with FREE plan cannot create new trigger", context do
       assert create_trigger_mutation_with_error(context) ==
-               SanbaseAccessChecker.signals_limits_upgrade_message()
+               SanbaseAccessChecker.alerts_limits_upgrade_message()
     end
 
     test "user with BASIC plan can create new trigger", context do
@@ -262,7 +262,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     end
   end
 
-  # describe "for FREE plan when signals limits not reached" do
+  # describe "for FREE plan when alerts limits not reached" do
   #   # Override the setup_all mock
   #   setup_with_mocks([
   #     {UserTrigger, [:passthrough], [triggers_count_for: fn _ -> @triggers_limit_count - 1 end]}

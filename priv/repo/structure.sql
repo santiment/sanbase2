@@ -81,8 +81,41 @@ CREATE TYPE public.watchlist_type AS ENUM (
 );
 
 
-SET default_tablespace = '';
+--
+-- Name: jsonb_rename_keys(jsonb, text[]); Type: FUNCTION; Schema: public; Owner: -
+--
 
+CREATE FUNCTION public.jsonb_rename_keys(jdata jsonb, keys text[]) RETURNS jsonb
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  result JSONB;
+  len INT;
+  newkey TEXT;
+  oldkey TEXT;
+BEGIN
+  len = array_length(keys, 1);
+
+  IF len < 1 OR (len % 2) != 0 THEN
+    RAISE EXCEPTION 'The length of keys must be even, such as {old1,new1,old2,new2,...}';
+  END IF;
+
+  result = jdata;
+
+  FOR i IN 1..len BY 2 LOOP
+    oldkey = keys[i];
+    IF (jdata ? oldkey) THEN
+      newkey = keys[i+1];
+      result = (result - oldkey) || jsonb_build_object(newkey, result->oldkey);
+    END IF;
+  END LOOP;
+
+  RETURN result;
+END;
+$$;
+
+
+SET default_tablespace = '';
 SET default_with_oids = false;
 
 --

@@ -1,14 +1,15 @@
-defmodule Sanbase.Signal.MaxSignalsPerDayTest do
+defmodule Sanbase.Alert.MaxAlertsPerDayTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
 
-  alias Sanbase.Signal.UserTrigger
-  alias Sanbase.Signal.Trigger.MetricTriggerSettings
+  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Alert.Trigger.MetricTriggerSettings
 
   setup do
     project = insert(:random_erc20_project)
-    user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
+
+    user = insert(:user, user_settings: %{settings: %{alert_notify_telegram: true}})
     Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     trigger_settings = %{
@@ -52,7 +53,7 @@ defmodule Sanbase.Signal.MaxSignalsPerDayTest do
     %{user: user, mock_fun: mock_fun} = context
 
     Sanbase.Accounts.UserSettings.update_settings(user, %{
-      signals_per_day_limit: %{"email" => 1, "telegram" => 1}
+      alerts_per_day_limit: %{"email" => 1, "telegram" => 1}
     })
 
     self_pid = self()
@@ -67,9 +68,9 @@ defmodule Sanbase.Signal.MaxSignalsPerDayTest do
       :ok
     end)
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Sanbase.Signal.Scheduler.run_signal(MetricTriggerSettings)
+      Sanbase.Alert.Scheduler.run_alert(MetricTriggerSettings)
 
-      # Three triggers have been evaluted with the limit of signals per day being 3
+      # Three triggers have been evaluted with the limit of alerts per day being 3
       # One trigger succesfully sends
       # The second trigger fires the limit reached notification
       # The third trigger neither sends a notification nor re-sends the limit

@@ -1,21 +1,21 @@
-defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
+defmodule Sanbase.Alert.TriggerTrendingWordsSendAtPredefiendTimeTest do
   use Sanbase.DataCase, async: false
 
   import Mock
   import Sanbase.Factory
   import ExUnit.CaptureLog
 
-  alias Sanbase.Signal.{UserTrigger, HistoricalActivity}
-  alias Sanbase.Signal.Evaluator
+  alias Sanbase.Alert.{UserTrigger, HistoricalActivity}
+  alias Sanbase.Alert.Evaluator
 
-  alias Sanbase.Signal.Trigger.TrendingWordsTriggerSettings
+  alias Sanbase.Alert.Trigger.TrendingWordsTriggerSettings
 
   @moduletag capture_log: true
 
   setup do
-    Sanbase.Signal.Evaluator.Cache.clear_all()
+    Sanbase.Alert.Evaluator.Cache.clear_all()
 
-    user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
+    user = insert(:user, user_settings: %{settings: %{alert_notify_telegram: true}})
     Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     send_at = Time.utc_now() |> Time.add(60) |> Time.to_iso8601()
@@ -82,9 +82,9 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
         {:ok, top_words()}
       end do
       assert capture_log(fn ->
-               Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
+               Sanbase.Alert.Scheduler.run_alert(TrendingWordsTriggerSettings)
              end) =~
-               "In total 1/1 trending_words signals were sent successfully"
+               "In total 1/1 trending_words alerts were sent successfully"
 
       user_signal = HistoricalActivity |> Sanbase.Repo.all() |> List.first()
       assert user_signal.user_id == context.user.id
@@ -92,26 +92,26 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
       payload = user_signal.payload |> Map.values() |> List.first()
       assert String.contains?(payload, "coinbase")
 
-      Sanbase.Signal.Evaluator.Cache.clear_all()
+      Sanbase.Alert.Evaluator.Cache.clear_all()
 
       assert capture_log(fn ->
-               Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
-             end) =~ "There were no trending_words signals triggered"
+               Sanbase.Alert.Scheduler.run_alert(TrendingWordsTriggerSettings)
+             end) =~ "There were no trending_words alerts triggered"
     end
   end
 
-  test "Non active signals are filtered", context do
+  test "Non active alerts are filtered", context do
     UserTrigger.update_user_trigger(context.user, %{
       id: context.trigger_trending_words.id,
       is_active: false
     })
 
     assert capture_log(fn ->
-             Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
-           end) =~ "There were no trending_words signals triggered"
+             Sanbase.Alert.Scheduler.run_alert(TrendingWordsTriggerSettings)
+           end) =~ "There were no trending_words alerts triggered"
   end
 
-  test "Non repeating signals are deactivated", context do
+  test "Non repeating alerts are deactivated", context do
     Tesla.Mock.mock_global(fn
       %{method: :post} ->
         %Tesla.Env{status: 200, body: "ok"}
@@ -127,9 +127,9 @@ defmodule Sanbase.Signal.TriggerTrendingWordsSendAtPredefiendTimeTest do
         {:ok, top_words()}
       end do
       assert capture_log(fn ->
-               Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
+               Sanbase.Alert.Scheduler.run_alert(TrendingWordsTriggerSettings)
              end) =~
-               "In total 1/1 trending_words signals were sent successfully"
+               "In total 1/1 trending_words alerts were sent successfully"
 
       {:ok, ut} = UserTrigger.get_trigger_by_id(context.user, context.trigger_trending_words.id)
       refute ut.trigger.is_active

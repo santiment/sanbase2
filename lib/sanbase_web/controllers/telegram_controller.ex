@@ -29,13 +29,13 @@ defmodule SanbaseWeb.TelegramController do
 
   defp welcome_message() do
     ~s"""
-    🤖Beep boop, Santiment Signals bot here!
+    🤖Beep boop, Santiment Alerts bot here!
 
     You've succesfully connected your Sanbase and Telegram accounts.
 
-    To receive alerts in this chat, enable the Telegram channel in a Sanbase signal.
+    To receive alerts in this chat, enable the Telegram channel in an alert settings.
 
-    Haven’t created any signals yet? Start [here](https://app.santiment.net/sonar/my-signals).
+    Haven’t created any alerts yet? Start [here](#{SanbaseWeb.Endpoint.my_alerts_url()}).
     """
   end
 end

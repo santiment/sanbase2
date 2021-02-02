@@ -3,7 +3,7 @@ defmodule Sanbase.Timeline.Query do
 
   alias Sanbase.Accounts.{UserFollower, Role}
   alias Sanbase.UserList
-  alias Sanbase.Signal.UserTrigger
+  alias Sanbase.Alert.UserTrigger
 
   # Events with public entities and current user private events
   def events_with_event_type(query, types) do

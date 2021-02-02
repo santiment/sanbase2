@@ -2066,7 +2066,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Number of Transactions transfering more than 100k USD",
+    "human_readable_name": "Number of Transactions Transferring More Than 100k USD",
     "name": "whale_transaction_count",
     "metric": "whale_transaction_count_more_than_100k_usd",
     "version": "2019-01-01",

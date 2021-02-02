@@ -2064,5 +2064,22 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
+  },
+  {
+    "human_readable_name": "Number of Transactions transfering more than 100k USD",
+    "name": "whale_transaction_count",
+    "metric": "whale_transaction_count_more_than_100k_usd",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
 ]

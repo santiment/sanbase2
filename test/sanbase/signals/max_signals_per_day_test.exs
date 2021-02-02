@@ -9,7 +9,7 @@ defmodule Sanbase.Signal.MaxSignalsPerDayTest do
   setup do
     project = insert(:random_erc20_project)
     user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
-    Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
+    Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     trigger_settings = %{
       type: "metric_signal",
@@ -51,7 +51,7 @@ defmodule Sanbase.Signal.MaxSignalsPerDayTest do
   test "does not send notifications after limit is reached", context do
     %{user: user, mock_fun: mock_fun} = context
 
-    Sanbase.Auth.UserSettings.update_settings(user, %{
+    Sanbase.Accounts.UserSettings.update_settings(user, %{
       signals_per_day_limit: %{"email" => 1, "telegram" => 1}
     })
 

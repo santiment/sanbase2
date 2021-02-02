@@ -1,7 +1,7 @@
 defmodule Sanbase.Repo.Migrations.CreateAnonymousUserInsights do
   use Ecto.Migration
 
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Repo
 
   def up do

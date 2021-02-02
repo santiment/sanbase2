@@ -20,7 +20,7 @@ defmodule Sanbase.Signal.PriceVolumeDiffTest do
     end)
 
     user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
-    Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
+    Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     Sanbase.Factory.insert(:project, %{
       name: "Santiment",

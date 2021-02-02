@@ -1,9 +1,9 @@
-defmodule Sanbase.Auth.UserPermissionsTest do
+defmodule Sanbase.Accounts.UserPermissionsTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
 
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
 
   setup do
     Sanbase.Billing.TestSeed.seed_products_and_plans()

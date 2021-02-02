@@ -10,7 +10,7 @@ defmodule Sanbase.Vote do
   alias Sanbase.Repo
   alias Sanbase.Insight.Post
   alias Sanbase.Timeline.TimelineEvent
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
 
   @type vote_params :: %{
           :user_id => non_neg_integer(),

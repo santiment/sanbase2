@@ -1,7 +1,9 @@
 defmodule Sanbase.Statistics do
-  import Sanbase.Auth.Settings, only: [daily_subscription_type: 0, weekly_subscription_type: 0]
+  import Sanbase.Accounts.Settings,
+    only: [daily_subscription_type: 0, weekly_subscription_type: 0]
+
   alias Sanbase.Clickhouse.ApiCallData
-  alias Sanbase.Auth.Statistics, as: UserStatistics
+  alias Sanbase.Accounts.Statistics, as: UserStatistics
   alias Sanbase.UserLists.Statistics, as: WatchlistStatistics
 
   @statistics [

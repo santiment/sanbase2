@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.UserSettingsTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Auth.UserSettings
+  alias Sanbase.Accounts.UserSettings
 
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory

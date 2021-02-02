@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.TimelineEventCommentApiTest do
   import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.Auth.UserFollower
+  alias Sanbase.Accounts.UserFollower
   alias Sanbase.Timeline.TimelineEvent
   alias Sanbase.Insight.Post
 

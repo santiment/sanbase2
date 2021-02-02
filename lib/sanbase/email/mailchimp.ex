@@ -2,7 +2,7 @@ defmodule Sanbase.Email.Mailchimp do
   require Sanbase.Utils.Config, as: Config
   require Logger
 
-  alias Sanbase.Auth.{User, UserSettings, Settings, Statistics}
+  alias Sanbase.Accounts.{User, UserSettings, Settings, Statistics}
 
   @base_url "https://us14.api.mailchimp.com/3.0"
   @weekly_digest_list_id "41325871aa"

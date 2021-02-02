@@ -31,7 +31,7 @@ defmodule Sanbase.Signal.DailyMetricTriggerSettingsTest do
     Sanbase.Signal.Evaluator.Cache.clear_all()
 
     user = insert(:user)
-    Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
+    Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     project = Sanbase.Factory.insert(:random_project)
 

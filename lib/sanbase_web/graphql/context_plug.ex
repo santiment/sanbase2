@@ -29,7 +29,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   require Sanbase.Utils.Config, as: Config
 
   alias Sanbase.ApiCallLimit
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Billing.{Subscription, Product}
   alias SanbaseWeb.Graphql.ContextPlug
 
@@ -351,7 +351,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   def apikey_authentication(%Plug.Conn{} = conn) do
     with {_, ["Apikey " <> apikey]} <- {:has_header?, get_req_header(conn, "authorization")},
          {:ok, current_user} <- apikey_authorize(apikey),
-         {:ok, {token, _apikey}} <- Sanbase.Auth.Hmac.split_apikey(apikey) do
+         {:ok, {token, _apikey}} <- Sanbase.Accounts.Hmac.split_apikey(apikey) do
       product_id =
         get_req_header(conn, "user-agent")
         |> get_apikey_product_id()
@@ -419,7 +419,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   end
 
   defp apikey_authorize(apikey) do
-    Sanbase.Auth.Apikey.apikey_to_user(apikey)
+    Sanbase.Accounts.Apikey.apikey_to_user(apikey)
   end
 
   defp san_balance(%User{} = user) do

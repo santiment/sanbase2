@@ -13,7 +13,7 @@ alias Sanbase.Model.ProjectEthAddress
 alias Sanbase.Model.ProjectBtcAddress
 alias Sanbase.Model.Infrastructure
 alias Sanbase.Repo
-alias Sanbase.Auth.{User, EthAccount}
+alias Sanbase.Accounts.{User, EthAccount}
 
 infrastructure_eth = Infrastructure.get_or_insert("ETH")
 

@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
   import Sanbase.Factory
 
   alias Sanbase.Repo
-  alias Sanbase.Auth.{UserApikeyToken, Hmac}
+  alias Sanbase.Accounts.{UserApikeyToken, Hmac}
 
   @moduletag capture_log: true
 
@@ -32,7 +32,7 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
   end
 
   test "cannot get apikey list with apikey auth", %{user: user} do
-    {:ok, apikey} = Sanbase.Auth.Apikey.generate_apikey(user)
+    {:ok, apikey} = Sanbase.Accounts.Apikey.generate_apikey(user)
     apikey_conn = setup_apikey_auth(build_conn(), apikey)
 
     error =

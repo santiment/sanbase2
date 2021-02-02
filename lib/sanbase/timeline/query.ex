@@ -1,7 +1,7 @@
 defmodule Sanbase.Timeline.Query do
   import Ecto.Query
 
-  alias Sanbase.Auth.{UserFollower, Role}
+  alias Sanbase.Accounts.{UserFollower, Role}
   alias Sanbase.UserList
   alias Sanbase.Signal.UserTrigger
 
@@ -58,7 +58,7 @@ defmodule Sanbase.Timeline.Query do
   end
 
   def events_by_sanfamily_query(query) do
-    sanfamily_ids = Sanbase.Auth.Role.san_family_ids()
+    sanfamily_ids = Sanbase.Accounts.Role.san_family_ids()
 
     from(
       event in query,

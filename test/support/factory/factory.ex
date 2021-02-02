@@ -3,7 +3,7 @@ defmodule Sanbase.Factory do
 
   alias Sanbase.Tag
   alias Sanbase.UserList
-  alias Sanbase.Auth.{User, UserSettings, Role, UserRole}
+  alias Sanbase.Accounts.{User, UserSettings, Role, UserRole}
   alias Sanbase.Insight.Post
   alias Sanbase.Comment
 
@@ -664,7 +664,7 @@ defmodule Sanbase.Factory do
   end
 
   def uniswap_staking_factory do
-    %Sanbase.Auth.User.UniswapStaking{
+    %Sanbase.Accounts.User.UniswapStaking{
       san_staked: 3000
     }
   end

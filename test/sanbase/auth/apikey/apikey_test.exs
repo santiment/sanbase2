@@ -1,7 +1,7 @@
-defmodule Sanbase.Auth.ApiKeyTest do
+defmodule Sanbase.Accounts.ApiKeyTest do
   use Sanbase.DataCase, async: false
 
-  alias Sanbase.Auth.{
+  alias Sanbase.Accounts.{
     User,
     Apikey
   }

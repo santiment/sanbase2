@@ -1,9 +1,9 @@
-defmodule Sanbase.Auth.UserSettings do
+defmodule Sanbase.Accounts.UserSettings do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Sanbase.Auth.{User, Settings}
+  alias Sanbase.Accounts.{User, Settings}
   alias Sanbase.Repo
 
   schema "user_settings" do
@@ -133,7 +133,7 @@ defmodule Sanbase.Auth.UserSettings do
       us.settings.signals_per_day_limit
       |> case do
         empty_map when map_size(empty_map) == 0 ->
-          Sanbase.Auth.Settings.default_signals_limit_per_day()
+          Sanbase.Accounts.Settings.default_signals_limit_per_day()
 
         map when is_map(map) ->
           map

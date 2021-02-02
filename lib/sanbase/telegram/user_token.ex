@@ -8,7 +8,7 @@ defmodule Sanbase.Telegram.UserToken do
   import Ecto.Query
   alias __MODULE__
   alias Sanbase.Repo
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
 
   @rand_bytes_length 64
   @telegram_authorization_length 18

@@ -1,8 +1,8 @@
-defmodule Sanbase.Auth.User.SanBalance do
+defmodule Sanbase.Accounts.User.SanBalance do
   import Ecto.Changeset
 
   alias Sanbase.Repo
-  alias Sanbase.Auth.{User, EthAccount}
+  alias Sanbase.Accounts.{User, EthAccount}
 
   @san_balance_cache_seconds 60 * 5
 

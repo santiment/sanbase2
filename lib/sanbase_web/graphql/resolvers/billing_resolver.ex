@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   alias Sanbase.Billing.{Subscription, Plan}
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
 
   alias Sanbase.StripeApi
 

@@ -1,10 +1,10 @@
-defmodule Sanbase.Auth.EthAccount do
+defmodule Sanbase.Accounts.EthAccount do
   use Ecto.Schema
   import Ecto.Changeset
 
   alias Sanbase.Repo
-  alias Sanbase.Auth.User
   alias Sanbase.SmartContracts.UniswapPair
+  alias Sanbase.Accounts.User
 
   require Logger
   require Mockery.Macro

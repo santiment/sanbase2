@@ -65,7 +65,7 @@ defmodule Sanbase.UserList.Settings do
   import Ecto.Changeset
 
   alias Sanbase.Repo
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.UserList
   alias __MODULE__.WatchlistSettings
 

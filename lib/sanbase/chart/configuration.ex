@@ -21,7 +21,7 @@ defmodule Sanbase.Chart.Configuration do
     )
 
     belongs_to(:post, Sanbase.Insight.Post)
-    belongs_to(:user, Sanbase.Auth.User)
+    belongs_to(:user, Sanbase.Accounts.User)
     belongs_to(:project, Sanbase.Model.Project)
 
     has_many(:chart_events, Sanbase.Insight.Post,

@@ -1,9 +1,9 @@
-defmodule Sanbase.Auth.UserFollowerTest do
+defmodule Sanbase.Accounts.UserFollowerTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
 
-  alias Sanbase.Auth.UserFollower
+  alias Sanbase.Accounts.UserFollower
 
   setup do
     user = insert(:user)

@@ -4,7 +4,7 @@ defmodule SanbaseWeb.RootController do
   require Logger
 
   alias Sanbase.Oauth2.Hydra
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
 
   # Used in production mode to serve the reactjs application
   def index(conn, _params) do

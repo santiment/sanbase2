@@ -3,9 +3,9 @@ defprotocol Sanbase.Signal do
 end
 
 defimpl Sanbase.Signal, for: Any do
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
 
-  @default_signals_limit_per_day Sanbase.Auth.Settings.default_signals_limit_per_day()
+  @default_signals_limit_per_day Sanbase.Accounts.Settings.default_signals_limit_per_day()
 
   @channels Map.keys(@default_signals_limit_per_day)
 
@@ -197,7 +197,7 @@ defimpl Sanbase.Signal, for: Any do
     # Force the settings to be fetched and not taken from the user struct
     # This is done so while evaluating signals, the signals fired count is
     # properly reflected here.
-    user_settings = Sanbase.Auth.UserSettings.settings_for(user, force: true)
+    user_settings = Sanbase.Accounts.UserSettings.settings_for(user, force: true)
 
     %{
       signals_fired: signals_fired,
@@ -314,7 +314,8 @@ defimpl Sanbase.Signal, for: Any do
   end
 
   defp update_user_signals_sent_per_day(user, sent_list_per_channel) do
-    %{signals_fired: signals_fired} = Sanbase.Auth.UserSettings.settings_for(user, force: true)
+    %{signals_fired: signals_fired} =
+      Sanbase.Accounts.UserSettings.settings_for(user, force: true)
 
     map_key = Date.utc_today() |> to_string()
 
@@ -335,7 +336,7 @@ defimpl Sanbase.Signal, for: Any do
 
     signals_fired = Map.put(signals_fired, map_key, signals_fired_today_updated)
 
-    Sanbase.Auth.UserSettings.update_settings(user, %{signals_fired: signals_fired})
+    Sanbase.Accounts.UserSettings.update_settings(user, %{signals_fired: signals_fired})
   end
 
   defp send_limit_reached_notification("telegram", user) do

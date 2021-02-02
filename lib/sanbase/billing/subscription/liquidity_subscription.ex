@@ -5,7 +5,7 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
   """
 
   alias Sanbase.Billing.Subscription
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Repo
 
   # SAN stake required for free subscription. We advertise 3000 SAN

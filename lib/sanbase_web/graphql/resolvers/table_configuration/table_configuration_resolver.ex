@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.TableConfigurationResolver do
   alias Sanbase.TableConfiguration
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
 
   require Logger
 

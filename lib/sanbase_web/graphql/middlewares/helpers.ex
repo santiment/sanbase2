@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.Helpers do
   """
 
   alias __MODULE__
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Absinthe.Resolution
 
   def has_enough_san_tokens?(_, 0), do: true

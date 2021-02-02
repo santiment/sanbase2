@@ -6,7 +6,7 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Mock
 
-  alias Sanbase.Auth.Apikey
+  alias Sanbase.Accounts.Apikey
   alias Sanbase.Metric
 
   @product "SANAPI"

@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Guardian do
   use Guardian, otp_app: :sanbase
 
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Repo
 
   def subject_for_token(%User{id: id}, _claims) do

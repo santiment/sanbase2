@@ -9,7 +9,7 @@ defmodule Sanbase.Signal.HistoricalActivity do
 
   import Ecto.Changeset
   alias Sanbase.Signal.UserTrigger
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Repo
 
   alias __MODULE__
@@ -66,7 +66,7 @@ defmodule Sanbase.Signal.HistoricalActivity do
   # private functions
 
   defp user_historical_activity(query, user_id, limit) do
-    san_family_ids = Sanbase.Auth.Role.san_family_ids()
+    san_family_ids = Sanbase.Accounts.Role.san_family_ids()
 
     from(
       ha in query,

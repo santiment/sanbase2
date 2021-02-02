@@ -6,7 +6,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   import SanbaseWeb.Graphql.TestHelpers
   import ExUnit.CaptureLog
 
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestResponse
 

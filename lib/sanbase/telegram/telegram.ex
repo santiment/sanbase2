@@ -9,7 +9,7 @@ defmodule Sanbase.Telegram do
   require Logger
   require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Auth.{User, Settings, UserSettings}
+  alias Sanbase.Accounts.{User, Settings, UserSettings}
   alias Sanbase.Telegram.UserToken
 
   @type message :: String.t() | iolist()

@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.PopulateSubscriptionSignUpTrials do
 
   alias Sanbase.Billing.Subscription.SignUpTrial
   alias Sanbase.Billing.{Subscription, Product}
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
 
   alias Sanbase.Repo
 

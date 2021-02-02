@@ -9,7 +9,7 @@ defmodule Sanbase.UserList.Monitor do
   import Ecto.Query
 
   alias Sanbase.UserList
-  alias Sanbase.Auth.{User, Statistics}
+  alias Sanbase.Accounts.{User, Statistics}
   alias Sanbase.Insight.Post
   alias Sanbase.Repo
 
@@ -182,8 +182,8 @@ defmodule Sanbase.UserList.Monitor do
   end
 
   defp insights_by_followed_users_or_sanfamily(insights, user_id) do
-    followed_users_ids = Sanbase.Auth.UserFollower.followed_by(user_id) |> Enum.map(& &1.id)
-    san_family_ids = Sanbase.Auth.Role.san_family_ids()
+    followed_users_ids = Sanbase.Accounts.UserFollower.followed_by(user_id) |> Enum.map(& &1.id)
+    san_family_ids = Sanbase.Accounts.Role.san_family_ids()
 
     insights
     |> Enum.filter(fn %Post{user_id: author_id} ->

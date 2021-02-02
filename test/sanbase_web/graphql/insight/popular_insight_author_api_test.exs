@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.PopularInsightAuthorApiTest do
   import Sanbase.Factory
 
   alias Sanbase.Vote
-  alias Sanbase.Auth.UserFollower
+  alias Sanbase.Accounts.UserFollower
 
   setup do
     [user1, user2, user3, user4, user5, user6] = for _ <- 1..6, do: insert(:user)

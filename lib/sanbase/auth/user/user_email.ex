@@ -1,6 +1,6 @@
-defmodule Sanbase.Auth.User.Email do
+defmodule Sanbase.Accounts.User.Email do
   alias Sanbase.Repo
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
 
   @token_valid_window_minutes 60
 

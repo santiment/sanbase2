@@ -5,7 +5,7 @@ defmodule Sanbase.TelegramTest do
   require Sanbase.Utils.Config, as: Config
 
   alias Sanbase.Repo
-  alias Sanbase.Auth.{User, Settings, UserSettings}
+  alias Sanbase.Accounts.{User, Settings, UserSettings}
   alias Sanbase.Telegram
   @bot_username Config.module_get(Sanbase.Telegram, :bot_username)
 

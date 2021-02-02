@@ -19,7 +19,7 @@ defmodule Sanbase.UserList do
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.UserList.ListItem
   alias Sanbase.WatchlistFunction
   alias Sanbase.Repo

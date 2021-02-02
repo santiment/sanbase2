@@ -7,10 +7,10 @@ defmodule SanbaseWeb.Graphql.UserApiTest do
   import ExUnit.CaptureLog
   import Sanbase.Factory
 
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Repo
   alias Sanbase.Billing.Subscription.SignUpTrial
-  alias Sanbase.Auth.User.UniswapStaking
+  alias Sanbase.Accounts.User.UniswapStaking
 
   setup_with_mocks([
     {SignUpTrial, [:passtrough], [create_trial_subscription: fn _ -> {:ok, %{}} end]}

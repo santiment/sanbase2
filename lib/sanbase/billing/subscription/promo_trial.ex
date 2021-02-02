@@ -7,7 +7,7 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
   require Logger
 
   alias Sanbase.StripeApi
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Billing.{Subscription, Plan}
   alias Sanbase.Repo
 

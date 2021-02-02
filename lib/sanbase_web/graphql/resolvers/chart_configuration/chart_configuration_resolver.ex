@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ChartConfigurationResolver do
   alias Sanbase.Chart.Configuration
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
 
   require Logger
 

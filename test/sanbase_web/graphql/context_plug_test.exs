@@ -5,10 +5,10 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
   import Sanbase.Factory
   @moduletag capture_log: true
 
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.ContextPlug
-  alias Sanbase.Auth.Apikey
+  alias Sanbase.Accounts.Apikey
   alias Sanbase.Billing.{Subscription, Product}
 
   test "loading the user from the current token", %{conn: conn} do

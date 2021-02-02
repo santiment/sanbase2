@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.AuthController do
+defmodule SanbaseWeb.AccountsController do
   @moduledoc """
   Auth controller responsible for handling Ueberauth responses
   """
@@ -7,7 +7,7 @@ defmodule SanbaseWeb.AuthController do
 
   plug(Ueberauth)
 
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
 
   def delete(conn, _params) do
     conn

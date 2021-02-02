@@ -3,7 +3,7 @@ defmodule Sanbase.UserLists.Statistics do
 
   alias Sanbase.Repo
   alias Sanbase.UserList
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
 
   def watchlists_created(%DateTime{} = from, %DateTime{} = to) do
     watchlists_query(from, to)

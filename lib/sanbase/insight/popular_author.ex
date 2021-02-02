@@ -1,7 +1,7 @@
 defmodule Sanbase.Insight.PopularAuthor do
   alias Sanbase.Vote
   alias Sanbase.Insight.Post
-  alias Sanbase.Auth.{User, UserFollower}
+  alias Sanbase.Accounts.{User, UserFollower}
 
   @doc ~s"""
   Returns a list of `size` number of users, ranked by how popular insights

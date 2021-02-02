@@ -1,11 +1,11 @@
-defmodule Sanbase.Auth.User.UniswapStaking do
+defmodule Sanbase.Accounts.User.UniswapStaking do
   use Ecto.Schema
   import Ecto.Changeset
 
   require Logger
 
   alias Sanbase.Repo
-  alias Sanbase.Auth.{User, EthAccount}
+  alias Sanbase.Accounts.{User, EthAccount}
   alias Sanbase.SmartContracts.UniswapPair
 
   schema "user_uniswap_staking" do

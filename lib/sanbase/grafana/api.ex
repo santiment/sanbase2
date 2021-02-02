@@ -3,7 +3,7 @@ defmodule Sanbase.GrafanaApi do
   require Mockery.Macro
   require Logger
 
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
 
   @plan_team_map %{
     41 => "Sangraphs-Basic",

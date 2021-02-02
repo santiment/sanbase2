@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   require Logger
 
   import SanbaseWeb.Graphql.Helpers.Utils, only: [transform_user_trigger: 1]
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Signal.{Trigger, UserTrigger}
   alias SanbaseWeb.Graphql.Helpers.Utils
   alias Sanbase.Telegram

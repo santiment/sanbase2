@@ -19,7 +19,7 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
 
   require Logger
 
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Billing.Subscription.PromoTrial
   alias Sanbase.Repo
   alias Sanbase.Billing.Plan

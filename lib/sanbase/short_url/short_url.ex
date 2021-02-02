@@ -12,7 +12,7 @@ defmodule Sanbase.ShortUrl do
     field(:short_url, :string)
     field(:full_url, :string)
 
-    belongs_to(:user, Sanbase.Auth.User)
+    belongs_to(:user, Sanbase.Accounts.User)
 
     timestamps()
   end

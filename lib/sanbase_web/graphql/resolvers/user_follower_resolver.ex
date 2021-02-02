@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.UserFollowerResolver do
   require Logger
 
-  alias Sanbase.Auth.UserFollower
+  alias Sanbase.Accounts.UserFollower
   alias SanbaseWeb.Graphql.Helpers.Utils
 
   def follow(_root, args, %{

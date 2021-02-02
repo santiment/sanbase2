@@ -1,4 +1,4 @@
-defmodule Sanbase.Auth.Settings do
+defmodule Sanbase.Accounts.Settings do
   use Ecto.Schema
   import Ecto.Changeset
 

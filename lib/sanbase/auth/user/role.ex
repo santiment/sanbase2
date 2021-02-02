@@ -1,4 +1,4 @@
-defmodule Sanbase.Auth.Role do
+defmodule Sanbase.Accounts.Role do
   use Ecto.Schema
 
   import Ecto.Changeset
@@ -10,7 +10,7 @@ defmodule Sanbase.Auth.Role do
   schema "roles" do
     field(:name, :string)
 
-    has_many(:users, {"user_roles", Sanbase.Auth.UserRole}, on_delete: :delete_all)
+    has_many(:users, {"user_roles", Sanbase.Accounts.UserRole}, on_delete: :delete_all)
   end
 
   def changeset(%__MODULE__{} = role, attrs \\ %{}) do
@@ -23,7 +23,7 @@ defmodule Sanbase.Auth.Role do
 
   def san_family_ids() do
     from(
-      ur in Sanbase.Auth.UserRole,
+      ur in Sanbase.Accounts.UserRole,
       where: ur.role_id == ^@san_family_role_id,
       select: ur.user_id
     )

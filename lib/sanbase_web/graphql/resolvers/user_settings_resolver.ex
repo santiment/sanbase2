@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
 
   import SanbaseWeb.Graphql.Helpers.Utils, only: [error_details: 1]
 
-  alias Sanbase.Auth.{User, UserSettings}
+  alias Sanbase.Accounts.{User, UserSettings}
   alias SanbaseWeb.Graphql.Helpers.Utils
 
   def settings(%User{} = user, _args, _resolution) do

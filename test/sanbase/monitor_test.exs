@@ -6,7 +6,7 @@ defmodule Sanbase.MonitorTest do
   alias Sanbase.UserList
   alias Sanbase.UserList.Monitor
   alias Sanbase.Insight.Post
-  alias Sanbase.Auth.UserFollower
+  alias Sanbase.Accounts.UserFollower
 
   setup do
     user = insert(:user)

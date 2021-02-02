@@ -9,11 +9,11 @@ defmodule Sanbase.Timeline.PostProcess do
   """
 
   def tag(events, current_user_id \\ nil) do
-    sanfamily_ids = Sanbase.Auth.Role.san_family_ids()
+    sanfamily_ids = Sanbase.Accounts.Role.san_family_ids()
 
     followed_users_ids =
       if current_user_id do
-        Sanbase.Auth.UserFollower.followed_by(current_user_id)
+        Sanbase.Accounts.UserFollower.followed_by(current_user_id)
         |> Enum.map(& &1.id)
       else
         []

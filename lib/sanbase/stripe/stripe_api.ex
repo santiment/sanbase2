@@ -4,7 +4,7 @@ defmodule Sanbase.StripeApi do
   """
 
   alias Sanbase.Billing.{Product, Plan}
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
 
   @type subscription_item :: %{plan: String.t()}
   @type subscription :: %{

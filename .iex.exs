@@ -12,7 +12,7 @@ alias Sanbase.Model.{
   LatestBtcWalletData
 }
 
-alias Sanbase.Auth.{
+alias Sanbase.Accounts.{
   User,
   EthAccount,
   Apikey,

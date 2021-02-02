@@ -6,7 +6,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ApikeyResolver do
 
   require Logger
 
-  alias Sanbase.Auth.{Apikey, User}
+  alias Sanbase.Accounts.{Apikey, User}
 
   @doc ~s"""
   Generates an apikey for the given user and returns the `user` struct.

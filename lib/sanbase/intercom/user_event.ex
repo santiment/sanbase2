@@ -5,7 +5,7 @@ defmodule Sanbase.Intercom.UserEvent do
   import Ecto.Query
 
   alias Sanbase.Repo
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
 
   require Logger
 
@@ -15,7 +15,7 @@ defmodule Sanbase.Intercom.UserEvent do
     field(:metadata, :map, default: %{})
     field(:remote_id, :string)
 
-    belongs_to(:user, Sanbase.Auth.User)
+    belongs_to(:user, Sanbase.Accounts.User)
     timestamps(type: :utc_datetime)
   end
 

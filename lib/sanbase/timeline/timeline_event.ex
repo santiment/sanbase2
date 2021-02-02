@@ -9,7 +9,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   import Ecto.Query
 
   alias Sanbase.Repo
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
   alias Sanbase.Signal.UserTrigger

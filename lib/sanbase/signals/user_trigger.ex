@@ -17,7 +17,7 @@ defmodule Sanbase.Signal.UserTrigger do
   import Sanbase.Signal.StructMapTransformation
 
   alias __MODULE__
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Signal.{Trigger, HistoricalActivity}
   alias Sanbase.Repo
   alias Sanbase.Tag

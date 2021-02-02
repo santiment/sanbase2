@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   import Absinthe.Resolution.Helpers, except: [async: 1]
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
   alias Sanbase.Vote
   alias Sanbase.Insight.{Post, PopularAuthor}
   alias Sanbase.Comments.EntityComment

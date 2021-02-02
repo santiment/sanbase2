@@ -10,7 +10,7 @@ defmodule Sanbase.ApiCallLimit.ETS do
   use GenServer
 
   alias Sanbase.ApiCallLimit
-  alias Sanbase.Auth.User
+  alias Sanbase.Accounts.User
 
   @type entity_type :: :remote_ip | :user
   @type remote_ip :: String.t()

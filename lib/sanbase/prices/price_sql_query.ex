@@ -251,6 +251,7 @@ defmodule Sanbase.Price.SqlQuery do
         #{aggregation(aggregation, "#{metric}", "dt")} AS value
       FROM #{@table}
       PREWHERE
+        isNotNull(#{metric}) AND NOT isNaN(#{metric}) AND
         dt >= toDateTime(?1) AND
         dt < toDateTime(?2)
       GROUP BY slug

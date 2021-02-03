@@ -57,7 +57,7 @@ defmodule Sanbase.Price.SqlQuery do
       NOT isNaN(#{metric}) AND isNotNull(#{metric}) AND
       source = cast(?4, 'LowCardinality(String)') AND
       dt >= toDateTime(?5) AND
-      dt < toDateTime(?6) AND
+      dt < toDateTime(?6)
     GROUP BY time
     ORDER BY time
     """

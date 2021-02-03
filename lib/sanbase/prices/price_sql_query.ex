@@ -54,10 +54,10 @@ defmodule Sanbase.Price.SqlQuery do
     FROM #{@table}
     PREWHERE
       #{slug_filter(slug_or_slugs, argument_position: 3)} AND
+      NOT isNaN(#{metric}) AND isNotNull(#{metric}) AND
       source = cast(?4, 'LowCardinality(String)') AND
       dt >= toDateTime(?5) AND
       dt < toDateTime(?6) AND
-      isNotNull(#{metric}) AND NOT isNaN(#{metric})
     GROUP BY time
     ORDER BY time
     """
@@ -199,6 +199,7 @@ defmodule Sanbase.Price.SqlQuery do
         toUInt32(1) AS has_changed
       FROM #{@table}
       PREWHERE
+        NOT isNaN(#{metric}) AND isNotNull(#{metric}) AND
         slug IN (?1) AND
         source = cast(?2, 'LowCardinality(String)') AND
         dt < toDateTime(?3)

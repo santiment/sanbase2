@@ -11,7 +11,7 @@ distribution_deltas_5min
 erc20_balances
 eth_balances
 eth2_staking_transfers_mv
-github
+github_v2
 intraday_label_based_metrics
 intraday_metrics
 ltc_balances

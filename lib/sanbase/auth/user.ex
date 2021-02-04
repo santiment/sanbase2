@@ -141,9 +141,9 @@ defmodule Sanbase.Accounts.User do
       :twitter_id,
       :username
     ])
-    |> normalize_username(attrs[:username], :username)
-    |> normalize_email(attrs[:email], :email)
-    |> normalize_email(attrs[:email_candidate], :email_candidate)
+    |> normalize_user_identificator(:username, attrs[:username])
+    |> normalize_user_identificator(:email, attrs[:email])
+    |> normalize_user_identificator(:email_candidate, attrs[:email_candidate])
     |> validate_change(:username, &validate_username_change/2)
     |> validate_change(:email_candidate, &validate_email_candidate_change/2)
     |> validate_change(:avatar_url, &validate_url_change/2)
@@ -225,7 +225,7 @@ defmodule Sanbase.Accounts.User do
 
   def find_or_insert_by(field, value, attrs \\ %{})
       when field in [:email, :username, :twitter_id] do
-    value = normalize_login_field_value(value)
+    value = normalize_user_identificator(field, value)
 
     case Repo.get_by(User, [{field, value}]) do
       nil ->
@@ -254,19 +254,18 @@ defmodule Sanbase.Accounts.User do
     |> List.ascii_printable?()
   end
 
-  defp normalize_username(changeset, nil, _), do: changeset
+  defp normalize_user_identificator(changeset, _field, nil), do: changeset
 
-  defp normalize_username(changeset, username, field) do
-    put_change(changeset, field, normalize_login_field_value(username))
+  defp normalize_user_identificator(changeset, field, value) do
+    put_change(changeset, field, normalize_user_identificator(field, value))
   end
 
-  defp normalize_email(changeset, nil, _), do: changeset
-
-  defp normalize_email(changeset, email, field) do
-    put_change(changeset, field, normalize_login_field_value(email))
+  defp normalize_user_identificator(:username, value) do
+    value
+    |> String.trim()
   end
 
-  defp normalize_login_field_value(value) do
+  defp normalize_user_identificator(_field, value) do
     value
     |> String.downcase()
     |> String.trim()

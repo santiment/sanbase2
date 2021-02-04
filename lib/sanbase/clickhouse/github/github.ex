@@ -34,7 +34,7 @@ defmodule Sanbase.Clickhouse.Github do
     "ProjectEvent"
   ]
 
-  @table "github"
+  @table "github_v2"
 
   @primary_key false
   @timestamps_opts [updated_at: false]

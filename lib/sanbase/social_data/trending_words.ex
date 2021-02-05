@@ -209,11 +209,11 @@ defmodule Sanbase.SocialData.TrendingWords do
           dt < toDateTime(?3) AND
           source NOT IN ('twitter', 'bitcointalk')
         GROUP BY t, word, source
-        ORDER BY score DESC
-        LIMIT ?4 BY t
+        ORDER BY t, score DESC
     )
     GROUP BY t, word
-    ORDER BY t, total_score
+    ORDER BY t, total_score DESC
+    LIMIT ?4 BY t
     """
 
     args = [str_to_sec(interval), from, to, size]

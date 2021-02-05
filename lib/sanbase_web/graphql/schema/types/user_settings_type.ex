@@ -22,15 +22,15 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:alerts_per_day_limit, :json)
     # Deprecated fields
     field :signal_notify_telegram, :boolean do
-      resolve(fn settings, _, _ -> settings.alert_notify_telegram end)
+      resolve(fn settings, _, _ -> {:ok, settings.alert_notify_telegram} end)
     end
 
     field :signal_notify_email, :boolean do
-      resolve(fn settings, _, _ -> settings.alert_notify_email end)
+      resolve(fn settings, _, _ -> {:ok, settings.alert_notify_email} end)
     end
 
     field :signals_per_day_limit, :json do
-      resolve(fn settings, _, _ -> settings.alerts_per_day_limit end)
+      resolve(fn settings, _, _ -> {:ok, settings.alerts_per_day_limit} end)
     end
   end
 

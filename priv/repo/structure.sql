@@ -5135,7 +5135,7 @@ ALTER TABLE ONLY public.user_intercom_attributes
 --
 
 ALTER TABLE ONLY public.user_lists
-    ADD CONSTRAINT user_lists_table_configuration_id_fkey FOREIGN KEY (table_configuration_id) REFERENCES public.table_configurations(id);
+    ADD CONSTRAINT user_lists_table_configuration_id_fkey FOREIGN KEY (table_configuration_id) REFERENCES public.table_configurations(id) ON DELETE SET NULL;
 
 
 --
@@ -5537,3 +5537,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210118080213);
 INSERT INTO public."schema_migrations" (version) VALUES (20210119085344);
 INSERT INTO public."schema_migrations" (version) VALUES (20210120090715);
 INSERT INTO public."schema_migrations" (version) VALUES (20210128140807);
+INSERT INTO public."schema_migrations" (version) VALUES (20210202161636);

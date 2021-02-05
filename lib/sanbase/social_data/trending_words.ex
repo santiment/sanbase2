@@ -195,25 +195,25 @@ defmodule Sanbase.SocialData.TrendingWords do
     SELECT
       t,
       word,
-      project,
-      total_score AS score
+      any(project) AS project,
+      sum(score) / 4 as total_score
     FROM(
         SELECT
            toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
            word,
            any(project) AS project,
-           SUM(score) / 4 AS total_score
+           argMax(score, dt) as score
         FROM #{Config.get(:trending_words_table)}
         PREWHERE
           dt >= toDateTime(?2) AND
           dt < toDateTime(?3) AND
-          source NOT IN ('twitter', 'bitcointalk') AND
-          dt = t
-        GROUP BY t, word
-        ORDER BY total_score DESC
-        LIMIT ?4 BY t
+          source NOT IN ('twitter', 'bitcointalk')
+        GROUP BY t, word, source
+        ORDER BY t, score DESC
     )
-    ORDER BY t, score
+    GROUP BY t, word
+    ORDER BY t, total_score DESC
+    LIMIT ?4 BY t
     """
 
     args = [str_to_sec(interval), from, to, size]

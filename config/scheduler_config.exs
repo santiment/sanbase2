@@ -131,6 +131,6 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       # integer ids.
       schedule: "@daily",
       task:
-        {Sanbase.ExternalServices.Coinmarketcap.TickerFetcher, :work, [projects_number: 10_000]}
+        {Sanbase.ExternalServices.Coinmarketcap.TickerFetcher, :work, [projects_number: 5_000]}
     ]
   ]

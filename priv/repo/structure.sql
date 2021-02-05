@@ -817,41 +817,6 @@ ALTER SEQUENCE public.infrastructures_id_seq OWNED BY public.infrastructures.id;
 
 
 --
--- Name: kafka_label_records; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.kafka_label_records (
-    id bigint NOT NULL,
-    topic character varying(255) NOT NULL,
-    sign integer NOT NULL,
-    address character varying(255) NOT NULL,
-    blockchain character varying(255) NOT NULL,
-    label character varying(255) NOT NULL,
-    metadata character varying(255),
-    datetime timestamp without time zone NOT NULL
-);
-
-
---
--- Name: kafka_label_records_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.kafka_label_records_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: kafka_label_records_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.kafka_label_records_id_seq OWNED BY public.kafka_label_records.id;
-
-
---
 -- Name: latest_btc_wallet_data; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2868,13 +2833,6 @@ ALTER TABLE ONLY public.infrastructures ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
--- Name: kafka_label_records id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.kafka_label_records ALTER COLUMN id SET DEFAULT nextval('public.kafka_label_records_id_seq'::regclass);
-
-
---
 -- Name: latest_btc_wallet_data id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3404,14 +3362,6 @@ ALTER TABLE ONLY public.icos
 
 ALTER TABLE ONLY public.infrastructures
     ADD CONSTRAINT infrastructures_pkey PRIMARY KEY (id);
-
-
---
--- Name: kafka_label_records kafka_label_records_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.kafka_label_records
-    ADD CONSTRAINT kafka_label_records_pkey PRIMARY KEY (id);
 
 
 --
@@ -5571,3 +5521,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210119085344);
 INSERT INTO public."schema_migrations" (version) VALUES (20210120090715);
 INSERT INTO public."schema_migrations" (version) VALUES (20210128140807);
 INSERT INTO public."schema_migrations" (version) VALUES (20210202161636);
+INSERT INTO public."schema_migrations" (version) VALUES (20210205121406);

@@ -5,8 +5,6 @@ defmodule SanbaseWeb.Graphql.Schema.WidgetQueries do
 
   alias SanbaseWeb.Graphql.Resolvers.WidgetResolver
 
-  import_types(SanbaseWeb.Graphql.WidgetTypes)
-
   object :widget_queries do
     @desc ~s"""
     Show all active widgets. Widgets are not intended to be active at all times.

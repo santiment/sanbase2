@@ -9,10 +9,6 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainMetricQueries do
   alias Sanbase.Billing.Product
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
-  import_types(SanbaseWeb.Graphql.EtherbiTypes)
-  import_types(SanbaseWeb.Graphql.ClickhouseTypes)
-  import_types(SanbaseWeb.Graphql.ExchangeTypes)
-
   object :blockchain_metric_queries do
     # STANDART PLAN
     @desc ~s"""

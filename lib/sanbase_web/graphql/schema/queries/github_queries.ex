@@ -7,8 +7,6 @@ defmodule SanbaseWeb.Graphql.Schema.GithubQueries do
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
-  import_types(SanbaseWeb.Graphql.GithubTypes)
-
   object :github_queries do
     @desc "Returns a list of slugs of the projects that have a github link"
     field :github_availables_repos, list_of(:string) do

@@ -1,9 +1,20 @@
 defmodule Sanbase.Repo.Migrations.NullifyTableConfigOnDelete do
   use Ecto.Migration
 
-  def change do
-    alter table(:user_lists) do
-      modify(:table_configuration_id, references(:device_type, on_delete: :nilify_all))
+  @table :user_lists
+  def up do
+    drop(constraint(@table, "user_lists_table_configuration_id_fkey"))
+
+    alter table(@table) do
+      modify(:table_configuration_id, references(:table_configurations, on_delete: :nilify_all))
+    end
+  end
+
+  def down do
+    drop(constraint(@table, "user_lists_table_configuration_id_fkey"))
+
+    alter table(@table) do
+      modify(:table_configuration_id, references(:table_configurations))
     end
   end
 end

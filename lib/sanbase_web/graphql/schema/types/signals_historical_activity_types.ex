@@ -1,12 +1,12 @@
-defmodule SanbaseWeb.Graphql.SignalsHistoricalActivityTypes do
+defmodule SanbaseWeb.Graphql.AlertsHistoricalActivityTypes do
   use Absinthe.Schema.Notation
 
-  object :signal_historical_activity_paginated do
-    field(:activity, list_of(:signal_historical_activity))
+  object :alert_historical_activity_paginated do
+    field(:activity, list_of(:alert_historical_activity))
     field(:cursor, :cursor)
   end
 
-  object :signal_historical_activity do
+  object :alert_historical_activity do
     field(:trigger, non_null(:trigger))
     field(:triggered_at, non_null(:datetime))
     field(:payload, :json)

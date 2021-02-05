@@ -125,15 +125,15 @@ defmodule Sanbase.Accounts.UserSettings do
   end
 
   defp modify_settings(%__MODULE__{} = us) do
-    # The default value of the signals limit is an empty map.
+    # The default value of the alerts limit is an empty map.
     # Put the defaults here, after fetching from the DB, at runtime.
     # This is done so the default values can be changed without altering DB records.
 
-    signals_per_day_limit =
-      us.settings.signals_per_day_limit
+    alerts_per_day_limit =
+      us.settings.alerts_per_day_limit
       |> case do
         empty_map when map_size(empty_map) == 0 ->
-          Sanbase.Accounts.Settings.default_signals_limit_per_day()
+          Sanbase.Accounts.Settings.default_alerts_limit_per_day()
 
         map when is_map(map) ->
           map
@@ -147,7 +147,7 @@ defmodule Sanbase.Accounts.UserSettings do
     %{
       us.settings
       | has_telegram_connected: us.settings.telegram_chat_id != nil,
-        signals_per_day_limit: signals_per_day_limit,
+        alerts_per_day_limit: alerts_per_day_limit,
         newsletter_subscription: newsletter_subscription
     }
   end

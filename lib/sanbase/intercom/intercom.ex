@@ -10,7 +10,7 @@ defmodule Sanbase.Intercom do
 
   alias Sanbase.Accounts.{User, Statistics}
   alias Sanbase.Billing.{Subscription, Product}
-  alias Sanbase.Signal.UserTrigger
+  alias Sanbase.Alert.UserTrigger
   alias Sanbase.Clickhouse.ApiCallData
   alias Sanbase.Intercom.UserAttributes
   alias Sanbase.Accounts.EthAccount
@@ -23,7 +23,7 @@ defmodule Sanbase.Intercom do
   def all_users_stats do
     %{
       customer_payment_type_map: customer_payment_type_map(),
-      triggers_map: Statistics.resource_user_count_map(Sanbase.Signal.UserTrigger),
+      triggers_map: Statistics.resource_user_count_map(Sanbase.Alert.UserTrigger),
       insights_map: Statistics.resource_user_count_map(Sanbase.Insight.Post),
       watchlists_map: Statistics.resource_user_count_map(Sanbase.UserList),
       screeners_map: Statistics.user_screeners_count_map(),

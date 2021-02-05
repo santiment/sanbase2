@@ -1,4 +1,4 @@
-defmodule Sanbase.Signal.UtilsTest do
+defmodule Sanbase.Alert.UtilsTest do
   use ExUnit.Case, async: true
-  doctest Sanbase.Signal.Utils
+  doctest Sanbase.Alert.Utils
 end

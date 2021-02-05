@@ -1,7 +1,7 @@
-defmodule Sanbase.Signal.TriggerHistoryUtilsTest do
+defmodule Sanbase.Alert.TriggerHistoryUtilsTest do
   use Sanbase.DataCase, async: true
 
-  alias Sanbase.Signal.History.Utils
+  alias Sanbase.Alert.History.Utils
 
   test "#percent_change_calculations_with_cooldown" do
     percent_changes = [{5, 6}, {10, 11}, {7, 8}, {3, 2}, {100, 105}, {4, 3}, {8, 10}, {9, 11}]

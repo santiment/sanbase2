@@ -1,7 +1,7 @@
-defmodule Sanbase.Signal.TriggerOperationTextTest do
+defmodule Sanbase.Alert.TriggerOperationTextTest do
   use Sanbase.DataCase, async: true
 
-  alias Sanbase.Signal.OperationText
+  alias Sanbase.Alert.OperationText
 
   describe "combinators" do
     test "all_of text" do

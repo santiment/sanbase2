@@ -1,4 +1,4 @@
-defmodule Sanbase.Repo.Migrations.AddDataForKvListSignals do
+defmodule Sanbase.Repo.Migrations.AddDataForKvListAlerts do
   use Ecto.Migration
 
   def change do

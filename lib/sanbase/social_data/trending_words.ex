@@ -10,7 +10,7 @@ defmodule Sanbase.SocialData.TrendingWords do
   stories within the crypto community. That is why each day you’ll see
   a new batch of fresh topics, currently gaining steam on crypto social media.
 
-  This signals an abnormally high interest in a previously uninspiring
+  This shows an abnormally high interest in a previously uninspiring
   topic, making the list practical for discovering new and developing
   talking points in the crypto community.
 

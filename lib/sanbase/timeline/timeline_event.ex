@@ -12,7 +12,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   alias Sanbase.Accounts.User
   alias Sanbase.Insight.Post
   alias Sanbase.UserList
-  alias Sanbase.Signal.UserTrigger
+  alias Sanbase.Alert.UserTrigger
   alias Sanbase.Vote
   alias Sanbase.Timeline.{Query, Filter, Order, Cursor, Type, PostProcess}
 
@@ -23,7 +23,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   * Publish Insight
   * Update a public Watchlist with projects
   * Create a public UserTrigger
-  * Signal for UserTrigger fires
+  * Alert for UserTrigger fires
   """
   @publish_insight_type "publish_insight"
   @update_watchlist_type "update_watchlist"

@@ -19,7 +19,7 @@ defmodule Sanbase.Factory do
     IcoCurrency
   }
 
-  alias Sanbase.Signal.{UserTrigger, HistoricalActivity}
+  alias Sanbase.Alert.{UserTrigger, HistoricalActivity}
   alias Sanbase.Billing.{Product, Plan, Subscription}
   alias Sanbase.Billing.Subscription.SignUpTrial
   alias Sanbase.Timeline.TimelineEvent
@@ -312,8 +312,8 @@ defmodule Sanbase.Factory do
   def user_settings_factory() do
     %UserSettings{
       settings: %{
-        signal_notify_telegram: false,
-        signal_notify_email: false,
+        alert_notify_telegram: false,
+        alert_notify_email: false,
         newsletter_subscription: "OFF"
       }
     }
@@ -345,7 +345,7 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def signals_historical_activity_factory() do
+  def alerts_historical_activity_factory() do
     %HistoricalActivity{
       user_trigger: %{}
     }

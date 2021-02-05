@@ -1,4 +1,4 @@
-defmodule Sanbase.Signal.EthWalletTriggerTest do
+defmodule Sanbase.Alert.EthWalletTriggerTest do
   use Sanbase.DataCase, async: false
 
   import Mock
@@ -6,7 +6,7 @@ defmodule Sanbase.Signal.EthWalletTriggerTest do
 
   alias Sanbase.Model.Project
 
-  alias Sanbase.Signal.{
+  alias Sanbase.Alert.{
     UserTrigger,
     Trigger.EthWalletTriggerSettings,
     Scheduler
@@ -15,9 +15,9 @@ defmodule Sanbase.Signal.EthWalletTriggerTest do
   alias Sanbase.Clickhouse.HistoricalBalance
 
   setup do
-    Sanbase.Signal.Evaluator.Cache.clear_all()
+    Sanbase.Alert.Evaluator.Cache.clear_all()
 
-    user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
+    user = insert(:user, user_settings: %{settings: %{alert_notify_telegram: true}})
     Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     project = Sanbase.Factory.insert(:random_erc20_project)
@@ -105,7 +105,7 @@ defmodule Sanbase.Signal.EthWalletTriggerTest do
           ]}
        end}
     ] do
-      Scheduler.run_signal(EthWalletTriggerSettings)
+      Scheduler.run_alert(EthWalletTriggerSettings)
 
       assert_receive({:telegram_to_self, message})
 
@@ -116,7 +116,7 @@ defmodule Sanbase.Signal.EthWalletTriggerTest do
     end
   end
 
-  test "triggers eth wallet and address signals when balance increases", context do
+  test "triggers eth wallet and address alerts when balance increases", context do
     test_pid = self()
 
     with_mocks [
@@ -139,7 +139,7 @@ defmodule Sanbase.Signal.EthWalletTriggerTest do
           ]}
        end}
     ] do
-      Scheduler.run_signal(EthWalletTriggerSettings)
+      Scheduler.run_alert(EthWalletTriggerSettings)
 
       assert_receive({:telegram_to_self, message1})
       assert_receive({:telegram_to_self, message2})
@@ -179,7 +179,7 @@ defmodule Sanbase.Signal.EthWalletTriggerTest do
           ]}
        end}
     ] do
-      Scheduler.run_signal(EthWalletTriggerSettings)
+      Scheduler.run_alert(EthWalletTriggerSettings)
 
       assert_receive({:telegram_to_self, message})
 
@@ -202,7 +202,7 @@ defmodule Sanbase.Signal.EthWalletTriggerTest do
          {:error, "Something bad happened"}
        end}
     ] do
-      Scheduler.run_signal(EthWalletTriggerSettings)
+      Scheduler.run_alert(EthWalletTriggerSettings)
 
       refute_receive({:telegram_to_self, _})
     end

@@ -81,7 +81,7 @@ defmodule Sanbase.Accounts.UserTest do
 
       # Trigger Historical activity
       {:ok, _} =
-        Sanbase.Signal.HistoricalActivity.create(%{
+        Sanbase.Alert.HistoricalActivity.create(%{
           user_id: user.id,
           user_trigger_id: user_trigger.id,
           triggered_at: Timex.now(),

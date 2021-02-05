@@ -1,4 +1,4 @@
-defmodule Sanbase.Signal.History.ResultBuilder.TransformerTest do
+defmodule Sanbase.Alert.History.ResultBuilder.TransformerTest do
   use ExUnit.Case
-  doctest Sanbase.Signal.History.ResultBuilder.Transformer
+  doctest Sanbase.Alert.History.ResultBuilder.Transformer
 end

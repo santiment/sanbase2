@@ -6,7 +6,7 @@ import Sanbase.Factory
 import Sanbase.Factory.Helper
 
 alias Sanbase.UserList
-alias Sanbase.Signal.UserTrigger
+alias Sanbase.Alert.UserTrigger
 alias Sanbase.Insight.Post
 
 Faker.start()

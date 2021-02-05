@@ -17,7 +17,7 @@ defmodule Sanbase.Notifications.Discord do
 
   def send_notification(_, _, _, %{retry_count: 5}), do: {:error, "Max retries reached"}
 
-  def send_notification(webhook, signal_name, payload, opts) do
+  def send_notification(webhook, alert_name, payload, opts) do
     case http_client().post(webhook, payload, [{"Content-Type", "application/json"}]) do
       {:ok, %HTTPoison.Response{status_code: code}} when code in 200..299 ->
         :ok
@@ -26,28 +26,28 @@ defmodule Sanbase.Notifications.Discord do
         body = body |> Jason.decode!()
 
         Logger.info(
-          "Cannot publish #{signal_name} signal in Discord: HTTP Response: #{inspect(resp)}"
+          "Cannot publish #{alert_name} alert in Discord: HTTP Response: #{inspect(resp)}"
         )
 
         Process.sleep(body["retry_after"] + 1000)
 
         send_notification(
           webhook,
-          signal_name,
+          alert_name,
           payload,
           Map.update(opts, :retry_count, 0, &(&1 + 1))
         )
 
       {:ok, %HTTPoison.Response{} = resp} ->
         Logger.error(
-          "Cannot publish #{signal_name} signal in Discord: HTTP Response: #{inspect(resp)}"
+          "Cannot publish #{alert_name} alert in Discord: HTTP Response: #{inspect(resp)}"
         )
 
-        {:error, "Cannot publish #{signal_name} signal in Discord"}
+        {:error, "Cannot publish #{alert_name} alert in Discord"}
 
       {:error, error} ->
-        Logger.error("Cannot publish #{signal_name} in Discord. Reason: " <> inspect(error))
-        {:error, "Cannot publish #{signal_name} signal in Discord"}
+        Logger.error("Cannot publish #{alert_name} in Discord. Reason: " <> inspect(error))
+        {:error, "Cannot publish #{alert_name} alert in Discord"}
     end
   end
 

@@ -173,11 +173,11 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
     end
   end
 
-  def user_can_create_signal?(user, subscription) do
+  def user_can_create_alert?(user, subscription) do
     subscription = subscription || @free_subscription
 
-    SanbaseAccessChecker.signals_limits_not_reached?(user, subscription)
+    SanbaseAccessChecker.alerts_limits_not_reached?(user, subscription)
   end
 
-  def signals_limits_upgrade_message(), do: SanbaseAccessChecker.signals_limits_upgrade_message()
+  def alerts_limits_upgrade_message(), do: SanbaseAccessChecker.alerts_limits_upgrade_message()
 end

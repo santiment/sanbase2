@@ -10,7 +10,7 @@ defmodule Sanbase.Scrapers.Scheduler do
   end
 end
 
-defmodule Sanbase.Signals.Scheduler do
+defmodule Sanbase.Alerts.Scheduler do
   use Quantum,
     otp_app: :sanbase
 

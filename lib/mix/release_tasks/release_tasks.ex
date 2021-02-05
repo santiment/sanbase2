@@ -7,7 +7,7 @@ defmodule Sanbase.ReleaseTasks do
 
     Migrate.run()
 
-    # Signal shutdown
+    # Alert shutdown
     IO.puts("Success!")
     :init.stop()
   end

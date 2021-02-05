@@ -75,13 +75,13 @@ config :waffle,
 
 config :sanbase, SanbaseWeb.Plug.VerifyStripeWebhook, webhook_secret: "stripe_webhook_secret"
 
-config :sanbase, Sanbase.Signal, email_channel_enabled: {:system, "EMAIL_CHANNEL_ENABLED", "true"}
+config :sanbase, Sanbase.Alert, email_channel_enabled: {:system, "EMAIL_CHANNEL_ENABLED", "true"}
 
 # So the router can read it compile time
 System.put_env("TELEGRAM_ENDPOINT_RANDOM_STRING", "random_string")
 
 config :sanbase, Sanbase.Telegram,
-  bot_username: "SantimentSignalsBotTest",
+  bot_username: "SantimentAlertsBotTest",
   telegram_endpoint: "random_string",
   token: "token"
 

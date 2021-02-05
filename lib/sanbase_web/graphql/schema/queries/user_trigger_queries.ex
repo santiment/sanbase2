@@ -8,13 +8,13 @@ defmodule SanbaseWeb.Graphql.Schema.UserTriggerQueries do
 
   alias SanbaseWeb.Graphql.Resolvers.{
     UserTriggerResolver,
-    SignalsHistoricalActivityResolver
+    AlertsHistoricalActivityResolver
   }
 
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
-  object :signal_queries do
-    @desc "Get signal trigger by its id"
+  object :alert_queries do
+    @desc "Get alert trigger by its id"
     field :get_trigger_by_id, :user_trigger do
       meta(access: :free)
 
@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserTriggerQueries do
       resolve(&UserTriggerResolver.get_trigger_by_id/3)
     end
 
-    @desc "Get public signal triggers by user_id"
+    @desc "Get public alert triggers by user_id"
     field :public_triggers_for_user, list_of(:user_trigger) do
       meta(access: :free)
 
@@ -32,7 +32,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserTriggerQueries do
       resolve(&UserTriggerResolver.public_triggers_for_user/3)
     end
 
-    @desc "Get all public signal triggers"
+    @desc "Get all public alert triggers"
     field :all_public_triggers, list_of(:user_trigger) do
       meta(access: :free)
 
@@ -50,13 +50,14 @@ defmodule SanbaseWeb.Graphql.Schema.UserTriggerQueries do
     end
 
     @desc ~s"""
-    Get current user's history of executed signals with cursor pagination.
+    Get current user's history of executed alerts with cursor pagination.
     * `cursor` argument is an object with: type `BEFORE` or `AFTER` and `datetime`.
       - `type: BEFORE` gives those executed before certain datetime
       - `type: AFTER` gives those executed after certain datetime
     * `limit` argument defines the size of the page. Default value is 25
     """
-    field :signals_historical_activity, :signal_historical_activity_paginated do
+    field :alerts_historical_activity, :alert_historical_activity_paginated do
+      deprecate(~s/Use alertsHistoricalActivity instead/)
       meta(access: :free)
 
       arg(:cursor, :cursor_input)
@@ -64,13 +65,32 @@ defmodule SanbaseWeb.Graphql.Schema.UserTriggerQueries do
 
       middleware(JWTAuth)
 
-      resolve(&SignalsHistoricalActivityResolver.fetch_historical_activity_for/3)
+      resolve(&AlertsHistoricalActivityResolver.fetch_historical_activity_for/3)
+    end
+
+    @desc ~s"""
+    Get current user's history of executed alerts with cursor pagination.
+    * `cursor` argument is an object with: type `BEFORE` or `AFTER` and `datetime`.
+      - `type: BEFORE` gives those executed before certain datetime
+      - `type: AFTER` gives those executed after certain datetime
+    * `limit` argument defines the size of the page. Default value is 25
+    """
+    field :signals_historical_activity, :alert_historical_activity_paginated do
+      deprecate(~s/Use alertsHistoricalActivity instead/)
+      meta(access: :free)
+
+      arg(:cursor, :cursor_input)
+      arg(:limit, :integer, default_value: 25)
+
+      middleware(JWTAuth)
+
+      resolve(&AlertsHistoricalActivityResolver.fetch_historical_activity_for/3)
     end
   end
 
-  object :signal_mutations do
+  object :alert_mutations do
     @desc """
-    Create signal trigger described by `trigger` json field.
+    Create alert trigger described by `trigger` json field.
     Returns the newly created trigger.
     """
     field :create_trigger, :user_trigger do
@@ -89,7 +109,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserTriggerQueries do
     end
 
     @desc """
-    Update signal trigger by its id.
+    Update alert trigger by its id.
     Returns the updated trigger.
     """
     field :update_trigger, :user_trigger do
@@ -109,7 +129,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserTriggerQueries do
     end
 
     @desc """
-    Remove signal trigger by its id.
+    Remove alert trigger by its id.
     Returns the removed trigger on success.
     """
     field :remove_trigger, :user_trigger do

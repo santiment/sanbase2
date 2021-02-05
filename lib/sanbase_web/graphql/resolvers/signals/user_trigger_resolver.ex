@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
 
   import SanbaseWeb.Graphql.Helpers.Utils, only: [transform_user_trigger: 1]
   alias Sanbase.Accounts.User
-  alias Sanbase.Signal.{Trigger, UserTrigger}
+  alias Sanbase.Alert.{Trigger, UserTrigger}
   alias SanbaseWeb.Graphql.Helpers.Utils
   alias Sanbase.Telegram
   alias Sanbase.Billing.Plan.AccessChecker
@@ -25,10 +25,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   def create_trigger(_root, args, %{
         context: %{auth: %{current_user: current_user, subscription: subscription}}
       }) do
-    if AccessChecker.user_can_create_signal?(current_user, subscription) do
+    if AccessChecker.user_can_create_alert?(current_user, subscription) do
       do_create_trigger(current_user, args)
     else
-      {:error, AccessChecker.signals_limits_upgrade_message()}
+      {:error, AccessChecker.alerts_limits_upgrade_message()}
     end
   end
 
@@ -94,15 +94,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
         Telegram.send_message(
           current_user,
           """
-          Successfully created a new signal of type: #{
+          Successfully created a new alert of type: #{
             Trigger.human_readable_settings_type(args.settings["type"])
           }
 
-          Title: #{args.title} #{
-            if args[:description], do: "\nDescription: #{args[:description]}"
-          }
+          Title: #{args.title}#{if args[:description], do: "\nDescription: #{args[:description]}"}
 
-          This bot will alert you when your signal triggers 🤖
+          This bot will send you a message when the alert triggers 🤖
           """
         )
 

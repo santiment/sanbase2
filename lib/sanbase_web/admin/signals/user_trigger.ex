@@ -1,10 +1,10 @@
-defmodule SanbaseWeb.ExAdmin.Signal.UserTrigger do
+defmodule SanbaseWeb.ExAdmin.Alert.UserTrigger do
   use ExAdmin.Register
 
   import Ecto.Query, warn: false
-  alias Sanbase.Signal.{Trigger, UserTrigger}
+  alias Sanbase.Alert.{Trigger, UserTrigger}
 
-  register_resource Sanbase.Signal.UserTrigger do
+  register_resource Sanbase.Alert.UserTrigger do
     update_changeset(:update_changeset)
     action_items(only: [:show, :edit, :delete])
 
@@ -94,7 +94,7 @@ defmodule SanbaseWeb.ExAdmin.Signal.UserTrigger do
   def set_public(conn, params, resource, :update) do
     case params.user_trigger.is_public do
       str when str in ["true", "false"] ->
-        Sanbase.Signal.UserTrigger.update_changeset(resource, %{
+        Sanbase.Alert.UserTrigger.update_changeset(resource, %{
           trigger: %{is_public: str |> String.to_existing_atom()}
         })
         |> Sanbase.Repo.update!()
@@ -106,7 +106,7 @@ defmodule SanbaseWeb.ExAdmin.Signal.UserTrigger do
     {conn, params, resource}
   end
 
-  defimpl ExAdmin.Render, for: Sanbase.Signal.Trigger do
+  defimpl ExAdmin.Render, for: Sanbase.Alert.Trigger do
     def to_string(data) do
       data |> Map.from_struct() |> Jason.encode!()
     end

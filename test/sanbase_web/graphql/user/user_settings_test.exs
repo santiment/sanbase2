@@ -87,17 +87,17 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     query = toggle_telegram_channel_query(true)
     result = conn |> execute(query, "settingsToggleChannel")
 
-    assert result == %{"signalNotifyTelegram" => true}
+    assert result == %{"alertNotifyTelegram" => true}
 
-    assert UserSettings.settings_for(user, force: true) |> Map.get(:signal_notify_telegram) ==
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:alert_notify_telegram) ==
              true
 
     query = toggle_telegram_channel_query(false)
     result = conn |> execute(query, "settingsToggleChannel")
 
-    assert result == %{"signalNotifyTelegram" => false}
+    assert result == %{"alertNotifyTelegram" => false}
 
-    assert UserSettings.settings_for(user, force: true) |> Map.get(:signal_notify_telegram) ==
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:alert_notify_telegram) ==
              false
   end
 
@@ -105,25 +105,25 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     query = toggle_email_channel_query(true)
     result = conn |> execute(query, "settingsToggleChannel")
 
-    assert result == %{"signalNotifyEmail" => true}
-    assert UserSettings.settings_for(user, force: true) |> Map.get(:signal_notify_email) == true
+    assert result == %{"alertNotifyEmail" => true}
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:alert_notify_email) == true
 
     query = toggle_email_channel_query(false)
     result = conn |> execute(query, "settingsToggleChannel")
 
-    assert result == %{"signalNotifyEmail" => false}
-    assert UserSettings.settings_for(user, force: true) |> Map.get(:signal_notify_email) == false
+    assert result == %{"alertNotifyEmail" => false}
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:alert_notify_email) == false
   end
 
   test "toggle on existing record", %{user: user, conn: conn} do
-    insert(:user_settings, user: user, settings: %{signal_notify_telegram: false})
+    insert(:user_settings, user: user, settings: %{alert_notify_telegram: false})
 
     query = toggle_telegram_channel_query(true)
     result = conn |> execute(query, "settingsToggleChannel")
 
-    assert result == %{"signalNotifyTelegram" => true}
+    assert result == %{"alertNotifyTelegram" => true}
 
-    assert UserSettings.settings_for(user, force: true) |> Map.get(:signal_notify_telegram) ==
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:alert_notify_telegram) ==
              true
   end
 
@@ -131,8 +131,8 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     insert(:user_settings,
       user: user,
       settings: %{
-        signal_notify_telegram: true,
-        signal_notify_email: false,
+        alert_notify_telegram: true,
+        alert_notify_email: false,
         is_beta_mode: true,
         theme: "nightmode",
         page_size: 100,
@@ -144,8 +144,8 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     result = conn |> execute(query, "currentUser")
 
     assert result["settings"] == %{
-             "signalNotifyEmail" => false,
-             "signalNotifyTelegram" => true,
+             "alertNotifyEmail" => false,
+             "alertNotifyTelegram" => true,
              "newsletterSubscription" => "OFF",
              "isBetaMode" => true,
              "pageSize" => 100,
@@ -160,8 +160,8 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
 
     assert result["settings"] == %{
              "newsletterSubscription" => "OFF",
-             "signalNotifyEmail" => false,
-             "signalNotifyTelegram" => false,
+             "alertNotifyEmail" => false,
+             "alertNotifyTelegram" => false,
              "isBetaMode" => false,
              "pageSize" => 20,
              "tableColumns" => %{},
@@ -221,8 +221,8 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
       currentUser {
         id
         settings {
-          signalNotifyEmail
-          signalNotifyTelegram
+          alertNotifyEmail
+          alertNotifyTelegram
           newsletterSubscription
           isBetaMode
           theme
@@ -237,8 +237,8 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
   defp toggle_telegram_channel_query(is_active?) do
     """
     mutation {
-      settingsToggleChannel(signalNotifyTelegram: #{is_active?}) {
-        signalNotifyTelegram
+      settingsToggleChannel(alertNotifyTelegram: #{is_active?}) {
+        alertNotifyTelegram
       }
     }
     """
@@ -291,8 +291,8 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
   defp toggle_email_channel_query(is_active?) do
     """
     mutation {
-      settingsToggleChannel(signalNotifyEmail: #{is_active?}) {
-        signalNotifyEmail
+      settingsToggleChannel(alertNotifyEmail: #{is_active?}) {
+        alertNotifyEmail
       }
     }
     """

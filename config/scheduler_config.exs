@@ -5,40 +5,39 @@
 # is restricted to this project.
 import Config
 
-alias Sanbase.Signal.Trigger
+alias Sanbase.Alert.Trigger
 
-config :sanbase, Sanbase.Signals.Scheduler,
+config :sanbase, Sanbase.Alerts.Scheduler,
   scheduler_enabled: {:system, "QUANTUM_SCHEDULER_ENABLED", false},
   timeout: 30_000,
   jobs: [
-    price_volume_difference_sonar_signal: [
+    price_volume_difference_sonar_alert: [
       schedule: "1-59/5 * * * *",
-      task:
-        {Sanbase.Signal.Scheduler, :run_signal, [Trigger.PriceVolumeDifferenceTriggerSettings]}
+      task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.PriceVolumeDifferenceTriggerSettings]}
     ],
-    screener_sonar_signal: [
+    screener_sonar_alert: [
       schedule: "2-59/5 * * * *",
-      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.ScreenerTriggerSettings]}
+      task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.ScreenerTriggerSettings]}
     ],
-    eth_wallet_signal: [
+    eth_wallet_alert: [
       schedule: "3-59/5 * * * *",
-      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.EthWalletTriggerSettings]}
+      task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.EthWalletTriggerSettings]}
     ],
     wallet_movement: [
       schedule: "3-59/5 * * * *",
-      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.WalletTriggerSettings]}
+      task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.WalletTriggerSettings]}
     ],
-    trending_words_sonar_signal: [
+    trending_words_sonar_alert: [
       schedule: "4-59/5 * * * *",
-      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.TrendingWordsTriggerSettings]}
+      task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.TrendingWordsTriggerSettings]}
     ],
-    metric_signal: [
+    metric_alert: [
       schedule: "5-59/5 * * * *",
-      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.MetricTriggerSettings]}
+      task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.MetricTriggerSettings]}
     ],
-    daily_metric_signal: [
+    daily_metric_alert: [
       schedule: "0 3 * * *",
-      task: {Sanbase.Signal.Scheduler, :run_signal, [Trigger.DailyMetricTriggerSettings]}
+      task: {Sanbase.Alert.Scheduler, :run_alert, [Trigger.DailyMetricTriggerSettings]}
     ]
   ]
 

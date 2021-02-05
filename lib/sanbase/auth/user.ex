@@ -18,7 +18,7 @@ defmodule Sanbase.Accounts.User do
   alias Sanbase.UserList
   alias Sanbase.Repo
   alias Sanbase.Telegram
-  alias Sanbase.Signal.HistoricalActivity
+  alias Sanbase.Alert.HistoricalActivity
   alias Sanbase.Billing
   alias Sanbase.Billing.Subscription
 
@@ -79,13 +79,13 @@ defmodule Sanbase.Accounts.User do
     has_many(:apikey_tokens, UserApikeyToken, on_delete: :delete_all)
     has_many(:user_lists, UserList, on_delete: :delete_all)
     has_many(:posts, Post, on_delete: :delete_all)
-    has_many(:signals_historical_activity, HistoricalActivity, on_delete: :delete_all)
+    has_many(:alerts_historical_activity, HistoricalActivity, on_delete: :delete_all)
     has_many(:followers, UserFollower, foreign_key: :user_id, on_delete: :delete_all)
     has_many(:following, UserFollower, foreign_key: :follower_id, on_delete: :delete_all)
     has_many(:subscriptions, Subscription, on_delete: :delete_all)
     has_many(:roles, {"user_roles", UserRole}, on_delete: :delete_all)
     has_many(:promo_trials, Subscription.PromoTrial, on_delete: :delete_all)
-    has_many(:triggers, Sanbase.Signal.UserTrigger, on_delete: :delete_all)
+    has_many(:triggers, Sanbase.Alert.UserTrigger, on_delete: :delete_all)
     has_many(:chart_configurations, Sanbase.Chart.Configuration, on_delete: :delete_all)
     has_many(:user_attributes, Sanbase.Intercom.UserAttributes, on_delete: :delete_all)
 

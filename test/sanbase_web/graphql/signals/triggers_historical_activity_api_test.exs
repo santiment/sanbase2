@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
     {:ok, conn: conn, user: user}
   end
 
-  test "signals historical activity from sanclan user", %{conn: conn} do
+  test "alerts historical activity from sanclan user", %{conn: conn} do
     san_clan_user = insert(:user)
     role_san_clan = insert(:role_san_clan)
     insert(:user_role, user: san_clan_user, role: role_san_clan)
@@ -40,27 +40,27 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
         }
       )
 
-    insert(:signals_historical_activity,
+    insert(:alerts_historical_activity,
       user: san_clan_user,
       user_trigger: user_trigger1,
       payload: %{"all" => "first"},
       triggered_at: NaiveDateTime.from_iso8601!("2019-01-21T00:00:00")
     )
 
-    insert(:signals_historical_activity,
+    insert(:alerts_historical_activity,
       user: san_clan_user,
       user_trigger: user_trigger2,
       payload: %{"all" => "second"},
       triggered_at: NaiveDateTime.from_iso8601!("2019-01-21T00:00:00")
     )
 
-    latest_two = current_user_signals_activity(conn, "limit: 2")
+    latest_two = current_user_alerts_activity(conn, "limit: 2")
 
     assert latest_two["activity"]
            |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "first"}]
   end
 
-  test "fetches signals historical activity for current user", %{user: user, conn: conn} do
+  test "fetches alerts historical activity for current user", %{user: user, conn: conn} do
     trigger_settings = default_trigger_settings_string_keys()
 
     user_trigger =
@@ -75,7 +75,7 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
       )
 
     _oldest =
-      insert(:signals_historical_activity,
+      insert(:alerts_historical_activity,
         user: user,
         user_trigger: user_trigger,
         payload: %{"all" => "oldest"},
@@ -83,7 +83,7 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
       )
 
     first_activity =
-      insert(:signals_historical_activity,
+      insert(:alerts_historical_activity,
         user: user,
         user_trigger: user_trigger,
         payload: %{"all" => "first"},
@@ -91,7 +91,7 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
       )
 
     second_activity =
-      insert(:signals_historical_activity,
+      insert(:alerts_historical_activity,
         user: user,
         user_trigger: user_trigger,
         payload: %{"all" => "second"},
@@ -99,7 +99,7 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
       )
 
     # fetch the last 2 signal activities
-    latest_two = current_user_signals_activity(conn, "limit: 2")
+    latest_two = current_user_alerts_activity(conn, "limit: 2")
 
     assert NaiveDateTime.compare(
              NaiveDateTime.from_iso8601!(latest_two["cursor"]["before"]),
@@ -118,7 +118,7 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
 
     # fetch one activity before previous last 2 fetched activities
     before_cursor_res =
-      current_user_signals_activity(
+      current_user_alerts_activity(
         conn,
         "limit: 1, cursor: {type: BEFORE, datetime: '#{before_cursor}'}"
       )
@@ -128,7 +128,7 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
 
     # insert new latest activity and fetch it with after cursor
     _latest =
-      insert(:signals_historical_activity,
+      insert(:alerts_historical_activity,
         user: user,
         user_trigger: user_trigger,
         payload: %{"all" => "latest"},
@@ -138,7 +138,7 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
     after_cursor = latest_two["cursor"]["after"]
 
     after_cursor_res =
-      current_user_signals_activity(
+      current_user_alerts_activity(
         conn,
         "limit: 1, cursor: {type: AFTER, datetime: '#{after_cursor}'}"
       )
@@ -148,12 +148,12 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
   end
 
   test "test fetching signal historical activities when there is none", %{conn: conn} do
-    result = current_user_signals_activity(conn, "limit: 2")
+    result = current_user_alerts_activity(conn, "limit: 2")
     assert result["activity"] == []
     assert result["cursor"] == %{"after" => nil, "before" => nil}
 
     result =
-      current_user_signals_activity(
+      current_user_alerts_activity(
         conn,
         "limit: 1, cursor: {type: BEFORE, datetime: '2019-01-20T00:00:00Z'}"
       )
@@ -162,7 +162,7 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
     assert result["cursor"] == %{"after" => nil, "before" => nil}
 
     result =
-      current_user_signals_activity(
+      current_user_alerts_activity(
         conn,
         "limit: 1, cursor: {type: AFTER, datetime: '2019-01-20T00:00:00Z'}"
       )
@@ -172,17 +172,17 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
   end
 
   test "fetch signal historical activities without logged in user" do
-    assert current_user_signals_activity(
+    assert current_user_alerts_activity(
              build_conn(),
              "limit: 1"
            ) == nil
   end
 
-  defp current_user_signals_activity(conn, args_str) do
+  defp current_user_alerts_activity(conn, args_str) do
     query =
       ~s|
     {
-      signalsHistoricalActivity(#{args_str}) {
+      alertsHistoricalActivity(#{args_str}) {
         cursor {
           after
           before
@@ -203,10 +203,10 @@ defmodule SanbaseWeb.Graphql.TriggersHistoricalActivityApiTest do
 
     result =
       conn
-      |> post("/graphql", query_skeleton(query, "signalsHistoricalActivity"))
+      |> post("/graphql", query_skeleton(query, "alertsHistoricalActivity"))
       |> json_response(200)
 
-    result["data"]["signalsHistoricalActivity"]
+    result["data"]["alertsHistoricalActivity"]
   end
 
   defp default_trigger_settings_string_keys() do

@@ -27,17 +27,17 @@ defmodule Sanbase.Application do
           Logger.info("Starting Scrapers Sanbase.")
           Sanbase.Application.Scrapers.children()
 
-        "signals" ->
-          Logger.info("Starting Signals Sanbase.")
-          Sanbase.Application.Signals.children()
+        alerts when alerts in ["signals", "alerts"] ->
+          Logger.info("Starting Alerts Sanbase.")
+          Sanbase.Application.Alerts.children()
 
         "all" ->
           Logger.info("Start all Sanbase container types.")
           {web_children, _} = Sanbase.Application.Web.children()
           {scrapers_children, _} = Sanbase.Application.Scrapers.children()
-          {signals_children, _} = Sanbase.Application.Signals.children()
+          {alerts_children, _} = Sanbase.Application.Alerts.children()
 
-          children = web_children ++ scrapers_children ++ signals_children
+          children = web_children ++ scrapers_children ++ alerts_children
           children = children |> Enum.uniq()
 
           opts = [
@@ -91,13 +91,13 @@ defmodule Sanbase.Application do
       "all" ->
         Sanbase.Application.Web.init()
         Sanbase.Application.Scrapers.init()
-        Sanbase.Application.Signals.init()
+        Sanbase.Application.Alerts.init()
 
       "web" ->
         Sanbase.Application.Web.init()
 
       "signals" ->
-        Sanbase.Application.Signals.init()
+        Sanbase.Application.Alerts.init()
 
       "scrapers" ->
         Sanbase.Application.Scrapers.init()
@@ -196,7 +196,7 @@ defmodule Sanbase.Application do
         id: Sanbase.ApiCallLimitMutex
       ),
 
-      # Start telegram rate limiter. Used both in web and signals
+      # Start telegram rate limiter. Used both in web and alerts
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(
         :telegram_bot_rate_limiting_server,
         scale: 1000,

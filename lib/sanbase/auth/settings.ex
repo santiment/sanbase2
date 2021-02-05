@@ -2,14 +2,14 @@ defmodule Sanbase.Accounts.Settings do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @default_signals_limit_per_day %{
+  @default_alerts_limit_per_day %{
     "email" => 50,
     "telegram" => 100,
     "webhook" => 1000,
     "webpush" => 1000
   }
 
-  def default_signals_limit_per_day(), do: @default_signals_limit_per_day
+  def default_alerts_limit_per_day(), do: @default_alerts_limit_per_day
 
   @newsletter_subscription_types ["DAILY", "WEEKLY", "OFF"]
 
@@ -19,16 +19,17 @@ defmodule Sanbase.Accounts.Settings do
     field(:page_size, :integer, default: 20)
     field(:is_beta_mode, :boolean, default: false)
     field(:table_columns, :map, default: %{})
-    field(:signal_notify_email, :boolean, default: false)
-    field(:signal_notify_telegram, :boolean, default: false)
-    field(:telegram_chat_id, :integer)
-    field(:has_telegram_connected, :boolean, virtual: true)
     field(:newsletter_subscription, :string, default: "OFF")
     field(:newsletter_subscription_updated_at_unix, :integer, default: nil)
     field(:is_promoter, :boolean, default: false)
     field(:paid_with, :string, default: nil)
-    field(:signals_per_day_limit, :map, default: %{})
-    field(:signals_fired, :map, default: %{})
+    # Alert fields
+    field(:has_telegram_connected, :boolean, virtual: true)
+    field(:telegram_chat_id, :integer)
+    field(:alert_notify_email, :boolean, default: false)
+    field(:alert_notify_telegram, :boolean, default: false)
+    field(:alerts_per_day_limit, :map, default: %{})
+    field(:alerts_fired, :map, default: %{})
   end
 
   def changeset(schema, params) do
@@ -38,14 +39,14 @@ defmodule Sanbase.Accounts.Settings do
       :page_size,
       :is_beta_mode,
       :table_columns,
-      :signal_notify_email,
-      :signal_notify_telegram,
+      :alert_notify_email,
+      :alert_notify_telegram,
       :telegram_chat_id,
       :hide_privacy_data,
       :is_promoter,
       :paid_with,
-      :signals_per_day_limit,
-      :signals_fired
+      :alerts_per_day_limit,
+      :alerts_fired
     ])
     |> normalize_newsletter_subscription(
       :newsletter_subscription,

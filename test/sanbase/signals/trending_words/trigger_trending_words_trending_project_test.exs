@@ -1,19 +1,19 @@
-defmodule Sanbase.Signal.TriggerTrendingWordsTrendingProjectTest do
+defmodule Sanbase.Alert.TriggerTrendingWordsTrendingProjectTest do
   use Sanbase.DataCase, async: false
 
   import Mock
   import Sanbase.Factory
   import ExUnit.CaptureLog
 
-  alias Sanbase.Signal.UserTrigger
-  alias Sanbase.Signal.Evaluator
+  alias Sanbase.Alert.UserTrigger
+  alias Sanbase.Alert.Evaluator
 
-  alias Sanbase.Signal.Trigger.TrendingWordsTriggerSettings
+  alias Sanbase.Alert.Trigger.TrendingWordsTriggerSettings
 
   setup do
-    Sanbase.Signal.Evaluator.Cache.clear_all()
+    Sanbase.Alert.Evaluator.Cache.clear_all()
 
-    user = insert(:user, user_settings: %{settings: %{signal_notify_telegram: true}})
+    user = insert(:user, user_settings: %{settings: %{alert_notify_telegram: true}})
     project = insert(:project)
 
     Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
@@ -69,15 +69,15 @@ defmodule Sanbase.Signal.TriggerTrendingWordsTrendingProjectTest do
         {:ok, [%{word: context.project.name |> String.downcase(), score: 10}] ++ top_words()}
       end do
       assert capture_log(fn ->
-               Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
+               Sanbase.Alert.Scheduler.run_alert(TrendingWordsTriggerSettings)
              end) =~
-               "In total 1/1 trending_words signals were sent successfully"
+               "In total 1/1 trending_words alerts were sent successfully"
 
-      Sanbase.Signal.Evaluator.Cache.clear_all()
+      Sanbase.Alert.Evaluator.Cache.clear_all()
 
       assert capture_log(fn ->
-               Sanbase.Signal.Scheduler.run_signal(TrendingWordsTriggerSettings)
-             end) =~ "There were no trending_words signals triggered"
+               Sanbase.Alert.Scheduler.run_alert(TrendingWordsTriggerSettings)
+             end) =~ "There were no trending_words alerts triggered"
     end
   end
 

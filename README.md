@@ -35,7 +35,7 @@ The API server powers a set of services:
     development skills. It is also the only place where many of the features are
     exposed, mainly those that require some UI to be usable:
     - Insights
-    - Signals
+    - Alerts
     - Watchlists
     - Screeners
     - User data
@@ -59,14 +59,14 @@ Internally, sanbase2 is broken into 3 bigger parts:
 
 - Scrapers - Fetch data from a few different sources - scraping prices or
   scraping some social data.
-- Signals - Use and monitor the timeseries data to trigger alerts when some
+- Alerts - Use and monitor the timeseries data to trigger alerts when some
   precondition is met (price increases by more than 10%, a given ETH wallet
   spends coins, etc.)
 - GraphQL API - Expose all available data through a GraphQL endpoint. This data
   includes:
   - The scraped data
   - The data computed by other services
-  - Managing signals
+  - Managing alerts
   - User data and authentication
   - Rate limiting per subscription plan
   - Projects data
@@ -113,8 +113,6 @@ project regularly because this way the development process and build times are
 much faster.
 
 [Running sanbase locallylocally](docs/sanbase-local-development.md)
-
-
 
 ## Running inside Docker
 

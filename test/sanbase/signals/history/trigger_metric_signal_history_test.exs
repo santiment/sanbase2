@@ -1,10 +1,10 @@
-defmodule Sanbase.Signal.TriggerMetricHistoryTest do
+defmodule Sanbase.Alert.TriggerMetricHistoryTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
   import Sanbase.TestHelpers
 
-  alias Sanbase.Signal.UserTrigger
+  alias Sanbase.Alert.UserTrigger
 
   setup_all_with_mocks([
     {Sanbase.Metric, [:passthrough], [timeseries_data: fn _, _, _, _, _ -> {:ok, resp()} end]}

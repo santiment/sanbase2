@@ -39,7 +39,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
     Get a URL for deep-linking sanbase and telegram accounts. It carries a unique
     random token that is associated with the user. The link leads to a telegram chat
     with Santiment's notification bot. When the `Start` button is pressed, telegram
-    and sanbase accounts are linked and the user can receive sanbase signals in telegram.
+    and sanbase accounts are linked and the user can receive sanbase alerts in telegram.
     """
     field :get_telegram_deep_link, :string do
       meta(access: :free)
@@ -191,8 +191,8 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
 
     @desc "Allow/Dissallow to receive notifications in email/telegram channel"
     field :settings_toggle_channel, :user_settings do
-      arg(:signal_notify_telegram, :boolean)
-      arg(:signal_notify_email, :boolean)
+      arg(:alert_notify_telegram, :boolean)
+      arg(:alert_notify_email, :boolean)
 
       middleware(JWTAuth)
       resolve(&UserSettingsResolver.settings_toggle_channel/3)

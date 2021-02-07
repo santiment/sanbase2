@@ -74,8 +74,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.UtxoSqlQueries do
     query = """
     SELECT
       address,
-      argMaxIf(balance, dt, dt <= ?3) AS start_balance,
-      argMaxIf(balance, dt, dt <= ?4) AS end_balance,
+      argMaxIf(balance, dt, dt <= ?2) AS start_balance,
+      argMaxIf(balance, dt, dt <= ?3) AS end_balance,
       end_balance - start_balance AS diff
     FROM #{table} FINAL
     PREWHERE

@@ -37,11 +37,14 @@ defimpl Sanbase.Alert, for: Any do
         "email" ->
           {"email", send_email(user_trigger, max_alerts_to_send)}
 
+        "web_push" ->
+          {"web_push", []}
+
         %{webhook: webhook_url} ->
           {"webhook", send_webhook(user_trigger, webhook_url, max_alerts_to_send)}
 
-        "web_push" ->
-          {"web_push", []}
+        %{telegram_channel: channel} ->
+          {"telegram_channel", send_telegram_channel(user_trigger, channel, max_alerts_to_send)}
       end)
 
     update_user_alerts_sent_per_day(user, result)
@@ -97,7 +100,8 @@ defimpl Sanbase.Alert, for: Any do
     # The emails notifications are disabled
     Enum.map(payload_map, fn {identifier, _payload} ->
       {identifier,
-       {:error, %{reason: :email_channel_disabled, user_id: user_id, trigger_id: trigger_id}}}
+       {:error,
+        %{reason: :email_alert_notifications_disabled, user_id: user_id, trigger_id: trigger_id}}}
     end)
   end
 
@@ -159,7 +163,12 @@ defimpl Sanbase.Alert, for: Any do
 
     Enum.map(payload_map, fn {identifier, _payload} ->
       {identifier,
-       {:error, %{reason: :telegram_channel_disabled, user_id: user_id, trigger_id: trigger_id}}}
+       {:error,
+        %{
+          reason: :telegram_alert_notifications_disabled,
+          user_id: user_id,
+          trigger_id: trigger_id
+        }}}
     end)
   end
 
@@ -175,12 +184,27 @@ defimpl Sanbase.Alert, for: Any do
     end)
   end
 
-  defp maybe_transform_telegram_response({:error, error}, trigger) do
-    %{user: %User{id: user_id}, trigger: %{id: trigger_id}} = trigger
+  defp send_telegram_channel(trigger, channel, max_alerts_to_send) do
+    fun = fn _identifier, payload ->
+      # Do not extend the payload with the trigger id and link. This channel
+      # would be used when serving the same alert to many users and not only
+      # to its owner. Having the link makes sense only for the owner as the
+      # other users cannot change it. Maybe it
+      Sanbase.Telegram.send_message_to_chat_id(channel, payload)
+      |> maybe_transform_telegram_response(trigger)
+    end
 
+    send_or_limit("telegram_channel", trigger, max_alerts_to_send, fun)
+  end
+
+  defp maybe_transform_telegram_response({:error, error}, trigger) do
     case is_binary(error) and String.contains?(error, "blocked the telegram bot") do
-      true -> {:error, %{reason: :telegram_bot_blocked, user_id: user_id, trigger_id: trigger_id}}
-      false -> {:error, error}
+      true ->
+        %{user: %User{id: user_id}, trigger: %{id: trigger_id}} = trigger
+        {:error, %{reason: :telegram_bot_blocked, user_id: user_id, trigger_id: trigger_id}}
+
+      false ->
+        {:error, error}
     end
   end
 
@@ -355,7 +379,7 @@ defimpl Sanbase.Alert, for: Any do
     end
   end
 
-  defp send_limit_reached_notification(_channel), do: :ok
+  defp send_limit_reached_notification(_channel, _user), do: :ok
 
   defp limit_reached_payload(channel) do
     """

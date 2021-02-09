@@ -74,26 +74,32 @@ defmodule Sanbase.Alert.Scheduler do
 
   # returns a tuple {updated_user_triggers, send_result_list}
   defp send_and_mark_as_sent(triggers) do
-    triggers
+    grouped_by_user = Enum.group_by(triggers, fn %{user: user} -> user.id end)
+
+    grouped_by_user
     |> Sanbase.Parallel.map(
-      fn %UserTrigger{} = user_trigger ->
-        case Alert.send(user_trigger) do
-          [] ->
-            {user_trigger, []}
-
-          list when is_list(list) ->
-            {:ok, %{last_triggered: last_triggered}} =
-              handle_send_results_list(user_trigger, list)
-
-            user_trigger = update_trigger_last_triggered(user_trigger, last_triggered)
-            {user_trigger, list}
-        end
-      end,
+      fn {_user_id, triggers} -> send_triggers_sequentially(triggers) end,
       max_concurrency: 20,
       ordered: false,
       map_type: :map
     )
     |> Enum.unzip()
+  end
+
+  defp send_triggers_sequentially(triggers) do
+    triggers
+    |> Enum.flat_map(fn %UserTrigger{} = user_trigger ->
+      case Alert.send(user_trigger) do
+        [] ->
+          {user_trigger, []}
+
+        list when is_list(list) ->
+          {:ok, %{last_triggered: last_triggered}} = handle_send_results_list(user_trigger, list)
+
+          user_trigger = update_trigger_last_triggered(user_trigger, last_triggered)
+          {user_trigger, list}
+      end
+    end)
   end
 
   # Note that the `user_trigger` that came as an argument is returned with

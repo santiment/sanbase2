@@ -192,7 +192,10 @@ defmodule SanbaseWeb.Graphql.Schema.UserQueries do
     @desc "Allow/Dissallow to receive notifications in email/telegram channel"
     field :settings_toggle_channel, :user_settings do
       arg(:alert_notify_telegram, :boolean)
+      arg(:signal_notify_telegram, :boolean)
+
       arg(:alert_notify_email, :boolean)
+      arg(:signal_notify_email, :boolean)
 
       middleware(JWTAuth)
       resolve(&UserSettingsResolver.settings_toggle_channel/3)

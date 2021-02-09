@@ -27,6 +27,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
   def settings_toggle_channel(_root, args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
+    args = maybe_update_settings_args(args)
+
     UserSettings.toggle_notification_channel(current_user, args)
     |> handle_toggle_result()
   end

@@ -194,35 +194,35 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do
     selections
     |> Enum.flat_map(fn
       %{name: name, argument_data: %{metric: metric}} = struct ->
-        case name |> Inflex.underscore() do
-          "get_metric" ->
-            selections =
-              Enum.map(struct.selections, fn
-                %{name: name} -> name |> Inflex.underscore()
-                _ -> nil
-              end)
-              |> Enum.reject(&is_nil/1)
-
-            # Put the metric name in the list 0, 1 or 2 times, depending
-            # on the selections. `timeseries_data` and `aggregated_timeseries_data`
-            # would go through the complexity code once, remiving the metric
-            # name from the list both times - so it has to be there twice, while
-            # `timeseries_data_complexity` won't go through that path.
-            # `histogram_data` does not have complexity checks right now.
-
-            # This is equivalent to X -- (X -- Y) because the `--` operator
-            # has right to left associativity
-            common_parts =
-              selections -- selections -- ["timeseries_data", "aggregated_timeseries_data"]
-
-            Enum.map(common_parts, fn _ -> metric end)
-
-          _ ->
-            []
+        case Inflex.underscore(name) do
+          "get_metric" -> get_metric_selections_to_metrics(struct.selections, metric)
+          _ -> []
         end
 
       _ ->
         []
     end)
+  end
+
+  defp get_metric_selections_to_metrics(selections, metric) do
+    selections =
+      Enum.map(selections, fn
+        %{name: name} -> name |> Inflex.underscore()
+        _ -> nil
+      end)
+      |> Enum.reject(&is_nil/1)
+
+    # Put the metric name in the list 0, 1 or 2 times, depending
+    # on the selections. `timeseries_data` and `aggregated_timeseries_data`
+    # would go through the complexity code once, remioing the metric
+    # name from the list both times - so it has to be there twice, while
+    # `timeseries_data_complexity` won't go through that path.
+    # `histogram_data` does not have complexity checks right now.
+
+    # This is equivalent to X -- (X -- Y) because the `--` operator
+    # has right to left associativity
+    common_parts = selections -- selections -- ["timeseries_data", "aggregated_timeseries_data"]
+
+    Enum.map(common_parts, fn _ -> metric end)
   end
 end

@@ -5,8 +5,6 @@ defmodule SanbaseWeb.Graphql.Schema.BillingQueries do
 
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
-  import_types(SanbaseWeb.Graphql.Schema.BillingTypes)
-
   object :billing_queries do
     @desc ~s"""
     List available products with corresponding subscription plans.

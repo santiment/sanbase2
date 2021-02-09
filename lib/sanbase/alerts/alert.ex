@@ -355,7 +355,7 @@ defimpl Sanbase.Alert, for: Any do
     end
   end
 
-  defp send_limit_reached_notification(_channel), do: :ok
+  defp send_limit_reached_notification(_channel, _user), do: :ok
 
   defp limit_reached_payload(channel) do
     """

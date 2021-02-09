@@ -7,8 +7,6 @@ defmodule SanbaseWeb.Graphql.Schema.PriceQueries do
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
-  import_types(SanbaseWeb.Graphql.PriceTypes)
-
   object :price_queries do
     @desc "Fetch price history for a given slug and time interval."
     field :history_price, list_of(:price_point) do

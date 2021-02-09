@@ -5,8 +5,6 @@ defmodule SanbaseWeb.Graphql.Schema.ResearchQueries do
 
   alias SanbaseWeb.Graphql.Resolvers.ResearchResolver
 
-  import_types(SanbaseWeb.Graphql.ResearchTypes)
-
   object :research_queries do
     field :uniswap_value_distribution, :uniswap_value_distribution do
       cache_resolve(&ResearchResolver.uniswap_value_distribution/3)

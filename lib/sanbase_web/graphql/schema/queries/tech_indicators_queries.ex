@@ -11,8 +11,6 @@ defmodule SanbaseWeb.Graphql.Schema.TechIndicatorsQueries do
 
   alias SanbaseWeb.Graphql.Middlewares.AccessControl
 
-  import_types(SanbaseWeb.Graphql.TechIndicatorsTypes)
-
   object :tech_indicators_queries do
     @desc ~s"""
     Fetch the price-volume difference technical indicator for a given ticker, display currency and time period.

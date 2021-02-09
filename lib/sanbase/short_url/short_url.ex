@@ -11,6 +11,7 @@ defmodule Sanbase.ShortUrl do
   schema "short_urls" do
     field(:short_url, :string)
     field(:full_url, :string)
+    field(:data, :string)
 
     belongs_to(:user, Sanbase.Accounts.User)
 
@@ -19,7 +20,7 @@ defmodule Sanbase.ShortUrl do
 
   def changeset(%__MODULE__{} = url, attrs \\ %{}) do
     url
-    |> cast(attrs, [:full_url, :short_url, :user_id])
+    |> cast(attrs, [:full_url, :short_url, :user_id, :data])
     |> validate_required([:full_url, :short_url])
     |> unique_constraint(:short_url)
   end

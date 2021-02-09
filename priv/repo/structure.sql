@@ -1962,7 +1962,8 @@ CREATE TABLE public.short_urls (
     full_url text NOT NULL,
     user_id bigint,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    data character varying(255)
 );
 
 
@@ -5520,5 +5521,7 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210118080213);
 INSERT INTO public."schema_migrations" (version) VALUES (20210119085344);
 INSERT INTO public."schema_migrations" (version) VALUES (20210120090715);
 INSERT INTO public."schema_migrations" (version) VALUES (20210128140807);
+INSERT INTO public."schema_migrations" (version) VALUES (20210201105522);
 INSERT INTO public."schema_migrations" (version) VALUES (20210202161636);
 INSERT INTO public."schema_migrations" (version) VALUES (20210205121406);
+INSERT INTO public."schema_migrations" (version) VALUES (20210209085710);

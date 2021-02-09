@@ -85,12 +85,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
       {:ok, result} ->
         result =
           result
-          |> Enum.map(fn {datetime, top_words} ->
-            %{
-              datetime: datetime,
-              top_words: Enum.sort_by(top_words, & &1.score, :desc)
-            }
-          end)
+          |> Enum.map(fn {datetime, top_words} -> %{datetime: datetime, top_words: top_words} end)
           |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
 
         {:ok, result}

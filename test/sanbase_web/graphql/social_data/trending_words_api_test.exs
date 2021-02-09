@@ -53,22 +53,22 @@ defmodule SanbaseWeb.Graphql.TrendingWordsApiTest do
                      %{
                        "datetime" => dt1_str,
                        "topWords" => [
-                         %{"score" => 2, "word" => "people"},
-                         %{"score" => 1, "word" => "pele"}
+                         %{"score" => 1, "word" => "pele"},
+                         %{"score" => 2, "word" => "people"}
                        ]
                      },
                      %{
                        "datetime" => dt2_str,
                        "topWords" => [
-                         %{"score" => 4, "word" => "eth"},
-                         %{"score" => 3, "word" => "btx"}
+                         %{"score" => 3, "word" => "btx"},
+                         %{"score" => 4, "word" => "eth"}
                        ]
                      },
                      %{
                        "datetime" => dt3_str,
                        "topWords" => [
-                         %{"score" => 6, "word" => "wtf"},
-                         %{"score" => 5, "word" => "omg"}
+                         %{"score" => 5, "word" => "omg"},
+                         %{"score" => 6, "word" => "wtf"}
                        ]
                      }
                    ]

@@ -74,6 +74,12 @@ defmodule Sanbase.Alert.Scheduler do
 
   # returns a tuple {updated_user_triggers, send_result_list}
   defp send_and_mark_as_sent(triggers) do
+    # Group by user. Separate user groups can be executed concurrently, but
+    # the triggers of the same user must not be concurrent. By doing this we
+    # drop the Mutex dependency while sending notifications that were necessary
+    # so the alerts sent can be tracked properly. If two triggers for the same
+    # user are executed concurrently, the `max_alerts_to_sent` cannot be enforced
+    # without using any synchronization technique.
     grouped_by_user = Enum.group_by(triggers, fn %{user: user} -> user.id end)
 
     grouped_by_user
@@ -81,14 +87,14 @@ defmodule Sanbase.Alert.Scheduler do
       fn {_user_id, triggers} -> send_triggers_sequentially(triggers) end,
       max_concurrency: 20,
       ordered: false,
-      map_type: :map
+      map_type: :flat_map
     )
     |> Enum.unzip()
   end
 
   defp send_triggers_sequentially(triggers) do
     triggers
-    |> Enum.flat_map(fn %UserTrigger{} = user_trigger ->
+    |> Enum.map(fn %UserTrigger{} = user_trigger ->
       case Alert.send(user_trigger) do
         [] ->
           {user_trigger, []}

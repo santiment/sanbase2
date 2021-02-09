@@ -11,26 +11,15 @@ defimpl Sanbase.Alert, for: Any do
 
   def default_alerts_limit_per_day(), do: @default_alerts_limit_per_day
 
-  def send(trigger) do
-    try do
-      do_send(trigger)
-    rescue
-      # In case Mutex timesout, this function won't return a list. This will
-      # fail in the caller process where `Enum.map/2` is executed over the result
-      # and it expects lists.
-      _ -> []
-    end
-  end
+  @doc ~s"""
+  Send a triggered alert to the configured notification channels.
 
-  defp do_send(%{user: user, trigger: %{settings: %{channel: channel}}} = user_trigger) do
-    # Mutex is needed, so the `max_alerts_to_send` can be properly counted and
-    # updated. This can happen because the sending of alerts happens with a
-    # concurrency of 20, so 2+ processes can be sending notifications to a user
-    # at the same time and compute the same `max_alerts_to_send` which would
-    # lead to exceeded the given limit. Without the lock the notification for
-    # exceeded the limit can be sent more than once as well.
-    lock = Mutex.await(Sanbase.AlertMutex, {:user, user.id}, 60_000)
-
+  It is important that this function is called either alone, without any other `send`
+  running for the same user, or it is called from the `Sanbase.Alert.Scheduler` module
+  which takes care of running concurrently only the triggers that are safe to run
+  in parallel.
+  """
+  def send(%{user: user, trigger: %{settings: %{channel: channel}}} = user_trigger) do
     max_alerts_to_send = max_alerts_to_send(user_trigger)
 
     # Returns a list of 2-element tuples where the first element is the channel
@@ -56,7 +45,6 @@ defimpl Sanbase.Alert, for: Any do
       end)
 
     update_user_alerts_sent_per_day(user, result)
-    Mutex.release(Sanbase.AlertMutex, lock)
 
     result |> Enum.flat_map(fn {_type, list} -> list end)
   end

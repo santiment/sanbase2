@@ -39,7 +39,7 @@ RUN cd assets && npm run build:prod
 COPY . /app
 RUN mix format --check-formatted
 
-RUN mix compile
+RUN mix compile --warnings-as-errors
 RUN mix phx.digest
 RUN mix distillery.release
 

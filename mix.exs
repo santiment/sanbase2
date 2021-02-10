@@ -90,7 +90,7 @@ defmodule Sanbase.Mixfile do
       {:httpoison, "~> 1.2", override: true},
       {:inch_ex, github: "rrrene/inch_ex", only: [:dev, :test]},
       {:inflex, "~> 2.0", override: true},
-      {:instream, "~> 1.0"},
+      {:instream, "~> 0.16"},
       {:jason, "~> 1.2"},
       {:kaffe, github: "santiment/kaffe", override: true},
       {:kafka_protocol,

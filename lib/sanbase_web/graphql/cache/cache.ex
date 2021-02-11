@@ -215,7 +215,8 @@ defmodule SanbaseWeb.Graphql.Cache do
       args[:caching_params][:max_ttl_offset] ||
         Keyword.get(opts, :max_ttl_offset, @max_ttl_offset)
 
-    max_ttl_offset = Enum.max([max_ttl_offset, 5])
+    base_ttl = Enum.max([base_ttl, 1])
+    max_ttl_offset = Enum.max([max_ttl_offset, 1])
 
     # Used to randomize the TTL for lists of objects like list of projects
     additional_args = Map.take(args, [:slug, :id])
@@ -223,6 +224,10 @@ defmodule SanbaseWeb.Graphql.Cache do
     # Using phash2 as a random number between 0 and max_ttl_offset is needed.
     # collisions are allowed and do not lead to errors
     ttl = base_ttl + ({name, additional_args} |> :erlang.phash2(max_ttl_offset))
+
+    if args[:caching_params] do
+      Process.put(:__change_absinthe_before_send_caching_ttl__, ttl)
+    end
 
     args = args |> convert_values(ttl)
     cache_key = [name, args] |> Sanbase.Cache.hash()

@@ -59,7 +59,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
     queries = queries_in_request(blueprint)
     export_api_call_data(queries, conn, blueprint)
-    do_not_cache? = is_nil(Process.get(:do_not_cache_query))
+    do_not_cache? = Process.get(:do_not_cache_query) == true
 
     maybe_update_api_call_limit_usage(blueprint.execution.context, Enum.count(queries))
 
@@ -103,8 +103,19 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     all_queries_cachable? = queries |> Enum.all?(&Enum.member?(@cached_queries, &1))
 
     if all_queries_cachable? do
+      cache_key =
+        case Process.get(:__change_absinthe_before_send_caching_ttl__) do
+          ttl when is_number(ttl) ->
+            {cache_key, _old_ttl} = blueprint.execution.context.query_cache_key
+
+            {cache_key, ttl}
+
+          _ ->
+            blueprint.execution.context.query_cache_key
+        end
+
       Cache.store(
-        blueprint.execution.context.query_cache_key,
+        cache_key,
         blueprint.result
       )
     end

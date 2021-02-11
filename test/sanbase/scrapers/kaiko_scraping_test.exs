@@ -39,7 +39,7 @@ defmodule Sanbase.KaikoTest do
 
     Sanbase.Mock.prepare_mock(HTTPoison, :get, mock_fun)
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Sanbase.Kaiko.run()
+      Sanbase.Kaiko.run(rounds_per_minute: 1)
 
       prices =
         Sanbase.InMemoryKafka.Producer.get_state()

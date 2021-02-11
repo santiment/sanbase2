@@ -31,6 +31,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PriceScrapingProgress do
     end
   end
 
+  def last_scraped_all_source(source) do
+    from(progress in __MODULE__,
+      where: progress.source == ^source,
+      select: {progress.identifier, progress.datetime}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
   def store_progress(identifier, source, datetime) do
     (Repo.get_by(__MODULE__, identifier: identifier, source: source) || %__MODULE__{})
     |> changeset(%{identifier: identifier, source: source, datetime: datetime})

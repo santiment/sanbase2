@@ -36,6 +36,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "price_usd",
         "price_eth",
         "price_usd_5m",
+        "price_eth_5m",
         "volume_usd",
         "twitter_followers",
         "total_supply",

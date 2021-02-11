@@ -2083,7 +2083,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "USD Price",
+    "human_readable_name": "Price in ETH",
     "name": "price_eth_5m",
     "metric": "price_eth",
     "version": "2019-01-01",

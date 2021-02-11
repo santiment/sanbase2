@@ -479,7 +479,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "other_to_traders_flow",
         "traders_to_other_flow",
         "other_traders_balance",
-        #Labeled holders metrics
+        # labeled holders metrics
         "holders_labeled_distribution_0_to_0.001",
         "holders_labeled_distribution_0.001_to_0.01",
         "holders_labeled_distribution_0.01_to_0.1",

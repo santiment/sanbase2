@@ -86,6 +86,8 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do
            context.auth.auth_method}
           |> Sanbase.Cache.hash()
 
+        # The ttl/max_ttl_offset might be rewritten in case `caching_params`
+        # are provided. The rewriting happens in the absinthe before_send function
         cache_key =
           SanbaseWeb.Graphql.Cache.cache_key(
             {"bp_root", additional_keys_hash},

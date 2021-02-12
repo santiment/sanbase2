@@ -226,6 +226,7 @@ defmodule SanbaseWeb.Graphql.Cache do
     ttl = base_ttl + ({name, additional_args} |> :erlang.phash2(max_ttl_offset))
 
     if args[:caching_params] do
+      # This is used in the Absinthe's before_send function
       Process.put(:__change_absinthe_before_send_caching_ttl__, ttl)
     end
 

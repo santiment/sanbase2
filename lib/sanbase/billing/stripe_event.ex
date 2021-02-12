@@ -136,7 +136,7 @@ defmodule Sanbase.Billing.StripeEvent do
        })
        when amount > 1 do
     message = """
-    Failed card charge for $#{amount / 100}.
+    Failed card charge for #{format_cents_amount(amount)}.
     Details: #{data["failure_message"]}. #{get_in(data, ["outcome", "seller_message"]) || ""}
     Event: https://dashboard.stripe.com/events/#{id}
     """
@@ -278,7 +278,9 @@ defmodule Sanbase.Billing.StripeEvent do
        })
        when total == abs(starting_balance) do
     [
-      "New 🔥 for $#{total / 100} received. Details: https://dashboard.stripe.com/events/#{id}"
+      "New 🔥 for #{format_cents_amount(total)} received. Details: https://dashboard.stripe.com/events/#{
+        id
+      }"
     ]
   end
 
@@ -287,7 +289,7 @@ defmodule Sanbase.Billing.StripeEvent do
          "data" => %{"object" => %{"total" => total}}
        }) do
     [
-      "New payment for $#{total / 100} received. Details: https://dashboard.stripe.com/events/#{
+      "New payment for #{format_cents_amount(total)} received. Details: https://dashboard.stripe.com/events/#{
         id
       }"
     ]
@@ -303,7 +305,9 @@ defmodule Sanbase.Billing.StripeEvent do
        )
        when total == abs(starting_balance) do
     [
-      "New 🔥 for $#{total / 100} for #{product_name} / #{plan_name} by #{mask_user(user)}"
+      "New 🔥 for #{format_cents_amount(total)} for #{product_name} / #{plan_name} by #{
+        mask_user(user)
+      }"
     ]
   end
 
@@ -320,14 +324,14 @@ defmodule Sanbase.Billing.StripeEvent do
     |> case do
       1 ->
         [
-          "🎉 New payment for $#{total / 100} for #{product_name} / #{plan_name} by #{
+          "🎉 New payment for #{format_cents_amount(total)} for #{product_name} / #{plan_name} by #{
             mask_user(user)
           }"
         ]
 
       count ->
         [
-          "Recurring payment for $#{total / 100} for #{product_name} / #{plan_name} (month #{
+          "Recurring payment for #{format_cents_amount(total)} for #{product_name} / #{plan_name} (month #{
             count
           }) by #{mask_user(user)}"
         ]
@@ -336,11 +340,11 @@ defmodule Sanbase.Billing.StripeEvent do
 
   defp payload_for_subscription(_, total, starting_balance)
        when total == abs(starting_balance) do
-    ["New 🔥 for $#{total / 100} received."]
+    ["New 🔥 for #{format_cents_amount(total)} received."]
   end
 
   defp payload_for_subscription(_, total, _) do
-    ["New payment for $#{total / 100} received."]
+    ["New payment for #{format_cents_amount(total)} received."]
   end
 
   defp mask_user(%User{email: email}) when is_binary(email) do
@@ -371,6 +375,10 @@ defmodule Sanbase.Billing.StripeEvent do
     ((now_unix - created_at_unix) / (29 * 86_400))
     |> floor()
     |> Kernel.+(1)
+  end
+
+  defp format_cents_amount(amount) do
+    "$" <> :erlang.float_to_binary(amount / 100, decimals: 0)
   end
 
   defp webhook_url() do

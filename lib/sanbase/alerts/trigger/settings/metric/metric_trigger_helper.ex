@@ -66,7 +66,7 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
     %{metric: metric, time_window: time_window} = settings
 
     cache_key =
-      {:metric_alert, metric, selector, time_window, round_datetime(Timex.now(), 300)}
+      {:metric_alert, metric, selector, time_window, round_datetime(Timex.now())}
       |> Sanbase.Cache.hash()
 
     %{

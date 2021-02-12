@@ -55,8 +55,8 @@ defmodule Sanbase.Model.Project.ListSelector.Transform do
     %{
       map
       | from:
-          if(is_binary(from), do: from_iso8601!(from) |> DateTime.truncate(:second), else: from),
-        to: if(is_binary(to), do: from_iso8601!(to) |> DateTime.truncate(:second), else: to)
+          if(is_binary(from), do: from_iso8601!(from) |> round_datetime(rounding: :up), else: from),
+        to: if(is_binary(to), do: from_iso8601!(to) |> round_datetime(rounding: :up), else: to)
     }
   end
 
@@ -100,8 +100,8 @@ defmodule Sanbase.Model.Project.ListSelector.Transform do
         to = Timex.shift(now, seconds: -shift_to_by)
 
         map
-        |> Map.put(:from, from |> DateTime.truncate(:second))
-        |> Map.put(:to, to |> DateTime.truncate(:second))
+        |> Map.put(:from, from |> round_datetime(rounding: :up))
+        |> Map.put(:to, to |> round_datetime(rounding: :up))
     end
   end
 

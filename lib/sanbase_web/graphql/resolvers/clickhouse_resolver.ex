@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   alias Sanbase.Model.Project
 
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
-  import Sanbase.DateTimeUtils, only: [round_datetime: 2]
+  import Sanbase.DateTimeUtils, only: [round_datetime: 1]
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
@@ -163,8 +163,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         args,
         %{context: %{loader: loader}}
       ) do
-    to = Map.get(args, :to, Timex.now()) |> round_datetime(300)
-    from = Map.get(args, :from, Timex.shift(to, days: -30)) |> round_datetime(300)
+    to = Map.get(args, :to, Timex.now()) |> round_datetime()
+    from = Map.get(args, :from, Timex.shift(to, days: -30)) |> round_datetime()
 
     data = %{project: project, from: from, to: to}
 

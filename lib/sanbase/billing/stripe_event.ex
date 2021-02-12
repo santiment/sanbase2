@@ -378,7 +378,7 @@ defmodule Sanbase.Billing.StripeEvent do
   end
 
   defp format_cents_amount(amount) do
-    "$" <> :erlang.float_to_binary(amount / 100, decimals: 0)
+    "$" <> Number.Delimit.number_to_delimited(amount / 100, precision: 0)
   end
 
   defp webhook_url() do

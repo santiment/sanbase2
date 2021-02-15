@@ -42,13 +42,11 @@ defmodule Sanbase.Signal.SignalAdapter do
 
   @impl Sanbase.Signal.Behaviour
   def metadata(signal) do
-    default_aggregation = Map.get(@aggregation_map, signal)
-
     {:ok,
      %{
        signal: signal,
        min_interval: Map.get(@min_interval_map, signal),
-       default_aggregation: default_aggregation,
+       default_aggregation: Map.get(@aggregation_map, signal),
        available_aggregations: @aggregations,
        data_type: Map.get(@data_type_map, signal)
      }}

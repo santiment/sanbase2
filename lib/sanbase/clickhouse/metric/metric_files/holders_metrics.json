@@ -408,7 +408,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Amount Of Holders With Balance Over 10M",
+    "human_readable_name": "Combined Balance Of Holders With Balance 10M",
     "name": "holders_distribution_combined_balance_10M_to_inf",
     "metric": "holders_distribution_amount_inf",
     "version": "2019-01-01",

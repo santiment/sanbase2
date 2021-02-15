@@ -20,6 +20,7 @@ defmodule SanbaseWeb.Graphql.Schema.ShortUrlQueries do
     @desc "Create a short url that will resolve to the full url."
     field :create_short_url, :short_url do
       arg(:full_url, non_null(:string))
+      arg(:data, :string)
 
       resolve(&ShortUrlResolver.create_short_url/3)
     end

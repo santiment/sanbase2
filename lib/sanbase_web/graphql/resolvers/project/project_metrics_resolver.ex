@@ -56,8 +56,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
         {:ok, from, to} =
           calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to)
 
-        from = from |> Sanbase.DateTimeUtils.round_datetime(300)
-        to = to |> Sanbase.DateTimeUtils.round_datetime(300)
+        from = from |> DateTime.truncate(:second)
+        to = to |> DateTime.truncate(:second)
         {:ok, opts} = selector_args_to_opts(args)
 
         data = %{

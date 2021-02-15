@@ -14,7 +14,7 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
   import Sanbase.Validation
   import Sanbase.Alert.Validation
   import Sanbase.Alert.OperationEvaluation
-  import Sanbase.DateTimeUtils, only: [str_to_sec: 1, round_datetime: 2]
+  import Sanbase.DateTimeUtils, only: [str_to_sec: 1, round_datetime: 1]
 
   alias __MODULE__
   alias Sanbase.Alert.Type
@@ -125,7 +125,7 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
 
   defp balance_change(addresses, slug, from, to) do
     cache_key =
-      {:balance_change, addresses, slug, round_datetime(from, 300), round_datetime(to, 300)}
+      {:balance_change, addresses, slug, round_datetime(from), round_datetime(to)}
       |> Sanbase.Cache.hash()
 
     Cache.get_or_store(

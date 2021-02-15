@@ -11,15 +11,15 @@ defimpl Sanbase.Alert, for: Any do
 
   def default_alerts_limit_per_day(), do: @default_alerts_limit_per_day
 
-  def send(%{user: user, trigger: %{settings: %{channel: channel}}} = user_trigger) do
-    # Mutex is needed, so the `max_alerts_to_send` can be properly counted and
-    # updated. This can happen because the sending of alerts happens with a
-    # concurrency of 20, so 2+ processes can be sending notifications to a user
-    # at the same time and compute the same `max_alerts_to_send` which would
-    # lead to exceeded the given limit. Without the lock the notification for
-    # exceeded the limit can be sent more than once as well.
-    lock = Mutex.await(Sanbase.AlertMutex, {:user, user.id}, 30_000)
+  @doc ~s"""
+  Send a triggered alert to the configured notification channels.
 
+  It is important that this function is called either alone, without any other `send`
+  running for the same user, or it is called from the `Sanbase.Alert.Scheduler` module
+  which takes care of running concurrently only the triggers that are safe to run
+  in parallel.
+  """
+  def send(%{user: user, trigger: %{settings: %{channel: channel}}} = user_trigger) do
     max_alerts_to_send = max_alerts_to_send(user_trigger)
 
     # Returns a list of 2-element tuples where the first element is the channel
@@ -37,15 +37,17 @@ defimpl Sanbase.Alert, for: Any do
         "email" ->
           {"email", send_email(user_trigger, max_alerts_to_send)}
 
+        "web_push" ->
+          {"web_push", []}
+
         %{webhook: webhook_url} ->
           {"webhook", send_webhook(user_trigger, webhook_url, max_alerts_to_send)}
 
-        "web_push" ->
-          {"web_push", []}
+        %{telegram_channel: channel} ->
+          {"telegram_channel", send_telegram_channel(user_trigger, channel, max_alerts_to_send)}
       end)
 
     update_user_alerts_sent_per_day(user, result)
-    Mutex.release(Sanbase.AlertMutex, lock)
 
     result |> Enum.flat_map(fn {_type, list} -> list end)
   end
@@ -97,7 +99,8 @@ defimpl Sanbase.Alert, for: Any do
     # The emails notifications are disabled
     Enum.map(payload_map, fn {identifier, _payload} ->
       {identifier,
-       {:error, %{reason: :email_channel_disabled, user_id: user_id, trigger_id: trigger_id}}}
+       {:error,
+        %{reason: :email_alert_notifications_disabled, user_id: user_id, trigger_id: trigger_id}}}
     end)
   end
 
@@ -159,7 +162,12 @@ defimpl Sanbase.Alert, for: Any do
 
     Enum.map(payload_map, fn {identifier, _payload} ->
       {identifier,
-       {:error, %{reason: :telegram_channel_disabled, user_id: user_id, trigger_id: trigger_id}}}
+       {:error,
+        %{
+          reason: :telegram_alert_notifications_disabled,
+          user_id: user_id,
+          trigger_id: trigger_id
+        }}}
     end)
   end
 
@@ -175,12 +183,27 @@ defimpl Sanbase.Alert, for: Any do
     end)
   end
 
-  defp maybe_transform_telegram_response({:error, error}, trigger) do
-    %{user: %User{id: user_id}, trigger: %{id: trigger_id}} = trigger
+  defp send_telegram_channel(trigger, channel, max_alerts_to_send) do
+    fun = fn _identifier, payload ->
+      # Do not extend the payload with the trigger id and link. This channel
+      # would be used when serving the same alert to many users and not only
+      # to its owner. Having the link makes sense only for the owner as the
+      # other users cannot change it. Maybe it
+      Sanbase.Telegram.send_message_to_chat_id(channel, payload)
+      |> maybe_transform_telegram_response(trigger)
+    end
 
+    send_or_limit("telegram_channel", trigger, max_alerts_to_send, fun)
+  end
+
+  defp maybe_transform_telegram_response({:error, error}, trigger) do
     case is_binary(error) and String.contains?(error, "blocked the telegram bot") do
-      true -> {:error, %{reason: :telegram_bot_blocked, user_id: user_id, trigger_id: trigger_id}}
-      false -> {:error, error}
+      true ->
+        %{user: %User{id: user_id}, trigger: %{id: trigger_id}} = trigger
+        {:error, %{reason: :telegram_bot_blocked, user_id: user_id, trigger_id: trigger_id}}
+
+      false ->
+        {:error, error}
     end
   end
 
@@ -355,7 +378,7 @@ defimpl Sanbase.Alert, for: Any do
     end
   end
 
-  defp send_limit_reached_notification(_channel), do: :ok
+  defp send_limit_reached_notification(_channel, _user), do: :ok
 
   defp limit_reached_payload(channel) do
     """

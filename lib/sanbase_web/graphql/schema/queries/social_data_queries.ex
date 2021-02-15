@@ -12,8 +12,6 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
   alias SanbaseWeb.Graphql.Complexity
 
-  import_types(SanbaseWeb.Graphql.SocialDataTypes)
-
   object :social_data_queries do
     field :popular_search_terms, list_of(:popular_search_term) do
       meta(access: :free)

@@ -6,14 +6,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ShortUrlResolver do
 
   require Logger
 
-  def create_short_url(_root, %{full_url: full_url}, %{
+  def create_short_url(_root, %{} = args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    do_create_short_url(full_url, current_user.id)
+    do_create_short_url(args, current_user.id)
   end
 
-  def create_short_url(_root, %{full_url: full_url}, _resolution) do
-    do_create_short_url(full_url, nil)
+  def create_short_url(_root, %{} = args, _resolution) do
+    do_create_short_url(args, nil)
   end
 
   def get_full_url(_root, %{short_url: short_url}, _resolution) do
@@ -41,8 +41,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ShortUrlResolver do
 
   # Private functions
 
-  defp do_create_short_url(full_url, user_id) do
-    case Sanbase.ShortUrl.create(%{full_url: full_url, user_id: user_id}) do
+  defp do_create_short_url(%{full_url: _} = args, user_id) do
+    args = Map.put(args, :user_id, user_id)
+
+    case Sanbase.ShortUrl.create(args) do
       {:ok, %Sanbase.ShortUrl{} = short_url} -> {:ok, short_url}
       {:error, error} -> {:error, changeset_errors_to_str(error)}
     end

@@ -4,8 +4,6 @@ defmodule SanbaseWeb.Graphql.Schema.PromoterQueries do
   alias SanbaseWeb.Graphql.Resolvers.PromoterResolver
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
-  import_types(SanbaseWeb.Graphql.Schema.PromoterTypes)
-
   object :promoter_queries do
     @desc ~s"""
     Show promoter details and stats

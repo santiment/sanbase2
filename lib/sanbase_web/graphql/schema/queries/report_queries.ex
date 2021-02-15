@@ -3,8 +3,6 @@ defmodule SanbaseWeb.Graphql.Schema.ReportQueries do
   alias SanbaseWeb.Graphql.Resolvers.ReportResolver
   alias SanbaseWeb.Graphql.Middlewares.BasicAuth
 
-  import_types(SanbaseWeb.Graphql.ReportTypes)
-
   object :report_queries do
     @desc ~s"""
     List all reports.

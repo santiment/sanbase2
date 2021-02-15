@@ -1,7 +1,6 @@
 defmodule Sanbase.Kaiko do
   alias Sanbase.ExternalServices.Coinmarketcap.PriceScrapingProgress, as: Progress
 
-  import Sanbase.DateTimeUtils, only: [round_datetime: 2]
   require Logger
   require Sanbase.Utils.Config, as: Config
 
@@ -9,38 +8,68 @@ defmodule Sanbase.Kaiko do
   @source "kaiko"
   @url "https://eu.market-api.kaiko.io"
   @recv_timeout 30_000
-  @interval "10s"
-  @interval_sec 10
+  @interval "1s"
+  @rounds_per_minute 12
 
+  # Scraping is started every round minute. We want to scrape every 5 seconds.
+  # Because of this, every minute scrape consists of many scrapres.
   def run(opts \\ []) do
-    # cronjobs cannot use sub-minute intervals.
-    # The cronjob runs every 30 seconds by starting it twice, the second time
-    # with a sleep: 30_000 argument, so it sleeps for 30 seconds before running
-    if milliseconds = Keyword.get(opts, :sleep), do: Process.sleep(milliseconds)
+    rounds = Keyword.get(opts, :rounds_per_minute, @rounds_per_minute)
+    sleep_seconds = div(60, rounds)
 
+    for i <- 1..rounds do
+      do_run()
+      # The last time there's no need for sleeping after the scraping
+      if i != rounds, do: Process.sleep(sleep_seconds * 1000)
+    end
+  end
+
+  defp do_run() do
     Logger.info("Scraping Kaiko prices for #{length(pairs())} pairs")
 
     now = Timex.now()
+    naive_now = DateTime.to_naive(now) |> NaiveDateTime.truncate(:second)
+    last_dt_map = Progress.last_scraped_all_source("kaiko")
 
-    Sanbase.Parallel.map(
-      pairs(),
-      fn {base_asset, slug} ->
-        # Build the timerange params. All `end_time` params are matching
-        usd_timerange = get_timerange_params(base_asset, "usd", now)
-        btc_timerange = get_timerange_params(base_asset, "btc", now)
+    data =
+      Sanbase.Parallel.map(
+        pairs(),
+        fn {base_asset, slug} ->
+          # Build the timerange params. All `end_time` params are matching
+          usd_timerange = get_timerange_params(base_asset, "usd", now, last_dt_map)
+          btc_timerange = get_timerange_params(base_asset, "btc", now, last_dt_map)
 
-        # Fetch the USD and BTC prices and combine them based on
-        # the datetime. The datetime is rounded to `@interval_sec` buckets
-        # so this combination can be done in more cases
-        usd_prices = current_prices(base_asset, "usd", usd_timerange)
-        btc_prices = current_prices(base_asset, "btc", btc_timerange)
-        prices = combine_prices(usd_prices, btc_prices)
+          # Fetch the USD and BTC prices and combine them based on
+          # the datetime. The datetime is rounded to `@interval_sec` buckets
+          # so this combination can be done in more cases
+          usd_prices = current_prices(base_asset, "usd", usd_timerange)
+          btc_prices = current_prices(base_asset, "btc", btc_timerange)
+          prices = combine_prices(usd_prices, btc_prices)
 
-        :ok = export_to_kafka(prices, slug)
+          :ok = export_to_kafka(prices, slug)
 
-        :ok = store_last_datetime(usd_prices, base_asset, "usd")
-        :ok = store_last_datetime(btc_prices, base_asset, "btc")
-      end
+          [
+            get_last_datetime(usd_prices, base_asset, "usd"),
+            get_last_datetime(btc_prices, base_asset, "btc")
+          ]
+        end,
+        max_concurrency: 50,
+        map_type: :flat_map
+      )
+      |> Enum.reject(&is_nil/1)
+      |> Enum.map(fn {identifier, dt} ->
+        %{
+          identifier: identifier,
+          datetime: DateTime.to_naive(dt) |> NaiveDateTime.truncate(:second),
+          source: @source,
+          updated_at: naive_now,
+          inserted_at: naive_now
+        }
+      end)
+
+    Sanbase.Repo.insert_all(Progress, data,
+      on_conflict: :replace_all,
+      conflict_target: [:identifier, :source]
     )
   end
 
@@ -59,7 +88,7 @@ defmodule Sanbase.Kaiko do
           datetime:
             elem["timestamp"]
             |> DateTime.from_unix!(:millisecond)
-            |> round_datetime(@interval_sec)
+            |> DateTime.truncate(:second)
         }
       end)
     else
@@ -91,14 +120,14 @@ defmodule Sanbase.Kaiko do
       URI.encode_query(opts)
   end
 
-  defp last_datetime_scraped(slug) do
-    case Progress.last_scraped(slug, @source) do
-      nil -> Timex.shift(Timex.now(), minutes: -10)
-      %DateTime{} = dt -> dt
+  defp last_datetime_scraped(slug, last_dt_map) do
+    case Map.get(last_dt_map, slug) do
+      nil -> Timex.shift(Timex.now(), minutes: -1)
+      %NaiveDateTime{} = ndt -> DateTime.from_naive!(ndt, "Etc/UTC")
     end
   end
 
-  def store_last_datetime(prices, base_asset, quote_asset) do
+  def get_last_datetime(prices, base_asset, quote_asset) do
     identifier = identifier(base_asset, quote_asset)
 
     prices
@@ -106,17 +135,18 @@ defmodule Sanbase.Kaiko do
     |> Enum.max_by(fn elem -> elem.datetime end, DateTime, fn -> nil end)
     |> case do
       %{datetime: %DateTime{} = dt} ->
-        {:ok, _} = Progress.store_progress(identifier, @source, dt)
-        :ok
+        {identifier, dt}
 
       _ ->
-        :ok
+        nil
     end
   end
 
-  defp get_timerange_params(base_asset, quote_asset, end_time) do
+  defp get_timerange_params(base_asset, quote_asset, end_time, last_dt_map) do
+    identifier = identifier(base_asset, quote_asset)
+
     %{
-      start_time: identifier(base_asset, quote_asset) |> last_datetime_scraped(),
+      start_time: last_datetime_scraped(identifier, last_dt_map),
       end_time: end_time,
       interval: @interval
     }

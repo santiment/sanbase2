@@ -9,8 +9,6 @@ defmodule SanbaseWeb.Graphql.Schema.TableConfigurationQueries do
   alias SanbaseWeb.Graphql.Resolvers.TableConfigurationResolver
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
-  import_types(SanbaseWeb.Graphql.TableConfigurationTypes)
-
   object :table_configuration_queries do
     field :table_configuration, :table_configuration do
       meta(access: :free)

@@ -1,4 +1,12 @@
 defmodule Sanbase.Signal do
+  @moduledoc """
+  Dispatch module used for fetching signals.
+
+  As there is a single signal adapter now, the dispatching is done directly.
+  After a second signals source is introduced, a dispatching logic similar
+  to the one found in Sanbase.Metric should be implemented.
+  """
+
   alias Sanbase.Signal.SignalAdapter
 
   def has_signal?(signal), do: SignalAdapter.has_signal?(signal)

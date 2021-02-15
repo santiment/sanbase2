@@ -1,7 +1,6 @@
 defmodule Sanbase.Kaiko do
   alias Sanbase.ExternalServices.Coinmarketcap.PriceScrapingProgress, as: Progress
 
-  import Sanbase.DateTimeUtils, only: [round_datetime: 2]
   require Logger
   require Sanbase.Utils.Config, as: Config
 
@@ -10,7 +9,6 @@ defmodule Sanbase.Kaiko do
   @url "https://eu.market-api.kaiko.io"
   @recv_timeout 30_000
   @interval "1s"
-  @interval_sec 1
   @rounds_per_minute 12
 
   # Scraping is started every round minute. We want to scrape every 5 seconds.
@@ -90,7 +88,7 @@ defmodule Sanbase.Kaiko do
           datetime:
             elem["timestamp"]
             |> DateTime.from_unix!(:millisecond)
-            |> round_datetime(@interval_sec)
+            |> DateTime.truncate(:second)
         }
       end)
     else

@@ -12,7 +12,7 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
   use Vex.Struct
 
   import Sanbase.{Validation, Alert.Validation}
-  import Sanbase.DateTimeUtils, only: [round_datetime: 2, str_to_sec: 1]
+  import Sanbase.DateTimeUtils, only: [round_datetime: 1, str_to_sec: 1]
 
   alias __MODULE__
   alias Sanbase.Model.Project
@@ -130,7 +130,7 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
 
   defp balance_change(selector, address, from, to) do
     cache_key =
-      {:wallet_signal, selector, address, round_datetime(from, 300), round_datetime(to, 300)}
+      {:wallet_signal, selector, address, round_datetime(from), round_datetime(to)}
       |> Sanbase.Cache.hash()
 
     Sanbase.Alert.Evaluator.Cache.get_or_store(cache_key, fn ->

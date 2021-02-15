@@ -27,14 +27,15 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   alias SanbaseWeb.Graphql.Cache
 
   @compile inline: [
-             construct_query_name: 1,
              cache_result: 2,
-             queries_in_request: 1,
-             extract_caller_data: 1,
+             construct_query_name: 1,
              export_api_call_data: 3,
-             remote_ip: 1,
+             extract_caller_data: 1,
+             get_cache_key: 1,
              has_graphql_errors?: 1,
-             maybe_create_or_drop_session: 2
+             maybe_create_or_drop_session: 2,
+             queries_in_request: 1,
+             remote_ip: 1
            ]
 
   @product_id_api Sanbase.Billing.Product.product_api()
@@ -59,7 +60,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
     queries = queries_in_request(blueprint)
     export_api_call_data(queries, conn, blueprint)
-    do_not_cache? = is_nil(Process.get(:do_not_cache_query))
+    do_not_cache? = Process.get(:do_not_cache_query) == true
 
     maybe_update_api_call_limit_usage(blueprint.execution.context, Enum.count(queries))
 
@@ -104,9 +105,28 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
     if all_queries_cachable? do
       Cache.store(
-        blueprint.execution.context.query_cache_key,
+        get_cache_key(blueprint),
         blueprint.result
       )
+    end
+  end
+
+  # The cache_key is the format of `{key, ttl}` or just `key`. Both cache keys
+  # will be stored under the name `key` and in the first case only the ttl is
+  # changed. This also means that if a value is stored as `{key, 300}` it can be
+  # retrieved by using `{key, 10}` as in the case of `get` the ttl is ignored.
+  # This allows us to change the cache_key produced in the DocumentProvider
+  # and store it with a different ttl. The ttl is changed from the graphql cache
+  # in case `caching_params` is provided.
+  defp get_cache_key(blueprint) do
+    case Process.get(:__change_absinthe_before_send_caching_ttl__) do
+      ttl when is_number(ttl) ->
+        {cache_key, _old_ttl} = blueprint.execution.context.query_cache_key
+
+        {cache_key, ttl}
+
+      _ ->
+        blueprint.execution.context.query_cache_key
     end
   end
 

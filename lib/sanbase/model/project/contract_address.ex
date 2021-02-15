@@ -50,4 +50,10 @@ defmodule Sanbase.Model.Project.ContractAddress do
   def list_to_main_contract_address(list) when is_list(list) do
     Enum.find(list, &(&1.label == "main")) || List.first(list)
   end
+
+  def list_to_latest_onchain_contract_address(list) when is_list(list) do
+    Enum.find(list, &(&1.label == "latest_onchain_contract")) ||
+      Enum.find(list, &(&1.label == "main")) ||
+      List.first(list)
+  end
 end

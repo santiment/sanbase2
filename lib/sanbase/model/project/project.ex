@@ -134,14 +134,13 @@ defmodule Sanbase.Model.Project do
 
   defdelegate describe(project), to: Project.Description
 
-  defdelegate contract_info_infrastructure_by_slug(slug), to: Project.ContractData
+  defdelegate contract_info_infrastructure_by_slug(slug, opts \\ []), to: Project.ContractData
 
-  defdelegate contract_info_by_slug(slug), to: Project.ContractData
+  defdelegate contract_info_by_slug(slug, opts \\ []), to: Project.ContractData
 
-  defdelegate contract_info(project), to: Project.ContractData
+  defdelegate contract_info(project, opts \\ []), to: Project.ContractData
 
-  defdelegate contract_address(project), to: Project.ContractData
-  defdelegate contract_addresses(project), to: Project.ContractData
+  defdelegate contract_address(project, opts \\ []), to: Project.ContractData
 
   defdelegate has_contract_address?(project), to: Project.ContractData
 

@@ -25,7 +25,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         },
         _resolution
       ) do
-    with {:ok, contract, token_decimals} <- Project.contract_info_by_slug(slug),
+    with {:ok, contract, token_decimals} <-
+           Project.contract_info_by_slug(slug, contract_type: :latest_onchain_contract),
          {:ok, top_holders} <-
            TopHolders.top_holders(
              slug,
@@ -53,7 +54,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         },
         _resolution
       ) do
-    with {:ok, contract, token_decimals} <- Project.contract_info_by_slug(slug),
+    with {:ok, contract, token_decimals} <-
+           Project.contract_info_by_slug(slug, contract_type: :latest_onchain_contract),
          {:ok, percent_of_total_supply} <-
            TopHolders.percent_of_total_supply(
              contract,

@@ -191,7 +191,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   def selector_to_args(%{slug: "ethereum"} = selector),
     do: selector_to_args(Map.put(selector, :infrastructure, "ETH"))
 
-  def selector_to_args(%{slug: slug} = selector) do
+  def selector_to_args(%{slug: slug} = selector) when not is_nil(slug) do
     with {:ok, contract, decimals, infrastructure} <-
            Sanbase.Model.Project.contract_info_infrastructure_by_slug(slug),
          module when not is_nil(module) <- Map.get(@infrastructure_to_module, infrastructure) do

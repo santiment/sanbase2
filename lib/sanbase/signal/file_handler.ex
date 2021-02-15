@@ -29,7 +29,7 @@ defmodule Sanbase.Signal.FileHandler do
   # Structure
   #  This JSON file contains a list of signals available in ClickHouse.
   #  For every signal we have:
-  #  - metric - the metric on top of which the signal is calculated
+  #  - signal - the name of the signal
   #  - access - whether the signal is completely free or some time restrictions
   #    should be applied
   #  - aggregation - the default aggregation that is applied to combine the values
@@ -42,16 +42,13 @@ defmodule Sanbase.Signal.FileHandler do
   @signals_json File.read!(available_signals_file) |> Jason.decode!()
   @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
 
-  @metric_map Helper.name_to_field_map(@signals_json, "metric")
+  @signal_map Helper.name_to_field_map(@signals_json, "signal")
   @access_map Helper.name_to_field_map(@signals_json, "access", &String.to_atom/1)
   @table_map Helper.name_to_field_map(@signals_json, "table")
   @aggregation_map Helper.name_to_field_map(@signals_json, "aggregation", &String.to_atom/1)
   @min_interval_map Helper.name_to_field_map(@signals_json, "min_interval")
   @human_readable_name_map Helper.name_to_field_map(@signals_json, "human_readable_name")
   @data_type_map Helper.name_to_field_map(@signals_json, "data_type", &String.to_atom/1)
-  @metric_to_signal_map Helper.fields_to_name_map(@signals_json, [
-                          "metric"
-                        ])
 
   @signals_list @signals_json |> Enum.map(fn %{"name" => name} -> name end)
   @signals_mapset MapSet.new(@signals_list)
@@ -59,13 +56,12 @@ defmodule Sanbase.Signal.FileHandler do
   def aggregations(), do: @aggregations
   def aggregation_map(), do: @aggregation_map
   def access_map(), do: @access_map
-  def metric_map(), do: @metric_map
+  def signal_map(), do: @signal_map
   def signals_mapset(), do: @signals_mapset
   def min_interval_map(), do: @min_interval_map
   def human_readable_name_map(), do: @human_readable_name_map
   def table_map(), do: @table_map
   def data_type_map(), do: @data_type_map
-  def metric_to_signal_map(), do: @metric_to_signal_map
 
   def signals_with_access(level) when level in [:free, :restricted] do
     @access_map

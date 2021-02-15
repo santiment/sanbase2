@@ -2,7 +2,7 @@
   {
     "human_readable_name": "Minting Dai Signal",
     "name": "dai_mint",
-    "metric": "dai_mint",
+    "signal": "dai_mint",
     "access": "free",
     "aggregation": "count",
     "min_interval": "1m",

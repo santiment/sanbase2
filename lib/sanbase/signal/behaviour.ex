@@ -2,12 +2,11 @@ defmodule Sanbase.Signal.Behaviour do
   @type slug :: String.t()
   @type slug_or_slugs :: slug | list(slug)
   @type signal :: String.t()
-  @type metric :: String.t()
   @type interval :: String.t()
   @type available_data_types :: :timeseries | :histogram | :table
 
   @type metadata :: %{
-          metric: metric,
+          signal: signal,
           min_interval: interval(),
           default_aggregation: atom(),
           available_aggregations: list(atom()),

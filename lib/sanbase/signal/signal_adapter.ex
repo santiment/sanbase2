@@ -11,7 +11,7 @@ defmodule Sanbase.Signal.SignalAdapter do
   @signals_mapset FileHandler.signals_mapset()
   @min_interval_map FileHandler.min_interval_map()
   @signals @signals_mapset |> Enum.to_list()
-  @metric_map FileHandler.metric_map()
+  @signal_map FileHandler.signal_map()
   @data_type_map FileHandler.data_type_map()
 
   def has_signal?(signal) do
@@ -47,7 +47,6 @@ defmodule Sanbase.Signal.SignalAdapter do
     {:ok,
      %{
        signal: signal,
-       metric: Map.get(@metric_map, signal),
        min_interval: Map.get(@min_interval_map, signal),
        default_aggregation: default_aggregation,
        available_aggregations: @aggregations,

@@ -35,7 +35,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   # End of custom types
   import_types(Graphql.AggregationTypes)
   import_types(Graphql.AlertsHistoricalActivityTypes)
-  import_types(Graphql.AnomalyTypes)
   import_types(Graphql.Schema.BillingTypes)
   import_types(Graphql.BlockchainAddressType)
   import_types(Graphql.ClickhouseTypes)

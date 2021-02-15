@@ -48,12 +48,10 @@ defmodule Sanbase.Signal.FileHandler do
   @aggregation_map Helper.name_to_field_map(@signals_json, "aggregation", &String.to_atom/1)
   @min_interval_map Helper.name_to_field_map(@signals_json, "min_interval")
   @human_readable_name_map Helper.name_to_field_map(@signals_json, "human_readable_name")
-  @model_name_map Helper.name_to_field_map(@signals_json, "model_name")
   @data_type_map Helper.name_to_field_map(@signals_json, "data_type", &String.to_atom/1)
-  @metric_and_model_to_signal_map Helper.fields_to_name_map(@signals_json, [
-                                    "metric",
-                                    "model_name"
-                                  ])
+  @metric_to_signal_map Helper.fields_to_name_map(@signals_json, [
+                          "metric"
+                        ])
 
   @signals_list @signals_json |> Enum.map(fn %{"name" => name} -> name end)
   @signals_mapset MapSet.new(@signals_list)
@@ -67,8 +65,7 @@ defmodule Sanbase.Signal.FileHandler do
   def human_readable_name_map(), do: @human_readable_name_map
   def table_map(), do: @table_map
   def data_type_map(), do: @data_type_map
-  def model_name_map(), do: @model_name_map
-  def metric_and_model_to_signal_map(), do: @metric_and_model_to_signal_map
+  def metric_to_signal_map(), do: @metric_to_signal_map
 
   def signals_with_access(level) when level in [:free, :restricted] do
     @access_map

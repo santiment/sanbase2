@@ -11,6 +11,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalTimeseriesDataTest do
     %{user: user} = insert(:subscription_pro_sanbase, user: insert(:user))
     conn = setup_jwt_auth(build_conn(), user)
 
+    insert(:random_project, slug: "ethereum")
+
     [
       conn: conn,
       slug: "ethereum",
@@ -48,7 +50,9 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalTimeseriesDataTest do
                }
              ]
 
-      assert_called(Signal.timeseries_data(signal, slug, from, to, interval, aggregation))
+      assert_called(
+        Signal.timeseries_data(signal, %{slug: slug}, from, to, interval, aggregation: aggregation)
+      )
     end
   end
 

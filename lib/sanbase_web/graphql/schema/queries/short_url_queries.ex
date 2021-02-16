@@ -24,5 +24,13 @@ defmodule SanbaseWeb.Graphql.Schema.ShortUrlQueries do
 
       resolve(&ShortUrlResolver.create_short_url/3)
     end
+
+    field :update_short_url, :short_url do
+      arg(:short_url, non_null(:string))
+      arg(:data, :string)
+      arg(:full_url, :string)
+
+      resolve(&ShortUrlResolver.update_short_url/3)
+    end
   end
 end

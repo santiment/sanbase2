@@ -5,10 +5,6 @@ defmodule Sanbase.Alert.UserTrigger do
   this is the struct that is used in the `Sanbase.Alert.Evaluator` because it
   needs to know the user to whom the alert needs to be sent.
   """
-  @derive [Sanbase.Alert, Jason.Encoder]
-
-  @type trigger_id :: non_neg_integer()
-
   use Ecto.Schema
 
   import Ecto.Changeset
@@ -24,6 +20,10 @@ defmodule Sanbase.Alert.UserTrigger do
   alias Sanbase.Timeline.TimelineEvent
 
   require Logger
+
+  @derive [Sanbase.Alert, Jason.Encoder]
+
+  @type trigger_id :: non_neg_integer()
 
   schema "user_triggers" do
     belongs_to(:user, User)

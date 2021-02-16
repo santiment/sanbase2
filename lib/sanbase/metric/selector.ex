@@ -33,11 +33,11 @@ defmodule Sanbase.Metric.Selector do
     end
   end
 
-  defp valid_selector?(%{} = map) when map_size(map) == 0,
-    do:
-      {:error,
-       "The selector must have at least one field provided." <>
-         "The available selector fields for a metric are listed in the metadata's availableSelectors field."}
+  defp valid_selector?(%{} = map) when map_size(map) == 0 do
+    {:error,
+     "The selector must have at least one field provided." <>
+       "The available selector fields for a metric are listed in the metadata's availableSelectors field."}
+  end
 
   defp valid_selector?(_), do: true
 

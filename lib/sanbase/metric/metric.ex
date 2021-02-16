@@ -19,7 +19,11 @@ defmodule Sanbase.Metric do
   # Use only the types from the behaviour module
   alias Sanbase.Metric.Behaviour, as: Type
 
-  @compile inline: [execute_if_aggregation_valid: 3, maybe_change_module: 3]
+  @compile inline: [
+             execute_if_aggregation_valid: 3,
+             maybe_change_module: 3,
+             combine_metrics_in_modules: 2
+           ]
 
   @type datetime :: DateTime.t()
   @type metric :: Type.metric()
@@ -466,6 +470,8 @@ defmodule Sanbase.Metric do
 
   @doc ~s"""
   Get the available metrics for a given slug.
+  The available metrics list is the combination of the available metrics lists
+  of every metric module.
   """
   @spec available_metrics_for_slug(any) :: available_metrics_with_nocache_result
   def available_metrics_for_slug(%{slug: slug} = selector) do
@@ -480,23 +486,7 @@ defmodule Sanbase.Metric do
 
     metrics_in_modules = Sanbase.Parallel.map(@metric_modules, parallel_fun, parallel_opts)
 
-    available_metrics =
-      Enum.flat_map(metrics_in_modules, fn
-        {:ok, metrics} -> metrics
-        _ -> []
-      end)
-      |> maybe_replace_metrics(slug)
-      |> Enum.uniq()
-      |> Enum.sort()
-
-    has_errors? =
-      metrics_in_modules
-      |> Enum.any?(&(not match?({:ok, _}, &1)))
-
-    case has_errors? do
-      true -> {:nocache, {:ok, available_metrics}}
-      false -> {:ok, available_metrics}
-    end
+    combine_metrics_in_modules(metrics_in_modules, slug)
   end
 
   @doc ~s"""
@@ -740,6 +730,30 @@ defmodule Sanbase.Metric do
     case errors do
       [] -> {:ok, slugs |> Enum.uniq()}
       _ -> {:error, "Cannot fetch all available slugs. Errors: #{inspect(errors)}"}
+    end
+  end
+
+  defp combine_metrics_in_modules(metrics_in_modules, slug) do
+    # Combine the results of the different metric modules. In case any of the
+    # metric modules returned an :error tuple, wrap the result in a :nocache
+    # tuple so the next attempt to fetch the data will try to fetch the metrics
+    # again.
+    available_metrics =
+      Enum.flat_map(metrics_in_modules, fn
+        {:ok, metrics} -> metrics
+        _ -> []
+      end)
+      |> maybe_replace_metrics(slug)
+      |> Enum.uniq()
+      |> Enum.sort()
+
+    has_errors? =
+      metrics_in_modules
+      |> Enum.any?(&(not match?({:ok, _}, &1)))
+
+    case has_errors? do
+      true -> {:nocache, {:ok, available_metrics}}
+      false -> {:ok, available_metrics}
     end
   end
 end

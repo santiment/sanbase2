@@ -84,28 +84,35 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectMetricsResolver do
     |> Dataloader.get(SanbaseDataloader, :aggregated_metric, selector)
     |> case do
       map when is_map(map) ->
-        case Map.fetch(map, slug) do
-          {:ok, value} ->
-            {:ok, value}
-
-          :error ->
-            cache_key =
-              {__MODULE__, :available_slugs_for_metric, metric}
-              |> Sanbase.Cache.hash()
-
-            {:ok, slugs_for_metric} =
-              Sanbase.Cache.get_or_store({cache_key, 1800}, fn ->
-                Metric.available_slugs(metric)
-              end)
-
-            case slug in slugs_for_metric do
-              true -> {:nocache, {:ok, nil}}
-              false -> {:ok, nil}
-            end
-        end
+        aggregated_metric_from_loader_map(map, slug, metric)
 
       _ ->
         {:nocache, {:ok, nil}}
+    end
+  end
+
+  defp aggregated_metric_from_loader_map(map, slug, metric) do
+    case Map.fetch(map, slug) do
+      {:ok, value} ->
+        {:ok, value}
+
+      :error ->
+        cache_key =
+          {__MODULE__, :available_slugs_for_metric, metric}
+          |> Sanbase.Cache.hash()
+
+        {:ok, slugs_for_metric} =
+          Sanbase.Cache.get_or_store({cache_key, 1800}, fn ->
+            Metric.available_slugs(metric)
+          end)
+
+        # Determine whether the value is missing because it failed to compute or
+        # because the metric is not available for the given slug. In the first case
+        # return a :nocache tuple so an attempt to compute it is made on the next call
+        case slug in slugs_for_metric do
+          true -> {:nocache, {:ok, nil}}
+          false -> {:ok, nil}
+        end
     end
   end
 

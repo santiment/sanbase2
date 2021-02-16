@@ -1,13 +1,13 @@
 defmodule Sanbase.SocialData.SocialVolume do
   import Sanbase.Utils.ErrorHandling
 
-  require Logger
-  require Sanbase.Utils.Config, as: Config
-
   alias Sanbase.SocialData.SocialHelper
   alias Sanbase.Model.Project
 
+  require Logger
   require Mockery.Macro
+  require Sanbase.Utils.Config, as: Config
+
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 25_000

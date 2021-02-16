@@ -3,6 +3,8 @@ defmodule Sanbase.Cache do
   @cache_name :sanbase_cache
   @max_cache_ttl 86_400
 
+  @compile {:inline, get_or_store_isolated: 4}
+
   def hash(data) do
     :crypto.hash(:sha256, data |> :erlang.term_to_binary())
     |> Base.encode64()
@@ -51,43 +53,59 @@ defmodule Sanbase.Cache do
     end
   end
 
+  @doc ~s"""
+  Get the value from the cache, or, if it does not exist there, compute it after
+  locking the key. This locking guarantees that if 100 concurrent processes try
+  to get this value, only one of them will do the actual computation and all other
+  will wait. This greatly reduces the DB load that will otherwise occur.
+  """
   @impl Sanbase.Cache.Behaviour
   def get_or_store(cache \\ @cache_name, key, func)
 
   def get_or_store(cache, key, func) do
     true_key = true_key(key)
 
-    {result, error_if_any} =
+    case ConCache.get(cache, true_key) do
+      {:stored, value} ->
+        value
+
+      _ ->
+        get_or_store_isolated(cache, key, true_key, func)
+    end
+  end
+
+  defp get_or_store_isolated(cache, key, true_key, func) do
+    # This function is to be executed inside ConCache.isolated/3 call.
+    # This isolated call locks the access for that key before doing anything else
+    # Doing this ensures that the case where another process modified the key
+    # before in the time between the previous check and the locking.
+    fun = fn ->
       case ConCache.get(cache, true_key) do
         {:stored, value} ->
-          {value, nil}
+          value
 
         _ ->
-          ConCache.isolated(cache, true_key, fn ->
-            case ConCache.get(cache, true_key) do
-              {:stored, value} ->
-                {value, nil}
-
-              _ ->
-                case func.() do
-                  {:error, _} = error ->
-                    {nil, error}
-
-                  {:nocache, {:ok, _result} = value} ->
-                    {value, nil}
-
-                  value ->
-                    cache_item(cache, key, {:stored, value})
-                    {value, nil}
-                end
-            end
-          end)
+          execute_and_maybe_cache_function(cache, key, func)
       end
+    end
 
-    if error_if_any != nil do
-      error_if_any
-    else
-      result
+    ConCache.isolated(cache, true_key, fun)
+  end
+
+  defp execute_and_maybe_cache_function(cache, key, func) do
+    # Execute the function and if it returns :ok tuple cache it
+    # Errors are not cached. Also, caching can be manually disabled by
+    # wrapping the result in a :nocache tuple
+    case func.() do
+      {:error, _} = error ->
+        error
+
+      {:nocache, {:ok, _result} = value} ->
+        value
+
+      value ->
+        cache_item(cache, key, {:stored, value})
+        value
     end
   end
 

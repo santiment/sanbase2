@@ -53,7 +53,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
     end
 
     with {:ok, top_holders} <- ClickhouseRepo.query_transform(query, args, transform_func),
-         addresses <- Enum.map(top_holders, & &1.address),
+         addresses = Enum.map(top_holders, & &1.address),
          {:ok, address_labels_map} <- Label.get_address_labels(slug, addresses) do
       labelled_top_holders =
         top_holders

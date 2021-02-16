@@ -67,6 +67,7 @@ defmodule Sanbase.Signal.SignalAdapter do
   end
 
   @impl Sanbase.Signal.Behaviour
+  def timeseries_data(signal, selector, from, to, interval, opts)
   def timeseries_data(_signal, %{slug: []}, _from, _to, _interval, _opts), do: {:ok, []}
 
   def timeseries_data(signal, %{slug: slug}, from, to, interval, opts) do

@@ -130,6 +130,16 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     field(:score, non_null(:float))
   end
 
+  object :words_context do
+    field(:word, non_null(:string))
+    field(:context, list_of(:word_context))
+  end
+
+  object :words_social_volume do
+    field(:word, non_null(:string))
+    field(:timeseries_data, list_of(:social_volume))
+  end
+
   object :top_social_gainers_losers do
     field(:datetime, non_null(:datetime))
     field(:projects, list_of(:projects_change))
@@ -150,5 +160,10 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     field(:datetime, non_null(:datetime))
     field(:change, non_null(:float))
     field(:status, :social_gainers_losers_status_enum)
+  end
+
+  input_object :word_selector_input_object do
+    field(:word, :string)
+    field(:words, list_of(:string))
   end
 end

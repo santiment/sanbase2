@@ -38,6 +38,13 @@ defmodule Sanbase.SocialData do
     |> handle_response(&trending_words_result/1, "trending words", "source: #{source}")
   end
 
+  def word_context(words, source, size, from_datetime, to_datetime) when is_list(words) do
+    words_str = Enum.join(words, ",")
+
+    words_context_request(words, source, size, from_datetime, to_datetime)
+    |> handle_response(&words_context_result/1, "word context", "word #{words_str}")
+  end
+
   def word_context(word, source, size, from_datetime, to_datetime) do
     word_context_request(word, source, size, from_datetime, to_datetime)
     |> handle_response(&word_context_result/1, "word context", "word #{word}")
@@ -98,6 +105,27 @@ defmodule Sanbase.SocialData do
         {"source", source |> Atom.to_string()},
         {"n", size},
         {"hour", hour},
+        {"from_timestamp", from_unix},
+        {"to_timestamp", to_unix}
+      ]
+    ]
+
+    http_client().get(url, [], options)
+  end
+
+  defp words_context_request(words, source, size, from_datetime, to_datetime)
+       when is_list(words) do
+    from_unix = DateTime.to_unix(from_datetime)
+    to_unix = DateTime.to_unix(to_datetime)
+
+    url = "#{tech_indicators_url()}/indicator/words_context"
+
+    options = [
+      recv_timeout: @recv_timeout,
+      params: [
+        {"words", Enum.join(words, ",")},
+        {"size", size},
+        {"source", source |> Atom.to_string()},
         {"from_timestamp", from_unix},
         {"to_timestamp", to_unix}
       ]
@@ -190,76 +218,79 @@ defmodule Sanbase.SocialData do
   end
 
   defp trending_words_result(result) do
-    result =
-      result
-      |> Enum.map(fn %{"timestamp" => timestamp, "top_words" => top_words} ->
-        %{
-          datetime: DateTime.from_unix!(timestamp),
-          top_words:
-            top_words
-            |> Enum.map(fn {k, v} ->
-              %{word: k, score: v}
-            end)
-        }
-      end)
-
-    {:ok, result}
+    result
+    |> Enum.map(fn %{"timestamp" => timestamp, "top_words" => top_words} ->
+      %{
+        datetime: DateTime.from_unix!(timestamp),
+        top_words:
+          top_words
+          |> Enum.map(fn {k, v} ->
+            %{word: k, score: v}
+          end)
+      }
+    end)
+    |> wrap_ok()
   end
 
   defp word_context_result(result) do
-    result =
-      result
-      |> Enum.map(fn {k, v} -> %{word: k, score: v["score"]} end)
-      |> Enum.sort(&(&1.score >= &2.score))
+    result
+    |> Enum.map(fn {k, v} -> %{word: k, score: v["score"]} end)
+    |> Enum.sort(&(&1.score >= &2.score))
+    |> wrap_ok()
+  end
 
-    {:ok, result}
+  defp words_context_result(result) do
+    result
+    |> Enum.map(fn {word, context} ->
+      {:ok, context} = word_context_result(context)
+
+      %{
+        word: word,
+        context: context
+      }
+    end)
+    |> wrap_ok()
   end
 
   defp word_trend_score_result(result) do
-    result =
-      result
-      |> Enum.map(fn
-        %{"timestamp" => timestamp, "score" => score, "hour" => hour, "source" => source} ->
-          %{
-            datetime: combine_unix_dt_and_hour(timestamp, hour),
-            score: score,
-            source: String.to_existing_atom(source)
-          }
-      end)
-      |> Enum.sort(&(&1.score >= &2.score))
-
-    {:ok, result}
+    result
+    |> Enum.map(fn
+      %{"timestamp" => timestamp, "score" => score, "hour" => hour, "source" => source} ->
+        %{
+          datetime: combine_unix_dt_and_hour(timestamp, hour),
+          score: score,
+          source: String.to_existing_atom(source)
+        }
+    end)
+    |> Enum.sort(&(&1.score >= &2.score))
+    |> wrap_ok()
   end
 
   defp top_social_gainers_losers_result(result) do
-    result =
-      result
-      |> Enum.sort(&(&1["timestamp"] <= &2["timestamp"]))
-      |> Enum.map(fn
-        %{"timestamp" => timestamp, "projects" => projects} ->
-          %{
-            datetime: DateTime.from_unix!(timestamp),
-            projects: convert_projects_result(projects)
-          }
-      end)
-
-    {:ok, result}
+    result
+    |> Enum.sort(&(&1["timestamp"] <= &2["timestamp"]))
+    |> Enum.map(fn
+      %{"timestamp" => timestamp, "projects" => projects} ->
+        %{
+          datetime: DateTime.from_unix!(timestamp),
+          projects: convert_projects_result(projects)
+        }
+    end)
+    |> wrap_ok()
   end
 
   defp social_gainers_losers_status_result(result) do
-    result =
-      result
-      |> Enum.sort(&(&1["timestamp"] <= &2["timestamp"]))
-      |> Enum.map(fn
-        %{"timestamp" => timestamp, "status" => status, "change" => change} ->
-          %{
-            datetime: DateTime.from_unix!(timestamp),
-            status: String.to_existing_atom(status),
-            change: change
-          }
-      end)
-
-    {:ok, result}
+    result
+    |> Enum.sort(&(&1["timestamp"] <= &2["timestamp"]))
+    |> Enum.map(fn
+      %{"timestamp" => timestamp, "status" => status, "change" => change} ->
+        %{
+          datetime: DateTime.from_unix!(timestamp),
+          status: String.to_existing_atom(status),
+          change: change
+        }
+    end)
+    |> wrap_ok()
   end
 
   defp convert_projects_result(projects) do
@@ -320,4 +351,6 @@ defmodule Sanbase.SocialData do
     |> Timex.beginning_of_day()
     |> Timex.shift(hours: Sanbase.Math.to_integer(hour))
   end
+
+  defp wrap_ok(result), do: {:ok, result}
 end

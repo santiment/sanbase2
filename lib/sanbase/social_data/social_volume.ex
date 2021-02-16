@@ -19,12 +19,55 @@ defmodule Sanbase.SocialData.SocialVolume do
     social_volume(selector, from, to, interval, sources_string)
   end
 
+  def social_volume(%{words: words} = selector, from, to, interval, source) when is_list(words) do
+    social_volume_list_request(selector, from, to, interval, source)
+    |> handle_list_response(selector)
+  end
+
   def social_volume(selector, from, to, interval, source) do
     social_volume_request(selector, from, to, interval, source)
+    |> handle_response(selector)
+  end
+
+  defp handle_response(response, selector) do
+    response
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Jason.decode(body)
-        social_volume_result(result)
+        body
+        |> Jason.decode!()
+        |> Map.get("data")
+        |> social_volume_result()
+        |> wrap_ok()
+
+      {:ok, %HTTPoison.Response{status_code: status}} ->
+        warn_result("Error status #{status} fetching social volume for #{inspect(selector)}")
+
+      {:error, %HTTPoison.Error{} = error} ->
+        error_result(
+          "Cannot fetch social volume data for #{inspect(selector)}: #{
+            HTTPoison.Error.message(error)
+          }"
+        )
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp handle_list_response(response, selector) do
+    response
+    |> case do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        body
+        |> Jason.decode!()
+        |> Map.get("data")
+        |> Enum.map(fn {word, timeseries} ->
+          %{
+            word: word,
+            timeseries_data: social_volume_result(timeseries)
+          }
+        end)
+        |> wrap_ok()
 
       {:ok, %HTTPoison.Response{status_code: status}} ->
         warn_result("Error status #{status} fetching social volume for #{inspect(selector)}")
@@ -47,6 +90,23 @@ defmodule Sanbase.SocialData.SocialVolume do
     {:ok, projects}
   end
 
+  defp social_volume_list_request(%{words: words}, from, to, interval, source) do
+    url = "#{metrics_hub_url()}/social_volume"
+
+    options = [
+      recv_timeout: @recv_timeout,
+      params: [
+        {"slugs", Enum.join(words, ",")},
+        {"from_timestamp", from |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
+        {"to_timestamp", to |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
+        {"interval", interval},
+        {"source", source}
+      ]
+    ]
+
+    http_client().get(url, [], options)
+  end
+
   defp social_volume_request(selector, from, to, interval, source) do
     with {:ok, search_text} <- SocialHelper.social_metrics_selector_handler(selector) do
       url = "#{metrics_hub_url()}/social_volume"
@@ -66,20 +126,19 @@ defmodule Sanbase.SocialData.SocialVolume do
     end
   end
 
-  defp social_volume_result(%{"data" => map}) do
-    map =
-      Enum.map(map, fn {datetime, value} ->
-        %{
-          datetime: Sanbase.DateTimeUtils.from_iso8601!(datetime),
-          mentions_count: value
-        }
-      end)
-      |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
-
-    {:ok, map}
+  defp social_volume_result(map) do
+    Enum.map(map, fn {datetime, value} ->
+      %{
+        datetime: Sanbase.DateTimeUtils.from_iso8601!(datetime),
+        mentions_count: value
+      }
+    end)
+    |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
   end
 
   defp metrics_hub_url() do
     Config.module_get(Sanbase.SocialData, :metricshub_url)
   end
+
+  defp wrap_ok(result), do: {:ok, result}
 end

@@ -33,12 +33,6 @@ defmodule SanbaseWeb.Graphql.SignalTypes do
     field(:min_interval, :string)
 
     @desc ~s"""
-    The metric for which the anomaly is about. The actual metric values can be
-    fetched via the `getMetric` API using the same metric as argument
-    """
-    field(:metric, :string)
-
-    @desc ~s"""
     When the interval provided in the query is bigger than `min_interval` and
     contains two or more data points, the data must be aggregated into a single
     data point. The default aggregation that is applied is this `default_aggregation`.

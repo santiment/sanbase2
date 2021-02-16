@@ -8,7 +8,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
     only: [handle_graphql_error: 3, maybe_handle_graphql_error: 2]
 
   alias Sanbase.Signal
-  alias Sanbase.DateTimeUtils
 
   require Logger
 

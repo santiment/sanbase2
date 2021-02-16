@@ -53,6 +53,10 @@ defmodule Sanbase.Signal.FileHandler do
   @signals_list @signals_json |> Enum.map(fn %{"name" => name} -> name end)
   @signals_mapset MapSet.new(@signals_list)
 
+  @selectors_map Helper.name_to_field_map(@signals_json, "selectors", fn list ->
+                   Enum.map(list, &String.to_atom/1)
+                 end)
+
   def aggregations(), do: @aggregations
   def aggregation_map(), do: @aggregation_map
   def access_map(), do: @access_map
@@ -62,6 +66,7 @@ defmodule Sanbase.Signal.FileHandler do
   def human_readable_name_map(), do: @human_readable_name_map
   def table_map(), do: @table_map
   def data_type_map(), do: @data_type_map
+  def selectors_map(), do: @selectors_map
 
   def signals_with_access(level) when level in [:free, :restricted] do
     @access_map

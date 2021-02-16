@@ -4,6 +4,7 @@
     "name": "dai_mint",
     "signal": "dai_mint",
     "access": "free",
+    "selectors": ["slug"],
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",

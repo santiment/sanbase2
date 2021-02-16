@@ -57,21 +57,6 @@ defmodule Sanbase.Signal.SqlQuery do
     {query, args}
   end
 
-  def first_datetime_query(signal, nil) do
-    query = """
-    SELECT toUnixTimestamp(toDateTime(min(dt)))
-    FROM #{@table}
-    PREWHERE
-      signal_id = ( SELECT signal_id FROM signal_metadata FINAL PREWHERE name = ?1 LIMIT 1 )
-    """
-
-    args = [
-      signal
-    ]
-
-    {query, args}
-  end
-
   def first_datetime_query(signal, slug) do
     query = """
     SELECT toUnixTimestamp(toDateTime(min(dt)))

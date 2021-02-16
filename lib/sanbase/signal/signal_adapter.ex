@@ -11,8 +11,8 @@ defmodule Sanbase.Signal.SignalAdapter do
   @signals_mapset FileHandler.signals_mapset()
   @min_interval_map FileHandler.min_interval_map()
   @signals @signals_mapset |> Enum.to_list()
-  @signal_map FileHandler.signal_map()
   @data_type_map FileHandler.data_type_map()
+  @selectors_map FileHandler.selectors_map()
 
   def has_signal?(signal) do
     case signal in @signals_mapset do
@@ -27,7 +27,7 @@ defmodule Sanbase.Signal.SignalAdapter do
   def available_signals(), do: @signals
 
   @impl Sanbase.Signal.Behaviour
-  def available_signals(slug) do
+  def available_signals(%{slug: slug}) when is_binary(slug) do
     {query, args} = available_signals_query(slug)
 
     ClickhouseRepo.query_transform(query, args, fn [signal] -> signal end)
@@ -48,12 +48,13 @@ defmodule Sanbase.Signal.SignalAdapter do
        min_interval: Map.get(@min_interval_map, signal),
        default_aggregation: Map.get(@aggregation_map, signal),
        available_aggregations: @aggregations,
+       available_selectors: Map.get(@selectors_map, signal),
        data_type: Map.get(@data_type_map, signal)
      }}
   end
 
   @impl Sanbase.Signal.Behaviour
-  def first_datetime(signal, slug \\ nil) do
+  def first_datetime(signal, %{slug: slug}) when is_binary(slug) do
     {query, args} = first_datetime_query(signal, slug)
 
     ClickhouseRepo.query_transform(query, args, fn [datetime] ->
@@ -66,9 +67,10 @@ defmodule Sanbase.Signal.SignalAdapter do
   end
 
   @impl Sanbase.Signal.Behaviour
-  def timeseries_data(signal, slug, from, to, interval, aggregation) do
-    default_aggregation = Map.get(@aggregation_map, signal)
-    aggregation = aggregation || default_aggregation
+  def timeseries_data(_signal, %{slug: []}, _from, _to, _interval, _opts), do: {:ok, []}
+
+  def timeseries_data(signal, %{slug: slug}, from, to, interval, opts) do
+    aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, signal)
 
     {query, args} = timeseries_data_query(signal, slug, from, to, interval, aggregation)
 
@@ -81,13 +83,13 @@ defmodule Sanbase.Signal.SignalAdapter do
   end
 
   @impl Sanbase.Signal.Behaviour
-  def aggregated_timeseries_data(signal, slug_or_slugs, from, to, aggregation \\ nil)
-  def aggregated_timeseries_data(_signal, [], _from, _to, _aggregation), do: {:ok, []}
+  def aggregated_timeseries_data(signal, selector, from, to, opts)
+  def aggregated_timeseries_data(_signal, nil, _from, _to, _opts), do: {:ok, []}
+  def aggregated_timeseries_data(_signal, [], _from, _to, _opts), do: {:ok, []}
 
-  def aggregated_timeseries_data(signal, slug_or_slugs, from, to, aggregation)
+  def aggregated_timeseries_data(signal, %{slug: slug_or_slugs}, from, to, opts)
       when is_binary(slug_or_slugs) or is_list(slug_or_slugs) do
-    default_aggregation = Map.get(@aggregation_map, signal)
-    aggregation = aggregation || default_aggregation
+    aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, signal)
     slugs = slug_or_slugs |> List.wrap()
 
     {query, args} = aggregated_timeseries_data_query(signal, slugs, from, to, aggregation)

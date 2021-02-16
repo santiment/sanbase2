@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
   import SanbaseWeb.Graphql.Helpers.Utils
-  import SanbaseWeb.Graphql.Helpers.CalibrateInterval, only: [calibrate: 8]
+  import SanbaseWeb.Graphql.Helpers.CalibrateInterval
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
   import Sanbase.Metric.Selector, only: [args_to_selector: 1, args_to_raw_selector: 1]
 
@@ -8,6 +8,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
     only: [handle_graphql_error: 3, maybe_handle_graphql_error: 2]
 
   alias Sanbase.Signal
+  alias Sanbase.DateTimeUtils
 
   require Logger
 
@@ -57,5 +58,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
       {:error, error} ->
         {:error, handle_graphql_error(signal, slug, error)}
     end
+  end
+
+  def aggregated_timeseries_data(
+        _root,
+        %{from: from, to: to} = args,
+        %{source: %{signal: signal}}
+      ) do
+    include_incomplete_data = Map.get(args, :include_incomplete_data, false)
+
+    with {:ok, selector} <- args_to_selector(args),
+         {:ok, opts} = selector_args_to_opts(args),
+         {:ok, from, to} <-
+           calibrate_incomplete_data_params(include_incomplete_data, Signal, signal, from, to),
+         {:ok, result} <- Signal.aggregated_timeseries_data(signal, selector, from, to, opts) do
+      {:ok, Map.values(result) |> List.first()}
+    end
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(signal, args_to_raw_selector(args), error)
+    end)
   end
 end

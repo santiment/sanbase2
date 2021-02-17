@@ -202,12 +202,12 @@ defmodule Sanbase.SocialData.TrendingWords do
            toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
            word,
            any(project) AS project,
-           SUM(score) / 4 AS total_score
+           SUM(score) / 5 AS total_score
         FROM #{Config.get(:trending_words_table)}
         PREWHERE
           dt >= toDateTime(?2) AND
           dt < toDateTime(?3) AND
-          source NOT IN ('twitter', 'bitcointalk') AND
+          source IN ('reddit', 'twitter', 'telegram', 'discord', 'bitcointalk') AND
           dt = t
         GROUP BY t, word
         ORDER BY total_score DESC

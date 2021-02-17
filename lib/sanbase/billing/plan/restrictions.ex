@@ -110,10 +110,36 @@ defmodule Sanbase.Billing.Plan.Restrictions do
 
   defp construct_name(:metric, name), do: name |> to_string()
   defp construct_name(:query, name), do: name |> Inflex.camelize(:lower)
-  defp min_interval("query", query), do: nil
 
   defp min_interval("metric", metric) do
     {:ok, metadata} = Sanbase.Metric.metadata(metric)
     metadata.min_interval
   end
+
+  defp min_interval("query", query)
+       when query in [
+              "dailyActiveDeposits",
+              "miningPoolsDistribution",
+              "historyTwitterData",
+              "percentOfTokenSupplyOnExchanges"
+            ],
+       do: "1d"
+
+  defp min_interval("query", query)
+       when query in [
+              "gasUsed",
+              "devActivity",
+              "githubActivity",
+              "historicalBalance",
+              "historyPrice",
+              "priceVolumeDiff",
+              "socialDominance",
+              "githubActivity",
+              "minersBalance",
+              "ohlc",
+              "getProjectTrendingHistory"
+            ],
+       do: "5m"
+
+  defp min_interval("query", _query), do: nil
 end

@@ -9,7 +9,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
   """
   @behaviour Absinthe.Middleware
 
-  @compile :inline_list_funcs
   @compile {:inline,
             transform_resolution: 1,
             check_plan: 1,

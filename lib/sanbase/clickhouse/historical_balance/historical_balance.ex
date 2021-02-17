@@ -9,8 +9,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
   alias Sanbase.Model.Project
 
-  @async_with_timeout 29_000
-
   alias Sanbase.Clickhouse.HistoricalBalance.{
     BchBalance,
     BnbBalance,
@@ -20,6 +18,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
     LtcBalance,
     XrpBalance
   }
+
+  @async_with_timeout 29_000
 
   @infrastructure_to_module %{
     "BCH" => BchBalance,

@@ -4,7 +4,6 @@ defmodule Sanbase.Utils.ErrorHandling do
   """
   require Logger
 
-  @compile :inline_list_funcs
   @compile inline: [
              description_and_identifier: 2
            ]

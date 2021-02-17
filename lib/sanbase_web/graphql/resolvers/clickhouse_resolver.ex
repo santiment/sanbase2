@@ -1,19 +1,19 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
-  require Logger
-
-  alias Sanbase.Model.Project
-
   import Absinthe.Resolution.Helpers, only: [on_load: 2]
   import Sanbase.DateTimeUtils, only: [round_datetime: 1]
   import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
 
+  alias Sanbase.Model.Project
   alias SanbaseWeb.Graphql.SanbaseDataloader
+  alias SanbaseWeb.Graphql.Resolvers.MetricResolver
 
   alias Sanbase.Clickhouse.{
     GasUsed,
     MiningPoolsDistribution,
     TopHolders
   }
+
+  require Logger
 
   def top_holders(
         _root,
@@ -85,7 +85,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   end
 
   def network_growth(_root, %{slug: _, from: _, to: _, interval: _} = args, _resolution) do
-    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+    MetricResolver.timeseries_data(
       %{},
       Map.put(args, :include_incomplete_data, true),
       %{source: %{metric: "network_growth"}}
@@ -108,7 +108,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   end
 
   def mvrv_ratio(_root, %{slug: _, from: _, to: _, interval: _} = args, _resolution) do
-    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+    MetricResolver.timeseries_data(
       %{},
       args,
       %{source: %{metric: "mvrv_usd"}}
@@ -121,7 +121,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         %{slug: _, from: _, to: _, interval: _} = args,
         _resolution
       ) do
-    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+    MetricResolver.timeseries_data(
       %{},
       args,
       %{source: %{metric: "circulation_1d"}}
@@ -134,7 +134,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         %{slug: _, from: _, to: _, interval: _} = args,
         _resolution
       ) do
-    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+    MetricResolver.timeseries_data(
       %{},
       args,
       %{source: %{metric: "velocity"}}
@@ -147,7 +147,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         %{slug: _, from: _, to: _, interval: _} = args,
         _resolution
       ) do
-    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+    MetricResolver.timeseries_data(
       %{},
       args,
       %{source: %{metric: "daily_active_addresses"}}
@@ -210,7 +210,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         %{slug: _, from: _, to: _, interval: _} = args,
         _resolution
       ) do
-    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+    MetricResolver.timeseries_data(
       %{},
       args,
       %{source: %{metric: "active_deposits"}}
@@ -223,7 +223,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         %{slug: _, from: _, to: _, interval: _} = args,
         _resolution
       ) do
-    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+    MetricResolver.timeseries_data(
       %{},
       Map.put(args, :include_incomplete_data, true),
       %{source: %{metric: "realized_value_usd"}}
@@ -237,13 +237,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         _resolution
       ) do
     with {:ok, nvt_circulation} <-
-           SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+           MetricResolver.timeseries_data(
              %{},
              args,
              %{source: %{metric: "nvt"}}
            ),
          {:ok, nvt_transaction_volume} <-
-           SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+           MetricResolver.timeseries_data(
              %{},
              args,
              %{source: %{metric: "nvt_transaction_volume"}}
@@ -268,7 +268,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         %{slug: _, from: _, to: _, interval: _} = args,
         _resolution
       ) do
-    SanbaseWeb.Graphql.Resolvers.MetricResolver.timeseries_data(
+    MetricResolver.timeseries_data(
       %{},
       args,
       %{source: %{metric: "percent_of_total_supply_on_exchanges"}}

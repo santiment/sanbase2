@@ -1,5 +1,7 @@
 defmodule Sanbase.Model.Project do
   use Ecto.Schema
+
+  import Ecto.Query
   import Ecto.Changeset
 
   alias __MODULE__
@@ -14,8 +16,6 @@ defmodule Sanbase.Model.Project do
     Infrastructure,
     LatestCoinmarketcapData
   }
-
-  import Ecto.Query
 
   @preloads [:eth_addresses, :latest_coinmarketcap_data, :github_organizations]
 

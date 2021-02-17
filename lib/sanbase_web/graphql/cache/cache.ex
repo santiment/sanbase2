@@ -4,13 +4,16 @@ defmodule SanbaseWeb.Graphql.Cache do
   caches the result of the resolver for a some time instead of precalculating itt
   each time.
   """
+
+  alias __MODULE__, as: CacheMod
+  alias SanbaseWeb.Graphql.ConCacheProvider, as: CacheProvider
+
   require Logger
 
   @ttl 300
   @max_ttl_offset 120
   @cache_name :graphql_cache
 
-  @compile :inline_list_funcs
   @compile {:inline,
             wrap: 2,
             wrap: 3,
@@ -24,9 +27,6 @@ defmodule SanbaseWeb.Graphql.Cache do
             cache_key: 2,
             convert_values: 2,
             generate_additional_args: 1}
-
-  alias __MODULE__, as: CacheMod
-  alias SanbaseWeb.Graphql.ConCacheProvider, as: CacheProvider
 
   @doc ~s"""
   Macro that's used instead of Absinthe's `resolve`. This resolver can perform

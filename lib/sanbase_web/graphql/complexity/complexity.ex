@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.Complexity do
   require Logger
 
-  @compile :inline_list_funcs
   @compile inline: [
              calculate_complexity: 3,
              interval_seconds: 1,

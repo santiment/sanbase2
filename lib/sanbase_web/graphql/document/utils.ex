@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.DocumentProvider.Utils do
-  @compile :inline_list_funcs
-  @compile {:inline, cache_key_from_params: 2}
+  @compile {:inline,
+            cache_key_from_params: 2, variables_from_params: 1, params_variables_to_map: 1}
 
   @doc ~s"""
   Extract the query and variables from the params map and genenrate a cache key from them
@@ -15,28 +15,34 @@ defmodule SanbaseWeb.Graphql.DocumentProvider.Utils do
   @spec cache_key_from_params(map(), map()) :: any()
   def cache_key_from_params(params, permissions) do
     query = Map.get(params, "query", "")
-
-    variables =
-      case Map.get(params, "variables") do
-        map when is_map(map) -> map
-        vars when is_binary(vars) and vars != "" -> vars |> Jason.decode!()
-        _ -> %{}
-      end
-      |> Enum.map(fn
-        {key, value} when is_binary(value) ->
-          case DateTime.from_iso8601(value) do
-            {:ok, datetime, _} -> {key, datetime}
-            _ -> {key, value}
-          end
-
-        pair ->
-          pair
-      end)
-      |> Map.new()
+    variables = variables_from_params(params)
 
     SanbaseWeb.Graphql.Cache.cache_key({query, permissions}, variables,
       ttl: 120,
       max_ttl_offset: 90
     )
+  end
+
+  defp variables_from_params(params) do
+    params_variables_to_map(params)
+    |> Enum.map(fn
+      {key, value} when is_binary(value) ->
+        case DateTime.from_iso8601(value) do
+          {:ok, datetime, _} -> {key, datetime}
+          _ -> {key, value}
+        end
+
+      pair ->
+        pair
+    end)
+    |> Map.new()
+  end
+
+  defp params_variables_to_map(params) do
+    case Map.get(params, "variables") do
+      map when is_map(map) -> map
+      vars when is_binary(vars) and vars != "" -> vars |> Jason.decode!()
+      _ -> %{}
+    end
   end
 end

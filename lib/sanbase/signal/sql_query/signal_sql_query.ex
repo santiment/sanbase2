@@ -12,7 +12,7 @@ defmodule Sanbase.Signal.SqlQuery do
   use Absinthe.Schema.Notation, only: [arg: 2]
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
-  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3]
+  import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3, asset_id_filter: 2]
 
   schema @table do
     field(:datetime, :utc_datetime, source: :dt)
@@ -121,7 +121,7 @@ defmodule Sanbase.Signal.SqlQuery do
       PREWHERE
         dt >= toDateTime(?2) AND
         dt < toDateTime(?3) AND
-        signal_id = ( SELECT signal_id FROM #{@metadata_table} FINAL PREWHERE name = ?1 LIMIT 1 )
+        #{asset_id_filter(slugs, argument_position: 4)}
     )
     INNER JOIN (
       SELECT asset_id, name
@@ -131,6 +131,7 @@ defmodule Sanbase.Signal.SqlQuery do
     GROUP BY slug
     """
 
+    # signal_id = ( SELECT signal_id FROM #{@metadata_table} FINAL PREWHERE name = ?1 LIMIT 1 )
     args = [
       signal,
       from |> DateTime.to_unix(),

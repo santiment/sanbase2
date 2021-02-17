@@ -29,15 +29,15 @@ defmodule Sanbase.Signal do
     SignalAdapter.metadata(signal)
   end
 
-  def first_datetime(signal, slug) do
-    SignalAdapter.first_datetime(signal, slug)
+  def first_datetime(signal, selector) do
+    SignalAdapter.first_datetime(signal, selector)
   end
 
-  def timeseries_data(signal, slug, from, to, interval, aggregation) do
-    SignalAdapter.timeseries_data(signal, slug, from, to, interval, aggregation)
+  def timeseries_data(signal, selector, from, to, interval, aggregation) do
+    SignalAdapter.timeseries_data(signal, selector, from, to, interval, aggregation)
   end
 
-  def aggregated_timeseries_data(signal, slug_or_slugs, from, to, aggregation) do
-    SignalAdapter.aggregated_timeseries_data(signal, slug_or_slugs, from, to, aggregation)
+  def aggregated_timeseries_data(signal, selector, from, to, aggregation) do
+    SignalAdapter.aggregated_timeseries_data(signal, selector, from, to, aggregation)
   end
 end

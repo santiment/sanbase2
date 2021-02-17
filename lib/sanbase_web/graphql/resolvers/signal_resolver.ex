@@ -43,19 +43,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
 
   def timeseries_data(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval} = args,
+        %{from: from, to: to, interval: interval} = args,
         %{source: %{signal: signal}}
       ) do
-    with {:ok, from, to, interval} <-
-           calibrate(Signal, signal, slug, from, to, interval, 86_400, @datapoints),
-         {:ok, selector} <- args_to_selector(args),
+    with {:ok, selector} <- args_to_selector(args),
          {:ok, opts} = selector_args_to_opts(args),
+         {:ok, from, to, interval} <-
+           calibrate(Signal, signal, selector, from, to, interval, 86_400, @datapoints),
          {:ok, result} <-
            Signal.timeseries_data(signal, selector, from, to, interval, opts) do
       {:ok, result |> Enum.reject(&is_nil/1)}
     else
       {:error, error} ->
-        {:error, handle_graphql_error(signal, slug, error)}
+        {:error, handle_graphql_error(signal, args_to_raw_selector(args), error)}
     end
   end
 

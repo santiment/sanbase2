@@ -8,6 +8,11 @@ defmodule SanbaseWeb.Graphql.SignalTypes do
   alias SanbaseWeb.Graphql.Resolvers.SignalResolver
   alias Sanbase.Signal
 
+  input_object :signal_selector_input_object do
+    field(:slug, :string)
+    field(:slugs, list_of(:string))
+  end
+
   object :signal_data do
     field(:datetime, non_null(:datetime))
     field(:value, :float)
@@ -64,7 +69,8 @@ defmodule SanbaseWeb.Graphql.SignalTypes do
     and time period.
     """
     field :timeseries_data, list_of(:signal_data) do
-      arg(:slug, non_null(:string))
+      arg(:slug, :string)
+      arg(:selector, :signal_selector_input_object)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :interval, default_value: "1d")
@@ -85,7 +91,8 @@ defmodule SanbaseWeb.Graphql.SignalTypes do
     of the values in the specified from-to range with the `aggregation` aggregation.
     """
     field :aggregated_timeseries_data, :float do
-      arg(:slug, non_null(:string))
+      arg(:slug, :string)
+      arg(:selector, :signal_selector_input_object)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:aggregation, :aggregation, default_value: nil)
@@ -97,7 +104,8 @@ defmodule SanbaseWeb.Graphql.SignalTypes do
     end
 
     field :available_since, :datetime do
-      arg(:slug, non_null(:string))
+      arg(:slug, :string)
+      arg(:selector, :signal_selector_input_object)
       cache_resolve(&SignalResolver.available_since/3)
     end
 

@@ -63,6 +63,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
     %{
       type: type_str,
       name: name_str,
+      min_interval: min_interval(type_str, name_str),
       is_accessible: false,
       is_restricted: false,
       restricted_from: nil,
@@ -74,6 +75,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
     %{
       type: type_str,
       name: name_str,
+      min_interval: min_interval(type_str, name_str),
       is_accessible: true,
       is_restricted: false
     }
@@ -98,6 +100,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
     %{
       type: type_str,
       name: name_str,
+      min_interval: min_interval(type_str, name_str),
       is_accessible: true,
       is_restricted: not is_nil(restricted_from) or not is_nil(restricted_to),
       restricted_from: restricted_from,
@@ -107,4 +110,10 @@ defmodule Sanbase.Billing.Plan.Restrictions do
 
   defp construct_name(:metric, name), do: name |> to_string()
   defp construct_name(:query, name), do: name |> Inflex.camelize(:lower)
+  defp min_interval("query", query), do: nil
+
+  defp min_interval("metric", metric) do
+    {:ok, metadata} = Sanbase.Metric.metadata(metric)
+    metadata.min_interval
+  end
 end

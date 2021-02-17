@@ -76,6 +76,26 @@ defmodule SanbaseWeb.Graphql.SignalTypes do
       cache_resolve(&SignalResolver.timeseries_data/3)
     end
 
+    @desc ~s"""
+    A derivative of the `timeseriesData` - read its full descriptio if not
+    familiar with it.
+
+    `aggregatedTimeseriesData` returns a single float value instead of list
+    of datetimes and values. The single values is computed by aggregating all
+    of the values in the specified from-to range with the `aggregation` aggregation.
+    """
+    field :aggregated_timeseries_data, :float do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:aggregation, :aggregation, default_value: nil)
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(AccessControl)
+
+      cache_resolve(&SignalResolver.aggregated_timeseries_data/3)
+    end
+
     field :available_since, :datetime do
       arg(:slug, non_null(:string))
       cache_resolve(&SignalResolver.available_since/3)

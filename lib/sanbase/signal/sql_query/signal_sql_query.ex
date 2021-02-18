@@ -9,7 +9,6 @@ defmodule Sanbase.Signal.SqlQuery do
   """
 
   use Ecto.Schema
-  use Absinthe.Schema.Notation, only: [arg: 2]
 
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
   import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3, asset_id_filter: 2]

@@ -90,7 +90,7 @@ defmodule Sanbase.Signal.SqlQuery do
         dt < toDateTime(?3) AND
         isNotNull(value) AND NOT isNaN(value) AND
         #{asset_id_filter(slug_or_slugs, argument_position: 5)} AND
-        signal_id = ( SELECT signal_id FROM #{@metadata_table} FINAL PREWHERE name = ?4 LIMIT 1 ) AND
+        signal_id = ( SELECT signal_id FROM #{@metadata_table} FINAL PREWHERE name = ?4 LIMIT 1 )
     )
     GROUP BY t
     ORDER BY t

@@ -42,17 +42,17 @@ defmodule Sanbase.SocialData do
     words_str = Enum.join(words, ",")
 
     words_context_request(words, source, size, from_datetime, to_datetime)
-    |> handle_response(&words_context_result/1, "word context", "word #{words_str}")
+    |> handle_response(&words_context_result/1, "word context", "words: #{words_str}")
   end
 
   def word_context(word, source, size, from_datetime, to_datetime) do
     word_context_request(word, source, size, from_datetime, to_datetime)
-    |> handle_response(&word_context_result/1, "word context", "word #{word}")
+    |> handle_response(&word_context_result/1, "word context", "word: #{word}")
   end
 
   def word_trend_score(word, source, from_datetime, to_datetime) do
     word_trend_score_request(word, source, from_datetime, to_datetime)
-    |> handle_response(&word_trend_score_result/1, "word trend score", "word #{word}")
+    |> handle_response(&word_trend_score_result/1, "word trend score", "word: #{word}")
   end
 
   def top_social_gainers_losers(args) do
@@ -268,7 +268,6 @@ defmodule Sanbase.SocialData do
 
   defp top_social_gainers_losers_result(result) do
     result
-    |> Enum.sort(&(&1["timestamp"] <= &2["timestamp"]))
     |> Enum.map(fn
       %{"timestamp" => timestamp, "projects" => projects} ->
         %{
@@ -276,12 +275,12 @@ defmodule Sanbase.SocialData do
           projects: convert_projects_result(projects)
         }
     end)
+    |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
     |> wrap_ok()
   end
 
   defp social_gainers_losers_status_result(result) do
     result
-    |> Enum.sort(&(&1["timestamp"] <= &2["timestamp"]))
     |> Enum.map(fn
       %{"timestamp" => timestamp, "status" => status, "change" => change} ->
         %{
@@ -290,6 +289,7 @@ defmodule Sanbase.SocialData do
           change: change
         }
     end)
+    |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
     |> wrap_ok()
   end
 

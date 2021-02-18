@@ -2,6 +2,7 @@ defmodule Sanbase.Signal.SignalAdapter do
   @behaviour Sanbase.Signal.Behaviour
 
   import Sanbase.Signal.SqlQuery
+  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
 
   alias Sanbase.Signal.FileHandler
   alias Sanbase.ClickhouseRepo
@@ -60,10 +61,7 @@ defmodule Sanbase.Signal.SignalAdapter do
     ClickhouseRepo.query_transform(query, args, fn [datetime] ->
       DateTime.from_unix!(datetime)
     end)
-    |> case do
-      {:ok, [result]} -> {:ok, result}
-      {:error, error} -> {:error, error}
-    end
+    |> maybe_unwrap_ok_value()
   end
 
   @impl Sanbase.Signal.Behaviour

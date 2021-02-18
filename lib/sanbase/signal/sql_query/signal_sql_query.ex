@@ -107,7 +107,7 @@ defmodule Sanbase.Signal.SqlQuery do
     {query, args}
   end
 
-  def aggregated_timeseries_data_query(signal, slugs, from, to, aggregation) do
+  def aggregated_timeseries_data_query(signal, slug_or_slugs, from, to, aggregation) do
     query = """
     SELECT
       name as slug,
@@ -121,7 +121,8 @@ defmodule Sanbase.Signal.SqlQuery do
       PREWHERE
         dt >= toDateTime(?2) AND
         dt < toDateTime(?3) AND
-        #{asset_id_filter(slugs, argument_position: 4)}
+        #{asset_id_filter(slug_or_slugs, argument_position: 4)} AND
+        signal_id = ( SELECT signal_id FROM #{@metadata_table} FINAL PREWHERE name = ?1 LIMIT 1 )
     )
     INNER JOIN (
       SELECT asset_id, name
@@ -131,12 +132,11 @@ defmodule Sanbase.Signal.SqlQuery do
     GROUP BY slug
     """
 
-    # signal_id = ( SELECT signal_id FROM #{@metadata_table} FINAL PREWHERE name = ?1 LIMIT 1 )
     args = [
       signal,
       from |> DateTime.to_unix(),
       to |> DateTime.to_unix(),
-      slugs
+      slug_or_slugs
     ]
 
     {query, args}

@@ -16,6 +16,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.ShortUrlResolver do
     do_create_short_url(args, nil)
   end
 
+  def update_short_url(_root, %{short_url: short_url} = args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    params = Map.delete(args, :short_url)
+    Sanbase.ShortUrl.update(current_user.id, short_url, params)
+  end
+
+  def update_short_url(_root, %{} = args, _resolution) do
+    {:error,
+     """
+     Only authenticated users can update Short URLs.
+     Short URLs created by anonymous users cannot be updated.
+     """}
+  end
+
   def get_full_url(_root, %{short_url: short_url}, _resolution) do
     case Sanbase.ShortUrl.get(short_url) do
       nil -> {:error, "Short url #{short_url} does not exist."}

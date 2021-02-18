@@ -36,6 +36,19 @@ defmodule Sanbase.ShortUrl do
     |> Repo.insert()
   end
 
+  def update(user_id, short_url, params) do
+    case get(short_url) do
+      %__MODULE__{user_id: ^user_id} = struct ->
+        struct
+        |> changeset(params)
+        |> Repo.update()
+
+      _ ->
+        {:error,
+         "The Short URL #{short_url} does not exist or belongs to another user and cannot be updated"}
+    end
+  end
+
   def get(short_url) when is_binary(short_url) do
     from(
       url in __MODULE__,

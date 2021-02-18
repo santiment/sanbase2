@@ -63,12 +63,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
         %{from: from, to: to} = args,
         %{source: %{signal: signal}}
       ) do
-    include_incomplete_data = Map.get(args, :include_incomplete_data, false)
-
     with {:ok, selector} <- args_to_selector(args),
          {:ok, opts} = selector_args_to_opts(args),
-         {:ok, from, to} <-
-           calibrate_incomplete_data_params(include_incomplete_data, Signal, signal, from, to),
          {:ok, result} <- Signal.aggregated_timeseries_data(signal, selector, from, to, opts) do
       {:ok, Map.values(result) |> List.first()}
     end

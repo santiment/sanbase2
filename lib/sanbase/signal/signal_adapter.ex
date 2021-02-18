@@ -66,12 +66,15 @@ defmodule Sanbase.Signal.SignalAdapter do
 
   @impl Sanbase.Signal.Behaviour
   def timeseries_data(signal, selector, from, to, interval, opts)
-  def timeseries_data(_signal, %{slug: []}, _from, _to, _interval, _opts), do: {:ok, []}
+  def timeseries_data(_signal, nil, _from, _to, _interval, _opts), do: {:ok, []}
+  def timeseries_data(_signal, [], _from, _to, _interval, _opts), do: {:ok, []}
 
-  def timeseries_data(signal, %{slug: slug}, from, to, interval, opts) do
+  def timeseries_data(signal, %{slug: slug_or_slugs}, from, to, interval, opts)
+      when is_binary(slug_or_slugs) or is_list(slug_or_slugs) do
     aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, signal)
+    slugs = slug_or_slugs |> List.wrap()
 
-    {query, args} = timeseries_data_query(signal, slug, from, to, interval, aggregation)
+    {query, args} = timeseries_data_query(signal, slugs, from, to, interval, aggregation)
 
     ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
       %{
@@ -93,8 +96,8 @@ defmodule Sanbase.Signal.SignalAdapter do
 
     {query, args} = aggregated_timeseries_data_query(signal, slugs, from, to, aggregation)
 
-    ClickhouseRepo.query_transform(query, args, fn [name, value] ->
-      %{name => value}
+    ClickhouseRepo.query_reduce(query, args, %{}, fn [slug, value], acc ->
+      Map.put(acc, slug, value)
     end)
   end
 

@@ -74,7 +74,7 @@ defmodule Sanbase.Signal.SqlQuery do
     {query, args}
   end
 
-  def timeseries_data_query(signal, slug, from, to, interval, aggregation) do
+  def timeseries_data_query(signal, slug_or_slugs, from, to, interval, aggregation) do
     query = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?1) * ?1) AS t,
@@ -89,8 +89,8 @@ defmodule Sanbase.Signal.SqlQuery do
         dt >= toDateTime(?2) AND
         dt < toDateTime(?3) AND
         isNotNull(value) AND NOT isNaN(value) AND
+        #{asset_id_filter(slug_or_slugs, argument_position: 5)} AND
         signal_id = ( SELECT signal_id FROM #{@metadata_table} FINAL PREWHERE name = ?4 LIMIT 1 ) AND
-        asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?5 LIMIT 1 )
     )
     GROUP BY t
     ORDER BY t
@@ -101,7 +101,7 @@ defmodule Sanbase.Signal.SqlQuery do
       from |> DateTime.to_unix(),
       to |> DateTime.to_unix(),
       signal,
-      slug
+      slug_or_slugs
     ]
 
     {query, args}

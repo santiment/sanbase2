@@ -1,0 +1,13 @@
+[
+  {
+    "human_readable_name": "Minting Dai Signal",
+    "name": "dai_mint",
+    "signal": "dai_mint",
+    "access": "free",
+    "selectors": ["slug"],
+    "aggregation": "count",
+    "min_interval": "1m",
+    "table": "signals",
+    "data_type": "timeseries"
+  }
+]

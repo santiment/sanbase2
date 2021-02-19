@@ -120,6 +120,32 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     SocialData.trending_words(source, size, hour, from, to)
   end
 
+  def words_social_volume(
+        _root,
+        %{selector: %{words: words} = selector, from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    SocialData.social_volume(selector, from, to, interval, :total)
+  end
+
+  def words_context(
+        _root,
+        %{selector: %{word: word}, source: source, size: size, from: from, to: to},
+        _resolution
+      ) do
+    size = Enum.min([size, 30])
+    SocialData.word_context([word], source, size, from, to)
+  end
+
+  def words_context(
+        _root,
+        %{selector: %{words: words}, source: source, size: size, from: from, to: to},
+        _resolution
+      ) do
+    size = Enum.min([size, 30])
+    SocialData.word_context(words, source, size, from, to)
+  end
+
   def word_context(
         _root,
         %{word: word, source: source, size: size, from: from, to: to},

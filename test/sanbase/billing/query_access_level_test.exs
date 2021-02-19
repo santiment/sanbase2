@@ -141,7 +141,9 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :topic_search,
           :transaction_volume,
           :word_context,
-          :word_trend_score
+          :word_trend_score,
+          :words_context,
+          :words_social_volume
         ]
         |> Enum.sort()
 

@@ -162,7 +162,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
     field :word_context, list_of(:word_context) do
       meta(access: :restricted)
 
-      arg(:word, non_null(:string))
+      arg(:word, :string)
       arg(:source, non_null(:trending_words_sources))
       arg(:size, non_null(:integer))
       arg(:from, non_null(:datetime))
@@ -171,6 +171,33 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       complexity(&Complexity.from_to_interval/3)
       middleware(AccessControl, %{allow_realtime_data: true})
       cache_resolve(&SocialDataResolver.word_context/3, ttl: 600, max_ttl_offset: 240)
+    end
+
+    field :words_context, list_of(:words_context) do
+      meta(access: :restricted)
+
+      arg(:selector, :word_selector_input_object)
+      arg(:source, non_null(:trending_words_sources))
+      arg(:size, non_null(:integer))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(AccessControl, %{allow_realtime_data: true})
+      cache_resolve(&SocialDataResolver.words_context/3, ttl: 600, max_ttl_offset: 240)
+    end
+
+    field :words_social_volume, list_of(:words_social_volume) do
+      meta(access: :restricted)
+
+      arg(:selector, :word_selector_input_object)
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :interval, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(AccessControl, %{allow_realtime_data: true})
+      cache_resolve(&SocialDataResolver.words_social_volume/3, ttl: 600, max_ttl_offset: 240)
     end
 
     @desc "Fetch the Twitter mention count for a given ticker and time period."

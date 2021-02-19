@@ -72,7 +72,8 @@ defmodule Sanbase.SocialData.MetricAdapter do
   def complexity_weight(_), do: @default_complexity_weight
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data(metric, %{slug: _slug} = selector, from, to, interval, _opts)
+
+  def timeseries_data(metric, selector, from, to, interval, _opts)
       when metric in @social_volume_timeseries_metrics do
     "social_volume_" <> source = metric
 
@@ -93,14 +94,6 @@ defmodule Sanbase.SocialData.MetricAdapter do
     "community_messages_count_" <> source = metric
 
     Sanbase.SocialData.community_messages_count(selector, from, to, interval, source)
-    |> transform_to_value_pairs(:mentions_count)
-  end
-
-  def timeseries_data(metric, %{text: _text} = selector, from, to, interval, _opts)
-      when metric in @social_volume_timeseries_metrics do
-    "social_volume_" <> source = metric
-
-    Sanbase.SocialData.social_volume(selector, from, to, interval, source)
     |> transform_to_value_pairs(:mentions_count)
   end
 

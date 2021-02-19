@@ -2085,7 +2085,7 @@
   {
     "human_readable_name": "Price in ETH",
     "name": "price_eth_5m",
-    "metric": "price_eth",
+    "metric": "price_eth_5m",
     "version": "2019-01-01",
     "access": "free",
     "selectors": ["slug"],

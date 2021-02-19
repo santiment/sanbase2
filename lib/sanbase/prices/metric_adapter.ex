@@ -5,7 +5,7 @@ defmodule Sanbase.Price.MetricAdapter do
   @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median]
   @default_aggregation :last
 
-  @timeseries_metrics ["price_usd", "price_btc", "price_eth", "volume_usd", "marketcap_usd"]
+  @timeseries_metrics ["price_usd", "price_btc", "volume_usd", "marketcap_usd"]
   @histogram_metrics []
   @table_metrics []
 

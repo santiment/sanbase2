@@ -3,7 +3,7 @@ defmodule Sanbase.Insight.Post do
 
   import Ecto.Changeset
   import Ecto.Query
-  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_to_str: 1]
+  import SanbaseWeb.Graphql.Helpers.Utils, only: [error_details: 1]
 
   alias Sanbase.Tag
   alias Sanbase.Repo
@@ -193,7 +193,7 @@ defmodule Sanbase.Insight.Post do
       {:error, changeset} ->
         {
           :error,
-          message: "Cannot create insight", details: changeset_errors_to_str(changeset)
+          message: "Cannot create insight", details: error_details(changeset)
         }
     end
   end
@@ -224,7 +224,7 @@ defmodule Sanbase.Insight.Post do
         {:error, "Cannot update not owned insight: #{post_id}"}
 
       {:error, changeset} ->
-        {:error, message: "Cannot update insight", details: changeset_errors_to_str(changeset)}
+        {:error, message: "Cannot update insight", details: error_details(changeset)}
 
       _post ->
         {:error, "Cannot update insight with id: #{post_id}"}
@@ -246,8 +246,7 @@ defmodule Sanbase.Insight.Post do
 
           {:error, changeset} ->
             {:error,
-             message: "Cannot delete post with id #{post_id}",
-             details: changeset_errors_to_str(changeset)}
+             message: "Cannot delete post with id #{post_id}", details: error_details(changeset)}
         end
 
       _post ->

@@ -23,6 +23,7 @@ defmodule Sanbase.Accounts.Settings do
     field(:newsletter_subscription_updated_at_unix, :integer, default: nil)
     field(:is_promoter, :boolean, default: false)
     field(:paid_with, :string, default: nil)
+    field(:favorite_metrics, {:array, :string}, default: [])
     # Alert fields
     field(:has_telegram_connected, :boolean, virtual: true)
     field(:telegram_chat_id, :integer)
@@ -45,6 +46,7 @@ defmodule Sanbase.Accounts.Settings do
       :hide_privacy_data,
       :is_promoter,
       :paid_with,
+      :favorite_metrics,
       :alerts_per_day_limit,
       :alerts_fired
     ])
@@ -53,6 +55,7 @@ defmodule Sanbase.Accounts.Settings do
       params[:newsletter_subscription]
     )
     |> validate_change(:newsletter_subscription, &validate_subscription_type/2)
+    |> validate_change(:favorite_metrics, &validate_favorite_metrics/2)
   end
 
   def daily_subscription_type(), do: "DAILY"
@@ -67,6 +70,21 @@ defmodule Sanbase.Accounts.Settings do
       :newsletter_subscription_updated_at_unix,
       DateTime.utc_now() |> DateTime.to_unix()
     )
+  end
+
+  defp validate_favorite_metrics(_, nil), do: []
+
+  defp validate_favorite_metrics(_, type) do
+    type
+    |> Stream.map(&Sanbase.Metric.has_metric?/1)
+    |> Enum.find(&(&1 != true))
+    |> case do
+      nil ->
+        []
+
+      {:error, error} ->
+        [favorite_metrics: "Invalid metric found in the favorite metrics list. #{error}"]
+    end
   end
 
   defp validate_subscription_type(_, nil), do: []

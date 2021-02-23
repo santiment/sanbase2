@@ -363,6 +363,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
         slug: "stablecoins",
         name: "Stablecoins",
         is_public: true,
+        is_screener: true,
         type: :blockchain_address
       })
 
@@ -372,6 +373,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
         id
         name
         slug
+        isScreener
       }
     }
     """
@@ -384,6 +386,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
     assert result["data"]["watchlistBySlug"]["id"] |> Sanbase.Math.to_integer() == ws.id
     assert result["data"]["watchlistBySlug"]["name"] == ws.name
     assert result["data"]["watchlistBySlug"]["slug"] == ws.slug
+    assert result["data"]["watchlistBySlug"]["isScreener"]
   end
 
   test "returns public lists for anonymous users", %{user2: user} do
@@ -404,6 +407,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
              "color" => "NONE",
              "id" => "#{watchlist.id}",
              "is_public" => true,
+             "is_screener" => false,
              "listItems" => [],
              "name" => "My Test List",
              "user" => %{"id" => "#{user.id}"}
@@ -415,6 +419,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
       UserList.create_user_list(user, %{
         name: "My Test List",
         is_public: true,
+        is_screener: false,
         type: :blockchain_address
       })
 
@@ -429,6 +434,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
              "color" => "NONE",
              "id" => "#{watchlist.id}",
              "is_public" => true,
+             "is_screener" => false,
              "listItems" => [],
              "name" => "My Test List",
              "user" => %{"id" => "#{user.id}"}
@@ -454,6 +460,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
              "color" => "NONE",
              "id" => "#{watchlist.id}",
              "is_public" => false,
+             "is_screener" => false,
              "listItems" => [],
              "name" => "My Test List",
              "user" => %{"id" => "#{user.id}"}
@@ -615,6 +622,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
         name
         color
         is_public
+        is_screener
         user {
           id
         }

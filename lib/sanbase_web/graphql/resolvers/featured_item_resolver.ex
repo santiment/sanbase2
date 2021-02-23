@@ -10,8 +10,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.FeaturedItemResolver do
   end
 
   def watchlists(_root, %{} = args, _context) do
-    type = Map.get(args, :type) || :project
-    {:ok, FeaturedItem.watchlists(type)}
+    {:ok, FeaturedItem.watchlists(args)}
   end
 
   def user_triggers(_root, _args, _context) do

@@ -123,7 +123,7 @@ defmodule Sanbase.FeaturedItemTest do
 
   describe "watchlist featured items" do
     test "no watchlists are featured" do
-      assert FeaturedItem.watchlists(:project) == []
+      assert FeaturedItem.watchlists(%{type: :project}) == []
     end
 
     test "cannot make private watchlist featured" do
@@ -139,7 +139,7 @@ defmodule Sanbase.FeaturedItemTest do
 
       insert(:watchlist, is_public: true, type: :project)
       :ok = FeaturedItem.update_item(watchlist, true)
-      assert FeaturedItem.watchlists(:blockchain_address) == [watchlist]
+      assert FeaturedItem.watchlists(%{type: :blockchain_address}) == [watchlist]
     end
 
     test "unmarking watchlists as featured" do
@@ -150,7 +150,7 @@ defmodule Sanbase.FeaturedItemTest do
       FeaturedItem.update_item(watchlist, true)
       FeaturedItem.update_item(watchlist, false)
 
-      assert FeaturedItem.watchlists(:blockchain_address) == []
+      assert FeaturedItem.watchlists(%{type: :blockchain_address}) == []
     end
 
     test "marking watchlist as featured is idempotent" do

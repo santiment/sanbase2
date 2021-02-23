@@ -164,6 +164,34 @@ defmodule Sanbase.FeaturedItemApiTest do
              }
     end
 
+    test "fetching featured screeners watchlists", context do
+      screener = insert(:watchlist, is_public: true, is_screener: true)
+      :ok = FeaturedItem.update_item(screener, true)
+
+      assert fetch_watchlists(context.conn, is_screener: true) == %{
+               "data" => %{
+                 "featuredWatchlists" => [
+                   %{"id" => "#{screener.id}", "name" => "#{screener.name}"}
+                 ]
+               }
+             }
+    end
+
+    test "by default it fetches only non screeners watchlists", context do
+      screener = insert(:watchlist, is_public: true, is_screener: true)
+      watchlist = insert(:watchlist, is_public: true)
+      :ok = FeaturedItem.update_item(screener, true)
+      :ok = FeaturedItem.update_item(watchlist, true)
+
+      assert fetch_watchlists(context.conn) == %{
+               "data" => %{
+                 "featuredWatchlists" => [
+                   %{"id" => "#{watchlist.id}", "name" => "#{watchlist.name}"}
+                 ]
+               }
+             }
+    end
+
     test "unmarking watchlists as featured", context do
       watchlist = insert(:watchlist, is_public: true)
       :ok = FeaturedItem.update_item(watchlist, true)
@@ -186,10 +214,12 @@ defmodule Sanbase.FeaturedItemApiTest do
              }
     end
 
-    defp fetch_watchlists(conn) do
+    defp fetch_watchlists(conn, opts \\ []) do
+      is_screener = Keyword.get(opts, :is_screener, false)
+
       query = """
       {
-        featuredWatchlists{
+        featuredWatchlists(isScreener: #{is_screener}){
           id
           name
         }

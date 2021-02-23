@@ -30,6 +30,7 @@ defmodule SanbaseWeb.Graphql.WatchlistApiTest do
         name: "My list"
         description: "Description"
         listItems: [{project_id: #{project.id}}]
+        is_screener: true
         color: BLACK) {
           id
           name

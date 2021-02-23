@@ -13,6 +13,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.FeaturedItemResolver do
     {:ok, FeaturedItem.watchlists(args)}
   end
 
+  def screeners(_root, _args, _context) do
+    {:ok, FeaturedItem.watchlists(%{is_screener: true})}
+  end
+
   def user_triggers(_root, _args, _context) do
     {:ok, FeaturedItem.user_triggers() |> Enum.map(&transform_user_trigger/1)}
   end

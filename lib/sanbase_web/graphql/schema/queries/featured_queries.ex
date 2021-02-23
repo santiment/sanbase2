@@ -17,8 +17,12 @@ defmodule SanbaseWeb.Graphql.Schema.FeaturedQueries do
     field :featured_watchlists, list_of(:user_list) do
       meta(access: :free)
       arg(:type, :watchlist_type_enum, default_value: :project)
-      arg(:is_screener, :boolean, default_value: false)
       cache_resolve(&FeaturedItemResolver.watchlists/3)
+    end
+
+    field :featured_screeners, list_of(:user_list) do
+      meta(access: :free)
+      cache_resolve(&FeaturedItemResolver.screeners/3)
     end
 
     field :featured_user_triggers, list_of(:user_trigger) do

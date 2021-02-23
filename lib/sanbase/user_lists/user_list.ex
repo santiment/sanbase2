@@ -119,7 +119,7 @@ defmodule Sanbase.UserList do
   end
 
   def is_public?(%__MODULE__{is_public: is_public}), do: is_public
-  def is_screener?(%__MODULE__{is_public: is_screener}), do: is_screener
+  def is_screener?(%__MODULE__{is_screener: is_screener}), do: is_screener
 
   @doc ~s"""
   Return a list of all blockchain addresses in a watchlist.

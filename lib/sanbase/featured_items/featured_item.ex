@@ -61,9 +61,9 @@ defmodule Sanbase.FeaturedItem do
     |> Repo.preload([:user, :tags])
   end
 
-  def watchlists(opts \\ %{}) do
-    type = Map.get(opts, :type, :project)
-    is_screener = Map.get(opts, :is_screener, false)
+  def watchlists(args \\ %{}) do
+    type = Map.get(args, :type, :project)
+    is_screener = Map.get(args, :is_screener, false)
 
     watchlists_query()
     |> join(:inner, [fi], fi in assoc(fi, :user_list))

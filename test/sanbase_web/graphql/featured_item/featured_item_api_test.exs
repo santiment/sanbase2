@@ -164,13 +164,13 @@ defmodule Sanbase.FeaturedItemApiTest do
              }
     end
 
-    test "fetching featured screeners watchlists", context do
+    test "fetching featured screeners", context do
       screener = insert(:watchlist, is_public: true, is_screener: true)
       :ok = FeaturedItem.update_item(screener, true)
 
-      assert fetch_watchlists(context.conn, is_screener: true) == %{
+      assert fetch_screeners(context.conn) == %{
                "data" => %{
-                 "featuredWatchlists" => [
+                 "featuredScreeners" => [
                    %{"id" => "#{screener.id}", "name" => "#{screener.name}"}
                  ]
                }
@@ -214,12 +214,25 @@ defmodule Sanbase.FeaturedItemApiTest do
              }
     end
 
-    defp fetch_watchlists(conn, opts \\ []) do
-      is_screener = Keyword.get(opts, :is_screener, false)
-
+    defp fetch_watchlists(conn) do
       query = """
       {
-        featuredWatchlists(isScreener: #{is_screener}){
+        featuredWatchlists{
+          id
+          name
+        }
+      }
+      """
+
+      conn
+      |> post("/graphql", query_skeleton(query))
+      |> json_response(200)
+    end
+
+    defp fetch_screeners(conn) do
+      query = """
+      {
+        featuredScreeners{
           id
           name
         }

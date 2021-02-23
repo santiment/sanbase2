@@ -205,6 +205,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "average_transfer_5m",
         "median_transfer_5m",
         "whale_transaction_count",
+        "mvrv_z",
         # social metrics
         "community_messages_count_telegram",
         "community_messages_count_total",

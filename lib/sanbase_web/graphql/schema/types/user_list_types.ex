@@ -60,7 +60,6 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
     field(:color, :color_enum)
     field(:function, :json)
     field(:is_monitored, :boolean)
-    field(:is_screener, :boolean)
 
     field :list_items, list_of(:list_item) do
       resolve(&UserListResolver.list_items/3)

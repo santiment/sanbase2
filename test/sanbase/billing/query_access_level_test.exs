@@ -48,6 +48,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :featured_table_configurations,
           :featured_user_triggers,
           :featured_watchlists,
+          :featured_screeners,
           :fetch_all_public_user_lists,
           :fetch_all_public_watchlists,
           :fetch_public_user_lists,

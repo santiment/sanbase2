@@ -175,7 +175,7 @@ defmodule Sanbase.Clickhouse.TopHolders.SqlQuery do
   def last_datetime_computed_at_query(table, contract) do
     query = """
     SELECT
-      toUnixTimestamp(argMax(computed_at, dt))
+      toUnixTimestamp(max(dt))
     FROM #{table} FINAL
     #{table_to_where_keyword(table)}
       contract = ?1

@@ -6,6 +6,7 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
 
   require Logger
 
+  alias Sanbase.Billing
   alias Sanbase.StripeApi
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.{Subscription, Plan}
@@ -69,7 +70,7 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
   end
 
   defp create_promo_subscription(%User{} = user, plans, trial_days) do
-    with {:ok, user} <- Subscription.create_or_update_stripe_customer(user),
+    with {:ok, user} <- Billing.create_or_update_stripe_customer(user),
          {:ok, subscriptions} <- promo_subscribe(user, plans, trial_days) do
       {:ok, subscriptions}
     else

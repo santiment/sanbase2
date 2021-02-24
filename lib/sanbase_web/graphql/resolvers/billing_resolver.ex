@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
+  alias Sanbase.Billing
   alias Sanbase.Billing.{Subscription, Plan}
   alias Sanbase.Accounts.User
 
@@ -13,7 +14,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   def update_customer_card(_root, %{card_token: card_token}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    Subscription.create_or_update_stripe_customer(current_user, card_token)
+    Billing.create_or_update_stripe_customer(current_user, card_token)
     |> case do
       {:ok, _} ->
         {:ok, %{success: true}}

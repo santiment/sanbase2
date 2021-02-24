@@ -28,7 +28,11 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     {StripeApi, [:passthrough],
      [retrieve_coupon: fn _ -> {:ok, %Stripe.Coupon{id: @coupon_code}} end]},
     {Sanbase.StripeApi, [:passthrough],
-     [get_subscription_first_item_id: fn _ -> {:ok, "item_id"} end]},
+     [
+       update_subscription_item_by_id: fn _, _ ->
+         StripeApiTestResponse.update_subscription_resp()
+       end
+     ]},
     {Sanbase.StripeApi, [:passthrough],
      [
        update_subscription: fn _, _ ->
@@ -308,7 +312,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
 
     test "when retrieving subscription from Stripe fails - returns generic error", context do
       with_mock StripeApi, [],
-        get_subscription_first_item_id: fn _ ->
+        update_subscription_item_by_id: fn _, _ ->
           {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
         end do
         subscription = insert(:subscription_essential, user: context.user, stripe_id: "stripe_id")
@@ -323,16 +327,10 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
     end
 
     test "when updating subscription in Stripe fails - returns generic error", context do
-      with_mocks([
-        {Sanbase.StripeApi, [:passthrough],
-         [get_subscription_first_item_id: fn _ -> {:ok, "item_id"} end]},
-        {StripeApi, [:passthrough],
-         [
-           update_subscription: fn _, _ ->
-             {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
-           end
-         ]}
-      ]) do
+      with_mock Sanbase.StripeApi, [],
+        update_subscription_item_by_id: fn _, _ ->
+          {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
+        end do
         subscription = insert(:subscription_essential, user: context.user, stripe_id: "stripe_id")
         query = update_subscription_mutation(subscription.id, context.plans.plan_pro.id)
 

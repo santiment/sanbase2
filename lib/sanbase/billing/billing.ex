@@ -8,6 +8,8 @@ defmodule Sanbase.Billing do
   alias Sanbase.Repo
   alias Sanbase.Billing.{Product, Plan, Subscription}
   alias Sanbase.Billing.Subscription.{LiquiditySubscription, SignUpTrial}
+  alias Sanbase.Accounts.User
+  alias Sanbase.StripeApi
 
   defdelegate create_trial_subscription(user_id), to: SignUpTrial
   # LiquiditySubscription
@@ -69,5 +71,28 @@ defmodule Sanbase.Billing do
       {:ok, _} -> false
       {:error, _} -> true
     end)
+  end
+
+  @spec create_or_update_stripe_customer(%User{}, String.t() | nil) ::
+          {:ok, %User{}} | {:error, %Stripe.Error{}}
+  def create_or_update_stripe_customer(_, _card_token \\ nil)
+
+  def create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)
+      when is_nil(stripe_id) do
+    with {:ok, stripe_customer} <- StripeApi.create_customer(user, card_token) do
+      User.update_field(user, :stripe_customer_id, stripe_customer.id)
+    end
+  end
+
+  def create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, nil)
+      when is_binary(stripe_id) do
+    {:ok, user}
+  end
+
+  def create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)
+      when is_binary(stripe_id) do
+    with {:ok, _} <- StripeApi.update_customer(user, card_token) do
+      {:ok, user}
+    end
   end
 end

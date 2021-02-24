@@ -86,8 +86,34 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     Repo.get_by(__MODULE__, user_id: user_id, is_finished: false)
   end
 
+  def by_subscription_id(subscription_id) do
+    Repo.get_by(__MODULE__, subscription_id: subscription_id, is_finished: false)
+  end
+
   def create(user_id) do
     %__MODULE__{} |> changeset(%{user_id: user_id}) |> Repo.insert()
+  end
+
+  def maybe_remove_sign_up_trial(user) do
+    case by_user_id(user.id) do
+      %__MODULE__{} = sign_up_trial ->
+        sign_up_trial
+        |> changeset(%{is_finished: true})
+        |> Repo.update()
+
+      _ ->
+        :ok
+    end
+  end
+
+  def left_trial_days_for_user(user) do
+    case by_user_id(user.id) do
+      %__MODULE__{} = sign_up_trial ->
+        calc_trial_days_left(sign_up_trial)
+
+      _ ->
+        0
+    end
   end
 
   @doc """
@@ -163,7 +189,7 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
 
   def handle_trial_will_end(stripe_subscription_id) do
     with {:ok, subscription} <- get_trialing_subscription(stripe_subscription_id),
-         {:ok, sign_up_trial} <- get_sign_up_trial(subscription) do
+         {:ok, sign_up_trial} <- get_trial_with_not_sent_email(subscription) do
       do_send_email_and_mark_sent(sign_up_trial, :sent_trial_will_end_email)
       {:ok, "Trial will end email is sent for subscription_id: #{stripe_subscription_id}"}
     end
@@ -206,12 +232,8 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     end
   end
 
-  defp get_sign_up_trial(subscription) do
-    Repo.get_by(__MODULE__,
-      user_id: subscription.user_id,
-      subscription_id: subscription.id,
-      is_finished: false
-    )
+  defp get_trial_with_not_sent_email(subscription) do
+    by_subscription_id(subscription.id)
     |> case do
       %__MODULE__{sent_trial_will_end_email: false} = sign_up_trial ->
         {:ok, sign_up_trial}
@@ -267,5 +289,9 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
 
   defp calc_trial_day(%__MODULE__{inserted_at: inserted_at}) do
     Timex.diff(Timex.now(), inserted_at, :days)
+  end
+
+  defp calc_trial_days_left(sign_up_trial) do
+    @free_trial_days - calc_trial_day(sign_up_trial)
   end
 end

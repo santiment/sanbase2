@@ -11,6 +11,7 @@ defmodule Sanbase.Billing.Subscription do
 
   alias Sanbase.Billing
   alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.Subscription.SignUpTrial
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
   alias Sanbase.StripeApi
@@ -92,6 +93,8 @@ defmodule Sanbase.Billing.Subscription do
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan),
          {:ok, _} <- Sanbase.ApiCallLimit.update_user_plan(user) do
+      plan.id in @free_trial_plans && SignUpTrial.maybe_remove_sign_up_trial(user)
+
       {:ok, preload(db_subscription)}
     end
   end
@@ -126,7 +129,7 @@ defmodule Sanbase.Billing.Subscription do
     with {:ok, stripe_subscription} <- StripeApi.cancel_subscription(stripe_id),
          {:ok, _canceled_sub} <-
            sync_with_stripe_subscription(stripe_subscription, db_subscription),
-         db_subscription = preload(db_subscription),
+         db_subscription <- preload(db_subscription),
          {:ok, _} <- Sanbase.ApiCallLimit.update_user_plan(db_subscription.user) do
       Sanbase.Billing.StripeEvent.send_cancel_event_to_discord(db_subscription)
 
@@ -349,6 +352,24 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
+  defp subscription_defaults(user, %Plan{id: plan_id} = plan) when plan_id in @free_trial_plans do
+    defaults = %{
+      customer: user.stripe_customer_id,
+      items: [%{plan: plan.stripe_id}]
+    }
+
+    case SignUpTrial.trial_end_dt(user) do
+      trial_end_dt = %DateTime{} ->
+        case DateTime.compare(Timex.now(), trial_end_dt) do
+          :lt -> Map.put(defaults, :trial_end, trial_end_dt)
+          _ -> defaults
+        end
+
+      _ ->
+        defaults
+    end
+  end
+
   defp subscription_defaults(user, plan) do
     %{
       customer: user.stripe_customer_id,
@@ -421,11 +442,13 @@ defmodule Sanbase.Billing.Subscription do
          } = subscription
        )
        when plan_id in @free_trial_plans do
-    Logger.info("Deleting subscription with id: #{stripe_id} for user: #{user_id}")
+    if SignUpTrial.by_subscription_id(subscription.id) do
+      Logger.info("Deleting subscription with id: #{stripe_id} for user: #{user_id}")
 
-    StripeApi.delete_subscription(stripe_id)
+      StripeApi.delete_subscription(stripe_id)
 
-    __MODULE__.SignUpTrial.maybe_send_trial_finished_email(subscription)
+      __MODULE__.SignUpTrial.maybe_send_trial_finished_email(subscription)
+    end
   end
 
   defp maybe_send_email_and_delete_subscription(%__MODULE__{stripe_id: stripe_id}) do

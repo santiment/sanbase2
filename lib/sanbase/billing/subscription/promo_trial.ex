@@ -42,34 +42,24 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
 
   def promo_trial_plans, do: @promo_trial_plans
 
-  def create_promo_trial(%{plans: plans, trial_days: trial_days, user_id: user_id}) do
+  def create_promo_trial(%{plans: plans, trial_days: trial_days, user_id: user_id})
+      when is_list(plans) do
     {:ok, user} = User.by_id(user_id)
+    plans = Enum.map(plans, &maybe_convert_to_integer/1)
+    trial_days = maybe_convert_to_integer(trial_days)
 
-    plans =
-      plans
-      |> Enum.map(&maybe_convert_to_integer?/1)
-
-    trial_days = maybe_convert_to_integer?(trial_days)
-
-    create_promo_subscription(user, plans, trial_days)
+    create_promo_subscriptions(user, plans, trial_days)
   end
 
-  defp create_promo_subscription(
-         %User{stripe_customer_id: stripe_customer_id} = user,
-         plans,
-         trial_days
-       )
-       when is_binary(stripe_customer_id) do
-    case promo_subscribe(user, plans, trial_days) do
-      {:ok, subscriptions} ->
-        {:ok, subscriptions}
+  def create_promo_trial(%{plan_id: plan_id, trial_days: trial_days, user_id: user_id}) do
+    plan_id = maybe_convert_to_integer(plan_id)
+    {:ok, user} = User.by_id(user_id)
+    trial_days = maybe_convert_to_integer(trial_days)
 
-      {:error, error} ->
-        handle_error(user, error)
-    end
+    create_promo_subscription(user, plan_id, trial_days)
   end
 
-  defp create_promo_subscription(%User{} = user, plans, trial_days) do
+  defp create_promo_subscriptions(%User{} = user, plans, trial_days) when is_list(plans) do
     with {:ok, user} <- Billing.create_or_update_stripe_customer(user),
          {:ok, subscriptions} <- promo_subscribe(user, plans, trial_days) do
       {:ok, subscriptions}
@@ -79,19 +69,36 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
     end
   end
 
-  defp promo_subscribe(user, plans, trial_days) do
-    from(p in Plan, where: p.id in ^plans)
-    |> Repo.all()
-    |> Enum.map(&subscribe_to_plan(user, &1, trial_days))
-    |> Enum.filter(&match?({:error, _}, &1))
-    |> case do
-      [] ->
-        {:ok, Subscription.user_subscriptions(user)}
-
-      # we are subscribing to multiple plans so any of them can fail
-      [error | _] ->
-        error
+  defp create_promo_subscription(%User{} = user, plan_id, trial_days) do
+    with {:ok, user} <- Billing.create_or_update_stripe_customer(user),
+         {:ok, subscription} <- promo_subscribe(user, plan_id, trial_days) do
+      {:ok, subscription}
+    else
+      {:error, error} ->
+        handle_error(user, error)
     end
+  end
+
+  defp promo_subscribe(user, plans, trial_days) when is_list(plans) do
+    subscriptions =
+      from(p in Plan, where: p.id in ^plans)
+      |> Repo.all()
+      |> Enum.map(&subscribe_to_plan(user, &1, trial_days))
+
+    oks = subscriptions |> Enum.filter(&match?({:ok, _}, &1))
+    errors = subscriptions |> Enum.filter(&match?({:error, _}, &1))
+
+    if length(errors) > 0 do
+      hd(errors)
+    else
+      {:ok, Enum.map(oks, &elem(&1, 1))}
+    end
+  end
+
+  defp promo_subscribe(user, plan_id, trial_days) do
+    plan = Plan.by_id(plan_id)
+
+    subscribe_to_plan(user, plan, trial_days)
   end
 
   defp subscribe_to_plan(user, plan, trial_days) do
@@ -142,11 +149,11 @@ defmodule Sanbase.Billing.Subscription.PromoTrial do
 
   defp stringify_plans(changeset, _), do: changeset
 
-  defp maybe_convert_to_integer?(value) when is_integer(value) do
+  defp maybe_convert_to_integer(value) when is_integer(value) do
     value
   end
 
-  defp maybe_convert_to_integer?(value) when is_binary(value) do
+  defp maybe_convert_to_integer(value) when is_binary(value) do
     String.to_integer(value)
   end
 end

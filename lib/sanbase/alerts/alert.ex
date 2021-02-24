@@ -233,7 +233,7 @@ defimpl Sanbase.Alert, for: Any do
     Enum.reduce(@channels, %{}, fn channel, map ->
       channel_limit =
         (Map.get(alerts_per_day_limit, channel) ||
-           Map.get(@default_alerts_limit_per_day, channel))
+           Map.fetch!(@default_alerts_limit_per_day, channel))
         |> Sanbase.Math.to_integer()
 
       channel_sent_today =

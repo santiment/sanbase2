@@ -61,12 +61,14 @@ defmodule Sanbase.FeaturedItem do
     |> Repo.preload([:user, :tags])
   end
 
-  def watchlists(type \\ :project)
+  def watchlists(args \\ %{}) do
+    type = Map.get(args, :type, :project)
+    is_screener = Map.get(args, :is_screener, false)
 
-  def watchlists(type) do
     watchlists_query()
     |> join(:inner, [fi], fi in assoc(fi, :user_list))
     |> where([_fi, user_list], user_list.type == ^type)
+    |> where([_fi, user_list], user_list.is_screener == ^is_screener)
     |> select([_fi, user_list], user_list)
     |> Repo.all()
     |> Repo.preload([:user, :list_items])

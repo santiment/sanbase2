@@ -243,12 +243,15 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
       {:ok, ["ethereum", "dai", "bitcoin"]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      result = execute_mutation(conn, create_watchlist_query(function: function))
+      result =
+        execute_mutation(conn, create_watchlist_query(function: function, is_screener: true))
+
       user_list = result["data"]["createWatchlist"]
 
       assert user_list["name"] == "My list"
       assert user_list["color"] == "BLACK"
       assert user_list["isPublic"] == false
+      assert user_list["isScreener"]
       assert user_list["user"]["id"] == user.id |> to_string()
 
       assert length(user_list["listItems"]) == 3
@@ -360,6 +363,7 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
     name = Keyword.get(opts, :name, "My list")
     color = Keyword.get(opts, :color, "BLACK")
     function = Keyword.get(opts, :function) |> Jason.encode!()
+    is_screener = Keyword.get(opts, :is_screener, false)
 
     ~s|
     mutation {
@@ -367,11 +371,13 @@ defmodule SanbaseWeb.Graphql.DynamicWatchlistTest do
         name: '#{name}'
         color: #{color}
         function: '#{function}'
+        isScreener: #{is_screener}
         ) {
          id
          name
          color
          isPublic
+         isScreener
          user{ id }
 
          listItems{

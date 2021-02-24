@@ -34,6 +34,7 @@ defmodule Sanbase.UserList do
     field(:function, WatchlistFunction, default: %WatchlistFunction{})
     field(:is_monitored, :boolean, default: false)
     field(:is_public, :boolean, default: false)
+    field(:is_screener, :boolean, default: false)
     field(:name, :string)
     field(:slug, :string)
 
@@ -64,6 +65,7 @@ defmodule Sanbase.UserList do
       :function,
       :is_monitored,
       :is_public,
+      :is_screener,
       :name,
       :slug,
       :table_configuration_id,
@@ -83,6 +85,7 @@ defmodule Sanbase.UserList do
       :function,
       :is_monitored,
       :is_public,
+      :is_screener,
       :name,
       :slug,
       :table_configuration_id,
@@ -116,6 +119,7 @@ defmodule Sanbase.UserList do
   end
 
   def is_public?(%__MODULE__{is_public: is_public}), do: is_public
+  def is_screener?(%__MODULE__{is_screener: is_screener}), do: is_screener
 
   @doc ~s"""
   Return a list of all blockchain addresses in a watchlist.

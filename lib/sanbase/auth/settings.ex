@@ -5,6 +5,7 @@ defmodule Sanbase.Accounts.Settings do
   @default_alerts_limit_per_day %{
     "email" => 50,
     "telegram" => 100,
+    "telegram_channel" => 1000,
     "webhook" => 1000,
     "webpush" => 1000
   }

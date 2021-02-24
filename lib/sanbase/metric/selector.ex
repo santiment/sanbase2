@@ -26,11 +26,28 @@ defmodule Sanbase.Metric.Selector do
 
   # Private functions
 
+  defp valid_selector?(%{slug: nil}) do
+    {:error, "The slug or slugs arguments must not be null."}
+  end
+
   defp valid_selector?(%{slug: slug}) when is_binary(slug) do
     case @available_slugs_module.valid_slug?(slug) do
       true -> true
       false -> {:error, "The slug #{inspect(slug)} is not an existing slug."}
     end
+  end
+
+  # The check will make one ETS call per slug. It will be executed only for small
+  # list of slugs (less than 10 slugs)
+  defp valid_selector?(%{slug: slugs}) when is_list(slugs) and length(slugs) < 10 do
+    # If all of the slugs are valid return `true`. Return {:error, error} otherwise.
+    slugs
+    |> Enum.find_value(true, fn slug ->
+      case @available_slugs_module.valid_slug?(slug) do
+        true -> false
+        false -> {:error, "The slug #{inspect(slug)} is not an existing slug."}
+      end
+    end)
   end
 
   defp valid_selector?(%{} = map) when map_size(map) == 0 do

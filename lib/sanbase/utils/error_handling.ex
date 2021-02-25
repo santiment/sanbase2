@@ -10,6 +10,10 @@ defmodule Sanbase.Utils.ErrorHandling do
   def changeset_errors_to_str(%Ecto.Changeset{} = changeset) do
     changeset
     |> Ecto.Changeset.traverse_errors(&format_error/1)
+    |> case do
+      map when is_map(map) -> Jason.encode!(map)
+      str when is_binary(str) -> str
+    end
   end
 
   def error_result(message, query_name \\ "query") do

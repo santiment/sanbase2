@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   require Logger
 
   import SanbaseWeb.Graphql.Helpers.Async, only: [async: 1]
+  import SanbaseWeb.Graphql.Helpers.Utils, only: [error_details: 1]
 
   alias Sanbase.Accounts.User
   alias Sanbase.UserList
@@ -9,7 +10,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   alias SanbaseWeb.Graphql.Helpers.Utils
   alias SanbaseWeb.Graphql.Cache
   alias Sanbase.SocialData.TrendingWords
-  alias SanbaseWeb.Graphql.Helpers.Utils
 
   @trending_words_size 10
   @trending_fields [:trending_slugs, :trending_tickers, :trending_names, :trending_projects]
@@ -240,8 +240,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
       {:error, changeset} ->
         {
           :error,
-          message: "Cannot create user list",
-          details: Sanbase.Utils.ErrorHandling.changeset_errors_to_str(changeset)
+          message: "Cannot create user list", details: error_details(changeset)
         }
     end
   end
@@ -255,8 +254,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
         {:error, changeset} ->
           {
             :error,
-            message: "Cannot update user list",
-            details: Sanbase.Utils.ErrorHandling.changeset_errors_to_str(changeset)
+            message: "Cannot update user list", details: error_details(changeset)
           }
       end
     else
@@ -277,8 +275,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
         {:error, changeset} ->
           {
             :error,
-            message: "Cannot add items to a watchlist",
-            details: Sanbase.Utils.ErrorHandling.changeset_errors_to_str(changeset)
+            message: "Cannot add items to a watchlist", details: error_details(changeset)
           }
       end
     else
@@ -299,8 +296,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
         {:error, changeset} ->
           {
             :error,
-            message: "Cannot remove items from a watchlist",
-            details: Sanbase.Utils.ErrorHandling.changeset_errors_to_str(changeset)
+            message: "Cannot remove items from a watchlist", details: error_details(changeset)
           }
       end
     end
@@ -315,9 +311,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
         {:ok, settings}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:error,
-         message: "Cannot update watchlist settings",
-         details: Sanbase.Utils.ErrorHandling.changeset_errors_to_str(changeset)}
+        {:error, message: "Cannot update watchlist settings", details: error_details(changeset)}
     end
   end
 

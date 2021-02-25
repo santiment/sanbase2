@@ -41,8 +41,8 @@ defmodule Sanbase.Mixfile do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
 
   # local_dev/ dir is used for local development and is excluded from source control
-  defp elixirc_paths(:dev), do: ["lib", "local_dev", "test/support"]
-  defp elixirc_paths(_), do: ["lib"]
+  defp elixirc_paths(:dev), do: ["lib", "local_dev", "test/support", "admin_panel"]
+  defp elixirc_paths(:prod), do: ["lib", "admin_panel"]
 
   defp deps() do
     [
@@ -73,7 +73,7 @@ defmodule Sanbase.Mixfile do
       {:ecto, "~> 3.0"},
       {:envy, "~> 1.1.1", only: [:dev, :test]},
       {:erlex, "~> 0.2.6", override: true},
-      {:ex_admin, github: "santiment/ex_admin"},
+      {:ex_admin, github: "santiment/ex_admin", only: [:dev, :prod]},
       {:ex_aws_s3, "~> 2.0"},
       {:ex_aws, "~> 2.0"},
       {:ex_machina, "~> 2.2", only: [:dev, :test]},

@@ -73,7 +73,11 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "eth2_staked_amount_per_label",
         "eth2_staked_address_count_per_label",
         "eth2_unlabeled_staker_inflow_sources",
-        "eth2_top_stakers"
+        "eth2_top_stakers",
+        "price_usd_change_1h",
+        "price_eth_change_1d",
+        "price_eth_change_7d",
+        "price_eth_change_30d"
       ]
       |> Enum.sort()
 
@@ -720,11 +724,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "social_dominance_total_change_30d",
         "sentiment_balance_total_change_1d",
         "sentiment_balance_total_change_7d",
-        "sentiment_balance_total_change_30d",
-        "price_usd_change_1h",
-        "price_eth_change_1d",
-        "price_eth_change_7d",
-        "price_eth_change_30d"
+        "sentiment_balance_total_change_30d"
       ]
       |> Enum.sort()
 

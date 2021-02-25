@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ShortUrlResolver do
     Sanbase.ShortUrl.update(current_user.id, short_url, params)
   end
 
-  def update_short_url(_root, %{} = args, _resolution) do
+  def update_short_url(_root, _args, _resolution) do
     {:error,
      """
      Only authenticated users can update Short URLs.

@@ -27,12 +27,12 @@ defmodule Sanbase.Billing.Plan.AccessChecker do
   as we have different restrictions.
   """
 
+  alias Sanbase.Billing.{Product, Subscription, GraphqlSchema}
+  alias Sanbase.Billing.Plan.{CustomAccess, ApiAccessChecker, SanbaseAccessChecker}
+
   @doc documentation_ref: "# DOCS access-plans/index.md"
 
   @type query_or_metric :: {:metric, String.t()} | {:query, atom()}
-
-  alias Sanbase.Billing.{Product, Subscription, GraphqlSchema}
-  alias Sanbase.Billing.Plan.{CustomAccess, ApiAccessChecker, SanbaseAccessChecker}
 
   # Raise an error if there is any query without subscription plan
   case GraphqlSchema.get_all_without_access_level() do

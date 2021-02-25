@@ -1,13 +1,13 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
   use Tesla
 
-  require Logger
-
   alias Sanbase.Model.{Project, LatestCoinmarketcapData}
   alias Sanbase.Repo
   alias Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo
   alias Sanbase.FileStore
   alias Sanbase.Utils.FileHash
+
+  require Logger
 
   @log_tag "[CMC][LogoFetcher]"
   @size 64

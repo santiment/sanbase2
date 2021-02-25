@@ -1,16 +1,18 @@
 defmodule Sanbase.Price do
   use Ecto.Schema
   use AsyncWith
-  @async_with_timeout 29_000
 
   import Sanbase.Price.SqlQuery
-  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
+
+  import Sanbase.Utils.Transform,
+    only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2, wrap_ok: 1]
+
   import Sanbase.Metric.Transform, only: [maybe_nullify_values: 1, remove_missing_values: 1]
 
   alias Sanbase.Model.Project
-
   alias Sanbase.ClickhouseRepo
 
+  @async_with_timeout 29_000
   @default_source "coinmarketcap"
   @metrics [:price_usd, :price_btc, :marketcap_usd, :volume_usd]
   @metrics @metrics ++ Enum.map(@metrics, &Atom.to_string/1)
@@ -575,37 +577,35 @@ defmodule Sanbase.Price do
 
   # Private functions
 
+  # Combine 2 price points. If `left` is empty then this is a new/initial price point
+  defp combine_price_points(left, right) do
+    %{
+      marketcap: (left[:marketcap] || 0) + (right[:marketcap] || 0),
+      marketcap_usd: (left[:marketcap_usd] || 0) + (right[:marketcap_usd] || 0),
+      volume: (left[:volume] || 0) + (right[:volume] || 0),
+      volume_usd: (left[:volume_usd] || 0) + (right[:volume_usd] || 0)
+    }
+  end
+
+  defp update_price_point_in_map(map, price_point) do
+    %{datetime: datetime} = price_point
+
+    initial = combine_price_points(%{}, price_point)
+
+    Map.update(map, datetime, initial, fn
+      %{has_changed: 0} = elem -> elem
+      elem -> combine_price_points(elem, price_point)
+    end)
+  end
+
   defp combine_marketcap_and_volume_results(results) do
-    # Combine 2 price points. If `map` is empty then this is a new/initial price point
-    build_result = fn map, price_point ->
-      %{
-        marketcap: (map[:marketcap] || 0) + (price_point[:marketcap] || 0),
-        marketcap_usd: (map[:marketcap_usd] || 0) + (price_point[:marketcap_usd] || 0),
-        volume: (map[:volume] || 0) + (price_point[:volume] || 0),
-        volume_usd: (map[:volume_usd] || 0) + (price_point[:volume_usd] || 0)
-      }
-    end
-
-    result =
-      results
-      |> Enum.reduce(%{}, fn {:ok, data}, acc ->
-        Enum.reduce(data, acc, fn price_point, inner_acc ->
-          %{datetime: datetime} = price_point
-
-          initial = build_result.(%{}, price_point)
-
-          Map.update(inner_acc, datetime, initial, fn elem ->
-            case elem do
-              %{has_changed: 0} -> elem
-              _ -> build_result.(elem, price_point)
-            end
-          end)
-        end)
-      end)
-      |> Enum.map(fn {datetime, data} -> Map.put(data, :datetime, datetime) end)
-      |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
-
-    {:ok, result}
+    results
+    |> Enum.reduce(%{}, fn {:ok, data}, acc ->
+      Enum.reduce(data, acc, &update_price_point_in_map(&2, &1))
+    end)
+    |> Enum.map(fn {datetime, data} -> Map.put(data, :datetime, datetime) end)
+    |> Enum.sort_by(& &1.datetime, {:asc, DateTime})
+    |> wrap_ok()
   end
 
   defp maybe_add_percent_of_total_marketcap({:ok, data}) do
@@ -630,18 +630,4 @@ defmodule Sanbase.Price do
   end
 
   defp maybe_add_percent_of_total_marketcap({:error, error}), do: {:error, error}
-
-  # Merge 2 lists by datetime transforming one of the fields by some formulae
-  defp merge_by_datetime(list1, list2, func, field) do
-    map = list2 |> Enum.into(%{}, fn %{datetime: dt} = item2 -> {dt, item2[field]} end)
-
-    list1
-    |> Enum.map(fn %{datetime: datetime} = item1 ->
-      value2 = Map.get(map, datetime, 0)
-      new_value = func.(item1[field], value2)
-
-      %{datetime: datetime, value: new_value}
-    end)
-    |> Enum.reject(&(&1.value == 0))
-  end
 end

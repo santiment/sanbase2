@@ -1,8 +1,6 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
   use Sanbase.DataCase
 
-  require Sanbase.Utils.Config, as: Config
-
   import Sanbase.Factory
   import Tesla.Mock
   import ExUnit.CaptureLog
@@ -10,6 +8,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcherTest do
   alias Sanbase.Repo
   alias Sanbase.ExternalServices.Coinmarketcap.LogoFetcher
   alias Sanbase.Model.{Project, LatestCoinmarketcapData}
+
+  require Sanbase.Utils.Config, as: Config
 
   describe "when successful" do
     setup do

@@ -127,7 +127,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
 
   def words_social_volume(
         _root,
-        %{selector: %{words: words} = selector, from: from, to: to, interval: interval},
+        %{selector: %{words: _words} = selector, from: from, to: to, interval: interval},
         _resolution
       ) do
     SocialData.social_volume(selector, from, to, interval, :total)

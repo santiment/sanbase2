@@ -51,7 +51,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Active Addresses For The Last 24h Change (1d)",
+    "human_readable_name": "Price in USD Change (1d)",
     "name": "price_usd_change_1d",
     "metric": "price_change_1d",
     "version": "2019-01-01",
@@ -68,7 +68,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Active Addresses For The Last 24h Change (7d)",
+    "human_readable_name": "Price in USD Change (7d)",
     "name": "price_usd_change_7d",
     "metric": "price_change_7d",
     "version": "2019-01-01",
@@ -85,7 +85,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Active Addresses For The Last 24h Change (30d)",
+    "human_readable_name": "Price in USD Change (30d)",
     "name": "price_usd_change_30d",
     "metric": "price_change_30d",
     "version": "2019-01-01",
@@ -3403,5 +3403,6 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
+  },
+
 ]

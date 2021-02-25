@@ -210,7 +210,14 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
 
       assert error_message ==
-               "The metric mvrv_long_short_diff_usd is not accessible with your current plan basic. Please upgrade to pro plan."
+               """
+               The metric mvrv_long_short_diff_usd is not accessible with the currently used
+               Sanapi Basic subscription. Please upgrade to Sanapi Pro subscription.
+
+               If you have a subscription for one product but attempt to fetch data using
+               another product, this error will still be shown. The data on Sanbase cannot
+               be fetched with a Sanapi subscription and vice versa.
+               """
     end
 
     test "some metrics can be accessed only with free timeframe", context do

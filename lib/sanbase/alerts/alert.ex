@@ -183,7 +183,11 @@ defimpl Sanbase.Alert, for: Any do
     end)
   end
 
-  defp send_telegram_channel(trigger, channel, max_alerts_to_send) do
+  defp send_telegram_channel(
+         trigger,
+         channel,
+         %{"telegram_channel" => max_alerts_to_send}
+       ) do
     fun = fn _identifier, payload ->
       # Do not extend the payload with the trigger id and link. This channel
       # would be used when serving the same alert to many users and not only
@@ -233,7 +237,7 @@ defimpl Sanbase.Alert, for: Any do
     Enum.reduce(@channels, %{}, fn channel, map ->
       channel_limit =
         (Map.get(alerts_per_day_limit, channel) ||
-           Map.get(@default_alerts_limit_per_day, channel))
+           Map.fetch!(@default_alerts_limit_per_day, channel))
         |> Sanbase.Math.to_integer()
 
       channel_sent_today =

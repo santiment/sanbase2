@@ -51,7 +51,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Active Addresses For The Last 24h Change (1d)",
+    "human_readable_name": "Price in USD Change (1d)",
     "name": "price_usd_change_1d",
     "metric": "price_change_1d",
     "version": "2019-01-01",
@@ -68,7 +68,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Active Addresses For The Last 24h Change (7d)",
+    "human_readable_name": "Price in USD Change (7d)",
     "name": "price_usd_change_7d",
     "metric": "price_change_7d",
     "version": "2019-01-01",
@@ -85,7 +85,7 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Active Addresses For The Last 24h Change (30d)",
+    "human_readable_name": "Price in USD Change (30d)",
     "name": "price_usd_change_30d",
     "metric": "price_change_30d",
     "version": "2019-01-01",
@@ -3393,6 +3393,77 @@
     "metric": "sentiment_balance_change_30d",
     "version": "2020-07-31",
     "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Price in ETH Change (1d)",
+    "name": "price_eth_change_1d",
+    "metric": "price_eth_change_1d",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "Price in ETH Change (7d)",
+    "name": "price_eth_change_7d",
+    "metric": "price_eth_change_7d",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "Price in ETH Change (30d)",
+    "name": "price_eth_change_30d",
+    "metric": "price_eth_change_30d",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
+  ,
+  {
+    "human_readable_name": "Price in USD Change (1h)",
+    "name": "price_usd_change_1h",
+    "metric": "price_change_1h",
+    "version": "2019-01-01",
+    "access": "free",
     "selectors": ["slug"],
     "min_plan": {
       "SANAPI": "free",

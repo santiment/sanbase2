@@ -66,6 +66,26 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
     end)
   end
 
+  test "unsupported slug in list returns error", context do
+    %{conn: conn, from: from, to: to, project1: project1, project2: project2} = context
+
+    result =
+      get_timeseries_per_slug_metric(
+        conn,
+        "daily_active_addresses",
+        %{slugs: [project1.slug, project2.slug, "unsupported_slug"]},
+        from,
+        to,
+        "1d",
+        :avg
+      )
+
+    error_msg = result["errors"] |> hd() |> Map.get("message")
+
+    assert error_msg =~
+             "Can't fetch daily_active_addresses for project with slug [\"aaaaa\", \"bbbbb\", \"unsupported_slug\"], Reason: \"The slug \\\"unsupported_slug\\\" is not an existing slug."
+  end
+
   # Private functions
 
   defp get_timeseries_per_slug_metric(

@@ -23,7 +23,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
     projects_count = Enum.count(projects)
     Logger.info("[CMC] Fetching data for #{projects_count} projects")
 
-    coinmarketcap_ids = Enum.map(projects, &Project.coinmarketcap_id/1)
+    coinmarketcap_ids =
+      Enum.map(projects, &Project.coinmarketcap_id/1)
+      |> Enum.sort()
 
     "v1/cryptocurrency/info?slug=#{Enum.join(coinmarketcap_ids, ",")}"
     |> get()

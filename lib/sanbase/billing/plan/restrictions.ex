@@ -51,10 +51,14 @@ defmodule Sanbase.Billing.Plan.Restrictions do
       |> Enum.map(&{:query, &1})
 
     # elements are {:metric, <string>} or {:query, <atom>}
-    (queries ++ metrics)
-    |> Enum.map(fn metric_or_query -> get(metric_or_query, plan, product_id) end)
+    result =
+      (queries ++ metrics)
+      |> Enum.map(fn metric_or_query -> get(metric_or_query, plan, product_id) end)
+
+    (get_extra_queries(plan, product_id) ++ result)
     |> Enum.filter(& &1.is_accessible)
     |> Enum.uniq_by(& &1.name)
+    |> Enum.sort_by(& &1.name)
   end
 
   # Private functions
@@ -137,9 +141,14 @@ defmodule Sanbase.Billing.Plan.Restrictions do
               "githubActivity",
               "minersBalance",
               "ohlc",
-              "getProjectTrendingHistory"
+              "getProjectTrendingHistory",
+              "ethSpentOverTime"
             ],
        do: "5m"
 
   defp min_interval("query", _query), do: nil
+
+  defp get_extra_queries(_plan, _product_id) do
+    [not_restricted_access_map("query", "ethSpentOverTime")]
+  end
 end

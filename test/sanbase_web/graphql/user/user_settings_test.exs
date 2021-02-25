@@ -21,6 +21,37 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     {:ok, conn: conn, user: user}
   end
 
+  test "change favorite metrics", %{user: user, conn: conn} do
+    favorites = ["price_eth", "nvt", "mvrv_usd"]
+
+    query = change_favorite_metrics_query(favorites)
+    result = conn |> execute(query, "updateUserSettings")
+
+    assert result == %{"favoriteMetrics" => favorites}
+
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:favorite_metrics) == favorites
+
+    favorites = ["price_btc", "nvt", "mvrv_usd"]
+
+    query = change_favorite_metrics_query(favorites)
+    result = conn |> execute(query, "updateUserSettings")
+
+    assert result == %{"favoriteMetrics" => favorites}
+
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:favorite_metrics) == favorites
+  end
+
+  test "change favorite metrics with invalid value", %{user: user, conn: conn} do
+    favorites = ["price_eth", "nvt", "asdfqwerty"]
+
+    query = change_favorite_metrics_query(favorites)
+    result = conn |> execute(query, "updateUserSettings")
+
+    assert result["favoriteMetrics"] == nil
+
+    assert UserSettings.settings_for(user, force: true) |> Map.get(:favorite_metrics) == []
+  end
+
   test "toggle beta mode", %{user: user, conn: conn} do
     query = toggle_beta_mode_query(true)
     result = conn |> execute(query, "updateUserSettings")
@@ -136,7 +167,8 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
         is_beta_mode: true,
         theme: "nightmode",
         page_size: 100,
-        table_columns: %{shown: ["price", "volume"]}
+        table_columns: %{shown: ["price", "volume"]},
+        favorite_metrics: ["daily_active_addresses", "nvt"]
       }
     )
 
@@ -150,7 +182,8 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
              "isBetaMode" => true,
              "pageSize" => 100,
              "tableColumns" => %{"shown" => ["price", "volume"]},
-             "theme" => "nightmode"
+             "theme" => "nightmode",
+             "favorite_metrics" => ["daily_active_addresses", "nvt"]
            }
   end
 
@@ -165,7 +198,8 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
              "isBetaMode" => false,
              "pageSize" => 20,
              "tableColumns" => %{},
-             "theme" => "default"
+             "theme" => "default",
+             "favorite_metrics" => []
            }
   end
 
@@ -228,7 +262,21 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
           theme
           pageSize
           tableColumns
+          favorite_metrics
         }
+      }
+    }
+    """
+  end
+
+  defp change_favorite_metrics_query(favorite_metrics) do
+    """
+    mutation {
+      updateUserSettings(settings: #{
+      map_to_input_object_str(%{favorite_metrics: favorite_metrics})
+    })
+      {
+        favoriteMetrics
       }
     }
     """

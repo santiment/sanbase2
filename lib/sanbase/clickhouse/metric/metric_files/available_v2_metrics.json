@@ -2101,7 +2101,7 @@
   },
   {
     "human_readable_name": "Daily MVRV-Z Score",
-    "name": "mvrv_z",
+    "name": "mvrv_usd_z_score",
     "metric": "mvrv_z",
     "version": "2019-01-01",
     "access": "restricted",

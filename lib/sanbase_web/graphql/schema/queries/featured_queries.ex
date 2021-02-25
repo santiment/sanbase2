@@ -20,6 +20,11 @@ defmodule SanbaseWeb.Graphql.Schema.FeaturedQueries do
       cache_resolve(&FeaturedItemResolver.watchlists/3)
     end
 
+    field :featured_screeners, list_of(:user_list) do
+      meta(access: :free)
+      cache_resolve(&FeaturedItemResolver.screeners/3)
+    end
+
     field :featured_user_triggers, list_of(:user_trigger) do
       meta(access: :free)
       cache_resolve(&FeaturedItemResolver.user_triggers/3)

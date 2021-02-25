@@ -85,7 +85,7 @@ defmodule Sanbase.Alert.Scheduler do
     grouped_by_user
     |> Sanbase.Parallel.map(
       fn {_user_id, triggers} -> send_triggers_sequentially(triggers) end,
-      max_concurrency: 20,
+      max_concurrency: 15,
       ordered: false,
       map_type: :flat_map
     )

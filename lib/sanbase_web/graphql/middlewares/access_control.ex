@@ -85,13 +85,21 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
 
       false ->
         min_plan = AccessChecker.min_plan(product, query_or_metric)
+        product = String.capitalize(product)
+        plan = plan |> to_string() |> String.capitalize()
+        min_plan = min_plan |> to_string() |> String.capitalize()
 
         Resolution.put_result(
           resolution,
           {:error,
-           "The metric #{elem(query_or_metric, 1)} is not accessible with your current plan #{
-             plan
-           }. Please upgrade to #{min_plan} plan."}
+           """
+           The metric #{elem(query_or_metric, 1)} is not accessible with the currently used
+           #{product} #{plan} subscription. Please upgrade to #{product} #{min_plan} subscription.
+
+           If you have a subscription for one product but attempt to fetch data using
+           another product, this error will still be shown. The data on Sanbase cannot
+           be fetched with a Sanapi subscription and vice versa.
+           """}
         )
     end
   end

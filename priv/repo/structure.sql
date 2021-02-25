@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 11.9 (Debian 11.9-0+deb10u1)
--- Dumped by pg_dump version 11.9 (Debian 11.9-0+deb10u1)
+-- Dumped from database version 12.3
+-- Dumped by pg_dump version 12.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -116,8 +116,6 @@ $$;
 
 
 SET default_tablespace = '';
-
-SET default_with_oids = false;
 
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
@@ -2427,7 +2425,8 @@ CREATE TABLE public.user_lists (
     is_monitored boolean DEFAULT false,
     table_configuration_id bigint,
     description text,
-    type public.watchlist_type DEFAULT 'project'::public.watchlist_type NOT NULL
+    type public.watchlist_type DEFAULT 'project'::public.watchlist_type NOT NULL,
+    is_screener boolean DEFAULT false
 );
 
 
@@ -5526,3 +5525,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210201105522);
 INSERT INTO public."schema_migrations" (version) VALUES (20210202161636);
 INSERT INTO public."schema_migrations" (version) VALUES (20210205121406);
 INSERT INTO public."schema_migrations" (version) VALUES (20210209085710);
+INSERT INTO public."schema_migrations" (version) VALUES (20210222141227);
+INSERT INTO public."schema_migrations" (version) VALUES (20210223081041);

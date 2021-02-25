@@ -24,25 +24,51 @@ defmodule Sanbase.Model.Project.ContractData do
     is_binary(contract_address(project))
   end
 
-  @spec contract_info_by_slug(String.t()) :: {:ok, contract, decimals} | {:error, tuple()}
+  # Internally when we have a table with blockchain related data
+  # contract address is used to identify projects. In case of ethereum
+  # the contract address contains simply 'ETH'
+
+  @spec contract_info(%Project{}, Keyword.t()) ::
+          {:ok, contract, decimals} | {:error, tuple()}
         when contract: String.t(), decimals: non_neg_integer()
-  def contract_info_by_slug(slug)
+  def contract_info(project, opts \\ [])
 
   for {slug, %{contract_address: contract, decimals: decimals}} <- @special_cases do
-    def contract_info_by_slug(unquote(slug)), do: {:ok, unquote(contract), unquote(decimals)}
+    def contract_info(%Project{slug: unquote(slug)}, _opts) do
+      {:ok, unquote(contract), unquote(decimals)}
+    end
   end
 
-  def contract_info_by_slug(slug) do
-    from(
-      contract in Project.ContractAddress,
-      inner_join: p in Project,
-      on: contract.project_id == p.id,
-      where: p.slug == ^slug
-    )
-    |> Repo.all()
-    |> case do
+  def contract_info(%Project{} = project, opts) do
+    case Repo.preload(project, [:contract_addresses]) do
+      %Project{contract_addresses: [_ | _] = list} ->
+        contract = contracts_list_to_contract(list, opts)
+        {:ok, String.downcase(contract.address), contract.decimals || 0}
+
+      _ ->
+        {:error,
+         {:missing_contract, "Can't find contract address of #{Project.describe(project)}"}}
+    end
+  end
+
+  def contract_info(data, _opts) do
+    {:error, "Not valid project type provided to contract_info - #{inspect(data)}"}
+  end
+
+  @spec contract_info_by_slug(String.t(), Keyword.t()) ::
+          {:ok, contract, decimals} | {:error, tuple()}
+        when contract: String.t(), decimals: non_neg_integer()
+  def contract_info_by_slug(slug, opts \\ [])
+
+  for {slug, %{contract_address: contract, decimals: decimals}} <- @special_cases do
+    def contract_info_by_slug(unquote(slug), _opts),
+      do: {:ok, unquote(contract), unquote(decimals)}
+  end
+
+  def contract_info_by_slug(slug, opts) do
+    case contract_addresses(slug) do
       [_ | _] = list ->
-        contract = Project.ContractAddress.list_to_main_contract_address(list)
+        contract = contracts_list_to_contract(list, opts)
         {:ok, String.downcase(contract.address), contract.decimals || 0}
 
       _ ->
@@ -55,27 +81,25 @@ defmodule Sanbase.Model.Project.ContractData do
   to `own` in the database it will use the contract. Ethereum has ETH as contract,
   Bitcoin has BTC and so on, which is the real infrastructure
   """
-  @spec contract_info_infrastructure_by_slug(String.t()) ::
+  @spec contract_info_infrastructure_by_slug(String.t(), Keyword.t()) ::
           {:ok, contract, decimals, infrastructure} | {:error, String.t()}
         when contract: String.t(), decimals: non_neg_integer(), infrastructure: String.t()
-  def contract_info_infrastructure_by_slug(slug)
+  def contract_info_infrastructure_by_slug(slug, opts \\ [])
 
   for {slug, %{contract_address: contract, decimals: decimals}} <-
         @special_cases do
-    def contract_info_infrastructure_by_slug(unquote(slug)),
+    def contract_info_infrastructure_by_slug(unquote(slug), _opts),
       do: {:ok, unquote(contract), unquote(decimals), unquote(contract)}
   end
 
-  def contract_info_infrastructure_by_slug(slug) do
-    from(
-      p in Project,
-      where: p.slug == ^slug,
-      preload: [:infrastructure, :contract_addresses]
+  def contract_info_infrastructure_by_slug(slug, opts) do
+    Project.by_slug(slug,
+      preload?: true,
+      only_preload: [:contract_addresses, :infrastructure]
     )
-    |> Repo.one()
     |> case do
       %Project{contract_addresses: [_ | _] = list, infrastructure: %{code: infr_code}} ->
-        contract = Project.ContractAddress.list_to_main_contract_address(list)
+        contract = contracts_list_to_contract(list, opts)
         {:ok, String.downcase(contract.address), contract.decimals || 0, infr_code}
 
       _ ->
@@ -85,53 +109,36 @@ defmodule Sanbase.Model.Project.ContractData do
     end
   end
 
-  for {slug, %{contract_address: contract}} <- @special_cases do
-    def contract_address(%Project{slug: unquote(slug)}), do: unquote(contract)
-  end
+  def contract_address(project, opts \\ [])
 
   for {slug, %{contract_address: contract}} <- @special_cases do
-    def contract_addresses(%Project{slug: unquote(slug)}), do: [unquote(contract)]
+    def contract_address(%Project{slug: unquote(slug)}, _opts), do: unquote(contract)
   end
 
-  def contract_address(%Project{} = project) do
-    case contract_info(project) do
+  def contract_address(%Project{} = project, opts) do
+    case contract_info(project, opts) do
       {:ok, address, _} -> address
       _ -> nil
     end
   end
 
-  def contract_addresses(%Project{} = project) do
+  defp contracts_list_to_contract(list, opts) do
+    case Keyword.get(opts, :contract_type, :main_contract) do
+      :main_contract ->
+        Project.ContractAddress.list_to_main_contract_address(list)
+
+      :latest_onchain_contract ->
+        Project.ContractAddress.list_to_latest_onchain_contract_address(list)
+    end
+  end
+
+  defp contract_addresses(slug) when is_binary(slug) do
     from(
       contract in Project.ContractAddress,
-      where: contract.project_id == ^project.id,
-      select: contract.address
+      inner_join: p in Project,
+      on: contract.project_id == p.id,
+      where: p.slug == ^slug
     )
     |> Repo.all()
-  end
-
-  # Internally when we have a table with blockchain related data
-  # contract address is used to identify projects. In case of ethereum
-  # the contract address contains simply 'ETH'
-
-  for {slug, %{contract_address: contract, decimals: decimals}} <- @special_cases do
-    def contract_info(%Project{slug: unquote(slug)}) do
-      {:ok, unquote(contract), unquote(decimals)}
-    end
-  end
-
-  def contract_info(%Project{} = project) do
-    case Repo.preload(project, [:contract_addresses]) do
-      %Project{contract_addresses: [_ | _] = list} ->
-        contract = Project.ContractAddress.list_to_main_contract_address(list)
-        {:ok, String.downcase(contract.address), contract.decimals || 0}
-
-      _ ->
-        {:error,
-         {:missing_contract, "Can't find contract address of #{Project.describe(project)}"}}
-    end
-  end
-
-  def contract_info(data) do
-    {:error, "Not valid project type provided to contract_info - #{inspect(data)}"}
   end
 end

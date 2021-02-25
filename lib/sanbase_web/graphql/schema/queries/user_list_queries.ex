@@ -124,6 +124,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserListQueries do
       arg(:function, :json)
       arg(:table_configuration_id, :integer)
       arg(:list_items, list_of(:input_list_item))
+      arg(:is_screener, :boolean)
 
       middleware(JWTAuth)
       resolve(&UserListResolver.create_user_list/3)
@@ -160,6 +161,7 @@ defmodule SanbaseWeb.Graphql.Schema.UserListQueries do
       arg(:list_items, list_of(:input_list_item))
       arg(:is_monitored, :boolean)
       arg(:table_configuration_id, :integer)
+      arg(:is_screener, :boolean)
 
       middleware(JWTAuth)
       resolve(&UserListResolver.update_watchlist/3)

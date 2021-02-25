@@ -74,17 +74,17 @@ defmodule Sanbase.Accounts.Settings do
 
   defp validate_favorite_metrics(_, nil), do: []
 
-  defp validate_favorite_metrics(_, type) do
-    type
-    |> Stream.map(&Sanbase.Metric.has_metric?/1)
-    |> Enum.find(&(&1 != true))
-    |> case do
-      nil ->
-        []
+  defp validate_favorite_metrics(_, metrics) do
+    metrics
+    |> Enum.find_value([], fn metric ->
+      case Sanbase.Metric.has_metric?(metric) do
+        true ->
+          false
 
-      {:error, error} ->
-        [favorite_metrics: "Invalid metric found in the favorite metrics list. #{error}"]
-    end
+        {:error, error} ->
+          [favorite_metrics: "Invalid metric found in the favorite metrics list. #{error}"]
+      end
+    end)
   end
 
   defp validate_subscription_type(_, nil), do: []

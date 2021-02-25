@@ -53,7 +53,6 @@ defmodule Sanbase.Mixfile do
       {:async_with, github: "fertapric/async_with"},
       {:cidr, "~> 1.1"},
       {:clickhouse_ecto, github: "santiment/clickhouse_ecto", branch: "migrate-ecto-3"},
-      {:waffle, "~> 1.1"},
       {:clickhousex, github: "santiment/clickhousex", override: true},
       {:con_cache, "~> 0.13"},
       {:corsica, "~> 1.0"},
@@ -63,16 +62,18 @@ defmodule Sanbase.Mixfile do
       {:csv, "~> 2.1"},
       {:dataloader, "~> 1.0.0"},
       {:db_connection, "~> 2.2", override: true},
-      {:ecto_psql_extras, "~> 0.3"},
       {:decimal, "~> 1.0"},
       {:dialyxir, "~> 1.0.0-rc.6", only: [:dev], runtime: false},
       {:distillery, "~> 2.0", runtime: false},
       {:earmark, "~> 1.2"},
       {:ecto_enum, "~> 1.4"},
+      {:ecto_psql_extras, "~> 0.3"},
       {:ecto_sql, "~> 3.0"},
       {:ecto, "~> 3.0"},
       {:envy, "~> 1.1.1", only: [:dev, :test]},
       {:erlex, "~> 0.2.6", override: true},
+      {:ethereumex, "~> 0.7.0"},
+      {:ex_abi, "~> 0.5.2"},
       {:ex_admin, github: "santiment/ex_admin", only: [:dev, :prod]},
       {:ex_aws_s3, "~> 2.0"},
       {:ex_aws, "~> 2.0"},
@@ -135,8 +136,7 @@ defmodule Sanbase.Mixfile do
       {:ueberauth_twitter, github: "santiment/ueberauth_twitter"},
       {:uuid, "~> 1.1"},
       {:vex, "~> 0.8.0", override: true},
-      {:ethereumex, "~> 0.7.0"},
-      {:ex_abi, "~> 0.5.2"}
+      {:waffle, "~> 1.1"}
     ]
   end
 

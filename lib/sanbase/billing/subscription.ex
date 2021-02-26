@@ -64,18 +64,44 @@ defmodule Sanbase.Billing.Subscription do
   end
 
   def by_id(id) do
-    Repo.get(__MODULE__, id)
-    |> Repo.preload(:plan)
+    Repo.get(__MODULE__, id) |> default_preload()
   end
 
+  @spec by_stripe_id(String.t()) :: %__MODULE__{} | nil
   def by_stripe_id(stripe_id) do
-    Repo.get_by(__MODULE__, stripe_id: stripe_id)
-    |> Repo.preload(:plan)
+    Repo.get_by(__MODULE__, stripe_id: stripe_id) |> default_preload()
   end
 
   @spec free_subscription() :: %__MODULE__{}
   def free_subscription() do
     %__MODULE__{plan: Plan.free_plan()}
+  end
+
+  def create_subscription_db(stripe_subscription, user, plan) do
+    %__MODULE__{}
+    |> changeset(%{
+      stripe_id: stripe_subscription.id,
+      user_id: user.id,
+      plan_id: plan.id,
+      current_period_end: DateTime.from_unix!(stripe_subscription.current_period_end),
+      cancel_at_period_end: stripe_subscription.cancel_at_period_end,
+      status: stripe_subscription.status,
+      trial_end: format_trial_end(stripe_subscription.trial_end),
+      inserted_at: DateTime.from_unix!(stripe_subscription.created) |> DateTime.to_naive()
+    })
+    |> Repo.insert(on_conflict: :nothing)
+  end
+
+  def update_subscription_db(subscription, params) do
+    subscription
+    |> changeset(params)
+    |> Repo.update()
+  end
+
+  def sync_stripe_subscriptions() do
+    __MODULE__
+    |> Repo.all()
+    |> Enum.each(&sync_subscription_with_stripe/1)
   end
 
   @doc """
@@ -93,9 +119,10 @@ defmodule Sanbase.Billing.Subscription do
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan),
          {:ok, _} <- Sanbase.ApiCallLimit.update_user_plan(user) do
-      plan.id in @free_trial_plans && SignUpTrial.maybe_remove_sign_up_trial(user)
+      # Remove sign up trial if exists.
+      plan.id in @free_trial_plans && SignUpTrial.remove_sign_up_trial(user)
 
-      {:ok, preload(db_subscription)}
+      {:ok, default_preload(db_subscription, force: true)}
     end
   end
 
@@ -109,8 +136,8 @@ defmodule Sanbase.Billing.Subscription do
     with {:ok, stripe_subscription} <-
            StripeApi.update_subscription_item_by_id(db_subscription, plan),
          {:ok, db_subscription} <-
-           sync_with_stripe_subscription(stripe_subscription, db_subscription),
-         db_subscription <- preload(db_subscription),
+           sync_subscription_with_stripe(stripe_subscription, db_subscription),
+         db_subscription <- default_preload(db_subscription, force: true),
          {:ok, _} <- Sanbase.ApiCallLimit.update_user_plan(db_subscription.user) do
       {:ok, db_subscription}
     end
@@ -128,8 +155,8 @@ defmodule Sanbase.Billing.Subscription do
       when is_binary(stripe_id) do
     with {:ok, stripe_subscription} <- StripeApi.cancel_subscription(stripe_id),
          {:ok, _canceled_sub} <-
-           sync_with_stripe_subscription(stripe_subscription, db_subscription),
-         db_subscription <- preload(db_subscription),
+           sync_subscription_with_stripe(stripe_subscription, db_subscription),
+         db_subscription <- default_preload(db_subscription, force: true),
          {:ok, _} <- Sanbase.ApiCallLimit.update_user_plan(db_subscription.user) do
       Sanbase.Billing.StripeEvent.send_cancel_event_to_discord(db_subscription)
 
@@ -156,8 +183,8 @@ defmodule Sanbase.Billing.Subscription do
          {:ok, stripe_subscription} <-
            StripeApi.update_subscription(db_subscription.stripe_id, %{cancel_at_period_end: false}),
          {:ok, db_subscription} <-
-           sync_with_stripe_subscription(stripe_subscription, db_subscription),
-         db_subscription = preload(db_subscription),
+           sync_subscription_with_stripe(stripe_subscription, db_subscription),
+         db_subscription = default_preload(db_subscription, force: true),
          {:ok, _} <- Sanbase.ApiCallLimit.update_user_plan(db_subscription.user) do
       {:ok, db_subscription}
     else
@@ -172,75 +199,18 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
-  def create_subscription_db(stripe_subscription, user, plan) do
-    %__MODULE__{}
-    |> changeset(%{
-      stripe_id: stripe_subscription.id,
-      user_id: user.id,
-      plan_id: plan.id,
-      current_period_end: DateTime.from_unix!(stripe_subscription.current_period_end),
-      cancel_at_period_end: stripe_subscription.cancel_at_period_end,
-      status: stripe_subscription.status,
-      trial_end: format_trial_end(stripe_subscription.trial_end),
-      inserted_at: DateTime.from_unix!(stripe_subscription.created) |> DateTime.to_naive()
-    })
-    |> Repo.insert(on_conflict: :nothing)
-  end
-
-  def update_subscription_db(subscription, params) do
-    subscription
-    |> changeset(params)
-    |> Repo.update()
-  end
-
-  def sync_all() do
-    __MODULE__
-    |> Repo.all()
-    |> Enum.each(&sync_with_stripe_subscription/1)
-  end
-
-  def sync_with_stripe_subscription(%__MODULE__{stripe_id: stripe_id} = sub) do
-    with {:ok, %Stripe.Subscription{} = stripe_sub} <- StripeApi.retrieve_subscription(stripe_id),
-         {_, %Plan{} = plan} <- {:plan_exists?, Plan.by_stripe_id(stripe_sub.plan.id)} do
-      args = %{
-        current_period_end: DateTime.from_unix!(stripe_sub.current_period_end),
-        cancel_at_period_end: stripe_sub.cancel_at_period_end,
-        status: stripe_sub.status,
-        plan_id: plan.id,
-        trial_end: format_trial_end(stripe_sub.trial_end),
-        inserted_at: DateTime.from_unix!(stripe_sub.created) |> DateTime.to_naive()
-      }
-
-      update_subscription_db(sub, args)
-    else
-      {:plan_exists?, nil} ->
-        Logger.error(
-          "Error while syncing subscription: #{sub.stripe_id}. Reason: Plan does not exist."
-        )
-
-      {:error, reason} ->
-        Logger.error(
-          "Error while syncing subscription: #{sub.stripe_id}. Reason: #{inspect(reason)}"
-        )
+  def sync_subscription_with_stripe(%__MODULE__{stripe_id: stripe_id} = db_subscription) do
+    with {:ok, stripe_subscription} <- StripeApi.retrieve_subscription(stripe_id),
+         plan_id <- fetch_plan_id(db_subscription, stripe_subscription) do
+      update_local_subsciption(db_subscription, stripe_subscription, plan_id)
     end
   end
 
-  def sync_with_stripe_subscription(_), do: :ok
+  def sync_subscription_with_stripe(_), do: :ok
 
-  def sync_with_stripe_subscription(stripe_subscription, db_subscription) do
-    plan_id =
-      case Plan.by_stripe_id(stripe_subscription.plan.id) do
-        %Plan{id: plan_id} -> plan_id
-        nil -> db_subscription.plan_id
-      end
-
-    update_subscription_db(db_subscription, %{
-      current_period_end: DateTime.from_unix!(stripe_subscription.current_period_end),
-      cancel_at_period_end: stripe_subscription.cancel_at_period_end,
-      status: stripe_subscription.status,
-      plan_id: plan_id,
-      trial_end: format_trial_end(stripe_subscription.trial_end)
-    })
+  def sync_subscription_with_stripe(stripe_subscription, db_subscription) do
+    plan_id = fetch_plan_id(db_subscription, stripe_subscription)
+    update_local_subsciption(db_subscription, stripe_subscription, plan_id)
   end
 
   @doc """
@@ -278,28 +248,6 @@ defmodule Sanbase.Billing.Subscription do
 
   def plan_name(nil), do: :free
   def plan_name(%__MODULE__{plan: plan}), do: plan |> Plan.plan_atom_name()
-
-  @doc """
-  Cancel trialing subscriptions.
-  * For Sanbase PRO cancel those:
-   - about to expire (in 2 hours)
-   - there is no payment instrument attached
-  and send an email for finished trial.
-
-  * For other plans - cancel regardless of card presense.
-  """
-  def cancel_about_to_expire_trials() do
-    now = Timex.now()
-    after_2_hours = Timex.shift(now, hours: 2)
-
-    from(s in __MODULE__,
-      where:
-        s.status == "trialing" and
-          s.trial_end >= ^now and s.trial_end <= ^after_2_hours
-    )
-    |> Repo.all()
-    |> Enum.each(&maybe_send_email_and_delete_subscription/1)
-  end
 
   def active_subscriptions_map() do
     from(s in __MODULE__, where: s.status == "active", preload: [plan: [:product]])
@@ -358,11 +306,16 @@ defmodule Sanbase.Billing.Subscription do
       items: [%{plan: plan.stripe_id}]
     }
 
+    # Transfer left trial to new subscription
     case SignUpTrial.trial_end_dt(user) do
-      trial_end_dt = %DateTime{} ->
-        case DateTime.compare(Timex.now(), trial_end_dt) do
-          :lt -> Map.put(defaults, :trial_end, trial_end_dt)
-          _ -> defaults
+      trial_end_dt = %NaiveDateTime{} ->
+        case NaiveDateTime.compare(NaiveDateTime.utc_now(), trial_end_dt) do
+          :lt ->
+            trial_end_dt = trial_end_dt |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
+            Map.put(defaults, :trial_end, trial_end_dt)
+
+          _ ->
+            defaults
         end
 
       _ ->
@@ -433,30 +386,6 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
-  # Send email and delete subscription if user plan is one of our free trial plans
-  defp maybe_send_email_and_delete_subscription(
-         %__MODULE__{
-           user_id: user_id,
-           stripe_id: stripe_id,
-           plan_id: plan_id
-         } = subscription
-       )
-       when plan_id in @free_trial_plans do
-    if SignUpTrial.by_subscription_id(subscription.id) do
-      Logger.info("Deleting subscription with id: #{stripe_id} for user: #{user_id}")
-
-      StripeApi.delete_subscription(stripe_id)
-
-      __MODULE__.SignUpTrial.maybe_send_trial_finished_email(subscription)
-    end
-  end
-
-  defp maybe_send_email_and_delete_subscription(%__MODULE__{stripe_id: stripe_id}) do
-    Logger.info("Deleting subscription with id: #{stripe_id}")
-
-    StripeApi.delete_subscription(stripe_id)
-  end
-
   defp fetch_current_subscription(user_id, product_id) do
     user_id
     |> user_subscriptions_query()
@@ -470,8 +399,28 @@ defmodule Sanbase.Billing.Subscription do
     from(s in query, preload: ^preloads)
   end
 
-  defp preload(subscription) do
-    Repo.preload(subscription, @preload_fields, force: true)
+  defp default_preload(subscription, opts \\ []) do
+    Repo.preload(subscription, @preload_fields, opts)
+  end
+
+  defp update_local_subsciption(db_subscription, stripe_subscription, plan_id) do
+    args = %{
+      current_period_end: DateTime.from_unix!(stripe_subscription.current_period_end),
+      cancel_at_period_end: stripe_subscription.cancel_at_period_end,
+      status: stripe_subscription.status,
+      plan_id: plan_id,
+      trial_end: format_trial_end(stripe_subscription.trial_end),
+      inserted_at: DateTime.from_unix!(stripe_subscription.created) |> DateTime.to_naive()
+    }
+
+    update_subscription_db(db_subscription, args)
+  end
+
+  defp fetch_plan_id(db_subscription, stripe_subscription) do
+    case Plan.by_stripe_id(stripe_subscription.plan.id) do
+      %Plan{id: plan_id} -> plan_id
+      nil -> db_subscription.plan_id
+    end
   end
 
   defp format_trial_end(nil), do: nil

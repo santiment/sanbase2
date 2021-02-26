@@ -9,6 +9,9 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   alias Sanbase.Accounts.User
   alias Sanbase.StripeApi
   alias Sanbase.StripeApiTestResponse
+  alias Sanbase.Billing.{Subscription, Product}
+  alias Sanbase.Billing.Subscription.SignUpTrial
+  alias Sanbase.Repo
 
   @coupon_code "test_coupon"
 
@@ -240,6 +243,51 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
       response = execute_mutation(context.conn, query, "subscribe")
       refute called(StripeApi.create_subscription(%{trial_period_days: 14}))
       assert response["plan"]["name"] == context.plans.plan_pro_sanbase.name
+    end
+
+    test "when on trial, transfers the trial", context do
+      with_mocks([
+        {StripeApi, [:passthrough],
+         [create_customer: fn _, _ -> StripeApiTestResponse.create_or_update_customer_resp() end]},
+        {StripeApi, [:passthrough],
+         [create_coupon: fn _ -> StripeApiTestResponse.create_coupon_resp() end]},
+        {StripeApi, [:passthrough],
+         [
+           create_subscription: fn arg ->
+             StripeApiTestResponse.create_subscription_resp(
+               status: "trialing",
+               trial_end: arg.trial_end
+             )
+           end
+         ]}
+      ]) do
+        seven_days_ago = Timex.shift(Timex.now(), days: -7)
+        subscription = insert(:subscription_pro_sanbase, user: context.user, status: "trialing")
+
+        sign_up_trial =
+          insert(:sign_up_trial,
+            subscription: subscription,
+            user: context.user,
+            inserted_at: seven_days_ago
+          )
+
+        query = subscribe_mutation(context.plans.plan_pro_sanbase.id)
+        response = execute_mutation(context.conn, query, "subscribe")
+
+        # SignUpTrial is marked as `is_finished`
+        assert SignUpTrial.by_subscription_id(subscription.id) == nil
+
+        current_subscription =
+          Subscription.current_subscription(context.user, Product.product_sanbase())
+
+        # Assert 7 days trial transferred
+        assert Float.round(Timex.diff(current_subscription.trial_end, Timex.now(), :hours) / 24) ==
+                 7
+
+        refute response["id"] == subscription.id
+        assert response["status"] == "TRIALING"
+        assert response["plan"]["name"] == "PRO"
+      end
     end
   end
 

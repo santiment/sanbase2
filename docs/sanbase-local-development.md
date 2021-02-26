@@ -80,7 +80,7 @@ are located in the `priv/repo` directory. They can be run as follows:
 > After running the `seed_plans_and_products.exs` seed, an optional sync with stripe can be done by providing the stripe credentials in the config file and executing:
 
 > ```elixir
-> Sanbase.Billing.sync_with_stripe()
+> Sanbase.Billing.sync_products_with_stripe()
 > ```
 > ---
 

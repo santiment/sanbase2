@@ -11,16 +11,29 @@ defmodule Sanbase.Billing do
   alias Sanbase.Accounts.User
   alias Sanbase.StripeApi
 
+  # Subscription API
+  defdelegate subscribe(user, plan, card, coupon), to: Subscription
+  defdelegate update_subscription(subscription, plan), to: Subscription
+  defdelegate cancel_subscription(subscription), to: Subscription
+  defdelegate renew_cancelled_subscription(subscription), to: Subscription
+
+  defdelegate sync_stripe_subscriptions, to: Subscription
+
+  # SignUpTrial
   defdelegate create_trial_subscription(user_id), to: SignUpTrial
+  defdelegate cancel_about_to_expire_trials, to: SignUpTrial
+  defdelegate update_finished_trials, to: SignUpTrial
+  defdelegate send_email_on_trial_day, to: SignUpTrial
+
   # LiquiditySubscription
   defdelegate create_liquidity_subscription(user_id), to: LiquiditySubscription
   defdelegate remove_liquidity_subscription(liquidity_subscription), to: LiquiditySubscription
-  defdelegate list_liquidity_subscriptions(), to: LiquiditySubscription
+  defdelegate list_liquidity_subscriptions, to: LiquiditySubscription
   defdelegate eligible_for_liquidity_subscription?(user_id), to: LiquiditySubscription
   defdelegate user_has_active_sanbase_subscriptions?(user_id), to: LiquiditySubscription
-  defdelegate sync_liquidity_subscriptions_staked_users(), to: LiquiditySubscription
-  defdelegate maybe_create_liquidity_subscriptions_staked_users(), to: LiquiditySubscription
-  defdelegate maybe_remove_liquidity_subscriptions_staked_users(), to: LiquiditySubscription
+  defdelegate sync_liquidity_subscriptions_staked_users, to: LiquiditySubscription
+  defdelegate maybe_create_liquidity_subscriptions_staked_users, to: LiquiditySubscription
+  defdelegate maybe_remove_liquidity_subscriptions_staked_users, to: LiquiditySubscription
 
   def list_products(), do: Repo.all(Product)
 
@@ -38,8 +51,8 @@ defmodule Sanbase.Billing do
   In order to create the Products and Plans locally, the seed
   `priv/repo/seed_plans_and_products.exs` must be executed.
   """
-  @spec sync_with_stripe() :: :ok | {:error, %Stripe.Error{}}
-  def sync_with_stripe() do
+  @spec sync_products_with_stripe() :: :ok | {:error, %Stripe.Error{}}
+  def sync_products_with_stripe() do
     with :ok <- run_sync(list_products(), &Product.maybe_create_product_in_stripe/1),
          :ok <- run_sync(list_plans(), &Plan.maybe_create_plan_in_stripe/1) do
       :ok

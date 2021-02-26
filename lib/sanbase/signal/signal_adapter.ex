@@ -28,7 +28,7 @@ defmodule Sanbase.Signal.SignalAdapter do
   def available_signals(), do: @signals
 
   @impl Sanbase.Signal.Behaviour
-  def available_signals(%{slug: slug}) when is_binary(slug) do
+  def available_signals(slug) when is_binary(slug) do
     {query, args} = available_signals_query(slug)
 
     ClickhouseRepo.query_transform(query, args, fn [signal] -> signal end)

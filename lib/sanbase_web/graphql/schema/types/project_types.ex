@@ -115,19 +115,19 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   """
   object :project do
     @desc ~s"""
-    Returns a list of available anomalies. Every one of the anomalies in the list
+    Returns a list of available signals. Every one of the signals in the list
     can be passed as the `metric` argument of the `getMetric` query.
 
-    For example, any of of the anomalies from the query:
+    For example, any of of the signals from the query:
     ```
     {
-      projectBySlug(slug: "ethereum"){ availableAnomalies }
+      projectBySlug(slug: "ethereum"){ availableSignals }
     }
     ```
     can be used like this:
     ```
     {
-      getAnomaly(anomaly: "<anomaly>"){
+      getSignal(signal: "<signal>"){
         timeseriesData(
           slug: "ethereum"
           from: "2019-01-01T00:00:00Z"
@@ -140,7 +140,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     ```
     """
 
-    field :available_anomalies, list_of(:string) do
+    field :available_signals, list_of(:string) do
       cache_resolve(&ProjectSignalsResolver.available_signals/3, ttl: 600)
     end
 

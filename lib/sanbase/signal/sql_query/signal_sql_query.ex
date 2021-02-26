@@ -25,9 +25,13 @@ defmodule Sanbase.Signal.SqlQuery do
     query = """
     SELECT name
     FROM #{@metadata_table}
-    PREWHERE
-      name = ?1
-    GROUP BY name
+    PREWHERE signal_id in (
+      SELECT DISTINCT(signal_id)
+      from #{@table}
+      INNER JOIN (
+        SELECT * FROM asset_metadata WHERE name = ?1
+    ) using(asset_id)
+    )
     """
 
     args = [

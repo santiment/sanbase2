@@ -86,7 +86,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     |> Enum.flat_map(fn %Ticker{} = ticker ->
       case Map.get(cmc_id_to_slugs_mapping, ticker.slug, []) |> List.wrap() do
         [_ | _] = slugs ->
-          price_point = Ticker.to_price_point(ticker)
+          price_point = Ticker.to_price_point(ticker) |> PricePoint.sanity_filters()
           Enum.map(slugs, fn slug -> PricePoint.json_kv_tuple(price_point, slug) end)
 
         _ ->

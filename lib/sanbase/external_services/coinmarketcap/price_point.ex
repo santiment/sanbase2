@@ -2,6 +2,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Model.Project
 
+  @volume_usd_limit 500_000_000_000
   @prices_source "coinmarketcap"
   defstruct [
     :ticker,
@@ -26,6 +27,25 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
       |> Jason.encode!()
 
     {key, value}
+  end
+
+  def sanity_filters([]), do: []
+
+  def sanity_filters([%__MODULE__{} | _] = price_points) when is_list(price_points) do
+    Enum.map(price_points, fn
+      %{volume_usd: volume_usd} = price_point
+      when is_number(volume_usd) and volume_usd > @volume_usd_limit ->
+        %{price_point | volume_usd: nil}
+
+      price_point ->
+        price_point
+    end)
+  end
+
+  def sanity_filters(%__MODULE__{} = price_point) do
+    [price_point]
+    |> sanity_filters()
+    |> hd()
   end
 
   def convert_to_measurement(%__MODULE__{datetime: datetime} = point, name) do

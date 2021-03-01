@@ -158,7 +158,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
 
   @spec convert_for_importing(%__MODULE__{}, %{}) :: [%Measurement{}]
   def convert_for_importing(%__MODULE__{} = ticker, cmc_id_to_slugs_mapping) do
-    price_point = to_price_point(ticker)
+    price_point = to_price_point(ticker) |> PricePoint.sanity_filters()
 
     case Map.get(cmc_id_to_slugs_mapping, ticker.slug, []) |> List.wrap() do
       [] ->

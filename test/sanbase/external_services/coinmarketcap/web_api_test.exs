@@ -16,6 +16,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApiTest do
         ]
       })
 
+    Sanbase.InMemoryKafka.Producer.clear_state()
+
     insert(:latest_cmc_data, %{coinmarketcap_id: "bitcoin"})
 
     [project: project]
@@ -29,6 +31,29 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.WebApiTest do
     {:ok, first_datetime} = WebApi.first_datetime(context.project)
 
     assert DateTime.compare(~U[2013-04-28T18:47:21.000Z], first_datetime) == :eq
+  end
+
+  test "filter out huge volumes", context do
+    Tesla.Mock.mock(fn %{method: :get} ->
+      %Tesla.Env{
+        status: 200,
+        body: File.read!(Path.join(__DIR__, "data/btc_web_api_success_huge_volume.json"))
+      }
+    end)
+
+    WebApi.fetch_and_store_prices(context.project, ~U[2018-01-01T23:59:01.000Z])
+    prices = Sanbase.InMemoryKafka.Producer.get_state() |> Map.get("asset_prices")
+
+    filtered_record =
+      {"coinmarketcap_bitcoin_2018-01-01T23:59:20.000Z",
+       "{\"marketcap_usd\":229119666553,\"price_btc\":1.0,\"price_usd\":13657.23046875,\"slug\":\"bitcoin\",\"source\":\"coinmarketcap\",\"timestamp\":1514851160,\"volume_usd\":null}"}
+
+    ok_record =
+      {"coinmarketcap_bitcoin_2018-01-02T23:59:22.000Z",
+       "{\"marketcap_usd\":251377940171,\"price_btc\":1.0,\"price_usd\":14982.1015625,\"slug\":\"bitcoin\",\"source\":\"coinmarketcap\",\"timestamp\":1514937562,\"volume_usd\":16846582784}"}
+
+    assert filtered_record in prices
+    assert ok_record in prices
   end
 
   test "fetching prices of a token", context do

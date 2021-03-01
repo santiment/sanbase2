@@ -27,9 +27,9 @@ defmodule Sanbase.Signal.SqlQuery do
     FROM #{@metadata_table}
     PREWHERE signal_id in (
       SELECT DISTINCT(signal_id)
-      from #{@table}
+      FROM #{@table}
       INNER JOIN (
-        SELECT * FROM asset_metadata WHERE name = ?1
+        SELECT * FROM asset_metadata PREWHERE name = ?1
     ) using(asset_id)
     )
     """
@@ -45,11 +45,11 @@ defmodule Sanbase.Signal.SqlQuery do
     query = """
     SELECT DISTINCT(name)
     FROM asset_metadata
-    WHERE asset_id in (
+    PREWHERE asset_id in (
       SELECT DISTINCT(asset_id)
       FROM #{@table}
       INNER JOIN (
-        SELECT * FROM #{@metadata_table} WHERE name = ?1
+        SELECT * FROM #{@metadata_table} PREWHERE name = ?1
       ) USING(signal_id))
     """
 
@@ -66,7 +66,7 @@ defmodule Sanbase.Signal.SqlQuery do
     FROM #{@table}
     PREWHERE
       signal_id = ( SELECT signal_id FROM signal_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
-      asset_id = ( select asset_id from asset_metadata final where name = ?2 LIMIT 1 )
+      asset_id = ( select asset_id from asset_metadata final PREWHERE name = ?2 LIMIT 1 )
     """
 
     args = [

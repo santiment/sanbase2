@@ -66,7 +66,7 @@ defmodule Sanbase.Signal.SqlQuery do
     FROM #{@table}
     PREWHERE
       signal_id = ( SELECT signal_id FROM signal_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
-      asset_id = ( select asset_id from asset_metadata final PREWHERE name = ?2 LIMIT 1 )
+      asset_id = ( select asset_id from asset_metadata FINAL PREWHERE name = ?2 LIMIT 1 )
     """
 
     args = [

@@ -1,10 +1,10 @@
 defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
-  require Logger
-
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors_to_str: 1]
   import SanbaseWeb.Graphql.Helpers.Utils, only: [error_details: 1]
 
   alias Sanbase.Accounts.{User, UserSettings}
+
+  require Logger
 
   def settings(%User{} = user, _args, _resolution) do
     {:ok, UserSettings.settings_for(user)}

@@ -1,4 +1,6 @@
 defmodule Sanbase.Utils.Transform do
+  def wrap_ok(data), do: {:ok, data}
+
   @doc ~s"""
   Transform the maps from the :ok tuple data so the `key` is renamed to `new_key`
 
@@ -109,6 +111,19 @@ defmodule Sanbase.Utils.Transform do
       %{:datetime => datetime, key => value}
     end)
     |> Enum.sort_by(&DateTime.to_unix(&1[:datetime]))
+  end
+
+  def merge_by_datetime(list1, list2, func, field) do
+    map = list2 |> Enum.into(%{}, fn %{datetime: dt} = item2 -> {dt, item2[field]} end)
+
+    list1
+    |> Enum.map(fn %{datetime: datetime} = item1 ->
+      value2 = Map.get(map, datetime, 0)
+      new_value = func.(item1[field], value2)
+
+      %{datetime: datetime, value: new_value}
+    end)
+    |> Enum.reject(&(&1.value == 0))
   end
 
   def maybe_transform_from_address("0x0000000000000000000000000000000000000000"), do: "mint"

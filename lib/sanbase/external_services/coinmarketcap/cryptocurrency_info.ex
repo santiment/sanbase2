@@ -1,13 +1,13 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo do
-  defstruct [:slug, :logo]
-
   use Tesla
+
+  alias Sanbase.Model.Project
+  alias Sanbase.ExternalServices.Coinmarketcap
 
   require Logger
   require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Model.Project
-  alias Sanbase.ExternalServices.Coinmarketcap
+  defstruct [:slug, :logo]
 
   plug(Sanbase.ExternalServices.RateLimiting.Middleware, name: :api_coinmarketcap_rate_limiter)
 

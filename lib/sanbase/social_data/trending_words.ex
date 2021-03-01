@@ -25,6 +25,8 @@ defmodule Sanbase.SocialData.TrendingWords do
 
   alias Sanbase.ClickhouseRepo
 
+  require Sanbase.Utils.Config, as: Config
+
   @type word :: String.t()
   @type slug :: String.t()
   @type interval :: String.t()
@@ -55,8 +57,6 @@ defmodule Sanbase.SocialData.TrendingWords do
   # N hours to ensure that there is some data and we're not in the middle
   # of computing the latest data
   @hours_back_ensure_has_data 3
-
-  require Sanbase.Utils.Config, as: Config
 
   schema Config.get(:trending_words_table) do
     field(:dt, :utc_datetime)

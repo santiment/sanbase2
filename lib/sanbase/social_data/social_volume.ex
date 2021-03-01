@@ -60,7 +60,7 @@ defmodule Sanbase.SocialData.SocialVolume do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         body
         |> Jason.decode!()
-        |> Map.get("data")
+        |> Map.fetch!("data")
         |> Enum.map(fn {word, timeseries} ->
           %{
             word: word,

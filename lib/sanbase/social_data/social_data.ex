@@ -1,6 +1,6 @@
 defmodule Sanbase.SocialData do
   import Sanbase.Utils.ErrorHandling, only: [error_result: 1]
-
+  import Sanbase.Utils.Transform, only: [wrap_ok: 1]
   alias Sanbase.DateTimeUtils
   alias Sanbase.SocialData.{SocialVolume, SocialDominance, Community, Sentiment, ActiveUsers}
   alias Sanbase.SocialData.News
@@ -324,10 +324,10 @@ defmodule Sanbase.SocialData do
   end
 
   defp validate_time_window(time_window) do
-    with {:valid_compound_duration?, true} <-
+    with {_, true} <-
            {:valid_compound_duration?, DateTimeUtils.valid_compound_duration?(time_window)},
          time_window_in_days = DateTimeUtils.str_to_days(time_window),
-         {:valid_time_window?, true} <-
+         {_, true} <-
            {:valid_time_window?, time_window_in_days >= 2 and time_window_in_days <= 30} do
       {:ok, "#{time_window_in_days}d"}
     else
@@ -351,6 +351,4 @@ defmodule Sanbase.SocialData do
     |> Timex.beginning_of_day()
     |> Timex.shift(hours: Sanbase.Math.to_integer(hour))
   end
-
-  defp wrap_ok(result), do: {:ok, result}
 end

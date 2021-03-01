@@ -121,14 +121,29 @@ defmodule Sanbase.Billing.SignUpTrialTest do
             trial_end: Timex.shift(Timex.now(), hours: 1)
           )
 
-        insert(:sign_up_trial,
-          user_id: context.user.id,
-          subscription: subscription
-        )
-
         SignUpTrial.cancel_about_to_expire_trials()
 
         assert_called(Sanbase.StripeApi.delete_subscription(subscription.stripe_id))
+        refute called(Sanbase.MandrillApi.send("trial-finished-without-card2", :_, :_))
+      end
+    end
+
+    test "don't cancel trial for Sanbase PRO that does not have record in sign_up_trials",
+         context do
+      with_mocks([
+        {Sanbase.StripeApi, [],
+         delete_subscription: fn _ -> {:ok, %Stripe.Subscription{id: "123"}} end}
+      ]) do
+        subscription =
+          insert(:subscription_pro_sanbase,
+            user: context.user,
+            status: "trialing",
+            trial_end: Timex.shift(Timex.now(), hours: 1)
+          )
+
+        SignUpTrial.cancel_about_to_expire_trials()
+
+        refute called(Sanbase.StripeApi.delete_subscription(subscription.stripe_id))
         refute called(Sanbase.MandrillApi.send("trial-finished-without-card2", :_, :_))
       end
     end

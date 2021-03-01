@@ -83,11 +83,19 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
   end
 
   def by_user_id(user_id) do
-    Repo.get_by(__MODULE__, user_id: user_id, is_finished: false)
+    from(sut in __MODULE__,
+      where: sut.user_id == ^user_id and sut.is_finished == false,
+      preload: [:subscription]
+    )
+    |> Repo.one()
   end
 
   def by_subscription_id(subscription_id) do
-    Repo.get_by(__MODULE__, subscription_id: subscription_id, is_finished: false)
+    from(sut in __MODULE__,
+      where: sut.subscription_id == ^subscription_id and sut.is_finished == false,
+      preload: [:subscription]
+    )
+    |> Repo.one()
   end
 
   def create(user_id) do
@@ -106,7 +114,7 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
 
   def trial_end_dt(user) do
     case by_user_id(user.id) do
-      %__MODULE__{inserted_at: inserted_at} = sign_up_trial ->
+      %__MODULE__{inserted_at: inserted_at} ->
         Timex.shift(inserted_at, days: @free_trial_days)
 
       _ ->
@@ -317,9 +325,5 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
 
   defp calc_trial_day(%__MODULE__{inserted_at: inserted_at}) do
     Timex.diff(Timex.now(), inserted_at, :days)
-  end
-
-  defp calc_trial_days_left(sign_up_trial) do
-    @free_trial_days - calc_trial_day(sign_up_trial)
   end
 end

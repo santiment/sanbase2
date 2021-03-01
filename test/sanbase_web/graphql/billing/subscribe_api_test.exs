@@ -11,7 +11,6 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
   alias Sanbase.StripeApiTestResponse
   alias Sanbase.Billing.{Subscription, Product}
   alias Sanbase.Billing.Subscription.SignUpTrial
-  alias Sanbase.Repo
 
   @coupon_code "test_coupon"
 
@@ -259,23 +258,32 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
                trial_end: arg.trial_end
              )
            end
-         ]}
+         ]},
+        {StripeApi, [:passthrough],
+         [delete_subscription: fn _ -> StripeApiTestResponse.delete_subscription_resp() end]}
       ]) do
         seven_days_ago = Timex.shift(Timex.now(), days: -7)
-        subscription = insert(:subscription_pro_sanbase, user: context.user, status: "trialing")
 
-        sign_up_trial =
-          insert(:sign_up_trial,
-            subscription: subscription,
+        subscription =
+          insert(:subscription_pro_sanbase,
             user: context.user,
-            inserted_at: seven_days_ago
+            status: "trialing",
+            stripe_id: "test_stripe_id"
           )
+
+        insert(:sign_up_trial,
+          subscription: subscription,
+          user: context.user,
+          inserted_at: seven_days_ago
+        )
 
         query = subscribe_mutation(context.plans.plan_pro_sanbase.id)
         response = execute_mutation(context.conn, query, "subscribe")
 
         # SignUpTrial is marked as `is_finished`
         assert SignUpTrial.by_subscription_id(subscription.id) == nil
+
+        assert_called(StripeApi.delete_subscription("test_stripe_id"))
 
         current_subscription =
           Subscription.current_subscription(context.user, Product.product_sanbase())

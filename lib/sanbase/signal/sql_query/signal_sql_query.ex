@@ -29,7 +29,7 @@ defmodule Sanbase.Signal.SqlQuery do
       SELECT DISTINCT(signal_id)
       FROM #{@table}
       INNER JOIN (
-        SELECT * FROM asset_metadata PREWHERE name = ?1
+        SELECT * FROM asset_metadata FINAL PREWHERE name = ?1
     ) using(asset_id)
     )
     """

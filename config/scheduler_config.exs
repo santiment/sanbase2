@@ -124,5 +124,10 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "@daily",
       task:
         {Sanbase.ExternalServices.Coinmarketcap.TickerFetcher, :work, [projects_number: 5_000]}
+    ],
+    get_kaiko_realtime_prices: [
+      # Start scraping at every round minute
+      schedule: "* * * * *",
+      task: {Sanbase.Kaiko, :run, []}
     ]
   ]

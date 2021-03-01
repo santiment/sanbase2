@@ -199,7 +199,8 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
-  def sync_subscription_with_stripe(%__MODULE__{stripe_id: stripe_id} = db_subscription) do
+  def sync_subscription_with_stripe(%__MODULE__{stripe_id: stripe_id} = db_subscription)
+      when is_binary(stripe_id) do
     with {:ok, stripe_subscription} <- StripeApi.retrieve_subscription(stripe_id),
          plan_id <- fetch_plan_id(db_subscription, stripe_subscription) do
       update_local_subsciption(db_subscription, stripe_subscription, plan_id)

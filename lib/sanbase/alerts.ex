@@ -25,20 +25,9 @@ defmodule Sanbase.Application.Alerts do
            name: :alerts_evaluator_cache,
            ttl_check_interval: :timer.minutes(1),
            global_ttl: :timer.minutes(3),
-           acquire_lock_timeout: 60_000
+           acquire_lock_timeout: 120_000
          ]},
         id: :alerts_evaluator_cache
-      ),
-
-      # Start alerts cache
-      Supervisor.child_spec(
-        {ConCache,
-         [
-           name: :long_ttl_cache,
-           ttl_check_interval: :timer.minutes(10),
-           global_ttl: :timer.hours(1)
-         ]},
-        id: :long_ttl_cache
       ),
 
       # Quantum Scheduler

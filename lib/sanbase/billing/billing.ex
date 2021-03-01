@@ -88,10 +88,9 @@ defmodule Sanbase.Billing do
 
   @spec create_or_update_stripe_customer(%User{}, String.t() | nil) ::
           {:ok, %User{}} | {:error, %Stripe.Error{}}
-  def create_or_update_stripe_customer(_, _card_token \\ nil)
+  def create_or_update_stripe_customer(user, card_token \\ nil)
 
-  def create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)
-      when is_nil(stripe_id) do
+  def create_or_update_stripe_customer(%User{stripe_customer_id: nil} = user, card_token) do
     with {:ok, stripe_customer} <- StripeApi.create_customer(user, card_token) do
       User.update_field(user, :stripe_customer_id, stripe_customer.id)
     end

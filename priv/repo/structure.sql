@@ -350,7 +350,7 @@ CREATE TABLE public.chart_configurations (
     title character varying(255),
     description text,
     is_public boolean DEFAULT false,
-    metrics character varying(255)[] DEFAULT ARRAY[]::character varying[],
+    metrics text[] DEFAULT ARRAY[]::text[],
     anomalies character varying(255)[] DEFAULT ARRAY[]::character varying[],
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,

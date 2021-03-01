@@ -200,7 +200,18 @@ defmodule Sanbase.Alert.SchedulerTest do
       mock_fun
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
-      Sanbase.Alert.Scheduler.run_alert(MetricTriggerSettings)
+      log =
+        capture_log(fn ->
+          Sanbase.Alert.Scheduler.run_alert(MetricTriggerSettings)
+        end)
+
+      # 1/2 because there is one alert with telegram channel created in the setup
+      assert log =~
+               "In total 1/2 active alerts of type metric_signal are not being computed because they cannot be sent"
+
+      assert log =~
+               "The owners of these alerts have disabled the notification channels or has no telegram/email linked to their account"
+
       ut = Sanbase.Repo.get(UserTrigger, trigger.id)
 
       # Previously "error" was put as the identifier instead the project's slug
@@ -209,9 +220,7 @@ defmodule Sanbase.Alert.SchedulerTest do
       # appear multiple times in user's feed
       assert Map.get(ut.trigger.last_triggered, "error") == nil
 
-      assert %DateTime{} =
-               Map.get(ut.trigger.last_triggered, project.slug)
-               |> Sanbase.DateTimeUtils.from_iso8601!()
+      assert Map.get(ut.trigger.last_triggered, project.slug) == nil
     end)
   end
 end

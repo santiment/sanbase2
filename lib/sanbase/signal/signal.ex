@@ -17,8 +17,8 @@ defmodule Sanbase.Signal do
     SignalAdapter.available_signals()
   end
 
-  def available_signals(slug) do
-    SignalAdapter.available_signals(slug)
+  def available_signals(selector) do
+    SignalAdapter.available_signals(selector)
   end
 
   def available_slugs(signal) do

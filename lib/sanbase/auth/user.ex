@@ -170,6 +170,7 @@ defmodule Sanbase.Accounts.User do
   defdelegate update_san_balance_changeset(user), to: __MODULE__.SanBalance
   defdelegate san_balance(user), to: __MODULE__.SanBalance
   defdelegate san_balance!(user), to: __MODULE__.SanBalance
+  defdelegate san_balance_or_zero(user), to: __MODULE__.SanBalance
 
   # Uniswap San Staking functions
   defdelegate fetch_all_uniswap_staked_users(), to: __MODULE__.UniswapStaking

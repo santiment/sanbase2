@@ -254,18 +254,6 @@ defmodule Sanbase.Billing.Subscription do
   def plan_name(nil), do: :free
   def plan_name(%__MODULE__{plan: plan}), do: plan |> Plan.plan_atom_name()
 
-  def active_subscriptions_map() do
-    from(s in __MODULE__, where: s.status == "active", preload: [plan: [:product]])
-    |> Sanbase.Repo.all()
-    |> Enum.map(fn s ->
-      %{user_id: s.user_id, product: "#{s.plan.product.name}/#{s.plan.name}"}
-    end)
-    |> Enum.group_by(& &1.user_id)
-    |> Enum.into(%{}, fn {user_id, products} ->
-      {user_id, Enum.map(products, & &1.product) |> Enum.join(", ")}
-    end)
-  end
-
   # Private functions
 
   defp active_subscriptions_for_this_plan(user, plan) do
@@ -302,7 +290,7 @@ defmodule Sanbase.Billing.Subscription do
   defp create_stripe_subscription(user, plan, nil) do
     percent_off =
       user
-      |> san_balance()
+      |> User.san_balance_or_zero()
       |> percent_discount()
 
     subscription_defaults(user, plan)
@@ -401,13 +389,6 @@ defmodule Sanbase.Billing.Subscription do
     case Plan.by_stripe_id(stripe_subscription.plan.id) do
       %Plan{id: plan_id} -> plan_id
       nil -> db_subscription.plan_id
-    end
-  end
-
-  defp san_balance(%User{} = user) do
-    case User.san_balance(user) do
-      {:ok, balance} -> balance
-      _ -> 0
     end
   end
 

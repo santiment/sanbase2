@@ -4,12 +4,13 @@ defmodule Sanbase.Billing.Subscription.Query do
   @preload_fields [:user, plan: [:product]]
 
   # only with status `active` and `past_due`
+  def all_active_subscriptions_query(query) do
+    from(q in query, where: q.status in ["active", "past_due"])
+  end
+
   def all_active_subscriptions_for_plan_query(query, plan_id) do
-    from(q in query,
-      where:
-        q.plan_id == ^plan_id and
-          q.status in ["active", "past_due"]
-    )
+    query = all_active_subscriptions_query(query)
+    from(q in query, where: q.plan_id == ^plan_id)
   end
 
   # with status `active`, `past_due`, `trialing`

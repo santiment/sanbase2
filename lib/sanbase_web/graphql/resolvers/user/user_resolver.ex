@@ -1,7 +1,8 @@
 defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   require Logger
 
-  alias SanbaseWeb.Graphql.Helpers.Utils
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
+
   alias Sanbase.Accounts.{User, EthAccount}
   alias Sanbase.InternalServices.Ethauth
   alias Sanbase.Accounts.{User, EthAccount, UserFollower}
@@ -152,7 +153,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
       {:error, changeset} ->
         message = "Can't change current user's email to #{email_candidate}"
         Logger.warn(message)
-        {:error, message: message, details: Utils.error_details(changeset)}
+        {:error, message: message, details: changeset_errors(changeset)}
     end
   end
 
@@ -182,7 +183,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
         {
           :error,
           message: "Cannot update current user's username to #{new_username}",
-          details: Utils.error_details(changeset)
+          details: changeset_errors(changeset)
         }
     end
   end
@@ -198,7 +199,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
       {:error, changeset} ->
         {
           :error,
-          message: "Cannot change the avatar", details: Utils.error_details(changeset)
+          message: "Cannot change the avatar", details: changeset_errors(changeset)
         }
     end
   end
@@ -256,7 +257,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
         {
           :error,
           message: "Cannot update current user's terms and conditions",
-          details: Utils.error_details(changeset)
+          details: changeset_errors(changeset)
         }
     end
   end

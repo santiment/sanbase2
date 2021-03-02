@@ -1,10 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
-  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_to_str: 1]
-  import SanbaseWeb.Graphql.Helpers.Utils, only: [error_details: 1]
+  require Logger
+
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1, changeset_errors_string: 1]
 
   alias Sanbase.Accounts.{User, UserSettings}
-
-  require Logger
 
   def settings(%User{} = user, _args, _resolution) do
     {:ok, UserSettings.settings_for(user)}
@@ -20,7 +19,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
         {:ok, settings}
 
       {:error, changeset} ->
-        {:error, "Cannot update user settings. Reason: #{changeset_errors_to_str(changeset)}"}
+        {:error, "Cannot update user settings. Reason: #{changeset_errors_string(changeset)}"}
     end
   end
 
@@ -48,7 +47,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
       {:error, changeset} ->
         {
           :error,
-          message: "Cannot toggle user setting", details: error_details(changeset)
+          message: "Cannot toggle user setting", details: changeset_errors(changeset)
         }
     end
   end

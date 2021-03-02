@@ -2,9 +2,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   require Logger
 
   import SanbaseWeb.Graphql.Helpers.Utils, only: [transform_user_trigger: 1]
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
+
   alias Sanbase.Accounts.User
   alias Sanbase.Alert.{Trigger, UserTrigger}
-  alias SanbaseWeb.Graphql.Helpers.Utils
   alias Sanbase.Telegram
   alias Sanbase.Billing.Plan.AccessChecker
 
@@ -122,7 +123,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
       {:error, %Ecto.Changeset{} = changeset} ->
         {
           :error,
-          message: "Cannot #{operation} trigger!", details: Utils.error_details(changeset)
+          message: "Cannot #{operation} trigger!", details: changeset_errors(changeset)
         }
     end
   end

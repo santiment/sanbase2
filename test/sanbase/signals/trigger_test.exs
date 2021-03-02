@@ -5,6 +5,7 @@ defmodule Sanbase.Alert.TriggersTest do
   import ExUnit.CaptureLog
   import Sanbase.TestHelpers
   import Sanbase.MapUtils
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
 
   alias Sanbase.Alert.UserTrigger
   alias Sanbase.Timeline.TimelineEvent
@@ -91,7 +92,7 @@ defmodule Sanbase.Alert.TriggersTest do
         settings: trigger_settings
       })
 
-    assert error_details(changeset) == %{
+    assert changeset_errors(changeset) == %{
              trigger: %{
                icon_url: [
                  "`not_a_url` is not a valid URL. Reason: it is missing scheme (e.g. missing https:// part)"

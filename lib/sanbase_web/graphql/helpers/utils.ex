@@ -1,9 +1,4 @@
 defmodule SanbaseWeb.Graphql.Helpers.Utils do
-  def error_details(changeset) do
-    changeset
-    |> Ecto.Changeset.traverse_errors(&format_error/1)
-  end
-
   def selector_args_to_opts(args) when is_map(args) do
     opts = [aggregation: Map.get(args, :aggregation, nil)]
     selector = args[:selector]
@@ -89,14 +84,6 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
   end
 
   # Private functions
-
-  @spec format_error(Ecto.Changeset.error()) :: String.t()
-  defp format_error({msg, opts}) do
-    Enum.reduce(opts, msg, fn {key, value}, acc ->
-      String.replace(acc, "%{#{key}}", to_string(inspect(value)))
-    end)
-  end
-
   defp maybe_add_field(opts, :additional_filters, selector) do
     case Map.split(selector, [:owner, :label]) do
       {map, _rest} when map_size(map) > 0 ->

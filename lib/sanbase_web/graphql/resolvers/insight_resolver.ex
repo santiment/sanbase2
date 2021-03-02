@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   alias Sanbase.Vote
   alias Sanbase.Insight.{Post, PopularAuthor}
   alias Sanbase.Comments.EntityComment
-  alias SanbaseWeb.Graphql.Helpers.Utils
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
 
   require Logger
 
@@ -196,7 +196,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
         {
           :error,
           message: "Can't vote for post with id #{insight_id}",
-          details: Utils.error_details(changeset)
+          details: changeset_errors(changeset)
         }
     end
   end

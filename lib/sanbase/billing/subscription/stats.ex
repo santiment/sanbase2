@@ -6,8 +6,8 @@ defmodule Sanbase.Billing.Subscription.Stats do
 
   def user_active_subscriptions_map() do
     Subscription
-    |> Query.all_active_subscriptions_query()
-    |> Query.preload_query(plan: [:product])
+    |> Query.all_active_subscriptions()
+    |> Query.preload(plan: [:product])
     |> Repo.all()
     |> Enum.map(fn subscription ->
       %{

@@ -7,7 +7,6 @@ defmodule Sanbase.Billing.Subscription do
   use Ecto.Schema
 
   import Ecto.Changeset
-  import Ecto.Query
 
   alias Sanbase.Billing
   alias Sanbase.Billing.Plan
@@ -221,10 +220,10 @@ defmodule Sanbase.Billing.Subscription do
   """
   def user_subscriptions(%User{id: user_id}) do
     __MODULE__
-    |> Query.filter_user_query(user_id)
-    |> Query.all_active_and_trialing_subscriptions_query()
-    |> Query.join_plan_and_product_query()
-    |> Query.order_by_query()
+    |> Query.filter_user(user_id)
+    |> Query.all_active_and_trialing_subscriptions()
+    |> Query.join_plan_and_product()
+    |> Query.order_by()
     |> Repo.all()
   end
 
@@ -233,10 +232,10 @@ defmodule Sanbase.Billing.Subscription do
   """
   def user_subscriptions_product_ids(%User{id: user_id}) do
     __MODULE__
-    |> Query.filter_user_query(user_id)
-    |> Query.all_active_and_trialing_subscriptions_query()
-    |> Query.select_product_id_query()
-    |> Query.order_by_query()
+    |> Query.filter_user(user_id)
+    |> Query.all_active_and_trialing_subscriptions()
+    |> Query.select_product_id()
+    |> Query.order_by()
     |> Repo.all()
   end
 
@@ -258,12 +257,12 @@ defmodule Sanbase.Billing.Subscription do
 
   defp active_subscriptions_for_this_plan(user, plan) do
     __MODULE__
-    |> Query.all_active_subscriptions_for_plan_query(plan.id)
-    |> Query.filter_user_query(user.id)
+    |> Query.all_active_subscriptions_for_plan(plan.id)
+    |> Query.filter_user(user.id)
     |> Repo.all()
-    |> Enum.any?()
+    |> Enum.empty?()
     |> case do
-      true ->
+      false ->
         {
           :error,
           %__MODULE__.Error{
@@ -271,7 +270,7 @@ defmodule Sanbase.Billing.Subscription do
           }
         }
 
-      false ->
+      true ->
         :ok
     end
   end
@@ -361,10 +360,10 @@ defmodule Sanbase.Billing.Subscription do
 
   defp fetch_current_subscription(user_id, product_id) do
     __MODULE__
-    |> Query.filter_user_query(user_id)
-    |> Query.all_active_and_trialing_subscriptions_query()
-    |> Query.last_subscription_for_product_query(product_id)
-    |> Query.preload_query(plan: [:product])
+    |> Query.filter_user(user_id)
+    |> Query.all_active_and_trialing_subscriptions()
+    |> Query.last_subscription_for_product(product_id)
+    |> Query.preload(plan: [:product])
     |> Repo.one()
   end
 

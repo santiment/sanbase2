@@ -76,20 +76,16 @@ defmodule Sanbase.StripeApi do
     Stripe.Subscription.delete(stripe_id)
   end
 
-  def get_subscription_first_item_id(stripe_id) do
-    stripe_id
-    |> retrieve_subscription()
-    |> case do
-      {:ok, subscription} ->
-        item_id =
-          subscription.items.data
-          |> hd()
-          |> Map.get(:id)
-
-        {:ok, item_id}
-
-      {:error, reason} ->
-        {:error, reason}
+  def update_subscription_item_by_id(db_subscription, plan) do
+    # Note: StripeApi.update_subscription/2 will generate dialyzer error
+    # because the spec is wrong.
+    # More info here: https://github.com/code-corps/stripity_stripe/pull/499
+    with {:ok, item_id} <- get_subscription_first_item_id(db_subscription.stripe_id),
+         {:ok, stripe_subscription} <-
+           update_subscription(db_subscription.stripe_id, %{
+             items: [%{id: item_id, plan: plan.stripe_id}]
+           }) do
+      {:ok, stripe_subscription}
     end
   end
 
@@ -116,5 +112,24 @@ defmodule Sanbase.StripeApi do
 
   def list_payments(_) do
     {:ok, []}
+  end
+
+  # Helpers
+
+  defp get_subscription_first_item_id(stripe_id) do
+    stripe_id
+    |> retrieve_subscription()
+    |> case do
+      {:ok, subscription} ->
+        item_id =
+          subscription.items.data
+          |> hd()
+          |> Map.get(:id)
+
+        {:ok, item_id}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 end

@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
+  alias Sanbase.Billing
   alias Sanbase.Billing.{Subscription, Plan}
   alias Sanbase.Accounts.User
 
@@ -13,7 +14,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
   def update_customer_card(_root, %{card_token: card_token}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    Subscription.create_or_update_stripe_customer(current_user, card_token)
+    Billing.create_or_update_stripe_customer(current_user, card_token)
     |> case do
       {:ok, _} ->
         {:ok, %{success: true}}
@@ -31,14 +32,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
     coupon = Map.get(args, :coupon)
 
     with {:plan?, %Plan{is_deprecated: false} = plan} <- {:plan?, Plan.by_id(plan_id)},
-         {:ok, subscription} <-
-           Subscription.subscribe(current_user, plan, card_token, coupon) do
+         {:ok, subscription} <- Billing.subscribe(current_user, plan, card_token, coupon) do
       {:ok, subscription}
     else
       result ->
-        handle_subscription_error_result(result, "Subscription attempt failed", %{
-          plan_id: plan_id
-        })
+        handle_subscription_error_result(
+          result,
+          "Subscription attempt failed",
+          %{plan_id: plan_id}
+        )
     end
   end
 
@@ -52,7 +54,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
          {_, %Subscription{cancel_at_period_end: false}} <-
            {:not_cancelled?, subscription},
          {_, %Plan{is_deprecated: false} = new_plan} <- {:plan?, Plan.by_id(plan_id)},
-         {:ok, subscription} <- Subscription.update_subscription(subscription, new_plan) do
+         {:ok, subscription} <- Billing.update_subscription(subscription, new_plan) do
       {:ok, subscription}
     else
       result ->
@@ -74,7 +76,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
          {_, %Subscription{cancel_at_period_end: false}} <-
            {:not_cancelled?, subscription},
          {:ok, cancel_subscription} <-
-           Subscription.cancel_subscription(subscription) do
+           Billing.cancel_subscription(subscription) do
       {:ok, cancel_subscription}
     else
       result ->
@@ -95,7 +97,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BillingResolver do
            {:subscription?, Subscription.by_id(subscription_id)},
          {_, %Subscription{cancel_at_period_end: true}} <-
            {:cancelled?, subscription},
-         {:ok, subscription} <- Subscription.renew_cancelled_subscription(subscription) do
+         {:ok, subscription} <- Billing.renew_cancelled_subscription(subscription) do
       {:ok, subscription}
     else
       result ->

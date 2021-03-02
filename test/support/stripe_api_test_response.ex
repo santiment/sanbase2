@@ -131,6 +131,8 @@ defmodule Sanbase.StripeApiTestResponse do
   def create_subscription_resp(opts \\ []) do
     stripe_id = Keyword.get(opts, :stripe_id, nil)
     stripe_id = stripe_id || "sub_" <> Base.encode16(:crypto.strong_rand_bytes(7))
+    status = Keyword.get(opts, :status, "active")
+    trial_end = Keyword.get(opts, :trial_end, nil)
 
     {:ok,
      %Stripe.Subscription{
@@ -215,9 +217,9 @@ defmodule Sanbase.StripeApiTestResponse do
        },
        quantity: 1,
        start_date: 1_558_185_786,
-       status: "active",
+       status: status,
        tax_percent: nil,
-       trial_end: nil,
+       trial_end: trial_end,
        trial_start: nil
      }}
   end
@@ -227,6 +229,10 @@ defmodule Sanbase.StripeApiTestResponse do
   end
 
   def retrieve_subscription_resp(opts \\ []) do
+    create_subscription_resp(opts)
+  end
+
+  def delete_subscription_resp(opts \\ []) do
     create_subscription_resp(opts)
   end
 end

@@ -51,27 +51,23 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     ],
     send_email_on_trial_day: [
       schedule: "00 07 * * *",
-      task: {Sanbase.Billing.Subscription.SignUpTrial, :send_email_on_trial_day, []}
+      task: {Sanbase.Billing, :send_email_on_trial_day, []}
     ],
     update_finished_trials: [
       schedule: "*/10 * * * *",
-      task: {Sanbase.Billing.Subscription.SignUpTrial, :update_finished, []}
-    ],
-    cancel_prematurely_ended_trials: [
-      schedule: "*/5 * * * *",
-      task: {Sanbase.Billing.Subscription.SignUpTrial, :cancel_prematurely_ended_trials, []}
-    ],
-    sync_with_stripe: [
-      schedule: "@reboot",
-      task: {Sanbase.Billing, :sync_with_stripe, []}
-    ],
-    sync_stripe_subscriptions: [
-      schedule: "2-59/5 * * * *",
-      task: {Sanbase.Billing.Subscription, :sync_all, []}
+      task: {Sanbase.Billing, :update_finished_trials, []}
     ],
     cancel_about_to_expire_trials: [
       schedule: "3-59/30 * * * *",
-      task: {Sanbase.Billing.Subscription, :cancel_about_to_expire_trials, []}
+      task: {Sanbase.Billing, :cancel_about_to_expire_trials, []}
+    ],
+    sync_products_with_stripe: [
+      schedule: "@reboot",
+      task: {Sanbase.Billing, :sync_products_with_stripe, []}
+    ],
+    sync_stripe_subscriptions: [
+      schedule: "2-59/5 * * * *",
+      task: {Sanbase.Billing, :sync_stripe_subscriptions, []}
     ],
     logo_fetcher: [
       schedule: "@daily",

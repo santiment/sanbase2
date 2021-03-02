@@ -83,11 +83,43 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
   end
 
   def by_user_id(user_id) do
-    Repo.get_by(__MODULE__, user_id: user_id, is_finished: false)
+    from(sut in __MODULE__,
+      where: sut.user_id == ^user_id and sut.is_finished == false,
+      preload: [:subscription]
+    )
+    |> Repo.one()
+  end
+
+  def by_subscription_id(subscription_id) do
+    from(sut in __MODULE__,
+      where: sut.subscription_id == ^subscription_id and sut.is_finished == false,
+      preload: [:subscription]
+    )
+    |> Repo.one()
   end
 
   def create(user_id) do
     %__MODULE__{} |> changeset(%{user_id: user_id}) |> Repo.insert()
+  end
+
+  def remove_sign_up_trial(user) do
+    case by_user_id(user.id) do
+      %__MODULE__{} = sign_up_trial ->
+        cancel_trial_when_user_subscribed(sign_up_trial)
+
+      _ ->
+        :ok
+    end
+  end
+
+  def trial_end_dt(user) do
+    case by_user_id(user.id) do
+      %__MODULE__{inserted_at: inserted_at} ->
+        Timex.shift(inserted_at, days: @free_trial_days)
+
+      _ ->
+        nil
+    end
   end
 
   @doc """
@@ -121,7 +153,7 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
   end
 
   # scheduled to run every 10 mins
-  def update_finished() do
+  def update_finished_trials() do
     free_trial_days_ago = Timex.shift(Timex.now(), days: -@free_trial_days)
 
     from(sut in __MODULE__,
@@ -131,39 +163,9 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     |> Repo.update_all([])
   end
 
-  # Cancel trial when customer has subscribed
-  # scheduled to run every 5 mins
-  def cancel_prematurely_ended_trials() do
-    from(sut in __MODULE__, where: sut.is_finished == false, preload: [:subscription])
-    |> Repo.all()
-    |> Enum.each(fn sign_up_trial ->
-      subscription =
-        Subscription.current_subscription(sign_up_trial.user_id, Product.product_sanbase())
-
-      if subscription && subscription.id != sign_up_trial.subscription_id &&
-           subscription.status == :active do
-        case StripeApi.delete_subscription(sign_up_trial.subscription.stripe_id) do
-          {:ok, _} ->
-            update_trial(sign_up_trial, %{is_finished: true})
-
-          # Subscription is already cancelled - update locally
-          {:error, %Stripe.Error{extra: %{http_status: 404}}} ->
-            update_trial(sign_up_trial, %{is_finished: true})
-
-          {:error, other} ->
-            Logger.error(
-              "Can't delete the subscription for: #{inspect(sign_up_trial)}, reason: #{
-                inspect(other)
-              }"
-            )
-        end
-      end
-    end)
-  end
-
   def handle_trial_will_end(stripe_subscription_id) do
     with {:ok, subscription} <- get_trialing_subscription(stripe_subscription_id),
-         {:ok, sign_up_trial} <- get_sign_up_trial(subscription) do
+         {:ok, sign_up_trial} <- get_trial_with_not_sent_email(subscription) do
       do_send_email_and_mark_sent(sign_up_trial, :sent_trial_will_end_email)
       {:ok, "Trial will end email is sent for subscription_id: #{stripe_subscription_id}"}
     end
@@ -184,6 +186,28 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     end
   end
 
+  @doc """
+  Cancel trialing subscriptions so customers are not charged if they have attached card.
+  * For Sanbase PRO cancel those:
+   1. About to expire (in 2 hours)
+   2. There is a record in SignUpTrials (otherwise the subscription might be with transferred trial)
+  and send an email for finished trial.
+
+  * For other plans - cancel everything.
+  """
+  def cancel_about_to_expire_trials() do
+    now = Timex.now()
+    after_2_hours = Timex.shift(now, hours: 2)
+
+    from(s in Subscription,
+      where:
+        s.status == "trialing" and
+          s.trial_end >= ^now and s.trial_end <= ^after_2_hours
+    )
+    |> Repo.all()
+    |> Enum.each(&maybe_send_email_and_delete_subscription/1)
+  end
+
   def send_email_async(%__MODULE__{} = sign_up_trial, email_type) do
     Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
       do_send_email_and_mark_sent(sign_up_trial, email_type)
@@ -191,6 +215,22 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
   end
 
   # helpers
+  defp cancel_trial_when_user_subscribed(sign_up_trial) do
+    case StripeApi.delete_subscription(sign_up_trial.subscription.stripe_id) do
+      {:ok, _} ->
+        update_trial(sign_up_trial, %{is_finished: true})
+
+      # Subscription is already cancelled - update locally
+      {:error, %Stripe.Error{extra: %{http_status: 404}}} ->
+        update_trial(sign_up_trial, %{is_finished: true})
+
+      {:error, other} ->
+        Logger.error(
+          "Can't delete the subscription for: #{inspect(sign_up_trial)}, reason: #{inspect(other)}"
+        )
+    end
+  end
+
   def update_trial(sign_up_trial, params) do
     sign_up_trial |> changeset(params) |> Repo.update()
   end
@@ -206,12 +246,8 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
     end
   end
 
-  defp get_sign_up_trial(subscription) do
-    Repo.get_by(__MODULE__,
-      user_id: subscription.user_id,
-      subscription_id: subscription.id,
-      is_finished: false
-    )
+  defp get_trial_with_not_sent_email(subscription) do
+    by_subscription_id(subscription.id)
     |> case do
       %__MODULE__{sent_trial_will_end_email: false} = sign_up_trial ->
         {:ok, sign_up_trial}
@@ -263,6 +299,28 @@ defmodule Sanbase.Billing.Subscription.SignUpTrial do
 
       update_trial(sign_up_trial, %{email_type => true})
     end
+  end
+
+  # Send email and delete subscription if user plan is one of our free trial plans
+  defp maybe_send_email_and_delete_subscription(%Subscription{plan_id: plan_id} = subscription)
+       when plan_id in @free_trial_plans do
+    if by_subscription_id(subscription.id) do
+      Logger.info(
+        "Deleting subscription with id: #{subscription.stripe_id} for user: #{
+          subscription.user_id
+        }"
+      )
+
+      StripeApi.delete_subscription(subscription.stripe_id)
+
+      maybe_send_trial_finished_email(subscription)
+    end
+  end
+
+  defp maybe_send_email_and_delete_subscription(subscription) do
+    Logger.info("Deleting subscription with id: #{subscription.stripe_id}")
+
+    StripeApi.delete_subscription(subscription.stripe_id)
   end
 
   defp calc_trial_day(%__MODULE__{inserted_at: inserted_at}) do

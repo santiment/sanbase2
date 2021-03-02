@@ -234,7 +234,7 @@ defmodule Sanbase.Billing.StripeEvent do
          {:nil?, %Subscription{} = subscription} <-
            {:nil?, Repo.get_by(Subscription, stripe_id: stripe_subscription.id)},
          {:ok, _subscription} <-
-           Subscription.sync_with_stripe_subscription(
+           Subscription.sync_subscription_with_stripe(
              stripe_subscription,
              subscription
            ) do

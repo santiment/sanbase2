@@ -8,17 +8,32 @@ defmodule Sanbase.Billing do
   alias Sanbase.Repo
   alias Sanbase.Billing.{Product, Plan, Subscription}
   alias Sanbase.Billing.Subscription.{LiquiditySubscription, SignUpTrial}
+  alias Sanbase.Accounts.User
+  alias Sanbase.StripeApi
 
+  # Subscription API
+  defdelegate subscribe(user, plan, card, coupon), to: Subscription
+  defdelegate update_subscription(subscription, plan), to: Subscription
+  defdelegate cancel_subscription(subscription), to: Subscription
+  defdelegate renew_cancelled_subscription(subscription), to: Subscription
+
+  defdelegate sync_stripe_subscriptions, to: Subscription
+
+  # SignUpTrial
   defdelegate create_trial_subscription(user_id), to: SignUpTrial
+  defdelegate cancel_about_to_expire_trials, to: SignUpTrial
+  defdelegate update_finished_trials, to: SignUpTrial
+  defdelegate send_email_on_trial_day, to: SignUpTrial
+
   # LiquiditySubscription
   defdelegate create_liquidity_subscription(user_id), to: LiquiditySubscription
   defdelegate remove_liquidity_subscription(liquidity_subscription), to: LiquiditySubscription
-  defdelegate list_liquidity_subscriptions(), to: LiquiditySubscription
+  defdelegate list_liquidity_subscriptions, to: LiquiditySubscription
   defdelegate eligible_for_liquidity_subscription?(user_id), to: LiquiditySubscription
   defdelegate user_has_active_sanbase_subscriptions?(user_id), to: LiquiditySubscription
-  defdelegate sync_liquidity_subscriptions_staked_users(), to: LiquiditySubscription
-  defdelegate maybe_create_liquidity_subscriptions_staked_users(), to: LiquiditySubscription
-  defdelegate maybe_remove_liquidity_subscriptions_staked_users(), to: LiquiditySubscription
+  defdelegate sync_liquidity_subscriptions_staked_users, to: LiquiditySubscription
+  defdelegate maybe_create_liquidity_subscriptions_staked_users, to: LiquiditySubscription
+  defdelegate maybe_remove_liquidity_subscriptions_staked_users, to: LiquiditySubscription
 
   def list_products(), do: Repo.all(Product)
 
@@ -36,8 +51,8 @@ defmodule Sanbase.Billing do
   In order to create the Products and Plans locally, the seed
   `priv/repo/seed_plans_and_products.exs` must be executed.
   """
-  @spec sync_with_stripe() :: :ok | {:error, %Stripe.Error{}}
-  def sync_with_stripe() do
+  @spec sync_products_with_stripe() :: :ok | {:error, %Stripe.Error{}}
+  def sync_products_with_stripe() do
     with :ok <- run_sync(list_products(), &Product.maybe_create_product_in_stripe/1),
          :ok <- run_sync(list_plans(), &Plan.maybe_create_plan_in_stripe/1) do
       :ok
@@ -69,5 +84,27 @@ defmodule Sanbase.Billing do
       {:ok, _} -> false
       {:error, _} -> true
     end)
+  end
+
+  @spec create_or_update_stripe_customer(%User{}, String.t() | nil) ::
+          {:ok, %User{}} | {:error, %Stripe.Error{}}
+  def create_or_update_stripe_customer(user, card_token \\ nil)
+
+  def create_or_update_stripe_customer(%User{stripe_customer_id: nil} = user, card_token) do
+    with {:ok, stripe_customer} <- StripeApi.create_customer(user, card_token) do
+      User.update_field(user, :stripe_customer_id, stripe_customer.id)
+    end
+  end
+
+  def create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, nil)
+      when is_binary(stripe_id) do
+    {:ok, user}
+  end
+
+  def create_or_update_stripe_customer(%User{stripe_customer_id: stripe_id} = user, card_token)
+      when is_binary(stripe_id) do
+    with {:ok, _} <- StripeApi.update_customer(user, card_token) do
+      {:ok, user}
+    end
   end
 end

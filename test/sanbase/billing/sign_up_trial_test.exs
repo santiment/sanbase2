@@ -7,10 +7,12 @@ defmodule Sanbase.Billing.SignUpTrialTest do
   alias Sanbase.Billing.Subscription.SignUpTrial
   alias Sanbase.Repo
 
+  @moduletag capture_log: true
+
   setup_with_mocks([
     {Sanbase.MandrillApi, [:passthrough], send: fn _, _, _, _ -> {:ok, %{"status" => "sent"}} end}
   ]) do
-    user = insert(:user)
+    user = insert(:user, stripe_customer_id: "test stripe id")
 
     %{
       user: user,
@@ -45,6 +47,155 @@ defmodule Sanbase.Billing.SignUpTrialTest do
 
       assert_called(Sanbase.MandrillApi.send("second-edu-email2", :_, :_))
       assert sign_up_trial.sent_second_education_email
+    end
+  end
+
+  describe "#cancel_about_to_expire_trials" do
+    test "cancel ~2 hours before trial expires and user has no CC", context do
+      with_mocks([
+        {Sanbase.StripeApi, [],
+         retrieve_customer: fn _ -> {:ok, %Stripe.Customer{default_source: nil}} end},
+        {Sanbase.StripeApi, [],
+         delete_subscription: fn _ -> {:ok, %Stripe.Subscription{id: "123"}} end},
+        {Sanbase.MandrillApi, [:passthrough],
+         send: fn _, _, _, _ -> {:ok, %{"status" => "sent"}} end}
+      ]) do
+        subscription =
+          insert(:subscription_pro_sanbase,
+            user: context.user,
+            status: "trialing",
+            trial_end: Timex.shift(Timex.now(), hours: 1)
+          )
+
+        insert(:sign_up_trial,
+          user_id: context.user.id,
+          subscription: subscription
+        )
+
+        SignUpTrial.cancel_about_to_expire_trials()
+
+        assert_called(Sanbase.StripeApi.delete_subscription(subscription.stripe_id))
+        assert_called(Sanbase.MandrillApi.send("trial-finished-without-card2", :_, :_))
+      end
+    end
+
+    test "cancel even when user has CC", context do
+      with_mocks([
+        {Sanbase.StripeApi, [],
+         retrieve_customer: fn _ -> {:ok, %Stripe.Customer{default_source: "card"}} end},
+        {Sanbase.StripeApi, [],
+         delete_subscription: fn _ -> {:ok, %Stripe.Subscription{id: "123"}} end},
+        {Sanbase.MandrillApi, [:passthrough],
+         send: fn _, _, _, _ -> {:ok, %{"status" => "sent"}} end}
+      ]) do
+        subscription =
+          insert(:subscription_pro_sanbase,
+            user: context.user,
+            status: "trialing",
+            trial_end: Timex.shift(Timex.now(), hours: 1)
+          )
+
+        insert(:sign_up_trial,
+          user_id: context.user.id,
+          subscription: subscription
+        )
+
+        SignUpTrial.cancel_about_to_expire_trials()
+
+        assert_called(Sanbase.StripeApi.delete_subscription(subscription.stripe_id))
+        assert_called(Sanbase.MandrillApi.send("trial-finished-without-card2", :_, :_))
+      end
+    end
+
+    test "cancel ~2 hours before trial expires when user has API plan", context do
+      with_mocks([
+        {Sanbase.StripeApi, [],
+         retrieve_customer: fn _ -> {:ok, %Stripe.Customer{default_source: nil}} end},
+        {Sanbase.StripeApi, [],
+         delete_subscription: fn _ -> {:ok, %Stripe.Subscription{id: "123"}} end},
+        {Sanbase.MandrillApi, [:passthrough],
+         send: fn _, _, _, _ -> {:ok, %{"status" => "sent"}} end}
+      ]) do
+        subscription =
+          insert(:subscription_pro,
+            user: context.user,
+            status: "trialing",
+            trial_end: Timex.shift(Timex.now(), hours: 1)
+          )
+
+        SignUpTrial.cancel_about_to_expire_trials()
+
+        assert_called(Sanbase.StripeApi.delete_subscription(subscription.stripe_id))
+        refute called(Sanbase.MandrillApi.send("trial-finished-without-card2", :_, :_))
+      end
+    end
+
+    test "don't cancel trial for Sanbase PRO that does not have record in sign_up_trials",
+         context do
+      with_mocks([
+        {Sanbase.StripeApi, [],
+         delete_subscription: fn _ -> {:ok, %Stripe.Subscription{id: "123"}} end}
+      ]) do
+        subscription =
+          insert(:subscription_pro_sanbase,
+            user: context.user,
+            status: "trialing",
+            trial_end: Timex.shift(Timex.now(), hours: 1)
+          )
+
+        SignUpTrial.cancel_about_to_expire_trials()
+
+        refute called(Sanbase.StripeApi.delete_subscription(subscription.stripe_id))
+        refute called(Sanbase.MandrillApi.send("trial-finished-without-card2", :_, :_))
+      end
+    end
+  end
+
+  describe "#create_trial_subscription" do
+    test "when everything is ok", context do
+      with_mocks([
+        {Sanbase.StripeApi, [],
+         create_subscription: fn _ ->
+           Sanbase.StripeApiTestResponse.create_subscription_resp(stripe_id: "test id")
+         end},
+        {Sanbase.MandrillApi, [:passthrough],
+         send: fn _, _, _, _ -> {:ok, %{"status" => "sent"}} end}
+      ]) do
+        sut =
+          SignUpTrial.create_trial_subscription(context.user.id)
+          |> elem(1)
+          |> Sanbase.Repo.preload(:subscription)
+
+        assert sut.subscription.stripe_id == "test id"
+      end
+    end
+
+    test "when user is already registered, no trial" do
+      with_mocks([
+        {Sanbase.StripeApi, [],
+         create_subscription: fn _ ->
+           Sanbase.StripeApiTestResponse.create_subscription_resp(stripe_id: "test id")
+         end}
+      ]) do
+        user = insert(:user, is_registered: true)
+        SignUpTrial.create_trial_subscription(user.id)
+        refute called(Sanbase.StripeApi.create_subscription(:_))
+      end
+    end
+
+    test "when there is a Stripe error", context do
+      with_mocks([
+        {Sanbase.StripeApi, [],
+         create_subscription: fn _ ->
+           {:error, %Stripe.Error{message: "test error", source: "ala", code: "bala"}}
+         end},
+        {Sanbase.MandrillApi, [:passthrough],
+         send: fn _, _, _, _ -> {:ok, %{"status" => "sent"}} end}
+      ]) do
+        {:error, error_msg} = SignUpTrial.create_trial_subscription(context.user.id)
+
+        assert error_msg =~ "test error"
+      end
     end
   end
 

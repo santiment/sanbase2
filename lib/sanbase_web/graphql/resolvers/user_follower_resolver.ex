@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserFollowerResolver do
   require Logger
 
   alias Sanbase.Accounts.UserFollower
-  alias SanbaseWeb.Graphql.Helpers.Utils
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
 
   def follow(_root, args, %{
         context: %{auth: %{auth_method: :user_token, current_user: current_user}}
@@ -29,7 +29,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserFollowerResolver do
       {:error, %Ecto.Changeset{} = changeset} ->
         {
           :error,
-          message: "Error trying to #{operation} user", details: Utils.error_details(changeset)
+          message: "Error trying to #{operation} user", details: changeset_errors(changeset)
         }
     end
   end

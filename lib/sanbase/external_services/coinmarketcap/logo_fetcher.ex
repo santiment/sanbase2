@@ -1,13 +1,15 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
   use Tesla
 
+  require Logger
+
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
+
   alias Sanbase.Model.{Project, LatestCoinmarketcapData}
   alias Sanbase.Repo
   alias Sanbase.ExternalServices.Coinmarketcap.CryptocurrencyInfo
   alias Sanbase.FileStore
   alias Sanbase.Utils.FileHash
-
-  require Logger
 
   @log_tag "[CMC][LogoFetcher]"
   @size 64
@@ -145,7 +147,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.LogoFetcher do
         {:ok, schema}
 
       {:error, error} ->
-        error_msg = Sanbase.Utils.ErrorHandling.changeset_errors_to_str(error)
+        error_msg = changeset_errors_string(error)
 
         Logger.error(
           "#{@log_tag} Error updating project locally: #{project.slug}. Error message: #{

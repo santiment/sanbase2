@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ShortUrlResolver do
-  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_to_str: 1]
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
   import Absinthe.Resolution.Helpers
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
@@ -61,7 +61,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ShortUrlResolver do
 
     case Sanbase.ShortUrl.create(args) do
       {:ok, %Sanbase.ShortUrl{} = short_url} -> {:ok, short_url}
-      {:error, error} -> {:error, changeset_errors_to_str(error)}
+      {:error, error} -> {:error, changeset_errors_string(error)}
     end
   end
 end

@@ -9,6 +9,8 @@ defmodule Sanbase.Telegram do
   require Logger
   require Sanbase.Utils.Config, as: Config
 
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
+
   alias Sanbase.Accounts.{User, Settings, UserSettings}
   alias Sanbase.Telegram.UserToken
 
@@ -127,7 +129,7 @@ defmodule Sanbase.Telegram do
             :ok
 
           {:error, changeset} ->
-            error_msg = Sanbase.Utils.ErrorHandling.changeset_errors_to_str(changeset)
+            error_msg = changeset_errors_string(changeset)
 
             Logger.error(
               "Cannot set telegram chat id for user id #{user_id}. Reason: #{error_msg}"

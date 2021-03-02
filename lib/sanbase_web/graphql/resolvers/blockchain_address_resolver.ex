@@ -2,11 +2,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
   require Logger
 
   import Absinthe.Resolution.Helpers, except: [async: 1]
-  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3]
+  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3, changeset_errors_string: 1]
 
   alias Sanbase.BlockchainAddress
   alias SanbaseWeb.Graphql.SanbaseDataloader
-  alias Sanbase.Utils.ErrorHandling
   alias Sanbase.Clickhouse.{Label, EthTransfers, Erc20Transfers, MarkExchanges}
 
   @recent_transactions_type_map %{
@@ -66,7 +65,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
       {:ok, addr}
     else
       {:error, %Ecto.Changeset{} = changeset} ->
-        reason = ErrorHandling.changeset_errors_to_str(changeset)
+        reason = changeset_errors_string(changeset)
         {:error, "Cannot get blockchain address #{infrastructure} #{address}. Reason: #{reason}"}
 
       {:error, error} ->

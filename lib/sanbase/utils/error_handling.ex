@@ -7,7 +7,13 @@ defmodule Sanbase.Utils.ErrorHandling do
   @compile inline: [
              description_and_identifier: 2
            ]
-  def changeset_errors_to_str(%Ecto.Changeset{} = changeset) do
+
+  def changeset_errors(changeset) do
+    changeset
+    |> Ecto.Changeset.traverse_errors(&format_error/1)
+  end
+
+  def changeset_errors_string(%Ecto.Changeset{} = changeset) do
     changeset
     |> Ecto.Changeset.traverse_errors(&format_error/1)
     |> case do

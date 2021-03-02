@@ -360,7 +360,7 @@ defmodule Sanbase.Factory do
   end
 
   def product_sanbase_factory() do
-    %Product{id: 2, name: "Sanabse by Santiment", code: "SANBASE"}
+    %Product{id: 2, name: "Sanbase by Santiment", code: "SANBASE"}
   end
 
   def product_sandata_factory() do

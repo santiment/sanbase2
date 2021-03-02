@@ -46,6 +46,7 @@ defmodule Sanbase.Alert.Scheduler do
     {updated_user_triggers, sent_list_results} =
       type
       |> UserTrigger.get_active_triggers_by_type()
+      |> filter_receivable_triggers(type)
       |> Evaluator.run(type)
       |> send_and_mark_as_sent()
 
@@ -61,6 +62,32 @@ defmodule Sanbase.Alert.Scheduler do
     sent_list_results
     |> List.flatten()
     |> log_sent_messages_stats(type)
+  end
+
+  defp filter_receivable_triggers(user_triggers, type) do
+    filtered =
+      Enum.filter(user_triggers, fn %{trigger: trigger, user: user} ->
+        channels = List.wrap(trigger.settings.channel)
+
+        channels != [] and
+          Enum.any?(channels, fn
+            "email" -> Sanbase.Accounts.User.can_receive_email_alert?(user)
+            "telegram" -> Sanbase.Accounts.User.can_receive_telegram_alert?(user)
+            # The other types - telegram channel and webhooks are always enabled
+            # and cannot be disabled by some settings.
+            _ -> true
+          end)
+      end)
+
+    total_count = length(user_triggers)
+    disabled_count = total_count - length(filtered)
+
+    Logger.info("""
+    In total #{disabled_count}/#{total_count} active alerts of type #{type} are not being computed because they cannot be sent.
+    The owners of these alerts have disabled the notification channels or has no telegram/email linked to their account.
+    """)
+
+    filtered
   end
 
   defp deactivate_non_repeating(triggers) do

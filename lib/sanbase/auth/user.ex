@@ -153,6 +153,9 @@ defmodule Sanbase.Accounts.User do
     |> unique_constraint(:twitter_id)
   end
 
+  defdelegate can_receive_telegram_alert?(user), to: __MODULE__.Alert
+  defdelegate can_receive_email_alert?(user), to: __MODULE__.Alert
+
   # Email functions
   defdelegate find_by_email_candidate(candidate, token), to: __MODULE__.Email
   defdelegate update_email_token(user, consent \\ nil), to: __MODULE__.Email
@@ -165,7 +168,6 @@ defmodule Sanbase.Accounts.User do
   defdelegate send_verify_email(user), to: __MODULE__.Email
 
   # San Balance functions
-
   defdelegate san_balance_cache_stale?(user), to: __MODULE__.SanBalance
   defdelegate update_san_balance_changeset(user), to: __MODULE__.SanBalance
   defdelegate san_balance(user), to: __MODULE__.SanBalance

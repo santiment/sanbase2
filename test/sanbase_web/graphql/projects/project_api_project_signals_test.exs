@@ -41,7 +41,6 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ProjectApiProjectSignalsTest do
 
     conn
     |> post("/graphql", query_skeleton(query, "projectBySlug"))
-    |> IO.inspect()
     |> json_response(200)
   end
 

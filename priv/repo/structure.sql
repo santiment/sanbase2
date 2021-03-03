@@ -4294,6 +4294,13 @@ CREATE INDEX signals_historical_activity_user_id_triggered_at_index ON public.si
 
 
 --
+-- Name: signals_historical_activity_user_trigger_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX signals_historical_activity_user_trigger_id_index ON public.signals_historical_activity USING btree (user_trigger_id);
+
+
+--
 -- Name: subscriptions_stripe_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4340,6 +4347,13 @@ CREATE INDEX timeline_event_comments_mapping_timeline_event_id_index ON public.t
 --
 
 CREATE INDEX timeline_events_user_id_inserted_at_index ON public.timeline_events USING btree (user_id, inserted_at);
+
+
+--
+-- Name: timeline_events_user_trigger_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX timeline_events_user_trigger_id_index ON public.timeline_events USING btree (user_trigger_id);
 
 
 --
@@ -5529,3 +5543,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210205121406);
 INSERT INTO public."schema_migrations" (version) VALUES (20210209085710);
 INSERT INTO public."schema_migrations" (version) VALUES (20210222141227);
 INSERT INTO public."schema_migrations" (version) VALUES (20210223081041);
+INSERT INTO public."schema_migrations" (version) VALUES (20210226144252);
+INSERT INTO public."schema_migrations" (version) VALUES (20210303094304);

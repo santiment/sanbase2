@@ -73,6 +73,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     end
 
     field :watchlists, list_of(:user_list) do
+      arg(:type, :watchlist_type_enum, default_value: :project)
+
       cache_resolve(&UserListResolver.public_watchlists/3, ttl: 60)
     end
   end
@@ -149,6 +151,8 @@ defmodule SanbaseWeb.Graphql.UserTypes do
     end
 
     field :watchlists, list_of(:user_list) do
+      arg(:type, :watchlist_type_enum, default_value: :project)
+
       cache_resolve(&UserListResolver.watchlists/3, ttl: 60)
     end
 

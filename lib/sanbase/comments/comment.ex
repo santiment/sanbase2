@@ -49,7 +49,7 @@ defmodule Sanbase.Comment do
     has_many(:sub_comments, __MODULE__, foreign_key: :parent_id, references: :id)
     field(:subcomments_count, :integer, default: 0)
 
-    many_to_many(:posts, Post, join_through: "post_comments_mapping")
+    many_to_many(:insights, Post, join_through: "post_comments_mapping")
     many_to_many(:short_urls, ShortUrl, join_through: "short_url_comments_mapping")
     many_to_many(:timeline_events, TimelineEvent, join_through: "timeline_event_comments_mapping")
 

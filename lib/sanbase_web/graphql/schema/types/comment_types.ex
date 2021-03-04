@@ -18,7 +18,22 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
     value(:timeline_event)
     value(:short_url)
     value(:blockchain_address)
-    value(:all)
+  end
+
+  object :comments_feed_item do
+    field(:id, non_null(:id))
+    field(:insight, :post)
+    field(:short_url, :short_url)
+    field(:timeline_event, :timeline_event)
+    field(:blockchain_address, :blockchain_address)
+
+    field(:content, non_null(:string))
+    field(:user, non_null(:public_user), resolve: dataloader(SanbaseRepo))
+    field(:parent_id, :id)
+    field(:root_parent_id, :id)
+    field(:subcomments_count, :integer)
+    field(:inserted_at, non_null(:datetime))
+    field(:edited_at, :datetime)
   end
 
   object :comment do

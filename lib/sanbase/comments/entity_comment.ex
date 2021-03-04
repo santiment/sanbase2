@@ -97,6 +97,26 @@ defmodule Sanbase.Comments.EntityComment do
     |> where([elem], field(elem, ^field) == ^entity_id)
   end
 
+  def all_comments_query do
+    from(c in Comment,
+      preload: [:user, :posts, :timeline_events, :short_urls, :blockchain_addresses],
+      order_by: [desc: c.inserted_at],
+      limit: 1
+    )
+    |> Repo.all()
+    |> Enum.map(fn comment ->
+      entities = [:posts, :timeline_events, :short_urls, :blockchain_addresses]
+
+      entities
+      |> Enum.reduce(comment, fn entity, acc ->
+        value = Map.get(acc, entity) |> List.first()
+        singular_entity = Inflex.singularize(entity) |> String.to_existing_atom()
+        acc = Map.delete(acc, entity)
+        Map.put(acc, singular_entity, value)
+      end)
+    end)
+  end
+
   defp entity_comments_query(:timeline_event, entity_id) do
     from(
       comment in TimelineEventComment,

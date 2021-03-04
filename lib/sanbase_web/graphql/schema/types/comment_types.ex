@@ -18,6 +18,7 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
     value(:timeline_event)
     value(:short_url)
     value(:blockchain_address)
+    value(:all)
   end
 
   object :comment do

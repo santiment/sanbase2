@@ -297,6 +297,16 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
         assert response["plan"]["name"] == "PRO"
       end
     end
+
+    test "subscribe when already subscribed to this plan", context do
+      insert(:subscription_pro_sanbase, status: :active, user: context.user)
+
+      capture_log(fn ->
+        query = subscribe_mutation(context.plans.plan_pro_sanbase.id)
+        error_msg = execute_mutation_with_error(context.conn, query)
+        assert error_msg =~ "You are already subscribed to Sanbase by Santiment / PRO"
+      end)
+    end
   end
 
   describe "update_subscription mutation" do

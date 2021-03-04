@@ -55,6 +55,14 @@ defmodule Sanbase.Accounts.User.SanBalance do
     end
   end
 
+  @spec san_balance_or_zero(%User{}) :: float
+  def san_balance_or_zero(%User{} = user) do
+    case san_balance(user) do
+      {:ok, san_balance} -> san_balance
+      _ -> 0
+    end
+  end
+
   defp san_balance_for_eth_accounts(%User{eth_accounts: eth_accounts, san_balance: san_balance}) do
     eth_accounts_balances =
       eth_accounts

@@ -30,7 +30,7 @@ defmodule Sanbase.Intercom do
       users_used_api_list: ApiCallData.users_used_api(),
       users_used_sansheets_list: ApiCallData.users_used_sansheets(),
       api_calls_per_user_count: ApiCallData.api_calls_count_per_user(),
-      active_subscriptions_map: Subscription.active_subscriptions_map(),
+      user_active_subscriptions_map: Subscription.Stats.user_active_subscriptions_map(),
       users_with_monitored_watchlist:
         Sanbase.UserLists.Statistics.users_with_monitored_watchlist()
         |> Enum.map(fn {%{id: user_id}, count} -> {user_id, count} end)
@@ -94,7 +94,7 @@ defmodule Sanbase.Intercom do
            api_calls_per_user_count: api_calls_per_user_count,
            users_with_monitored_watchlist: users_with_monitored_watchlist,
            customer_payment_type_map: customer_payment_type_map,
-           active_subscriptions_map: active_subscriptions_map
+           user_active_subscriptions_map: user_active_subscriptions_map
          }
        ) do
     {sanbase_subscription_current_status, sanbase_trial_created_at} =
@@ -137,7 +137,7 @@ defmodule Sanbase.Intercom do
           used_sansheets: id in users_used_sansheets_list,
           api_calls_count: Map.get(api_calls_per_user_count, id, 0),
           weekly_report_watchlist_count: Map.get(users_with_monitored_watchlist, id, 0),
-          active_subscriptions: Map.get(active_subscriptions_map, id, "")
+          active_subscriptions: Map.get(user_active_subscriptions_map, id, "")
         }
         |> Map.merge(triggers_type_count(user))
     }

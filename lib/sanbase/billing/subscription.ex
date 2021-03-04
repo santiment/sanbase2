@@ -7,11 +7,11 @@ defmodule Sanbase.Billing.Subscription do
   use Ecto.Schema
 
   import Ecto.Changeset
-  import Ecto.Query
 
   alias Sanbase.Billing
   alias Sanbase.Billing.Plan
-  alias Sanbase.Billing.Subscription.SignUpTrial
+  alias Sanbase.Billing.Subscription.{SignUpTrial, Query}
+
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
   alias Sanbase.StripeApi
@@ -115,7 +115,8 @@ defmodule Sanbase.Billing.Subscription do
   @spec subscribe(%User{}, %Plan{}, string_or_nil, string_or_nil) ::
           {:ok, %__MODULE__{}} | {:error, %Stripe.Error{} | String.t()}
   def subscribe(user, plan, card_token \\ nil, coupon \\ nil) do
-    with {:ok, user} <- Billing.create_or_update_stripe_customer(user, card_token),
+    with :ok <- active_subscriptions_for_this_plan(user, plan),
+         {:ok, user} <- Billing.create_or_update_stripe_customer(user, card_token),
          {:ok, stripe_subscription} <- create_stripe_subscription(user, plan, coupon),
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan),
          {:ok, _} <- Sanbase.ApiCallLimit.update_user_plan(user) do
@@ -218,10 +219,11 @@ defmodule Sanbase.Billing.Subscription do
   List all active user subscriptions with plans and products.
   """
   def user_subscriptions(%User{id: user_id}) do
-    user_id
-    |> user_subscriptions_query()
-    |> active_subscriptions_query()
-    |> join_plan_and_product_query()
+    __MODULE__
+    |> Query.filter_user(user_id)
+    |> Query.all_active_and_trialing_subscriptions()
+    |> Query.join_plan_and_product()
+    |> Query.order_by()
     |> Repo.all()
   end
 
@@ -229,10 +231,11 @@ defmodule Sanbase.Billing.Subscription do
   List active subcriptions' product ids
   """
   def user_subscriptions_product_ids(%User{id: user_id}) do
-    user_id
-    |> user_subscriptions_query()
-    |> active_subscriptions_query()
-    |> select_product_id_query()
+    __MODULE__
+    |> Query.filter_user(user_id)
+    |> Query.all_active_and_trialing_subscriptions()
+    |> Query.select_product_id()
+    |> Query.order_by()
     |> Repo.all()
   end
 
@@ -250,19 +253,27 @@ defmodule Sanbase.Billing.Subscription do
   def plan_name(nil), do: :free
   def plan_name(%__MODULE__{plan: plan}), do: plan |> Plan.plan_atom_name()
 
-  def active_subscriptions_map() do
-    from(s in __MODULE__, where: s.status == "active", preload: [plan: [:product]])
-    |> Sanbase.Repo.all()
-    |> Enum.map(fn s ->
-      %{user_id: s.user_id, product: "#{s.plan.product.name}/#{s.plan.name}"}
-    end)
-    |> Enum.group_by(& &1.user_id)
-    |> Enum.into(%{}, fn {user_id, products} ->
-      {user_id, Enum.map(products, & &1.product) |> Enum.join(", ")}
-    end)
-  end
-
   # Private functions
+
+  defp active_subscriptions_for_this_plan(user, plan) do
+    __MODULE__
+    |> Query.all_active_subscriptions_for_plan(plan.id)
+    |> Query.filter_user(user.id)
+    |> Repo.all()
+    |> Enum.empty?()
+    |> case do
+      false ->
+        {
+          :error,
+          %__MODULE__.Error{
+            message: "You are already subscribed to #{Plan.plan_full_name(plan)}"
+          }
+        }
+
+      true ->
+        :ok
+    end
+  end
 
   # Add 80% off Sanbase Basic subscription for first month
   defp create_stripe_subscription(user, %Plan{id: plan_id} = plan, _)
@@ -278,7 +289,7 @@ defmodule Sanbase.Billing.Subscription do
   defp create_stripe_subscription(user, plan, nil) do
     percent_off =
       user
-      |> san_balance()
+      |> User.san_balance_or_zero()
       |> percent_discount()
 
     subscription_defaults(user, plan)
@@ -347,57 +358,13 @@ defmodule Sanbase.Billing.Subscription do
   defp percent_discount(balance) when balance >= 1000, do: @percent_discount_1000_san
   defp percent_discount(_), do: nil
 
-  defp user_subscriptions_query(user_id) do
-    from(s in __MODULE__,
-      where: s.user_id == ^user_id,
-      order_by: [desc: s.id]
-    )
-  end
-
-  defp active_subscriptions_query(query) do
-    from(s in query,
-      where: s.status == "active" or s.status == "trialing" or s.status == "past_due"
-    )
-  end
-
-  defp join_plan_and_product_query(query) do
-    from(
-      s in query,
-      join: p in assoc(s, :plan),
-      join: pr in assoc(p, :product),
-      preload: [plan: {p, product: pr}]
-    )
-  end
-
-  defp select_product_id_query(query) do
-    from(s in query, join: p in assoc(s, :plan), select: p.product_id)
-  end
-
-  defp last_subscription_for_product_query(query, product_id) do
-    from(s in query,
-      where: s.plan_id in fragment("select id from plans where product_id = ?", ^product_id),
-      limit: 1
-    )
-  end
-
-  defp san_balance(%User{} = user) do
-    case User.san_balance(user) do
-      {:ok, balance} -> balance
-      _ -> 0
-    end
-  end
-
   defp fetch_current_subscription(user_id, product_id) do
-    user_id
-    |> user_subscriptions_query()
-    |> active_subscriptions_query()
-    |> last_subscription_for_product_query(product_id)
-    |> preload_query(plan: [:product])
+    __MODULE__
+    |> Query.filter_user(user_id)
+    |> Query.all_active_and_trialing_subscriptions()
+    |> Query.last_subscription_for_product(product_id)
+    |> Query.preload(plan: [:product])
     |> Repo.one()
-  end
-
-  defp preload_query(query, preloads) do
-    from(s in query, preload: ^preloads)
   end
 
   defp default_preload(subscription, opts \\ []) do

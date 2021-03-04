@@ -3475,4 +3475,58 @@
     "has_incomplete_data": false,
     "data_type": "timeseries"
   }
+  ,
+  {
+    "human_readable_name": "Price in BTC Change (1d)",
+    "name": "price_btc_change_1d",
+    "metric": "price_btc_change_1d",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "Price in BTC Change (7d)",
+    "name": "price_btc_change_7d",
+    "metric": "price_btc_change_7d",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "Price in BTC Change (30d)",
+    "name": "price_btc_change_30d",
+    "metric": "price_btc_change_30d",
+    "version": "2019-01-01",
+    "access": "free",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "last",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
 ]

@@ -94,7 +94,7 @@ defmodule Sanbase.Comments.EntityComment do
 
     all_comments_query()
     |> apply_cursor(cursor)
-    |> order_by([c], [{^order, c.inserted_at}])
+    |> order_by([c], [{^order, c.inserted_at}, {^order, c.id}])
     |> limit(^limit)
     |> Repo.all()
     |> transform_entity_list_to_singular()

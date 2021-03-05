@@ -12,7 +12,7 @@ defmodule Sanbase.Alert.PriceVolumeDiffTest do
   @cmc_id "santiment"
 
   setup do
-    Sanbase.Alert.Evaluator.Cache.clear_all()
+    Sanbase.Cache.clear_all(:alerts_evaluator_cache)
 
     Tesla.Mock.mock(fn
       %{method: :post} ->

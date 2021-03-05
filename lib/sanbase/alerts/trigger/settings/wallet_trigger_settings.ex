@@ -133,19 +133,8 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
       {:wallet_signal, selector, address, round_datetime(from), round_datetime(to)}
       |> Sanbase.Cache.hash()
 
-    Sanbase.Alert.Evaluator.Cache.get_or_store(cache_key, fn ->
-      case Sanbase.Clickhouse.HistoricalBalance.balance_change(
-             selector,
-             address,
-             from,
-             to
-           ) do
-        {:ok, result} ->
-          {:ok, result}
-
-        {:error, error} ->
-          {:error, error}
-      end
+    Sanbase.Cache.get_or_store(:alerts_evaluator_cache, cache_key, fn ->
+      Sanbase.Clickhouse.HistoricalBalance.balance_change(selector, address, from, to)
     end)
   end
 

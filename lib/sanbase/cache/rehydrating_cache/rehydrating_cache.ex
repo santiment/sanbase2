@@ -104,8 +104,6 @@ defmodule Sanbase.Cache.RehydratingCache do
       data ->
         data
     end
-
-    g(s)
   catch
     :exit, {:timeout, _} ->
       {:error, :timeout}

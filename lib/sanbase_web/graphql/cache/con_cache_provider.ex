@@ -89,7 +89,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
     ConCache.isolated(cache, true_key, fun)
   end
 
-  defp execute_and_maybe_cache_function(cache, key, func, middleware_funcs) do
+  defp execute_and_maybe_cache_function(cache, key, func, middleware_func) do
     # Execute the function and if it returns :ok tuple cache it
     # Errors are not cached. Also, caching can be manually disabled by
     # wrapping the result in a :nocache tuple

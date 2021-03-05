@@ -1,4 +1,5 @@
 defmodule SanbaseWeb.CommentModerationController do
+  @resource "comments"
   use ExAdmin.Web, :resource_controller
 
   require Logger

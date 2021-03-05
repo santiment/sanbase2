@@ -8,7 +8,7 @@ defmodule Sanbase.Alert.SchedulerTest do
   alias Sanbase.Alert.Trigger.MetricTriggerSettings
 
   setup do
-    Sanbase.Alert.Evaluator.Cache.clear_all()
+    Sanbase.Cache.clear_all(:alerts_evaluator_cache)
 
     Tesla.Mock.mock_global(fn %{method: :post} -> %Tesla.Env{status: 200, body: "ok"} end)
 

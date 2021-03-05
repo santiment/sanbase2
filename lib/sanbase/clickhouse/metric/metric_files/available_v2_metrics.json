@@ -1454,23 +1454,7 @@
   {
     "human_readable_name": "Age Consumed",
     "name": "age_destroyed",
-    "metric": "stack_age_consumed_5min",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "sum",
-    "min_interval": "5m",
-    "table": "intraday_metrics",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Age Consumed",
-    "name": "age_consumed",
+    "aliases": ["age_consumed"],
     "metric": "stack_age_consumed_5min",
     "version": "2019-01-01",
     "access": "restricted",
@@ -1604,24 +1588,6 @@
     "has_incomplete_data": true,
     "data_type": "timeseries"
   },
-  {
-    "human_readable_name": "Total Supply",
-    "name": "total_supply",
-    "metric": "total_supply",
-    "version": "2020-01-01",
-    "access": "free",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "free",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": false,
-    "data_type": "timeseries"
-  },
-
   {
     "human_readable_name": "Daily Development Activity",
     "name": "dev_activity_1d",

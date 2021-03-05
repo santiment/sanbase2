@@ -88,6 +88,18 @@ defmodule Sanbase.Comments.EntityComment do
     |> Repo.all()
   end
 
+  def get_comments(%{limit: limit} = args) do
+    cursor = Map.get(args, :cursor) || %{}
+    order = Map.get(cursor, :order, :desc)
+
+    all_comments_query()
+    |> apply_cursor(cursor)
+    |> order_by([c], [{^order, c.inserted_at}, {^order, c.id}])
+    |> limit(^limit)
+    |> Repo.all()
+    |> transform_entity_list_to_singular()
+  end
+
   # Private Functions
 
   defp maybe_add_entity_id_clause(query, _field, nil), do: query
@@ -95,6 +107,32 @@ defmodule Sanbase.Comments.EntityComment do
   defp maybe_add_entity_id_clause(query, field, entity_id) do
     query
     |> where([elem], field(elem, ^field) == ^entity_id)
+  end
+
+  def all_comments_query() do
+    from(c in Comment,
+      preload: [:user, :insights, :timeline_events, :short_urls, :blockchain_addresses]
+    )
+  end
+
+  # Since polymorphic comments are modeled with many_to_many :through but the actual
+  # association is belongs_to, like `comment` belongs_to `insight` we need to
+  # transform preloaded entities like so: insights: [%{}] -> insight: %{}
+  defp transform_entity_list_to_singular(comments) do
+    entities = [:insights, :timeline_events, :short_urls, :blockchain_addresses]
+
+    comments
+    |> Enum.map(fn comment ->
+      entities
+      |> Enum.reduce(comment, fn entity, acc ->
+        value = Map.get(acc, entity) |> List.first()
+        singular_entity = Inflex.singularize(entity) |> String.to_existing_atom()
+
+        acc
+        |> Map.delete(entity)
+        |> Map.put(singular_entity, value)
+      end)
+    end)
   end
 
   defp entity_comments_query(:timeline_event, entity_id) do

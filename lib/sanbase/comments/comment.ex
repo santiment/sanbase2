@@ -22,6 +22,10 @@ defmodule Sanbase.Comment do
 
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
+  alias Sanbase.Insight.Post
+  alias Sanbase.ShortUrl
+  alias Sanbase.Timeline.TimelineEvent
+  alias Sanbase.BlockchainAddress
 
   @max_comment_length 15_000
 
@@ -44,6 +48,14 @@ defmodule Sanbase.Comment do
 
     has_many(:sub_comments, __MODULE__, foreign_key: :parent_id, references: :id)
     field(:subcomments_count, :integer, default: 0)
+
+    many_to_many(:insights, Post, join_through: "post_comments_mapping")
+    many_to_many(:short_urls, ShortUrl, join_through: "short_url_comments_mapping")
+    many_to_many(:timeline_events, TimelineEvent, join_through: "timeline_event_comments_mapping")
+
+    many_to_many(:blockchain_addresses, BlockchainAddress,
+      join_through: "blockchain_address_comments_mapping"
+    )
 
     timestamps()
   end

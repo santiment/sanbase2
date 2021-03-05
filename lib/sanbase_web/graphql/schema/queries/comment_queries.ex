@@ -9,6 +9,13 @@ defmodule SanbaseWeb.Graphql.Schema.CommentQueries do
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
   object :comment_queries do
+    field :comments_feed, list_of(:comments_feed_item) do
+      arg(:cursor, :cursor_input, default_value: nil)
+      arg(:limit, :integer, default_value: 50)
+
+      resolve(&CommentResolver.comments_feed/3)
+    end
+
     field :comments, list_of(:comment) do
       arg(:entity_type, :comment_entity_type_enum, default_value: :insight)
 

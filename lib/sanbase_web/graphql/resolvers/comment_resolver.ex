@@ -50,6 +50,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.CommentResolver do
     {:ok, comments}
   end
 
+  def comments_feed(
+        _root,
+        args,
+        _resolution
+      ) do
+    comments = EntityComment.get_comments(args)
+
+    {:ok, comments}
+  end
+
   def comments(
         _root,
         %{entity_type: entity_type} = args,

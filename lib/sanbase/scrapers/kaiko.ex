@@ -81,6 +81,7 @@ defmodule Sanbase.Kaiko do
       # Round the datetimes, so the combining of USD and BTC prices can be done.
       # It is expected that the timestamps come in already rounded but this is
       # done just to make sure
+
       data
       |> Enum.map(fn elem ->
         %{
@@ -116,7 +117,7 @@ defmodule Sanbase.Kaiko do
     }
 
     @url <>
-      "/v2/data/trades.v1/spot_exchange_rate/#{base_asset}/#{quote_asset}?" <>
+      "/v2/data/trades.v1/spot_direct_exchange_rate/#{base_asset}/#{quote_asset}?" <>
       URI.encode_query(opts)
   end
 

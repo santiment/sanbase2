@@ -1,6 +1,4 @@
 defmodule Sanbase.Accounts.User.Alert do
-  alias Sanbase.Accounts.User
-
   def can_receive_telegram_alert?(user) do
     user = Sanbase.Repo.preload(user, :user_settings)
     settings = Sanbase.Accounts.UserSettings.settings_for(user)

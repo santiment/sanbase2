@@ -65,7 +65,10 @@ defmodule Sanbase.Model.Ico do
 
     ico
     |> changeset(attrs)
-    |> cast_assoc(:ico_currencies, required: false, with: &IcoCurrency.changeset_ex_admin/2)
+    |> cast_assoc(:ico_currencies,
+      required: false,
+      with: &IcoCurrency.changeset_ex_admin/2
+    )
   end
 
   def funds_raised_by_icos(ico_ids) when is_list(ico_ids) do
@@ -106,41 +109,34 @@ defmodule Sanbase.Model.Ico do
 
   # Private functions
 
-  defp funds_raised_ico_end_price_from_currencies(
-         _project,
-         %Ico{} = ico,
-         target_currency,
-         date
-       ) do
+  defp funds_raised_ico_end_price_from_currencies(_project, ico, target_currency, date) do
     datetime = Sanbase.DateTimeUtils.date_to_datetime(date)
 
-    Repo.preload(ico, ico_currencies: [:currency]).ico_currencies
-    |> Enum.map(fn ic ->
-      case Project.by_currency(ic.currency) do
-        %Project{slug: slug} ->
-          price =
-            Sanbase.Price.Utils.fetch_last_price_before(
-              slug,
-              target_currency,
-              datetime
-            )
-
-          case price != nil and ic.amount != nil do
-            true ->
-              price * Decimal.to_float(ic.amount)
-
-            false ->
-              nil
-          end
-
-        _ ->
-          nil
-      end
-    end)
+    Repo.preload(ico, ico_currencies: [:currency])
+    |> Map.get(:ico_currencies, [])
+    |> Enum.map(&get_funds_raised(&1, target_currency, datetime))
     |> Enum.reject(&is_nil/1)
     |> case do
       [] -> nil
       amounts -> Enum.reduce(amounts, 0, &Kernel.+/2)
+    end
+  end
+
+  defp get_funds_raised(ico_currency, target_currency, datetime) do
+    case Project.by_currency(ico_currency.currency) do
+      %Project{slug: slug} ->
+        price =
+          Sanbase.Price.Utils.fetch_last_price_before(
+            slug,
+            target_currency,
+            datetime
+          )
+
+        price && ico_currency.amount &&
+          price * Decimal.to_float(ico_currency.amount)
+
+      _ ->
+        nil
     end
   end
 end

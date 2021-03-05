@@ -62,13 +62,8 @@ defmodule Sanbase.Math do
           part / whole * 100
       end
 
-    case Keyword.get(opts, :precision) do
-      precision when is_integer(precision) and precision >= 0 ->
-        Float.floor(result, precision)
-
-      nil ->
-        result
-    end
+    precision = Keyword.get(opts, :precision, 15)
+    Float.floor(result, precision)
   end
 
   def percent_of(_, _, _), do: nil

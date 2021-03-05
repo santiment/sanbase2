@@ -89,12 +89,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
     ConCache.isolated(cache, true_key, fun)
   end
 
-  defp execute_and_maybe_cache_function(
-         cache,
-         key,
-         func,
-         middleware_func
-       ) do
+  defp execute_and_maybe_cache_function(cache, key, func, middleware_funcs) do
     # Execute the function and if it returns :ok tuple cache it
     # Errors are not cached. Also, caching can be manually disabled by
     # wrapping the result in a :nocache tuple
@@ -116,8 +111,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
     end
   end
 
-  defp cache_item(cache, {key, ttl}, value)
-       when is_integer(ttl) and ttl <= @max_cache_ttl do
+  defp cache_item(cache, {key, ttl}, value) when is_integer(ttl) and ttl <= @max_cache_ttl do
     ConCache.put(cache, key, %ConCache.Item{
       value: value,
       ttl: :timer.seconds(ttl)
@@ -128,8 +122,6 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
     ConCache.put(cache, key, value)
   end
 
-  defp true_key({key, ttl}) when is_integer(ttl) and ttl <= @max_cache_ttl,
-    do: key
-
+  defp true_key({key, ttl}) when is_integer(ttl) and ttl <= @max_cache_ttl, do: key
   defp true_key(key), do: key
 end

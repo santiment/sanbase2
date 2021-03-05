@@ -90,25 +90,25 @@ defmodule Sanbase.Cache.RehydratingCache do
   @spec get(any(), non_neg_integer(), Keyword.t()) ::
           {:ok, any()} | {:nocache, {:ok, any()}} | {:error, :timeout} | {:error, :not_registered}
   def get(key, timeout \\ 30_000, opts \\ []) when is_integer(timeout) and timeout > 0 do
-    try do
-      case Store.get(@store_name, key) do
-        nil ->
-          GenServer.call(@name, {:get, key, timeout}, timeout)
-          |> handle_get_response(opts)
+    case Store.get(@store_name, key) do
+      nil ->
+        GenServer.call(@name, {:get, key, timeout}, timeout)
+        |> handle_get_response(opts)
 
-        {:ok, value} ->
-          {:ok, value}
+      {:ok, value} ->
+        {:ok, value}
 
-        {:nocache, {:ok, _value}} = value ->
-          handle_get_response(value, opts)
+      {:nocache, {:ok, _value}} = value ->
+        handle_get_response(value, opts)
 
-        data ->
-          data
-      end
-    catch
-      :exit, {:timeout, _} ->
-        {:error, :timeout}
+      data ->
+        data
     end
+
+    g(s)
+  catch
+    :exit, {:timeout, _} ->
+      {:error, :timeout}
   end
 
   defp handle_get_response(data, opts) do
@@ -197,9 +197,6 @@ defmodule Sanbase.Cache.RehydratingCache do
   end
 
   def handle_info({:store_result, fun_map, data}, state) do
-    %{progress: progress, waiting: waiting, functions: functions} = state
-    %{key: key, refresh_time_delta: refresh_time_delta, ttl: ttl} = fun_map
-
     now_unix = Timex.now() |> DateTime.to_unix()
 
     store_result_handle_info(data, state, fun_map, now_unix)
@@ -289,6 +286,7 @@ defmodule Sanbase.Cache.RehydratingCache do
     %{state | waiting: new_waiting}
   end
 
+  # Walk over the functions and re-evaluate the ones that have to be re-evaluated
   defp do_run(state) do
     now = Timex.now()
     now_unix = now |> DateTime.to_unix()

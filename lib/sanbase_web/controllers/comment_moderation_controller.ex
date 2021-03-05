@@ -3,8 +3,6 @@ defmodule SanbaseWeb.CommentModerationController do
 
   require Logger
 
-  @resource "comments"
-
   def anonymize_comment(conn, _defn, %{id: comment_id}) do
     resource = conn.assigns.resource
 

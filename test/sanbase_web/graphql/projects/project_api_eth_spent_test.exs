@@ -34,9 +34,9 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
     rows = [
       [
         context.project_address,
-        30_000 * @eth_decimals,
-        10_000 * @eth_decimals,
-        -20_000 * @eth_decimals
+        30_000,
+        10_000,
+        -20_000
       ]
     ]
 
@@ -66,9 +66,9 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
     rows = [
       [
         context.project_address,
-        20_000 * @eth_decimals,
-        15_500 * @eth_decimals,
-        -4500 * @eth_decimals
+        20_000,
+        15_500,
+        -4500
       ]
     ]
 
@@ -98,9 +98,9 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
     rows = [
       [
         context.project_address,
-        100_000 * @eth_decimals,
-        70_000 * @eth_decimals,
-        -30_000 * @eth_decimals
+        100_000,
+        70_000,
+        -30_000
       ]
     ]
 
@@ -130,11 +130,11 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
       |> Enum.map(&DateTime.to_unix/1)
 
     rows = [
-      [dt1, -16_500 * @eth_decimals],
-      [dt2, -5500 * @eth_decimals],
-      [dt3, -3500 * @eth_decimals],
-      [dt4, -2500 * @eth_decimals],
-      [dt5, -500 * @eth_decimals]
+      [dt1, -16_500],
+      [dt2, -5500],
+      [dt3, -3500],
+      [dt4, -2500],
+      [dt5, -500]
     ]
 
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})

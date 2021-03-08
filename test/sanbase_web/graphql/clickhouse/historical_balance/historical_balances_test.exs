@@ -6,18 +6,17 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
   import ExUnit.CaptureLog
   import Sanbase.Factory
 
-  @eth_decimals 1_000_000_000_000_000_000
   setup do
     project_without_contract = insert(:project, %{slug: "someid1", contract_addresses: []})
 
     project_with_contract =
-      insert(:project, %{
-        main_contract_address: "0x123",
+      insert(:random_erc20_project, %{
+        contract_addresses: [build(:contract_address)],
         slug: "someid2",
         token_decimals: 18
       })
 
-    insert(:project, %{slug: "ethereum", ticker: "ETH"})
+    insert(:random_erc20_project, %{slug: "ethereum", ticker: "ETH"})
 
     [
       project_with_contract: project_with_contract,
@@ -49,10 +48,10 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
     dt4 = ~U[2019-01-04 00:00:00Z]
 
     rows = [
-      [dt1 |> DateTime.to_unix(), :math.pow(10, 18) * 2000, 1],
+      [dt1 |> DateTime.to_unix(), 2000, 1],
       [dt2 |> DateTime.to_unix(), 0, 0],
       [dt3 |> DateTime.to_unix(), 0, 0],
-      [dt4 |> DateTime.to_unix(), :math.pow(10, 18) * 1800, 1]
+      [dt4 |> DateTime.to_unix(), 1800, 1]
     ]
 
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
@@ -85,12 +84,12 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
     rows = [
       [dt1, 0, 1],
       [dt2, 0, 1],
-      [dt3, 2000 * @eth_decimals, 1],
-      [dt4, 1800 * @eth_decimals, 1],
+      [dt3, 2000, 1],
+      [dt4, 1800, 1],
       [dt5, 0, 0],
-      [dt6, 1500 * @eth_decimals, 1],
-      [dt7, 1900 * @eth_decimals, 1],
-      [dt8, 1000 * @eth_decimals, 1],
+      [dt6, 1500, 1],
+      [dt7, 1900, 1],
+      [dt8, 1000, 1],
       [dt9, 0, 0],
       [dt10, 0, 0]
     ]
@@ -135,9 +134,9 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       |> Enum.map(&DateTime.to_unix/1)
 
     rows = [
-      [dt1, 2000 * @eth_decimals, 1],
-      [dt2, 1800 * @eth_decimals, 1],
-      [dt3, 1400 * @eth_decimals, 1]
+      [dt1, 2000, 1],
+      [dt2, 1800, 1],
+      [dt3, 1400, 1]
     ]
 
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
@@ -227,12 +226,12 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
     rows = [
       [dt1, 0, 1],
       [dt2, 0, 1],
-      [dt3, :math.pow(10, 18) * 2000, 1],
-      [dt4, :math.pow(10, 18) * 1800, 1],
+      [dt3, 2000, 1],
+      [dt4, 1800, 1],
       [dt5, 0, 0],
-      [dt6, :math.pow(10, 18) * 1500, 1],
-      [dt7, :math.pow(10, 18) * 1900, 1],
-      [dt8, :math.pow(10, 18) * 1000, 1],
+      [dt6, 1500, 1],
+      [dt7, 1900, 1],
+      [dt8, 1000, 1],
       [dt9, 0, 0],
       [dt10, 0, 0]
     ]
@@ -254,6 +253,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
         context.conn
         |> post("/graphql", query_skeleton(query, "historicalBalance"))
         |> json_response(200)
+        |> IO.inspect(label: "256", limit: :infinity)
 
       historical_balance = result["data"]["historicalBalance"]
 
@@ -300,7 +300,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
                  "Can't fetch Historical Balances for selector #{inspect(selector)}"
       end)
 
-    assert log =~ "Can't find contract address of project with slug: someid1"
+    assert log =~ "Can't find contract address or infrastructure of project with slug: someid1"
   end
 
   test "historical balances when clickhouse returns error", context do

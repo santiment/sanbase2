@@ -5,8 +5,6 @@ defmodule SanbaseWeb.Graphql.ProjectApiEthSpentOverTimeTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
-  @eth_decimals 1_000_000_000_000_000_000
-
   setup do
     ticker = "TESTXYZ"
 
@@ -27,12 +25,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiEthSpentOverTimeTest do
       generate_datetimes(~U[2017-05-13T00:00:00Z], "1d", 6) |> Enum.map(&DateTime.to_unix/1)
 
     rows = [
-      [dt1, -500 * @eth_decimals],
-      [dt2, -1500 * @eth_decimals],
-      [dt3, -6000 * @eth_decimals],
+      [dt1, -500],
+      [dt2, -1500],
+      [dt3, -6000],
       [dt4, 0],
       [dt5, 0],
-      [dt6, -6500 * @eth_decimals]
+      [dt6, -6500]
     ]
 
     Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})

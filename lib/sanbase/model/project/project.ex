@@ -146,6 +146,24 @@ defmodule Sanbase.Model.Project do
 
   defdelegate twitter_handle(project), to: Project.TwitterData
 
+  def infrastructure_to_blockchain(infrastructure) do
+    case String.upcase(infrastructure) do
+      "ETH" -> "ethereum"
+      "BTC" -> "bitcoin"
+      "XRP" -> "ripple"
+      "BCH" -> "bitcoin-cash"
+      "LTC" -> "litecoin"
+      "BNB" -> "binance-coin"
+      _ -> nil
+    end
+  end
+
+  def slug_to_blockchain(slug) when is_binary(slug) do
+    with {:ok, _contract, _decimal, infrastructure} <- contract_info_infrastructure_by_slug(slug) do
+      infrastructure_to_blockchain(infrastructure)
+    end
+  end
+
   def coinmarketcap_id(%Project{source_slug_mappings: []}), do: nil
 
   def coinmarketcap_id(%Project{source_slug_mappings: [_ | _] = source_slug_mappings}) do

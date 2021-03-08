@@ -137,7 +137,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
 
     eth_spent_per_address =
       eth_addresses(projects)
-      |> Enum.chunk_every(10)
+      |> Enum.chunk_every(25)
       |> Sanbase.Parallel.map(&eth_spent(&1, from, to),
         map_type: :flat_map,
         max_concurrency: 8,

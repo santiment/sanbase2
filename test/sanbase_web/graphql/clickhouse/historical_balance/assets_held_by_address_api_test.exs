@@ -26,19 +26,19 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
   test "historical balances returns lists of results for ETH", context do
     %{conn: conn, eth_project: eth_project, p1: p1, p2: p2} = context
 
-    data_erc20 = [
+    data = [
       %{balance: -100.0, slug: p1.slug},
-      %{balance: 200.0, slug: p2.slug}
+      %{balance: 200.0, slug: p2.slug},
+      %{balance: 1000.0, slug: eth_project.slug}
     ]
 
-    data_eth = [%{balance: 1000.0, slug: eth_project.slug}]
-    data_metric = %{eth_project.slug => 1300}
+    ethereum_usd_price = 1300
 
-    Sanbase.Mock.prepare_mock2(&Erc20Balance.assets_held_by_address/1, {:ok, data_erc20})
-    |> Sanbase.Mock.prepare_mock2(&EthBalance.assets_held_by_address/1, {:ok, data_eth})
+    Sanbase.Mock.prepare_mock2(&Sanbase.Balance.assets_held_by_address/1, {:ok, data})
     |> Sanbase.Mock.prepare_mock2(
       &Sanbase.Metric.aggregated_timeseries_data/5,
-      {:ok, data_metric}
+      # Ethereum's price usd
+      {:ok, %{eth_project.slug => ethereum_usd_price}}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
       query = assets_held_by_address_query("0x123", "ETH")
@@ -58,7 +58,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
       assert %{
                "balance" => 1.0e3,
                "slug" => eth_project.slug,
-               "balanceUsd" => 1.0e3 * data_metric[eth_project.slug]
+               "balanceUsd" => 1.0e3 * ethereum_usd_price
              } in result
     end)
   end
@@ -66,34 +66,36 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
   test "historical balances returns lists of results for BTC", context do
     %{conn: conn, btc_project: btc_project} = context
 
+    bitcoin_usd_price = 30_000
     data_btc = [%{balance: 200.0, slug: btc_project.slug}]
-    data_metric = %{btc_project.slug => 30_000}
 
-    Sanbase.Mock.prepare_mock2(&BtcBalance.assets_held_by_address/1, {:ok, data_btc})
-    |> Sanbase.Mock.prepare_mock2(
-      &Sanbase.Metric.aggregated_timeseries_data/5,
-      {:ok, data_metric}
-    )
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      query = assets_held_by_address_query("0x123", "BTC")
+    data_metric =
+      Sanbase.Mock.prepare_mock2(&Sanbase.Balance.assets_held_by_address/1, {:ok, data_btc})
+      |> Sanbase.Mock.prepare_mock2(
+        &Sanbase.Metric.aggregated_timeseries_data/5,
+        # Bitcoin's price in usd
+        {:ok, %{btc_project.slug => bitcoin_usd_price}}
+      )
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        query = assets_held_by_address_query("0x123", "BTC")
 
-      result =
-        conn
-        |> post("/graphql", query_skeleton(query, "assetsHeldByAddress"))
-        |> json_response(200)
+        result =
+          conn
+          |> post("/graphql", query_skeleton(query, "assetsHeldByAddress"))
+          |> json_response(200)
 
-      assert result == %{
-               "data" => %{
-                 "assetsHeldByAddress" => [
-                   %{
-                     "balance" => 200.0,
-                     "slug" => btc_project.slug,
-                     "balanceUsd" => 200 * data_metric[btc_project.slug]
-                   }
-                 ]
+        assert result == %{
+                 "data" => %{
+                   "assetsHeldByAddress" => [
+                     %{
+                       "balance" => 200.0,
+                       "slug" => btc_project.slug,
+                       "balanceUsd" => 200.0 * bitcoin_usd_price
+                     }
+                   ]
+                 }
                }
-             }
-    end)
+      end)
   end
 
   test "historical balances results for BTC without timeseries data", context do
@@ -101,11 +103,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
 
     data_btc = [%{balance: 200.0, slug: btc_project.slug}]
 
-    Sanbase.Mock.prepare_mock2(&BtcBalance.assets_held_by_address/1, {:ok, data_btc})
-    |> Sanbase.Mock.prepare_mock2(
-      &Sanbase.Metric.aggregated_timeseries_data/5,
-      {:ok, %{}}
-    )
+    Sanbase.Mock.prepare_mock2(&Sanbase.Balance.assets_held_by_address/1, {:ok, data_btc})
+    |> Sanbase.Mock.prepare_mock2(&Sanbase.Metric.aggregated_timeseries_data/5, {:ok, %{}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       query = assets_held_by_address_query("0x123", "BTC")
 
@@ -129,12 +128,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
   end
 
   test "historical balances returns empty list", context do
-    with_mocks [
-      {Sanbase.Clickhouse.HistoricalBalance.Erc20Balance, [:passthrough],
-       assets_held_by_address: fn _ -> {:ok, []} end},
-      {Sanbase.Clickhouse.HistoricalBalance.EthBalance, [:passthrough],
-       assets_held_by_address: fn _ -> {:ok, []} end}
-    ] do
+    Sanbase.Mock.prepare_mock2(&Sanbase.Balance.assets_held_by_address/1, {:ok, []})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       address = "0x123"
 
       query = assets_held_by_address_query(address, "ETH")
@@ -145,7 +140,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
         |> json_response(200)
 
       assert result == %{"data" => %{"assetsHeldByAddress" => []}}
-    end
+    end)
   end
 
   test "one of the historical balances returns error", context do

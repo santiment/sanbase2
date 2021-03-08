@@ -21,8 +21,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
     XrpBalance
   }
 
-  @async_with_timeout 29_000
-
   @infrastructure_to_module %{
     "BCH" => BchBalance,
     "BNB" => BnbBalance,
@@ -110,6 +108,9 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   @spec historical_balance(selector, address, from :: DateTime.t(), to :: DateTime.t(), interval) ::
           __MODULE__.Behaviour.historical_balance_result()
   def historical_balance(selector, address, from, to, interval) do
+    IO.inspect(selector, label: "SELECTOR")
+    IO.inspect(selector_to_args(selector), label: "selector_to_args(selector)")
+
     case selector_to_args(selector) do
       %{blockchain: blockchain, slug: slug} when blockchain in ["ethereum", "bitcoin"] ->
         Sanbase.Balance.historical_balance(address, slug, from, to, interval)
@@ -156,7 +157,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
       asset: String.downcase(contract),
       contract: String.downcase(contract),
       blockchain: Project.infrastructure_to_blockchain("ETH"),
-      slug: nil,
+      slug: Map.get(selector, :slug),
       decimals: decimals
     }
   end
@@ -269,8 +270,10 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   end
 
   def selector_to_args(%{slug: slug} = selector) when not is_nil(slug) do
-    with %{infrastructure: infrastructure} = map <- get_project_details(%{slug: slug}) do
-      %{original_selector: selector} |> Map.merge(map)
+    with %{infrastructure: _} = map <- get_project_details(%{slug: slug}) do
+      require IEx
+      IEx.pry()
+      %{original_selector: selector} |> Map.merge(map) |> selector_to_args()
     else
       {:error, {:missing_contract, _}} ->
         {:error,
@@ -285,7 +288,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
   def selector_to_args(selector) do
     original_selector = Map.get(selector, :original_selector) || selector
-    {:error, "Invalid historical balance selector: #{inspect(selector)}"}
+    {:error, "Invalid historical balance selector: #{inspect(original_selector)}"}
   end
 
   defp get_project_details(%{contract: _, decimals: _, slug: _, infrastructure: _} = data) do

@@ -8,7 +8,7 @@ defmodule Sanbase.Alert.WalletTriggerHistoryTest do
   alias Sanbase.Clickhouse.HistoricalBalance
 
   setup do
-    Sanbase.Alert.Evaluator.Cache.clear_all()
+    Sanbase.Cache.clear_all(:alerts_evaluator_cache)
 
     project = Sanbase.Factory.insert(:random_erc20_project)
 

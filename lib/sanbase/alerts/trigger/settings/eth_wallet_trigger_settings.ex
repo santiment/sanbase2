@@ -14,13 +14,12 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
   import Sanbase.Validation
   import Sanbase.Alert.Validation
   import Sanbase.Alert.OperationEvaluation
-  import Sanbase.DateTimeUtils, only: [str_to_sec: 1, round_datetime: 1]
+  import Sanbase.DateTimeUtils, only: [str_to_sec: 1, round_datetime: 2]
 
   alias __MODULE__
   alias Sanbase.Alert.Type
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.HistoricalBalance
-  alias Sanbase.Alert.Evaluator.Cache
 
   @trigger_type "eth_wallet"
   @derive {Jason.Encoder, except: [:filtered_target, :triggered?, :payload, :template_kv]}
@@ -74,7 +73,7 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
     target_list
     |> Enum.map(fn addr ->
       case balance_change(addr, settings.asset.slug, from, to) do
-        [%{address: ^addr} = result] ->
+        {:ok, [%{address: ^addr} = result]} ->
           {addr, from,
            %{
              balance_start: result.balance_start,
@@ -98,7 +97,7 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
     |> Enum.map(fn %Project{} = project ->
       {:ok, eth_addresses} = Project.eth_addresses(project)
 
-      project_balance_data =
+      {:ok, project_balance_data} =
         eth_addresses
         |> Enum.map(&String.downcase/1)
         |> balance_change(settings.asset.slug, from, to)
@@ -125,21 +124,18 @@ defmodule Sanbase.Alert.Trigger.EthWalletTriggerSettings do
 
   defp balance_change(addresses, slug, from, to) do
     cache_key =
-      {:balance_change, addresses, slug, round_datetime(from), round_datetime(to)}
+      {:balance_change, addresses, slug, round_datetime(from, second: 60),
+       round_datetime(to, second: 60)}
       |> Sanbase.Cache.hash()
 
-    Cache.get_or_store(
-      cache_key,
-      fn ->
-        selector = %{infrastructure: "ETH", slug: slug}
+    Sanbase.Cache.get_or_store(:alerts_evaluator_cache, cache_key, fn ->
+      selector = %{infrastructure: "ETH", slug: slug}
 
-        HistoricalBalance.balance_change(selector, addresses, from, to)
-        |> case do
-          {:ok, result} -> result
-          _ -> []
-        end
+      case HistoricalBalance.balance_change(selector, addresses, from, to) do
+        {:ok, result} -> {:ok, result}
+        _ -> {:ok, []}
       end
-    )
+    end)
   end
 
   defimpl Sanbase.Alert.Settings, for: EthWalletTriggerSettings do

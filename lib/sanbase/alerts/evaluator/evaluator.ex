@@ -8,7 +8,7 @@ defmodule Sanbase.Alert.Evaluator do
   (email or telegram), name and description of the alert, etc. are ignored
   """
 
-  alias Sanbase.Alert.Evaluator.Cache
+  alias Sanbase.Cache
   alias Sanbase.Alert.{UserTrigger, Trigger}
 
   require Logger
@@ -38,14 +38,15 @@ defmodule Sanbase.Alert.Evaluator do
   end
 
   defp evaluate(%UserTrigger{trigger: trigger} = user_trigger) do
-    %{cooldown: cd, last_triggered: lt} = trigger
+    %{cooldown: cooldown, last_triggered: last_triggered} = trigger
 
     # Along with the trigger settings (the `cache_key`) take into account also
     # the last triggered datetime and cooldown. This is done because an alert
     # can only be fired if it did not fire in the past `cooldown` intereval of time
     evaluated_trigger =
       Cache.get_or_store(
-        {Trigger.cache_key(trigger), {lt, cd}},
+        :alerts_evaluator_cache,
+        {Trigger.cache_key(trigger), {last_triggered, cooldown}},
         fn -> Trigger.evaluate(trigger) end
       )
 

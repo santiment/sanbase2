@@ -13,7 +13,7 @@ defmodule Sanbase.Alert.TriggerTrendingWordsSendAtPredefiendTimeTest do
   @moduletag capture_log: true
 
   setup do
-    Sanbase.Alert.Evaluator.Cache.clear_all()
+    Sanbase.Cache.clear_all(:alerts_evaluator_cache)
 
     user = insert(:user, user_settings: %{settings: %{alert_notify_telegram: true}})
     Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
@@ -92,7 +92,7 @@ defmodule Sanbase.Alert.TriggerTrendingWordsSendAtPredefiendTimeTest do
       payload = user_signal.payload |> Map.values() |> List.first()
       assert String.contains?(payload, "coinbase")
 
-      Sanbase.Alert.Evaluator.Cache.clear_all()
+      Sanbase.Cache.clear_all(:alerts_evaluator_cache)
 
       assert capture_log(fn ->
                Sanbase.Alert.Scheduler.run_alert(TrendingWordsTriggerSettings)

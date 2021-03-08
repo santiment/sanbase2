@@ -11,7 +11,7 @@ defmodule Sanbase.Alert.TriggerTrendingWordsWatchlistTargetTest do
   alias Sanbase.Alert.Trigger.TrendingWordsTriggerSettings
 
   setup do
-    Sanbase.Alert.Evaluator.Cache.clear_all()
+    Sanbase.Cache.clear_all(:alerts_evaluator_cache)
 
     user = insert(:user, user_settings: %{settings: %{alert_notify_telegram: true}})
     Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)

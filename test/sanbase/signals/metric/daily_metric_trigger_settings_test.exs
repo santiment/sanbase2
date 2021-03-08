@@ -28,7 +28,7 @@ defmodule Sanbase.Alert.DailyMetricTriggerSettingsTest do
     # Clean children on exit, otherwise DB calls from async tasks can be attempted
     clean_task_supervisor_children()
 
-    Sanbase.Alert.Evaluator.Cache.clear_all()
+    Sanbase.Cache.clear_all(:alerts_evaluator_cache)
 
     user = insert(:user)
     Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)

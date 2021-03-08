@@ -62,6 +62,9 @@ defmodule Sanbase.Cache do
   @impl Sanbase.Cache.Behaviour
   def get_or_store(cache \\ @cache_name, key, func)
 
+  def get_or_store(_cache, :nocache, func), do: func.()
+  def get_or_store(_cache, {:nocache, _}, func), do: func.()
+
   def get_or_store(cache, key, func) do
     true_key = true_key(key)
 

@@ -8,7 +8,7 @@ defmodule Sanbase.Alert.PriceVolumeDiffHistoryTest do
   @moduletag capture_log: true
 
   setup do
-    Sanbase.Alert.Evaluator.Cache.clear_all()
+    Sanbase.Cache.clear_all(:alerts_evaluator_cache)
 
     project =
       insert(:project, %{

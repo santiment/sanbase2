@@ -1,9 +1,8 @@
 defmodule SanbaseWeb.CommentModerationController do
+  @resource "comments"
   use ExAdmin.Web, :resource_controller
 
   require Logger
-
-  @resource "comments"
 
   def anonymize_comment(conn, _defn, %{id: comment_id}) do
     resource = conn.assigns.resource

@@ -7,7 +7,7 @@ defmodule Sanbase.Alert.TriggerPayloadTest do
   alias Sanbase.Alert.Trigger.MetricTriggerSettings
 
   setup do
-    Sanbase.Alert.Evaluator.Cache.clear_all()
+    Sanbase.Cache.clear_all(:alerts_evaluator_cache)
 
     user =
       insert(:user,

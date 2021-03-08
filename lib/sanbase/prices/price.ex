@@ -12,7 +12,6 @@ defmodule Sanbase.Price do
   alias Sanbase.Model.Project
   alias Sanbase.ClickhouseRepo
 
-  @async_with_timeout 29_000
   @default_source "coinmarketcap"
   @metrics [:price_usd, :price_btc, :marketcap_usd, :volume_usd]
   @metrics @metrics ++ Enum.map(@metrics, &Atom.to_string/1)

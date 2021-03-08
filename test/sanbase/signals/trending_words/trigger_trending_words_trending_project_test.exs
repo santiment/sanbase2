@@ -11,7 +11,7 @@ defmodule Sanbase.Alert.TriggerTrendingWordsTrendingProjectTest do
   alias Sanbase.Alert.Trigger.TrendingWordsTriggerSettings
 
   setup do
-    Sanbase.Alert.Evaluator.Cache.clear_all()
+    Sanbase.Cache.clear_all(:alerts_evaluator_cache)
 
     user = insert(:user, user_settings: %{settings: %{alert_notify_telegram: true}})
     project = insert(:project)
@@ -73,7 +73,7 @@ defmodule Sanbase.Alert.TriggerTrendingWordsTrendingProjectTest do
              end) =~
                "In total 1/1 trending_words alerts were sent successfully"
 
-      Sanbase.Alert.Evaluator.Cache.clear_all()
+      Sanbase.Cache.clear_all(:alerts_evaluator_cache)
 
       assert capture_log(fn ->
                Sanbase.Alert.Scheduler.run_alert(TrendingWordsTriggerSettings)

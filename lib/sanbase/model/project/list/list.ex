@@ -209,9 +209,9 @@ defmodule Sanbase.Model.Project.List do
 
   See the "Shared options" section at the module documentation for more options.
   """
-  def project_slugs_with_organization(opts \\ [])
+  def slugs_with_github_organization(opts \\ [])
 
-  def project_slugs_with_organization(opts) do
+  def slugs_with_github_organization(opts) do
     # explicitly remove preloads as they are not going to be used
     opts = Keyword.put(opts, :preload?, false)
 
@@ -220,6 +220,24 @@ defmodule Sanbase.Model.Project.List do
     |> select([p], p.slug)
     |> distinct(true)
     |> Repo.all()
+  end
+
+  def github_organizations_by_slug(slug_or_slugs, opts \\ [])
+
+  def github_organizations_by_slug(slug_or_slugs, opts) do
+    slugs = List.wrap(slug_or_slugs)
+    opts = Keyword.put(opts, :preload?, false)
+
+    projects_query(opts)
+    |> where([p], p.slug in ^slugs)
+    |> join(:left, [p], gl in Project.GithubOrganization, on: p.id == gl.project_id)
+    |> select([p, gl], {p.slug, gl.organization})
+    |> distinct(true)
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn
+      {slug, nil}, acc -> Map.update(acc, slug, [], & &1)
+      {slug, org}, acc -> Map.update(acc, slug, [org], &[org | &1])
+    end)
   end
 
   @doc ~s"""

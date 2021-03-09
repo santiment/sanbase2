@@ -40,12 +40,15 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   def complexity_weight(_), do: @default_complexity_weight
 
   @impl Sanbase.Metric.Behaviour
-  def timeseries_data(metric, %{slug: slug}, from, to, interval, _opts) do
-    case Project.github_organizations(slug) do
-      {:ok, []} ->
+  def timeseries_data(metric, %{slug: slug_or_slugs}, from, to, interval, _opts) do
+    case Project.List.github_organizations_by_slug(slug_or_slugs) do
+      %{} = empty_map when map_size(empty_map) == 0 ->
+        IO.inspect("XAåå HENLO")
         {:ok, []}
 
-      {:ok, organizations} ->
+      %{} = organizations_map ->
+        organizations = Map.values(organizations_map) |> List.flatten()
+
         apply(
           Github,
           Map.get(@timeseries_metrics_function_mapping, metric),
@@ -97,7 +100,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def first_datetime(_metric, %{slug: slug}) do
+  def first_datetime(_metric, %{slug: slug}) when is_binary(slug) do
     case Project.github_organizations(slug) do
       {:ok, []} ->
         {:ok, nil}
@@ -122,7 +125,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
-  def last_datetime_computed_at(_metric, %{slug: slug}) do
+  def last_datetime_computed_at(_metric, %{slug: slug}) when is_binary(slug) do
     case Project.github_organizations(slug) do
       {:ok, []} ->
         {:ok, nil}
@@ -193,7 +196,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   def available_metrics(), do: @metrics
 
   @impl Sanbase.Metric.Behaviour
-  def available_metrics(%{slug: slug}) do
+  def available_metrics(%{slug: slug}) when is_binary(slug) do
     case Project.github_organizations(slug) do
       {:ok, []} ->
         {:ok, []}
@@ -211,7 +214,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
     # Providing a 2 element tuple `{any, integer}` will use that second element
     # as TTL for the cache key
     Sanbase.Cache.get_or_store({:slugs_with_github_org, 1800}, fn ->
-      {:ok, Project.List.project_slugs_with_organization()}
+      {:ok, Project.List.slugs_with_github_organization()}
     end)
   end
 

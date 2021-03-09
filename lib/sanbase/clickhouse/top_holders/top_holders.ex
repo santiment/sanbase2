@@ -8,6 +8,8 @@ defmodule Sanbase.Clickhouse.TopHolders do
   alias Sanbase.ClickhouseRepo
   alias Sanbase.Clickhouse.Label
 
+  @table "eth_top_holders_daily_union"
+
   @type percent_of_total_supply :: %{
           datetime: DateTime.t(),
           in_exchanges: number(),
@@ -133,19 +135,22 @@ defmodule Sanbase.Clickhouse.TopHolders do
           value / (valueTotal / pow(10, ?3)), 0) AS partOfTotal
         FROM (
           SELECT *
-          FROM eth_top_holders
-          PREWHERE (contract = ?2)
-            AND (address NOT IN ('TOTAL', 'freeze'))
-            AND ((dt >= toStartOfDay(toDateTime(?4)))
-            AND (dt <= toStartOfDay(toDateTime(?5))))
+          FROM #{@table} FINAL
+          WHERE
+            contract = ?2
+            AND rank > 0
+            AND address NOT IN ('TOTAL', 'freeze')
+            AND dt >= toStartOfDay(toDateTime(?4))
+            AND dt <= toStartOfDay(toDateTime(?5))
         )
         GLOBAL ANY LEFT JOIN (
           SELECT
             dt,
             sum(value) AS valueTotal
-          FROM eth_top_holders
-          PREWHERE (contract = ?2)
-            AND (address IN ('TOTAL','freeze'))
+          FROM #{@table} FINAL
+          WHERE
+            contract = ?2
+            AND address IN ('TOTAL','freeze') AND rank < 0
             AND dt >= toStartOfDay(toDateTime(?4))
             AND dt <= toStartOfDay(toDateTime(?5))
           GROUP BY dt
@@ -229,21 +234,25 @@ defmodule Sanbase.Clickhouse.TopHolders do
             FROM
             (
               SELECT *
-              FROM eth_top_holders
-              PREWHERE (contract = ?2) AND
-                (rank <= ?3) AND
-                ((dt >= toStartOfDay(toDateTime(?4))) AND
-                (dt <= toStartOfDay(toDateTime(?5))))
+              FROM #{@table}
+              WHERE
+                contract = ?2 AND
+                rank > 0 AND
+                rank <= ?3 AND
+                dt >= toStartOfDay(toDateTime(?4)) AND
+                dt <= toStartOfDay(toDateTime(?5))
             )
             GLOBAL ANY LEFT JOIN
             (
               SELECT
                 dt,
                 sum(value) AS valueTotal
-              FROM eth_top_holders
-              PREWHERE (contract = ?2) AND
-               (address IN ('TOTAL', 'freeze')) AND
-               ((dt >= toStartOfDay(toDateTime(?4))) AND (dt <= toStartOfDay(toDateTime(?5))))
+              FROM #{@table}
+              WHERE
+                contract = ?2 AND
+                address IN ('TOTAL', 'freeze') AND rank < 0 AND
+                dt >= toStartOfDay(toDateTime(?4)) AND
+                dt <= toStartOfDay(toDateTime(?5))
               GROUP BY dt
             ) USING (dt)
           )

@@ -223,6 +223,7 @@ defmodule Sanbase.Billing.Subscription do
     end)
     |> Enum.each(fn [first | rest] ->
       Enum.each(rest, fn {_, stripe_id, _, _, _} ->
+        Logger.info("Delete duplicate subscription: #{stripe_id}")
         StripeApi.delete_subscription(stripe_id)
       end)
     end)

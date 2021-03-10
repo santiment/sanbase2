@@ -20,6 +20,8 @@ config :sanbase, SanbaseWeb.Endpoint,
       "--mode",
       "development",
       "--watch-stdin",
+      "--display",
+      "errors-only",
       cd: Path.expand("../assets", __DIR__)
     ]
   ]

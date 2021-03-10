@@ -19,15 +19,9 @@ defmodule Sanbase.Application.Web do
       {Absinthe.Subscription, SanbaseWeb.Endpoint},
 
       # Start the graphQL in-memory cache
-      Supervisor.child_spec(
-        {ConCache,
-         [
-           name: :graphql_cache,
-           ttl_check_interval: :timer.seconds(30),
-           global_ttl: :timer.minutes(5),
-           acquire_lock_timeout: 30_000
-         ]},
-        id: :api_cache
+      SanbaseWeb.Graphql.Cache.child_spec(
+        id: :graphql_api_cache,
+        name: :graphql_cache
       ),
 
       # Time sereies Twitter DB connection
@@ -35,6 +29,7 @@ defmodule Sanbase.Application.Web do
 
       # Rehydrating cache
       Sanbase.Cache.RehydratingCache.Supervisor,
+
       # Transform a list of transactions into a list of transactions
       # where addresses are marked whether or not they are an exchange address
       Sanbase.Clickhouse.MarkExchanges,
@@ -50,7 +45,12 @@ defmodule Sanbase.Application.Web do
       )
     ]
 
-    opts = [strategy: :one_for_one, name: Sanbase.WebSupervisor, max_restarts: 5, max_seconds: 1]
+    opts = [
+      name: Sanbase.WebSupervisor,
+      strategy: :one_for_one,
+      max_restarts: 5,
+      max_seconds: 1
+    ]
 
     {children, opts}
   end

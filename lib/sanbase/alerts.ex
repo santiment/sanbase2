@@ -19,16 +19,14 @@ defmodule Sanbase.Application.Alerts do
       ),
 
       # Start the alert evaluator cache
-      Supervisor.child_spec(
-        {ConCache,
-         [
-           name: :alerts_evaluator_cache,
-           ttl_check_interval: :timer.minutes(1),
-           global_ttl: :timer.minutes(3),
-           acquire_lock_timeout: 120_000
-         ]},
-        id: :alerts_evaluator_cache
-      ),
+      {Sanbase.Cache,
+       [
+         id: :alerts_evaluator_cache,
+         name: :alerts_evaluator_cache,
+         ttl_check_interval: :timer.minutes(1),
+         global_ttl: :timer.minutes(3),
+         acquire_lock_timeout: 120_000
+       ]},
 
       # Quantum Scheduler
       start_if(
@@ -38,8 +36,8 @@ defmodule Sanbase.Application.Alerts do
     ]
 
     opts = [
-      strategy: :one_for_one,
       name: Sanbase.AlertsSupervisor,
+      strategy: :one_for_one,
       max_restarts: 5,
       max_seconds: 1
     ]

@@ -5,6 +5,19 @@ defmodule Sanbase.Cache do
 
   @compile {:inline, get_or_store_isolated: 4}
 
+  def child_spec(opts) do
+    Supervisor.child_spec(
+      {ConCache,
+       [
+         name: Keyword.fetch!(opts, :name),
+         ttl_check_interval: Keyword.get(opts, :ttl_check_interval, :timer.seconds(30)),
+         global_ttl: Keyword.get(opts, :global_ttl, :timer.minutes(5)),
+         acquire_lock_timeout: Keyword.get(opts, :aquire_lock_timeout, 30_000)
+       ]},
+      id: Keyword.fetch!(opts, :id)
+    )
+  end
+
   def hash(data) do
     :crypto.hash(:sha256, data |> :erlang.term_to_binary())
     |> Base.encode64()

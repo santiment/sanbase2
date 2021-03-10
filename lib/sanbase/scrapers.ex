@@ -1,6 +1,7 @@
 defmodule Sanbase.Application.Scrapers do
   import Sanbase.ApplicationUtils
 
+  alias Sanbase.ExternalServices.RateLimiting
   def init(), do: :ok
 
   @doc ~s"""
@@ -17,7 +18,7 @@ defmodule Sanbase.Application.Scrapers do
       Sanbase.Twitter.Store.child_spec(),
 
       # Etherscan rate limiter
-      Sanbase.ExternalServices.RateLimiting.Server.child_spec(
+      RateLimiting.Server.child_spec(
         :etherscan_rate_limiter,
         scale: 1000,
         limit: 5,
@@ -25,7 +26,7 @@ defmodule Sanbase.Application.Scrapers do
       ),
 
       # Coinmarketcap graph data rate limiter
-      Sanbase.ExternalServices.RateLimiting.Server.child_spec(
+      RateLimiting.Server.child_spec(
         :graph_coinmarketcap_rate_limiter,
         scale: 60_000,
         limit: 60,
@@ -33,7 +34,7 @@ defmodule Sanbase.Application.Scrapers do
       ),
 
       # Coinmarketcap api rate limiter
-      Sanbase.ExternalServices.RateLimiting.Server.child_spec(
+      RateLimiting.Server.child_spec(
         :api_coinmarketcap_rate_limiter,
         scale: 60_000,
         limit: 5,
@@ -41,7 +42,7 @@ defmodule Sanbase.Application.Scrapers do
       ),
 
       # Coinmarketcap http rate limiter
-      Sanbase.ExternalServices.RateLimiting.Server.child_spec(
+      RateLimiting.Server.child_spec(
         :http_coinmarketcap_rate_limiter,
         scale: 60_000,
         limit: 30,
@@ -49,7 +50,7 @@ defmodule Sanbase.Application.Scrapers do
       ),
 
       # Twitter API rate limiter
-      Sanbase.ExternalServices.RateLimiting.Server.child_spec(
+      RateLimiting.Server.child_spec(
         :twitter_api_rate_limiter,
         scale: 60 * 15 * 1000,
         limit: 450,
@@ -73,8 +74,8 @@ defmodule Sanbase.Application.Scrapers do
     ]
 
     opts = [
-      strategy: :one_for_one,
       name: Sanbase.ScrapersSupervisor,
+      strategy: :one_for_one,
       max_restarts: 5,
       max_seconds: 1
     ]

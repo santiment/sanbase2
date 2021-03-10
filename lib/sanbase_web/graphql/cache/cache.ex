@@ -28,6 +28,8 @@ defmodule SanbaseWeb.Graphql.Cache do
             convert_values: 2,
             generate_additional_args: 1}
 
+  def child_spec(opts), do: Sanbase.Cache.child_spec(opts)
+
   @doc ~s"""
   Macro that's used instead of Absinthe's `resolve`. This resolver can perform
   the following operations:

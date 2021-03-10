@@ -56,6 +56,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :fetch_user_lists,
           :fetch_watchlists,
           :get_access_restrictions,
+          :get_available_blockchains,
           :get_signal,
           :get_available_signals,
           :get_available_metrics,

@@ -5,7 +5,6 @@ defmodule Sanbase.Billing.Subscription.Stats do
   alias Sanbase.Billing.Subscription
   alias Sanbase.Billing.Subscription.Query
   alias Sanbase.Repo
-  alias Sanbase.StripeApi
 
   def user_active_subscriptions_map() do
     Subscription

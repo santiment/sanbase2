@@ -9,7 +9,7 @@ defmodule Sanbase.Billing.Subscription do
   import Ecto.Changeset
 
   alias Sanbase.Billing
-  alias Sanbase.Billing.Plan
+  alias Sanbase.Billing.{Plan, Product}
   alias Sanbase.Billing.Subscription.{SignUpTrial, Query}
 
   alias Sanbase.Accounts.User
@@ -23,7 +23,7 @@ defmodule Sanbase.Billing.Subscription do
   Current subscription attempt failed.
   Please, contact administrator of the site for more information.
   """
-  @free_trial_plans Plan.Metadata.free_trial_plans()
+  @product_sanbase Product.product_sanbase()
   @sanbase_basic_plan_id 205
   @preload_fields [:user, plan: [:product]]
 
@@ -121,7 +121,7 @@ defmodule Sanbase.Billing.Subscription do
          {:ok, db_subscription} <- create_subscription_db(stripe_subscription, user, plan),
          {:ok, _} <- Sanbase.ApiCallLimit.update_user_plan(user) do
       # Remove sign up trial if exists.
-      plan.id in @free_trial_plans && SignUpTrial.remove_sign_up_trial(user)
+      plan.product_id == @product_sanbase && SignUpTrial.remove_sign_up_trial(user)
 
       {:ok, default_preload(db_subscription, force: true)}
     end
@@ -213,6 +213,19 @@ defmodule Sanbase.Billing.Subscription do
   def sync_subscription_with_stripe(stripe_subscription, db_subscription) do
     plan_id = fetch_plan_id(db_subscription, stripe_subscription)
     update_local_subsciption(db_subscription, stripe_subscription, plan_id)
+  end
+
+  # Leave first active subscription and remove rest
+  def remove_duplicate_subscriptions() do
+    __MODULE__.Stats.duplicate_sanbase_subscriptions()
+    |> Enum.filter(fn subs ->
+      subs |> List.first() |> elem(3) == :active
+    end)
+    |> Enum.each(fn [first | rest] ->
+      Enum.each(rest, fn {_, stripe_id, _, _, _} ->
+        StripeApi.delete_subscription(stripe_id)
+      end)
+    end)
   end
 
   @doc """
@@ -312,7 +325,8 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
-  defp subscription_defaults(user, %Plan{id: plan_id} = plan) when plan_id in @free_trial_plans do
+  defp subscription_defaults(user, %Plan{product_id: product_id} = plan)
+       when product_id == @product_sanbase do
     defaults = %{
       customer: user.stripe_customer_id,
       items: [%{plan: plan.stripe_id}]

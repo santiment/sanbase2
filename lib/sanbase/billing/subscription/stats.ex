@@ -1,8 +1,11 @@
 defmodule Sanbase.Billing.Subscription.Stats do
+  import Ecto.Query
+
   alias Sanbase.Billing.Plan
   alias Sanbase.Billing.Subscription
   alias Sanbase.Billing.Subscription.Query
   alias Sanbase.Repo
+  alias Sanbase.StripeApi
 
   def user_active_subscriptions_map() do
     Subscription
@@ -21,6 +24,33 @@ defmodule Sanbase.Billing.Subscription.Stats do
         user_id,
         Enum.map(products, & &1.product) |> Enum.join(", ")
       }
+    end)
+  end
+
+  def duplicate_sanbase_subscriptions() do
+    from(
+      s in Subscription,
+      join: p in Plan,
+      on: s.plan_id == p.id,
+      where:
+        p.product_id == 2 and s.status in ["active", "trialing", "past_due"] and
+          not is_nil(s.stripe_id),
+      group_by: [s.user_id, p.product_id],
+      having: count(s.id) >= 2,
+      select: {s.user_id, count(s.id)}
+    )
+    |> Repo.all()
+    |> Enum.map(fn {user_id, _} ->
+      from(s in Subscription,
+        join: p in Plan,
+        on: s.plan_id == p.id,
+        where:
+          s.user_id == ^user_id and p.product_id == 2 and
+            s.status in ["active", "trialing", "past_due"] and not is_nil(s.stripe_id),
+        select: {s.id, s.stripe_id, s.plan_id, s.status, s.inserted_at},
+        order_by: [desc: s.inserted_at]
+      )
+      |> Repo.all()
     end)
   end
 end

@@ -492,6 +492,16 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def plan_pro_sanbase_yearly_factory() do
+    %Plan{
+      id: 202,
+      name: "PRO",
+      amount: 52900,
+      currency: "USD",
+      interval: "year"
+    }
+  end
+
   def plan_pro_plus_sanbase_factory() do
     %Plan{
       id: 203,

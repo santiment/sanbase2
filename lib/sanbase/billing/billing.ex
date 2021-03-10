@@ -18,6 +18,7 @@ defmodule Sanbase.Billing do
   defdelegate renew_cancelled_subscription(subscription), to: Subscription
 
   defdelegate sync_stripe_subscriptions, to: Subscription
+  defdelegate remove_duplicate_subscriptions, to: Subscription
 
   # SignUpTrial
   defdelegate create_trial_subscription(user_id), to: SignUpTrial

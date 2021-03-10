@@ -38,6 +38,13 @@ defmodule Sanbase.KafkaExporter do
     GenServer.start_link(__MODULE__, opts, name: name)
   end
 
+  def child_spec(opts) do
+    %{
+      id: Keyword.fetch!(opts, :id),
+      start: {__MODULE__, :start_link, [opts]}
+    }
+  end
+
   @spec init(options) :: {:ok, state} when state: map()
   def init(opts) do
     kafka_flush_timeout = Keyword.get(opts, :kafka_flush_timeout, 30_000)

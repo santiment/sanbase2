@@ -6,63 +6,37 @@ defmodule Sanbase.Application do
   require Logger
   require Sanbase.Utils.Config, as: Config
 
-  # See https://hexdocs.pm/elixir/Application.html
-  # for more information on OTP Applications
   def start(_type, _args) do
-    if Code.ensure_loaded?(Envy) do
-      Envy.auto_load()
-    end
+    Code.ensure_loaded?(Envy) && Envy.auto_load()
 
+    # Container type is one of: web, scrapers, signals, all
     container_type = System.get_env("CONTAINER_TYPE") || "all"
 
+    print_starting_log(container_type)
+
+    # Do some initialization. This includes increasing the backtrace depth,
+    # setting up some monitoring instruments, etc.
     init(container_type)
 
-    {children, opts} =
-      case container_type do
-        "web" ->
-          Logger.info("Starting Web Sanbase.")
-          Sanbase.Application.Web.children()
+    # Get the proper children that have to be started in the current container type
+    {children, opts} = children_opts(container_type)
 
-        "scrapers" ->
-          Logger.info("Starting Scrapers Sanbase.")
-          Sanbase.Application.Scrapers.children()
+    # Some of the children must be expliclitly started before others. Because the
+    # container type `all` is a combination of all other container types, we need to
+    # additionally prepend these children, otherwise they can end up in the middle
+    # of the list
+    prepended_children = prepended_children(container_type)
 
-        alerts when alerts in ["signals", "alerts"] ->
-          Logger.info("Starting Alerts Sanbase.")
-          Sanbase.Application.Alerts.children()
+    # This list contains all children that are common to all container types. These
+    # include some Ecto adapters, Telemetry, Phoenix Endpoint, etc.
+    common_children = common_children()
 
-        "all" ->
-          Logger.info("Start all Sanbase container types.")
-          {web_children, _} = Sanbase.Application.Web.children()
-          {scrapers_children, _} = Sanbase.Application.Scrapers.children()
-          {alerts_children, _} = Sanbase.Application.Alerts.children()
-
-          children = web_children ++ scrapers_children ++ alerts_children
-          children = children |> Enum.uniq()
-
-          opts = [
-            strategy: :one_for_one,
-            name: Sanbase.Supervisor,
-            max_restarts: 5,
-            max_seconds: 1
-          ]
-
-          {children, opts}
-
-        unknown_type ->
-          Logger.warn(
-            "Unkwnown container type provided - #{inspect(unknown_type)}. Will start a default web container."
-          )
-
-          Logger.info("Starting Web Sanbase.")
-          Sanbase.Application.Web.children()
-      end
-
-    prepended_children =
-      prepended_children(container_type) ++ prepend_api_call_exporter_children(container_type)
-
+    # Combine all the children to be started. Run a normalization. This normalization
+    # takes care of the results of some custom `start_in` and `start_if` custom cases.
+    # They might return `nil` to signal that they don't have to be started and these
+    # values need to be cleaned.
     children =
-      (prepended_children ++ common_children() ++ children)
+      (prepended_children ++ common_children ++ children)
       |> Sanbase.ApplicationUtils.normalize_children()
       |> Enum.uniq()
 
@@ -71,10 +45,7 @@ defmodule Sanbase.Application do
     Supervisor.start_link(children, opts)
   end
 
-  @spec init(String.t()) :: :ok | [any()]
   def init(container_type) do
-    # Common inits
-
     # Increase the backtrace depth here and not in the phoenix config
     # so it applies to all non-phoenix work, too
     :erlang.system_flag(:backtrace_depth, 20)
@@ -107,52 +78,97 @@ defmodule Sanbase.Application do
     end
   end
 
+  def print_starting_log(container_type) do
+    case container_type do
+      "all" ->
+        Logger.info("Starting all Sanbase container types.")
+
+      "web" ->
+        Logger.info("Starting Web Sanbase.")
+
+      "scraper" ->
+        Logger.info("Starting Alerts Sanbase.")
+
+      type when type in ["alerts", "signal"] ->
+        Logger.info("Starting Scrapers Sanbase.")
+
+      unknown ->
+        Logger.warn("Unkwnown type #{inspect(unknown)}. Starting a default web container.")
+        Logger.info("Starting Web Sanbase.")
+    end
+  end
+
+  def children_opts(container_type) do
+    case container_type do
+      "all" ->
+        {web_children, _} = Sanbase.Application.Web.children()
+        {scrapers_children, _} = Sanbase.Application.Scrapers.children()
+        {alerts_children, _} = Sanbase.Application.Alerts.children()
+
+        children = web_children ++ scrapers_children ++ alerts_children
+        children = children |> Enum.uniq()
+
+        opts = [
+          strategy: :one_for_one,
+          name: Sanbase.Supervisor,
+          max_restarts: 5,
+          max_seconds: 1
+        ]
+
+        {children, opts}
+
+      "web" ->
+        Sanbase.Application.Web.children()
+
+      "scrapers" ->
+        Sanbase.Application.Scrapers.children()
+
+      type when type in ["alerts", "signals"] ->
+        Sanbase.Application.Alerts.children()
+
+      _unknown ->
+        Sanbase.Application.Web.children()
+    end
+  end
+
   @doc ~s"""
-  Some services must be started before all others
+  Some services must be started before all others. This should be a separate step
+  as the `all` containers type will merge all the different children and some that
+  must be in the front will end up in the middle.
   """
-  def prepended_children(container_type) when container_type in ["all", "scrapers"] do
+  def prepended_children(container_type) do
     [
-      # Start the Kafka Exporter
       {SanExporterEx,
        [
          kafka_producer_module: kafka_producer_supervisor_module(),
          kafka_endpoint: kafka_endpoint()
        ]},
-      Supervisor.child_spec(
-        {Sanbase.KafkaExporter,
-         [
-           name: :prices_exporter,
-           topic: kafka_prices_data_topic(),
-           buffering_max_messages: 10_000,
-           can_send_after_interval: 200
-         ]},
-        id: :prices_exporter
+      start_if(
+        fn ->
+          Sanbase.KafkaExporter.child_spec(
+            id: :api_call_exporter,
+            name: :api_call_exporter,
+            topic: kafka_api_call_data_topic()
+          )
+        end,
+        fn -> container_type in ["web", "all"] end
+      ),
+      start_if(
+        fn ->
+          Sanbase.KafkaExporter.child_spec(
+            id: :prices_exporter,
+            name: :prices_exporter,
+            topic: kafka_prices_data_topic(),
+            buffering_max_messages: 10_000,
+            can_send_after_interval: 250
+          )
+        end,
+        fn ->
+          container_type in ["all", "scrapers"]
+        end
       )
     ]
   end
-
-  def prepended_children(_), do: []
-
-  def prepend_api_call_exporter_children(container_type) when container_type in ["web", "all"] do
-    [
-      # Start the Kafka Exporter
-      {SanExporterEx,
-       [
-         kafka_producer_module: kafka_producer_supervisor_module(),
-         kafka_endpoint: kafka_endpoint()
-       ]},
-
-      # Start the API Call Data Exporter. Must be started before the Endpoint
-      # so it will be terminated after the Endpoint so no API Calls can come in
-      # and not be persisted. When terminating it will flush its internal buffer
-      Supervisor.child_spec(
-        {Sanbase.KafkaExporter, [name: :api_call_exporter, topic: kafka_api_call_data_topic()]},
-        id: :api_call_exporter
-      )
-    ]
-  end
-
-  def prepend_api_call_exporter_children(_), do: []
 
   @doc ~s"""
   Children common for all types of container types
@@ -205,16 +221,14 @@ defmodule Sanbase.Application do
       ),
 
       # General purpose cache available in all types
-      Supervisor.child_spec(
-        {ConCache,
-         [
-           name: Sanbase.Cache.name(),
-           ttl_check_interval: :timer.seconds(30),
-           global_ttl: :timer.minutes(5),
-           acquire_lock_timeout: 30_000
-         ]},
-        id: :sanbase_generic_cache
-      ),
+      {Sanbase.Cache,
+       [
+         id: :sanbase_generic_cache,
+         name: Sanbase.Cache.name(),
+         ttl_check_interval: :timer.seconds(30),
+         global_ttl: :timer.minutes(5),
+         acquire_lock_timeout: 30_000
+       ]},
 
       # Service for fast checking if a slug is valid
       # `:available_slugs_module` option changes the module
@@ -245,7 +259,6 @@ defmodule Sanbase.Application do
 
   defp kafka_endpoint() do
     url = Config.module_get(Sanbase.KafkaExporter, :kafka_url) |> to_charlist()
-
     port = Config.module_get(Sanbase.KafkaExporter, :kafka_port) |> Sanbase.Math.to_integer()
 
     [{url, port}]

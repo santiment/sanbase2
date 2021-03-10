@@ -277,7 +277,7 @@ defmodule SanbaseWeb.Graphql.Billing.SubscribeApiTest do
           inserted_at: seven_days_ago
         )
 
-        query = subscribe_mutation(context.plans.plan_pro_sanbase.id)
+        query = subscribe_mutation(context.plans.plan_pro_sanbase_yearly.id)
         response = execute_mutation(context.conn, query, "subscribe")
 
         # SignUpTrial is marked as `is_finished`

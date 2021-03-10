@@ -82,10 +82,17 @@ defmodule Sanbase.Kaiko do
       # It is expected that the timestamps come in already rounded but this is
       # done just to make sure
 
+      # Kaiko is wrongly returning `0.0` as a price for a few assets like bitcoin
+      # and chainlink. This is not a real price, so we're converting it to nil instead
+      extract_price = fn
+        "0.0" -> nil
+        price -> Sanbase.Math.to_float(price)
+      end
+
       data
       |> Enum.map(fn elem ->
         %{
-          price: elem["price"] |> Sanbase.Math.to_float(),
+          price: extract_price.(elem["price"]),
           datetime:
             elem["timestamp"]
             |> DateTime.from_unix!(:millisecond)

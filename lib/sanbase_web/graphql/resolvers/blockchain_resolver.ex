@@ -1,8 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
-  alias Sanbase.Billing.Product
-  alias SanbaseWeb.Graphql.Cache
-
   @blockchains ["ethereum", "bitcoin", "bitcoin-cash", "litecoin", "ripple", "binance-coin"]
+
   def available_blockchains_metadata(_root, _argsargs, _resolution) do
     {:ok, Enum.map(@blockchains, &blockchain_data/1)}
   end

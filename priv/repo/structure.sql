@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 11.10 (Debian 11.10-0+deb10u1)
--- Dumped by pg_dump version 11.10 (Debian 11.10-0+deb10u1)
+-- Dumped from database version 12.3
+-- Dumped by pg_dump version 12.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -116,8 +116,6 @@ $$;
 
 
 SET default_tablespace = '';
-
-SET default_with_oids = false;
 
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
@@ -1922,6 +1920,40 @@ CREATE TABLE public.schema_migrations (
 
 
 --
+-- Name: sheets_templates; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.sheets_templates (
+    id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    description text,
+    url character varying(255) NOT NULL,
+    is_pro boolean DEFAULT false NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: sheets_templates_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.sheets_templates_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: sheets_templates_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.sheets_templates_id_seq OWNED BY public.sheets_templates.id;
+
+
+--
 -- Name: short_url_comments_mapping; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3060,6 +3092,13 @@ ALTER TABLE ONLY public.schedule_rescrape_prices ALTER COLUMN id SET DEFAULT nex
 
 
 --
+-- Name: sheets_templates id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sheets_templates ALTER COLUMN id SET DEFAULT nextval('public.sheets_templates_id_seq'::regclass);
+
+
+--
 -- Name: short_url_comments_mapping id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3629,6 +3668,14 @@ ALTER TABLE ONLY public.schedule_rescrape_prices
 
 ALTER TABLE ONLY public.schema_migrations
     ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+
+
+--
+-- Name: sheets_templates sheets_templates_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sheets_templates
+    ADD CONSTRAINT sheets_templates_pkey PRIMARY KEY (id);
 
 
 --
@@ -5545,3 +5592,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210222141227);
 INSERT INTO public."schema_migrations" (version) VALUES (20210223081041);
 INSERT INTO public."schema_migrations" (version) VALUES (20210226144252);
 INSERT INTO public."schema_migrations" (version) VALUES (20210303094304);
+INSERT INTO public."schema_migrations" (version) VALUES (20210311123253);

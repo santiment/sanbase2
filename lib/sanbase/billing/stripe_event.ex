@@ -14,7 +14,7 @@ defmodule Sanbase.Billing.StripeEvent do
 
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
-  alias Sanbase.Billing.{Subscription, Plan, Product}
+  alias Sanbase.Billing.{Subscription, Plan}
   alias Sanbase.StripeApi
   alias Sanbase.Notifications.Discord
 
@@ -129,13 +129,13 @@ defmodule Sanbase.Billing.StripeEvent do
     do_send_to_discord(message, "Stripe Payment")
   end
 
+  defp handle_discord_notification(_), do: :ok
+
   defp do_send_to_discord(message, title) do
     payload = [message] |> Discord.encode!(publish_user())
 
     Discord.send_notification(webhook_url(), title, payload)
   end
-
-  defp handle_discord_notification(_), do: :ok
 
   defp handle_event(%{
          "id" => id,

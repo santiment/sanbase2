@@ -10,12 +10,14 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
   setup do
     user = insert(:user)
+    Sanbase.Accounts.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
+
     conn = setup_jwt_auth(build_conn(), user)
 
     {:ok, conn: conn, user: user}
   end
 
-  describe "Create traigger" do
+  describe "Create trigger" do
     test "with proper args - creates it successfully", %{conn: conn} do
       with_mock Sanbase.Telegram,
         send_message: fn _user, text ->
@@ -347,6 +349,34 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     assert created_trigger["tags"] == [%{"name" => "SAN"}, %{"name" => "santiment"}]
   end
 
+  test "fetch last_triggered_datetime", context do
+    trigger =
+      create_trigger(context.conn,
+        settings: default_trigger_settings_string_keys(),
+        cooldown: "1d"
+      )
+
+    mock_fun =
+      [fn -> {:ok, 100} end, fn -> {:ok, 5000} end]
+      |> Sanbase.Mock.wrap_consecutives(arity: 5)
+
+    Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      [triggered] =
+        Sanbase.Alert.Trigger.MetricTriggerSettings.type()
+        |> UserTrigger.get_active_triggers_by_type()
+        |> Sanbase.Alert.Evaluator.run()
+
+      assert triggered.id == trigger.id
+
+      last_triggered_datetime =
+        get_trigger_by_id(context.conn, trigger.id)
+        |> get_in(["data", "getTriggerById", "trigger", "lastTriggeredDatetime"])
+
+      datetime = Sanbase.DateTimeUtils.from_iso8601!(last_triggered_datetime)
+    end)
+  end
+
   defp update_trigger(conn, trigger_id, trigger_settings, tags, cooldown, is_repeating) do
     tags_str = tags |> Enum.map(&"'#{&1}'") |> Enum.join(", ")
     trigger_settings_json = trigger_settings |> Jason.encode!()
@@ -415,6 +445,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
           trigger{
             id
             settings
+            lastTriggeredDatetime
         }
       }
     }

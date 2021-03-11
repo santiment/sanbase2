@@ -34,7 +34,10 @@ defmodule Sanbase.Alert.Trigger.MetricTriggerHelper do
   def evaluate(%{} = settings, _trigger) do
     case get_data(settings) do
       data when is_list(data) and data != [] ->
+        IO.inspect(data, label: "DATA")
+
         build_result(data, settings)
+        |> IO.inspect(label: "39", limit: :infinity)
 
       _ ->
         %{settings | triggered?: false}

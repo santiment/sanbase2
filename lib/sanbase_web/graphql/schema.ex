@@ -69,6 +69,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.UserTypes)
   import_types(Graphql.SignalTypes)
   import_types(Graphql.WidgetTypes)
+  import_types(Graphql.SheetsTemplateTypes)
 
   # Queries and mutations
   import_types(Graphql.Schema.SignalQueries)
@@ -101,6 +102,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.UserTriggerQueries)
   import_types(Graphql.Schema.UserListQueries)
   import_types(Graphql.Schema.WidgetQueries)
+  import_types(Graphql.Schema.SheetsTemplateQueries)
 
   def dataloader() do
     Dataloader.new(timeout: :timer.seconds(20), get_policy: :return_nil_on_error)
@@ -167,6 +169,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:user_list_queries)
     import_fields(:user_queries)
     import_fields(:widget_queries)
+    import_fields(:sheets_template_queries)
   end
 
   mutation do

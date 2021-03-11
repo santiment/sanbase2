@@ -92,23 +92,15 @@ defmodule Sanbase.Billing.StripeEvent do
       message = """
       New cancellation scheduled for `#{subscription.current_period_end}` from `#{
         mask_user(subscription.user)
-      }` for `#{product_name(subscription)}` | #{subscription.user.stripe_customer_id}.
+      }` for `#{Plan.plan_full_name(subscription.plan)}` | #{subscription.user.stripe_customer_id}.
       Subscription status before cancellation: `#{subscription.status}`.
       Subscription lasted #{duration}
       """
 
-      do_send_to_discord(message)
+      if subscription.status == :active do
+        do_send_to_discord(message, "Stripe Cancellation")
+      end
     end)
-  end
-
-  defp do_send_to_discord(message) do
-    payload = [message] |> Discord.encode!(publish_user())
-
-    Discord.send_notification(
-      webhook_url(),
-      "Stripe Cancellation",
-      payload
-    )
   end
 
   defp handle_discord_notification(
@@ -118,15 +110,8 @@ defmodule Sanbase.Billing.StripeEvent do
          } = event
        )
        when total > 1 do
-    payload =
-      build_payload(event)
-      |> Discord.encode!(publish_user())
-
-    Discord.send_notification(
-      webhook_url(),
-      "Stripe Payment",
-      payload
-    )
+    message = build_payload(event)
+    do_send_to_discord(message, "Stripe Payment")
   end
 
   defp handle_discord_notification(%{
@@ -141,9 +126,13 @@ defmodule Sanbase.Billing.StripeEvent do
     Event: https://dashboard.stripe.com/events/#{id}
     """
 
-    payload = Discord.encode!([message], publish_user())
+    do_send_to_discord(message, "Stripe Payment")
+  end
 
-    Discord.send_notification(webhook_url(), "Stripe Payment", payload)
+  defp do_send_to_discord(message, title) do
+    payload = [message] |> Discord.encode!(publish_user())
+
+    Discord.send_notification(webhook_url(), title, payload)
   end
 
   defp handle_discord_notification(_), do: :ok
@@ -277,43 +266,37 @@ defmodule Sanbase.Billing.StripeEvent do
          }
        })
        when total == abs(starting_balance) do
-    [
-      "New 🔥 for #{format_cents_amount(total)} received. Details: https://dashboard.stripe.com/events/#{
-        id
-      }"
-    ]
+    "New 🔥 for #{format_cents_amount(total)} received. Details: https://dashboard.stripe.com/events/#{
+      id
+    }"
   end
 
   defp build_payload(%{
          "id" => id,
          "data" => %{"object" => %{"total" => total}}
        }) do
-    [
-      "New payment for #{format_cents_amount(total)} received. Details: https://dashboard.stripe.com/events/#{
-        id
-      }"
-    ]
+    "New payment for #{format_cents_amount(total)} received. Details: https://dashboard.stripe.com/events/#{
+      id
+    }"
   end
 
   defp payload_for_subscription(
          %Subscription{
-           plan: %Plan{name: plan_name, product: %Product{name: product_name}},
+           plan: plan,
            user: user
          },
          total,
          starting_balance
        )
        when total == abs(starting_balance) do
-    [
-      "New 🔥 for #{format_cents_amount(total)} for #{product_name} / #{plan_name} by #{
-        mask_user(user)
-      }"
-    ]
+    "New 🔥 for #{format_cents_amount(total)} for #{Plan.plan_full_name(plan)} by #{
+      mask_user(user)
+    }"
   end
 
   defp payload_for_subscription(
          %Subscription{
-           plan: %Plan{name: plan_name, product: %Product{name: product_name}},
+           plan: plan,
            inserted_at: inserted_at,
            user: user
          },
@@ -323,28 +306,24 @@ defmodule Sanbase.Billing.StripeEvent do
     calculate_recurring_month(inserted_at)
     |> case do
       1 ->
-        [
-          "🎉 New payment for #{format_cents_amount(total)} for #{product_name} / #{plan_name} by #{
-            mask_user(user)
-          }"
-        ]
+        "🎉 New payment for #{format_cents_amount(total)} for #{Plan.plan_full_name(plan)} by #{
+          mask_user(user)
+        }"
 
       count ->
-        [
-          "Recurring payment for #{format_cents_amount(total)} for #{product_name} / #{plan_name} (month #{
-            count
-          }) by #{mask_user(user)}"
-        ]
+        "Recurring payment for #{format_cents_amount(total)} for #{Plan.plan_full_name(plan)} (month #{
+          count
+        }) by #{mask_user(user)}"
     end
   end
 
   defp payload_for_subscription(_, total, starting_balance)
        when total == abs(starting_balance) do
-    ["New 🔥 for #{format_cents_amount(total)} received."]
+    "New 🔥 for #{format_cents_amount(total)} received."
   end
 
   defp payload_for_subscription(_, total, _) do
-    ["New payment for #{format_cents_amount(total)} received."]
+    "New payment for #{format_cents_amount(total)} received."
   end
 
   defp mask_user(%User{email: email}) when is_binary(email) do
@@ -362,19 +341,10 @@ defmodule Sanbase.Billing.StripeEvent do
     "Metamask user"
   end
 
-  defp product_name(subscription) do
-    "#{subscription.plan.product.name}/#{subscription.plan.name}"
-  end
-
   # checks which month of recurring subscription it is by the subscription creation date
   defp calculate_recurring_month(inserted_at) do
-    now_unix = Timex.now() |> DateTime.to_unix()
-
-    created_at_unix = inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
-
-    ((now_unix - created_at_unix) / (29 * 86_400))
-    |> floor()
-    |> Kernel.+(1)
+    created_at_dt = inserted_at |> DateTime.from_naive!("Etc/UTC")
+    Timex.diff(Timex.now(), created_at_dt, :months) + 1
   end
 
   defp format_cents_amount(amount) do

@@ -207,7 +207,7 @@ defmodule Sanbase.SocialData.TrendingWords do
         PREWHERE
           dt >= toDateTime(?2) AND
           dt < toDateTime(?3) AND
-          source IN ('reddit', 'twitter', 'telegram', 'discord', 'bitcointalk')
+          source != 'bitcointalk'
         GROUP BY t, word, source
         ORDER BY t, score DESC
     )

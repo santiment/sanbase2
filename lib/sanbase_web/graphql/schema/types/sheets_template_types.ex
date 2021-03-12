@@ -3,8 +3,8 @@ defmodule SanbaseWeb.Graphql.SheetsTemplateTypes do
 
   object :sheets_template do
     field(:url, :string)
-    field(:name, :string)
+    field(:name, non_null(:string))
     field(:description, :string)
-    field(:is_pro, :boolean)
+    field(:is_pro, non_null(:boolean))
   end
 end

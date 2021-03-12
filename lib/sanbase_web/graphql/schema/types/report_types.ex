@@ -3,9 +3,9 @@ defmodule SanbaseWeb.Graphql.ReportTypes do
 
   object :report do
     field(:url, :string)
-    field(:name, :string)
+    field(:name, non_null(:string))
     field(:description, :string)
     field(:tags, list_of(:string))
-    field(:is_pro, :boolean)
+    field(:is_pro, non_null(:boolean))
   end
 end

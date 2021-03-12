@@ -43,7 +43,6 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   def timeseries_data(metric, %{slug: slug_or_slugs}, from, to, interval, _opts) do
     case Project.List.github_organizations_by_slug(slug_or_slugs) do
       %{} = empty_map when map_size(empty_map) == 0 ->
-        IO.inspect("XAåå HENLO")
         {:ok, []}
 
       %{} = organizations_map ->

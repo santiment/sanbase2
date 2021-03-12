@@ -156,10 +156,13 @@ defmodule Sanbase.Alert.Scheduler do
          %{trigger: %{last_triggered: last_triggered}},
          send_results_list
        ) do
-    # Round the datetimes to minutes because the `last_triggered` is used as
+    # Round the datetimes 30 seconds because the `last_triggered` is used as
     # part of a cache key. If `now` is left as is the last triggered time of
     # all alerts will be different, sometimes only by a second
-    now = Timex.now() |> Timex.set(second: 0, microsecond: {0, 0})
+    now =
+      Timex.now()
+      |> Sanbase.DateTimeUtils.round_datetime(second: 30)
+      |> Timex.set(microsecond: {0, 0})
 
     # Update all triggered_at regardless if the send to the channel succeed
     # because the alert will be stored in the timeline events.

@@ -47,6 +47,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
     |> handle_result("remove")
   end
 
+  def last_triggered_datetime(root, _args, _resolution) do
+    case root.last_triggered do
+      %{} = empty_map when map_size(empty_map) == 0 ->
+        {:ok, nil}
+
+      %{} = map ->
+        last_triggered =
+          map
+          |> Map.values()
+          |> Enum.map(&Sanbase.DateTimeUtils.from_iso8601!/1)
+          |> Enum.max(DateTime)
+
+        {:ok, last_triggered}
+    end
+  end
+
   def get_trigger_by_id(_root, %{id: id}, %{
         context: %{auth: %{current_user: current_user}}
       }) do

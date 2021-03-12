@@ -29,7 +29,7 @@ defmodule Sanbase.BlockchainAddress do
   Convert an address to the internal format used in our databases.
 
   Ethereum addresses are case-insensitive - the upper and lower letters are used
-  only for checks. Internally we store the addresses all lowercased so they can be
+  only for checks. Internally we store the addresses all downcased so they can be
   compared.
 
   All other chains are sensitive, so they are not changed by this function.

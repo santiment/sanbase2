@@ -4,7 +4,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthSpent do
   """
 
   alias Sanbase.Clickhouse.HistoricalBalance
-  alias Sanbase.Clickhouse.HistoricalBalance.EthBalance
 
   @type slug :: String.t()
 
@@ -34,7 +33,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthSpent do
   @spec eth_balance_change(address, from :: DateTime.t(), to :: DateTime.t()) ::
           HistoricalBalance.Behaviour.balance_change_result()
   def eth_balance_change(addresses, from, to) do
-    EthBalance.balance_change(addresses, "ETH", 18, from, to)
+    Sanbase.Balance.balance_change(addresses, "ethereum", from, to)
   end
 
   @doc ~s"""
@@ -44,7 +43,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthSpent do
   @spec eth_balance_change(address, from :: DateTime.t(), to :: DateTime.t(), interval) ::
           HistoricalBalance.Behaviour.historical_balance_change_result()
   def eth_balance_change(addresses, from, to, interval) do
-    EthBalance.historical_balance_change(addresses, "ETH", 18, from, to, interval)
+    Sanbase.Balance.historical_balance_changes(addresses, "ethereum", from, to, interval)
   end
 
   @doc ~s"""
@@ -93,7 +92,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthSpent do
         eth_spent_over_time =
           balance_changes
           |> Enum.map(fn
-            %{balance_change: change, datetime: dt} when change < 0 ->
+            %{balance_change_amount: change, datetime: dt} when change < 0 ->
               %{datetime: dt, eth_spent: abs(change)}
 
             %{datetime: dt} ->

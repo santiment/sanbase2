@@ -97,7 +97,7 @@ defmodule Sanbase.Alert.Validation.Target do
 
   def valid_historical_balance_selector?(selector) when is_map(selector) do
     case Sanbase.Clickhouse.HistoricalBalance.selector_to_args(selector) do
-      {_, _, _} -> :ok
+      %{module: _, blockchain: _, asset: _, decimals: _, slug: _} -> :ok
       {:error, _error} -> "#{inspect(selector)} is not a valid  historical balance selector."
     end
   end

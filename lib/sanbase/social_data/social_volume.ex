@@ -91,7 +91,7 @@ defmodule Sanbase.SocialData.SocialVolume do
   end
 
   defp social_volume_list_request(%{words: words}, from, to, interval, source) do
-    url = "#{metrics_hub_url()}/social_volume"
+    url = Path.join([metrics_hub_url(), "social_volume"])
 
     options = [
       recv_timeout: @recv_timeout,
@@ -113,12 +113,12 @@ defmodule Sanbase.SocialData.SocialVolume do
 
   defp social_volume_request(selector, from, to, interval, source) do
     with {:ok, search_text} <- SocialHelper.social_metrics_selector_handler(selector) do
-      url = "#{metrics_hub_url()}/social_volume"
+      url = Path.join([metrics_hub_url(), "social_volume"])
 
       options = [
         recv_timeout: @recv_timeout,
         params: [
-          {"search_text", search_text},
+          {"search_text", search_text |> URI.encode()},
           {"from_timestamp", from |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
           {"to_timestamp", to |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
           {"interval", interval},

@@ -7,6 +7,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
   use AsyncWith
 
+  import Sanbase.Utils.Transform, only: [maybe_apply_function: 2]
+
   alias Sanbase.Model.Project
 
   alias Sanbase.Clickhouse.HistoricalBalance.{
@@ -18,8 +20,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
     LtcBalance,
     XrpBalance
   }
-
-  @async_with_timeout 29_000
 
   @infrastructure_to_module %{
     "BCH" => BchBalance,
@@ -65,32 +65,19 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   balance of all currently owned assets
   """
   @spec assets_held_by_address(map()) :: {:ok, list(map())} | {:error, String.t()}
-  def assets_held_by_address(%{infrastructure: "ETH", address: address}) do
-    async with {:ok, erc20_assets} <- Erc20Balance.assets_held_by_address(address),
-               {:ok, ethereum_assets} <- EthBalance.assets_held_by_address(address) do
-      sorted_assets =
-        (erc20_assets ++ ethereum_assets)
-        |> Enum.sort_by(& &1.balance, :desc)
-
-      {:ok, sorted_assets}
-    end
-  end
 
   def assets_held_by_address(%{infrastructure: infr, address: address}) do
-    case Map.get(@infrastructure_to_module, infr) do
-      nil ->
-        {:error, "Infrastructure #{infr} is not supported."}
+    case selector_to_args(%{infrastructure: infr}) do
+      %{blockchain: blockchain} when blockchain in ["ethereum", "bitcoin"] ->
+        Sanbase.Balance.assets_held_by_address(address)
 
-      module ->
-        case module.assets_held_by_address(address) do
-          {:ok, assets} ->
-            sorted_assets = Enum.sort_by(assets, &Map.get(&1, :balance), &>=/2)
-            {:ok, sorted_assets}
+      %{module: module} ->
+        module.assets_held_by_address(address)
 
-          error ->
-            error
-        end
+      {:error, error} ->
+        {:error, error}
     end
+    |> maybe_apply_function(fn data -> Enum.sort_by(data, &Map.get(&1, :balance), :desc) end)
   end
 
   @doc ~s"""
@@ -100,11 +87,13 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   """
   @spec balance_change(selector, address, from :: DateTime.t(), to :: DateTime.t()) ::
           __MODULE__.Behaviour.balance_change_result()
-  def balance_change(selector, address, from, to) do
-    selector = selector |> Map.put_new(:slug, nil)
 
+  def balance_change(selector, address, from, to) do
     case selector_to_args(selector) do
-      {module, asset, decimals} ->
+      %{blockchain: blockchain, slug: slug} when blockchain in ["ethereum", "bitcoin"] ->
+        Sanbase.Balance.balance_change(address, slug, from, to)
+
+      %{module: module, asset: asset, decimals: decimals} ->
         module.balance_change(address, asset, decimals, from, to)
 
       {:error, error} ->
@@ -119,8 +108,14 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   @spec historical_balance(selector, address, from :: DateTime.t(), to :: DateTime.t(), interval) ::
           __MODULE__.Behaviour.historical_balance_result()
   def historical_balance(selector, address, from, to, interval) do
+    IO.inspect(selector, label: "SELECTOR")
+    IO.inspect(selector_to_args(selector), label: "selector_to_args(selector)")
+
     case selector_to_args(selector) do
-      {module, asset, decimals} ->
+      %{blockchain: blockchain, slug: slug} when blockchain in ["ethereum", "bitcoin"] ->
+        Sanbase.Balance.historical_balance(address, slug, from, to, interval)
+
+      %{module: module, asset: asset, decimals: decimals} ->
         module.historical_balance(address, asset, decimals, from, to, interval)
 
       {:error, error} ->
@@ -130,83 +125,180 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
   @spec current_balance(selector, address | list(address)) ::
           __MODULE__.Behaviour.current_balance_result()
-  def current_balance(selector, addresses) do
+  def current_balance(selector, address) do
     case selector_to_args(selector) do
-      {module, asset, decimals} ->
-        module.current_balance(addresses, asset, decimals)
+      %{blockchain: blockchain, slug: slug} when blockchain in ["ethereum", "bitcoin"] ->
+        Sanbase.Balance.current_balance(address, slug)
+
+      %{module: module, asset: asset, decimals: decimals} ->
+        module.current_balance(address, asset, decimals)
 
       {:error, error} ->
         {:error, error}
     end
   end
 
-  # erc20 case
+  defguard is_ethereum(map)
+           when (is_map_key(map, :slug) and map.slug == "ethereum") or
+                  (is_map_key(map, :contract) and map.contract == "ETH") or
+                  (is_map_key(map, :infrastructure) and not is_map_key(map, :slug) and
+                     map.infrastructure == "ETH")
 
   @spec selector_to_args(selector) ::
           {module(), String.t(), non_neg_integer()} | {:error, tuple()}
 
-  def selector_to_args(%{infrastructure: "ETH", contract: contract, decimals: decimals})
-      when is_binary(contract) and is_number(decimals) and decimals > 0 do
-    {Erc20Balance, String.downcase(contract), decimals}
+  def selector_to_args(
+        %{infrastructure: "ETH", contract: contract, decimals: decimals} = selector
+      )
+      when is_binary(contract) and is_number(decimals) and decimals > 0 and
+             not is_ethereum(selector) do
+    %{
+      module: Erc20Balance,
+      asset: String.downcase(contract),
+      contract: String.downcase(contract),
+      blockchain: Project.infrastructure_to_blockchain("ETH"),
+      slug: Map.get(selector, :slug),
+      decimals: decimals
+    }
   end
 
-  def selector_to_args(%{infrastructure: "ETH", slug: slug})
-      when is_binary(slug) and slug != "ethereum" do
-    with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug),
-         do: {Erc20Balance, contract, decimals}
+  def selector_to_args(%{} = selector) when is_ethereum(selector) do
+    selector = Map.put_new(selector, :slug, "ethereum")
+
+    with %{slug: slug, contract: contract, decimals: decimals, infrastructure: "ETH"} <-
+           get_project_details(selector) do
+      %{
+        module: EthBalance,
+        asset: contract,
+        contract: contract,
+        blockchain: Project.infrastructure_to_blockchain("ETH"),
+        slug: slug,
+        decimals: decimals
+      }
+    end
   end
 
-  def selector_to_args(%{infrastructure: "ETH"}) do
-    with {:ok, contract, decimals} <- Project.contract_info_by_slug("ethereum"),
-         do: {EthBalance, contract, decimals}
+  def selector_to_args(%{infrastructure: "ETH", slug: slug} = selector) when is_binary(slug) do
+    with %{contract: contract, decimals: decimals} <- get_project_details(selector) do
+      %{
+        module: Erc20Balance,
+        asset: contract,
+        contract: contract,
+        blockchain: Project.infrastructure_to_blockchain("ETH"),
+        slug: slug,
+        decimals: decimals
+      }
+    end
   end
 
   def selector_to_args(%{infrastructure: "XRP"} = selector) do
-    currency = Map.get(selector, :currency, "XRP")
-    {XrpBalance, currency, 0}
+    %{
+      module: XrpBalance,
+      asset: Map.get(selector, :currency, "XRP"),
+      currency: Map.get(selector, :currency, "XRP"),
+      blockchain: Project.infrastructure_to_blockchain("XRP"),
+      slug: "ripple",
+      decimals: 0
+    }
   end
 
-  def selector_to_args(%{infrastructure: "BTC"}) do
-    with {:ok, contract, decimals} <- Project.contract_info_by_slug("bitcoin"),
-         do: {BtcBalance, contract, decimals}
+  def selector_to_args(%{infrastructure: "BTC"} = selector) do
+    selector = Map.put_new(selector, :slug, "bitcoin")
+
+    with %{slug: slug, contract: contract, decimals: decimals} <- get_project_details(selector) do
+      %{
+        module: BtcBalance,
+        asset: contract,
+        contract: contract,
+        blockchain: Project.infrastructure_to_blockchain("BTC"),
+        slug: slug,
+        decimals: decimals
+      }
+    end
   end
 
-  def selector_to_args(%{infrastructure: "BCH"}) do
-    with {:ok, contract, decimals} <- Project.contract_info_by_slug("bitcoin-cash"),
-         do: {BchBalance, contract, decimals}
+  def selector_to_args(%{infrastructure: "BCH"} = selector) do
+    selector = Map.put_new(selector, :slug, "bitcoin-cash")
+
+    with %{slug: slug, contract: contract, decimals: decimals} <- get_project_details(selector) do
+      %{
+        module: BchBalance,
+        asset: contract,
+        contract: contract,
+        blockchain: Project.infrastructure_to_blockchain("BCH"),
+        slug: slug,
+        decimals: decimals
+      }
+    end
   end
 
-  def selector_to_args(%{infrastructure: "LTC"}) do
-    with {:ok, contract, decimals} <- Project.contract_info_by_slug("litecoin"),
-         do: {LtcBalance, contract, decimals}
+  def selector_to_args(%{infrastructure: "LTC"} = selector) do
+    selector = Map.put_new(selector, :slug, "litecoin")
+
+    with %{slug: slug, contract: contract, decimals: decimals} <- get_project_details(selector) do
+      %{
+        module: LtcBalance,
+        asset: contract,
+        contract: contract,
+        blockchain: Project.infrastructure_to_blockchain("LTC"),
+        slug: slug,
+        decimals: decimals
+      }
+    end
   end
 
   def selector_to_args(%{infrastructure: "BNB"} = selector) do
-    slug = Map.get(selector, :slug, "binance-coin")
+    selector = Map.put_new(selector, :slug, "binance-coin")
 
-    with {:ok, contract, decimals} <- Project.contract_info_by_slug(slug),
-         do: {BnbBalance, contract, decimals}
+    with %{slug: slug, contract: contract, decimals: decimals} <- get_project_details(selector) do
+      %{
+        module: BnbBalance,
+        asset: contract,
+        contract: contract,
+        blockchain: Project.infrastructure_to_blockchain("BNB"),
+        slug: slug,
+        decimals: decimals
+      }
+    end
   end
 
-  def selector_to_args(%{slug: "ethereum"} = selector),
-    do: selector_to_args(Map.put(selector, :infrastructure, "ETH"))
+  def selector_to_args(%{infrastructure: infrastructure} = selector) do
+    {:error,
+     "Invalid historical balance selector. The infrastructure #{inspect(infrastructure)} is not supported. Provided selector: #{
+       inspect(selector)
+     }"}
+  end
 
   def selector_to_args(%{slug: slug} = selector) when not is_nil(slug) do
-    with {:ok, contract, decimals, infrastructure} <-
-           Sanbase.Model.Project.contract_info_infrastructure_by_slug(slug),
-         module when not is_nil(module) <- Map.get(@infrastructure_to_module, infrastructure) do
-      # TODO: Rework better. The ETH infrastructure is resolved to 2 different modules
-      case module do
-        [_, _] -> {Erc20Balance, contract, decimals}
-        _ -> {module, contract, decimals}
-      end
+    with %{infrastructure: _} = map <- get_project_details(%{slug: slug}) do
+      require IEx
+      IEx.pry()
+      %{original_selector: selector} |> Map.merge(map) |> selector_to_args()
     else
-      _ ->
-        {:error, "Invalid historical balance selector: #{inspect(selector)}"}
+      {:error, {:missing_contract, _}} ->
+        {:error,
+         "Invalid historical balance selector. The provided slug has no contract data available. Provided selector: #{
+           inspect(selector)
+         }"}
+
+      error ->
+        error
     end
   end
 
   def selector_to_args(selector) do
-    {:error, "Invalid historical balance selector: #{inspect(selector)}"}
+    original_selector = Map.get(selector, :original_selector) || selector
+    {:error, "Invalid historical balance selector: #{inspect(original_selector)}"}
+  end
+
+  defp get_project_details(%{contract: _, decimals: _, slug: _, infrastructure: _} = data) do
+    data
+  end
+
+  defp get_project_details(%{slug: slug}) do
+    with {:ok, contract, decimals, infrastructure} <-
+           Project.contract_info_infrastructure_by_slug(slug) do
+      %{contract: contract, decimals: decimals, slug: slug, infrastructure: infrastructure}
+    end
   end
 end

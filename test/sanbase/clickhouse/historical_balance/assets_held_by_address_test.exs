@@ -19,20 +19,16 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.AssetsHeldByAdderssTest do
   end
 
   test "clickhouse returns list of results", context do
-    with_mocks [
-      {Sanbase.Clickhouse.HistoricalBalance.Erc20Balance, [:passthrough],
-       assets_held_by_address: fn _ ->
-         {:ok,
-          [
-            %{balance: 100.0, slug: context.p1.slug},
-            %{balance: 200.0, slug: context.p2.slug}
-          ]}
-       end},
-      {Sanbase.Clickhouse.HistoricalBalance.EthBalance, [:passthrough],
-       assets_held_by_address: fn _ ->
-         {:ok, [%{balance: 1000.0, slug: context.eth_project.slug}]}
-       end}
-    ] do
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Balance.assets_held_by_address/1,
+      {:ok,
+       [
+         %{balance: 1000.0, slug: context.eth_project.slug},
+         %{balance: 100.0, slug: context.p1.slug},
+         %{balance: 200.0, slug: context.p2.slug}
+       ]}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
       assert HistoricalBalance.assets_held_by_address(%{address: "0x123", infrastructure: "ETH"}) ==
                {:ok,
                 [
@@ -40,30 +36,25 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.AssetsHeldByAdderssTest do
                   %{slug: context.p2.slug, balance: 200.0},
                   %{slug: context.p1.slug, balance: 100.0}
                 ]}
-    end
+    end)
   end
 
   test "clickhouse returns no results", _context do
-    with_mocks [
-      {Sanbase.Clickhouse.HistoricalBalance.BtcBalance, [:passthrough],
-       assets_held_by_address: fn _ ->
-         {:ok, []}
-       end}
-    ] do
+    Sanbase.Mock.prepare_mock2(&Sanbase.Balance.assets_held_by_address/1, {:ok, []})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       assert HistoricalBalance.assets_held_by_address(%{address: "0x123", infrastructure: "BTC"}) ==
                {:ok, []}
-    end
+    end)
   end
 
   test "clickhouse returns error", _context do
-    with_mocks [
-      {Sanbase.Clickhouse.HistoricalBalance.LtcBalance, [:passthrough],
-       assets_held_by_address: fn _ ->
-         {:error, "Something went wrong"}
-       end}
-    ] do
+    Sanbase.Mock.prepare_mock2(
+      &Sanbase.Clickhouse.HistoricalBalance.LtcBalance.assets_held_by_address/1,
+      {:error, "Something went wrong"}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
       assert HistoricalBalance.assets_held_by_address(%{address: "0x123", infrastructure: "LTC"}) ==
                {:error, "Something went wrong"}
-    end
+    end)
   end
 end

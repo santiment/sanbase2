@@ -53,6 +53,7 @@ defmodule SanbaseWeb.Router do
     get("/anonymize_comment/:id", CommentModerationController, :anonymize_comment)
     get("/delete_subcomment_tree/:id", CommentModerationController, :delete_subcomment_tree)
     resources("/reports", ReportController)
+    resources("/sheets_templates", SheetsTemplateController)
   end
 
   scope "/" do

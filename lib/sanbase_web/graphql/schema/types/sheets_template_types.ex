@@ -1,11 +1,10 @@
-defmodule SanbaseWeb.Graphql.ReportTypes do
+defmodule SanbaseWeb.Graphql.SheetsTemplateTypes do
   use Absinthe.Schema.Notation
 
-  object :report do
+  object :sheets_template do
     field(:url, :string)
     field(:name, non_null(:string))
     field(:description, :string)
-    field(:tags, list_of(:string))
     field(:is_pro, non_null(:boolean))
   end
 end

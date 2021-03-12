@@ -28,6 +28,7 @@ defmodule Sanbase.Factory do
   alias Sanbase.Email.NewsletterToken
   alias Sanbase.Report
   alias Sanbase.BlockchainAddress
+  alias Sanbase.SheetsTemplate
 
   def user_factory() do
     %User{
@@ -663,6 +664,13 @@ defmodule Sanbase.Factory do
     %Report{
       url: "https://example.com/#{rand_hex_str()}_report.pdf",
       name: "Alpha Report"
+    }
+  end
+
+  def sheets_template_factory do
+    %SheetsTemplate{
+      url: "https://example.com/#{rand_hex_str()}",
+      name: "Top Transactions"
     }
   end
 

@@ -253,7 +253,6 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
         context.conn
         |> post("/graphql", query_skeleton(query, "historicalBalance"))
         |> json_response(200)
-        |> IO.inspect(label: "256", limit: :infinity)
 
       historical_balance = result["data"]["historicalBalance"]
 

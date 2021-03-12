@@ -108,9 +108,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   @spec historical_balance(selector, address, from :: DateTime.t(), to :: DateTime.t(), interval) ::
           __MODULE__.Behaviour.historical_balance_result()
   def historical_balance(selector, address, from, to, interval) do
-    IO.inspect(selector, label: "SELECTOR")
-    IO.inspect(selector_to_args(selector), label: "selector_to_args(selector)")
-
     case selector_to_args(selector) do
       %{blockchain: blockchain, slug: slug} when blockchain in ["ethereum", "bitcoin"] ->
         Sanbase.Balance.historical_balance(address, slug, from, to, interval)

@@ -6,9 +6,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
   import SanbaseWeb.Graphql.TestHelpers
   import ExUnit.CaptureLog
 
-  alias Sanbase.Clickhouse.HistoricalBalance.EthBalance
-  alias Sanbase.Clickhouse.HistoricalBalance.BtcBalance
-  alias Sanbase.Clickhouse.HistoricalBalance.Erc20Balance
+  alias Sanbase.Clickhouse.HistoricalBalance.{EthBalance, XrpBalance, Erc20Balance}
 
   setup do
     p1 = insert(:random_erc20_project)
@@ -145,11 +143,11 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
 
   test "one of the historical balances returns error", context do
     with_mocks [
-      {Sanbase.Clickhouse.HistoricalBalance.Erc20Balance, [:passthrough],
+      {Erc20Balance, [:passthrough],
        assets_held_by_address: fn _ ->
          {:ok, []}
        end},
-      {Sanbase.Clickhouse.HistoricalBalance.EthBalance, [:passthrough],
+      {EthBalance, [:passthrough],
        assets_held_by_address: fn _ ->
          {:error, "Something went wrong"}
        end}
@@ -174,7 +172,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
 
   test "negative balances are discarded", context do
     with_mocks [
-      {Sanbase.Clickhouse.HistoricalBalance.XrpBalance, [:passthrough],
+      {XrpBalance, [:passthrough],
        assets_held_by_address: fn _ ->
          {:ok,
           [
@@ -182,7 +180,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
             %{balance: -200.0, slug: context.p2.slug}
           ]}
        end},
-      {Sanbase.Clickhouse.HistoricalBalance.EthBalance, [:passthrough],
+      {EthBalance, [:passthrough],
        assets_held_by_address: fn _ ->
          {:ok, [%{balance: -500, slug: context.eth_project.slug}]}
        end}

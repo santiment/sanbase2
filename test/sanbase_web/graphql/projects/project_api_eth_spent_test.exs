@@ -5,8 +5,6 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
   import Sanbase.TestHelpers
   import SanbaseWeb.Graphql.TestHelpers
 
-  @eth_decimals 1_000_000_000_000_000_000
-
   setup do
     datetime1 = Timex.now() |> Timex.beginning_of_day()
     datetime2 = Timex.shift(datetime1, days: -10)

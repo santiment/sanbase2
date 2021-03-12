@@ -7,6 +7,8 @@ defmodule Sanbase.Balance do
   alias Sanbase.ClickhouseRepo
   alias Sanbase.Model.Project
 
+  def historical_balance_ohlc([], _slug, _from, _to, _interval), do: {:ok, []}
+
   def historical_balance_ohlc(address, slug, from, to, interval) do
     with {:ok, _contract, decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug) do
       blockchain = blockchain_from_infrastructure(infr)
@@ -16,7 +18,7 @@ defmodule Sanbase.Balance do
     end
   end
 
-  def historical_balance(address, slug, from, to, interval) do
+  def historical_balance(address, slug, from, to, interval) when is_binary(address) do
     with {:ok, _contract, decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug) do
       blockchain = blockchain_from_infrastructure(infr)
       address = transform_address(address, blockchain)
@@ -24,6 +26,8 @@ defmodule Sanbase.Balance do
       do_historical_balance(address, slug, decimals, blockchain, from, to, interval)
     end
   end
+
+  def balance_change([], _slug, _from, _to), do: {:ok, []}
 
   def balance_change(address_or_addresses, slug, from, to) do
     with {:ok, _contract, decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug) do
@@ -33,6 +37,8 @@ defmodule Sanbase.Balance do
       do_balance_change(addresses, slug, decimals, blockchain, from, to)
     end
   end
+
+  def historical_balance_changes([], _slug, _from, _to, _interval), do: {:ok, []}
 
   def historical_balance_changes(address_or_addresses, slug, from, to, interval) do
     with {:ok, _contract, decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug) do

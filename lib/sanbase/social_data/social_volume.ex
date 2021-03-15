@@ -96,11 +96,7 @@ defmodule Sanbase.SocialData.SocialVolume do
     options = [
       recv_timeout: @recv_timeout,
       params: [
-        # The endpoint in metrics-hub uses a param named `slugs`.
-        # It actually works with a list of search texts but if the search text is a project slug the query in
-        # Elasticsearch is updated.
-        # We can just rename in metrcs-hub to search_texts.
-        {"slugs", Enum.join(words, ",")},
+        {"search_texts", Enum.join(words, ",")},
         {"from_timestamp", from |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
         {"to_timestamp", to |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
         {"interval", interval},

@@ -39,6 +39,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "volume_usd",
         "twitter_followers",
         "total_supply",
+        "mcd_erc20_supply",
         # change metrics
         "volume_usd_change_1d",
         "volume_usd_change_7d",
@@ -343,7 +344,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "mcd_collat_ratio_sai",
         "mcd_collat_ratio_weth",
         "mcd_dsr",
-        "mcd_erc20_supply",
         "mcd_locked_token",
         "mcd_stability_fee",
         "mcd_supply",

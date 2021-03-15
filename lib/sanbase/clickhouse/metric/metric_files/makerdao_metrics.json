@@ -34,24 +34,6 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Total Supply",
-    "name": "total_supply",
-    "aliases": ["mcd_erc20_supply"],
-    "metric": "total_supply",
-    "version": "2019-01-01",
-    "access": "restricted",
-    "selectors": ["slug"],
-    "min_plan": {
-      "SANAPI": "pro",
-      "SANBASE": "free"
-    },
-    "aggregation": "last",
-    "min_interval": "1d",
-    "table": "daily_metrics_v2",
-    "has_incomplete_data": true,
-    "data_type": "timeseries"
-  },
-  {
     "human_readable_name": "Multi-Collateral DAI Total Supply",
     "name": "mcd_supply",
     "metric": "mcd_debt",

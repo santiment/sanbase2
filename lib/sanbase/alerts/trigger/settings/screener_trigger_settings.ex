@@ -6,6 +6,8 @@ defmodule Sanbase.Alert.Trigger.ScreenerTriggerSettings do
   is fired that the project has entered the list. When a project no longer fulfills
   the filters, an alert is fired that the project exits the list.
   """
+  @behaviour Sanbase.Alert.Trigger.Settings.Behaviour
+
   use Vex.Struct
 
   import Sanbase.Alert.Validation

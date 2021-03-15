@@ -4,6 +4,8 @@ defmodule Sanbase.Alert.Trigger.DailyMetricTriggerSettings do
 
   The metric we're following is configured via the 'metric' parameter
   """
+  @behaviour Sanbase.Alert.Trigger.Settings.Behaviour
+
   use Vex.Struct
 
   import Sanbase.{Validation, Alert.Validation}

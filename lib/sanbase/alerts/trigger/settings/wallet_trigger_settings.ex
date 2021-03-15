@@ -8,6 +8,7 @@ defmodule Sanbase.Alert.Trigger.WalletTriggerSettings do
   are considered to be owned by a single entity and the transfers between them
   are excluded.
   """
+  @behaviour Sanbase.Alert.Trigger.Settings.Behaviour
 
   use Vex.Struct
 

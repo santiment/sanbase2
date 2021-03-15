@@ -268,8 +268,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
   def selector_to_args(%{slug: slug} = selector) when not is_nil(slug) do
     with %{infrastructure: _} = map <- get_project_details(%{slug: slug}) do
-      require IEx
-      IEx.pry()
       %{original_selector: selector} |> Map.merge(map) |> selector_to_args()
     else
       {:error, {:missing_contract, _}} ->

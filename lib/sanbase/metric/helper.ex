@@ -33,6 +33,11 @@ defmodule Sanbase.Metric.Helper do
   Module.register_attribute(__MODULE__, :access_map_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :min_plan_map_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :timeseries_metric_module_mapping_acc, accumulate: true)
+
+  Module.register_attribute(__MODULE__, :timeseries_ohlc_metric_module_mapping_acc,
+    accumulate: true
+  )
+
   Module.register_attribute(__MODULE__, :histogram_metric_module_mapping_acc, accumulate: true)
   Module.register_attribute(__MODULE__, :table_metric_module_mapping_acc, accumulate: true)
 
@@ -59,6 +64,13 @@ defmodule Sanbase.Metric.Helper do
                                             fn metric -> %{metric: metric, module: module} end
                                           )
 
+    @timeseries_ohlc_metric_module_mapping_acc Enum.map(
+                                                 module.available_timeseries_ohlc_metrics(),
+                                                 fn metric ->
+                                                   %{metric: metric, module: module}
+                                                 end
+                                               )
+
     @histogram_metric_module_mapping_acc Enum.map(
                                            module.available_histogram_metrics(),
                                            fn metric -> %{metric: metric, module: module} end
@@ -78,6 +90,9 @@ defmodule Sanbase.Metric.Helper do
   @timeseries_metric_module_mapping List.flatten(@timeseries_metric_module_mapping_acc)
                                     |> Enum.uniq()
 
+  @timeseries_ohlc_metric_module_mapping List.flatten(@timeseries_ohlc_metric_module_mapping_acc)
+                                         |> Enum.uniq()
+
   @table_metric_module_mapping List.flatten(@table_metric_module_mapping_acc)
                                |> Enum.uniq()
 
@@ -85,7 +100,8 @@ defmodule Sanbase.Metric.Helper do
                                    |> Enum.uniq()
 
   @metric_module_mapping (@histogram_metric_module_mapping ++
-                            @timeseries_metric_module_mapping ++ @table_metric_module_mapping)
+                            @timeseries_metric_module_mapping ++
+                            @table_metric_module_mapping ++ @timeseries_ohlc_metric_module_mapping)
                          |> Enum.uniq()
 
   @metric_to_module_map @metric_module_mapping
@@ -99,10 +115,12 @@ defmodule Sanbase.Metric.Helper do
 
   @metrics Enum.map(@metric_module_mapping, & &1.metric)
   @timeseries_metrics Enum.map(@timeseries_metric_module_mapping, & &1.metric)
+  @timeseries_ohlc_metrics Enum.map(@timeseries_ohlc_metric_module_mapping, & &1.metric)
   @histogram_metrics Enum.map(@histogram_metric_module_mapping, & &1.metric)
 
   @metrics_mapset MapSet.new(@metrics)
   @timeseries_metrics_mapset MapSet.new(@timeseries_metrics)
+  @timeseries_ohlc_metrics_mapset MapSet.new(@timeseries_ohlc_metrics)
   @histogram_metrics_mapset MapSet.new(@histogram_metrics)
 
   @table_metrics Enum.map(@table_metric_module_mapping, & &1.metric)
@@ -141,4 +159,12 @@ defmodule Sanbase.Metric.Helper do
 
   def timeseries_metrics_mapset(), do: @timeseries_metrics_mapset
   def timeseries_metrics(), do: @timeseries_metrics
+
+  def timeseries_ohlc_metric_module_mapping(), do: @timeseries_ohlc_metric_module_mapping
+
+  def timeseries_ohlc_metric_to_module_map(),
+    do: @timeseries_ohlc_metric_module_mapping |> Enum.into(%{}, &{&1.metric, &1.module})
+
+  def timeseries_ohlc_metrics_mapset(), do: @timeseries_ohlc_metrics_mapset
+  def timeseries_ohlc_metrics(), do: @timeseries_ohlc_metrics
 end

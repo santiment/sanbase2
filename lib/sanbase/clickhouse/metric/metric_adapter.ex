@@ -17,6 +17,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @plain_aggregations FileHandler.aggregations()
   @aggregations [nil] ++ @plain_aggregations
   @timeseries_metrics_name_list FileHandler.metrics_with_data_type(:timeseries)
+  @timeseries_ohlc_metrics_name_list FileHandler.metrics_with_data_type(:timeseries_ohlc)
   @histogram_metrics_name_list FileHandler.metrics_with_data_type(:histogram)
   @table_structured_metrics_name_list FileHandler.metrics_with_data_type(:table)
   @access_map FileHandler.access_map()
@@ -28,7 +29,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @human_readable_name_map FileHandler.human_readable_name_map()
   @metrics_data_type_map FileHandler.metrics_data_type_map()
   @metrics_name_list (@histogram_metrics_name_list ++
-                        @timeseries_metrics_name_list ++ @table_structured_metrics_name_list)
+                        @timeseries_metrics_name_list ++
+                        @table_structured_metrics_name_list ++ @timeseries_ohlc_metrics_name_list)
                      |> Enum.uniq()
   @metrics_mapset @metrics_name_list |> MapSet.new()
   @incomplete_data_map FileHandler.incomplete_data_map()
@@ -113,6 +115,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   defdelegate table_data(metric, slug_or_slugs, from, to, opts), to: TableMetric
 
   @impl Sanbase.Metric.Behaviour
+  defdelegate timeseries_ohlc_data(metric, slug_or_slugs, from, to, opts), to: TableMetric
+
+  @impl Sanbase.Metric.Behaviour
   def aggregated_timeseries_data(metric, selector, from, to, opts)
 
   def aggregated_timeseries_data(_metric, nil, _from, _to, _opts), do: {:ok, %{}}
@@ -177,6 +182,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_timeseries_metrics(), do: @timeseries_metrics_name_list
+
+  @impl Sanbase.Metric.Behaviour
+  def available_timeseries_ohlc_metrics(), do: @timeseries_ohlc_metrics_name_list
 
   @impl Sanbase.Metric.Behaviour
   def available_table_metrics(), do: @table_structured_metrics_name_list

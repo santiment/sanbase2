@@ -9,12 +9,11 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
   @aggregations [:sum]
 
   @timeseries_metrics []
-
   @histogram_metrics ["uniswap_top_claimers"]
-
   @table_metrics []
+  @timeseries_ohlc_metrics []
 
-  @metrics @histogram_metrics ++ @timeseries_metrics ++ @table_metrics
+  @metrics @histogram_metrics ++ @timeseries_metrics ++ @table_metrics ++ @timeseries_ohlc_metrics
 
   @access_map Enum.into(@metrics, %{}, fn metric -> {metric, :restricted} end)
   @min_plan_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
@@ -122,6 +121,9 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_timeseries_metrics(), do: @timeseries_metrics
+
+  @impl Sanbase.Metric.Behaviour
+  def available_timeseries_ohlc_metrics(), do: @timeseries_ohlc_metrics
 
   @impl Sanbase.Metric.Behaviour
   def available_histogram_metrics(), do: @histogram_metrics

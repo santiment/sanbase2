@@ -22,6 +22,7 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
   @timeseries_metrics Map.keys(@timeseries_metrics_function_mapping)
   @histogram_metrics []
   @table_metrics []
+  @timeseries_ohlc_metrics []
 
   @metrics @histogram_metrics ++ @timeseries_metrics ++ @table_metrics
 
@@ -184,6 +185,9 @@ defmodule Sanbase.Clickhouse.Github.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_timeseries_metrics(), do: @timeseries_metrics
+
+  @impl Sanbase.Metric.Behaviour
+  def available_timeseries_ohlc_metrics(), do: @timeseries_ohlc_metrics
 
   @impl Sanbase.Metric.Behaviour
   def available_histogram_metrics(), do: @histogram_metrics

@@ -52,6 +52,14 @@ defmodule Sanbase.Metric.Behaviour do
 
   @type timeseries_data_point :: %{datetime: Datetime.t(), value: float()}
 
+  @type timeseries_ohlc_data_point :: %{
+          datetime: Datetime.t(),
+          open: float(),
+          close: float(),
+          high: float(),
+          low: float()
+        }
+
   @type timeseries_data_per_slug_point :: %{
           datetime: Datetime.t(),
           data: list(slug_float_value_pair())
@@ -59,6 +67,9 @@ defmodule Sanbase.Metric.Behaviour do
 
   # Return types
   @type timeseries_data_result :: {:ok, list(timeseries_data_point)} | {:error, String.t()}
+
+  @type timeseries_ohlc_data_result ::
+          {:ok, list(timeseries_ohlc_data_point)} | {:error, String.t()}
 
   @type aggregated_timeseries_data_result :: {:ok, map()} | {:error, String.t()}
 
@@ -92,6 +103,16 @@ defmodule Sanbase.Metric.Behaviour do
   # Callbacks
 
   @callback timeseries_data(
+              metric :: metric(),
+              selector :: selector,
+              from :: DatetTime.t(),
+              to :: DateTime.t(),
+              interval :: interval(),
+              opts :: opts
+            ) ::
+              timeseries_data_result
+
+  @callback timeseries_ohlc_data(
               metric :: metric(),
               selector :: selector,
               from :: DatetTime.t(),
@@ -176,6 +197,8 @@ defmodule Sanbase.Metric.Behaviour do
   @callback available_metrics(selector) :: available_metrics_result()
 
   @callback available_timeseries_metrics() :: list(metric)
+
+  @callback available_timeseries_ohlc_metrics() :: list(metric)
 
   @callback available_histogram_metrics() :: list(metric)
 

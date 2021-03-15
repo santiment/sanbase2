@@ -6,10 +6,11 @@ defmodule Sanbase.Price.MetricAdapter do
   @default_aggregation :last
 
   @timeseries_metrics ["price_usd", "price_btc", "volume_usd", "marketcap_usd"]
+  @timeseries_ohlc_metrics ["price_usd"]
   @histogram_metrics []
   @table_metrics []
 
-  @metrics @histogram_metrics ++ @timeseries_metrics ++ @table_metrics
+  @metrics @histogram_metrics ++ @timeseries_metrics ++ @table_metrics ++ @timeseries_ohlc_metrics
 
   @access_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
   @min_plan_map Enum.into(@metrics, %{}, fn metric -> {metric, :free} end)
@@ -30,6 +31,11 @@ defmodule Sanbase.Price.MetricAdapter do
   @impl Sanbase.Metric.Behaviour
   def timeseries_data(metric, %{slug: slug}, from, to, interval, opts) do
     Price.timeseries_metric_data(slug, metric, from, to, interval, update_opts(opts))
+  end
+
+  @impl Sanbase.Metric.Behaviour
+  def timeseries_ohlc_data(metric, %{slug: slug}, from, to, interval, opts) do
+    Price.timeseries_ohlc_data(slug, from, to, interval, update_opts(opts))
   end
 
   @impl Sanbase.Metric.Behaviour
@@ -94,6 +100,9 @@ defmodule Sanbase.Price.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def available_timeseries_metrics(), do: @timeseries_metrics
+
+  @impl Sanbase.Metric.Behaviour
+  def available_timeseries_ohlc_metrics(), do: @timeseries_ohlc_metrics
 
   @impl Sanbase.Metric.Behaviour
   def available_histogram_metrics(), do: @histogram_metrics

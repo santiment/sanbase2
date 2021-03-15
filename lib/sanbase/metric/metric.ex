@@ -63,7 +63,9 @@ defmodule Sanbase.Metric do
   @table_metrics Sanbase.Metric.Helper.table_metrics()
   @table_metrics_mapset Sanbase.Metric.Helper.table_metrics_mapset()
   @table_metric_to_module_map Sanbase.Metric.Helper.table_metric_to_module_map()
-
+  @timeseries_ohlc_metric_to_module_map Sanbase.Metric.Helper.timeseries_ohlc_metric_to_module_map()
+  @timeseries_ohlc_metrics Sanbase.Metric.Helper.timeseries_ohlc_metrics()
+  @timeseries_ohlc_metrics_mapset Sanbase.Metric.Helper.timeseries_ohlc_metrics_mapset()
   @doc ~s"""
   Check if `metric` is a valid metric name.
   """
@@ -116,6 +118,36 @@ defmodule Sanbase.Metric do
 
         fun = fn ->
           module.timeseries_data(
+            metric,
+            selector,
+            from,
+            to,
+            interval,
+            opts
+          )
+        end
+
+        execute_if_aggregation_valid(fun, metric, aggregation)
+    end
+  end
+
+  @spec timeseries_data(metric, selector, datetime, datetime, interval, opts) ::
+          Type.timeseries_data_result()
+  def timeseries_ohlc_data(metric, selector, from, to, interval, opts \\ [])
+
+  def timeseries_ohlc_data(metric, selector, from, to, interval, opts) do
+    metric = maybe_replace_metric(metric, selector)
+
+    case Map.get(@timeseries_ohlc_metric_to_module_map, metric) do
+      nil ->
+        metric_not_available_error(metric, type: :timeseries)
+
+      module when is_atom(module) ->
+        module = maybe_change_module(module, metric, selector)
+        aggregation = Keyword.get(opts, :aggregation, nil)
+
+        fun = fn ->
+          module.timeseries_ohlc_data(
             metric,
             selector,
             from,
@@ -557,6 +589,12 @@ defmodule Sanbase.Metric do
   """
   @spec available_timeseries_metrics() :: list(metric)
   def available_timeseries_metrics(), do: @timeseries_metrics
+
+  @doc ~s"""
+  Get all available timeseries metrics
+  """
+  @spec available_timeseries_ohlc_metrics() :: list(metric)
+  def available_timeseries_ohlc_metrics(), do: @timeseries_ohlc_metrics
 
   @doc ~s"""
   Get all available histogram metrics

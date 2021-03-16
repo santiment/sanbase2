@@ -36,6 +36,12 @@ defmodule Sanbase.DateTimeUtils do
     end
   end
 
+  def generate_datetimes_list(from, interval, count) do
+    interval_sec = Sanbase.DateTimeUtils.str_to_sec(interval)
+
+    0..(count - 1) |> Enum.map(fn offset -> Timex.shift(from, seconds: interval_sec * offset) end)
+  end
+
   @doc ~s"""
   Sleep until `datetime` if and only if it is in the future.
   """

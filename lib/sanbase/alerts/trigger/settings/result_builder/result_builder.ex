@@ -10,8 +10,15 @@ defmodule Sanbase.Alert.ResultBuilder do
 
   @doc ~s"""
   Provided the raw data and the settings, and returns the trigger settings with
-  updated `triggered?` and `template_kv` fields. These fields are updated by computing
-  whether or not the alert should be triggered.
+  updated `triggered?` and `template_kv` fields. These fields are updated by
+  computing whether or not the alert should be triggered.
+
+  The `data` argument is in the format expected by the
+  Sanbase.Alert.ResultBuilder.Transformer.transform/2 function.
+  By default, data is a list of 2-element tuples where the first elemenet is a string
+  identifier (slug) and the second element is a list of maps with the `value` key.
+  If the key is not `value`, but something else, this has to be specified as the
+  `value_key` key in the opts.
   """
   def build(
         data,
@@ -19,7 +26,7 @@ defmodule Sanbase.Alert.ResultBuilder do
         template_kv_fun,
         opts \\ []
       )
-      when trigger_module in @trigger_modules do
+      when trigger_module in @trigger_modules and is_function(template_kv_fun, 2) do
     template_kv =
       Transformer.transform(data, Keyword.get(opts, :value_key, :value))
       |> Enum.reduce(%{}, fn %{} = transformed_data, acc ->

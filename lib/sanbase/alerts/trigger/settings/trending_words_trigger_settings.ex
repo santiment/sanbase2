@@ -10,6 +10,7 @@ defmodule Sanbase.Alert.Trigger.TrendingWordsTriggerSettings do
   4. Send an alert if some project from a watchlist enters the list
      of trending words
   """
+  @behaviour Sanbase.Alert.Trigger.Settings.Behaviour
 
   use Vex.Struct
 

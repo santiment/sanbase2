@@ -7,8 +7,8 @@ when given conditions are met.
 
 Examples:
 
-- `price_usd of ethreum is above $1,500`
-- `daily active addresses of bitcoin are incrased by 10% compared to 24h ago`
+- `price_usd of ethereum is above $1,500`
+- `daily active addresses of bitcoin increased by 10% compared to 24h ago`
 - `the word 'sell' is in the trending words`
 - `the ethereum balance of the address 0x123 is down by 100 ETH compared to 12h ago`
 - `transaction volume of santiment is above $1,000,000 and has increased by more

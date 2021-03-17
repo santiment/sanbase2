@@ -9,19 +9,25 @@ defmodule Sanbase.Kaiko do
   @url "https://eu.market-api.kaiko.io"
   @recv_timeout 30_000
   @interval "1s"
-  @rounds_per_minute 12
+  @rounds_per_minute 20
 
   # Scraping is started every round minute. We want to scrape every 5 seconds.
   # Because of this, every minute scrape consists of many scrapres.
   def run(opts \\ []) do
     rounds = Keyword.get(opts, :rounds_per_minute, @rounds_per_minute)
-    sleep_seconds = div(60, rounds)
+    interval_sec = div(60, rounds)
 
-    for i <- 1..rounds do
+    run_at_datetimes =
+      Sanbase.DateTimeUtils.generate_datetimes_list(Timex.now(), "#{interval_sec}s", rounds)
+      |> Enum.with_index()
+
+    Enum.each(run_at_datetimes, fn {dt, i} ->
       do_run()
-      # The last time there's no need for sleeping after the scraping
-      if i != rounds, do: Process.sleep(sleep_seconds * 1000)
-    end
+
+      # Sleep until some predefined time. This makes sure that the time between
+      # requests is even if some requests takes longer to compute.
+      if i != rounds, do: Sanbase.DateTimeUtils.sleep_until(dt)
+    end)
   end
 
   defp do_run() do
@@ -43,6 +49,7 @@ defmodule Sanbase.Kaiko do
           # the datetime. The datetime is rounded to `@interval_sec` buckets
           # so this combination can be done in more cases
           usd_prices = current_prices(base_asset, "usd", usd_timerange)
+
           btc_prices = current_prices(base_asset, "btc", btc_timerange)
           prices = combine_prices(usd_prices, btc_prices)
 

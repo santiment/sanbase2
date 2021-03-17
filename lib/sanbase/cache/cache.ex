@@ -10,7 +10,7 @@ defmodule Sanbase.Cache do
       {ConCache,
        [
          name: Keyword.fetch!(opts, :name),
-         ttl_check_interval: Keyword.get(opts, :ttl_check_interval, :timer.seconds(30)),
+         ttl_check_interval: Keyword.get(opts, :ttl_check_interval, :timer.seconds(5)),
          global_ttl: Keyword.get(opts, :global_ttl, :timer.minutes(5)),
          acquire_lock_timeout: Keyword.get(opts, :aquire_lock_timeout, 30_000)
        ]},

@@ -1,4 +1,6 @@
 defmodule Sanbase.Alert.Trigger.PriceVolumeDifferenceTriggerSettings do
+  @behaviour Sanbase.Alert.Trigger.Settings.Behaviour
+
   use Vex.Struct
 
   import Sanbase.{Validation, Alert.Validation}

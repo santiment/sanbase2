@@ -1,5 +1,31 @@
 defmodule Sanbase.TemplateEngine do
   @moduledoc ~s"""
+  Produce a string value from a given template and key-value enumerable.
+  All occurances in the template that are enclosed in double braces are replaced
+  with the corersponding values from KV enumerable.
+
+  Example:
+    iex> Sanbase.TemplateEngine.run("My name is {{name}}", %{name: "San"})
+    "My name is San"
+
+    iex> Sanbase.TemplateEngine.run("{{a}}{{b}}{{a}}{{a}}", %{a: "1", b: 2})
+    "1211"
+
+    iex> Sanbase.TemplateEngine.run("SmallNum: {{small_num}}", %{small_num: 100})
+    "SmallNum: 100"
+
+    iex> Sanbase.TemplateEngine.run("MediumNum: {{medium_num}}", %{medium_num: 100000})
+    "MediumNum: 100000"
+
+    iex> Sanbase.TemplateEngine.run("Human Readable MediumNum: {{medium_num}}", %{medium_num: 100000, human_readable: [:medium_num]})
+    "Human Readable MediumNum: 100,000.00"
+
+    iex> Sanbase.TemplateEngine.run("BigNum: {{big_num}}", %{big_num: 999999999999})
+    "BigNum: 999999999999"
+
+
+    iex> Sanbase.TemplateEngine.run("Human Readable BigNum: {{big_num}}", %{big_num: 999999999999, human_readable: [:big_num]})
+    "Human Readable BigNum: 1,000.00 Billion"
   """
 
   def run(template, kv) do

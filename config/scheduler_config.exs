@@ -66,7 +66,7 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       task: {Sanbase.Billing, :sync_products_with_stripe, []}
     ],
     sync_stripe_subscriptions: [
-      schedule: "2-59/5 * * * *",
+      schedule: "2-59/20 * * * *",
       task: {Sanbase.Billing, :sync_stripe_subscriptions, []}
     ],
     remove_duplicate_subscriptions: [

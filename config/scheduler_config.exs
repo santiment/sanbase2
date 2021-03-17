@@ -67,11 +67,13 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     ],
     sync_stripe_subscriptions: [
       schedule: "2-59/20 * * * *",
-      task: {Sanbase.Billing, :sync_stripe_subscriptions, []}
+      task: {Sanbase.Billing, :sync_stripe_subscriptions, []},
+      overlap: false
     ],
     remove_duplicate_subscriptions: [
       schedule: "*/20 * * * *",
-      task: {Sanbase.Billing, :remove_duplicate_subscriptions, []}
+      task: {Sanbase.Billing, :remove_duplicate_subscriptions, []},
+      overlap: false
     ],
     logo_fetcher: [
       schedule: "@daily",

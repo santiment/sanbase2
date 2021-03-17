@@ -70,6 +70,14 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
     field(:value, :float)
   end
 
+  object :ohlc_data do
+    field(:datetime, non_null(:datetime))
+    field(:open, :float)
+    field(:close, :float)
+    field(:high, :float)
+    field(:low, :float)
+  end
+
   object :slug_float_value_pair do
     field(:slug, non_null(:string))
     field(:value, :float)
@@ -313,6 +321,23 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       middleware(AccessControl)
 
       cache_resolve(&MetricResolver.timeseries_data/3)
+    end
+
+    field :timeseries_ohlc_data, list_of(:ohlc_data) do
+      arg(:slug, :string)
+      arg(:selector, :metric_target_selector_input_object)
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :interval, default_value: "1d")
+      arg(:aggregation, :aggregation, default_value: nil)
+      arg(:transform, :timeseries_metric_transform_input_object)
+      arg(:include_incomplete_data, :boolean, default_value: false)
+      arg(:caching_params, :caching_params_input_object)
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(AccessControl)
+
+      cache_resolve(&MetricResolver.timeseries_ohlc_data/3)
     end
 
     field :timeseries_data_per_slug, list_of(:metric_data_per_slug) do

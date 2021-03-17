@@ -432,6 +432,26 @@ defmodule Sanbase.Price do
     |> maybe_unwrap_ok_value()
   end
 
+  def timeseries_ohlc_data("price_usd", slug, from, to, interval, opts) do
+    source = Keyword.get(opts, :source, @default_source)
+    {query, args} = timeseries_ohlc_data_query(slug, from, to, interval, source)
+
+    ClickhouseRepo.query_transform(
+      query,
+      args,
+      fn
+        [timestamp, open, high, low, close, has_changed] ->
+          %{
+            datetime: DateTime.from_unix!(timestamp),
+            open: open,
+            high: high,
+            close: close,
+            low: low
+          }
+      end
+    )
+  end
+
   @doc ~s"""
   Return open-high-close-low price data in USD for the provided slug
   in the given interval.

@@ -84,6 +84,10 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   end
 
   @impl Sanbase.Metric.Behaviour
+  def timeseries_ohlc_data(_metric, _selector, _from, _to, _interval, _opts),
+    do: {:error, "Not implemented"}
+
+  @impl Sanbase.Metric.Behaviour
   def timeseries_data_per_slug(metric, %{slug: slug}, from, to, interval, opts) do
     aggregation = Keyword.get(opts, :aggregation, nil) || Map.get(@aggregation_map, metric)
     filters = Keyword.get(opts, :additional_filters, [])
@@ -113,9 +117,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   defdelegate table_data(metric, slug_or_slugs, from, to, opts), to: TableMetric
-
-  @impl Sanbase.Metric.Behaviour
-  defdelegate timeseries_ohlc_data(metric, slug_or_slugs, from, to, opts), to: TableMetric
 
   @impl Sanbase.Metric.Behaviour
   def aggregated_timeseries_data(metric, selector, from, to, opts)

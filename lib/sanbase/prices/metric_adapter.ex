@@ -35,7 +35,7 @@ defmodule Sanbase.Price.MetricAdapter do
 
   @impl Sanbase.Metric.Behaviour
   def timeseries_ohlc_data(metric, %{slug: slug}, from, to, interval, opts) do
-    Price.timeseries_ohlc_data(slug, from, to, interval, update_opts(opts))
+    Price.timeseries_ohlc_data(metric, slug, from, to, interval, update_opts(opts))
   end
 
   @impl Sanbase.Metric.Behaviour

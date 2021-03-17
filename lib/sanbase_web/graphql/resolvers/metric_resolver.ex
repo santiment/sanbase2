@@ -89,8 +89,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     fetch_timeseries_data(metric, args, :timeseries_data)
   end
 
+  def timeseries_data(_root, args, %{source: %{metric: metric}}) do
+    fetch_timeseries_data(metric, args, :timeseries_data)
+  end
+
   def timeseries_data_per_slug(_root, args, %{source: %{metric: metric}}) do
     fetch_timeseries_data(metric, args, :timeseries_data_per_slug)
+  end
+
+  def timeseries_ohlc_data(_root, args, %{source: %{metric: metric}}) do
+    fetch_timeseries_data(metric, args, :timeseries_ohlc_data)
   end
 
   def aggregated_timeseries_data(

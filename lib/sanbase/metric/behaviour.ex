@@ -120,7 +120,7 @@ defmodule Sanbase.Metric.Behaviour do
               interval :: interval(),
               opts :: opts
             ) ::
-              timeseries_data_result
+              timeseries_ohlc_data_result
 
   @callback timeseries_data_per_slug(
               metric :: metric(),

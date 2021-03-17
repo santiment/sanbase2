@@ -7,6 +7,7 @@ defmodule Sanbase.Billing.Subscription do
   use Ecto.Schema
 
   import Ecto.Changeset
+  import Sanbase.Billing.Event, only: [emit_event: 3]
 
   alias Sanbase.Billing
   alias Sanbase.Billing.{Plan, Product}
@@ -90,12 +91,17 @@ defmodule Sanbase.Billing.Subscription do
       inserted_at: DateTime.from_unix!(stripe_subscription.created) |> DateTime.to_naive()
     })
     |> Repo.insert(on_conflict: :nothing)
+    |> case do
+      {:ok, %{id: nil}} = result -> result
+      result -> result |> emit_event(:create_subscription, %{})
+    end
   end
 
   def update_subscription_db(subscription, params) do
     subscription
     |> changeset(params)
     |> Repo.update()
+    |> emit_event(:update_subscription, %{})
   end
 
   @doc """

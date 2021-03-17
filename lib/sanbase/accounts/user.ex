@@ -3,6 +3,7 @@ defmodule Sanbase.Accounts.User do
 
   import Ecto.Changeset
   import Ecto.Query
+  import Sanbase.Accounts.Event, only: [emit_event: 3]
 
   alias Sanbase.Accounts.{
     User,
@@ -187,12 +188,9 @@ defmodule Sanbase.Accounts.User do
   end
 
   def by_id(user_id) when is_integer(user_id) do
-    case Sanbase.Repo.get_by(User, id: user_id) do
-      nil ->
-        {:error, "Cannot fetch the user with id #{user_id}"}
-
-      user ->
-        {:ok, user}
+    case Sanbase.Repo.get(User, user_id) do
+      nil -> {:error, "Cannot fetch the user with id #{user_id}"}
+      %__MODULE__{} = user -> {:ok, user}
     end
   end
 
@@ -212,8 +210,8 @@ defmodule Sanbase.Accounts.User do
     Sanbase.Repo.get_by(User, email: email)
   end
 
-  def by_selector(%{id: id}), do: Repo.get_by(__MODULE__, id: id)
-  def by_selector(%{email: email}), do: Repo.get_by(__MODULE__, email: email)
+  def by_selector(%{id: id}), do: by_id(Sanbase.Math.to_integer(id))
+  def by_selector(%{email: email}), do: by_email(email)
   def by_selector(%{username: username}), do: Repo.get_by(__MODULE__, username: username)
 
   def update_field(%__MODULE__{} = user, field, value) do
@@ -303,6 +301,7 @@ defmodule Sanbase.Accounts.User do
     user
     |> changeset(%{username: username})
     |> Repo.update()
+    |> emit_event(:update_username, %{old_username: user.username, new_username: username})
   end
 
   @spec add_eth_account(%User{}, String.t()) :: {:ok, %User{}} | {:error, Ecto.Changeset.t()}
@@ -394,12 +393,13 @@ defmodule Sanbase.Accounts.User do
   It is used from all channels for sign up - email, metamask, google, twitter.
   If user is already registered it does nothing but returning the user object.
   """
-  def mark_as_registered(%User{is_registered: true} = user), do: {:ok, user}
+  def mark_as_registered(%User{is_registered: true} = user, args), do: {:ok, user}
 
-  def mark_as_registered(%User{is_registered: false} = user) do
+  def mark_as_registered(%User{is_registered: false} = user, %{login_origin: _} = args) do
     user
     |> User.changeset(%{is_registered: true})
     |> Repo.update()
+    |> emit_event(:register_user, args)
   end
 
   # Helpers

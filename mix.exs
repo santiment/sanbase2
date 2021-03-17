@@ -32,7 +32,8 @@ defmodule Sanbase.Mixfile do
         :runtime_tools,
         :sasl,
         :clickhousex,
-        :os_mon
+        :os_mon,
+        :event_bus
       ],
       included_applications: [:oauther, :brod, :kaffe, :ueberauth_twitter]
     ]
@@ -73,6 +74,7 @@ defmodule Sanbase.Mixfile do
       {:ecto, "~> 3.0"},
       {:envy, "~> 1.1.1", only: [:dev, :test]},
       {:erlex, "~> 0.2.6", override: true},
+      {:event_bus, "~> 1.6.2"},
       {:ex_admin, github: "santiment/ex_admin"},
       {:ex_aws_s3, "~> 2.0"},
       {:ex_aws, "~> 2.0"},

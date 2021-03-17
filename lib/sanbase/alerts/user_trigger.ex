@@ -9,6 +9,7 @@ defmodule Sanbase.Alert.UserTrigger do
 
   import Ecto.Changeset
   import Ecto.Query
+  import Sanbase.Alert.Event, only: [emit_event: 2]
   import Sanbase.Alert.TriggerQuery
   import Sanbase.Alert.StructMapTransformation
 
@@ -167,8 +168,9 @@ defmodule Sanbase.Alert.UserTrigger do
       case Repo.insert(changeset) do
         {:ok, ut} ->
           {:ok, _} = create_event(ut, changeset, TimelineEvent.create_public_trigger_type())
-          {:ok, ut} = post_create_process(ut)
-          {:ok, ut}
+
+          post_create_process(ut)
+          |> emit_event(:create_alert)
 
         {:error, error} ->
           {:error, error}

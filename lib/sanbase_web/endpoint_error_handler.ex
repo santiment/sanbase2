@@ -69,7 +69,7 @@ defmodule SanbaseWeb.Endpoint.ErrorHandler do
           san_tokens: nil
         }
         |> Sanbase.Kafka.ApiCall.json_kv_tuple()
-        |> Sanbase.KafkaExporter.persist(:api_call_exporter)
+        |> Sanbase.KafkaExporter.persist_async(:api_call_exporter)
       end
     end
   end

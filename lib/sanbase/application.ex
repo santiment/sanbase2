@@ -52,10 +52,10 @@ defmodule Sanbase.Application do
 
     # Prometheus related
     Sanbase.Prometheus.EctoInstrumenter.setup()
-
     Sanbase.Prometheus.PipelineInstrumenter.setup()
-
     Sanbase.Prometheus.Exporter.setup()
+
+    event_bus_init()
 
     # Container specific init
     case container_type do
@@ -140,7 +140,7 @@ defmodule Sanbase.Application do
     [
       {SanExporterEx,
        [
-         kafka_producer_module: kafka_producer_supervisor_module(),
+         kafka_producer_module: Config.module_get(Sanbase.KafkaExporter, :supervisor),
          kafka_endpoint: kafka_endpoint()
        ]},
       start_if(
@@ -148,7 +148,7 @@ defmodule Sanbase.Application do
           Sanbase.KafkaExporter.child_spec(
             id: :api_call_exporter,
             name: :api_call_exporter,
-            topic: kafka_api_call_data_topic()
+            topic: Config.module_get(Sanbase.KafkaExporter, :api_call_data_topic)
           )
         end,
         fn -> container_type in ["web", "all"] end
@@ -158,7 +158,7 @@ defmodule Sanbase.Application do
           Sanbase.KafkaExporter.child_spec(
             id: :prices_exporter,
             name: :prices_exporter,
-            topic: kafka_prices_data_topic(),
+            topic: Config.module_get(Sanbase.KafkaExporter, :prices_topic),
             buffering_max_messages: 10_000,
             can_send_after_interval: 250
           )
@@ -166,6 +166,13 @@ defmodule Sanbase.Application do
         fn ->
           container_type in ["all", "scrapers"]
         end
+      ),
+      Sanbase.KafkaExporter.child_spec(
+        id: :sanbase_event_bus_kafka_exporter,
+        name: :sanbase_event_bus_kafka_exporter,
+        topic: Config.module_get(Sanbase.KafkaExporter, :sanbase_event_bus_topic),
+        buffering_max_messages: 10_000,
+        can_send_after_interval: 250
       )
     ]
   end
@@ -229,6 +236,8 @@ defmodule Sanbase.Application do
          global_ttl: :timer.minutes(5),
          acquire_lock_timeout: 30_000
        ]},
+      Sanbase.EventBus.KafkaExporterSubscriber,
+      Sanbase.EventBus.UserEventsSubscriber,
 
       # Service for fast checking if a slug is valid
       # `:available_slugs_module` option changes the module
@@ -245,16 +254,17 @@ defmodule Sanbase.Application do
     :ok
   end
 
-  defp kafka_producer_supervisor_module() do
-    Config.module_get(Sanbase.KafkaExporter, :supervisor)
-  end
+  defp event_bus_init() do
+    EventBus.register_topic(:user_events)
+    EventBus.register_topic(:watchlist_events)
+    EventBus.register_topic(:alert_events)
+    EventBus.register_topic(:insight_events)
+    EventBus.register_topic(:payment_events)
 
-  defp kafka_api_call_data_topic() do
-    Config.module_get(Sanbase.KafkaExporter, :api_call_data_topic)
-  end
-
-  defp kafka_prices_data_topic() do
-    Config.module_get(Sanbase.KafkaExporter, :prices_topic)
+    EventBus.subscribe({Sanbase.EventBus.NotificationSubscriber, [".*"]})
+    EventBus.subscribe({Sanbase.EventBus.KafkaExporterSubscriber, [".*"]})
+    EventBus.subscribe({Sanbase.EventBus.UserEventsSubscriber, ["user_events"]})
+    EventBus.subscribe({Sanbase.EventBus.PaymentSubscriber, ["payment"]})
   end
 
   defp kafka_endpoint() do

@@ -2,9 +2,12 @@ defmodule Sanbase.Accounts.User.Email do
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
 
-  @token_valid_window_minutes 60
+  import Sanbase.Accounts.Event, only: [emit_event: 3]
 
   require Mockery.Macro
+
+  @token_valid_window_minutes 60
+
   defp mandrill_api(), do: Mockery.Macro.mockable(Sanbase.MandrillApi)
 
   def find_by_email_candidate(email_candidate, email_candidate_token) do
@@ -43,6 +46,7 @@ defmodule Sanbase.Accounts.User.Email do
       email_candidate_token_validated_at: nil
     })
     |> Repo.update()
+    |> emit_event(:update_email_candidate, %{email_candidate: email_candidate})
   end
 
   def mark_email_token_as_validated(user) do
@@ -69,6 +73,7 @@ defmodule Sanbase.Accounts.User.Email do
       email_candidate_token_validated_at: validated_at
     })
     |> Repo.update()
+    |> emit_event(:update_email, %{old_email: user.email, new_email: user.email_candidate})
   end
 
   @doc ~s"""

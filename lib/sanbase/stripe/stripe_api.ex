@@ -13,21 +13,25 @@ defmodule Sanbase.StripeApi do
           items: list(subscription_item)
         }
 
-  def create_customer(%User{username: username, email: email}, nil) do
+  @spec create_customer(%User{}, nil | String.t()) ::
+          {:ok, Stripe.Customer.t()} | {:error, Stripe.Error.t()}
+  def create_customer(%User{} = user, nil) do
     Stripe.Customer.create(%{
-      description: username,
-      email: email
+      description: user.username,
+      email: user.email
     })
   end
 
-  def create_customer(%User{username: username, email: email}, card_token) do
+  def create_customer(%User{} = user, card_token) do
     Stripe.Customer.create(%{
-      description: username,
-      email: email,
+      description: user.username,
+      email: user.email,
       source: card_token
     })
   end
 
+  @spec update_customer(%User{}, String.t()) ::
+          {:ok, Stripe.Customer.t()} | {:error, Stripe.Error.t()}
   def update_customer(%User{stripe_customer_id: stripe_customer_id}, card_token)
       when is_binary(stripe_customer_id) do
     Stripe.Customer.update(stripe_customer_id, %{source: card_token})

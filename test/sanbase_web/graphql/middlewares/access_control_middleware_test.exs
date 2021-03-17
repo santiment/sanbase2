@@ -241,7 +241,10 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
       |> json_response(401)
 
     assert result["errors"]["details"] ==
-             "You need to upgrade to Sanbase Basic or Sanbase Pro in order to use SanSheets."
+             """
+             You need to upgrade Sanbase Pro in order to use SanSheets.
+             If you already have Sanbase Pro, please make sure that a correct API key is provided.
+             """
   end
 
   test "returns error when sansheets user without API key is not Pro" do
@@ -275,6 +278,9 @@ defmodule SanbaseWeb.Graphql.AccessControlMiddlewareTest do
       |> json_response(401)
 
     assert result["errors"]["details"] ==
-             "You need to upgrade to Sanbase Basic or Sanbase Pro in order to use SanSheets."
+             """
+             You need to upgrade Sanbase Pro in order to use SanSheets.
+             If you already have Sanbase Pro, please make sure that a correct API key is provided.
+             """
   end
 end

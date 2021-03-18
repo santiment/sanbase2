@@ -39,7 +39,7 @@ These are the fields describing a trigger.
 
 ### Settings fields
 
-- **type** Defines the type of the trigger. Can be one of: `["trending_words", "price_volume_difference", "metric_signal", "daily_metric_signal", "wallet_movement"]`
+- **type** Defines the type of the trigger. Can be one of: `["trending_words", "price_volume_difference", "metric_signal", "daily_metric_signal", "wallet_movement", "signal_data"]`
 - **target**: Slug or list of slugs or watchlist or ethereum addresses or list of ethereum addresses - `{"slug": "naga"} | {"slug": ["ethereum", "santiment"]} | {"watchlist_id": watchlsit_id} | {"eth_address": "0x123"} | {"eth_address": ["0x123", "0x234"]}`.
 - **channel**: A channel where the alert is sent. Can be one of `"telegram" | "email" | "web_push" | {"webhook": <webhook_url>}` | `{"telegram_channel": "@<channel_name>"}` or a list of any combination. In case of telegram_channel, the bot must be an admin that has post messages priviliges.
 - **time_window**: `1d`, `4w`, `1h` - Time string we use throughout the API for `interval`
@@ -129,6 +129,30 @@ These are the fields describing a trigger.
   "channel": "telegram",
   "target": { "slug": "santiment" },
   "threshold": 0.002
+}
+```
+
+#### Example settings structure for `signal_data`
+```json
+// Send an alert if there are any signals
+{
+  "type": "signal_data",
+  "signal": "dai_mint",
+  "target": {"slug": "mint-collateral-dai"},
+  "channel": "telegram",
+  "operation": {"above": 0}
+}
+```
+
+```json
+// Send an alert if there are any signals for the last day
+{
+  "type": "signal_data",
+  "signal": "dai_mint",
+  "target": {"slug": "mint-collateral-dai"},
+  "channel": "telegram",
+  "time_window": "1d",
+  "operation": {"above": 0}
 }
 ```
 

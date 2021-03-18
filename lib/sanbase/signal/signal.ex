@@ -13,6 +13,8 @@ defmodule Sanbase.Signal do
 
   def available_aggregations(), do: SignalAdapter.available_aggregations()
 
+  def human_readable_name(signal), do: {:ok, SignalAdapter.human_readable_name(signal)}
+
   def available_signals() do
     SignalAdapter.available_signals()
   end

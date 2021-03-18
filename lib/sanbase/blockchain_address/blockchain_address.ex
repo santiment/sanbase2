@@ -16,6 +16,7 @@ defmodule Sanbase.BlockchainAddress do
     addr
     |> cast(attrs, [:address, :infrastructure_id, :notes])
     |> validate_required([:address])
+    |> validate_length(:notes, max: 45)
   end
 
   def by_id(id) do

@@ -115,7 +115,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
         name: "#{update_name}"
         description: "#{update_description}"
         color: BLACK
-        listItems: [{blockchainAddress: {address: "0x123a", infrastructure: "ETH", labels: ["Trader", "DEX"]}}]
+        listItems: [{blockchainAddress: {address: "0x123a", infrastructure: "ETH", notes: "note", labels: ["Trader", "DEX"]}}]
         isMonitored: true
       ) {
         name
@@ -125,7 +125,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
         isMonitored
         user { id }
         listItems {
-          blockchainAddress { address labels { name } }
+          blockchainAddress { address notes labels { name } }
         }
       }
     }
@@ -147,6 +147,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
              %{
                "blockchainAddress" => %{
                  "address" => "0x123a",
+                 "notes" => "note",
                  "labels" => [%{"name" => "Trader"}, %{"name" => "DEX"}]
                }
              }

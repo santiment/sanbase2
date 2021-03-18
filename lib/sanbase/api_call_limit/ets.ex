@@ -136,7 +136,7 @@ defmodule Sanbase.ApiCallLimit.ETS do
 
         # Do another lookup do re-fetch the data in case we waited for the
         # mutex while some other process was doing work here.
-        [{^entity_key, api_calls_remaining, quota, _metadata}] =
+        [{^entity_key, api_calls_remaining, quota, metadata}] =
           :ets.lookup(@ets_table, entity_key)
 
         if api_calls_remaining <= count do
@@ -149,20 +149,30 @@ defmodule Sanbase.ApiCallLimit.ETS do
 
           get_quota_db_and_update_ets(entity_type, entity, entity_key)
         else
-          true = do_upate_ets_usage(entity_key, api_calls_remaining - count)
+          true = do_upate_ets_usage(entity_key, api_calls_remaining, count, metadata)
         end
 
         Mutex.release(Sanbase.ApiCallLimitMutex, lock)
         :ok
 
-      [{^entity_key, api_calls_remaining, _quota, _metadata}] ->
-        true = do_upate_ets_usage(entity_key, api_calls_remaining - count)
+      [{^entity_key, api_calls_remaining, _quota, metadata}] ->
+        true = do_upate_ets_usage(entity_key, api_calls_remaining, count, metadata)
         :ok
     end
   end
 
-  defp do_upate_ets_usage(entity_key, value) do
-    :ets.update_element(@ets_table, entity_key, {2, value})
+  defp do_upate_ets_usage(entity_key, api_calls_remaining, count, metadata) do
+    remaining = metadata.api_calls_remaining
+
+    metadata =
+      Map.put(metadata, :api_calls_remaining, %{
+        month: Enum.max([remaining.month - count, 0]),
+        hour: Enum.max([remaining.hour - count, 0]),
+        minute: Enum.max([remaining.minute - count, 0])
+      })
+
+    true = :ets.update_element(@ets_table, entity_key, {2, api_calls_remaining - count})
+    true = :ets.update_element(@ets_table, entity_key, {4, metadata})
   end
 
   defp get_quota_db_and_update_ets(entity_type, entity, entity_key) do

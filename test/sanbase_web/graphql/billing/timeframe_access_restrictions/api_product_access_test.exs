@@ -230,17 +230,6 @@ defmodule Sanbase.Billing.ApiProductAccessTest do
       assert_called(Metric.timeseries_data(metric, :_, :_, :_, :_, :_))
       assert result != nil
     end
-
-    test "some metrics can't be accessed with basic timeframe", context do
-      {from, to} = from_to(2 * 365 - 1, 2 * 365 - 2)
-      metric = "active_deposits"
-      slug = context.project.slug
-      query = metric_query(metric, slug, from, to)
-      error_msg = execute_query_with_error(context.conn, query, "getMetric")
-
-      refute called(Metric.timeseries_data(metric, :_, from, to, :_, :_))
-      assert error_msg != nil
-    end
   end
 
   describe "SanAPI product, user with PRO plan" do

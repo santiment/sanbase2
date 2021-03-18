@@ -98,12 +98,6 @@ defmodule Sanbase.Billing.Subscription do
     |> Repo.update()
   end
 
-  def sync_stripe_subscriptions() do
-    __MODULE__
-    |> Repo.all()
-    |> Enum.each(&sync_subscription_with_stripe/1)
-  end
-
   @doc """
   Subscribe user with card_token to a plan.
 
@@ -200,6 +194,19 @@ defmodule Sanbase.Billing.Subscription do
     end
   end
 
+  @doc ~s"""
+  Sync the subscriptions stored in the database with the ones in Stripe.
+  If changes are found, the local subscriptions are updated with the latest data
+  in Stripe.
+  """
+  def sync_stripe_subscriptions() do
+    Logger.info("Start syncing subscriptions with Stripe.")
+
+    __MODULE__
+    |> Repo.all()
+    |> Enum.each(&sync_subscription_with_stripe/1)
+  end
+
   def sync_subscription_with_stripe(%__MODULE__{stripe_id: stripe_id} = db_subscription)
       when is_binary(stripe_id) do
     with {:ok, stripe_subscription} <- StripeApi.retrieve_subscription(stripe_id),
@@ -217,6 +224,8 @@ defmodule Sanbase.Billing.Subscription do
 
   # Leave first active subscription and remove rest
   def remove_duplicate_subscriptions() do
+    Logger.info("Start removing duplicate subscriptions.")
+
     __MODULE__.Stats.duplicate_sanbase_subscriptions()
     |> Enum.filter(fn subs ->
       subs |> List.first() |> elem(3) == :active

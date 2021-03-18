@@ -1,6 +1,6 @@
 [
   {
-    "human_readable_name": "Stablecoin Balances",
+    "human_readable_name": "Labeled Exchange Balances",
     "name": "labelled_exchange_balance_sum",
     "metric": "labelled_exchange_balance_sum",
     "version": "2020-09-15",

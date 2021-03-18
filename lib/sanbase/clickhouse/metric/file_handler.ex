@@ -1,6 +1,8 @@
 defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   @moduledoc false
 
+  require Sanbase.Break, as: Break
+
   defmodule Helper do
     def name_to_field_map(map, field, transform_fn \\ fn x -> x end) do
       map
@@ -8,6 +10,14 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
         %{"name" => name, ^field => value} -> {name, transform_fn.(value)}
         %{"name" => name} -> {name, nil}
       end)
+    end
+
+    def resolve_metric_aliases(metric, aliases) do
+      duplicates =
+        aliases
+        |> Enum.map(&Map.put(metric, "name", &1))
+
+      [metric | duplicates]
     end
   end
 
@@ -24,7 +34,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   #  if the data is queried with interval bigger than 'min_interval'
   #  min-interval - the minimal interval the data is available for
   #  table - the table name in ClickHouse where the metric is stored
-  # Orderig
+  # Ordering
   #  The metrics order in this list is not important. For consistency and
   #  to be easy-readable, the same metric with different time-bound are packed
   #  together. In descending order we have the time-bound from biggest to
@@ -51,9 +61,17 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   @external_resource Path.join(__DIR__, "metric_files/uniswap_metrics.json")
   @external_resource Path.join(__DIR__, "metric_files/labeled_holders_distribution_metrics.json")
 
-  @metrics_json Enum.reduce(@external_resource, [], fn file, acc ->
-                  (File.read!(file) |> Jason.decode!()) ++ acc
-                end)
+  @metrics_json_pre_alias_expand Enum.reduce(@external_resource, [], fn file, acc ->
+                                   (File.read!(file) |> Jason.decode!()) ++ acc
+                                 end)
+
+  @metrics_json Enum.flat_map(
+                  @metrics_json_pre_alias_expand,
+                  fn metric ->
+                    aliases = Map.get(metric, "aliases", [])
+                    Helper.resolve_metric_aliases(metric, aliases)
+                  end
+                )
 
   @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
 
@@ -79,13 +97,25 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
   @metrics_list @metrics_json |> Enum.map(fn %{"name" => name} -> name end)
   @metrics_mapset MapSet.new(@metrics_list)
 
+  Enum.group_by(
+    @metrics_json_pre_alias_expand,
+    fn metric -> {metric["metric"], metric["data_type"]} end
+  )
+  |> Map.values()
+  |> Enum.filter(fn grouped_metrics -> Enum.count(grouped_metrics) > 1 end)
+  |> Enum.each(fn duplicate_metrics ->
+    Break.break("""
+      Duplicate metrics found, consider using the aliases field:
+      `aliases: ["name1", "name2", ...]`
+      These metrics are: #{inspect(duplicate_metrics)}
+    """)
+  end)
+
   case Enum.filter(@aggregation_map, fn {_, aggr} -> aggr not in @aggregations end) do
     [] ->
       :ok
 
     metrics ->
-      require(Sanbase.Break, as: Break)
-
       Break.break("""
       There are metrics defined in the metric files that have not supported aggregation.
       These metrics are: #{inspect(metrics)}
@@ -120,6 +150,4 @@ defmodule Sanbase.Clickhouse.MetricAdapter.FileHandler do
     |> Enum.filter(fn {_metric, data_type} -> data_type == type end)
     |> Enum.map(&elem(&1, 0))
   end
-
-  # Private functions
 end

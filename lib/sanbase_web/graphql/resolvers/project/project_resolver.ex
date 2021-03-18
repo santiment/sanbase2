@@ -69,6 +69,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, infrastructure}
   end
 
+  def social_volume_query(%Project{} = project, _args, %{
+        context: %{loader: loader}
+      }) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :social_volume_query, project.id)
+    |> on_load(&social_volume_query_from_loader(&1, project))
+  end
+
+  defp social_volume_query_from_loader(loader, project) do
+    query =
+      loader
+      |> Dataloader.get(SanbaseDataloader, :social_volume_query, project.id)
+
+    {:ok, query}
+  end
+
   def roi_usd(%Project{} = project, _args, _resolution) do
     roi = Project.roi_usd(project)
 

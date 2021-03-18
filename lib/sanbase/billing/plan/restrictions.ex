@@ -56,7 +56,6 @@ defmodule Sanbase.Billing.Plan.Restrictions do
       |> Enum.map(fn metric_or_query -> get(metric_or_query, plan, product_id) end)
 
     (get_extra_queries(plan, product_id) ++ result)
-    |> Enum.filter(& &1.is_accessible)
     |> Enum.uniq_by(& &1.name)
     |> Enum.sort_by(& &1.name)
   end
@@ -69,7 +68,7 @@ defmodule Sanbase.Billing.Plan.Restrictions do
       name: name_str,
       min_interval: min_interval(type_str, name_str),
       is_accessible: false,
-      is_restricted: false,
+      is_restricted: true,
       restricted_from: nil,
       restricted_to: nil
     }

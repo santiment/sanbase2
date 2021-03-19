@@ -5,7 +5,13 @@ defmodule Sanbase.Price do
   import Sanbase.Price.SqlQuery
 
   import Sanbase.Utils.Transform,
-    only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2, wrap_ok: 1]
+    only: [
+      maybe_unwrap_ok_value: 1,
+      maybe_apply_function: 2,
+      wrap_ok: 1,
+      transform_metric_result_func: 0,
+      transform_metric_ohlc_result_func: 0
+    ]
 
   import Sanbase.Metric.Transform, only: [maybe_nullify_values: 1, remove_missing_values: 1]
 
@@ -199,34 +205,9 @@ defmodule Sanbase.Price do
       timeseries_metric_data_query(slug_or_slugs, metric, from, to, interval, source, aggregation)
 
     if aggregation == :ohlc do
-      ClickhouseRepo.query_transform(
-        query,
-        args,
-        fn
-          [timestamp, open, high, low, close] ->
-            %{
-              datetime: DateTime.from_unix!(timestamp),
-              value_ohlc: %{
-                open: open,
-                high: high,
-                low: low,
-                close: close
-              }
-            }
-        end
-      )
+      ClickhouseRepo.query_transform(query, args, transform_metric_ohlc_result_func())
     else
-      ClickhouseRepo.query_transform(
-        query,
-        args,
-        fn
-          [timestamp, value] ->
-            %{
-              datetime: DateTime.from_unix!(timestamp),
-              value: value
-            }
-        end
-      )
+      ClickhouseRepo.query_transform(query, args, transform_metric_result_func())
     end
   end
 

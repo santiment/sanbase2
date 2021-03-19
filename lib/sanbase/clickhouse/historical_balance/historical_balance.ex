@@ -57,6 +57,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
           | {:ok, list(%{datetime: DateTime.t(), balance: number()})}
           | {:error, String.t()}
 
+  @async_with_timeout 29_000
   @doc ~s"""
   Return a list of the assets that a given address currently holds or
   has held in the past.
@@ -65,6 +66,16 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   balance of all currently owned assets
   """
   @spec assets_held_by_address(map()) :: {:ok, list(map())} | {:error, String.t()}
+  def assets_held_by_address(%{infrastructure: "ETH", address: address}) do
+    async with {:ok, erc20_assets} <- Erc20Balance.assets_held_by_address(address),
+               {:ok, ethereum_assets} <- EthBalance.assets_held_by_address(address) do
+      sorted_assets =
+        (erc20_assets ++ ethereum_assets)
+        |> Enum.sort_by(& &1.balance, :desc)
+
+      {:ok, sorted_assets}
+    end
+  end
 
   def assets_held_by_address(%{infrastructure: infr, address: address}) do
     case selector_to_args(%{infrastructure: infr}) do

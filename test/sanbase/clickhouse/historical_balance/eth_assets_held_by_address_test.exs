@@ -5,6 +5,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthAssetsHeldByAdderssTest do
 
   alias Sanbase.Clickhouse.HistoricalBalance.EthBalance
 
+  @moduletag :historical_balance
+
   setup do
     project = insert(:project, %{name: "Ethereum", slug: "ethereum", ticker: "ETH"})
 

@@ -68,8 +68,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
   def assets_held_by_address(%{infrastructure: infr, address: address}) do
     case selector_to_args(%{infrastructure: infr}) do
-      %{blockchain: blockchain} when blockchain in ["ethereum", "bitcoin"] ->
-        Sanbase.Balance.assets_held_by_address(address)
+      # %{blockchain: blockchain} when blockchain in ["ethereum", "bitcoin"] ->
+      #   Sanbase.Balance.assets_held_by_address(address)
 
       %{module: module} ->
         module.assets_held_by_address(address)
@@ -90,8 +90,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
   def balance_change(selector, address, from, to) do
     case selector_to_args(selector) do
-      %{blockchain: blockchain, slug: slug} when blockchain in ["ethereum", "bitcoin"] ->
-        Sanbase.Balance.balance_change(address, slug, from, to)
+      # %{blockchain: blockchain, slug: slug} when blockchain in ["ethereum", "bitcoin"] ->
+      #   Sanbase.Balance.balance_change(address, slug, from, to)
 
       %{module: module, asset: asset, decimals: decimals} ->
         module.balance_change(address, asset, decimals, from, to)
@@ -109,8 +109,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
           __MODULE__.Behaviour.historical_balance_result()
   def historical_balance(selector, address, from, to, interval) do
     case selector_to_args(selector) do
-      %{blockchain: blockchain, slug: slug} when blockchain in ["ethereum", "bitcoin"] ->
-        Sanbase.Balance.historical_balance(address, slug, from, to, interval)
+      # %{blockchain: blockchain, slug: slug} when blockchain in ["ethereum", "bitcoin"] ->
+      #   Sanbase.Balance.historical_balance(address, slug, from, to, interval)
 
       %{module: module, asset: asset, decimals: decimals} ->
         module.historical_balance(address, asset, decimals, from, to, interval)
@@ -124,8 +124,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
           __MODULE__.Behaviour.current_balance_result()
   def current_balance(selector, address) do
     case selector_to_args(selector) do
-      %{blockchain: blockchain, slug: slug} when blockchain in ["ethereum", "bitcoin"] ->
-        Sanbase.Balance.current_balance(address, slug)
+      # %{blockchain: blockchain, slug: slug} when blockchain in ["ethereum", "bitcoin"] ->
+      #   Sanbase.Balance.current_balance(address, slug)
 
       %{module: module, asset: asset, decimals: decimals} ->
         module.current_balance(address, asset, decimals)

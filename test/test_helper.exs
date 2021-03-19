@@ -5,3 +5,4 @@ ExUnit.start()
 Faker.start()
 
 Ecto.Adapters.SQL.Sandbox.mode(Sanbase.Repo, :manual)
+ExUnit.configure(exclude: [historical_balance: true])

@@ -8,6 +8,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
 
   alias Sanbase.Clickhouse.HistoricalBalance.{EthBalance, XrpBalance, Erc20Balance}
 
+  @moduletag :historical_balance
+
   setup do
     p1 = insert(:random_erc20_project)
     p2 = insert(:random_erc20_project)

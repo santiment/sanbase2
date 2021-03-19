@@ -6,6 +6,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
   import ExUnit.CaptureLog
   import Sanbase.Factory
 
+  @moduletag :historical_balance
+
   setup do
     project_without_contract = insert(:project, %{slug: "someid1", contract_addresses: []})
 

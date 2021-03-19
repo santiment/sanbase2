@@ -16,6 +16,7 @@ defmodule Sanbase.BlockchainAddress do
     addr
     |> cast(attrs, [:address, :infrastructure_id, :notes])
     |> validate_required([:address])
+    |> validate_length(:notes, max: 45)
   end
 
   def by_id(id) do
@@ -55,9 +56,13 @@ defmodule Sanbase.BlockchainAddress do
       changesets,
       Ecto.Multi.new(),
       fn {changeset, offset}, multi ->
+        # notes is an optional field. It should be replaced only if it is in the changeset
+        notes_change = if Map.has_key?(changeset.changes, :notes), do: [:notes], else: []
+        replace = notes_change ++ [:address, :infrastructure_id]
+
         multi
         |> Ecto.Multi.insert(offset, changeset,
-          on_conflict: {:replace, [:address]},
+          on_conflict: {:replace, replace},
           conflict_target: [:address, :infrastructure_id],
           returning: true
         )

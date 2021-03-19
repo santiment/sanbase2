@@ -115,7 +115,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
         name: "#{update_name}"
         description: "#{update_description}"
         color: BLACK
-        listItems: [{blockchainAddress: {address: "0x123a", infrastructure: "ETH", labels: ["Trader", "DEX"]}}]
+        listItems: [{blockchainAddress: {address: "0x123a", infrastructure: "ETH", notes: "note", labels: ["Trader", "DEX"]}}]
         isMonitored: true
       ) {
         name
@@ -125,28 +125,74 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressWatchlistApiTest do
         isMonitored
         user { id }
         listItems {
-          blockchainAddress { address labels { name } }
+          blockchainAddress { address notes labels { name } }
         }
       }
     }
     """
 
-    watchlist =
+    watchlist1 =
       conn
       |> post("/graphql", mutation_skeleton(query))
       |> json_response(200)
       |> get_in(["data", "updateWatchlist"])
 
-    assert watchlist["name"] == update_name
-    assert watchlist["description"] == update_description
-    assert watchlist["color"] == "BLACK"
-    assert watchlist["isPublic"] == false
-    assert watchlist["isMonitored"] == true
+    assert watchlist1["name"] == update_name
+    assert watchlist1["description"] == update_description
+    assert watchlist1["color"] == "BLACK"
+    assert watchlist1["isPublic"] == false
+    assert watchlist1["isMonitored"] == true
 
-    assert watchlist["listItems"] == [
+    assert watchlist1["listItems"] == [
              %{
                "blockchainAddress" => %{
                  "address" => "0x123a",
+                 "notes" => "note",
+                 "labels" => [%{"name" => "Trader"}, %{"name" => "DEX"}]
+               }
+             }
+           ]
+
+    query = """
+    mutation {
+      updateWatchlist(
+        id: #{watchlist.id}
+        name: "#{update_name}"
+        description: "#{update_description}"
+        color: BLACK
+        listItems: [{blockchainAddress: {address: "0x123a", infrastructure: "ETH", notes: "note2", labels: ["Trader", "DEX"]}}]
+        isMonitored: true
+      ) {
+        name
+        description
+        color
+        isPublic
+        isMonitored
+        user { id }
+        listItems {
+          blockchainAddress { address notes labels { name } }
+        }
+      }
+    }
+    """
+
+    watchlist2 =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+      |> json_response(200)
+      |> get_in(["data", "updateWatchlist"])
+
+    assert watchlist2["name"] == update_name
+    assert watchlist2["description"] == update_description
+    assert watchlist2["color"] == "BLACK"
+    assert watchlist2["isPublic"] == false
+    assert watchlist2["isMonitored"] == true
+
+    assert watchlist2["listItems"] == [
+             %{
+               "blockchainAddress" => %{
+                 "address" => "0x123a",
+                 "notes" => "note2",
                  "labels" => [%{"name" => "Trader"}, %{"name" => "DEX"}]
                }
              }

@@ -85,7 +85,7 @@ defmodule Sanbase.Balance do
 
     ClickhouseRepo.query_transform(query, args, fn [address, balance] ->
       %{
-        addresses: address,
+        address: address,
         balance: balance
       }
     end)

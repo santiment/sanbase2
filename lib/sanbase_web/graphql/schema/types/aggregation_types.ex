@@ -11,5 +11,6 @@ defmodule SanbaseWeb.Graphql.AggregationTypes do
     value(:min)
     value(:max)
     value(:median)
+    value(:ohlc)
   end
 end

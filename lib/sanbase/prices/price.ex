@@ -198,17 +198,36 @@ defmodule Sanbase.Price do
     {query, args} =
       timeseries_metric_data_query(slug_or_slugs, metric, from, to, interval, source, aggregation)
 
-    ClickhouseRepo.query_transform(
-      query,
-      args,
-      fn
-        [timestamp, value] ->
-          %{
-            datetime: DateTime.from_unix!(timestamp),
-            value: value
-          }
-      end
-    )
+    if aggregation == :ohlc do
+      ClickhouseRepo.query_transform(
+        query,
+        args,
+        fn
+          [timestamp, open, high, low, close] ->
+            %{
+              datetime: DateTime.from_unix!(timestamp),
+              value_ohlc: %{
+                open: open,
+                high: high,
+                low: low,
+                close: close
+              }
+            }
+        end
+      )
+    else
+      ClickhouseRepo.query_transform(
+        query,
+        args,
+        fn
+          [timestamp, value] ->
+            %{
+              datetime: DateTime.from_unix!(timestamp),
+              value: value
+            }
+        end
+      )
+    end
   end
 
   def timeseries_metric_data_per_slug(slug_or_slugs, metric, from, to, interval, opts) do

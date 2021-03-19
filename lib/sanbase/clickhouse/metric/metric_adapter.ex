@@ -73,12 +73,26 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
     {query, args} = timeseries_data_query(metric, slug, from, to, interval, aggregation, filters)
 
-    ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
-      %{
-        datetime: DateTime.from_unix!(unix),
-        value: value
-      }
-    end)
+    if aggregation == :ohlc do
+      ClickhouseRepo.query_transform(query, args, fn [unix, open, high, low, close] ->
+        %{
+          datetime: DateTime.from_unix!(unix),
+          value_ohlc: %{
+            open: open,
+            high: high,
+            low: low,
+            close: close
+          }
+        }
+      end)
+    else
+      ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
+        %{
+          datetime: DateTime.from_unix!(unix),
+          value: value
+        }
+      end)
+    end
   end
 
   @impl Sanbase.Metric.Behaviour

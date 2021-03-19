@@ -68,6 +68,14 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
   object :metric_data do
     field(:datetime, non_null(:datetime))
     field(:value, :float)
+    field(:value_ohlc, :ohlc_data)
+  end
+
+  object :ohlc_data do
+    field(:open, :float)
+    field(:close, :float)
+    field(:high, :float)
+    field(:low, :float)
   end
 
   object :slug_float_value_pair do

@@ -3,9 +3,9 @@ defprotocol Sanbase.Alert do
 end
 
 defimpl Sanbase.Alert, for: Any do
-  alias Sanbase.Accounts.User
+  alias Sanbase.Accounts.{UserSettings, Settings, User}
 
-  @default_alerts_limit_per_day Sanbase.Accounts.Settings.default_alerts_limit_per_day()
+  @default_alerts_limit_per_day Settings.default_alerts_limit_per_day()
 
   @channels Map.keys(@default_alerts_limit_per_day)
 
@@ -20,7 +20,7 @@ defimpl Sanbase.Alert, for: Any do
   in parallel.
   """
   def send(%{user: user, trigger: %{settings: %{channel: channel}}} = user_trigger) do
-    max_alerts_to_send = max_alerts_to_send(user_trigger)
+    {:ok, max_alerts_to_send} = UserSettings.max_alerts_to_send(user_trigger.user)
 
     # Returns a list of 2-element tuples where the first element is the channel
     # and the second element is a list of `{identifier, telegram_sent_status}` or
@@ -220,36 +220,6 @@ defimpl Sanbase.Alert, for: Any do
     """
   end
 
-  defp max_alerts_to_send(%{user: user}) do
-    # Force the settings to be fetched and not taken from the user struct
-    # This is done so while evaluating alerts, the alerts fired count is
-    # properly reflected here.
-    user_settings = Sanbase.Accounts.UserSettings.settings_for(user, force: true)
-
-    %{
-      alerts_fired: alerts_fired,
-      alerts_per_day_limit: alerts_per_day_limit
-    } = user_settings
-
-    # A map of "channel" => list pairs
-    notifications_sent_today = Map.get(alerts_fired, Date.utc_today() |> to_string(), %{})
-
-    Enum.reduce(@channels, %{}, fn channel, map ->
-      channel_limit =
-        (Map.get(alerts_per_day_limit, channel) ||
-           Map.fetch!(@default_alerts_limit_per_day, channel))
-        |> Sanbase.Math.to_integer()
-
-      channel_sent_today =
-        Map.get(notifications_sent_today, channel, 0)
-        |> Sanbase.Math.to_integer()
-
-      left_to_send = Enum.max([channel_limit - channel_sent_today, 0])
-
-      Map.put(map, channel, left_to_send)
-    end)
-  end
-
   defp do_send_email(email, payload, trigger_id) do
     Sanbase.MandrillApi.send("signals", email, %{
       payload:
@@ -318,7 +288,7 @@ defimpl Sanbase.Alert, for: Any do
       payload_map
       |> Enum.reduce({[], limit}, fn
         {identifier, _payload}, {list, 0 = _remaining} ->
-          {[{identifier, limits_reached_error_tuple(user, trigger)} | list], 0}
+          {[{identifier, limits_reached_error_tuple(user, trigger, channel)} | list], 0}
 
         {identifier, payload}, {list, remaining} ->
           {[{identifier, fun.(identifier, payload)} | list], remaining - 1}
@@ -332,8 +302,9 @@ defimpl Sanbase.Alert, for: Any do
     result
   end
 
-  defp limits_reached_error_tuple(user, trigger) do
-    {:error, %{reason: :alerts_limit_reached, user_id: user.id, trigger_id: trigger.id}}
+  defp limits_reached_error_tuple(user, trigger, channel) do
+    {:error,
+     %{reason: :alerts_limit_reached, user_id: user.id, trigger_id: trigger.id, channel: channel}}
   end
 
   defp update_user_alerts_sent_per_day(user, sent_list_per_channel) do

@@ -9,6 +9,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
     {:ok, UserSettings.settings_for(user)}
   end
 
+  def alerts_per_dy_limit_left(_settings, _args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    UserSettings.max_alerts_to_send(current_user)
+  end
+
   def update_user_settings(_root, %{settings: settings}, %{
         context: %{auth: %{current_user: current_user}}
       }) do

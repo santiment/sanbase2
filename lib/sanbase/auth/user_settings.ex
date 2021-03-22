@@ -49,6 +49,44 @@ defmodule Sanbase.Accounts.UserSettings do
     user_settings |> modify_settings()
   end
 
+  @spec max_alerts_to_send(%User{}) :: %{channel => count}
+        when channel: String.t(), count: non_neg_integer()
+  def max_alerts_to_send(%User{} = user) do
+    # Force the settings to be fetched and not taken from the user struct
+    # This is done so while evaluating alerts, the alerts fired count is
+    # properly reflected here.
+    user_settings = Sanbase.Accounts.UserSettings.settings_for(user, force: true)
+
+    %{
+      alerts_fired: alerts_fired,
+      alerts_per_day_limit: alerts_per_day_limit
+    } = user_settings
+
+    # A map of "channel" => list pairs
+    notifications_sent_today = Map.get(alerts_fired, Date.utc_today() |> to_string(), %{})
+
+    default_alerts_limit_per_day = Settings.default_alerts_limit_per_day()
+
+    result =
+      Map.keys(default_alerts_limit_per_day)
+      |> Enum.reduce(%{}, fn channel, map ->
+        channel_limit =
+          (Map.get(alerts_per_day_limit, channel) ||
+             Map.fetch!(default_alerts_limit_per_day, channel))
+          |> Sanbase.Math.to_integer()
+
+        channel_sent_today =
+          Map.get(notifications_sent_today, channel, 0)
+          |> Sanbase.Math.to_integer()
+
+        left_to_send = Enum.max([channel_limit - channel_sent_today, 0])
+
+        Map.put(map, channel, left_to_send)
+      end)
+
+    {:ok, result}
+  end
+
   def sync_paid_with() do
     Sanbase.Intercom.customer_payment_type_map()
     |> Enum.into(%{}, fn {customer_id, paid_with} ->

@@ -163,7 +163,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     user_trigger = UserTrigger.triggers_for(user) |> List.first()
     trigger_id = user_trigger.id
 
-    query =
+    mutation =
       ~s|
     mutation {
       removeTrigger(
@@ -180,7 +180,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       |> format_interpolated_json()
 
     conn
-    |> post("/graphql", %{"query" => query})
+    |> post("/graphql", mutation_skeleton(mutation))
     |> json_response(200)
 
     assert UserTrigger.triggers_for(user) == []
@@ -396,11 +396,55 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     end)
   end
 
+  test "fetch alerts triggered left to send", context do
+    mock_fun =
+      [fn -> {:ok, 100} end, fn -> {:ok, 5000} end]
+      |> Sanbase.Mock.wrap_consecutives(arity: 4)
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.Telegram.send_message/2, :ok)
+    |> Sanbase.Mock.prepare_mock(Sanbase.Metric, :aggregated_timeseries_data, mock_fun)
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      create_trigger(context.conn,
+        settings: default_trigger_settings_string_keys(),
+        cooldown: "1d"
+      )
+      |> get_in(["data", "createTrigger", "trigger", "id"])
+
+      Sanbase.Alert.Scheduler.run_alert(Sanbase.Alert.Trigger.MetricTriggerSettings)
+
+      result =
+        get_alerts_sent_limits(context.conn)
+        |> get_in(["data", "currentUser", "settings"])
+
+      telegram_limit = result["alertsPerDayLimit"]["telegram"]
+      telegram_left = result["alertsPerDayLimitLeft"]["telegram"]
+
+      assert telegram_limit == telegram_left + 1
+    end)
+  end
+
+  defp get_alerts_sent_limits(conn) do
+    query = """
+    {
+      currentUser{
+        settings {
+          alertsPerDayLimit
+          alertsPerDayLimitLeft
+        }
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query, "currentUser"))
+    |> json_response(200)
+  end
+
   defp update_trigger(conn, trigger_id, trigger_settings, tags, cooldown, is_repeating) do
     tags_str = tags |> Enum.map(&"'#{&1}'") |> Enum.join(", ")
     trigger_settings_json = trigger_settings |> Jason.encode!()
 
-    query =
+    mutation =
       ~s|
     mutation {
       updateTrigger(
@@ -423,7 +467,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       |> format_interpolated_json()
 
     conn
-    |> post("/graphql", %{"query" => query})
+    |> post("/graphql", mutation_skeleton(mutation))
     |> json_response(200)
   end
 

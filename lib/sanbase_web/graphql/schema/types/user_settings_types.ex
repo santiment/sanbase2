@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.UserSettingsTypes do
   use Absinthe.Schema.Notation
 
+  alias SanbaseWeb.Graphql.Resolvers.UserSettingsResolver
+
   enum :newsletter_subscription_type do
     value(:weekly)
     value(:daily)
@@ -20,6 +22,11 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:alert_notify_email, :boolean)
     field(:alert_notify_telegram, :boolean)
     field(:alerts_per_day_limit, :json)
+
+    field :alerts_per_day_limit_left, :json do
+      resolve(&UserSettingsResolver.alerts_per_dy_limit_left/3)
+    end
+
     field(:favorite_metrics, list_of(:string))
     # Deprecated fields
     field :signal_notify_telegram, :boolean do

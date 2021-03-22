@@ -10,8 +10,7 @@ defmodule Sanbase.Balance do
   def historical_balance_ohlc([], _slug, _from, _to, _interval), do: {:ok, []}
 
   def historical_balance_ohlc(address, slug, from, to, interval) do
-    with {:ok, _contract, decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug) do
-      blockchain = blockchain_from_infrastructure(infr)
+    with {:ok, {decimals, blockchain}} <- info_by_slug(slug) do
       address = transform_address(address, blockchain)
 
       do_historical_balance_ohlc(address, slug, decimals, blockchain, from, to, interval)
@@ -19,8 +18,7 @@ defmodule Sanbase.Balance do
   end
 
   def historical_balance(address, slug, from, to, interval) when is_binary(address) do
-    with {:ok, _contract, decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug) do
-      blockchain = blockchain_from_infrastructure(infr)
+    with {:ok, {decimals, blockchain}} <- info_by_slug(slug) do
       address = transform_address(address, blockchain)
 
       do_historical_balance(address, slug, decimals, blockchain, from, to, interval)
@@ -30,8 +28,7 @@ defmodule Sanbase.Balance do
   def balance_change([], _slug, _from, _to), do: {:ok, []}
 
   def balance_change(address_or_addresses, slug, from, to) do
-    with {:ok, _contract, decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug) do
-      blockchain = blockchain_from_infrastructure(infr)
+    with {:ok, {decimals, blockchain}} <- info_by_slug(slug) do
       addresses = List.wrap(address_or_addresses) |> transform_address(blockchain)
 
       do_balance_change(addresses, slug, decimals, blockchain, from, to)
@@ -41,8 +38,7 @@ defmodule Sanbase.Balance do
   def historical_balance_changes([], _slug, _from, _to, _interval), do: {:ok, []}
 
   def historical_balance_changes(address_or_addresses, slug, from, to, interval) do
-    with {:ok, _contract, decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug) do
-      blockchain = blockchain_from_infrastructure(infr)
+    with {:ok, {decimals, blockchain}} <- info_by_slug(slug) do
       addresses = List.wrap(address_or_addresses) |> transform_address(blockchain)
 
       do_historical_balance_changes(addresses, slug, decimals, blockchain, from, to, interval)
@@ -50,8 +46,7 @@ defmodule Sanbase.Balance do
   end
 
   def last_balance_before(address, slug, datetime) do
-    with {:ok, _contract, decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug) do
-      blockchain = blockchain_from_infrastructure(infr)
+    with {:ok, {decimals, blockchain}} <- info_by_slug(slug) do
       address = transform_address(address, blockchain)
 
       do_last_balance_before(address, slug, decimals, blockchain, datetime)
@@ -71,8 +66,7 @@ defmodule Sanbase.Balance do
   end
 
   def current_balance(address_or_addresses, slug) do
-    with {:ok, _contract, decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug) do
-      blockchain = blockchain_from_infrastructure(infr)
+    with {:ok, {decimals, blockchain}} <- info_by_slug(slug) do
       addresses = List.wrap(address_or_addresses) |> transform_address(blockchain)
       do_current_balance(addresses, slug, decimals, blockchain)
     end
@@ -169,10 +163,6 @@ defmodule Sanbase.Balance do
     |> maybe_fill_gaps_last_seen_balance()
   end
 
-  defp blockchain_from_infrastructure("ETH"), do: "ethereum"
-  defp blockchain_from_infrastructure("BTC"), do: "bitcoin"
-  defp blockchain_from_infrastructure("XRP"), do: "ripple"
-
   defp transform_address("0x" <> _rest = address, :unknown),
     do: String.downcase(address)
 
@@ -191,4 +181,31 @@ defmodule Sanbase.Balance do
 
   defp transform_address(addresses, _) when is_list(addresses),
     do: List.flatten(addresses)
+
+  defp info_by_slug(slug) do
+    case Project.contract_info_infrastructure_by_slug(slug) do
+      {:ok, _contract, decimals, infr} ->
+        blockchain = blockchain_from_infrastructure(infr)
+        decimals = maybe_override_decimals(blockchain, decimals)
+        {:ok, {decimals, blockchain}}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  # The values for all other chains except ethereum (ethereum itself and all ERC20 assets)
+  # are stored already divided by the decimals. In these cases replace decimals with 0
+  # so the division of 10^0 will do nothing.
+
+  defp maybe_override_decimals("ethereum", decimals), do: decimals
+  defp maybe_override_decimals(_blockchain, _decimal), do: 0
+
+  defp blockchain_from_infrastructure("ETH"), do: "ethereum"
+  defp blockchain_from_infrastructure("BTC"), do: "bitcoin"
+  defp blockchain_from_infrastructure("BCH"), do: "bitcoin-cash"
+  defp blockchain_from_infrastructure("LTC"), do: "litecoin"
+  defp blockchain_from_infrastructure("BNB"), do: "binance-coin"
+  defp blockchain_from_infrastructure("BEP2"), do: "binance-coin"
+  defp blockchain_from_infrastructure("XRP"), do: "ripple"
 end

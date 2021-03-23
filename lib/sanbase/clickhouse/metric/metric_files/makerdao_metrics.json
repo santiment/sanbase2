@@ -185,5 +185,22 @@
     "table": "intraday_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Collateral Liquidation",
+    "name": "mcd_art_liquidation_5m",
+    "metric": "mcd_art_liquidation_5m",
+    "version": "2019-12-09",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
   }
 ]

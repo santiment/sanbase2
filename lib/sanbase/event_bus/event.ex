@@ -17,18 +17,17 @@ defmodule Sanbase.EventBus.Event do
     do: valid_integer_id?(id)
 
   ## Alert Events
-  def valid?(%{event_type: :create_alert, user_id: user_id, alert_id: alert_id}),
-    do: valid_integer_id?(user_id) and valid_integer_id?(alert_id)
+  def valid?(%{event_type: event_type, user_id: user_id, alert_id: alert_id})
+      when event_type in [:create_alert, :delete_alert],
+      do: valid_integer_id?(user_id) and valid_integer_id?(alert_id)
 
   def valid?(%{event_type: :alert_triggered, user_id: user_id, alert_id: alert_id}),
     do: valid_integer_id?(user_id) and valid_integer_id?(alert_id)
 
   ## Watchlist Events
-  def valid?(%{event_type: :create_watchlist, user_id: user_id, watchlist_id: watchlist_id}),
-    do: valid_integer_id?(user_id) and valid_integer_id?(watchlist_id)
-
-  def valid?(%{event_type: :delete_watchlist, user_id: user_id, watchlist_id: watchlist_id}),
-    do: valid_integer_id?(user_id) and valid_integer_id?(watchlist_id)
+  def valid?(%{event_type: event_type, user_id: user_id, watchlist_id: watchlist_id})
+      when event_type in [:create_watchlist, :delete_watchlist],
+      do: valid_integer_id?(user_id) and valid_integer_id?(watchlist_id)
 
   ## Billing Events
   def valid?(%{

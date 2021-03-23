@@ -1,4 +1,6 @@
-defmodule Sanbase.Billing.Event do
+defmodule Sanbase.Billing.EventEmitter do
+  @behaviour Sanbase.EventEmitter.Behaviour
+
   @topic :stripe_events
 
   def emit_event({:error, _} = result, _event_type, _args), do: result

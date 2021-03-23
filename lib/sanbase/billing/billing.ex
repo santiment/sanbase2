@@ -4,7 +4,7 @@ defmodule Sanbase.Billing do
   """
 
   import Ecto.Query
-  import Sanbase.Billing.Event, only: [emit_event: 3]
+  import Sanbase.Billing.EventEmitter, only: [emit_event: 3]
 
   alias Sanbase.Repo
   alias Sanbase.Billing.{Product, Plan, Subscription}

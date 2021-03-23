@@ -3,7 +3,7 @@ defmodule Sanbase.Accounts.User do
 
   import Ecto.Changeset
   import Ecto.Query
-  import Sanbase.Accounts.Event, only: [emit_event: 3]
+  import Sanbase.Accounts.EventEmitter, only: [emit_event: 3]
 
   alias Sanbase.Accounts.{
     User,

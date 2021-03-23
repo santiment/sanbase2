@@ -26,27 +26,27 @@ defmodule Sanbase.EventBus.PaymentSubscriber do
   end
 
   defp handle_event(:payment_success, _event, event_shadow, state) do
-    :ok = EventBus.mark_as_completed(event_shadow)
+    :ok = EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
 
   defp handle_event(:payment_fail, _event, event_shadow, state) do
-    :ok = EventBus.mark_as_completed(event_shadow)
+    :ok = EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
 
   defp handle_event(:cancel_subscription, _event, event_shadow, state) do
-    :ok = EventBus.mark_as_completed(event_shadow)
+    :ok = EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
 
   defp handle_event(:new_subscription, _event, event_shadow, state) do
-    :ok = EventBus.mark_as_completed(event_shadow)
+    :ok = EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
 
   defp handle_event(:apply_promocode, _event, event_shadow, state) do
-    :ok = EventBus.mark_as_completed(event_shadow)
+    :ok = EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
 end

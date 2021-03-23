@@ -2,7 +2,7 @@ defmodule Sanbase.Accounts.User.Email do
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
 
-  import Sanbase.Accounts.Event, only: [emit_event: 3]
+  import Sanbase.Accounts.EventEmitter, only: [emit_event: 3]
 
   require Mockery.Macro
 

@@ -24,7 +24,7 @@ defmodule Sanbase.EventBus.NotificationSubscriber do
   end
 
   defp handle_event(_event, event_shadow, state) do
-    :ok = EventBus.mark_as_completed(event_shadow)
+    :ok = EventBus.mark_as_completed({__MODULE__, event_shadow})
     state
   end
 end

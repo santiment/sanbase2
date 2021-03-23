@@ -7,7 +7,7 @@ defmodule Sanbase.Billing.Subscription do
   use Ecto.Schema
 
   import Ecto.Changeset
-  import Sanbase.Billing.Event, only: [emit_event: 3]
+  import Sanbase.Billing.EventEmitter, only: [emit_event: 3]
 
   alias Sanbase.Billing
   alias Sanbase.Billing.{Plan, Product}

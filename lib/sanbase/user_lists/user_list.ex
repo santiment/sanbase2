@@ -18,7 +18,7 @@ defmodule Sanbase.UserList do
 
   import Ecto.Changeset
   import Ecto.Query
-  import Sanbase.UserList.Event, only: [emit_event: 2]
+  import Sanbase.UserList.EventEmitter, only: [emit_event: 3]
 
   alias Sanbase.Accounts.User
   alias Sanbase.UserList.ListItem
@@ -189,7 +189,7 @@ defmodule Sanbase.UserList do
     %__MODULE__{}
     |> create_changeset(params)
     |> Repo.insert()
-    |> emit_event(:create_watchlist)
+    |> emit_event(:create_watchlist, %{})
     |> case do
       {:ok, user_list} ->
         case list_items = Map.get(params, :list_items) do
@@ -238,7 +238,7 @@ defmodule Sanbase.UserList do
   def remove_user_list(_user, %{id: id}) do
     by_id(id)
     |> Repo.delete()
-    |> emit_event(:delete_watchlist)
+    |> emit_event(:delete_watchlist, %{})
   end
 
   def fetch_user_lists(%User{id: user_id}, type) do

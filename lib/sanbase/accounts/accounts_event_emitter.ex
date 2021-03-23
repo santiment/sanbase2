@@ -1,4 +1,6 @@
-defmodule Sanbase.Accounts.Event do
+defmodule Sanbase.Accounts.EventEmitter do
+  @behaviour Sanbase.EventEmitter.Behaviour
+
   @topic :user_events
 
   def emit_event({:error, _} = result, _event, _args), do: result

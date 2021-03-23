@@ -187,8 +187,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Collateral Liquidation",
-    "name": "mcd_art_liquidation_5m",
+    "human_readable_name": "Makerdao Collateral Liquidation Amounts",
+    "name": "mcd_liquidation",
     "metric": "mcd_art_liquidation_5m",
     "version": "2019-12-09",
     "access": "restricted",

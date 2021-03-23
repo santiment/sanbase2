@@ -137,13 +137,7 @@ defmodule SanbaseWeb.Graphql.MetricPostgresDataloader do
   def query(:social_volume_query, projects_ids) do
     all_projects = Project.List.projects(preload: [:social_volume_query])
 
-    current_projects =
-      Enum.filter(
-        all_projects,
-        fn %Project{id: id} ->
-          id in projects_ids
-        end
-      )
+    current_projects = Enum.filter(all_projects, &(&1.id in projects_ids))
 
     Map.new(
       current_projects,
@@ -160,11 +154,7 @@ defmodule SanbaseWeb.Graphql.MetricPostgresDataloader do
 
           query = SocialVolumeQuery.default_query(project)
 
-          if exclusion_string === "" do
-            {project.id, query}
-          else
-            {project.id, query <> " " <> exclusion_string}
-          end
+          generate_social_query(project.id, query, exclusion_string)
       end
     )
   end
@@ -174,7 +164,7 @@ defmodule SanbaseWeb.Graphql.MetricPostgresDataloader do
 
     Enum.filter(all_projects, fn other_project ->
       %Project{name: other_name, slug: other_slug} = other_project
-      other_project_names = String.split(String.downcase(other_name), [" ", "-"])
+      other_project_names = String.downcase(other_name) |> String.split([" ", "-"])
       downcased_project_name = String.downcase(project_name)
 
       if project_slug !== other_slug do
@@ -184,5 +174,13 @@ defmodule SanbaseWeb.Graphql.MetricPostgresDataloader do
         end)
       end
     end)
+  end
+
+  defp generate_social_query(id, query, exclusion_string) do
+    if exclusion_string === "" do
+      {id, query}
+    else
+      {id, query <> " " <> exclusion_string}
+    end
   end
 end

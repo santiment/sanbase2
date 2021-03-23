@@ -1,9 +1,7 @@
 defmodule Sanbase.EventBus.Event do
-  require Sanbase.Utils.Config, as: Config
-
-  @invalid_event_handler Config.get(:invalid_event_handler, __MODULE__)
-
-  ## User Events
+  #############################################################################
+  ## Accounts Events
+  #############################################################################
   def valid?(%{event_type: :update_username, user_id: id, old_username: old, new_username: new}),
     do: valid_integer_id?(id) and valid_string_field_change?(old, new)
 
@@ -16,7 +14,9 @@ defmodule Sanbase.EventBus.Event do
   def valid?(%{event_type: :register_user, user_id: id, login_origin: _origin}),
     do: valid_integer_id?(id)
 
+  #############################################################################
   ## Alert Events
+  #############################################################################
   def valid?(%{event_type: event_type, user_id: user_id, alert_id: alert_id})
       when event_type in [:create_alert, :delete_alert],
       do: valid_integer_id?(user_id) and valid_integer_id?(alert_id)
@@ -24,12 +24,28 @@ defmodule Sanbase.EventBus.Event do
   def valid?(%{event_type: :alert_triggered, user_id: user_id, alert_id: alert_id}),
     do: valid_integer_id?(user_id) and valid_integer_id?(alert_id)
 
+  #############################################################################
   ## Watchlist Events
+  #############################################################################
   def valid?(%{event_type: event_type, user_id: user_id, watchlist_id: watchlist_id})
       when event_type in [:create_watchlist, :delete_watchlist],
       do: valid_integer_id?(user_id) and valid_integer_id?(watchlist_id)
 
+  #############################################################################
+  ## Apikey Events
+  #############################################################################
+
+  def valid?(%{
+        event_type: event_type,
+        user_id: user_id,
+        token: token
+      })
+      when event_type in [:generate_apikey, :revoke_apikey],
+      do: is_binary(token) and token != "" and valid_integer_id?(user_id)
+
+  #############################################################################
   ## Billing Events
+  #############################################################################
   def valid?(%{
         event_type: :create_stripe_customer,
         user_id: user_id,
@@ -62,7 +78,9 @@ defmodule Sanbase.EventBus.Event do
         valid_integer_id?(subscription_id) and valid_integer_id?(user_id) and
           valid_string_id?(stripe_subscription_id)
 
+  #############################################################################
   ## Payment Events
+  #############################################################################
   def valid?(%{event_type: :payment_success, user_id: user_id, stripe_id: stripe_id}),
     do: valid_integer_id?(user_id) and valid_string_id?(stripe_id)
 
@@ -105,6 +123,10 @@ defmodule Sanbase.EventBus.Event do
       plan in Sanbase.Billing.Plan.plans() and
       product in Sanbase.Billing.Product.product_atom_names()
   end
+
+  #############################################################################
+  ## Invalid Events
+  #############################################################################
 
   def valid?(%{} = event) do
     # For testing purposes. If an event is marked as valid it will be passed. This is

@@ -18,10 +18,19 @@ defmodule Sanbase.EventBus.KafkaExporterSubscriber do
   end
 
   def handle_cast({topic, id} = event_shadow, state) do
-    event = EventBus.fetch_event(event_shadow)
-    kv_tuple = {event.transaction_id, event}
-    :ok = Sanbase.KafkaExporter.persist_async(kv_tuple, :sanbase_event_bus_kafka_exporter)
-    :ok = EventBus.mark_as_completed({{__MODULE__, %{}}, topic, id})
+    case EventBus.fetch_event(event_shadow) do
+      %{} = event ->
+        :ok =
+          Sanbase.KafkaExporter.persist_async(
+            {event.id, Jason.encode!(event)},
+            :sanbase_event_bus_kafka_exporter
+          )
+
+      nil ->
+        {:noreply, state}
+    end
+
+    :ok = EventBus.mark_as_completed({__MODULE__, topic, id})
 
     {:noreply, state}
   end

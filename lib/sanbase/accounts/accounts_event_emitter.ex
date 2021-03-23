@@ -33,6 +33,14 @@ defmodule Sanbase.Accounts.EventEmitter do
     {:ok, user}
   end
 
+  def emit_event({:ok, user_api_token}, event_type, %{user: user})
+      when event_type in [:generate_apikey, :revoke_apikey] do
+    %{event_type: :generate_apikey, token: user_api_token.token, user_id: user.id}
+    |> notify()
+
+    {:ok, user_api_token}
+  end
+
   defp notify(data) do
     Sanbase.EventBus.notify(%{topic: @topic, data: data})
   end

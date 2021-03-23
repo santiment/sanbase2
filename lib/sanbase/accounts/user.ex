@@ -393,7 +393,7 @@ defmodule Sanbase.Accounts.User do
   It is used from all channels for sign up - email, metamask, google, twitter.
   If user is already registered it does nothing but returning the user object.
   """
-  def mark_as_registered(%User{is_registered: true} = user, args), do: {:ok, user}
+  def mark_as_registered(%User{is_registered: true} = user, _args), do: {:ok, user}
 
   def mark_as_registered(%User{is_registered: false} = user, %{login_origin: _} = args) do
     user

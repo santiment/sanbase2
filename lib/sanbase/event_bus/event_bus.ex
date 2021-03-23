@@ -28,6 +28,10 @@ defmodule Sanbase.EventBus do
 
   use EventBus.EventSource
 
+  defmodule InvalidEventError do
+    defexception [:message]
+  end
+
   def notify(params) do
     params =
       params
@@ -42,8 +46,14 @@ defmodule Sanbase.EventBus do
       data = Map.fetch!(params, :data)
 
       case Sanbase.EventBus.Event.valid?(data) do
-        true -> data |> Map.delete(:extra_data)
-        false -> raise("Invalid event submitted: #{inspect(params)}")
+        true ->
+          data
+
+        false ->
+          raise(
+            InvalidEventError,
+            message: "Invalid event submitted: #{inspect(params)}"
+          )
       end
     end
   end

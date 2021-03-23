@@ -119,7 +119,7 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
              }
     end
 
-    test "can't unfollow user that has not been followed", %{conn: conn} do
+    test "can't unfollow user that has not been followed", %{conn: conn, current_user: user} do
       user_to_follow = insert(:user)
 
       result =
@@ -130,7 +130,8 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
         |> hd()
         |> Map.get("message")
 
-      assert result == "Error trying to unfollow user"
+      assert result ==
+               "User with id #{user_to_follow.id} is not followed by user with id #{user.id}"
     end
   end
 

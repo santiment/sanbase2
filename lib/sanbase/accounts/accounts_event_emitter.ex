@@ -35,10 +35,21 @@ defmodule Sanbase.Accounts.EventEmitter do
 
   def emit_event({:ok, user_api_token}, event_type, %{user: user})
       when event_type in [:generate_apikey, :revoke_apikey] do
-    %{event_type: :generate_apikey, token: user_api_token.token, user_id: user.id}
+    %{event_type: event_type, token: user_api_token.token, user_id: user.id}
     |> notify()
 
     {:ok, user_api_token}
+  end
+
+  def emit_event({:ok, user_follower}, event_type, _extra_args)
+      when event_type in [:follow_user, :unfollow_user] do
+    %{
+      event_type: event_type,
+      user_id: user_follower.user_id,
+      follower_id: user_follower.follower_id
+    }
+
+    {:ok, user_follower}
   end
 
   defp notify(data) do

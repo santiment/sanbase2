@@ -14,6 +14,11 @@ defmodule Sanbase.EventBus.Event do
   def valid?(%{event_type: :register_user, user_id: id, login_origin: _origin}),
     do: valid_integer_id?(id)
 
+  def valid?(%{event_type: event_type, user_id: user_id, follower_id: follower_id})
+      when event_type in [:follow_user, :unfollow_user] do
+    valid_integer_id?(user_id) and valid_integer_id?(follower_id)
+  end
+
   #############################################################################
   ## Alert Events
   #############################################################################
@@ -122,6 +127,18 @@ defmodule Sanbase.EventBus.Event do
     valid_integer_id?(user_id) and valid_string_id?(stripe_id) and is_binary(promo_code) and
       plan in Sanbase.Billing.Plan.plans() and
       product in Sanbase.Billing.Product.product_atom_names()
+  end
+
+  #############################################################################
+  ## Promoter Events
+  #############################################################################
+
+  def valid?(%{
+        event_type: :create_promoter,
+        user_id: user_id,
+        promoter_origin: promoter_origin
+      }) do
+    valid_integer_id?(user_id) and is_binary(promoter_origin) and promoter_origin != ""
   end
 
   #############################################################################

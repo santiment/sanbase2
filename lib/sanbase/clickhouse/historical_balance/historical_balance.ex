@@ -30,13 +30,18 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
     "XRP" => XrpBalance,
     "ETH" => [EthBalance, Erc20Balance]
   }
+
+  @balances_aggregated_blockchains ["ethereum", "bitcoin", "bitcoin-cash"]
+
   @supported_infrastructures Map.keys(@infrastructure_to_module)
   def supported_infrastructures(), do: @supported_infrastructures
 
   @type selector :: %{
-          required(:infrastructure) => String.t(),
+          optional(:infrastructure) => String.t(),
           optional(:currency) => String.t(),
-          optional(:slug) => String.t()
+          optional(:slug) => String.t(),
+          optional(:contract) => String.t(),
+          optional(:decimals) => non_neg_integer()
         }
 
   @type slug :: String.t()
@@ -57,7 +62,9 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
           | {:ok, list(%{datetime: DateTime.t(), balance: number()})}
           | {:error, String.t()}
 
-  @async_with_timeout 29_000
+  defguard balances_aggregated_blockchain?(blockchain)
+           when blockchain in @balances_aggregated_blockchains
+
   @doc ~s"""
   Return a list of the assets that a given address currently holds or
   has held in the past.
@@ -66,21 +73,10 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   balance of all currently owned assets
   """
   @spec assets_held_by_address(map()) :: {:ok, list(map())} | {:error, String.t()}
-  def assets_held_by_address(%{infrastructure: "ETH", address: address}) do
-    async with {:ok, erc20_assets} <- Erc20Balance.assets_held_by_address(address),
-               {:ok, ethereum_assets} <- EthBalance.assets_held_by_address(address) do
-      sorted_assets =
-        (erc20_assets ++ ethereum_assets)
-        |> Enum.sort_by(& &1.balance, :desc)
-
-      {:ok, sorted_assets}
-    end
-  end
-
   def assets_held_by_address(%{infrastructure: infr, address: address}) do
     case selector_to_args(%{infrastructure: infr}) do
-      # %{blockchain: blockchain} when blockchain in ["ethereum", "bitcoin"] ->
-      #   Sanbase.Balance.assets_held_by_address(address)
+      %{blockchain: blockchain} when balances_aggregated_blockchain?(blockchain) ->
+        Sanbase.Balance.assets_held_by_address(address)
 
       %{module: module} ->
         module.assets_held_by_address(address)
@@ -101,8 +97,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
   def balance_change(selector, address, from, to) do
     case selector_to_args(selector) do
-      # %{blockchain: blockchain, slug: slug} when blockchain in ["ethereum", "bitcoin"] ->
-      #   Sanbase.Balance.balance_change(address, slug, from, to)
+      %{blockchain: blockchain, slug: slug} when balances_aggregated_blockchain?(blockchain) ->
+        Sanbase.Balance.balance_change(address, slug, from, to)
 
       %{module: module, asset: asset, decimals: decimals} ->
         module.balance_change(address, asset, decimals, from, to)
@@ -120,8 +116,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
           __MODULE__.Behaviour.historical_balance_result()
   def historical_balance(selector, address, from, to, interval) do
     case selector_to_args(selector) do
-      # %{blockchain: blockchain, slug: slug} when blockchain in ["ethereum", "bitcoin"] ->
-      #   Sanbase.Balance.historical_balance(address, slug, from, to, interval)
+      %{blockchain: blockchain, slug: slug} when balances_aggregated_blockchain?(blockchain) ->
+        Sanbase.Balance.historical_balance(address, slug, from, to, interval)
 
       %{module: module, asset: asset, decimals: decimals} ->
         module.historical_balance(address, asset, decimals, from, to, interval)
@@ -135,8 +131,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
           __MODULE__.Behaviour.current_balance_result()
   def current_balance(selector, address) do
     case selector_to_args(selector) do
-      # %{blockchain: blockchain, slug: slug} when blockchain in ["ethereum", "bitcoin"] ->
-      #   Sanbase.Balance.current_balance(address, slug)
+      %{blockchain: blockchain, slug: slug} when balances_aggregated_blockchain?(blockchain) ->
+        Sanbase.Balance.current_balance(address, slug)
 
       %{module: module, asset: asset, decimals: decimals} ->
         module.current_balance(address, asset, decimals)

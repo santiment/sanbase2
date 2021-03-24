@@ -63,7 +63,8 @@ defmodule SanbaseWeb.Graphql.Schema.ProjectQueries do
       arg(:function, :json)
 
       middleware(ProjectPermissions)
-      cache_resolve(&ProjectListResolver.all_projects_by_function/3)
+
+      cache_resolve(&ProjectListResolver.all_projects_by_function/3, honor_do_not_cache_flag: true)
     end
 
     field :all_projects_by_ticker, list_of(:project) do

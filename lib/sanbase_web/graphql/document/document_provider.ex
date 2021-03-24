@@ -91,7 +91,7 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do
         cache_key =
           SanbaseWeb.Graphql.Cache.cache_key(
             {"bp_root", additional_keys_hash},
-            santize_blueprint(bp_root),
+            sanitize_blueprint(bp_root),
             ttl: 120,
             max_ttl_offset: 120
           )
@@ -137,9 +137,24 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do
   # This let's us cache with values that are interpolated into the query string itself
   # The datetimes are rounded so all datetimes in a bucket generate the same
   # cache key
-  defp santize_blueprint(%DateTime{} = dt), do: dt
-  defp santize_blueprint({:argument_data, _} = tuple), do: tuple
-  defp santize_blueprint({a, b}), do: {a, santize_blueprint(b)}
+  defp sanitize_blueprint(%DateTime{} = dt), do: dt
+
+  defp sanitize_blueprint(
+         {:argument_data, %{function: %{"args" => %{"baseProjects" => base_projects}}}} = tuple
+       ) do
+    has_watchlist_base? =
+      Enum.any?(base_projects, fn elem ->
+        match?(%{"watchlistId" => _}, elem) or match?(%{"watchlistSlug" => _}, elem)
+      end)
+
+    has_watchlist_base? && Process.put(:do_not_cache_query, true)
+
+    tuple
+  end
+
+  defp sanitize_blueprint({:argument_data, _} = tuple), do: tuple
+
+  defp sanitize_blueprint({a, b}), do: {a, sanitize_blueprint(b)}
 
   @cache_fields [
     :name,
@@ -150,17 +165,17 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Execution.CacheDocument do
     :operations,
     :alias
   ]
-  defp santize_blueprint(map) when is_map(map) do
+  defp sanitize_blueprint(map) when is_map(map) do
     Map.take(map, @cache_fields)
-    |> Enum.map(&santize_blueprint/1)
+    |> Enum.map(&sanitize_blueprint/1)
     |> Map.new()
   end
 
-  defp santize_blueprint(list) when is_list(list) do
-    Enum.map(list, &santize_blueprint/1)
+  defp sanitize_blueprint(list) when is_list(list) do
+    Enum.map(list, &sanitize_blueprint/1)
   end
 
-  defp santize_blueprint(data), do: data
+  defp sanitize_blueprint(data), do: data
 end
 
 defmodule SanbaseWeb.Graphql.Phase.Document.Execution.Idempotent do
@@ -197,8 +212,11 @@ defmodule SanbaseWeb.Graphql.Phase.Document.Complexity.Preprocess do
     |> Enum.flat_map(fn
       %{name: name, argument_data: %{metric: metric}} = struct ->
         case Inflex.underscore(name) do
-          "get_metric" -> get_metric_selections_to_metrics(struct.selections, metric)
-          _ -> []
+          "get_metric" ->
+            get_metric_selections_to_metrics(struct.selections, metric)
+
+          _ ->
+            []
         end
 
       _ ->

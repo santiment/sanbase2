@@ -264,7 +264,8 @@ defmodule Sanbase.Clickhouse.TopHolders do
       SELECT
         address,
         1 AS isExchange
-      FROM exchange_addresses
+      FROM blockchain_address_labels
+      PREWHERE blockchain = 'ethereum' AND label in ('centralized_exchange', 'decentralized_exchange')
     ) USING (address)
     GROUP BY dt
     ORDER BY dt ASC

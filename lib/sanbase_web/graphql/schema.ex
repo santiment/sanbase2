@@ -69,6 +69,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.UserTypes)
   import_types(Graphql.SignalTypes)
   import_types(Graphql.WidgetTypes)
+  import_types(Graphql.WalletHunterTypes)
   import_types(Graphql.SheetsTemplateTypes)
 
   # Queries and mutations
@@ -102,6 +103,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.Schema.UserTriggerQueries)
   import_types(Graphql.Schema.UserListQueries)
   import_types(Graphql.Schema.WidgetQueries)
+  import_types(Graphql.Schema.WalletHunterQueries)
   import_types(Graphql.Schema.SheetsTemplateQueries)
 
   def dataloader() do
@@ -169,6 +171,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:user_list_queries)
     import_fields(:user_queries)
     import_fields(:widget_queries)
+    import_fields(:wallet_hunter_queries)
     import_fields(:sheets_template_queries)
   end
 

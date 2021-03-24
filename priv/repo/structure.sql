@@ -2717,6 +2717,40 @@ ALTER SEQUENCE public.votes_id_seq OWNED BY public.votes.id;
 
 
 --
+-- Name: wallet_hunters_proposals; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.wallet_hunters_proposals (
+    id bigint NOT NULL,
+    title text,
+    text text,
+    proposal_id integer,
+    hunter_address character varying(255),
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: wallet_hunters_proposals_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.wallet_hunters_proposals_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: wallet_hunters_proposals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.wallet_hunters_proposals_id_seq OWNED BY public.wallet_hunters_proposals.id;
+
+
+--
 -- Name: watchlist_settings; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3236,6 +3270,13 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 --
 
 ALTER TABLE ONLY public.votes ALTER COLUMN id SET DEFAULT nextval('public.votes_id_seq'::regclass);
+
+
+--
+-- Name: wallet_hunters_proposals id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wallet_hunters_proposals ALTER COLUMN id SET DEFAULT nextval('public.wallet_hunters_proposals_id_seq'::regclass);
 
 
 --
@@ -3868,6 +3909,14 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.votes
     ADD CONSTRAINT votes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: wallet_hunters_proposals wallet_hunters_proposals_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wallet_hunters_proposals
+    ADD CONSTRAINT wallet_hunters_proposals_pkey PRIMARY KEY (id);
 
 
 --
@@ -4527,6 +4576,13 @@ CREATE UNIQUE INDEX votes_post_id_user_id_index ON public.votes USING btree (pos
 --
 
 CREATE UNIQUE INDEX votes_timeline_event_id_user_id_index ON public.votes USING btree (timeline_event_id, user_id);
+
+
+--
+-- Name: wallet_hunters_proposals_proposal_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX wallet_hunters_proposals_proposal_id_index ON public.wallet_hunters_proposals USING btree (proposal_id);
 
 
 --
@@ -5593,3 +5649,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210223081041);
 INSERT INTO public."schema_migrations" (version) VALUES (20210226144252);
 INSERT INTO public."schema_migrations" (version) VALUES (20210303094304);
 INSERT INTO public."schema_migrations" (version) VALUES (20210311123253);
+INSERT INTO public."schema_migrations" (version) VALUES (20210323125906);

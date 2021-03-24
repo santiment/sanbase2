@@ -1,5 +1,6 @@
 defmodule Sanbase.SmartContracts.UniswapPair do
-  import Sanbase.SmartContracts.Utils, only: [format_address: 1, format_number: 2]
+  import Sanbase.SmartContracts.Utils,
+    only: [call_contract: 4, format_address: 1, format_number: 2]
 
   @type address :: String.t()
 
@@ -65,21 +66,5 @@ defmodule Sanbase.SmartContracts.UniswapPair do
       token1(contract) == Sanbase.SantimentContract.contract() ->
         1
     end
-  end
-
-  @spec call_contract(address, String.t(), list(), list()) :: any()
-  def call_contract(contract, call, args, return_types) do
-    abi = ABI.encode(call, args) |> Base.encode16(case: :lower)
-
-    {:ok, res_enc} =
-      Ethereumex.HttpClient.eth_call(%{
-        data: "0x" <> abi,
-        to: contract
-      })
-
-    res_enc
-    |> String.slice(2..-1)
-    |> Base.decode16!(case: :lower)
-    |> ABI.TypeDecoder.decode_raw(return_types)
   end
 end

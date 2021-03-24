@@ -1,0 +1,16 @@
+defmodule Sanbase.Repo.Migrations.CreateWalletHuntersProposals do
+  use Ecto.Migration
+
+  def change do
+    create table(:wallet_hunters_proposals) do
+      add(:title, :text)
+      add(:text, :text)
+      add(:proposal_id, :integer)
+      add(:hunter_address, :string)
+
+      timestamps()
+    end
+
+    create(unique_index(:wallet_hunters_proposals, [:proposal_id]))
+  end
+end

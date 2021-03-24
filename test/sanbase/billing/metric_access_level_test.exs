@@ -214,6 +214,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "median_transfer_5m",
         "whale_transaction_count",
         "mvrv_usd_z_score",
+        "stock_to_flow",
         # social metrics
         "community_messages_count_telegram",
         "community_messages_count_total",
@@ -340,6 +341,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         # makerdao metrics
         "dai_created",
         "dai_repaid",
+        "mcd_liquidation",
         "mcd_collat_ratio",
         "mcd_collat_ratio_sai",
         "mcd_collat_ratio_weth",
@@ -349,7 +351,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "mcd_supply",
         "scd_collat_ratio",
         "scd_locked_token",
-        "stock_to_flow",
         # derivatives
         "bitmex_perpetual_funding_rate",
         "bitmex_perpetual_basis",

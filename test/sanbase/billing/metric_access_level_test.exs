@@ -341,6 +341,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         # makerdao metrics
         "dai_created",
         "dai_repaid",
+        "mcd_liquidation",
         "mcd_collat_ratio",
         "mcd_collat_ratio_sai",
         "mcd_collat_ratio_weth",
@@ -350,7 +351,6 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "mcd_supply",
         "scd_collat_ratio",
         "scd_locked_token",
-        "mcd_art_liquidation_5m",
         # derivatives
         "bitmex_perpetual_funding_rate",
         "bitmex_perpetual_basis",

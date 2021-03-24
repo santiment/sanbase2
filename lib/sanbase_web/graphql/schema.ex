@@ -190,5 +190,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     import_fields(:timeline_mutations)
     import_fields(:user_list_mutations)
     import_fields(:user_mutations)
+    import_fields(:wallet_hunter_mutations)
   end
 end

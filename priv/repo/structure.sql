@@ -2726,6 +2726,7 @@ CREATE TABLE public.wallet_hunters_proposals (
     text text,
     proposal_id integer,
     hunter_address character varying(255),
+    user_id bigint,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
@@ -5327,6 +5328,14 @@ ALTER TABLE ONLY public.votes
 
 ALTER TABLE ONLY public.votes
     ADD CONSTRAINT votes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: wallet_hunters_proposals wallet_hunters_proposals_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wallet_hunters_proposals
+    ADD CONSTRAINT wallet_hunters_proposals_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --

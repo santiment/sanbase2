@@ -8,6 +8,8 @@ defmodule Sanbase.WalletHunters.Proposal do
     only: [call_contract: 4, encode_address: 1, format_number: 1]
 
   alias Sanbase.Repo
+  alias Sanbase.Accounts.{User, EthAccount}
+  alias Sanbase.InternalServices.Ethauth
 
   @contract "0x772e255402EEE3Fa243CB17AF58001f40Da78d90"
   @abi Path.join(__DIR__, "abis/wallet_hunters_abi.json")
@@ -24,21 +26,60 @@ defmodule Sanbase.WalletHunters.Proposal do
     field(:text, :string)
     field(:title, :string)
 
+    belongs_to(:user, User)
+
     timestamps()
   end
 
   @doc false
   def changeset(proposal, attrs) do
     proposal
-    |> cast(attrs, [:title, :text, :proposal_id, :hunter_address])
-    |> validate_required([:title, :text, :proposal_id, :hunter_address])
+    |> cast(attrs, [:title, :text, :proposal_id, :hunter_address, :user_id])
+    |> validate_required([:title, :text, :proposal_id, :hunter_address, :user_id])
     |> unique_constraint(:proposal_id)
+  end
+
+  def create(args) do
+    Map.update!(args, :hunter_address, &String.downcase/1)
+
+    with true <- Ethauth.verify_signature(args.signature, args.hunter_address, args.message_hash) do
+      args = maybe_add_user(args)
+
+      %__MODULE__{}
+      |> changeset(args)
+      |> Repo.insert()
+      |> case do
+        {:ok, proposal} ->
+          proposal = Repo.preload(proposal, :user)
+
+          response =
+            wallet_proposal(proposal.proposal_id)
+            |> map_response()
+            |> hd()
+            |> Map.merge(proposal)
+
+          {:ok, response}
+
+        error ->
+          error
+      end
+    end
+  end
+
+  def fetch_all(selector \\ %{}) do
+    wallet_proposals()
+    |> map_response()
+    |> filter_response(selector[:filter])
+    |> sort_response(selector[:sort_by])
+    |> paginate(selector[:page], selector[:page_size])
+    |> merge_db_proposals()
   end
 
   def fetch_by_proposal_ids(proposal_ids) do
     from(p in __MODULE__,
       where: p.proposal_id in ^proposal_ids,
-      select: %{proposal_id: p.proposal_id, title: p.title, text: p.text}
+      join: u in assoc(p, :user),
+      select: %{proposal_id: p.proposal_id, title: p.title, text: p.text, user: u}
     )
     |> Repo.all()
   end
@@ -78,13 +119,13 @@ defmodule Sanbase.WalletHunters.Proposal do
     |> hd()
   end
 
-  def fetch_all(selector \\ %{}) do
-    wallet_proposals()
-    |> map_response()
-    |> filter_response(selector[:filter])
-    |> sort_response(selector[:sort_by])
-    |> paginate(selector[:page], selector[:page_size])
-    |> merge_db_proposals()
+  def wallet_proposal(proposal_id) do
+    call_contract(
+      @contract,
+      function_abi("walletProposal"),
+      [proposal_id],
+      function_abi("walletProposal").returns
+    )
   end
 
   def map_response(response) do
@@ -164,5 +205,17 @@ defmodule Sanbase.WalletHunters.Proposal do
       db_proposal = id_proposal_map[proposal[:proposal_id]] || %{}
       Map.merge(proposal, db_proposal)
     end)
+  end
+
+  defp maybe_add_user(%{user_id: _} = args), do: args
+
+  defp maybe_add_user(args) do
+    eth_account = EthAccount.by_address(args.hunter_address)
+
+    if eth_account do
+      Map.put(args, :user_id, eth_account.user_id)
+    else
+      args
+    end
   end
 end

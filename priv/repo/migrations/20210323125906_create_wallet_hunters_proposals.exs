@@ -7,6 +7,7 @@ defmodule Sanbase.Repo.Migrations.CreateWalletHuntersProposals do
       add(:text, :text)
       add(:proposal_id, :integer)
       add(:hunter_address, :string)
+      add(:user_id, references(:users), null: true)
 
       timestamps()
     end

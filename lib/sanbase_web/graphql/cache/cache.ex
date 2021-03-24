@@ -142,8 +142,22 @@ defmodule SanbaseWeb.Graphql.Cache do
         # the key must include `metric` from the parent's args
         args_from_source = generate_additional_args(resolution.source)
 
-        cache_key({name, additional_args, args_from_source}, args, opts)
-        |> get_or_store(fun)
+        cache_key = cache_key({name, additional_args, args_from_source}, args, opts)
+
+        # In some edge-cases the caching can be disabled for some reason. In one
+        # particular case for all_projects_by_function the caching is disabled
+        # (by putting the do_not_cache_query: true Process dictionary key-value)
+        # if the base_projects depends on a watchlist. The cache resolver that
+        # is disabled must provide the `honor_do_no_cache_flag: true` explicitly,
+        # so we are not disabling all of the caching, but only the one that matters
+        skip_cache? =
+          Keyword.get(opts, :honor_do_not_cache_flag, false) and
+            Process.get(:do_not_cache_query) == true
+
+        case skip_cache? do
+          true -> fun.()
+          false -> get_or_store(cache_key, fun)
+        end
     end
   end
 

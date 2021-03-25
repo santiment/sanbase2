@@ -215,6 +215,7 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "whale_transaction_count",
         "mvrv_usd_z_score",
         "stock_to_flow",
+        "miners_total_supply",
         # social metrics
         "community_messages_count_telegram",
         "community_messages_count_total",

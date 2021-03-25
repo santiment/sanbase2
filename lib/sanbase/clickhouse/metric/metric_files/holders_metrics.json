@@ -425,6 +425,23 @@
     "data_type": "timeseries"
   },
   {
+    "human_readable_name": "Combined Balance Of Holders Total",
+    "name": "holders_distribution_combined_balance_total",
+    "metric": "holders_distribution_amount_all",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "avg",
+    "min_interval": "1d",
+    "table": "daily_metrics_v2",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  },
+  {
     "human_readable_name": "Amount Of Holders With Balance Over 1",
     "name": "holders_distribution_over_1",
     "metric": "holders_distribution_more_than_1",

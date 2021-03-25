@@ -4,6 +4,8 @@ defmodule Sanbase.EventBus.PaymentSubscriber do
   """
   use GenServer
 
+  def topics(), do: ["payment_events"]
+
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name, __MODULE__))
   end

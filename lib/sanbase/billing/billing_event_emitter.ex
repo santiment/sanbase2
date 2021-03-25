@@ -1,5 +1,5 @@
 defmodule Sanbase.Billing.EventEmitter do
-  @behaviour Sanbase.EventEmitter.Behaviour
+  @behaviour Sanbase.EventBus.EventEmitter.Behaviour
 
   @topic :stripe_events
 
@@ -36,14 +36,15 @@ defmodule Sanbase.Billing.EventEmitter do
     {:ok, stripe_subscription}
   end
 
-  def emit_event({:ok, subscription}, event_type, %{})
-      when event_type in [:create_subscription, :update_subscription] do
+  def emit_event({:ok, subscription}, event_type, %{} = args)
+      when event_type in [:create_subscription, :update_subscription, :delete_subscription] do
     %{
       event_type: event_type,
       subscription_id: subscription.id,
       user_id: subscription.user_id,
       stripe_subscription_id: subscription.stripe_id
     }
+    |> Map.merge(args)
     |> notify()
 
     {:ok, subscription}

@@ -1,5 +1,5 @@
 defmodule Sanbase.Promoters.FirstPromoter do
-  import Sanbase.Promoters.PromoterEventEmitter, only: [emit_event: 3]
+  import Sanbase.Promoters.EventEmitter, only: [emit_event: 3]
 
   alias Sanbase.Promoters.FirstPromoterApi
   alias Sanbase.Accounts.{User, UserSettings}

@@ -1,5 +1,5 @@
 defmodule Sanbase.EventBusTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   defmodule EventBusTestSubscriber do
     def process({_topic, _id} = event_shadow) do
@@ -12,8 +12,17 @@ defmodule Sanbase.EventBusTest do
   end
 
   setup do
+    alias Sanbase.EventBus.KafkaExporterSubscriber
     EventBus.register_topic(:test_events)
     EventBus.subscribe({EventBusTestSubscriber, [".*"]})
+
+    # Unsubscribe the KafkaExporterSubscriber for the tests so the Jason.Encoder
+    # does not fail when encoding PIDs
+    EventBus.unsubscribe(KafkaExporterSubscriber)
+
+    on_exit(fn ->
+      EventBus.subscribe({KafkaExporterSubscriber, KafkaExporterSubscriber.topics()})
+    end)
 
     []
   end

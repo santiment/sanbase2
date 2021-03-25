@@ -3,6 +3,7 @@ defmodule Sanbase.Comments.EntityComment do
   Module for dealing with comments for certain entities.
   """
   import Ecto.Query
+  import Sanbase.Comments.EventEmitter, only: [emit_event: 3]
 
   alias Sanbase.Repo
   alias Sanbase.Comment
@@ -36,6 +37,7 @@ defmodule Sanbase.Comments.EntityComment do
       {:ok, %{create_comment: comment}} -> {:ok, comment}
       {:error, _name, error, _} -> {:error, error}
     end
+    |> emit_event(:create_comment, %{entity: entity})
   end
 
   @spec link(:insight, non_neg_integer(), non_neg_integer()) ::

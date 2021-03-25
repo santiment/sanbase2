@@ -1,4 +1,4 @@
-defmodule Sanbase.EventEmitter.Behaviour do
+defmodule Sanbase.EventBus.EventEmitter.Behaviour do
   @type entity :: any()
   @type event_type :: atom()
   @type extra_args :: map()

@@ -19,6 +19,7 @@ defmodule Sanbase.Comment do
   use Ecto.Schema
 
   import Ecto.{Query, Changeset}
+  import Sanbase.Comments.EventEmitter, only: [emit_event: 3]
 
   alias Sanbase.Repo
   alias Sanbase.Accounts.User
@@ -141,6 +142,7 @@ defmodule Sanbase.Comment do
         comment
         |> changeset(%{content: content, edited_at: NaiveDateTime.utc_now()})
         |> Repo.update()
+        |> emit_event(:update_comment, %{})
 
       {:error, error} ->
         {:error, error}
@@ -155,6 +157,7 @@ defmodule Sanbase.Comment do
     case select_comment(comment_id, user_id) do
       {:ok, comment} ->
         anonymize(comment)
+        |> emit_event(:anonymize_comment, %{})
 
       {:error, error} ->
         {:error, error}

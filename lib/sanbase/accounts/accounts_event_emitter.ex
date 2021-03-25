@@ -1,5 +1,5 @@
 defmodule Sanbase.Accounts.EventEmitter do
-  @behaviour Sanbase.EventEmitter.Behaviour
+  @behaviour Sanbase.EventBus.EventEmitter.Behaviour
 
   @topic :user_events
 

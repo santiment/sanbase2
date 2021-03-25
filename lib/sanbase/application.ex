@@ -55,7 +55,7 @@ defmodule Sanbase.Application do
     Sanbase.Prometheus.PipelineInstrumenter.setup()
     Sanbase.Prometheus.Exporter.setup()
 
-    event_bus_init()
+    Sanbase.EventBus.init()
 
     # Container specific init
     case container_type do
@@ -252,19 +252,6 @@ defmodule Sanbase.Application do
   def config_change(changed, _new, removed) do
     SanbaseWeb.Endpoint.config_change(changed, removed)
     :ok
-  end
-
-  defp event_bus_init() do
-    EventBus.register_topic(:user_events)
-    EventBus.register_topic(:watchlist_events)
-    EventBus.register_topic(:alert_events)
-    EventBus.register_topic(:insight_events)
-    EventBus.register_topic(:payment_events)
-
-    EventBus.subscribe({Sanbase.EventBus.NotificationSubscriber, [".*"]})
-    EventBus.subscribe({Sanbase.EventBus.KafkaExporterSubscriber, [".*"]})
-    EventBus.subscribe({Sanbase.EventBus.UserEventsSubscriber, ["user_events"]})
-    EventBus.subscribe({Sanbase.EventBus.PaymentSubscriber, ["payment"]})
   end
 
   defp kafka_endpoint() do

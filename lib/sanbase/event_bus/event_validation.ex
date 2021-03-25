@@ -1,4 +1,8 @@
-defmodule Sanbase.EventBus.Event do
+defmodule Sanbase.EventBus.EventValidation do
+  @moduledoc """
+
+  """
+
   #############################################################################
   ## Accounts Events
   #############################################################################
@@ -6,13 +10,13 @@ defmodule Sanbase.EventBus.Event do
     do: valid_integer_id?(id) and valid_string_field_change?(old, new)
 
   def valid?(%{event_type: :update_email, user_id: id, old_email: old, new_email: new}),
-    do: valid_integer_id?(id) and valid_string_field_change?(old, new) and is_binary(new)
+    do: valid_integer_id?(id) and valid_string_field_change?(old, new)
 
   def valid?(%{event_type: :update_email_candidate, user_id: id, email_candidate: email}),
     do: valid_integer_id?(id) and is_binary(email)
 
-  def valid?(%{event_type: :register_user, user_id: id, login_origin: _origin}),
-    do: valid_integer_id?(id)
+  def valid?(%{event_type: :register_user, user_id: id, login_origin: login_origin}),
+    do: valid_integer_id?(id) and is_atom(login_origin)
 
   def valid?(%{event_type: event_type, user_id: user_id, follower_id: follower_id})
       when event_type in [:follow_user, :unfollow_user] do
@@ -28,6 +32,32 @@ defmodule Sanbase.EventBus.Event do
 
   def valid?(%{event_type: :alert_triggered, user_id: user_id, alert_id: alert_id}),
     do: valid_integer_id?(user_id) and valid_integer_id?(alert_id)
+
+  #############################################################################
+  ## Comments Events
+  #############################################################################
+  def valid?(%{
+        event_type: :create_comment,
+        user_id: user_id,
+        comment_id: comment_id,
+        entity: entity
+      }),
+      do: valid_integer_id?(user_id) and valid_integer_id?(comment_id) and is_atom(entity)
+
+  def valid?(%{
+        event_type: event_type,
+        user_id: user_id,
+        comment_id: comment_id
+      })
+      when event_type in [:update_comment, :anonymize_comment],
+      do: valid_integer_id?(user_id) and valid_integer_id?(comment_id)
+
+  #############################################################################
+  ## Insight Events
+  #############################################################################
+  def valid?(%{event_type: event_type, user_id: user_id, insight_id: insight_id})
+      when event_type in [:create_insight, :update_insight, :delete_insight, :publish_insight],
+      do: valid_integer_id?(user_id) and valid_integer_id?(insight_id)
 
   #############################################################################
   ## Watchlist Events
@@ -72,16 +102,18 @@ defmodule Sanbase.EventBus.Event do
         valid_integer_id?(user_id) and valid_string_id?(customer_id) and
           (is_nil(card_token) or is_binary(card_token))
 
-  def valid?(%{
-        event_type: event_type,
-        subscription_id: subscription_id,
-        user_id: user_id,
-        stripe_subscription_id: stripe_subscription_id
-      })
+  def valid?(
+        %{
+          event_type: event_type,
+          subscription_id: subscription_id,
+          user_id: user_id,
+          stripe_subscription_id: _stripe_subscription_id
+        } = event
+      )
       when event_type in [:create_subscription, :update_subscription],
       do:
         valid_integer_id?(subscription_id) and valid_integer_id?(user_id) and
-          valid_string_id?(stripe_subscription_id)
+          valid_subscription_stripe_id?(event)
 
   #############################################################################
   ## Payment Events
@@ -157,4 +189,10 @@ defmodule Sanbase.EventBus.Event do
   defp valid_integer_id?(id), do: is_integer(id) and id > 0
   defp valid_string_id?(id), do: is_binary(id) and id != ""
   defp valid_string_field_change?(old, new), do: is_binary(old) and is_binary(new) and old != new
+
+  defp valid_subscription_stripe_id?(%{type: :liquidity_subscription, stripe_subscription_id: id}),
+    do: is_nil(id) or valid_string_id?(id)
+
+  defp valid_subscription_stripe_id?(%{stripe_subscription_id: id}),
+    do: valid_string_id?(id)
 end

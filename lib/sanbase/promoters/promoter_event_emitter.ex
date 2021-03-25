@@ -1,5 +1,5 @@
-defmodule Sanbase.Promoters.PromoterEventEmitter do
-  @behaviour Sanbase.EventEmitter.Behaviour
+defmodule Sanbase.Promoters.EventEmitter do
+  @behaviour Sanbase.EventBus.EventEmitter.Behaviour
 
   @topic :user_events
 

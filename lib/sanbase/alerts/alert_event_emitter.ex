@@ -1,5 +1,5 @@
 defmodule Sanbase.Alert.EventEmitter do
-  @behaviour Sanbase.EventEmitter.Behaviour
+  @behaviour Sanbase.EventBus.EventEmitter.Behaviour
 
   @topic :alert_events
 

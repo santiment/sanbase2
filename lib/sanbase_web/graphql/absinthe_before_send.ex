@@ -45,8 +45,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     "allErc20Projects",
     "allCurrencyProjects",
     "projectsListHistoryStats",
-    "projectsListStats",
-    "allProjectsByFunction"
+    "projectsListStats"
   ]
 
   def cached_queries(), do: @cached_queries

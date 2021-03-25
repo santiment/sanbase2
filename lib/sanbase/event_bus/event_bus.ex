@@ -16,7 +16,7 @@ defmodule Sanbase.EventBus do
   An emitter is every module that invokes the Sanbase.EventBus.notify/1 function.
   In order to emit an event, all a module needs is to know a valid topic name
   and valid event structure. The valid event structure are those that are
-  recognized by the Sanbase.Event.valid?/1 function.
+  recognized by the Sanbase.EventValidation.valid?/1 function.
 
   The subscribers should subscribe to a list of topics by invoking the
   EventBus.subscribe.subscribe/1 function like this:
@@ -32,6 +32,17 @@ defmodule Sanbase.EventBus do
     defexception [:message]
   end
 
+  @topics [:user_events, :watchlist_events, :alert_events, :insight_events, :payment_events]
+  @subscribers [
+    __MODULE__.KafkaExporterSubscriber,
+    __MODULE__.UserEventsSubscriber,
+    __MODULE__.PaymentSubscriber
+  ]
+  def init() do
+    for topic <- @topics, do: EventBus.register_topic(topic)
+    for subscriber <- @subscribers, do: EventBus.subscribe({subscriber, subscriber.topics()})
+  end
+
   def notify(params) do
     params =
       params
@@ -45,7 +56,7 @@ defmodule Sanbase.EventBus do
     EventSource.notify params do
       data = Map.fetch!(params, :data)
 
-      case Sanbase.EventBus.Event.valid?(data) do
+      case Sanbase.EventBus.EventValidation.valid?(data) do
         true ->
           data
 

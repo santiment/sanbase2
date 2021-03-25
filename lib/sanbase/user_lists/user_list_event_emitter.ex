@@ -1,5 +1,5 @@
 defmodule Sanbase.UserList.EventEmitter do
-  @behaviour Sanbase.EventEmitter.Behaviour
+  @behaviour Sanbase.EventBus.EventEmitter.Behaviour
   @topic :watchlist_events
 
   def emit_event({:error, _} = result, _event_type, _extra_args), do: result

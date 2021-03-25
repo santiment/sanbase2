@@ -4,6 +4,8 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
   Uniswap liquidity pools. They are present only in Sanbase but not synced in Stripe.
   """
 
+  import Sanbase.Billing.EventEmitter, only: [emit_event: 3]
+
   alias Sanbase.Billing.Subscription
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
@@ -22,10 +24,12 @@ defmodule Sanbase.Billing.Subscription.LiquiditySubscription do
       status: "active",
       current_period_end: Timex.shift(Timex.now(), days: 30)
     })
+    |> emit_event(:create_subscription, %{type: :liquidity_subscription})
   end
 
   def remove_liquidity_subscription(liquidity_subscription) do
     Repo.delete(liquidity_subscription)
+    |> emit_event(:delete_subscription, %{type: :liquidity_subscription})
   end
 
   @doc """

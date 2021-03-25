@@ -4,6 +4,8 @@ defmodule Sanbase.EventBus.UserEventsSubscriber do
   """
   use GenServer
 
+  def topics(), do: ["user_events"]
+
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name, __MODULE__))
   end

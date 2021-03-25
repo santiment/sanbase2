@@ -38,21 +38,20 @@ defmodule Sanbase.InternalServices.Ethauth do
   """
   @spec verify_signature(any(), any(), any()) :: boolean() | {:error, String.t()}
   def verify_signature(signature, address, message_hash) do
-    true
-    # with {:ok, %Tesla.Env{status: 200, body: body}} <-
-    #        get(client(), "recover",
-    #          query: [sign: signature, hash: message_hash],
-    #          opts: @tesla_opts
-    #        ),
-    #      {:ok, %{"recovered" => recovered}} <- Jason.decode(body) do
-    #   String.downcase(address) == String.downcase(recovered)
-    # else
-    #   {:ok, %Tesla.Env{status: status}} ->
-    #     {:error, "Error veryfing signature for address. #{address}. Status: #{status}"}
+    with {:ok, %Tesla.Env{status: 200, body: body}} <-
+           get(client(), "recover",
+             query: [sign: signature, hash: message_hash],
+             opts: @tesla_opts
+           ),
+         {:ok, %{"recovered" => recovered}} <- Jason.decode(body) do
+      String.downcase(address) == String.downcase(recovered)
+    else
+      {:ok, %Tesla.Env{status: status}} ->
+        {:error, "Error veryfing signature for address. #{address}. Status: #{status}"}
 
-    #   {:error, error} ->
-    #     {:error, "Error veryfing signature for address. #{address}. Reason: #{inspect(error)}"}
-    # end
+      {:error, error} ->
+        {:error, "Error veryfing signature for address. #{address}. Reason: #{inspect(error)}"}
+    end
   end
 
   @doc ~s"""

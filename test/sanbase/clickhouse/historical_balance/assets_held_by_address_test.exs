@@ -50,7 +50,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.AssetsHeldByAdderssTest do
 
   test "clickhouse returns error", _context do
     Sanbase.Mock.prepare_mock2(
-      &Sanbase.Clickhouse.HistoricalBalance.LtcBalance.assets_held_by_address/1,
+      &Sanbase.Balance.assets_held_by_address/1,
       {:error, "Something went wrong"}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->

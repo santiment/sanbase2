@@ -31,7 +31,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
     "ETH" => [EthBalance, Erc20Balance]
   }
 
-  @balances_aggregated_blockchains ["ethereum", "bitcoin", "bitcoin-cash"]
+  @balances_aggregated_blockchains ["ethereum", "bitcoin", "bitcoin-cash", "litecoin"]
 
   @supported_infrastructures Map.keys(@infrastructure_to_module)
   def supported_infrastructures(), do: @supported_infrastructures

@@ -45,6 +45,10 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
   scheduler_enabled: {:system, "QUANTUM_SCHEDULER_ENABLED", false},
   timeout: 30_000,
   jobs: [
+    update_api_call_limit_plans: [
+      schedule: "@daily",
+      task: {Sanbase.ApiCallLimit.Sync, :run, []}
+    ],
     notify_users_for_comments: [
       schedule: "@hourly",
       task: {Sanbase.Comments.Notification, :notify_users, []}

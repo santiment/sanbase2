@@ -101,7 +101,7 @@ config :waffle,
   storage_dir_prefix: "/"
 
 config :ethereumex,
-  url: "http://parity.stage.san:30954"
+  url: "https://rinkeby.infura.io/v3/438d7b89339745c6b512eac25d83ddd2"
 
 if File.exists?("config/dev.secret.exs") do
   import_config "dev.secret.exs"

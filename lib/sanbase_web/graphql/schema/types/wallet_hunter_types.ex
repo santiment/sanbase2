@@ -1,6 +1,10 @@
 defmodule SanbaseWeb.Graphql.WalletHunterTypes do
   use Absinthe.Schema.Notation
 
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
+
+  alias SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver
+
   enum :wallet_hunter_proposal_states do
     value(:active)
     value(:approved)
@@ -35,7 +39,6 @@ defmodule SanbaseWeb.Graphql.WalletHunterTypes do
     field(:user, :public_user)
     field(:title, :string)
     field(:text, :string)
-    field(:hunter_address, :string)
     field(:reward, :float)
     field(:state, :wallet_hunter_proposal_states)
     field(:claimed_reward, :boolean)
@@ -45,5 +48,10 @@ defmodule SanbaseWeb.Graphql.WalletHunterTypes do
     field(:votes_against, :float)
     field(:sheriffs_reward_share, :float)
     field(:fixed_sheriff_reward, :float)
+    field(:address, :string)
+
+    field :labels, list_of(:blockchain_address_label) do
+      cache_resolve(&BlockchainAddressResolver.labels/3, ttl: 600, max_ttl_offset: 600)
+    end
   end
 end

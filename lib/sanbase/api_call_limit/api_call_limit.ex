@@ -7,6 +7,8 @@ defmodule Sanbase.ApiCallLimit do
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.{Product, Subscription}
 
+  require Logger
+
   @compile inline: [by_user: 1, by_remote_ip: 1]
 
   @plans_without_limits ["sanapi_enterprise", "sanapi_premium", "sanapi_custom"]
@@ -55,14 +57,24 @@ defmodule Sanbase.ApiCallLimit do
         {:ok, nil}
 
       %__MODULE__{} = acl ->
-        acl
-        |> changeset(%{api_calls_limit_plan: user_to_plan(user)})
-        |> Repo.update()
-        |> case do
+        changeset =
+          acl
+          |> changeset(%{api_calls_limit_plan: user_to_plan(user)})
+
+        case Repo.update(changeset) do
           {:ok, _} = result ->
-            # Clear the in-memory data for the user after plan update. This will
-            # make any curently applied rate limits go away.
-            __MODULE__.ETS.clear_data(:user, user)
+            # Clear the in-memory data for a user so the new restrictions
+            # can be picked up faster. Do this only if the plan actually changes
+            if new_plan = Ecto.Changeset.get_change(changeset, :api_calls_limit_plan) do
+              Logger.info(
+                "Updating ApiCallLimit record for user with id #{user.id} with new plan #{
+                  new_plan
+                }"
+              )
+
+              __MODULE__.ETS.clear_data(:user, user)
+            end
+
             result
 
           {:error, error} ->

@@ -42,12 +42,27 @@ defmodule Sanbase.WalletHunters.Contract do
   end
 
   def contract_execute(function_name, args) do
-    call_contract(
-      @wallet_hunters_contract,
-      function_abi(function_name),
-      args,
-      function_abi(function_name).returns
-    )
+    original_url = Application.get_env(:ethereumex, :url)
+
+    # TODO remove after testing on Rinkeby Ethereum Test Network
+    if localhost_or_stage?() do
+      rinkeby_url = System.get_env("RINKEBY_URL")
+      Application.put_env(:ethereumex, :url, rinkeby_url)
+    end
+
+    call_result =
+      call_contract(
+        @wallet_hunters_contract,
+        function_abi(function_name),
+        args,
+        function_abi(function_name).returns
+      )
+
+    if localhost_or_stage?() do
+      Application.put_env(:ethereumex, :url, original_url)
+    end
+
+    call_result
     |> case do
       {:error, %{"message" => message}} ->
         {:error, message}
@@ -64,5 +79,9 @@ defmodule Sanbase.WalletHunters.Contract do
       [result | _] ->
         result
     end
+  end
+
+  def localhost_or_stage? do
+    System.get_env("FRONTEND_URL") |> String.contains?(["stage", "localhost"])
   end
 end

@@ -34,17 +34,23 @@ defmodule Sanbase.EventBus.EventEmitter do
         defexception [:message]
       end
 
+      @doc ~s"""
+      Emit an event built from the provided arguments.
+      If no error, occured, the first argument is returned as-is, so the function
+      can be used inside pipelines.
+      """
+      @spec emit_event(arg :: term, event_type :: atom, args :: map) :: term | no_return
       def emit_event(arg, event_type, args) do
         case __MODULE__.handle_event(arg, event_type, args) do
-          ^arg ->
+          :ok ->
             arg
 
-          _ ->
+          error ->
             raise(
               ReturnResultError,
               """
               The handle_event/3 implementation for the event type :#{event_type} \
-              must return the first argument unchanged.
+              returned an error: #{inspect(error)}.
               """
             )
         end

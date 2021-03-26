@@ -3,7 +3,7 @@ defmodule Sanbase.Billing.EventEmitter do
 
   @topic :stripe_events
 
-  def handle_event({:error, _} = result, _event_type, _args), do: result
+  def handle_event({:error, _}, _event_type, _args), do: :ok
 
   def handle_event({:ok, stripe_customer}, event_type, %{
         user: user,
@@ -17,8 +17,6 @@ defmodule Sanbase.Billing.EventEmitter do
       card_token: card_token
     }
     |> notify()
-
-    {:ok, stripe_customer}
   end
 
   def handle_event({:ok, stripe_subscription}, :create_stripe_subscription, %{
@@ -32,8 +30,6 @@ defmodule Sanbase.Billing.EventEmitter do
       stripe_subscription_id: stripe_subscription.id
     }
     |> notify()
-
-    {:ok, stripe_subscription}
   end
 
   def handle_event({:ok, subscription}, event_type, %{} = args)
@@ -46,11 +42,10 @@ defmodule Sanbase.Billing.EventEmitter do
     }
     |> Map.merge(args)
     |> notify()
-
-    {:ok, subscription}
   end
 
   defp notify(data) do
     Sanbase.EventBus.notify(%{topic: @topic, data: data})
+    :ok
   end
 end

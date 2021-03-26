@@ -3,7 +3,7 @@ defmodule Sanbase.Insight.EventEmitter do
 
   @topic :insight_topic
 
-  def handle_event({:error, _} = result, _event_type, _extra_args), do: result
+  def handle_event({:error, _}, _event_type, _extra_args), do: :ok
 
   def handle_event({:ok, insight}, event_type, _args)
       when event_type in [:create_insight, :update_insight, :delete_insight, :publish_insight] do
@@ -14,14 +14,10 @@ defmodule Sanbase.Insight.EventEmitter do
       insight_ready_state: insight.ready_state
     }
     |> notify()
-
-    {:ok, insight}
   end
 
   defp notify(data) do
-    Sanbase.EventBus.notify(%{
-      topic: @topic,
-      data: data
-    })
+    Sanbase.EventBus.notify(%{topic: @topic, data: data})
+    :ok
   end
 end

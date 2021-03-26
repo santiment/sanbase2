@@ -3,7 +3,7 @@ defmodule Sanbase.Comments.EventEmitter do
 
   @topic :comments_topic
 
-  def handle_event({:error, _} = result, _event_type, _args), do: result
+  def handle_event({:error, _}, _event_type, _args), do: :ok
 
   # entity is one of :insight, :timeline_event, etc.
   def handle_event({:ok, comment}, event_type, %{} = args)
@@ -15,14 +15,10 @@ defmodule Sanbase.Comments.EventEmitter do
     }
     |> Map.merge(args)
     |> notify()
-
-    {:ok, comment}
   end
 
   defp notify(data) do
-    Sanbase.EventBus.notify(%{
-      topic: @topic,
-      data: data
-    })
+    Sanbase.EventBus.notify(%{topic: @topic, data: data})
+    :ok
   end
 end

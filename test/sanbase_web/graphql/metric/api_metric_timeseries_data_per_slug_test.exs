@@ -66,6 +66,8 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataPerSlugTest do
     end)
   end
 
+  # The graphql error is logged
+  @tag capture_log: true
   test "unsupported slug in list returns error", context do
     %{conn: conn, from: from, to: to, project1: project1, project2: project2} = context
 

@@ -49,6 +49,7 @@ defmodule Sanbase.Alert.MaxAlertsPerDayTest do
     ]
   end
 
+  @tag capture_log: true
   test "does not send notifications after limit is reached", context do
     %{user: user, mock_fun: mock_fun} = context
 

@@ -1,4 +1,5 @@
 defmodule Sanbase.WalletHunters.Contract do
+  require Logger
   import Sanbase.SmartContracts.Utils
 
   @wallet_hunters_contract "0x772e255402EEE3Fa243CB17AF58001f40Da78d90"
@@ -26,10 +27,14 @@ defmodule Sanbase.WalletHunters.Contract do
     contract_execute("walletProposalsLength", [])
   end
 
-  def wallet_proposals(limit \\ nil, offset \\ 0) do
-    args = [offset, limit || wallet_proposals_count()]
+  def wallet_proposals() do
+    count = wallet_proposals_count()
 
-    contract_execute("walletProposals", args)
+    if count > 0 do
+      contract_execute("walletProposals", [0, count])
+    else
+      []
+    end
   end
 
   def wallet_proposal(proposal_id) do
@@ -48,7 +53,13 @@ defmodule Sanbase.WalletHunters.Contract do
         {:error, message}
 
       {:error, reason} ->
-        {:error, "Error during executing smart contract call"}
+        Logger.error(
+          "Error occurred during executing smart contract call #{function_name} with args: #{
+            inspect(args)
+          }. reason: #{inspect(reason)}"
+        )
+
+        {:error, "Error occured during executing smart contract call"}
 
       [result | _] ->
         result

@@ -1,11 +1,11 @@
 defmodule Sanbase.Billing.EventEmitter do
-  @behaviour Sanbase.EventBus.EventEmitter.Behaviour
+  use Sanbase.EventBus.EventEmitter
 
   @topic :stripe_events
 
-  def emit_event({:error, _} = result, _event_type, _args), do: result
+  def handle_event({:error, _} = result, _event_type, _args), do: result
 
-  def emit_event({:ok, stripe_customer}, event_type, %{
+  def handle_event({:ok, stripe_customer}, event_type, %{
         user: user,
         card_token: card_token
       })
@@ -21,7 +21,7 @@ defmodule Sanbase.Billing.EventEmitter do
     {:ok, stripe_customer}
   end
 
-  def emit_event({:ok, stripe_subscription}, :create_stripe_subscription, %{
+  def handle_event({:ok, stripe_subscription}, :create_stripe_subscription, %{
         user: user,
         card_token: card_token
       }) do
@@ -36,7 +36,7 @@ defmodule Sanbase.Billing.EventEmitter do
     {:ok, stripe_subscription}
   end
 
-  def emit_event({:ok, subscription}, event_type, %{} = args)
+  def handle_event({:ok, subscription}, event_type, %{} = args)
       when event_type in [:create_subscription, :update_subscription, :delete_subscription] do
     %{
       event_type: event_type,

@@ -1,11 +1,11 @@
 defmodule Sanbase.Promoters.EventEmitter do
-  @behaviour Sanbase.EventBus.EventEmitter.Behaviour
+  use Sanbase.EventBus.EventEmitter
 
   @topic :user_events
 
-  def emit_event({:error, _} = result, _event_type, _extra_args), do: result
+  def handle_event({:error, _} = result, _event_type, _extra_args), do: result
 
-  def emit_event({:ok, promoter}, :create_promoter, %{
+  def handle_event({:ok, promoter}, :create_promoter, %{
         user: user,
         promoter_origin: promoter_origin
       }) do

@@ -1,12 +1,12 @@
 defmodule Sanbase.Comments.EventEmitter do
-  @behaviour Sanbase.EventBus.EventEmitter.Behaviour
+  use Sanbase.EventBus.EventEmitter
 
   @topic :comments_topic
 
-  def emit_event({:error, _} = result, _event_type, _args), do: result
+  def handle_event({:error, _} = result, _event_type, _args), do: result
 
   # entity is one of :insight, :timeline_event, etc.
-  def emit_event({:ok, comment}, event_type, %{} = args)
+  def handle_event({:ok, comment}, event_type, %{} = args)
       when event_type in [:create_comment, :update_comment, :anonymize_comment] do
     %{
       event_type: event_type,

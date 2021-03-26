@@ -1,11 +1,11 @@
 defmodule Sanbase.Insight.EventEmitter do
-  @behaviour Sanbase.EventBus.EventEmitter.Behaviour
+  use Sanbase.EventBus.EventEmitter
 
   @topic :insight_topic
 
-  def emit_event({:error, _} = result, _event_type, _extra_args), do: result
+  def handle_event({:error, _} = result, _event_type, _extra_args), do: result
 
-  def emit_event({:ok, insight}, event_type, _args)
+  def handle_event({:ok, insight}, event_type, _args)
       when event_type in [:create_insight, :update_insight, :delete_insight, :publish_insight] do
     %{
       event_type: event_type,

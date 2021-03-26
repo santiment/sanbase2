@@ -4,17 +4,11 @@ defmodule Sanbase.WalletHunters.Contract do
 
   @wallet_hunters_contract "0x772e255402EEE3Fa243CB17AF58001f40Da78d90"
   @abi Path.join(__DIR__, "abis/wallet_hunters_abi.json")
+       |> File.read!()
+       |> Jason.decode!()
+       |> Map.get("abi")
 
-  def abi do
-    Sanbase.Cache.get_or_store(
-      {__MODULE__, :wallet_hunters_abi} |> Sanbase.Cache.hash(),
-      fn ->
-        File.read!(@abi)
-        |> Jason.decode!()
-        |> Map.get("abi")
-      end
-    )
-  end
+  def abi(), do: @abi
 
   def function_abi(function) do
     abi()

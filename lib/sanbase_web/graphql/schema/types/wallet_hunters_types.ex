@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.WalletHunterTypes do
+defmodule SanbaseWeb.Graphql.WalletHuntersTypes do
   use Absinthe.Schema.Notation
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
@@ -41,7 +41,7 @@ defmodule SanbaseWeb.Graphql.WalletHunterTypes do
     field(:text, :string)
     field(:reward, :float)
     field(:state, :wallet_hunter_proposal_states)
-    field(:claimed_reward, :boolean)
+    field(:is_reward_claimed, :boolean)
     field(:created_at, :datetime)
     field(:finish_at, :datetime)
     field(:votes_for, :float)

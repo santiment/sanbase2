@@ -3,14 +3,14 @@ defmodule SanbaseWeb.Graphql.Schema.WalletHunterQueries do
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
-  alias SanbaseWeb.Graphql.Resolvers.WalletHunterResolver
+  alias SanbaseWeb.Graphql.Resolvers.WalletHuntersResolver
 
   object :wallet_hunter_queries do
-    field :all_wallet_hunter_proposals, list_of(:wallet_hunter_proposal) do
+    field :wallet_hunters_proposals, list_of(:wallet_hunter_proposal) do
       meta(access: :free)
       arg(:selector, :wallet_hunters_proposals_selector_input_object)
 
-      cache_resolve(&WalletHunterResolver.all_wallet_hunter_proposals/3)
+      cache_resolve(&WalletHuntersResolver.wallet_hunters_proposals/3)
     end
   end
 
@@ -25,7 +25,7 @@ defmodule SanbaseWeb.Graphql.Schema.WalletHunterQueries do
       arg(:signature, non_null(:string))
       arg(:message_hash, non_null(:string))
 
-      cache_resolve(&WalletHunterResolver.create_wallet_hunter_proposal/3)
+      cache_resolve(&WalletHuntersResolver.create_wallet_hunter_proposal/3)
     end
   end
 end

@@ -54,17 +54,14 @@ defmodule Sanbase.SmartContracts.Utils do
     # https://docs.soliditylang.org/en/latest/abi-spec.html#function-selector-and-argument-encoding
     function_signature = ABI.encode(contract_function, args) |> Base.encode16(case: :lower)
 
-    {:ok, hex_encoded_binary_response} =
-      Ethereumex.HttpClient.eth_call(%{
-        data: "0x" <> function_signature,
-        to: contract
-      })
-
-    hex_encoded_binary_response
-    # Strip `0x` prefix
-    |> String.slice(2..-1)
-    |> Base.decode16!(case: :lower)
-    |> ABI.TypeDecoder.decode_raw(return_types)
+    with {:ok, hex_encoded_binary_response} <-
+           Ethereumex.HttpClient.eth_call(%{data: "0x" <> function_signature, to: contract}) do
+      hex_encoded_binary_response
+      # Strip `0x` prefix
+      |> String.slice(2..-1)
+      |> Base.decode16!(case: :lower)
+      |> ABI.TypeDecoder.decode_raw(return_types)
+    end
   end
 
   def format_number(number, decimals \\ 18)

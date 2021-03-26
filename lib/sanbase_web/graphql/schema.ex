@@ -69,7 +69,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.UserTypes)
   import_types(Graphql.SignalTypes)
   import_types(Graphql.WidgetTypes)
-  import_types(Graphql.WalletHunterTypes)
+  import_types(Graphql.WalletHuntersTypes)
   import_types(Graphql.SheetsTemplateTypes)
 
   # Queries and mutations

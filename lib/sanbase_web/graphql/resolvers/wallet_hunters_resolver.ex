@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.Resolvers.WalletHunterResolver do
+defmodule SanbaseWeb.Graphql.Resolvers.WalletHuntersResolver do
   alias Sanbase.WalletHunters.Proposal
 
   def create_wallet_hunter_proposal(_root, args, %{
@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.WalletHunterResolver do
     Proposal.create(args)
   end
 
-  def all_wallet_hunter_proposals(_root, args, _resolution) do
+  def wallet_hunters_proposals(_root, args, _resolution) do
     selector = args[:selector] || %{}
     {:ok, Sanbase.WalletHunters.Proposal.fetch_all(selector)}
   end

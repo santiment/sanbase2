@@ -39,27 +39,20 @@ defmodule Sanbase.WalletHunters.Proposal do
   def create(args) do
     Map.update!(args, :hunter_address, &String.downcase/1)
 
-    with true <- Ethauth.verify_signature(args.signature, args.hunter_address, args.message_hash) do
-      args = maybe_add_user(args)
+    with true <- Ethauth.verify_signature(args.signature, args.hunter_address, args.message_hash),
+         args <- maybe_add_user(args),
+         proposal <- Contract.wallet_proposal(args.proposal_id),
+         {:ok, db_proposal} <- changeset(%__MODULE__{}, args) |> Repo.insert() do
+      db_proposal = Repo.preload(db_proposal, :user) |> Map.from_struct()
 
-      %__MODULE__{}
-      |> changeset(args)
-      |> Repo.insert()
-      |> case do
-        {:ok, proposal} ->
-          proposal = Repo.preload(proposal, :user)
+      response =
+        proposal
+        |> List.wrap()
+        |> map_response()
+        |> hd()
+        |> Map.merge(db_proposal)
 
-          response =
-            Contract.wallet_proposal(proposal.proposal_id)
-            |> map_response()
-            |> hd()
-            |> Map.merge(proposal)
-
-          {:ok, response}
-
-        error ->
-          error
-      end
+      {:ok, response}
     end
   end
 
@@ -79,7 +72,7 @@ defmodule Sanbase.WalletHunters.Proposal do
                      hunter_address,
                      reward,
                      state,
-                     claimed_reward,
+                     is_reward_claimed,
                      created_at,
                      finish_at,
                      votes_for,
@@ -92,7 +85,7 @@ defmodule Sanbase.WalletHunters.Proposal do
         address: encode_address(hunter_address),
         reward: format_number(reward),
         state: @states_map[state],
-        claimed_reward: claimed_reward,
+        is_reward_claimed: is_reward_claimed,
         created_at: DateTime.from_unix!(created_at),
         finish_at: DateTime.from_unix!(finish_at),
         votes_for: format_number(votes_for),

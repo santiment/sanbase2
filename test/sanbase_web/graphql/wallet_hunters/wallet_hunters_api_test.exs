@@ -14,7 +14,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
     Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_call/1, all_proposals_resp())
     |> Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: labels_rows()}})
     |> Sanbase.Mock.run_with_mocks(fn ->
-      result = execute_query(build_conn(), wallet_hunters_query(), "allWalletHunterProposals")
+      result = execute_query(build_conn(), wallet_hunters_query(), "walletHuntersProposals")
 
       assert result == query_response()
     end)
@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
       selector = %{sort_by: %{field: "created_at", direction: :desc}, page: 1, page_size: 2}
 
       result =
-        execute_query(build_conn(), wallet_hunters_query(selector), "allWalletHunterProposals")
+        execute_query(build_conn(), wallet_hunters_query(selector), "walletHuntersProposals")
 
       assert result == query_response() |> Enum.sort_by(& &1["createdAt"], :desc) |> Enum.take(2)
     end)
@@ -45,7 +45,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
       }
 
       result =
-        execute_query(build_conn(), wallet_hunters_query(selector), "allWalletHunterProposals")
+        execute_query(build_conn(), wallet_hunters_query(selector), "walletHuntersProposals")
 
       assert result == query_response() |> Enum.take(-1)
     end)
@@ -56,7 +56,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
 
     """
     {
-      allWalletHunterProposals(
+      walletHuntersProposals(
         selector: #{selector}
       ) {
         proposalId
@@ -71,7 +71,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         }
         reward
         state
-        claimedReward
+        isRewardClaimed
         createdAt
         finishAt
         votesFor
@@ -98,7 +98,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
     [
       %{
         "address" => "0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
-        "claimedReward" => false,
+        "isRewardClaimed" => false,
         "createdAt" => "2021-03-23T20:34:16Z",
         "finishAt" => "2021-03-24T20:34:16Z",
         "fixedSheriffReward" => 10.0,
@@ -115,7 +115,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
       },
       %{
         "address" => "0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
-        "claimedReward" => false,
+        "isRewardClaimed" => false,
         "createdAt" => "2021-03-24T09:03:19Z",
         "finishAt" => "2021-03-25T09:03:19Z",
         "fixedSheriffReward" => 10.0,
@@ -132,7 +132,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
       },
       %{
         "address" => "0x26caae548b7cecf98da12ccaaa633d6d140447aa",
-        "claimedReward" => false,
+        "isRewardClaimed" => false,
         "createdAt" => "2021-03-25T08:45:32Z",
         "finishAt" => "2021-03-26T08:45:32Z",
         "fixedSheriffReward" => 10.0,

@@ -208,6 +208,8 @@ config :sanbase, Sanbase.Promoters.FirstPromoterApi,
   api_id: {:system, "FIRST_PROMOTER_API_ID"},
   api_key: {:system, "FIRST_PROMOTER_API_KEY"}
 
+config :sanbase, Sanbase.WalletHunters.Contract, rinkeby_url: {:system, "RINKEBY_URL"}
+
 # Import configs
 import_config "ex_admin_config.exs"
 import_config "influxdb_config.exs"

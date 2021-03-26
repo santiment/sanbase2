@@ -15,6 +15,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
       expected_free_queries =
         [
           :active_widgets,
+          :wallet_hunters_proposals,
           :address_historical_balance_change,
           :alerts_historical_activity,
           :all_currency_projects,

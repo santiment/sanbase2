@@ -114,7 +114,9 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     |> Map.get("message")
   end
 
-  def map_to_input_object_str(%{} = map) do
+  def map_to_input_object_str(%{} = map, opts \\ []) do
+    map_as_input_object? = Keyword.get(opts, :map_as_input_object, false)
+
     str =
       Enum.map(map, fn
         {k, [%{} | _] = l} ->
@@ -124,9 +126,13 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
           ~s/#{k}: "#{dt |> DateTime.truncate(:second) |> DateTime.to_iso8601()}"/
 
         {k, m} when is_map(m) ->
-          ~s/#{k}: '#{Jason.encode!(m)}'/
-          |> String.replace(~r|\"|, ~S|\\"|)
-          |> String.replace(~r|'|, ~S|"|)
+          if map_as_input_object? do
+            ~s/#{k}: #{map_to_input_object_str(m)}/
+          else
+            ~s/#{k}: '#{Jason.encode!(m)}'/
+            |> String.replace(~r|\"|, ~S|\\"|)
+            |> String.replace(~r|'|, ~S|"|)
+          end
 
         {k, a} when a in [true, false, nil] ->
           ~s/#{k}: #{inspect(a)}/

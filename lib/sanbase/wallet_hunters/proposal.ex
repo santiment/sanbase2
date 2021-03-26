@@ -32,7 +32,7 @@ defmodule Sanbase.WalletHunters.Proposal do
   def changeset(proposal, attrs) do
     proposal
     |> cast(attrs, [:title, :text, :proposal_id, :hunter_address, :user_id])
-    |> validate_required([:title, :text, :proposal_id, :hunter_address, :user_id])
+    |> validate_required([:title, :text, :proposal_id, :hunter_address])
     |> unique_constraint(:proposal_id)
   end
 

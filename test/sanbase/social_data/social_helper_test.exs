@@ -10,13 +10,11 @@ defmodule Sanbase.SocialHelperTest do
   end
 
   describe "social_metrics_selector_handler/1" do
-    alias Sanbase.Model.Project
-
     test "with existing slug: success" do
-      _project = Sanbase.Factory.insert(%Project{name: "santiment", slug: "santiment"})
+      Sanbase.Factory.insert(:project, %{ticker: "SAN", name: "Santiment", slug: "santiment"})
 
       assert SocialHelper.social_metrics_selector_handler(%{slug: "santiment"}) ==
-               {:ok, "\"santiment\" OR \"santiment\""}
+               {:ok, ~s/"SAN" OR "Santiment" OR "santiment"/}
     end
 
     test "with text: success" do

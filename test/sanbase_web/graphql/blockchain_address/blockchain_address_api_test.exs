@@ -43,7 +43,9 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
     end)
   end
 
-  test "Error when fetching recent transactions", context do
+  # ClickhouseRepo will log the error
+  @tag capture_log: true
+  test "error when fetching recent transactions", context do
     Sanbase.Mock.prepare_mock2(
       &Sanbase.ClickhouseRepo.query/2,
       {:error, "Internal error message"}

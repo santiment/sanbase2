@@ -69,33 +69,32 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
     bitcoin_usd_price = 30_000
     data_btc = [%{balance: 200.0, slug: btc_project.slug}]
 
-    data_metric =
-      Sanbase.Mock.prepare_mock2(&Sanbase.Balance.assets_held_by_address/1, {:ok, data_btc})
-      |> Sanbase.Mock.prepare_mock2(
-        &Sanbase.Metric.aggregated_timeseries_data/5,
-        # Bitcoin's price in usd
-        {:ok, %{btc_project.slug => bitcoin_usd_price}}
-      )
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        query = assets_held_by_address_query("0x123", "BTC")
+    Sanbase.Mock.prepare_mock2(&Sanbase.Balance.assets_held_by_address/1, {:ok, data_btc})
+    |> Sanbase.Mock.prepare_mock2(
+      &Sanbase.Metric.aggregated_timeseries_data/5,
+      # Bitcoin's price in usd
+      {:ok, %{btc_project.slug => bitcoin_usd_price}}
+    )
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      query = assets_held_by_address_query("0x123", "BTC")
 
-        result =
-          conn
-          |> post("/graphql", query_skeleton(query, "assetsHeldByAddress"))
-          |> json_response(200)
+      result =
+        conn
+        |> post("/graphql", query_skeleton(query, "assetsHeldByAddress"))
+        |> json_response(200)
 
-        assert result == %{
-                 "data" => %{
-                   "assetsHeldByAddress" => [
-                     %{
-                       "balance" => 200.0,
-                       "slug" => btc_project.slug,
-                       "balanceUsd" => 200.0 * bitcoin_usd_price
-                     }
-                   ]
-                 }
+      assert result == %{
+               "data" => %{
+                 "assetsHeldByAddress" => [
+                   %{
+                     "balance" => 200.0,
+                     "slug" => btc_project.slug,
+                     "balanceUsd" => 200.0 * bitcoin_usd_price
+                   }
+                 ]
                }
-      end)
+             }
+    end)
   end
 
   test "historical balances results for BTC without timeseries data", context do

@@ -12,10 +12,9 @@ defmodule Sanbase.ApiCallLimit.Sync do
   alias Sanbase.ApiCallLimit
 
   def run() do
-    users =
-      from(acl in ApiCallLimit, where: not is_nil(acl.user_id), preload: [:user])
-      |> Repo.all()
-      |> Enum.map(& &1.user)
-      |> Enum.each(&ApiCallLimit.update_user_plan/1)
+    from(acl in ApiCallLimit, where: not is_nil(acl.user_id), preload: [:user])
+    |> Repo.all()
+    |> Enum.map(& &1.user)
+    |> Enum.each(&ApiCallLimit.update_user_plan/1)
   end
 end

@@ -82,6 +82,7 @@ defmodule Sanbase.WalletHunters.Contract do
   end
 
   def localhost_or_stage? do
-    System.get_env("FRONTEND_URL") |> String.contains?(["stage", "localhost"])
+    frontend_url = System.get_env("FRONTEND_URL")
+    is_binary(frontend_url) && String.contains?(frontend_url, ["stage", "localhost"])
   end
 end

@@ -114,11 +114,8 @@ defmodule Sanbase.WalletHunters.Proposal do
   defp sort_response(response, %{field: field, direction: direction}) do
     field = String.to_existing_atom(field)
 
-    if field in [:created_at, :finish_at] do
-      Enum.sort_by(response, & &1[field], {direction, DateTime})
-    else
-      Enum.sort_by(response, & &1[field], direction)
-    end
+    direction = if field in [:created_at, :finish_at], do: {direction, DateTime}, else: direction
+    Enum.sort_by(response, & &1[field], direction)
   end
 
   defp paginate(response, page, page_size) do

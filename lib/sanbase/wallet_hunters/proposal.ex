@@ -32,8 +32,17 @@ defmodule Sanbase.WalletHunters.Proposal do
   def changeset(proposal, attrs) do
     proposal
     |> cast(attrs, [:title, :text, :proposal_id, :hunter_address, :user_id])
+    |> normalize_text(:text, attrs[:text])
     |> validate_required([:title, :text, :proposal_id, :hunter_address])
     |> unique_constraint(:proposal_id)
+  end
+
+  def sanitize_markdown(markdown) do
+    # mark lines that start with "> " (valid markdown blockquote syntax)
+    markdown = Regex.replace(~r/^>\s+([^\s+])/m, markdown, "REPLACED_BLOCKQUOTE\\1")
+    markdown = HtmlSanitizeEx.markdown_html(markdown)
+    # Bring back the blockquotes
+    Regex.replace(~r/^REPLACED_BLOCKQUOTE/m, markdown, "> ")
   end
 
   def create(args) do
@@ -159,5 +168,9 @@ defmodule Sanbase.WalletHunters.Proposal do
     else
       args
     end
+  end
+
+  defp normalize_text(changeset, field, value) do
+    put_change(changeset, field, sanitize_markdown(value))
   end
 end

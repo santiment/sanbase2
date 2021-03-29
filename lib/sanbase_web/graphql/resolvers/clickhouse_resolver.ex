@@ -21,10 +21,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
           slug: slug,
           from: from,
           to: to,
-          number_of_holders: number_of_holders
-        },
+          page: page,
+          page_size: page_size
+        } = args,
         _resolution
       ) do
+    page_size = Enum.min([args[:number_of_holders] || page_size, 100])
+    opts = [page: page, page_size: page_size]
+
     with {:ok, contract, token_decimals} <-
            Project.contract_info_by_slug(slug, contract_type: :latest_onchain_contract),
          {:ok, top_holders} <-
@@ -34,7 +38,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
              token_decimals,
              from,
              to,
-             number_of_holders
+             opts
            ) do
       {:ok, top_holders}
     else

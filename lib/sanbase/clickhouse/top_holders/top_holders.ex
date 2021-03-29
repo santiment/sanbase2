@@ -31,9 +31,9 @@ defmodule Sanbase.Clickhouse.TopHolders do
           token_decimals :: non_neg_integer(),
           from :: DateTime.t(),
           to :: DateTime.t(),
-          number_of_holders :: non_neg_integer()
+          opts :: Keyword.t()
         ) :: {:ok, list(top_holders)} | {:error, String.t()}
-  def top_holders(slug, contract, token_decimals, from, to, number_of_holders) do
+  def top_holders(slug, contract, token_decimals, from, to, opts) do
     {query, args} =
       top_holders_query(
         slug,
@@ -41,7 +41,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
         token_decimals,
         from,
         to,
-        number_of_holders
+        opts
       )
 
     transform_func = fn [dt, address, value, value_usd, part_of_total] ->
@@ -109,8 +109,12 @@ defmodule Sanbase.Clickhouse.TopHolders do
          token_decimals,
          from,
          to,
-         number_of_holders
+         opts
        ) do
+    page = Keyword.get(opts, :page)
+    page_size = Keyword.get(opts, :page_size)
+    offset = (page - 1) * page_size
+
     query = """
     SELECT
       toUnixTimestamp(dt),
@@ -157,7 +161,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
         ) USING (dt) )
       GROUP BY address
       ORDER BY val DESC
-      LIMIT ?6
+      LIMIT ?6 OFFSET ?7
     )
     GLOBAL ANY JOIN (
       SELECT
@@ -177,7 +181,8 @@ defmodule Sanbase.Clickhouse.TopHolders do
       token_decimals,
       DateTime.to_unix(from),
       DateTime.to_unix(to),
-      number_of_holders
+      page_size,
+      offset
     ]
 
     {query, args}

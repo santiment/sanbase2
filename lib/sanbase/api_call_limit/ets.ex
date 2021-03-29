@@ -36,6 +36,7 @@ defmodule Sanbase.ApiCallLimit.ETS do
   end
 
   def clear_all(), do: :ets.delete_all_objects(@ets_table)
+
   def clear_data(:user, %User{id: user_id}), do: :ets.delete(@ets_table, user_id)
   def clear_data(:remote_ip, remote_ip), do: :ets.delete(@ets_table, remote_ip)
 
@@ -59,13 +60,11 @@ defmodule Sanbase.ApiCallLimit.ETS do
   """
   def update_usage(_type, _entity, _count, :basic), do: :ok
 
-  def update_usage(:user, %User{} = user, count, _auth_method) do
-    do_update_usage(:user, user, user.id, count)
-  end
+  def update_usage(:user, %User{} = user, count, _auth_method),
+    do: do_update_usage(:user, user, user.id, count)
 
-  def update_usage(:remote_ip, remote_ip, count, _auth_method) do
-    do_update_usage(:remote_ip, remote_ip, remote_ip, count)
-  end
+  def update_usage(:remote_ip, remote_ip, count, _auth_method),
+    do: do_update_usage(:remote_ip, remote_ip, remote_ip, count)
 
   # Private functions
 
@@ -99,15 +98,27 @@ defmodule Sanbase.ApiCallLimit.ETS do
             get_quota_db_and_update_ets(entity_type, entity, entity_key)
         end
 
-      [{^entity_key, :infinity, :infinity, metadata}] ->
+      [{^entity_key, :infinity, :infinity, metadata, _refresh_after}] ->
         {:ok, %{metadata | quota: :infinity}}
 
-      [{^entity_key, api_calls_remaining, quota}] when api_calls_remaining <= 0 ->
-        {:ok, _} = ApiCallLimit.update_usage_db(entity_type, entity, quota + -api_calls_remaining)
+      [{^entity_key, api_calls_remaining, quota, _metadata, _refresh_after}]
+      when api_calls_remaining <= 0 ->
+        # quota - api_calls_remaining works both with positive and negative api calls
+        # remaining.
+        {:ok, _} =
+          ApiCallLimit.update_usage_db(
+            entity_type,
+            entity,
+            quota - api_calls_remaining
+          )
+
         get_quota_db_and_update_ets(entity_type, entity, entity_key)
 
-      [{^entity_key, api_calls_remaining, _quota, metadata}] ->
-        {:ok, %{metadata | quota: api_calls_remaining}}
+      [{^entity_key, api_calls_remaining, _quota, metadata, refresh_after}] ->
+        case DateTime.compare(DateTime.utc_now(), refresh_after) do
+          :gt -> get_quota_db_and_update_ets(entity_type, entity, entity_key)
+          _ -> {:ok, %{metadata | quota: api_calls_remaining}}
+        end
     end
   end
 
@@ -120,10 +131,11 @@ defmodule Sanbase.ApiCallLimit.ETS do
 
         :ok
 
-      [{^entity_key, :infinity, :infinity, _metadata}] ->
+      [{^entity_key, :infinity, :infinity, _metadata, _refresh_after}] ->
         :ok
 
-      [{^entity_key, api_calls_remaining, _quota, _metadata}] when api_calls_remaining <= count ->
+      [{^entity_key, api_calls_remaining, _quota, _metadata, _refresh_after}]
+      when api_calls_remaining <= count ->
         # If 2+ processes execute :ets.lookup/2 at the same time with the same key
         # it could happen that both processes enter this path. This will lead to
         # updating the DB more than once, thus leading to storing more api calls
@@ -136,7 +148,7 @@ defmodule Sanbase.ApiCallLimit.ETS do
 
         # Do another lookup do re-fetch the data in case we waited for the
         # mutex while some other process was doing work here.
-        [{^entity_key, api_calls_remaining, quota, metadata}] =
+        [{^entity_key, api_calls_remaining, quota, metadata, _refresh_after}] =
           :ets.lookup(@ets_table, entity_key)
 
         if api_calls_remaining <= count do
@@ -155,8 +167,9 @@ defmodule Sanbase.ApiCallLimit.ETS do
         Mutex.release(Sanbase.ApiCallLimitMutex, lock)
         :ok
 
-      [{^entity_key, api_calls_remaining, _quota, metadata}] ->
+      [{^entity_key, api_calls_remaining, _quota, metadata, _refresh_after}] ->
         true = do_upate_ets_usage(entity_key, api_calls_remaining, count, metadata)
+
         :ok
     end
   end
@@ -171,14 +184,28 @@ defmodule Sanbase.ApiCallLimit.ETS do
         minute: Enum.max([remaining.minute - count, 0])
       })
 
-    true = :ets.update_element(@ets_table, entity_key, {2, api_calls_remaining - count})
+    true =
+      :ets.update_element(
+        @ets_table,
+        entity_key,
+        {2, api_calls_remaining - count}
+      )
+
     true = :ets.update_element(@ets_table, entity_key, {4, metadata})
   end
 
   defp get_quota_db_and_update_ets(entity_type, entity, entity_key) do
     case ApiCallLimit.get_quota_db(entity_type, entity) do
       {:ok, %{quota: quota} = metadata} ->
-        true = :ets.insert(@ets_table, {entity_key, quota, quota, metadata})
+        now = Timex.now()
+        refresh_after = Timex.shift(now, seconds: 60 - now.second)
+
+        true =
+          :ets.insert(
+            @ets_table,
+            {entity_key, quota, quota, metadata, refresh_after}
+          )
+
         {:ok, metadata}
 
       {:error, %{} = error_map} ->

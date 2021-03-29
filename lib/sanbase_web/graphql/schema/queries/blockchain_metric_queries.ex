@@ -233,7 +233,13 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainMetricQueries do
       meta(access: :restricted)
 
       arg(:slug, non_null(:string))
-      arg(:number_of_holders, non_null(:integer), default_value: 20)
+
+      arg(:number_of_holders, non_null(:integer),
+        deprecate: "pageSize argument should be used instead"
+      )
+
+      arg(:page, non_null(:integer), default_value: 1)
+      arg(:page_size, non_null(:integer), default_value: 20)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 

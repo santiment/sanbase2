@@ -1,10 +1,10 @@
 defmodule Sanbase.EventBusTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   defmodule EventBusTestSubscriber do
     def process({_topic, _id} = event_shadow) do
       event = EventBus.fetch_event(event_shadow)
-      send(event.data.pid, event.data.message)
+      Process.send(:__internal_event_test_process_name_given__, event.data.message, [])
       EventBus.mark_as_completed(event)
 
       :ok
@@ -12,39 +12,27 @@ defmodule Sanbase.EventBusTest do
   end
 
   setup do
-    alias Sanbase.EventBus.KafkaExporterSubscriber
     EventBus.register_topic(:test_events)
     EventBus.subscribe({EventBusTestSubscriber, [".*"]})
-
-    # Unsubscribe the KafkaExporterSubscriber for the tests so the Jason.Encoder
-    # does not fail when encoding PIDs
-    EventBus.unsubscribe(KafkaExporterSubscriber)
-
-    on_exit(fn ->
-      EventBus.subscribe({KafkaExporterSubscriber, KafkaExporterSubscriber.topics()})
-    end)
 
     []
   end
 
   test "emit and process event" do
-    Sanbase.EventBus.notify(%{
-      topic: :test_events,
-      data: %{pid: self(), message: "ping1", __internal_valid_event__: true}
-    })
+    # Register a name and use it. If the event contains a pid, the Jason encoder
+    # will fail encoding it to json
+    Process.register(self(), :__internal_event_test_process_name_given__)
 
-    Sanbase.EventBus.notify(%{
-      topic: :test_events,
-      data: %{pid: self(), message: "ping2", __internal_valid_event__: true}
-    })
+    for i <- 1..50 do
+      Sanbase.EventBus.notify(%{
+        topic: :test_events,
+        data: %{message: "ping#{i}", __internal_valid_event__: true}
+      })
+    end
 
-    Sanbase.EventBus.notify(%{
-      topic: :test_events,
-      data: %{pid: self(), message: "ping3", __internal_valid_event__: true}
-    })
-
-    assert_receive "ping1"
-    assert_receive "ping2"
-    assert_receive "ping3"
+    for i <- 1..50 do
+      msg = "ping#{i}"
+      assert_receive(^msg, 1000)
+    end
   end
 end

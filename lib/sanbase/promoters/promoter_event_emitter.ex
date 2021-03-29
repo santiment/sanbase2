@@ -5,7 +5,7 @@ defmodule Sanbase.Promoters.EventEmitter do
 
   def handle_event({:error, _}, _event_type, _extra_args), do: :ok
 
-  def handle_event({:ok, promoter}, :create_promoter, %{
+  def handle_event({:ok, _promoter}, :create_promoter, %{
         user: user,
         promoter_origin: promoter_origin
       }) do

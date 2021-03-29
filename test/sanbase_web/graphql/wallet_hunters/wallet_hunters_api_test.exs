@@ -12,8 +12,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
   end
 
   test "Create proposal" do
-    Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.verify_signature/3, true)
-    |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_call/1, proposal_resp())
+    Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_call/1, proposal_resp())
     |> Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: labels_rows()}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
@@ -40,8 +39,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
   end
 
   test "Create proposal with logged in user", context do
-    Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.verify_signature/3, true)
-    |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_call/1, proposal_resp())
+    Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_call/1, proposal_resp())
     |> Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: labels_rows()}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
@@ -68,8 +66,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
   end
 
   test "Create proposal with hunter address that is in EthAccount" do
-    Sanbase.Mock.prepare_mock2(&Sanbase.InternalServices.Ethauth.verify_signature/3, true)
-    |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_call/1, proposal_resp())
+    Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_call/1, proposal_resp())
     |> Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: labels_rows()}})
     |> Sanbase.Mock.run_with_mocks(fn ->
       user =
@@ -151,8 +148,6 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         proposalId:1,
         text:"t",
         title:"t2",
-        signature:"test"
-        messageHash:"alabala",
         hunterAddress:"0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
       ) {
         proposalId

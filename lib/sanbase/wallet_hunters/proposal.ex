@@ -47,10 +47,9 @@ defmodule Sanbase.WalletHunters.Proposal do
 
   def create(args) do
     Map.update!(args, :hunter_address, &String.downcase/1)
+    args = maybe_add_user(args)
 
-    with true <- Ethauth.verify_signature(args.signature, args.hunter_address, args.message_hash),
-         args <- maybe_add_user(args),
-         proposal <- Contract.wallet_proposal(args.proposal_id),
+    with proposal <- Contract.wallet_proposal(args.proposal_id),
          {:ok, db_proposal} <- changeset(%__MODULE__{}, args) |> Repo.insert() do
       db_proposal = Repo.preload(db_proposal, :user) |> Map.from_struct()
 

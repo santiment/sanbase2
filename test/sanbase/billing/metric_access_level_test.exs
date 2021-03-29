@@ -731,7 +731,16 @@ defmodule Sanbase.Billing.MetricAccessLevelTest do
         "social_dominance_total_change_30d",
         "sentiment_balance_total_change_1d",
         "sentiment_balance_total_change_7d",
-        "sentiment_balance_total_change_30d"
+        "sentiment_balance_total_change_30d",
+        "network_profit_loss_change_1d",
+        "network_profit_loss_change_7d",
+        "network_profit_loss_change_30d",
+        "whale_transaction_count_more_than_100k_usd_5min_change_1d",
+        "whale_transaction_count_more_than_100k_usd_5min_change_7d",
+        "whale_transaction_count_more_than_100k_usd_5min_change_30d",
+        "whale_transaction_count_more_than_1m_usd_5min_change_1d",
+        "whale_transaction_count_more_than_1m_usd_5min_change_7d",
+        "whale_transaction_count_more_than_1m_usd_5min_change_30d"
       ]
       |> Enum.sort()
 

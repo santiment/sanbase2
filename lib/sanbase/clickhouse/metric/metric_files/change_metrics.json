@@ -3425,5 +3425,165 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Network Realized Profit or Loss in USD Change (1d)",
+    "name": "network_profit_loss_change_1d",
+    "metric": "network_profit_loss_change_1d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "Network Realized Profit or Loss in USD Change (7d)",
+    "name": "network_profit_loss_change_7d",
+    "metric": "network_profit_loss_change_7d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "Network Realized Profit or Loss in USD Change (30d)",
+    "name": "network_profit_loss_change_30d",
+    "metric": "network_profit_loss_change_30d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": false,
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Number of Transactions Transferring More Than 100k USD Change (1d)",
+    "name": "whale_transaction_count_100k_usd_to_inf_change_1d",
+    "metric": "whale_transaction_count_more_than_100k_usd_5min_change_1d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "Number of Transactions Transferring More Than 100k USD Change (7d)",
+    "name": "whale_transaction_count_100k_usd_to_inf_change_7d",
+    "metric": "whale_transaction_count_more_than_100k_usd_5min_change_7d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "Number of Transactions Transferring More Than 100k USD Change (30d)",
+    "name": "whale_transaction_count_100k_usd_to_inf_change_30d",
+    "metric": "whale_transaction_count_more_than_100k_usd_5min_change_30d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "Number of Transactions Transferring More Than 1 million USD Change (1d)",
+    "name": "whale_transaction_count_1m_usd_to_inf_change_1d",
+    "metric": "whale_transaction_count_more_than_1m_usd_5min_change_1d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "Number of Transactions Transferring More Than 1 million USD Change (7d)",
+    "name": "whale_transaction_count_1m_usd_to_inf_change_7d",
+    "metric": "whale_transaction_count_more_than_1m_usd_5min_change_7d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
+  }
+,
+  {
+    "human_readable_name": "Number of Transactions Transferring More Than 1 million USD Change (30d)",
+    "name": "whale_transaction_count_1m_usd_to_inf_change_30d",
+    "metric": "whale_transaction_count_more_than_1m_usd_5min_change_30d",
+    "version": "2019-01-01",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "free"
+    },
+    "aggregation": "sum",
+    "min_interval": "5m",
+    "table": "intraday_metrics",
+    "has_incomplete_data": true,
+    "data_type": "timeseries"
   }
 ]

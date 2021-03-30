@@ -21,7 +21,9 @@ defmodule SanbaseWeb.Graphql.Schema.WalletHunterQueries do
       arg(:proposal_id, non_null(:integer))
       arg(:title, non_null(:string))
       arg(:text, non_null(:string))
+      arg(:proposed_address, non_null(:string))
       arg(:hunter_address, non_null(:string))
+      arg(:user_labels, list_of(:string), default_value: [])
 
       cache_resolve(&WalletHuntersResolver.create_wallet_hunter_proposal/3)
     end

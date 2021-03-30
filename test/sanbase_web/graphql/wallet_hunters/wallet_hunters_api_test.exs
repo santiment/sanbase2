@@ -12,19 +12,25 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
   end
 
   test "Create proposal" do
+    mock_fun =
+      [
+        fn -> {:ok, %{rows: labels_rows()}} end,
+        fn -> {:ok, %{rows: labels_rows()}} end
+      ]
+      |> Sanbase.Mock.wrap_consecutives(arity: 2)
+
     Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_call/1, proposal_resp())
-    |> Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: labels_rows()}})
+    |> Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
     |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         execute_mutation(build_conn(), create_proposal_mutation(), "createWalletHunterProposal")
 
       assert result == %{
-               "address" => "0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
+               "hunterAddress" => "0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
                "createdAt" => "2021-03-24T09:03:19Z",
                "finishAt" => "2021-03-25T09:03:19Z",
                "fixedSheriffReward" => 10.0,
                "isRewardClaimed" => false,
-               "labels" => [],
                "proposalId" => "1",
                "reward" => 110.0,
                "sheriffsRewardShare" => 2.0e3,
@@ -33,7 +39,11 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
                "title" => "t2",
                "user" => nil,
                "votesAgainst" => 0.0,
-               "votesFor" => 0.0
+               "votesFor" => 0.0,
+               "hunterAddressLabels" => [],
+               "proposedAddress" => "0x11111109fe98a396f32d6cff4736bedc7b60008c",
+               "proposedAddressLabels" => [%{"name" => "DEX Trader2"}],
+               "userLabels" => ["test label1", "test label 2"]
              }
     end)
   end
@@ -46,12 +56,10 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         execute_mutation(context.conn, create_proposal_mutation(), "createWalletHunterProposal")
 
       assert result == %{
-               "address" => "0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
                "createdAt" => "2021-03-24T09:03:19Z",
                "finishAt" => "2021-03-25T09:03:19Z",
                "fixedSheriffReward" => 10.0,
                "isRewardClaimed" => false,
-               "labels" => [],
                "proposalId" => "1",
                "reward" => 110.0,
                "sheriffsRewardShare" => 2.0e3,
@@ -60,7 +68,12 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
                "title" => "t2",
                "user" => %{"email" => context.user.email},
                "votesAgainst" => 0.0,
-               "votesFor" => 0.0
+               "votesFor" => 0.0,
+               "hunterAddress" => "0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
+               "hunterAddressLabels" => [],
+               "proposedAddress" => "0x11111109fe98a396f32d6cff4736bedc7b60008c",
+               "proposedAddressLabels" => [%{"name" => "DEX Trader2"}],
+               "userLabels" => ["test label1", "test label 2"]
              }
     end)
   end
@@ -81,19 +94,22 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
       result = execute_mutation(conn, create_proposal_mutation(), "createWalletHunterProposal")
 
       assert result == %{
-               "address" => "0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
                "createdAt" => "2021-03-24T09:03:19Z",
                "finishAt" => "2021-03-25T09:03:19Z",
                "fixedSheriffReward" => 10.0,
+               "hunterAddress" => "0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
+               "hunterAddressLabels" => [],
                "isRewardClaimed" => false,
-               "labels" => [],
                "proposalId" => "1",
+               "proposedAddress" => "0x11111109fe98a396f32d6cff4736bedc7b60008c",
+               "proposedAddressLabels" => [%{"name" => "DEX Trader2"}],
                "reward" => 110.0,
                "sheriffsRewardShare" => 2.0e3,
                "state" => "DECLINED",
                "text" => "t",
                "title" => "t2",
                "user" => %{"email" => user.email},
+               "userLabels" => ["test label1", "test label 2"],
                "votesAgainst" => 0.0,
                "votesFor" => 0.0
              }
@@ -130,7 +146,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
       selector = %{
         filter: [
           %{field: "state", value: "active"},
-          %{field: "address", value: "0x26caae548b7cecf98da12ccaaa633d6d140447aa"}
+          %{field: "hunter_address", value: "0x26caae548b7cecf98da12ccaaa633d6d140447aa"}
         ]
       }
 
@@ -149,6 +165,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         text:"t",
         title:"t2",
         hunterAddress:"0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
+        proposedAddress:"0x11111109fe98a396f32d6cff4736bedc7b60008c",
+        userLabels: ["test label1", "test label 2"]
       ) {
         proposalId
         user {
@@ -156,10 +174,15 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         }
         title
         text
-        address
-        labels {
+        hunterAddress
+        hunterAddressLabels {
           name
         }
+        proposedAddress
+        proposedAddressLabels {
+          name
+        }
+        userLabels
         reward
         state
         isRewardClaimed
@@ -188,10 +211,15 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         }
         title
         text
-        address
-        labels {
+        hunterAddress
+        hunterAddressLabels {
           name
         }
+        proposedAddress
+        proposedAddressLabels {
+          name
+        }
+        userLabels
         reward
         state
         isRewardClaimed
@@ -208,7 +236,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
 
   defp labels_rows() do
     [
-      ["0x26caae548b7cecf98da12ccaaa633d6d140447aa", "DEX Trader", "{\"owner\": \"\"}"]
+      ["0x26caae548b7cecf98da12ccaaa633d6d140447aa", "DEX Trader", "{\"owner\": \"\"}"],
+      ["0x11111109fe98a396f32d6cff4736bedc7b60008c", "DEX Trader2", "{\"owner\": \"\"}"]
     ]
   end
 
@@ -225,12 +254,11 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
   def query_response do
     [
       %{
-        "address" => "0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
-        "isRewardClaimed" => false,
         "createdAt" => "2021-03-23T20:34:16Z",
         "finishAt" => "2021-03-24T20:34:16Z",
         "fixedSheriffReward" => 10.0,
-        "labels" => [],
+        "hunterAddress" => "0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
+        "isRewardClaimed" => false,
         "proposalId" => "0",
         "reward" => 100.0,
         "sheriffsRewardShare" => 2.0e3,
@@ -239,15 +267,18 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         "title" => nil,
         "user" => nil,
         "votesAgainst" => 0.0,
-        "votesFor" => 0.0
+        "votesFor" => 0.0,
+        "hunterAddressLabels" => [],
+        "proposedAddress" => nil,
+        "proposedAddressLabels" => [],
+        "userLabels" => nil
       },
       %{
-        "address" => "0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
-        "isRewardClaimed" => false,
         "createdAt" => "2021-03-24T09:03:19Z",
         "finishAt" => "2021-03-25T09:03:19Z",
         "fixedSheriffReward" => 10.0,
-        "labels" => [],
+        "hunterAddress" => "0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
+        "isRewardClaimed" => false,
         "proposalId" => "1",
         "reward" => 110.0,
         "sheriffsRewardShare" => 2.0e3,
@@ -256,15 +287,18 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         "title" => nil,
         "user" => nil,
         "votesAgainst" => 0.0,
-        "votesFor" => 0.0
+        "votesFor" => 0.0,
+        "hunterAddressLabels" => [],
+        "proposedAddress" => nil,
+        "proposedAddressLabels" => [],
+        "userLabels" => nil
       },
       %{
-        "address" => "0x26caae548b7cecf98da12ccaaa633d6d140447aa",
-        "isRewardClaimed" => false,
         "createdAt" => "2021-03-25T08:45:32Z",
         "finishAt" => "2021-03-26T08:45:32Z",
         "fixedSheriffReward" => 10.0,
-        "labels" => [%{"name" => "DEX Trader"}],
+        "hunterAddress" => "0x26caae548b7cecf98da12ccaaa633d6d140447aa",
+        "isRewardClaimed" => false,
         "proposalId" => "2",
         "reward" => 12341.0,
         "sheriffsRewardShare" => 2.0e3,
@@ -273,7 +307,11 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         "title" => "title",
         "user" => %{"email" => "<email hidden>"},
         "votesAgainst" => 0.0,
-        "votesFor" => 0.0
+        "votesFor" => 0.0,
+        "hunterAddressLabels" => [%{"name" => "DEX Trader"}],
+        "proposedAddress" => nil,
+        "proposedAddressLabels" => [],
+        "userLabels" => []
       }
     ]
   end

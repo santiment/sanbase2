@@ -48,10 +48,22 @@ defmodule SanbaseWeb.Graphql.WalletHuntersTypes do
     field(:votes_against, :float)
     field(:sheriffs_reward_share, :float)
     field(:fixed_sheriff_reward, :float)
-    field(:address, :string)
+    field(:hunter_address, :string)
+    field(:proposed_address, :string)
+    field(:user_labels, list_of(:string))
 
-    field :labels, list_of(:blockchain_address_label) do
-      cache_resolve(&BlockchainAddressResolver.labels/3, ttl: 600, max_ttl_offset: 600)
+    field :hunter_address_labels, list_of(:blockchain_address_label) do
+      cache_resolve(&BlockchainAddressResolver.hunter_address_labels/3,
+        ttl: 600,
+        max_ttl_offset: 600
+      )
+    end
+
+    field :proposed_address_labels, list_of(:blockchain_address_label) do
+      cache_resolve(&BlockchainAddressResolver.proposed_address_labels/3,
+        ttl: 600,
+        max_ttl_offset: 600
+      )
     end
   end
 end

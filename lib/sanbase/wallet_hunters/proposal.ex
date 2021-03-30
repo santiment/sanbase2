@@ -7,7 +7,6 @@ defmodule Sanbase.WalletHunters.Proposal do
 
   alias Sanbase.Repo
   alias Sanbase.Accounts.{User, EthAccount}
-  alias Sanbase.InternalServices.Ethauth
   alias Sanbase.WalletHunters.Contract
 
   @states_map %{
@@ -23,6 +22,9 @@ defmodule Sanbase.WalletHunters.Proposal do
     field(:text, :string)
     field(:title, :string)
 
+    field(:proposed_address, :string)
+    field(:user_labels, {:array, :string}, default: [])
+
     belongs_to(:user, User)
 
     timestamps()
@@ -31,9 +33,17 @@ defmodule Sanbase.WalletHunters.Proposal do
   @doc false
   def changeset(proposal, attrs) do
     proposal
-    |> cast(attrs, [:title, :text, :proposal_id, :hunter_address, :user_id])
+    |> cast(attrs, [
+      :title,
+      :text,
+      :proposal_id,
+      :hunter_address,
+      :user_id,
+      :proposed_address,
+      :user_labels
+    ])
     |> normalize_text(:text, attrs[:text])
-    |> validate_required([:title, :text, :proposal_id, :hunter_address])
+    |> validate_required([:title, :text, :proposal_id, :hunter_address, :proposed_address])
     |> unique_constraint(:proposal_id)
   end
 
@@ -46,8 +56,11 @@ defmodule Sanbase.WalletHunters.Proposal do
   end
 
   def create(args) do
-    Map.update!(args, :hunter_address, &String.downcase/1)
-    args = maybe_add_user(args)
+    args =
+      args
+      |> Map.update!(:hunter_address, &String.downcase/1)
+      |> Map.update!(:proposed_address, &String.downcase/1)
+      |> maybe_add_user()
 
     with proposal <- Contract.wallet_proposal(args.proposal_id),
          {:ok, db_proposal} <- changeset(%__MODULE__{}, args) |> Repo.insert() do
@@ -90,7 +103,7 @@ defmodule Sanbase.WalletHunters.Proposal do
                    } ->
       %{
         proposal_id: proposal_id,
-        address: encode_address(hunter_address),
+        hunter_address: encode_address(hunter_address),
         reward: format_number(reward),
         state: @states_map[state],
         is_reward_claimed: is_reward_claimed,
@@ -152,7 +165,14 @@ defmodule Sanbase.WalletHunters.Proposal do
     from(p in __MODULE__,
       where: p.proposal_id in ^proposal_ids,
       join: u in assoc(p, :user),
-      select: %{proposal_id: p.proposal_id, title: p.title, text: p.text, user: u}
+      select: %{
+        proposal_id: p.proposal_id,
+        title: p.title,
+        text: p.text,
+        user: u,
+        user_labels: p.user_labels,
+        proposed_address: p.proposed_address
+      }
     )
     |> Repo.all()
   end

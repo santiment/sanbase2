@@ -312,6 +312,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
       value_ohlc_requested? && aggregation != :ohlc ->
         {:error, "Selected field valueOhlc works only with aggregation ohlc"}
 
+      value_requested? and value_ohlc_requested? ->
+        {:error, "Cannot select value and valueOhlc fields at the same time"}
+
       true ->
         true
     end

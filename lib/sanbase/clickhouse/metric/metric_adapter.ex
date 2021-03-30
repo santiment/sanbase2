@@ -8,14 +8,9 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
 
   import Sanbase.Clickhouse.MetricAdapter.SqlQuery
+  import Sanbase.Metric.Transform, only: [exec_timeseries_data_query: 2]
 
-  import Sanbase.Utils.Transform,
-    only: [
-      maybe_unwrap_ok_value: 1,
-      maybe_apply_function: 2,
-      transform_metric_result_func: 0,
-      transform_metric_ohlc_result_func: 0
-    ]
+  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
 
   alias __MODULE__.{HistogramMetric, FileHandler, TableMetric}
 
@@ -80,11 +75,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
     {query, args} = timeseries_data_query(metric, slug, from, to, interval, aggregation, filters)
 
-    if aggregation == :ohlc do
-      ClickhouseRepo.query_transform(query, args, transform_metric_ohlc_result_func())
-    else
-      ClickhouseRepo.query_transform(query, args, transform_metric_result_func())
-    end
+    exec_timeseries_data_query(query, args)
   end
 
   @impl Sanbase.Metric.Behaviour

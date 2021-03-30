@@ -130,27 +130,4 @@ defmodule Sanbase.Utils.Transform do
   def maybe_transform_from_address(address), do: address
   def maybe_transform_to_address("0x0000000000000000000000000000000000000000"), do: "burn"
   def maybe_transform_to_address(address), do: address
-
-  def transform_metric_result_func() do
-    fn [unix, value] ->
-      %{
-        datetime: DateTime.from_unix!(unix),
-        value: value
-      }
-    end
-  end
-
-  def transform_metric_ohlc_result_func() do
-    fn [unix, open, high, low, close] ->
-      %{
-        datetime: DateTime.from_unix!(unix),
-        value_ohlc: %{
-          open: open,
-          high: high,
-          low: low,
-          close: close
-        }
-      }
-    end
-  end
 end

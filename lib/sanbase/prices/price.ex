@@ -8,12 +8,15 @@ defmodule Sanbase.Price do
     only: [
       maybe_unwrap_ok_value: 1,
       maybe_apply_function: 2,
-      wrap_ok: 1,
-      transform_metric_result_func: 0,
-      transform_metric_ohlc_result_func: 0
+      wrap_ok: 1
     ]
 
-  import Sanbase.Metric.Transform, only: [maybe_nullify_values: 1, remove_missing_values: 1]
+  import Sanbase.Metric.Transform,
+    only: [
+      maybe_nullify_values: 1,
+      remove_missing_values: 1,
+      exec_timeseries_data_query: 2
+    ]
 
   alias Sanbase.Model.Project
   alias Sanbase.ClickhouseRepo
@@ -204,11 +207,7 @@ defmodule Sanbase.Price do
     {query, args} =
       timeseries_metric_data_query(slug_or_slugs, metric, from, to, interval, source, aggregation)
 
-    if aggregation == :ohlc do
-      ClickhouseRepo.query_transform(query, args, transform_metric_ohlc_result_func())
-    else
-      ClickhouseRepo.query_transform(query, args, transform_metric_result_func())
-    end
+    exec_timeseries_data_query(query, args)
   end
 
   def timeseries_metric_data_per_slug(slug_or_slugs, metric, from, to, interval, opts) do

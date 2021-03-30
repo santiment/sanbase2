@@ -85,12 +85,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     end)
   end
 
-  def timeseries_data(_root, args, %{source: %{metric: metric}}) do
-    fetch_timeseries_data(metric, args, :timeseries_data)
+  def timeseries_data(_root, args, %{source: %{metric: metric}} = resolution) do
+    requested_fields = requested_fields(resolution)
+    fetch_timeseries_data(metric, args, requested_fields, :timeseries_data)
   end
 
-  def timeseries_data_per_slug(_root, args, %{source: %{metric: metric}}) do
-    fetch_timeseries_data(metric, args, :timeseries_data_per_slug)
+  def timeseries_data(_root, args, %{source: %{metric: metric}} = resolution) do
+    requested_fields = requested_fields(resolution)
+    fetch_timeseries_data(metric, args, requested_fields, :timeseries_data)
+  end
+
+  def timeseries_data_per_slug(_root, args, %{source: %{metric: metric}} = resolution) do
+    requested_fields = requested_fields(resolution)
+    fetch_timeseries_data(metric, args, requested_fields, :timeseries_data_per_slug)
   end
 
   def aggregated_timeseries_data(
@@ -154,13 +161,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
   # timeseries_data and timeseries_data_per_slug are processed and fetched in
   # exactly the same way. The only difference is the function that is called
   # from the Metric module.
-  defp fetch_timeseries_data(metric, args, function) do
+  defp fetch_timeseries_data(metric, args, requested_fields, function) do
     transform =
       Map.get(args, :transform, %{type: "none"})
       |> Map.update!(:type, &Inflex.underscore/1)
 
     with {:ok, selector} <- args_to_selector(args),
          {:ok, opts} <- selector_args_to_opts(args),
+         true <- valid_timeseries_selection?(requested_fields, args),
          {:ok, from, to, interval} <-
            transform_datetime_params(selector, metric, transform, args),
          {:ok, result} <- apply(Metric, function, [metric, selector, from, to, interval, opts]),
@@ -289,6 +297,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
       true
     else
       {:error, "Missing required `from` argument"}
+    end
+  end
+
+  defp valid_timeseries_selection?(requested_fields, args) do
+    aggregation = Map.get(args, :aggregation, nil)
+    value_requested? = MapSet.member?(requested_fields, "value")
+    value_ohlc_requested? = MapSet.member?(requested_fields, "valueOhlc")
+
+    cond do
+      aggregation == :ohlc && value_requested? ->
+        {:error, "Field value shouldn't be selected when using aggregation ohlc"}
+
+      value_ohlc_requested? && aggregation != :ohlc ->
+        {:error, "Selected field valueOhlc works only with aggregation ohlc"}
+
+      value_requested? and value_ohlc_requested? ->
+        {:error, "Cannot select value and valueOhlc fields at the same time"}
+
+      true ->
+        true
     end
   end
 end

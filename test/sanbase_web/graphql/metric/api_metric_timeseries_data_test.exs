@@ -227,6 +227,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTimeseriesDataTest do
     # manually choose a metric that supports all different aggregations
     metric = "daily_active_addresses"
     {:ok, %{available_aggregations: aggregations}} = Metric.metadata(metric)
+    aggregations = aggregations -- [:ohlc]
 
     Sanbase.Mock.prepare_mock2(
       &Sanbase.Clickhouse.MetricAdapter.timeseries_data/6,

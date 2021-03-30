@@ -1,7 +1,16 @@
 defmodule Sanbase.Metric.SqlQuery.Helper do
-  @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median, :count]
+  @aggregations [:any, :sum, :avg, :min, :max, :last, :first, :median, :count, :ohlc]
 
   def aggregations(), do: @aggregations
+
+  def aggregation(:ohlc, value_column, dt_column) do
+    """
+    argMin(#{value_column}, #{dt_column}) AS open,
+    max(#{value_column}) AS high,
+    min(#{value_column}) AS low,
+    argMax(#{value_column}, #{dt_column}) AS close
+    """
+  end
 
   def aggregation(:last, value_column, dt_column), do: "argMax(#{value_column}, #{dt_column})"
   def aggregation(:first, value_column, dt_column), do: "argMin(#{value_column}, #{dt_column})"

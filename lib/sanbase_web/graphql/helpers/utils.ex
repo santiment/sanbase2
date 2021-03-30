@@ -83,6 +83,8 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
     |> MapSet.new()
   end
 
+  def requested_fields(_), do: MapSet.new([])
+
   # Private functions
   defp maybe_add_field(opts, :additional_filters, selector) do
     case Map.split(selector, [:owner, :label]) do

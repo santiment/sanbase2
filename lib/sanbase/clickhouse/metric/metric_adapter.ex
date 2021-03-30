@@ -8,6 +8,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
   @behaviour Sanbase.Metric.Behaviour
 
   import Sanbase.Clickhouse.MetricAdapter.SqlQuery
+  import Sanbase.Metric.Transform, only: [exec_timeseries_data_query: 2]
+
   import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
 
   alias __MODULE__.{HistogramMetric, FileHandler, TableMetric}
@@ -73,12 +75,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter do
 
     {query, args} = timeseries_data_query(metric, slug, from, to, interval, aggregation, filters)
 
-    ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
-      %{
-        datetime: DateTime.from_unix!(unix),
-        value: value
-      }
-    end)
+    exec_timeseries_data_query(query, args)
   end
 
   @impl Sanbase.Metric.Behaviour

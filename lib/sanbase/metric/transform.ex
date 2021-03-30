@@ -67,4 +67,22 @@ defmodule Sanbase.Metric.Transform do
   end
 
   def remove_missing_values({:error, error}), do: {:error, error}
+
+  def exec_timeseries_data_query(query, args) do
+    Sanbase.ClickhouseRepo.query_transform(query, args, fn
+      [unix, value] ->
+        %{datetime: DateTime.from_unix!(unix), value: value}
+
+      [unix, open, high, low, close] ->
+        %{
+          datetime: DateTime.from_unix!(unix),
+          value_ohlc: %{
+            open: open,
+            high: high,
+            low: low,
+            close: close
+          }
+        }
+    end)
+  end
 end

@@ -5,9 +5,18 @@ defmodule Sanbase.Price do
   import Sanbase.Price.SqlQuery
 
   import Sanbase.Utils.Transform,
-    only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2, wrap_ok: 1]
+    only: [
+      maybe_unwrap_ok_value: 1,
+      maybe_apply_function: 2,
+      wrap_ok: 1
+    ]
 
-  import Sanbase.Metric.Transform, only: [maybe_nullify_values: 1, remove_missing_values: 1]
+  import Sanbase.Metric.Transform,
+    only: [
+      maybe_nullify_values: 1,
+      remove_missing_values: 1,
+      exec_timeseries_data_query: 2
+    ]
 
   alias Sanbase.Model.Project
   alias Sanbase.ClickhouseRepo
@@ -198,17 +207,7 @@ defmodule Sanbase.Price do
     {query, args} =
       timeseries_metric_data_query(slug_or_slugs, metric, from, to, interval, source, aggregation)
 
-    ClickhouseRepo.query_transform(
-      query,
-      args,
-      fn
-        [timestamp, value] ->
-          %{
-            datetime: DateTime.from_unix!(timestamp),
-            value: value
-          }
-      end
-    )
+    exec_timeseries_data_query(query, args)
   end
 
   def timeseries_metric_data_per_slug(slug_or_slugs, metric, from, to, interval, opts) do

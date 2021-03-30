@@ -74,13 +74,31 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
   end
 
   def labels(%{address: address} = root, _args, %{context: %{loader: loader}}) do
+    do_load_address_labels(root, address, loader)
+  end
+
+  def hunter_address_labels(%{hunter_address: hunter_address} = root, _args, %{
+        context: %{loader: loader}
+      }) do
+    do_load_address_labels(root, hunter_address, loader)
+  end
+
+  def proposed_address_labels(%{proposed_address: address} = root, _args, %{
+        context: %{loader: loader}
+      })
+      when is_binary(address) do
+    do_load_address_labels(root, address, loader)
+  end
+
+  def proposed_address_labels(_, _, _), do: {:ok, []}
+
+  defp do_load_address_labels(root, address, loader) do
     address = BlockchainAddress.to_internal_format(address)
 
     loader
     |> Dataloader.load(SanbaseDataloader, :address_labels, address)
     |> on_load(fn loader ->
       santiment_labels = Dataloader.get(loader, SanbaseDataloader, :address_labels, address) || []
-
       # The root can be built either from a BlockchainAddress in case the
       # `blockchain_address` query is used, or from a BlockchainAddressUserPair
       # in casethe address is part of a watchlist. In the second case, the root

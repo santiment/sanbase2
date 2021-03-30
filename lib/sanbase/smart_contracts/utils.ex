@@ -2,7 +2,7 @@ defmodule Sanbase.SmartContracts.Utils do
   @type address :: String.t()
   @type contract_function :: String.t() | %ABI.FunctionSelector{}
 
-  @desc ~s"""
+  @doc ~s"""
   Example usage:
   If we have the abi specification obtained by:
   ```

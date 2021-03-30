@@ -2728,7 +2728,9 @@ CREATE TABLE public.wallet_hunters_proposals (
     hunter_address character varying(255),
     user_id bigint,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    proposed_address character varying(255),
+    user_labels character varying(255)[] DEFAULT ARRAY[]::character varying[]
 );
 
 
@@ -5659,3 +5661,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210226144252);
 INSERT INTO public."schema_migrations" (version) VALUES (20210303094304);
 INSERT INTO public."schema_migrations" (version) VALUES (20210311123253);
 INSERT INTO public."schema_migrations" (version) VALUES (20210323125906);
+INSERT INTO public."schema_migrations" (version) VALUES (20210330100652);

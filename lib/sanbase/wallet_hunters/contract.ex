@@ -25,15 +25,17 @@ defmodule Sanbase.WalletHunters.Contract do
   end
 
   def get_event_filter_id(event_name) do
-    {:ok, filter_id} =
-      Ethereumex.HttpClient.eth_new_filter(%{
-        address: @wallet_hunters_contract,
-        fromBlock: "0x1",
-        toBlock: "latest",
-        topics: [event_signature(event_name)]
-      })
+    maybe_replace_rinkeby(fn ->
+      {:ok, filter_id} =
+        Ethereumex.HttpClient.eth_new_filter(%{
+          address: @wallet_hunters_contract,
+          fromBlock: "0x1",
+          toBlock: "latest",
+          topics: [event_signature(event_name)]
+        })
 
-    filter_id
+      filter_id
+    end)
   end
 
   def all_votes() do
@@ -59,8 +61,10 @@ defmodule Sanbase.WalletHunters.Contract do
   end
 
   def fetch_all_events(event_name) do
-    get_event_filter_id(event_name)
-    |> Ethereumex.HttpClient.eth_get_filter_logs()
+    maybe_replace_rinkeby(fn ->
+      get_event_filter_id(event_name)
+      |> Ethereumex.HttpClient.eth_get_filter_logs()
+    end)
   end
 
   def wallet_proposals_count() do
@@ -82,25 +86,15 @@ defmodule Sanbase.WalletHunters.Contract do
   end
 
   def contract_execute(function_name, args) do
-    original_url = Application.get_env(:ethereumex, :url)
-
-    # TODO remove after testing on Rinkeby Ethereum Test Network
-    if localhost_or_stage?() do
-      rinkeby_url = System.get_env("RINKEBY_URL")
-      Application.put_env(:ethereumex, :url, rinkeby_url)
-    end
-
     call_result =
-      call_contract(
-        @wallet_hunters_contract,
-        function_abi(function_name),
-        args,
-        function_abi(function_name).returns
-      )
-
-    if localhost_or_stage?() do
-      Application.put_env(:ethereumex, :url, original_url)
-    end
+      maybe_replace_rinkeby(fn ->
+        call_contract(
+          @wallet_hunters_contract,
+          function_abi(function_name),
+          args,
+          function_abi(function_name).returns
+        )
+      end)
 
     call_result
     |> case do
@@ -124,5 +118,23 @@ defmodule Sanbase.WalletHunters.Contract do
   def localhost_or_stage? do
     frontend_url = System.get_env("FRONTEND_URL")
     is_binary(frontend_url) && String.contains?(frontend_url, ["stage", "localhost"])
+  end
+
+  defp maybe_replace_rinkeby(func) do
+    original_url = Application.get_env(:ethereumex, :url)
+
+    # TODO remove after testing on Rinkeby Ethereum Test Network
+    if localhost_or_stage?() do
+      rinkeby_url = System.get_env("RINKEBY_URL")
+      Application.put_env(:ethereumex, :url, rinkeby_url)
+    end
+
+    result = func.()
+
+    if localhost_or_stage?() do
+      Application.put_env(:ethereumex, :url, original_url)
+    end
+
+    result
   end
 end

@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
   alias SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver
+  alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
   object :blockchain_address_queries do
     @desc "Recent transactions for this address"
@@ -21,6 +22,17 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
       arg(:selector, non_null(:blockchain_address_selector_input_object))
 
       resolve(&BlockchainAddressResolver.blockchain_address/3)
+    end
+  end
+
+  object :blockchain_address_mutations do
+    field :update_blockchain_address_user_pair, :blockchain_address_user_pair do
+      arg(:id, non_null(:integer))
+      arg(:notes, :string)
+      arg(:labels, list_of(:string))
+
+      middleware(JWTAuth)
+      resolve(&BlockchainAddressResolver.update_blockchain_address_user_pair/3)
     end
   end
 end

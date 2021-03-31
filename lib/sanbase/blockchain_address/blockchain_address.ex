@@ -26,6 +26,19 @@ defmodule Sanbase.BlockchainAddress do
     end
   end
 
+  def by_selector(%{id: id}), do: by_id(id)
+
+  def by_selector(%{infrastructure: infrastructure, address: address}) do
+    with {:ok, %{id: infrastructure_id}} <- Sanbase.Model.Infrastructure.by_code(infrastructure),
+         {:ok, addr} <-
+           maybe_create(%{
+             address: address,
+             infrastructure_id: infrastructure_id
+           }) do
+      {:ok, addr}
+    end
+  end
+
   @doc ~s"""
   Convert an address to the internal format used in our databases.
 

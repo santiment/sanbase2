@@ -68,14 +68,16 @@ defmodule SanbaseWeb.Graphql.WalletHuntersTypes do
     field(:votes_count, :integer)
 
     field :hunter_address_labels, list_of(:blockchain_address_label) do
-      cache_resolve(&BlockchainAddressResolver.hunter_address_labels/3,
+      cache_resolve(
+        &BlockchainAddressResolver.labels(%{address: &1.hunter_address}, &2, &3),
         ttl: 600,
         max_ttl_offset: 600
       )
     end
 
     field :proposed_address_labels, list_of(:blockchain_address_label) do
-      cache_resolve(&BlockchainAddressResolver.proposed_address_labels/3,
+      cache_resolve(
+        &BlockchainAddressResolver.labels(%{address: &1.proposed_address}, &2, &3),
         ttl: 600,
         max_ttl_offset: 600
       )

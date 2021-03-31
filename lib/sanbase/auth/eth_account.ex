@@ -1,6 +1,7 @@
 defmodule Sanbase.Accounts.EthAccount do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
 
   alias Sanbase.Repo
   alias Sanbase.SmartContracts.UniswapPair
@@ -35,6 +36,11 @@ defmodule Sanbase.Accounts.EthAccount do
 
   def by_address(address) do
     Repo.get_by(__MODULE__, address: address)
+  end
+
+  def wallets_by_user(user_id) do
+    from(e in __MODULE__, where: e.user_id == ^user_id, select: e.address)
+    |> Repo.all()
   end
 
   def san_balance(%__MODULE__{address: address}) do

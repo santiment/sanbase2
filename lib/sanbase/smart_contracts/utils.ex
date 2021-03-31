@@ -82,4 +82,16 @@ defmodule Sanbase.SmartContracts.Utils do
   def encode_address(address) do
     "0x" <> Base.encode16(address, case: :lower)
   end
+
+  def address_strip_zeros(address) do
+    address =
+      address
+      |> String.slice(2..-1)
+      |> Integer.parse(16)
+      |> elem(0)
+      |> Integer.to_string(16)
+      |> String.downcase()
+
+    "0x" <> address
+  end
 end

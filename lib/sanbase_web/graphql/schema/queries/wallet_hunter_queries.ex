@@ -8,9 +8,18 @@ defmodule SanbaseWeb.Graphql.Schema.WalletHunterQueries do
   object :wallet_hunter_queries do
     field :wallet_hunters_proposals, list_of(:wallet_hunter_proposal) do
       meta(access: :free)
+
       arg(:selector, :wallet_hunters_proposals_selector_input_object)
 
       cache_resolve(&WalletHuntersResolver.wallet_hunters_proposals/3)
+    end
+
+    field :wallet_hunters_proposal, :wallet_hunter_proposal do
+      meta(access: :free)
+
+      arg(:id, non_null(:integer))
+
+      cache_resolve(&WalletHuntersResolver.wallet_hunters_proposal/3)
     end
   end
 

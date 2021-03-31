@@ -16,6 +16,7 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
         [
           :active_widgets,
           :wallet_hunters_proposals,
+          :wallet_hunters_proposal,
           :address_historical_balance_change,
           :alerts_historical_activity,
           :all_currency_projects,

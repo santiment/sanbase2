@@ -77,13 +77,34 @@ defmodule Sanbase.WalletHunters.Proposal do
     end
   end
 
-  def fetch_all(selector \\ %{}) do
-    Contract.wallet_proposals()
-    |> map_response()
-    |> filter_response(selector[:filter])
-    |> sort_response(selector[:sort_by])
-    |> paginate(selector[:page], selector[:page_size])
-    |> merge_db_proposals()
+  def fetch_by_id(proposal_id) do
+    with proposal <- Contract.wallet_proposal(proposal_id) do
+      proposal =
+        proposal
+        |> List.wrap()
+        |> map_response()
+        |> merge_db_proposals()
+        |> hd()
+
+      {:ok, proposal}
+    end
+  end
+
+  def fetch_all(selector \\ %{}, user \\ nil) do
+    proposals =
+      Contract.wallet_proposals()
+      |> map_response()
+      |> filter_response(selector[:filter])
+      |> filter_by_type(selector[:type], user)
+      |> sort_response(selector[:sort_by])
+      |> paginate(selector[:page], selector[:page_size])
+      |> merge_db_proposals()
+
+    {:ok, proposals}
+  end
+
+  defp votes_for_proposal(votes, proposal_id) do
+    Enum.filter(votes, &(&1.proposal_id == proposal_id))
   end
 
   defp map_response(response) do
@@ -101,6 +122,10 @@ defmodule Sanbase.WalletHunters.Proposal do
                      sheriffs_reward_share,
                      fixed_sheriff_reward
                    } ->
+      votes_for_proposal =
+        Contract.all_votes()
+        |> votes_for_proposal(proposal_id)
+
       %{
         proposal_id: proposal_id,
         hunter_address: encode_address(hunter_address),
@@ -112,7 +137,8 @@ defmodule Sanbase.WalletHunters.Proposal do
         votes_for: format_number(votes_for),
         votes_against: format_number(votes_against),
         sheriffs_reward_share: sheriffs_reward_share,
-        fixed_sheriff_reward: format_number(fixed_sheriff_reward)
+        fixed_sheriff_reward: format_number(fixed_sheriff_reward),
+        votes: votes_for_proposal
       }
     end)
   end
@@ -127,6 +153,35 @@ defmodule Sanbase.WalletHunters.Proposal do
         to_string(proposal[field]) == value
       end)
       |> Enum.all?()
+    end)
+  end
+
+  defp filter_by_type(response, nil, _), do: response
+  defp filter_by_type(response, :all, _), do: response
+  defp filter_by_type(_, :only_voted, nil), do: []
+  defp filter_by_type(_, :only_mine, nil), do: []
+
+  defp filter_by_type(response, :only_voted, user) do
+    user_wallets = EthAccount.wallets_by_user(user.id)
+
+    response
+    |> Enum.filter(fn proposal ->
+      voted_addresses = Enum.map(proposal.votes, &String.downcase(&1.voter_address))
+
+      intersection =
+        MapSet.intersection(MapSet.new(voted_addresses), MapSet.new(user_wallets))
+        |> Enum.to_list()
+
+      intersection != []
+    end)
+  end
+
+  defp filter_by_type(response, :only_mine, user) do
+    proposal_ids = fetch_all_proposal_ids_by_user(user)
+
+    response
+    |> Enum.filter(fn proposal ->
+      proposal.proposal_id in proposal_ids
     end)
   end
 
@@ -174,6 +229,11 @@ defmodule Sanbase.WalletHunters.Proposal do
         proposed_address: p.proposed_address
       }
     )
+    |> Repo.all()
+  end
+
+  defp fetch_all_proposal_ids_by_user(user) do
+    from(p in __MODULE__, where: p.user_id == ^user.id, select: p.proposal_id)
     |> Repo.all()
   end
 

@@ -5,6 +5,12 @@ defmodule SanbaseWeb.Graphql.WalletHuntersTypes do
 
   alias SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver
 
+  enum :wallet_hunter_proposal_types do
+    value(:all)
+    value(:only_voted)
+    value(:only_mine)
+  end
+
   enum :wallet_hunter_proposal_states do
     value(:active)
     value(:approved)
@@ -32,6 +38,13 @@ defmodule SanbaseWeb.Graphql.WalletHuntersTypes do
     field(:sort_by, :wallet_hunters_sort_object)
     field(:page, :integer, default_value: 1)
     field(:page_size, :integer, default_value: 10)
+    field(:type, :wallet_hunter_proposal_types, default_value: :all)
+  end
+
+  object :proposal_vote do
+    field(:amount, :float)
+    field(:voted_for, :boolean)
+    field(:voter_address, :string)
   end
 
   object :wallet_hunter_proposal do
@@ -51,6 +64,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersTypes do
     field(:hunter_address, :string)
     field(:proposed_address, :string)
     field(:user_labels, list_of(:string))
+    field(:votes, list_of(:proposal_vote))
 
     field :hunter_address_labels, list_of(:blockchain_address_label) do
       cache_resolve(&BlockchainAddressResolver.hunter_address_labels/3,

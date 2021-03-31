@@ -17,6 +17,52 @@ defmodule Sanbase.WalletHunters.Contract do
     |> hd()
   end
 
+  def event_signature(event_name) do
+    abi()
+    |> Enum.filter(&(&1["type"] == "event" && &1["name"] == event_name))
+    |> hd()
+    |> Map.get("signature")
+  end
+
+  def get_event_filter_id(event_name) do
+    {:ok, filter_id} =
+      Ethereumex.HttpClient.eth_new_filter(%{
+        address: @wallet_hunters_contract,
+        fromBlock: "0x1",
+        toBlock: "latest",
+        topics: [event_signature(event_name)]
+      })
+
+    filter_id
+  end
+
+  def all_votes() do
+    {:ok, events} = fetch_all_events("Voted")
+
+    events
+    |> Enum.map(fn event ->
+      [_, proposal_id, voter_address] = event["topics"]
+
+      [amount, voted_for] =
+        event["data"]
+        |> String.slice(2..-1)
+        |> Base.decode16!(case: :lower)
+        |> ABI.TypeDecoder.decode_raw([{:uint, 256}, :bool])
+
+      %{
+        proposal_id: proposal_id |> String.slice(2..-1) |> Integer.parse(16) |> elem(0),
+        voter_address: address_strip_zeros(voter_address),
+        amount: format_number(amount),
+        voted_for: voted_for
+      }
+    end)
+  end
+
+  def fetch_all_events(event_name) do
+    get_event_filter_id(event_name)
+    |> Ethereumex.HttpClient.eth_get_filter_logs()
+  end
+
   def wallet_proposals_count() do
     contract_execute("walletProposalsLength", [])
   end

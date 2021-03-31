@@ -213,10 +213,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     query = """
     SELECT DISTINCT(name)
     FROM asset_metadata FINAL
-    PREWHERE asset_id GLOBAL IN (
-      SELECT DISTINCT(asset_id)
-      FROM available_metrics
-    )
+    PREWHERE
+      asset_id GLOBAL IN (
+        SELECT DISTINCT(asset_id)
+        FROM available_metrics
+      )
     """
 
     args = []
@@ -232,7 +233,8 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
       SELECT DISTINCT(asset_id)
       FROM available_metrics
       PREWHERE
-        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?1 LIMIT 1 )
+        metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
+        end_dt > now() - INTERVAL 14 DAY
     )
     """
 
@@ -293,13 +295,11 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     ) USING (metric_id)
     PREWHERE
       asset_id = ( SELECT asset_id FROM asset_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
-      end_dt > toDateTime(?2)
+      end_dt > now() - INTERVAL 14 DAY
 
     """
 
-    # artifical boundary so the query checks less results
-    datetime = Timex.shift(Timex.now(), days: -14) |> DateTime.to_unix()
-    args = [slug, datetime]
+    args = [slug]
     {query, args}
   end
 

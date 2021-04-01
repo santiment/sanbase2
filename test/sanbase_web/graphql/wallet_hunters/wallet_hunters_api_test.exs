@@ -47,7 +47,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
                  "proposedAddress" => "0x11111109fe98a396f32d6cff4736bedc7b60008c",
                  "proposedAddressLabels" => [%{"name" => "DEX Trader2"}],
                  "userLabels" => ["test label1", "test label 2"],
-                 "votes" => []
+                 "votes" => [],
+                 "votesCount" => 0
                }
       end)
     end
@@ -83,7 +84,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
                  "proposedAddress" => "0x11111109fe98a396f32d6cff4736bedc7b60008c",
                  "proposedAddressLabels" => [%{"name" => "DEX Trader2"}],
                  "userLabels" => ["test label1", "test label 2"],
-                 "votes" => []
+                 "votes" => [],
+                 "votesCount" => 0
                }
       end)
     end
@@ -127,7 +129,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
                  "userLabels" => ["test label1", "test label 2"],
                  "votesAgainst" => 0.0,
                  "votesFor" => 0.0,
-                 "votes" => []
+                 "votes" => [],
+                 "votesCount" => 0
                }
       end)
     end
@@ -283,6 +286,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
           voterAddress
           votedFor
         }
+        votesCount
       }
     }
     """
@@ -325,6 +329,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
           voterAddress
           votedFor
         }
+        votesCount
       }
     }
     """
@@ -401,7 +406,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
             "votedFor" => true,
             "voterAddress" => "0x9a70009b09d729453333121a7d47bd9a039b9153"
           }
-        ]
+        ],
+        "votesCount" => 1
       },
       %{
         "createdAt" => "2021-03-24T09:03:19Z",
@@ -422,7 +428,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         "proposedAddress" => nil,
         "proposedAddressLabels" => [],
         "userLabels" => nil,
-        "votes" => []
+        "votes" => [],
+        "votesCount" => 0
       },
       %{
         "createdAt" => "2021-03-25T08:45:32Z",
@@ -443,7 +450,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         "proposedAddress" => nil,
         "proposedAddressLabels" => [],
         "userLabels" => [],
-        "votes" => []
+        "votes" => [],
+        "votesCount" => 0
       }
     ]
   end

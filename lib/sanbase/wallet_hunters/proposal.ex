@@ -138,7 +138,8 @@ defmodule Sanbase.WalletHunters.Proposal do
         votes_against: format_number(votes_against),
         sheriffs_reward_share: sheriffs_reward_share,
         fixed_sheriff_reward: format_number(fixed_sheriff_reward),
-        votes: votes_for_proposal
+        votes: votes_for_proposal,
+        votes_count: length(votes_for_proposal)
       }
     end)
   end

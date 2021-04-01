@@ -16,6 +16,7 @@ defmodule SanbaseWeb.Graphql.SignalTypes do
   object :signal_data do
     field(:datetime, non_null(:datetime))
     field(:value, :float)
+    field(:metadata, list_of(:json))
   end
 
   object :signal_metadata do

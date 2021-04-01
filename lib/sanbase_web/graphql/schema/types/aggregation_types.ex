@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.AggregationTypes do
   use Absinthe.Schema.Notation
 
   enum :aggregation do
+    value(:none)
     value(:count)
     value(:any)
     value(:last)

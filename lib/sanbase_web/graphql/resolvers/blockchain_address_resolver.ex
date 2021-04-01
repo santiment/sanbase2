@@ -63,11 +63,40 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     end)
   end
 
-  def update_blockchain_address_user_pair(_root, %{id: id} = args, %{
+  def blockchain_address_user_pair(_root, %{selector: selector}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    selector = %{id: id}
+    case BlockchainAddressUserPair.by_selector(selector, current_user.id) do
+      {:ok, pair} ->
+        {:ok, pair}
 
+      {:error, _error} ->
+        case selector do
+          %{address: address, infrastructure: infrastructure} ->
+            BlockchainAddressUserPair.create(address, infrastructure, current_user.id)
+
+          %{id: id} ->
+            {:error,
+             """
+             Blockchain address user pair with id #{id} does not exist. In order \
+             to create a new pair for the current user, provide `address` and `infrastrucutre`
+             in the selector.
+             """}
+        end
+    end
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(
+        "Blockchain Address User Pair",
+        inspect(selector),
+        error,
+        description: "selector"
+      )
+    end)
+  end
+
+  def update_blockchain_address_user_pair(_root, %{selector: selector} = args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
     with {:ok, pair} <- BlockchainAddressUserPair.by_selector(selector, current_user.id),
          {:ok, pair} <- BlockchainAddressUserPair.update(pair, args) do
       {:ok, pair}

@@ -46,6 +46,28 @@ defmodule Sanbase.BlockchainAddress.BlockchainAddressUserPair do
     end
   end
 
+  def by_selector(%{address: address, infrastructure: infrastructure} = selector, user_id) do
+    from(
+      pair in __MODULE__,
+      join: blockchain_address in assoc(pair, :blockchain_address),
+      on: pair.blockchain_address_id == blockchain_address.id,
+      join: infrastructure in assoc(blockchain_address, :infrastructure),
+      on: blockchain_address.infrastructure_id == infrastructure.id,
+      where:
+        blockchain_address.address == ^address and infrastructure.code == ^infrastructure and
+          pair.user_id == ^user_id,
+      preload: ^@preloads
+    )
+    |> Sanbase.Repo.one()
+    |> case do
+      %__MODULE__{user_id: _} = pair ->
+        {:ok, pair}
+
+      _ ->
+        {:error, "Blockchain address user pair with selector #{inspect(selector)} does not exist"}
+    end
+  end
+
   def by_selector(%{blockchain_address_id: blockchain_address_id}, user_id) do
     from(pair in __MODULE__,
       where: pair.user_id == ^user_id and pair.blockchain_address_id == ^blockchain_address_id,
@@ -101,6 +123,19 @@ defmodule Sanbase.BlockchainAddress.BlockchainAddressUserPair do
     |> case do
       {:ok, result} -> {:ok, Map.values(result)}
       {:error, _name, error, _changes_so_far} -> {:error, error}
+    end
+  end
+
+  def create(address, infrastructure, user_id) do
+    {:ok, blockchain_address} =
+      Sanbase.BlockchainAddress.by_selector(%{address: address, infrastructure: infrastructure})
+
+    %__MODULE__{}
+    |> changeset(%{blockchain_address_id: blockchain_address.id, user_id: user_id})
+    |> Sanbase.Repo.insert()
+    |> case do
+      {:ok, struct} -> {:ok, Sanbase.Repo.preload(struct, @preloads)}
+      {:error, error} -> {:error, error}
     end
   end
 

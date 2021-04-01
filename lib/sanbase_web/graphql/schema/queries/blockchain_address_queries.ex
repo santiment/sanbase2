@@ -23,11 +23,18 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
 
       resolve(&BlockchainAddressResolver.blockchain_address/3)
     end
+
+    field :blockchain_address_user_pair, :blockchain_address_user_pair do
+      arg(:selector, non_null(:blockchain_address_selector_input_object))
+
+      middleware(JWTAuth)
+      resolve(&BlockchainAddressResolver.blockchain_address_user_pair/3)
+    end
   end
 
   object :blockchain_address_mutations do
     field :update_blockchain_address_user_pair, :blockchain_address_user_pair do
-      arg(:id, non_null(:integer))
+      arg(:selector, non_null(:blockchain_address_selector_input_object))
       arg(:notes, :string)
       arg(:labels, list_of(:string))
 

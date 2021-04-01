@@ -40,7 +40,7 @@ defmodule Sanbase.Signal.FileHandler do
   @signals_file "signal_files/available_signals.json"
   @external_resource available_signals_file = Path.join(__DIR__, @signals_file)
   @signals_json File.read!(available_signals_file) |> Jason.decode!()
-  @aggregations Sanbase.Metric.SqlQuery.Helper.aggregations()
+  @aggregations [:none] ++ Sanbase.Metric.SqlQuery.Helper.aggregations()
 
   @signal_map Helper.name_to_field_map(@signals_json, "signal")
   @access_map Helper.name_to_field_map(@signals_json, "access", &String.to_atom/1)

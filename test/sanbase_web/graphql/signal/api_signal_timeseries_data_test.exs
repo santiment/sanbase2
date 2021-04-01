@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalTimeseriesDataTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
 
@@ -27,33 +26,60 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalTimeseriesDataTest do
     aggregation = :avg
     [signal | _] = Signal.available_signals()
 
-    with_mock Signal, [:passthrough],
-      timeseries_data: fn _, _, _, _, _, _ ->
-        {:ok,
-         [
-           %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z]},
-           %{value: 200.0, datetime: ~U[2019-01-02 00:00:00Z]}
-         ]}
-      end do
+    rows = [
+      [
+        ~U[2019-01-01 00:00:00Z] |> DateTime.to_unix(),
+        2,
+        [
+          "{\"txHash\": \"0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6\", \"address\": \"0x183c9077fb7b74f02d3badda6c85a19c92b1f648\"}",
+          "{\"txHash\": \"0x8e8eae8adeb2fae2b21387d7bea7f4287e425cfe9efc1728966eceed4feb7d4e\", \"address\": \"0x65b0bf8ee4947edd2a500d74e50a3d757dc79de0\"}"
+        ]
+      ],
+      [
+        ~U[2019-01-02 00:00:00Z] |> DateTime.to_unix(),
+        1,
+        [
+          "{\"txHash\": \"0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd\", \"address\": \"0x61c808d82a3ac53231750dadc13c777b59310bd9\"}"
+        ]
+      ]
+    ]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
       result =
         get_timeseries_signal(conn, signal, slug, from, to, interval, aggregation)
         |> extract_timeseries_data()
 
       assert result == [
                %{
-                 "value" => 100.0,
-                 "datetime" => "2019-01-01T00:00:00Z"
+                 "value" => 2,
+                 "datetime" => "2019-01-01T00:00:00Z",
+                 "metadata" => [
+                   %{
+                     "address" => "0x183c9077fb7b74f02d3badda6c85a19c92b1f648",
+                     "txHash" =>
+                       "0xecdeb8435aff6e18e08177bb94d52b2da6dd15b95aee7f442021911a7c9861e6"
+                   },
+                   %{
+                     "address" => "0x65b0bf8ee4947edd2a500d74e50a3d757dc79de0",
+                     "txHash" =>
+                       "0x8e8eae8adeb2fae2b21387d7bea7f4287e425cfe9efc1728966eceed4feb7d4e"
+                   }
+                 ]
                },
                %{
-                 "value" => 200.0,
-                 "datetime" => "2019-01-02T00:00:00Z"
+                 "value" => 1,
+                 "datetime" => "2019-01-02T00:00:00Z",
+                 "metadata" => [
+                   %{
+                     "address" => "0x61c808d82a3ac53231750dadc13c777b59310bd9",
+                     "txHash" =>
+                       "0x0bb27622fa4fcdf39344251e9b0776467eaa5d9dbf0f025d254f55093848f2bd"
+                   }
+                 ]
                }
              ]
-
-      assert_called(
-        Signal.timeseries_data(signal, %{slug: slug}, from, to, interval, aggregation: aggregation)
-      )
-    end
+    end)
   end
 
   test "returns data for all available signals", context do
@@ -65,8 +91,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalTimeseriesDataTest do
       &Signal.timeseries_data/6,
       {:ok,
        [
-         %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z]},
-         %{value: 200.0, datetime: ~U[2019-01-02 00:00:00Z]}
+         %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z], metadata: []},
+         %{value: 200.0, datetime: ~U[2019-01-02 00:00:00Z], metadata: []}
        ]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -91,8 +117,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalTimeseriesDataTest do
       &Signal.timeseries_data/6,
       {:ok,
        [
-         %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z]},
-         %{value: 200.0, datetime: ~U[2019-01-02 00:00:00Z]}
+         %{value: 100.0, datetime: ~U[2019-01-01 00:00:00Z], metadata: []},
+         %{value: 200.0, datetime: ~U[2019-01-02 00:00:00Z], metadata: []}
        ]}
     )
     |> Sanbase.Mock.run_with_mocks(fn ->
@@ -168,6 +194,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.ApiSignalTimeseriesDataTest do
             aggregation: #{Atom.to_string(aggregation) |> String.upcase()}){
               datetime
               value
+              metadata
             }
         }
       }

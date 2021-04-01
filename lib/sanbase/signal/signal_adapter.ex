@@ -50,7 +50,8 @@ defmodule Sanbase.Signal.SignalAdapter do
        default_aggregation: Map.get(@aggregation_map, signal),
        available_aggregations: @aggregations,
        available_selectors: Map.get(@selectors_map, signal),
-       data_type: Map.get(@data_type_map, signal)
+       data_type: Map.get(@data_type_map, signal),
+       complexity_weight: 0.3
      }}
   end
 
@@ -65,9 +66,7 @@ defmodule Sanbase.Signal.SignalAdapter do
   end
 
   @impl Sanbase.Signal.Behaviour
-  def timeseries_data(signal, selector, from, to, interval, opts)
-  def timeseries_data(_signal, nil, _from, _to, _interval, _opts), do: {:ok, []}
-  def timeseries_data(_signal, [], _from, _to, _interval, _opts), do: {:ok, []}
+  def timeseries_data(_signal, %{slug: []}, _from, _to, _interval, _opts), do: {:ok, []}
 
   def timeseries_data(signal, %{slug: slug_or_slugs}, from, to, interval, opts)
       when is_binary(slug_or_slugs) or is_list(slug_or_slugs) do
@@ -76,10 +75,11 @@ defmodule Sanbase.Signal.SignalAdapter do
 
     {query, args} = timeseries_data_query(signal, slugs, from, to, interval, aggregation)
 
-    ClickhouseRepo.query_transform(query, args, fn [unix, value] ->
+    ClickhouseRepo.query_transform(query, args, fn [unix, value, metadata] ->
       %{
         datetime: DateTime.from_unix!(unix),
-        value: value
+        value: value,
+        metadata: metadata |> List.wrap() |> Enum.map(&Jason.decode!/1)
       }
     end)
   end

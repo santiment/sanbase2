@@ -15,7 +15,7 @@ defmodule Sanbase.Signal.Behaviour do
           complexity_weight: number()
         }
 
-  @type timeseries_data_point :: %{datetime: Datetime.t(), value: float()}
+  @type timeseries_data_point :: %{datetime: Datetime.t(), value: float(), metadata: list(map())}
   @type selector :: slug | map()
   @type aggregation :: nil | :any | :sum | :avg | :min | :max | :last | :first | :median
 
@@ -35,13 +35,13 @@ defmodule Sanbase.Signal.Behaviour do
   # Callbacks
   @callback available_signals() :: list(signal)
 
-  @callback available_signals(slug) :: available_signals_result()
+  @callback available_signals(selector) :: available_signals_result()
 
   @callback available_slugs(signal) :: available_slugs_result()
 
   @callback metadata(signal) :: metadata_result()
 
-  @callback first_datetime(signal, slug | nil) :: first_datetime_result()
+  @callback first_datetime(signal, selector | nil) :: first_datetime_result()
 
   @callback timeseries_data(
               signal :: signal,

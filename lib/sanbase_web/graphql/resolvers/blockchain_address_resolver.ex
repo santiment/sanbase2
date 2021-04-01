@@ -185,10 +185,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     end)
   end
 
-  def blockchain_address_id(root, _args, %{context: %{loader: loader}}) do
-    root_address = root_to_blockchain_address(root)
-    id = root_address.id
-
+  def blockchain_address_id(%Sanbase.Comment{id: id}, _args, %{context: %{loader: loader}}) do
     loader
     |> Dataloader.load(SanbaseDataloader, :comment_blockchain_address_id, id)
     |> on_load(fn loader ->

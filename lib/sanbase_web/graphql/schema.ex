@@ -24,8 +24,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   # Types
   import_types(Absinthe.Plug.Types)
   import_types(Graphql.AggregationTypes)
-  import_types(Graphql.BlockchainAddressType)
-  import_types(Graphql.CommentTypes)
+  import_types(Graphql.CustomTypes.BlockchainAddress)
   import_types(Graphql.CustomTypes.Date)
   import_types(Graphql.CustomTypes.DateTime)
   import_types(Graphql.CustomTypes.Decimal)
@@ -36,6 +35,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(Graphql.AggregationTypes)
   import_types(Graphql.AlertsHistoricalActivityTypes)
   import_types(Graphql.BillingTypes)
+  import_types(Graphql.BlockchainAddressType)
   import_types(Graphql.BlockchainTypes)
   import_types(Graphql.BlockchainAddressType)
   import_types(Graphql.ClickhouseTypes)

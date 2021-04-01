@@ -26,7 +26,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressType do
 
   input_object :blockchain_address_selector_input_object do
     field(:id, :id)
-    field(:address, :string)
+    field(:address, :binary_blockchain_address)
     field(:infrastructure, :string)
   end
 
@@ -39,7 +39,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressType do
 
   object :blockchain_address do
     field(:id, :integer)
-    field(:address, :string)
+    field(:address, :binary_blockchain_address)
 
     field :infrastructure, :string do
       cache_resolve(&BlockchainAddressResolver.infrastructure/3)

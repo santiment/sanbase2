@@ -313,11 +313,19 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
     filters_string =
       filters
       |> Enum.map(fn
+        {column, [value | _] = list} when is_list(list) and is_binary(value) ->
+          coma_separated = list |> Enum.map(&"'#{&1}'") |> Enum.join(",")
+          ~s/lower(#{column}) IN (#{coma_separated})/
+
+        {column, [value | _] = list} when is_list(list) and is_number(value) ->
+          coma_separated = Enum.join(list, ",")
+          ~s/#{column} IN (#{coma_separated})/
+
         {column, value} when is_binary(value) ->
-          "lower(#{column}) = '#{value |> String.downcase()}'"
+          ~s/lower(#{column}) = '#{value |> String.downcase()}'/
 
         {column, value} when is_number(value) ->
-          "#{column} = #{value}"
+          ~s/#{column} = #{value}/
       end)
       |> Enum.join(" AND\n")
 

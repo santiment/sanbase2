@@ -85,7 +85,9 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
   input_object :aggregated_timeseries_data_selector_input_object do
     field(:label, :string)
+    field(:labels, list_of(:string))
     field(:owner, :string)
+    field(:owners, list_of(:string))
     field(:holders_count, :integer)
     field(:source, :string)
   end

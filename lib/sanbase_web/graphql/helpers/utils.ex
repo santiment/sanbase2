@@ -87,8 +87,15 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
 
   # Private functions
   defp maybe_add_field(opts, :additional_filters, selector) do
-    case Map.split(selector, [:owner, :label]) do
+    case Map.split(selector, [:owner, :label, :owners, :labels]) do
       {map, _rest} when map_size(map) > 0 ->
+        # Rename the plurals to singulars. This is done to simplify the
+        # SQL generation
+        map =
+          map
+          |> maybe_rename_field(:owners, :owner)
+          |> maybe_rename_field(:labels, :label)
+
         [additional_filters: Keyword.new(map)] ++ opts
 
       _ ->
@@ -100,6 +107,17 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
     case Map.has_key?(selector, field) do
       true -> [{field, Map.fetch!(selector, field)}] ++ opts
       false -> opts
+    end
+  end
+
+  defp maybe_rename_field(map, old_key, new_key) do
+    case Map.has_key?(map, old_key) do
+      true ->
+        value = Map.get(map, old_key)
+        map |> Map.delete(old_key) |> Map.put(new_key, value)
+
+      false ->
+        map
     end
   end
 end

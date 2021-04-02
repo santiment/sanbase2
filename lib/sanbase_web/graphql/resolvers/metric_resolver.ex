@@ -90,11 +90,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     fetch_timeseries_data(metric, args, requested_fields, :timeseries_data)
   end
 
-  def timeseries_data(_root, args, %{source: %{metric: metric}} = resolution) do
-    requested_fields = requested_fields(resolution)
-    fetch_timeseries_data(metric, args, requested_fields, :timeseries_data)
-  end
-
   def timeseries_data_per_slug(_root, args, %{source: %{metric: metric}} = resolution) do
     requested_fields = requested_fields(resolution)
     fetch_timeseries_data(metric, args, requested_fields, :timeseries_data_per_slug)
@@ -108,6 +103,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
     include_incomplete_data = Map.get(args, :include_incomplete_data, false)
 
     with {:ok, selector} <- args_to_selector(args),
+         true <- valid_owners_labels_selection?(args),
          {:ok, opts} = selector_args_to_opts(args),
          {:ok, from, to} <-
            calibrate_incomplete_data_params(include_incomplete_data, Metric, metric, from, to),
@@ -132,6 +128,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
 
     with true <- valid_histogram_args?(metric, args),
          {:ok, selector} <- args_to_selector(args),
+         true <- valid_owners_labels_selection?(args),
          {:ok, data} <-
            Metric.histogram_data(metric, selector, from, to, interval, limit),
          {:ok, data} <- maybe_enrich_with_labels(metric, data) do
@@ -148,6 +145,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
         %{source: %{metric: metric}}
       ) do
     with {:ok, selector} <- args_to_selector(args),
+         true <- valid_owners_labels_selection?(args),
          {:ok, data} <- Metric.table_data(metric, selector, from, to) do
       {:ok, data}
     end
@@ -167,8 +165,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
       |> Map.update!(:type, &Inflex.underscore/1)
 
     with {:ok, selector} <- args_to_selector(args),
-         {:ok, opts} <- selector_args_to_opts(args),
+         true <- valid_owners_labels_selection?(args),
          true <- valid_timeseries_selection?(requested_fields, args),
+         {:ok, opts} <- selector_args_to_opts(args),
          {:ok, from, to, interval} <-
            transform_datetime_params(selector, metric, transform, args),
          {:ok, result} <- apply(Metric, function, [metric, selector, from, to, interval, opts]),
@@ -299,6 +298,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.MetricResolver do
       {:error, "Missing required `from` argument"}
     end
   end
+
+  defp valid_owners_labels_selection?(%{selector: selector} = _args) do
+    cond do
+      Map.has_key?(selector, :label) and Map.has_key?(selector, :labels) ->
+        {:error, "Cannot use both 'label' and 'labels' fields at the same time."}
+
+      Map.has_key?(selector, :owner) and Map.has_key?(selector, :owners) ->
+        {:error, "Cannot use both 'owner' and 'owners' fields at the same time."}
+
+      Map.has_key?(selector, :labels) and selector.labels == [] ->
+        {:error, "The 'labels' selector field must not be an empty list."}
+
+      Map.has_key?(selector, :owners) and selector.owners == [] ->
+        {:error, "The 'owners' selector field must not be an empty list."}
+
+      true ->
+        true
+    end
+  end
+
+  defp valid_owners_labels_selection?(_), do: true
 
   defp valid_timeseries_selection?(requested_fields, args) do
     aggregation = Map.get(args, :aggregation, nil)

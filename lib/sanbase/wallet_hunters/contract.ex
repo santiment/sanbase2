@@ -115,26 +115,30 @@ defmodule Sanbase.WalletHunters.Contract do
     end
   end
 
-  def localhost_or_stage? do
-    frontend_url = System.get_env("FRONTEND_URL")
-    is_binary(frontend_url) && String.contains?(frontend_url, ["stage", "localhost"])
-  end
-
+  # TODO - remove after testing on Rinkeby Ethereum Test Network
   defp maybe_replace_rinkeby(func) do
     original_url = Application.get_env(:ethereumex, :url)
 
-    # TODO remove after testing on Rinkeby Ethereum Test Network
     if localhost_or_stage?() do
       rinkeby_url = System.get_env("RINKEBY_URL")
       Application.put_env(:ethereumex, :url, rinkeby_url)
     end
 
-    result = func.()
-
-    if localhost_or_stage?() do
-      Application.put_env(:ethereumex, :url, original_url)
+    try do
+      func.()
+    rescue
+      e ->
+        Logger.error("Error occurred while executing smart contract call: #{inspect(e)}")
+        {:error, "Error occurred while executing smart contract call."}
+    after
+      if localhost_or_stage?() do
+        Application.put_env(:ethereumex, :url, original_url)
+      end
     end
+  end
 
-    result
+  defp localhost_or_stage? do
+    frontend_url = System.get_env("FRONTEND_URL")
+    is_binary(frontend_url) && String.contains?(frontend_url, ["stage", "localhost"])
   end
 end

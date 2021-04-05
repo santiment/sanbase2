@@ -71,8 +71,8 @@ defmodule Sanbase.KafkaExporter do
   is pushed to an internal buffer that is then send at once to Kafka.
   """
 
-  @spec persist(data | [data], pid() | atom()) :: :ok
-  def persist(data, exporter \\ __MODULE__) do
+  @spec persist_async(data | [data], pid() | atom()) :: :ok
+  def persist_async(data, exporter \\ __MODULE__) do
     GenServer.cast(exporter, {:persist, data})
   end
 

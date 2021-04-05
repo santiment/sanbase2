@@ -217,7 +217,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
       end)
     end
 
-    test "when fetching only voted", context do
+    test "when fetching only voted", _context do
       user =
         insert(:user,
           eth_accounts: [

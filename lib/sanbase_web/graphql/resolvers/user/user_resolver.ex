@@ -77,10 +77,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
   end
 
   def get_user(_root, %{selector: selector}, _resolution) do
-    case User.by_selector(selector) do
-      nil -> {:error, "Cannot fetch user by: #{inspect(selector)}"}
-      user -> {:ok, user}
-    end
+    User.by_selector(selector)
   end
 
   def following(%User{id: user_id}, _args, _resolution) do
@@ -104,7 +101,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
          {:ok, user} <- fetch_user(args, EthAccount.by_address(address)),
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),
          _ <- Billing.maybe_create_liquidity_or_trial_subscription(user.id),
-         {:ok, user} <- User.mark_as_registered(user) do
+         {:ok, user} <- User.mark_as_registered(user, %{login_origin: :eth_login}) do
       {:ok, %{user: user, token: token}}
     else
       {:error, reason} ->
@@ -136,7 +133,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),
          {:ok, user} <- User.mark_email_token_as_validated(user),
          _ <- Billing.maybe_create_liquidity_or_trial_subscription(user.id),
-         {:ok, user} <- User.mark_as_registered(user) do
+         {:ok, user} <- User.mark_as_registered(user, %{login_origin: :email}) do
       {:ok, %{user: user, token: token}}
     else
       _ -> {:error, message: "Login failed"}

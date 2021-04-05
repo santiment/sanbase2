@@ -152,12 +152,12 @@ defmodule Sanbase.ApiCallLimit.ETS do
           :ets.lookup(@ets_table, entity_key)
 
         if api_calls_remaining <= count do
-          {:ok, _} =
-            ApiCallLimit.update_usage_db(
-              entity_type,
-              entity,
-              quota - api_calls_remaining + count
-            )
+          # Update the value with the number of API calls made so far. This is the
+          # number of the difference between the quota gained and the api calls left
+          # plus the number of count that are being processed right now
+          api_calls_made = quota - api_calls_remaining + count
+
+          {:ok, _} = ApiCallLimit.update_usage_db(entity_type, entity, api_calls_made)
 
           get_quota_db_and_update_ets(entity_type, entity, entity_key)
         else

@@ -6,7 +6,7 @@ defmodule KafkaExporterTest do
     %{topic: topic}
   end
 
-  # Setting buffering max messages to 0 sends to kafka on each `persist` call
+  # Setting buffering max messages to 0 sends to kafka on each `persist_async` call
   test "buffering max messages works", %{topic: topic} do
     {:ok, exporter_pid} =
       Sanbase.KafkaExporter.start_link(
@@ -18,7 +18,7 @@ defmodule KafkaExporterTest do
       )
 
     data = api_call_data()
-    :ok = Sanbase.KafkaExporter.persist(data, exporter_pid)
+    :ok = Sanbase.KafkaExporter.persist_async(data, exporter_pid)
     Process.sleep(100)
     state = Sanbase.InMemoryKafka.Producer.get_state()
     assert Map.get(state, topic) == data
@@ -36,7 +36,7 @@ defmodule KafkaExporterTest do
       )
 
     data = api_call_data()
-    :ok = Sanbase.KafkaExporter.persist(data, exporter_pid)
+    :ok = Sanbase.KafkaExporter.persist_async(data, exporter_pid)
     Process.sleep(200)
     state = Sanbase.InMemoryKafka.Producer.get_state()
     assert Map.get(state, topic) == data
@@ -52,7 +52,7 @@ defmodule KafkaExporterTest do
         topic: topic
       )
 
-    for _ <- 1..50, do: :ok = Sanbase.KafkaExporter.persist(api_call_data(), exporter_pid)
+    for _ <- 1..50, do: :ok = Sanbase.KafkaExporter.persist_async(api_call_data(), exporter_pid)
 
     # No data even after 50 api calls were persisted and some time has passed
     Process.sleep(100)
@@ -76,7 +76,7 @@ defmodule KafkaExporterTest do
         topic: topic
       )
 
-    for _ <- 1..600, do: :ok = Sanbase.KafkaExporter.persist(api_call_data(), exporter_pid)
+    for _ <- 1..600, do: :ok = Sanbase.KafkaExporter.persist_async(api_call_data(), exporter_pid)
 
     Process.sleep(100)
     state = Sanbase.InMemoryKafka.Producer.get_state()
@@ -97,7 +97,7 @@ defmodule KafkaExporterTest do
       )
 
     for _ <- 1..10_000,
-        do: :ok = Sanbase.KafkaExporter.persist(api_call_data(), exporter_pid)
+        do: :ok = Sanbase.KafkaExporter.persist_async(api_call_data(), exporter_pid)
 
     Process.sleep(300)
     state = Sanbase.InMemoryKafka.Producer.get_state()

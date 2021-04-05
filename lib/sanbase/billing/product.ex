@@ -24,6 +24,10 @@ defmodule Sanbase.Billing.Product do
     "SANDATA" => 4,
     "SAN_EXCHANGE_WALLETS" => 5
   }
+  @product_atom_names Enum.map(@code_product_id_map, fn {k, _v} ->
+                        k |> String.downcase() |> String.to_atom()
+                      end)
+
   @product_code_by_id_map Enum.into(@code_product_id_map, %{}, fn {k, v} -> {v, k} end)
 
   schema "products" do
@@ -38,6 +42,8 @@ defmodule Sanbase.Billing.Product do
   def product_sanbase(), do: @product_sanbase
   def product_sandata(), do: @product_sandata
   def product_exchange_wallets(), do: @product_exchange_wallets
+
+  def product_atom_names(), do: @product_atom_names
 
   def changeset(%__MODULE__{} = product, attrs \\ %{}) do
     product

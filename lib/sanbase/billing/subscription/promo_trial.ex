@@ -1,16 +1,16 @@
 defmodule Sanbase.Billing.Subscription.PromoTrial do
   use Ecto.Schema
 
-  import Ecto.Changeset
   import Ecto.Query
-
-  require Logger
+  import Ecto.Changeset
 
   alias Sanbase.Billing
   alias Sanbase.StripeApi
   alias Sanbase.Accounts.User
   alias Sanbase.Billing.{Subscription, Plan}
   alias Sanbase.Repo
+
+  require Logger
 
   @plan_id_name_map %{
     "3" => "SanAPI by Santiment / PRO",

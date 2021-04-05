@@ -877,9 +877,8 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
       user: user,
       conn: conn
     } do
-      with_mocks([
-        {Sanbase.Notifications.Insight, [], [publish_in_discord: fn _ -> :ok end]}
-      ]) do
+      Sanbase.Mock.prepare_mock2(&Sanbase.Notifications.Insight.publish_in_discord/1, :ok)
+      |> Sanbase.Mock.run_with_mocks(fn ->
         post =
           insert(:post,
             user: user,
@@ -899,7 +898,7 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
         assert result["publishedAt"] != nil
 
         assert Sanbase.Timeline.TimelineEvent |> Repo.all() |> length() == 1
-      end
+      end)
     end
 
     test "returns error when insight does not exist with the provided post_id", %{conn: conn} do
@@ -1091,15 +1090,18 @@ defmodule SanbaseWeb.Graphql.InsightApiTest do
 
       query = create_chart_event(args)
 
-      res = execute_mutation_with_success(query, "createChartEvent", context.conn)
+      Sanbase.Mock.prepare_mock2(&Sanbase.Notifications.Insight.publish_in_discord/1, :ok)
+      |> Sanbase.Mock.run_with_mocks(fn ->
+        res = execute_mutation_with_success(query, "createChartEvent", context.conn)
 
-      assert res["isChartEvent"]
-      assert res["chartEventDatetime"] != nil
-      assert res["chartConfigurationForEvent"]["id"] == conf.id
+        assert res["isChartEvent"]
+        assert res["chartEventDatetime"] != nil
+        assert res["chartConfigurationForEvent"]["id"] == conf.id
 
-      {:ok, new_conf} = Sanbase.Chart.Configuration.by_id(conf.id, context.user)
+        {:ok, new_conf} = Sanbase.Chart.Configuration.by_id(conf.id, context.user)
 
-      assert length(new_conf.chart_events) == 1
+        assert length(new_conf.chart_events) == 1
+      end)
     end
 
     test "chart configuration doesn't exist", context do

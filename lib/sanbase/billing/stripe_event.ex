@@ -44,12 +44,7 @@ defmodule Sanbase.Billing.StripeEvent do
   @doc """
   Log event details with initial status `is_processed: false`
   """
-  def create(
-        %{
-          "id" => id,
-          "type" => type
-        } = stripe_event
-      ) do
+  def create(%{"id" => id, "type" => type} = stripe_event) do
     %__MODULE__{}
     |> changeset(%{event_id: id, type: type, payload: stripe_event})
     |> Repo.insert()

@@ -50,8 +50,14 @@ defmodule Sanbase.Alert.Evaluator do
         fn -> Trigger.evaluate(trigger) end
       )
 
-    # Take only `template_kv` and `triggered?` from the cache. Each `put` is done
-    # by a separete `put_in` invocation
+    fill_user_trigger_from_cached(user_trigger, evaluated_trigger)
+    |> emit_event(Trigger.triggered?(evaluated_trigger), :alert_triggered)
+  end
+
+  defp fill_user_trigger_from_cached(user_trigger, evaluated_trigger) do
+    # The cached version could return a different trigger.
+    # Take only `template_kv`, `triggered?` and `state` (if exists) from the cache.
+    # Each `put` is done by a separete `put_in` invocation
     user_trigger
     |> put_in(
       [Access.key!(:trigger), Access.key!(:settings), Access.key!(:template_kv)],
@@ -105,5 +111,20 @@ defmodule Sanbase.Alert.Evaluator do
         payload
       )
     end)
+  end
+
+  defp emit_event(user_trigger, false, _), do: user_trigger
+
+  defp emit_event(user_trigger, true, :alert_triggered) do
+    Sanbase.EventBus.notify(%{
+      topic: :alert_events,
+      data: %{
+        event_type: :alert_triggered,
+        alert_id: user_trigger.id,
+        user_id: user_trigger.user_id
+      }
+    })
+
+    user_trigger
   end
 end

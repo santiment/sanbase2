@@ -1,4 +1,6 @@
 defmodule Sanbase.Promoters.FirstPromoter do
+  import Sanbase.Promoters.EventEmitter, only: [emit_event: 3]
+
   alias Sanbase.Promoters.FirstPromoterApi
   alias Sanbase.Accounts.{User, UserSettings}
 
@@ -12,6 +14,11 @@ defmodule Sanbase.Promoters.FirstPromoter do
   def create_promoter(user, args) do
     with {:ok, promoter} <- FirstPromoterApi.create(user, args),
          {:ok, _} <- UserSettings.toggle_is_promoter(user, %{is_promoter: true}) do
+      emit_event({:ok, promoter}, :create_promoter, %{
+        user: user,
+        promoter_origin: "first_promoter"
+      })
+
       {:ok, promoter}
     end
   end

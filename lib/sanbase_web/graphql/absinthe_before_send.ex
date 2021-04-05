@@ -45,8 +45,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     "allErc20Projects",
     "allCurrencyProjects",
     "projectsListHistoryStats",
-    "projectsListStats",
-    "allProjectsByFunction"
+    "projectsListStats"
   ]
 
   def cached_queries(), do: @cached_queries
@@ -188,7 +187,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       }
     end)
     |> Sanbase.Kafka.ApiCall.json_kv_tuple()
-    |> Sanbase.KafkaExporter.persist(:api_call_exporter)
+    |> Sanbase.KafkaExporter.persist_async(:api_call_exporter)
   end
 
   defp construct_query_name({:get_metric, metric}), do: "getMetric|#{metric}"

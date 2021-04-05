@@ -1,8 +1,9 @@
 defmodule Sanbase.Insight.Post do
   use Ecto.Schema
 
-  import Ecto.Changeset
   import Ecto.Query
+  import Ecto.Changeset
+  import Sanbase.Insight.EventEmitter, only: [emit_event: 3]
   import Sanbase.Utils.ErrorHandling, only: [changeset_errors: 1]
 
   alias Sanbase.Tag
@@ -187,6 +188,7 @@ defmodule Sanbase.Insight.Post do
     |> Repo.insert()
     |> case do
       {:ok, post} ->
+        emit_event({:ok, post}, :create_insight, %{})
         :ok = Sanbase.Insight.Search.update_document_tokens(post.id)
         {:ok, post |> Tag.Preloader.order_tags()}
 
@@ -213,6 +215,7 @@ defmodule Sanbase.Insight.Post do
         |> Repo.update()
         |> case do
           {:ok, post} ->
+            emit_event({:ok, post}, :update_insight, %{})
             :ok = Sanbase.Insight.Search.update_document_tokens(post.id)
             {:ok, post |> Tag.Preloader.order_tags()}
 
@@ -242,6 +245,8 @@ defmodule Sanbase.Insight.Post do
         # Note: When ecto changeset middleware is implemented return just `Repo.delete(post)`
         case Repo.delete(post) do
           {:ok, post} ->
+            emit_event({:ok, post}, :delete_insight, %{})
+
             {:ok, post |> Tag.Preloader.order_tags()}
 
           {:error, changeset} ->
@@ -263,7 +268,9 @@ defmodule Sanbase.Insight.Post do
          {_, %Post{user_id: ^user_id}} <- {:own_post?, post},
          {_, %Post{ready_state: @draft}} <- {:draft?, post},
          {:ok, post} <- publish_post(post) do
-      {:ok, post |> Tag.Preloader.order_tags()}
+      emit_event({:ok, post}, :publish_insight, %{})
+
+      {:ok, post |> Repo.preload(@preloads) |> Tag.Preloader.order_tags()}
     else
       {:nil?, nil} ->
         {:error, "Cannot publish insight with id #{post_id}"}
@@ -409,22 +416,22 @@ defmodule Sanbase.Insight.Post do
 
   def create_chart_event(
         user_id,
-        %{chart_configuration_id: chart_configuration_for_event_id} = args
+        %{chart_configuration_id: chart_configuration_id} = args
       ) do
-    case Configuration.by_id(chart_configuration_for_event_id, user_id) do
+    case Configuration.by_id(chart_configuration_id, user_id) do
       {:ok, conf} ->
-        %__MODULE__{user_id: user_id}
-        |> create_changeset(
+        args =
           Map.merge(args, %{
             chart_configuration_for_event_id: conf.id,
-            is_chart_event: true,
-            ready_state: @published
+            is_chart_event: true
           })
-        )
-        |> Repo.insert()
-        |> case do
-          {:ok, post} -> {:ok, post |> Repo.preload(@preloads)}
-          {:error, changeset} -> {:error, changeset}
+
+        case create(%User{id: user_id}, args) do
+          {:ok, post} ->
+            publish(post.id, user_id)
+
+          {:error, error} ->
+            {:error, error}
         end
 
       {:error, reason} ->

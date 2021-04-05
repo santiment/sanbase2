@@ -13,6 +13,9 @@ defmodule Sanbase.Billing.Plan do
   alias Sanbase.Billing.{Product, Subscription}
 
   @plans_order [free: 0, basic: 1, pro: 2, premium: 3, custom: 4]
+  @plans Keyword.keys(@plans_order)
+
+  def plans(), do: @plans
   def plans_order(), do: @plans_order
   def sort_plans(plans), do: Enum.sort_by(plans, fn plan -> Keyword.get(@plans_order, plan) end)
 

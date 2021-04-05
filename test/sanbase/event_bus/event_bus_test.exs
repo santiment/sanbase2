@@ -24,7 +24,6 @@ defmodule Sanbase.EventBusTest do
     # done via GenServer.cast/2. Adding a small wait loop to make sure the test
     # starts only after the subscriber is properly established.
     wait_subscriber(test_events_topic)
-    Process.sleep(500)
 
     :ok
   end

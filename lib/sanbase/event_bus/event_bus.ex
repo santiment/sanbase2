@@ -33,13 +33,15 @@ defmodule Sanbase.EventBus do
   end
 
   @topics [
-    :user_events,
-    :watchlist_events,
     :alert_events,
+    :comment_topic,
     :insight_events,
+    :invalid_events,
     :payment_events,
-    :invalid_events
+    :user_events,
+    :watchlist_events
   ]
+
   @subscribers [
     __MODULE__.KafkaExporterSubscriber,
     __MODULE__.UserEventsSubscriber,

@@ -46,6 +46,14 @@ defmodule Sanbase.Utils.Config do
     end
   end
 
+  defmacro module_get!(module, key) do
+    quote bind_quoted: [module: module, key: key] do
+      Application.fetch_env!(:sanbase, module)
+      |> Keyword.fetch!(key)
+      |> Sanbase.Utils.Config.parse_config_value()
+    end
+  end
+
   defmacro module_get(module, key, default) do
     quote bind_quoted: [module: module, key: key, default: default] do
       Application.fetch_env(:sanbase, module)

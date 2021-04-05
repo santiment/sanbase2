@@ -69,7 +69,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersTypes do
 
     field :hunter_address_labels, list_of(:blockchain_address_label) do
       cache_resolve(
-        &BlockchainAddressResolver.labels(%{address: &1.hunter_address}, &2, &3),
+        &BlockchainAddressResolver.labels(%{address: Map.get(&1, :hunter_address)}, &2, &3),
         ttl: 600,
         max_ttl_offset: 600
       )
@@ -77,7 +77,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersTypes do
 
     field :proposed_address_labels, list_of(:blockchain_address_label) do
       cache_resolve(
-        &BlockchainAddressResolver.labels(%{address: &1.proposed_address}, &2, &3),
+        &BlockchainAddressResolver.labels(%{address: Map.get(&1, :proposed_address)}, &2, &3),
         ttl: 600,
         max_ttl_offset: 600
       )

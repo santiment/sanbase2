@@ -95,7 +95,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
     labels = ["cex trader", "whale", "eth"]
 
     result =
-      update_blockchain_address_user_pair(context.conn, pair.id, notes, labels)
+      update_blockchain_address_user_pair(context.conn, %{id: pair.id}, notes, labels)
       |> get_in(["data", "updateBlockchainAddressUserPair"])
 
     assert result["id"] == pair.id
@@ -112,7 +112,7 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
   end
 
   test "error updating a non-existining blockchain address user pair", context do
-    result = update_blockchain_address_user_pair(context.conn, 15_123_123, "notes", [])
+    result = update_blockchain_address_user_pair(context.conn, %{id: 15_123_123}, "notes", [])
 
     %{"errors" => [%{"message" => error_msg}]} = result
     assert error_msg =~ "Blockchain address pair with 15123123 does not exist"
@@ -136,11 +136,11 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
     |> json_response(200)
   end
 
-  defp update_blockchain_address_user_pair(conn, id, notes, labels) do
+  defp update_blockchain_address_user_pair(conn, selector, notes, labels) do
     mutation = """
     mutation {
       updateBlockchainAddressUserPair(
-        id: #{id}
+        selector: #{map_to_input_object_str(selector)}
         notes: "#{notes}"
         labels: #{string_list_to_string(labels)}
       ){

@@ -112,29 +112,34 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
   end
 
   def labels(root, _args, %{context: %{loader: loader}}) do
-    address =
-      root_to_raw_address(root)
-      |> BlockchainAddress.to_internal_format()
+    case root_to_raw_address(root) do
+      nil ->
+        {:ok, []}
 
-    loader
-    |> Dataloader.load(SanbaseDataloader, :address_labels, address)
-    |> on_load(fn loader ->
-      santiment_labels = Dataloader.get(loader, SanbaseDataloader, :address_labels, address) || []
-      # The root can be built either from a BlockchainAddress in case the
-      # `blockchain_address` query is used, or from a BlockchainAddressUserPair
-      # in casethe address is part of a watchlist. In the second case, the root
-      # has an additional `labels` key which holds the list of user-defined labels
-      # for that address. The santiment defined labels from CH are provided with a
-      # `origin: "santiment"` key-value pair so they could be distinguished from
-      # the user-defined labels.
-      user_labels =
-        Map.get(root, :labels, [])
-        |> Enum.map(fn label ->
-          label |> Map.from_struct() |> Map.put(:origin, "user")
+      address ->
+        address
+        |> BlockchainAddress.to_internal_format()
+
+        loader
+        |> Dataloader.load(SanbaseDataloader, :address_labels, address)
+        |> on_load(fn loader ->
+          santiment_labels =
+            Dataloader.get(loader, SanbaseDataloader, :address_labels, address) || []
+
+          # The root can be built either from a BlockchainAddress in case the
+          # `blockchain_address` query is used, or from a BlockchainAddressUserPair
+          # in casethe address is part of a watchlist. In the second case, the root
+          # has an additional `labels` key which holds the list of user-defined labels
+          # for that address. The santiment defined labels from CH are provided with a
+          # `origin: "santiment"` key-value pair so they could be distinguished from
+          # the user-defined labels.
+          user_labels =
+            Map.get(root, :labels, [])
+            |> Enum.map(fn label -> label |> Map.from_struct() |> Map.put(:origin, "user") end)
+
+          {:ok, user_labels ++ santiment_labels}
         end)
-
-      {:ok, user_labels ++ santiment_labels}
-    end)
+    end
   end
 
   def infrastructure(root, _args, %{context: %{loader: loader}}) do

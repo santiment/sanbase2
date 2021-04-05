@@ -140,7 +140,7 @@ defmodule Sanbase.Application do
     [
       {SanExporterEx,
        [
-         kafka_producer_module: Config.module_get(Sanbase.KafkaExporter, :supervisor),
+         kafka_producer_module: Config.module_get!(Sanbase.KafkaExporter, :supervisor),
          kafka_endpoint: kafka_endpoint()
        ]},
       start_if(
@@ -148,7 +148,7 @@ defmodule Sanbase.Application do
           Sanbase.KafkaExporter.child_spec(
             id: :api_call_exporter,
             name: :api_call_exporter,
-            topic: Config.module_get(Sanbase.KafkaExporter, :api_call_data_topic)
+            topic: Config.module_get!(Sanbase.KafkaExporter, :api_call_data_topic)
           )
         end,
         fn -> container_type in ["web", "all"] end
@@ -158,7 +158,7 @@ defmodule Sanbase.Application do
           Sanbase.KafkaExporter.child_spec(
             id: :prices_exporter,
             name: :prices_exporter,
-            topic: Config.module_get(Sanbase.KafkaExporter, :prices_topic),
+            topic: Config.module_get!(Sanbase.KafkaExporter, :prices_topic),
             buffering_max_messages: 10_000,
             can_send_after_interval: 250
           )
@@ -170,9 +170,9 @@ defmodule Sanbase.Application do
       Sanbase.KafkaExporter.child_spec(
         id: :sanbase_event_bus_kafka_exporter,
         name: :sanbase_event_bus_kafka_exporter,
-        topic: Config.module_get(Sanbase.KafkaExporter, :sanbase_event_bus_topic),
-        buffering_max_messages: 10_000,
-        can_send_after_interval: 250
+        topic: Config.module_get!(Sanbase.KafkaExporter, :event_bus_topic),
+        buffering_max_messages: 250,
+        can_send_after_interval: 1000
       )
     ]
   end
@@ -255,8 +255,8 @@ defmodule Sanbase.Application do
   end
 
   defp kafka_endpoint() do
-    url = Config.module_get(Sanbase.KafkaExporter, :kafka_url) |> to_charlist()
-    port = Config.module_get(Sanbase.KafkaExporter, :kafka_port) |> Sanbase.Math.to_integer()
+    url = Config.module_get!(Sanbase.KafkaExporter, :kafka_url) |> to_charlist()
+    port = Config.module_get!(Sanbase.KafkaExporter, :kafka_port) |> Sanbase.Math.to_integer()
 
     [{url, port}]
   end

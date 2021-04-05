@@ -4,7 +4,7 @@ defmodule Sanbase.KafkaExporter do
 
   The module exposes one function that should be used - `persist/1`.
   This functions adds the data to an internal buffer that is flushed
-  every `kafka_flush_timeout` seconds or when the buffer is big enough.
+  every `kafka_flush_timeout` milliseconds or when the buffer is big enough.
 
   The exporter cannot send data more than once every 1 second so the
   GenServer cannot die too often and crash its supervisor
@@ -67,7 +67,7 @@ defmodule Sanbase.KafkaExporter do
   @doc ~s"""
   Asynchronously add data to be exported to the buffer.
 
-  It will be sent no longer than `kafka_flush_timeout` seconds later. The data
+  It will be sent no longer than `kafka_flush_timeout` milliseconds later. The data
   is pushed to an internal buffer that is then send at once to Kafka.
   """
 

@@ -1,7 +1,7 @@
 defmodule Sanbase.Insight.EventEmitter do
   use Sanbase.EventBus.EventEmitter
 
-  @topic :insight_topic
+  @topic :insight_events
 
   def handle_event({:error, _}, _event_type, _extra_args), do: :ok
 

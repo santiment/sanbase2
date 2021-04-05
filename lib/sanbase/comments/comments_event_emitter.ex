@@ -1,7 +1,7 @@
 defmodule Sanbase.Comments.EventEmitter do
   use Sanbase.EventBus.EventEmitter
 
-  @topic :comments_topic
+  @topic :comment_topic
 
   def handle_event({:error, _}, _event_type, _args), do: :ok
 

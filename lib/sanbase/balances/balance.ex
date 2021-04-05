@@ -72,6 +72,14 @@ defmodule Sanbase.Balance do
     end
   end
 
+  def blockchain_from_infrastructure("ETH"), do: "ethereum"
+  def blockchain_from_infrastructure("BTC"), do: "bitcoin"
+  def blockchain_from_infrastructure("BCH"), do: "bitcoin-cash"
+  def blockchain_from_infrastructure("LTC"), do: "litecoin"
+  def blockchain_from_infrastructure("BNB"), do: "binance"
+  def blockchain_from_infrastructure("BEP2"), do: "binance"
+  def blockchain_from_infrastructure("XRP"), do: "ripple"
+
   # Private functions
 
   defp do_current_balance(addresses, slug, decimals, blockchain) do
@@ -200,12 +208,4 @@ defmodule Sanbase.Balance do
 
   defp maybe_override_decimals("ethereum", decimals), do: decimals
   defp maybe_override_decimals(_blockchain, _decimal), do: 0
-
-  defp blockchain_from_infrastructure("ETH"), do: "ethereum"
-  defp blockchain_from_infrastructure("BTC"), do: "bitcoin"
-  defp blockchain_from_infrastructure("BCH"), do: "bitcoin-cash"
-  defp blockchain_from_infrastructure("LTC"), do: "litecoin"
-  defp blockchain_from_infrastructure("BNB"), do: "binance-coin"
-  defp blockchain_from_infrastructure("BEP2"), do: "binance-coin"
-  defp blockchain_from_infrastructure("XRP"), do: "ripple"
 end

@@ -31,7 +31,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
     "ETH" => [EthBalance, Erc20Balance]
   }
 
-  @balances_aggregated_blockchains ["ethereum", "bitcoin", "bitcoin-cash", "litecoin"]
+  @balances_aggregated_blockchains ["ethereum", "bitcoin", "bitcoin-cash", "litecoin", "binance"]
 
   @supported_infrastructures Map.keys(@infrastructure_to_module)
   def supported_infrastructures(), do: @supported_infrastructures
@@ -148,9 +148,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
                   (is_map_key(map, :infrastructure) and not is_map_key(map, :slug) and
                      map.infrastructure == "ETH")
 
-  @spec selector_to_args(selector) ::
-          {module(), String.t(), non_neg_integer()} | {:error, tuple()}
-
   def selector_to_args(
         %{infrastructure: "ETH", contract: contract, decimals: decimals} = selector
       )
@@ -160,7 +157,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
       module: Erc20Balance,
       asset: String.downcase(contract),
       contract: String.downcase(contract),
-      blockchain: Project.infrastructure_to_blockchain("ETH"),
+      blockchain: Sanbase.Balance.blockchain_from_infrastructure("ETH"),
       slug: Map.get(selector, :slug),
       decimals: decimals
     }
@@ -175,7 +172,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
         module: EthBalance,
         asset: contract,
         contract: contract,
-        blockchain: Project.infrastructure_to_blockchain("ETH"),
+        blockchain: Sanbase.Balance.blockchain_from_infrastructure("ETH"),
         slug: slug,
         decimals: decimals
       }
@@ -188,7 +185,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
         module: Erc20Balance,
         asset: contract,
         contract: contract,
-        blockchain: Project.infrastructure_to_blockchain("ETH"),
+        blockchain: Sanbase.Balance.blockchain_from_infrastructure("ETH"),
         slug: slug,
         decimals: decimals
       }
@@ -200,7 +197,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
       module: XrpBalance,
       asset: Map.get(selector, :currency, "XRP"),
       currency: Map.get(selector, :currency, "XRP"),
-      blockchain: Project.infrastructure_to_blockchain("XRP"),
+      blockchain: Sanbase.Balance.blockchain_from_infrastructure("XRP"),
       slug: "ripple",
       decimals: 0
     }
@@ -214,7 +211,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
         module: BtcBalance,
         asset: contract,
         contract: contract,
-        blockchain: Project.infrastructure_to_blockchain("BTC"),
+        blockchain: Sanbase.Balance.blockchain_from_infrastructure("BTC"),
         slug: slug,
         decimals: decimals
       }
@@ -229,7 +226,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
         module: BchBalance,
         asset: contract,
         contract: contract,
-        blockchain: Project.infrastructure_to_blockchain("BCH"),
+        blockchain: Sanbase.Balance.blockchain_from_infrastructure("BCH"),
         slug: slug,
         decimals: decimals
       }
@@ -244,7 +241,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
         module: LtcBalance,
         asset: contract,
         contract: contract,
-        blockchain: Project.infrastructure_to_blockchain("LTC"),
+        blockchain: Sanbase.Balance.blockchain_from_infrastructure("LTC"),
         slug: slug,
         decimals: decimals
       }
@@ -259,7 +256,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
         module: BnbBalance,
         asset: contract,
         contract: contract,
-        blockchain: Project.infrastructure_to_blockchain("BNB"),
+        blockchain: Sanbase.Balance.blockchain_from_infrastructure("BNB"),
         slug: slug,
         decimals: decimals
       }

@@ -130,5 +130,10 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
       schedule: "@daily",
       task:
         {Sanbase.ExternalServices.Coinmarketcap.TickerFetcher, :work, [projects_number: 5_000]}
+    ],
+    warm_up_wallet_hunters: [
+      # fetch proposals count to warm up infura cache
+      schedule: "@minutely",
+      task: {Sanbase.WalletHunters.Contract, :wallet_proposals_count, []}
     ]
   ]

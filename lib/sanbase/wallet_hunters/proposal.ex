@@ -108,6 +108,8 @@ defmodule Sanbase.WalletHunters.Proposal do
   end
 
   defp map_response(response) do
+    votes = Contract.all_votes()
+
     response
     |> Enum.map(fn {
                      proposal_id,
@@ -122,9 +124,7 @@ defmodule Sanbase.WalletHunters.Proposal do
                      sheriffs_reward_share,
                      fixed_sheriff_reward
                    } ->
-      votes_for_proposal =
-        Contract.all_votes()
-        |> votes_for_proposal(proposal_id)
+      votes_for_proposal = votes_for_proposal(votes, proposal_id)
 
       %{
         proposal_id: proposal_id,

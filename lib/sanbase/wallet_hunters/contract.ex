@@ -25,17 +25,20 @@ defmodule Sanbase.WalletHunters.Contract do
   end
 
   def get_event_filter_id(event_name) do
-    maybe_replace_rinkeby(fn ->
-      {:ok, filter_id} =
-        Ethereumex.HttpClient.eth_new_filter(%{
-          address: @wallet_hunters_contract,
-          fromBlock: "0x1",
-          toBlock: "latest",
-          topics: [event_signature(event_name)]
-        })
+    maybe_replace_rinkeby(
+      fn ->
+        {:ok, filter_id} =
+          Ethereumex.HttpClient.eth_new_filter(%{
+            address: @wallet_hunters_contract,
+            fromBlock: "0x1",
+            toBlock: "latest",
+            topics: [event_signature(event_name)]
+          })
 
-      filter_id
-    end)
+        filter_id
+      end,
+      :get_event_filter_id
+    )
   end
 
   def all_votes() do
@@ -61,10 +64,14 @@ defmodule Sanbase.WalletHunters.Contract do
   end
 
   def fetch_all_events(event_name) do
-    maybe_replace_rinkeby(fn ->
-      get_event_filter_id(event_name)
-      |> Ethereumex.HttpClient.eth_get_filter_logs()
-    end)
+    filter_id = get_event_filter_id(event_name)
+
+    maybe_replace_rinkeby(
+      fn ->
+        Ethereumex.HttpClient.eth_get_filter_logs(filter_id)
+      end,
+      :fetch_all_events
+    )
   end
 
   def wallet_proposals_count() do
@@ -87,14 +94,17 @@ defmodule Sanbase.WalletHunters.Contract do
 
   def contract_execute(function_name, args) do
     call_result =
-      maybe_replace_rinkeby(fn ->
-        call_contract(
-          @wallet_hunters_contract,
-          function_abi(function_name),
-          args,
-          function_abi(function_name).returns
-        )
-      end)
+      maybe_replace_rinkeby(
+        fn ->
+          call_contract(
+            @wallet_hunters_contract,
+            function_abi(function_name),
+            args,
+            function_abi(function_name).returns
+          )
+        end,
+        function_name
+      )
 
     call_result
     |> case do
@@ -116,7 +126,7 @@ defmodule Sanbase.WalletHunters.Contract do
   end
 
   # TODO - remove after testing on Rinkeby Ethereum Test Network
-  defp maybe_replace_rinkeby(func) do
+  defp maybe_replace_rinkeby(func, func_name) do
     original_url = Application.get_env(:ethereumex, :url)
 
     if localhost_or_stage?() do
@@ -125,7 +135,9 @@ defmodule Sanbase.WalletHunters.Contract do
     end
 
     try do
-      func.()
+      {elapsed, result} = :timer.tc(fn -> func.() end)
+      Logger.info("Contract call: #{func_name}, elapsed: #{elapsed / 1_000_000}")
+      result
     rescue
       e ->
         Logger.error("Error occurred while executing smart contract call: #{inspect(e)}")

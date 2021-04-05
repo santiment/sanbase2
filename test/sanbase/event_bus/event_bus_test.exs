@@ -37,7 +37,7 @@ defmodule Sanbase.EventBusTest do
     for i <- 1..50 do
       Sanbase.EventBus.notify(%{
         topic: :test_events,
-        data: %{message: "ping#{i}", __internal_valid_event__: true}
+        data: %{event_type: :test_event, message: "ping#{i}", __internal_valid_event__: true}
       })
     end
 

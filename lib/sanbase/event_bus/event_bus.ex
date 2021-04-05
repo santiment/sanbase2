@@ -53,15 +53,6 @@ defmodule Sanbase.EventBus do
   end
 
   def notify(params) do
-    params =
-      params
-      |> Map.merge(%{
-        id: Map.get(params, :id, Ecto.UUID.generate()),
-        topic: Map.fetch!(params, :topic),
-        transaction_id: Map.get(params, :transaction_id),
-        error_topic: Map.fetch!(params, :topic)
-      })
-
     # In case the event is not valid, in prod this will rewrite the params so
     # the event is emitted in a special invalid_events topic. In dev/test the
     # behavior is to raise so errors are catched straight away. Invalid events
@@ -72,6 +63,17 @@ defmodule Sanbase.EventBus do
         true -> params
         false -> handle_invalid_event(params)
       end
+
+    params =
+      params
+      |> Map.merge(%{
+        id: Map.get(params, :id, Ecto.UUID.generate()),
+        topic: Map.fetch!(params, :topic),
+        transaction_id: Map.get(params, :transaction_id),
+        event_type: Map.fetch!(params.data, :event_type),
+        user_id: Map.get(params.data, :user_id)
+      })
+      |> Map.delete(:source)
 
     EventSource.notify params do
       Map.fetch!(params, :data)

@@ -72,6 +72,18 @@ CREATE TYPE public.status AS ENUM (
 
 
 --
+-- Name: subscription_type; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.subscription_type AS ENUM (
+    'fiat',
+    'liquidity',
+    'burning_regular',
+    'burning_nft'
+);
+
+
+--
 -- Name: watchlist_type; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -2150,7 +2162,8 @@ CREATE TABLE public.subscriptions (
     status public.status DEFAULT 'initial'::public.status NOT NULL,
     trial_end timestamp without time zone,
     inserted_at timestamp without time zone,
-    updated_at timestamp without time zone
+    updated_at timestamp without time zone,
+    type public.subscription_type DEFAULT 'fiat'::public.subscription_type NOT NULL
 );
 
 
@@ -5662,3 +5675,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210303094304);
 INSERT INTO public."schema_migrations" (version) VALUES (20210311123253);
 INSERT INTO public."schema_migrations" (version) VALUES (20210323125906);
 INSERT INTO public."schema_migrations" (version) VALUES (20210330100652);
+INSERT INTO public."schema_migrations" (version) VALUES (20210406104622);
+INSERT INTO public."schema_migrations" (version) VALUES (20210406113235);

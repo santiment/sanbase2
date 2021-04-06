@@ -1,5 +1,12 @@
 import EctoEnum
 
+defenum(SubscriptionType, :subscription_type, [
+  "fiat",
+  "liquidity",
+  "burning_regular",
+  "burning_nft"
+])
+
 defenum(WatchlistType, :watchlist_type, ["project", "blockchain_address"])
 
 defenum(ColorEnum, :color, ["none", "blue", "red", "green", "yellow", "grey", "black"])

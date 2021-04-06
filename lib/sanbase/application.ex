@@ -6,6 +6,8 @@ defmodule Sanbase.Application do
   require Logger
   require Sanbase.Utils.Config, as: Config
 
+  alias Sanbase.EventBus.KafkaExporterSubscriber
+
   def start(_type, _args) do
     Code.ensure_loaded?(Envy) && Envy.auto_load()
 
@@ -138,11 +140,14 @@ defmodule Sanbase.Application do
   """
   def prepended_children(container_type) do
     [
+      # SanExporterEx is the module that handles the data pushing to Kafka
       {SanExporterEx,
        [
          kafka_producer_module: Config.module_get!(Sanbase.KafkaExporter, :supervisor),
          kafka_endpoint: kafka_endpoint()
        ]},
+
+      # API Calls exporter is started only in `web` and `all` pods.
       start_if(
         fn ->
           Sanbase.KafkaExporter.child_spec(
@@ -151,8 +156,10 @@ defmodule Sanbase.Application do
             topic: Config.module_get!(Sanbase.KafkaExporter, :api_call_data_topic)
           )
         end,
-        fn -> container_type in ["web", "all"] end
+        fn -> container_type in ["all", "web"] end
       ),
+
+      # Prices exporter is started only in `scrapers` and `all` pods.
       start_if(
         fn ->
           Sanbase.KafkaExporter.child_spec(
@@ -163,16 +170,20 @@ defmodule Sanbase.Application do
             can_send_after_interval: 250
           )
         end,
-        fn ->
-          container_type in ["all", "scrapers"]
-        end
+        fn -> container_type in ["all", "scrapers"] end
       ),
+
+      # Kafka exporter for the Event Bus events
       Sanbase.KafkaExporter.child_spec(
         id: :sanbase_event_bus_kafka_exporter,
         name: :sanbase_event_bus_kafka_exporter,
-        topic: Config.module_get!(Sanbase.KafkaExporter, :event_bus_topic),
-        buffering_max_messages: 250,
-        can_send_after_interval: 1000
+        topic: Config.module_get!(KafkaExporterSubscriber, :event_bus_topic),
+        kafka_flush_timeout:
+          Config.module_get_integer!(KafkaExporterSubscriber, :kafka_flush_timeout),
+        buffering_max_messages:
+          Config.module_get_integer!(KafkaExporterSubscriber, :buffering_max_messages),
+        can_send_after_interval:
+          Config.module_get_integer!(KafkaExporterSubscriber, :can_send_after_interval)
       )
     ]
   end

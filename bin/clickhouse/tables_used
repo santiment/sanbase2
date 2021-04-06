@@ -3,17 +3,19 @@ api_call_data
 asset_metadata
 asset_prices_v3
 blockchain_address_labels
-bnb_balances
-btc_balances
+bnb_balances - still present, not used
+bnb_top_holders
+btc_balances - still present, not used
 daily_label_based_metrics
 daily_metrics_v2
 distribution_deltas_5min
-erc20_balances
-eth_balances
+erc20_balances - still present, not used
+eth_balances - still present, not used
+eth_top_holders_daily_union
 eth2_staking_transfers_mv
 github_v2
 intraday_label_based_metrics
-intraday_metrics
-ltc_balances
+intraday_metrics - still present, not used
+ltc_balances - still present, not used
 metric_metadata
 xrp_balances

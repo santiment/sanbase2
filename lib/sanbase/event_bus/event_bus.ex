@@ -60,8 +60,11 @@ defmodule Sanbase.EventBus do
     # and in this case prod should not break
     params =
       case Sanbase.EventBus.EventValidation.valid?(params.data) do
-        true -> params
-        false -> handle_invalid_event(params)
+        true ->
+          params
+
+        false ->
+          handle_invalid_event(params)
       end
 
     params =
@@ -70,10 +73,8 @@ defmodule Sanbase.EventBus do
         id: Map.get(params, :id, Ecto.UUID.generate()),
         topic: Map.fetch!(params, :topic),
         transaction_id: Map.get(params, :transaction_id),
-        event_type: Map.fetch!(params.data, :event_type),
-        user_id: Map.get(params.data, :user_id)
+        error_topic: Map.fetch!(params, :topic)
       })
-      |> Map.delete(:source)
 
     EventSource.notify params do
       Map.fetch!(params, :data)

@@ -64,4 +64,8 @@ defmodule Sanbase.Utils.Config do
       |> Sanbase.Utils.Config.parse_config_value()
     end
   end
+
+  def module_get_integer!(module, key) do
+    module_get!(module, key) |> Sanbase.Math.to_integer()
+  end
 end

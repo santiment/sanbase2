@@ -51,8 +51,13 @@ config :sanbase, Sanbase.KafkaExporter,
   kafka_url: {:system, "KAFKA_URL", "blockchain-kafka-kafka"},
   kafka_port: {:system, "KAFKA_PORT", "9092"},
   prices_topic: {:system, "KAFKA_PRICES_TOPIC", "asset_prices"},
-  api_call_data_topic: {:system, "KAFKA_API_CALL_DATA_TOPIC", "sanbase_api_call_data"},
-  event_bus_topic: {:system, "KAFKA_EVENT_BUS_TOPIC", "sanbase_event_bus"}
+  api_call_data_topic: {:system, "KAFKA_API_CALL_DATA_TOPIC", "sanbase_api_call_data"}
+
+config :sanbase, Sanbase.EventBus.KafkaExporterSubscriber,
+  event_bus_topic: {:system, "KAFKA_EVENT_BUS_TOPIC", "sanbase_event_bus"},
+  buffering_max_messages: 250,
+  can_send_after_interval: 1000,
+  kafka_flush_timeout: 5000
 
 config :sanbase, Sanbase.ExternalServices.RateLimiting.Server,
   implementation_module: Sanbase.ExternalServices.RateLimiting.WaitServer

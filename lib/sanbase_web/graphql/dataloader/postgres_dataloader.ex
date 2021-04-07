@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.MetricPostgresDataloader do
   import Ecto.Query
-  alias Sanbase.Model.{MarketSegment, Infrastructure}
+  alias Sanbase.Model.Project.SocialVolumeQuery
+  alias Sanbase.Model.{MarketSegment, Infrastructure, Project}
   alias Sanbase.Repo
 
   def data() do
@@ -131,5 +132,55 @@ defmodule SanbaseWeb.Graphql.MetricPostgresDataloader do
     |> Enum.to_list()
     |> Sanbase.Model.Project.List.by_slugs()
     |> Enum.into(%{}, fn %{slug: slug} = project -> {slug, project} end)
+  end
+
+  def query(:social_volume_query, projects_ids) do
+    all_projects = Project.List.projects(preload: [:social_volume_query])
+
+    current_projects = Enum.filter(all_projects, &(&1.id in projects_ids))
+
+    Map.new(
+      current_projects,
+      fn
+        %{social_volume_query: %{query: query}} = project when not is_nil(query) ->
+          {project.id, query}
+
+        %Project{} = project ->
+          exclusion_string =
+            all_projects
+            |> filter_similar_projects(project)
+            |> Enum.map(fn excluded_project -> "NOT \"#{excluded_project.name}\"" end)
+            |> Enum.join(" ")
+
+          query = SocialVolumeQuery.default_query(project)
+
+          generate_social_query(project.id, query, exclusion_string)
+      end
+    )
+  end
+
+  defp filter_similar_projects(all_projects, project) do
+    %Project{ticker: project_ticker, slug: project_slug, name: project_name} = project
+
+    Enum.filter(all_projects, fn other_project ->
+      %Project{name: other_name, slug: other_slug} = other_project
+      other_project_names = String.downcase(other_name) |> String.split([" ", "-"])
+      downcased_project_name = String.downcase(project_name)
+
+      if project_slug !== other_slug do
+        Enum.any?(other_project_names, fn element ->
+          element === downcased_project_name || element === project_slug ||
+            element === project_ticker
+        end)
+      end
+    end)
+  end
+
+  defp generate_social_query(id, query, exclusion_string) do
+    if exclusion_string === "" do
+      {id, query}
+    else
+      {id, query <> " " <> exclusion_string}
+    end
   end
 end

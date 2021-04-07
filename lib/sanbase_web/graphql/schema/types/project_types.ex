@@ -357,17 +357,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       )
     end
 
-    field :social_volume_query, :string do
-      cache_resolve(
-        dataloader(SanbaseRepo, :social_volume_query,
-          callback: fn query, project, _args ->
-            {:ok, query || Project.SocialVolumeQuery.default_query(project)}
-          end
-        ),
-        fun_name: :social_volume_query
-      )
-    end
-
     field :source_slug_mappings, list_of(:source_slug_mapping) do
       cache_resolve(
         dataloader(SanbaseRepo, :source_slug_mappings,
@@ -626,6 +615,11 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
         ttl: 600,
         max_ttl_offset: 600
       )
+    end
+
+    @desc "Social volume query for a project"
+    field :social_volume_query, :string do
+      cache_resolve(&ProjectResolver.social_volume_query/3)
     end
   end
 

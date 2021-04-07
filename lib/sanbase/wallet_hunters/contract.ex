@@ -2,12 +2,16 @@ defmodule Sanbase.WalletHunters.Contract do
   require Logger
   import Sanbase.SmartContracts.Utils
 
-  @wallet_hunters_contract "0x772e255402EEE3Fa243CB17AF58001f40Da78d90"
-  @abi Path.join(__DIR__, "abis/wallet_hunters_abi.json")
-       |> File.read!()
-       |> Jason.decode!()
-       |> Map.get("abi")
+  @abi_file Path.join(__DIR__, "abis/wallet_hunters_abi.json")
+            |> File.read!()
+            |> Jason.decode!()
 
+  @abi Map.get(@abi_file, "abi")
+  @rinkeby_contract get_in(@abi_file, ["networks", "rinkeby", "address"])
+  @ropsten_contract get_in(@abi_file, ["networks", "ropsten", "address"])
+
+  def rinkeby_contract(), do: @rinkeby_contract
+  def ropsten_contract(), do: @ropsten_contract
   def abi(), do: @abi
 
   def function_abi(function) do
@@ -29,7 +33,7 @@ defmodule Sanbase.WalletHunters.Contract do
       fn ->
         {:ok, filter_id} =
           Ethereumex.HttpClient.eth_new_filter(%{
-            address: @wallet_hunters_contract,
+            address: @rinkeby_contract,
             fromBlock: "0x1",
             toBlock: "latest",
             topics: [event_signature(event_name)]
@@ -97,7 +101,7 @@ defmodule Sanbase.WalletHunters.Contract do
       maybe_replace_rinkeby(
         fn ->
           call_contract(
-            @wallet_hunters_contract,
+            @rinkeby_contract,
             function_abi(function_name),
             args,
             function_abi(function_name).returns

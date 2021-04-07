@@ -689,12 +689,7 @@ defmodule Sanbase.Factory do
   end
 
   def wallet_hunters_proposal_factory do
-    %Proposal{
-      title: "title",
-      text: "text",
-      proposal_id: 2,
-      hunter_address: "0x26caae548b7cecf98da12ccaaa633d6d140447aa"
-    }
+    %Proposal{}
   end
 
   def rand_str(length \\ 10) do

@@ -114,6 +114,11 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     |> Map.get("message")
   end
 
+  def string_list_to_string(list) do
+    str = list |> Enum.map(fn elem -> ~s|"#{elem}"| end) |> Enum.join(",")
+    "[" <> str <> "]"
+  end
+
   def map_to_input_object_str(%{} = map, opts \\ []) do
     map_as_input_object? = Keyword.get(opts, :map_as_input_object, false)
 

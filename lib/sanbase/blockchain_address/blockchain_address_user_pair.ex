@@ -7,6 +7,7 @@ defmodule Sanbase.BlockchainAddress.BlockchainAddressUserPair do
 
   @labels_join_through_table "blockchain_address_user_pairs_labels"
 
+  @preloads [:user, :blockchain_address, :labels]
   schema "blockchain_address_user_pairs" do
     field(:notes, :string)
 
@@ -23,11 +24,80 @@ defmodule Sanbase.BlockchainAddress.BlockchainAddressUserPair do
     )
   end
 
-  def changeset(%__MODULE__{} = addr, attrs \\ %{}) do
-    addr
+  def changeset(%__MODULE__{} = pair, attrs \\ %{}) do
+    pair
     |> cast(attrs, [:user_id, :blockchain_address_id, :notes])
     |> validate_required([:user_id, :blockchain_address_id])
     |> put_labels(attrs)
+  end
+
+  def by_selector(%{id: id}, user_id) do
+    from(pair in __MODULE__, where: pair.id == ^id, preload: ^@preloads)
+    |> Sanbase.Repo.one()
+    |> case do
+      %__MODULE__{user_id: ^user_id} = pair ->
+        {:ok, pair}
+
+      %__MODULE__{user_id: _} ->
+        {:error, "Blockchain address pair with id #{id} does not belong to the querying user."}
+
+      _ ->
+        {:error, "Blockchain address pair with #{id} does not exist"}
+    end
+  end
+
+  def by_selector(%{address: address, infrastructure: infrastructure} = selector, user_id) do
+    from(
+      pair in __MODULE__,
+      join: blockchain_address in assoc(pair, :blockchain_address),
+      on: pair.blockchain_address_id == blockchain_address.id,
+      join: infrastructure in assoc(blockchain_address, :infrastructure),
+      on: blockchain_address.infrastructure_id == infrastructure.id,
+      where:
+        blockchain_address.address == ^address and infrastructure.code == ^infrastructure and
+          pair.user_id == ^user_id,
+      preload: ^@preloads
+    )
+    |> Sanbase.Repo.one()
+    |> case do
+      %__MODULE__{user_id: _} = pair ->
+        {:ok, pair}
+
+      _ ->
+        {:error, "Blockchain address user pair with selector #{inspect(selector)} does not exist"}
+    end
+  end
+
+  def by_selector(%{blockchain_address_id: blockchain_address_id}, user_id) do
+    from(pair in __MODULE__,
+      where: pair.user_id == ^user_id and pair.blockchain_address_id == ^blockchain_address_id,
+      preload: ^@preloads
+    )
+    |> Sanbase.Repo.one()
+    |> case do
+      %__MODULE__{user_id: ^user_id} = pair ->
+        {:ok, pair}
+
+      _ ->
+        {:error,
+         """
+         Blockchain address user pair for user id #{user_id} and\
+         blockchain address id #{blockchain_address_id} does not exist
+         """}
+    end
+  end
+
+  def update(%__MODULE__{} = pair, attrs) do
+    # These fields are needed by put_labels/2
+    attrs =
+      attrs
+      |> Map.put(:user_id, pair.user_id)
+      |> Map.put(:blockchain_address_id, pair.blockchain_address_id)
+
+    pair
+    |> cast(attrs, [:notes])
+    |> put_labels(attrs)
+    |> Sanbase.Repo.update()
   end
 
   def maybe_create(attrs_list) when is_list(attrs_list) do
@@ -53,6 +123,19 @@ defmodule Sanbase.BlockchainAddress.BlockchainAddressUserPair do
     |> case do
       {:ok, result} -> {:ok, Map.values(result)}
       {:error, _name, error, _changes_so_far} -> {:error, error}
+    end
+  end
+
+  def create(address, infrastructure, user_id) do
+    {:ok, blockchain_address} =
+      Sanbase.BlockchainAddress.by_selector(%{address: address, infrastructure: infrastructure})
+
+    %__MODULE__{}
+    |> changeset(%{blockchain_address_id: blockchain_address.id, user_id: user_id})
+    |> Sanbase.Repo.insert()
+    |> case do
+      {:ok, struct} -> {:ok, Sanbase.Repo.preload(struct, @preloads)}
+      {:error, error} -> {:error, error}
     end
   end
 

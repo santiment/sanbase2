@@ -229,7 +229,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
     {:ok, comments}
   end
 
-  def insight_id(%{id: id}, _args, %{context: %{loader: loader}}) do
+  def insight_id(%Sanbase.Comment{id: id}, _args, %{context: %{loader: loader}}) do
     loader
     |> Dataloader.load(SanbaseDataloader, :comment_insight_id, id)
     |> on_load(fn loader ->

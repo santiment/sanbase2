@@ -42,6 +42,9 @@ defmodule Sanbase.Utils.ErrorHandling do
         <<"["::utf8, uuid::binary-size(36), "]"::utf8, message::binary>> ->
           {uuid, message |> String.trim()}
 
+        %Ecto.Changeset{} = changeset ->
+          {Ecto.UUID.generate(), changeset_errors_string(changeset)}
+
         _ ->
           {Ecto.UUID.generate(), reason}
       end

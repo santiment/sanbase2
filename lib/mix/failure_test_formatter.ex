@@ -15,19 +15,18 @@ defmodule Sanbase.FailedTestFormatter do
   def handle_cast({:test_finished, %ExUnit.Test{state: {:failed, _}} = test}, config) do
     config =
       case test do
-        %ExUnit.Test{state: {:failed, [{:error, _error, failures}]}} when is_list(failures) ->
-          case List.last(failures) do
-            {_module, _test_name, _, [file: file, line: line]} ->
-              %{
-                config
-                | failed: ["#{file}:#{line}" | config.failed],
-                  failure_counter: config.failure_counter + 1
-              }
+        %ExUnit.Test{state: {:failed, [{:error, _error, failures}]}} = test
+        when is_list(failures) ->
+          # Add a leading dot so the file:line string can be copy-pasted in the
+          # terminal to directly execute it
+          file = String.replace_leading(test.tags.file, File.cwd!(), ".")
+          line = test.tags.line
 
-            elem ->
-              IO.warn("Unexpected element in failures: #{inspect(elem)}")
-              config
-          end
+          %{
+            config
+            | failed: ["#{file}:#{line}" | config.failed],
+              failure_counter: config.failure_counter + 1
+          }
 
         _ ->
           IO.warn("Unexpected failed test format.")

@@ -1,171 +1,165 @@
 defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import SanbaseWeb.Graphql.TestHelpers
 
-  require Sanbase.Utils.Config
+  alias Sanbase.BlockchainAddress.BlockchainAddressUserPair
 
   setup do
-    project = insert(:random_project)
-    {:ok, project: project}
+    user = insert(:user)
+    conn = setup_jwt_auth(build_conn(), user)
+    eth_infrastructure = insert(:infrastructure, code: "ETH")
+
+    %{
+      user: user,
+      conn: conn,
+      eth_infrastructure: eth_infrastructure
+    }
   end
 
-  test "Ethereum recent transactions", context do
-    mock_fun =
-      [
-        fn -> {:ok, %{rows: eth_recent_transactions_result()}} end,
-        fn -> {:ok, %{rows: labels_rows()}} end
-      ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 2)
+  test "fetch (create) a non-existing blockchain address", context do
+    result =
+      blockchain_address(context.conn, %{
+        address: "0x123",
+        infrastructure: "ETH"
+      })
+      |> get_in(["data", "blockchainAddress"])
 
-    Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      query = recent_transactions_query("ETH")
-      result = execute_query(context.conn, query, "recentTransactions")
-      assert result == expected_eth_transactions()
-    end)
+    assert result["address"] == "0x123"
+    assert result["infrastructure"] == "ETH"
+    assert result["labels"] == []
+    assert result["notes"] == nil
   end
 
-  test "Token recent transactions", context do
-    mock_fun =
-      [
-        fn -> {:ok, %{rows: token_recent_transactions_result(context.project)}} end,
-        fn -> {:ok, %{rows: labels_rows()}} end
-      ]
-      |> Sanbase.Mock.wrap_consecutives(arity: 2)
+  test "fetch an existing blockchain address by id", context do
+    address_id =
+      blockchain_address(context.conn, %{
+        address: "0x123",
+        infrastructure: "ETH"
+      })
+      |> get_in(["data", "blockchainAddress", "id"])
 
-    Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      query = recent_transactions_query("ERC20")
-      result = execute_query(context.conn, query, "recentTransactions")
-      assert result == expected_token_transactions(context.project)
-    end)
+    result =
+      blockchain_address(context.conn, %{id: address_id})
+      |> get_in(["data", "blockchainAddress"])
+
+    # The same address if fetched and a new one is not created
+    assert result["id"] == address_id
+
+    assert result["address"] == "0x123"
+    assert result["infrastructure"] == "ETH"
+    assert result["labels"] == []
+    assert result["notes"] == nil
   end
 
-  # ClickhouseRepo will log the error
-  @tag capture_log: true
-  test "error when fetching recent transactions", context do
-    Sanbase.Mock.prepare_mock2(
-      &Sanbase.ClickhouseRepo.query/2,
-      {:error, "Internal error message"}
-    )
-    |> Sanbase.Mock.run_with_mocks(fn ->
-      query = recent_transactions_query("ERC20")
-      error = execute_query_with_error(context.conn, query, "recentTransactions")
+  test "fetch an existing blockchain address by address and infrastructure",
+       context do
+    blockchain_address =
+      insert(:blockchain_address,
+        address: "0x123",
+        infrastructure: context.eth_infrastructure
+      )
 
-      assert error =~
-               "Can't fetch Recent transactions for Address 0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8"
-    end)
+    result =
+      blockchain_address(context.conn, %{
+        address: "0x123",
+        infrastructure: context.eth_infrastructure.code
+      })
+      |> get_in(["data", "blockchainAddress"])
+
+    # The same address if fetched and a new one is not created
+    assert result["id"] == blockchain_address.id
+    assert result["address"] == "0x123"
+    assert result["infrastructure"] == "ETH"
+    assert result["labels"] == []
+    assert result["notes"] == nil
   end
 
-  defp recent_transactions_query(type) do
-    """
+  test "update a blockchain address user pair", context do
+    blockchain_address =
+      insert(:blockchain_address,
+        address: "0x123",
+        infrastructure: context.eth_infrastructure
+      )
+
+    {:ok, [pair]} =
+      BlockchainAddressUserPair.maybe_create([
+        %{
+          user_id: context.user.id,
+          blockchain_address_id: blockchain_address.id
+        }
+      ])
+
+    notes = "some new notes"
+    labels = ["cex trader", "whale", "eth"]
+
+    result =
+      update_blockchain_address_user_pair(context.conn, %{id: pair.id}, notes, labels)
+      |> get_in(["data", "updateBlockchainAddressUserPair"])
+
+    assert result["id"] == pair.id
+    assert result["notes"] == "some new notes"
+
+    assert result["labels"] == [
+             %{"name" => "cex trader"},
+             %{"name" => "whale"},
+             %{"name" => "eth"}
+           ]
+
+    assert result["blockchainAddress"]["address"] == blockchain_address.address
+    assert result["user"]["id"] |> Sanbase.Math.to_integer() == context.user.id
+  end
+
+  test "error updating a non-existining blockchain address user pair", context do
+    result = update_blockchain_address_user_pair(context.conn, %{id: 15_123_123}, "notes", [])
+
+    %{"errors" => [%{"message" => error_msg}]} = result
+    assert error_msg =~ "Blockchain address pair with 15123123 does not exist"
+  end
+
+  defp blockchain_address(conn, selector) do
+    query = """
     {
-      recentTransactions(
-        address: "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8",
-        type: #{type}
-      ) {
-        fromAddress {
+      blockchainAddress(selector: #{map_to_input_object_str(selector)}){
+        id
+        address
+        infrastructure
+        notes
+        labels{ name }
+      }
+    }
+    """
+
+    conn
+    |> post("/graphql", query_skeleton(query))
+    |> json_response(200)
+  end
+
+  defp update_blockchain_address_user_pair(conn, selector, notes, labels) do
+    mutation = """
+    mutation {
+      updateBlockchainAddressUserPair(
+        selector: #{map_to_input_object_str(selector)}
+        notes: "#{notes}"
+        labels: #{string_list_to_string(labels)}
+      ){
+        id
+        notes
+        labels{ name }
+        blockchainAddress{
           address
-          labels {
-            name
-          }
+          infrastructure
         }
-        toAddress {
-          address
-          labels {
-            name
-          }
-        }
-        trxValue
-        trxHash
-        project {
+        user{
           id
-          slug
         }
       }
     }
     """
-  end
 
-  defp labels_rows() do
-    [
-      [
-        "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8",
-        "centralized_exchange",
-        ~s|{"comment":"Poloniex GNT","is_dex":false,"owner":"Poloniex","source":""}|
-      ],
-      [
-        "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8",
-        "whale",
-        ~s|{"rank": 58, "value": 1.1438690681177702e+24}|
-      ]
-    ]
-  end
-
-  defp expected_token_transactions(project) do
-    [
-      %{
-        "fromAddress" => %{
-          "address" => "0xc12d1c73ee7dc3615ba4e37e4abfdbddfa38907e",
-          "labels" => []
-        },
-        "project" => %{
-          "slug" => project.slug,
-          "id" => to_string(project.id)
-        },
-        "toAddress" => %{
-          "address" => "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8",
-          "labels" => [%{"name" => "whale"}, %{"name" => "centralized_exchange"}]
-        },
-        "trxHash" => "0x4bd5d44da7f69c5227530728249431072087b5f9780eec704869fc768922121e",
-        "trxValue" => 888_888.0
-      }
-    ]
-  end
-
-  defp expected_eth_transactions do
-    [
-      %{
-        "fromAddress" => %{
-          "address" => "0x876eabf441b2ee5b5b0554fd502a8e0600950cfa",
-          "labels" => ''
-        },
-        "toAddress" => %{
-          "address" => "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8",
-          "labels" => [%{"name" => "whale"}, %{"name" => "centralized_exchange"}]
-        },
-        "trxHash" => "0x21a56440bedb1a5c2f4adca4a6f9fbccf13bd741d63c0e3b2214a6ee418a5974",
-        "trxValue" => 5.5,
-        "project" => nil
-      }
-    ]
-  end
-
-  defp token_recent_transactions_result(project) do
-    [
-      [
-        1_579_862_776,
-        "0xc12d1c73ee7dc3615ba4e37e4abfdbddfa38907e",
-        "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8",
-        "0x4bd5d44da7f69c5227530728249431072087b5f9780eec704869fc768922121e",
-        8.88888e13,
-        project.slug,
-        8
-      ]
-    ]
-  end
-
-  defp eth_recent_transactions_result do
-    [
-      [
-        1_603_725_064,
-        "0x876eabf441b2ee5b5b0554fd502a8e0600950cfa",
-        "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8",
-        "0x21a56440bedb1a5c2f4adca4a6f9fbccf13bd741d63c0e3b2214a6ee418a5974",
-        5.5e18
-      ]
-    ]
+    conn
+    |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
   end
 end

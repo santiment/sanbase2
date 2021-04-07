@@ -2,9 +2,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
   require Logger
 
   import Absinthe.Resolution.Helpers, except: [async: 1]
-  import Sanbase.Utils.ErrorHandling, only: [handle_graphql_error: 3, changeset_errors_string: 1]
+
+  import Sanbase.Utils.ErrorHandling,
+    only: [handle_graphql_error: 3, handle_graphql_error: 4, maybe_handle_graphql_error: 2]
 
   alias Sanbase.BlockchainAddress
+  alias Sanbase.BlockchainAddress.BlockchainAddressUserPair
+
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Clickhouse.{Label, EthTransfers, Erc20Transfers, MarkExchanges}
 
@@ -47,77 +51,116 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     end
   end
 
-  def blockchain_address(_root, %{selector: %{id: id}}, _resolution) do
-    BlockchainAddress.by_id(id)
-  end
-
-  def blockchain_address(
-        _root,
-        %{selector: %{address: address, infrastructure: infrastructure}},
-        _resolution
-      ) do
-    with {:ok, %{id: infrastructure_id}} <- Sanbase.Model.Infrastructure.by_code(infrastructure),
-         {:ok, addr} <-
-           BlockchainAddress.maybe_create(%{
-             address: address,
-             infrastructure_id: infrastructure_id
-           }) do
-      {:ok, addr}
-    else
-      {:error, %Ecto.Changeset{} = changeset} ->
-        reason = changeset_errors_string(changeset)
-        {:error, "Cannot get blockchain address #{infrastructure} #{address}. Reason: #{reason}"}
-
-      {:error, error} ->
-        {:error, error}
-    end
-  end
-
-  def labels(%{address: address} = root, _args, %{context: %{loader: loader}}) do
-    do_load_address_labels(root, address, loader)
-  end
-
-  def hunter_address_labels(%{hunter_address: hunter_address} = root, _args, %{
-        context: %{loader: loader}
-      }) do
-    do_load_address_labels(root, hunter_address, loader)
-  end
-
-  def proposed_address_labels(%{proposed_address: address} = root, _args, %{
-        context: %{loader: loader}
-      })
-      when is_binary(address) do
-    do_load_address_labels(root, address, loader)
-  end
-
-  def proposed_address_labels(_, _, _), do: {:ok, []}
-
-  defp do_load_address_labels(root, address, loader) do
-    address = BlockchainAddress.to_internal_format(address)
-
-    loader
-    |> Dataloader.load(SanbaseDataloader, :address_labels, address)
-    |> on_load(fn loader ->
-      santiment_labels = Dataloader.get(loader, SanbaseDataloader, :address_labels, address) || []
-      # The root can be built either from a BlockchainAddress in case the
-      # `blockchain_address` query is used, or from a BlockchainAddressUserPair
-      # in casethe address is part of a watchlist. In the second case, the root
-      # has an additional `labels` key which holds the list of user-defined labels
-      # for that address. The santiment defined labels from CH are provided with a
-      # `origin: "santiment"` key-value pair so they could be distinguished from
-      # the user-defined labels.
-      user_labels =
-        Map.get(root, :labels, [])
-        |> Enum.map(fn label ->
-          label |> Map.from_struct() |> Map.put(:origin, "user")
-        end)
-
-      {:ok, user_labels ++ santiment_labels}
+  def blockchain_address(_root, %{selector: selector}, _resolution) do
+    BlockchainAddress.by_selector(selector)
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(
+        "Blockchain Address",
+        inspect(selector),
+        error,
+        description: "selector"
+      )
     end)
   end
 
-  def balance(%{address: address}, %{selector: selector}, %{context: %{loader: loader}}) do
-    address = BlockchainAddress.to_internal_format(address)
+  def blockchain_address_user_pair(_root, %{selector: selector}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    case BlockchainAddressUserPair.by_selector(selector, current_user.id) do
+      {:ok, pair} ->
+        {:ok, pair}
+
+      {:error, _error} ->
+        case selector do
+          %{address: address, infrastructure: infrastructure} ->
+            BlockchainAddressUserPair.create(address, infrastructure, current_user.id)
+
+          %{id: id} ->
+            {:error,
+             """
+             Blockchain address user pair with id #{id} does not exist. In order \
+             to create a new pair for the current user, provide `address` and `infrastrucutre`
+             in the selector.
+             """}
+        end
+    end
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(
+        "Blockchain Address User Pair",
+        inspect(selector),
+        error,
+        description: "selector"
+      )
+    end)
+  end
+
+  def update_blockchain_address_user_pair(_root, %{selector: selector} = args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    with {:ok, pair} <- BlockchainAddressUserPair.by_selector(selector, current_user.id),
+         {:ok, pair} <- BlockchainAddressUserPair.update(pair, args) do
+      {:ok, pair}
+    end
+    |> maybe_handle_graphql_error(fn error ->
+      handle_graphql_error(
+        "Update Blockchain Address User Pair",
+        inspect(selector),
+        error,
+        description: "selector"
+      )
+    end)
+  end
+
+  def labels(root, _args, %{context: %{loader: loader}}) do
+    case root_to_raw_address(root) do
+      nil ->
+        {:ok, []}
+
+      address ->
+        address
+        |> BlockchainAddress.to_internal_format()
+
+        loader
+        |> Dataloader.load(SanbaseDataloader, :address_labels, address)
+        |> on_load(fn loader ->
+          santiment_labels =
+            Dataloader.get(loader, SanbaseDataloader, :address_labels, address) || []
+
+          # The root can be built either from a BlockchainAddress in case the
+          # `blockchain_address` query is used, or from a BlockchainAddressUserPair
+          # in casethe address is part of a watchlist. In the second case, the root
+          # has an additional `labels` key which holds the list of user-defined labels
+          # for that address. The santiment defined labels from CH are provided with a
+          # `origin: "santiment"` key-value pair so they could be distinguished from
+          # the user-defined labels.
+          user_labels =
+            Map.get(root, :labels, [])
+            |> Enum.map(fn label -> label |> Map.from_struct() |> Map.put(:origin, "user") end)
+
+          {:ok, user_labels ++ santiment_labels}
+        end)
+    end
+  end
+
+  def infrastructure(root, _args, %{context: %{loader: loader}}) do
+    root_address = root_to_blockchain_address(root)
+    infrastructure_id = root_address.infrastructure_id
+
+    loader
+    |> Dataloader.load(SanbaseDataloader, :infrastructure, infrastructure_id)
+    |> on_load(fn loader ->
+      {:ok,
+       Dataloader.get(
+         loader,
+         SanbaseDataloader,
+         :infrastructure,
+         infrastructure_id
+       )}
+    end)
+  end
+
+  def balance(root, %{selector: selector}, %{context: %{loader: loader}}) do
+    address = root |> root_to_raw_address() |> BlockchainAddress.to_internal_format()
 
     loader
     |> Dataloader.load(SanbaseDataloader, :address_selector_current_balance, {address, selector})
@@ -132,8 +175,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     end)
   end
 
-  def balance_dominance(%{address: address}, %{selector: selector}, %{context: %{loader: loader}}) do
-    address = BlockchainAddress.to_internal_format(address)
+  def balance_dominance(root, %{selector: selector}, %{context: %{loader: loader}}) do
+    address = root |> root_to_raw_address() |> BlockchainAddress.to_internal_format()
 
     loader
     |> Dataloader.load(SanbaseDataloader, :address_selector_current_balance, {address, selector})
@@ -154,10 +197,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     end)
   end
 
-  def balance_change(%{address: address}, %{selector: selector, from: from, to: to}, %{
+  def balance_change(root, %{selector: selector, from: from, to: to}, %{
         context: %{loader: loader}
       }) do
-    address = BlockchainAddress.to_internal_format(address)
+    address = root |> root_to_raw_address() |> BlockchainAddress.to_internal_format()
 
     loader
     |> Dataloader.load(
@@ -176,9 +219,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     end)
   end
 
-  def blockchain_address_id(%{id: id}, _args, %{
-        context: %{loader: loader}
-      }) do
+  def blockchain_address_id(%Sanbase.Comment{id: id}, _args, %{context: %{loader: loader}}) do
     loader
     |> Dataloader.load(SanbaseDataloader, :comment_blockchain_address_id, id)
     |> on_load(fn loader ->
@@ -186,7 +227,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     end)
   end
 
-  def comments_count(%{id: id}, _args, %{context: %{loader: loader}}) do
+  def comments_count(root, _args, %{context: %{loader: loader}}) do
+    root_address = root_to_blockchain_address(root)
+    id = root_address.id
+
     loader
     |> Dataloader.load(SanbaseDataloader, :blockchain_addresses_comments_count, id)
     |> on_load(fn loader ->
@@ -194,4 +238,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
        Dataloader.get(loader, SanbaseDataloader, :blockchain_addresses_comments_count, id) || 0}
     end)
   end
+
+  # Private functions
+
+  defp root_to_blockchain_address(%{blockchain_address: blockchain_address}),
+    do: blockchain_address
+
+  defp root_to_blockchain_address(%{address: _} = blockchain_address), do: blockchain_address
+
+  defp root_to_raw_address(%{blockchain_address: %{address: address}}), do: address
+  defp root_to_raw_address(%{address: address}), do: address
 end

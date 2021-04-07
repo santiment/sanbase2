@@ -48,8 +48,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :timeline_events_comments_count,
     :blockchain_addresses_comments_count,
     :short_urls_comments_count,
-    :project_by_slug,
-    :social_volume_query
+    :project_by_slug
   ]
 
   def query(queryable, args) do

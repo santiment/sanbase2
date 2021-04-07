@@ -40,13 +40,13 @@ defmodule Sanbase.SocialData.Sentiment do
   end
 
   defp sentiment_request(selector, from, to, interval, source, type) do
-    with {:ok, search_term} <- SocialHelper.social_metrics_selector_handler(selector) do
+    with {:ok, search_text} <- SocialHelper.social_metrics_selector_handler(selector) do
       url = "#{metrics_hub_url()}/sentiment_#{type}"
 
       options = [
         recv_timeout: @recv_timeout,
         params: [
-          search_term |> SocialHelper.handle_search_term(),
+          {"search_text", search_text},
           {"from_timestamp", from |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
           {"to_timestamp", to |> DateTime.truncate(:second) |> DateTime.to_iso8601()},
           {"interval", interval},

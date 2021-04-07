@@ -1,4 +1,7 @@
 defmodule Sanbase.SocialData.SocialHelper do
+  alias Sanbase.Model.Project
+  alias Sanbase.Model.Project.SocialVolumeQuery
+
   @sources [:telegram, :professional_traders_chat, :reddit, :discord, :twitter, :bitcointalk]
 
   def sources(), do: @sources
@@ -8,26 +11,27 @@ defmodule Sanbase.SocialData.SocialHelper do
   end
 
   def social_metrics_selector_handler(%{slug: slug}) when is_binary(slug) do
-    # We let metricshub ask sanbase back for the social volume query
-    # This is done so that the social volume query that requires all projects is taken
-    # This will leverage the caching, so it won't be that slow
-    {:ok, %{slug: slug}}
+    slug
+    |> Project.by_slug(only_preload: [:social_volume_query])
+    |> case do
+      %Project{social_volume_query: %{query: query_text}}
+      when not is_nil(query_text) ->
+        {:ok, query_text}
+
+      %Project{} = project ->
+        {:ok, SocialVolumeQuery.default_query(project)}
+
+      _ ->
+        {:error, "Invalid slug"}
+    end
   end
 
   def social_metrics_selector_handler(%{text: search_text}) do
-    {:ok, %{text: search_text}}
+    {:ok, search_text}
   end
 
   def social_metrics_selector_handler(_args) do
     {:error, "Invalid argument please input a slug or search_text"}
-  end
-
-  def handle_search_term(%{slug: slug}) do
-    {"slug", slug}
-  end
-
-  def handle_search_term(%{text: search_text}) do
-    {"search_text", search_text |> URI.encode()}
   end
 
   def split_by_source(str) do

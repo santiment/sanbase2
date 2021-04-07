@@ -37,7 +37,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersTypes do
     field(:filter, list_of(:wallet_hunters_filter_object))
     field(:sort_by, :wallet_hunters_sort_object)
     field(:page, :integer, default_value: 1)
-    field(:page_size, :integer, default_value: 10)
+    field(:page_size, :integer, default_value: 20)
     field(:type, :wallet_hunter_proposal_types, default_value: :all)
   end
 

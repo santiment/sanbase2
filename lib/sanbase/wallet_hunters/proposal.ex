@@ -197,7 +197,7 @@ defmodule Sanbase.WalletHunters.Proposal do
 
   defp paginate(response, page, page_size) do
     page = page || 1
-    page_size = page_size || 10
+    page_size = page_size || 20
     start_index = (page - 1) * page_size
     Enum.slice(response, start_index, page_size)
   end

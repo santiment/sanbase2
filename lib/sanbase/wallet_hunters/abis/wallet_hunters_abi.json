@@ -1,7 +1,10 @@
 {
     "networks": {
         "rinkeby": {
-            "address": "0x772e255402EEE3Fa243CB17AF58001f40Da78d90"
+            "address": "0xA02a47f7ee790c9836D7fE2aAE9e9972f9349336"
+        },
+        "ropsten": {
+            "address": "0x63c65fD98380fF02935840090Eab0fAC491eb030"
         }
     },
     "abi": [
@@ -63,11 +66,17 @@
                     "internalType": "uint256",
                     "name": "minimalDepositForSheriff",
                     "type": "uint256"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "uint256",
+                    "name": "requestReward",
+                    "type": "uint256"
                 }
             ],
             "name": "ConfigurationChanged",
             "type": "event",
-            "signature": "0xda4281c14b22d30368ef10494e51dffececd1b7d8e9fcffd1da22890398d4260"
+            "signature": "0x34eabf6ce26618d827a5f39d913b92218ef543e3b7d20c654c167e645c91fabe"
         },
         {
             "anonymous": false,
@@ -543,6 +552,11 @@
                     "internalType": "uint256",
                     "name": "minimalDepositForSheriff",
                     "type": "uint256"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "requestReward",
+                    "type": "uint256"
                 }
             ],
             "stateMutability": "view",
@@ -610,53 +624,6 @@
             "type": "function",
             "constant": true,
             "signature": "0x248a9ca3"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "bytes32",
-                    "name": "role",
-                    "type": "bytes32"
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "index",
-                    "type": "uint256"
-                }
-            ],
-            "name": "getRoleMember",
-            "outputs": [
-                {
-                    "internalType": "address",
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "stateMutability": "view",
-            "type": "function",
-            "constant": true,
-            "signature": "0x9010d07c"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "bytes32",
-                    "name": "role",
-                    "type": "bytes32"
-                }
-            ],
-            "name": "getRoleMemberCount",
-            "outputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "stateMutability": "view",
-            "type": "function",
-            "constant": true,
-            "signature": "0xca15c873"
         },
         {
             "inputs": [
@@ -833,6 +800,27 @@
             "signature": "0x72f702f3"
         },
         {
+            "inputs": [
+                {
+                    "internalType": "bytes4",
+                    "name": "interfaceId",
+                    "type": "bytes4"
+                }
+            ],
+            "name": "supportsInterface",
+            "outputs": [
+                {
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function",
+            "constant": true,
+            "signature": "0x01ffc9a7"
+        },
+        {
             "inputs": [],
             "name": "symbol",
             "outputs": [
@@ -918,21 +906,6 @@
             "signature": "0x23b872dd"
         },
         {
-            "inputs": [],
-            "name": "trustedForwarder",
-            "outputs": [
-                {
-                    "internalType": "address",
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "stateMutability": "view",
-            "type": "function",
-            "constant": true,
-            "signature": "0x7da0a877"
-        },
-        {
             "inputs": [
                 {
                     "internalType": "address",
@@ -973,13 +946,18 @@
                     "internalType": "uint256",
                     "name": "minimalDepositForSheriff_",
                     "type": "uint256"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "requestReward_",
+                    "type": "uint256"
                 }
             ],
             "name": "initialize",
             "outputs": [],
             "stateMutability": "nonpayable",
             "type": "function",
-            "signature": "0xdf8fa430"
+            "signature": "0xbb4a2509"
         },
         {
             "inputs": [
@@ -987,11 +965,6 @@
                     "internalType": "address",
                     "name": "hunter",
                     "type": "address"
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "reward",
-                    "type": "uint256"
                 }
             ],
             "name": "submitRequest",
@@ -1004,7 +977,7 @@
             ],
             "stateMutability": "nonpayable",
             "type": "function",
-            "signature": "0x8c3cbe3a"
+            "signature": "0x2c62c181"
         },
         {
             "inputs": [
@@ -1184,13 +1157,18 @@
                     "internalType": "uint256",
                     "name": "_minimalDepositForSheriff",
                     "type": "uint256"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "_requestReward",
+                    "type": "uint256"
                 }
             ],
             "name": "updateConfiguration",
             "outputs": [],
             "stateMutability": "nonpayable",
             "type": "function",
-            "signature": "0xe59375f1"
+            "signature": "0x0cff5166"
         },
         {
             "inputs": [],
@@ -1367,6 +1345,128 @@
             "type": "function",
             "constant": true,
             "signature": "0xe414be18"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "requestId",
+                    "type": "uint256"
+                }
+            ],
+            "name": "getVotesLength",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function",
+            "constant": true,
+            "signature": "0xfa06ab7f"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "requestId",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "startIndex",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "pageSize",
+                    "type": "uint256"
+                }
+            ],
+            "name": "getVotes",
+            "outputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "uint256",
+                            "name": "requestId",
+                            "type": "uint256"
+                        },
+                        {
+                            "internalType": "address",
+                            "name": "sheriff",
+                            "type": "address"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "amount",
+                            "type": "uint256"
+                        },
+                        {
+                            "internalType": "bool",
+                            "name": "voteFor",
+                            "type": "bool"
+                        }
+                    ],
+                    "internalType": "struct IWalletHunters.WalletVote[]",
+                    "name": "",
+                    "type": "tuple[]"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function",
+            "constant": true,
+            "signature": "0x809b2cb1"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "requestId",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "address",
+                    "name": "sheriff",
+                    "type": "address"
+                }
+            ],
+            "name": "getVote",
+            "outputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "uint256",
+                            "name": "requestId",
+                            "type": "uint256"
+                        },
+                        {
+                            "internalType": "address",
+                            "name": "sheriff",
+                            "type": "address"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "amount",
+                            "type": "uint256"
+                        },
+                        {
+                            "internalType": "bool",
+                            "name": "voteFor",
+                            "type": "bool"
+                        }
+                    ],
+                    "internalType": "struct IWalletHunters.WalletVote",
+                    "name": "",
+                    "type": "tuple"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function",
+            "constant": true,
+            "signature": "0xbc3f931f"
         },
         {
             "inputs": [
@@ -1558,37 +1658,6 @@
             "type": "function",
             "constant": true,
             "signature": "0x0ec6eb73"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "sheriff",
-                    "type": "address"
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "requestId",
-                    "type": "uint256"
-                }
-            ],
-            "name": "getVote",
-            "outputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "votes",
-                    "type": "uint256"
-                },
-                {
-                    "internalType": "bool",
-                    "name": "voteFor",
-                    "type": "bool"
-                }
-            ],
-            "stateMutability": "view",
-            "type": "function",
-            "constant": true,
-            "signature": "0x6b0dd90f"
         },
         {
             "inputs": [

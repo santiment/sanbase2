@@ -51,7 +51,7 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
         SUM(value)/1e18 AS amount
       FROM #{address_ordered_table()} FINAL
       PREWHERE
-        assetRefId = cityHash64('ETH_' || '#{@contract}') AND
+        assetRefId = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = 'uniswap' LIMIT 1) AND
         from = '0x090d4613473dee047c3f2706764f49e0821d256e' AND
         dt >= toDateTime(?1) AND
         dt < toDateTime(?2)
@@ -166,19 +166,11 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
   defp maybe_add_balances({:ok, data}, from, to) do
     addresses = Enum.map(data, & &1.address)
 
-    {:ok, balances} =
-      Sanbase.Clickhouse.HistoricalBalance.Erc20Balance.last_balance(
-        addresses,
-        @contract,
-        18,
-        from,
-        to
-      )
+    {:ok, balances} = Sanbase.Balance.last_balance_before(addresses, "uniswap", to)
 
     data =
       Enum.map(data, fn %{address: address} = elem ->
-        balance = Map.get(balances, address)
-        Map.put(elem, :balance, balance)
+        Map.put(elem, :balance, Map.get(balances, address))
       end)
 
     {:ok, data}

@@ -297,27 +297,30 @@ defmodule Sanbase.Balance.SqlQuery do
     {query, args}
   end
 
-  def last_balance_before_query(address, slug, decimals, blockchain, datetime) do
+  def last_balance_before_query(addresses, slug, decimals, blockchain, datetime) do
     query = """
     SELECT
+      address,
       argMax(value, dt) / ?5 AS last_value_before
     FROM (
       SELECT
+        address,
         arrayJoin(groupArrayMerge(values)) AS values_merged,
         values_merged.1 AS dt,
         values_merged.2 AS value
       FROM balances_aggregated
       WHERE
-        #{address_clause(address, argument_position: 1)} AND
+        #{address_clause(addresses, argument_position: 1)} AND
         blockchain = ?2 AND
         asset_ref_id = ( SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = ?3 LIMIT 1 )
       GROUP BY address, blockchain, asset_ref_id
       HAVING dt < toDateTime(?4)
     )
+    GROUP BY address
     """
 
     args = [
-      address,
+      addresses,
       blockchain,
       slug,
       DateTime.to_unix(datetime),

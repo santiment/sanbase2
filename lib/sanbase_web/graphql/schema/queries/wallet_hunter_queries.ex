@@ -1,8 +1,6 @@
 defmodule SanbaseWeb.Graphql.Schema.WalletHunterQueries do
   use Absinthe.Schema.Notation
 
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
-
   alias SanbaseWeb.Graphql.Resolvers.WalletHuntersResolver
 
   object :wallet_hunter_queries do
@@ -11,7 +9,7 @@ defmodule SanbaseWeb.Graphql.Schema.WalletHunterQueries do
 
       arg(:selector, :wallet_hunters_proposals_selector_input_object)
 
-      cache_resolve(&WalletHuntersResolver.wallet_hunters_proposals/3)
+      resolve(&WalletHuntersResolver.wallet_hunters_proposals/3)
     end
 
     field :wallet_hunters_proposal, :wallet_hunter_proposal do
@@ -19,7 +17,7 @@ defmodule SanbaseWeb.Graphql.Schema.WalletHunterQueries do
 
       arg(:id, non_null(:integer))
 
-      cache_resolve(&WalletHuntersResolver.wallet_hunters_proposal/3)
+      resolve(&WalletHuntersResolver.wallet_hunters_proposal/3)
     end
   end
 
@@ -34,7 +32,7 @@ defmodule SanbaseWeb.Graphql.Schema.WalletHunterQueries do
       arg(:hunter_address, non_null(:string))
       arg(:user_labels, list_of(:string), default_value: [])
 
-      cache_resolve(&WalletHuntersResolver.create_wallet_hunter_proposal/3)
+      resolve(&WalletHuntersResolver.create_wallet_hunter_proposal/3)
     end
   end
 end

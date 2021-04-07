@@ -79,14 +79,14 @@ defmodule Sanbase.WalletHunters.Proposal do
 
   def fetch_by_id(proposal_id) do
     with proposal <- Contract.wallet_proposal(proposal_id) do
-      proposal =
-        proposal
-        |> List.wrap()
-        |> map_response()
-        |> merge_db_proposals()
-        |> hd()
-
-      {:ok, proposal}
+      proposal
+      |> List.wrap()
+      |> map_response()
+      |> merge_db_proposals()
+      |> case do
+        [] -> {:error, "No proposal with id #{proposal_id} found."}
+        [proposal | _] -> {:ok, proposal}
+      end
     end
   end
 
@@ -210,6 +210,8 @@ defmodule Sanbase.WalletHunters.Proposal do
       db_proposals
       |> Enum.into(%{}, fn %{proposal_id: proposal_id} = item -> {proposal_id, item} end)
 
+    proposals = Enum.filter(proposals, &(id_proposal_map[&1[:proposal_id]] != nil))
+
     proposals
     |> Enum.map(fn proposal ->
       db_proposal = id_proposal_map[proposal[:proposal_id]] || %{}
@@ -220,7 +222,7 @@ defmodule Sanbase.WalletHunters.Proposal do
   defp fetch_by_proposal_ids(proposal_ids) do
     from(p in __MODULE__,
       where: p.proposal_id in ^proposal_ids,
-      join: u in assoc(p, :user),
+      left_join: u in assoc(p, :user),
       select: %{
         proposal_id: p.proposal_id,
         title: p.title,

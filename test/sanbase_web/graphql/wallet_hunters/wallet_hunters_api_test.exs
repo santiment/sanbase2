@@ -6,8 +6,16 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
 
   setup do
     user = insert(:user)
-    proposal = insert(:wallet_hunters_proposal, user: user)
+
+    proposal =
+      insert(:wallet_hunters_proposal,
+        proposal_id: 2,
+        user: user,
+        hunter_address: "0x26caae548b7cecf98da12ccaaa633d6d140447aa"
+      )
+
     conn = setup_jwt_auth(build_conn(), user)
+
     {:ok, conn: conn, user: user, proposal: proposal}
   end
 
@@ -137,6 +145,12 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
   end
 
   describe "Fetch proposals" do
+    setup do
+      insert(:wallet_hunters_proposal, proposal_id: 0)
+      insert(:wallet_hunters_proposal, proposal_id: 1)
+      :ok
+    end
+
     test "when fetching all" do
       Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_new_filter/1, filter_id_resp())
       |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_get_filter_logs/1, votes_resp())
@@ -399,7 +413,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         "hunterAddressLabels" => [],
         "proposedAddress" => nil,
         "proposedAddressLabels" => [],
-        "userLabels" => nil,
+        "userLabels" => [],
         "votes" => [
           %{
             "amount" => 50.0,
@@ -427,7 +441,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         "hunterAddressLabels" => [],
         "proposedAddress" => nil,
         "proposedAddressLabels" => [],
-        "userLabels" => nil,
+        "userLabels" => [],
         "votes" => [],
         "votesCount" => 0
       },
@@ -441,8 +455,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         "reward" => 12341.0,
         "sheriffsRewardShare" => 2.0e3,
         "state" => "ACTIVE",
-        "text" => "text",
-        "title" => "title",
+        "text" => nil,
+        "title" => nil,
         "user" => %{"email" => "<email hidden>"},
         "votesAgainst" => 0.0,
         "votesFor" => 0.0,

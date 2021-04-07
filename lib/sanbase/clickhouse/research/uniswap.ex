@@ -42,7 +42,7 @@ defmodule Sanbase.Clickhouse.Research.Uniswap do
       sum(value)/1e18 AS token_value
     FROM #{address_ordered_table()} FINAL
     PREWHERE
-      assetRefId = cityHash64('ETH_' || '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984') AND
+      assetRefId = (SELECT asset_ref_id FROM asset_metadata FINAL WHERE name = 'uniswap' LIMIT 1) AND
       from = '0x090d4613473dee047c3f2706764f49e0821d256e'
 
     UNION ALL

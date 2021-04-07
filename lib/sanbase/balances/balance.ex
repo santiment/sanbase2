@@ -45,11 +45,11 @@ defmodule Sanbase.Balance do
     end
   end
 
-  def last_balance_before(address, slug, datetime) do
+  def last_balance_before(address_or_addresses, slug, datetime) do
     with {:ok, {decimals, blockchain}} <- info_by_slug(slug) do
-      address = transform_address(address, blockchain)
+      addresses = List.wrap(address_or_addresses) |> transform_address(blockchain)
 
-      do_last_balance_before(address, slug, decimals, blockchain, datetime)
+      do_last_balance_before(addresses, slug, decimals, blockchain, datetime)
     end
   end
 
@@ -120,13 +120,21 @@ defmodule Sanbase.Balance do
     end)
   end
 
-  defp do_last_balance_before(address, slug, decimals, blockchain, datetime) do
-    {query, args} = last_balance_before_query(address, slug, decimals, blockchain, datetime)
+  defp do_last_balance_before(address_or_addresse, slug, decimals, blockchain, datetime) do
+    addresses = address_or_addresse |> List.wrap() |> Enum.map(&transform_address(&1, blockchain))
+    {query, args} = last_balance_before_query(addresses, slug, decimals, blockchain, datetime)
 
     case ClickhouseRepo.query_transform(query, args, & &1) do
-      {:ok, [[balance]]} -> {:ok, balance}
-      {:ok, []} -> {:ok, 0}
-      {:error, error} -> {:error, error}
+      {:ok, list} ->
+        # If an address does not own the given coin/token, it will be missing from the
+        # result. Iterate it like this in order to fill the missing values with 0
+        map = Map.new(list, fn [address, balance] -> {address, balance} end)
+        result = Enum.into(addresses, %{}, &{&1, Map.get(map, &1, 0)})
+
+        {:ok, result}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -142,7 +150,10 @@ defmodule Sanbase.Balance do
       }
     end)
     |> maybe_update_first_balance(fn ->
-      do_last_balance_before(address, slug, decimals, blockchain, from)
+      case do_last_balance_before(address, slug, decimals, blockchain, from) do
+        {:ok, %{^address => balance}} -> {:ok, balance}
+        {:error, error} -> {:error, error}
+      end
     end)
     |> maybe_fill_gaps_last_seen_balance()
   end
@@ -166,7 +177,10 @@ defmodule Sanbase.Balance do
       end
     )
     |> maybe_update_first_balance(fn ->
-      do_last_balance_before(address, slug, decimals, blockchain, from)
+      case do_last_balance_before(address, slug, decimals, blockchain, from) do
+        {:ok, %{^address => balance}} -> {:ok, balance}
+        {:error, error} -> {:error, error}
+      end
     end)
     |> maybe_fill_gaps_last_seen_balance()
   end

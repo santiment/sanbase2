@@ -79,8 +79,8 @@ The Settings module of every alert should implement 2 things:
 - The `Sanbase.Alert.Trigger.Settings.Behaviour` behaviour
   - It includes 3 simple functions - `type/0` which always returns the type of
     the alert and `post_create_process/1` and `post_update_process/1`, which in
-    all but one case returns the atom `:nocachange`
-- The `Sanbae.Alert.Trigger.Settings` protocol, which implements the
+    all but one case returns the atom `:nochange`
+- The `Sanbase.Alert.Trigger.Settings` protocol, which implements the
   `evaluate/2`, `triggered?/1` and `cache_key/1` functions.
 
 The evaluation of the trigger should update the trigger struct and properly set
@@ -150,7 +150,7 @@ The first argument accepts a plain map, but in most cases the provided value is 
 For every alert, there is a module that implements historical trigger points.
 This is used when deciding how to configure the alert. It should return, given
 some alert settings, when in the past they should have triggered the alert.
-Example module: Sanbase.Alert.History.MetricHistory
+Example module: `Sanbase.Alert.History.MetricHistory`
 
 These modules are used to build these charts (more precisely, to return where we
 should put the red points).

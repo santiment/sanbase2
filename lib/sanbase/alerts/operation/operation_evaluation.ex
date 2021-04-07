@@ -22,13 +22,29 @@ defmodule Sanbase.Alert.OperationEvaluation do
 
   # Above
   def operation_triggered?(%{current: nil}, %{above: _}), do: false
-  def operation_triggered?(%{current: value}, %{above: above}), do: value >= above
-  def operation_triggered?(value, %{above: above}), do: value >= above
+  def operation_triggered?(%{current: value}, %{above: above}), do: value > above
+  def operation_triggered?(value, %{above: above}), do: value > above
 
   # Below
   def operation_triggered?(%{current: nil}, %{below: _}), do: false
-  def operation_triggered?(%{current: value}, %{below: below}), do: value <= below
-  def operation_triggered?(value, %{below: below}), do: value <= below
+  def operation_triggered?(%{current: value}, %{below: below}), do: value < below
+  def operation_triggered?(value, %{below: below}), do: value < below
+
+  # Above or equal
+  def operation_triggered?(%{current: nil}, %{above_or_equal: _}), do: false
+
+  def operation_triggered?(%{current: value}, %{above_or_equal: _} = op),
+    do: operation_triggered?(value, op)
+
+  def operation_triggered?(value, %{above_or_equal: above_or_equal}), do: value >= above_or_equal
+
+  # Below or equal
+  def operation_triggered?(%{current: nil}, %{below_or_equal: _}), do: false
+
+  def operation_triggered?(%{current: value}, %{below_or_equal: _} = op),
+    do: operation_triggered?(value, op)
+
+  def operation_triggered?(value, %{below_or_equal: below_or_equal}), do: value <= below_or_equal
 
   # Inside channel
   def operation_triggered?(%{current: nil}, %{inside_channel: _}), do: false

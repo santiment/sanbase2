@@ -14,6 +14,7 @@ defmodule Sanbase.Signal.SignalAdapter do
   @signals @signals_mapset |> Enum.to_list()
   @data_type_map FileHandler.data_type_map()
   @selectors_map FileHandler.selectors_map()
+  @human_readable_name_map FileHandler.human_readable_name_map()
 
   def has_signal?(signal) do
     case signal in @signals_mapset do
@@ -22,7 +23,23 @@ defmodule Sanbase.Signal.SignalAdapter do
     end
   end
 
+  @doc ~s"""
+  Get available aggregations
+  """
   def available_aggregations(), do: @aggregations
+
+  @doc ~s"""
+  Get the human readable name representation of a given signal
+  """
+  def human_readable_name(signal) do
+    case Map.get(@human_readable_name_map, signal) do
+      nil ->
+        signal_not_available_error(signal)
+
+      human_readable_name ->
+        human_readable_name
+    end
+  end
 
   @impl Sanbase.Signal.Behaviour
   def available_signals(), do: @signals

@@ -68,16 +68,34 @@ defmodule Sanbase.Alert.Validation.Operation do
 
   # Validate combinators
   def valid_operation?(%{some_of: list}) when is_list(list), do: valid_combinator_operation?(list)
+
   def valid_operation?(%{all_of: list}) when is_list(list), do: valid_combinator_operation?(list)
+
   def valid_operation?(%{none_of: list}) when is_list(list), do: valid_combinator_operation?(list)
 
   # Validate percent changes
-  def valid_operation?(%{percent_up: percent}) when is_valid_percent_change(percent), do: :ok
-  def valid_operation?(%{percent_down: percent}) when is_valid_percent_change(percent), do: :ok
+  def valid_operation?(%{percent_up: percent} = map)
+      when map_size(map) == 1 and is_valid_percent_change(percent),
+      do: :ok
+
+  def valid_operation?(%{percent_down: percent} = map)
+      when map_size(map) == 1 and is_valid_percent_change(percent),
+      do: :ok
 
   # Validate absolute values
-  def valid_operation?(%{above: above}) when is_number(above), do: :ok
-  def valid_operation?(%{below: below}) when is_number(below), do: :ok
+  def valid_operation?(%{above: above} = map) when map_size(map) == 1 and is_number(above),
+    do: :ok
+
+  def valid_operation?(%{below: below} = map) when map_size(map) == 1 and is_number(below),
+    do: :ok
+
+  def valid_operation?(%{above_or_equal: above_or_equal} = map)
+      when map_size(map) == 1 and is_number(above_or_equal),
+      do: :ok
+
+  def valid_operation?(%{below_or_equal: below_or_equal} = map)
+      when map_size(map) == 1 and is_number(below_or_equal),
+      do: :ok
 
   # Validate channels
   def valid_operation?(%{inside_channel: [min, max]}),
@@ -87,8 +105,11 @@ defmodule Sanbase.Alert.Validation.Operation do
     do: valid_channel_operation?(:outside_channel, [min, max])
 
   # Validate absolute value changes
-  def valid_operation?(%{amount_up: value}) when is_number(value), do: :ok
-  def valid_operation?(%{amount_down: value}) when is_number(value), do: :ok
+  def valid_operation?(%{amount_up: value} = map) when map_size(map) == 1 and is_number(value),
+    do: :ok
+
+  def valid_operation?(%{amount_down: value} = map) when map_size(map) == 1 and is_number(value),
+    do: :ok
 
   # Validate screener alert
   def valid_operation?(%{selector: %{watchlist_id: id}}) when is_integer(id) and id > 0, do: :ok

@@ -3,6 +3,7 @@ defmodule Sanbase.Alert.Type do
   @type channel :: String.t() | list(String.t() | {String.t(), String.t()})
   @type target :: String.t()
   @type metric :: String.t()
+  @type signal :: String.t()
   @type complex_target :: target | list(target) | map()
   @type filtered_target :: %{list: list(), type: trigger_type()}
   @type asset :: String.t()

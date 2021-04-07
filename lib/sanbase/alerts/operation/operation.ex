@@ -4,7 +4,7 @@ defmodule Sanbase.Alert.Operation do
   """
 
   @percent_operations [:percent_up, :percent_down]
-  @absolute_value_operations [:above, :below]
+  @absolute_value_operations [:above, :below, :above_or_equal, :below_or_equal]
   @absolute_change_operations [:amount_up, :amount_down]
   @absolute_operations @absolute_change_operations ++ @absolute_value_operations
   @channel_operations [:inside_channel, :outside_channel]

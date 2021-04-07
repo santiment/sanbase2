@@ -9,7 +9,8 @@ defmodule Sanbase.Alert.List do
       Trigger.PriceVolumeDifferenceTriggerSettings,
       Trigger.ScreenerTriggerSettings,
       Trigger.TrendingWordsTriggerSettings,
-      Trigger.WalletTriggerSettings
+      Trigger.WalletTriggerSettings,
+      Trigger.SignalTriggerSettings
     ]
   end
 end

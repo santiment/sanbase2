@@ -87,13 +87,11 @@ defmodule Sanbase.Validation do
   end
 
   def valid_metric?(metric) do
-    case metric in Sanbase.Metric.available_metrics() do
-      true ->
-        :ok
+    Sanbase.Metric.has_metric?(metric)
+  end
 
-      false ->
-        {:error, "#{inspect(metric)} is not a valid metric."}
-    end
+  def valid_signal?(signal) do
+    Sanbase.Signal.has_signal?(signal)
   end
 
   def valid_5m_min_interval_metric?(metric) do

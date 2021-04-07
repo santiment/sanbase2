@@ -14,6 +14,7 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
 
   def aggregation(:last, value_column, dt_column), do: "argMax(#{value_column}, #{dt_column})"
   def aggregation(:first, value_column, dt_column), do: "argMin(#{value_column}, #{dt_column})"
+  def aggregation(:count, value_column, _dt_column), do: "coalesce(count(#{value_column}), 0)"
   def aggregation(aggr, value_column, _dt_column), do: "#{aggr}(#{value_column})"
 
   def generate_comparison_string(column, :inside_channel, threshold),

@@ -179,7 +179,7 @@ defmodule Sanbase.Alert.TriggerPayloadTest do
       target: %{slug: slug},
       channel: channel,
       time_window: time_window,
-      operation: %{above: 5}
+      operation: %{above_or_equal: 5}
     }
 
     {:ok, _trigger} =

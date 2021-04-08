@@ -35,6 +35,10 @@ defmodule Sanbase.Signal do
     SignalAdapter.first_datetime(signal, selector)
   end
 
+  def raw_data(signals, from, to) do
+    SignalAdapter.raw_data(signals, from, to)
+  end
+
   def timeseries_data(signal, selector, from, to, interval, aggregation) do
     SignalAdapter.timeseries_data(signal, selector, from, to, interval, aggregation)
   end

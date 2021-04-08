@@ -43,6 +43,8 @@ defmodule Sanbase.Signal.FileHandler do
   @aggregations [:none] ++ Sanbase.Metric.SqlQuery.Helper.aggregations()
 
   @signal_map Helper.name_to_field_map(@signals_json, "signal")
+  @name_to_signal_map @signal_map
+  @signal_to_name_map Map.new(@name_to_signal_map, fn {k, v} -> {v, k} end)
   @access_map Helper.name_to_field_map(@signals_json, "access", &String.to_atom/1)
   @table_map Helper.name_to_field_map(@signals_json, "table")
   @aggregation_map Helper.name_to_field_map(@signals_json, "aggregation", &String.to_atom/1)
@@ -67,6 +69,8 @@ defmodule Sanbase.Signal.FileHandler do
   def table_map(), do: @table_map
   def data_type_map(), do: @data_type_map
   def selectors_map(), do: @selectors_map
+  def name_to_signal_map(), do: @name_to_signal_map
+  def signal_to_name_map(), do: @signal_to_name_map
 
   def signals_with_access(level) when level in [:free, :restricted] do
     @access_map

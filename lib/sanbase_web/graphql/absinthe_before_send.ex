@@ -192,6 +192,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
 
   defp construct_query_name({:get_metric, metric}), do: "getMetric|#{metric}"
   defp construct_query_name({:get_anomaly, anomaly}), do: "getAnomaly|#{anomaly}"
+  defp construct_query_name({:get_signal, signal}), do: "getSignal|#{signal}"
   defp construct_query_name(query), do: query
 
   defp remote_ip(blueprint) do

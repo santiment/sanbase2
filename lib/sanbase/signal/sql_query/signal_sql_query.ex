@@ -13,6 +13,10 @@ defmodule Sanbase.Signal.SqlQuery do
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
   import Sanbase.Metric.SqlQuery.Helper, only: [aggregation: 3, asset_id_filter: 2]
 
+  alias Sanbase.Signal.FileHandler
+
+  @name_to_signal_map FileHandler.name_to_signal_map()
+
   schema @table do
     field(:datetime, :utc_datetime, source: :dt)
     field(:value, :float)
@@ -54,7 +58,7 @@ defmodule Sanbase.Signal.SqlQuery do
     """
 
     args = [
-      signal
+      Map.get(@name_to_signal_map, signal)
     ]
 
     {query, args}
@@ -70,9 +74,45 @@ defmodule Sanbase.Signal.SqlQuery do
     """
 
     args = [
-      signal,
+      Map.get(@name_to_signal_map, signal),
       slug
     ]
+
+    {query, args}
+  end
+
+  def raw_data_query(signals, from, to) do
+    # Clickhouse does not support multiple joins with using, so there's an extra
+    # nesting just for that
+
+    query = """
+    SELECT
+      dt, signal, slug, value, metadata
+    FROM(
+      SELECT
+        toUnixTimestamp(dt) AS dt, signal, asset_id, value, metadata
+      FROM signals FINAL
+      ANY LEFT JOIN (
+        SELECT signal_id, name AS signal FROM signal_metadata FINAL
+      ) USING signal_id
+      PREWHERE
+        #{maybe_filter_signals(signals, argument_position: 3, trailing_and: true)}
+        dt >= toDateTime(?1) AND
+        dt < toDateTime(?2) AND
+        isNotNull(value) AND NOT isNaN(value)
+    )
+    ANY LEFT JOIN (
+      SELECT asset_id, name AS slug FROM asset_metadata FINAL
+    ) USING asset_id
+    """
+
+    args = [from |> DateTime.to_unix(), to |> DateTime.to_unix()]
+
+    args =
+      case signals do
+        :all -> args
+        [_ | _] -> args ++ [signals]
+      end
 
     {query, args}
   end
@@ -96,7 +136,7 @@ defmodule Sanbase.Signal.SqlQuery do
     args = [
       from |> DateTime.to_unix(),
       to |> DateTime.to_unix(),
-      signal,
+      Map.get(@name_to_signal_map, signal),
       slug_or_slugs
     ]
 
@@ -131,7 +171,7 @@ defmodule Sanbase.Signal.SqlQuery do
       str_to_sec(interval),
       from |> DateTime.to_unix(),
       to |> DateTime.to_unix(),
-      signal,
+      Map.get(@name_to_signal_map, signal),
       slug_or_slugs
     ]
 
@@ -164,12 +204,23 @@ defmodule Sanbase.Signal.SqlQuery do
     """
 
     args = [
-      signal,
+      Map.get(@name_to_signal_map, signal),
       from |> DateTime.to_unix(),
       to |> DateTime.to_unix(),
       slug_or_slugs
     ]
 
     {query, args}
+  end
+
+  defp maybe_filter_signals(:all, _opts), do: ""
+
+  defp maybe_filter_signals([_ | _], opts) do
+    argument_position = Keyword.fetch!(opts, :argument_position)
+    trailing_and = if Keyword.get(opts, :trailing_and), do: " AND", else: ""
+
+    "signal_id IN ( SELECT signal_id FROM signal_metadata FINAL PREWHERE name in (?#{
+      argument_position
+    }))" <> trailing_and
   end
 end

@@ -19,6 +19,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
     end
   end
 
+  def get_raw_signals(_root, %{from: from, to: to} = args, _resolution) do
+    signals = Map.get(args, :signals, :all)
+    Signal.raw_data(signals, from, to)
+  end
+
   def get_available_signals(_root, _args, _resolution), do: {:ok, Signal.available_signals()}
 
   def get_available_slugs(_root, _args, %{source: %{signal: signal}}),

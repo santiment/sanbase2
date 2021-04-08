@@ -2,7 +2,7 @@ defmodule Sanbase.Signal.SignalAdapter do
   @behaviour Sanbase.Signal.Behaviour
 
   import Sanbase.Signal.SqlQuery
-  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1]
+  import Sanbase.Utils.Transform, only: [maybe_unwrap_ok_value: 1, maybe_apply_function: 2]
 
   alias Sanbase.Signal.FileHandler
   alias Sanbase.ClickhouseRepo
@@ -15,6 +15,7 @@ defmodule Sanbase.Signal.SignalAdapter do
   @data_type_map FileHandler.data_type_map()
   @selectors_map FileHandler.selectors_map()
   @human_readable_name_map FileHandler.human_readable_name_map()
+  @signal_to_name_map FileHandler.signal_to_name_map()
 
   def has_signal?(signal) do
     case signal in @signals_mapset do
@@ -48,7 +49,10 @@ defmodule Sanbase.Signal.SignalAdapter do
   def available_signals(%{slug: slug}) when is_binary(slug) do
     {query, args} = available_signals_query(slug)
 
-    ClickhouseRepo.query_transform(query, args, fn [signal] -> signal end)
+    ClickhouseRepo.query_transform(query, args, fn [signal] ->
+      Map.get(@signal_to_name_map, signal)
+    end)
+    |> maybe_apply_function(fn list -> Enum.reject(list, &is_nil/1) end)
   end
 
   @impl Sanbase.Signal.Behaviour
@@ -80,6 +84,22 @@ defmodule Sanbase.Signal.SignalAdapter do
       DateTime.from_unix!(datetime)
     end)
     |> maybe_unwrap_ok_value()
+  end
+
+  @impl Sanbase.Signal.Behaviour
+  def raw_data(signals, from, to) do
+    {query, args} = raw_data_query(signals, from, to)
+
+    ClickhouseRepo.query_transform(query, args, fn [unix, signal, slug, value, metadata] ->
+      %{
+        datetime: DateTime.from_unix!(unix),
+        signal: Map.get(@signal_to_name_map, signal),
+        slug: slug,
+        value: value,
+        metadata: Jason.decode!(metadata)
+      }
+    end)
+    |> maybe_apply_function(fn list -> Enum.filter(list, & &1.signal) end)
   end
 
   @impl Sanbase.Signal.Behaviour

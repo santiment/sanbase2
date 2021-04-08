@@ -13,6 +13,14 @@ defmodule SanbaseWeb.Graphql.SignalTypes do
     field(:slugs, list_of(:string))
   end
 
+  object :raw_signal do
+    field(:datetime, non_null(:datetime))
+    field(:slug, non_null(:string))
+    field(:signal, non_null(:string))
+    field(:value, non_null(:float))
+    field(:metadata, non_null(:json))
+  end
+
   object :signal_data do
     field(:datetime, non_null(:datetime))
     field(:value, :float)

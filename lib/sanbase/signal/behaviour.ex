@@ -16,6 +16,15 @@ defmodule Sanbase.Signal.Behaviour do
         }
 
   @type timeseries_data_point :: %{datetime: Datetime.t(), value: float(), metadata: list(map())}
+
+  @type raw_data_point :: %{
+          datetime: Datetime.t(),
+          value: float(),
+          signal: String.t(),
+          slug: String.t(),
+          metadata: map()
+        }
+
   @type selector :: slug | map()
   @type aggregation :: nil | :any | :sum | :avg | :min | :max | :last | :first | :median
 
@@ -32,6 +41,8 @@ defmodule Sanbase.Signal.Behaviour do
 
   @type aggregated_timeseries_data_result :: {:ok, map()} | {:error, String.t()}
 
+  @type raw_data_result :: {:ok, list(raw_data_point())} | {:error, String.t()}
+
   # Callbacks
   @callback available_signals() :: list(signal)
 
@@ -42,6 +53,12 @@ defmodule Sanbase.Signal.Behaviour do
   @callback metadata(signal) :: metadata_result()
 
   @callback first_datetime(signal, selector | nil) :: first_datetime_result()
+
+  @callback raw_data(
+              signals :: :all | list(signal),
+              from :: DateTime.t(),
+              to :: DateTime.t()
+            ) :: raw_data_result()
 
   @callback timeseries_data(
               signal :: signal,

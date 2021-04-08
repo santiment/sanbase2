@@ -22,5 +22,16 @@ defmodule SanbaseWeb.Graphql.Schema.SignalQueries do
       meta(access: :free)
       cache_resolve(&SignalResolver.get_available_signals/3, ttl: 600)
     end
+
+    field :get_raw_signals, list_of(:raw_signal) do
+      meta(access: :free)
+      # TODO: Implement later. Now use all assets by default
+      # arg(:selector, ...)
+      arg(:signals, list_of(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      cache_resolve(&SignalResolver.get_raw_signals/3, ttl: 60, max_ttl_offset: 60)
+    end
   end
 end

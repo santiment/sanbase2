@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 11.10 (Debian 11.10-0+deb10u1)
--- Dumped by pg_dump version 11.10 (Debian 11.10-0+deb10u1)
+-- Dumped from database version 12.3
+-- Dumped by pg_dump version 12.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -128,8 +128,6 @@ $$;
 
 
 SET default_tablespace = '';
-
-SET default_with_oids = false;
 
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
@@ -4457,13 +4455,6 @@ CREATE INDEX timeline_event_comments_mapping_timeline_event_id_index ON public.t
 
 
 --
--- Name: timeline_events_user_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX timeline_events_user_id_index ON public.timeline_events USING btree (user_id);
-
-
---
 -- Name: timeline_events_user_id_inserted_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4608,13 +4599,6 @@ CREATE UNIQUE INDEX votes_timeline_event_id_user_id_index ON public.votes USING 
 --
 
 CREATE UNIQUE INDEX wallet_hunters_proposals_proposal_id_index ON public.wallet_hunters_proposals USING btree (proposal_id);
-
-
---
--- Name: watchlist_settings_user_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX watchlist_settings_user_id_index ON public.watchlist_settings USING btree (user_id);
 
 
 --
@@ -5693,4 +5677,3 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210323125906);
 INSERT INTO public."schema_migrations" (version) VALUES (20210330100652);
 INSERT INTO public."schema_migrations" (version) VALUES (20210406104622);
 INSERT INTO public."schema_migrations" (version) VALUES (20210406113235);
-INSERT INTO public."schema_migrations" (version) VALUES (20210408103523);

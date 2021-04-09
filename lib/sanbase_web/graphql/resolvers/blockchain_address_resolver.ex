@@ -143,20 +143,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
   end
 
   def infrastructure(root, _args, %{context: %{loader: loader}}) do
-    root_address = root_to_blockchain_address(root)
-    infrastructure_id = root_address.infrastructure_id
+    case root_to_blockchain_address(root) do
+      %{infrastructure: infrastructure} when is_binary(infrastructure) ->
+        {:ok, infrastructure}
 
-    loader
-    |> Dataloader.load(SanbaseDataloader, :infrastructure, infrastructure_id)
-    |> on_load(fn loader ->
-      {:ok,
-       Dataloader.get(
-         loader,
-         SanbaseDataloader,
-         :infrastructure,
-         infrastructure_id
-       )}
-    end)
+      %{infrastructure_id: infrastructure_id} ->
+        loader
+        |> Dataloader.load(SanbaseDataloader, :infrastructure, infrastructure_id)
+        |> on_load(fn loader ->
+          {:ok,
+           Dataloader.get(
+             loader,
+             SanbaseDataloader,
+             :infrastructure,
+             infrastructure_id
+           )}
+        end)
+    end
   end
 
   def balance(root, %{selector: selector}, %{context: %{loader: loader}}) do

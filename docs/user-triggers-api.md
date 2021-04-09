@@ -5,6 +5,7 @@
   - [Settings fields](#settings-fields)
   - [Examples](#examples)
     - [Example settings structure for `trending_words`](#example-settings-structure-for-trending_words)
+    - [Example settings structure for `signal_data`](#example-settings-structure-for-signal_data)
     - [Example settings structure for `price_volume_difference`](#example-settings-structure-for-price_volume_difference)
     - [Example settings structure for `wallet_movement`](#example-settings-structure-for-wallet_movement)
     - [Example settings structure for `metric_signal`](#example-settings-structure-for-metric_signal)

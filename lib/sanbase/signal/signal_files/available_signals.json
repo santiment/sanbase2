@@ -9,5 +9,49 @@
     "min_interval": "1m",
     "table": "signals",
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Old Coins Moved",
+    "name": "old_coins_moved",
+    "signal": "old_coins_moved",
+    "access": "free",
+    "selectors": ["slug"],
+    "aggregation": "count",
+    "min_interval": "1m",
+    "table": "signals",
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Large Transactions",
+    "name": "large_transactions",
+    "signal": "large_transactions",
+    "access": "free",
+    "selectors": ["slug"],
+    "aggregation": "count",
+    "min_interval": "1m",
+    "table": "signals",
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Large Exchange Deposit",
+    "name": "large_exchange_deposit",
+    "signal": "large_exchange_deposit",
+    "access": "free",
+    "selectors": ["slug"],
+    "aggregation": "count",
+    "min_interval": "1m",
+    "table": "signals",
+    "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Large Exchange Withdrawal",
+    "name": "large_exchange_withdrawal",
+    "signal": "large_exchange_withdrawal",
+    "access": "free",
+    "selectors": ["slug"],
+    "aggregation": "count",
+    "min_interval": "1m",
+    "table": "signals",
+    "data_type": "timeseries"
   }
 ]

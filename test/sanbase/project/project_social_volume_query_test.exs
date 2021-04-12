@@ -5,12 +5,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiSocialVolumeQuery do
 
   alias Sanbase.Model.Project
 
-  test "default query contains project name, slug and ticker" do
+  test "default query contains lowercased project name, slug and ticker" do
     p1 = insert(:random_erc20_project)
     query = Project.SocialVolumeQuery.default_query(p1)
-    assert String.contains?(query, p1.ticker)
-    assert String.contains?(query, p1.name)
-    assert String.contains?(query, p1.slug)
+    assert String.contains?(query, String.downcase(p1.ticker))
+    assert String.contains?(query, String.downcase(p1.name))
+    assert String.contains?(query, String.downcase(p1.slug))
     assert String.contains?(query, "OR")
   end
 end

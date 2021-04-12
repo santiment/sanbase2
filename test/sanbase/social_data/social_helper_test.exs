@@ -14,7 +14,7 @@ defmodule Sanbase.SocialHelperTest do
       Sanbase.Factory.insert(:project, %{ticker: "SAN", name: "Santiment", slug: "santiment"})
 
       assert SocialHelper.social_metrics_selector_handler(%{slug: "santiment"}) ==
-               {:ok, ~s/"SAN" OR "Santiment" OR "santiment"/}
+               {:ok, ~s/"san" OR "santiment"/}
     end
 
     test "with text: success" do

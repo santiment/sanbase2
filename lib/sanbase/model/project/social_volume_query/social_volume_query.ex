@@ -23,6 +23,8 @@ defmodule Sanbase.Model.Project.SocialVolumeQuery do
 
     [ticker, name, slug]
     |> Enum.reject(&is_nil/1)
+    |> Enum.map(&String.downcase/1)
+    |> Enum.uniq()
     |> Enum.map(fn elem -> ~s/"#{elem}"/ end)
     |> Enum.join(" OR ")
   end

@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
   use Absinthe.Schema.Notation
 
   import Absinthe.Resolution.Helpers
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
 
   alias SanbaseWeb.Graphql.SanbaseRepo
   alias SanbaseWeb.Graphql.Resolvers.UserListResolver
@@ -71,7 +71,7 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
     field(:updated_at, non_null(:naive_datetime))
 
     field(:stats, :watchlist_stats) do
-      cache_resolve(&UserListResolver.stats/3)
+      cache_resolve(&UserListResolver.stats/3, honor_do_not_cache_flag: true)
     end
 
     field(:historical_stats, list_of(:combined_projects_stats)) do
@@ -79,11 +79,11 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
       arg(:to, non_null(:datetime))
       arg(:interval, :interval, default_value: "1d")
 
-      cache_resolve(&UserListResolver.historical_stats/3)
+      cache_resolve(&UserListResolver.historical_stats/3, honor_do_not_cache_flag: true)
     end
 
     field(:settings, :watchlist_settings) do
-      cache_resolve(&UserListResolver.settings/3)
+      cache_resolve(&UserListResolver.settings/3, honor_do_not_cache_flag: true)
     end
   end
 end

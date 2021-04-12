@@ -3228,8 +3228,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Social Dominance Change (30d)",
     "name": "social_dominance_total_change_30d",
@@ -3246,8 +3245,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Balance Change (1d)",
     "name": "sentiment_balance_total_change_1d",
@@ -3264,8 +3262,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Balance Change (7d)",
     "name": "sentiment_balance_total_change_7d",
@@ -3282,8 +3279,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Sentiment Balance Change (30d)",
     "name": "sentiment_balance_total_change_30d",
@@ -3317,8 +3313,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Price in ETH Change (7d)",
     "name": "price_eth_change_7d",
@@ -3335,8 +3330,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Price in ETH Change (30d)",
     "name": "price_eth_change_30d",
@@ -3353,8 +3347,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-  ,
+  },
   {
     "human_readable_name": "Price in USD Change (1h)",
     "name": "price_usd_change_1h",
@@ -3371,8 +3364,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-  ,
+  },
   {
     "human_readable_name": "Price in BTC Change (1d)",
     "name": "price_btc_change_1d",
@@ -3389,8 +3381,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Price in BTC Change (7d)",
     "name": "price_btc_change_7d",
@@ -3407,8 +3398,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Price in BTC Change (30d)",
     "name": "price_btc_change_30d",
@@ -3442,8 +3432,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Network Realized Profit or Loss in USD Change (7d)",
     "name": "network_profit_loss_change_7d",
@@ -3460,8 +3449,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": false,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Network Realized Profit or Loss in USD Change (30d)",
     "name": "network_profit_loss_change_30d",
@@ -3495,8 +3483,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Number of Transactions Transferring More Than 100k USD Change (7d)",
     "name": "whale_transaction_count_100k_usd_to_inf_change_7d",
@@ -3513,8 +3500,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Number of Transactions Transferring More Than 100k USD Change (30d)",
     "name": "whale_transaction_count_100k_usd_to_inf_change_30d",
@@ -3531,8 +3517,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Number of Transactions Transferring More Than 1 million USD Change (1d)",
     "name": "whale_transaction_count_1m_usd_to_inf_change_1d",
@@ -3549,8 +3534,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Number of Transactions Transferring More Than 1 million USD Change (7d)",
     "name": "whale_transaction_count_1m_usd_to_inf_change_7d",
@@ -3567,8 +3551,7 @@
     "table": "intraday_metrics",
     "has_incomplete_data": true,
     "data_type": "timeseries"
-  }
-,
+  },
   {
     "human_readable_name": "Number of Transactions Transferring More Than 1 million USD Change (30d)",
     "name": "whale_transaction_count_1m_usd_to_inf_change_30d",

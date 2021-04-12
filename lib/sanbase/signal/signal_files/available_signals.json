@@ -53,5 +53,29 @@
     "min_interval": "1m",
     "table": "signals",
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Circulation Anomaly {{timebound_human_readable}}",
+    "name": "anomaly_circulation_{{timebound}}",
+    "signal": "anomalies_stack_circulation_{{timebound}}",
+    "timebound": [
+      "1d",
+      "7d",
+      "30d",
+      "60d",
+      "90d",
+      "180d",
+      "365d",
+      "2y",
+      "3y",
+      "5y",
+      "10y"
+    ],
+    "access": "free",
+    "selectors": ["slug"],
+    "aggregation": "count",
+    "min_interval": "1m",
+    "table": "signals",
+    "data_type": "timeseries"
   }
 ]

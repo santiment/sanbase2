@@ -2,6 +2,9 @@ defmodule Sanbase.Signal.FileHandler do
   @moduledoc false
 
   defmodule Helper do
+    alias Sanbase.TemplateEngine
+    alias Sanbase.DateTimeUtils
+
     def name_to_field_map(map, field, transform_fn \\ fn x -> x end) do
       map
       |> Enum.map(fn
@@ -24,6 +27,22 @@ defmodule Sanbase.Signal.FileHandler do
         end
       )
     end
+
+    def resolve_timebound_signals(signal_map, timebound_values) do
+      timebound_values
+      |> Enum.map(fn timebound ->
+        %{
+          signal_map
+          | "name" => TemplateEngine.run(signal_map["name"], %{timebound: timebound}),
+            "signal" => TemplateEngine.run(signal_map["signal"], %{timebound: timebound}),
+            "human_readable_name" =>
+              TemplateEngine.run(
+                signal_map["human_readable_name"],
+                %{timebound_human_readable: DateTimeUtils.interval_to_str(timebound)}
+              )
+        }
+      end)
+    end
   end
 
   # Structure
@@ -39,9 +58,21 @@ defmodule Sanbase.Signal.FileHandler do
 
   @signals_file "signal_files/available_signals.json"
   @external_resource available_signals_file = Path.join(__DIR__, @signals_file)
-  @signals_json File.read!(available_signals_file) |> Jason.decode!()
-  @aggregations [:none] ++ Sanbase.Metric.SqlQuery.Helper.aggregations()
+  @signals_json_pre_timebound_expand File.read!(available_signals_file) |> Jason.decode!()
+  @signals_json Enum.flat_map(
+                  @signals_json_pre_timebound_expand,
+                  fn signal ->
+                    case Map.get(signal, "timebound") do
+                      nil ->
+                        [signal]
 
+                      timebound_values ->
+                        Helper.resolve_timebound_signals(signal, timebound_values)
+                    end
+                  end
+                )
+
+  @aggregations [:none] ++ Sanbase.Metric.SqlQuery.Helper.aggregations()
   @signal_map Helper.name_to_field_map(@signals_json, "signal")
   @name_to_signal_map @signal_map
   @signal_to_name_map Map.new(@name_to_signal_map, fn {k, v} -> {v, k} end)

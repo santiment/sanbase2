@@ -2,8 +2,9 @@ defmodule Sanbase.Signal.FileHandler do
   @moduledoc false
 
   defmodule Helper do
+    import Sanbase.DateTimeUtils, only: [interval_to_str: 1]
+
     alias Sanbase.TemplateEngine
-    alias Sanbase.DateTimeUtils
 
     def name_to_field_map(map, field, transform_fn \\ fn x -> x end) do
       map
@@ -29,16 +30,22 @@ defmodule Sanbase.Signal.FileHandler do
     end
 
     def resolve_timebound_signals(signal_map, timebound_values) do
+      %{
+        "name" => name,
+        "signal" => signal,
+        "human_readable_name" => human_readable_name
+      } = signal_map
+
       timebound_values
       |> Enum.map(fn timebound ->
         %{
           signal_map
-          | "name" => TemplateEngine.run(signal_map["name"], %{timebound: timebound}),
-            "signal" => TemplateEngine.run(signal_map["signal"], %{timebound: timebound}),
+          | "name" => TemplateEngine.run(name, %{timebound: timebound}),
+            "signal" => TemplateEngine.run(signal, %{timebound: timebound}),
             "human_readable_name" =>
               TemplateEngine.run(
-                signal_map["human_readable_name"],
-                %{timebound_human_readable: DateTimeUtils.interval_to_str(timebound)}
+                human_readable_name,
+                %{timebound_human_readable: interval_to_str(timebound)}
               )
         }
       end)

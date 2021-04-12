@@ -55,8 +55,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Anomalies MVRV USD {{timebound_human_readable}}",
-    "name": "anomalies_mvrv_usd_{{timebound}}",
+    "human_readable_name": "Anomaly MVRV USD {{timebound_human_readable}}",
+    "name": "anomaly_mvrv_usd_{{timebound}}",
     "signal": "anomalies_mvrv_usd_{{timebound}}",
     "timebound": [
       "1d",
@@ -79,8 +79,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Anomalies MVRV USD",
-    "name": "anomalies_mvrv_usd",
+    "human_readable_name": "Anomaly MVRV USD",
+    "name": "anomaly_mvrv_usd",
     "signal": "anomalies_mvrv_usd_20y",
     "access": "restricted",
     "selectors": ["slug"],
@@ -90,8 +90,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Anomalies Circulation 1 day",
-    "name": "anomalies_stack_circulation_1d",
+    "human_readable_name": "Anomaly Circulation 1 day",
+    "name": "anomaly_stack_circulation_1d",
     "signal": "anomalies_stack_circulation_1d",
     "access": "free",
     "selectors": ["slug"],
@@ -101,8 +101,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Anomalies Daily Active Addresses",
-    "name": "anomalies_daily_active_addresses",
+    "human_readable_name": "Anomaly Daily Active Addresses",
+    "name": "anomaly_daily_active_addresses",
     "signal": "anomalies_daily_active_addresses",
     "access": "free",
     "selectors": ["slug"],
@@ -112,8 +112,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Anomalies Network Growth",
-    "name": "anomalies_network_growth",
+    "human_readable_name": "Anomaly Network Growth",
+    "name": "anomaly_network_growth",
     "signal": "anomalies_network_growth",
     "access": "free",
     "selectors": ["slug"],
@@ -123,8 +123,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Anomalies Token Velocity",
-    "name": "anomalies_token_velocity",
+    "human_readable_name": "Anomaly Token Velocity",
+    "name": "anomaly_token_velocity",
     "signal": "anomalies_token_velocity",
     "access": "free",
     "selectors": ["slug"],
@@ -134,8 +134,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Anomalies Stack Age Consumed",
-    "name": "anomalies_stack_age_consumed",
+    "human_readable_name": "Anomaly Stack Age Consumed",
+    "name": "anomaly_stack_age_consumed",
     "signal": "anomalies_stack_age_consumed",
     "access": "free",
     "selectors": ["slug"],
@@ -145,8 +145,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Anomalies Payment Count",
-    "name": "anomalies_payment_count",
+    "human_readable_name": "Anomaly Payment Count",
+    "name": "anomaly_payment_count",
     "signal": "anomalies_payment_count",
     "access": "free",
     "selectors": ["slug"],
@@ -156,8 +156,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Anomalies Exchange Token Supply",
-    "name": "anomalies_exchange_token_supply",
+    "human_readable_name": "Anomaly Exchange Token Supply",
+    "name": "anomaly_exchange_token_supply",
     "signal": "anomalies_exchange_token_supply",
     "access": "free",
     "selectors": ["slug"],
@@ -167,8 +167,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Anomalies Transaction Count",
-    "name": "anomalies_transaction_count",
+    "human_readable_name": "Anomaly Transaction Count",
+    "name": "anomaly_transaction_count",
     "signal": "anomalies_transaction_count",
     "access": "free",
     "selectors": ["slug"],
@@ -178,8 +178,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Anomalies Stack Comulative Age Consumed",
-    "name": "anomalies_stack_cumulative_age_consumed",
+    "human_readable_name": "Anomaly Stack Comulative Age Consumed",
+    "name": "anomaly_stack_cumulative_age_consumed",
     "signal": "anomalies_stack_cumulative_age_consumed",
     "access": "free",
     "selectors": ["slug"],
@@ -189,8 +189,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Anomalies Active Deposits",
-    "name": "anomalies_active_deposits",
+    "human_readable_name": "Anomaly Active Deposits",
+    "name": "anomaly_active_deposits",
     "signal": "anomalies_active_deposits",
     "access": "free",
     "selectors": ["slug"],
@@ -200,8 +200,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Anomalies Active Withdrawals",
-    "name": "anomalies_active_withdrawals",
+    "human_readable_name": "Anomaly Active Withdrawals",
+    "name": "anomaly_active_withdrawals",
     "signal": "anomalies_active_withdrawals",
     "access": "free",
     "selectors": ["slug"],
@@ -277,8 +277,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Anomalies Transaction Volume",
-    "name": "anomalies_transaction_volume",
+    "human_readable_name": "Anomaly Transaction Volume",
+    "name": "anomaly_transaction_volume",
     "signal": "anomalies_transaction_volume",
     "access": "free",
     "selectors": ["slug"],

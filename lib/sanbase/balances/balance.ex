@@ -211,7 +211,7 @@ defmodule Sanbase.Balance do
         decimals = maybe_override_decimals(blockchain, decimals)
         {:ok, {decimals, blockchain}}
 
-      {:error, error} ->
+      {:error, {:missing_contract, error}} ->
         {:error, error}
     end
   end

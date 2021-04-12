@@ -82,7 +82,7 @@ defmodule Sanbase.Model.Project.ContractData do
   Bitcoin has BTC and so on, which is the real infrastructure
   """
   @spec contract_info_infrastructure_by_slug(String.t(), Keyword.t()) ::
-          {:ok, contract, decimals, infrastructure} | {:error, String.t()}
+          {:ok, contract, decimals, infrastructure} | {:error, {:missing_contract, String.t()}}
         when contract: String.t(), decimals: non_neg_integer(), infrastructure: String.t()
   def contract_info_infrastructure_by_slug(slug, opts \\ [])
 

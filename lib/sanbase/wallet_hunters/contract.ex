@@ -131,8 +131,6 @@ defmodule Sanbase.WalletHunters.Contract do
 
   # TODO - remove after testing on Rinkeby Ethereum Test Network
   defp maybe_replace_rinkeby(func, func_name) do
-    original_url = Application.get_env(:ethereumex, :url)
-
     if localhost_or_stage?() do
       rinkeby_url = System.get_env("RINKEBY_URL")
       Application.put_env(:ethereumex, :url, rinkeby_url)
@@ -148,13 +146,13 @@ defmodule Sanbase.WalletHunters.Contract do
         {:error, "Error occurred while executing smart contract call."}
     after
       if localhost_or_stage?() do
-        Application.put_env(:ethereumex, :url, original_url)
+        Application.put_env(:ethereumex, :url, System.get_env("PARITY_URL"))
       end
     end
   end
 
   defp localhost_or_stage? do
-    frontend_url = System.get_env("FRONTEND_URL")
+    frontend_url = SanbaseWeb.Endpoint.frontend_url()
     is_binary(frontend_url) && String.contains?(frontend_url, ["stage", "localhost"])
   end
 end

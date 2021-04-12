@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.ProjectsByFunctionTest do
+defmodule SanbaseWeb.Graphql.ProjectsByFunctionApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   import SanbaseWeb.Graphql.TestHelpers

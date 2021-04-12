@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
   use Absinthe.Schema.Notation
 
   import Absinthe.Resolution.Helpers
-  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve: 2]
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
 
   alias SanbaseWeb.Graphql.SanbaseRepo
   alias SanbaseWeb.Graphql.Resolvers.UserListResolver

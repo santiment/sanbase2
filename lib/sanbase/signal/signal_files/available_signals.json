@@ -77,5 +77,16 @@
     "min_interval": "1m",
     "table": "signals",
     "data_type": "timeseries"
+  },
+  {
+    "human_readable_name": "Circulation Anomaly 20 years",
+    "name": "anomaly_circulation_20y",
+    "signal": "anomalies_stack_circulation_20y",
+    "access": "restricted",
+    "selectors": ["slug"],
+    "aggregation": "count",
+    "min_interval": "1m",
+    "table": "signals",
+    "data_type": "timeseries"
   }
 ]

@@ -82,7 +82,7 @@
     "human_readable_name": "Anomaly MVRV USD",
     "name": "anomaly_mvrv_usd",
     "signal": "anomalies_mvrv_usd_20y",
-    "access": "restricted",
+    "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
     "min_interval": "1m",
@@ -123,8 +123,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Anomaly Token Velocity",
-    "name": "anomaly_token_velocity",
+    "human_readable_name": "Velocity",
+    "name": "velocity",
     "signal": "anomalies_token_velocity",
     "access": "free",
     "selectors": ["slug"],
@@ -134,8 +134,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Anomaly Stack Age Consumed",
-    "name": "anomaly_stack_age_consumed",
+    "human_readable_name": "Age Consumed",
+    "name": "age_consumed",
     "signal": "anomalies_stack_age_consumed",
     "access": "free",
     "selectors": ["slug"],
@@ -156,8 +156,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Anomaly Exchange Token Supply",
-    "name": "anomaly_exchange_token_supply",
+    "human_readable_name": "Tokens/Coins On Exchanges",
+    "name": "supply_on_exchanges",
     "signal": "anomalies_exchange_token_supply",
     "access": "free",
     "selectors": ["slug"],
@@ -178,8 +178,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Anomaly Stack Comulative Age Consumed",
-    "name": "anomaly_stack_cumulative_age_consumed",
+    "human_readable_name": "Comulative Age Consumed",
+    "name": "cumulative_age_consumed",
     "signal": "anomalies_stack_cumulative_age_consumed",
     "access": "free",
     "selectors": ["slug"],
@@ -266,8 +266,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Ath",
-    "name": "ath",
+    "human_readable_name": "Price USD All Time High",
+    "name": "price_usd_all_time_high",
     "signal": "ath",
     "access": "free",
     "selectors": ["slug"],

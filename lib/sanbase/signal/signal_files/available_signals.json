@@ -91,7 +91,7 @@
   },
   {
     "human_readable_name": "Anomaly Circulation 1 day",
-    "name": "anomaly_stack_circulation_1d",
+    "name": "anomaly_circulation_1d",
     "signal": "anomalies_stack_circulation_1d",
     "access": "free",
     "selectors": ["slug"],

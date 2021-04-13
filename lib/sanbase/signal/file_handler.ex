@@ -50,6 +50,21 @@ defmodule Sanbase.Signal.FileHandler do
         }
       end)
     end
+
+    def expand_timebound_signals(signals_json_pre_timebound_expand) do
+      Enum.flat_map(
+        signals_json_pre_timebound_expand,
+        fn signal ->
+          case Map.get(signal, "timebound") do
+            nil ->
+              [signal]
+
+            timebound_values ->
+              resolve_timebound_signals(signal, timebound_values)
+          end
+        end
+      )
+    end
   end
 
   # Structure
@@ -66,18 +81,7 @@ defmodule Sanbase.Signal.FileHandler do
   @signals_file "signal_files/available_signals.json"
   @external_resource available_signals_file = Path.join(__DIR__, @signals_file)
   @signals_json_pre_timebound_expand File.read!(available_signals_file) |> Jason.decode!()
-  @signals_json Enum.flat_map(
-                  @signals_json_pre_timebound_expand,
-                  fn signal ->
-                    case Map.get(signal, "timebound") do
-                      nil ->
-                        [signal]
-
-                      timebound_values ->
-                        Helper.resolve_timebound_signals(signal, timebound_values)
-                    end
-                  end
-                )
+  @signals_json Helper.expand_timebound_signals(@signals_json_pre_timebound_expand)
 
   @aggregations [:none] ++ Sanbase.Metric.SqlQuery.Helper.aggregations()
   @signal_map Helper.name_to_field_map(@signals_json, "signal")

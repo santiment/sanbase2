@@ -8,9 +8,9 @@ defmodule Sanbase.Signal.AvailableSignalsTest do
 
     expected_available_signals =
       [
-        "ath",
+        "price_usd_all_time_high",
         "dai_mint",
-        "anomaly_stack_circulation_1d",
+        "anomaly_circulation_1d",
         "anomaly_mvrv_usd_1d",
         "anomaly_mvrv_usd_7d",
         "anomaly_mvrv_usd_30d",
@@ -26,12 +26,12 @@ defmodule Sanbase.Signal.AvailableSignalsTest do
         "anomaly_transaction_volume",
         "anomaly_daily_active_addresses",
         "anomaly_network_growth",
-        "anomaly_token_velocity",
-        "anomaly_stack_age_consumed",
+        "velocity",
+        "age_consumed",
         "anomaly_payment_count",
-        "anomaly_exchange_token_supply",
+        "supply_on_exchanges",
         "anomaly_transaction_count",
-        "anomaly_stack_cumulative_age_consumed",
+        "cumulative_age_consumed",
         "anomaly_active_deposits",
         "anomaly_active_withdrawals",
         "old_coins_moved",

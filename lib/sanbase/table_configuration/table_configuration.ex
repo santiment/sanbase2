@@ -6,6 +6,7 @@ defmodule Sanbase.TableConfiguration do
   alias Sanbase.Repo
 
   schema "table_configurations" do
+    field(:type, TableConfigurationType)
     field(:title, :string)
     field(:description, :string)
     field(:is_public, :boolean, default: false)
@@ -24,7 +25,7 @@ defmodule Sanbase.TableConfiguration do
     timestamps()
   end
 
-  @fields [:user_id, :title, :description, :is_public, :page_size, :columns]
+  @fields [:user_id, :type, :title, :description, :is_public, :page_size, :columns]
   def changeset(%__MODULE__{} = table_configuration, attrs \\ %{}) do
     table_configuration
     |> cast(attrs, @fields)

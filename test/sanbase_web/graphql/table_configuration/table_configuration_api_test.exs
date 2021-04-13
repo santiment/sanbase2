@@ -14,6 +14,7 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
 
     settings = %{
       title: "My table configuration",
+      type: :project,
       description: "some description",
       is_public: false,
       page_size: 50,
@@ -44,6 +45,7 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
         |> get_in(["data", "createTableConfiguration"])
 
       assert table_configuration["title"] == settings.title
+      assert table_configuration["type"] == settings.type |> Atom.to_string() |> String.upcase()
       assert table_configuration["description"] == settings.description
       assert table_configuration["isPublic"] == settings.is_public
       assert table_configuration["pageSize"] == settings.page_size
@@ -61,6 +63,7 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
 
       new_settings = %{
         title: "New Title",
+        type: :blockchain_address,
         description: "New description",
         is_public: true,
         page_size: 150,
@@ -72,6 +75,10 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
         |> get_in(["data", "updateTableConfiguration"])
 
       assert table_configuration["title"] == new_settings.title
+
+      assert table_configuration["type"] ==
+               new_settings.type |> Atom.to_string() |> String.upcase()
+
       assert table_configuration["description"] == new_settings.description
       assert table_configuration["isPublic"] == new_settings.is_public
       assert table_configuration["pageSize"] == new_settings.page_size
@@ -155,6 +162,7 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
         |> get_in(["data", "tableConfiguration"])
 
       assert table_configuration["title"] == settings.title
+      assert table_configuration["type"] == settings.type |> Atom.to_string() |> String.upcase()
       assert table_configuration["description"] == settings.description
       assert table_configuration["isPublic"] == settings.is_public
       assert table_configuration["pageSize"] == settings.page_size
@@ -302,6 +310,7 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
       createTableConfiguration(settings: #{map_to_input_object_str(settings)}) {
         id
         title
+        type
         isPublic
         description
         pageSize
@@ -324,6 +333,7 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
     }) {
         id
         title
+        type
         isPublic
         description
         pageSize
@@ -344,6 +354,7 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
       deleteTableConfiguration(id: #{table_configuration_id}) {
         id
         title
+        type
         isPublic
         description
         pageSize
@@ -364,6 +375,7 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
       tableConfiguration(id: #{table_configuration_id}) {
         id
         title
+        type
         isPublic
         description
         pageSize
@@ -384,6 +396,7 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
       tableConfigurations {
         id
         title
+        type
         isPublic
         description
         pageSize
@@ -404,6 +417,7 @@ defmodule SanbaseWeb.Graphql.TableConfigurationApiTest do
       tableConfigurations(#{if user_id, do: "user_id: #{user_id}"}) {
         id
         title
+        type
         isPublic
         description
         pageSize

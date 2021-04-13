@@ -8,6 +8,7 @@ defenum(SubscriptionType, :subscription_type, [
 ])
 
 defenum(WatchlistType, :watchlist_type, ["project", "blockchain_address"])
+defenum(TableConfigurationType, :table_configuration_type, ["project", "blockchain_address"])
 
 defenum(ColorEnum, :color, ["none", "blue", "red", "green", "yellow", "grey", "black"])
 

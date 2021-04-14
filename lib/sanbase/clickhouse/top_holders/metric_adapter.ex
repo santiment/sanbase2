@@ -203,23 +203,25 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   def available_slugs() do
     cache_key = {__MODULE__, :available_slugs} |> Sanbase.Cache.hash()
 
-    Sanbase.Cache.get_or_store({cache_key, 1800}, fn ->
-      result =
-        Project.List.projects(preload: [:infrastructure])
-        |> Enum.filter(fn project ->
-          case Project.infrastructure_real_code(project) do
-            {:ok, infr_code} ->
-              infr_code in @supported_infrastructures and
-                Project.has_contract_address?(project)
+    Sanbase.Cache.get_or_store({cache_key, 1800}, &projects_with_supported_infrastructure/0)
+  end
 
-            _ ->
-              false
-          end
-        end)
-        |> Enum.map(& &1.slug)
+  defp projects_with_supported_infrastructure() do
+    result =
+      Project.List.projects(preload: [:infrastructure])
+      |> Enum.filter(fn project ->
+        case Project.infrastructure_real_code(project) do
+          {:ok, infr_code} ->
+            infr_code in @supported_infrastructures and
+              Project.has_contract_address?(project)
 
-      {:ok, result}
-    end)
+          _ ->
+            false
+        end
+      end)
+      |> Enum.map(& &1.slug)
+
+    {:ok, result}
   end
 
   @impl Sanbase.Metric.Behaviour

@@ -2,7 +2,7 @@ defmodule Sanbase.InternalServices.Ethauth do
   use Tesla
   require Sanbase.Utils.Config, as: Config
 
-  @san_token_decimals Sanbase.SantimentContract.decimals_expanded()
+  @san_token_decimals 1_000_000_000_000_000_000
   @tesla_opts [adapter: [recv_timeout: 15_000]]
 
   def token_decimals(contract) when is_binary(contract) do

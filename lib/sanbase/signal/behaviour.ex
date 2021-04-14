@@ -1,6 +1,6 @@
 defmodule Sanbase.Signal.Behaviour do
   @type slug :: String.t()
-  @type slug_or_slugs :: slug | list(slug)
+  @type selector :: slug | map()
   @type signal :: String.t()
   @type interval :: String.t()
   @type available_data_types :: :timeseries | :histogram | :table
@@ -25,7 +25,6 @@ defmodule Sanbase.Signal.Behaviour do
           metadata: map()
         }
 
-  @type selector :: slug | map()
   @type aggregation :: nil | :any | :sum | :avg | :min | :max | :last | :first | :median
 
   # Return types
@@ -62,7 +61,7 @@ defmodule Sanbase.Signal.Behaviour do
 
   @callback timeseries_data(
               signal :: signal,
-              slug :: slug,
+              selector :: selector,
               from :: DateTime.t(),
               to :: DateTime.t(),
               interval :: interval,
@@ -71,7 +70,7 @@ defmodule Sanbase.Signal.Behaviour do
 
   @callback aggregated_timeseries_data(
               signal :: signal,
-              slug_or_slugs :: slug_or_slugs,
+              selector :: selector,
               from :: DateTime.t(),
               to :: DateTime.t(),
               aggregation :: aggregation

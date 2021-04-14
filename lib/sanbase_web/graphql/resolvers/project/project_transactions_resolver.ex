@@ -9,7 +9,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.SanbaseDataloader
   alias Sanbase.Clickhouse.{Label, EthTransfers, Erc20Transfers, MarkExchanges}
-  alias Sanbase.Clickhouse.HistoricalBalance.BtcBalance
+  alias Sanbase.Clickhouse.BtcTransfers
 
   @max_concurrency 100
 
@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     excluded_addresses = Map.get(args, :excluded_addresses, [])
 
     with {:ok, token_transactions} <-
-           BtcBalance.top_transactions(from, to, limit, excluded_addresses),
+           BtcTransfers.top_transactions(from, to, limit, excluded_addresses),
          {:ok, token_transactions} <-
            MarkExchanges.mark_exchange_wallets(token_transactions),
          {:ok, token_transactions} <- Label.add_labels("bitcoin", token_transactions) do

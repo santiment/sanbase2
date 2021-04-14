@@ -34,9 +34,9 @@ defmodule Sanbase.Tag.Preloader do
       select: {pt.post_id, pt.tag_id, pt.id}
     )
     |> Repo.all()
-    |> Enum.reduce(%{}, fn {post_id, tag_id, id}, acc ->
-      elem = {tag_id, id}
-      Map.update(acc, post_id, [elem], fn list -> [elem | list] end)
+    |> Enum.reduce(%{}, fn {post_id, tag_id, pair_id}, acc ->
+      elem = {tag_id, pair_id}
+      Map.update(acc, post_id, [elem], &[elem | &1])
     end)
     |> Enum.into(%{}, fn {post_id, tags} ->
       tags = Enum.sort_by(tags, &elem(&1, 1)) |> Enum.map(&elem(&1, 0))

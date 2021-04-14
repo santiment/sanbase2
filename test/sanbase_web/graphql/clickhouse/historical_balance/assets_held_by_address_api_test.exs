@@ -4,9 +4,6 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
   import Mock
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import ExUnit.CaptureLog
-
-  alias Sanbase.Clickhouse.HistoricalBalance.{EthBalance, XrpBalance, Erc20Balance}
 
   @moduletag :historical_balance
 
@@ -142,48 +139,15 @@ defmodule SanbaseWeb.Graphql.Clickhouse.AssetsHeldByAdderssApiTest do
     end)
   end
 
-  test "one of the historical balances returns error", context do
-    with_mocks [
-      {Erc20Balance, [:passthrough],
-       assets_held_by_address: fn _ ->
-         {:ok, []}
-       end},
-      {EthBalance, [:passthrough],
-       assets_held_by_address: fn _ ->
-         {:error, "Something went wrong"}
-       end}
-    ] do
-      address = "0x123"
-
-      query = assets_held_by_address_query(address, "ETH")
-
-      assert capture_log(fn ->
-               result =
-                 context.conn
-                 |> post("/graphql", query_skeleton(query, "assetsHeldByAddress"))
-                 |> json_response(200)
-
-               error = result["errors"] |> List.first()
-
-               assert error["message"] =~
-                        "Can't fetch Assets held by address for address #{address}"
-             end) =~ "Can't fetch Assets held by address for address #{address}"
-    end
-  end
-
   test "negative balances are discarded", context do
     with_mocks [
-      {XrpBalance, [:passthrough],
+      {Sanbase.Clickhouse.HistoricalBalance.XrpBalance, [:passthrough],
        assets_held_by_address: fn _ ->
          {:ok,
           [
             %{balance: -100.0, slug: context.p1.slug},
             %{balance: -200.0, slug: context.p2.slug}
           ]}
-       end},
-      {EthBalance, [:passthrough],
-       assets_held_by_address: fn _ ->
-         {:ok, [%{balance: -500, slug: context.eth_project.slug}]}
        end}
     ] do
       address = "0x123"

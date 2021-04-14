@@ -3,6 +3,8 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
   Uses ClickHouse to work with ERC20 transfers.
   """
 
+  use Ecto.Schema
+
   @type t :: %__MODULE__{
           datetime: %DateTime{},
           contract: String.t(),
@@ -15,8 +17,6 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
           log_index: non_neg_integer,
           project: map()
         }
-
-  use Ecto.Schema
 
   import Sanbase.Utils.Transform
 

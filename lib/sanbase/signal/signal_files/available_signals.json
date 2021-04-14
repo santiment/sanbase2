@@ -33,28 +33,6 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Large Exchange Deposit",
-    "name": "large_exchange_deposit",
-    "signal": "large_exchange_deposit",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "1m",
-    "table": "signals",
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Large Exchange Withdrawal",
-    "name": "large_exchange_withdrawal",
-    "signal": "large_exchange_withdrawal",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "1m",
-    "table": "signals",
-    "data_type": "timeseries"
-  },
-  {
     "human_readable_name": "Anomaly MVRV USD {{timebound_human_readable}}",
     "name": "anomaly_mvrv_usd_{{timebound}}",
     "signal": "anomalies_mvrv_usd_{{timebound}}",
@@ -90,9 +68,10 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Anomaly Circulation 1 day",
-    "name": "anomaly_circulation_1d",
-    "signal": "anomalies_stack_circulation_1d",
+    "human_readable_name": "Anomaly Circulation {{timebound_human_readable}}",
+    "name": "anomaly_circulation_{{timebound}}",
+    "signal": "anomalies_stack_circulation_{{timebound}}",
+    "timebound": ["1d"],
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
@@ -123,8 +102,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Velocity",
-    "name": "velocity",
+    "human_readable_name": "Anomaly Velocity",
+    "name": "anomaly_velocity",
     "signal": "anomalies_token_velocity",
     "access": "free",
     "selectors": ["slug"],
@@ -134,8 +113,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Age Consumed",
-    "name": "age_consumed",
+    "human_readable_name": "Anomaly Age Consumed",
+    "name": "anomaly_age_consumed",
     "signal": "anomalies_stack_age_consumed",
     "access": "free",
     "selectors": ["slug"],
@@ -156,8 +135,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Tokens/Coins On Exchanges",
-    "name": "supply_on_exchanges",
+    "human_readable_name": "Anomaly Supply On Exchanges",
+    "name": "anomaly_supply_on_exchanges",
     "signal": "anomalies_exchange_token_supply",
     "access": "free",
     "selectors": ["slug"],
@@ -178,8 +157,8 @@
     "data_type": "timeseries"
   },
   {
-    "human_readable_name": "Comulative Age Consumed",
-    "name": "cumulative_age_consumed",
+    "human_readable_name": "Anomaly Comulative Age Consumed",
+    "name": "anomaly_cumulative_age_consumed",
     "signal": "anomalies_stack_cumulative_age_consumed",
     "access": "free",
     "selectors": ["slug"],
@@ -203,28 +182,6 @@
     "human_readable_name": "Anomaly Active Withdrawals",
     "name": "anomaly_active_withdrawals",
     "signal": "anomalies_active_withdrawals",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "1m",
-    "table": "signals",
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Old Coins Moved",
-    "name": "old_coins_moved",
-    "signal": "old_coins_moved",
-    "access": "free",
-    "selectors": ["slug"],
-    "aggregation": "count",
-    "min_interval": "1m",
-    "table": "signals",
-    "data_type": "timeseries"
-  },
-  {
-    "human_readable_name": "Large Transactions",
-    "name": "large_transactions",
-    "signal": "large_transactions",
     "access": "free",
     "selectors": ["slug"],
     "aggregation": "count",
@@ -288,4 +245,3 @@
     "data_type": "timeseries"
   }
 ]
-

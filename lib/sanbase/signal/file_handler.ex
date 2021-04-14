@@ -100,6 +100,19 @@ defmodule Sanbase.Signal.FileHandler do
   @selectors_map Helper.name_to_field_map(@signals_json, "selectors", fn list ->
                    Enum.map(list, &String.to_atom/1)
                  end)
+  Enum.group_by(
+    @signals_json_pre_timebound_expand,
+    fn signal -> {signal["signal"], signal["data_type"]} end
+  )
+  |> Map.values()
+  |> Enum.filter(fn group -> Enum.count(group) > 1 end)
+  |> Enum.each(fn duplicate_signals ->
+    require Sanbase.Break, as: Break
+
+    Break.break("""
+      Duplicate signals found: #{inspect(duplicate_signals)}
+    """)
+  end)
 
   def aggregations(), do: @aggregations
   def aggregation_map(), do: @aggregation_map

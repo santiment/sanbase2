@@ -8,11 +8,37 @@ defmodule Sanbase.Signal.AvailableSignalsTest do
 
     expected_available_signals =
       [
+        "anomaly_active_deposits",
+        "anomaly_active_withdrawals",
+        "anomaly_age_consumed",
+        "anomaly_circulation_1d",
+        "anomaly_cumulative_age_consumed",
+        "anomaly_daily_active_addresses",
+        "anomaly_mvrv_usd_10y",
+        "anomaly_mvrv_usd_180d",
+        "anomaly_mvrv_usd_1d",
+        "anomaly_mvrv_usd_2y",
+        "anomaly_mvrv_usd_30d",
+        "anomaly_mvrv_usd_365d",
+        "anomaly_mvrv_usd_3y",
+        "anomaly_mvrv_usd_5y",
+        "anomaly_mvrv_usd_60d",
+        "anomaly_mvrv_usd_7d",
+        "anomaly_mvrv_usd_90d",
+        "anomaly_mvrv_usd",
+        "anomaly_network_growth",
+        "anomaly_payment_count",
+        "anomaly_supply_on_exchanges",
+        "anomaly_transaction_count",
+        "anomaly_transaction_volume",
+        "anomaly_velocity",
         "dai_mint",
-        "old_coins_moved",
-        "large_transactions",
         "large_exchange_deposit",
-        "large_exchange_withdrawal"
+        "large_exchange_withdrawal",
+        "large_transactions",
+        "mcd_art_liquidations",
+        "old_coins_moved",
+        "price_usd_all_time_high"
       ]
       |> Enum.sort()
 

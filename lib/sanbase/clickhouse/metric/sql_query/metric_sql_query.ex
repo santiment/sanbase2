@@ -13,7 +13,12 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   import Sanbase.DateTimeUtils, only: [str_to_sec: 1]
 
   import Sanbase.Metric.SqlQuery.Helper,
-    only: [aggregation: 3, generate_comparison_string: 3, asset_id_filter: 2]
+    only: [
+      aggregation: 3,
+      generate_comparison_string: 3,
+      asset_id_filter: 2,
+      additional_filters: 2
+    ]
 
   alias Sanbase.Clickhouse.MetricAdapter.FileHandler
 
@@ -40,7 +45,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         value
       FROM #{Map.get(@table_map, metric)} FINAL
       PREWHERE
-        #{additional_filters(filters)}
+        #{additional_filters(filters, trailing_and: true)}
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
         isNotNull(value) AND NOT isNaN(value) AND
@@ -83,7 +88,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         value
       FROM #{Map.get(@table_map, metric)} FINAL
       PREWHERE
-        #{additional_filters(filters)}
+        #{additional_filters(filters, trailing_and: true)}
         #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?3)")} AND
         #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?4)")} AND
         isNotNull(value) AND NOT isNaN(value) AND
@@ -121,7 +126,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
         value
       FROM #{Map.get(@table_map, metric)} FINAL
       PREWHERE
-        #{additional_filters(filters)}
+        #{additional_filters(filters, trailing_and: true)}
         #{asset_id_filter(slug_or_slugs, argument_position: 1)} AND
         metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?2 LIMIT 1 ) AND
         isNotNull(value) AND NOT isNaN(value) AND
@@ -185,7 +190,7 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
           value
         FROM #{Map.get(@table_map, metric)} FINAL
         PREWHERE
-          #{additional_filters(filters)}
+          #{additional_filters(filters, trailing_and: true)}
           metric_id = ( SELECT metric_id FROM metric_metadata FINAL PREWHERE name = ?1 LIMIT 1 ) AND
           #{maybe_convert_to_date(:after, metric, "dt", "toDateTime(?2)")} AND
           #{maybe_convert_to_date(:before, metric, "dt", "toDateTime(?3)")}
@@ -304,33 +309,6 @@ defmodule Sanbase.Clickhouse.MetricAdapter.SqlQuery do
   end
 
   # Private functions
-
-  # Add additional `=` filters to the query. This is mostly used with labeled
-  # metrics where additional column filters must be applied.
-  defp additional_filters([]), do: []
-
-  defp additional_filters(filters) do
-    filters_string =
-      filters
-      |> Enum.map(fn
-        {column, [value | _] = list} when is_list(list) and is_binary(value) ->
-          coma_separated = list |> Enum.map(&"'#{&1}'") |> Enum.join(",")
-          ~s/lower(#{column}) IN (#{coma_separated})/
-
-        {column, [value | _] = list} when is_list(list) and is_number(value) ->
-          coma_separated = Enum.join(list, ",")
-          ~s/#{column} IN (#{coma_separated})/
-
-        {column, value} when is_binary(value) ->
-          ~s/lower(#{column}) = '#{value |> String.downcase()}'/
-
-        {column, value} when is_number(value) ->
-          ~s/#{column} = #{value}/
-      end)
-      |> Enum.join(" AND\n")
-
-    filters_string <> " AND"
-  end
 
   defp maybe_convert_to_date(:after, metric, dt_column, code) do
     case Map.get(@table_map, metric) do

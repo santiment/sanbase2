@@ -38,6 +38,22 @@ defmodule Sanbase.Clickhouse.Label do
           datetime: Datetime.t()
         }
 
+  def list_all(:all = _blockchain) do
+    query = """
+    SELECT DISTINCT(label) FROM blockchain_address_labels
+    """
+
+    Sanbase.ClickhouseRepo.query_transform(query, [], fn [label] -> label end)
+  end
+
+  def list_all(blockchain) do
+    query = """
+    SELECT DISTINCT(label) FROM blockchain_address_labels PREWHERE blockchain = ?1
+    """
+
+    Sanbase.ClickhouseRepo.query_transform(query, [blockchain], fn [label] -> label end)
+  end
+
   @spec add_labels(String.t() | nil, list(input_transaction)) :: {:ok, list(output_transaction)}
   def add_labels(_, []), do: {:ok, []}
 

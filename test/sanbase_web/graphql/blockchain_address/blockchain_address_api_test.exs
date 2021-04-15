@@ -18,6 +18,32 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
     }
   end
 
+  test "fetch all blockchain address labels", context do
+    rows = [["miner"], ["centralized_exchange"], ["decentralized_exchange"]]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        blockchain_address_labels(context.conn)
+        |> get_in(["data", "blockchainAddressLabels"])
+
+      assert result == ["miner", "centralized_exchange", "decentralized_exchange"]
+    end)
+  end
+
+  test "fetch blockchain address labels for a blockchain", context do
+    rows = [["miner"], ["centralized_exchange"]]
+
+    Sanbase.Mock.prepare_mock2(&Sanbase.ClickhouseRepo.query/2, {:ok, %{rows: rows}})
+    |> Sanbase.Mock.run_with_mocks(fn ->
+      result =
+        blockchain_address_labels(context.conn, blockchain: "bitcoin")
+        |> get_in(["data", "blockchainAddressLabels"])
+
+      assert result == ["miner", "centralized_exchange"]
+    end)
+  end
+
   test "fetch (create) a non-existing blockchain address", context do
     result =
       blockchain_address(context.conn, %{
@@ -160,6 +186,18 @@ defmodule SanbaseWeb.Graphql.BlockchainAddressApiTest do
 
     conn
     |> post("/graphql", mutation_skeleton(mutation))
+    |> json_response(200)
+  end
+
+  defp blockchain_address_labels(conn, opts \\ []) do
+    query =
+      case Keyword.get(opts, :blockchain) do
+        nil -> "{ blockchainAddressLabels }"
+        blockchain -> ~s/{ blockchainAddressLabels(blockchain: "#{blockchain}") }/
+      end
+
+    conn
+    |> post("/graphql", query_skeleton(query))
     |> json_response(200)
   end
 end

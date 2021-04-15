@@ -91,12 +91,18 @@ defmodule Sanbase.Signal.SignalAdapter do
     {query, args} = raw_data_query(signals, from, to)
 
     ClickhouseRepo.query_transform(query, args, fn [unix, signal, slug, value, metadata] ->
+      metadata =
+        case Jason.decode(metadata) do
+          {:ok, value} -> value
+          _ -> %{}
+        end
+
       %{
         datetime: DateTime.from_unix!(unix),
         signal: Map.get(@signal_to_name_map, signal),
         slug: slug,
         value: value,
-        metadata: Jason.decode!(metadata)
+        metadata: metadata
       }
     end)
     |> maybe_apply_function(fn list -> Enum.filter(list, & &1.signal) end)
@@ -113,10 +119,20 @@ defmodule Sanbase.Signal.SignalAdapter do
     {query, args} = timeseries_data_query(signal, slugs, from, to, interval, aggregation)
 
     ClickhouseRepo.query_transform(query, args, fn [unix, value, metadata] ->
+      metadata =
+        metadata
+        |> List.wrap()
+        |> Enum.map(&Jason.decode/1)
+        |> Enum.reduce_while([], fn
+          {:ok, value}, acc -> {:cont, [value | acc]}
+          _, _ -> {:halt, []}
+        end)
+        |> Enum.reverse()
+
       %{
         datetime: DateTime.from_unix!(unix),
         value: value,
-        metadata: metadata |> List.wrap() |> Enum.map(&Jason.decode!/1)
+        metadata: metadata
       }
     end)
   end

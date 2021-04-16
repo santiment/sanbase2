@@ -62,4 +62,36 @@ defmodule Sanbase.Metric.SqlQuery.Helper do
     }) )
     """
   end
+
+  # Add additional `=`/`in` filters to the query. This is mostly used with labeled
+  # metrics where additional column filters must be applied.
+  def additional_filters([], _opts), do: []
+
+  def additional_filters(filters, opts) do
+    filters_string =
+      filters
+      |> Enum.map(fn
+        {column, [value | _] = list} when is_list(list) and is_binary(value) ->
+          coma_separated = list |> Enum.map(&"'#{&1}'") |> Enum.join(",")
+          ~s/lower(#{column}) IN (#{coma_separated})/
+
+        {column, [value | _] = list} when is_list(list) and is_number(value) ->
+          coma_separated = Enum.join(list, ",")
+          ~s/#{column} IN (#{coma_separated})/
+
+        {column, value} when is_binary(value) ->
+          ~s/lower(#{column}) = '#{value |> String.downcase()}'/
+
+        {column, value} when is_number(value) ->
+          ~s/#{column} = #{value}/
+      end)
+      |> Enum.join(" AND\n")
+
+    filters_string <> " AND"
+
+    case Keyword.get(opts, :trailing_and, false) do
+      false -> filters_string
+      true -> filters_string <> " AND"
+    end
+  end
 end

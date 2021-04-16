@@ -3,6 +3,7 @@ defmodule Sanbase.Clickhouse.TopHolders do
   Uses ClickHouse to calculate the percent supply in exchanges, non exchanges and combined
   """
 
+  import Sanbase.Metric.SqlQuery.Helper, only: [additional_filters: 2]
   alias Sanbase.DateTimeUtils
 
   alias Sanbase.ClickhouseRepo
@@ -114,6 +115,9 @@ defmodule Sanbase.Clickhouse.TopHolders do
     page = Keyword.get(opts, :page)
     page_size = Keyword.get(opts, :page_size)
     offset = (page - 1) * page_size
+
+    filters = Keyword.get(opts, :additional_filters, [])
+    additional_filters = additional_filters(filters, trailing_and: false)
 
     query = """
     SELECT

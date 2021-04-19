@@ -28,14 +28,36 @@ defmodule Sanbase.WalletHunters.Contract do
     |> Map.get("signature")
   end
 
-  def get_event_filter_id(event_name) do
+  def get_trx_by_id(trx_id) do
+    maybe_replace_rinkeby(
+      fn ->
+        Ethereumex.HttpClient.eth_get_transaction_by_hash(trx_id)
+      end,
+      :eth_get_transaction_by_hash
+    )
+  end
+
+  def get_trx_receipt_by_id(trx_id) do
+    maybe_replace_rinkeby(
+      fn ->
+        Ethereumex.HttpClient.eth_get_transaction_receipt(trx_id)
+      end,
+      :eth_get_transaction_receipt
+    )
+  end
+
+  def get_event_filter_id(event_name, opts \\ []) do
+    address = Keyword.get(opts, :address, @rinkeby_contract)
+    from_block = Keyword.get(opts, :from_block, "0x1")
+    to_block = Keyword.get(opts, :to_block, "latest")
+
     maybe_replace_rinkeby(
       fn ->
         {:ok, filter_id} =
           Ethereumex.HttpClient.eth_new_filter(%{
-            address: @rinkeby_contract,
-            fromBlock: "0x1",
-            toBlock: "latest",
+            address: address,
+            fromBlock: from_block,
+            toBlock: to_block,
             topics: [event_signature(event_name)]
           })
 
@@ -67,8 +89,8 @@ defmodule Sanbase.WalletHunters.Contract do
     end)
   end
 
-  def fetch_all_events(event_name) do
-    filter_id = get_event_filter_id(event_name)
+  def fetch_all_events(event_name, opts \\ []) do
+    filter_id = get_event_filter_id(event_name, opts)
 
     maybe_replace_rinkeby(
       fn ->

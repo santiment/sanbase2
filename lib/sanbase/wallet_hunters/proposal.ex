@@ -8,6 +8,7 @@ defmodule Sanbase.WalletHunters.Proposal do
   alias Sanbase.Repo
   alias Sanbase.Accounts.{User, EthAccount}
   alias Sanbase.WalletHunters.Contract
+  alias Sanbase.WalletHunters.{RelayerApi, RelayQuota}
 
   @states_map %{
     0 => :active,
@@ -19,6 +20,7 @@ defmodule Sanbase.WalletHunters.Proposal do
   schema "wallet_hunters_proposals" do
     field(:hunter_address, :string)
     field(:proposal_id, :integer)
+    field(:transaction_id, :string)
     field(:text, :string)
     field(:title, :string)
 
@@ -37,14 +39,16 @@ defmodule Sanbase.WalletHunters.Proposal do
       :title,
       :text,
       :proposal_id,
+      :transaction_id,
       :hunter_address,
       :user_id,
       :proposed_address,
       :user_labels
     ])
+    |> validate_required([:transaction_id, :title, :text, :hunter_address, :proposed_address])
     |> normalize_text(:text, attrs[:text])
-    |> validate_required([:title, :text, :proposal_id, :hunter_address, :proposed_address])
     |> unique_constraint(:proposal_id)
+    |> unique_constraint(:transaction_id)
   end
 
   def sanitize_markdown(markdown) do
@@ -53,6 +57,42 @@ defmodule Sanbase.WalletHunters.Proposal do
     markdown = HtmlSanitizeEx.markdown_html(markdown)
     # Bring back the blockquotes
     Regex.replace(~r/^REPLACED_BLOCKQUOTE/m, markdown, "> ")
+  end
+
+  def create_proposal(%{request: request, signature: signature} = args) do
+    with true <- RelayQuota.can_relay?(args.user_id),
+         {:ok, %{"hash" => transaction_id}} <- RelayerApi.relay(request, signature),
+         {:ok, _} <- RelayQuota.create_or_update(args.user_id),
+         {:ok, proposal} <- create_db_proposal(Map.put(args, :transaction_id, transaction_id)) do
+      async_poll_transaction_events(transaction_id)
+      {:ok, proposal}
+    end
+  end
+
+  def create_proposal(%{transaction_id: transaction_id} = args) do
+    with {:ok, proposal} <- create_db_proposal(args) do
+      async_poll_transaction_events(transaction_id)
+      {:ok, proposal}
+    end
+  end
+
+  def create_db_proposal(args) do
+    args =
+      args
+      |> Map.update!(:hunter_address, &String.downcase/1)
+      |> Map.update!(:proposed_address, &String.downcase/1)
+      |> maybe_add_user()
+
+    changeset(%__MODULE__{}, args)
+    |> Repo.insert()
+    |> case do
+      {:ok, db_proposal} -> {:ok, Repo.preload(db_proposal, :user)}
+      error -> error
+    end
+  end
+
+  def fetch_by_transaction_id(transaction_id) do
+    Repo.get_by(__MODULE__, transaction_id: transaction_id)
   end
 
   def create(args) do
@@ -229,7 +269,8 @@ defmodule Sanbase.WalletHunters.Proposal do
         text: p.text,
         user: u,
         user_labels: p.user_labels,
-        proposed_address: p.proposed_address
+        proposed_address: p.proposed_address,
+        transaction_id: p.transaction_id
       }
     )
     |> Repo.all()
@@ -252,7 +293,40 @@ defmodule Sanbase.WalletHunters.Proposal do
     end
   end
 
+  defp normalize_text(changeset, _field, nil), do: changeset
+
   defp normalize_text(changeset, field, value) do
     put_change(changeset, field, sanitize_markdown(value))
+  end
+
+  defp async_poll_transaction_events(transaction_id) do
+    Task.Supervisor.async_nolink(Sanbase.TaskSupervisor, fn ->
+      check_trx_events(transaction_id, 0)
+    end)
+  end
+
+  defp check_trx_events(_, 200), do: :ok
+
+  defp check_trx_events(transaction_id, retries_so_far) do
+    with {:ok, %{"blockNumber" => block_number}} when block_number != nil <-
+           Contract.get_trx_by_id(transaction_id),
+         {:ok, %{"logs" => logs} = receipt} when is_list(logs) <-
+           Contract.get_trx_receipt_by_id(transaction_id) do
+      if receipt["status"] == "0x1" and logs != [] do
+        event = hd(logs)
+        [_, proposal_id, _] = event["topics"]
+        proposal_id = proposal_id |> String.slice(2..-1) |> Integer.parse(16) |> elem(0)
+
+        fetch_by_transaction_id(transaction_id)
+        |> changeset(%{proposal_id: proposal_id})
+        |> Repo.update()
+      else
+        :ok
+      end
+    else
+      _error ->
+        Process.sleep(5000)
+        check_trx_events(transaction_id, retries_so_far + 1)
+    end
   end
 end

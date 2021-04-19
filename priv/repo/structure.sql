@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 13.1
--- Dumped by pg_dump version 13.1
+-- Dumped from database version 12.3
+-- Dumped by pg_dump version 12.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -129,7 +129,7 @@ $$;
 
 SET default_tablespace = '';
 
-SET default_with_oids = false;
+SET default_table_access_method = heap;
 
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
@@ -2748,7 +2748,8 @@ CREATE TABLE public.wallet_hunters_proposals (
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     proposed_address character varying(255),
-    user_labels character varying(255)[] DEFAULT ARRAY[]::character varying[]
+    user_labels character varying(255)[] DEFAULT ARRAY[]::character varying[],
+    transaction_id character varying(255) NOT NULL
 );
 
 
@@ -2769,6 +2770,38 @@ CREATE SEQUENCE public.wallet_hunters_proposals_id_seq
 --
 
 ALTER SEQUENCE public.wallet_hunters_proposals_id_seq OWNED BY public.wallet_hunters_proposals.id;
+
+
+--
+-- Name: wallet_hunters_relays_quota; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.wallet_hunters_relays_quota (
+    id bigint NOT NULL,
+    proposals_used integer,
+    user_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: wallet_hunters_relays_quota_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.wallet_hunters_relays_quota_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: wallet_hunters_relays_quota_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.wallet_hunters_relays_quota_id_seq OWNED BY public.wallet_hunters_relays_quota.id;
 
 
 --
@@ -3298,6 +3331,13 @@ ALTER TABLE ONLY public.votes ALTER COLUMN id SET DEFAULT nextval('public.votes_
 --
 
 ALTER TABLE ONLY public.wallet_hunters_proposals ALTER COLUMN id SET DEFAULT nextval('public.wallet_hunters_proposals_id_seq'::regclass);
+
+
+--
+-- Name: wallet_hunters_relays_quota id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wallet_hunters_relays_quota ALTER COLUMN id SET DEFAULT nextval('public.wallet_hunters_relays_quota_id_seq'::regclass);
 
 
 --
@@ -3938,6 +3978,14 @@ ALTER TABLE ONLY public.votes
 
 ALTER TABLE ONLY public.wallet_hunters_proposals
     ADD CONSTRAINT wallet_hunters_proposals_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: wallet_hunters_relays_quota wallet_hunters_relays_quota_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wallet_hunters_relays_quota
+    ADD CONSTRAINT wallet_hunters_relays_quota_pkey PRIMARY KEY (id);
 
 
 --
@@ -4611,6 +4659,20 @@ CREATE UNIQUE INDEX votes_timeline_event_id_user_id_index ON public.votes USING 
 --
 
 CREATE UNIQUE INDEX wallet_hunters_proposals_proposal_id_index ON public.wallet_hunters_proposals USING btree (proposal_id);
+
+
+--
+-- Name: wallet_hunters_proposals_transaction_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX wallet_hunters_proposals_transaction_id_index ON public.wallet_hunters_proposals USING btree (transaction_id);
+
+
+--
+-- Name: wallet_hunters_relays_quota_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX wallet_hunters_relays_quota_user_id_index ON public.wallet_hunters_relays_quota USING btree (user_id);
 
 
 --
@@ -5373,6 +5435,14 @@ ALTER TABLE ONLY public.wallet_hunters_proposals
 
 
 --
+-- Name: wallet_hunters_relays_quota wallet_hunters_relays_quota_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wallet_hunters_relays_quota
+    ADD CONSTRAINT wallet_hunters_relays_quota_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: watchlist_settings watchlist_settings_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5699,3 +5769,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210406113235);
 INSERT INTO public."schema_migrations" (version) VALUES (20210408103523);
 INSERT INTO public."schema_migrations" (version) VALUES (20210408131830);
 INSERT INTO public."schema_migrations" (version) VALUES (20210409081625);
+INSERT INTO public."schema_migrations" (version) VALUES (20210416074600);
+INSERT INTO public."schema_migrations" (version) VALUES (20210416132337);

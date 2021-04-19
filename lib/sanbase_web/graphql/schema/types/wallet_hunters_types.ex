@@ -33,6 +33,15 @@ defmodule SanbaseWeb.Graphql.WalletHuntersTypes do
     field(:direction, :sort_direction)
   end
 
+  input_object :wallet_hunters_request_object do
+    field(:data, :string)
+    field(:from, :string)
+    field(:gas, :integer)
+    field(:nonce, :string)
+    field(:to, :string)
+    field(:value, :integer)
+  end
+
   input_object :wallet_hunters_proposals_selector_input_object do
     field(:filter, list_of(:wallet_hunters_filter_object))
     field(:sort_by, :wallet_hunters_sort_object)
@@ -48,7 +57,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersTypes do
   end
 
   object :wallet_hunter_proposal do
-    field(:proposal_id, non_null(:id))
+    field(:proposal_id, :id)
     field(:user, :public_user)
     field(:title, :string)
     field(:text, :string)
@@ -66,6 +75,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersTypes do
     field(:user_labels, list_of(:string))
     field(:votes, list_of(:proposal_vote))
     field(:votes_count, :integer)
+    field(:transaction_id, :string)
 
     field :hunter_address_labels, list_of(:blockchain_address_label) do
       cache_resolve(

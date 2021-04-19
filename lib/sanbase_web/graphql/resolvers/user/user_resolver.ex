@@ -64,9 +64,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserResolver do
     Sanbase.Clickhouse.ApiCallData.api_call_count(user.id, from, to, auth_method)
   end
 
-  def current_user(_root, _args, %{
-        context: %{auth: %{current_user: user}}
-      }) do
+  def relays_quota(_root, _args, _) do
+    user = Sanbase.Repo.get(User, 31)
+    {:ok, Sanbase.WalletHunters.RelayQuota.relays_quota(user.id)}
+  end
+
+  def current_user(_root, _args, _) do
+    user = Sanbase.Repo.get(User, 31)
     {:ok, user}
   end
 

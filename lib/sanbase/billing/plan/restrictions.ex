@@ -15,25 +15,25 @@ defmodule Sanbase.Billing.Plan.Restrictions do
           restricted_to: DateTime.t()
         }
 
-  @spec get(query_or_metric, atom(), non_neg_integer()) :: restriction()
-        when query_or_metric: {:metric, String.t()} | {:query, atom()}
-  def get({type, name} = query_or_metric, plan, product_id)
-      when type in [:metric, :query] do
+  @spec get(query_or_argument, atom(), non_neg_integer()) :: restriction()
+        when query_or_argument: {:metric, String.t()} | {:signal, String.t()} | {:query, atom()}
+  def get({type, name} = query_or_argument, plan, product_id)
+      when type in [:metric, :signal, :query] do
     type_str = type |> to_string()
     name_str = construct_name(type, name)
     product = Product.code_by_id(product_id)
 
-    case AccessChecker.plan_has_access?(plan, product, query_or_metric) do
+    case AccessChecker.plan_has_access?(plan, product, query_or_argument) do
       false ->
         no_access_map(type_str, name_str)
 
       true ->
-        case AccessChecker.is_restricted?(query_or_metric) do
+        case AccessChecker.is_restricted?(query_or_argument) do
           false ->
             not_restricted_access_map(type_str, name_str)
 
           true ->
-            maybe_restricted_access_map(type_str, name_str, plan, product_id, query_or_metric)
+            maybe_restricted_access_map(type_str, name_str, plan, product_id, query_or_argument)
         end
     end
   end
@@ -45,15 +45,16 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   @spec get_all(atom(), non_neg_integer()) :: list(restriction)
   def get_all(plan, product_id) do
     metrics = Sanbase.Metric.available_metrics() |> Enum.map(&{:metric, &1})
+    signals = Sanbase.Signal.available_signals() |> Enum.map(&{:signal, &1})
 
     queries =
       Sanbase.Model.Project.AvailableQueries.all_atom_names()
       |> Enum.map(&{:query, &1})
 
-    # elements are {:metric, <string>} or {:query, <atom>}
+    # elements are {:metric, <string>} or {:query, <atom>} or {:signal, <string>}
     result =
-      (queries ++ metrics)
-      |> Enum.map(fn metric_or_query -> get(metric_or_query, plan, product_id) end)
+      (queries ++ metrics ++ signals)
+      |> Enum.map(fn query_or_argument -> get(query_or_argument, plan, product_id) end)
 
     (get_extra_queries(plan, product_id) ++ result)
     |> Enum.uniq_by(& &1.name)
@@ -112,10 +113,16 @@ defmodule Sanbase.Billing.Plan.Restrictions do
   end
 
   defp construct_name(:metric, name), do: name |> to_string()
+  defp construct_name(:signal, name), do: name |> to_string()
   defp construct_name(:query, name), do: name |> Inflex.camelize(:lower)
 
   defp min_interval("metric", metric) do
     {:ok, metadata} = Sanbase.Metric.metadata(metric)
+    metadata.min_interval
+  end
+
+  defp min_interval("signal", signal) do
+    {:ok, metadata} = Sanbase.Signal.metadata(signal)
     metadata.min_interval
   end
 

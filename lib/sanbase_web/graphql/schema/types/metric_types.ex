@@ -272,7 +272,7 @@ defmodule SanbaseWeb.Graphql.MetricTypes do
       - Histogram data is an approximate representation of the distribution of
         numerical or categorical data. The metric is represented as a list of data
         points, where every point is represented represented by a tuple containing
-        a range an a value.
+        a range and a value.
     """
     field(:data_type, :metric_data_type)
 

@@ -92,6 +92,9 @@ defmodule Sanbase.Utils.ErrorHandling do
           %{metric: metric} ->
             {"metric", metric}
 
+          %{signal: signal} ->
+            {"signal", signal}
+
           slug when is_binary(slug) ->
             {"project with slug", slug}
 

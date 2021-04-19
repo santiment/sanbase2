@@ -295,8 +295,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.AccessControl do
         %{restricted_from: restricted_from, restricted_to: restricted_to} =
           Sanbase.Billing.Plan.Restrictions.get(
             context[:__query_argument_atom_name__],
-            context[:auth][:plan],
-            context[:product_id]
+            context[:auth][:plan] || :free,
+            context[:product_id] || Product.product_api()
           )
 
         resolution

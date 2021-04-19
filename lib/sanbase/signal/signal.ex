@@ -93,9 +93,12 @@ defmodule Sanbase.Signal do
   @doc ~s"""
   Get metadata for a given signal
   """
-  @spec metadata(signal) :: Type.metadata()
+  @spec metadata(signal) :: Type.metadata() | {:error, String.t()}
   def metadata(signal) do
-    SignalAdapter.metadata(signal)
+    case SignalAdapter.has_signal?(signal) do
+      true -> SignalAdapter.metadata(signal)
+      error -> error
+    end
   end
 
   @doc ~s"""

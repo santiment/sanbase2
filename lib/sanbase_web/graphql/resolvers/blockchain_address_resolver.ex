@@ -17,6 +17,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver do
     erc20: %{module: Erc20Transfers, slug: nil}
   }
 
+  def list_all_labels(_root, args, _resolution) do
+    Map.get(args, :blockchain, :all)
+    |> Label.list_all()
+  end
+
   def recent_transactions(
         _root,
         %{

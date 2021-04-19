@@ -64,7 +64,7 @@ defmodule SanbaseWeb.Graphql.SignalTypes do
     field(:default_aggregation, :aggregation)
 
     @desc ~s"""
-    The supported aggregations for this anomaly. For more information about
+    The supported aggregations for this signal. For more information about
     aggregations see the documentation for `defaultAggregation`
     """
     field(:available_aggregations, list_of(:aggregation))

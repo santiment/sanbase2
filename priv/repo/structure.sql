@@ -84,6 +84,16 @@ CREATE TYPE public.subscription_type AS ENUM (
 
 
 --
+-- Name: table_configuration_type; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.table_configuration_type AS ENUM (
+    'project',
+    'blockchain_address'
+);
+
+
+--
 -- Name: watchlist_type; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -2204,7 +2214,8 @@ CREATE TABLE public.table_configurations (
     page_size integer DEFAULT 50,
     columns jsonb,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    type public.table_configuration_type
 );
 
 
@@ -5769,5 +5780,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210406113235);
 INSERT INTO public."schema_migrations" (version) VALUES (20210408103523);
 INSERT INTO public."schema_migrations" (version) VALUES (20210408131830);
 INSERT INTO public."schema_migrations" (version) VALUES (20210409081625);
+INSERT INTO public."schema_migrations" (version) VALUES (20210413091357);
 INSERT INTO public."schema_migrations" (version) VALUES (20210416074600);
 INSERT INTO public."schema_migrations" (version) VALUES (20210416132337);

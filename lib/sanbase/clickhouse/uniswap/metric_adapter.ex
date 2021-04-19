@@ -24,8 +24,6 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
 
   @default_complexity_weight 0.3
 
-  @contract "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"
-
   defp address_ordered_table(), do: Config.module_get(Erc20Transfers, :address_ordered_table)
 
   @impl Sanbase.Metric.Behaviour
@@ -163,7 +161,7 @@ defmodule Sanbase.Clickhouse.Uniswap.MetricAdapter do
   def min_plan_map(), do: @min_plan_map
 
   # Private functions
-  defp maybe_add_balances({:ok, data}, from, to) do
+  defp maybe_add_balances({:ok, data}, _from, to) do
     addresses = Enum.map(data, & &1.address)
 
     {:ok, balances} = Sanbase.Balance.last_balance_before(addresses, "uniswap", to)

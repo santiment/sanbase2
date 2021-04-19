@@ -239,6 +239,8 @@ defmodule Sanbase.Clickhouse.Github do
     |> maybe_unwrap_ok_value()
   end
 
+  def dev_activity_contributors_count([], _, _, _, _, _), do: {:ok, []}
+
   def dev_activity_contributors_count(organizations, from, to, interval, "None", _) do
     do_dev_activity_contributors_count(organizations, from, to, interval)
   end
@@ -256,6 +258,8 @@ defmodule Sanbase.Clickhouse.Github do
         error
     end
   end
+
+  def github_activity_contributors_count([], _, _, _, _, _), do: {:ok, []}
 
   def github_activity_contributors_count(organizations, from, to, interval, "None", _) do
     do_github_activity_contributors_count(organizations, from, to, interval)

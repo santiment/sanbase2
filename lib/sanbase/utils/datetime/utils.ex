@@ -125,14 +125,16 @@ defmodule Sanbase.DateTimeUtils do
     {int_interval, duration_index} = Integer.parse(interval)
 
     case duration_index do
-      "ns" -> "#{int_interval} nanosecond(s)"
-      "ms" -> "#{int_interval} millisecond(s)"
-      "s" -> "#{int_interval} second(s)"
-      "m" -> "#{int_interval} minute(s)"
-      "h" -> "#{int_interval} hour(s)"
-      "d" -> "#{int_interval} day(s)"
-      "w" -> "#{int_interval} week(s)"
+      "ns" -> "#{int_interval} nanosecond"
+      "ms" -> "#{int_interval} millisecond"
+      "s" -> "#{int_interval} second"
+      "m" -> "#{int_interval} minute"
+      "h" -> "#{int_interval} hour"
+      "d" -> "#{int_interval} day"
+      "w" -> "#{int_interval} week"
+      "y" -> "#{int_interval} year"
     end
+    |> maybe_append_s(int_interval)
   end
 
   def valid_compound_duration?(value) do
@@ -211,4 +213,8 @@ defmodule Sanbase.DateTimeUtils do
     |> Kernel.*(seconds)
     |> DateTime.from_unix!()
   end
+
+  # Private
+  defp maybe_append_s(str, 1), do: str
+  defp maybe_append_s(str, _), do: str <> "s"
 end

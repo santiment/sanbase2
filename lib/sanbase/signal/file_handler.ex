@@ -2,6 +2,10 @@ defmodule Sanbase.Signal.FileHandler do
   @moduledoc false
 
   defmodule Helper do
+    import Sanbase.DateTimeUtils, only: [interval_to_str: 1]
+
+    alias Sanbase.TemplateEngine
+
     def name_to_field_map(map, field, transform_fn \\ fn x -> x end) do
       map
       |> Enum.map(fn
@@ -24,6 +28,43 @@ defmodule Sanbase.Signal.FileHandler do
         end
       )
     end
+
+    def resolve_timebound_signals(signal_map, timebound_values) do
+      %{
+        "name" => name,
+        "signal" => signal,
+        "human_readable_name" => human_readable_name
+      } = signal_map
+
+      timebound_values
+      |> Enum.map(fn timebound ->
+        %{
+          signal_map
+          | "name" => TemplateEngine.run(name, %{timebound: timebound}),
+            "signal" => TemplateEngine.run(signal, %{timebound: timebound}),
+            "human_readable_name" =>
+              TemplateEngine.run(
+                human_readable_name,
+                %{timebound_human_readable: interval_to_str(timebound)}
+              )
+        }
+      end)
+    end
+
+    def expand_timebound_signals(signals_json_pre_timebound_expand) do
+      Enum.flat_map(
+        signals_json_pre_timebound_expand,
+        fn signal ->
+          case Map.get(signal, "timebound") do
+            nil ->
+              [signal]
+
+            timebound_values ->
+              resolve_timebound_signals(signal, timebound_values)
+          end
+        end
+      )
+    end
   end
 
   # Structure
@@ -39,9 +80,10 @@ defmodule Sanbase.Signal.FileHandler do
 
   @signals_file "signal_files/available_signals.json"
   @external_resource available_signals_file = Path.join(__DIR__, @signals_file)
-  @signals_json File.read!(available_signals_file) |> Jason.decode!()
-  @aggregations [:none] ++ Sanbase.Metric.SqlQuery.Helper.aggregations()
+  @signals_json_pre_timebound_expand File.read!(available_signals_file) |> Jason.decode!()
+  @signals_json Helper.expand_timebound_signals(@signals_json_pre_timebound_expand)
 
+  @aggregations [:none] ++ Sanbase.Metric.SqlQuery.Helper.aggregations()
   @signal_map Helper.name_to_field_map(@signals_json, "signal")
   @name_to_signal_map @signal_map
   @signal_to_name_map Map.new(@name_to_signal_map, fn {k, v} -> {v, k} end)
@@ -58,6 +100,19 @@ defmodule Sanbase.Signal.FileHandler do
   @selectors_map Helper.name_to_field_map(@signals_json, "selectors", fn list ->
                    Enum.map(list, &String.to_atom/1)
                  end)
+  Enum.group_by(
+    @signals_json_pre_timebound_expand,
+    fn signal -> {signal["signal"], signal["data_type"]} end
+  )
+  |> Map.values()
+  |> Enum.filter(fn group -> Enum.count(group) > 1 end)
+  |> Enum.each(fn duplicate_signals ->
+    require Sanbase.Break, as: Break
+
+    Break.break("""
+      Duplicate signals found: #{inspect(duplicate_signals)}
+    """)
+  end)
 
   def aggregations(), do: @aggregations
   def aggregation_map(), do: @aggregation_map

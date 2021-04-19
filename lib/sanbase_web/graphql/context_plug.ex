@@ -127,14 +127,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
       }) do
     case ApiCallLimit.get_quota(:user, user, auth_method) do
       {:error, %{blocked_for_seconds: _} = rate_limit_map} ->
-        error_map = %{
-          error_msg: rate_limit_error_message(rate_limit_map),
-          error_code: 429
-        }
-
         conn = Sanbase.Utils.Conn.put_extra_resp_headers(conn, rate_limit_headers(rate_limit_map))
 
-        {true, conn, error_map}
+        {true, conn, rate_limit_map_to_error_map(rate_limit_map)}
 
       {:ok, %{quota: :infinity}} ->
         {false, conn}
@@ -159,14 +154,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
     case ApiCallLimit.get_quota(:remote_ip, remote_ip, auth_method) do
       {:error, %{blocked_for_seconds: _} = rate_limit_map} ->
-        error_map = %{
-          error_msg: rate_limit_error_message(rate_limit_map),
-          error_code: 429
-        }
-
         conn = Sanbase.Utils.Conn.put_extra_resp_headers(conn, rate_limit_headers(rate_limit_map))
 
-        {true, conn, error_map}
+        {true, conn, rate_limit_map_to_error_map(rate_limit_map)}
 
       {:ok, %{quota: :infinity}} ->
         {false, conn}
@@ -475,5 +465,12 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
           origin_url: nil
         }
     end
+  end
+
+  defp rate_limit_map_to_error_map(rate_limit_map) do
+    %{
+      error_msg: rate_limit_error_message(rate_limit_map),
+      error_code: 429
+    }
   end
 end

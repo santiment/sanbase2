@@ -107,7 +107,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.BlockchainResolver do
     |> add_complex_fields()
   end
 
-  defp add_complex_fields(map = %{}) do
+  defp add_complex_fields(%{} = map) do
     map
     |> Map.put(
       :has_exchange_top_holders_metrics,

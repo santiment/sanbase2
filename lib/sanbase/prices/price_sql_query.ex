@@ -104,10 +104,10 @@ defmodule Sanbase.Price.SqlQuery do
     volume_aggr = Keyword.get(opts, :volume_aggregation, :avg)
 
     query = """
-    SELECT slug, SUM(price_usd), SUM(price_btc), SUM(marketcap_usd), SUM(volume_usd), toUInt32(SUM(has_changed))
+    SELECT slugString, SUM(price_usd), SUM(price_btc), SUM(marketcap_usd), SUM(volume_usd), toUInt32(SUM(has_changed))
     FROM (
       SELECT
-        arrayJoin([?1]) AS slug,
+        arrayJoin([?1]) AS slugString,
         toFloat64(0) AS price_usd,
         toFloat64(0) AS price_btc,
         toFloat64(0) AS marketcap_usd,
@@ -117,7 +117,7 @@ defmodule Sanbase.Price.SqlQuery do
       UNION ALL
 
       SELECT
-        cast(slug, 'String') AS slug,
+        cast(slug, 'String') AS slugString,
         #{aggregation(price_aggr, "price_usd", "dt")} AS price_usd,
         #{aggregation(price_aggr, "price_btc", "dt")} AS price_btc,
         #{aggregation(marketcap_aggr, "marketcap_usd", "dt")} AS marketcap_usd,
@@ -130,7 +130,7 @@ defmodule Sanbase.Price.SqlQuery do
         source = cast(?4, 'LowCardinality(String)')
       GROUP BY slug
     )
-    GROUP BY slug
+    GROUP BY slugString
     """
 
     {query,
@@ -147,10 +147,10 @@ defmodule Sanbase.Price.SqlQuery do
     volume_aggr = Keyword.get(opts, :volume_aggregation, :avg)
 
     query = """
-    SELECT slug, SUM(marketcap_usd), SUM(volume_usd), toUInt32(SUM(has_changed))
+    SELECT slugString, SUM(marketcap_usd), SUM(volume_usd), toUInt32(SUM(has_changed))
     FROM (
       SELECT
-        arrayJoin([?1]) AS slug,
+        arrayJoin([?1]) AS slugString,
         toFloat64(0) AS marketcap_usd,
         toFloat64(0) AS volume_usd,
         toUInt32(0) AS has_changed
@@ -158,7 +158,7 @@ defmodule Sanbase.Price.SqlQuery do
       UNION ALL
 
       SELECT
-        cast(slug, 'String') AS slug,
+        cast(slug, 'String') AS slugString,
         #{aggregation(marketcap_aggr, "marketcap_usd", "dt")} AS marketcap_usd,
         #{aggregation(volume_aggr, "volume_usd", "dt")} AS volume_usd,
         toUInt32(1) AS has_changed
@@ -170,7 +170,7 @@ defmodule Sanbase.Price.SqlQuery do
         source = cast(?4, 'LowCardinality(String)')
       GROUP BY slug
     )
-    GROUP BY slug
+    GROUP BY slugString
     """
 
     {query,
@@ -184,17 +184,17 @@ defmodule Sanbase.Price.SqlQuery do
 
   def aggregated_metric_timeseries_data_query(slugs, metric, from, to, source, aggregation) do
     query = """
-    SELECT slug, SUM(value), toUInt32(SUM(has_changed))
+    SELECT slugString, SUM(value), toUInt32(SUM(has_changed))
     FROM (
       SELECT
-        arrayJoin([?1]) AS slug,
+        arrayJoin([?1]) AS slugString,
         toFloat64(0) AS value,
         toUInt32(0) AS has_changed
 
       UNION ALL
 
       SELECT
-        cast(slug, 'String') AS slug,
+        cast(slug, 'String') AS slugString,
         #{aggregation(aggregation, "#{metric}", "dt")} AS value,
         toUInt32(1) AS has_changed
       FROM #{@table} FINAL
@@ -206,7 +206,7 @@ defmodule Sanbase.Price.SqlQuery do
         #{if from, do: "AND dt >= toDateTime(?4)"}
       GROUP BY slug
     )
-    GROUP BY slug
+    GROUP BY slugString
     """
 
     args =
@@ -274,7 +274,7 @@ defmodule Sanbase.Price.SqlQuery do
       SUM(open_price), SUM(high_price), SUM(close_price), SUM(low_price), toUInt32(SUM(has_changed))
     FROM (
       SELECT
-        arrayJoin([(?1)]) AS slug,
+        arrayJoin([(?1)]) AS slugString,
         toFloat64(0) AS open_price,
         toFloat64(0) AS high_price,
         toFloat64(0) AS close_price,
@@ -284,7 +284,7 @@ defmodule Sanbase.Price.SqlQuery do
       UNION ALL
 
       SELECT
-        cast(slug, 'String') AS slug,
+        cast(slug, 'String') AS slugString,
         argMin(price_usd, dt) AS open_price,
         max(price_usd) AS high_price,
         min(price_usd) AS low_price,
@@ -298,7 +298,7 @@ defmodule Sanbase.Price.SqlQuery do
         dt < toDateTime(?4)
       GROUP BY slug
     )
-    GROUP BY slug
+    GROUP BY slugString
     """
 
     args = [slug, source, from, to]

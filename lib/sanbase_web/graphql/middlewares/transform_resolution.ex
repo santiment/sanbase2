@@ -36,15 +36,5 @@ defmodule SanbaseWeb.Graphql.Middlewares.TransformResolution do
     }
   end
 
-  defp do_call(:get_anomaly, %{context: context} = resolution) do
-    %{arguments: %{anomaly: anomaly}} = resolution
-    elem = {:get_anomaly, anomaly}
-
-    %Resolution{
-      resolution
-      | context: Map.update(context, :__get_query_name_arg__, [elem], &[elem | &1])
-    }
-  end
-
   defp do_call(_, resolution), do: resolution
 end

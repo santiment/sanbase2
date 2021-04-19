@@ -161,11 +161,11 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     {user_id, san_tokens, auth_method, api_token} =
       extract_caller_data(blueprint.execution.context)
 
-    # Replace all occurences of getMetric and getAnomaly with names where
-    # the metric or anomaly argument is also included
+    # Replace all occurences of getMetric and getSignal with names where
+    # the metric or signal argument is also included
     queries =
       Map.get(blueprint.execution.context, :__get_query_name_arg__, []) ++
-        Enum.reject(queries, &(&1 == "getMetric" or &1 == "getAnomaly"))
+        Enum.reject(queries, &(&1 == "getMetric" or &1 == "getSignal"))
 
     id =
       Logger.metadata() |> Keyword.get(:request_id) ||
@@ -192,7 +192,6 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   end
 
   defp construct_query_name({:get_metric, metric}), do: "getMetric|#{metric}"
-  defp construct_query_name({:get_anomaly, anomaly}), do: "getAnomaly|#{anomaly}"
   defp construct_query_name({:get_signal, signal}), do: "getSignal|#{signal}"
   defp construct_query_name(query), do: query
 

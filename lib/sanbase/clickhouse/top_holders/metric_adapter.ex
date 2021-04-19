@@ -63,27 +63,22 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
         interval,
         opts
       ) do
-    aggregation = Keyword.get(opts, :aggregation, nil) || :last
-    count = Map.get(selector, :holders_count, @default_holders_count)
-
     with {:ok, contract, decimals, infr} <- Project.contract_info_infrastructure_by_slug(slug),
          true <- chain_supported?(infr, slug, metric) do
-      table = Map.get(@infrastructure_to_table, infr)
-      blockchain = Map.get(@infrastructure_to_blockchain, infr)
+      params = %{
+        contract: contract,
+        blockchain: Map.get(@infrastructure_to_blockchain, infr),
+        table: Map.get(@infrastructure_to_table, infr),
+        count: Map.get(selector, :holders_count, @default_holders_count),
+        from: from,
+        to: to,
+        interval: interval,
+        decimals: decimals,
+        aggregation: Keyword.get(opts, :aggregation, nil) || :last,
+        include_labels: Keyword.get(opts, :additional_filters, [])[:label]
+      }
 
-      {query, args} =
-        timeseries_data_query(
-          metric,
-          table,
-          contract,
-          blockchain,
-          count,
-          from,
-          to,
-          interval,
-          decimals,
-          aggregation
-        )
+      {query, args} = timeseries_data_query(metric, params)
 
       ClickhouseRepo.query_transform(query, args, fn [timestamp, value] ->
         %{datetime: DateTime.from_unix!(timestamp), value: value}
@@ -203,23 +198,25 @@ defmodule Sanbase.Clickhouse.TopHolders.MetricAdapter do
   def available_slugs() do
     cache_key = {__MODULE__, :available_slugs} |> Sanbase.Cache.hash()
 
-    Sanbase.Cache.get_or_store({cache_key, 1800}, fn ->
-      result =
-        Project.List.projects(preload: [:infrastructure])
-        |> Enum.filter(fn project ->
-          case Project.infrastructure_real_code(project) do
-            {:ok, infr_code} ->
-              infr_code in @supported_infrastructures and
-                Project.has_contract_address?(project)
+    Sanbase.Cache.get_or_store({cache_key, 1800}, &projects_with_supported_infrastructure/0)
+  end
 
-            _ ->
-              false
-          end
-        end)
-        |> Enum.map(& &1.slug)
+  defp projects_with_supported_infrastructure() do
+    result =
+      Project.List.projects(preload: [:infrastructure])
+      |> Enum.filter(fn project ->
+        case Project.infrastructure_real_code(project) do
+          {:ok, infr_code} ->
+            infr_code in @supported_infrastructures and
+              Project.has_contract_address?(project)
 
-      {:ok, result}
-    end)
+          _ ->
+            false
+        end
+      end)
+      |> Enum.map(& &1.slug)
+
+    {:ok, result}
   end
 
   @impl Sanbase.Metric.Behaviour

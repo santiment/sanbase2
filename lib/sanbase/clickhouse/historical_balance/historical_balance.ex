@@ -11,29 +11,11 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
   alias Sanbase.Model.Project
 
-  alias Sanbase.Clickhouse.HistoricalBalance.{
-    BchBalance,
-    BnbBalance,
-    BtcBalance,
-    Erc20Balance,
-    EthBalance,
-    LtcBalance,
-    XrpBalance
-  }
-
-  @infrastructure_to_module %{
-    "BCH" => BchBalance,
-    "BNB" => BnbBalance,
-    "BEP2" => BnbBalance,
-    "BTC" => BtcBalance,
-    "LTC" => LtcBalance,
-    "XRP" => XrpBalance,
-    "ETH" => [EthBalance, Erc20Balance]
-  }
+  alias Sanbase.Clickhouse.HistoricalBalance.XrpBalance
 
   @balances_aggregated_blockchains ["ethereum", "bitcoin", "bitcoin-cash", "litecoin", "binance"]
 
-  @supported_infrastructures Map.keys(@infrastructure_to_module)
+  @supported_infrastructures ["BCH", "BNB", "BEP2", "BTC", "LTC", "XRP", "ETH"]
   def supported_infrastructures(), do: @supported_infrastructures
 
   @type selector :: %{
@@ -154,7 +136,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
       when is_binary(contract) and is_number(decimals) and decimals > 0 and
              not is_ethereum(selector) do
     %{
-      module: Erc20Balance,
+      module: :none,
       asset: String.downcase(contract),
       contract: String.downcase(contract),
       blockchain: Sanbase.Balance.blockchain_from_infrastructure("ETH"),
@@ -169,7 +151,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
     with %{slug: slug, contract: contract, decimals: decimals, infrastructure: "ETH"} <-
            get_project_details(selector) do
       %{
-        module: EthBalance,
+        module: :none,
         asset: contract,
         contract: contract,
         blockchain: Sanbase.Balance.blockchain_from_infrastructure("ETH"),
@@ -182,7 +164,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
   def selector_to_args(%{infrastructure: "ETH", slug: slug} = selector) when is_binary(slug) do
     with %{contract: contract, decimals: decimals} <- get_project_details(selector) do
       %{
-        module: Erc20Balance,
+        module: :none,
         asset: contract,
         contract: contract,
         blockchain: Sanbase.Balance.blockchain_from_infrastructure("ETH"),
@@ -208,7 +190,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
     with %{slug: slug, contract: contract, decimals: decimals} <- get_project_details(selector) do
       %{
-        module: BtcBalance,
+        module: :none,
         asset: contract,
         contract: contract,
         blockchain: Sanbase.Balance.blockchain_from_infrastructure("BTC"),
@@ -223,7 +205,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
     with %{slug: slug, contract: contract, decimals: decimals} <- get_project_details(selector) do
       %{
-        module: BchBalance,
+        module: :none,
         asset: contract,
         contract: contract,
         blockchain: Sanbase.Balance.blockchain_from_infrastructure("BCH"),
@@ -238,7 +220,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
     with %{slug: slug, contract: contract, decimals: decimals} <- get_project_details(selector) do
       %{
-        module: LtcBalance,
+        module: :none,
         asset: contract,
         contract: contract,
         blockchain: Sanbase.Balance.blockchain_from_infrastructure("LTC"),
@@ -253,7 +235,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
 
     with %{slug: slug, contract: contract, decimals: decimals} <- get_project_details(selector) do
       %{
-        module: BnbBalance,
+        module: :none,
         asset: contract,
         contract: contract,
         blockchain: Sanbase.Balance.blockchain_from_infrastructure("BNB"),

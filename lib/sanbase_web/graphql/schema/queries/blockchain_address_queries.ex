@@ -7,8 +7,16 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
   alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
   object :blockchain_address_queries do
+    field :blockchain_address_labels, list_of(:string) do
+      arg(:blockchain, :string)
+
+      cache_resolve(&BlockchainAddressResolver.list_all_labels/3)
+    end
+
     @desc "Recent transactions for this address"
     field :recent_transactions, list_of(:transaction) do
+      meta(access: :free)
+
       arg(:address, non_null(:string))
       arg(:type, non_null(:recent_transactions_type))
       arg(:page, non_null(:integer), default_value: 1)
@@ -19,12 +27,14 @@ defmodule SanbaseWeb.Graphql.Schema.BlockchainAddressQueries do
     end
 
     field :blockchain_address, :blockchain_address do
+      meta(access: :free)
       arg(:selector, non_null(:blockchain_address_selector_input_object))
 
       resolve(&BlockchainAddressResolver.blockchain_address/3)
     end
 
     field :blockchain_address_user_pair, :blockchain_address_user_pair do
+      meta(access: :free)
       arg(:selector, non_null(:blockchain_address_selector_input_object))
 
       middleware(JWTAuth)

@@ -58,7 +58,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
                  "userLabels" => ["test label1", "test label 2"],
                  "votes" => [],
                  "votesCount" => 0,
-                 "transactionId" => "0x1"
+                 "transactionId" => "0x1",
+                 "transactionStatus" => "pending"
                }
       end)
     end
@@ -96,7 +97,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
                  "userLabels" => ["test label1", "test label 2"],
                  "votes" => [],
                  "votesCount" => 0,
-                 "transactionId" => "0x1"
+                 "transactionId" => "0x1",
+                 "transactionStatus" => "pending"
                }
       end)
     end
@@ -142,7 +144,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
                  "votesFor" => 0.0,
                  "votes" => [],
                  "votesCount" => 0,
-                 "transactionId" => "0x1"
+                 "transactionId" => "0x1",
+                 "transactionStatus" => "pending"
                }
       end)
     end
@@ -307,6 +310,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         }
         votesCount
         transactionId
+        transactionStatus
       }
     }
     """
@@ -351,6 +355,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         }
         votesCount
         transactionId
+        transactionStatus
       }
     }
     """
@@ -429,7 +434,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
           }
         ],
         "votesCount" => 1,
-        "transactionId" => "0x0"
+        "transactionId" => "0x0",
+        "transactionStatus" => "pending"
       },
       %{
         "createdAt" => "2021-03-24T09:03:19Z",
@@ -452,7 +458,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         "userLabels" => [],
         "votes" => [],
         "votesCount" => 0,
-        "transactionId" => "0x1"
+        "transactionId" => "0x1",
+        "transactionStatus" => "pending"
       },
       %{
         "createdAt" => "2021-03-25T08:45:32Z",
@@ -475,7 +482,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         "userLabels" => [],
         "votes" => [],
         "votesCount" => 0,
-        "transactionId" => "0x2"
+        "transactionId" => "0x2",
+        "transactionStatus" => "pending"
       }
     ]
   end

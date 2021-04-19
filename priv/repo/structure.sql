@@ -139,7 +139,6 @@ $$;
 
 SET default_tablespace = '';
 
-
 --
 -- Name: active_widgets; Type: TABLE; Schema: public; Owner: -
 --
@@ -2759,7 +2758,8 @@ CREATE TABLE public.wallet_hunters_proposals (
     updated_at timestamp without time zone NOT NULL,
     proposed_address character varying(255),
     user_labels character varying(255)[] DEFAULT ARRAY[]::character varying[],
-    transaction_id character varying(255) NOT NULL
+    transaction_id character varying(255) NOT NULL,
+    transaction_status character varying(255) DEFAULT 'pending'::character varying NOT NULL
 );
 
 
@@ -5782,3 +5782,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210409081625);
 INSERT INTO public."schema_migrations" (version) VALUES (20210413091357);
 INSERT INTO public."schema_migrations" (version) VALUES (20210416074600);
 INSERT INTO public."schema_migrations" (version) VALUES (20210416132337);
+INSERT INTO public."schema_migrations" (version) VALUES (20210419130213);

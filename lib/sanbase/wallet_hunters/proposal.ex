@@ -17,10 +17,15 @@ defmodule Sanbase.WalletHunters.Proposal do
     3 => :discarded
   }
 
+  # Polling for transaction 100 times at 5s interval
+  @retries_num 100
+  @sleep_time 5000
+
   schema "wallet_hunters_proposals" do
     field(:hunter_address, :string)
     field(:proposal_id, :integer)
     field(:transaction_id, :string)
+    field(:transaction_status, :string, default: "pending")
     field(:text, :string)
     field(:title, :string)
 
@@ -43,9 +48,17 @@ defmodule Sanbase.WalletHunters.Proposal do
       :hunter_address,
       :user_id,
       :proposed_address,
-      :user_labels
+      :user_labels,
+      :transaction_status
     ])
-    |> validate_required([:transaction_id, :title, :text, :hunter_address, :proposed_address])
+    |> validate_required([
+      :transaction_id,
+      :transaction_status,
+      :title,
+      :text,
+      :hunter_address,
+      :proposed_address
+    ])
     |> normalize_text(:text, attrs[:text])
     |> unique_constraint(:proposal_id)
     |> unique_constraint(:transaction_id)
@@ -57,6 +70,14 @@ defmodule Sanbase.WalletHunters.Proposal do
     markdown = HtmlSanitizeEx.markdown_html(markdown)
     # Bring back the blockquotes
     Regex.replace(~r/^REPLACED_BLOCKQUOTE/m, markdown, "> ")
+  end
+
+  def poll_pending_transactions() do
+    from(p in __MODULE__, where: p.transaction_status == "pending")
+    |> Repo.all()
+    |> Enum.each(fn %{transaction_id: transaction_id} ->
+      poll_transaction_and_maybe_update(transaction_id)
+    end)
   end
 
   def create_proposal(%{request: request, signature: signature} = args) do
@@ -134,11 +155,11 @@ defmodule Sanbase.WalletHunters.Proposal do
     proposals =
       Contract.wallet_proposals()
       |> map_response()
+      |> merge_db_proposals()
       |> filter_response(selector[:filter])
       |> filter_by_type(selector[:type], user)
       |> sort_response(selector[:sort_by])
       |> paginate(selector[:page], selector[:page_size])
-      |> merge_db_proposals()
 
     {:ok, proposals}
   end
@@ -255,25 +276,17 @@ defmodule Sanbase.WalletHunters.Proposal do
     proposals
     |> Enum.map(fn proposal ->
       db_proposal = id_proposal_map[proposal[:proposal_id]] || %{}
-      Map.merge(proposal, db_proposal)
+      Map.merge(Map.from_struct(db_proposal), proposal)
     end)
   end
 
   defp fetch_by_proposal_ids(proposal_ids) do
     from(p in __MODULE__,
       where: p.proposal_id in ^proposal_ids,
-      left_join: u in assoc(p, :user),
-      select: %{
-        proposal_id: p.proposal_id,
-        title: p.title,
-        text: p.text,
-        user: u,
-        user_labels: p.user_labels,
-        proposed_address: p.proposed_address,
-        transaction_id: p.transaction_id
-      }
+      left_join: u in assoc(p, :user)
     )
     |> Repo.all()
+    |> Repo.preload(:user)
   end
 
   defp fetch_all_proposal_ids_by_user(user) do
@@ -305,9 +318,21 @@ defmodule Sanbase.WalletHunters.Proposal do
     end)
   end
 
-  defp check_trx_events(_, 200), do: :ok
+  defp check_trx_events(_, @retries_num), do: :ok
 
   defp check_trx_events(transaction_id, retries_so_far) do
+    poll_transaction_and_maybe_update(transaction_id)
+    |> case do
+      {:ok, %__MODULE__{} = proposal} ->
+        {:ok, proposal}
+
+      error ->
+        Process.sleep(@sleep_time)
+        check_trx_events(transaction_id, retries_so_far + 1)
+    end
+  end
+
+  defp poll_transaction_and_maybe_update(transaction_id) do
     with {:ok, %{"blockNumber" => block_number}} when block_number != nil <-
            Contract.get_trx_by_id(transaction_id),
          {:ok, %{"logs" => logs} = receipt} when is_list(logs) <-
@@ -317,16 +342,19 @@ defmodule Sanbase.WalletHunters.Proposal do
         [_, proposal_id, _] = event["topics"]
         proposal_id = proposal_id |> String.slice(2..-1) |> Integer.parse(16) |> elem(0)
 
-        fetch_by_transaction_id(transaction_id)
-        |> changeset(%{proposal_id: proposal_id})
-        |> Repo.update()
+        update_by_transaction_id(transaction_id, %{
+          proposal_id: proposal_id,
+          transaction_status: "ok"
+        })
       else
-        :ok
+        update_by_transaction_id(transaction_id, %{transaction_status: "error"})
       end
-    else
-      _error ->
-        Process.sleep(5000)
-        check_trx_events(transaction_id, retries_so_far + 1)
     end
+  end
+
+  defp update_by_transaction_id(transaction_id, params) do
+    fetch_by_transaction_id(transaction_id)
+    |> changeset(params)
+    |> Repo.update()
   end
 end

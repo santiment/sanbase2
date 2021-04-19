@@ -79,6 +79,7 @@ defmodule Sanbase.Balance do
   def blockchain_from_infrastructure("BNB"), do: "binance"
   def blockchain_from_infrastructure("BEP2"), do: "binance"
   def blockchain_from_infrastructure("XRP"), do: "ripple"
+  def blockchain_from_infrastructure(_), do: :unsupported_blockchain
 
   # Private functions
 
@@ -207,9 +208,18 @@ defmodule Sanbase.Balance do
   defp info_by_slug(slug) do
     case Project.contract_info_infrastructure_by_slug(slug) do
       {:ok, _contract, decimals, infr} ->
-        blockchain = blockchain_from_infrastructure(infr)
-        decimals = maybe_override_decimals(blockchain, decimals)
-        {:ok, {decimals, blockchain}}
+        case blockchain_from_infrastructure(infr) do
+          :unsupported_blockchain ->
+            {:error,
+             """
+             Project with slug #{slug} has #{infr} infrastructure which does not \
+             have support for historical balances.
+             """}
+
+          blockchain ->
+            decimals = maybe_override_decimals(blockchain, decimals)
+            {:ok, {decimals, blockchain}}
+        end
 
       {:error, {:missing_contract, error}} ->
         {:error, error}

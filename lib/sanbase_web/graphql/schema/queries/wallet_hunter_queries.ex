@@ -26,6 +26,7 @@ defmodule SanbaseWeb.Graphql.Schema.WalletHunterQueries do
       meta(access: :free)
 
       arg(:proposal_id, non_null(:integer))
+      arg(:transaction_id, :string)
       arg(:title, non_null(:string))
       arg(:text, non_null(:string))
       arg(:proposed_address, non_null(:string))

@@ -11,7 +11,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
       insert(:wallet_hunters_proposal,
         proposal_id: 2,
         user: user,
-        hunter_address: "0x26caae548b7cecf98da12ccaaa633d6d140447aa"
+        hunter_address: "0x26caae548b7cecf98da12ccaaa633d6d140447aa",
+        transaction_id: "0x2"
       )
 
     conn = setup_jwt_auth(build_conn(), user)
@@ -56,7 +57,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
                  "proposedAddressLabels" => [%{"name" => "DEX Trader2"}],
                  "userLabels" => ["test label1", "test label 2"],
                  "votes" => [],
-                 "votesCount" => 0
+                 "votesCount" => 0,
+                 "transactionId" => "0x1"
                }
       end)
     end
@@ -93,7 +95,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
                  "proposedAddressLabels" => [%{"name" => "DEX Trader2"}],
                  "userLabels" => ["test label1", "test label 2"],
                  "votes" => [],
-                 "votesCount" => 0
+                 "votesCount" => 0,
+                 "transactionId" => "0x1"
                }
       end)
     end
@@ -138,7 +141,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
                  "votesAgainst" => 0.0,
                  "votesFor" => 0.0,
                  "votes" => [],
-                 "votesCount" => 0
+                 "votesCount" => 0,
+                 "transactionId" => "0x1"
                }
       end)
     end
@@ -146,8 +150,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
 
   describe "Fetch proposals" do
     setup do
-      insert(:wallet_hunters_proposal, proposal_id: 0)
-      insert(:wallet_hunters_proposal, proposal_id: 1)
+      insert(:wallet_hunters_proposal, proposal_id: 0, transaction_id: "0x0")
+      insert(:wallet_hunters_proposal, proposal_id: 1, transaction_id: "0x1")
       :ok
     end
 
@@ -269,7 +273,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         title:"t2",
         hunterAddress:"0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
         proposedAddress:"0x11111109fe98a396f32d6cff4736bedc7b60008c",
-        userLabels: ["test label1", "test label 2"]
+        userLabels: ["test label1", "test label 2"],
+        transactionId: "0x1"
       ) {
         proposalId
         user {
@@ -301,6 +306,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
           votedFor
         }
         votesCount
+        transactionId
       }
     }
     """
@@ -344,6 +350,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
           votedFor
         }
         votesCount
+        transactionId
       }
     }
     """
@@ -421,7 +428,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
             "voterAddress" => "0x9a70009b09d729453333121a7d47bd9a039b9153"
           }
         ],
-        "votesCount" => 1
+        "votesCount" => 1,
+        "transactionId" => "0x0"
       },
       %{
         "createdAt" => "2021-03-24T09:03:19Z",
@@ -443,7 +451,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         "proposedAddressLabels" => [],
         "userLabels" => [],
         "votes" => [],
-        "votesCount" => 0
+        "votesCount" => 0,
+        "transactionId" => "0x1"
       },
       %{
         "createdAt" => "2021-03-25T08:45:32Z",
@@ -465,7 +474,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         "proposedAddressLabels" => [],
         "userLabels" => [],
         "votes" => [],
-        "votesCount" => 0
+        "votesCount" => 0,
+        "transactionId" => "0x2"
       }
     ]
   end

@@ -7,8 +7,20 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
   alias SanbaseWeb.Graphql.SanbaseRepo
   alias SanbaseWeb.Graphql.Resolvers.UserListResolver
 
-  enum(:color_enum, values: [:none, :blue, :red, :green, :yellow, :grey, :black])
-  enum(:watchlist_type_enum, values: [:project, :blockchain_address])
+  enum :color_enum do
+    value(:none)
+    value(:blue)
+    value(:red)
+    value(:green)
+    value(:yellow)
+    value(:grey)
+    value(:black)
+  end
+
+  enum :watchlist_type_enum do
+    value(:project)
+    value(:blockchain_address)
+  end
 
   input_object :blockchain_address_input_object do
     field(:address, :string)

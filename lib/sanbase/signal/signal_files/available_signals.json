@@ -8,7 +8,11 @@
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "Old Coins Moved",
@@ -19,7 +23,11 @@
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "Large Transactions",
@@ -30,7 +38,11 @@
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "Anomaly MVRV USD {{timebound_human_readable}}",
@@ -54,7 +66,11 @@
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "Anomaly MVRV USD",
@@ -65,7 +81,11 @@
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "Anomaly Circulation {{timebound_human_readable}}",
@@ -77,7 +97,11 @@
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "Anomaly Daily Active Addresses",
@@ -88,7 +112,11 @@
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "Anomaly Network Growth",
@@ -99,7 +127,11 @@
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "Anomaly Velocity",
@@ -110,7 +142,11 @@
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "Anomaly Age Consumed",
@@ -121,7 +157,11 @@
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "Anomaly Payment Count",
@@ -132,7 +172,11 @@
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "Anomaly Supply On Exchanges",
@@ -143,7 +187,11 @@
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "Anomaly Transaction Count",
@@ -154,7 +202,11 @@
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "Anomaly Comulative Age Consumed",
@@ -165,7 +217,11 @@
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "Anomaly Active Deposits",
@@ -176,7 +232,11 @@
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "Anomaly Active Withdrawals",
@@ -187,18 +247,26 @@
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "MCD Art Liquidations",
     "name": "mcd_art_liquidations",
     "signal": "mcd_art_liquidations",
-    "access": "free",
+    "access": "restricted",
     "selectors": ["slug"],
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "pro",
+      "SANBASE": "pro"
+    }
   },
   {
     "human_readable_name": "Large Exchange Deposit",
@@ -209,7 +277,11 @@
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "Large Exchange Withdrawal",
@@ -220,7 +292,11 @@
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "Price All Time High (USD)",
@@ -231,7 +307,11 @@
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   },
   {
     "human_readable_name": "Anomaly Transaction Volume",
@@ -242,6 +322,10 @@
     "aggregation": "count",
     "min_interval": "1m",
     "table": "signals",
-    "data_type": "timeseries"
+    "data_type": "timeseries",
+    "min_plan": {
+      "SANAPI": "free",
+      "SANBASE": "free"
+    }
   }
 ]

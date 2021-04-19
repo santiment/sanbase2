@@ -16,6 +16,11 @@ defmodule Sanbase.Signal.SignalAdapter do
   @selectors_map FileHandler.selectors_map()
   @human_readable_name_map FileHandler.human_readable_name_map()
   @signal_to_name_map FileHandler.signal_to_name_map()
+  @access_map FileHandler.access_map()
+  @min_plan_map FileHandler.min_plan_map()
+  @free_signals FileHandler.signals_with_access(:free)
+  @restricted_signals FileHandler.signals_with_access(:restricted)
+  @timeseries_signals FileHandler.signals_with_data_type(:timeseries)
 
   def has_signal?(signal) do
     case signal in @signals_mapset do
@@ -24,14 +29,8 @@ defmodule Sanbase.Signal.SignalAdapter do
     end
   end
 
-  @doc ~s"""
-  Get available aggregations
-  """
   def available_aggregations(), do: @aggregations
 
-  @doc ~s"""
-  Get the human readable name representation of a given signal
-  """
   def human_readable_name(signal) do
     case Map.get(@human_readable_name_map, signal) do
       nil ->
@@ -41,6 +40,16 @@ defmodule Sanbase.Signal.SignalAdapter do
         human_readable_name
     end
   end
+
+  def free_signals(), do: @free_signals
+
+  def restricted_signals(), do: @restricted_signals
+
+  def available_timeseries_signals(), do: @timeseries_signals
+
+  def access_map(), do: @access_map
+
+  def min_plan_map(), do: @min_plan_map
 
   @impl Sanbase.Signal.Behaviour
   def available_signals(), do: @signals

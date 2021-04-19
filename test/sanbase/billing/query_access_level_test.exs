@@ -3,10 +3,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
 
   # Assert that a query's access level does not change incidentally
   describe "subscription meta" do
-    test "there are no queries without defined subscription" do
-      assert Sanbase.Billing.GraphqlSchema.get_all_without_access_level() == []
-    end
-
     test "free queries defined in the schema" do
       free_queries =
         Sanbase.Billing.GraphqlSchema.get_queries_with_access_level(:free)

@@ -8,6 +8,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
 
   alias Sanbase.Billing.Plan.SanbaseAccessChecker
   alias Sanbase.Metric
+  alias Sanbase.Signal
 
   @triggers_limit_count 10
   @product "SANBASE"
@@ -15,6 +16,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
   setup_all_with_mocks([
     {Sanbase.Price, [:passthrough], [timeseries_data: fn _, _, _, _ -> price_resp() end]},
     {Sanbase.Metric, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> metric_resp() end]},
+    {Sanbase.Signal, [:passthrough], [timeseries_data: fn _, _, _, _, _, _ -> signal_resp() end]},
     {Sanbase.Alert.UserTrigger, [:passthrough],
      [triggers_count_for: fn _ -> @triggers_limit_count end]}
   ]) do
@@ -35,7 +37,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       {from, to} = from_to(2500, 0)
       slug = context.project.slug
 
-      metric = v2_free_timeseries_metric(context.next_integer.(), "SANBASE")
+      metric = get_free_timeseries_element(context.next_integer.(), @product, :metric)
       query = metric_query(metric, slug, from, to)
 
       result = execute_query(context.conn, query, "getMetric")
@@ -51,6 +53,19 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       result = execute_query(context.conn, query, "historyPrice")
 
       assert_called(Sanbase.Price.timeseries_data(:_, from, to, :_))
+      assert result != nil
+    end
+
+    test "can access FREE signals for all time", context do
+      {from, to} = from_to(2500, 0)
+      slug = context.project.slug
+
+      signal = get_free_timeseries_element(context.next_integer.(), @product, :signal)
+      query = signal_query(signal, slug, from, to)
+
+      result = execute_query(context.conn, query, "getSignal")
+
+      assert_called(Signal.timeseries_data(signal, :_, from, to, :_, :_))
       assert result != nil
     end
 
@@ -160,7 +175,7 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     test "can access FREE metrics for all time", context do
       {from, to} = from_to(4000, 0)
       slug = context.project.slug
-      metric = v2_free_timeseries_metric(context.next_integer.(), "SANBASE")
+      metric = get_free_timeseries_element(context.next_integer.(), @product, :metric)
       query = metric_query(metric, slug, from, to)
 
       result = execute_query(context.conn, query, "getMetric")
@@ -179,6 +194,19 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       assert result != nil
     end
 
+    test "can access FREE signals for all time", context do
+      {from, to} = from_to(2500, 0)
+      slug = context.project.slug
+
+      signal = get_free_timeseries_element(context.next_integer.(), @product, :signal)
+      query = signal_query(signal, slug, from, to)
+
+      result = execute_query(context.conn, query, "getSignal")
+
+      assert_called(Signal.timeseries_data(signal, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
     test "can access RESTRICTED metrics for all time", context do
       {from, to} = from_to(4000, 10)
       slug = context.project.slug
@@ -191,8 +219,20 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       assert result != nil
     end
 
-    test "can access RESTRICTED metrics realtime", context do
-      {from, to} = from_to(10, 0)
+    test "can access RESTRICTED signals for all time", context do
+      {from, to} = from_to(4000, 10)
+      slug = context.project.slug
+      signal = restricted_signal_for_plan(context.next_integer.(), @product, :pro)
+      query = signal_query(signal, slug, from, to)
+
+      result = execute_query(context.conn, query, "getSignal")
+
+      assert_called(Signal.timeseries_data(signal, :_, from, to, :_, :_))
+      assert result != nil
+    end
+
+    test "can access RESTRICTED queries for all time", context do
+      {from, to} = from_to(4000, 10)
       slug = context.project.slug
       query = network_growth_query(slug, from, to)
 
@@ -202,8 +242,8 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
       assert result != nil
     end
 
-    test "can access RESTRICTED queries for all time", context do
-      {from, to} = from_to(4000, 10)
+    test "can access RESTRICTED metrics realtime", context do
+      {from, to} = from_to(10, 0)
       slug = context.project.slug
       query = network_growth_query(slug, from, to)
 
@@ -306,6 +346,23 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
     """
   end
 
+  defp signal_query(signal, slug, from, to) do
+    """
+      {
+        getSignal(signal: "#{signal}") {
+          timeseriesData(
+            slug: "#{slug}"
+            from: "#{from}"
+            to: "#{to}"
+            interval: "30d"){
+              datetime
+              value
+          }
+        }
+      }
+    """
+  end
+
   defp network_growth_query(slug, from, to) do
     """
       {
@@ -333,6 +390,14 @@ defmodule Sanbase.Billing.SanbaseProductAccessTest do
      [
        %{value: 10.0, datetime: ~U[2019-01-01 00:00:00Z]},
        %{value: 20.0, datetime: ~U[2019-01-02 00:00:00Z]}
+     ]}
+  end
+
+  defp signal_resp() do
+    {:ok,
+     [
+       %{value: 5.0, datetime: ~U[2020-01-01 00:00:00Z]},
+       %{value: 10.0, datetime: ~U[2020-01-02 00:00:00Z]}
      ]}
   end
 

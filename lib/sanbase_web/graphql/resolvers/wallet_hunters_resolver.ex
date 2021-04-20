@@ -1,5 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.WalletHuntersResolver do
   import Absinthe.Resolution.Helpers
+  import Sanbase.Utils.ErrorHandling, only: [changeset_errors_string: 1]
 
   alias Sanbase.WalletHunters.Proposal
   alias Sanbase.WalletHunters.Vote
@@ -12,6 +13,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.WalletHuntersResolver do
     args = Map.put(args, :user_id, current_user.id)
 
     Proposal.create(args)
+    |> case do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, message: changeset_errors_string(changeset)}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   def create_wh_proposal(_root, args, %{
@@ -20,6 +31,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.WalletHuntersResolver do
     args = Map.put(args, :user_id, current_user.id)
 
     Proposal.create_proposal(args)
+    |> case do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, message: changeset_errors_string(changeset)}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   def wallet_hunters_vote(_root, args, %{

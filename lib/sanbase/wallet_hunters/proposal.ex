@@ -60,6 +60,8 @@ defmodule Sanbase.WalletHunters.Proposal do
       :proposed_address
     ])
     |> normalize_text(:text, attrs[:text])
+    |> validate_change(:hunter_address, &validate_address/2)
+    |> validate_change(:proposed_address, &validate_address/2)
     |> unique_constraint(:proposal_id)
     |> unique_constraint(:transaction_id)
   end
@@ -378,5 +380,12 @@ defmodule Sanbase.WalletHunters.Proposal do
     fetch_by_transaction_id(transaction_id)
     |> changeset(params)
     |> Repo.update()
+  end
+
+  defp validate_address(field, address) do
+    case Regex.match?(~r/^0x([A-Fa-f0-9]{40})$/, address) do
+      true -> []
+      false -> [{field, "Invalid Ethereum address!"}]
+    end
   end
 end

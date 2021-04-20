@@ -29,7 +29,7 @@ defmodule Sanbase.Alert.Trigger.DailyMetricTriggerSettings do
             template_kv: %{}
 
   validates(:metric, &valid_metric?/1)
-  validates(:metric, &valid_1_day_min_interval_metric?/1)
+  validates(:metric, &valid_above_5m_min_interval_metric?/1)
   validates(:target, &valid_target?/1)
   validates(:channel, &valid_notification_channel?/1)
   validates(:time_window, &valid_time_window?/1)

@@ -1,4 +1,6 @@
 defmodule Sanbase.WalletHunters.RelayerApi do
+  require Logger
+
   @relayer_url "http://san-rewards-relay.default.svc.cluster.local/"
   @opts [recv_timeout: 20000]
 
@@ -29,8 +31,13 @@ defmodule Sanbase.WalletHunters.RelayerApi do
       {:ok, %HTTPoison.Response{status_code: code, body: body}} when code in 200..299 ->
         {:ok, Jason.decode!(body)}
 
+      {:ok, %HTTPoison.Response{status_code: code, body: body} = response} when is_binary(body) ->
+        Logger.error("Relaying request failed: #{inspect(response)}")
+        {:error, "Relaying request failed: #{body}"}
+
       response ->
-        {:error, response}
+        Logger.error("Relaying request failed: #{inspect(response)}")
+        {:error, "Relaying request failed!"}
     end
   end
 end

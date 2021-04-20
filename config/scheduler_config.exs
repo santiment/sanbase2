@@ -143,5 +143,13 @@ config :sanbase, Sanbase.Scrapers.Scheduler,
     poll_pending_wallet_hunters_proposal_transactions: [
       schedule: "5 * * * *",
       task: {Sanbase.WalletHunters.Proposal, :poll_pending_transactions, []}
+    ],
+    update_earned_relays: [
+      schedule: "8 * * * *",
+      task: {Sanbase.WalletHunters.Proposal, :update_earned_relays, []}
+    ],
+    poll_pending_wallet_hunters_vote_transactions: [
+      schedule: "6 * * * *",
+      task: {Sanbase.WalletHunters.Vote, :poll_pending_transactions, []}
     ]
   ]

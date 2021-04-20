@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.Schema.WalletHunterQueries do
   use Absinthe.Schema.Notation
 
   alias SanbaseWeb.Graphql.Resolvers.WalletHuntersResolver
+  alias SanbaseWeb.Graphql.Middlewares.JWTAuth
 
   object :wallet_hunter_queries do
     field :wallet_hunters_proposals, list_of(:wallet_hunter_proposal) do
@@ -33,6 +34,7 @@ defmodule SanbaseWeb.Graphql.Schema.WalletHunterQueries do
       arg(:hunter_address, non_null(:string))
       arg(:user_labels, list_of(:string), default_value: [])
 
+      middleware(JWTAuth)
       resolve(&WalletHuntersResolver.create_wallet_hunter_proposal/3)
     end
 
@@ -49,7 +51,22 @@ defmodule SanbaseWeb.Graphql.Schema.WalletHunterQueries do
       arg(:hunter_address, non_null(:string))
       arg(:user_labels, list_of(:string), default_value: [])
 
+      middleware(JWTAuth)
       resolve(&WalletHuntersResolver.create_wh_proposal/3)
+    end
+
+    field :wallet_hunters_vote, :wallet_hunters_vote do
+      meta(access: :free)
+
+      arg(:transaction_id, :string)
+      arg(:request, :wallet_hunters_request_object)
+      arg(:signature, :string)
+
+      arg(:proposal_id, non_null(:integer))
+
+      middleware(JWTAuth)
+
+      resolve(&WalletHuntersResolver.wallet_hunters_vote/3)
     end
   end
 end

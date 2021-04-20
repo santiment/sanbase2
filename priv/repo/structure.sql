@@ -2764,6 +2764,38 @@ CREATE TABLE public.wallet_hunters_proposals (
 
 
 --
+-- Name: wallet_hunters_proposals_comments_mapping; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.wallet_hunters_proposals_comments_mapping (
+    id bigint NOT NULL,
+    comment_id bigint,
+    proposal_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: wallet_hunters_proposals_comments_mapping_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.wallet_hunters_proposals_comments_mapping_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: wallet_hunters_proposals_comments_mapping_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.wallet_hunters_proposals_comments_mapping_id_seq OWNED BY public.wallet_hunters_proposals_comments_mapping.id;
+
+
+--
 -- Name: wallet_hunters_proposals_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -3378,6 +3410,13 @@ ALTER TABLE ONLY public.votes ALTER COLUMN id SET DEFAULT nextval('public.votes_
 --
 
 ALTER TABLE ONLY public.wallet_hunters_proposals ALTER COLUMN id SET DEFAULT nextval('public.wallet_hunters_proposals_id_seq'::regclass);
+
+
+--
+-- Name: wallet_hunters_proposals_comments_mapping id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wallet_hunters_proposals_comments_mapping ALTER COLUMN id SET DEFAULT nextval('public.wallet_hunters_proposals_comments_mapping_id_seq'::regclass);
 
 
 --
@@ -4024,6 +4063,14 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.votes
     ADD CONSTRAINT votes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: wallet_hunters_proposals_comments_mapping wallet_hunters_proposals_comments_mapping_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wallet_hunters_proposals_comments_mapping
+    ADD CONSTRAINT wallet_hunters_proposals_comments_mapping_pkey PRIMARY KEY (id);
 
 
 --
@@ -4714,6 +4761,20 @@ CREATE UNIQUE INDEX votes_post_id_user_id_index ON public.votes USING btree (pos
 --
 
 CREATE UNIQUE INDEX votes_timeline_event_id_user_id_index ON public.votes USING btree (timeline_event_id, user_id);
+
+
+--
+-- Name: wallet_hunters_proposals_comments_mapping_comment_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX wallet_hunters_proposals_comments_mapping_comment_id_index ON public.wallet_hunters_proposals_comments_mapping USING btree (comment_id);
+
+
+--
+-- Name: wallet_hunters_proposals_comments_mapping_proposal_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX wallet_hunters_proposals_comments_mapping_proposal_id_index ON public.wallet_hunters_proposals_comments_mapping USING btree (proposal_id);
 
 
 --
@@ -5496,6 +5557,22 @@ ALTER TABLE ONLY public.votes
 
 
 --
+-- Name: wallet_hunters_proposals_comments_mapping wallet_hunters_proposals_comments_mapping_comment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wallet_hunters_proposals_comments_mapping
+    ADD CONSTRAINT wallet_hunters_proposals_comments_mapping_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES public.comments(id) ON DELETE CASCADE;
+
+
+--
+-- Name: wallet_hunters_proposals_comments_mapping wallet_hunters_proposals_comments_mapping_proposal_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wallet_hunters_proposals_comments_mapping
+    ADD CONSTRAINT wallet_hunters_proposals_comments_mapping_proposal_id_fkey FOREIGN KEY (proposal_id) REFERENCES public.wallet_hunters_proposals(id) ON DELETE CASCADE;
+
+
+--
 -- Name: wallet_hunters_proposals wallet_hunters_proposals_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5852,3 +5929,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210416132337);
 INSERT INTO public."schema_migrations" (version) VALUES (20210419130213);
 INSERT INTO public."schema_migrations" (version) VALUES (20210419183855);
 INSERT INTO public."schema_migrations" (version) VALUES (20210419190728);
+INSERT INTO public."schema_migrations" (version) VALUES (20210420120610);

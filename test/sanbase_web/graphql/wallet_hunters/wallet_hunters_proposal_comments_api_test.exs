@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.ShortUrlCommentApiTest do
+defmodule SanbaseWeb.Graphql.WalletHuntersProposalCommentApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Factory
@@ -9,23 +9,31 @@ defmodule SanbaseWeb.Graphql.ShortUrlCommentApiTest do
     clean_task_supervisor_children()
 
     user = insert(:user)
-    short_url = insert(:short_url)
+
+    proposal =
+      insert(:wallet_hunters_proposal,
+        proposal_id: 2,
+        user: user,
+        hunter_address: "0x26caae548b7cecf98da12ccaaa633d6d140447aa",
+        transaction_id: "0x2"
+      )
+
     conn = setup_jwt_auth(build_conn(), user)
 
-    %{conn: conn, user: user, short_url: short_url}
+    %{conn: conn, user: user, proposal: proposal}
   end
 
-  test "comment a short url", context do
-    %{short_url: short_url, conn: conn, user: user} = context
+  test "comment a wallet hunters proposal", context do
+    %{proposal: proposal, conn: conn, user: user} = context
     other_user_conn = setup_jwt_auth(build_conn(), insert(:user))
 
-    content = "nice short_url"
+    content = "nice proposal"
 
-    comment = create_comment(conn, short_url.id, nil, content)
+    comment = create_comment(conn, proposal.id, nil, content)
 
-    comments = short_url_comments(other_user_conn, short_url.id)
+    comments = proposal_comments(other_user_conn, proposal.id)
 
-    assert comment["shortUrlId"] |> Sanbase.Math.to_integer() == short_url.id
+    assert comment["proposalId"] |> Sanbase.Math.to_integer() == proposal.id
     assert comment["content"] == content
     assert comment["insertedAt"] != nil
     assert comment["editedAt"] == nil
@@ -36,14 +44,14 @@ defmodule SanbaseWeb.Graphql.ShortUrlCommentApiTest do
   end
 
   test "update a comment", context do
-    %{conn: conn, short_url: short_url} = context
+    %{conn: conn, proposal: proposal} = context
 
-    content = "nice short_url"
+    content = "nice proposal"
     new_content = "updated content"
 
-    comment = create_comment(conn, short_url.id, nil, content)
+    comment = create_comment(conn, proposal.id, nil, content)
     updated_comment = update_comment(conn, comment["id"], new_content)
-    comments = short_url_comments(conn, short_url.id)
+    comments = proposal_comments(conn, proposal.id)
 
     assert comment["editedAt"] == nil
     assert updated_comment["editedAt"] != nil
@@ -63,31 +71,31 @@ defmodule SanbaseWeb.Graphql.ShortUrlCommentApiTest do
   end
 
   test "delete a comment", context do
-    %{conn: conn, short_url: short_url} = context
+    %{conn: conn, proposal: proposal} = context
     fallback_user = insert(:insights_fallback_user)
 
-    content = "nice short_url"
-    comment = create_comment(conn, short_url.id, nil, content)
+    content = "nice proposal"
+    comment = create_comment(conn, proposal.id, nil, content)
     delete_comment(conn, comment["id"])
 
-    comments = short_url_comments(conn, short_url.id)
-    short_url_comment = comments |> List.first()
+    comments = proposal_comments(conn, proposal.id)
+    proposal_comment = comments |> List.first()
 
-    assert short_url_comment["user"]["id"] != comment["user"]["id"]
-    assert short_url_comment["user"]["id"] |> Sanbase.Math.to_integer() == fallback_user.id
+    assert proposal_comment["user"]["id"] != comment["user"]["id"]
+    assert proposal_comment["user"]["id"] |> Sanbase.Math.to_integer() == fallback_user.id
 
-    assert short_url_comment["content"] != comment["content"]
-    assert short_url_comment["content"] =~ "deleted"
+    assert proposal_comment["content"] != comment["content"]
+    assert proposal_comment["content"] =~ "deleted"
   end
 
   test "create a subcomment", context do
-    %{conn: conn, short_url: short_url} = context
-    c1 = create_comment(conn, short_url.id, nil, "some content")
-    c2 = create_comment(conn, short_url.id, c1["id"], "other content")
-    create_comment(conn, short_url.id, c2["id"], "other content2")
+    %{conn: conn, proposal: proposal} = context
+    c1 = create_comment(conn, proposal.id, nil, "some content")
+    c2 = create_comment(conn, proposal.id, c1["id"], "other content")
+    create_comment(conn, proposal.id, c2["id"], "other content2")
 
     [comment, subcomment1, subcomment2] =
-      short_url_comments(conn, short_url.id)
+      proposal_comments(conn, proposal.id)
       |> Enum.sort_by(&(&1["id"] |> String.to_integer()))
 
     assert comment["parentId"] == nil
@@ -100,17 +108,17 @@ defmodule SanbaseWeb.Graphql.ShortUrlCommentApiTest do
     assert subcomment2["rootParentId"] == comment["id"]
   end
 
-  defp create_comment(conn, short_url_id, parent_id, content) do
+  defp create_comment(conn, proposal_id, parent_id, content) do
     mutation = """
     mutation {
       createComment(
-        entityType: SHORT_URL
-        id: #{short_url_id}
+        entityType: WALLET_HUNTERS_PROPOSAL
+        id: #{proposal_id}
         parentId: #{parent_id || "null"}
         content: "#{content}") {
           id
           content
-          shortUrlId
+          proposalId
           user{ id username email }
           subcommentsCount
           insertedAt
@@ -119,10 +127,7 @@ defmodule SanbaseWeb.Graphql.ShortUrlCommentApiTest do
     }
     """
 
-    conn
-    |> post("/graphql", mutation_skeleton(mutation))
-    |> json_response(200)
-    |> get_in(["data", "createComment"])
+    execute_mutation(conn, mutation, "createComment")
   end
 
   defp update_comment(conn, comment_id, content) do
@@ -133,7 +138,7 @@ defmodule SanbaseWeb.Graphql.ShortUrlCommentApiTest do
         content: "#{content}") {
           id
           content
-          shortUrlId
+          proposalId
           user{ id username email }
           subcommentsCount
           insertedAt
@@ -142,10 +147,7 @@ defmodule SanbaseWeb.Graphql.ShortUrlCommentApiTest do
     }
     """
 
-    conn
-    |> post("/graphql", mutation_skeleton(mutation))
-    |> json_response(200)
-    |> get_in(["data", "updateComment"])
+    execute_mutation(conn, mutation, "updateComment")
   end
 
   defp delete_comment(conn, comment_id) do
@@ -154,7 +156,7 @@ defmodule SanbaseWeb.Graphql.ShortUrlCommentApiTest do
       deleteComment(commentId: #{comment_id}) {
         id
         content
-        shortUrlId
+        proposalId
         user{ id username email }
         subcommentsCount
         insertedAt
@@ -163,22 +165,19 @@ defmodule SanbaseWeb.Graphql.ShortUrlCommentApiTest do
     }
     """
 
-    conn
-    |> post("/graphql", mutation_skeleton(mutation))
-    |> json_response(200)
-    |> get_in(["data", "deleteComment"])
+    execute_mutation(conn, mutation, "deleteComment")
   end
 
-  defp short_url_comments(conn, short_url_id) do
+  defp proposal_comments(conn, proposal_id) do
     query = """
     {
       comments(
-        entityType: SHORT_URL
-        id: #{short_url_id}
+        entityType: WALLET_HUNTERS_PROPOSAL
+        id: #{proposal_id}
         cursor: {type: BEFORE, datetime: "#{Timex.now()}"}) {
           id
           content
-          shortUrlId
+          proposalId
           parentId
           rootParentId
           user{ id username email }
@@ -187,9 +186,6 @@ defmodule SanbaseWeb.Graphql.ShortUrlCommentApiTest do
     }
     """
 
-    conn
-    |> post("/graphql", query_skeleton(query))
-    |> json_response(200)
-    |> get_in(["data", "comments"])
+    execute_query(conn, query, "comments")
   end
 end

@@ -40,6 +40,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :comment_insight_id,
     :comment_timeline_event_id,
     :comment_blockchain_address_id,
+    :comment_proposal_id,
     :comment_short_url_id,
     :infrastructure,
     :market_segment,
@@ -47,6 +48,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
     :insights_count_per_user,
     :timeline_events_comments_count,
     :blockchain_addresses_comments_count,
+    :wallet_hunters_proposals_comments_count,
     :short_urls_comments_count,
     :project_by_slug
   ]

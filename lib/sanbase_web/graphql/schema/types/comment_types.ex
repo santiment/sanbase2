@@ -8,7 +8,8 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
     InsightResolver,
     TimelineEventResolver,
     BlockchainAddressResolver,
-    ShortUrlResolver
+    ShortUrlResolver,
+    WalletHuntersResolver
   }
 
   alias SanbaseWeb.Graphql.SanbaseRepo
@@ -18,6 +19,7 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
     value(:timeline_event)
     value(:short_url)
     value(:blockchain_address)
+    value(:wallet_hunters_proposal)
   end
 
   object :comments_feed_item do
@@ -49,6 +51,10 @@ defmodule SanbaseWeb.Graphql.CommentTypes do
 
     field :blockchain_address_id, non_null(:id) do
       cache_resolve(&BlockchainAddressResolver.blockchain_address_id/3)
+    end
+
+    field :proposal_id, non_null(:id) do
+      cache_resolve(&WalletHuntersResolver.proposal_id/3)
     end
 
     field :short_url_id, non_null(:id) do

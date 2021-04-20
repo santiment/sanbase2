@@ -106,9 +106,9 @@ defmodule Sanbase.Validation do
     end
   end
 
-  def valid_1_day_min_interval_metric?(metric) do
+  def valid_above_5m_min_interval_metric?(metric) do
     with {:ok, %{min_interval: min_interval}} <- Sanbase.Metric.metadata(metric),
-         interval_sec when is_number(interval_sec) and interval_sec >= 86_400 <-
+         interval_sec when is_number(interval_sec) and interval_sec > 300 <-
            Sanbase.DateTimeUtils.str_to_sec(min_interval) do
       :ok
     else

@@ -122,11 +122,11 @@ defmodule Sanbase.WalletHunters.RelayQuota do
       %{global_relays_left: global_relays_left} when global_relays_left <= 0 ->
         {:error, "Global relays limit reached!"}
 
-      %{votes_relays_left: votes_relays_left} when votes_relays_left <= 0 ->
+      %{vote_relays_left: vote_relays_left} when vote_relays_left <= 0 ->
         {:error, "Votes relays limit reached!"}
 
-      %{global_relays_left: global_relays_left, votes_relays_left: votes_relays_left}
-      when global_relays_left > 0 and votes_relays_left > 0 ->
+      %{global_relays_left: global_relays_left, vote_relays_left: vote_relays_left}
+      when global_relays_left > 0 and vote_relays_left > 0 ->
         true
     end
   end
@@ -203,9 +203,9 @@ defmodule Sanbase.WalletHunters.RelayQuota do
 
   defp to_map_votes({quota, used, left}) do
     %{
-      votes_relays_quota: quota,
-      votes_relays_used: used,
-      votes_relays_left: left
+      vote_relays_quota: quota,
+      vote_relays_used: used,
+      vote_relays_left: left
     }
   end
 

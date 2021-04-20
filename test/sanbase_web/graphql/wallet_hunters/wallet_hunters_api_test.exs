@@ -21,49 +21,6 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
   end
 
   describe "Create proposal" do
-    test "when user is not logged in" do
-      mock_fun =
-        [
-          fn -> {:ok, %{rows: labels_rows()}} end,
-          fn -> {:ok, %{rows: labels_rows()}} end
-        ]
-        |> Sanbase.Mock.wrap_consecutives(arity: 2)
-
-      Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_new_filter/1, filter_id_resp())
-      |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_get_filter_logs/1, votes_resp())
-      |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_call/1, proposal_resp())
-      |> Sanbase.Mock.prepare_mock(Sanbase.ClickhouseRepo, :query, mock_fun)
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        result =
-          execute_mutation(build_conn(), create_proposal_mutation(), "createWalletHunterProposal")
-
-        assert result == %{
-                 "hunterAddress" => "0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
-                 "createdAt" => "2021-03-24T09:03:19Z",
-                 "finishAt" => "2021-03-25T09:03:19Z",
-                 "fixedSheriffReward" => 10.0,
-                 "isRewardClaimed" => false,
-                 "proposalId" => "1",
-                 "reward" => 110.0,
-                 "sheriffsRewardShare" => 2.0e3,
-                 "state" => "DECLINED",
-                 "text" => "t",
-                 "title" => "t2",
-                 "user" => nil,
-                 "votesAgainst" => 0.0,
-                 "votesFor" => 0.0,
-                 "hunterAddressLabels" => [],
-                 "proposedAddress" => "0x11111109fe98a396f32d6cff4736bedc7b60008c",
-                 "proposedAddressLabels" => [%{"name" => "DEX Trader2"}],
-                 "userLabels" => ["test label1", "test label 2"],
-                 "votes" => [],
-                 "votesCount" => 0,
-                 "transactionId" => "0x1",
-                 "transactionStatus" => "pending"
-               }
-      end)
-    end
-
     test "when user is logged in", context do
       Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_new_filter/1, filter_id_resp())
       |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_get_filter_logs/1, votes_resp())

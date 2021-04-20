@@ -1,15 +1,12 @@
 defmodule SanbaseWeb.Graphql.Resolvers.WalletHuntersResolver do
   alias Sanbase.WalletHunters.Proposal
+  alias Sanbase.WalletHunters.Vote
 
   def create_wallet_hunter_proposal(_root, args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
     args = Map.put(args, :user_id, current_user.id)
 
-    Proposal.create(args)
-  end
-
-  def create_wallet_hunter_proposal(_root, args, _resolution) do
     Proposal.create(args)
   end
 
@@ -21,8 +18,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.WalletHuntersResolver do
     Proposal.create_proposal(args)
   end
 
-  def create_wh_proposal(_root, args, _resolution) do
-    Proposal.create_proposal(args)
+  def wallet_hunters_vote(_root, args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    args = Map.put(args, :user_id, current_user.id)
+
+    Vote.vote(args)
   end
 
   def wallet_hunters_proposals(_root, args, %{context: %{auth: %{current_user: current_user}}}) do

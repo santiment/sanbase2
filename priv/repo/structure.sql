@@ -2791,7 +2791,10 @@ CREATE TABLE public.wallet_hunters_relays_quota (
     proposals_used integer,
     user_id bigint,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    votes_used integer DEFAULT 0,
+    last_voted timestamp(0) without time zone,
+    proposals_earned integer DEFAULT 0
 );
 
 
@@ -2812,6 +2815,40 @@ CREATE SEQUENCE public.wallet_hunters_relays_quota_id_seq
 --
 
 ALTER SEQUENCE public.wallet_hunters_relays_quota_id_seq OWNED BY public.wallet_hunters_relays_quota.id;
+
+
+--
+-- Name: wallet_hunters_votes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.wallet_hunters_votes (
+    id bigint NOT NULL,
+    proposal_id integer,
+    transaction_id character varying(255),
+    transaction_status character varying(255) DEFAULT 'pending'::character varying,
+    user_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: wallet_hunters_votes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.wallet_hunters_votes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: wallet_hunters_votes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.wallet_hunters_votes_id_seq OWNED BY public.wallet_hunters_votes.id;
 
 
 --
@@ -3348,6 +3385,13 @@ ALTER TABLE ONLY public.wallet_hunters_proposals ALTER COLUMN id SET DEFAULT nex
 --
 
 ALTER TABLE ONLY public.wallet_hunters_relays_quota ALTER COLUMN id SET DEFAULT nextval('public.wallet_hunters_relays_quota_id_seq'::regclass);
+
+
+--
+-- Name: wallet_hunters_votes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wallet_hunters_votes ALTER COLUMN id SET DEFAULT nextval('public.wallet_hunters_votes_id_seq'::regclass);
 
 
 --
@@ -3996,6 +4040,14 @@ ALTER TABLE ONLY public.wallet_hunters_proposals
 
 ALTER TABLE ONLY public.wallet_hunters_relays_quota
     ADD CONSTRAINT wallet_hunters_relays_quota_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: wallet_hunters_votes wallet_hunters_votes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wallet_hunters_votes
+    ADD CONSTRAINT wallet_hunters_votes_pkey PRIMARY KEY (id);
 
 
 --
@@ -4683,6 +4735,13 @@ CREATE UNIQUE INDEX wallet_hunters_proposals_transaction_id_index ON public.wall
 --
 
 CREATE INDEX wallet_hunters_relays_quota_user_id_index ON public.wallet_hunters_relays_quota USING btree (user_id);
+
+
+--
+-- Name: wallet_hunters_votes_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX wallet_hunters_votes_user_id_index ON public.wallet_hunters_votes USING btree (user_id);
 
 
 --
@@ -5453,6 +5512,14 @@ ALTER TABLE ONLY public.wallet_hunters_relays_quota
 
 
 --
+-- Name: wallet_hunters_votes wallet_hunters_votes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wallet_hunters_votes
+    ADD CONSTRAINT wallet_hunters_votes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: watchlist_settings watchlist_settings_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5783,3 +5850,5 @@ INSERT INTO public."schema_migrations" (version) VALUES (20210413091357);
 INSERT INTO public."schema_migrations" (version) VALUES (20210416074600);
 INSERT INTO public."schema_migrations" (version) VALUES (20210416132337);
 INSERT INTO public."schema_migrations" (version) VALUES (20210419130213);
+INSERT INTO public."schema_migrations" (version) VALUES (20210419183855);
+INSERT INTO public."schema_migrations" (version) VALUES (20210419190728);

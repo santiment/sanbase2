@@ -80,6 +80,28 @@ defmodule Sanbase.WalletHunters.Proposal do
     end)
   end
 
+  def update_earned_relays() do
+    proposals =
+      Contract.wallet_proposals()
+      |> map_response()
+      |> merge_db_proposals()
+
+    proposals
+    |> Enum.group_by(& &1.user_id)
+    |> Enum.each(fn {user_id, proposals_per_user} ->
+      Enum.filter(proposals_per_user, &(&1.state == :approved))
+      |> length()
+      |> case do
+        approved when approved > 0 ->
+          :ok
+          RelayQuota.update_earned_proposals(user_id, approved)
+
+        _ ->
+          :ok
+      end
+    end)
+  end
+
   def create_proposal(%{request: request, signature: signature} = args) do
     with true <- RelayQuota.can_relay?(args.user_id),
          {:ok, %{"hash" => transaction_id}} <- RelayerApi.relay(request, signature),

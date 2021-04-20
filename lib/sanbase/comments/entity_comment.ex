@@ -11,8 +11,10 @@ defmodule Sanbase.Comments.EntityComment do
   alias Sanbase.Insight.PostComment
   alias Sanbase.ShortUrl.ShortUrlComment
   alias Sanbase.BlockchainAddress.BlockchainAddressComment
+  alias Sanbase.WalletHunters.ProposalComment
 
-  @type entity :: :insight | :timeline_event | :short_url | :blockchain_address
+  @type entity ::
+          :insight | :timeline_event | :short_url | :blockchain_address | :wallet_hunters_proposal
 
   @spec create_and_link(
           entity,
@@ -66,6 +68,17 @@ defmodule Sanbase.Comments.EntityComment do
     |> BlockchainAddressComment.changeset(%{
       comment_id: comment_id,
       blockchain_address_id: entity_id
+    })
+    |> Repo.insert()
+  end
+
+  @spec link(:wallet_hunters_proposal, non_neg_integer(), non_neg_integer()) ::
+          {:ok, %ProposalComment{}} | {:error, Ecto.Changeset.t()}
+  def link(:wallet_hunters_proposal, entity_id, comment_id) do
+    %ProposalComment{}
+    |> ProposalComment.changeset(%{
+      comment_id: comment_id,
+      proposal_id: entity_id
     })
     |> Repo.insert()
   end
@@ -157,6 +170,13 @@ defmodule Sanbase.Comments.EntityComment do
       preload: [:comment, comment: :user]
     )
     |> maybe_add_entity_id_clause(:blockchain_address_id, entity_id)
+  end
+
+  defp entity_comments_query(:wallet_hunters_proposal, entity_id) do
+    from(comment in ProposalComment,
+      preload: [:comment, comment: :user]
+    )
+    |> maybe_add_entity_id_clause(:proposal_id, entity_id)
   end
 
   defp entity_comments_query(:short_url, entity_id) do

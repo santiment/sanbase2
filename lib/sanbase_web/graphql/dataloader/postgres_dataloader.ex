@@ -62,6 +62,17 @@ defmodule SanbaseWeb.Graphql.MetricPostgresDataloader do
     |> Map.new()
   end
 
+  def query(:comment_proposal_id, comment_ids) do
+    ids = Enum.to_list(comment_ids)
+
+    from(mapping in Sanbase.WalletHunters.ProposalComment,
+      where: mapping.comment_id in ^ids,
+      select: {mapping.comment_id, mapping.proposal_id}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
   def query(:comment_short_url_id, comment_ids) do
     ids = Enum.to_list(comment_ids)
 
@@ -121,6 +132,18 @@ defmodule SanbaseWeb.Graphql.MetricPostgresDataloader do
       where: mapping.short_url_id in ^ids,
       group_by: mapping.short_url_id,
       select: {mapping.short_url_id, fragment("COUNT(*)")}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  def query(:wallet_hunters_proposals_comments_count, proposal_ids) do
+    ids = Enum.to_list(proposal_ids)
+
+    from(mapping in Sanbase.WalletHunters.ProposalComment,
+      where: mapping.proposal_id in ^ids,
+      group_by: mapping.proposal_id,
+      select: {mapping.proposal_id, fragment("COUNT(*)")}
     )
     |> Repo.all()
     |> Map.new()

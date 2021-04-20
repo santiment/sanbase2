@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersTypes do
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 2]
 
-  alias SanbaseWeb.Graphql.Resolvers.BlockchainAddressResolver
+  alias SanbaseWeb.Graphql.Resolvers.{BlockchainAddressResolver, WalletHuntersResolver}
 
   enum :wallet_hunter_proposal_types do
     value(:all)
@@ -99,6 +99,10 @@ defmodule SanbaseWeb.Graphql.WalletHuntersTypes do
         ttl: 600,
         max_ttl_offset: 600
       )
+    end
+
+    field :comments_count, :integer do
+      resolve(&WalletHuntersResolver.comments_count/3)
     end
   end
 end

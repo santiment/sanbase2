@@ -6,9 +6,13 @@ defmodule Sanbase.WalletHunters.RelayQuota do
   alias Sanbase.Accounts.User
   alias Sanbase.Repo
 
-  @free_ops_global_quota 100
-  @proposals_per_user_quota 2
-  @votes_per_user_quota 3
+  # @free_ops_global_quota 100
+  # @proposals_per_user_quota 2
+  # @votes_per_user_quota 3
+
+  @free_ops_global_quota 1000
+  @proposals_per_user_quota 50
+  @votes_per_user_quota 100
   # 2 weeks
   @votes_reset_interval_in_days 14
 

@@ -30,8 +30,8 @@ defmodule SanbaseWeb.Graphql.Schema.WalletHunterQueries do
       arg(:transaction_id, :string)
       arg(:title, non_null(:string))
       arg(:text, non_null(:string))
-      arg(:proposed_address, non_null(:string))
-      arg(:hunter_address, non_null(:string))
+      arg(:proposed_address, non_null(:binary_blockchain_address))
+      arg(:hunter_address, non_null(:binary_blockchain_address))
       arg(:user_labels, list_of(:string), default_value: [])
 
       middleware(JWTAuth)
@@ -47,8 +47,8 @@ defmodule SanbaseWeb.Graphql.Schema.WalletHunterQueries do
 
       arg(:title, non_null(:string))
       arg(:text, non_null(:string))
-      arg(:proposed_address, non_null(:string))
-      arg(:hunter_address, non_null(:string))
+      arg(:proposed_address, non_null(:binary_blockchain_address))
+      arg(:hunter_address, non_null(:binary_blockchain_address))
       arg(:user_labels, list_of(:string), default_value: [])
 
       middleware(JWTAuth)

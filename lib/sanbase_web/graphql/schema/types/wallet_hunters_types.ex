@@ -35,10 +35,10 @@ defmodule SanbaseWeb.Graphql.WalletHuntersTypes do
 
   input_object :wallet_hunters_request_object do
     field(:data, :string)
-    field(:from, :string)
+    field(:from, :binary_blockchain_address)
     field(:gas, :integer)
     field(:nonce, :string)
-    field(:to, :string)
+    field(:to, :binary_blockchain_address)
     field(:value, :integer)
   end
 
@@ -53,7 +53,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersTypes do
   object :proposal_vote do
     field(:amount, :float)
     field(:voted_for, :boolean)
-    field(:voter_address, :string)
+    field(:voter_address, :binary_blockchain_address)
   end
 
   object :wallet_hunters_vote do
@@ -77,8 +77,8 @@ defmodule SanbaseWeb.Graphql.WalletHuntersTypes do
     field(:votes_against, :float)
     field(:sheriffs_reward_share, :float)
     field(:fixed_sheriff_reward, :float)
-    field(:hunter_address, :string)
-    field(:proposed_address, :string)
+    field(:hunter_address, :binary_blockchain_address)
+    field(:proposed_address, :binary_blockchain_address)
     field(:user_labels, list_of(:string))
     field(:votes, list_of(:proposal_vote))
     field(:votes_count, :integer)

@@ -181,6 +181,19 @@ defmodule Sanbase.Alert.Trigger do
     end
   end
 
+  defp remove_targets_on_cooldown(%{market_segments: market_segments} = target, trigger) do
+    combinator = Map.get(target, :market_segments_combinator, "and")
+
+    projects =
+      case combinator do
+        "and" -> Sanbase.Model.Project.List.by_market_segment_all_of(market_segments)
+        "or" -> Sanbase.Model.Project.List.by_market_segment_any_of(market_segments)
+      end
+
+    Enum.map(projects, & &1.slug)
+    |> remove_targets_on_cooldown(trigger, :slug)
+  end
+
   defp remove_targets_on_cooldown(%{slug: slug}, trigger)
        when is_binary(slug) or is_list(slug) do
     slug

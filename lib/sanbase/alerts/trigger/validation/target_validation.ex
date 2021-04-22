@@ -12,6 +12,9 @@ defmodule Sanbase.Alert.Validation.Target do
   def valid_target?(%{text: text}) when is_binary(text), do: :ok
   def valid_target?(%{word: word}) when is_binary(word), do: :ok
 
+  def valid_target?(%{market_segments: [market_segment | _]}) when is_binary(market_segment),
+    do: :ok
+
   def valid_target?(%{word: words}) when is_list(words) do
     Enum.find(words, fn word -> not is_binary(word) end)
     |> case do

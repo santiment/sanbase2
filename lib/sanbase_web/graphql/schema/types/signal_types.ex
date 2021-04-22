@@ -16,6 +16,11 @@ defmodule SanbaseWeb.Graphql.SignalTypes do
   object :raw_signal do
     field(:datetime, non_null(:datetime))
     field(:slug, non_null(:string))
+
+    field :project, non_null(:project) do
+      cache_resolve(&SignalResolver.project/3)
+    end
+
     field(:signal, non_null(:string))
     field(:value, non_null(:float))
     field(:metadata, non_null(:json))

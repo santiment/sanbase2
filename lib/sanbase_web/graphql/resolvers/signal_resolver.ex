@@ -1,16 +1,26 @@
 defmodule SanbaseWeb.Graphql.Resolvers.SignalResolver do
   import SanbaseWeb.Graphql.Helpers.Utils
   import SanbaseWeb.Graphql.Helpers.CalibrateInterval
+  import Absinthe.Resolution.Helpers, only: [on_load: 2]
   import Sanbase.Metric.Selector, only: [args_to_selector: 1, args_to_raw_selector: 1]
 
   import Sanbase.Utils.ErrorHandling,
     only: [handle_graphql_error: 3, maybe_handle_graphql_error: 2]
 
   alias Sanbase.Signal
+  alias SanbaseWeb.Graphql.SanbaseDataloader
 
   require Logger
 
   @datapoints 300
+
+  def project(%{slug: slug}, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :project_by_slug, slug)
+    |> on_load(fn loader ->
+      {:ok, Dataloader.get(loader, SanbaseDataloader, :project_by_slug, slug)}
+    end)
+  end
 
   def get_signal(_root, %{signal: signal}, _resolution) do
     case Signal.has_signal?(signal) do

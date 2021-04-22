@@ -17,7 +17,9 @@ defmodule SanbaseWeb.Graphql.SignalTypes do
     field(:datetime, non_null(:datetime))
     field(:slug, non_null(:string))
 
-    field :project, non_null(:project) do
+    # The signals can be computed for assets that are no longer linked to
+    # an existing project. In this case this field can be nil.
+    field :project, :project do
       cache_resolve(&SignalResolver.project/3)
     end
 

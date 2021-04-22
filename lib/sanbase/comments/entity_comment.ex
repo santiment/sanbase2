@@ -126,6 +126,9 @@ defmodule Sanbase.Comments.EntityComment do
 
   def all_comments_query() do
     from(c in Comment,
+      left_join: pc in ProposalComment,
+      on: c.id == pc.comment_id,
+      where: is_nil(pc.proposal_id),
       preload: [:user, :insights, :timeline_events, :short_urls, :blockchain_addresses]
     )
   end

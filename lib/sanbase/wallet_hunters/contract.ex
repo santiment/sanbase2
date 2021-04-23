@@ -9,6 +9,15 @@ defmodule Sanbase.WalletHunters.Contract do
   @abi Map.get(@abi_file, "abi")
   @rinkeby_contract get_in(@abi_file, ["networks", "rinkeby", "address"])
   @ropsten_contract get_in(@abi_file, ["networks", "ropsten", "address"])
+  @mainnet_contract get_in(@abi_file, ["networks", "mainnet", "address"])
+
+  def contract() do
+    if localhost_or_stage?() do
+      @rinkeby_contract
+    else
+      @mainnet_contract
+    end
+  end
 
   def rinkeby_contract(), do: @rinkeby_contract
   def ropsten_contract(), do: @ropsten_contract
@@ -47,7 +56,7 @@ defmodule Sanbase.WalletHunters.Contract do
   end
 
   def get_event_filter_id(event_name, opts \\ []) do
-    address = Keyword.get(opts, :address, @rinkeby_contract)
+    address = Keyword.get(opts, :address, contract())
     from_block = Keyword.get(opts, :from_block, "0x1")
     to_block = Keyword.get(opts, :to_block, "latest")
 
@@ -123,7 +132,7 @@ defmodule Sanbase.WalletHunters.Contract do
       maybe_replace_rinkeby(
         fn ->
           call_contract(
-            @rinkeby_contract,
+            contract(),
             function_abi(function_name),
             args,
             function_abi(function_name).returns

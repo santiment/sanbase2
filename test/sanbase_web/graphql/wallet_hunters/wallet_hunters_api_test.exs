@@ -3,6 +3,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
+  alias Sanbase.WalletHunters.{RelayQuota, RelayerApi}
 
   setup do
     user = insert(:user)
@@ -21,88 +22,53 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
   end
 
   describe "Create proposal" do
-    test "when user is logged in", context do
-      Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_new_filter/1, filter_id_resp())
-      |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_get_filter_logs/1, votes_resp())
-      |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_call/1, proposal_resp())
+    setup do
+      create_args = %{
+        text: "t1",
+        title: "t2",
+        hunter_address: "0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
+        proposed_address: "0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
+        request: %{
+          data: "0x2c62c181000000000000000000000000301addd55603a559fe0af598eeee4cd3564f7355",
+          from: "0x301addd55603a559fe0af598eeee4cd3564f7355",
+          gas: 0,
+          nonce: "0",
+          to: "0x244d7B189CB0fc5fff6cb22893862aE581e0dbC3",
+          value: 0
+        },
+        signature:
+          "0xe49d1f4cc653a6a3ce249ab2a4bebfe542f10e31d17a38afd1037cb07068340e61d50cd0d0b412ad28f11a02e2361d2fe3fb996bdb0e78b584e26683813322461b"
+      }
+
+      {:ok, create_args: create_args, transaction_id: "0x1"}
+    end
+
+    test "when everything is ok", context do
+      args = context.create_args
+
+      Sanbase.Mock.prepare_mock2(&RelayQuota.can_relay?/1, true)
+      |> Sanbase.Mock.prepare_mock2(
+        &RelayerApi.relay/2,
+        {:ok, %{"hash" => context.transaction_id}}
+      )
+      |> Sanbase.Mock.prepare_mock2(&RelayQuota.create_or_update/1, {:ok, %{}})
       |> Sanbase.Mock.prepare_mock2(
         &Sanbase.ClickhouseRepo.query/2,
         {:ok, %{rows: labels_rows()}}
       )
       |> Sanbase.Mock.run_with_mocks(fn ->
         result =
-          execute_mutation(context.conn, create_proposal_mutation(), "createWalletHunterProposal")
+          execute_mutation(context.conn, create_proposal_mutation(args), "createWhProposal")
 
         assert result == %{
-                 "createdAt" => "2021-03-24T09:03:19Z",
-                 "finishAt" => "2021-03-25T09:03:19Z",
-                 "fixedSheriffReward" => 10.0,
-                 "isRewardClaimed" => false,
-                 "proposalId" => "1",
-                 "reward" => 110.0,
-                 "sheriffsRewardShare" => 2.0e3,
-                 "state" => "DECLINED",
-                 "text" => "t",
-                 "title" => "t2",
-                 "user" => %{"email" => context.user.email},
-                 "votesAgainst" => 0.0,
-                 "votesFor" => 0.0,
-                 "hunterAddress" => "0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
-                 "hunterAddressLabels" => [],
-                 "proposedAddress" => "0x11111109fe98a396f32d6cff4736bedc7b60008c",
-                 "proposedAddressLabels" => [%{"name" => "DEX Trader2"}],
-                 "userLabels" => ["test label1", "test label 2"],
-                 "votes" => [],
-                 "votesCount" => 0,
-                 "transactionId" => "0x1",
-                 "transactionStatus" => "pending"
-               }
-      end)
-    end
-
-    test "when hunter address is in EthAccounts" do
-      Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_new_filter/1, filter_id_resp())
-      |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_get_filter_logs/1, votes_resp())
-      |> Sanbase.Mock.prepare_mock2(&Ethereumex.HttpClient.eth_call/1, proposal_resp())
-      |> Sanbase.Mock.prepare_mock2(
-        &Sanbase.ClickhouseRepo.query/2,
-        {:ok, %{rows: labels_rows()}}
-      )
-      |> Sanbase.Mock.run_with_mocks(fn ->
-        user =
-          insert(:user,
-            eth_accounts: [
-              %Sanbase.Accounts.EthAccount{address: "0xcb8c7409fe98a396f32d6cff4736bedc7b60008c"}
-            ]
-          )
-
-        conn = setup_jwt_auth(build_conn(), user)
-
-        result = execute_mutation(conn, create_proposal_mutation(), "createWalletHunterProposal")
-
-        assert result == %{
-                 "createdAt" => "2021-03-24T09:03:19Z",
-                 "finishAt" => "2021-03-25T09:03:19Z",
-                 "fixedSheriffReward" => 10.0,
-                 "hunterAddress" => "0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
-                 "hunterAddressLabels" => [],
-                 "isRewardClaimed" => false,
-                 "proposalId" => "1",
-                 "proposedAddress" => "0x11111109fe98a396f32d6cff4736bedc7b60008c",
-                 "proposedAddressLabels" => [%{"name" => "DEX Trader2"}],
-                 "reward" => 110.0,
-                 "sheriffsRewardShare" => 2.0e3,
-                 "state" => "DECLINED",
-                 "text" => "t",
-                 "title" => "t2",
-                 "user" => %{"email" => user.email},
-                 "userLabels" => ["test label1", "test label 2"],
-                 "votesAgainst" => 0.0,
-                 "votesFor" => 0.0,
-                 "votes" => [],
-                 "votesCount" => 0,
-                 "transactionId" => "0x1",
-                 "transactionStatus" => "pending"
+                 "hunterAddress" => args.hunter_address,
+                 "proposalId" => nil,
+                 "proposedAddress" => args.proposed_address,
+                 "text" => args.text,
+                 "title" => args.title,
+                 "transactionId" => context.transaction_id,
+                 "transactionStatus" => "pending",
+                 "user" => %{"email" => context.user.email}
                }
       end)
     end
@@ -224,17 +190,16 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
     end
   end
 
-  defp create_proposal_mutation do
+  defp create_proposal_mutation(args) do
     """
     mutation {
-      createWalletHunterProposal(
-        proposalId:1,
-        text:"t",
-        title:"t2",
+      createWhProposal(
+        text: "#{args.text}",
+        title:"#{args.title}",
         hunterAddress:"0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
-        proposedAddress:"0x11111109fe98a396f32d6cff4736bedc7b60008c",
-        userLabels: ["test label1", "test label 2"],
-        transactionId: "0x1"
+        proposedAddress:"0xcb8c7409fe98a396f32d6cff4736bedc7b60008c",
+        request: #{map_to_input_object_str(args.request, map_as_input_object: false)},
+        signature: "#{args.signature}"
       ) {
         proposalId
         user {
@@ -243,29 +208,7 @@ defmodule SanbaseWeb.Graphql.WalletHuntersApiTest do
         title
         text
         hunterAddress
-        hunterAddressLabels {
-          name
-        }
         proposedAddress
-        proposedAddressLabels {
-          name
-        }
-        userLabels
-        reward
-        state
-        isRewardClaimed
-        createdAt
-        finishAt
-        votesFor
-        votesAgainst
-        sheriffsRewardShare
-        fixedSheriffReward
-        votes {
-          amount
-          voterAddress
-          votedFor
-        }
-        votesCount
         transactionId
         transactionStatus
       }

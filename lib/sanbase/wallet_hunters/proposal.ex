@@ -107,8 +107,8 @@ defmodule Sanbase.WalletHunters.Proposal do
   def create_proposal(%{request: request, signature: signature} = args) do
     with true <- RelayQuota.can_relay?(args.user_id),
          {:ok, %{"hash" => transaction_id}} <- RelayerApi.relay(request, signature),
-         {:ok, _} <- RelayQuota.create_or_update(args.user_id),
-         {:ok, proposal} <- create_db_proposal(Map.put(args, :transaction_id, transaction_id)) do
+         {:ok, proposal} <- create_db_proposal(Map.put(args, :transaction_id, transaction_id)),
+         {:ok, _} <- RelayQuota.create_or_update(args.user_id) do
       async_poll_transaction_events(transaction_id)
       {:ok, proposal}
     end
@@ -130,10 +130,14 @@ defmodule Sanbase.WalletHunters.Proposal do
 
     changeset(%__MODULE__{}, args)
     |> Repo.insert()
-    |> case do
-      {:ok, db_proposal} -> {:ok, Repo.preload(db_proposal, :user)}
-      error -> error
-    end
+    |> preload()
+  end
+
+  def update_db_proposal(proposal, args) do
+    proposal
+    |> changeset(args)
+    |> Repo.update()
+    |> preload()
   end
 
   def fetch_by_transaction_id(transaction_id) do
@@ -388,4 +392,10 @@ defmodule Sanbase.WalletHunters.Proposal do
       false -> [{field, "Invalid Ethereum address!"}]
     end
   end
+
+  defp preload({:ok, db_proposal}) do
+    {:ok, Repo.preload(db_proposal, :user)}
+  end
+
+  defp preload(error), do: error
 end

@@ -35,7 +35,7 @@ defmodule Sanbase.Billing.DiscordNotification do
     formatted_amount = format_cents_amount(total_amount)
 
     message = """
-    Failed card charge for #{formatted_amount}.
+    ⛔ Failed card charge for #{formatted_amount}.
     Details: #{failure_message}. #{seller_message}
     Event: https://dashboard.stripe.com/events/#{stripe_event_id}
     """
@@ -49,7 +49,7 @@ defmodule Sanbase.Billing.DiscordNotification do
     period_end = DateTime.truncate(subscription.current_period_end, :second)
 
     message = """
-    New cancellation scheduled for `#{period_end}` from \
+    😢 New cancellation scheduled for `#{period_end}` from \
     `#{mask_user(subscription.user)}` for \
     `#{Plan.plan_full_name(subscription.plan)}` | #{subscription.user.stripe_customer_id}.
     Subscription status before cancellation: `#{subscription.status}`.
@@ -171,7 +171,7 @@ defmodule Sanbase.Billing.DiscordNotification do
 
       count ->
         """
-        Recurring payment for #{format_cents_amount(total)} for \
+        ⏰ Recurring payment for #{format_cents_amount(total)} for \
         #{Plan.plan_full_name(plan)} (month #{count}) by #{mask_user(user)}
         """ <> payment_details(event)
     end

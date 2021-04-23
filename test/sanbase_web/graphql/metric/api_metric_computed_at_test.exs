@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricComputedAtTest do
 
   test "returns last datetime computed at for all available metric", context do
     %{conn: conn, project: project} = context
-    metrics = Metric.available_metrics()
+    metrics = Metric.available_metrics() |> Enum.shuffle() |> Enum.take(100)
 
     datetime = ~U[2020-01-01 12:45:40Z]
     clickhouse_response = {:ok, %{rows: [[datetime |> DateTime.to_unix()]]}}

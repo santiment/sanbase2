@@ -126,7 +126,10 @@ defmodule Sanbase.Alert.DailyMetricTriggerSettingsTest do
        context do
     %{project: project, user: user} = context
 
-    Enum.each(@metrics_1d_min_interval, fn metric ->
+    @metrics_1d_min_interval
+    |> Enum.shuffle()
+    |> Enum.take(100)
+    |> Enum.each(fn metric ->
       trigger_settings = %{
         type: "daily_metric_signal",
         metric: metric,

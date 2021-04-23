@@ -183,7 +183,10 @@ defmodule Sanbase.Alert.MetricTriggerSettingsTest do
          context do
       %{project: project, user: user} = context
 
-      Enum.each(@metrics_5m_min_interval, fn metric ->
+      @metrics_5m_min_interval
+      |> Enum.shuffle()
+      |> Enum.take(100)
+      |> Enum.each(fn metric ->
         trigger_settings = %{
           type: "metric_signal",
           metric: metric,

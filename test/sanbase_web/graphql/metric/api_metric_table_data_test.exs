@@ -51,7 +51,7 @@ defmodule SanbaseWeb.Graphql.ApiMetricTableDataTest do
     %{conn: conn, slugs: slugs, from: from, to: to} = context
     list_of_slugs = Enum.map(slugs, fn slug -> "#{slug}" end)
 
-    metrics = Metric.available_table_metrics() |> Enum.shuffle()
+    metrics = Metric.available_table_metrics() |> Enum.shuffle() |> Enum.take(100)
 
     Sanbase.Mock.prepare_mock2(
       &Sanbase.Clickhouse.MetricAdapter.table_data/5,

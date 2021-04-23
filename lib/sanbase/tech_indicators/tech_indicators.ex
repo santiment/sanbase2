@@ -11,9 +11,6 @@ defmodule Sanbase.TechIndicators do
 
   @recv_timeout 15_000
 
-  defdelegate metric_anomaly(metric, slug, from, to, interval),
-    to: MetricAnomaly
-
   def twitter_mention_count(ticker, from, to, interval, result_size_tail \\ 0) do
     twitter_mention_count_request(ticker, from, to, interval, result_size_tail)
     |> case do

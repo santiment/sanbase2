@@ -32,30 +32,5 @@ defmodule SanbaseWeb.Graphql.Schema.TechIndicatorsQueries do
       middleware(AccessControl)
       cache_resolve(&TechIndicatorsResolver.price_volume_diff/3)
     end
-
-    @desc ~s"""
-    Returns pairs of datetime and metricValue, where anomaly (metricValue outside some calculated boundary) was detected for chosen metric.
-    Field `metricValue` is the value from original metric that is considered abnormal.
-
-    Arguments description:
-    * metric - name of metric (currently supports DAILY_ACTIVE_ADDRESSES, DEV_ACTIVITY, SOCIAL_VOLUME)
-    * slug - project's slug
-    * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
-    * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
-    * interval - an integer followed by one of: `m`, `h`, `d`, `w`
-    """
-    field :metric_anomaly, list_of(:anomaly_value) do
-      meta(access: :free)
-
-      arg(:metric, non_null(:anomalies_metrics_enum))
-      arg(:slug, non_null(:string))
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-      arg(:interval, :interval, default_value: "1d")
-
-      complexity(&Complexity.from_to_interval/3)
-      middleware(AccessControl)
-      cache_resolve(&TechIndicatorsResolver.metric_anomaly/3)
-    end
   end
 end

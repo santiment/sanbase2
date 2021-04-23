@@ -76,7 +76,6 @@ defmodule Sanbase.Billing.QueryAccessLevelTest do
           :history_price,
           :history_twitter_data,
           :insight,
-          :metric_anomaly,
           :news,
           :ohlc,
           :payments,
